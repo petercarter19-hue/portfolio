@@ -289,13 +289,29 @@ app.config.update(
         os.environ.get('PEERSLATE_OPPORTUNITY_SLATE_ENABLED', 'false').lower() == 'true'
     ),
     PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY=PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY,
-    # Spend guard for handoff section 18 safeguard 3. CONFIG ONLY IN SLICE
-    # OS-1 — it is plumbed here so the ceiling is a deployment decision that
-    # already exists before the first AI call does, but slice OS-1 makes NO
-    # AI call on this surface, so nothing reads or enforces it yet. The
-    # enforcement (fail closed into the analysis-failure contract, honest
-    # copy, no partial results) belongs to slices OS-2/OS-3 with the
-    # endpoints it guards. Do not mistake this line for a live control.
+    # Spend guard for handoff section 18 safeguard 3. LIVE AS OF SLICE OS-2:
+    # services/opportunity_analysis_service.DailyAiSpendGuard reads this value
+    # on every anonymous AI request and fails closed into the section 7
+    # failure card when it is spent — or when it was never opened.
+    #
+    # Four things an operator has to know before changing it:
+    #   * Zero (the shipped default) means anonymous visitors get NO AI. The
+    #     screens still work; the wording review and the statement
+    #     interpretation refuse with honest copy that says the budget was
+    #     never opened — not that a limit was reached. Turning anonymous AI
+    #     on is therefore an explicit, written-down decision.
+    #   * The counter is per worker process. There is no shared counter store
+    #     in this runtime and this package does not add one, so under Gunicorn
+    #     with N workers the effective daily ceiling is up to N times this
+    #     number. The feature flag remains the real stop control.
+    #   * It counts calls attempted, not calls that succeeded — and one
+    #     attempt permits up to two provider requests, because the service
+    #     allows a single retry. Worst-case daily provider spend is
+    #     2 x workers x this number.
+    #   * This value is read from the environment once, here. Changing the
+    #     App Service setting requires a restart before it takes effect.
+    # Signed-in members are not metered here: they are identified,
+    # rate-limited per client, and bounded by the same input caps.
     PEERSLATE_OPPSLATE_DAILY_AI_CEILING=int(
         os.environ.get('PEERSLATE_OPPSLATE_DAILY_AI_CEILING', '0') or 0
     ),
@@ -698,17 +714,31 @@ for _workshop_rate_limited_endpoint, _workshop_rate_limit in (
     )(app.view_functions[_workshop_rate_limited_endpoint])
 
 # PS-OPPSLATE-001: the same post-registration wrapper idiom for Opportunity
-# Slate's state-changing routes and its anonymous public-session transport.
-# Slice OS-1 has no AI endpoint, so the budget is a modest anti-abuse floor
-# rather than the interview AI budget; the tighter per-endpoint AI limits
-# (handoff section 18 safeguard 2, <= 6/minute) land with the slices that
-# introduce the calls they protect.
+# Slate's state-changing routes and its anonymous transports.
+#
+# Two budgets, deliberately. The state-changing routes that write a row carry
+# a modest anti-abuse floor. The four routes that call a model — two for
+# signed-in members, two anonymous — carry the interview AI budget of 6 per
+# minute per client, which handoff section 18 safeguard 2 sets as the floor
+# for every AI endpoint in BOTH modes. That is why slice OS-2 split the
+# anonymous AI actions onto their own `public_propose` endpoint: one shared
+# endpoint would have had to choose between throttling a visitor's typing and
+# leaving the model calls unbounded.
 for _oppslate_rate_limited_endpoint, _oppslate_rate_limit in (
     ('opportunity_slate.set_source', '30 per minute'),
     ('opportunity_slate.correct_source', '30 per minute'),
     ('opportunity_slate.confirm_source', '30 per minute'),
     ('opportunity_slate.delete_source', '30 per minute'),
     ('opportunity_slate.public_session', '30 per minute'),
+    # PS-OPPSLATE-001 slice OS-2.
+    ('opportunity_slate.resolve_source_concern', '30 per minute'),
+    ('opportunity_slate.correct_statement', '30 per minute'),
+    ('opportunity_slate.confirm_requirements', '30 per minute'),
+    # The AI budget. Every route below reaches
+    # services/opportunity_analysis_service.py and therefore a model.
+    ('opportunity_slate.review_source_wording', '6 per minute'),
+    ('opportunity_slate.interpret_requirements', '6 per minute'),
+    ('opportunity_slate.public_propose', '6 per minute'),
 ):
     app.view_functions[_oppslate_rate_limited_endpoint] = limiter.limit(
         _oppslate_rate_limit

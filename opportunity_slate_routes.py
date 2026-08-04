@@ -1,23 +1,39 @@
-"""Opportunity Slate room routes — PS-OPPSLATE-001, slice OS-1.
+"""Opportunity Slate room routes — PS-OPPSLATE-001, slices OS-1 and OS-2.
 
 Package: docs/initiatives/PS-OPPORTUNITY-SLATE-001. Controlling contract:
 01_ARCHITECTURE_AND_IMPLEMENTATION_HANDOFF.md, sections 3 (shell), 5
-(palette), 9 (routes), 11 (security), 12 (responsive), 13 (accessibility),
-16 (slice OS-1 scope), 17-18 (owner decisions, public v1 mode).
+(palette), 7 (processing/failure), 9 (routes), 10 (AI contract), 11
+(security), 12 (responsive), 13 (accessibility), 16 (slice scope), 17-18
+(owner decisions, public v1 mode).
 
-Slice OS-1 delivers exactly two member-reachable screens — role intake and
-Review Source — plus checkpoint 1 of 2. **No AI call happens anywhere in
-this module or anything it imports.** Requirement interpretation is OS-2,
-alignment is OS-3, saving is OS-4, dictation is OS-5, and document upload /
-public-link import are OS-6. Where the locked visual set shows one of those
-later capabilities, this slice renders an honest, inert state rather than a
-control that pretends to work.
+Slice OS-1 delivered role intake, Review Source, and checkpoint 1 of 2.
+Slice OS-2 adds the room's first two AI steps and the screen they feed:
 
-Because there is no AI latency in OS-1, there is also no processing stage
-rail: the intake-to-review transition is an ordinary request. Rendering
-fabricated "Extracting employer wording..." stages for a request that does
-none of that would be theatre, so the ``os-stage-rail`` component is not
-built in this slice (handoff section 7 / the truthfulness rule).
+* **AI step 1**, extraction concerns. PeerSlate proposes spans of the
+  captured wording that may have come through wrong. It proposes; the member
+  applies or dismisses each one.
+* **AI step 2**, statement interpretation. The confirmed source is segmented
+  into statements, each with a proposed class and a proposed AND/OR reading.
+* **Review Requirements** (image 03) with the correction rail, and
+  checkpoint 2 of 2.
+
+**No AI client is imported here.** Both steps go through
+``services/opportunity_analysis_service.py``, which owns every prompt
+contract, every validator, and the only Anthropic client in this room. This
+module renders proposals and records decisions; it cannot reach the provider.
+
+Alignment analysis is OS-3, saving is OS-4, dictation is OS-5, and document
+upload / public-link import are OS-6. Where the locked visual set shows one
+of those, this slice renders an honest, inert state rather than a control
+that pretends to work — including image 03's primary action, which reads
+"Confirm requirements" here because nothing is analyzed when it is pressed.
+
+Because slice OS-2 has real AI latency, image 07/08's bounded stage rail
+becomes legitimate for the first time, and it is used for exactly the two
+waits that exist: the wording review and the statement interpretation. Its
+stages name real request boundaries. No stage in this room describes work
+that is not happening, and there is still no rail on any transition that
+merely writes a row.
 
 Two modes, one implementation (owner decision, handoff section 18)
 -----------------------------------------------------------------
@@ -63,7 +79,7 @@ module gives.
 """
 
 import re
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from flask import (
     Blueprint,
@@ -80,9 +96,18 @@ from itsdangerous import BadData, URLSafeTimedSerializer
 
 from identity import get_optional_identity
 from services.database_service import DatabaseServiceError
+from services.opportunity_analysis_service import (
+    MAX_PUBLIC_AI_SOURCE_UNITS,
+    MAX_PUBLIC_STATEMENTS,
+    OpportunityAnalysisError,
+    opportunity_analysis_service,
+)
 from services.opportunity_slate_service import (
+    MAX_CLARIFICATION_UNITS,
     MAX_SOURCE_TEXT_UNITS,
+    STATEMENT_CLASSES,
     OpportunitySlateServiceError,
+    apply_concern_correction,
     opportunity_slate_service,
     validate_source_text,
 )
@@ -98,7 +123,11 @@ ROOM_PATH = "/opportunity-slate"
 # enough that a token copied out of one browser stops working the same day.
 PUBLIC_CONTEXT_MAX_AGE_SECONDS = 8 * 60 * 60
 PUBLIC_CONTEXT_SALT = "peerslate-opportunity-slate-working-v1"
-PUBLIC_CONTEXT_VERSION = 1
+# Bumped by slice OS-2: the anonymous working state now also carries the AI
+# proposals and the visitor's decisions on them. A slice OS-1 token no longer
+# validates, so an in-flight visitor is reset honestly to intake rather than
+# rehydrated into a half-shaped screen.
+PUBLIC_CONTEXT_VERSION = 2
 # Defensive bound on the inbound token string itself, before any signature
 # work. Comfortably above a signed, compressed 20,000-unit source plus its
 # correction; far below MAX_CONTENT_LENGTH.
@@ -117,12 +146,62 @@ CAPTURE_METHOD_LABELS = {
 
 STEP_ROLE = "role"
 STEP_REVIEW = "review"
+STEP_REQUIREMENTS = "requirements"
 # ``replace`` is a role-intake variant, not a third screen: it opens the
 # intake editor empty so the member can bring in a different role.
 STEP_REPLACE = "replace"
-_ALLOWED_STEPS = frozenset({STEP_ROLE, STEP_REVIEW, STEP_REPLACE})
+_ALLOWED_STEPS = frozenset(
+    {STEP_ROLE, STEP_REVIEW, STEP_REPLACE, STEP_REQUIREMENTS}
+)
 
-_PUBLIC_ACTIONS = frozenset({"render", "step", "source", "correct", "confirm", "discard"})
+# The anonymous session's actions, split across two endpoints for one
+# reason: rate limiting. Handoff section 18 safeguard 2 sets the AI budget at
+# <= 6 per minute per client, which is far too tight for ordinary typing and
+# navigation. Putting the two AI actions on their own route lets each carry
+# the budget that fits it, instead of one endpoint forced to choose between
+# throttling a visitor's corrections and leaving the model calls unbounded.
+_PUBLIC_SESSION_ACTIONS = frozenset(
+    {
+        "render",
+        "step",
+        "source",
+        "correct",
+        "confirm",
+        "discard",
+        # Slice OS-2, and none of these calls a model: they record the
+        # visitor's own decisions about proposals already made.
+        "resolve",
+        "statement",
+        "confirm_requirements",
+    }
+)
+_PUBLIC_PROPOSE_ACTIONS = frozenset({"review", "interpret"})
+_PUBLIC_ACTIONS = _PUBLIC_SESSION_ACTIONS | _PUBLIC_PROPOSE_ACTIONS
+
+# Presentation-only. The service returns validated enum values; the member
+# facing labels are a view concern and live here (the workshop_routes.py
+# convention). Reproduced from image 03's group headings.
+STATEMENT_CLASS_LABELS = {
+    "required_qualification": "Required qualification",
+    "preferred_qualification": "Preferred qualification",
+    "responsibility": "Responsibility",
+    "informational_statement": "Informational statement",
+}
+STATEMENT_GROUP_LABELS = {
+    "required_qualification": "Required qualifications",
+    "preferred_qualification": "Preferred qualifications",
+    "responsibility": "Responsibilities",
+    "informational_statement": "Informational statements",
+}
+# Image 03's group order. Required, Preferred, Responsibilities, and
+# Informational statements are four SEPARATE cards and are never merged
+# (locked rule; handoff section 14-M14).
+STATEMENT_GROUP_ORDER = (
+    "required_qualification",
+    "preferred_qualification",
+    "responsibility",
+    "informational_statement",
+)
 
 # Reproduced exactly from the locked visual set. Handoff section 14-M11
 # lists the session-private / saved / failure sentences as trust-critical:
@@ -157,6 +236,65 @@ FIELD_ERROR_HINTS = {
     "invalid": "Check this entry and try again.",
 }
 DEFAULT_FIELD_HINT = "Check this entry and try again."
+
+# ---------------------------------------------------------------------------
+# Slice OS-2 failure copy — image 09-b's grammar, told for the two AI steps
+# this slice actually runs.
+#
+# Image 09-b is the analysis-failure card: heading, one sentence saying what
+# is unchanged, a retry and a review-inputs action, and the truth footer
+# "Results not generated | Nothing was saved." Slice OS-2 has no analysis, so
+# reproducing that card verbatim would name a step that never ran. The
+# grammar is reproduced exactly; the nouns are the ones true here (handoff
+# section 14-M11: trust-critical sentences are quoted, the rest follow the
+# images' meaning).
+# ---------------------------------------------------------------------------
+REVIEW_FAILURE_HEADING = "We couldn't review this wording."
+REVIEW_FAILURE_MESSAGE = "Your role text is unchanged."
+INTERPRET_FAILURE_HEADING = "We couldn't read the employer's statements."
+INTERPRET_FAILURE_MESSAGE = "Your confirmed source is unchanged."
+PROPOSAL_FAILURE_TRUTH = "Results not generated • Nothing was saved."
+
+# The anonymous spend guard, refusing. It is a real limit on a real preview,
+# so it says so plainly instead of pretending to be a transient error.
+#
+# TWO REFUSALS, TWO CARDS (slice OS-2 independent review, finding F2). The
+# guard says no in two entirely different situations and only one of them is
+# a limit anybody reached:
+#
+#   * ceiling_closed — PEERSLATE_OPPSLATE_DAILY_AI_CEILING is 0 or unset. That
+#     is the SHIPPED DEFAULT in both app.py and .env.example, so "flag on,
+#     budget never opened" is the most likely first state this feature is ever
+#     seen in. Telling that visitor a daily limit "has been reached" describes
+#     spending that never happened, and "can run again tomorrow" promises a
+#     recovery that will not come: tomorrow the ceiling is still 0.
+#   * daily_ceiling — a real ceiling was opened and today's is used up. Then
+#     the original wording is exactly right, tomorrow included.
+#
+# Both cards keep image 09-b's grammar (heading, what is unchanged, the truth
+# footer) and both keep the section 7 guarantees: the visitor's inputs are
+# preserved and nothing was saved.
+PUBLIC_BUDGET_HEADING = "This preview has reached its daily limit."
+PUBLIC_BUDGET_MESSAGE = (
+    "PeerSlate caps how much of this preview runs each day. Your role text is "
+    "still here and still yours to edit — the review can run again tomorrow, "
+    "and membership does not share this cap."
+)
+PUBLIC_BUDGET_CLOSED_HEADING = "Wording review is not available in this preview."
+PUBLIC_BUDGET_CLOSED_MESSAGE = (
+    "PeerSlate has not opened this preview's daily AI budget. Your role text is "
+    "still here and still yours to edit."
+)
+PUBLIC_OVERSIZE_HEADING = "That role text is too long for this preview."
+PUBLIC_OVERSIZE_MESSAGE = (
+    f"The preview reads up to {MAX_PUBLIC_AI_SOURCE_UNITS:,} characters of role "
+    "text. Your text is still below, exactly as you pasted it — shorten it, or "
+    "bring the full role in with membership."
+)
+CLARIFICATION_TOO_LONG_MESSAGE = (
+    f"That clarification is longer than {MAX_CLARIFICATION_UNITS:,} characters. "
+    "Shorten it and try again — your text is still below."
+)
 
 
 def _field_error(heading, code, truth):
@@ -244,7 +382,37 @@ _HEADING_MAX_UNITS = 80
 _HEADING_TERMINATORS = ".!?,;"
 
 
-def _normalize_display_blocks(text):
+def _split_runs(text, marks):
+    """Split one line into plain and concern-highlighted runs.
+
+    ``marks`` is a list of ``(quote, concern_key)``. Matching is plain
+    substring matching against the text being displayed, so a highlight can
+    only ever appear where the exact quoted characters really are. A concern
+    whose wording is no longer on screen — because the member already
+    corrected it, or replaced the source — simply does not highlight, rather
+    than highlighting the wrong phrase (image 02's connector is implemented as
+    adjacency and a shared accent, per handoff section 14-M10).
+    """
+    runs = [{"text": text, "concern_key": None}]
+    for quote, concern_key in marks:
+        if not quote:
+            continue
+        rebuilt = []
+        for run in runs:
+            if run["concern_key"] is not None or quote not in run["text"]:
+                rebuilt.append(run)
+                continue
+            head, _, tail = run["text"].partition(quote)
+            if head:
+                rebuilt.append({"text": head, "concern_key": None})
+            rebuilt.append({"text": quote, "concern_key": concern_key})
+            if tail:
+                rebuilt.append({"text": tail, "concern_key": None})
+        runs = rebuilt
+    return [run for run in runs if run["text"]]
+
+
+def _normalize_display_blocks(text, marks=()):
     """Lay the member's captured text out for reading. Presentation only."""
     raw_blocks = [
         block.strip("\n") for block in re.split(r"\n\s*\n", text.replace("\r\n", "\n"))
@@ -287,6 +455,21 @@ def _normalize_display_blocks(text):
         if candidate.endswith(tuple(_HEADING_TERMINATORS)):
             continue
         blocks[index] = {"kind": "heading", "text": candidate}
+
+    # Concern highlights are attached last, so the layout above stays exactly
+    # the deterministic, presentation-only pass slice OS-1 shipped. A heading
+    # is never highlighted: it is a label PeerSlate promoted, not employer
+    # prose the member would correct.
+    marks = list(marks)
+    for block in blocks:
+        if block["kind"] == "list":
+            block["item_runs"] = [
+                _split_runs(item, marks) for item in block["items"]
+            ]
+        elif block["kind"] == "paragraph":
+            block["runs"] = _split_runs(block["text"], marks)
+        else:
+            block["runs"] = [{"text": block["text"], "concern_key": None}]
     return blocks
 
 
@@ -302,7 +485,27 @@ def _base_room(mode, *, step, error=None):
         "is_public": is_public,
         "step": step,
         "error": error,
+        # Every state below is None on a plain page load and is filled in
+        # only by the room builder that owns it. The stage rail and the
+        # read-only correction rail are deliberately NOT in here: both are
+        # client states that exist only while a request is genuinely in
+        # flight, so a server-rendered page can never show a stage that is
+        # not happening.
+        "requirements": None,
         "max_source_units": MAX_SOURCE_TEXT_UNITS,
+        # Slice OS-2 independent review, finding F5. The intake textarea's
+        # maxlength is the STORAGE cap in both modes, but the anonymous AI
+        # cap is far tighter (8,000 vs 20,000), so a visitor could paste and
+        # confirm 20,000 characters and first learn of the real limit when
+        # they pressed the AI button — a refusal by surprise, after the work.
+        # The server cap is correct and unchanged; what was missing was
+        # telling the visitor about it up front. This is that number.
+        #
+        # maxlength deliberately stays at the storage cap even in public
+        # mode: lowering it would silently TRUNCATE a long paste, losing the
+        # visitor's employer text without a word. Disclosing the limit and
+        # preserving the text is the honest pair.
+        "public_ai_source_units": MAX_PUBLIC_AI_SOURCE_UNITS,
         "back_url": "/",
         "room_url": url_for("opportunity_slate.room"),
         "source_url": url_for("opportunity_slate.set_source"),
@@ -310,9 +513,25 @@ def _base_room(mode, *, step, error=None):
         "confirm_url": url_for("opportunity_slate.confirm_source"),
         "delete_url": url_for("opportunity_slate.delete_source"),
         "public_session_url": url_for("opportunity_slate.public_session"),
+        "public_propose_url": url_for("opportunity_slate.public_propose"),
+        "review_url": url_for("opportunity_slate.review_source_wording"),
+        "resolve_url": url_for("opportunity_slate.resolve_source_concern"),
+        "interpret_url": url_for("opportunity_slate.interpret_requirements"),
+        "statement_url": url_for("opportunity_slate.correct_statement"),
+        "confirm_requirements_url": url_for(
+            "opportunity_slate.confirm_requirements"
+        ),
         "role_step_url": url_for("opportunity_slate.room", step=STEP_ROLE),
         "replace_step_url": url_for("opportunity_slate.room", step=STEP_REPLACE),
-        "review_step_url": url_for("opportunity_slate.room"),
+        "review_step_url": url_for("opportunity_slate.room", step=STEP_REVIEW),
+        "requirements_step_url": url_for(
+            "opportunity_slate.room", step=STEP_REQUIREMENTS
+        ),
+        "max_clarification_units": MAX_CLARIFICATION_UNITS,
+        "statement_class_options": [
+            {"value": name, "label": STATEMENT_CLASS_LABELS[name]}
+            for name in STATEMENT_GROUP_ORDER
+        ],
     }
 
 
@@ -333,6 +552,20 @@ def _intake_room(mode, *, text="", replace=False, error=None, has_source=False):
     return room
 
 
+def _concern_marks(concerns):
+    """The ``(quote, key)`` pairs the source document may highlight.
+
+    Only pending concerns highlight. Once the member has applied or dismissed
+    one, the highlight is gone: an applied concern's wording is no longer on
+    screen, and a dismissed one is a decision the member already made.
+    """
+    return [
+        (concern["quote"], concern["key"])
+        for concern in concerns
+        if concern["resolution"] == "pending"
+    ]
+
+
 def _review_room(
     mode,
     *,
@@ -348,8 +581,12 @@ def _review_room(
     editing=False,
     editor_text=None,
     error=None,
+    review=None,
+    concerns=(),
 ):
     display_text = corrected_text or original_text
+    concerns = list(concerns)
+    pending = [item for item in concerns if item["resolution"] == "pending"]
     room = _base_room(mode, step=STEP_REVIEW, error=error)
     room.update(
         {
@@ -373,18 +610,214 @@ def _review_room(
                 "original_text": original_text,
                 "display_text": display_text,
                 "has_correction": bool(corrected_text),
-                "blocks": _normalize_display_blocks(display_text),
+                "blocks": _normalize_display_blocks(
+                    display_text, _concern_marks(concerns)
+                ),
                 "original_blocks": _normalize_display_blocks(original_text),
                 "is_confirmed": bool(is_confirmed),
                 "editing": bool(editing),
                 "editor_text": editor_text if editor_text is not None else display_text,
+                # Slice OS-2. ``review`` is None until AI step 1 has run for
+                # this source version. That is deliberately a different fact
+                # from "it ran and found nothing", which is a review with an
+                # empty concern list, and the screen says the two differently.
+                "review": review,
+                "concerns": concerns,
+                "pending_concerns": pending,
+                "pending_concern_count": len(pending),
+                "concern_count": len(concerns),
             },
         }
     )
     return room
 
 
-def _review_room_from_view(view, mode="member", **overrides):
+def _concerns_from_views(concerns):
+    return [
+        {
+            "key": concern.concern_key,
+            "quote": concern.quoted_text,
+            "reason": concern.concern_reason,
+            "resolution": concern.member_resolution,
+            "corrected_text": concern.member_corrected_text,
+            "version_token": concern.version_token,
+        }
+        for concern in concerns
+    ]
+
+
+def _review_summary(model_name, prompt_contract_version, concern_count):
+    """What the screen may say about the proposal that produced these cards.
+
+    The model and the prompt-contract version travel with the proposal
+    everywhere (handoff section 10) so a member — and a reviewer — can always
+    see which contract produced a given reading.
+    """
+    return {
+        "model": model_name,
+        "prompt_contract": prompt_contract_version,
+        "concern_count": concern_count,
+    }
+
+
+def _statements_from_views(statements):
+    return [
+        {
+            "key": statement.statement_key,
+            "ordinal": statement.ordinal,
+            "text": statement.employer_text,
+            "proposed_class": statement.proposed_class,
+            "proposed_class_label": STATEMENT_CLASS_LABELS[statement.proposed_class],
+            "effective_class": statement.effective_class,
+            "class_label": STATEMENT_CLASS_LABELS[statement.effective_class],
+            "explanation": statement.proposed_explanation,
+            "paths": [
+                {"label": path["label"], "clauses": list(path["clauses"])}
+                for path in statement.proposed_paths
+            ],
+            "member_class": statement.member_class,
+            "member_clarification": statement.member_clarification,
+            "is_reclassified": statement.is_reclassified,
+            "has_member_input": statement.has_member_input,
+            "version_token": statement.version_token,
+        }
+        for statement in statements
+    ]
+
+
+def _group_statements(statements):
+    """Four separate groups, always, in image 03's order.
+
+    A group with no statements still renders, with a count of zero and an
+    honest empty line. Merging Responsibilities and Informational statements —
+    which image 05 does — is prohibited (locked rule, handoff section 14-M14),
+    and silently dropping an empty group would let the screen imply the
+    employer wrote something they did not.
+    """
+    groups = []
+    opened = False
+    for name in STATEMENT_GROUP_ORDER:
+        members = [
+            statement
+            for statement in statements
+            if statement["effective_class"] == name
+        ]
+        # The first group that actually has statements opens. Opening an
+        # empty first group would greet the member with a card that says
+        # nothing while the statements sit collapsed below it.
+        is_open = bool(members) and not opened
+        opened = opened or is_open
+        groups.append(
+            {
+                "class": name,
+                "label": STATEMENT_GROUP_LABELS[name],
+                "count": len(members),
+                "statements": members,
+                "is_open": is_open,
+            }
+        )
+    return groups
+
+
+def _requirements_room(
+    mode,
+    *,
+    source_key,
+    session_key,
+    source_version_token,
+    session_version_token,
+    version_number,
+    is_source_confirmed,
+    requirement_set=None,
+    statements=(),
+    selected_key=None,
+    error=None,
+):
+    """Review Requirements — image 03, and image 08's processing variant."""
+    statements = list(statements)
+    groups = _group_statements(statements)
+    if statements:
+        keys = [statement["key"] for statement in statements]
+        if selected_key not in keys:
+            # Default to the first statement in DISPLAY order, not source
+            # order. The screen opens the first non-empty group, so picking
+            # the first statement of that group is the one the member is
+            # actually looking at — image 03 shows the selected row inside the
+            # open Required qualifications card, not a row two cards below.
+            selected_key = next(
+                (
+                    group["statements"][0]["key"]
+                    for group in groups
+                    if group["statements"]
+                ),
+                keys[0],
+            )
+    else:
+        selected_key = None
+
+    room = _base_room(mode, step=STEP_REQUIREMENTS, error=error)
+    room.update(
+        {
+            "state_title_lead": "Review",
+            "state_title_rest": "Requirements",
+            "checkpoint_label": "Checkpoint 2 of 2",
+            "source_text": "",
+            "is_replace": False,
+            "has_source": True,
+            "idempotency_key": str(uuid4()),
+            "source": None,
+            "requirements": {
+                "source_key": source_key,
+                "session_key": session_key,
+                "source_version_token": source_version_token,
+                "session_version_token": session_version_token,
+                "version_number": version_number,
+                "version_label": f"Source Version {version_number}",
+                "is_source_confirmed": bool(is_source_confirmed),
+                "set": requirement_set,
+                "statements": statements,
+                "groups": groups,
+                "selected_key": selected_key,
+                "has_statements": bool(statements),
+            },
+        }
+    )
+    return room
+
+
+def _requirements_room_from_views(
+    working, requirement_set=None, mode="member", **overrides
+):
+    statements = (
+        _statements_from_views(requirement_set.statements) if requirement_set else []
+    )
+    return _requirements_room(
+        mode,
+        source_key=working.source_key,
+        session_key=working.working_session_key,
+        source_version_token=working.source_version_token,
+        session_version_token=working.session_version_token,
+        version_number=working.version_number,
+        is_source_confirmed=working.is_confirmed,
+        requirement_set=(
+            {
+                "set_key": requirement_set.requirement_set_key,
+                "version_token": requirement_set.version_token,
+                "version_number": requirement_set.version_number,
+                "model": requirement_set.model_name,
+                "prompt_contract": requirement_set.prompt_contract_version,
+                "is_confirmed": requirement_set.is_confirmed,
+                "counts": requirement_set.counts_by_class(),
+            }
+            if requirement_set
+            else None
+        ),
+        statements=statements,
+        **overrides,
+    )
+
+
+def _review_room_from_view(view, mode="member", review=None, **overrides):
     return _review_room(
         mode,
         source_key=view.source_key,
@@ -396,11 +829,22 @@ def _review_room_from_view(view, mode="member", **overrides):
         corrected_text=view.member_corrected_text,
         is_confirmed=view.is_confirmed,
         capture_method=view.capture_method,
+        review=(
+            _review_summary(
+                review.model_name,
+                review.prompt_contract_version,
+                review.concern_count,
+            )
+            if review
+            else None
+        ),
+        concerns=_concerns_from_views(review.concerns) if review else (),
         **overrides,
     )
 
 
 def _review_room_from_context(context, mode="public", **overrides):
+    stored_review = context.get("review")
     return _review_room(
         mode,
         source_key=None,
@@ -412,6 +856,88 @@ def _review_room_from_context(context, mode="public", **overrides):
         corrected_text=context.get("corrected"),
         is_confirmed=context.get("confirmed", False),
         capture_method="pasted",
+        review=(
+            _review_summary(
+                stored_review["model"],
+                stored_review["contract"],
+                len(stored_review["concerns"]),
+            )
+            if stored_review
+            else None
+        ),
+        concerns=(
+            [
+                {
+                    "key": entry["k"],
+                    "quote": entry["q"],
+                    "reason": entry["r"],
+                    "resolution": entry["res"],
+                    "corrected_text": entry.get("c"),
+                    "version_token": None,
+                }
+                for entry in stored_review["concerns"]
+            ]
+            if stored_review
+            else ()
+        ),
+        **overrides,
+    )
+
+
+def _requirements_room_from_context(context, mode="public", **overrides):
+    stored = context.get("requirements")
+    statements = []
+    if stored:
+        for entry in stored["statements"]:
+            effective = entry.get("mc") or entry["pc"]
+            statements.append(
+                {
+                    "key": entry["k"],
+                    "ordinal": entry["o"],
+                    "text": entry["t"],
+                    "proposed_class": entry["pc"],
+                    "proposed_class_label": STATEMENT_CLASS_LABELS[entry["pc"]],
+                    "effective_class": effective,
+                    "class_label": STATEMENT_CLASS_LABELS[effective],
+                    "explanation": entry["e"],
+                    "paths": [
+                        {"label": path["label"], "clauses": list(path["clauses"])}
+                        for path in entry["p"]
+                    ],
+                    "member_class": entry.get("mc"),
+                    "member_clarification": entry.get("mx"),
+                    "is_reclassified": bool(entry.get("mc"))
+                    and entry.get("mc") != entry["pc"],
+                    "has_member_input": bool(entry.get("mc"))
+                    or bool(entry.get("mx")),
+                    "version_token": None,
+                }
+            )
+    counts = {name: 0 for name in STATEMENT_GROUP_ORDER}
+    for statement in statements:
+        counts[statement["effective_class"]] += 1
+    return _requirements_room(
+        mode,
+        source_key=None,
+        session_key=None,
+        source_version_token=None,
+        session_version_token=None,
+        version_number=context["version"],
+        is_source_confirmed=context.get("confirmed", False),
+        requirement_set=(
+            {
+                "set_key": None,
+                "version_token": None,
+                "version_number": stored["version"],
+                "model": stored["model"],
+                "prompt_contract": stored["contract"],
+                "is_confirmed": bool(stored.get("confirmed")),
+                "counts": counts,
+            }
+            if stored
+            else None
+        ),
+        statements=statements,
         **overrides,
     )
 
@@ -525,13 +1051,193 @@ def _load_public_context(token):
     if not isinstance(confirmed, bool):
         return None
 
+    review = _load_public_review(context.get("review"))
+    if review is False:
+        return None
+    requirements = _load_public_requirements(context.get("requirements"))
+    if requirements is False:
+        return None
+
     return {
         "v": PUBLIC_CONTEXT_VERSION,
         "text": text,
         "corrected": corrected,
         "version": version,
         "confirmed": confirmed,
+        "review": review,
+        "requirements": requirements,
     }
+
+
+def _bounded_token_text(value, max_units):
+    if not isinstance(value, str):
+        return None
+    cleaned = value.strip()
+    if not cleaned or len(cleaned.encode("utf-16-le")) // 2 > max_units:
+        return None
+    return cleaned
+
+
+def _load_public_review(stored):
+    """Validate the AI step-1 proposals carried in the visitor's own token.
+
+    ``None`` means "step 1 has not run"; ``False`` means the stored shape is
+    wrong, which resets the whole session honestly rather than rendering half
+    a screen. The token is server-signed, so this is not an untrusted-input
+    boundary — it is the same shape discipline the database rows get, applied
+    to the other mode so neither can drift into accepting something the other
+    would refuse.
+    """
+    if stored is None:
+        return None
+    if not isinstance(stored, dict) or set(stored) != {"model", "contract", "concerns"}:
+        return False
+    model = _bounded_token_text(stored["model"], 100)
+    contract = _bounded_token_text(stored["contract"], 60)
+    if not model or not contract:
+        return False
+    entries = stored["concerns"]
+    if not isinstance(entries, list) or len(entries) > 6:
+        return False
+    concerns = []
+    for entry in entries:
+        if not isinstance(entry, dict) or set(entry) - {"k", "q", "r", "res", "c"}:
+            return False
+        key = _normalize_key(entry.get("k"))
+        quote = _bounded_token_text(entry.get("q"), 600)
+        reason = _bounded_token_text(entry.get("r"), 240)
+        resolution = entry.get("res")
+        corrected = entry.get("c")
+        if corrected is not None:
+            corrected = _bounded_token_text(corrected, MAX_SOURCE_TEXT_UNITS)
+            if corrected is None:
+                return False
+        if (
+            not key
+            or not quote
+            or not reason
+            or resolution not in {"pending", "applied", "dismissed"}
+        ):
+            return False
+        concerns.append(
+            {"k": key, "q": quote, "r": reason, "res": resolution, "c": corrected}
+        )
+    return {"model": model, "contract": contract, "concerns": concerns}
+
+
+def _load_public_requirements(stored):
+    """Validate the AI step-2 proposals carried in the visitor's own token."""
+    if stored is None:
+        return None
+    if not isinstance(stored, dict) or set(stored) != {
+        "model",
+        "contract",
+        "version",
+        "source_version",
+        "confirmed",
+        "statements",
+    }:
+        return False
+    model = _bounded_token_text(stored["model"], 100)
+    contract = _bounded_token_text(stored["contract"], 60)
+    if not model or not contract:
+        return False
+    for numeric in ("version", "source_version"):
+        value = stored[numeric]
+        if not isinstance(value, int) or isinstance(value, bool) or not 1 <= value <= 50:
+            return False
+    if not isinstance(stored["confirmed"], bool):
+        return False
+    entries = stored["statements"]
+    if (
+        not isinstance(entries, list)
+        or not entries
+        or len(entries) > MAX_PUBLIC_STATEMENTS
+    ):
+        return False
+
+    statements = []
+    for ordinal, entry in enumerate(entries, start=1):
+        if not isinstance(entry, dict) or set(entry) - {
+            "k",
+            "o",
+            "t",
+            "pc",
+            "e",
+            "p",
+            "mc",
+            "mx",
+        }:
+            return False
+        key = _normalize_key(entry.get("k"))
+        text = _bounded_token_text(entry.get("t"), 1200)
+        explanation = _bounded_token_text(entry.get("e"), 400)
+        if not key or not text or not explanation:
+            return False
+        if entry.get("o") != ordinal:
+            return False
+        if entry.get("pc") not in STATEMENT_CLASSES:
+            return False
+        member_class = entry.get("mc")
+        if member_class is not None and member_class not in STATEMENT_CLASSES:
+            return False
+        clarification = entry.get("mx")
+        if clarification is not None:
+            clarification = _bounded_token_text(clarification, MAX_CLARIFICATION_UNITS)
+            if clarification is None:
+                return False
+        paths = _load_public_paths(entry.get("p"))
+        if paths is None:
+            return False
+        statements.append(
+            {
+                "k": key,
+                "o": ordinal,
+                "t": text,
+                "pc": entry["pc"],
+                "e": explanation,
+                "p": paths,
+                "mc": member_class,
+                "mx": clarification,
+            }
+        )
+    return {
+        "model": model,
+        "contract": contract,
+        "version": stored["version"],
+        "source_version": stored["source_version"],
+        "confirmed": stored["confirmed"],
+        "statements": statements,
+    }
+
+
+def _load_public_paths(stored):
+    if not isinstance(stored, list) or not stored or len(stored) > 4:
+        return None
+    paths = []
+    for entry in stored:
+        if not isinstance(entry, dict) or set(entry) != {"label", "clauses"}:
+            return None
+        label = _bounded_token_text(entry["label"], 20)
+        clauses = entry["clauses"]
+        if not label or not isinstance(clauses, list) or not clauses or len(clauses) > 8:
+            return None
+        cleaned = []
+        for clause in clauses:
+            value = _bounded_token_text(clause, 200)
+            if not value:
+                return None
+            cleaned.append(value)
+        paths.append({"label": label, "clauses": cleaned})
+    return paths
+
+
+def _normalize_key(value):
+    """Opaque-key normalization, null on failure (the house idiom)."""
+    try:
+        return str(UUID(str(value)))
+    except (TypeError, ValueError, AttributeError):
+        return None
 
 
 def _public_json_body():
@@ -614,7 +1320,32 @@ def room():
         return _render_room(
             _intake_room("member", text=working.display_text, has_source=True)
         )
-    return _render_room(_review_room_from_view(working))
+
+    # A confirmed source lands on Review Requirements unless the member asked
+    # for the source screen by name, so re-entering the room resumes where the
+    # member actually was rather than at checkpoint 1 again.
+    if step == STEP_REQUIREMENTS or (step is None and working.is_confirmed):
+        try:
+            requirement_set = opportunity_slate_service.get_requirements_for_owner(
+                identity.user_key
+            )
+        except (DatabaseServiceError, OpportunitySlateServiceError):
+            return _render_unavailable()
+        return _render_room(
+            _requirements_room_from_views(
+                working,
+                requirement_set,
+                selected_key=_normalize_key(request.args.get("statement")),
+            )
+        )
+
+    try:
+        review = opportunity_slate_service.get_source_review_for_owner(
+            identity.user_key, working.source_key
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        return _render_unavailable()
+    return _render_room(_review_room_from_view(working, review=review))
 
 
 @opportunity_slate.post(f"{ROOM_PATH}/source")
@@ -680,13 +1411,23 @@ def set_source():
 
 
 def _reload_review_for_error(
-    identity, *, editor_text, message, heading, status, field_hint=None
+    identity,
+    *,
+    editor_text,
+    message,
+    heading,
+    status,
+    field_hint=None,
+    kind="field",
+    truth=None,
 ):
     """Re-render Review Source with the member's own wording intact.
 
-    A failed correction must never cost the member their typing. When the
-    current server state can still be read, it is used; when it cannot, the
-    truthful 503 is returned instead of a guessed page.
+    A failed correction must never cost the member their typing, and a failed
+    AI step must never cost them the concerns they had already resolved — so
+    the current review is read back and re-rendered alongside the failure
+    card. When the current server state cannot be read at all, the truthful
+    503 is returned instead of a guessed page.
     """
     try:
         working = opportunity_slate_service.get_working_session_for_owner(
@@ -696,17 +1437,24 @@ def _reload_review_for_error(
         return _render_unavailable(text=editor_text)
     if working is None:
         return _render_room(_intake_room("member", text=editor_text))
+    try:
+        review = opportunity_slate_service.get_source_review_for_owner(
+            identity.user_key, working.source_key
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        review = None
     return _render_room(
         _review_room_from_view(
             working,
-            editing=True,
+            review=review,
+            editing=kind == "field",
             editor_text=editor_text,
             error={
-                "kind": "field",
+                "kind": kind,
                 "heading": heading,
                 "message": message,
                 "field_hint": field_hint,
-                "truth": f"Session private • {TRUTH_NOTHING_SAVED}",
+                "truth": truth or f"Session private • {TRUTH_NOTHING_SAVED}",
             },
         ),
         status=status,
@@ -808,7 +1556,7 @@ def confirm_source():
             status=409 if error.code == "changed" else 400,
         )
 
-    return redirect(url_for("opportunity_slate.room"))
+    return redirect(url_for("opportunity_slate.room", step=STEP_REQUIREMENTS))
 
 
 @opportunity_slate.post(f"{ROOM_PATH}/source/delete")
@@ -856,6 +1604,505 @@ def delete_source():
     return redirect(url_for("opportunity_slate.room"))
 
 
+# ---------------------------------------------------------------------------
+# Slice OS-2 — the two AI steps, the correction rail, and checkpoint 2
+#
+# Every one of these is an explicit member action on an explicit control. No
+# timer, navigation, or voice event reaches them (handoff section 2's
+# transition invariant 1), and each one is rate limited in app.py at the
+# interview AI budget of 6 per minute per client.
+# ---------------------------------------------------------------------------
+
+
+def _daily_ai_ceiling():
+    """The anonymous daily AI-call ceiling (handoff section 18 safeguard 3).
+
+    Read from ``current_app.config`` on every request rather than captured in
+    a module constant, so a value changed in the live config object takes
+    effect on the next request.
+
+    Slice OS-2 independent review, finding F11: that is NOT the same as
+    "no restart is needed", which is what this docstring used to claim.
+    ``app.py`` populates ``PEERSLATE_OPPSLATE_DAILY_AI_CEILING`` once from
+    ``os.environ`` at import and nothing in the runtime mutates it
+    afterwards, so changing the Azure App Service setting still requires the
+    app to restart before this function sees the new number. The per-request
+    read buys reload-safety and testability, not live reconfiguration.
+    """
+    try:
+        return int(
+            current_app.config.get("PEERSLATE_OPPSLATE_DAILY_AI_CEILING", 0) or 0
+        )
+    except (TypeError, ValueError):
+        return 0
+
+
+def _proposal_failure(error, heading, message, *, mode="member"):
+    """Image 09-b's failure card, told for the step that actually failed."""
+    if error.code == "budget":
+        # Finding F2: never-opened and spent are different facts. See the
+        # copy constants above for why the shipped default makes this the
+        # branch that matters most.
+        if error.reason == "ceiling_closed":
+            heading, message = (
+                PUBLIC_BUDGET_CLOSED_HEADING,
+                PUBLIC_BUDGET_CLOSED_MESSAGE,
+            )
+        else:
+            heading, message = PUBLIC_BUDGET_HEADING, PUBLIC_BUDGET_MESSAGE
+    elif error.code == "too_long":
+        heading = (
+            PUBLIC_OVERSIZE_HEADING
+            if mode == "public"
+            else "That role text is too long to review."
+        )
+        message = (
+            PUBLIC_OVERSIZE_MESSAGE
+            if mode == "public"
+            else str(error) + " Shorten it and try again — your text is unchanged."
+        )
+    return {
+        "kind": "proposal",
+        "heading": heading,
+        "message": message,
+        "truth": PROPOSAL_FAILURE_TRUTH,
+    }
+
+
+def _proposal_status(error):
+    """A refusal we made is not a provider failure, and says so in its code."""
+    if error.code == "too_long":
+        return 400
+    if error.code == "budget":
+        # Finding F2 again, in the status line. A spent ceiling really is
+        # "too many requests"; a ceiling that was never opened is not — the
+        # capability is simply not turned on here, which is 503, not 429.
+        # A client backing off and retrying tomorrow is correct behavior for
+        # the first and pointless for the second.
+        return 429 if error.reason == "daily_ceiling" else 503
+    if error.code == "invalid":
+        return 400
+    return 502
+
+
+def _reload_requirements_for_error(identity, *, error, status, selected_key=None):
+    """Re-render Review Requirements with every confirmed input intact."""
+    try:
+        working = opportunity_slate_service.get_working_session_for_owner(
+            identity.user_key
+        )
+        requirement_set = (
+            opportunity_slate_service.get_requirements_for_owner(identity.user_key)
+            if working is not None
+            else None
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        return _render_unavailable()
+    if working is None:
+        return _render_room(_intake_room("member"))
+    return _render_room(
+        _requirements_room_from_views(
+            working, requirement_set, selected_key=selected_key, error=error
+        ),
+        status=status,
+    )
+
+
+@opportunity_slate.post(f"{ROOM_PATH}/source/review")
+def review_source_wording():
+    """AI step 1. Proposes extraction concerns on the captured wording.
+
+    The proposals are spans of the member's own displayed text plus a reason
+    to look at each one. PeerSlate never rewrites the employer's wording here:
+    ``services/opportunity_analysis_service.py`` rejects any reply whose quote
+    is not actually in the text it was given, so a rewritten quote fails the
+    contract rather than reaching the screen.
+    """
+    if not _opportunity_slate_enabled():
+        abort(404)
+    if not _is_same_origin_write():
+        abort(403)
+    identity, failure = _resolve_identity_or_unavailable()
+    if failure is not None:
+        return failure
+    if identity is None:
+        abort(404)
+
+    try:
+        working = opportunity_slate_service.get_working_session_for_owner(
+            identity.user_key
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        return _render_unavailable()
+    if working is None:
+        return redirect(url_for("opportunity_slate.room"))
+
+    try:
+        proposal = opportunity_analysis_service.propose_source_concerns(
+            working.display_text
+        )
+    except OpportunityAnalysisError as error:
+        return _reload_review_for_error(
+            identity,
+            editor_text=working.display_text,
+            heading=REVIEW_FAILURE_HEADING,
+            message=REVIEW_FAILURE_MESSAGE,
+            status=_proposal_status(error),
+            kind="proposal",
+            truth=PROPOSAL_FAILURE_TRUTH,
+        )
+
+    try:
+        opportunity_slate_service.save_source_review_for_owner(
+            identity.user_key,
+            working.source_key,
+            working.source_version_token,
+            proposal["concerns"],
+            proposal["model"],
+            proposal["prompt_contract"],
+        )
+    except DatabaseServiceError:
+        return _reload_review_for_error(
+            identity,
+            editor_text=working.display_text,
+            heading=REVIEW_FAILURE_HEADING,
+            message=UNAVAILABLE_MESSAGE,
+            status=503,
+            kind="proposal",
+            truth=PROPOSAL_FAILURE_TRUTH,
+        )
+    except OpportunitySlateServiceError as error:
+        return _reload_review_for_error(
+            identity,
+            editor_text=working.display_text,
+            heading="This role source changed.",
+            message=CONFLICT_MESSAGE
+            if error.code == "changed"
+            else REVIEW_FAILURE_MESSAGE,
+            status=409 if error.code == "changed" else 400,
+            kind="proposal",
+            truth=PROPOSAL_FAILURE_TRUTH,
+        )
+
+    return redirect(url_for("opportunity_slate.room", step=STEP_REVIEW))
+
+
+@opportunity_slate.post(f"{ROOM_PATH}/source/concerns")
+def resolve_source_concern():
+    """The member's decision on one proposed concern: apply, or dismiss.
+
+    Applying splices their corrected wording into the displayed document;
+    dismissing changes no wording at all. Both are recorded against the
+    proposal so "PeerSlate flagged this and the member kept it" stays a fact
+    the record can answer.
+    """
+    if not _opportunity_slate_enabled():
+        abort(404)
+    if not _is_same_origin_write():
+        abort(403)
+    identity, failure = _resolve_identity_or_unavailable()
+    if failure is not None:
+        return failure
+    if identity is None:
+        abort(404)
+
+    concern_key = request.form.get("concern_key")
+    decision = request.form.get("decision")
+    corrected_text = request.form.get("corrected_text", "")
+    version_token = request.form.get("concern_version_token")
+
+    try:
+        working = opportunity_slate_service.get_working_session_for_owner(
+            identity.user_key
+        )
+        review = (
+            opportunity_slate_service.get_source_review_for_owner(
+                identity.user_key, working.source_key
+            )
+            if working is not None
+            else None
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        return _render_unavailable()
+    if working is None or review is None:
+        return redirect(url_for("opportunity_slate.room"))
+
+    concern = next(
+        (
+            item
+            for item in review.concerns
+            if item.concern_key == (_normalize_key(concern_key) or "")
+        ),
+        None,
+    )
+    if concern is None or decision not in {"applied", "dismissed"}:
+        return _reload_review_for_error(
+            identity,
+            editor_text=working.display_text,
+            heading="We couldn't apply that decision.",
+            message=CONFLICT_MESSAGE,
+            status=409,
+        )
+
+    document_text = None
+    if decision == "applied":
+        try:
+            document_text = apply_concern_correction(
+                working.display_text, concern.quoted_text, corrected_text
+            )
+        except OpportunitySlateServiceError as error:
+            return _reload_review_for_error(
+                identity,
+                editor_text=corrected_text if isinstance(corrected_text, str) else "",
+                heading="We couldn't use that wording.",
+                message=(
+                    str(error)
+                    if error.code == "changed"
+                    else FIELD_ERROR_MESSAGES.get(error.code, DEFAULT_FIELD_ERROR)
+                ),
+                field_hint=FIELD_ERROR_HINTS.get(error.code, DEFAULT_FIELD_HINT),
+                status=409 if error.code == "changed" else 400,
+            )
+
+    try:
+        opportunity_slate_service.resolve_source_concern_for_owner(
+            identity.user_key,
+            concern_key,
+            version_token,
+            decision,
+            corrected_span_text=corrected_text if decision == "applied" else None,
+            document_text=document_text,
+        )
+    except DatabaseServiceError:
+        return _reload_review_for_error(
+            identity,
+            editor_text=working.display_text,
+            heading="We couldn't apply that decision.",
+            message=UNAVAILABLE_MESSAGE,
+            status=503,
+        )
+    except OpportunitySlateServiceError as error:
+        return _reload_review_for_error(
+            identity,
+            editor_text=working.display_text,
+            heading="This role source changed.",
+            message=CONFLICT_MESSAGE
+            if error.code == "changed"
+            else FIELD_ERROR_MESSAGES.get(error.code, DEFAULT_FIELD_ERROR),
+            status=409 if error.code == "changed" else 400,
+        )
+
+    return redirect(url_for("opportunity_slate.room", step=STEP_REVIEW))
+
+
+@opportunity_slate.post(f"{ROOM_PATH}/requirements")
+def interpret_requirements():
+    """AI step 2. Segments the confirmed source and proposes each reading."""
+    if not _opportunity_slate_enabled():
+        abort(404)
+    if not _is_same_origin_write():
+        abort(403)
+    identity, failure = _resolve_identity_or_unavailable()
+    if failure is not None:
+        return failure
+    if identity is None:
+        abort(404)
+
+    try:
+        working = opportunity_slate_service.get_working_session_for_owner(
+            identity.user_key
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        return _render_unavailable()
+    if working is None:
+        return redirect(url_for("opportunity_slate.room"))
+    if not working.is_confirmed:
+        # Interpretation reads the source the member accepted. Without a
+        # confirmed source there is nothing to interpret, and inventing one
+        # would put words in the employer's mouth.
+        return redirect(url_for("opportunity_slate.room", step=STEP_REVIEW))
+
+    try:
+        proposal = opportunity_analysis_service.propose_statement_interpretation(
+            working.display_text
+        )
+    except OpportunityAnalysisError as error:
+        return _reload_requirements_for_error(
+            identity,
+            error=_proposal_failure(
+                error, INTERPRET_FAILURE_HEADING, INTERPRET_FAILURE_MESSAGE
+            ),
+            status=_proposal_status(error),
+        )
+
+    try:
+        opportunity_slate_service.save_requirement_proposal_for_owner(
+            identity.user_key,
+            working.source_key,
+            working.source_version_token,
+            proposal["statements"],
+            proposal["model"],
+            proposal["prompt_contract"],
+        )
+    except DatabaseServiceError:
+        return _reload_requirements_for_error(
+            identity,
+            error=_proposal_failure(
+                OpportunityAnalysisError("unavailable"),
+                INTERPRET_FAILURE_HEADING,
+                UNAVAILABLE_MESSAGE,
+            ),
+            status=503,
+        )
+    except OpportunitySlateServiceError as error:
+        return _reload_requirements_for_error(
+            identity,
+            error=_proposal_failure(
+                OpportunityAnalysisError("unavailable"),
+                "This role source changed."
+                if error.code == "changed"
+                else INTERPRET_FAILURE_HEADING,
+                CONFLICT_MESSAGE
+                if error.code == "changed"
+                else INTERPRET_FAILURE_MESSAGE,
+            ),
+            status=409 if error.code == "changed" else 400,
+        )
+
+    return redirect(url_for("opportunity_slate.room", step=STEP_REQUIREMENTS))
+
+
+@opportunity_slate.post(f"{ROOM_PATH}/requirements/corrections")
+def correct_statement():
+    """Reclassify or clarify one statement. The member's reading wins.
+
+    The AI's proposed class and structure stay exactly where they were; the
+    member's decision is stored beside them. Correcting a statement clears
+    the requirement-set confirmation, because a confirmed set must never
+    describe a reading the member has since changed.
+    """
+    if not _opportunity_slate_enabled():
+        abort(404)
+    if not _is_same_origin_write():
+        abort(403)
+    identity, failure = _resolve_identity_or_unavailable()
+    if failure is not None:
+        return failure
+    if identity is None:
+        abort(404)
+
+    statement_key = _normalize_key(request.form.get("statement_key"))
+    version_token = request.form.get("statement_version_token")
+    member_class = request.form.get("member_class") or None
+    clarification = request.form.get("member_clarification", "")
+
+    if member_class is not None and member_class not in STATEMENT_CLASSES:
+        member_class = None
+
+    try:
+        opportunity_slate_service.correct_requirement_statement_for_owner(
+            identity.user_key,
+            statement_key,
+            version_token,
+            member_class=member_class,
+            member_clarification=clarification,
+        )
+    except DatabaseServiceError:
+        return _reload_requirements_for_error(
+            identity,
+            error={
+                "kind": "unavailable",
+                "heading": "We couldn't apply that correction.",
+                "message": UNAVAILABLE_MESSAGE,
+                "truth": f"Session private • {TRUTH_NOTHING_SAVED}",
+            },
+            status=503,
+            selected_key=statement_key,
+        )
+    except OpportunitySlateServiceError as error:
+        return _reload_requirements_for_error(
+            identity,
+            error={
+                "kind": "field",
+                "heading": "This statement changed."
+                if error.code == "changed"
+                else "We couldn't use that correction.",
+                "message": CONFLICT_MESSAGE
+                if error.code == "changed"
+                else (
+                    CLARIFICATION_TOO_LONG_MESSAGE
+                    if error.code == "too_long"
+                    else FIELD_ERROR_MESSAGES.get(error.code, DEFAULT_FIELD_ERROR)
+                ),
+                "field_hint": FIELD_ERROR_HINTS.get(error.code, DEFAULT_FIELD_HINT),
+                "truth": f"Session private • {TRUTH_NOTHING_SAVED}",
+            },
+            status=409 if error.code == "changed" else 400,
+            selected_key=statement_key,
+        )
+
+    return redirect(
+        url_for(
+            "opportunity_slate.room",
+            step=STEP_REQUIREMENTS,
+            statement=statement_key,
+        )
+    )
+
+
+@opportunity_slate.post(f"{ROOM_PATH}/requirements/confirm")
+def confirm_requirements():
+    """Checkpoint 2 of 2. Records which requirement set the member accepted.
+
+    It saves no slate, produces no alignment result, and calls no AI. The
+    evidence alignment this checkpoint precedes is slice OS-3; this slice
+    stops here and the screen says so rather than showing a stage that never
+    ran.
+    """
+    if not _opportunity_slate_enabled():
+        abort(404)
+    if not _is_same_origin_write():
+        abort(403)
+    identity, failure = _resolve_identity_or_unavailable()
+    if failure is not None:
+        return failure
+    if identity is None:
+        abort(404)
+
+    try:
+        opportunity_slate_service.confirm_requirements_for_owner(
+            identity.user_key,
+            request.form.get("requirement_set_key"),
+            request.form.get("set_version_token"),
+        )
+    except DatabaseServiceError:
+        return _reload_requirements_for_error(
+            identity,
+            error={
+                "kind": "unavailable",
+                "heading": "We couldn't confirm these requirements.",
+                "message": UNAVAILABLE_MESSAGE,
+                "truth": f"Session private • {TRUTH_NOTHING_SAVED}",
+            },
+            status=503,
+        )
+    except OpportunitySlateServiceError as error:
+        return _reload_requirements_for_error(
+            identity,
+            error={
+                "kind": "field",
+                "heading": "These requirements changed.",
+                "message": CONFLICT_MESSAGE
+                if error.code == "changed"
+                else FIELD_ERROR_MESSAGES.get(error.code, DEFAULT_FIELD_ERROR),
+                "truth": f"Session private • {TRUTH_NOTHING_SAVED}",
+            },
+            status=409 if error.code == "changed" else 400,
+        )
+
+    return redirect(url_for("opportunity_slate.room", step=STEP_REQUIREMENTS))
+
+
 @opportunity_slate.post(f"{ROOM_PATH}/public-session")
 def public_session():
     """The anonymous public session's single transport (handoff section 18).
@@ -886,7 +2133,7 @@ def public_session():
         )
 
     action = body.get("action")
-    if action not in _PUBLIC_ACTIONS:
+    if action not in _PUBLIC_SESSION_ACTIONS:
         return (
             jsonify({"success": False, "message": "We couldn't read that request."}),
             400,
@@ -941,12 +2188,17 @@ def public_session():
             version = min(context["version"] + 1, 50)
         elif context is not None:
             version = context["version"]
+        # New employer wording invalidates every proposal made about the old
+        # wording. They are dropped rather than carried forward, so the
+        # visitor can never be shown a reading of text they replaced.
         context = {
             "v": PUBLIC_CONTEXT_VERSION,
             "text": clean_text,
             "corrected": None,
             "version": version,
             "confirmed": False,
+            "review": None,
+            "requirements": None,
         }
 
     elif action == "correct":
@@ -984,24 +2236,292 @@ def public_session():
         context = dict(context)
         context["corrected"] = None if clean_text == context["text"] else clean_text
         context["confirmed"] = False
+        context["review"] = None
+        context["requirements"] = None
 
     elif action == "confirm":
         if context is None:
             return _public_reset_response()
         context = dict(context)
         context["confirmed"] = True
+        requested_step = STEP_REQUIREMENTS
+
+    elif action == "resolve":
+        if context is None or not context.get("review"):
+            return _public_reset_response()
+        concern_key = _normalize_key(body.get("concern_key"))
+        decision = body.get("decision")
+        concern = next(
+            (
+                entry
+                for entry in context["review"]["concerns"]
+                if entry["k"] == concern_key
+            ),
+            None,
+        )
+        if concern is None or decision not in {"applied", "dismissed"}:
+            return _public_invalid_request()
+
+        context = dict(context)
+        review = {
+            "model": context["review"]["model"],
+            "contract": context["review"]["contract"],
+            "concerns": [dict(entry) for entry in context["review"]["concerns"]],
+        }
+        target = next(entry for entry in review["concerns"] if entry["k"] == concern_key)
+
+        if decision == "applied":
+            try:
+                document_text = apply_concern_correction(
+                    _public_display_text(context),
+                    target["q"],
+                    body.get("corrected_text"),
+                )
+            except OpportunitySlateServiceError as error:
+                room = _review_room_from_context(
+                    context,
+                    error=_field_error(
+                        "We couldn't use that wording.",
+                        error.code,
+                        "Public session • Nothing is stored.",
+                    ),
+                )
+                token = _dump_public_context(context)
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "step": STEP_REVIEW,
+                            "html": _render_fragment(room, context_token=token),
+                            "context_token": token,
+                        }
+                    ),
+                    409 if error.code == "changed" else 400,
+                )
+            target["res"] = "applied"
+            target["c"] = validate_source_text(
+                body.get("corrected_text"), label="corrected wording"
+            )
+            context["corrected"] = (
+                None if document_text == context["text"] else document_text
+            )
+            # Changed wording is not the wording the visitor confirmed, and
+            # any statements read out of it no longer describe what is on
+            # screen. Both go, exactly as they do for a signed-in member.
+            context["confirmed"] = False
+            context["requirements"] = None
+        else:
+            target["res"] = "dismissed"
+
+        context["review"] = review
+        requested_step = STEP_REVIEW
+
+    elif action == "statement":
+        if context is None or not context.get("requirements"):
+            return _public_reset_response()
+        statement_key = _normalize_key(body.get("statement_key"))
+        member_class = body.get("member_class") or None
+        clarification = body.get("member_clarification")
+        if member_class is not None and member_class not in STATEMENT_CLASSES:
+            member_class = None
+        if isinstance(clarification, str):
+            clarification = clarification.strip() or None
+            if clarification is not None and (
+                len(clarification.encode("utf-16-le")) // 2 > MAX_CLARIFICATION_UNITS
+            ):
+                room = _requirements_room_from_context(
+                    context,
+                    selected_key=statement_key,
+                    error={
+                        "kind": "field",
+                        "heading": "We couldn't use that clarification.",
+                        "message": CLARIFICATION_TOO_LONG_MESSAGE,
+                        "field_hint": FIELD_ERROR_HINTS["too_long"],
+                        "truth": "Public session • Nothing is stored.",
+                    },
+                )
+                token = _dump_public_context(context)
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "step": STEP_REQUIREMENTS,
+                            "html": _render_fragment(room, context_token=token),
+                            "context_token": token,
+                        }
+                    ),
+                    400,
+                )
+        else:
+            clarification = None
+
+        statements = [dict(entry) for entry in context["requirements"]["statements"]]
+        target = next(
+            (entry for entry in statements if entry["k"] == statement_key), None
+        )
+        if target is None:
+            return _public_invalid_request()
+        target["mc"] = member_class
+        target["mx"] = clarification
+
+        context = dict(context)
+        requirements = dict(context["requirements"])
+        requirements["statements"] = statements
+        # A corrected reading is not the reading the visitor confirmed.
+        requirements["confirmed"] = False
+        context["requirements"] = requirements
+        requested_step = STEP_REQUIREMENTS
+
+    elif action == "confirm_requirements":
+        if context is None or not context.get("requirements"):
+            return _public_reset_response()
+        context = dict(context)
+        requirements = dict(context["requirements"])
+        requirements["confirmed"] = True
+        context["requirements"] = requirements
+        requested_step = STEP_REQUIREMENTS
 
     if context is None:
         return _public_reset_response()
+    return _public_render_response(
+        context, requested_step, _normalize_key(body.get("statement_key"))
+    )
 
+
+@opportunity_slate.post(f"{ROOM_PATH}/public-session/propose")
+def public_propose():
+    """The anonymous session's two AI steps, on their own rate-limit budget.
+
+    Split out of :func:`public_session` so handoff section 18 safeguard 2's
+    <= 6/minute AI budget can apply to the model calls without also throttling
+    a visitor's typing. Everything else is identical: same signed
+    browser-held context, same single renderer, no persistence method
+    imported and no stored procedure called.
+
+    Both steps consume the anonymous daily AI ceiling before the provider is
+    contacted, and both fail closed into the section 7 failure card with the
+    visitor's held state re-signed and returned intact.
+    """
+    if not _opportunity_slate_enabled():
+        abort(404)
+    if not _is_same_origin_write():
+        abort(403)
+    identity, failure = _resolve_identity_or_unavailable()
+    if failure is not None:
+        return failure
+    if identity is not None:
+        return jsonify({"success": False, "message": "Not found."}), 404
+
+    body = _public_json_body()
+    if body is None:
+        return _public_invalid_request()
+    action = body.get("action")
+    if action not in _PUBLIC_PROPOSE_ACTIONS:
+        return _public_invalid_request()
+
+    context = _load_public_context(body.get("context_token"))
+    if context is None:
+        return _public_reset_response()
+
+    if action == "review":
+        try:
+            proposal = opportunity_analysis_service.propose_source_concerns(
+                _public_display_text(context),
+                is_public=True,
+                daily_ceiling=_daily_ai_ceiling(),
+            )
+        except OpportunityAnalysisError as error:
+            return _public_proposal_failure(
+                context,
+                STEP_REVIEW,
+                error,
+                REVIEW_FAILURE_HEADING,
+                REVIEW_FAILURE_MESSAGE,
+            )
+        context = dict(context)
+        context["review"] = {
+            "model": proposal["model"],
+            "contract": proposal["prompt_contract"],
+            "concerns": [
+                {
+                    "k": str(uuid4()),
+                    "q": concern["quoted_text"],
+                    "r": concern["reason"],
+                    "res": "pending",
+                    "c": None,
+                }
+                for concern in proposal["concerns"]
+            ],
+        }
+        return _public_render_response(context, STEP_REVIEW)
+
+    if not context.get("confirmed"):
+        # Nothing to interpret without a confirmed source, and inventing one
+        # would put words in the employer's mouth.
+        return _public_render_response(context, STEP_REVIEW)
+
+    try:
+        proposal = opportunity_analysis_service.propose_statement_interpretation(
+            _public_display_text(context),
+            is_public=True,
+            daily_ceiling=_daily_ai_ceiling(),
+        )
+    except OpportunityAnalysisError as error:
+        return _public_proposal_failure(
+            context,
+            STEP_REQUIREMENTS,
+            error,
+            INTERPRET_FAILURE_HEADING,
+            INTERPRET_FAILURE_MESSAGE,
+        )
+
+    context = dict(context)
+    previous = context.get("requirements") or {}
+    context["requirements"] = {
+        "model": proposal["model"],
+        "contract": proposal["prompt_contract"],
+        "version": min(int(previous.get("version", 0)) + 1, 50),
+        "source_version": context["version"],
+        "confirmed": False,
+        "statements": [
+            {
+                "k": str(uuid4()),
+                "o": statement["ordinal"],
+                "t": statement["employer_text"],
+                "pc": statement["proposed_class"],
+                "e": statement["proposed_explanation"],
+                "p": statement["proposed_paths"],
+                "mc": None,
+                "mx": None,
+            }
+            for statement in proposal["statements"]
+        ],
+    }
+    return _public_render_response(context, STEP_REQUIREMENTS)
+
+
+def _public_render_response(context, requested_step, selected_key=None):
+    """Render the anonymous room from held state and re-sign it.
+
+    One renderer for every anonymous action, on both endpoints, so the public
+    session cannot drift into a second surface — the same reason both modes
+    share ``partials/opportunity_slate/_room.html``.
+    """
     if requested_step in {STEP_ROLE, STEP_REPLACE}:
         room = _intake_room(
             "public",
-            text="" if requested_step == STEP_REPLACE else (context.get("corrected") or context["text"]),
+            text=""
+            if requested_step == STEP_REPLACE
+            else _public_display_text(context),
             replace=requested_step == STEP_REPLACE,
             has_source=True,
         )
         step = requested_step
+    elif requested_step == STEP_REQUIREMENTS or (
+        requested_step is None and context.get("confirmed")
+    ):
+        room = _requirements_room_from_context(context, selected_key=selected_key)
+        step = STEP_REQUIREMENTS
     else:
         room = _review_room_from_context(context)
         step = STEP_REVIEW
@@ -1015,6 +2535,44 @@ def public_session():
             "html": _render_fragment(room, context_token=token),
             "context_token": token,
         }
+    )
+
+
+def _public_display_text(context):
+    return context.get("corrected") or context["text"]
+
+
+def _public_invalid_request():
+    return (
+        jsonify({"success": False, "message": "We couldn't read that request."}),
+        400,
+    )
+
+
+def _public_proposal_failure(context, step, error, heading, message):
+    """Image 09-b's failure card in the anonymous session.
+
+    The visitor's held state is re-signed and returned unchanged alongside the
+    card, so a failed proposal never costs them the role text they pasted or
+    the decisions they already made.
+    """
+    error_card = _proposal_failure(error, heading, message, mode="public")
+    error_card["truth"] = "Public session • Nothing was generated or stored."
+    if step == STEP_REQUIREMENTS:
+        room = _requirements_room_from_context(context, error=error_card)
+    else:
+        room = _review_room_from_context(context, error=error_card)
+    token = _dump_public_context(context)
+    return (
+        jsonify(
+            {
+                "success": False,
+                "step": step,
+                "html": _render_fragment(room, context_token=token),
+                "context_token": token,
+            }
+        ),
+        _proposal_status(error),
     )
 
 

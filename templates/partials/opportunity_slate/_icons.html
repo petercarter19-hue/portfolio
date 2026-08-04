@@ -44,6 +44,12 @@
     <path d="M20 12a8 8 0 1 1-2.6-5.9"></path><path d="M20 4.2v4.4h-4.4"></path>
   {%- elif name == 'block' -%}
     <circle cx="12" cy="12" r="8.5"></circle><path d="M6.2 6.2l11.6 11.6"></path>
+  {%- elif name == 'chevron' -%}
+    <path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path>
+  {%- elif name == 'statement' -%}
+    <rect x="4.5" y="4.5" width="15" height="15" rx="2.2"></rect><path d="M8 9.5h8"></path><path d="M8 13h8"></path><path d="M8 16.2h4.5"></path>
+  {%- elif name == 'list' -%}
+    <path d="M9 6.5h11"></path><path d="M9 12h11"></path><path d="M9 17.5h11"></path><path d="M4.5 6.5h.01"></path><path d="M4.5 12h.01"></path><path d="M4.5 17.5h.01"></path>
   {%- endif -%}
 </svg>
 {%- endmacro %}

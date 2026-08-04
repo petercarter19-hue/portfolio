@@ -2,23 +2,47 @@
 {#
   Review Source — image 02.
 
-  Truth adaptations in this slice:
-    * image 02's context strip carries Role and Employer chips. Those values
-      come from AI statement interpretation (slice OS-2); this slice cannot
-      know them, and inventing them would be fabrication. The strip renders
-      the three chips that ARE true here — Source, Version, Session;
-    * image 02's extraction-concern card is an AI proposal (slice OS-2). The
-      same card grammar is used for the member's own manual correction:
-      original wording read-only above, corrected wording editable below,
-      with Apply correction / Cancel. Nothing is flagged, proposed, or
-      highlighted by PeerSlate;
+  Slice OS-2 makes this screen's proposal half real: the extraction-concern
+  card image 02 draws is now an actual AI proposal, with the employer's
+  original wording read-only above the member's editable correction, and the
+  flagged phrase highlighted in the document above it.
+
+  Truth adaptations still standing in this slice:
+    * image 02's context strip carries Role and Employer chips. Those are not
+      facts this room has — nothing in the source is labelled as the role
+      title or the employer name, and inventing them would be fabrication.
+      The strip renders the three chips that ARE true: Source, Version,
+      Session;
     * "Open original" served a retained uploaded file. Pasted text has no
       separate original artifact, so that control is omitted rather than
-      rendered dead; "Compare with original" appears only once a correction
-      exists to compare against;
+      rendered dead; upload arrives with slice OS-6;
     * the source below is the member's own text laid out for reading. No
       wording is added, removed, or reordered — the screen says so.
 #}
+{% macro doc_runs(runs) %}
+  {%- for run in runs -%}
+    {%- if run.concern_key -%}
+      <mark class="os-mark" data-os-concern="{{ run.concern_key }}">{{ run.text }}</mark>
+    {%- else -%}
+      {{ run.text }}
+    {%- endif -%}
+  {%- endfor -%}
+{% endmacro %}
+
+{% macro doc_blocks(blocks, heading_tag) %}
+  {% for block in blocks %}
+    {% if block.kind == 'heading' %}
+      <{{ heading_tag }} class="os-source-doc__heading">{{ block.text }}</{{ heading_tag }}>
+    {% elif block.kind == 'list' %}
+      <ul class="os-source-doc__list">
+        {% for runs in block.item_runs %}<li>{{ doc_runs(runs) }}</li>{% endfor %}
+      </ul>
+    {% else %}
+      <p class="os-source-doc__para">{{ doc_runs(block.runs) }}</p>
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
+
 <div class="os-context-strip">
   <span class="os-chip">
     <span class="os-chip__badge">{{ os_icon('doc') }}</span>
@@ -54,48 +78,67 @@
   {{ os_icon('check') }}
   <span>
     <strong>You confirmed {{ room.source.version_label }}.</strong>
-    Nothing was saved, published, shared, or sent to an employer. The next
-    step — reviewing the employer's requirements — is not built yet.
+    Nothing was saved, published, shared, or sent to an employer.
   </span>
 </div>
 {% endif %}
 
-{# Owner visual review 2026-08-03.
+{# ---------------------------------------------------------------------
+   AI step 1 — the wording review.
 
-   V9: the reviewed source is set directly on the workbench surface. The
-   first pass wrapped it in its own bordered, shadowed, differently
-   coloured card — a card inside the workbench card.
+   Three distinct states, and they are three different facts:
+     * not run yet — PeerSlate has not looked at this wording;
+     * run, nothing flagged — a real answer, never dressed up as "not checked";
+     * run, with concerns — proposals the member decides on.
 
-   V13: the authority's extraction-concern card sits to the right of the
-   source column. Its content is an AI proposal and arrives with slice
-   OS-2; the card's placement, geometry and styling are built now, in a
-   truthful awaiting state that flags nothing and claims no analysis.
+   MERGE NOTE, slice OS-2 onto slice OS-1's shipped composition. OS-1's owner
+   visual pass built this screen as one reading measure with the extraction
+   concern card laid over the margin that measure leaves (image 02), and Pete
+   accepted it. That composition is kept exactly. What changes is that the
+   card's content is now a real proposal instead of a truthful placeholder.
 
-   Owner visual review, second pass: image 02 holds the reviewed source
-   at one reading measure from the first line to the last, and puts this
-   card in the margin that measure leaves — not in a column of its own.
-   The card therefore takes no grid track (see .os-review in the
-   stylesheet), so nothing below it is pinched.
+   The card stays in the margin because that is where image 02 draws it and
+   where the accepted geometry puts it. The per-concern CORRECTION cards do
+   not: they carry a textarea, a mic and two decision buttons, and a 242px
+   margin is not a place to edit the employer's wording. They sit in the
+   reading column, above the document, where the measure is. The margin card
+   names each flagged phrase and links to the card that corrects it.
+   --------------------------------------------------------------------- #}
+{% if not room.source.review %}
+{# The stage rail this screen shows while the wording review is genuinely in
+   flight. It is authored here, server-side, and cloned into place by
+   static/js/opportunity-slate.js — the room script never composes
+   member-facing copy of its own, and a rail that describes work can only
+   exist where that work is actually requested. #}
+{% set stage_heading = 'Checking the captured wording' %}
+{% set stage_truth = 'Nothing is being saved, published, shared, or sent to an employer.' %}
+{% set stages = [
+     ('Wording received', 'The captured text is with PeerSlate.'),
+     ('Checking wording for review', 'PeerSlate is reading it for spans that may have come through wrong.'),
+     ('Preparing source review', 'Laying out anything it wants you to look at.')
+   ] %}
+<template data-os-stage-template>{% include "partials/opportunity_slate/_stage_rail.html" %}</template>
+{% endif %}
 
-   The card is named after its own heading, per handoff §14-M10: with
-   nothing flagged there is no phrase for a connector to point at, so
-   the relationship to the document is carried by position, by the
-   accent rule, and by this <aside> being announced as "Extraction
-   concerns". #}
-{# Third parity round: the aside is placed BEFORE the document in the
+{# Third parity round (OS-1): the aside is placed BEFORE the document in the
    source order. On the desktop composition nothing moves — both children
-   share grid cell 1/1, so the card still sits in the margin beside the
-   first screenful. But below a 700px workbench the card stacks, and in
-   document order it belongs in front of the thing it is a note about: a
-   member on a phone, or on a screen reader, should be told what has and
-   has not been checked BEFORE reading two thousand words, not after. #}
+   share grid cell 1/1, so the card still sits in the margin beside the first
+   screenful. But below a 700px workbench the card stacks, and in document
+   order it belongs in front of the thing it is a note about. #}
 <div class="os-review">
   <aside class="os-review__aside" aria-labelledby="os-concern-title">
-    <div class="os-concern-card">
+    <div class="os-concern-card{% if room.source.review and room.source.concern_count %} os-concern-card--flagged{% endif %}">
       <h3 class="os-concern-card__title" id="os-concern-title">
         {{ os_icon('warning', 'os-icon os-icon--sm') }}Extraction concerns
       </h3>
-      <p class="os-concern-card__state">None flagged</p>
+
+      {% if not room.source.review %}
+      {# Not checked yet. OS-1's shipped sentences are preserved verbatim —
+         they are still literally true before the review runs — and the only
+         addition is the control that makes the check possible. The state
+         label is the one word that had to move: "None flagged" described a
+         slice in which nothing COULD be flagged. #}
+      <p class="os-concern-card__state">Not checked yet</p>
       <p>
         PeerSlate has not read or analyzed this source. Nothing on this
         screen was flagged, proposed, or highlighted by PeerSlate.
@@ -104,20 +147,67 @@
         Checking the wording here is your own review. Correct anything that
         came through wrong before you confirm it.
       </p>
-      {# Third parity round. Image 02's card carries a flagged phrase and a
-         correction pair and runs most of the height of the document; ours
-         held four lines and left the margin beside it visibly empty. The
-         fix is substance, not filler, and it has to stay true of a slice
-         that runs no AI — so this is what the MEMBER is being asked to
-         check, in the present tense, not a promise about what PeerSlate
-         will check later. It invents no future capability, flags nothing,
-         and is replaced by the real concern when OS-2 has one. #}
       <p class="os-concern-card__lead">What to look for as you read:</p>
       <ul class="os-concern-card__checks">
         <li>every section of the posting is here</li>
         <li>lists did not run together</li>
         <li>no sentence is cut off part-way</li>
       </ul>
+      <form class="os-concern-card__form" method="post" action="{{ room.review_url }}" data-os-form="review">
+        <button type="submit" class="os-btn os-btn--primary os-btn--sm os-btn--block" data-os-review>
+          {{ os_icon('sparkle') }}<span>Check the wording</span>
+        </button>
+      </form>
+      {% if room.is_public %}
+      <p class="os-help os-help--muted">
+        {{ os_icon('globe', 'os-icon os-icon--sm') }}This sends the role text to PeerSlate's AI provider. PeerSlate does not store it.
+      </p>
+      {% endif %}
+
+      {% elif room.source.concern_count == 0 %}
+      {# Reviewed, nothing flagged. A real answer. #}
+      <p class="os-concern-card__state os-concern-card__state--ok">
+        {{ os_icon('check', 'os-icon os-icon--sm') }}None flagged
+      </p>
+      <p>
+        PeerSlate read the captured wording and did not see a span that looks
+        mis-captured. That is not a judgement about the role — only about
+        whether the text came through cleanly.
+      </p>
+      <p class="os-concern-card__lead">Worth checking yourself:</p>
+      <ul class="os-concern-card__checks">
+        <li>every section of the posting is here</li>
+        <li>lists did not run together</li>
+        <li>no sentence is cut off part-way</li>
+      </ul>
+      <p class="os-help os-help--muted">Proposed by {{ room.source.review.model }} · contract {{ room.source.review.prompt_contract }}</p>
+
+      {% else %}
+      {# Reviewed, with concerns. Image 02's amber treatment applies here and
+         only here — it is the state the authority draws. #}
+      <p class="os-concern-card__state os-concern-card__state--flagged">
+        {{ room.source.concern_count }}
+        {{ 'phrase' if room.source.concern_count == 1 else 'phrases' }} flagged
+      </p>
+      <p>
+        Each one is a proposal about the capture, not about you. The
+        employer's original wording is kept either way. You decide.
+      </p>
+      <ul class="os-concern-card__flags">
+        {% for concern in room.source.concerns %}
+        <li>
+          <a class="os-concern-card__flag" href="#os-concern-{{ concern.key }}" data-os-concern-link="{{ concern.key }}">
+            <span class="os-concern-card__flag-quote">{{ concern.quote }}</span>
+            <span class="os-concern-card__flag-state">
+              {% if concern.resolution == 'pending' %}Waiting on you{% elif concern.resolution == 'applied' %}You corrected this{% else %}You kept this wording{% endif %}
+            </span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="os-help os-help--muted">Proposed by {{ room.source.review.model }} · contract {{ room.source.review.prompt_contract }}</p>
+      {% endif %}
+
       <a class="os-concern-card__action" href="#os-correct" data-os-reveal="os-correct">
         {{ os_icon('pencil', 'os-icon os-icon--sm') }}Correct the wording
       </a>
@@ -125,20 +215,93 @@
   </aside>
 
   <div class="os-review__main">
-    <div class="os-source-doc">
-      {% for block in room.source.blocks %}
-        {% if block.kind == 'heading' %}
-          <h3 class="os-source-doc__heading">{{ block.text }}</h3>
-        {% elif block.kind == 'list' %}
-          <ul class="os-source-doc__list">
-            {% for item in block['items'] %}<li>{{ item }}</li>{% endfor %}
-          </ul>
-        {% else %}
-          <p class="os-source-doc__para">{{ block.text }}</p>
+    {% if room.source.review and room.source.concern_count %}
+    <div class="os-concerns" data-os-concerns>
+      {% for concern in room.source.concerns %}
+      {# Image 02's concern card. The dashed connector between the highlighted
+         phrase and this card is implemented as adjacency, a shared accent, and
+         a programmatic association rather than a drawn line (handoff section
+         14-M10) — a drawn connector cannot survive reflow. #}
+      <div class="os-concern{% if concern.resolution != 'pending' %} os-concern--resolved{% endif %}"
+           id="os-concern-{{ concern.key }}"
+           data-os-concern-card="{{ concern.key }}">
+        <p class="os-concern__eyebrow">
+          {% if concern.resolution == 'pending' %}
+            {{ os_icon('warning', 'os-icon os-icon--sm') }}Extraction concern
+          {% elif concern.resolution == 'applied' %}
+            {{ os_icon('check', 'os-icon os-icon--sm') }}You corrected this wording
+          {% else %}
+            {{ os_icon('block', 'os-icon os-icon--sm') }}You kept this wording
+          {% endif %}
+        </p>
+        <p class="os-concern__reason">
+          {% if concern.resolution == 'pending' %}
+            PeerSlate flagged this phrase as {{ concern.reason }}
+          {% else %}
+            PeerSlate flagged it as {{ concern.reason }}
+          {% endif %}
+        </p>
+
+        <p class="os-pair__label" id="os-concern-original-{{ concern.key }}">Original uploaded wording</p>
+        <div class="os-pair__original"
+             role="region"
+             aria-labelledby="os-concern-original-{{ concern.key }}"
+             tabindex="0">{{ concern.quote }}</div>
+
+        {% if concern.resolution == 'pending' %}
+        <form class="os-form" method="post" action="{{ room.resolve_url }}" data-os-form="resolve" novalidate>
+          <input type="hidden" name="concern_key" value="{{ concern.key }}">
+          <input type="hidden" name="concern_version_token" value="{{ concern.version_token or '' }}">
+
+          <label class="os-pair__label" for="os-concern-text-{{ concern.key }}">Your corrected wording</label>
+          <div class="os-editor os-editor--compact">
+            <textarea id="os-concern-text-{{ concern.key }}"
+                      class="os-editor__field"
+                      name="corrected_text"
+                      rows="5"
+                      maxlength="{{ room.max_source_units }}"
+                      aria-describedby="os-concern-help-{{ concern.key }}"
+                      data-os-concern-input>{{ concern.quote }}</textarea>
+            <button type="button"
+                    class="os-mic os-mic--sm"
+                    aria-disabled="true"
+                    aria-describedby="os-concern-help-{{ concern.key }}"
+                    data-os-inert-mic
+                    title="Dictation is not available yet">
+              {{ os_icon('mic') }}
+              <span class="os-visually-hidden">Dictate the correction (not available yet)</span>
+            </button>
+          </div>
+          <p class="os-help" id="os-concern-help-{{ concern.key }}">
+            Type your correction. The original wording above is always kept.
+            Dictation arrives in a later update.
+          </p>
+          <div class="os-disclosure__actions">
+            {# The decision travels on the activated button itself, so a
+               no-JavaScript submit sends the decision the member actually pressed.
+               A hidden field would have sent "applied" for both. #}
+            <button type="submit" name="decision" value="applied"
+                    class="os-btn os-btn--primary os-btn--sm" data-os-apply-concern
+                    {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>Apply correction</button>
+            <button type="submit" name="decision" value="dismissed"
+                    class="os-btn os-btn--quiet os-btn--sm" data-os-dismiss-concern
+                    {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>Keep the original wording</button>
+          </div>
+        </form>
+        {% elif concern.resolution == 'applied' %}
+        <p class="os-pair__label">Your corrected wording</p>
+        <div class="os-pair__original os-pair__original--applied">{{ concern.corrected_text }}</div>
         {% endif %}
+      </div>
       {% endfor %}
     </div>
+    {% endif %}
+
+    <div class="os-source-doc">
+      {{ doc_blocks(room.source.blocks, 'h3') }}
+    </div>
   </div>
+</div>
 </div>
 
 {# V11: the authority carries no full-width action bars in the middle of
@@ -149,7 +312,10 @@
 <div class="os-quiet-actions">
 
 {# Manual correction. Native <details> so it is keyboard-operable and works
-   with JavaScript off in the signed-in mode. #}
+   with JavaScript off in the signed-in mode. This is the whole-document
+   editor and is deliberately kept beside the per-concern cards: a member who
+   disagrees with every proposal, or was offered none, still edits any wording
+   they like. #}
 <details class="os-disclosure os-disclosure--correct" id="os-correct"{% if room.source.editing %} open{% endif %}>
   <summary class="os-disclosure__summary">
     {{ os_icon('pencil', 'os-icon os-icon--sm') }}Correct the wording
@@ -214,21 +380,13 @@
       <div class="os-compare__side">
         <p class="os-compare__label">Original wording</p>
         <div class="os-source-doc os-source-doc--compare">
-          {% for block in room.source.original_blocks %}
-            {% if block.kind == 'heading' %}<h4 class="os-source-doc__heading">{{ block.text }}</h4>
-            {% elif block.kind == 'list' %}<ul class="os-source-doc__list">{% for item in block['items'] %}<li>{{ item }}</li>{% endfor %}</ul>
-            {% else %}<p class="os-source-doc__para">{{ block.text }}</p>{% endif %}
-          {% endfor %}
+          {{ doc_blocks(room.source.original_blocks, 'h4') }}
         </div>
       </div>
       <div class="os-compare__side">
         <p class="os-compare__label">Your corrected wording</p>
         <div class="os-source-doc os-source-doc--compare">
-          {% for block in room.source.blocks %}
-            {% if block.kind == 'heading' %}<h4 class="os-source-doc__heading">{{ block.text }}</h4>
-            {% elif block.kind == 'list' %}<ul class="os-source-doc__list">{% for item in block['items'] %}<li>{{ item }}</li>{% endfor %}</ul>
-            {% else %}<p class="os-source-doc__para">{{ block.text }}</p>{% endif %}
-          {% endfor %}
+          {{ doc_blocks(room.source.blocks, 'h4') }}
         </div>
       </div>
     </div>
@@ -282,15 +440,9 @@
       <a class="os-link os-link--danger" href="#os-delete" data-os-reveal="os-delete">Delete source</a>
     </span>
     {% if room.source.is_confirmed %}
-    {# Honest inert primary: checkpoint 1 is done and checkpoint 2 does not
-       exist yet. A live-looking button that did nothing would be worse than
-       saying so. #}
-    <button type="button"
-            class="os-btn os-btn--primary"
-            aria-disabled="true"
-            data-os-inert-next>
+    <a class="os-btn os-btn--primary" href="{{ room.requirements_step_url }}" data-os-step="requirements">
       <span>Review requirements</span>{{ os_icon('arrow-right') }}
-    </button>
+    </a>
     {% else %}
     <form method="post" action="{{ room.confirm_url }}" data-os-form="confirm">
       <input type="hidden" name="source_key" value="{{ room.source.source_key or '' }}">
@@ -303,9 +455,3 @@
     {% endif %}
   </div>
 </div>
-{% if room.source.is_confirmed %}
-<p class="os-help os-help--muted os-footer-note">
-  Reviewing the employer's requirements arrives in a later update. Nothing is
-  waiting behind this button.
-</p>
-{% endif %}

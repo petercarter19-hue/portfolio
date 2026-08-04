@@ -1,11 +1,18 @@
 /* ============================================================
    PS-OPPSLATE-001 ROLLBACK - guarded Opportunity Slate working-store removal
 
-   Refuses to discard any member opportunity_working_sessions,
-   opportunity_sources, or opportunity_source_versions record, any later
-   migration, or any protected procedure that changed after this migration
-   was applied. Removes only the six Opportunity Slate procedures and the
-   three tables this migration added.
+   Refuses to discard any member Opportunity Slate record - working
+   sessions, sources, captured versions, AI-proposal reviews, extraction
+   concerns, requirement sets, requirement-set versions, or requirement
+   statements - any later migration, or any protected procedure that changed
+   after this migration was applied. Removes only the thirteen Opportunity
+   Slate procedures and the eight tables this migration added.
+
+   SLICE OS-2 extended every list below. The proposal tables hold employer
+   wording and the member's own corrections just as the OS-1 tables do, so
+   they get exactly the same refusal: a rollback that quietly discarded
+   PeerSlate's readings and a member's decisions about them would be a data
+   loss dressed up as a schema change.
 
    The working store is ephemeral by design, but "ephemeral" is not
    "disposable on an operator's behalf": a member with an open working
@@ -34,6 +41,11 @@ BEGIN TRY
            OBJECT_ID(N'dbo.opportunity_working_sessions', N'U') IS NOT NULL
            OR OBJECT_ID(N'dbo.opportunity_sources', N'U') IS NOT NULL
            OR OBJECT_ID(N'dbo.opportunity_source_versions', N'U') IS NOT NULL
+           OR OBJECT_ID(N'dbo.opportunity_source_reviews', N'U') IS NOT NULL
+           OR OBJECT_ID(N'dbo.opportunity_source_concerns', N'U') IS NOT NULL
+           OR OBJECT_ID(N'dbo.opportunity_requirement_sets', N'U') IS NOT NULL
+           OR OBJECT_ID(N'dbo.opportunity_requirement_set_versions', N'U') IS NOT NULL
+           OR OBJECT_ID(N'dbo.opportunity_requirement_statements', N'U') IS NOT NULL
        )
         THROW 53501, 'Rollback refused: Opportunity Slate objects exist without their migration record.', 1;
 
@@ -58,7 +70,14 @@ BEGIN TRY
         (N'usp_SaveOpportunitySourceForOwner'),
         (N'usp_CorrectOpportunitySourceForOwner'),
         (N'usp_ConfirmOpportunitySourceForOwner'),
-        (N'usp_DeleteOpportunityWorkingSessionForOwner');
+        (N'usp_DeleteOpportunityWorkingSessionForOwner'),
+        (N'usp_GetOpportunitySourceReviewForOwner'),
+        (N'usp_SaveOpportunitySourceReviewForOwner'),
+        (N'usp_ResolveOpportunitySourceConcernForOwner'),
+        (N'usp_GetOpportunityRequirementsForOwner'),
+        (N'usp_SaveOpportunityRequirementProposalForOwner'),
+        (N'usp_CorrectOpportunityRequirementStatementForOwner'),
+        (N'usp_ConfirmOpportunityRequirementsForOwner');
 
     IF @OppSlateAppliedAtUtc IS NOT NULL
        AND EXISTS
@@ -89,6 +108,21 @@ BEGIN TRY
        )
         THROW 53503, 'Rollback refused: a protected Opportunity Slate procedure changed after PS-OPPSLATE-001.', 1;
 
+    IF OBJECT_ID(N'dbo.opportunity_source_concerns', N'U') IS NOT NULL
+       AND EXISTS (SELECT 1 FROM dbo.opportunity_source_concerns)
+        THROW 53507, 'Rollback refused: opportunity_source_concerns contains member records.', 1;
+    IF OBJECT_ID(N'dbo.opportunity_source_reviews', N'U') IS NOT NULL
+       AND EXISTS (SELECT 1 FROM dbo.opportunity_source_reviews)
+        THROW 53508, 'Rollback refused: opportunity_source_reviews contains member records.', 1;
+    IF OBJECT_ID(N'dbo.opportunity_requirement_statements', N'U') IS NOT NULL
+       AND EXISTS (SELECT 1 FROM dbo.opportunity_requirement_statements)
+        THROW 53509, 'Rollback refused: opportunity_requirement_statements contains member records.', 1;
+    IF OBJECT_ID(N'dbo.opportunity_requirement_set_versions', N'U') IS NOT NULL
+       AND EXISTS (SELECT 1 FROM dbo.opportunity_requirement_set_versions)
+        THROW 53510, 'Rollback refused: opportunity_requirement_set_versions contains member records.', 1;
+    IF OBJECT_ID(N'dbo.opportunity_requirement_sets', N'U') IS NOT NULL
+       AND EXISTS (SELECT 1 FROM dbo.opportunity_requirement_sets)
+        THROW 53511, 'Rollback refused: opportunity_requirement_sets contains member records.', 1;
     IF OBJECT_ID(N'dbo.opportunity_source_versions', N'U') IS NOT NULL
        AND EXISTS (SELECT 1 FROM dbo.opportunity_source_versions)
         THROW 53504, 'Rollback refused: opportunity_source_versions contains member records.', 1;
@@ -113,7 +147,33 @@ BEGIN TRY
         DROP PROCEDURE dbo.usp_ConfirmOpportunitySourceForOwner;
     IF OBJECT_ID(N'dbo.usp_DeleteOpportunityWorkingSessionForOwner', N'P') IS NOT NULL
         DROP PROCEDURE dbo.usp_DeleteOpportunityWorkingSessionForOwner;
+    IF OBJECT_ID(N'dbo.usp_GetOpportunitySourceReviewForOwner', N'P') IS NOT NULL
+        DROP PROCEDURE dbo.usp_GetOpportunitySourceReviewForOwner;
+    IF OBJECT_ID(N'dbo.usp_SaveOpportunitySourceReviewForOwner', N'P') IS NOT NULL
+        DROP PROCEDURE dbo.usp_SaveOpportunitySourceReviewForOwner;
+    IF OBJECT_ID(N'dbo.usp_ResolveOpportunitySourceConcernForOwner', N'P') IS NOT NULL
+        DROP PROCEDURE dbo.usp_ResolveOpportunitySourceConcernForOwner;
+    IF OBJECT_ID(N'dbo.usp_GetOpportunityRequirementsForOwner', N'P') IS NOT NULL
+        DROP PROCEDURE dbo.usp_GetOpportunityRequirementsForOwner;
+    IF OBJECT_ID(N'dbo.usp_SaveOpportunityRequirementProposalForOwner', N'P') IS NOT NULL
+        DROP PROCEDURE dbo.usp_SaveOpportunityRequirementProposalForOwner;
+    IF OBJECT_ID(N'dbo.usp_CorrectOpportunityRequirementStatementForOwner', N'P') IS NOT NULL
+        DROP PROCEDURE dbo.usp_CorrectOpportunityRequirementStatementForOwner;
+    IF OBJECT_ID(N'dbo.usp_ConfirmOpportunityRequirementsForOwner', N'P') IS NOT NULL
+        DROP PROCEDURE dbo.usp_ConfirmOpportunityRequirementsForOwner;
 
+    /* Children before parents, so no drop ever runs against an object a
+       foreign key still points at. */
+    IF OBJECT_ID(N'dbo.opportunity_source_concerns', N'U') IS NOT NULL
+        DROP TABLE dbo.opportunity_source_concerns;
+    IF OBJECT_ID(N'dbo.opportunity_source_reviews', N'U') IS NOT NULL
+        DROP TABLE dbo.opportunity_source_reviews;
+    IF OBJECT_ID(N'dbo.opportunity_requirement_statements', N'U') IS NOT NULL
+        DROP TABLE dbo.opportunity_requirement_statements;
+    IF OBJECT_ID(N'dbo.opportunity_requirement_set_versions', N'U') IS NOT NULL
+        DROP TABLE dbo.opportunity_requirement_set_versions;
+    IF OBJECT_ID(N'dbo.opportunity_requirement_sets', N'U') IS NOT NULL
+        DROP TABLE dbo.opportunity_requirement_sets;
     IF OBJECT_ID(N'dbo.opportunity_source_versions', N'U') IS NOT NULL
         DROP TABLE dbo.opportunity_source_versions;
     IF OBJECT_ID(N'dbo.opportunity_sources', N'U') IS NOT NULL

@@ -21,7 +21,8 @@
 <p class="os-workbench__lead">
   {% if room.is_replace and room.is_public %}
     Paste or type a different role description. This replaces the role you
-    brought in — in this public session the wording you have now is not kept.
+    brought in — in this public session PeerSlate keeps no copy of the wording
+    you have now.
   {% elif room.is_replace %}
     Paste or type a different role description. This replaces the role you
     brought in — the wording you have now is kept as its own source version.
@@ -47,7 +48,8 @@
               maxlength="{{ room.max_source_units }}"
               placeholder="Paste a role description…"
               data-os-source-input
-              {% if room.error and room.error.kind == 'field' %}aria-invalid="true" aria-describedby="os-source-help os-source-error"{% else %}aria-describedby="os-source-help"{% endif %}>{{ room.source_text }}</textarea>
+              {%- set described = 'os-source-help' + (' os-source-limit' if room.is_public else '') %}
+              {% if room.error and room.error.kind == 'field' %}aria-invalid="true" aria-describedby="{{ described }} os-source-error"{% else %}aria-describedby="{{ described }}"{% endif %}>{{ room.source_text }}</textarea>
 
     {# Image 01's microphone, rendered honestly inert. It is a real button
        element so its state is announced, and it says why it cannot be used
@@ -66,6 +68,34 @@
   <p class="os-help" id="os-source-help">
     Your text stays editable. Nothing is analyzed until you ask for it.
   </p>
+  {% if room.is_public %}
+  {# Slice OS-2 independent review, finding F5. The public wording review
+     reads at most room.public_ai_source_units characters, and the server
+     enforces that — correctly — at the moment the AI button is pressed.
+     Before this counter existed, that was the FIRST time an anonymous
+     visitor heard about it: they could paste 20,000 characters, work through
+     Review Source, confirm, and only then be refused. The limit is now on
+     screen from the first keystroke.
+
+     Every sentence here is server-authored. The room script writes the
+     count and toggles the over-limit sentence's `hidden`; it composes no
+     member-facing copy (tests/test_opportunity_slate_ai.py holds that rule
+     for the stage rail and it applies just as much here). #}
+  <p class="os-help os-help--muted"
+     id="os-source-limit"
+     data-os-source-limit="{{ room.public_ai_source_units }}">
+    {{ os_icon('info', 'os-icon os-icon--sm') }}
+    <span aria-live="polite">
+      <span data-os-source-count>{{ room.source_text|length }}</span>
+      of {{ '{:,}'.format(room.public_ai_source_units) }} characters this
+      preview can review.
+      <span data-os-source-over hidden>
+        Longer text is kept exactly as you pasted it — the wording review
+        asks you to shorten it rather than cutting anything.
+      </span>
+    </span>
+  </p>
+  {% endif %}
   <p class="os-help os-help--muted" id="os-mic-note">
     {{ os_icon('mic', 'os-icon os-icon--sm') }}Dictation arrives in a later update. Typing and pasting work now.
   </p>

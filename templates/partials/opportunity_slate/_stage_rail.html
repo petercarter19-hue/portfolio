@@ -1,0 +1,57 @@
+{#
+  os-stage-rail — images 07 and 08.
+
+  ONE rule governs this component and it is the reason slice OS-1 refused to
+  build it: every stage names a REAL request boundary. Slice OS-2 is the first
+  slice with a genuine AI wait, so the rail is finally honest here — and it is
+  used for exactly the two waits that exist (the wording review and the
+  statement interpretation), never for a transition that merely writes a row.
+
+  Image 08's own stage names ("Checking authorized evidence", "Preparing the
+  evidence map") describe the OS-3 alignment analysis and are deliberately NOT
+  reproduced: nothing in this slice checks any evidence, and printing that it
+  did would be exactly the fabricated-progress theatre the handoff's section 7
+  forbids. The three stages come from the calling template, which knows what
+  its own request actually does.
+
+  Rendered server-side at stage 1; static/js/opportunity-slate.js advances it
+  with the interview-studio.js setStage idiom — exactly one aria-current="step"
+  at a time, and a polite live announcement on each change.
+
+  `stages` is a list of (name, description) pairs supplied by the includer.
+#}
+<div class="os-stage" data-os-stage-rail role="group" aria-labelledby="os-stage-heading">
+  <p class="os-stage__heading" id="os-stage-heading">{{ stage_heading }}</p>
+  <ol class="os-stage__rail">
+    {% for stage in stages %}
+    {# The per-stage sentence rides on the step itself so the room script can
+       show it without owning any member-facing copy. #}
+    <li class="os-stage__step{% if loop.first %} is-current{% endif %}"
+        data-os-stage="{{ loop.index }}"
+        data-os-stage-note="{{ stage[1] }}"
+        {% if loop.first %}aria-current="step"{% endif %}>
+      <span class="os-stage__marker" aria-hidden="true">
+        <span class="os-stage__numeral">{{ loop.index }}</span>
+      </span>
+      <span class="os-stage__label">{{ loop.index }}. {{ stage[0] }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  <p class="os-stage__note" data-os-stage-note>{{ stages[0][1] }}</p>
+  {# Images 07 and 08 both keep a live Cancel beside the processing label.
+     It belongs here rather than in the correction rail because this rail is
+     shown at moments when there may be no statements to correct yet — the
+     first interpretation run has an empty rail behind it. Cancel aborts the
+     request and puts the screen back; nothing was written, so there is
+     nothing to undo. #}
+  <p class="os-stage__actions">
+    <button type="button" class="os-link" data-os-cancel-processing>Cancel</button>
+  </p>
+  <p class="os-stage__truth">
+    {{ stage_truth }}
+  </p>
+  {# The live region lives inside the rail so a screen reader hears the stage
+     change where the stage change is, and is polite so it never interrupts.
+     JS writes the current stage name here. #}
+  <p class="os-visually-hidden" role="status" aria-live="polite" data-os-stage-live></p>
+</div>

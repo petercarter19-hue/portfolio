@@ -1,26 +1,52 @@
 /* ============================================================
-   PS-OPPSLATE-001 - Opportunity Slate working-session store (Slice OS-1)
+   PS-OPPSLATE-001 - Opportunity Slate working store (Slices OS-1, OS-2)
 
    Package: docs/initiatives/PS-OPPORTUNITY-SLATE-001
    Contract: 01_ARCHITECTURE_AND_IMPLEMENTATION_HANDOFF.md section 8
              (data model), section 9 (route/service contract),
-             section 11 (security), section 16 (slice OS-1 scope).
+             section 11 (security), section 16 (slice scope).
 
-   Slice OS-1 covers ONLY the ephemeral pre-save workbench a signed-in
-   member needs to paste a role, review the captured source, correct its
-   wording by hand, and confirm it (checkpoint 1 of 2):
+   Slice OS-1 covered the ephemeral pre-save workbench a signed-in member
+   needs to paste a role, review the captured source, correct its wording by
+   hand, and confirm it (checkpoint 1 of 2):
 
      dbo.opportunity_working_sessions   the ephemeral workbench record
      dbo.opportunity_sources            one employer source per session
      dbo.opportunity_source_versions    append-only captured wording
 
+   Slice OS-2 adds the AI-proposal store the room's first two AI steps write
+   into, and checkpoint 2 of 2:
+
+     dbo.opportunity_source_reviews          AI step 1 ran for this version
+     dbo.opportunity_source_concerns         its proposed extraction concerns
+     dbo.opportunity_requirement_sets        one per working session
+     dbo.opportunity_requirement_set_versions   one AI step 2 run
+     dbo.opportunity_requirement_statements  the statements it proposed
+
    Deliberately NOT in this file (later slices, handoff section 16):
-   requirement sets and their versions (OS-2), analyses and responses
-   (OS-3), the durable saved slate, saved results, and the save
-   idempotency ledger (OS-4). No aggregate score, percentage,
+   analyses and responses (OS-3), the durable saved slate, saved results,
+   and the save idempotency ledger (OS-4). No aggregate score, percentage,
    recommendation, or employer-prediction column exists anywhere in this
    file, and none may ever be added - handoff section 1 and section 8
    make that a design rule, not an oversight.
+
+   RE-APPLYING OVER THE SLICE OS-1 REVISION IS SUPPORTED. This file is
+   idempotent in both directions: applied to an empty database it creates
+   everything, and applied to a database already carrying the OS-1 revision
+   it creates only what is missing AND upgrades the one constraint that
+   changed. That upgrade is not optional and was missing until independent
+   review finding F4 - see the "SLICE OS-2 CONSTRAINT UPGRADE" block below
+   for what silently broke without it and why the compatibility THROW never
+   caught it.
+
+   SLICE OS-2 TOUCHED TWO SLICE OS-1 PROCEDURES, and only these two:
+   usp_PurgeExpiredOpportunityWorkingData and
+   usp_DeleteOpportunityWorkingSessionForOwner both learned to remove the
+   new child rows. That was not optional. The proposal tables reference the
+   source versions and the working session, so without it a purge could not
+   complete (leaving expired employer wording on disk past its expiry) and a
+   member's explicit delete would fail on a foreign key while promising to
+   be atomic. No other OS-1 procedure changed.
 
    EPHEMERAL BY DESIGN. Nothing here is a saved, member-visible artifact.
    "Session private - nothing is saved yet" means exactly this: a working
@@ -61,20 +87,270 @@
    that is the contract; OS-1 itself only ever writes N'pasted'.
    Dictation lands with OS-5, upload and import with OS-6.
 
-   NOT APPLIED. This file ships as proposed/ exactly like
-   PS-WORKSHOP-001_knowledge_items.sql. Applying it is a separate,
-   explicitly authorized operational step.
+   THIS REVISION IS NOT APPLIED TO PRODUCTION. PRODUCTION CARRIES THE SLICE
+   OS-1 REVISION OF THIS FILE.
 
-   UNMET PRECONDITION - THE T-SQL IN THIS FILE HAS NEVER EXECUTED. No SQL
-   Server engine of any kind exists on the development machine (no LocalDB,
-   no sqlcmd, no container runtime), so tests/test_opportunity_slate_migration.py
-   asserts this migration's shape statically and its
-   OpportunitySlateIsolatedSqlGateTests apply/verify/rollback/re-apply gate
-   is skipped. That gate is a NAMED UNMET CONDITION: run it against a
-   throwaway database (PS_OPPSLATE_SQL_GATE=1 with AZURE_SQL_CONNECTIONSTRING
-   pointing at that database) as the PS-OPS-001 Candidate/Launch step before
-   this migration is applied anywhere. Static assertions cannot catch a
-   syntax or runtime error in a dynamic-SQL procedure body.
+   THE PRODUCTION-APPLY RECORD, STATED HERE RATHER THAN CITED. An operator
+   reading this file needs the record in front of them, so it is written out
+   below instead of being pointed at:
+
+     What      the SLICE OS-1 revision of this file, exactly as it stood on
+               origin/main at a55a4c5. Nothing executable was changed to
+               apply it; the diff that accompanied the apply was confined to
+               this leading header comment (executable SHA-256
+               895f3b5eb86af13d50ef41523a0728b726f8950e5375cddf2ca6a9884ba38a83
+               before and after).
+     Where     peerslate-database, the production Azure SQL database.
+     When      2026-08-04 UTC, under explicit owner authorization.
+     How       one batch through mssql-python, using
+               scripts/apply_sql_migrations.py's connection and execution
+               method, inside the file's own transaction.
+     Gate      the 2026-08-03 apply/verify/exercise/rollback/re-apply gate
+               recorded further down this header, executed on the throwaway
+               database ps-oppslate-001-gate-20260803 (identical tier,
+               server and collation to production) and deleted afterwards.
+     Pre-flight  no Opportunity Slate object of any kind existed, and every
+               guarded prerequisite was present.
+     Post-apply  3 tables, 3 indexes, 39 constraints, 6 procedures, 6
+               definition-hash properties, 1 ledger row, 1 audit event, zero
+               data rows; every new foreign key and CHECK enabled and
+               trusted; all six procedure names already present in
+               services/database_service.ALLOWED_PROCEDURES; the
+               owner-isolation verifier returned verified = 1 and left no
+               residue.
+
+   PRODUCTION THEREFORE CARRIES 3 TABLES, 3 INDEXES, 39 CONSTRAINTS AND 6
+   PROCEDURES - NOT the 8 tables and 13 procedures THIS file creates - with
+   PEERSLATE_OPPORTUNITY_SLATE_ENABLED still unset, so the room is off.
+
+   (The same record was also written into the OS-1 copy of this header by
+   commit 2aac790ca698fa59ba52fff9b78ba7146361e06c. That is supplementary
+   provenance only: at the time of writing that commit sits on
+   work/2026-08-03-oppslate-prod-migration-record and is not on main, so do
+   not rely on being able to follow it. Everything it says that matters to an
+   operator of THIS file is stated above.)
+
+   Applying THIS revision is a separate operational step needing its own
+   authorization. On that path the file does not start from nothing: the
+   guarded blocks below detect the OS-1 objects that already exist, skip
+   their CREATEs, and run the one upgrade OS-1 cannot have had -
+   UQ_opportunity_source_versions_id_owner, the candidate key the 2026-08-03
+   gate found missing. That key is deliberately absent from production
+   because nothing in OS-1 references opportunity_source_versions; without it
+   FK_opportunity_source_reviews_version below cannot be created at all. The
+   guarded ALTER therefore has to run BEFORE that table, and does. This exact
+   populated-OS-1-to-OS-2 upgrade was exercised on the gate (see "upgrade"
+   below and the 2026-08-04 gate further down); it has not been exercised
+   against production data.
+
+   RE-GATED ON THE UPGRADE PATH, 2026-08-04. The 2026-08-03 gate ran before
+   the OS-1 revision reached production and before this file was ported onto
+   the OS-2 branch. Because production now carries OS-1, the path that
+   matters is the upgrade over a POPULATED OS-1 database, so the whole gate
+   was run again on that shape.
+
+     Database  ps-oppslate-002-gate-20260804, a throwaway Basic-tier Azure
+               SQL database on server peerslate, collation
+               SQL_Latin1_General_CP1_CI_AS - identical tier, server and
+               collation to production. Created for this gate and deleted
+               immediately afterwards.
+     Driver    mssql-python, each file executed as ONE batch exactly as
+               scripts/apply_sql_migrations.py does.
+     Prereqs   PS-PLAT-000 through PS-PLAT-007, PS-AUTH-001 and
+               PS-WORKSHOP-001, applied through
+               scripts/apply_sql_migrations.py. PS-PLAT-000 removed the
+               manual dbo.app_users bootstrap the 2026-08-03 gate needed;
+               that is now confirmed by execution, not just expected.
+     Baseline  the SLICE OS-1 revision as it stands on origin/main
+               (executable SHA-256
+               895f3b5eb86af13d50ef41523a0728b726f8950e5375cddf2ca6a9884ba38a83),
+               i.e. byte-identical to what production carries, then
+               POPULATED through the OS-1 procedures themselves: two
+               distinct owners, each with a working session, a source,
+               multiple appended source versions, a member correction
+               overlay and a confirmed source. Nothing was hand-inserted
+               where a procedure existed. 2 sessions, 2 sources, 5 versions.
+
+   Results of the 2026-08-04 gate:
+     upgrade    PASS - this file applied over that populated OS-1 database.
+                Both guarded upgrades ran on tables that already held rows:
+                UQ_opportunity_source_versions_id_owner was added to a
+                five-row opportunity_source_versions, and
+                CK_opportunity_working_sessions_state was rebuilt with the
+                two checkpoint-2 states while validating the existing
+                source_confirmed rows. Afterwards: 8 tables, 13 procedures,
+                37 CHECK constraints, 31 key constraints, 14 foreign keys,
+                all enabled and trusted, and 13 definition-hash properties
+                each matching its deployed body.
+     data       PASS - NO member content changed. A per-row SHA-256 of
+                original_text, original_sha256 and member_corrected_text
+                across all five version rows, plus the source/session state
+                rows, was taken before and after and compared: every row
+                identical, and the aggregate digest
+                607C1D965836B4EFCC739CAB6C7F6E87D5E5EF22BA3ADC392A9F0DDDEBB53ECA
+                before and after. Row counts unchanged.
+     exercise   PASS - the seven OS-2 procedures were CALLED on that
+                populated database: save a review and its concerns, resolve
+                a concern both ways (applied and dismissed), save a
+                requirement proposal, correct a statement's class and
+                clarification, confirm the requirement set, and purge. The
+                AI columns and the member-decision columns stayed apart -
+                a statement carrying proposed_class = required_qualification
+                and member_class = preferred_qualification held both.
+     negative   PASS - stale row_version returned 'changed' and did not
+                write; a forged @UserKey returned 'changed' or nothing from
+                every procedure; cross-owner keys returned 'changed'; an
+                unsupported class or resolution word returned 'invalid' or
+                'changed'; malformed JSON returned 'invalid'.
+     atomicity  PASS - two forced mid-procedure failures (a statement whose
+                employer_text exceeds its CHECK, and a concern quote that
+                exceeds its own) both rolled back whole: engine error 547,
+                no partial rows, no orphan set version, no advanced version
+                number, the member's confirmation and decisions intact, and
+                @@TRANCOUNT back to 0.
+     isolation  PASS - PS-OPPSLATE-001_owner_isolation_verify.sql returned
+                verified = 1 while the two real gate owners' data was
+                present, and left no residue.
+     rollback   PASS - refused while OS-2 proposal rows existed
+                ("opportunity_source_concerns contains member records"),
+                refused again on a deliberately drifted procedure
+                definition, then removed exactly what it owns once the data
+                was cleared through the member-facing delete, leaving all
+                ten prerequisite migrations intact.
+     re-apply   PASS - clean re-apply, and a SECOND apply over itself was a
+                genuine no-op: same ledger row, same audit-event count, same
+                applied_at_utc, same object counts.
+     harness    PASS - tests/test_opportunity_slate_migration.py run with
+                PS_OPPSLATE_SQL_GATE=1 against the gate database: 49 tests,
+                all passing, including
+                OpportunitySlateIsolatedSqlGateTests.test_apply_verify_rollback_reapply.
+                That count is the harness AS IT STOOD DURING THE GATE RUN. The
+                two tests pinning the fixes below were written afterwards, so
+                the suite reports 51 today; the extra two are static contract
+                checks and need no engine.
+
+   TWO MORE DEFECTS WERE FOUND AND FIXED, both only reachable by running it:
+     1. usp_SaveOpportunitySourceReviewForOwner DESTROYED MEMBER DECISIONS ON
+        A REJECTED PROPOSAL. Its "more than 20 concerns" guard sat AFTER the
+        two DELETEs that clear the previous review, and then COMMITted. A
+        21-concern payload therefore deleted the member's existing review,
+        its concerns, and every applied/dismissed decision and per-concern
+        corrected wording on them - and returned 'invalid', which tells the
+        caller nothing happened. Observed on the gate: three resolved
+        concerns went to zero. The count and its guard now run before the
+        DELETEs, which is the order the sibling procedure
+        usp_SaveOpportunityRequirementProposalForOwner already used. THIS
+        CHANGES BEHAVIOUR ON THE 'invalid' PATH - from destroying the
+        previous review to leaving it alone - and is the behaviour that
+        return value already claimed. The success path is unchanged.
+        Pinned by test_a_rejected_proposal_counts_before_it_deletes.
+        The member's own document wording was never at risk: it lives on
+        the source version row, which this procedure does not touch.
+     2. THE LEDGER LIED AFTER THE UPGRADE. dbo.schema_migrations is how an
+        operator answers "which revision does this database carry?", and the
+        ledger write is INSERT-if-absent. On the upgrade path the row
+        already exists, so the INSERT was skipped and the row kept saying
+        "Slice OS-1: ... owner-scoped get/save/correct/confirm/delete
+        procedures" on a database that now carried eight tables and thirteen
+        procedures. A guarded UPDATE now corrects the description in place.
+        applied_at_utc is deliberately NOT moved - the rollback's "a later
+        migration is present" guard compares against it, and the second
+        apply must stay a no-op, which was re-proved after the fix.
+        Pinned by test_the_upgrade_path_corrects_the_migration_ledger_description.
+
+   THE EXECUTABLE BYTES CHANGED, AND THE OS-2 REVIEW RECORD IS NOW STALE.
+   OS-2's independent review certified the executable SQL (everything after
+   this header comment) as SHA-256
+   b8e881a130b528a108bf44ccd54a605a7998c0bdab2bd32ae9d2ab1140cccb0d. The two
+   fixes above change it to
+   c0984204f7d394d50cd30981c1be777332b921b274ef362fd758c8db073ea800. Defect 1
+   changes procedure BEHAVIOUR on the 'invalid' path, so it is not a
+   header-only or cosmetic edit and the certified-bytes claim must be
+   re-established rather than carried forward.
+
+   THE FIXES ARE PORTED, AND THE BYTES HERE ARE THE GATED BYTES. Both fixes
+   and both pinning tests were carried onto the OS-2 delivery branch
+   work/2026-08-03-opportunity-slate-os2. The executable body of THIS file -
+   everything below this header comment, from the first session-setting
+   statement to end of file, which is exactly what the hashes above measure -
+   was recomputed on that branch and is
+   c0984204f7d394d50cd30981c1be777332b921b274ef362fd758c8db073ea800, identical
+   to the gate branch's. Nothing else was taken from the gate branch. The
+   rollback script and PS-OPPSLATE-001_owner_isolation_verify.sql are
+   unchanged by the fix; the verification script still hashes the same way at
+   3ac86a103a751cf428aaa832a6b153d9edaa0a6fe2a74c9ecd87cf09d34e7026. The
+   superseded record is corrected in the slice OS-2 completion report, section
+   4 residual 3. Only this header changed after the port, and the header is
+   outside the hashed region by construction.
+
+   WHAT THE 2026-08-04 GATE STILL COULD NOT PROVE. It ran against a
+   two-owner, five-version database, not against production's data volume,
+   and it did not run on the production database. The post-commit
+   result-set race below remains unreproduced for the same reason it was in
+   August 3. Concurrency was single-threaded throughout, so no genuinely
+   simultaneous two-writer contention was scheduled.
+
+   EXECUTED AND GATED, 2026-08-03. This T-SQL has now run against a real
+   engine. The apply/verify/exercise/rollback/re-apply gate was executed on a
+   throwaway Azure SQL database, ps-oppslate-001-gate-20260803 (Basic tier,
+   server peerslate, collation SQL_Latin1_General_CP1_CI_AS - identical to
+   production), created for the gate and deleted immediately afterwards.
+   Engine: Microsoft SQL Azure 12.0.2000.8. Driver: mssql-python, executing
+   each file as ONE batch exactly as scripts/apply_sql_migrations.py does.
+
+   Prerequisites applied first, in order: PS-PLAT-001 through PS-PLAT-007,
+   PS-AUTH-001, PS-WORKSHOP-001. dbo.app_users had to be bootstrapped by hand
+   before PS-PLAT-001 could add FK_audit_events_app_users, because at gate
+   time it was a pre-migration table that no tracked migration created.
+
+   THAT IS NO LONGER TRUE, as of PS-PLAT-000_app_users_base.sql (PR 263,
+   2026-08-03). A from-empty database now gets the table from a real
+   migration, so the manual step this gate needed is gone and a future rerun
+   should apply PS-PLAT-000 first instead. Nothing about the gate's RESULTS
+   changes - the same table, with the same columns the FK targets require,
+   was present either way.
+
+   Results:
+     apply      PASS - 8 tables, 13 procedures, 13 definition-hash extended
+                properties, 1 ledger row, 1 audit event.
+     verify     PASS - PS-OPPSLATE-001_owner_isolation_verify.sql returned
+                verified = 1. Two synthetic owners; every cross-owner read
+                returned nothing; the forged-key canary on all thirteen
+                procedures returned the truthful empty/changed outcome.
+     exercise   PASS - the procedures were CALLED, not just parsed: save,
+                idempotent replay, correct, confirm, replace, both AI
+                proposal steps, both checkpoints, purge and delete.
+     rollback   PASS - refused while member rows existed (each guard fired in
+                turn), then removed exactly the 8 tables, 13 procedures, hash
+                properties and ledger row it owns, leaving all nine
+                prerequisite migrations intact.
+     re-apply   PASS - clean re-apply, and a SECOND apply over itself was a
+                genuine no-op (no duplicate ledger row, no audit event).
+     upgrade    PASS - applied over a POPULATED slice OS-1 database: both
+                guarded upgrades ran, member data and verbatim employer
+                wording survived, and checkpoint 2 then worked end to end.
+
+   The repository's own harness was run last and independently agrees:
+   tests/test_opportunity_slate_migration.py
+   OpportunitySlateIsolatedSqlGateTests.test_apply_verify_rollback_reapply,
+   the named unmet condition, executed with PS_OPPSLATE_SQL_GATE=1 against
+   the gate database and PASSED. It is skipped again by default because it
+   mutates whatever AZURE_SQL_CONNECTIONSTRING points at.
+
+   THREE DEFECTS WERE FOUND AND FIXED, all invisible to static assertion:
+     1. This file (fatal, both paths). opportunity_source_versions had no
+        UNIQUE (opportunity_source_version_id, owner_profile_id), so slice
+        OS-2's FK_opportunity_source_reviews_version could not be created at
+        all: "There are no primary or candidate keys in the referenced table
+        ... that match the referencing column list". Fixed by adding the
+        missing candidate key AND a guarded ALTER for the OS-1 upgrade path.
+     2. The verification script asserted a requirement proposal succeeds on a
+        source it had deliberately left unconfirmed. Fixed by re-confirming.
+     3. The verification script backdated expires_at_utc alone, which
+        CK_opportunity_working_sessions_expiry rejects. Fixed by ageing
+        created_at_utc with it.
+   None of the three changed any procedure's behaviour; see the completion
+   record for the exact diff.
 
    KNOWN ISSUE - STALE row_version IN THE TRAILING RESULT SET (named
    "OS-1 post-commit result-set race"). Every mutating procedure below
@@ -98,10 +374,37 @@
    asserts the commit-then-select shape. The exposure requires two
    concurrent writers on one member's single working session, which the
    UQ_opportunity_working_sessions_owner constraint plus the one-room-tab
-   client makes unlikely but not impossible. DECIDE THIS DELIBERATELY at
-   the PS-OPS-001 gate, alongside the unmet SQL gate above, before this
-   migration is applied anywhere - not after it is discovered in
-   production.
+   client makes unlikely but not impossible.
+
+   WHAT THE 2026-08-03 GATE ADDED TO THIS NOTE. The shape is confirmed on
+   the real deployed objects, not merely in this source text: reading
+   OBJECT_DEFINITION back from the gate database showed the last COMMIT
+   preceding the trailing success SELECT in all NINE mutating procedures, so
+   the window is genuinely present in every one of them.
+
+   The gate also narrowed what is at risk. The fence itself was exercised
+   under real contention and holds: a mutation presented with a stale
+   row_version returned 'changed' and its write did NOT land, and a forced
+   mid-procedure failure rolled back whole - no partial statement rows, no
+   orphan set version, @@TRANCOUNT back to 0. So the damage a wrong token
+   can do remains bounded to a wrongly ACCEPTED next write by the client
+   holding it; it cannot corrupt a row, cross an owner boundary, or leave a
+   torn transaction.
+
+   The race WINDOW ITSELF WAS NOT REPRODUCED. Hitting it needs two writers
+   interleaved inside the microseconds between COMMIT and the trailing
+   SELECT, which single-threaded gate conditions cannot schedule
+   deterministically. Treat it as present-but-unreproduced, not as
+   disproven.
+
+   THIS ISSUE IS ALREADY IN PRODUCTION AND REMAINS OPEN. The six OS-1
+   procedures carrying the same shape shipped with the 2026-08-04 apply, as a
+   known and accepted limitation rather than an oversight. It is not
+   reachable: the room is flag-off, so no member can call them. The decision
+   point is therefore no longer "before this file is applied" - applying this
+   file adds seven more procedures with the same shape to a database that
+   already has six - but BEFORE PEERSLATE_OPPORTUNITY_SLATE_ENABLED is turned
+   on for anyone. That is the one open question left on this file.
 
    Rollback: PS-OPPSLATE-001_opportunity_slate_rollback.sql
    Verification: ../../Verification/PS-OPPSLATE-001_owner_isolation_verify.sql
@@ -173,7 +476,8 @@ BEGIN TRY
             CONSTRAINT FK_opportunity_working_sessions_owner FOREIGN KEY (owner_profile_id)
                 REFERENCES dbo.member_profiles(profile_id),
             CONSTRAINT CK_opportunity_working_sessions_state CHECK
-                (workbench_state IN (N'role_intake', N'review_source', N'source_confirmed')),
+                (workbench_state IN (N'role_intake', N'review_source', N'source_confirmed',
+                                     N'review_requirements', N'requirements_confirmed')),
             CONSTRAINT CK_opportunity_working_sessions_visibility CHECK (visibility = N'private'),
             CONSTRAINT CK_opportunity_working_sessions_expiry CHECK (expires_at_utc > created_at_utc)
         );
@@ -278,6 +582,17 @@ BEGIN TRY
                 UNIQUE (opportunity_source_id, version_number),
             CONSTRAINT UQ_opportunity_source_versions_owner_key
                 UNIQUE (owner_profile_id, idempotency_key),
+            /* The owner-scoped candidate key every child of this table needs.
+               Slice OS-2's opportunity_source_reviews carries a composite
+               FOREIGN KEY (opportunity_source_version_id, owner_profile_id)
+               so a review can never be attached across owners, and SQL Server
+               requires a matching UNIQUE on the referenced side. Slice OS-1
+               omitted it because nothing referenced this table yet; without
+               it the whole migration fails at APPLY time with "no primary or
+               candidate keys ... match the referencing column list". Every
+               other table in this file already carries its _id_owner twin. */
+            CONSTRAINT UQ_opportunity_source_versions_id_owner
+                UNIQUE (opportunity_source_version_id, owner_profile_id),
             CONSTRAINT FK_opportunity_source_versions_source FOREIGN KEY (opportunity_source_id, owner_profile_id)
                 REFERENCES dbo.opportunity_sources(opportunity_source_id, owner_profile_id),
             CONSTRAINT FK_opportunity_source_versions_capturer FOREIGN KEY (captured_by_user_id)
@@ -312,9 +627,409 @@ BEGIN TRY
             INCLUDE (capture_method, captured_at_utc, corrected_at_utc);
     END;
 
+    /* ------------------------------------------------------------
+       SLICE OS-2 CANDIDATE-KEY UPGRADE (isolated SQL gate, defect 1).
+
+       The composite UNIQUE immediately above is new in slice OS-2, and it is
+       a PRECONDITION for creating opportunity_source_reviews below rather
+       than a refinement of it. A database already carrying the slice OS-1
+       revision has opportunity_source_versions WITHOUT that key, and the
+       CREATE TABLE that now declares it only runs when the table is absent -
+       so on an OS-1 database this file would reach the reviews table and
+       fail outright:
+
+         There are no primary or candidate keys in the referenced table
+         'dbo.opportunity_source_versions' that match the referencing column
+         list in the foreign key 'FK_opportunity_source_reviews_version'.
+
+       This block therefore has to run BEFORE the first table that references
+       it, not with the state-CHECK repair further down. It is a no-op on a
+       fresh apply because the constraint was created moments ago, and it can
+       never fail validation on an OS-1 database: opportunity_source_version_id
+       is already the primary key, so any pair containing it is unique too.
+       ------------------------------------------------------------ */
+    IF OBJECT_ID(N'dbo.opportunity_source_versions', N'U') IS NOT NULL
+       AND NOT EXISTS (
+            SELECT 1
+            FROM sys.key_constraints
+            WHERE parent_object_id = OBJECT_ID(N'dbo.opportunity_source_versions')
+              AND name = N'UQ_opportunity_source_versions_id_owner'
+       )
+        ALTER TABLE dbo.opportunity_source_versions
+            ADD CONSTRAINT UQ_opportunity_source_versions_id_owner
+                UNIQUE (opportunity_source_version_id, owner_profile_id);
+
+    /* ------------------------------------------------------------
+       SLICE OS-2 — AI proposals and the member's decisions on them.
+
+       THE THIRD DATA CLASS. Handoff section 1 names three kinds of thing
+       this room holds and forbids collapsing any of them into another: the
+       employer's captured wording, the member's own input, and AI
+       proposals. Slice OS-1 kept the first two apart (original_text is
+       write-once; member_corrected_text is a separate nullable column on
+       the same row). The tables below are the third class, and they are
+       SEPARATE TABLES rather than columns on the source, so no proposal can
+       ever be written into a field the member or the employer owns.
+
+       Within them the same rule applies again: proposed_class and
+       proposed_structure_json are the model's reading, member_class and
+       member_clarification are the member's, and no procedure in this file
+       writes one from the other. That is what makes "PeerSlate proposed X,
+       the member says Y" a question the data can still answer.
+
+       STILL NO SCORE. No aggregate score, percentage, recommendation,
+       employer prediction, or traffic-light verdict column exists in any
+       table here, and none may ever be added. The Review Requirements
+       screen counts statements per class; that is the entire accounting.
+       ------------------------------------------------------------ */
+
+    IF OBJECT_ID(N'dbo.opportunity_source_reviews', N'U') IS NULL
+    BEGIN
+        CREATE TABLE dbo.opportunity_source_reviews
+        (
+            opportunity_source_review_id bigint IDENTITY(1,1) NOT NULL,
+            review_key uniqueidentifier NOT NULL
+                CONSTRAINT DF_opportunity_source_reviews_key DEFAULT NEWSEQUENTIALID(),
+            opportunity_source_version_id bigint NOT NULL,
+            /* Denormalized from the version row so every owner-scoped read
+               and the superseded-version cleanup below can be expressed
+               without a third join. Both are re-asserted against
+               owner_profile_id regardless. */
+            opportunity_source_id bigint NOT NULL,
+            owner_profile_id bigint NOT NULL,
+            source_version_number int NOT NULL,
+            /* Provenance travels with the proposal (handoff section 10): the
+               exact model and the exact prompt-contract version that
+               produced the concerns below. */
+            model_name nvarchar(200) NOT NULL,
+            prompt_contract_version nvarchar(100) NOT NULL,
+            concern_count int NOT NULL
+                CONSTRAINT DF_opportunity_source_reviews_count DEFAULT 0,
+            reviewed_at_utc datetime2(7) NOT NULL
+                CONSTRAINT DF_opportunity_source_reviews_reviewed DEFAULT SYSUTCDATETIME(),
+            row_version rowversion NOT NULL,
+            CONSTRAINT PK_opportunity_source_reviews PRIMARY KEY (opportunity_source_review_id),
+            CONSTRAINT UQ_opportunity_source_reviews_key UNIQUE (review_key),
+            /* One review per captured version. Re-running the wording review
+               replaces it rather than stacking a second opinion beside the
+               first. */
+            CONSTRAINT UQ_opportunity_source_reviews_version UNIQUE (opportunity_source_version_id),
+            CONSTRAINT UQ_opportunity_source_reviews_id_owner
+                UNIQUE (opportunity_source_review_id, owner_profile_id),
+            CONSTRAINT FK_opportunity_source_reviews_version FOREIGN KEY (opportunity_source_version_id, owner_profile_id)
+                REFERENCES dbo.opportunity_source_versions(opportunity_source_version_id, owner_profile_id),
+            CONSTRAINT CK_opportunity_source_reviews_count CHECK (concern_count BETWEEN 0 AND 20),
+            CONSTRAINT CK_opportunity_source_reviews_version_number CHECK (source_version_number > 0),
+            CONSTRAINT CK_opportunity_source_reviews_model_length CHECK
+                (DATALENGTH(model_name) / 2 BETWEEN 1 AND 100),
+            CONSTRAINT CK_opportunity_source_reviews_contract_length CHECK
+                (DATALENGTH(prompt_contract_version) / 2 BETWEEN 1 AND 60)
+        );
+
+        CREATE INDEX IX_opportunity_source_reviews_source
+            ON dbo.opportunity_source_reviews(opportunity_source_id, owner_profile_id)
+            INCLUDE (source_version_number, review_key);
+    END;
+
+    IF OBJECT_ID(N'dbo.opportunity_source_concerns', N'U') IS NULL
+    BEGIN
+        CREATE TABLE dbo.opportunity_source_concerns
+        (
+            opportunity_source_concern_id bigint IDENTITY(1,1) NOT NULL,
+            concern_key uniqueidentifier NOT NULL
+                CONSTRAINT DF_opportunity_source_concerns_key DEFAULT NEWSEQUENTIALID(),
+            opportunity_source_review_id bigint NOT NULL,
+            owner_profile_id bigint NOT NULL,
+            ordinal int NOT NULL,
+            /* The proposal: where the model pointed, what it quoted, and
+               why. quoted_text holds the employer's characters at that span
+               as they were stored, not as the model retyped them, so a
+               concern can never become a back door for rewritten wording. */
+            span_start int NOT NULL,
+            span_length int NOT NULL,
+            quoted_text nvarchar(1000) NOT NULL,
+            concern_reason nvarchar(500) NOT NULL,
+            /* The member's decision, in its own columns. "pending" is where
+               every proposal starts and only the member moves it. */
+            member_resolution nvarchar(20) NOT NULL
+                CONSTRAINT DF_opportunity_source_concerns_resolution DEFAULT N'pending',
+            member_corrected_text nvarchar(max) NULL,
+            resolved_by_user_id int NULL,
+            resolved_at_utc datetime2(7) NULL,
+            row_version rowversion NOT NULL,
+            CONSTRAINT PK_opportunity_source_concerns PRIMARY KEY (opportunity_source_concern_id),
+            CONSTRAINT UQ_opportunity_source_concerns_key UNIQUE (concern_key),
+            CONSTRAINT UQ_opportunity_source_concerns_ordinal
+                UNIQUE (opportunity_source_review_id, ordinal),
+            CONSTRAINT UQ_opportunity_source_concerns_id_owner
+                UNIQUE (opportunity_source_concern_id, owner_profile_id),
+            CONSTRAINT FK_opportunity_source_concerns_review FOREIGN KEY (opportunity_source_review_id, owner_profile_id)
+                REFERENCES dbo.opportunity_source_reviews(opportunity_source_review_id, owner_profile_id),
+            CONSTRAINT FK_opportunity_source_concerns_resolver FOREIGN KEY (resolved_by_user_id)
+                REFERENCES dbo.app_users(id),
+            CONSTRAINT CK_opportunity_source_concerns_resolution CHECK
+                (member_resolution IN (N'pending', N'applied', N'dismissed')),
+            CONSTRAINT CK_opportunity_source_concerns_span CHECK
+                (span_start >= 0 AND span_length > 0),
+            CONSTRAINT CK_opportunity_source_concerns_quote_length CHECK
+                (DATALENGTH(quoted_text) / 2 BETWEEN 1 AND 600),
+            CONSTRAINT CK_opportunity_source_concerns_reason_length CHECK
+                (DATALENGTH(concern_reason) / 2 BETWEEN 1 AND 240),
+            CONSTRAINT CK_opportunity_source_concerns_corrected_length CHECK
+                (member_corrected_text IS NULL
+                 OR DATALENGTH(member_corrected_text) / 2 BETWEEN 1 AND 20000),
+            /* A resolution and its provenance move together, and only an
+               applied concern carries replacement wording. A dismissed one
+               changed nothing, so it must not look like it did. */
+            CONSTRAINT CK_opportunity_source_concerns_resolution_pair CHECK
+            (
+                (member_resolution = N'pending'
+                 AND member_corrected_text IS NULL
+                 AND resolved_by_user_id IS NULL
+                 AND resolved_at_utc IS NULL)
+                OR
+                (member_resolution = N'dismissed'
+                 AND member_corrected_text IS NULL
+                 AND resolved_by_user_id IS NOT NULL
+                 AND resolved_at_utc IS NOT NULL)
+                OR
+                (member_resolution = N'applied'
+                 AND member_corrected_text IS NOT NULL
+                 AND resolved_by_user_id IS NOT NULL
+                 AND resolved_at_utc IS NOT NULL)
+            )
+        );
+
+        CREATE INDEX IX_opportunity_source_concerns_review
+            ON dbo.opportunity_source_concerns(opportunity_source_review_id, ordinal)
+            INCLUDE (concern_key, member_resolution);
+    END;
+
+    IF OBJECT_ID(N'dbo.opportunity_requirement_sets', N'U') IS NULL
+    BEGIN
+        CREATE TABLE dbo.opportunity_requirement_sets
+        (
+            opportunity_requirement_set_id bigint IDENTITY(1,1) NOT NULL,
+            requirement_set_key uniqueidentifier NOT NULL
+                CONSTRAINT DF_opportunity_requirement_sets_key DEFAULT NEWSEQUENTIALID(),
+            working_session_id bigint NOT NULL,
+            owner_profile_id bigint NOT NULL,
+            current_version_number int NOT NULL
+                CONSTRAINT DF_opportunity_requirement_sets_current DEFAULT 1,
+            confirmed_version_number int NULL,
+            confirmed_by_user_id int NULL,
+            confirmed_at_utc datetime2(7) NULL,
+            created_at_utc datetime2(7) NOT NULL
+                CONSTRAINT DF_opportunity_requirement_sets_created DEFAULT SYSUTCDATETIME(),
+            updated_at_utc datetime2(7) NOT NULL
+                CONSTRAINT DF_opportunity_requirement_sets_updated DEFAULT SYSUTCDATETIME(),
+            row_version rowversion NOT NULL,
+            CONSTRAINT PK_opportunity_requirement_sets PRIMARY KEY (opportunity_requirement_set_id),
+            CONSTRAINT UQ_opportunity_requirement_sets_key UNIQUE (requirement_set_key),
+            /* One requirement set per working session, matching the
+               one-slate-per-member rule (owner decision, handoff 17-Q2). */
+            CONSTRAINT UQ_opportunity_requirement_sets_session UNIQUE (working_session_id),
+            CONSTRAINT UQ_opportunity_requirement_sets_id_owner
+                UNIQUE (opportunity_requirement_set_id, owner_profile_id),
+            CONSTRAINT FK_opportunity_requirement_sets_session FOREIGN KEY (working_session_id, owner_profile_id)
+                REFERENCES dbo.opportunity_working_sessions(working_session_id, owner_profile_id),
+            CONSTRAINT FK_opportunity_requirement_sets_confirmer FOREIGN KEY (confirmed_by_user_id)
+                REFERENCES dbo.app_users(id),
+            CONSTRAINT CK_opportunity_requirement_sets_current CHECK (current_version_number > 0),
+            /* Checkpoint 2's exact analogue of the source's confirmation
+               CHECK: either nothing is confirmed, or the CURRENT version is,
+               with its provenance. A correction or a re-read clears the
+               triple, so a confirmed set can never describe a reading the
+               member never confirmed. */
+            CONSTRAINT CK_opportunity_requirement_sets_confirmation_state CHECK
+            (
+                (
+                    confirmed_version_number IS NULL
+                    AND confirmed_by_user_id IS NULL
+                    AND confirmed_at_utc IS NULL
+                )
+                OR
+                (
+                    confirmed_version_number = current_version_number
+                    AND confirmed_by_user_id IS NOT NULL
+                    AND confirmed_at_utc IS NOT NULL
+                )
+            )
+        );
+
+        CREATE INDEX IX_opportunity_requirement_sets_owner
+            ON dbo.opportunity_requirement_sets(owner_profile_id, opportunity_requirement_set_id)
+            INCLUDE (requirement_set_key, working_session_id);
+    END;
+
+    IF OBJECT_ID(N'dbo.opportunity_requirement_set_versions', N'U') IS NULL
+    BEGIN
+        CREATE TABLE dbo.opportunity_requirement_set_versions
+        (
+            opportunity_requirement_set_version_id bigint IDENTITY(1,1) NOT NULL,
+            opportunity_requirement_set_id bigint NOT NULL,
+            owner_profile_id bigint NOT NULL,
+            version_number int NOT NULL,
+            /* Which captured source version this reading was made from.
+               A reading is only ever shown against the wording it was read
+               out of. */
+            source_version_number int NOT NULL,
+            model_name nvarchar(200) NOT NULL,
+            prompt_contract_version nvarchar(100) NOT NULL,
+            statement_count int NOT NULL,
+            proposed_at_utc datetime2(7) NOT NULL
+                CONSTRAINT DF_opportunity_requirement_set_versions_proposed DEFAULT SYSUTCDATETIME(),
+            row_version rowversion NOT NULL,
+            CONSTRAINT PK_opportunity_requirement_set_versions PRIMARY KEY (opportunity_requirement_set_version_id),
+            CONSTRAINT UQ_opportunity_requirement_set_versions_number
+                UNIQUE (opportunity_requirement_set_id, version_number),
+            CONSTRAINT UQ_opportunity_requirement_set_versions_id_owner
+                UNIQUE (opportunity_requirement_set_version_id, owner_profile_id),
+            CONSTRAINT FK_opportunity_requirement_set_versions_set FOREIGN KEY (opportunity_requirement_set_id, owner_profile_id)
+                REFERENCES dbo.opportunity_requirement_sets(opportunity_requirement_set_id, owner_profile_id),
+            CONSTRAINT CK_opportunity_requirement_set_versions_number CHECK (version_number > 0),
+            CONSTRAINT CK_opportunity_requirement_set_versions_source CHECK (source_version_number > 0),
+            CONSTRAINT CK_opportunity_requirement_set_versions_count CHECK
+                (statement_count BETWEEN 1 AND 60),
+            CONSTRAINT CK_opportunity_requirement_set_versions_model_length CHECK
+                (DATALENGTH(model_name) / 2 BETWEEN 1 AND 100),
+            CONSTRAINT CK_opportunity_requirement_set_versions_contract_length CHECK
+                (DATALENGTH(prompt_contract_version) / 2 BETWEEN 1 AND 60)
+        );
+    END;
+
+    IF OBJECT_ID(N'dbo.opportunity_requirement_statements', N'U') IS NULL
+    BEGIN
+        CREATE TABLE dbo.opportunity_requirement_statements
+        (
+            opportunity_requirement_statement_id bigint IDENTITY(1,1) NOT NULL,
+            statement_key uniqueidentifier NOT NULL
+                CONSTRAINT DF_opportunity_requirement_statements_key DEFAULT NEWSEQUENTIALID(),
+            opportunity_requirement_set_version_id bigint NOT NULL,
+            owner_profile_id bigint NOT NULL,
+            ordinal int NOT NULL,
+            /* The employer's own wording for this statement, and where it
+               sits in the confirmed source. Write-once: no procedure in this
+               file ever updates employer_text. */
+            span_start int NOT NULL,
+            span_length int NOT NULL,
+            employer_text nvarchar(2000) NOT NULL,
+            /* The AI proposal. */
+            proposed_class nvarchar(40) NOT NULL,
+            proposed_explanation nvarchar(1000) NOT NULL,
+            proposed_structure_json nvarchar(4000) NOT NULL,
+            /* The member's decision, in its own columns, never written from
+               the proposal and never overwriting it. */
+            member_class nvarchar(40) NULL,
+            member_clarification nvarchar(2000) NULL,
+            member_updated_by_user_id int NULL,
+            member_updated_at_utc datetime2(7) NULL,
+            row_version rowversion NOT NULL,
+            CONSTRAINT PK_opportunity_requirement_statements PRIMARY KEY (opportunity_requirement_statement_id),
+            CONSTRAINT UQ_opportunity_requirement_statements_key UNIQUE (statement_key),
+            CONSTRAINT UQ_opportunity_requirement_statements_ordinal
+                UNIQUE (opportunity_requirement_set_version_id, ordinal),
+            CONSTRAINT UQ_opportunity_requirement_statements_id_owner
+                UNIQUE (opportunity_requirement_statement_id, owner_profile_id),
+            CONSTRAINT FK_opportunity_requirement_statements_version FOREIGN KEY (opportunity_requirement_set_version_id, owner_profile_id)
+                REFERENCES dbo.opportunity_requirement_set_versions(opportunity_requirement_set_version_id, owner_profile_id),
+            CONSTRAINT FK_opportunity_requirement_statements_corrector FOREIGN KEY (member_updated_by_user_id)
+                REFERENCES dbo.app_users(id),
+            CONSTRAINT CK_opportunity_requirement_statements_ordinal CHECK (ordinal > 0),
+            CONSTRAINT CK_opportunity_requirement_statements_span CHECK
+                (span_start >= 0 AND span_length > 0),
+            /* The four classes, CHECK-pinned in both columns. Required,
+               Preferred, Responsibilities, and Informational statements are
+               the whole vocabulary; there is no fifth value and no ordering
+               among them. */
+            CONSTRAINT CK_opportunity_requirement_statements_proposed_class CHECK
+                (proposed_class IN (N'required_qualification', N'preferred_qualification',
+                                    N'responsibility', N'informational_statement')),
+            CONSTRAINT CK_opportunity_requirement_statements_member_class CHECK
+                (member_class IS NULL
+                 OR member_class IN (N'required_qualification', N'preferred_qualification',
+                                     N'responsibility', N'informational_statement')),
+            CONSTRAINT CK_opportunity_requirement_statements_text_length CHECK
+                (DATALENGTH(employer_text) / 2 BETWEEN 1 AND 1200),
+            CONSTRAINT CK_opportunity_requirement_statements_explanation_length CHECK
+                (DATALENGTH(proposed_explanation) / 2 BETWEEN 1 AND 400),
+            CONSTRAINT CK_opportunity_requirement_statements_structure_length CHECK
+                (DATALENGTH(proposed_structure_json) / 2 BETWEEN 1 AND 4000),
+            CONSTRAINT CK_opportunity_requirement_statements_clarification_length CHECK
+                (member_clarification IS NULL
+                 OR DATALENGTH(member_clarification) / 2 BETWEEN 1 AND 2000),
+            /* Member input and its provenance move together. */
+            CONSTRAINT CK_opportunity_requirement_statements_member_pair CHECK
+            (
+                (member_class IS NULL AND member_clarification IS NULL
+                 AND member_updated_by_user_id IS NULL AND member_updated_at_utc IS NULL)
+                OR
+                (member_updated_by_user_id IS NOT NULL AND member_updated_at_utc IS NOT NULL)
+            )
+        );
+
+        CREATE INDEX IX_opportunity_requirement_statements_version
+            ON dbo.opportunity_requirement_statements(opportunity_requirement_set_version_id, ordinal)
+            INCLUDE (statement_key, proposed_class, member_class);
+    END;
+
+    /* ------------------------------------------------------------
+       SLICE OS-2 CONSTRAINT UPGRADE (independent review, finding F4).
+
+       Slice OS-2 widened CK_opportunity_working_sessions_state with the two
+       checkpoint-2 states, review_requirements and requirements_confirmed.
+       That widened CHECK is written inline in the CREATE TABLE above, which
+       only runs when the table does not exist. A database already carrying
+       the slice OS-1 revision therefore skipped it entirely: this file
+       created the new proposal tables and the new procedures, reported
+       success, and then failed at RUNTIME the first time a member reached
+       checkpoint 2, because usp_SaveOpportunityRequirementsForOwner and
+       usp_ConfirmOpportunityRequirementsForOwner write exactly those two
+       values into a CHECK that still refuses them.
+
+       The compatibility THROW immediately below does not catch it. Every
+       column it probes is on a table this file has just created, so on a
+       fresh apply they all exist, and on an OS-1 database the OS-1 columns
+       exist too. Neither case inspects the constraint.
+
+       This block closes it, and is a no-op on a fresh apply: the table was
+       created moments ago with the full five-value CHECK, so the EXISTS
+       matches and nothing is altered. It is also written to repair the case
+       where the constraint is missing altogether. ALTER TABLE ... ADD
+       CONSTRAINT validates existing rows by default, which is safe here
+       because the new value set is a strict superset of the old one - no
+       stored workbench_state can fail it.
+       ------------------------------------------------------------ */
+    IF OBJECT_ID(N'dbo.opportunity_working_sessions', N'U') IS NOT NULL
+       AND NOT EXISTS (
+            SELECT 1
+            FROM sys.check_constraints
+            WHERE parent_object_id = OBJECT_ID(N'dbo.opportunity_working_sessions')
+              AND name = N'CK_opportunity_working_sessions_state'
+              AND definition LIKE N'%review\_requirements%' ESCAPE N'\'
+              AND definition LIKE N'%requirements\_confirmed%' ESCAPE N'\'
+       )
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM sys.check_constraints
+            WHERE parent_object_id = OBJECT_ID(N'dbo.opportunity_working_sessions')
+              AND name = N'CK_opportunity_working_sessions_state'
+        )
+            ALTER TABLE dbo.opportunity_working_sessions
+                DROP CONSTRAINT CK_opportunity_working_sessions_state;
+
+        ALTER TABLE dbo.opportunity_working_sessions
+            ADD CONSTRAINT CK_opportunity_working_sessions_state CHECK
+                (workbench_state IN (N'role_intake', N'review_source', N'source_confirmed',
+                                     N'review_requirements', N'requirements_confirmed'));
+    END;
+
     IF COL_LENGTH(N'dbo.opportunity_working_sessions', N'expires_at_utc') IS NULL
        OR COL_LENGTH(N'dbo.opportunity_sources', N'confirmed_version_number') IS NULL
        OR COL_LENGTH(N'dbo.opportunity_source_versions', N'member_corrected_text') IS NULL
+       OR COL_LENGTH(N'dbo.opportunity_source_concerns', N'member_resolution') IS NULL
+       OR COL_LENGTH(N'dbo.opportunity_requirement_statements', N'member_class') IS NULL
         THROW 53406, 'Existing Opportunity Slate tables are incompatible.', 1;
 
     /* ------------------------------------------------------------
@@ -400,6 +1115,62 @@ BEGIN TRY
                 FROM dbo.opportunity_working_sessions AS working_session WITH (UPDLOCK, HOLDLOCK)
                 WHERE working_session.owner_profile_id = @ProfileId
                   AND working_session.expires_at_utc <= @Now;
+
+                /* SLICE OS-2 ADDITION. The AI-proposal tables hang off the
+                   source versions and the working session, so they have to
+                   go first or the deletes below violate their foreign keys.
+                   This is the one place slice OS-2 had to reach into a
+                   procedure slice OS-1 wrote, and it is not optional: a purge
+                   that cannot complete leaves expired employer wording on
+                   disk past its expiry, which is the exact thing this
+                   procedure exists to prevent. */
+                DELETE concern_record
+                FROM dbo.opportunity_source_concerns AS concern_record
+                JOIN dbo.opportunity_source_reviews AS review_record
+                  ON review_record.opportunity_source_review_id = concern_record.opportunity_source_review_id
+                 AND review_record.owner_profile_id = concern_record.owner_profile_id
+                JOIN dbo.opportunity_sources AS source_record
+                  ON source_record.opportunity_source_id = review_record.opportunity_source_id
+                 AND source_record.owner_profile_id = review_record.owner_profile_id
+                JOIN @ExpiredSessions AS expired
+                  ON expired.working_session_id = source_record.working_session_id
+                WHERE concern_record.owner_profile_id = @ProfileId;
+
+                DELETE review_record
+                FROM dbo.opportunity_source_reviews AS review_record
+                JOIN dbo.opportunity_sources AS source_record
+                  ON source_record.opportunity_source_id = review_record.opportunity_source_id
+                 AND source_record.owner_profile_id = review_record.owner_profile_id
+                JOIN @ExpiredSessions AS expired
+                  ON expired.working_session_id = source_record.working_session_id
+                WHERE review_record.owner_profile_id = @ProfileId;
+
+                DELETE statement_record
+                FROM dbo.opportunity_requirement_statements AS statement_record
+                JOIN dbo.opportunity_requirement_set_versions AS set_version
+                  ON set_version.opportunity_requirement_set_version_id = statement_record.opportunity_requirement_set_version_id
+                 AND set_version.owner_profile_id = statement_record.owner_profile_id
+                JOIN dbo.opportunity_requirement_sets AS requirement_set
+                  ON requirement_set.opportunity_requirement_set_id = set_version.opportunity_requirement_set_id
+                 AND requirement_set.owner_profile_id = set_version.owner_profile_id
+                JOIN @ExpiredSessions AS expired
+                  ON expired.working_session_id = requirement_set.working_session_id
+                WHERE statement_record.owner_profile_id = @ProfileId;
+
+                DELETE set_version
+                FROM dbo.opportunity_requirement_set_versions AS set_version
+                JOIN dbo.opportunity_requirement_sets AS requirement_set
+                  ON requirement_set.opportunity_requirement_set_id = set_version.opportunity_requirement_set_id
+                 AND requirement_set.owner_profile_id = set_version.owner_profile_id
+                JOIN @ExpiredSessions AS expired
+                  ON expired.working_session_id = requirement_set.working_session_id
+                WHERE set_version.owner_profile_id = @ProfileId;
+
+                DELETE requirement_set
+                FROM dbo.opportunity_requirement_sets AS requirement_set
+                JOIN @ExpiredSessions AS expired
+                  ON expired.working_session_id = requirement_set.working_session_id
+                WHERE requirement_set.owner_profile_id = @ProfileId;
 
                 DELETE version_record
                 FROM dbo.opportunity_source_versions AS version_record
@@ -1080,6 +1851,52 @@ BEGIN TRY
                     RETURN;
                 END;
 
+                /* SLICE OS-2 ADDITION, and the same reason as the purge: the
+                   proposal tables reference these rows, so "atomic and
+                   complete" now means them too. A member who deletes their
+                   working session must not be left with PeerSlate''s readings
+                   of a source that no longer exists. */
+                DELETE concern_record
+                FROM dbo.opportunity_source_concerns AS concern_record
+                JOIN dbo.opportunity_source_reviews AS review_record
+                  ON review_record.opportunity_source_review_id = concern_record.opportunity_source_review_id
+                 AND review_record.owner_profile_id = concern_record.owner_profile_id
+                JOIN dbo.opportunity_sources AS source_record
+                  ON source_record.opportunity_source_id = review_record.opportunity_source_id
+                 AND source_record.owner_profile_id = review_record.owner_profile_id
+                WHERE source_record.working_session_id = @SessionId
+                  AND concern_record.owner_profile_id = @ProfileId;
+
+                DELETE review_record
+                FROM dbo.opportunity_source_reviews AS review_record
+                JOIN dbo.opportunity_sources AS source_record
+                  ON source_record.opportunity_source_id = review_record.opportunity_source_id
+                 AND source_record.owner_profile_id = review_record.owner_profile_id
+                WHERE source_record.working_session_id = @SessionId
+                  AND review_record.owner_profile_id = @ProfileId;
+
+                DELETE statement_record
+                FROM dbo.opportunity_requirement_statements AS statement_record
+                JOIN dbo.opportunity_requirement_set_versions AS set_version
+                  ON set_version.opportunity_requirement_set_version_id = statement_record.opportunity_requirement_set_version_id
+                 AND set_version.owner_profile_id = statement_record.owner_profile_id
+                JOIN dbo.opportunity_requirement_sets AS requirement_set
+                  ON requirement_set.opportunity_requirement_set_id = set_version.opportunity_requirement_set_id
+                 AND requirement_set.owner_profile_id = set_version.owner_profile_id
+                WHERE requirement_set.working_session_id = @SessionId
+                  AND statement_record.owner_profile_id = @ProfileId;
+
+                DELETE set_version
+                FROM dbo.opportunity_requirement_set_versions AS set_version
+                JOIN dbo.opportunity_requirement_sets AS requirement_set
+                  ON requirement_set.opportunity_requirement_set_id = set_version.opportunity_requirement_set_id
+                 AND requirement_set.owner_profile_id = set_version.owner_profile_id
+                WHERE requirement_set.working_session_id = @SessionId
+                  AND set_version.owner_profile_id = @ProfileId;
+
+                DELETE dbo.opportunity_requirement_sets
+                WHERE working_session_id = @SessionId AND owner_profile_id = @ProfileId;
+
                 DELETE version_record
                 FROM dbo.opportunity_source_versions AS version_record
                 JOIN dbo.opportunity_sources AS source_record
@@ -1106,6 +1923,952 @@ BEGIN TRY
         END;
     ');
 
+    /* ============================================================
+       SLICE OS-2 PROCEDURES
+
+       Same discipline as every procedure above: @UserKey resolved here,
+       owner_profile_id re-asserted in every predicate, rowversion fencing on
+       every mutation, and one BEGIN TRY / BEGIN TRANSACTION / COMMIT /
+       CATCH + XACT_STATE envelope around every write. No procedure below
+       accepts an owner id from its caller, and none of them writes a
+       proposal column from a member column or the reverse.
+       ============================================================ */
+
+    EXEC(N'
+        CREATE OR ALTER PROCEDURE dbo.usp_GetOpportunitySourceReviewForOwner
+            @UserKey nvarchar(300),
+            @SourceKey uniqueidentifier
+        AS
+        BEGIN
+            SET NOCOUNT ON;
+            SET XACT_ABORT ON;
+
+            /* Two result sets: the review, then its concerns. No rows at all
+               means AI step 1 has not run for the CURRENT captured version —
+               deliberately a different answer from a review with zero
+               concerns, which means it ran and found nothing. The screen
+               says those two things differently and this is what lets it. */
+            SET @UserKey = NULLIF(LTRIM(RTRIM(@UserKey)), N'''');
+            IF @UserKey IS NULL OR @SourceKey IS NULL RETURN;
+
+            DECLARE @ProfileId bigint;
+            SELECT @ProfileId = profile.profile_id
+            FROM dbo.member_profiles AS profile
+            JOIN dbo.app_users AS app_user ON app_user.id = profile.user_id
+            WHERE app_user.user_key = @UserKey
+              AND app_user.active = 1
+              AND profile.active = 1;
+
+            IF @ProfileId IS NULL RETURN;
+
+            DECLARE @ReviewId bigint;
+            SELECT @ReviewId = review_record.opportunity_source_review_id
+            FROM dbo.opportunity_source_reviews AS review_record
+            JOIN dbo.opportunity_sources AS source_record
+              ON source_record.opportunity_source_id = review_record.opportunity_source_id
+             AND source_record.owner_profile_id = review_record.owner_profile_id
+            JOIN dbo.opportunity_working_sessions AS working_session
+              ON working_session.working_session_id = source_record.working_session_id
+             AND working_session.owner_profile_id = source_record.owner_profile_id
+            WHERE source_record.source_key = @SourceKey
+              AND review_record.owner_profile_id = @ProfileId
+              AND review_record.source_version_number = source_record.current_version_number
+              AND working_session.expires_at_utc > SYSUTCDATETIME();
+
+            IF @ReviewId IS NULL RETURN;
+
+            SELECT
+                review_record.review_key,
+                review_record.source_version_number,
+                review_record.model_name,
+                review_record.prompt_contract_version,
+                review_record.concern_count,
+                review_record.reviewed_at_utc
+            FROM dbo.opportunity_source_reviews AS review_record
+            WHERE review_record.opportunity_source_review_id = @ReviewId
+              AND review_record.owner_profile_id = @ProfileId;
+
+            SELECT
+                concern_record.concern_key,
+                concern_record.span_start,
+                concern_record.span_length,
+                concern_record.quoted_text,
+                concern_record.concern_reason,
+                concern_record.member_resolution,
+                concern_record.member_corrected_text,
+                concern_record.resolved_at_utc,
+                CONVERT(binary(8), concern_record.row_version) AS concern_row_version
+            FROM dbo.opportunity_source_concerns AS concern_record
+            WHERE concern_record.opportunity_source_review_id = @ReviewId
+              AND concern_record.owner_profile_id = @ProfileId
+            ORDER BY concern_record.ordinal;
+        END;
+    ');
+
+    EXEC(N'
+        CREATE OR ALTER PROCEDURE dbo.usp_SaveOpportunitySourceReviewForOwner
+            @UserKey nvarchar(300),
+            @SourceKey uniqueidentifier,
+            @ExpectedRowVersion binary(8),
+            @ModelName nvarchar(4000),
+            @PromptContractVersion nvarchar(4000),
+            @ConcernsJson nvarchar(max)
+        AS
+        BEGIN
+            SET NOCOUNT ON;
+            SET XACT_ABORT ON;
+
+            /* Records that AI step 1 ran against the current captured
+               version, with the proposals it made. It writes ONLY proposal
+               columns: not one statement here touches original_text,
+               member_corrected_text on the version row, or the source
+               confirmation. A proposal is not a change to the member''s
+               wording and must not be able to become one. */
+            SET @UserKey = NULLIF(LTRIM(RTRIM(@UserKey)), N'''');
+            IF @UserKey IS NULL OR @SourceKey IS NULL OR @ExpectedRowVersion IS NULL
+            BEGIN
+                SELECT N''changed'' AS outcome, CAST(NULL AS uniqueidentifier) AS review_key,
+                       CAST(NULL AS int) AS concern_count;
+                RETURN;
+            END;
+
+            DECLARE @ProfileId bigint;
+            SELECT @ProfileId = profile.profile_id
+            FROM dbo.member_profiles AS profile
+            JOIN dbo.app_users AS app_user ON app_user.id = profile.user_id
+            WHERE app_user.user_key = @UserKey
+              AND app_user.active = 1
+              AND profile.active = 1;
+
+            IF @ProfileId IS NULL
+            BEGIN
+                SELECT N''changed'' AS outcome, CAST(NULL AS uniqueidentifier) AS review_key,
+                       CAST(NULL AS int) AS concern_count;
+                RETURN;
+            END;
+
+            IF @ModelName IS NULL OR DATALENGTH(@ModelName) / 2 NOT BETWEEN 1 AND 100
+               OR @PromptContractVersion IS NULL
+               OR DATALENGTH(@PromptContractVersion) / 2 NOT BETWEEN 1 AND 60
+               OR @ConcernsJson IS NULL
+               OR ISJSON(@ConcernsJson) <> 1
+            BEGIN
+                SELECT N''invalid'' AS outcome, CAST(NULL AS uniqueidentifier) AS review_key,
+                       CAST(NULL AS int) AS concern_count;
+                RETURN;
+            END;
+
+            DECLARE @Now datetime2(7) = SYSUTCDATETIME();
+            DECLARE @SourceId bigint;
+            DECLARE @VersionId bigint;
+            DECLARE @VersionNumber int;
+            DECLARE @ReviewId bigint;
+            DECLARE @ReviewKey uniqueidentifier;
+            DECLARE @ConcernCount int = 0;
+
+            /* The whole write is one unit of work: clearing the previous
+               review, inserting this one, and inserting its concerns. In
+               autocommit a failure between them could leave a review row
+               claiming a concern_count it has no rows for. */
+            BEGIN TRY
+                BEGIN TRANSACTION;
+
+                SELECT
+                    @SourceId = source_record.opportunity_source_id,
+                    @VersionNumber = source_record.current_version_number,
+                    @VersionId = version_record.opportunity_source_version_id
+                FROM dbo.opportunity_sources AS source_record WITH (UPDLOCK, HOLDLOCK)
+                JOIN dbo.opportunity_working_sessions AS working_session
+                  ON working_session.working_session_id = source_record.working_session_id
+                 AND working_session.owner_profile_id = source_record.owner_profile_id
+                JOIN dbo.opportunity_source_versions AS version_record
+                  ON version_record.opportunity_source_id = source_record.opportunity_source_id
+                 AND version_record.owner_profile_id = source_record.owner_profile_id
+                 AND version_record.version_number = source_record.current_version_number
+                WHERE source_record.source_key = @SourceKey
+                  AND source_record.owner_profile_id = @ProfileId
+                  AND source_record.row_version = @ExpectedRowVersion
+                  AND working_session.expires_at_utc > @Now;
+
+                IF @SourceId IS NULL
+                BEGIN
+                    COMMIT TRANSACTION;
+                    SELECT N''changed'' AS outcome, CAST(NULL AS uniqueidentifier) AS review_key,
+                           CAST(NULL AS int) AS concern_count;
+                    RETURN;
+                END;
+
+                /* COUNT AND REJECT BEFORE DELETING ANYTHING (isolated SQL
+                   gate, 2026-08-04, defect 1). This guard used to sit AFTER
+                   the two DELETEs below and then COMMIT, so an over-long
+                   proposal destroyed the member''s existing review, its
+                   concerns, and every decision they had already made on
+                   them - and then returned ''invalid'', which tells the
+                   caller nothing happened. The sibling procedure
+                   usp_SaveOpportunityRequirementProposalForOwner already
+                   counts before it deletes; this one now does too, so a
+                   rejected proposal leaves the member''s work exactly where
+                   it was. */
+                SELECT @ConcernCount = COUNT(*)
+                FROM OPENJSON(@ConcernsJson)
+                WITH
+                (
+                    span_start int ''$.span_start'',
+                    span_length int ''$.span_length'',
+                    quoted_text nvarchar(1000) ''$.quoted_text'',
+                    concern_reason nvarchar(500) ''$.concern_reason''
+                ) AS proposal;
+
+                IF @ConcernCount > 20
+                BEGIN
+                    COMMIT TRANSACTION;
+                    SELECT N''invalid'' AS outcome, CAST(NULL AS uniqueidentifier) AS review_key,
+                           CAST(NULL AS int) AS concern_count;
+                    RETURN;
+                END;
+
+                /* Any earlier review of this source goes, including one for a
+                   superseded version. A reading of wording the member has
+                   since replaced is not history worth keeping in an ephemeral
+                   store; it is a second copy of employer text with nothing to
+                   show for it. */
+                DELETE concern_record
+                FROM dbo.opportunity_source_concerns AS concern_record
+                JOIN dbo.opportunity_source_reviews AS review_record
+                  ON review_record.opportunity_source_review_id = concern_record.opportunity_source_review_id
+                 AND review_record.owner_profile_id = concern_record.owner_profile_id
+                WHERE review_record.opportunity_source_id = @SourceId
+                  AND concern_record.owner_profile_id = @ProfileId;
+
+                DELETE dbo.opportunity_source_reviews
+                WHERE opportunity_source_id = @SourceId AND owner_profile_id = @ProfileId;
+
+                INSERT dbo.opportunity_source_reviews
+                    (opportunity_source_version_id, opportunity_source_id, owner_profile_id,
+                     source_version_number, model_name, prompt_contract_version,
+                     concern_count, reviewed_at_utc)
+                VALUES
+                    (@VersionId, @SourceId, @ProfileId, @VersionNumber, @ModelName,
+                     @PromptContractVersion, @ConcernCount, @Now);
+                SET @ReviewId = SCOPE_IDENTITY();
+
+                INSERT dbo.opportunity_source_concerns
+                    (opportunity_source_review_id, owner_profile_id, ordinal,
+                     span_start, span_length, quoted_text, concern_reason)
+                SELECT
+                    @ReviewId,
+                    @ProfileId,
+                    ROW_NUMBER() OVER (ORDER BY proposal.span_start, proposal.span_length),
+                    proposal.span_start,
+                    proposal.span_length,
+                    proposal.quoted_text,
+                    proposal.concern_reason
+                FROM OPENJSON(@ConcernsJson)
+                WITH
+                (
+                    span_start int ''$.span_start'',
+                    span_length int ''$.span_length'',
+                    quoted_text nvarchar(1000) ''$.quoted_text'',
+                    concern_reason nvarchar(500) ''$.concern_reason''
+                ) AS proposal;
+
+                SELECT @ReviewKey = review_record.review_key
+                FROM dbo.opportunity_source_reviews AS review_record
+                WHERE review_record.opportunity_source_review_id = @ReviewId
+                  AND review_record.owner_profile_id = @ProfileId;
+
+                COMMIT TRANSACTION;
+
+                SELECT N''success'' AS outcome, @ReviewKey AS review_key,
+                       @ConcernCount AS concern_count;
+            END TRY
+            BEGIN CATCH
+                IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+                THROW;
+            END CATCH;
+        END;
+    ');
+
+    EXEC(N'
+        CREATE OR ALTER PROCEDURE dbo.usp_ResolveOpportunitySourceConcernForOwner
+            @UserKey nvarchar(300),
+            @ConcernKey uniqueidentifier,
+            @ExpectedRowVersion binary(8),
+            @Resolution nvarchar(20),
+            @CorrectedSpanText nvarchar(max) = NULL,
+            @DocumentText nvarchar(max) = NULL
+        AS
+        BEGIN
+            SET NOCOUNT ON;
+            SET XACT_ABORT ON;
+
+            /* The member''s decision on one proposal.
+
+               ''applied'' writes their replacement wording for the span AND
+               the resulting whole document, then clears the source
+               confirmation the changed wording invalidates — all in one
+               transaction, because a committed document change with a stale
+               confirmation would badge a source as confirmed against text
+               the member never confirmed.
+
+               ''dismissed'' records the decision and changes NO wording. The
+               confirmation is deliberately left alone: nothing about the
+               employer''s text moved, so there is nothing to re-confirm.
+
+               original_text is untouched on both paths. */
+            SET @UserKey = NULLIF(LTRIM(RTRIM(@UserKey)), N'''');
+            IF @UserKey IS NULL OR @ConcernKey IS NULL OR @ExpectedRowVersion IS NULL
+               OR @Resolution NOT IN (N''applied'', N''dismissed'')
+            BEGIN
+                SELECT N''changed'' AS outcome, CAST(NULL AS binary(8)) AS source_row_version,
+                       CAST(NULL AS nvarchar(20)) AS member_resolution;
+                RETURN;
+            END;
+
+            IF @Resolution = N''applied''
+               AND (@CorrectedSpanText IS NULL
+                    OR DATALENGTH(@CorrectedSpanText) / 2 NOT BETWEEN 1 AND 20000
+                    OR @DocumentText IS NULL
+                    OR DATALENGTH(@DocumentText) / 2 NOT BETWEEN 1 AND 20000)
+            BEGIN
+                SELECT N''invalid'' AS outcome, CAST(NULL AS binary(8)) AS source_row_version,
+                       CAST(NULL AS nvarchar(20)) AS member_resolution;
+                RETURN;
+            END;
+
+            DECLARE @ProfileId bigint;
+            DECLARE @UserId int;
+            SELECT @ProfileId = profile.profile_id, @UserId = app_user.id
+            FROM dbo.member_profiles AS profile
+            JOIN dbo.app_users AS app_user ON app_user.id = profile.user_id
+            WHERE app_user.user_key = @UserKey
+              AND app_user.active = 1
+              AND profile.active = 1;
+
+            IF @ProfileId IS NULL
+            BEGIN
+                SELECT N''changed'' AS outcome, CAST(NULL AS binary(8)) AS source_row_version,
+                       CAST(NULL AS nvarchar(20)) AS member_resolution;
+                RETURN;
+            END;
+
+            DECLARE @Now datetime2(7) = SYSUTCDATETIME();
+            DECLARE @ConcernId bigint;
+            DECLARE @SourceId bigint;
+            DECLARE @SessionId bigint;
+            DECLARE @VersionNumber int;
+
+            BEGIN TRY
+                BEGIN TRANSACTION;
+
+                SELECT
+                    @ConcernId = concern_record.opportunity_source_concern_id,
+                    @SourceId = source_record.opportunity_source_id,
+                    @SessionId = source_record.working_session_id,
+                    @VersionNumber = source_record.current_version_number
+                FROM dbo.opportunity_source_concerns AS concern_record WITH (UPDLOCK, HOLDLOCK)
+                JOIN dbo.opportunity_source_reviews AS review_record
+                  ON review_record.opportunity_source_review_id = concern_record.opportunity_source_review_id
+                 AND review_record.owner_profile_id = concern_record.owner_profile_id
+                JOIN dbo.opportunity_sources AS source_record
+                  ON source_record.opportunity_source_id = review_record.opportunity_source_id
+                 AND source_record.owner_profile_id = review_record.owner_profile_id
+                JOIN dbo.opportunity_working_sessions AS working_session
+                  ON working_session.working_session_id = source_record.working_session_id
+                 AND working_session.owner_profile_id = source_record.owner_profile_id
+                WHERE concern_record.concern_key = @ConcernKey
+                  AND concern_record.owner_profile_id = @ProfileId
+                  AND concern_record.row_version = @ExpectedRowVersion
+                  AND concern_record.member_resolution = N''pending''
+                  AND review_record.source_version_number = source_record.current_version_number
+                  AND working_session.expires_at_utc > @Now;
+
+                /* A missing, foreign, already-decided, superseded, expired,
+                   or stale-version concern all resolve to the same neutral
+                   ''changed'', so the response can never confirm whether
+                   another member''s key exists. */
+                IF @ConcernId IS NULL
+                BEGIN
+                    COMMIT TRANSACTION;
+                    SELECT N''changed'' AS outcome, CAST(NULL AS binary(8)) AS source_row_version,
+                           CAST(NULL AS nvarchar(20)) AS member_resolution;
+                    RETURN;
+                END;
+
+                UPDATE dbo.opportunity_source_concerns
+                SET member_resolution = @Resolution,
+                    member_corrected_text = CASE WHEN @Resolution = N''applied''
+                                                 THEN @CorrectedSpanText ELSE NULL END,
+                    resolved_by_user_id = @UserId,
+                    resolved_at_utc = @Now
+                WHERE opportunity_source_concern_id = @ConcernId
+                  AND owner_profile_id = @ProfileId;
+
+                IF @Resolution = N''applied''
+                BEGIN
+                    UPDATE dbo.opportunity_source_versions
+                    SET member_corrected_text = @DocumentText,
+                        corrected_by_user_id = @UserId,
+                        corrected_at_utc = @Now
+                    WHERE opportunity_source_id = @SourceId
+                      AND owner_profile_id = @ProfileId
+                      AND version_number = @VersionNumber;
+
+                    UPDATE dbo.opportunity_sources
+                    SET confirmed_version_number = NULL,
+                        confirmed_by_user_id = NULL,
+                        confirmed_at_utc = NULL,
+                        updated_at_utc = @Now
+                    WHERE opportunity_source_id = @SourceId AND owner_profile_id = @ProfileId;
+
+                    UPDATE dbo.opportunity_working_sessions
+                    SET workbench_state = N''review_source'', updated_at_utc = @Now
+                    WHERE working_session_id = @SessionId AND owner_profile_id = @ProfileId;
+                END;
+
+                COMMIT TRANSACTION;
+
+                SELECT
+                    N''success'' AS outcome,
+                    CONVERT(binary(8), source_record.row_version) AS source_row_version,
+                    @Resolution AS member_resolution
+                FROM dbo.opportunity_sources AS source_record
+                WHERE source_record.opportunity_source_id = @SourceId
+                  AND source_record.owner_profile_id = @ProfileId;
+            END TRY
+            BEGIN CATCH
+                IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+                THROW;
+            END CATCH;
+        END;
+    ');
+
+    EXEC(N'
+        CREATE OR ALTER PROCEDURE dbo.usp_GetOpportunityRequirementsForOwner
+            @UserKey nvarchar(300)
+        AS
+        BEGIN
+            SET NOCOUNT ON;
+            SET XACT_ABORT ON;
+
+            /* Two result sets: the current requirement-set version, then its
+               statements. A set pinned to a SUPERSEDED source version returns
+               nothing at all, because it describes wording the member has
+               since replaced and showing it would put words in the
+               employer''s mouth. */
+            SET @UserKey = NULLIF(LTRIM(RTRIM(@UserKey)), N'''');
+            IF @UserKey IS NULL RETURN;
+
+            DECLARE @ProfileId bigint;
+            SELECT @ProfileId = profile.profile_id
+            FROM dbo.member_profiles AS profile
+            JOIN dbo.app_users AS app_user ON app_user.id = profile.user_id
+            WHERE app_user.user_key = @UserKey
+              AND app_user.active = 1
+              AND profile.active = 1;
+
+            IF @ProfileId IS NULL RETURN;
+
+            DECLARE @VersionId bigint;
+            SELECT @VersionId = set_version.opportunity_requirement_set_version_id
+            FROM dbo.opportunity_requirement_set_versions AS set_version
+            JOIN dbo.opportunity_requirement_sets AS requirement_set
+              ON requirement_set.opportunity_requirement_set_id = set_version.opportunity_requirement_set_id
+             AND requirement_set.owner_profile_id = set_version.owner_profile_id
+            JOIN dbo.opportunity_working_sessions AS working_session
+              ON working_session.working_session_id = requirement_set.working_session_id
+             AND working_session.owner_profile_id = requirement_set.owner_profile_id
+            JOIN dbo.opportunity_sources AS source_record
+              ON source_record.working_session_id = working_session.working_session_id
+             AND source_record.owner_profile_id = working_session.owner_profile_id
+            WHERE requirement_set.owner_profile_id = @ProfileId
+              AND set_version.version_number = requirement_set.current_version_number
+              AND set_version.source_version_number = source_record.current_version_number
+              AND working_session.expires_at_utc > SYSUTCDATETIME();
+
+            IF @VersionId IS NULL RETURN;
+
+            SELECT
+                requirement_set.requirement_set_key,
+                CONVERT(binary(8), requirement_set.row_version) AS set_row_version,
+                set_version.version_number,
+                set_version.source_version_number,
+                set_version.model_name,
+                set_version.prompt_contract_version,
+                set_version.proposed_at_utc,
+                requirement_set.confirmed_version_number,
+                requirement_set.confirmed_at_utc
+            FROM dbo.opportunity_requirement_set_versions AS set_version
+            JOIN dbo.opportunity_requirement_sets AS requirement_set
+              ON requirement_set.opportunity_requirement_set_id = set_version.opportunity_requirement_set_id
+             AND requirement_set.owner_profile_id = set_version.owner_profile_id
+            WHERE set_version.opportunity_requirement_set_version_id = @VersionId
+              AND set_version.owner_profile_id = @ProfileId;
+
+            SELECT
+                statement_record.statement_key,
+                statement_record.ordinal,
+                statement_record.span_start,
+                statement_record.span_length,
+                statement_record.employer_text,
+                statement_record.proposed_class,
+                statement_record.proposed_explanation,
+                statement_record.proposed_structure_json,
+                statement_record.member_class,
+                statement_record.member_clarification,
+                statement_record.member_updated_at_utc,
+                CONVERT(binary(8), statement_record.row_version) AS statement_row_version
+            FROM dbo.opportunity_requirement_statements AS statement_record
+            WHERE statement_record.opportunity_requirement_set_version_id = @VersionId
+              AND statement_record.owner_profile_id = @ProfileId
+            ORDER BY statement_record.ordinal;
+        END;
+    ');
+
+    EXEC(N'
+        CREATE OR ALTER PROCEDURE dbo.usp_SaveOpportunityRequirementProposalForOwner
+            @UserKey nvarchar(300),
+            @SourceKey uniqueidentifier,
+            @ExpectedRowVersion binary(8),
+            @ModelName nvarchar(4000),
+            @PromptContractVersion nvarchar(4000),
+            @StatementsJson nvarchar(max)
+        AS
+        BEGIN
+            SET NOCOUNT ON;
+            SET XACT_ABORT ON;
+
+            /* Records AI step 2''s validated proposals as ONE current
+               requirement-set version for the working session, replacing any
+               earlier one. The version number still increments, so which run
+               produced the confirmed reading stays answerable; the superseded
+               statements do not linger, because a working session is
+               ephemeral infrastructure and not a member-visible history of
+               PeerSlate''s opinions.
+
+               Any existing confirmation is cleared: a member cannot have
+               confirmed a reading that did not exist a moment ago. */
+            SET @UserKey = NULLIF(LTRIM(RTRIM(@UserKey)), N'''');
+            IF @UserKey IS NULL OR @SourceKey IS NULL OR @ExpectedRowVersion IS NULL
+            BEGIN
+                SELECT N''changed'' AS outcome, CAST(NULL AS uniqueidentifier) AS requirement_set_key,
+                       CAST(NULL AS int) AS version_number, CAST(NULL AS int) AS statement_count;
+                RETURN;
+            END;
+
+            DECLARE @ProfileId bigint;
+            SELECT @ProfileId = profile.profile_id
+            FROM dbo.member_profiles AS profile
+            JOIN dbo.app_users AS app_user ON app_user.id = profile.user_id
+            WHERE app_user.user_key = @UserKey
+              AND app_user.active = 1
+              AND profile.active = 1;
+
+            IF @ProfileId IS NULL
+            BEGIN
+                SELECT N''changed'' AS outcome, CAST(NULL AS uniqueidentifier) AS requirement_set_key,
+                       CAST(NULL AS int) AS version_number, CAST(NULL AS int) AS statement_count;
+                RETURN;
+            END;
+
+            IF @ModelName IS NULL OR DATALENGTH(@ModelName) / 2 NOT BETWEEN 1 AND 100
+               OR @PromptContractVersion IS NULL
+               OR DATALENGTH(@PromptContractVersion) / 2 NOT BETWEEN 1 AND 60
+               OR @StatementsJson IS NULL
+               OR ISJSON(@StatementsJson) <> 1
+            BEGIN
+                SELECT N''invalid'' AS outcome, CAST(NULL AS uniqueidentifier) AS requirement_set_key,
+                       CAST(NULL AS int) AS version_number, CAST(NULL AS int) AS statement_count;
+                RETURN;
+            END;
+
+            DECLARE @Now datetime2(7) = SYSUTCDATETIME();
+            DECLARE @SessionId bigint;
+            DECLARE @SourceVersionNumber int;
+            DECLARE @SetId bigint;
+            DECLARE @SetKey uniqueidentifier;
+            DECLARE @NextVersion int;
+            DECLARE @VersionId bigint;
+            DECLARE @StatementCount int = 0;
+
+            BEGIN TRY
+                BEGIN TRANSACTION;
+
+                SELECT
+                    @SessionId = source_record.working_session_id,
+                    @SourceVersionNumber = source_record.current_version_number
+                FROM dbo.opportunity_sources AS source_record WITH (UPDLOCK, HOLDLOCK)
+                JOIN dbo.opportunity_working_sessions AS working_session
+                  ON working_session.working_session_id = source_record.working_session_id
+                 AND working_session.owner_profile_id = source_record.owner_profile_id
+                WHERE source_record.source_key = @SourceKey
+                  AND source_record.owner_profile_id = @ProfileId
+                  AND source_record.row_version = @ExpectedRowVersion
+                  AND source_record.confirmed_version_number = source_record.current_version_number
+                  AND working_session.expires_at_utc > @Now;
+
+                IF @SessionId IS NULL
+                BEGIN
+                    COMMIT TRANSACTION;
+                    SELECT N''changed'' AS outcome, CAST(NULL AS uniqueidentifier) AS requirement_set_key,
+                           CAST(NULL AS int) AS version_number, CAST(NULL AS int) AS statement_count;
+                    RETURN;
+                END;
+
+                SELECT @StatementCount = COUNT(*)
+                FROM OPENJSON(@StatementsJson)
+                WITH
+                (
+                    ordinal int ''$.ordinal'',
+                    span_start int ''$.span_start'',
+                    span_length int ''$.span_length'',
+                    employer_text nvarchar(2000) ''$.employer_text'',
+                    proposed_class nvarchar(40) ''$.proposed_class'',
+                    proposed_explanation nvarchar(1000) ''$.proposed_explanation'',
+                    proposed_structure_json nvarchar(4000) ''$.proposed_structure_json''
+                ) AS proposal;
+
+                IF @StatementCount < 1 OR @StatementCount > 60
+                BEGIN
+                    COMMIT TRANSACTION;
+                    SELECT N''invalid'' AS outcome, CAST(NULL AS uniqueidentifier) AS requirement_set_key,
+                           CAST(NULL AS int) AS version_number, CAST(NULL AS int) AS statement_count;
+                    RETURN;
+                END;
+
+                SELECT @SetId = requirement_set.opportunity_requirement_set_id,
+                       @NextVersion = requirement_set.current_version_number + 1
+                FROM dbo.opportunity_requirement_sets AS requirement_set WITH (UPDLOCK, HOLDLOCK)
+                WHERE requirement_set.working_session_id = @SessionId
+                  AND requirement_set.owner_profile_id = @ProfileId;
+
+                IF @SetId IS NULL
+                BEGIN
+                    INSERT dbo.opportunity_requirement_sets
+                        (working_session_id, owner_profile_id, current_version_number,
+                         created_at_utc, updated_at_utc)
+                    VALUES (@SessionId, @ProfileId, 1, @Now, @Now);
+                    SET @SetId = SCOPE_IDENTITY();
+                    SET @NextVersion = 1;
+                END
+                ELSE
+                BEGIN
+                    /* Clear the confirmation BEFORE the version moves, so the
+                       paired CHECK never sees a confirmed_version_number that
+                       no longer equals current_version_number. */
+                    UPDATE dbo.opportunity_requirement_sets
+                    SET confirmed_version_number = NULL,
+                        confirmed_by_user_id = NULL,
+                        confirmed_at_utc = NULL,
+                        current_version_number = @NextVersion,
+                        updated_at_utc = @Now
+                    WHERE opportunity_requirement_set_id = @SetId
+                      AND owner_profile_id = @ProfileId;
+
+                    DELETE statement_record
+                    FROM dbo.opportunity_requirement_statements AS statement_record
+                    JOIN dbo.opportunity_requirement_set_versions AS set_version
+                      ON set_version.opportunity_requirement_set_version_id = statement_record.opportunity_requirement_set_version_id
+                     AND set_version.owner_profile_id = statement_record.owner_profile_id
+                    WHERE set_version.opportunity_requirement_set_id = @SetId
+                      AND statement_record.owner_profile_id = @ProfileId;
+
+                    DELETE dbo.opportunity_requirement_set_versions
+                    WHERE opportunity_requirement_set_id = @SetId
+                      AND owner_profile_id = @ProfileId;
+                END;
+
+                INSERT dbo.opportunity_requirement_set_versions
+                    (opportunity_requirement_set_id, owner_profile_id, version_number,
+                     source_version_number, model_name, prompt_contract_version,
+                     statement_count, proposed_at_utc)
+                VALUES
+                    (@SetId, @ProfileId, @NextVersion, @SourceVersionNumber, @ModelName,
+                     @PromptContractVersion, @StatementCount, @Now);
+                SET @VersionId = SCOPE_IDENTITY();
+
+                INSERT dbo.opportunity_requirement_statements
+                    (opportunity_requirement_set_version_id, owner_profile_id, ordinal,
+                     span_start, span_length, employer_text, proposed_class,
+                     proposed_explanation, proposed_structure_json)
+                SELECT
+                    @VersionId,
+                    @ProfileId,
+                    proposal.ordinal,
+                    proposal.span_start,
+                    proposal.span_length,
+                    proposal.employer_text,
+                    proposal.proposed_class,
+                    proposal.proposed_explanation,
+                    proposal.proposed_structure_json
+                FROM OPENJSON(@StatementsJson)
+                WITH
+                (
+                    ordinal int ''$.ordinal'',
+                    span_start int ''$.span_start'',
+                    span_length int ''$.span_length'',
+                    employer_text nvarchar(2000) ''$.employer_text'',
+                    proposed_class nvarchar(40) ''$.proposed_class'',
+                    proposed_explanation nvarchar(1000) ''$.proposed_explanation'',
+                    proposed_structure_json nvarchar(4000) ''$.proposed_structure_json''
+                ) AS proposal;
+
+                UPDATE dbo.opportunity_working_sessions
+                SET workbench_state = N''review_requirements'', updated_at_utc = @Now
+                WHERE working_session_id = @SessionId AND owner_profile_id = @ProfileId;
+
+                SELECT @SetKey = requirement_set.requirement_set_key
+                FROM dbo.opportunity_requirement_sets AS requirement_set
+                WHERE requirement_set.opportunity_requirement_set_id = @SetId
+                  AND requirement_set.owner_profile_id = @ProfileId;
+
+                COMMIT TRANSACTION;
+
+                SELECT N''success'' AS outcome, @SetKey AS requirement_set_key,
+                       @NextVersion AS version_number, @StatementCount AS statement_count;
+            END TRY
+            BEGIN CATCH
+                IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+                THROW;
+            END CATCH;
+        END;
+    ');
+
+    EXEC(N'
+        CREATE OR ALTER PROCEDURE dbo.usp_CorrectOpportunityRequirementStatementForOwner
+            @UserKey nvarchar(300),
+            @StatementKey uniqueidentifier,
+            @ExpectedRowVersion binary(8),
+            @MemberClass nvarchar(40) = NULL,
+            @MemberClarification nvarchar(max) = NULL
+        AS
+        BEGIN
+            SET NOCOUNT ON;
+            SET XACT_ABORT ON;
+
+            /* The member''s reading of one statement. It writes member_class
+               and member_clarification ONLY: proposed_class,
+               proposed_explanation, and proposed_structure_json are never
+               touched by any procedure in this file, so "PeerSlate proposed
+               X, the member says Y" stays answerable for the life of the
+               session.
+
+               A correction clears the requirement-set confirmation for the
+               same reason a source correction clears the source''s: a
+               confirmed set must never describe a reading the member has
+               since changed. */
+            SET @UserKey = NULLIF(LTRIM(RTRIM(@UserKey)), N'''');
+            IF @UserKey IS NULL OR @StatementKey IS NULL OR @ExpectedRowVersion IS NULL
+            BEGIN
+                SELECT N''changed'' AS outcome, CAST(NULL AS binary(8)) AS statement_row_version,
+                       CAST(NULL AS nvarchar(40)) AS member_class;
+                RETURN;
+            END;
+
+            SET @MemberClarification = NULLIF(LTRIM(RTRIM(@MemberClarification)), N'''');
+            IF (@MemberClass IS NOT NULL
+                AND @MemberClass NOT IN (N''required_qualification'', N''preferred_qualification'',
+                                         N''responsibility'', N''informational_statement''))
+               OR (@MemberClarification IS NOT NULL
+                   AND DATALENGTH(@MemberClarification) / 2 NOT BETWEEN 1 AND 2000)
+            BEGIN
+                SELECT N''invalid'' AS outcome, CAST(NULL AS binary(8)) AS statement_row_version,
+                       CAST(NULL AS nvarchar(40)) AS member_class;
+                RETURN;
+            END;
+
+            DECLARE @ProfileId bigint;
+            DECLARE @UserId int;
+            SELECT @ProfileId = profile.profile_id, @UserId = app_user.id
+            FROM dbo.member_profiles AS profile
+            JOIN dbo.app_users AS app_user ON app_user.id = profile.user_id
+            WHERE app_user.user_key = @UserKey
+              AND app_user.active = 1
+              AND profile.active = 1;
+
+            IF @ProfileId IS NULL
+            BEGIN
+                SELECT N''changed'' AS outcome, CAST(NULL AS binary(8)) AS statement_row_version,
+                       CAST(NULL AS nvarchar(40)) AS member_class;
+                RETURN;
+            END;
+
+            DECLARE @Now datetime2(7) = SYSUTCDATETIME();
+            DECLARE @StatementId bigint;
+            DECLARE @SetId bigint;
+            DECLARE @ProposedClass nvarchar(40);
+
+            BEGIN TRY
+                BEGIN TRANSACTION;
+
+                SELECT
+                    @StatementId = statement_record.opportunity_requirement_statement_id,
+                    @SetId = requirement_set.opportunity_requirement_set_id,
+                    @ProposedClass = statement_record.proposed_class
+                FROM dbo.opportunity_requirement_statements AS statement_record WITH (UPDLOCK, HOLDLOCK)
+                JOIN dbo.opportunity_requirement_set_versions AS set_version
+                  ON set_version.opportunity_requirement_set_version_id = statement_record.opportunity_requirement_set_version_id
+                 AND set_version.owner_profile_id = statement_record.owner_profile_id
+                JOIN dbo.opportunity_requirement_sets AS requirement_set
+                  ON requirement_set.opportunity_requirement_set_id = set_version.opportunity_requirement_set_id
+                 AND requirement_set.owner_profile_id = set_version.owner_profile_id
+                JOIN dbo.opportunity_working_sessions AS working_session
+                  ON working_session.working_session_id = requirement_set.working_session_id
+                 AND working_session.owner_profile_id = requirement_set.owner_profile_id
+                WHERE statement_record.statement_key = @StatementKey
+                  AND statement_record.owner_profile_id = @ProfileId
+                  AND statement_record.row_version = @ExpectedRowVersion
+                  AND set_version.version_number = requirement_set.current_version_number
+                  AND working_session.expires_at_utc > @Now;
+
+                IF @StatementId IS NULL
+                BEGIN
+                    COMMIT TRANSACTION;
+                    SELECT N''changed'' AS outcome, CAST(NULL AS binary(8)) AS statement_row_version,
+                           CAST(NULL AS nvarchar(40)) AS member_class;
+                    RETURN;
+                END;
+
+                /* A member who selects the proposed class and leaves the
+                   clarification empty has told PeerSlate nothing new. Storing
+                   that as a member decision would let the screen claim they
+                   corrected something they did not. */
+                IF @MemberClass = @ProposedClass AND @MemberClarification IS NULL
+                    SET @MemberClass = NULL;
+
+                UPDATE dbo.opportunity_requirement_statements
+                SET member_class = @MemberClass,
+                    member_clarification = @MemberClarification,
+                    member_updated_by_user_id = CASE
+                        WHEN @MemberClass IS NULL AND @MemberClarification IS NULL
+                        THEN NULL ELSE @UserId END,
+                    member_updated_at_utc = CASE
+                        WHEN @MemberClass IS NULL AND @MemberClarification IS NULL
+                        THEN NULL ELSE @Now END
+                WHERE opportunity_requirement_statement_id = @StatementId
+                  AND owner_profile_id = @ProfileId;
+
+                UPDATE dbo.opportunity_requirement_sets
+                SET confirmed_version_number = NULL,
+                    confirmed_by_user_id = NULL,
+                    confirmed_at_utc = NULL,
+                    updated_at_utc = @Now
+                WHERE opportunity_requirement_set_id = @SetId
+                  AND owner_profile_id = @ProfileId;
+
+                COMMIT TRANSACTION;
+
+                SELECT
+                    N''success'' AS outcome,
+                    CONVERT(binary(8), statement_record.row_version) AS statement_row_version,
+                    statement_record.member_class
+                FROM dbo.opportunity_requirement_statements AS statement_record
+                WHERE statement_record.opportunity_requirement_statement_id = @StatementId
+                  AND statement_record.owner_profile_id = @ProfileId;
+            END TRY
+            BEGIN CATCH
+                IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+                THROW;
+            END CATCH;
+        END;
+    ');
+
+    EXEC(N'
+        CREATE OR ALTER PROCEDURE dbo.usp_ConfirmOpportunityRequirementsForOwner
+            @UserKey nvarchar(300),
+            @RequirementSetKey uniqueidentifier,
+            @ExpectedRowVersion binary(8)
+        AS
+        BEGIN
+            SET NOCOUNT ON;
+            SET XACT_ABORT ON;
+
+            /* Checkpoint 2 of 2 (handoff section 2). Confirming records which
+               requirement-set version the member accepted. It saves no slate,
+               produces no alignment result, and calls no AI — the analysis it
+               precedes is slice OS-3 and does not exist. */
+            SET @UserKey = NULLIF(LTRIM(RTRIM(@UserKey)), N'''');
+            IF @UserKey IS NULL OR @RequirementSetKey IS NULL OR @ExpectedRowVersion IS NULL
+            BEGIN
+                SELECT N''changed'' AS outcome, CAST(NULL AS binary(8)) AS set_row_version,
+                       CAST(NULL AS int) AS confirmed_version_number;
+                RETURN;
+            END;
+
+            DECLARE @ProfileId bigint;
+            DECLARE @UserId int;
+            SELECT @ProfileId = profile.profile_id, @UserId = app_user.id
+            FROM dbo.member_profiles AS profile
+            JOIN dbo.app_users AS app_user ON app_user.id = profile.user_id
+            WHERE app_user.user_key = @UserKey
+              AND app_user.active = 1
+              AND profile.active = 1;
+
+            IF @ProfileId IS NULL
+            BEGIN
+                SELECT N''changed'' AS outcome, CAST(NULL AS binary(8)) AS set_row_version,
+                       CAST(NULL AS int) AS confirmed_version_number;
+                RETURN;
+            END;
+
+            DECLARE @Now datetime2(7) = SYSUTCDATETIME();
+            DECLARE @SetId bigint;
+            DECLARE @SessionId bigint;
+            DECLARE @VersionNumber int;
+
+            BEGIN TRY
+                BEGIN TRANSACTION;
+
+                SELECT
+                    @SetId = requirement_set.opportunity_requirement_set_id,
+                    @SessionId = requirement_set.working_session_id,
+                    @VersionNumber = requirement_set.current_version_number
+                FROM dbo.opportunity_requirement_sets AS requirement_set WITH (UPDLOCK, HOLDLOCK)
+                JOIN dbo.opportunity_working_sessions AS working_session
+                  ON working_session.working_session_id = requirement_set.working_session_id
+                 AND working_session.owner_profile_id = requirement_set.owner_profile_id
+                WHERE requirement_set.requirement_set_key = @RequirementSetKey
+                  AND requirement_set.owner_profile_id = @ProfileId
+                  AND requirement_set.row_version = @ExpectedRowVersion
+                  AND working_session.expires_at_utc > @Now;
+
+                IF @SetId IS NULL
+                BEGIN
+                    COMMIT TRANSACTION;
+                    SELECT N''changed'' AS outcome, CAST(NULL AS binary(8)) AS set_row_version,
+                           CAST(NULL AS int) AS confirmed_version_number;
+                    RETURN;
+                END;
+
+                UPDATE dbo.opportunity_requirement_sets
+                SET confirmed_version_number = @VersionNumber,
+                    confirmed_by_user_id = @UserId,
+                    confirmed_at_utc = @Now,
+                    updated_at_utc = @Now
+                WHERE opportunity_requirement_set_id = @SetId
+                  AND owner_profile_id = @ProfileId;
+
+                UPDATE dbo.opportunity_working_sessions
+                SET workbench_state = N''requirements_confirmed'', updated_at_utc = @Now
+                WHERE working_session_id = @SessionId AND owner_profile_id = @ProfileId;
+
+                COMMIT TRANSACTION;
+
+                SELECT
+                    N''success'' AS outcome,
+                    CONVERT(binary(8), requirement_set.row_version) AS set_row_version,
+                    @VersionNumber AS confirmed_version_number
+                FROM dbo.opportunity_requirement_sets AS requirement_set
+                WHERE requirement_set.opportunity_requirement_set_id = @SetId
+                  AND requirement_set.owner_profile_id = @ProfileId;
+            END TRY
+            BEGIN CATCH
+                IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+                THROW;
+            END CATCH;
+        END;
+    ');
+
     /* ------------------------------------------------------------
        Fingerprint every procedure this migration owns, so the rollback
        can refuse to drop one that changed afterwards (the
@@ -1120,7 +2883,14 @@ BEGIN TRY
         (N'usp_SaveOpportunitySourceForOwner'),
         (N'usp_CorrectOpportunitySourceForOwner'),
         (N'usp_ConfirmOpportunitySourceForOwner'),
-        (N'usp_DeleteOpportunityWorkingSessionForOwner');
+        (N'usp_DeleteOpportunityWorkingSessionForOwner'),
+        (N'usp_GetOpportunitySourceReviewForOwner'),
+        (N'usp_SaveOpportunitySourceReviewForOwner'),
+        (N'usp_ResolveOpportunitySourceConcernForOwner'),
+        (N'usp_GetOpportunityRequirementsForOwner'),
+        (N'usp_SaveOpportunityRequirementProposalForOwner'),
+        (N'usp_CorrectOpportunityRequirementStatementForOwner'),
+        (N'usp_ConfirmOpportunityRequirementsForOwner');
 
     DECLARE @ProtectedProcedureName sysname;
     DECLARE @ProtectedProcedureHash nvarchar(64);
@@ -1169,6 +2939,11 @@ BEGIN TRY
         WHERE procedure_name = @ProtectedProcedureName;
     END;
 
+    /* The ledger is how an operator answers "which revision does this
+       database carry?", so it has to describe what is actually here. */
+    DECLARE @OppSlateDescription nvarchar(4000) =
+        N'Slices OS-1 and OS-2: Opportunity Slate ephemeral working session (opportunity_working_sessions / opportunity_sources / opportunity_source_versions), its AI-proposal store (opportunity_source_reviews / opportunity_source_concerns / opportunity_requirement_sets / opportunity_requirement_set_versions / opportunity_requirement_statements), thirteen owner-scoped procedures, and the expired-working-data purge';
+
     IF NOT EXISTS
     (
         SELECT 1 FROM dbo.schema_migrations
@@ -1182,7 +2957,7 @@ BEGIN TRY
         VALUES
         (
             N'PS-OPPSLATE-001',
-            N'Slice OS-1: Opportunity Slate ephemeral working session (opportunity_working_sessions / opportunity_sources / opportunity_source_versions), owner-scoped get/save/correct/confirm/delete procedures, and the expired-working-data purge',
+            @OppSlateDescription,
             N'PeerSlate Bible and Roadmap v3.0'
         );
 
@@ -1191,6 +2966,25 @@ BEGIN TRY
             @EntityType = N'database_migration',
             @Outcome = N'success',
             @MetadataJson = N'{"migration_id":"PS-OPPSLATE-001"}';
+    END;
+    ELSE
+    BEGIN
+        /* UPGRADE OVER THE SLICE OS-1 REVISION (isolated SQL gate,
+           2026-08-04, defect 2). The row already exists, so the INSERT above
+           is skipped and the ledger kept describing a three-table, six-
+           procedure migration on a database that now carries eight tables
+           and thirteen procedures. Correct the description in place.
+
+           applied_at_utc is deliberately NOT moved. It records when
+           PS-OPPSLATE-001 first landed, the rollback's "a later migration is
+           present" guard compares against it, and re-running this file must
+           stay a genuine no-op. Once the description is already correct the
+           UPDATE matches nothing, so a second apply still changes nothing
+           and still appends no audit event. */
+        UPDATE dbo.schema_migrations
+        SET description = @OppSlateDescription
+        WHERE migration_id = N'PS-OPPSLATE-001'
+          AND description <> @OppSlateDescription;
     END;
 
     COMMIT TRANSACTION;

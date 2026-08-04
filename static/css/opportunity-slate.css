@@ -246,6 +246,16 @@ body.opportunity-slate-page .main-content {
 .os *::before,
 .os *::after { box-sizing: border-box; }
 
+/* The `hidden` attribute is the room's only mechanism for a state that
+   exists in the markup but is not showing — the unselected statement
+   panels, the read-only notice, the processing Cancel control. Its default
+   `display: none` is a UA rule, so ANY component rule with a display value
+   silently defeats it. That is not hypothetical: the first evidence capture
+   of this slice showed "Corrections are paused while PeerSlate is working"
+   and a duplicate Cancel on a screen where nothing was running, because
+   both carry a display rule. This makes the attribute win outright. */
+.os [hidden] { display: none !important; }
+
 .os p { margin: 0 0 0.55rem; }
 .os p:last-child { margin-bottom: 0; }
 
@@ -383,6 +393,69 @@ body.opportunity-slate-page .main-content {
 .os-layout--review .os-rail-card__title { font-size: 0.92rem; }
 .os-layout--review .os-state-title { font-size: clamp(1.2rem, 1.5vw, 1.35rem); }
 .os-layout--review .os-truth-card__heading { font-size: 0.92rem; }
+
+/* Review · Requirements: image 03's own proportions, measured the same way
+   the other two were — by scanning each row of the locked PNG for the warm
+   panel surface against the cool canvas and taking the modal edges.
+
+     image 01  1448px frame   workbench x332-1102   770px   53.2%
+     image 02  1295px frame   workbench x239-1075   836px   64.6%
+     image 03  1448px frame   workbench x269-1105   837px   57.8%
+
+   Image 03 sits between them, and that is the design rather than noise: it
+   is neither an intake form wanting air around one paste box nor a reading
+   document wanting every pixel of measure. It is a TABLE, and a table wants
+   enough width that a two-line statement does not become three, plus a rail
+   wide enough to hold an interpretation tree beside it.
+
+   Image 03's own side zones, scaled to a 1440 viewport:
+
+     40 margin | 177 rail | 46 gap | 835 workbench | 25 gap | 277 rail | 40
+
+   The two gaps are deliberately unequal in the authority — the left rail
+   floats well clear of the workbench while the statement rail sits close to
+   the rows it belongs to, which is what makes the rail read as attached to
+   the selection. A grid gap cannot be asymmetric, so the column gap carries
+   the smaller right-hand value and the left rail takes the difference as a
+   margin. */
+.os-layout--requirements {
+    /* 202px = the authority's 181px of rail ink (its cards measure x45-225)
+       plus the 21px the margin below takes back out of the column. */
+    --os-rail-left: 202px;
+    --os-rail-right: 277px;
+    gap: clamp(0.9rem, 1.75vw, 25px);
+}
+.os-layout--requirements .os-rail--left { margin-right: clamp(0px, 1.5vw, 21px); }
+/* Image 03 sets its rails a shade smaller again than image 02's. Measured
+   scale-free inside image 03 itself (the only sound way to read a mockup
+   whose export scale is unknown): its rail body runs about 34 characters per
+   line in 172px where ours ran 30 in 181px, and its intro paragraph closes
+   in four lines where ours took five. One notch, not two — 0.78rem was
+   rendered and rejected as thin, which is the same place slice OS-1's third
+   round landed on the review rail. */
+.os-layout--requirements .os-rail { font-size: 0.80rem; }
+.os-layout--requirements .os-rail__intro { font-size: 0.84rem; }
+.os-layout--requirements .os-rail-note__eyebrow,
+.os-layout--requirements .os-rail-card__title { font-size: 0.92rem; }
+.os-layout--requirements .os-state-title { font-size: clamp(1.2rem, 1.5vw, 1.35rem); }
+.os-layout--requirements .os-truth-card__heading { font-size: 0.88rem; }
+/* Image 03's left-rail cards hold "Source confirmed" on ONE line inside a
+   181px card. Ours broke it in two, and the cause was the badge rather than
+   the type: a 34px disc plus its gap left about 110px of heading width where
+   the authority's 24px disc leaves about 125px. The authority's badge is
+   visibly smaller on this screen than on the intake screen, so this is
+   matching it rather than shrinking to fit. */
+.os-layout--requirements .os-truth-card { padding: 0.75rem 0.8rem; gap: 0.55rem; }
+.os-layout--requirements .os-truth-card__badge { width: 24px; height: 24px; }
+.os-layout--requirements .os-truth-card__badge .os-icon { width: 15px; height: 15px; }
+
+/* Image 03's workbench holds its group cards 32px from the edge (card
+   x301-1074 inside a workbench x269-1105). The shared 38px was spending six
+   pixels a side of statement measure on margin. */
+.os-layout--requirements .os-card--workbench {
+    padding: clamp(1.25rem, 2.4vw, 2rem) clamp(1.1rem, 2.2vw, 2rem)
+        clamp(1.1rem, 2.2vw, 1.75rem);
+}
 
 .os-rail {
     display: flex;
@@ -774,8 +847,21 @@ body.opportunity-slate-page .main-content {
     color: var(--os-muted);
     font-size: 0.84rem;
 }
+/* Slice OS-1's owner visual pass moved the two neutral TEXT uses onto
+   --os-neutral-ink (4.90:1 on the off-white workbench, where --os-neutral
+   fell to 4.44:1). Borders and icons keep --os-neutral. That split is kept
+   here verbatim; only the --over rules below are new in OS-2. */
 .os-help--muted { color: var(--os-neutral-ink); }
 .os-help--muted .os-icon { color: var(--os-neutral-ink); }
+/* The anonymous input counter past the public review cap (independent review
+   finding F5). Amber, not red: nothing is wrong and nothing is lost — the
+   text is intact and editable, and only the wording review is bounded. Uses
+   the text-safe amber per the palette rule above, and it is never the only
+   signal: the sentence beside it says what happens. */
+.os-help--over,
+.os-help--over.os-help--muted { color: var(--os-warning-ink); }
+.os-help--over .os-icon { color: var(--os-warning-ink); }
+.os-help--over [data-os-source-count] { font-weight: 600; }
 .os-footer-note { margin-top: calc(var(--os-card-gap) * -0.5); }
 
 .os-field-error {
@@ -887,8 +973,14 @@ body.opportunity-slate-page .main-content {
    left-grouping them left two thirds of the strip empty and made the bar
    read as unfinished rather than sparse-by-truth. Equal cells plus the
    authority's separators fill the width honestly: the same three facts,
-   composed as a metadata bar instead of a huddle. When OS-2 adds the two
-   real chips the cells simply divide five ways.
+   composed as a metadata bar instead of a huddle.
+
+   Slice OS-2 note: the OS-1 comment here predicted that OS-2 would supply
+   the two missing chips and the cells would divide five ways. It does not.
+   Role and Employer are still not facts this room has — nothing in the
+   source is labelled as either, and image 03's Review Requirements strip
+   renders the same three true chips as image 02's. The cells stay at three
+   and the prediction is retired rather than left standing as a plan.
 
    Scoped to the workbench container, not a viewport breakpoint, for the
    same reason the concern card is: below 700px the strip wraps to the
@@ -1115,6 +1207,77 @@ body.opportunity-slate-page .main-content {
 }
 .os-concern-card__checks li + li { margin-top: 0.3rem; }
 .os-concern-card__checks li::marker { color: var(--os-neutral-ink); }
+
+/* -----------------------------------------------------------------
+   Slice OS-2: the card with a real proposal in it.
+
+   Slice OS-1 could only ever draw the empty state, so image 02's amber
+   treatment was deliberately withheld — taking it while nothing was
+   flagged would have said something was wrong when nothing was. Now that
+   a concern can genuinely exist, the state that has one takes the
+   authority's amber and the states that do not keep the quiet grey.
+   ----------------------------------------------------------------- */
+.os-concern-card--flagged {
+    border-left-color: var(--os-warning);
+    background: var(--os-warning-tint);
+}
+.os-concern-card--flagged .os-concern-card__title .os-icon {
+    color: var(--os-warning-ink);
+}
+.os-concern-card__state--flagged {
+    border-color: var(--os-warning);
+    background: var(--os-surface);
+    color: var(--os-warning-ink);
+}
+.os-concern-card__state--ok {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-color: var(--os-success);
+    color: var(--os-success-ink);
+}
+
+/* Each flagged phrase links to the card that corrects it. Quote and status
+   are separate blocks: run inline they read as one sentence, so a truncated
+   phrase and the words "Waiting on you" ran together into something the
+   employer never wrote. */
+.os-concern-card__flags {
+    margin: 0.55rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+.os-concern-card__flags li + li {
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--os-line-soft);
+}
+.os-concern-card__flag {
+    display: block;
+    padding: 0.15rem 0;
+    color: inherit;
+    text-decoration: none;
+}
+.os-concern-card__flag-quote {
+    display: block;
+    color: var(--os-ink);
+    font-style: italic;
+    /* The employer's own words, quoted. Bounded so one long span cannot
+       push the rail card taller than the document beside it. */
+    overflow-wrap: anywhere;
+}
+.os-concern-card__flag-quote::before { content: "\201C"; }
+.os-concern-card__flag-quote::after { content: "\201D"; }
+.os-concern-card__flag-state {
+    display: block;
+    margin-top: 0.1rem;
+    color: var(--os-warning-ink);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+.os-concern-card__flag:hover .os-concern-card__flag-quote,
+.os-concern-card__flag:focus-visible .os-concern-card__flag-quote {
+    text-decoration: underline;
+}
 
 .os-concern-card__action {
     display: inline-flex;
@@ -1387,6 +1550,540 @@ body.opportunity-slate-page .main-content {
 }
 .os-fallback__truth .os-icon { color: var(--os-action); }
 
+/* =========================================================
+   SLICE OS-2 — AI proposals, the requirement review, and the
+   correction rail.
+
+   Visual authority:
+     02-PRIMARY-Review-Source.png            (extraction-concern card,
+                                              highlighted phrase)
+     03-PRIMARY-Review-Requirements.png      (statement groups, selected row,
+                                              interpretation tree, rail)
+     07/08-SUPPORT-...-Processing.png        (stage rail, read-only rail)
+     09-SUPPORT-Fallback-...png              (failure-card grammar, reused)
+
+   Same page-scoped --os-* palette; nothing new is invented here.
+   ========================================================= */
+
+/* The flagged phrase inside the source document (image 02). Amber is the
+   locked "recoverable warning" colour. The mark carries a border and a
+   weight change as well as the tint, so it is never colour alone. */
+.os-mark {
+    padding: 0.05em 0.15em;
+    border-bottom: 2px solid var(--os-warning);
+    border-radius: 3px;
+    background: var(--os-warning-tint);
+    color: var(--os-warning-ink);
+    font-weight: 600;
+}
+.os-mark.is-active {
+    outline: 2px solid var(--os-warning);
+    outline-offset: 1px;
+}
+
+/* ---------------------------------------------------------
+   Prompt card — "have PeerSlate look at this" and its answers.
+   --------------------------------------------------------- */
+.os-prompt-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.35rem 0.9rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--os-action);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-action-tint);
+    color: var(--os-muted);
+    font-size: 0.9rem;
+}
+.os-prompt-card--quiet {
+    border-color: var(--os-line);
+    background: var(--os-surface-muted);
+}
+.os-prompt-card__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--os-surface);
+    color: var(--os-action);
+}
+.os-prompt-card__badge--ok { color: var(--os-success-ink); }
+.os-prompt-card__body { min-width: 0; }
+.os-prompt-card__heading {
+    margin: 0 0 0.3rem;
+    color: var(--os-ink);
+    font-weight: 700;
+    font-size: 0.98rem;
+}
+.os-prompt-card__action {
+    grid-column: 2;
+    margin: 0.35rem 0 0;
+}
+
+/* ---------------------------------------------------------
+   Extraction-concern cards (image 02).
+   --------------------------------------------------------- */
+.os-concerns { display: flex; flex-direction: column; gap: var(--os-card-gap); }
+.os-concerns__lead { margin: 0; color: var(--os-muted); font-size: 0.9rem; }
+
+.os-concern {
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--os-warning);
+    border-left-width: 4px;
+    border-radius: var(--os-radius-sm);
+    background: var(--os-surface);
+    box-shadow: var(--os-shadow-sm);
+}
+.os-concern--resolved {
+    border-color: var(--os-line);
+    border-left-color: var(--os-success);
+    background: var(--os-surface-muted);
+}
+.os-concern__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.3rem;
+    color: var(--os-warning-ink);
+    font-weight: 700;
+    font-size: 0.86rem;
+}
+.os-concern--resolved .os-concern__eyebrow { color: var(--os-success-ink); }
+.os-concern__reason { margin: 0 0 0.5rem; color: var(--os-muted); font-size: 0.88rem; }
+.os-pair__original--applied {
+    border-color: var(--os-success);
+    background: var(--os-success-tint);
+    color: var(--os-ink);
+}
+.os-pair__original--quote { max-height: 11rem; }
+
+.os-btn--quiet {
+    background: var(--os-surface);
+    border-color: var(--os-line);
+    color: var(--os-ink);
+}
+.os-btn--quiet:hover { background: var(--os-surface-muted); }
+
+.os-link--inline { gap: 0.3rem; margin-top: 0.15rem; }
+
+/* ---------------------------------------------------------
+   Stage rail (images 07/08). Three bounded steps, one current.
+   --------------------------------------------------------- */
+.os-stage {
+    padding: 1.1rem 1.2rem;
+    border: 1px solid var(--os-line);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-surface);
+    box-shadow: var(--os-shadow-sm);
+}
+.os-stage__heading {
+    margin: 0 0 0.9rem;
+    color: var(--os-ink);
+    font-weight: 700;
+    font-size: 1rem;
+}
+.os-stage__rail {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin: 0 0 0.9rem;
+    padding: 0;
+    list-style: none;
+}
+.os-stage__step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    text-align: center;
+    color: var(--os-muted);
+    font-size: 0.82rem;
+}
+.os-stage__marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 2px solid var(--os-line);
+    border-radius: 50%;
+    background: var(--os-surface);
+    color: var(--os-muted);
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+.os-stage__step.is-current { color: var(--os-action-strong); font-weight: 600; }
+.os-stage__step.is-current .os-stage__marker {
+    border-color: var(--os-action);
+    background: var(--os-action);
+    color: var(--os-on-action);
+}
+.os-stage__step.is-done { color: var(--os-success-ink); }
+.os-stage__step.is-done .os-stage__marker {
+    border-color: var(--os-success);
+    background: var(--os-success-tint);
+    color: var(--os-success-ink);
+}
+/* A done step reads its checkmark, not its number. Content is used rather
+   than a second element so nothing is announced twice. */
+.os-stage__step.is-done .os-stage__numeral { visibility: hidden; }
+.os-stage__step.is-done .os-stage__marker::after {
+    content: "";
+    position: absolute;
+    width: 10px;
+    height: 6px;
+    border-left: 2.5px solid currentColor;
+    border-bottom: 2.5px solid currentColor;
+    transform: translateY(-1px) rotate(-45deg);
+}
+.os-stage__step.is-done .os-stage__marker { position: relative; }
+.os-stage__note { margin: 0 0 0.5rem; color: var(--os-muted); font-size: 0.88rem; }
+.os-stage__actions { margin: 0 0 0.6rem; }
+.os-stage__truth {
+    margin: 0;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--os-line-soft);
+    color: var(--os-muted);
+    font-size: 0.83rem;
+}
+
+/* ---------------------------------------------------------
+   Statement groups and the statement table (image 03).
+   --------------------------------------------------------- */
+.os-statement-groups { display: flex; flex-direction: column; gap: var(--os-card-gap); }
+
+.os-group {
+    border: 1px solid var(--os-line);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-surface);
+    box-shadow: var(--os-shadow-sm);
+}
+.os-group__summary {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    /* 46px collapsed / 48px as an open header in image 03, and its title
+       starts at the same x as the statement text below it (329 against 327),
+       so the header padding matches the row padding rather than being its
+       own smaller value. */
+    min-height: 46px;
+    padding: 0.5rem 1.6rem;
+    border-radius: var(--os-radius-sm);
+    cursor: pointer;
+}
+.os-group__summary::-webkit-details-marker { display: none; }
+.os-group__title {
+    /* Image 03 sets the count immediately beside the title, not opposite it:
+       the pair reads as one label ("Required qualifications 6") rather than
+       as a heading with a separate right-hand statistic. The auto margin
+       therefore lives on the count, not on the title. */
+    flex: 0 1 auto;
+    color: var(--os-ink);
+    font-weight: 700;
+    font-size: 1rem;
+}
+.os-group__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 22px;
+    margin-right: auto;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: var(--os-surface-muted);
+    color: var(--os-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+.os-group__chevron { display: inline-flex; color: var(--os-muted); transition: transform 0.15s ease; }
+.os-group[open] .os-group__chevron { transform: rotate(180deg); }
+/* Image 03 runs the statement rows edge to edge inside the group card: the
+   separators reach both borders and the selected row's cobalt outline sits on
+   the card's own edge rather than floating inside a margin. Insetting them
+   made the rows read as a second card nested in the first — the same "card
+   within a card" the owner rejected as V9 on screen 2. */
+.os-group__body { padding: 0; }
+.os-group__empty {
+    margin: 0;
+    padding: 0.4rem 0.75rem 0.9rem;
+    color: var(--os-muted);
+    font-size: 0.87rem;
+}
+
+.os-statements { width: 100%; border-collapse: collapse; }
+.os-statements thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); }
+.os-statements__row {
+    border-top: 1px solid var(--os-line-soft);
+}
+.os-statements__row:first-child { border-top: 0; }
+/* Selected row (image 03): cobalt outline plus a faint cobalt tint. The
+   outline is drawn with box-shadow so it does not shift the table layout,
+   and reads well past 3:1 against the adjacent rows. */
+.os-statements__row.is-selected {
+    /* Image 03's selected row is a light, cool wash — not the saturated
+       periwinkle --os-action-tint gives at full strength, which read as a
+       different material from the rows around it. The outline is drawn with
+       box-shadow so it does not shift the table layout, and it is the
+       authority's brighter cobalt rather than the darker strong tone. */
+    background: color-mix(in srgb, var(--os-action-tint) 55%, var(--os-surface));
+    box-shadow: inset 0 0 0 2px var(--os-action);
+    border-radius: var(--os-radius-sm);
+}
+/* Row rhythm, measured off image 03 rather than estimated. Scanning the
+   locked PNG for the row separators inside the open group gives a one-line
+   row of 65px and a two-line row of 84px — so 19px per line with 23px of
+   air above and below it. That is the opposite of what the first pass did:
+   it spent the height on LEADING (1.55) and starved the padding (11px), and
+   the table came out dense and unresting where the authority's is airy and
+   tightly set. Matching the authority means tighter lines in a taller row.
+   1.4 rather than the authority's ~1.3, because a wrapped statement is
+   genuine running text and 1.3 is mean to read at; the row still lands
+   within a couple of pixels of 65px. */
+/* The horizontal padding is asymmetric on purpose, as it is in the
+   authority: the statement cell is inset 26px from the card edge and then
+   runs almost to its own boundary, and the gap before the classification is
+   supplied by that cell's own left padding. Padding both sides of both cells
+   equally spent about 40px of statement measure on white space that the
+   authority does not have. */
+.os-statements td { padding: 1.3rem 0.5rem; vertical-align: top; }
+.os-statements td:first-child { padding-left: 1.6rem; }
+.os-statements__class { padding-left: 1.6rem; }
+.os-statements__text {
+    color: var(--os-ink);
+    /* Image 03 fits about 71 characters of statement on a line. At 0.92rem
+       ours fit 62 and the long qualification ran to three lines where the
+       authority holds it at two — which is the difference between a table
+       that looks composed and one that looks crowded. 0.88rem plus the
+       narrower classification column below closes it without taking the
+       statement text below the size of the rails, which would invert the
+       hierarchy: the employer's words are the object on this screen. */
+    font-size: 0.88rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+/* Image 03's three cells divide its 773px group card 64.6% / 26.1% / 9.3%.
+   The statement is the object on this screen and gets the width; the first
+   pass let the classification take whatever it wanted, which pushed
+   one-line statements onto two lines and was most of why the build read
+   denser than the authority. */
+.os-statements__class { width: 24%; white-space: nowrap; }
+/* Image 03 rules the action cell off from the rest of the row with a
+   hairline running the full row height. It is what stops the row reading as
+   one undifferentiated band and gives the little review control a home. */
+.os-statements__action {
+    /* 72px in the authority (its rule sits at x1002 in a card ending 1074). */
+    width: 72px;
+    padding-left: 0;
+    padding-right: 0;
+    text-align: center;
+    border-left: 1px solid var(--os-line-soft);
+}
+.os-statements__select {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--os-line);
+    border-radius: 8px;
+    background: var(--os-surface);
+    /* Quieter than the first pass. In the authority this glyph is a muted
+       slate-blue that sits back behind the statement text; a full-strength
+       cobalt icon repeated on every row competed with the selected outline,
+       which is the one thing on this screen that must read as cobalt. */
+    color: var(--os-neutral-ink);
+    text-decoration: none;
+}
+.os-statements__select:hover {
+    background: var(--os-action-tint);
+    border-color: var(--os-action);
+    color: var(--os-action);
+}
+.os-statements__flag {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--os-action-strong);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+/* Image 03 sets the classification as plain text, with no bullet, no pill
+   and no colour coding. That restraint is the point: a coloured dot beside
+   every classification starts to read as a status or a score, and this
+   screen is forbidden from carrying either (locked rule — no overall score,
+   ranking, recommendation or traffic-light verdict at any layer). The one
+   place a marker does appear is where the MEMBER has overridden the
+   proposal, which is a fact about them rather than a judgement about the
+   role. */
+.os-class-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--os-muted);
+    font-size: 0.86rem;
+}
+.os-class-chip--member { color: var(--os-action-strong); font-weight: 600; }
+.os-class-chip--member::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* The connector image 03 draws from the selected row to the statement rail:
+   a dot on the row's edge and a short dashed cobalt run across the gap.
+   It says, without a word, that the panel on the right belongs to the row on
+   the left — which is the one relationship this screen is built on.
+
+   Handoff section 14-M10 rejected a drawn connector for the extraction
+   concern card, and that ruling still holds there: it had to point at an
+   arbitrary phrase inside reflowing body text, and no drawn line survives
+   that. This one is different in the way that matters. It joins two fixed
+   edges — a table cell and a rail — at a fixed vertical position, and it
+   only exists in the one layout where those two edges are actually side by
+   side. Below 1200px the rail is not beside the workbench at all and the
+   connector does not render.
+
+   Purely decorative: no content, no pointer target, and the relationship is
+   already carried programmatically by aria-current on the row's select
+   control and by the rail panel it addresses.
+
+   1201px, not 1200px: the rails stack at max-width 1200, so a min-width of
+   1200 would have drawn a line pointing rightwards at empty canvas on the
+   exact viewport where the rail had just moved underneath the workbench. */
+@media (min-width: 1201px) {
+    .os-layout--requirements .os-statements__row.is-selected .os-statements__action {
+        position: relative;
+    }
+    .os-layout--requirements
+        .os-statements__row.is-selected
+        .os-statements__action::before,
+    .os-layout--requirements
+        .os-statements__row.is-selected
+        .os-statements__action::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        pointer-events: none;
+    }
+    .os-layout--requirements .os-statements__row.is-selected .os-statements__action::before {
+        left: 100%;
+        width: 7px;
+        height: 7px;
+        margin-top: -3px;
+        margin-left: -1px;
+        border-radius: 50%;
+        background: var(--os-action);
+    }
+    .os-layout--requirements .os-statements__row.is-selected .os-statements__action::after {
+        left: calc(100% + 7px);
+        width: 46px;
+        border-top: 2px dashed var(--os-action);
+    }
+    /* The run has to leave the workbench card to reach the rail. */
+    .os-layout--requirements .os-card--workbench,
+    .os-layout--requirements .os-group,
+    .os-layout--requirements .os-group__body { overflow: visible; }
+}
+
+/* ---------------------------------------------------------
+   Correction rail (image 03's "Review this statement").
+   --------------------------------------------------------- */
+.os-rail-card--statement { font-size: 0.88rem; }
+/* Image 03 sets Apply correction and Cancel on ONE row at the foot of the
+   rail. At 277px the default 1rem gap tipped them onto two lines, which put
+   the primary and its escape at different altitudes and made the panel look
+   like it had run out of room. */
+.os-rail-card--statement .os-disclosure__actions { gap: 0.5rem; flex-wrap: nowrap; }
+.os-rail-card--statement .os-disclosure__actions .os-btn { white-space: nowrap; }
+/* Scoped to the statement card on purpose. Unscoped, this re-declared the
+   margin slice OS-1's owner visual pass tuned on the source-review rail card
+   (0.5rem, above) and silently loosened a screen Pete has already accepted. */
+.os-rail-card--statement .os-rail-card__note { margin: 0.6rem 0 0; }
+.os-rail-card__note--locked {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--os-warning);
+    border-radius: 8px;
+    background: var(--os-warning-tint);
+    color: var(--os-warning-ink);
+    font-weight: 600;
+}
+.os-statement-panel { margin-top: 0.75rem; }
+.os-statement-panel[hidden] { display: none; }
+.os-form--rail { gap: 0.6rem; }
+
+.os-select {
+    display: block;
+    width: 100%;
+    min-height: 40px;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--os-line);
+    border-radius: 8px;
+    background: var(--os-surface);
+    color: var(--os-ink);
+    font-family: var(--ps-font-ui);
+    font-size: 0.9rem;
+}
+.os-select:disabled,
+.os-editor__field:disabled {
+    background: #eef1f6;
+    color: #4a5578;
+    cursor: not-allowed;
+}
+
+/* Interpreted structure — image 03's Path A / Path B tree. */
+.os-tree { display: flex; flex-direction: column; gap: 0.35rem; }
+.os-tree__path {
+    padding: 0.55rem 0.6rem;
+    border: 1px solid var(--os-success);
+    border-radius: 10px;
+    background: var(--os-success-tint);
+}
+.os-tree__path-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin: 0 0 0.4rem;
+    color: var(--os-success-ink);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.os-tree__clauses { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
+.os-tree__clauses li {
+    padding: 0.4rem 0.55rem;
+    border: 1px solid var(--os-line-soft);
+    border-radius: 8px;
+    background: var(--os-surface);
+    color: var(--os-ink);
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+.os-tree__join {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0.15rem 0;
+    color: var(--os-success-ink);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+.os-tree__join::before,
+.os-tree__join::after {
+    content: "";
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--os-line);
+}
+
 /* ---------------------------------------------------------
    Focus visibility (handoff section 13). A 3:1-plus ring on every
    focusable control, never removed.
@@ -1435,8 +2132,69 @@ body.opportunity-slate-page .main-content {
     .os-prop { display: none; }
 }
 
+@media (max-width: 900px) {
+    /* The stage rail stacks rather than compressing three labels into
+       thirds of a narrow column (handoff section 12: steppers compress to
+       vertical). */
+    .os-stage__rail { grid-template-columns: minmax(0, 1fr); gap: 0.7rem; }
+    .os-stage__step { flex-direction: row; align-items: center; text-align: left; }
+}
+
 @media (max-width: 640px) {
     .os-layout { padding-left: 1rem; padding-right: 1rem; }
+
+    /* The statement table restacks into one card per statement, preserving
+       reading order: employer wording, then classification, then the review
+       control (handoff section 12). The header row is already
+       visually-hidden, so the stacked cells keep their own labels. */
+    .os-statements,
+    .os-statements tbody,
+    .os-statements tr,
+    .os-statements td { display: block; width: 100%; }
+    .os-statements__row {
+        margin-bottom: 0.6rem;
+        padding: 0.2rem 0.35rem 0.35rem;
+        border: 1px solid var(--os-line-soft);
+        border-radius: 10px;
+    }
+    /* The desktop row rhythm — 21px of air above and below one tightly set
+       line — is measured off image 03's THREE-COLUMN row. Stacked, the same
+       padding is paid three times over and a six-row group ran to 900px on a
+       390px screen. The cells carry their own small vertical spacing here
+       instead, which is a reflow adaptation rather than a different design:
+       the same three facts in the same order at the same sizes. */
+    .os-statements td { padding: 0.35rem 0.6rem; }
+    .os-statements td:first-child { padding: 0.6rem 0.6rem 0.15rem; }
+    .os-statements__row.is-selected { border-color: transparent; }
+    .os-statements__class {
+        width: auto;
+        padding-left: 0.6rem;
+        white-space: normal;
+    }
+    .os-statements__action {
+        width: auto;
+        padding: 0.15rem 0.6rem 0.5rem;
+        text-align: left;
+        /* The full-height rule belongs to the three-column row; stacked, it
+           would draw a stray vertical line beside a full-width button. */
+        border-left: 0;
+    }
+    .os-statements__select { width: 100%; gap: 0.45rem; }
+    .os-statements__select .os-visually-hidden {
+        position: static;
+        width: auto;
+        height: auto;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        clip-path: none;
+        white-space: normal;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .os-prompt-card { grid-template-columns: minmax(0, 1fr); }
+    .os-prompt-card__action { grid-column: 1; }
+    .os-prompt-card__action .os-btn { width: 100%; }
     .os-rail--left,
     .os-rail--right { grid-template-columns: minmax(0, 1fr); }
     .os-card--workbench { padding: 1.1rem; }

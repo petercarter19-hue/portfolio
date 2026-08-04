@@ -1,0 +1,146 @@
+{% from "partials/opportunity_slate/_icons.html" import os_icon %}
+{#
+  os-correction-rail — image 03's "Review this statement" panel, and image
+  08's read-only variant.
+
+  One panel per statement is rendered, all but the selected one hidden. That
+  is what makes selection instant and keyboard-operable without a round trip,
+  and it is why the no-JavaScript path still works: the server marks the
+  selected panel and the fragment link scrolls to it.
+
+  READ-ONLY DURING PROCESSING (image 08 + the locked rule): while a request
+  is in flight the whole rail is disabled — select, textarea, and both
+  buttons — and Cancel restores editing. The controls are visibly disabled,
+  never hidden, so the member can see what will come back.
+#}
+{% set requirements = room.requirements %}
+
+<div class="os-rail-card os-rail-card--statement"
+     id="os-statement-rail"
+     data-os-statement-rail>
+  <p class="os-rail-card__title">Review this statement</p>
+
+  {% if not requirements.has_statements %}
+  <p>
+    Once PeerSlate has read the employer's statements, selecting one here
+    shows how it read that statement — and lets you say otherwise.
+  </p>
+  {% else %}
+
+  {# The read-only notice image 08 shows. It is authored here and revealed by
+     the room script while a request is in flight, so the script never writes
+     member-facing copy and this sentence cannot appear on a screen where
+     nothing is running. #}
+  <p class="os-rail-card__note os-rail-card__note--locked" role="status" data-os-rail-locked-note hidden>
+    {{ os_icon('lock', 'os-icon os-icon--sm') }}Corrections are paused while
+    PeerSlate is working. Cancel to keep editing.
+  </p>
+
+  {% for statement in requirements.statements %}
+  <div class="os-statement-panel"
+       data-os-statement-panel="{{ statement.key }}"
+       {% if statement.key != requirements.selected_key %}hidden{% endif %}>
+
+    {# The employer's own wording, read-only. It is the thing being
+       interpreted, so it sits above every interpretation of it. #}
+    <div class="os-pair__original os-pair__original--quote"
+         role="region"
+         aria-label="Employer statement {{ statement.ordinal }}"
+         tabindex="0">{{ statement.text }}</div>
+
+    <p class="os-rail-card__note">
+      PeerSlate proposes the interpretation. You decide what the employer's
+      statement means here.
+    </p>
+
+    <form class="os-form os-form--rail" method="post" action="{{ room.statement_url }}" data-os-form="statement" novalidate>
+      <input type="hidden" name="statement_key" value="{{ statement.key }}">
+      <input type="hidden" name="statement_version_token" value="{{ statement.version_token or '' }}">
+
+      <label class="os-pair__label" for="os-class-{{ statement.key }}">Classification</label>
+      <select id="os-class-{{ statement.key }}"
+              class="os-select"
+              name="member_class"
+              data-os-rail-control>
+        {% for option in room.statement_class_options %}
+        <option value="{{ option.value }}"{% if option.value == statement.effective_class %} selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
+      </select>
+      {% if statement.is_reclassified %}
+      <p class="os-help os-help--muted">
+        PeerSlate proposed {{ statement.proposed_class_label | lower }}. Your
+        classification is kept, and its proposal is kept beside it.
+      </p>
+      {% endif %}
+
+      {# Interpreted structure — image 03's Path A / Path B tree. Clauses
+         inside a path all have to hold (AND); the paths are alternatives
+         (OR). Rendered as a labelled list, not a drawn diagram, so it
+         survives reflow and reads correctly to a screen reader. #}
+      <p class="os-pair__label" id="os-structure-{{ statement.key }}">Interpreted structure</p>
+      <div class="os-tree" role="group" aria-labelledby="os-structure-{{ statement.key }}">
+        {% for path in statement.paths %}
+        {% if not loop.first %}
+        <p class="os-tree__join"><span>OR</span></p>
+        {% endif %}
+        <div class="os-tree__path">
+          <p class="os-tree__path-head">
+            <span class="os-tree__path-label">{{ path.label }}</span>
+            {% if path.clauses | length > 1 %}<span class="os-tree__op">AND</span>{% endif %}
+          </p>
+          <ul class="os-tree__clauses">
+            {% for clause in path.clauses %}<li>{{ clause }}</li>{% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="os-rail-card__note">{{ statement.explanation }}</p>
+
+      <label class="os-pair__label" for="os-clarify-{{ statement.key }}">Clarify or correct (optional)</label>
+      <div class="os-editor os-editor--compact">
+        <textarea id="os-clarify-{{ statement.key }}"
+                  class="os-editor__field"
+                  name="member_clarification"
+                  rows="3"
+                  maxlength="{{ room.max_clarification_units }}"
+                  placeholder="Type your clarification…"
+                  aria-describedby="os-clarify-help-{{ statement.key }}"
+                  data-os-rail-control>{{ statement.member_clarification or '' }}</textarea>
+        <button type="button"
+                class="os-mic os-mic--sm"
+                aria-disabled="true"
+                aria-describedby="os-clarify-help-{{ statement.key }}"
+                data-os-inert-mic
+                title="Dictation is not available yet">
+          {{ os_icon('mic') }}
+          <span class="os-visually-hidden">Dictate the clarification (not available yet)</span>
+        </button>
+      </div>
+      <p class="os-help" id="os-clarify-help-{{ statement.key }}">
+        Type your clarification. Your transcript stays editable. Dictation
+        arrives in a later update.
+      </p>
+
+      <div class="os-disclosure__actions">
+        <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                data-os-rail-control
+                {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>Apply correction</button>
+        {# Two Cancel controls, both authored here. The room script reveals the
+           processing one and hides the ordinary one while a request is in
+           flight; without JavaScript only the ordinary link ever shows, and it
+           works.
+
+           Image 03 draws Cancel as a bordered white button beside the primary,
+           not as a bare text link, and image 08 keeps it looking exactly the
+           same while everything around it is disabled — which is the whole
+           point of that frame: the one control that still works has to look
+           like a control. #}
+        <a class="os-btn os-btn--quiet os-btn--sm" href="{{ room.requirements_step_url }}&amp;statement={{ statement.key }}"
+           data-os-cancel-statement="{{ statement.key }}">Cancel</a>
+        <button type="button" class="os-btn os-btn--quiet os-btn--sm" data-os-cancel-processing hidden>Cancel</button>
+      </div>
+    </form>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>

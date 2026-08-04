@@ -1,10 +1,10 @@
-/* PS-OPPSLATE-001 (Slice OS-1) production-safe verification.
+/* PS-OPPSLATE-001 (Slices OS-1 and OS-2) production-safe verification.
 
    Uses two synthetic owners inside one outer always-rolled-back
    transaction to prove that the Opportunity Slate working store cannot
    leak or be written across members:
 
-     - every one of the six procedures declares @UserKey nvarchar(300),
+     - every one of the thirteen procedures declares @UserKey nvarchar(300),
        resolves it to @ProfileId itself, filters owner_profile_id =
        @ProfileId, and never accepts a caller-supplied @OwnerProfileId;
      - no procedure contains an aggregate score / percentage /
@@ -27,7 +27,18 @@
      - the purge destroys expired working data for its own owner only and
        leaves unexpired sessions - and other owners entirely - untouched;
      - an expired working session is already invisible to the read before
-       any purge has run.
+       any purge has run;
+     - (slice OS-2) an AI proposal is a THIRD data class and never
+       overwrites either of the other two: saving a wording review and
+       saving a requirement proposal both leave original_text and the
+       member's own corrections byte-identical, and a member's
+       reclassification never touches proposed_class;
+     - (slice OS-2) one owner can neither read nor resolve another owner's
+       extraction concerns or requirement statements, and a forged
+       @UserKey produces no truthful-looking outcome from any of the seven
+       new procedures;
+     - (slice OS-2) correcting a statement clears the requirement-set
+       confirmation, exactly as correcting the source clears the source's.
 
    Calling convention note: no procedure in PS-OPPSLATE-001 appends an
    audit event (a working session is ephemeral infrastructure - see the
@@ -51,7 +62,7 @@ BEGIN TRY
         THROW 53600, 'PS-OPPSLATE-001 is not registered.', 1;
 
     /* ------------------------------------------------------------
-       0. OBJECT_DEFINITION greps across all six procedures.
+       0. OBJECT_DEFINITION greps across all thirteen procedures.
        ------------------------------------------------------------ */
     DECLARE @ProcedureNames TABLE (procedure_name sysname NOT NULL PRIMARY KEY);
     INSERT @ProcedureNames (procedure_name)
@@ -61,7 +72,14 @@ BEGIN TRY
         (N'usp_SaveOpportunitySourceForOwner'),
         (N'usp_CorrectOpportunitySourceForOwner'),
         (N'usp_ConfirmOpportunitySourceForOwner'),
-        (N'usp_DeleteOpportunityWorkingSessionForOwner');
+        (N'usp_DeleteOpportunityWorkingSessionForOwner'),
+        (N'usp_GetOpportunitySourceReviewForOwner'),
+        (N'usp_SaveOpportunitySourceReviewForOwner'),
+        (N'usp_ResolveOpportunitySourceConcernForOwner'),
+        (N'usp_GetOpportunityRequirementsForOwner'),
+        (N'usp_SaveOpportunityRequirementProposalForOwner'),
+        (N'usp_CorrectOpportunityRequirementStatementForOwner'),
+        (N'usp_ConfirmOpportunityRequirementsForOwner');
 
     DECLARE @CheckName sysname;
     DECLARE @CheckDefinition nvarchar(max);
@@ -102,7 +120,12 @@ BEGIN TRY
         (
             OBJECT_ID(N'dbo.opportunity_working_sessions'),
             OBJECT_ID(N'dbo.opportunity_sources'),
-            OBJECT_ID(N'dbo.opportunity_source_versions')
+            OBJECT_ID(N'dbo.opportunity_source_versions'),
+            OBJECT_ID(N'dbo.opportunity_source_reviews'),
+            OBJECT_ID(N'dbo.opportunity_source_concerns'),
+            OBJECT_ID(N'dbo.opportunity_requirement_sets'),
+            OBJECT_ID(N'dbo.opportunity_requirement_set_versions'),
+            OBJECT_ID(N'dbo.opportunity_requirement_statements')
         )
           AND name IN (N'overall_score', N'match_score', N'match_percentage', N'recommendation')
     )
@@ -441,11 +464,324 @@ BEGIN TRY
         THROW 53632, 'Replacing the source destroyed the previous verbatim version.', 1;
 
     /* ------------------------------------------------------------
+       5b. SLICE OS-2. The AI proposals are a third data class: they are
+           written beside the employer's wording and the member's own
+           corrections, never over either, and they are as owner-scoped as
+           everything else in this store.
+       ------------------------------------------------------------ */
+    DECLARE @ReviewSaveResult TABLE
+    (
+        outcome nvarchar(30),
+        review_key uniqueidentifier,
+        concern_count int
+    );
+    DECLARE @ResolveResult TABLE
+    (
+        outcome nvarchar(30),
+        source_row_version binary(8),
+        member_resolution nvarchar(20)
+    );
+    DECLARE @ProposalResult TABLE
+    (
+        outcome nvarchar(30),
+        requirement_set_key uniqueidentifier,
+        version_number int,
+        statement_count int
+    );
+    DECLARE @StatementCorrectResult TABLE
+    (
+        outcome nvarchar(30),
+        statement_row_version binary(8),
+        member_class nvarchar(40)
+    );
+    DECLARE @RequirementConfirmResult TABLE
+    (
+        outcome nvarchar(30),
+        set_row_version binary(8),
+        confirmed_version_number int
+    );
+
+    DECLARE @ConcernsJsonA nvarchar(max) =
+        N'[{"span_start":0,"span_length":9,"quoted_text":"SYNTHETIC","concern_reason":"a fragment that may be cut off."}]';
+    DECLARE @StatementsJsonA nvarchar(max) =
+        N'[{"ordinal":1,"span_start":0,"span_length":9,"employer_text":"SYNTHETIC",' +
+        N'"proposed_class":"required_qualification","proposed_explanation":"Synthetic reading.",' +
+        N'"proposed_structure_json":"[{\"label\":\"Path A\",\"clauses\":[\"SYNTHETIC\"]}]"}]';
+
+    /* Owner A's current source and its verbatim wording, captured before any
+       proposal is written, so the byte-identical assertions below mean
+       something. */
+    DELETE @GetResult;
+    INSERT @GetResult EXEC dbo.usp_GetOpportunityWorkingSessionForOwner @UserKey = @UserKeyA;
+    DECLARE @PreProposalOriginalA nvarchar(max);
+    DECLARE @PreProposalCorrectedA nvarchar(max);
+    SELECT TOP (1)
+        @SourceRowVersionA = source_row_version,
+        @PreProposalOriginalA = original_text,
+        @PreProposalCorrectedA = member_corrected_text
+    FROM @GetResult;
+
+    /* A forged owner cannot record a proposal against a real member's
+       source. */
+    DELETE @ReviewSaveResult;
+    INSERT @ReviewSaveResult
+    EXEC dbo.usp_SaveOpportunitySourceReviewForOwner
+        @UserKey = @ForgedUserKey, @SourceKey = @SourceKeyA,
+        @ExpectedRowVersion = @SourceRowVersionA,
+        @ModelName = N'synthetic-model', @PromptContractVersion = N'synthetic-contract',
+        @ConcernsJson = @ConcernsJsonA;
+    IF EXISTS (SELECT 1 FROM @ReviewSaveResult WHERE outcome <> N'changed' OR review_key IS NOT NULL)
+        THROW 53650, 'A forged UserKey produced a truthful-looking wording-review outcome.', 1;
+
+    DELETE @ReviewSaveResult;
+    INSERT @ReviewSaveResult
+    EXEC dbo.usp_SaveOpportunitySourceReviewForOwner
+        @UserKey = @UserKeyB, @SourceKey = @SourceKeyA,
+        @ExpectedRowVersion = @SourceRowVersionA,
+        @ModelName = N'synthetic-model', @PromptContractVersion = N'synthetic-contract',
+        @ConcernsJson = @ConcernsJsonA;
+    IF EXISTS (SELECT 1 FROM @ReviewSaveResult WHERE outcome <> N'changed')
+        THROW 53651, 'Owner B recorded a wording review against owner A''s source.', 1;
+
+    DELETE @ReviewSaveResult;
+    INSERT @ReviewSaveResult
+    EXEC dbo.usp_SaveOpportunitySourceReviewForOwner
+        @UserKey = @UserKeyA, @SourceKey = @SourceKeyA,
+        @ExpectedRowVersion = @SourceRowVersionA,
+        @ModelName = N'synthetic-model', @PromptContractVersion = N'synthetic-contract',
+        @ConcernsJson = @ConcernsJsonA;
+    IF NOT EXISTS (SELECT 1 FROM @ReviewSaveResult WHERE outcome = N'success' AND concern_count = 1)
+        THROW 53652, 'Owner A could not record a wording review on their own source.', 1;
+
+    /* THE POINT OF THE WHOLE SLICE: recording a proposal changed neither of
+       the other two data classes. */
+    IF EXISTS
+    (
+        SELECT 1 FROM dbo.opportunity_source_versions AS version_record
+        JOIN dbo.opportunity_sources AS source_record
+          ON source_record.opportunity_source_id = version_record.opportunity_source_id
+        WHERE source_record.source_key = @SourceKeyA
+          AND version_record.version_number = source_record.current_version_number
+          AND (version_record.original_text <> @PreProposalOriginalA
+               OR ISNULL(version_record.member_corrected_text, N'') <> ISNULL(@PreProposalCorrectedA, N''))
+    )
+        THROW 53653, 'Recording an AI wording review altered the employer wording or the member correction.', 1;
+
+    /* Owner B cannot read owner A's concerns. */
+    DECLARE @ConcernReadCount int;
+    DECLARE @ReviewReadResult TABLE
+    (
+        review_key uniqueidentifier,
+        source_version_number int,
+        model_name nvarchar(200),
+        prompt_contract_version nvarchar(100),
+        concern_count int,
+        reviewed_at_utc datetime2(7)
+    );
+    DELETE @ReviewReadResult;
+    INSERT @ReviewReadResult
+    EXEC dbo.usp_GetOpportunitySourceReviewForOwner @UserKey = @UserKeyB, @SourceKey = @SourceKeyA;
+    IF EXISTS (SELECT 1 FROM @ReviewReadResult)
+        THROW 53654, 'Owner B read owner A''s wording review.', 1;
+
+    DECLARE @ConcernKeyA uniqueidentifier;
+    DECLARE @ConcernRowVersionA binary(8);
+    SELECT TOP (1)
+        @ConcernKeyA = concern_record.concern_key,
+        @ConcernRowVersionA = CONVERT(binary(8), concern_record.row_version)
+    FROM dbo.opportunity_source_concerns AS concern_record
+    WHERE concern_record.owner_profile_id = @ProfileIdA;
+
+    DELETE @ResolveResult;
+    INSERT @ResolveResult
+    EXEC dbo.usp_ResolveOpportunitySourceConcernForOwner
+        @UserKey = @UserKeyB, @ConcernKey = @ConcernKeyA,
+        @ExpectedRowVersion = @ConcernRowVersionA, @Resolution = N'dismissed';
+    IF EXISTS (SELECT 1 FROM @ResolveResult WHERE outcome <> N'changed')
+        THROW 53655, 'Owner B resolved owner A''s extraction concern.', 1;
+
+    DELETE @ResolveResult;
+    INSERT @ResolveResult
+    EXEC dbo.usp_ResolveOpportunitySourceConcernForOwner
+        @UserKey = @UserKeyA, @ConcernKey = @ConcernKeyA,
+        @ExpectedRowVersion = 0x0000000000000001, @Resolution = N'dismissed';
+    IF EXISTS (SELECT 1 FROM @ResolveResult WHERE outcome <> N'changed')
+        THROW 53656, 'Resolving a concern is not fenced by @ExpectedRowVersion.', 1;
+
+    DELETE @ResolveResult;
+    INSERT @ResolveResult
+    EXEC dbo.usp_ResolveOpportunitySourceConcernForOwner
+        @UserKey = @UserKeyA, @ConcernKey = @ConcernKeyA,
+        @ExpectedRowVersion = @ConcernRowVersionA, @Resolution = N'dismissed';
+    IF NOT EXISTS (SELECT 1 FROM @ResolveResult WHERE outcome = N'success' AND member_resolution = N'dismissed')
+        THROW 53657, 'Owner A could not dismiss their own extraction concern.', 1;
+
+    /* Dismissing changed no wording at all, so the confirmation it did not
+       invalidate is still standing. */
+    IF EXISTS
+    (
+        SELECT 1 FROM dbo.opportunity_source_versions AS version_record
+        JOIN dbo.opportunity_sources AS source_record
+          ON source_record.opportunity_source_id = version_record.opportunity_source_id
+        WHERE source_record.source_key = @SourceKeyA
+          AND version_record.version_number = source_record.current_version_number
+          AND version_record.original_text <> @PreProposalOriginalA
+    )
+        THROW 53658, 'Dismissing an extraction concern altered the verbatim employer wording.', 1;
+
+    /* CHECKPOINT 1 HAS TO BE STANDING AGAIN BEFORE CHECKPOINT 2 CAN BEGIN
+       (isolated SQL gate, defect 2).
+
+       Section 5 deliberately replaced the wording after confirming it, and
+       asserted at THROW 53631 that doing so cleared the confirmation. That
+       assertion is correct and stays. But every step since then has run
+       against an UNCONFIRMED source, and
+       usp_SaveOpportunityRequirementProposalForOwner requires
+       confirmed_version_number = current_version_number before it will read
+       requirements out of a source - a member cannot have PeerSlate interpret
+       wording they never confirmed.
+
+       Without this re-confirmation the proposal below correctly returns
+       'changed', and THROW 53660 then reports it as a failure of the
+       proposal path when it is really the confirmation guard doing its job.
+       Re-confirm the current version so the assertions that follow test what
+       they claim to test. */
+    DELETE @GetResult;
+    INSERT @GetResult EXEC dbo.usp_GetOpportunityWorkingSessionForOwner @UserKey = @UserKeyA;
+    SELECT TOP (1) @SourceRowVersionA = source_row_version FROM @GetResult;
+
+    DELETE @ConfirmResult;
+    INSERT @ConfirmResult
+    EXEC dbo.usp_ConfirmOpportunitySourceForOwner
+        @UserKey = @UserKeyA, @SourceKey = @SourceKeyA,
+        @ExpectedRowVersion = @SourceRowVersionA;
+    IF NOT EXISTS (SELECT 1 FROM @ConfirmResult WHERE outcome = N'success')
+        THROW 53649, 'Owner A could not re-confirm the replaced source before checkpoint 2.', 1;
+
+    /* Requirement proposals: same owner scoping, same separation. */
+    DELETE @GetResult;
+    INSERT @GetResult EXEC dbo.usp_GetOpportunityWorkingSessionForOwner @UserKey = @UserKeyA;
+    SELECT TOP (1) @SourceRowVersionA = source_row_version FROM @GetResult;
+
+    DELETE @ProposalResult;
+    INSERT @ProposalResult
+    EXEC dbo.usp_SaveOpportunityRequirementProposalForOwner
+        @UserKey = @ForgedUserKey, @SourceKey = @SourceKeyA,
+        @ExpectedRowVersion = @SourceRowVersionA,
+        @ModelName = N'synthetic-model', @PromptContractVersion = N'synthetic-contract',
+        @StatementsJson = @StatementsJsonA;
+    IF EXISTS (SELECT 1 FROM @ProposalResult WHERE outcome <> N'changed' OR requirement_set_key IS NOT NULL)
+        THROW 53659, 'A forged UserKey produced a truthful-looking requirement-proposal outcome.', 1;
+
+    DELETE @ProposalResult;
+    INSERT @ProposalResult
+    EXEC dbo.usp_SaveOpportunityRequirementProposalForOwner
+        @UserKey = @UserKeyA, @SourceKey = @SourceKeyA,
+        @ExpectedRowVersion = @SourceRowVersionA,
+        @ModelName = N'synthetic-model', @PromptContractVersion = N'synthetic-contract',
+        @StatementsJson = @StatementsJsonA;
+    IF NOT EXISTS (SELECT 1 FROM @ProposalResult WHERE outcome = N'success' AND statement_count = 1)
+        THROW 53660, 'Owner A could not record a requirement proposal on their own confirmed source.', 1;
+
+    DECLARE @StatementKeyA uniqueidentifier;
+    DECLARE @StatementRowVersionA binary(8);
+    DECLARE @RequirementSetKeyA uniqueidentifier;
+    DECLARE @SetRowVersionA binary(8);
+    SELECT TOP (1)
+        @StatementKeyA = statement_record.statement_key,
+        @StatementRowVersionA = CONVERT(binary(8), statement_record.row_version)
+    FROM dbo.opportunity_requirement_statements AS statement_record
+    WHERE statement_record.owner_profile_id = @ProfileIdA;
+    SELECT TOP (1)
+        @RequirementSetKeyA = requirement_set.requirement_set_key,
+        @SetRowVersionA = CONVERT(binary(8), requirement_set.row_version)
+    FROM dbo.opportunity_requirement_sets AS requirement_set
+    WHERE requirement_set.owner_profile_id = @ProfileIdA;
+
+    DELETE @StatementCorrectResult;
+    INSERT @StatementCorrectResult
+    EXEC dbo.usp_CorrectOpportunityRequirementStatementForOwner
+        @UserKey = @UserKeyB, @StatementKey = @StatementKeyA,
+        @ExpectedRowVersion = @StatementRowVersionA,
+        @MemberClass = N'informational_statement';
+    IF EXISTS (SELECT 1 FROM @StatementCorrectResult WHERE outcome <> N'changed')
+        THROW 53661, 'Owner B corrected owner A''s requirement statement.', 1;
+
+    /* Confirm the set first, so the next assertion can prove a correction
+       clears it. */
+    DELETE @RequirementConfirmResult;
+    INSERT @RequirementConfirmResult
+    EXEC dbo.usp_ConfirmOpportunityRequirementsForOwner
+        @UserKey = @UserKeyA, @RequirementSetKey = @RequirementSetKeyA,
+        @ExpectedRowVersion = @SetRowVersionA;
+    IF NOT EXISTS (SELECT 1 FROM @RequirementConfirmResult WHERE outcome = N'success' AND confirmed_version_number = 1)
+        THROW 53662, 'Owner A could not confirm their own requirement set (checkpoint 2 of 2).', 1;
+
+    DELETE @StatementCorrectResult;
+    INSERT @StatementCorrectResult
+    EXEC dbo.usp_CorrectOpportunityRequirementStatementForOwner
+        @UserKey = @UserKeyA, @StatementKey = @StatementKeyA,
+        @ExpectedRowVersion = @StatementRowVersionA,
+        @MemberClass = N'informational_statement';
+    IF NOT EXISTS (SELECT 1 FROM @StatementCorrectResult WHERE outcome = N'success' AND member_class = N'informational_statement')
+        THROW 53663, 'Owner A could not correct their own requirement statement.', 1;
+
+    /* The member's reading is stored BESIDE the proposal, not over it. */
+    IF NOT EXISTS
+    (
+        SELECT 1 FROM dbo.opportunity_requirement_statements
+        WHERE statement_key = @StatementKeyA
+          AND proposed_class = N'required_qualification'
+          AND member_class = N'informational_statement'
+    )
+        THROW 53664, 'A member correction overwrote the AI-proposed classification.', 1;
+
+    /* And it cleared the confirmation, exactly as a source correction does. */
+    IF EXISTS
+    (
+        SELECT 1 FROM dbo.opportunity_requirement_sets
+        WHERE requirement_set_key = @RequirementSetKeyA
+          AND confirmed_version_number IS NOT NULL
+    )
+        THROW 53665, 'Correcting a statement left a stale requirement-set confirmation.', 1;
+
+    /* Owner B reads nothing of owner A's requirement set. */
+    DECLARE @RequirementReadResult TABLE
+    (
+        requirement_set_key uniqueidentifier,
+        set_row_version binary(8),
+        version_number int,
+        source_version_number int,
+        model_name nvarchar(200),
+        prompt_contract_version nvarchar(100),
+        proposed_at_utc datetime2(7),
+        confirmed_version_number int,
+        confirmed_at_utc datetime2(7)
+    );
+    DELETE @RequirementReadResult;
+    INSERT @RequirementReadResult
+    EXEC dbo.usp_GetOpportunityRequirementsForOwner @UserKey = @UserKeyB;
+    IF EXISTS (SELECT 1 FROM @RequirementReadResult WHERE requirement_set_key = @RequirementSetKeyA)
+        THROW 53666, 'Owner B read owner A''s requirement set.', 1;
+
+    /* ------------------------------------------------------------
        6. Purge: expired working data only, owner-scoped, and an expired
           session is already invisible to the read before it runs.
        ------------------------------------------------------------ */
+    /* created_at_utc has to move with it (isolated SQL gate, defect 3).
+       CK_opportunity_working_sessions_expiry requires
+       expires_at_utc > created_at_utc, and the session was created moments
+       ago, so backdating the expiry alone is rejected outright:
+
+         The UPDATE statement conflicted with the CHECK constraint
+         "CK_opportunity_working_sessions_expiry".
+
+       Ageing the whole row keeps the constraint satisfied and still puts the
+       expiry in the past, which is the only thing the purge and the
+       expiry-bounded reads below actually care about. */
     UPDATE dbo.opportunity_working_sessions
-    SET expires_at_utc = DATEADD(hour, -1, SYSUTCDATETIME())
+    SET created_at_utc = DATEADD(hour, -3, SYSUTCDATETIME()),
+        expires_at_utc = DATEADD(hour, -1, SYSUTCDATETIME())
     WHERE owner_profile_id = @ProfileIdA;
 
     DELETE @GetResult;
@@ -483,6 +819,11 @@ BEGIN TRY
     IF EXISTS (SELECT 1 FROM dbo.opportunity_source_versions WHERE owner_profile_id = @ProfileIdA)
        OR EXISTS (SELECT 1 FROM dbo.opportunity_sources WHERE owner_profile_id = @ProfileIdA)
        OR EXISTS (SELECT 1 FROM dbo.opportunity_working_sessions WHERE owner_profile_id = @ProfileIdA)
+       OR EXISTS (SELECT 1 FROM dbo.opportunity_source_concerns WHERE owner_profile_id = @ProfileIdA)
+       OR EXISTS (SELECT 1 FROM dbo.opportunity_source_reviews WHERE owner_profile_id = @ProfileIdA)
+       OR EXISTS (SELECT 1 FROM dbo.opportunity_requirement_statements WHERE owner_profile_id = @ProfileIdA)
+       OR EXISTS (SELECT 1 FROM dbo.opportunity_requirement_set_versions WHERE owner_profile_id = @ProfileIdA)
+       OR EXISTS (SELECT 1 FROM dbo.opportunity_requirement_sets WHERE owner_profile_id = @ProfileIdA)
         THROW 53640, 'Owner A''s expired working data survived its own purge.', 1;
     IF NOT EXISTS (SELECT 1 FROM dbo.opportunity_working_sessions WHERE owner_profile_id = @ProfileIdB)
         THROW 53641, 'Owner A''s purge destroyed owner B''s working session.', 1;
@@ -537,6 +878,11 @@ BEGIN TRY
     IF EXISTS (SELECT 1 FROM dbo.opportunity_working_sessions WHERE working_session_key = @SessionKeyB)
        OR EXISTS (SELECT 1 FROM dbo.opportunity_sources WHERE source_key = @SourceKeyB)
        OR EXISTS (SELECT 1 FROM dbo.opportunity_source_versions WHERE owner_profile_id = @ProfileIdB)
+       OR EXISTS (SELECT 1 FROM dbo.opportunity_source_concerns WHERE owner_profile_id = @ProfileIdB)
+       OR EXISTS (SELECT 1 FROM dbo.opportunity_source_reviews WHERE owner_profile_id = @ProfileIdB)
+       OR EXISTS (SELECT 1 FROM dbo.opportunity_requirement_statements WHERE owner_profile_id = @ProfileIdB)
+       OR EXISTS (SELECT 1 FROM dbo.opportunity_requirement_set_versions WHERE owner_profile_id = @ProfileIdB)
+       OR EXISTS (SELECT 1 FROM dbo.opportunity_requirement_sets WHERE owner_profile_id = @ProfileIdB)
         THROW 53647, 'Deleting a working session left orphaned child rows.', 1;
 
     /* ------------------------------------------------------------
@@ -559,7 +905,7 @@ BEGIN TRY
 
     SELECT
         CAST(1 AS bit) AS verified,
-        N'PS-OPPSLATE-001 two-owner isolation across all six procedures, per-owner idempotent Save without overwrite, unchanged-resubmission suppression, verbatim original_text preservation under correction and replacement, confirmation cleared on wording change, version-fenced Correct/Confirm/Delete, forged-owner canaries on every procedure, expiry enforced at read before purge, owner-scoped purge that spares other owners and unexpired sessions, no aggregate verdict column or identifier, no wording in audit metadata, and full synthetic rollback verified.' AS detail;
+        N'PS-OPPSLATE-001 two-owner isolation across all thirteen procedures, per-owner idempotent Save without overwrite, unchanged-resubmission suppression, verbatim original_text preservation under correction and replacement, confirmation cleared on wording change, version-fenced Correct/Confirm/Delete, forged-owner canaries on every procedure, expiry enforced at read before purge, owner-scoped purge that spares other owners and unexpired sessions, no aggregate verdict column or identifier, no wording in audit metadata, AI proposals kept as a third data class that overwrites neither the employer wording nor the member correction, member reclassification stored beside the AI proposal rather than over it, statement correction clearing the requirement-set confirmation, owner-scoped proposal reads and resolutions with forged-key canaries, purge and delete clearing every proposal row they own, and full synthetic rollback verified.' AS detail;
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;

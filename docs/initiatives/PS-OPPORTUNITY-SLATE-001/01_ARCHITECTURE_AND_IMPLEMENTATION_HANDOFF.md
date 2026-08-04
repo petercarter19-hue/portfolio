@@ -542,6 +542,68 @@ alongside output:
    rejects fabricated metrics/employers/titles by construction (grounding
    list is the only evidence vocabulary).
 
+**The no-aggregate rule binds prose, not only keys — and OS-3 is where that
+matters most.** Slice OS-2 implemented the rule as a recursive check over
+every *key* of every reply (`_reject_aggregate_fields`), on the reasoning that
+a member's or an employer's own wording may legitimately contain "score" or a
+percentage while a machine-readable field carrying one may never exist. Its
+independent review (finding F3) established that this is necessary and not
+sufficient: `explanation`, `clauses`, and a concern's `reason` are
+**model-authored**, so a reply of `{"explanation": "You are an 85% match for
+this role."}` satisfied a keys-only rule completely. OS-2 added
+`_reject_aggregate_prose`, a scan bound to a judgement about a person rather
+than to a number, so that ordinary employer wording ("travel up to 25% of the
+time", "a satisfaction score above 90%") still validates.
+
+**The OS-2 prose scan operates at HIGH PRECISION, not high recall.** Architect's
+decision after four rounds of correction, each of which introduced a defect its
+own tests missed. The two error types are not symmetric at OS-2. A false
+positive is expensive and certain: budget is reserved **before** the provider
+call and the scan runs **after** it, so a refusal burns the visitor's free daily
+allowance, shows a generic failure card, and fails identically on retry because
+the wording is the employer's own — and job adverts are written in the second
+person, so the triggering wording is ordinary. A false negative at OS-2 is
+nearly harmless, because steps 1 and 2 receive only the employer's source text
+and so the model has nothing to ground a verdict about a person in. The scan is
+therefore **defence in depth**: it makes the rule structurally true where a
+model unmistakably addresses the reader, and it deliberately lets
+judgement-shaped prose pass. Measured: **zero false positives across 616
+legitimate sentences (498 unique), 36% recall on the verdict side.** Round 5
+lowered recall on purpose: an independent audit of 461 sentences found the card
+rule refusing ordinary advert headings ("Ideal candidate: strong communicator")
+and the "`<metric>` of `<a thing>`: `<verdict>`" form, so its uninspected tail,
+its superlative `candidate|applicant` label and its quality-valued
+verdict/recommendation label were **deleted rather than made cleverer**. Do not
+restore them to raise recall.
+
+**Slice OS-3 must not inherit a keys-only rule, and must not inherit this scan
+either.** Steps 1 and 2 are given no fact about the member. Step 3 receives an
+allowlist of the member's confirmed evidence and writes `explanation`,
+`why_supports`, and `remains_unestablished` about a real person against real
+requirements — it is the first step in this package structurally capable of
+producing a **grounded** verdict, and therefore the step where a lexical scan
+stops being adequate.
+
+**OS-3 needs a STRUCTURAL control, not a stricter scan.** Earlier revisions of
+this section said OS-3 must apply "a stricter scan". That guidance is withdrawn
+as wrong: five rounds proved regex tuning does not converge, and each tightening
+bought recall by paying in false positives the visitor cannot see, cannot fix,
+and pays for. Candidates for OS-3's architect:
+
+* **Constrain the output schema** so free prose about the member is not
+  representable — bounded enumerated fields plus citations of specific evidence
+  records, with no field able to hold a sentence that judges a person.
+* **And/or a separate verification pass** over the generated text, with its own
+  contract and failure mode, before any of it reaches a member.
+* **And/or grounding constraints** that make an ungrounded claim invalid by
+  construction — every assertion must resolve to a cited evidence record or the
+  reply is malformed.
+
+The lexical scan is retained **at OS-2 only, as defence in depth**. It must not
+be treated as sufficient anywhere member facts are in scope.
+`OS-2_COMPLETION_REPORT.md` section 4 residual 5 lists, by class and with
+measurements, every judgement-shaped sentence the scan now allows through.
+
 Member responses (`Tell us more`, real examples) enter later reanalysis as
 member-attributed context, clearly separated in the prompt from authorized
 evidence; analysis output must attribute support drawn from responses as

@@ -96,6 +96,34 @@
         primary.setAttribute('aria-disabled', empty ? 'true' : 'false');
     }
 
+    /* The anonymous input counter (independent review finding F5). The public
+       wording review reads a tighter cap than the editor's maxlength, and the
+       server enforces it at the AI call; this keeps the number on screen from
+       the first keystroke so the refusal is never the first the visitor hears
+       of it.
+
+       Writes a NUMBER and toggles `hidden`. Every sentence around it is
+       authored in _intake.html — no member-facing copy lives here. */
+    function syncSourceCount(node) {
+        var limitNote = node.querySelector('[data-os-source-limit]');
+        var editor = node.querySelector('[data-os-source-input]');
+        if (!limitNote || !editor) {
+            return;
+        }
+        var limit = parseInt(limitNote.getAttribute('data-os-source-limit'), 10);
+        var count = editor.value.length;
+        var counter = limitNote.querySelector('[data-os-source-count]');
+        if (counter) {
+            counter.textContent = String(count);
+        }
+        var over = !isNaN(limit) && count > limit;
+        var overNote = limitNote.querySelector('[data-os-source-over]');
+        if (overNote) {
+            overNote.hidden = !over;
+        }
+        limitNote.classList.toggle('os-help--over', over);
+    }
+
     function enableJsOnlyControls(node) {
         var controls = node.querySelectorAll('[data-os-needs-js]');
         for (var index = 0; index < controls.length; index += 1) {
@@ -114,6 +142,7 @@
             enableJsOnlyControls(node);
         }
         syncPrimary(node);
+        syncSourceCount(node);
     }
 
     /* Replacing the fragment destroys whatever the visitor was focused on,
@@ -141,6 +170,18 @@
         }
     }
 
+    /* Which anonymous actions put the correction rail into image 08's
+       read-only state while they are in flight. They are the ones the member
+       fires FROM that rail, or that change what it is showing: letting a
+       second correction be typed into a control whose value is already on
+       its way to the server is how a member loses an edit they thought they
+       made. Cancel aborts and restores editing; nothing was written. */
+    var RAIL_LOCKING_ACTIONS = {
+        statement: true,
+        confirm_requirements: true,
+        resolve: true
+    };
+
     function send(payload) {
         var node = room();
         if (!node) {
@@ -149,11 +190,28 @@
         var endpoint = node.getAttribute('data-os-public-url');
         payload.context_token = currentToken(node);
 
+        var controller =
+            typeof window.AbortController === 'function'
+                ? new window.AbortController()
+                : null;
+        var locking = RAIL_LOCKING_ACTIONS[payload.action] === true;
+        if (locking) {
+            lockRail(node, true);
+            pending = {
+                controller: controller,
+                restore: function () {
+                    lockRail(node, false);
+                    pending = null;
+                }
+            };
+        }
+
         window
             .fetch(endpoint, {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
+                signal: controller ? controller.signal : undefined,
                 body: JSON.stringify(payload)
             })
             .then(function (response) {
@@ -170,6 +228,7 @@
                 });
             })
             .then(function (result) {
+                pending = null;
                 if (!result) {
                     return;
                 }
@@ -178,13 +237,25 @@
                     writeStoredToken(data.context_token);
                 }
                 if (data.html) {
+                    /* The replacement markup arrives unlocked, so there is
+                       nothing to unlock. */
                     swapRoom(data.html);
+                } else if (locking) {
+                    lockRail(room() || node, false);
                 }
                 if (data.message) {
                     announce(data.message);
                 }
             })
-            .catch(function () {
+            .catch(function (error) {
+                var restore = pending && pending.restore;
+                pending = null;
+                if (restore) {
+                    restore();
+                }
+                if (error && error.name === 'AbortError') {
+                    return;
+                }
                 /* Never discard the visitor's held state on a transient
                    failure — say so plainly and leave the screen alone. */
                 announce(
@@ -218,15 +289,303 @@
         return target.closest(selector);
     }
 
+    /* ------------------------------------------------------------------
+       Slice OS-2 — the stage rail, statement selection, and the two AI
+       requests.
+
+       Every sentence any of this shows is authored server-side. The stage
+       rail is cloned from a <template> the page already carries, the
+       read-only notice and the processing Cancel control are rendered
+       hidden and revealed, and the only strings this file owns are the two
+       transient announcements slice OS-1 already shipped. That is not
+       tidiness: copy that lives in JavaScript is copy nobody reviews.
+       ------------------------------------------------------------------ */
+
+    var pending = null;
+
+    /* The interview-studio.js setStage idiom: exactly one step carries
+       aria-current="step" at any time, kept in sync with the visual state,
+       and each change is announced politely from inside the rail. */
+    function setStage(rail, stage) {
+        if (!rail) {
+            return;
+        }
+        var steps = rail.querySelectorAll('[data-os-stage]');
+        var note = rail.querySelector('[data-os-stage-note]');
+        var live = rail.querySelector('[data-os-stage-live]');
+        for (var index = 0; index < steps.length; index += 1) {
+            var step = steps[index];
+            var number = Number(step.getAttribute('data-os-stage'));
+            var current = number === stage;
+            step.classList.toggle('is-done', number < stage);
+            step.classList.toggle('is-current', current);
+            if (current) {
+                step.setAttribute('aria-current', 'step');
+                var label = step.querySelector('.os-stage__label');
+                if (live && label) {
+                    live.textContent = label.textContent.trim();
+                }
+                if (note) {
+                    /* The per-stage sentence is carried on the step itself so
+                       it stays server-authored. */
+                    var described = step.getAttribute('data-os-stage-note');
+                    if (described) {
+                        note.textContent = described;
+                    }
+                }
+            } else {
+                step.removeAttribute('aria-current');
+            }
+        }
+    }
+
+    /* Image 08's locked rail. Visibly disabled, never hidden, so the member
+       can see exactly what will come back. */
+    function lockRail(node, locked) {
+        var controls = node.querySelectorAll('[data-os-rail-control]');
+        if (!controls.length && !node.querySelector('[data-os-statement-rail]')) {
+            return;
+        }
+        for (var index = 0; index < controls.length; index += 1) {
+            controls[index].disabled = locked;
+            controls[index].setAttribute('aria-disabled', locked ? 'true' : 'false');
+        }
+        var notice = node.querySelector('[data-os-rail-locked-note]');
+        if (notice) {
+            notice.hidden = !locked;
+        }
+        /* Scoped to the correction rail. The stage rail carries its own
+           Cancel and is only ever on screen while a request is running, so
+           hiding by this toggle would remove the one control that can stop
+           it. */
+        var rail = node.querySelector('[data-os-statement-rail]');
+        if (!rail) {
+            return;
+        }
+        var cancels = rail.querySelectorAll('[data-os-cancel-processing]');
+        for (var i = 0; i < cancels.length; i += 1) {
+            cancels[i].hidden = !locked;
+        }
+        var ordinary = rail.querySelectorAll('[data-os-cancel-statement]');
+        for (var j = 0; j < ordinary.length; j += 1) {
+            ordinary[j].hidden = locked;
+        }
+    }
+
+    /* Selecting a statement moves context to the rail WITHOUT stealing focus
+       (handoff section 13). The member stays where they were and can Tab into
+       the rail when they want it. */
+    function selectStatement(node, key) {
+        var panels = node.querySelectorAll('[data-os-statement-panel]');
+        for (var index = 0; index < panels.length; index += 1) {
+            panels[index].hidden =
+                panels[index].getAttribute('data-os-statement-panel') !== key;
+        }
+        var rows = node.querySelectorAll('[data-os-statement-row]');
+        for (var i = 0; i < rows.length; i += 1) {
+            var selected = rows[i].getAttribute('data-os-statement-row') === key;
+            rows[i].classList.toggle('is-selected', selected);
+            /* Independent review finding F7: the state used to be written as
+               aria-selected on the <tr>, where it is unsupported outside a
+               grid/treegrid and therefore announced to nobody. It moves to
+               the control that performs the selection. */
+            var control = rows[i].querySelector('[data-os-select-statement]');
+            if (control) {
+                if (selected) {
+                    control.setAttribute('aria-current', 'true');
+                } else {
+                    control.removeAttribute('aria-current');
+                }
+            }
+        }
+    }
+
+    function stageRailFor(node) {
+        var template = node.querySelector('[data-os-stage-template]');
+        if (!template || !template.content) {
+            return null;
+        }
+        var clone = template.content.firstElementChild;
+        return clone ? clone.cloneNode(true) : null;
+    }
+
+    /* Both AI requests, both modes, one shape:
+         stage 1  the request is composed and about to leave
+         stage 2  it is in flight
+         stage 3  a response has arrived and the screen is being rebuilt
+       Those are real boundaries. Nothing here reports progress the request
+       has not actually made. */
+    function beginProposal(node, form, publicAction) {
+        var rail = stageRailFor(node);
+        var card = form.closest('.os-prompt-card');
+        if (!rail || !card) {
+            return false;
+        }
+        var controller =
+            typeof window.AbortController === 'function'
+                ? new window.AbortController()
+                : null;
+
+        card.parentNode.insertBefore(rail, card);
+        card.hidden = true;
+        setStage(rail, 1);
+        lockRail(node, true);
+        pending = {
+            controller: controller,
+            restore: function () {
+                if (rail.parentNode) {
+                    rail.parentNode.removeChild(rail);
+                }
+                card.hidden = false;
+                lockRail(node, false);
+                pending = null;
+            }
+        };
+
+        var request;
+        if (publicAction) {
+            request = window.fetch(node.getAttribute('data-os-public-propose-url'), {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                signal: controller ? controller.signal : undefined,
+                body: JSON.stringify({
+                    action: publicAction,
+                    context_token: currentToken(node)
+                })
+            });
+        } else {
+            request = window.fetch(form.action, {
+                method: 'POST',
+                credentials: 'same-origin',
+                signal: controller ? controller.signal : undefined,
+                body: new window.FormData(form)
+            });
+        }
+        setStage(rail, 2);
+
+        request
+            .then(function (response) {
+                setStage(rail, 3);
+                if (!publicAction) {
+                    /* The member routes answer with an ordinary redirect to
+                       the room. Following it lands on the real server-rendered
+                       state rather than a client-assembled one. */
+                    window.location.assign(response.url || window.location.href);
+                    return null;
+                }
+                if (response.status === 404) {
+                    writeStoredToken(null);
+                    window.location.reload();
+                    return null;
+                }
+                return response.json();
+            })
+            .then(function (data) {
+                if (!data) {
+                    return;
+                }
+                pending = null;
+                if (Object.prototype.hasOwnProperty.call(data, 'context_token')) {
+                    writeStoredToken(data.context_token);
+                }
+                if (data.html) {
+                    swapRoom(data.html);
+                } else if (data.message) {
+                    announce(data.message);
+                }
+            })
+            .catch(function (error) {
+                var restore = pending && pending.restore;
+                pending = null;
+                if (restore) {
+                    restore();
+                }
+                if (!error || error.name !== 'AbortError') {
+                    announce(
+                        'We could not reach PeerSlate just then. Nothing was lost — your ' +
+                            'role text is still on this screen. Try that again.'
+                    );
+                }
+            });
+        return true;
+    }
+
+    /* event.submitter is not available in every browser this site supports,
+       and which button was pressed is load-bearing here: it carries the
+       apply-or-dismiss decision on a concern card. Captured on the way down
+       so a handler cannot have changed it first. */
+    var lastSubmitter = null;
+    document.addEventListener(
+        'click',
+        function (event) {
+            var button = closestFrom(event.target, 'button[type="submit"]');
+            if (button) {
+                lastSubmitter = button;
+            }
+        },
+        true
+    );
+
+    function submitterFor(event, form) {
+        var candidate = event.submitter || lastSubmitter;
+        return candidate && form.contains(candidate) ? candidate : null;
+    }
+
     document.addEventListener('submit', function (event) {
         var form = closestFrom(event.target, '[data-os-form]');
         var node = room();
-        if (!form || !node || !node.contains(form) || !isPublic(node)) {
+        if (!form || !node || !node.contains(form)) {
+            return;
+        }
+        var kind = form.getAttribute('data-os-form');
+
+        /* The two AI requests are intercepted in BOTH modes, because both
+           have a real wait worth showing a bounded stage rail for. If the
+           rail template is missing for any reason, beginProposal returns
+           false and the ordinary form post goes ahead — the flow degrades to
+           a plain page load rather than breaking. */
+        if (kind === 'review' || kind === 'interpret') {
+            var action = kind === 'review' ? 'review' : 'interpret';
+            if (beginProposal(node, form, isPublic(node) ? action : null)) {
+                event.preventDefault();
+            }
+            return;
+        }
+
+        if (!isPublic(node)) {
             return;
         }
         event.preventDefault();
 
-        var kind = form.getAttribute('data-os-form');
+        if (kind === 'resolve') {
+            var pressed = submitterFor(event, form);
+            var input = form.querySelector('[data-os-concern-input]');
+            send({
+                action: 'resolve',
+                concern_key: form.querySelector('[name="concern_key"]').value,
+                decision: pressed ? pressed.value : 'applied',
+                corrected_text: input ? input.value : '',
+                step: 'review'
+            });
+            return;
+        }
+        if (kind === 'statement') {
+            var classSelect = form.querySelector('[name="member_class"]');
+            var clarification = form.querySelector('[name="member_clarification"]');
+            send({
+                action: 'statement',
+                statement_key: form.querySelector('[name="statement_key"]').value,
+                member_class: classSelect ? classSelect.value : '',
+                member_clarification: clarification ? clarification.value : '',
+                step: 'requirements'
+            });
+            return;
+        }
+        if (kind === 'confirm-requirements') {
+            send({ action: 'confirm_requirements', step: 'requirements' });
+            return;
+        }
         if (kind === 'source') {
             var editor = node.querySelector('[data-os-source-input]');
             send({
@@ -268,9 +627,50 @@
         if (next && node.contains(next)) {
             event.preventDefault();
             announce(
-                'Reviewing the employer requirements is not built yet. Your source ' +
-                    'is confirmed and nothing was saved.'
+                'Comparing these requirements against your evidence is not built ' +
+                    'yet. Your requirements are confirmed and nothing was saved.'
             );
+            return;
+        }
+
+        /* Cancel while a proposal is in flight. Aborts the request and puts
+           the screen back exactly as it was — nothing was written, so there
+           is nothing to undo. */
+        var cancelProcessing = closestFrom(event.target, '[data-os-cancel-processing]');
+        if (cancelProcessing && node.contains(cancelProcessing)) {
+            event.preventDefault();
+            if (pending) {
+                if (pending.controller) {
+                    pending.controller.abort();
+                }
+                var restore = pending.restore;
+                pending = null;
+                if (restore) {
+                    restore();
+                }
+            }
+            return;
+        }
+
+        /* Selecting a statement row. A real link, so it works with
+           JavaScript off; intercepted here so it does not cost a round trip. */
+        var select = closestFrom(event.target, '[data-os-select-statement]');
+        if (select && node.contains(select)) {
+            event.preventDefault();
+            selectStatement(node, select.getAttribute('data-os-select-statement'));
+            return;
+        }
+
+        /* Cancel inside the correction rail: put the controls back to the
+           values the server rendered, without a round trip and without
+           touching anything else on the screen. */
+        var cancelStatement = closestFrom(event.target, '[data-os-cancel-statement]');
+        if (cancelStatement && node.contains(cancelStatement) && !pending) {
+            var railForm = closestFrom(cancelStatement, 'form');
+            if (railForm) {
+                event.preventDefault();
+                railForm.reset();
+            }
             return;
         }
 
@@ -326,6 +726,7 @@
             event.target.matches('[data-os-source-input]')
         ) {
             syncPrimary(node);
+            syncSourceCount(node);
         }
     });
 

@@ -1,4 +1,5 @@
-"""Contract tests for Opportunity Slate — PS-OPPSLATE-001, slice OS-1.
+"""Contract tests for Opportunity Slate — PS-OPPSLATE-001, slices OS-1
+and OS-2.
 
 Covers the flag gate, the two modes (signed-in private workbench and the
 anonymous public session), the owner-only mutation boundary, the same-origin
@@ -12,7 +13,9 @@ Pete-specific identifier (tests/test_site_rules.py's OwnershipGuardrailTests
 enforces that separately for reusable service/route code).
 """
 
+import re
 import unittest
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -23,6 +26,8 @@ from services.database_service import DatabaseServiceError
 from services.opportunity_slate_service import (
     MAX_SOURCE_TEXT_UNITS,
     OpportunitySlateServiceError,
+    RequirementSetView,
+    RequirementStatementView,
     WorkingSourceView,
 )
 
@@ -32,6 +37,38 @@ SOURCE_KEY = "22222222-2222-2222-2222-222222222222"
 SESSION_TOKEN = "0000000000000001"
 SOURCE_TOKEN = "0000000000000002"
 SAME_ORIGIN_HEADERS = {"Origin": "http://localhost", "Sec-Fetch-Site": "same-origin"}
+
+
+def requirement_set(**overrides):
+    """The smallest proposed requirement set that renders Review Requirements."""
+    statement = RequirementStatementView(
+        statement_key="44444444-4444-4444-4444-444444444444",
+        ordinal=1,
+        span_start=0,
+        span_length=52,
+        employer_text="Strong understanding of systems engineering processes.",
+        proposed_class="required_qualification",
+        proposed_explanation="Asks for systems engineering knowledge.",
+        proposed_paths=({"label": "Path A", "clauses": ("Systems engineering",)},),
+        member_class=None,
+        member_clarification=None,
+        member_updated_at=None,
+        version_token="0000000000000004",
+    )
+    fields = {
+        "requirement_set_key": "55555555-5555-5555-5555-555555555555",
+        "version_token": "0000000000000003",
+        "version_number": 1,
+        "source_version_number": 1,
+        "model_name": "claude-sonnet-5",
+        "prompt_contract_version": "os-statements-v1",
+        "proposed_at": datetime.now(timezone.utc),
+        "confirmed_version_number": None,
+        "confirmed_at": None,
+        "statements": (statement,),
+    }
+    fields.update(overrides)
+    return RequirementSetView(**fields)
 
 ROLE_TEXT = (
     "Overview\n\n"
@@ -50,8 +87,15 @@ MEMBER_POSTS = (
     "/opportunity-slate/source/corrections",
     "/opportunity-slate/source/confirm",
     "/opportunity-slate/source/delete",
+    # Slice OS-2.
+    "/opportunity-slate/source/review",
+    "/opportunity-slate/source/concerns",
+    "/opportunity-slate/requirements",
+    "/opportunity-slate/requirements/corrections",
+    "/opportunity-slate/requirements/confirm",
 )
 PUBLIC_POST = "/opportunity-slate/public-session"
+PUBLIC_PROPOSE_POST = "/opportunity-slate/public-session/propose"
 
 
 def member(name="Opportunity Slate Test Member", user_key="member-oppslate-1"):
@@ -107,15 +151,31 @@ class OpportunitySlateTestCase(unittest.TestCase):
             return_value=identity or member(),
         )
 
+    @contextmanager
     def service(self):
-        return patch("opportunity_slate_routes.opportunity_slate_service")
+        """The patched service module, with the two slice OS-2 lookups
+        defaulted to "nothing has run yet".
+
+        An unconfigured MagicMock attribute is TRUTHY, so without these two
+        defaults every test that does not mention AI would render the room as
+        though a wording review and a requirement proposal already existed —
+        and a screen whose whole job is to distinguish "not checked" from
+        "checked, nothing found" would be asserted in the wrong state without
+        anything failing. None is also what the real service returns before
+        either step has run, so this is the honest default rather than a
+        convenience.
+        """
+        with patch("opportunity_slate_routes.opportunity_slate_service") as service:
+            service.get_source_review_for_owner.return_value = None
+            service.get_requirements_for_owner.return_value = None
+            yield service
 
 
 class FlagGateTests(OpportunitySlateTestCase):
     def test_flag_off_returns_404_on_every_route(self):
         app.config["PEERSLATE_OPPORTUNITY_SLATE_ENABLED"] = False
         self.assertEqual(self.client.get(ROOM_GET).status_code, 404)
-        for path in MEMBER_POSTS + (PUBLIC_POST,):
+        for path in MEMBER_POSTS + (PUBLIC_POST, PUBLIC_PROPOSE_POST):
             with self.subTest(path=path):
                 response = self.client.post(path, headers=SAME_ORIGIN_HEADERS)
                 self.assertEqual(response.status_code, 404)
@@ -126,7 +186,7 @@ class FlagGateTests(OpportunitySlateTestCase):
         app.config["PEERSLATE_OPPORTUNITY_SLATE_ENABLED"] = False
         with patch("opportunity_slate_routes.get_optional_identity") as resolve:
             self.client.get(ROOM_GET)
-            for path in MEMBER_POSTS + (PUBLIC_POST,):
+            for path in MEMBER_POSTS + (PUBLIC_POST, PUBLIC_PROPOSE_POST):
                 self.client.post(path, headers=SAME_ORIGIN_HEADERS)
         resolve.assert_not_called()
 
@@ -204,29 +264,53 @@ class AnonymousPublicSessionTests(OpportunitySlateTestCase):
         banner now names the transit before it claims the locality, and both
         halves are asserted here so a future edit cannot quietly restore the
         locality-only shape on either element.
+
+        Slice OS-2 independent review, finding F1: the corrected sentences then
+        over-corrected in the other direction and asserted a THIRD PARTY's
+        retention policy — "Never stored on either", "It is not stored there",
+        "the only copy kept". PeerSlate can promise what PeerSlate does. It
+        cannot promise what its AI provider retains: provider inputs are
+        retained by default and zero-retention is contractual, and nothing in
+        this repository establishes such an arrangement. Every retention
+        promise on this surface is now scoped to PeerSlate by name, the transit
+        is described without characterising the provider, and each retired
+        over-claim is rejected by substring below.
         """
         with self.anonymous():
             body = self.client.get(ROOM_GET).data.decode("utf-8")
         text = " ".join(body.split())
 
         self.assertIn(
-            "Your text is sent to PeerSlate to draw this screen, and never stored.",
+            "Your text is sent to PeerSlate to draw this screen, and on to its "
+            "AI provider when you ask for a reading. PeerSlate stores none of it.",
             text,
         )
-        self.assertIn("The only copy kept is in this browser tab.", text)
+        self.assertIn("The copy you keep is in this browser tab.", text)
         self.assertIn(
-            "Sent to PeerSlate to draw this screen, and never stored there. "
-            "The only copy kept is in this browser tab.",
+            "Sent to PeerSlate, and on to PeerSlate's AI provider when you ask "
+            "for a reading. PeerSlate stores none of it. The copy you keep is in "
+            "this browser tab.",
+            text,
+        )
+        # Slice OS-2 truth correction. "nothing is analyzed" was true in
+        # slice OS-1 and is false now, so the clause is gone and the AI
+        # transit is named in its place. The promise that still holds —
+        # nothing stored ON PEERSLATE, nothing sent to an employer — is
+        # unchanged and is asserted here so a future edit cannot quietly drop
+        # it either.
+        self.assertIn(
+            "This preview sends your role text to PeerSlate to draw each screen, "
+            "and on to PeerSlate's AI provider when you ask it to read the "
+            "wording.",
             text,
         )
         self.assertIn(
-            "This preview sends your role text to PeerSlate to draw each screen. "
-            "The only copy kept is in your own browser, for this visit only.",
+            "Your own browser holds the copy you keep, for this visit only.",
             text,
         )
         self.assertIn(
-            "Nothing is stored on PeerSlate, nothing is analyzed, and nothing is "
-            "shared or sent to an employer.",
+            "Nothing is stored on PeerSlate, and nothing is shared or sent to an "
+            "employer.",
             text,
         )
         for false_claim in (
@@ -240,8 +324,76 @@ class AnonymousPublicSessionTests(OpportunitySlateTestCase):
             # off nothing is ever sent.
             "This preview keeps your role text in your own browser",
             "keeps your role text in your own browser for this visit only",
+            # The slice OS-1 clause this slice had to retire. An anonymous
+            # visitor who presses "Check the wording" IS having their text
+            # analyzed, so this sentence may never come back while that is
+            # true.
+            "nothing is analyzed",
+            # Finding F1: the four retired third-party retention claims. Each
+            # one asserted, in a member-visible sentence, what PeerSlate's AI
+            # provider does with the employer's role text. None of them may
+            # come back in any state of this room.
+            "Never stored on either",
+            "never stored on either",
+            "The only copy kept is",
+            "the only copy kept is",
+            "It is not stored there",
+            "not stored there",
         ):
             self.assertNotIn(false_claim, text)
+
+    def test_no_surface_in_the_room_asserts_the_ai_providers_retention(self):
+        """Slice OS-2 independent review, finding F1, held at the source.
+
+        The test above can only see the states a plain room GET renders. Two
+        of the four sentences F1 found live on screens that need a confirmed
+        source and a completed AI step to reach, so a substring check on one
+        response body would have missed them — and would miss the next one
+        somebody writes on a state no test drives.
+
+        This reads every file the room is built from instead. The rule it
+        enforces is narrow and absolute: PeerSlate may describe sending the
+        employer's role text ONWARD to its AI provider, and may promise what
+        PeerSlate itself stores. It may not state, imply, or summarise what
+        the provider retains. Provider inputs are retained by default; zero
+        retention is a contractual arrangement, and nothing in this
+        repository establishes one.
+
+        If a future slice genuinely obtains a zero-retention agreement, the
+        place to record it is the package, with the contract named — not a
+        sentence in a template that no evidence supports.
+        """
+        root = Path(app.root_path)
+        surfaces = sorted(
+            (root / "templates" / "partials" / "opportunity_slate").glob("*.html")
+        )
+        surfaces += [
+            root / "static" / "js" / "opportunity-slate.js",
+            root / "opportunity_slate_routes.py",
+        ]
+        self.assertGreaterEqual(len(surfaces), 8, "the room's surfaces moved")
+
+        # Each entry: the retired claim, and why it is not PeerSlate's to make.
+        retired = {
+            "Never stored on either": "asserts the provider stores nothing",
+            "never stored on either": "asserts the provider stores nothing",
+            "not stored there": "asserts the provider stores nothing",
+            "The only copy kept": "asserts no provider-side copy exists",
+            "the only copy kept": "asserts no provider-side copy exists",
+            "the only retained copy": "asserts no provider-side copy exists",
+            "nothing is retained anywhere": "asserts provider-side retention",
+            "deleted by the provider": "asserts provider-side deletion",
+            "the AI does not keep": "asserts provider-side retention",
+            "the AI never keeps": "asserts provider-side retention",
+        }
+        for path in surfaces:
+            body = path.read_text(encoding="utf-8")
+            for claim, why in retired.items():
+                self.assertNotIn(
+                    claim,
+                    body,
+                    f"{path.name} {why}: {claim!r}",
+                )
 
     def test_the_step_handler_cannot_swallow_every_click_in_the_room(self):
         """Found while re-capturing evidence, outside the accepted finding
@@ -317,8 +469,11 @@ class AnonymousPublicSessionTests(OpportunitySlateTestCase):
                 },
                 headers=SAME_ORIGIN_HEADERS,
             ).get_json()
-        self.assertIn("You confirmed Source Version 1", confirmed["html"])
-        self.assertIn("is not built yet", confirmed["html"])
+        # Slice OS-2: confirming the source lands on checkpoint 2, which
+        # offers to read the employer's statements and has not read them yet.
+        self.assertEqual(confirmed["step"], "requirements")
+        self.assertIn("Checkpoint 2 of 2", confirmed["html"])
+        self.assertIn("Read the statements", confirmed["html"])
 
     def test_public_correction_keeps_the_original_wording(self):
         with self.anonymous():
@@ -556,12 +711,24 @@ class MemberFlowTests(OpportunitySlateTestCase):
         so: nothing flagged, nothing proposed, no claim that any analysis
         has run. If a future change wires real content in here, it has to
         break this test deliberately rather than drift past it.
+
+        SLICE OS-2 BROKE IT DELIBERATELY, exactly as invited. The card's
+        content is a real proposal now, so the state label had to move: OS-1
+        printed "None flagged" because nothing COULD be flagged, and after
+        OS-2 that sentence would tell a member the wording had been read and
+        come back clean when it has not been read at all. The un-reviewed
+        card says "Not checked yet"; "None flagged" is now reserved for the
+        state where PeerSlate genuinely did read the wording and found
+        nothing (asserted separately in the AI suite). Every anti-fabrication
+        assertion below is unchanged and still applies before the member asks
+        for a review.
         """
         with self.signed_in(), self.service() as service:
             service.get_working_session_for_owner.return_value = working_view()
             body = self.client.get(ROOM_GET).data.decode("utf-8")
         self.assertIn("Extraction concerns", body)
-        self.assertIn("None flagged", body)
+        self.assertIn("Not checked yet", body)
+        self.assertNotIn("None flagged", body)
         self.assertIn("PeerSlate has not read or", body)
         for fabricated in (
             "flagged this phrase",
@@ -644,19 +811,36 @@ class MemberFlowTests(OpportunitySlateTestCase):
                 self.assertIn('alt=""', tag)
                 self.assertIn('aria-hidden="true"', tag)
 
-    def test_no_ai_processing_stage_rail_is_rendered(self):
-        """There is no AI call in this slice, so there are no stages to
-        show. Rendering "Extracting employer wording..." would be theatre."""
+    def test_no_ai_processing_stage_rail_is_shown_before_a_request_is_made(self):
+        """Slice OS-1 had no AI call at all, so it asserted the stage rail
+        did not exist anywhere in the document.
+
+        Slice OS-2 has a real call, so the rail's markup legitimately ships —
+        but only inside an inert ``<template>``, cloned into place by the room
+        script when a request is genuinely in flight. The guarantee this test
+        protects is unchanged and is the one that matters: on a page load,
+        with nothing running, the member sees no stage rail and no stage copy.
+        A LIVE rail on first paint would be theatre either way.
+        """
         with self.signed_in(), self.service() as service:
             service.get_working_session_for_owner.return_value = working_view()
             body = self.client.get(ROOM_GET).data.decode("utf-8")
+        # The template is inert markup; nothing outside it may mention a stage.
+        outside_template = re.sub(
+            r"<template data-os-stage-template>.*?</template>",
+            "",
+            body,
+            flags=re.DOTALL,
+        )
+        self.assertIn("<template data-os-stage-template>", body)
         for invented in (
             "os-stage-rail",
             "Extracting employer wording",
             "Preparing source review",
             "Analyzing",
         ):
-            self.assertNotIn(invented, body)
+            with self.subTest(invented=invented):
+                self.assertNotIn(invented, outside_template)
 
     def test_a_correction_keeps_the_original_and_flags_the_change(self):
         with self.signed_in(), self.service() as service:
@@ -670,23 +854,27 @@ class MemberFlowTests(OpportunitySlateTestCase):
         self.assertIn("Compare with original", body)
         self.assertIn("The wording you", body)
 
-    def test_confirming_the_source_shows_an_honest_next_step(self):
+    def test_confirming_the_source_leads_to_the_requirements_checkpoint(self):
+        """Slice OS-1 ended here with an honestly inert control. Slice OS-2
+        built the screen it pointed at, so the control is a real link now —
+        and the room resumes there rather than at checkpoint 1."""
         with self.signed_in(), self.service() as service:
             service.get_working_session_for_owner.return_value = working_view(
                 confirmed_version_number=1,
                 confirmed_at=datetime.now(timezone.utc),
                 workbench_state="source_confirmed",
             )
-            body = self.client.get(ROOM_GET).data.decode("utf-8")
+            service.get_requirements_for_owner.return_value = None
+            body = self.client.get(
+                f"{ROOM_GET}?step=review"
+            ).data.decode("utf-8")
         self.assertIn("You confirmed Source Version 1", body)
-        self.assertIn("Source confirmed", body)
-        self.assertIn("is not built yet", body)
-        self.assertIn("data-os-inert-next", body)
-        # The confirm form is gone, replaced by the honestly inert control.
-        # Asserted against the form, not the button's text node: the owner
-        # visual-parity pass (2026-08-03) gave the primary the authority's
-        # trailing arrow, so the button no longer ends "Confirm source</button>"
-        # in any state and a text-node assertion would pass vacuously.
+        self.assertIn("Review requirements", body)
+        self.assertNotIn("data-os-inert-next", body)
+        # Asserted against the form, not the button's text node: slice OS-1's
+        # owner visual-parity pass gave the primary the authority's trailing
+        # arrow, so the button no longer ends "Confirm source</button>" in any
+        # state and a text-node assertion would pass vacuously.
         self.assertNotIn('data-os-form="confirm"', body)
         self.assertNotIn("Confirm source", body)
 
@@ -729,6 +917,12 @@ class MemberFlowTests(OpportunitySlateTestCase):
         condition that selects the review partial. This asserts the two
         cannot come apart — a review screen without the modifier would
         silently render at the intake screen's proportions.
+
+        SLICE OS-2 adds the third: image 03 measures 57.8%, between the other
+        two, because Review Requirements is a table rather than a form or a
+        document. Without its own modifier it inherited the intake screen's
+        53.2% — which is the same defect this test was written to catch, one
+        screen later.
         """
         with self.signed_in(), self.service() as service:
             service.get_working_session_for_owner.return_value = working_view()
@@ -740,6 +934,33 @@ class MemberFlowTests(OpportunitySlateTestCase):
         self.assertIn("Bring a role", intake)
         self.assertIn('class="os-layout"', intake)
         self.assertNotIn("os-layout--review", intake)
+
+        with self.signed_in(), self.service() as service:
+            service.get_working_session_for_owner.return_value = working_view(
+                confirmed_version_number=1,
+                confirmed_at=datetime.now(timezone.utc),
+                workbench_state="source_confirmed",
+            )
+            service.get_requirements_for_owner.return_value = None
+            landed = self.client.get(ROOM_GET).data.decode("utf-8")
+        self.assertIn("Checkpoint 2 of 2", landed)
+        self.assertIn("Read the statements", landed)
+
+        with self.signed_in(), self.service() as service:
+            service.get_working_session_for_owner.return_value = working_view(
+                confirmed_version_number=1,
+                confirmed_at=datetime.now(timezone.utc),
+                workbench_state="requirements_proposed",
+            )
+            service.get_requirements_for_owner.return_value = requirement_set()
+            requirements = self.client.get(
+                f"{ROOM_GET}?step=requirements"
+            ).data.decode("utf-8")
+        self.assertIn("Employer statements", requirements)
+        self.assertIn("os-layout os-layout--requirements", requirements)
+        self.assertNotIn("os-layout--review", requirements)
+        # and the two screen modifiers are mutually exclusive
+        self.assertNotIn("os-layout--requirements", review)
 
     def test_return_to_role_input_prefills_and_replace_starts_empty(self):
         with self.signed_in(), self.service() as service:
@@ -1029,23 +1250,100 @@ class RateLimitRegistrationTests(unittest.TestCase):
             app_source,
         )
 
-    def test_the_spend_guard_is_plumbed_and_honestly_labelled_as_unused(self):
-        """Handoff section 18 safeguard 3. Slice OS-1 has no AI endpoint, so
-        the ceiling is config-only — and must say so, rather than reading as
-        a live control."""
+    def test_the_spend_guard_is_live_and_documents_its_real_limits(self):
+        """Handoff section 18 safeguard 3. Slice OS-2 turned the ceiling from
+        config-only plumbing into an enforced control, so the labelling has
+        to move with it — including the two honest limits an operator needs
+        before choosing a number."""
         root = __import__("pathlib").Path(__file__).resolve().parents[1]
         app_source = (root / "app.py").read_text(encoding="utf-8")
         env_example = (root / ".env.example").read_text(encoding="utf-8")
         self.assertIn("PEERSLATE_OPPSLATE_DAILY_AI_CEILING", app_source)
-        self.assertIn("CONFIG ONLY IN SLICE", app_source)
+        self.assertIn("LIVE AS OF SLICE OS-2", app_source)
+        self.assertNotIn("CONFIG ONLY IN SLICE", app_source)
         self.assertIn("PEERSLATE_OPPSLATE_DAILY_AI_CEILING=0", env_example)
-        self.assertIn("CONFIG ONLY TODAY", env_example)
+        self.assertNotIn("CONFIG ONLY TODAY", env_example)
+        # The limits that make the control honest rather than magic.
+        self.assertIn("per worker process", app_source)
+        self.assertIn("PER WORKER PROCESS", env_example)
+        self.assertIn("counts calls attempted", app_source)
+        # Slice OS-2 independent review, finding F12: one unit of budget
+        # permits two provider requests, so the worst case an operator has
+        # to size against is 2 x workers x ceiling, not the ceiling. Both
+        # operator-facing documents have to say so.
+        self.assertIn("2 x workers x", app_source)
+        self.assertIn("2 x (worker processes) x (this value)", env_example)
+        # Finding F11: the value is environment-read once, so a change needs
+        # a restart. Neither document may imply otherwise.
+        self.assertIn("requires an app restart", env_example)
+        self.assertIn("requires a restart", app_source)
+
+    def test_the_model_and_cost_citations_resolve_to_a_real_document(self):
+        """Slice OS-2 independent review, finding F10.
+
+        Two shipped comments cite "the slice OS-2 completion report" for the
+        recorded model-comparison trial and the per-call costs. No such
+        report existed, so a reader following either citation — an operator
+        sizing the spend ceiling, or the next writer wondering why step 2 is
+        on a different model — found nothing. The report now exists and both
+        citations name its path.
+        """
+        root = __import__("pathlib").Path(__file__).resolve().parents[1]
+        report = (
+            root
+            / "docs"
+            / "initiatives"
+            / "PS-OPPORTUNITY-SLATE-001"
+            / "OS-2_COMPLETION_REPORT.md"
+        )
+        self.assertTrue(report.is_file(), "the cited completion report is missing")
+        body = report.read_text(encoding="utf-8")
+        # The two things the citations promise are actually in it.
+        for recorded in (
+            "Sonnet",
+            "adversarial",
+            "US$0.04",
+            "2  x  (worker processes)  x  (the configured ceiling)",
+        ):
+            self.assertIn(recorded, body)
+
+        for source in (
+            root / "services" / "opportunity_analysis_service.py",
+            root / ".env.example",
+        ):
+            with self.subTest(source=source.name):
+                self.assertIn(
+                    "PS-OPPORTUNITY-SLATE-001/OS-2_COMPLETION_REPORT.md",
+                    source.read_text(encoding="utf-8"),
+                )
+
+    def test_every_ai_endpoint_carries_the_interview_budget(self):
+        """Handoff section 18 safeguard 2: <= 6/minute per client on each AI
+        endpoint, in BOTH modes."""
+        source = (
+            __import__("pathlib").Path(__file__).resolve().parents[1] / "app.py"
+        ).read_text(encoding="utf-8")
+        for endpoint in (
+            "opportunity_slate.review_source_wording",
+            "opportunity_slate.interpret_requirements",
+            "opportunity_slate.public_propose",
+        ):
+            with self.subTest(endpoint=endpoint):
+                index = source.index(f"'{endpoint}'")
+                window = source[index : index + 120]
+                self.assertIn("'6 per minute'", window)
 
 
 class NoAiCallTests(unittest.TestCase):
-    def test_the_slice_imports_no_ai_client(self):
-        """Slice OS-1 makes no AI call. Asserted as a literal absence across
-        the route and service modules so it cannot drift in unnoticed."""
+    def test_routing_and_persistence_import_no_ai_client(self):
+        """Slice OS-2 introduces AI, and confines it to exactly one module.
+
+        services/opportunity_analysis_service.py owns every prompt contract,
+        every validator, and the only Anthropic client. The route module and
+        the persistence module below must still hold none of it, so a
+        proposal can never be made from a place nobody reviews as an AI
+        surface — and a key can never reach one.
+        """
         root = __import__("pathlib").Path(__file__).resolve().parents[1]
         for relative in (
             "opportunity_slate_routes.py",

@@ -84,6 +84,14 @@ wins and the deviation is named below. What does not flex: the honesty states,
 the byte-identical trust and privacy copy, accessibility, and the rule against
 inventing visual direction.
 
+**Scope of "byte-identical trust and privacy copy".** That constraint binds the
+visual passes recorded in this document — a parity, tone or layout change may
+not reword a trust sentence — and it is **not** a branch-wide guarantee that no
+trust sentence changed anywhere. Slice OS-2 changed five of them, because OS-1
+could truthfully say nothing is analyzed and OS-2 cannot. The complete
+branch-wide before/after set, and the re-acceptance those five need, live in
+[`OS-2_COMPLETION_REPORT.md`](OS-2_COMPLETION_REPORT.md) §5.
+
 ## Disposition, 2026-08-03
 
 Implemented on `work/2026-08-02-opportunity-slate-os1`. Evidence:
@@ -349,3 +357,109 @@ Findings recorded 2026-08-03; three rounds of corrections implemented the same
 day. Evidence: [`evidence/os-1/`](evidence/os-1/EVIDENCE_MANIFEST.md). PR 250
 remains open and unmerged; OS-1 does not merge until Pete accepts the corrected
 build. Nothing is deployed.
+
+---
+
+# Fourth round, 2026-08-03 — Review Requirements (image 03), slice OS-2
+
+The owner's directive above was "go through all of them", and the scope note
+recorded that image 03's screen lives on the stacked OS-2 branch and receives
+the same treatment "after OS-1's shared room CSS is corrected, since OS-2
+inherits it". OS-1 has now merged, OS-2 has been reconciled onto it, and this
+is that pass.
+
+## What the screen inherited, and what it did not
+
+Reconciling onto the shipped OS-1 brought the whole accepted visual language
+across intact — the elevation scale, the deeper canvas, the off-white grained
+workbench, the restored props, the narrowed rails and the `--os-neutral-ink`
+contrast split. The stylesheet is a strict superset of `main`'s: 458 lines
+added, none removed, no OS-1 selector missing.
+
+Two places would have quietly undone accepted work, and both were found by
+reading the merge rather than by a failing test:
+
+- `.os-help--muted` was still on `--os-neutral`, reverting the second round's
+  contrast split from 4.90:1 back to 4.44:1;
+- `.os-rail-card__note` was re-declared unscoped, loosening the margin the
+  third round tuned on the review screen's rail card.
+
+What the screen did **not** inherit was a proportion of its own. It rendered
+at the intake screen's 53.2%, which is the exact defect gap 1 was opened to
+fix, one screen later.
+
+## Findings, and what was done
+
+Judged the way the owner asked for: real page rendered, put beside the locked
+mockup at full width, corrected, re-rendered, repeatedly.
+
+| # | Finding | Disposition |
+|---|---|---|
+| R1 | **No proportion of its own.** Image 03 measures 57.8% — between image 01's 53.2% and image 02's 64.6% — because it is a table rather than a form or a document. | Done. `.os-layout--requirements`, gated on the condition that selects `_requirements.html`. Built: **57.7%**, rails 181/277 against the authority's 181/277, and the authority's unequal gaps (46 left, 25 right) reproduced by putting the smaller value on the column gap and the difference on the rail's margin. |
+| R2 | **The count sat opposite the title**, not beside it, so "Required qualifications" and "6" read as a heading and a separate statistic instead of one label. | Done. The auto margin moved from the title to the count. |
+| R3 | **A coloured dot before every classification.** The authority has none — and a coloured marker repeated down a column starts to read as a status or a score, which this screen is forbidden to carry. | Done. The dot survives only where the **member** has overridden the proposal, which is a fact about them rather than a judgement about the role. |
+| R4 | **No rule before the action cell.** Image 03 rules it off at full row height. | Done, at the authority's 72px cell width. |
+| R5 | **Rows inset from the card edges**, so the separators and the selected outline floated inside a margin — a card within a card, the reading V9 rejected on screen 2. | Done. `.os-group__body` padding to zero; rows run edge to edge. |
+| R6 | **The selected row was too saturated** and its outline too dark. | Done. The fill is mixed back toward the surface; the outline is the authority's brighter cobalt. |
+| R7 | **Every review control was full-strength cobalt**, competing with the one thing on the screen that must read as cobalt — the selection. | Done, muted; hover restores the cobalt. |
+| R8 | **The wrong kind of density.** Measured off the locked PNG, the authority spends its row height on AIR (23px of padding) around a tightly set line (19px). The build had it backwards: 11px of padding and 1.55 leading. That is precisely the owner's "not classy" — loose type in a cramped row. | Done. Padding to 1.3rem, leading to 1.45, statement text to 0.88rem. One-line rows now 63px against the authority's 65px; two-line rows 84px against 84px. |
+| R9 | **The classification column took whatever it wanted**, pushing one-line statements onto two where the authority holds them on one. | Done. The authority's 64.6/26.1/9.3 split is now built as 66/24/72px. |
+| R10 | **The connector was missing.** Image 03 draws a dot and a dashed cobalt run from the selected row to the rail. | Done, and this is a genuine departure from §14-M10's ruling against drawn connectors — argued below. |
+| R11 | **Cancel was a bare text link.** The authority draws it as a bordered white button, and image 08 keeps it looking like a control while everything around it is disabled. | Done. Both Cancel controls, ordinary and processing. |
+| R12 | **The rails were image 01's scale**, not image 03's, and the left-rail cards' 34px badge broke "Source confirmed" across two lines where the authority holds it on one. | Done. Rail 0.80rem, intro 0.84rem, badge 24px. 0.78rem was rendered and rejected as thin — the same place the third round landed. |
+| R13 | **"Why review requirements?" was a boxed card** where images 01-03 all set the "Why ...?" block plainly on the canvas. | Done, using OS-1's shipped `.os-rail-note` grammar. |
+| R14 | **Two "Source confirmed" headings** in one rail once OS-2's own source card arrived beside OS-1's session-truth card. | Done. Image 03 shows the second card as "Session private", and that is now what renders. |
+| R15 | **No decorative prop** on this screen's left rail, though image 03 carries the same papers-and-magnifier as image 02. | Done. |
+| R16 | **The phone was three times too tall.** The desktop row rhythm is measured off a three-column row; stacked, the same padding is paid three times and a six-row group ran to 900px on a 390px screen. | Done. The cells carry their own smaller spacing below 640px; 390 came down 583px, and the stray vertical rule beside a full-width button is gone. |
+
+### The connector, and why section 14-M10 does not forbid it
+
+Handoff section 14-M10 rejected a drawn connector for the extraction-concern
+card, and that ruling still holds there: it had to point at an arbitrary
+phrase inside reflowing body text, and no drawn line survives that. This one
+joins two fixed edges — a table cell and a rail — at a fixed vertical
+position, and it exists only in the layout where those edges are genuinely
+side by side. Below 1200px the rail stacks and the connector does not render;
+the relationship is carried at every width by `aria-current` on the selecting
+control and the fragment link it addresses. It is decorative, has no pointer
+target, and adds no information that is not already programmatic.
+
+## Copy
+
+Two user-visible strings changed, both forced by the slice rather than chosen:
+
+1. The extraction-concern card's state label reads **"Not checked yet"**
+   before a review has run. Slice OS-1 printed "None flagged" because in OS-1
+   nothing *could* be flagged; after OS-2 that sentence tells a member the
+   wording was read and came back clean when it has not been read at all.
+   "None flagged" is now reserved for a review that genuinely found nothing,
+   and all three states are pinned by `ConcernCardStateTests`.
+2. The right rail's standing help no longer says requirement review "is not
+   built yet", because it is. The evidence alignment map still says so,
+   because it still is not.
+
+Every trust and privacy sentence is unchanged **by this pass**. The banner and
+truth-card wording is OS-2's own reviewed AI-transit copy, which this pass did
+not touch — it is not OS-1's wording, and the branch-wide delta is in
+[`OS-2_COMPLETION_REPORT.md`](OS-2_COMPLETION_REPORT.md) §5.
+
+## Verification
+
+| Check | Result |
+|---|---|
+| Workbench proportion at 1440 | requirements 831px = **57.7%** (authority 57.8%) |
+| Rails at 1440 | left ink 181px (authority 181), right 277px (authority 277) |
+| Row rhythm | one line 63px (authority 65), two lines 84px (authority 84) |
+| Overflow, contrast, targets, heading order | Clean at 320/360/390/430/480/560/640/700/768/900/1024/1100/1200/1280/1366/1440/1600 in **both** modes — 34 combinations, no findings |
+| Honesty states | Truthful public banner, spend-guard cards, honest inert primary, no fabricated analysis, no score/ranking/verdict string at any width in either mode |
+| Anti-verdict prose scan | Untouched. Its five correction rounds and its pinned tests are unchanged |
+| Dark theme | No new dark rules; the site-wide pause is respected |
+| Tests | 80 + 75 + 49 focused, 15 + 18 guardrail, plus the full suite |
+
+Evidence: [`evidence/os-2/`](evidence/os-2/EVIDENCE_MANIFEST.md), including
+`compare-03-review-requirements.png` — authority left, build right.
+
+## Status
+
+Implemented on `work/2026-08-03-opportunity-slate-os2`. **Awaiting Pete's
+visual acceptance.** No PR is open for OS-2 and nothing is deployed.

@@ -24,6 +24,16 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_GetOpportunityWorkingSessionForOwner",
         "usp_PurgeExpiredOpportunityWorkingData",
         "usp_SaveOpportunitySourceForOwner",
+        # PS-OPPSLATE-001 slice OS-2: AI step 1 and 2 proposals and the
+        # member's decisions on them. Same owner-scoping rule — each resolves
+        # @UserKey itself and re-asserts owner_profile_id in every predicate.
+        "usp_ConfirmOpportunityRequirementsForOwner",
+        "usp_CorrectOpportunityRequirementStatementForOwner",
+        "usp_GetOpportunityRequirementsForOwner",
+        "usp_GetOpportunitySourceReviewForOwner",
+        "usp_ResolveOpportunitySourceConcernForOwner",
+        "usp_SaveOpportunityRequirementProposalForOwner",
+        "usp_SaveOpportunitySourceReviewForOwner",
         "usp_CorrectCapture",
         "usp_CreateCapture",
         "usp_CreateVoiceDraft",

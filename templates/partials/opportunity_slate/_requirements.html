@@ -1,0 +1,255 @@
+{% from "partials/opportunity_slate/_icons.html" import os_icon %}
+{#
+  Review Requirements — image 03, and image 08's processing variant.
+
+  The four statement groups are four SEPARATE cards with their own counts, in
+  image 03's order, and they stay separate even when one is empty (locked
+  rule; handoff section 14-M14 — image 05's merged "Responsibilities and
+  informational statements" card must not be imported here).
+
+  Selecting a row drives the right rail (_statement_rail.html). Every row is a
+  real <button> inside a real <table>, so selection is keyboard-operable and
+  the relationship survives the narrow reflow.
+
+  THE HONEST END OF THIS SLICE. Image 03's primary action reads "Confirm
+  requirements and analyze". Slice OS-2 has no analysis engine — that is OS-3
+  — so the button here reads "Confirm requirements", because that is exactly
+  what pressing it does. Confirming is real: it records checkpoint 2 of 2
+  against this exact requirement-set version. What follows it is stated
+  plainly rather than staged, and there is no fabricated progress rail, no
+  invented status, and no result.
+#}
+{% set requirements = room.requirements %}
+{% set set_record = requirements.set %}
+
+<div class="os-context-strip">
+  <span class="os-chip">
+    <span class="os-chip__badge">{{ os_icon('doc') }}</span>
+    <span>
+      <span class="os-chip__label">Source</span>
+      <span class="os-chip__value">Confirmed</span>
+    </span>
+  </span>
+  <span class="os-chip">
+    <span class="os-chip__badge">{{ os_icon('compare') }}</span>
+    <span>
+      <span class="os-chip__label">Version</span>
+      <span class="os-chip__value">{{ requirements.version_label }}</span>
+    </span>
+  </span>
+  <span class="os-chip">
+    <span class="os-chip__badge">{{ os_icon('globe' if room.is_public else 'lock') }}</span>
+    <span>
+      <span class="os-chip__label">Session</span>
+      <span class="os-chip__value">{% if room.is_public %}Public session{% else %}Session private{% endif %}</span>
+    </span>
+  </span>
+</div>
+
+<h2 class="os-workbench__title os-workbench__title--doc" data-os-focus tabindex="-1">Employer statements</h2>
+<p class="os-workbench__lead">
+  {% if requirements.has_statements %}
+  PeerSlate extracted these statements from the confirmed source. Review the
+  proposed meaning before you confirm it.
+  {% else %}
+  PeerSlate can read the confirmed source and propose how each of the
+  employer's statements is meant.
+  {% endif %}
+</p>
+
+{% if not requirements.is_source_confirmed %}
+{# Reachable only by hand-typing the step. There is nothing to interpret
+   without a confirmed source, and this says so instead of guessing. #}
+<div class="os-prompt-card os-prompt-card--quiet">
+  <span class="os-prompt-card__badge">{{ os_icon('info') }}</span>
+  <div class="os-prompt-card__body">
+    <p class="os-prompt-card__heading">Confirm the source first</p>
+    <p>
+      PeerSlate reads the employer's statements out of the source you
+      accepted. Confirm the wording at checkpoint 1 and this screen fills in.
+    </p>
+  </div>
+  <p class="os-prompt-card__action">
+    <a class="os-btn os-btn--primary os-btn--sm" href="{{ room.review_step_url }}" data-os-step="review">Review source</a>
+  </p>
+</div>
+
+{% elif not requirements.has_statements %}
+{# Server-authored, cloned into place by the room script while the request is
+   genuinely in flight. Image 08's own stage names describe the OS-3 evidence
+   analysis and are deliberately not used: nothing here checks any evidence. #}
+{% set stage_heading = 'Reading the employer statements' %}
+{% set stage_truth = 'Nothing is being saved, published, shared, or sent to an employer.' %}
+{% set stages = [
+     ('Source confirmed', 'PeerSlate is working from the wording you accepted.'),
+     ('Reading the employer statements', 'Segmenting the source and proposing how each statement reads.'),
+     ('Preparing the requirement review', 'Laying out the statements for you to check.')
+   ] %}
+<template data-os-stage-template>{% include "partials/opportunity_slate/_stage_rail.html" %}</template>
+
+<div class="os-prompt-card">
+  <span class="os-prompt-card__badge">{{ os_icon('sparkle') }}</span>
+  <div class="os-prompt-card__body">
+    <p class="os-prompt-card__heading">Read the employer's statements</p>
+    <p>
+      PeerSlate will split the confirmed source into individual statements and
+      propose, for each one, whether it reads as a required qualification, a
+      preferred one, a responsibility, or information — and how its parts fit
+      together. Every proposal is yours to correct.
+    </p>
+    {% if room.is_public %}
+    <p class="os-help os-help--muted">
+      {{ os_icon('globe', 'os-icon os-icon--sm') }}This sends the confirmed role text to PeerSlate's AI provider. PeerSlate does not store it.
+    </p>
+    {% endif %}
+  </div>
+  <form class="os-prompt-card__action" method="post" action="{{ room.interpret_url }}" data-os-form="interpret">
+    <button type="submit" class="os-btn os-btn--primary os-btn--sm" data-os-interpret>
+      {{ os_icon('sparkle') }}<span>Read the statements</span>
+    </button>
+  </form>
+</div>
+
+{% else %}
+
+{% if set_record.is_confirmed %}
+<div class="os-confirmed-banner" role="status">
+  {{ os_icon('check') }}
+  <span>
+    <strong>You confirmed these requirements.</strong>
+    Nothing was saved, published, shared, or sent to an employer, and nothing
+    has been compared against your evidence.
+  </span>
+</div>
+{% endif %}
+
+{# Per-class counts, never an aggregate. Handoff section 1 and the locked
+   rules: no overall score, percentage, recommendation, employer prediction,
+   or traffic-light verdict at any layer. Four independent counts is the whole
+   accounting this screen performs. #}
+<div class="os-statement-groups" data-os-statement-groups>
+  {% for group in requirements.groups %}
+  <details class="os-group" id="os-group-{{ group.class }}"{% if group.is_open %} open{% endif %}>
+    <summary class="os-group__summary">
+      <span class="os-group__title">{{ group.label }}</span>
+      <span class="os-group__count">{{ group.count }}</span>
+      <span class="os-group__chevron" aria-hidden="true">{{ os_icon('chevron', 'os-icon os-icon--sm') }}</span>
+    </summary>
+    <div class="os-group__body">
+      {% if group.count %}
+      <table class="os-statements">
+        <caption class="os-visually-hidden">{{ group.label }} extracted from the confirmed employer source</caption>
+        <thead>
+          <tr>
+            <th scope="col">Employer statement</th>
+            <th scope="col">Classification</th>
+            <th scope="col"><span class="os-visually-hidden">Review this statement</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for statement in group.statements %}
+          {# Slice OS-2 independent review, finding F7. This row used to carry
+             aria-selected. That attribute is only supported on role="row"
+             inside a grid or treegrid; on a plain <tr> in a data table it is
+             ignored by assistive technology, so the selected state was
+             announced to nobody. The state belongs on the control that
+             actually does the selecting — the link in the last cell — and
+             aria-current is the right attribute for it, because that link is
+             a navigation control (it is a real href so selection works with
+             JavaScript off), not a toggle button. The visual outline stays on
+             the row via is-selected. #}
+          <tr class="os-statements__row{% if statement.key == requirements.selected_key %} is-selected{% endif %}"
+              data-os-statement-row="{{ statement.key }}">
+            <td class="os-statements__text">{{ statement.text }}</td>
+            <td class="os-statements__class">
+              <span class="os-class-chip{% if statement.is_reclassified %} os-class-chip--member{% endif %}">
+                {{ statement.class_label }}
+              </span>
+              {% if statement.is_reclassified %}
+              <span class="os-statements__flag">Your classification</span>
+              {% elif statement.member_clarification %}
+              <span class="os-statements__flag">You clarified this</span>
+              {% endif %}
+            </td>
+            <td class="os-statements__action">
+              {# A real link so selection works with JavaScript off; the room
+                 script intercepts it and swaps the rail panel in place. #}
+              <a class="os-statements__select"
+                 href="{{ room.requirements_step_url }}&amp;statement={{ statement.key }}#os-statement-rail"
+                 data-os-select-statement="{{ statement.key }}"
+                 {% if statement.key == requirements.selected_key %}aria-current="true"{% endif %}>
+                {{ os_icon('statement', 'os-icon os-icon--sm') }}
+                <span class="os-visually-hidden">Review statement {{ statement.ordinal }}</span>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="os-group__empty">
+        PeerSlate did not read any of the employer's statements this way. That
+        is a reading, not a fact about the role — reclassify any statement in
+        the rail if you disagree.
+      </p>
+      {% endif %}
+    </div>
+  </details>
+  {% endfor %}
+</div>
+
+<p class="os-help os-help--muted">
+  Proposed by {{ set_record.model }} · contract {{ set_record.prompt_contract }} ·
+  read from {{ requirements.version_label }}
+</p>
+{% endif %}
+
+<div class="os-footer-strip">
+  <p class="os-footer-strip__truth">
+    {{ os_icon('lock') }}
+    <span>
+      <strong>{% if room.is_public %}Public session · Nothing is stored{% else %}Session private · Nothing is saved yet{% endif %}</strong>
+      {% if requirements.has_statements %}
+      Confirming these requirements records what you accepted. It does not
+      save the slate or produce qualification results.
+      {% else %}
+      Nothing has been read from the employer's source yet.
+      {% endif %}
+    </span>
+  </p>
+  <div class="os-footer-strip__actions">
+    <a class="os-link" href="{{ room.review_step_url }}" data-os-step="review">Review source</a>
+    {% if requirements.has_statements and not set_record.is_confirmed %}
+    <form method="post" action="{{ room.confirm_requirements_url }}" data-os-form="confirm-requirements">
+      <input type="hidden" name="requirement_set_key" value="{{ set_record.set_key or '' }}">
+      <input type="hidden" name="set_version_token" value="{{ set_record.version_token or '' }}">
+      <button type="submit" class="os-btn os-btn--primary" data-os-confirm-requirements
+              {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>
+        <span>Confirm requirements</span>{{ os_icon('arrow-right') }}
+      </button>
+    </form>
+    {% elif requirements.has_statements %}
+    {# Honest inert primary, in slice OS-1's established grammar. Checkpoint 2
+       is done and the alignment analysis it precedes does not exist yet. A
+       live-looking button that did nothing would be worse than saying so.
+
+       Slice OS-2 independent review, finding F8: aria-disabled announced
+       that the control does nothing but never said WHY. The note below the
+       footer strip is the explanation, and a sighted member reads it by
+       proximity; aria-describedby gives a screen-reader user the same
+       sentence in the same breath. The note renders under exactly the same
+       condition as this branch, so the reference is never dangling. #}
+    <button type="button" class="os-btn os-btn--primary" aria-disabled="true"
+            aria-describedby="os-alignment-note" data-os-inert-next>
+      <span>Explore alignment</span>{{ os_icon('arrow-right') }}
+    </button>
+    {% endif %}
+  </div>
+</div>
+{% if requirements.has_statements and set_record.is_confirmed %}
+<p class="os-help os-help--muted os-footer-note" id="os-alignment-note">
+  Comparing these requirements against your authorized evidence arrives in a
+  later update. Nothing is waiting behind this button, and nothing has been
+  analyzed.
+</p>
+{% endif %}

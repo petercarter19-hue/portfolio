@@ -1,5 +1,5 @@
 """Static contract tests for the Opportunity Slate migration —
-PS-OPPSLATE-001, slice OS-1.
+PS-OPPSLATE-001, slices OS-1 and OS-2.
 
 Mirrors tests/test_workshop_migration.py: these assert the shape of the
 proposed SQL without needing a database, so the migration's guards, owner
@@ -22,7 +22,7 @@ FORWARD = MIGRATIONS / "PS-OPPSLATE-001_opportunity_slate.sql"
 ROLLBACK = MIGRATIONS / "PS-OPPSLATE-001_opportunity_slate_rollback.sql"
 VERIFY = VERIFICATION / "PS-OPPSLATE-001_owner_isolation_verify.sql"
 
-PROCEDURE_NAMES = (
+OS1_PROCEDURE_NAMES = (
     "usp_PurgeExpiredOpportunityWorkingData",
     "usp_GetOpportunityWorkingSessionForOwner",
     "usp_SaveOpportunitySourceForOwner",
@@ -31,20 +31,49 @@ PROCEDURE_NAMES = (
     "usp_DeleteOpportunityWorkingSessionForOwner",
 )
 
-# Every procedure that writes. usp_GetOpportunityWorkingSessionForOwner is
-# deliberately absent: it is a single read and owns no transaction.
+# Slice OS-2: the AI-proposal store and checkpoint 2 of 2.
+OS2_PROCEDURE_NAMES = (
+    "usp_GetOpportunitySourceReviewForOwner",
+    "usp_SaveOpportunitySourceReviewForOwner",
+    "usp_ResolveOpportunitySourceConcernForOwner",
+    "usp_GetOpportunityRequirementsForOwner",
+    "usp_SaveOpportunityRequirementProposalForOwner",
+    "usp_CorrectOpportunityRequirementStatementForOwner",
+    "usp_ConfirmOpportunityRequirementsForOwner",
+)
+
+PROCEDURE_NAMES = OS1_PROCEDURE_NAMES + OS2_PROCEDURE_NAMES
+
+# Every procedure that writes. The two read procedures are deliberately
+# absent: each is a single read and owns no transaction.
 MUTATING_PROCEDURE_NAMES = (
     "usp_PurgeExpiredOpportunityWorkingData",
     "usp_SaveOpportunitySourceForOwner",
     "usp_CorrectOpportunitySourceForOwner",
     "usp_ConfirmOpportunitySourceForOwner",
     "usp_DeleteOpportunityWorkingSessionForOwner",
+    "usp_SaveOpportunitySourceReviewForOwner",
+    "usp_ResolveOpportunitySourceConcernForOwner",
+    "usp_SaveOpportunityRequirementProposalForOwner",
+    "usp_CorrectOpportunityRequirementStatementForOwner",
+    "usp_ConfirmOpportunityRequirementsForOwner",
+)
+
+READ_PROCEDURE_NAMES = (
+    "usp_GetOpportunityWorkingSessionForOwner",
+    "usp_GetOpportunitySourceReviewForOwner",
+    "usp_GetOpportunityRequirementsForOwner",
 )
 
 TABLE_NAMES = (
     "dbo.opportunity_working_sessions",
     "dbo.opportunity_sources",
     "dbo.opportunity_source_versions",
+    "dbo.opportunity_source_reviews",
+    "dbo.opportunity_source_concerns",
+    "dbo.opportunity_requirement_sets",
+    "dbo.opportunity_requirement_set_versions",
+    "dbo.opportunity_requirement_statements",
 )
 
 # Handoff section 1 and section 8: no overall score, percentage,
@@ -97,7 +126,7 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         self.assertTrue(ROLLBACK.exists())
         self.assertTrue(VERIFY.exists())
 
-    def test_all_six_procedures_are_present_exactly_once(self):
+    def test_all_thirteen_procedures_are_present_exactly_once(self):
         self.assertEqual(set(self.procedures), set(PROCEDURE_NAMES))
         self.assertEqual(
             self.forward.count("CREATE OR ALTER PROCEDURE"), len(PROCEDURE_NAMES)
@@ -215,13 +244,93 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
 
     def test_workbench_state_and_capture_method_are_check_pinned(self):
         self.assertIn(
-            "workbench_state IN (N'role_intake', N'review_source', N'source_confirmed')",
+            "workbench_state IN (N'role_intake', N'review_source', N'source_confirmed',\n"
+            "                                     N'review_requirements', N'requirements_confirmed')",
             self.forward,
         )
         self.assertIn(
             "capture_method IN (N'pasted', N'dictated', N'uploaded', N'imported')",
             self.forward,
         )
+
+    def test_the_widened_state_check_is_migrated_not_only_declared(self):
+        """Slice OS-2 independent review, finding F4.
+
+        The two checkpoint-2 states are declared inline in CREATE TABLE, and
+        that CREATE TABLE sits inside `IF OBJECT_ID(...) IS NULL`. On a
+        database already at the slice OS-1 revision the whole block is
+        skipped: this file would create the new proposal tables and
+        procedures, report success, and then fail at runtime the first time a
+        member reached checkpoint 2, because the CHECK still refused the
+        value the confirm procedure writes. The compatibility THROW below it
+        probes columns on tables this file just created, so it cannot see the
+        constraint at all.
+
+        The fix is an ALTER path, and the test asserts three things about it:
+        that it exists, that it is guarded so a fresh apply is unaffected,
+        and that it reinstates the constraint rather than merely dropping it.
+        """
+        alter_index = self.forward.find(
+            "ALTER TABLE dbo.opportunity_working_sessions\n"
+            "                DROP CONSTRAINT CK_opportunity_working_sessions_state;"
+        )
+        self.assertNotEqual(alter_index, -1, "no ALTER path for the widened CHECK")
+
+        add_index = self.forward.find(
+            "ALTER TABLE dbo.opportunity_working_sessions\n"
+            "            ADD CONSTRAINT CK_opportunity_working_sessions_state CHECK"
+        )
+        self.assertNotEqual(add_index, -1, "the CHECK is dropped and never restored")
+        self.assertGreater(
+            add_index,
+            alter_index,
+            "ADD CONSTRAINT appears before DROP CONSTRAINT, so the widened "
+            "CHECK is overwritten by the narrow one it was meant to replace",
+        )
+
+        # Guarded: the drop/add only runs when the live constraint does not
+        # already carry both new values, so applying this file to an empty
+        # database changes nothing.
+        guard = self.forward[:alter_index]
+        self.assertIn("FROM sys.check_constraints", guard)
+        self.assertIn(r"definition LIKE N'%review\_requirements%' ESCAPE N'\'", guard)
+        self.assertIn(r"definition LIKE N'%requirements\_confirmed%' ESCAPE N'\'", guard)
+
+        # The restored constraint carries the full five-value vocabulary, not
+        # a subset that would break some other state.
+        restored = self.forward[add_index : add_index + 400]
+        for state in (
+            "role_intake",
+            "review_source",
+            "source_confirmed",
+            "review_requirements",
+            "requirements_confirmed",
+        ):
+            self.assertIn(f"N'{state}'", restored)
+
+        # And it stays inside the file's single guarded transaction — the
+        # envelope this slice's review verified is not reopened.
+        #
+        # Both anchors name the OUTER envelope explicitly. The file contains
+        # 20-odd nested COMMIT TRANSACTION statements inside procedure bodies,
+        # the first of them well before this ALTER path, so a bare
+        # index("COMMIT TRANSACTION") would bind to a procedure's commit and
+        # assert nothing about the envelope at all.
+        envelope_begin = "\n    BEGIN TRANSACTION;"
+        envelope_commit = "\n    COMMIT TRANSACTION;\nEND TRY"
+        self.assertEqual(
+            self.forward.count(envelope_commit), 1, "envelope COMMIT is not unique"
+        )
+        self.assertLess(self.forward.index(envelope_begin), alter_index)
+        self.assertGreater(self.forward.index(envelope_commit), add_index)
+
+    def test_the_migration_header_states_it_is_safe_over_the_os1_revision(self):
+        """Finding F4's other half: an operator deciding whether to re-run
+        this file against an existing database must not have to read 2,500
+        lines of T-SQL to find out."""
+        header = self.forward[: self.forward.index("SET NOCOUNT ON;")]
+        self.assertIn("RE-APPLYING OVER THE SLICE OS-1 REVISION IS SUPPORTED", header)
+        self.assertIn("SLICE OS-2 CONSTRAINT UPGRADE", self.forward)
 
     def test_confirmation_state_is_a_paired_check_pinned_to_the_current_version(self):
         self.assertIn("CK_opportunity_sources_confirmation_state", self.forward)
@@ -319,8 +428,9 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         self.assertIn("expires_at_utc <= @Now", purge)
         self.assertIn("UPDLOCK, HOLDLOCK", purge)
         # Owner-scoped with no all-owners branch: a member request can never
-        # trigger a cross-owner destructive sweep.
-        self.assertEqual(purge.count("owner_profile_id = @ProfileId"), 4)
+        # trigger a cross-owner destructive sweep. Slice OS-2 added five more
+        # deletes (the proposal tables), each carrying the same predicate.
+        self.assertEqual(purge.count("owner_profile_id = @ProfileId"), 9)
         self.assertNotIn("@AllOwners", purge)
         # Counts are opt-out so the internal caller does not emit a second
         # result set ahead of its own.
@@ -514,6 +624,199 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         called = set(re.findall(r'"(usp_[A-Za-z0-9_]+)"', service_source))
         self.assertEqual(called, set(PROCEDURE_NAMES))
 
+    # ------------------------------------------------------------------
+    # Slice OS-2
+    # ------------------------------------------------------------------
+
+    def test_the_proposal_tables_keep_ai_and_member_columns_apart(self):
+        """Handoff section 1's third data class, enforced in the schema.
+
+        A statement carries the model's reading in proposed_* columns and the
+        member's in member_* columns. If a future edit ever merged them,
+        "PeerSlate proposed X, the member says Y" stops being a question the
+        data can answer.
+        """
+        for column in (
+            "proposed_class nvarchar(40) NOT NULL",
+            "proposed_explanation nvarchar(1000) NOT NULL",
+            "proposed_structure_json nvarchar(4000) NOT NULL",
+            "member_class nvarchar(40) NULL",
+            "member_clarification nvarchar(2000) NULL",
+        ):
+            self.assertIn(column, self.forward)
+
+    def test_no_procedure_ever_writes_a_proposal_column(self):
+        """The AI's reading is written once, when the proposal is recorded,
+        and never edited afterwards — least of all from a member column."""
+        correct = self.procedures[
+            "usp_CorrectOpportunityRequirementStatementForOwner"
+        ]
+        for forbidden in (
+            "SET proposed_class",
+            "proposed_class =",
+            "proposed_explanation =",
+            "proposed_structure_json =",
+        ):
+            self.assertNotIn(forbidden, correct)
+        resolve = self.procedures["usp_ResolveOpportunitySourceConcernForOwner"]
+        for forbidden in ("original_text =", "SET original_text", "quoted_text ="):
+            self.assertNotIn(forbidden, resolve)
+
+    def test_resolving_a_concern_never_touches_the_verbatim_original(self):
+        """Applying a member's per-concern correction writes the correction
+        columns and the whole-document overlay. original_text is write-once
+        and stays that way."""
+        resolve = self.procedures["usp_ResolveOpportunitySourceConcernForOwner"]
+        self.assertIn("member_corrected_text = @DocumentText", resolve)
+        self.assertIn("member_corrected_text = CASE WHEN @Resolution", resolve)
+        # Applying invalidates the confirmation; dismissing changes no
+        # wording, so it must not.
+        applied = resolve.split("IF @Resolution = N''applied''", 2)[-1]
+        self.assertIn("confirmed_version_number = NULL", applied)
+        self.assertEqual(resolve.count("confirmed_version_number = NULL"), 1)
+
+    def test_a_statement_correction_clears_the_requirement_confirmation(self):
+        correct = self.procedures[
+            "usp_CorrectOpportunityRequirementStatementForOwner"
+        ]
+        self.assertIn("confirmed_version_number = NULL", correct)
+        proposal = self.procedures[
+            "usp_SaveOpportunityRequirementProposalForOwner"
+        ]
+        self.assertIn("confirmed_version_number = NULL", proposal)
+
+    def test_requirement_confirmation_is_a_paired_check_on_the_current_version(self):
+        self.assertIn(
+            "CK_opportunity_requirement_sets_confirmation_state", self.forward
+        )
+        self.assertIn(
+            "confirmed_version_number = current_version_number", self.forward
+        )
+
+    def test_the_four_statement_classes_are_check_pinned_in_both_columns(self):
+        for constraint in (
+            "CK_opportunity_requirement_statements_proposed_class",
+            "CK_opportunity_requirement_statements_member_class",
+        ):
+            self.assertIn(constraint, self.forward)
+        self.assertEqual(
+            self.forward.count(
+                "N'required_qualification', N'preferred_qualification'"
+            ),
+            2,
+        )
+
+    def test_the_concern_resolution_pair_is_all_or_nothing(self):
+        """A dismissed concern changed no wording, so it must not be able to
+        carry replacement wording; a pending one must not look decided."""
+        self.assertIn(
+            "CK_opportunity_source_concerns_resolution_pair", self.forward
+        )
+        for clause in (
+            "member_resolution = N'pending'",
+            "member_resolution = N'dismissed'",
+            "member_resolution = N'applied'",
+        ):
+            self.assertIn(clause, self.forward)
+
+    def test_purge_and_delete_remove_every_proposal_row_they_own(self):
+        """The two slice OS-1 procedures slice OS-2 had to touch. Without
+        this a purge cannot complete (expired employer wording survives its
+        expiry) and an explicit delete fails on a foreign key while promising
+        to be atomic."""
+        for name in (
+            "usp_PurgeExpiredOpportunityWorkingData",
+            "usp_DeleteOpportunityWorkingSessionForOwner",
+        ):
+            with self.subTest(procedure=name):
+                body = self.procedures[name]
+                for table in (
+                    "dbo.opportunity_source_concerns",
+                    "dbo.opportunity_source_reviews",
+                    "dbo.opportunity_requirement_statements",
+                    "dbo.opportunity_requirement_set_versions",
+                    "dbo.opportunity_requirement_sets",
+                ):
+                    self.assertIn(table, body)
+
+    def test_the_two_read_procedures_own_no_transaction(self):
+        for name in READ_PROCEDURE_NAMES:
+            with self.subTest(procedure=name):
+                self.assertNotIn("BEGIN TRANSACTION", self.procedures[name])
+
+    def test_a_rejected_proposal_counts_before_it_deletes(self):
+        """Isolated SQL gate, 2026-08-04, defect 1.
+
+        Both Save-proposal procedures clear the previous proposal before
+        writing the new one, and both can still reject the payload after
+        that point on a count they have not yet taken. If the count guard
+        runs after the DELETE and then COMMITs, an over-long proposal
+        destroys the member's existing review or set - and every decision
+        they had already made on it - while returning 'invalid', which tells
+        the caller nothing happened.
+
+        This was live in usp_SaveOpportunitySourceReviewForOwner: a
+        21-concern payload deleted the member's review and all three
+        resolved concerns, committed the delete, and reported 'invalid'.
+        The order below is the fix, and its sibling already had it right.
+        """
+        checks = (
+            (
+                "usp_SaveOpportunitySourceReviewForOwner",
+                "@ConcernCount > 20",
+                "DELETE dbo.opportunity_source_reviews",
+            ),
+            (
+                "usp_SaveOpportunityRequirementProposalForOwner",
+                "@StatementCount < 1 OR @StatementCount > 60",
+                "DELETE dbo.opportunity_requirement_set_versions",
+            ),
+        )
+        for name, guard, delete_statement in checks:
+            with self.subTest(procedure=name):
+                body = self.procedures[name]
+                self.assertIn(guard, body)
+                self.assertIn(delete_statement, body)
+                self.assertLess(
+                    body.index(guard),
+                    body.index(delete_statement),
+                    f"{name} rejects the payload only after it has already "
+                    "deleted the member's previous proposal",
+                )
+
+    def test_the_upgrade_path_corrects_the_migration_ledger_description(self):
+        """Isolated SQL gate, 2026-08-04, defect 2.
+
+        The ledger row is how an operator answers "which revision does this
+        database carry?". On the upgrade over the slice OS-1 revision the
+        INSERT is skipped, so without this the ledger keeps describing a
+        three-table, six-procedure migration on a database that now has
+        eight tables and thirteen procedures.
+
+        applied_at_utc must NOT move: the rollback's "a later migration is
+        present" guard compares against it, and re-running the file has to
+        stay a no-op.
+        """
+        wrapper = migration_wrapper(self.forward)
+        self.assertIn("UPDATE dbo.schema_migrations", wrapper)
+        self.assertIn("SET description = @OppSlateDescription", wrapper)
+        self.assertIn("description <> @OppSlateDescription", wrapper)
+        self.assertNotIn("SET applied_at_utc", wrapper)
+        self.assertIn("Slices OS-1 and OS-2:", wrapper)
+
+    def test_json_parameters_are_validated_before_use(self):
+        """A malformed JSON payload is refused by name rather than thrown as
+        a raw engine error out of OPENJSON."""
+        for name in (
+            "usp_SaveOpportunitySourceReviewForOwner",
+            "usp_SaveOpportunityRequirementProposalForOwner",
+        ):
+            with self.subTest(procedure=name):
+                body = self.procedures[name]
+                self.assertIn("ISJSON(", body)
+                self.assertIn("OPENJSON(", body)
+                self.assertIn("N''invalid''", body)
+
     def test_the_migration_is_proposed_and_not_wired_into_the_apply_script(self):
         """Slice OS-1 ships the migration as proposed/ and applies it
         nowhere. Registering it with the apply script is a separate,
@@ -532,10 +835,15 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
 class OpportunitySlateIsolatedSqlGateTests(unittest.TestCase):
     """Apply / verify / rollback / re-apply against a throwaway database.
 
-    Skipped by default and never run against production. Slice OS-1 has not
-    executed this gate — no isolated gate database exists on this machine —
-    so the migration's runtime behaviour is asserted statically above and
-    the live rehearsal remains an explicit operational step.
+    Skipped by default and never run against production. Still skipped
+    without an isolated gate database, because it mutates whatever
+    AZURE_SQL_CONNECTIONSTRING points at.
+
+    EXECUTED 2026-08-03 and PASSED, against the throwaway Azure SQL database
+    ps-oppslate-001-gate-20260803 (Basic tier, deleted afterwards). It found
+    three defects the static assertions above cannot reach: a missing
+    candidate key that made the forward migration fail outright, and two
+    verification-script errors. See the migration header for the full record.
     """
 
     @classmethod

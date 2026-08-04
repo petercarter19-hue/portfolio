@@ -1,16 +1,28 @@
-"""Opportunity Slate ephemeral working session — PS-OPPSLATE-001, slice OS-1.
+"""Opportunity Slate ephemeral working session — PS-OPPSLATE-001, slices
+OS-1 and OS-2.
 
 Package: docs/initiatives/PS-OPPORTUNITY-SLATE-001. Controlling contract:
 01_ARCHITECTURE_AND_IMPLEMENTATION_HANDOFF.md sections 8 (data model),
-9 (route/service contract), 11 (security/privacy), and 16 (slice OS-1).
+9 (route/service contract), 11 (security/privacy), and 16 (slices OS-1/OS-2).
 
 This module owns the signed-in member's pre-save workbench: the working
-session, the employer source, and its append-only captured versions. It is
-deliberately small, because slice OS-1 is deliberately small.
+session, the employer source and its append-only captured versions (OS-1),
+and — added by OS-2 — the AI proposals made about that source and the
+member's decisions on them: extraction-concern reviews, the proposed
+requirement set, and per-statement reclassification and clarification.
 
-**No AI call happens anywhere in this module.** Extraction concerns and
-statement interpretation are OS-2; alignment analysis is OS-3. Nothing here
-imports the Anthropic client, and nothing here fabricates a proposal.
+**No AI call happens anywhere in this module.** It stores proposals; it never
+makes one. The single AI seam for this room is
+``services/opportunity_analysis_service.py``, which owns every prompt
+contract, every validator, and the only Anthropic client. Nothing here
+imports that module either — the proposals arrive as plain validated data
+from the route layer — so persistence cannot reach the provider by any path.
+Alignment analysis is OS-3 and does not exist yet.
+
+Three data classes stay apart in the schema and in the views below (handoff
+section 1): the employer's captured wording, the member's own corrections and
+decisions, and the AI proposals. A proposal column is never written over a
+member column and neither is ever written over the employer's original.
 
 **Nothing here is a saved artifact.** A working session is infrastructure
 (handoff section 1): never listed, never exported, never projected, and
@@ -37,6 +49,7 @@ precedent, so this file has no edit-time dependency on another package's
 reserved file.
 """
 
+import json
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -65,7 +78,45 @@ CAPTURE_METHODS = frozenset({"pasted", "dictated", "uploaded", "imported"})
 # import are OS-6. The full enum is the contract, not the current surface.
 OS1_CAPTURE_METHODS = frozenset({"pasted"})
 
-WORKBENCH_STATES = frozenset({"role_intake", "review_source", "source_confirmed"})
+WORKBENCH_STATES = frozenset(
+    {
+        "role_intake",
+        "review_source",
+        "source_confirmed",
+        # Slice OS-2 adds the two states checkpoint 2 lives between. There is
+        # deliberately no analysis or alignment state here: the analysis
+        # engine is OS-3, and a state this schema cannot honestly reach is a
+        # state it must not carry.
+        "review_requirements",
+        "requirements_confirmed",
+    }
+)
+
+# Slice OS-2. A member's decision about one AI-proposed extraction concern.
+# "pending" is the state every proposal starts in; the member is the only
+# thing that moves it.
+CONCERN_RESOLUTIONS = frozenset({"pending", "applied", "dismissed"})
+
+# The four statement classes, as handoff section 10 fixes them. Required,
+# Preferred, Responsibilities, and Informational statements stay four separate
+# groups on the screen (locked rule, handoff section 14-M14).
+STATEMENT_CLASSES = frozenset(
+    {
+        "required_qualification",
+        "preferred_qualification",
+        "responsibility",
+        "informational_statement",
+    }
+)
+
+MAX_CLARIFICATION_UNITS = 2000
+MAX_STATEMENT_TEXT_UNITS = 1200
+MAX_EXPLANATION_UNITS = 400
+MAX_STRUCTURE_JSON_UNITS = 4000
+MAX_CONCERN_REASON_UNITS = 240
+MAX_CONCERN_QUOTE_UNITS = 600
+MAX_MODEL_NAME_UNITS = 100
+MAX_PROMPT_CONTRACT_UNITS = 60
 
 _VERSION_TOKEN = re.compile(r"^[0-9a-fA-F]{16}$")
 
@@ -104,6 +155,71 @@ CONFIRM_ROW_FIELDS = frozenset(
 )
 DELETE_ROW_FIELDS = frozenset({"outcome", "deleted_version_count"})
 PURGE_ROW_FIELDS = frozenset({"purged_session_count", "purged_version_count"})
+
+# Slice OS-2 row shapes.
+REVIEW_ROW_FIELDS = frozenset(
+    {
+        "review_key",
+        "source_version_number",
+        "model_name",
+        "prompt_contract_version",
+        "concern_count",
+        "reviewed_at_utc",
+    }
+)
+CONCERN_ROW_FIELDS = frozenset(
+    {
+        "concern_key",
+        "span_start",
+        "span_length",
+        "quoted_text",
+        "concern_reason",
+        "member_resolution",
+        "member_corrected_text",
+        "resolved_at_utc",
+        "concern_row_version",
+    }
+)
+SAVE_REVIEW_ROW_FIELDS = frozenset({"outcome", "review_key", "concern_count"})
+RESOLVE_ROW_FIELDS = frozenset({"outcome", "source_row_version", "member_resolution"})
+REQUIREMENT_SET_ROW_FIELDS = frozenset(
+    {
+        "requirement_set_key",
+        "set_row_version",
+        "version_number",
+        "source_version_number",
+        "model_name",
+        "prompt_contract_version",
+        "proposed_at_utc",
+        "confirmed_version_number",
+        "confirmed_at_utc",
+    }
+)
+STATEMENT_ROW_FIELDS = frozenset(
+    {
+        "statement_key",
+        "ordinal",
+        "span_start",
+        "span_length",
+        "employer_text",
+        "proposed_class",
+        "proposed_explanation",
+        "proposed_structure_json",
+        "member_class",
+        "member_clarification",
+        "member_updated_at_utc",
+        "statement_row_version",
+    }
+)
+SAVE_PROPOSAL_ROW_FIELDS = frozenset(
+    {"outcome", "requirement_set_key", "version_number", "statement_count"}
+)
+CORRECT_STATEMENT_ROW_FIELDS = frozenset(
+    {"outcome", "statement_row_version", "member_class"}
+)
+CONFIRM_REQUIREMENTS_ROW_FIELDS = frozenset(
+    {"outcome", "set_row_version", "confirmed_version_number"}
+)
 
 _SAVE_OUTCOMES = frozenset({"success", "existing", "unchanged"})
 
@@ -284,6 +400,37 @@ def validate_source_text(value, *, label="role text"):
     return cleaned
 
 
+def apply_concern_correction(document_text, quoted_text, corrected_text):
+    """Splice one concern's corrected wording into the displayed document.
+
+    Deterministic and shared by both modes, for the same reason
+    :func:`validate_source_text` is: the anonymous public path must not get a
+    looser rule than the signed-in one.
+
+    The quoted span has to appear exactly once in the current document. If it
+    appears zero times the wording has already changed underneath the concern;
+    if it appears more than once there is no single right place to put the
+    correction. Both raise ``code="changed"`` so the member is told the text
+    moved and sent to the full editor, rather than having PeerSlate guess at a
+    position and quietly rewrite the wrong sentence.
+    """
+    if not isinstance(document_text, str) or not document_text:
+        raise OpportunitySlateServiceError("Invalid role text.", code="invalid")
+    quote = quoted_text if isinstance(quoted_text, str) else ""
+    if not quote:
+        raise OpportunitySlateServiceError("Invalid quoted wording.", code="invalid")
+    replacement = validate_source_text(corrected_text, label="corrected wording")
+
+    occurrences = document_text.count(quote)
+    if occurrences != 1:
+        raise OpportunitySlateServiceError(
+            "This wording changed. Review it and correct it in the editor.",
+            code="changed",
+        )
+    updated = document_text.replace(quote, replacement, 1)
+    return validate_source_text(updated, label="role text")
+
+
 @dataclass(frozen=True)
 class WorkingSourceView:
     """One member's current working session and its current source version.
@@ -369,6 +516,281 @@ def _serialize_working_row(row):
         ),
         captured_at=_utc_timestamp(row["captured_at_utc"], "captured time"),
     )
+
+
+@dataclass(frozen=True)
+class SourceConcernView:
+    """One AI-proposed extraction concern and the member's decision on it.
+
+    A third data class (handoff section 1), kept apart from both the
+    employer's captured wording and the member's own correction:
+    ``quoted_text`` is the employer's characters at the proposed span,
+    ``concern_reason`` is the proposal, and ``member_corrected_text`` is the
+    member's replacement wording — present only once they have applied one.
+    None of the three is ever written over another.
+    """
+
+    concern_key: str
+    span_start: int
+    span_length: int
+    quoted_text: str
+    concern_reason: str
+    member_resolution: str
+    member_corrected_text: str | None
+    resolved_at: datetime | None
+    version_token: str
+
+    @property
+    def is_pending(self):
+        return self.member_resolution == "pending"
+
+    @property
+    def span_end(self):
+        return self.span_start + self.span_length
+
+
+@dataclass(frozen=True)
+class SourceReviewView:
+    """The record that AI step 1 ran against one captured source version.
+
+    Its existence is what tells "PeerSlate has reviewed this wording and found
+    nothing" apart from "PeerSlate has not looked yet" — two different facts
+    the screen has to be able to state differently.
+    """
+
+    review_key: str
+    source_version_number: int
+    model_name: str
+    prompt_contract_version: str
+    concern_count: int
+    reviewed_at: datetime
+    concerns: tuple
+
+    @property
+    def pending_concerns(self):
+        return tuple(concern for concern in self.concerns if concern.is_pending)
+
+
+@dataclass(frozen=True)
+class RequirementStatementView:
+    """One employer statement: the AI proposal and the member's correction.
+
+    ``proposed_class`` / ``proposed_paths`` are the proposal.
+    ``member_class`` / ``member_clarification`` are the member's canonical
+    decision. They are separate fields on purpose — ``effective_class``
+    derives the display value without either one overwriting the other, so
+    "PeerSlate proposed X, the member says Y" stays answerable.
+    """
+
+    statement_key: str
+    ordinal: int
+    span_start: int
+    span_length: int
+    employer_text: str
+    proposed_class: str
+    proposed_explanation: str
+    proposed_paths: tuple
+    member_class: str | None
+    member_clarification: str | None
+    member_updated_at: datetime | None
+    version_token: str
+
+    @property
+    def effective_class(self):
+        return self.member_class or self.proposed_class
+
+    @property
+    def is_reclassified(self):
+        return bool(self.member_class) and self.member_class != self.proposed_class
+
+    @property
+    def has_member_input(self):
+        return bool(self.member_class) or bool(self.member_clarification)
+
+
+@dataclass(frozen=True)
+class RequirementSetView:
+    """The current proposed requirement set for one working session."""
+
+    requirement_set_key: str
+    version_token: str
+    version_number: int
+    source_version_number: int
+    model_name: str
+    prompt_contract_version: str
+    proposed_at: datetime
+    confirmed_version_number: int | None
+    confirmed_at: datetime | None
+    statements: tuple
+
+    @property
+    def is_confirmed(self):
+        return self.confirmed_version_number == self.version_number
+
+    def counts_by_class(self):
+        """Per-class counts only.
+
+        Handoff section 1 and the locked rules: qualification accounting is
+        per-status counts, never an overall score, percentage, recommendation,
+        or verdict. This method is the only aggregation this module performs
+        and it returns four independent counts.
+        """
+        counts = {name: 0 for name in sorted(STATEMENT_CLASSES)}
+        for statement in self.statements:
+            counts[statement.effective_class] = (
+                counts.get(statement.effective_class, 0) + 1
+            )
+        return counts
+
+
+def _serialize_concern_row(row):
+    _require_exact_fields(row, CONCERN_ROW_FIELDS, "concern row")
+    corrected = row["member_corrected_text"]
+    if corrected is not None:
+        corrected = _bounded_text(
+            corrected, "corrected wording", MAX_SOURCE_TEXT_UNITS
+        )
+    return SourceConcernView(
+        concern_key=_opaque_key(row["concern_key"], "concern key"),
+        span_start=_non_negative_int(row["span_start"], "span start"),
+        span_length=_positive_int(row["span_length"], "span length"),
+        quoted_text=_bounded_text(
+            row["quoted_text"], "quoted wording", MAX_CONCERN_QUOTE_UNITS
+        ),
+        concern_reason=_bounded_text(
+            row["concern_reason"], "concern reason", MAX_CONCERN_REASON_UNITS
+        ),
+        member_resolution=_bounded_choice(
+            row["member_resolution"], CONCERN_RESOLUTIONS, "concern resolution"
+        ),
+        member_corrected_text=corrected,
+        resolved_at=_utc_timestamp(
+            row["resolved_at_utc"], "resolved time", required=False
+        ),
+        version_token=_version_token(
+            row["concern_row_version"], "concern row version"
+        ),
+    )
+
+
+def _serialize_statement_row(row):
+    _require_exact_fields(row, STATEMENT_ROW_FIELDS, "statement row")
+    member_class = row["member_class"]
+    if member_class is not None:
+        member_class = _bounded_choice(
+            member_class, STATEMENT_CLASSES, "member classification"
+        )
+    clarification = row["member_clarification"]
+    if clarification is not None:
+        clarification = _bounded_text(
+            clarification, "clarification", MAX_CLARIFICATION_UNITS
+        )
+    return RequirementStatementView(
+        statement_key=_opaque_key(row["statement_key"], "statement key"),
+        ordinal=_positive_int(row["ordinal"], "statement ordinal"),
+        span_start=_non_negative_int(row["span_start"], "span start"),
+        span_length=_positive_int(row["span_length"], "span length"),
+        employer_text=_bounded_text(
+            row["employer_text"], "employer wording", MAX_STATEMENT_TEXT_UNITS
+        ),
+        proposed_class=_bounded_choice(
+            row["proposed_class"], STATEMENT_CLASSES, "proposed classification"
+        ),
+        proposed_explanation=_bounded_text(
+            row["proposed_explanation"], "explanation", MAX_EXPLANATION_UNITS
+        ),
+        proposed_paths=_decode_structure(row["proposed_structure_json"]),
+        member_class=member_class,
+        member_clarification=clarification,
+        member_updated_at=_utc_timestamp(
+            row["member_updated_at_utc"], "correction time", required=False
+        ),
+        version_token=_version_token(
+            row["statement_row_version"], "statement row version"
+        ),
+    )
+
+
+def _decode_structure(value):
+    """Read the stored interpreted structure back into bounded path tuples.
+
+    Rejects anything that is not the exact shape this package writes. A stored
+    blob is not more trustworthy than a model reply just because it made a
+    round trip through the database, so it is re-checked on the way out.
+    """
+    if not isinstance(value, str) or not value:
+        raise OpportunitySlateServiceError(
+            "Invalid interpreted structure.", code="invalid"
+        )
+    if utf16_length(value) > MAX_STRUCTURE_JSON_UNITS:
+        raise OpportunitySlateServiceError(
+            "Invalid interpreted structure.", code="invalid"
+        )
+    try:
+        decoded = json.loads(value)
+    except (TypeError, ValueError) as error:
+        raise OpportunitySlateServiceError(
+            "Invalid interpreted structure.", code="invalid"
+        ) from error
+    if not isinstance(decoded, list) or not decoded or len(decoded) > 4:
+        raise OpportunitySlateServiceError(
+            "Invalid interpreted structure.", code="invalid"
+        )
+    paths = []
+    for entry in decoded:
+        if (
+            not isinstance(entry, dict)
+            or set(entry) != {"label", "clauses"}
+            or not isinstance(entry["clauses"], list)
+            or not entry["clauses"]
+            or len(entry["clauses"]) > 8
+        ):
+            raise OpportunitySlateServiceError(
+                "Invalid interpreted structure.", code="invalid"
+            )
+        clauses = tuple(
+            _bounded_text(clause, "clause", 200) for clause in entry["clauses"]
+        )
+        paths.append(
+            {
+                "label": _bounded_text(entry["label"], "path label", 20),
+                "clauses": clauses,
+            }
+        )
+    return tuple(paths)
+
+
+def _encode_structure(paths):
+    """The inverse of :func:`_decode_structure`, with the same bounds."""
+    if not isinstance(paths, (list, tuple)) or not paths or len(paths) > 4:
+        raise OpportunitySlateServiceError(
+            "Invalid interpreted structure.", code="invalid"
+        )
+    encoded = []
+    for entry in paths:
+        if not isinstance(entry, dict) or set(entry) != {"label", "clauses"}:
+            raise OpportunitySlateServiceError(
+                "Invalid interpreted structure.", code="invalid"
+            )
+        clauses = entry["clauses"]
+        if not isinstance(clauses, (list, tuple)) or not clauses or len(clauses) > 8:
+            raise OpportunitySlateServiceError(
+                "Invalid interpreted structure.", code="invalid"
+            )
+        encoded.append(
+            {
+                "label": _bounded_text(entry["label"], "path label", 20),
+                "clauses": [
+                    _bounded_text(clause, "clause", 200) for clause in clauses
+                ],
+            }
+        )
+    serialized = json.dumps(encoded, separators=(",", ":"), ensure_ascii=False)
+    if utf16_length(serialized) > MAX_STRUCTURE_JSON_UNITS:
+        raise OpportunitySlateServiceError(
+            "Invalid interpreted structure.", code="invalid"
+        )
+    return serialized
 
 
 class OpportunitySlateService:
@@ -626,6 +1048,473 @@ class OpportunitySlateService:
             "outcome": "success",
             "deleted_version_count": _non_negative_int(
                 row["deleted_version_count"], "deleted version count"
+            ),
+        }
+
+    # ------------------------------------------------------------------
+    # Slice OS-2: AI proposals and the member's decisions about them
+    #
+    # Every method below takes the same server-derived user key and passes it
+    # to a procedure that resolves the owner itself. Nothing here accepts an
+    # owner id, and nothing here is reachable from the anonymous public
+    # session — handoff section 18's public mode holds its whole working
+    # state in a signed browser-held token and calls no procedure at all.
+    # ------------------------------------------------------------------
+
+    def get_source_review_for_owner(self, user_key, source_key):
+        """The AI step-1 record for this owner's current source version.
+
+        ``None`` means step 1 has not run for this version — deliberately not
+        the same answer as "it ran and found nothing", which returns a review
+        with an empty ``concerns``.
+        """
+        self._require_user_key(user_key)
+        clean_source_key = self._require_source_key(source_key)
+        result_sets = self.database.execute_procedure(
+            "usp_GetOpportunitySourceReviewForOwner",
+            [("@UserKey", user_key), ("@SourceKey", clean_source_key)],
+        )
+        review_rows = result_sets[0] if result_sets else []
+        if not review_rows:
+            return None
+        row = review_rows[0]
+        _require_exact_fields(row, REVIEW_ROW_FIELDS, "source review row")
+        concern_rows = result_sets[1] if len(result_sets) > 1 else []
+        concerns = tuple(_serialize_concern_row(item) for item in concern_rows)
+        return SourceReviewView(
+            review_key=_opaque_key(row["review_key"], "review key"),
+            source_version_number=_positive_int(
+                row["source_version_number"], "source version"
+            ),
+            model_name=_bounded_text(
+                row["model_name"], "model name", MAX_MODEL_NAME_UNITS
+            ),
+            prompt_contract_version=_bounded_text(
+                row["prompt_contract_version"],
+                "prompt contract version",
+                MAX_PROMPT_CONTRACT_UNITS,
+            ),
+            concern_count=_non_negative_int(row["concern_count"], "concern count"),
+            reviewed_at=_utc_timestamp(row["reviewed_at_utc"], "review time"),
+            concerns=concerns,
+        )
+
+    def save_source_review_for_owner(
+        self,
+        user_key,
+        source_key,
+        expected_version_token,
+        concerns,
+        model_name,
+        prompt_contract_version,
+    ):
+        """Record that AI step 1 ran, with its validated proposals.
+
+        The proposals arrive already validated against the stored source by
+        ``services/opportunity_analysis_service.py``; this method re-bounds
+        every field before it reaches the database rather than trusting that,
+        because the two layers are allowed to be corrected independently.
+        """
+        self._require_user_key(user_key)
+        clean_source_key = self._require_source_key(source_key)
+        expected_row_version = self._require_expected_row_version(
+            expected_version_token
+        )
+        if not isinstance(concerns, (list, tuple)):
+            raise OpportunitySlateServiceError(
+                "Invalid concern proposals.", code="invalid"
+            )
+        if len(concerns) > 20:
+            raise OpportunitySlateServiceError(
+                "Too many concern proposals.", code="invalid"
+            )
+
+        payload = []
+        for concern in concerns:
+            if not isinstance(concern, dict):
+                raise OpportunitySlateServiceError(
+                    "Invalid concern proposal.", code="invalid"
+                )
+            payload.append(
+                {
+                    "span_start": _non_negative_int(
+                        concern.get("span_start"), "span start"
+                    ),
+                    "span_length": _positive_int(
+                        concern.get("span_length"), "span length"
+                    ),
+                    "quoted_text": _bounded_text(
+                        concern.get("quoted_text"),
+                        "quoted wording",
+                        MAX_CONCERN_QUOTE_UNITS,
+                    ),
+                    "concern_reason": _bounded_text(
+                        concern.get("concern_reason"),
+                        "concern reason",
+                        MAX_CONCERN_REASON_UNITS,
+                    ),
+                }
+            )
+
+        row = self.database.first_row(
+            "usp_SaveOpportunitySourceReviewForOwner",
+            [
+                ("@UserKey", user_key),
+                ("@SourceKey", clean_source_key),
+                ("@ExpectedRowVersion", expected_row_version),
+                (
+                    "@ModelName",
+                    _bounded_text(model_name, "model name", MAX_MODEL_NAME_UNITS),
+                ),
+                (
+                    "@PromptContractVersion",
+                    _bounded_text(
+                        prompt_contract_version,
+                        "prompt contract version",
+                        MAX_PROMPT_CONTRACT_UNITS,
+                    ),
+                ),
+                (
+                    "@ConcernsJson",
+                    json.dumps(payload, separators=(",", ":"), ensure_ascii=False),
+                ),
+            ],
+        )
+        _require_exact_fields(row, SAVE_REVIEW_ROW_FIELDS, "source review result")
+        self._raise_for_fenced_outcome(row["outcome"], "wording review")
+        return {
+            "outcome": "success",
+            "review_key": _opaque_key(row["review_key"], "review key"),
+            "concern_count": _non_negative_int(row["concern_count"], "concern count"),
+        }
+
+    def resolve_source_concern_for_owner(
+        self,
+        user_key,
+        concern_key,
+        expected_version_token,
+        resolution,
+        corrected_span_text=None,
+        document_text=None,
+    ):
+        """Apply or dismiss one concern.
+
+        ``applied`` writes the member's replacement wording for that span AND
+        the resulting whole-document text in one transaction, then clears the
+        source confirmation the changed wording invalidates. ``dismissed``
+        records the decision and changes no wording at all — the employer's
+        text is exactly as it was, so there is nothing to re-confirm.
+
+        The employer's ``original_text`` is never touched by either path.
+        """
+        self._require_user_key(user_key)
+        clean_concern_key = self._require_source_key(concern_key)
+        expected_row_version = self._require_expected_row_version(
+            expected_version_token
+        )
+        if resolution not in {"applied", "dismissed"}:
+            raise OpportunitySlateServiceError(
+                "Invalid concern decision.", code="invalid"
+            )
+        if resolution == "applied":
+            corrected_span_text = validate_source_text(
+                corrected_span_text, label="corrected wording"
+            )
+            document_text = validate_source_text(document_text, label="role text")
+        else:
+            corrected_span_text = None
+            document_text = None
+
+        row = self.database.first_row(
+            "usp_ResolveOpportunitySourceConcernForOwner",
+            [
+                ("@UserKey", user_key),
+                ("@ConcernKey", clean_concern_key),
+                ("@ExpectedRowVersion", expected_row_version),
+                ("@Resolution", resolution),
+                ("@CorrectedSpanText", corrected_span_text),
+                ("@DocumentText", document_text),
+            ],
+        )
+        _require_exact_fields(row, RESOLVE_ROW_FIELDS, "concern decision result")
+        self._raise_for_fenced_outcome(row["outcome"], "concern decision")
+        return {
+            "outcome": "success",
+            "source_version_token": _version_token(
+                row["source_row_version"], "source row version"
+            ),
+            "member_resolution": _bounded_choice(
+                row["member_resolution"], CONCERN_RESOLUTIONS, "concern resolution"
+            ),
+        }
+
+    def get_requirements_for_owner(self, user_key):
+        """This owner's current proposed requirement set, or ``None``.
+
+        Returns ``None`` when no proposal exists for the *current* source
+        version — a requirement set pinned to superseded wording is never
+        shown, because it describes text the member has since replaced.
+        """
+        self._require_user_key(user_key)
+        result_sets = self.database.execute_procedure(
+            "usp_GetOpportunityRequirementsForOwner",
+            [("@UserKey", user_key)],
+        )
+        set_rows = result_sets[0] if result_sets else []
+        if not set_rows:
+            return None
+        row = set_rows[0]
+        _require_exact_fields(row, REQUIREMENT_SET_ROW_FIELDS, "requirement set row")
+        statement_rows = result_sets[1] if len(result_sets) > 1 else []
+        statements = tuple(
+            _serialize_statement_row(item) for item in statement_rows
+        )
+        if not statements:
+            # A set with no statements is not a set. Refusing it here keeps
+            # an empty Review Requirements screen from ever claiming that
+            # PeerSlate found nothing in the employer's source.
+            raise OpportunitySlateServiceError(
+                "The requirement set is incomplete.", code="invalid"
+            )
+        ordinals = [statement.ordinal for statement in statements]
+        if sorted(ordinals) != list(range(1, len(statements) + 1)):
+            raise OpportunitySlateServiceError(
+                "The requirement set is incomplete.", code="invalid"
+            )
+        return RequirementSetView(
+            requirement_set_key=_opaque_key(
+                row["requirement_set_key"], "requirement set key"
+            ),
+            version_token=_version_token(row["set_row_version"], "set row version"),
+            version_number=_positive_int(row["version_number"], "set version"),
+            source_version_number=_positive_int(
+                row["source_version_number"], "source version"
+            ),
+            model_name=_bounded_text(
+                row["model_name"], "model name", MAX_MODEL_NAME_UNITS
+            ),
+            prompt_contract_version=_bounded_text(
+                row["prompt_contract_version"],
+                "prompt contract version",
+                MAX_PROMPT_CONTRACT_UNITS,
+            ),
+            proposed_at=_utc_timestamp(row["proposed_at_utc"], "proposal time"),
+            confirmed_version_number=_optional_positive_int(
+                row["confirmed_version_number"], "confirmed version"
+            ),
+            confirmed_at=_utc_timestamp(
+                row["confirmed_at_utc"], "confirmed time", required=False
+            ),
+            statements=tuple(sorted(statements, key=lambda item: item.ordinal)),
+        )
+
+    def save_requirement_proposal_for_owner(
+        self,
+        user_key,
+        source_key,
+        expected_version_token,
+        statements,
+        model_name,
+        prompt_contract_version,
+    ):
+        """Record AI step 2's validated statement proposals.
+
+        Writes one proposal version for the working session, replacing any
+        earlier one. A working session is ephemeral infrastructure, not a
+        member-visible history: keeping superseded AI proposals around would
+        be a second copy of employer wording with nothing to show for it. The
+        version number still increments, so which run produced the confirmed
+        set stays answerable, and OS-4's saved slate pins the confirmed
+        content into its own snapshot.
+        """
+        self._require_user_key(user_key)
+        clean_source_key = self._require_source_key(source_key)
+        expected_row_version = self._require_expected_row_version(
+            expected_version_token
+        )
+        if not isinstance(statements, (list, tuple)) or not statements:
+            raise OpportunitySlateServiceError(
+                "Invalid statement proposals.", code="invalid"
+            )
+        if len(statements) > 60:
+            raise OpportunitySlateServiceError(
+                "Too many statement proposals.", code="invalid"
+            )
+
+        payload = []
+        for ordinal, statement in enumerate(statements, start=1):
+            if not isinstance(statement, dict):
+                raise OpportunitySlateServiceError(
+                    "Invalid statement proposal.", code="invalid"
+                )
+            payload.append(
+                {
+                    "ordinal": ordinal,
+                    "span_start": _non_negative_int(
+                        statement.get("span_start"), "span start"
+                    ),
+                    "span_length": _positive_int(
+                        statement.get("span_length"), "span length"
+                    ),
+                    "employer_text": _bounded_text(
+                        statement.get("employer_text"),
+                        "employer wording",
+                        MAX_STATEMENT_TEXT_UNITS,
+                    ),
+                    "proposed_class": _bounded_choice(
+                        statement.get("proposed_class"),
+                        STATEMENT_CLASSES,
+                        "proposed classification",
+                    ),
+                    "proposed_explanation": _bounded_text(
+                        statement.get("proposed_explanation"),
+                        "explanation",
+                        MAX_EXPLANATION_UNITS,
+                    ),
+                    "proposed_structure_json": _encode_structure(
+                        statement.get("proposed_paths")
+                    ),
+                }
+            )
+
+        row = self.database.first_row(
+            "usp_SaveOpportunityRequirementProposalForOwner",
+            [
+                ("@UserKey", user_key),
+                ("@SourceKey", clean_source_key),
+                ("@ExpectedRowVersion", expected_row_version),
+                (
+                    "@ModelName",
+                    _bounded_text(model_name, "model name", MAX_MODEL_NAME_UNITS),
+                ),
+                (
+                    "@PromptContractVersion",
+                    _bounded_text(
+                        prompt_contract_version,
+                        "prompt contract version",
+                        MAX_PROMPT_CONTRACT_UNITS,
+                    ),
+                ),
+                (
+                    "@StatementsJson",
+                    json.dumps(payload, separators=(",", ":"), ensure_ascii=False),
+                ),
+            ],
+        )
+        _require_exact_fields(row, SAVE_PROPOSAL_ROW_FIELDS, "proposal result")
+        self._raise_for_fenced_outcome(row["outcome"], "requirement proposal")
+        return {
+            "outcome": "success",
+            "requirement_set_key": _opaque_key(
+                row["requirement_set_key"], "requirement set key"
+            ),
+            "version_number": _positive_int(row["version_number"], "set version"),
+            "statement_count": _positive_int(
+                row["statement_count"], "statement count"
+            ),
+        }
+
+    def correct_requirement_statement_for_owner(
+        self,
+        user_key,
+        statement_key,
+        expected_version_token,
+        member_class=None,
+        member_clarification=None,
+    ):
+        """The member's correction of one statement's meaning.
+
+        Reclassification and clarification are stored in their own columns
+        beside the AI proposal, never over it. Correcting a statement clears
+        the requirement-set confirmation, exactly as correcting the source
+        clears the source confirmation: a confirmed set must never describe
+        a reading the member has since changed.
+        """
+        self._require_user_key(user_key)
+        clean_statement_key = self._require_source_key(statement_key)
+        expected_row_version = self._require_expected_row_version(
+            expected_version_token
+        )
+        if member_class is not None:
+            member_class = _bounded_choice(
+                member_class, STATEMENT_CLASSES, "classification"
+            )
+        if member_clarification is not None:
+            cleaned = member_clarification.strip() if isinstance(
+                member_clarification, str
+            ) else ""
+            if not cleaned:
+                member_clarification = None
+            elif utf16_length(cleaned) > MAX_CLARIFICATION_UNITS:
+                raise OpportunitySlateServiceError(
+                    f"That clarification is longer than "
+                    f"{MAX_CLARIFICATION_UNITS:,} characters.",
+                    code="too_long",
+                )
+            else:
+                member_clarification = cleaned
+
+        row = self.database.first_row(
+            "usp_CorrectOpportunityRequirementStatementForOwner",
+            [
+                ("@UserKey", user_key),
+                ("@StatementKey", clean_statement_key),
+                ("@ExpectedRowVersion", expected_row_version),
+                ("@MemberClass", member_class),
+                ("@MemberClarification", member_clarification),
+            ],
+        )
+        _require_exact_fields(
+            row, CORRECT_STATEMENT_ROW_FIELDS, "statement correction result"
+        )
+        self._raise_for_fenced_outcome(row["outcome"], "statement correction")
+        applied_class = row["member_class"]
+        if applied_class is not None:
+            applied_class = _bounded_choice(
+                applied_class, STATEMENT_CLASSES, "classification"
+            )
+        return {
+            "outcome": "success",
+            "statement_version_token": _version_token(
+                row["statement_row_version"], "statement row version"
+            ),
+            "member_class": applied_class,
+        }
+
+    def confirm_requirements_for_owner(
+        self, user_key, requirement_set_key, expected_version_token
+    ):
+        """Checkpoint 2 of 2. Records which requirement set the member
+        accepted.
+
+        It saves no slate, produces no alignment result, and calls no AI. The
+        alignment analysis it precedes is slice OS-3 and does not exist yet.
+        """
+        self._require_user_key(user_key)
+        clean_set_key = self._require_source_key(requirement_set_key)
+        expected_row_version = self._require_expected_row_version(
+            expected_version_token
+        )
+
+        row = self.database.first_row(
+            "usp_ConfirmOpportunityRequirementsForOwner",
+            [
+                ("@UserKey", user_key),
+                ("@RequirementSetKey", clean_set_key),
+                ("@ExpectedRowVersion", expected_row_version),
+            ],
+        )
+        _require_exact_fields(
+            row, CONFIRM_REQUIREMENTS_ROW_FIELDS, "requirement confirmation result"
+        )
+        self._raise_for_fenced_outcome(row["outcome"], "requirement confirmation")
+        return {
+            "outcome": "success",
+            "set_version_token": _version_token(
+                row["set_row_version"], "set row version"
+            ),
+            "confirmed_version_number": _positive_int(
+                row["confirmed_version_number"], "confirmed version"
             ),
         }
 

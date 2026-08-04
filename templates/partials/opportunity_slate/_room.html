@@ -19,7 +19,8 @@
      data-os-mode="{{ room.mode }}"
      data-os-step="{{ room.step }}"
      {% if context_token %}data-os-context-token="{{ context_token }}"{% endif %}
-     data-os-public-url="{{ room.public_session_url }}">
+     data-os-public-url="{{ room.public_session_url }}"
+     data-os-public-propose-url="{{ room.public_propose_url }}">
 
   {# Subheader: Back + title only. Handoff section 14-M7 / owner decision
      section 17-Q1 — the generated set's "Ask Slate AI" control is image
@@ -37,12 +38,34 @@
   {# Workshop's public-preview banner grammar, told for this surface. Every
      sentence here has to stay literally true of the anonymous mode AND tell
      the same story as the truth card a hundred pixels below: each step posts
-     the role text to PeerSlate so the server can render the next screen, the
-     server keeps none of it, the only retained copy is the visitor's own
-     browser, and nothing is analyzed in this slice. This banner is the
-     first thing an anonymous visitor reads, so it names the transit before
-     it claims the locality — a locality-only first sentence was the shape
-     independent review rejected.
+     the role text to PeerSlate so the server can render the next screen,
+     PeerSlate keeps none of it, and the copy the visitor keeps is the one in
+     their own browser. This banner is the first thing an anonymous visitor
+     reads, so it names the transit before it claims the locality — a
+     locality-only first sentence was the shape independent review rejected.
+
+     SLICE OS-2 TRUTH CORRECTION. Slice OS-1's banner ended "nothing is
+     stored on PeerSlate, nothing is analyzed, and nothing is shared or sent
+     to an employer". "Nothing is analyzed" was true then and is FALSE now:
+     an anonymous visitor who presses "Check the wording" or "Read the
+     statements" sends the employer's role text to PeerSlate's AI provider,
+     and that is exactly the kind of claim this room has already been
+     corrected twice for getting wrong. The clause is removed and the AI
+     transit is named in its place.
+
+     SLICE OS-2 REVIEW CORRECTION (finding F1). The first OS-2 wording told
+     the visitor their text was kept by neither PeerSlate nor its AI, and
+     that their browser held the sole surviving copy. Both sentences assert
+     what a THIRD PARTY does. PeerSlate can promise what PeerSlate does; it
+     cannot promise what its AI provider retains. Provider inputs are
+     retained by default and zero retention is a contractual arrangement
+     that nothing in this repository establishes. Every retention promise on
+     this surface is therefore scoped to PeerSlate by name, and the transit
+     to a provider is described without characterising the provider's
+     behavior. Do not reintroduce a promise that reaches past PeerSlate:
+     test_no_surface_in_the_room_asserts_the_ai_providers_retention scans
+     every template, the room script, and the routes module for the exact
+     phrasings that were retired.
 
      Keep "Nothing is stored on PeerSlate" unbroken on one source line below:
      test_room_serves_the_public_session_to_a_signed_out_visitor asserts it
@@ -50,10 +73,11 @@
   <div class="os-banner" role="status">
     <span class="os-banner__label">Public session</span>
     <span>
-      This preview sends your role text to PeerSlate to draw each screen. The
-      only copy kept is in your own browser, for this visit only.
-      Nothing is stored on PeerSlate, nothing is analyzed, and nothing is
-      shared or sent to an employer. Saving your work arrives with membership.
+      This preview sends your role text to PeerSlate to draw each screen, and
+      on to PeerSlate's AI provider when you ask it to read the wording.
+      Nothing is stored on PeerSlate, and nothing is shared or sent to an
+      employer. Your own browser holds the copy you keep, for this visit only.
+      Saving your work arrives with membership.
     </span>
   </div>
   <noscript>
@@ -68,13 +92,21 @@
   </noscript>
   {% endif %}
 
-  {# Third parity round: the locked set gives the two screens different
-     proportions — image 01's workbench holds 53.2% of the frame, image
-     02's holds 64.6% — because one is an intake form and the other is a
-     reading document. The modifier carries image 02's geometry and is
-     gated on the SAME condition that selects _review.html below, so the
-     rail widths can never drift away from the screen they belong to. #}
-  <div class="os-layout{% if room.step == 'review' and room.source %} os-layout--review{% endif %}">
+  {# Each screen carries its own workbench proportion, measured off its own
+     locked image rather than shared: image 01's holds 53.2% of the frame,
+     image 02's 64.6%, image 03's 57.8%. One is an intake form wanting air
+     around a paste box, one is a reading document wanting measure, and one
+     is a table wanting enough width that a two-line statement does not
+     become three.
+
+     Each modifier is gated on exactly the condition that chooses the
+     partial below, so a screen's geometry can never drift away from the
+     screen it belongs to — the defect the third parity round was opened to
+     fix, and the one slice OS-2 repeated by inheriting the intake
+     proportion for Review Requirements. #}
+  <div class="os-layout
+              {%- if room.step == 'requirements' and room.requirements %} os-layout--requirements
+              {%- elif room.step == 'review' and room.source %} os-layout--review{% endif %}">
 
     {# ---------------------------------------------------------------
        Left rail: state title, supporting copy, session-truth card
@@ -93,7 +125,38 @@
          beside an intake screen that carries its own. Tying both to one
          condition makes one-h1-per-state (handoff section 13) structural
          rather than a property of the current call sites. #}
-      {% if room.step == 'review' and room.source %}
+      {% if room.step == 'requirements' and room.requirements %}
+      <h1 class="os-state-title">
+        <span class="os-state-title__lead">{{ room.state_title_lead }}</span>
+        <span class="os-state-title__dot" aria-hidden="true">·</span>
+        <span class="os-state-title__rest">{{ room.state_title_rest }}</span>
+      </h1>
+      {% if room.checkpoint_label %}
+      <p class="os-checkpoint">{{ room.checkpoint_label }}</p>
+      {% endif %}
+      {# Image 03's left-rail copy. "before analysis begins" is kept: the
+         member IS confirming these readings before any analysis, and the
+         screen says separately and plainly that the analysis itself is not
+         built yet. #}
+      <p class="os-rail__intro">
+        Confirm that PeerSlate interpreted the employer's statements and
+        logical relationships accurately before analysis begins.
+      </p>
+      {# Owner visual review 2026-08-03, V3, carried onto this screen: the
+         authority sets the "Why …?" block directly on the canvas — sparkle,
+         serif heading, copy — not inside a card. Image 03 draws it exactly
+         the way image 01 and 02 do, so it uses the same shipped grammar. #}
+      <div class="os-rail-note">
+        <p class="os-rail-note__eyebrow">
+          {{ os_icon('sparkle', 'os-icon os-icon--sm') }}Why review requirements?
+        </p>
+        <p>
+          PeerSlate proposes classifications and logical interpretations from
+          the confirmed employer source. You decide what each statement means
+          here.
+        </p>
+      </div>
+      {% elif room.step == 'review' and room.source %}
       <h1 class="os-state-title">
         <span class="os-state-title__lead">{{ room.state_title_lead }}</span>
         <span class="os-state-title__dot" aria-hidden="true">·</span>
@@ -208,6 +271,25 @@
       </div>
       {% endif %}
 
+      {# Image 03's "Source confirmed" card. It names the exact source version
+         the statements below were read out of, and links back to it, so the
+         member is never reading an interpretation without being able to see
+         what it was interpreted from. #}
+      {% if room.step == 'requirements' and room.requirements and room.requirements.is_source_confirmed %}
+      <div class="os-truth-card os-truth-card--confirmed">
+        <span class="os-truth-card__badge">{{ os_icon('check') }}</span>
+        <div>
+          <p class="os-truth-card__heading">Source confirmed</p>
+          <p>{{ room.requirements.version_label }}</p>
+          <p>
+            <a class="os-link os-link--inline" href="{{ room.review_step_url }}" data-os-step="review">
+              Review source{{ os_icon('compare', 'os-icon os-icon--sm') }}
+            </a>
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
       {# Session-truth card. The signed-in wording is reproduced exactly from
          image 01 (handoff section 14-M11 lists these as trust-critical
          sentences). The public variant states its own, different truth
@@ -217,11 +299,15 @@
         <span class="os-truth-card__badge">{{ os_icon('globe') }}</span>
         <div>
           <p class="os-truth-card__heading">Public session</p>
-          <p>Your text is sent to PeerSlate to draw this screen, and never stored.</p>
-          <p>The only copy kept is in this browser tab.</p>
+          <p>Your text is sent to PeerSlate to draw this screen, and on to its AI provider when you ask for a reading. PeerSlate stores none of it.</p>
+          <p>The copy you keep is in this browser tab.</p>
         </div>
       </div>
-      {% elif room.source and room.source.is_confirmed %}
+      {# Slice OS-2: the requirements screen already carries its own
+         "Source confirmed" card immediately above, with the version and the
+         link back. Repeating the heading here would print it twice in one
+         rail; image 03 shows the second card as "Session private". #}
+      {% elif room.source and room.source.is_confirmed and room.step != 'requirements' %}
       <div class="os-truth-card os-truth-card--confirmed">
         <span class="os-truth-card__badge">{{ os_icon('check') }}</span>
         <div>
@@ -241,6 +327,21 @@
       </div>
       {% endif %}
 
+      {# Image 02's extraction-concern card. It counts only concerns still
+         waiting on the member: once one is applied or dismissed it is a
+         decision they made, not something outstanding. #}
+      {% if room.source and room.source.pending_concern_count %}
+      <div class="os-truth-card os-truth-card--warning">
+        <span class="os-truth-card__badge">{{ os_icon('warning') }}</span>
+        <div>
+          <p class="os-truth-card__heading">
+            {{ room.source.pending_concern_count }} extraction concern{{ '' if room.source.pending_concern_count == 1 else 's' }}
+          </p>
+          <p>Review the flagged wording to ensure accuracy.</p>
+        </div>
+      </div>
+      {% endif %}
+
       {% if room.source and room.source.has_correction %}
       <div class="os-truth-card os-truth-card--warning">
         <span class="os-truth-card__badge">{{ os_icon('pencil') }}</span>
@@ -251,9 +352,11 @@
       </div>
       {% endif %}
 
-      {% if room.step == 'review' and room.source %}
+      {% if (room.step == 'review' and room.source) or (room.step == 'requirements' and room.requirements) %}
       {# Image 02 places the prop at the foot of the left rail on this
-         screen rather than above the "Why" block. Decorative only. #}
+         screen rather than above the "Why" block. Image 03 places the same
+         prop in the same position, so the requirements screen carries it
+         too. Decorative only. #}
       <img class="os-prop"
            src="{{ url_for('static', filename='images/opportunity-slate/prop-source-review.png') }}"
            alt=""
@@ -289,7 +392,9 @@
         </div>
         {% endif %}
 
-        {% if room.step == 'review' and room.source %}
+        {% if room.step == 'requirements' and room.requirements %}
+          {% include "partials/opportunity_slate/_requirements.html" %}
+        {% elif room.step == 'review' and room.source %}
           {% include "partials/opportunity_slate/_review.html" %}
         {% else %}
           {% include "partials/opportunity_slate/_intake.html" %}
@@ -302,6 +407,13 @@
        (handoff section 3); only the content changes.
        --------------------------------------------------------------- #}
     <div class="os-rail os-rail--right">
+      {# Image 03 puts exactly one card in this rail: "Review this statement".
+         The standing help below belongs to the intake and source screens and
+         is deliberately not repeated here — on the requirements screen the
+         rail's whole job is the statement the member selected. #}
+      {% if room.step == 'requirements' and room.requirements %}
+        {% include "partials/opportunity_slate/_statement_rail.html" %}
+      {% else %}
       {# The locked set carries this rail's standing help as plain sections
          separated by hairline rules (image 01), and reserves a card here
          for state-specific data (image 02's source card, image 03's
@@ -319,16 +431,19 @@
           {{ os_icon('sparkle', 'os-icon os-icon--sm') }}What happens next
         </p>
         {# Truth adaptation. Image 01's rail promises requirement extraction
-           and an evidence alignment map; neither exists in this slice, so
-           this states what the build actually does today. #}
+           and an evidence alignment map. Slice OS-2 built the first of those,
+           so the copy moves with the build: requirement review is real and is
+           named, the evidence alignment map is not and still says so. #}
         {% if room.step == 'review' %}
         <p>Check the wording, correct anything that came through wrong, then confirm it.</p>
+        <p>Then PeerSlate proposes how it reads each of the employer's statements, and you decide.</p>
         {% else %}
         <p>You'll review the captured wording and confirm PeerSlate has the employer's text right.</p>
+        <p>Then you'll review how PeerSlate reads each employer statement.</p>
         {% endif %}
         <p>
-          Requirement review and the evidence alignment map are not built yet.
-          Nothing on this screen is analyzed.
+          The evidence alignment map is not built yet. Nothing on this screen
+          is compared against your evidence.
         </p>
       </div>
 
@@ -349,8 +464,9 @@
         </p>
         {% if room.is_public %}
         <p>
-          Sent to PeerSlate to draw this screen, and never stored there. The
-          only copy kept is in this browser tab.
+          Sent to PeerSlate, and on to PeerSlate's AI provider when you ask for
+          a reading. PeerSlate stores none of it. The copy you keep is in this
+          browser tab.
         </p>
         {% else %}
         <p>Stays in this private working session. It is never listed, shared, or sent to an employer.</p>
@@ -359,7 +475,9 @@
       </div>
 
       {# The authority's ambient stone, at the foot of the right rail.
-         Decorative only (owner decision 2026-08-03, V3). #}
+         Decorative only (owner decision 2026-08-03, V3). It stays inside this
+         branch: image 03 gives the whole right rail to "Review this
+         statement" and carries no prop there. #}
       <img class="os-prop os-prop--stone"
            src="{{ url_for('static', filename='images/opportunity-slate/prop-ambient-stone.png') }}"
            alt=""
@@ -368,6 +486,7 @@
            height="424"
            loading="lazy"
            decoding="async">
+      {% endif %}
     </div>
   </div>
 </div>

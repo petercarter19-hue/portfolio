@@ -166,14 +166,23 @@ Neither is committed; both are in the working capture only.
    the shell.
 
 2. **No database exists on this machine.** No SQL Server engine of any kind is
-   reachable here and the PS-OPPSLATE-001 migration is deliberately applied
-   nowhere, so every signed-in path ran against an in-memory stand-in returning
-   the same `WorkingSourceView` shape as the real service, driven through the
-   real save / correct / confirm / delete routes. The anonymous public mode has
-   no persistence layer and ran completely unmodified. These frames are evidence
-   of rendering and interaction, not of the stored procedures — whose T-SQL has
-   never executed anywhere (see the named unmet SQL gate in the migration
-   header).
+   reachable here, so every signed-in path ran against an in-memory stand-in
+   returning the same `WorkingSourceView` shape as the real service, driven
+   through the real save / correct / confirm / delete routes. The anonymous
+   public mode has no persistence layer and ran completely unmodified. These
+   frames are evidence of rendering and interaction, not of the stored
+   procedures.
+
+   **Corrected 2026-08-04.** This entry used to end "whose T-SQL has never
+   executed anywhere (see the named unmet SQL gate in the migration header)",
+   and said the migration was "deliberately applied nowhere". Both were true
+   when these frames were captured and are false now: the slice OS-1 revision
+   shipped to production with the 2026-08-04 apply, and the PS-OPPSLATE-001
+   T-SQL has since been executed on a real engine by two isolated gates
+   (2026-08-03 from empty, 2026-08-04 over a populated OS-1 database). What
+   remains true is the sentence above: no engine was reachable *from this
+   machine when these frames were captured*, so they evidence rendering, not
+   the procedures. The gate record is in the migration header.
 
 3. **The concern card is empty, and the authority's is full.** Image 02's card
    carries a flagged phrase and a correction pair; ours carries a truthful empty
