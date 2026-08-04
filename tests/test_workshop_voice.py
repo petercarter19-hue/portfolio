@@ -19,6 +19,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import pathlib
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -805,3 +806,50 @@ class VoiceStateMachineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DictationInsertionPointTests(unittest.TestCase):
+    """Audit follow-on (2026-08-04): a transcript landed at position 0 when
+    the field had never been focused.
+
+    A textarea that has never held a caret reports ``selectionStart === 0``
+    — a real number, not undefined — so the caret-aware insertion treated
+    "never touched" as "caret at the very beginning". Someone who typed a
+    paragraph and then pressed the mic watched their dictation land in front
+    of everything they had written.
+
+    Asserted against the shared module's source, matching this repo's
+    existing convention for behaviour that lives in a browser script
+    (see tests/test_interview_studio.py's own dictation assertions).
+    """
+
+    def _module(self):
+        return (
+            pathlib.Path(__file__).resolve().parents[1] / "static" / "js" / "dictation.js"
+        ).read_text(encoding="utf-8")
+
+    def test_the_caret_is_only_trusted_for_a_field_that_has_held_one(self):
+        module = self._module()
+        self.assertIn("CARET_KNOWN_FIELDS", module)
+        self.assertIn("hasRealCaret", module)
+        self.assertIn("var caretIsReal = hasRealCaret(target);", module)
+        # Both ends of the selection must respect it, or a stale selectionEnd
+        # would still splice into the middle.
+        self.assertIn("caretIsReal && typeof target.selectionStart === 'number'", module)
+        self.assertIn("caretIsReal && typeof target.selectionEnd === 'number'", module)
+
+    def test_an_untouched_field_appends_at_the_end(self):
+        module = self._module()
+        self.assertIn("? target.selectionStart\n            : target.value.length;", module)
+
+    def test_focus_is_tracked_by_listener_not_by_active_element(self):
+        """Pressing the mic moves focus to the BUTTON, so checking
+        document.activeElement at insertion time would report "not focused"
+        for every dictation and break deliberate mid-text insertion."""
+        module = self._module()
+        self.assertIn("'focusin'", module)
+        self.assertNotIn("document.activeElement === target", module)
+
+    def test_it_degrades_rather_than_guessing_without_weakset(self):
+        module = self._module()
+        self.assertIn("if (!CARET_KNOWN_FIELDS) return true;", module)

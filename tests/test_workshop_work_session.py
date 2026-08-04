@@ -8,6 +8,7 @@ services/workshop_demo_library.py, and owner isolation. Every behavioral
 test uses a generic fixture member key, never a Pete-specific identifier.
 """
 
+import html
 import random
 import re
 import shutil
@@ -248,28 +249,123 @@ class SessionRoundTripTests(WorkOnSomethingTestCase):
         body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
         self.assertIn("I led a big migration.", body)
 
-    def test_question_selection_is_deterministic_per_door(self):
-        first_index, first_text = wws.question_for_door(wws.DOOR_SOMETHING)
-        second_index, second_text = wws.question_for_door(wws.DOOR_SOMETHING)
-        self.assertEqual(first_index, second_index)
-        self.assertEqual(first_text, second_text)
+    def _question_on_screen(self, client=None):
+        client = client or self.client
+        body = client.get("/app/workshop/work/session").data.decode("utf-8")
+        match = re.search(r'wk-session-question">(.*?)</h1>', body)
+        self.assertIsNotNone(match, "expected a focused question on the session screen")
+        # Unescaped so it can be compared against the curated constants
+        # themselves (the questions contain apostrophes and em dashes).
+        return html.unescape(match.group(1))
 
+    def test_the_same_session_keeps_its_question_across_re_renders(self):
+        """Stability within one session is the half that must not break:
+        the index is chosen once and STORED, so a reload, a re-render, or a
+        validation failure can never swap the question out from under
+        someone mid-answer."""
         self._start(door=wws.DOOR_SOMETHING, thought="thought one")
-        body1 = self.client.get("/app/workshop/work/session").data.decode("utf-8")
+        first = self._question_on_screen()
 
-        client2 = app.test_client()
-        client2.post(
-            "/app/workshop/work/start",
-            data={"door": wws.DOOR_SOMETHING, "thought": "thought two"},
+        for _ in range(4):
+            self.assertEqual(self._question_on_screen(), first)
+
+        rejected = self.client.post(
+            "/app/workshop/work/session",
+            data={"answer": "x" * (wws.MAX_ANSWER_UNITS + 1), "wk_action": "save_unfinished"},
             headers=SAME_ORIGIN_HEADERS,
         )
-        body2 = client2.get("/app/workshop/work/session").data.decode("utf-8")
+        self.assertEqual(rejected.status_code, 400)
+        self.assertIn(first, html.unescape(rejected.data.decode("utf-8")))
+        self.assertEqual(self._question_on_screen(), first)
 
-        m1 = re.search(r'wk-session-question">(.*?)</h1>', body1)
-        m2 = re.search(r'wk-session-question">(.*?)</h1>', body2)
-        self.assertIsNotNone(m1)
-        self.assertIsNotNone(m2)
-        self.assertEqual(m1.group(1), m2.group(1))
+    def test_different_sessions_are_asked_different_questions(self):
+        """Audit fix F2 (2026-08-04): question_for_door was hardcoded
+        ``return 0, questions[0]``, so every curated question but the first
+        was unreachable and two people starting side by side were asked the
+        identical thing. This test previously asserted that sameness.
+
+        Sampled rather than pinned to one pair, because varied selection is
+        by nature probabilistic: with 6 curated questions, 40 independent
+        sessions returning a single distinct question has odds around
+        6 * (1/6)^40. Anything less than 2 distinct means selection is
+        effectively constant again.
+        """
+        seen = set()
+        for _ in range(40):
+            client = app.test_client()
+            client.post(
+                "/app/workshop/work/start",
+                data={"door": wws.DOOR_SOMETHING, "thought": "a thought"},
+                headers=SAME_ORIGIN_HEADERS,
+            )
+            seen.add(self._question_on_screen(client))
+
+        self.assertGreater(len(seen), 1, "every session was asked the same question")
+        self.assertTrue(seen.issubset(set(wws.QUESTION_SETS[wws.DOOR_SOMETHING])))
+
+    def test_every_curated_question_is_actually_reachable(self):
+        """The curated sets are product copy someone wrote and reviewed. If
+        a door's later entries can never be selected they are dead text, and
+        the set silently shrinks to one."""
+        for door, questions in wws.QUESTION_SETS.items():
+            with self.subTest(door=door):
+                reachable = {
+                    wws.question_for_door(door, entropy=b"probe-%d" % i)[0]
+                    for i in range(600)
+                }
+                self.assertEqual(reachable, set(range(len(questions))))
+
+    def test_a_pinned_entropy_selects_reproducibly(self):
+        """The seam a test uses to pin a question is itself deterministic."""
+        for door in wws.QUESTION_SETS:
+            with self.subTest(door=door):
+                first = wws.question_for_door(door, entropy=b"fixed-seed")
+                second = wws.question_for_door(door, entropy=b"fixed-seed")
+                self.assertEqual(first, second)
+
+    def test_a_stale_stored_index_degrades_to_the_first_question_not_a_new_one(self):
+        """An out-of-range index (a copy edit shrinking a set) must fall back
+        to a FIXED question. Routing the fallback through the now-varied
+        selector would make the question change on every render."""
+        for _ in range(8):
+            self.assertEqual(
+                wws.question_text_for(wws.DOOR_SOMETHING, 9999),
+                wws.QUESTION_SETS[wws.DOOR_SOMETHING][0],
+            )
+
+    def test_the_visitors_own_opening_thought_is_echoed_back_to_them(self):
+        """Audit fix F2: the visitor typed something to get here and the
+        screen never mentioned it again, so it read as thrown away."""
+        self._start(door=wws.DOOR_SOMETHING, thought="I led a messy migration.")
+        body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
+
+        self.assertIn("I led a messy migration.", body)
+        self.assertIn("You started with your own words", body)
+        echo = re.search(r'wk-session-echo__quote">(.*?)</blockquote>', body)
+        self.assertIsNotNone(echo, "the thought must render as the member's own words")
+        self.assertEqual(echo.group(1), "I led a messy migration.")
+        # It must not be confusable with the question PeerSlate asked.
+        self.assertNotEqual(echo.group(1), self._question_on_screen())
+
+    def test_no_echo_is_rendered_when_there_is_no_thought_to_echo(self):
+        """Resuming unfinished work starts from saved wording, not from
+        something typed just now — an empty quote block would be a claim
+        about the member that is not true."""
+        self._start(door=wws.DOOR_SOMETHING, thought="")
+        body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
+        self.assertNotIn("wk-session-echo__quote", body)
+        self.assertNotIn("You started with your own words", body)
+
+    def test_the_work_on_something_door_carries_the_typed_thought(self):
+        """The door button submits the composer's own form, so pressing the
+        large obvious door no longer discards what the visitor just typed.
+        It used to be a separate, empty form."""
+        opening = self.client.get("/app/workshop/work").data.decode("utf-8")
+        self.assertIn('id="wk-work-composer-form"', opening)
+        self.assertIn('form="wk-work-composer-form"', opening)
+        # Exactly one form posts to the start URL from the composer area, so
+        # there is no second, thought-less path back into the same door.
+        self.assertEqual(opening.count('id="wk-work-composer-form"'), 1)
 
     def test_unavailable_doors_cannot_start_a_session(self):
         response = self._start(door=wws.DOOR_BROUGHT)
@@ -456,12 +552,15 @@ class SaveUnfinishedTests(WorkOnSomethingTestCase):
 
         # Confirm it actually landed as a session item (title-only list
         # read carries no body text, but the item must be present, titled
-        # from the focused question, and marked unfinished).
+        # from the MEMBER'S OWN wording, and marked unfinished).
         with self.client.session_transaction() as sess:
             delta = wdl.read_session_delta(sess)
         self.assertEqual(len(delta["a"]), 1)
         added_title = delta["a"][0][1]
-        self.assertIn("did that mattered", added_title)
+        # Audit fix F6 (2026-08-04): the title is derived from the answer,
+        # never seeded from the question PeerSlate asked.
+        self.assertEqual(added_title, "A concrete answer worth keeping")
+        self.assertNotIn(added_title, wws.QUESTION_SETS[wws.DOOR_SOMETHING])
         self.assertEqual(delta["a"][0][4], "f")  # status code "f" == unfinished
 
     def test_anonymous_save_unfinished_clears_the_active_session(self):
@@ -594,9 +693,15 @@ class StartFreshTests(WorkOnSomethingTestCase):
             self.assertNotIn(wdl.SESSION_KEY, sess)
 
         # Library-after-reset is pristine: 17 base items, no visitor deltas.
+        # Audit fix F5 (2026-08-04): the header badge now counts what is
+        # LISTED (15 — the two natively archived items stay hidden until the
+        # Archived chip asks for them), while the footer carries the
+        # whole-library total. Both are asserted, so this still pins "the
+        # reset really restored all 17 base items".
         library_body = self.client.get("/app/workshop").data.decode("utf-8")
         self.assertNotIn("My own item", library_body)
-        self.assertIn(">17 items<", library_body)
+        self.assertIn(">15 items<", library_body)
+        self.assertIn("Showing 15 of 17 items", library_body)
         session_body = self.client.get("/app/workshop/work/session")
         self.assertEqual(session_body.status_code, 302)  # no active session anymore
 
@@ -760,16 +865,24 @@ class SessionByteBudgetTests(WorkOnSomethingTestCase):
         )
 
     def test_true_adversarial_worst_case_still_fits_the_shared_ceiling(self):
-        """The library's OWN full 4-item/400-char cap, combined with a
-        full-length Work on Something session (1000-unit answer, full
-        context selection) — the actual worst case a real visitor could
-        reach through the product's own caps. It fits comfortably; the
-        session legitimately starts rather than being refused."""
+        """A library filled to 4 items of 400 characters, combined with a
+        full-length Work on Something session (a maximal answer and a full
+        context selection) — the worst case a visitor could reach before
+        audit fix F1, which must keep working unchanged. It fits; the session
+        legitimately starts rather than being refused.
+
+        400 rather than wdl.MAX_PREVIEW_WORDING_UNITS: F1 (2026-08-04) raised
+        that cap from 400 to 1000 to match the length the session invites, so
+        the constant no longer names this shape. Four items of 1000
+        characters is not a harder version of this case — it is a combination
+        no visitor could construct before F1 and one the byte guard now
+        refuses honestly (see tests/test_workshop_demo_library.py's
+        WorkshopDemoLibrarySessionSizeTests). What this test exists to
+        protect is that nothing which used to fit stopped fitting.
+        """
         for i in range(wdl.MAX_ADDED_ITEMS):
             title = (f"Sample demo title number {i} " * 6)[:160]
-            wording = "".join(
-                self.rng.choices(self.alphabet, k=wdl.MAX_PREVIEW_WORDING_UNITS)
-            )
+            wording = "".join(self.rng.choices(self.alphabet, k=400))
             response = self._add_library_item(title=title, wording=wording)
             self.assertEqual(response.status_code, 200)
 
@@ -845,3 +958,39 @@ class SessionByteBudgetTests(WorkOnSomethingTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SessionScreenTruthfulnessTests(WorkOnSomethingTestCase):
+    """The session screen must not claim the focused question was derived
+    from what the visitor wrote.
+
+    Caught during F2's own live verification: the echo block shipped with a
+    note reading "PeerSlate asked this in response to what you wrote". The
+    question is drawn from a fixed curated set per door — varied per session,
+    but never derived from the visitor's text — so that sentence was a plain
+    untruth about how the feature works, sitting directly beneath a
+    genuinely random question.
+    """
+
+    def test_the_screen_never_claims_the_question_responded_to_the_visitor(self):
+        self._start(door=wws.DOOR_SOMETHING, thought="I led a messy migration.")
+        body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
+        for overclaim in (
+            "in response to what you wrote",
+            "based on what you wrote",
+            "chose this question for you",
+        ):
+            self.assertNotIn(overclaim, body)
+
+    def test_it_says_where_the_typed_words_actually_went(self):
+        """The pre-filled answer box is otherwise a surprise: the visitor
+        typed into one field on the opening and finds the text in a
+        different field here."""
+        self._start(door=wws.DOOR_SOMETHING, thought="I led a messy migration.")
+        body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
+        self.assertIn("Your words are already in the answer below", body)
+
+    def test_no_such_note_when_there_was_no_typed_thought(self):
+        self._start(door=wws.DOOR_SOMETHING, thought="")
+        body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
+        self.assertNotIn("Your words are already in the answer below", body)

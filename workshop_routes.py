@@ -95,6 +95,7 @@ from services.knowledge_service import (
     STATUS_FILTERS,
     KnowledgeServiceError,
     knowledge_service,
+    utf16_length,
     validate_knowledge_item_input,
 )
 
@@ -369,7 +370,37 @@ def _resolve_selected_item_key(requested, rows):
     return None
 
 
-def _real_item_view(row, *, selected_key):
+def _item_select_url(item_key, *, area="all", status="all", search=""):
+    """The link that opens one item, carrying the CURRENTLY active filter and
+    search with it.
+
+    Audit fix F5 (2026-08-04). This used to be
+    ``url_for("workshop.my_information", item=item_key)`` — item only. So
+    clicking an item while the Archived filter was applied navigated to a URL
+    with no ``status=archived``, which reset the list to the default (active
+    statuses only) AND left the detail panel empty, because
+    ``_resolve_selected_item_key`` resolves the requested key against the
+    FILTERED rows and the archived item is not in the default set. From the
+    visitor's side the item they had just clicked simply disappeared, which
+    made archiving look one-way: you could archive something and then never
+    open it again from the UI.
+
+    The filter chips already thread these parameters through every link they
+    build (see partials/workshop/_library.html); item links were the one
+    navigation on the screen that dropped them. ``or none`` mirrors the
+    chips' own idiom, so a default filter stays absent from the URL rather
+    than showing up as noise like ``?area=all&status=all``.
+    """
+    return url_for(
+        "workshop.my_information",
+        item=item_key,
+        area=area if area and area != "all" else None,
+        status=status if status and status != "all" else None,
+        q=search or None,
+    )
+
+
+def _real_item_view(row, *, selected_key, area="all", status="all", search=""):
     item_key = row["item_key"]
     return {
         "item_key": item_key,
@@ -382,7 +413,7 @@ def _real_item_view(row, *, selected_key):
         ),
         "downstream_use_label": NOT_USED_ELSEWHERE,
         "selected": item_key == selected_key,
-        "select_url": url_for("workshop.my_information", item=item_key),
+        "select_url": _item_select_url(item_key, area=area, status=status, search=search),
     }
 
 
@@ -507,7 +538,17 @@ def _build_demo_library_view(*, area, status, search, item_param):
         "schema_version": SCHEMA_VERSION,
         "owner_display_name": workshop_demo_library.PERSONA_DISPLAY_NAME,
         "library_items": [
-            _real_item_view(row, selected_key=selected_key) for row in filtered_rows
+            # Audit fix F5: item links carry the active filter/search, so
+            # opening an archived item does not silently reset the list and
+            # blank the detail panel.
+            _real_item_view(
+                row,
+                selected_key=selected_key,
+                area=selected_area,
+                status=selected_status,
+                search=search_query,
+            )
+            for row in filtered_rows
         ],
         "detail": detail,
         "area_filters": AREA_FILTERS,
@@ -632,7 +673,15 @@ def my_information():
             "schema_version": SCHEMA_VERSION,
             "owner_display_name": _owner_display_name(identity),
             "library_items": [
-                _real_item_view(row, selected_key=selected_key) for row in filtered_rows
+                # Audit fix F5: see the anonymous path above.
+                _real_item_view(
+                    row,
+                    selected_key=selected_key,
+                    area=selected_area,
+                    status=selected_status,
+                    search=search_query,
+                )
+                for row in filtered_rows
             ],
             "detail": detail,
             "area_filters": AREA_FILTERS,
@@ -674,6 +723,38 @@ def my_information():
 # ---------------------------------------------------------------------------
 
 
+def _offending_field(values, *, error_message, title_limit, wording_limit):
+    """Which field a rejected submission is actually about — "title",
+    "wording", or ``None`` when it is neither (a classification problem, a
+    database failure, a conflict).
+
+    Audit fix F1 (2026-08-04). The composer and review screens showed a
+    single error banner and left every field looking perfectly valid, so a
+    screen-reader user was told nothing at all about WHICH box to fix and a
+    sighted user had to guess. ``services/knowledge_service.py``'s validation
+    codes are deliberately coarse ("required"/"too_long" cover both fields at
+    once), so rather than inventing a parallel error taxonomy — which would
+    then have to be kept in step with the service's own — this re-derives the
+    answer from the values the member actually submitted, which is the same
+    information the validator looked at. The caller passes the limits that
+    apply to THIS viewer (an anonymous preview's wording cap differs from a
+    member's), so the answer is right on both paths.
+
+    Order matters: title first, matching the order the validator itself
+    checks in, so the field named here is the one that actually stopped the
+    save rather than a second problem further down the form.
+    """
+    if not error_message:
+        return None
+    title = values.get("title") or ""
+    wording = values.get("wording") or ""
+    if not title.strip() or utf16_length(title) > title_limit:
+        return "title"
+    if not wording.strip() or len(wording) > wording_limit or utf16_length(wording) > wording_limit:
+        return "wording"
+    return None
+
+
 def _composer_response(
     *,
     mode,
@@ -686,9 +767,20 @@ def _composer_response(
     status_code=200,
     anonymous_preview=False,
 ):
+    wording_limit = (
+        workshop_demo_library.MAX_PREVIEW_WORDING_UNITS
+        if anonymous_preview
+        else MAX_WORDING_UNITS
+    )
     return (
         render_template(
             "workshop_add.html",
+            error_field=_offending_field(
+                values,
+                error_message=error_message,
+                title_limit=MAX_TITLE_UNITS,
+                wording_limit=wording_limit,
+            ),
             page_title=("Edit information" if mode == "edit" else "Add information")
             + " — Workshop",
             mode=mode,
@@ -701,15 +793,11 @@ def _composer_response(
             max_title_units=MAX_TITLE_UNITS,
             # Public preview mode (owner instruction 2026-08-02, doc 20
             # section 6e): every preview surface — add AND edit alike, since
-            # Edit is now anonymous-capable too — hints the tighter 400-char
-            # preview wording cap in the browser's own maxlength attribute.
-            # The real, authoritative enforcement happens server-side in
+            # Edit is now anonymous-capable too — hints the preview wording
+            # cap in the browser's own maxlength attribute. The real,
+            # authoritative enforcement happens server-side in
             # save_item/update_item regardless of this attribute.
-            max_wording_units=(
-                workshop_demo_library.MAX_PREVIEW_WORDING_UNITS
-                if anonymous_preview
-                else MAX_WORDING_UNITS
-            ),
+            max_wording_units=wording_limit,
             classification_choices=CLASSIFICATION_CHOICES,
             anonymous_preview=anonymous_preview,
         ),
@@ -742,10 +830,21 @@ def _review_response(
     function and template rather than forking a second one, per the
     architecture's "flows into the EXISTING save paths" instruction.
     """
+    wording_limit = (
+        workshop_demo_library.MAX_PREVIEW_WORDING_UNITS
+        if anonymous_preview
+        else MAX_WORDING_UNITS
+    )
     return (
         render_template(
             "workshop_review.html",
             page_title="Review what will be saved — Workshop",
+            error_field=_offending_field(
+                values,
+                error_message=error_message,
+                title_limit=MAX_TITLE_UNITS,
+                wording_limit=wording_limit,
+            ),
             mode=mode,
             values=values,
             idempotency_key=idempotency_key,
@@ -756,11 +855,7 @@ def _review_response(
             keep_working_url=keep_working_url,
             source_label=source_label or "Your words, added directly",
             max_title_units=MAX_TITLE_UNITS,
-            max_wording_units=(
-                workshop_demo_library.MAX_PREVIEW_WORDING_UNITS
-                if anonymous_preview
-                else MAX_WORDING_UNITS
-            ),
+            max_wording_units=wording_limit,
             classification_choices=CLASSIFICATION_CHOICES,
             anonymous_preview=anonymous_preview,
         ),

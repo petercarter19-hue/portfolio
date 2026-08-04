@@ -9,6 +9,8 @@ for reusable service/route code).
 """
 
 import contextlib
+import html
+import re
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -1110,3 +1112,134 @@ class WorkshopRateLimitTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ArchivedItemNavigationTests(unittest.TestCase):
+    """Audit fix F5 (2026-08-04): archiving was effectively one-way from the
+    UI.
+
+    An item link was built as ``?item=<key>`` and nothing else, so clicking
+    an archived item while the Archived filter was applied navigated to a URL
+    with no ``status=archived``. The list reset to the default (active
+    statuses only) AND the detail panel came back empty, because the
+    requested key is resolved against the FILTERED rows and an archived item
+    is not in the default set. From the visitor's side the thing they had
+    just clicked simply vanished — so you could archive something and then
+    never open it again from the UI.
+
+    Driven over the anonymous sample library, which ships two genuinely
+    archived items, so this exercises the real rendered page end to end with
+    no service mocking at all.
+    """
+
+    def setUp(self):
+        self.client = app.test_client()
+        self.original_flag = app.config.get("PEERSLATE_WORKSHOP_ENABLED")
+        self.original_fixture_flag = app.config.get("PEERSLATE_WORKSHOP_DEV_FIXTURE")
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        app.config["PEERSLATE_WORKSHOP_DEV_FIXTURE"] = False
+        self.identity_patch = patch(
+            "workshop_routes.get_current_identity",
+            side_effect=AuthenticationRequired("anonymous"),
+        )
+        self.identity_patch.start()
+        self._limiter_enabled = limiter.enabled
+        limiter.enabled = False
+
+    def tearDown(self):
+        limiter.enabled = self._limiter_enabled
+        self.identity_patch.stop()
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = self.original_flag
+        app.config["PEERSLATE_WORKSHOP_DEV_FIXTURE"] = self.original_fixture_flag
+
+    def _body(self, path):
+        response = self.client.get(path)
+        self.assertEqual(response.status_code, 200)
+        return response.data.decode("utf-8")
+
+    def _item_links(self, body):
+        return re.findall(r'class="wk-list__item-link"\s+href="([^"]+)"', body)
+
+    def test_an_archived_item_link_carries_the_archived_filter(self):
+        links = self._item_links(self._body("/app/workshop?status=archived"))
+        self.assertTrue(links, "the Archived filter must list the archived items")
+        for link in links:
+            self.assertIn("item=", link)
+            self.assertIn("status=archived", link)
+
+    def test_opening_an_archived_item_populates_its_detail_panel(self):
+        listing = self._body("/app/workshop?status=archived")
+        link = html.unescape(self._item_links(listing)[0])
+
+        opened = self._body(link)
+        # The detail card rendered at all...
+        self.assertIn('class="wk-detail"', opened)
+        # ...and it is the archived item's real content, not an empty shell.
+        self.assertIn("Early bookkeeping role", opened)
+        self.assertIn("bookkeeping before healthcare", opened)
+
+    def test_opening_an_archived_item_keeps_the_archived_filter_applied(self):
+        listing = self._body("/app/workshop?status=archived")
+        link = html.unescape(self._item_links(listing)[0])
+
+        opened = self._body(link)
+        archived_chip = re.search(
+            r'<a\b[^>]*class="[^"]*wk-chip--archived[^"]*"[^>]*>', opened
+        )
+        self.assertIsNotNone(archived_chip)
+        self.assertIn("wk-chip--selected", archived_chip.group(0))
+        self.assertIn('aria-current="true"', archived_chip.group(0))
+        # The list still shows archived items rather than resetting.
+        self.assertIn("Draft bio from 2024", opened)
+
+    def test_an_area_filter_and_a_search_also_survive_opening_an_item(self):
+        listing = self._body("/app/workshop?area=personal&q=trail")
+        links = self._item_links(listing)
+        self.assertTrue(links)
+        link = html.unescape(links[0])
+        self.assertIn("area=personal", link)
+        self.assertIn("q=trail", link)
+
+        opened = self._body(link)
+        self.assertIn('value="trail"', opened)
+        self.assertIn('class="wk-detail"', opened)
+
+    def test_a_default_view_keeps_its_item_links_free_of_filter_noise(self):
+        """``or none`` matches the filter chips' own idiom: a default filter
+        stays out of the URL rather than rendering as ?area=all&status=all."""
+        links = self._item_links(self._body("/app/workshop"))
+        self.assertTrue(links)
+        for link in links:
+            self.assertNotIn("area=all", link)
+            self.assertNotIn("status=all", link)
+            self.assertNotIn("q=", link)
+
+    def test_the_count_badge_reflects_what_is_actually_listed(self):
+        """It always read the whole library, so filtering to two archived
+        items still announced "17 items" directly above those two rows.
+
+        Note the default view is 15, not 17: archived items stay hidden until
+        the Archived chip asks for them, so "17 items" was wrong there too —
+        it counted rows the visitor could not see. The footer still carries
+        the whole-library number, so nothing is lost by making the badge
+        describe the list it actually sits on top of.
+        """
+        everything = self._body("/app/workshop")
+        self.assertIn(">15 items<", everything)
+        self.assertIn("Showing 15 of 17 items", everything)
+        self.assertNotIn(">17 items<", everything)
+
+        archived = self._body("/app/workshop?status=archived")
+        self.assertIn(">2 items<", archived)
+        self.assertIn("Showing 2 of 17 items", archived)
+        self.assertNotIn(">17 items<", archived)
+
+    def test_the_inert_sort_control_is_not_in_the_tab_order(self):
+        """It sorts nothing and there is no second order to choose, but it
+        was a focusable button with a chevron — reaching keyboard users as an
+        interactive control that silently did nothing."""
+        body = self._body("/app/workshop")
+        sort_button = re.search(r"<button\b[^>]*class=\"wk-sort\"[^>]*>", body)
+        self.assertIsNotNone(sort_button)
+        self.assertIn("disabled", sort_button.group(0))
+        self.assertNotIn('aria-disabled="true"', sort_button.group(0))

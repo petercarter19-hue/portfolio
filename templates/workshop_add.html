@@ -16,6 +16,7 @@
    workshop_voice_enabled or the transcription URL without it, and would
    silently render the flag-off inert mic on every screen. #}
 {% from "partials/workshop/_voice.html" import workshop_mic, workshop_voice_status with context %}
+{% from "partials/workshop/_field_counter.html" import workshop_field_counter %}
 {#
   PS-WORKSHOP-001, Slice W1 direct entry — composer step.
   Assembled from approved components per doc 18's direct-entry visual
@@ -90,8 +91,11 @@
                             type="text"
                             maxlength="{{ max_title_units }}"
                             value="{{ values.title }}"
+                            aria-describedby="wk-title-count"
+                            {% if error_field == "title" %}aria-invalid="true" autofocus{% endif %}
                             required
                         >
+                        {{ workshop_field_counter("wk-title", values.title, max_title_units) }}
                     </div>
 
                     <div class="wk-field">
@@ -103,11 +107,14 @@
                                 name="wording"
                                 maxlength="{{ max_wording_units }}"
                                 rows="6"
+                                aria-describedby="wk-wording-count"
+                                {% if error_field == "wording" %}aria-invalid="true" autofocus{% endif %}
                                 required
                             >{{ values.wording }}</textarea>
                             {{ workshop_mic("wk-wording", "wording") }}
                         </div>
                         {{ workshop_voice_status("wk-wording") }}
+                        {{ workshop_field_counter("wk-wording", values.wording, max_wording_units) }}
                         <p class="wk-field__hint">{% if workshop_voice_enabled %}Text entry is available. You can type or speak.{% else %}Text entry is available. Voice input is not available yet.{% endif %}</p>
                     </div>
 
@@ -154,6 +161,11 @@
 {% endblock %}
 
 {% block extra_scripts %}
+{# Audit fix F1 (2026-08-04): the capped-field character counters. Loaded
+   unconditionally — unlike the voice scripts below it, this has nothing to
+   do with the voice flag, and a field's limit must be visible on every
+   screen that has one. #}
+<script src="{{ url_for('static', filename='js/workshop-fields.js') }}" defer></script>
 {% if workshop_voice_enabled %}
 {# PS-WORKSHOP-001 W2d. Loaded only when the voice flag is on, so a page
    with no mic on it also carries no voice JavaScript. dictation.js comes

@@ -74,7 +74,10 @@
                     <h1 class="wk-work-composer__title">Start with whatever is on your mind</h1>
                     <p class="wk-work-composer__sub">A rough thought is enough. Type or speak in your own words.</p>
 
-                    <form method="post" action="{{ start_url }}">
+                    {# Audit fix F2 (2026-08-04): this form now has an id
+                       because the "Work on something" door below submits it
+                       too — see that door's own comment. #}
+                    <form method="post" action="{{ start_url }}" id="wk-work-composer-form">
                         <input type="hidden" name="door" value="{{ door_something }}">
                         <div class="wk-work-composer__row">
                             <div class="wk-field__textarea-wrap">
@@ -146,21 +149,33 @@
                         <p class="wk-door__meta">Not available yet</p>
                     </div>
 
-                    {# Work on something #}
-                    <form method="post" action="{{ start_url }}">
-                        <input type="hidden" name="door" value="{{ door_something }}">
-                        <button type="submit" class="wk-door">
-                            <span class="wk-door__head">
-                                <span class="wk-door__head-left">
-                                    <span class="wk-door__icon">{{ workshop_icon("pencil") }}</span>
-                                    <span class="wk-door__title">Work on something</span>
-                                </span>
-                                <span class="wk-door__chevron">{{ workshop_icon("chevron-right") }}</span>
+                    {#
+                      Work on something. Audit fix F2 (2026-08-04): this
+                      button submits the COMPOSER's form (via the HTML form=
+                      attribute) instead of a second, empty form of its own.
+
+                      It used to be its own <form> carrying only the door
+                      code, so a visitor who typed their thought into the
+                      composer above and then pressed this door — the
+                      large, obvious, labelled way into the product —
+                      started a session with an EMPTY answer and watched
+                      everything they had written disappear. The composer's
+                      small arrow button was the only control that actually
+                      kept their words. Same door, same hidden door code
+                      (the composer form carries it already); it simply no
+                      longer throws the visitor's text away.
+                    #}
+                    <button type="submit" form="wk-work-composer-form" class="wk-door">
+                        <span class="wk-door__head">
+                            <span class="wk-door__head-left">
+                                <span class="wk-door__icon">{{ workshop_icon("pencil") }}</span>
+                                <span class="wk-door__title">Work on something</span>
                             </span>
-                            <p class="wk-door__copy">Start with a thought, example, skill, or question in your own words.</p>
-                            <p class="wk-door__meta">Type or speak</p>
-                        </button>
-                    </form>
+                            <span class="wk-door__chevron">{{ workshop_icon("chevron-right") }}</span>
+                        </span>
+                        <p class="wk-door__copy">Start with a thought, example, skill, or question in your own words.</p>
+                        <p class="wk-door__meta">Type or speak</p>
+                    </button>
 
                     {#
                       Give me a spark. Real from W2c, but only for a viewer

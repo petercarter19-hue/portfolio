@@ -47,9 +47,12 @@ unchanged. No second, parallel view-model exists for the anonymous path.
 
 **Compact session encoding.** The stored delta uses short top-level keys and
 positional (list, not dict) entries for visitor-added items specifically to
-keep the signed, base64-encoded cookie small: measured worst-case (4 added
-items at the full title/wording caps, near-random-content wording) is well
-under 3KB end to end (see ``tests/test_workshop_demo_library.py``).
+keep the signed, base64-encoded cookie small. Audit fix F1 (2026-08-04)
+raised ``MAX_PREVIEW_WORDING_UNITS`` from 400 to 1000 so it matches the
+length the Work on Something session actually invites; the measured
+consequences for the cookie are tabulated at ``MAX_SESSION_BYTES`` below and
+asserted in ``tests/test_workshop_demo_library.py`` /
+``tests/test_workshop_work_session.py``.
 """
 
 import hashlib
@@ -73,20 +76,72 @@ SESSION_KEY = "workshop_preview"
 # the browser's maxlength attribute.
 MAX_ADDED_ITEMS = 4
 # "Characters" here means Python string length (Unicode code points), the
-# plain-language reading of the owner's "400 characters" instruction — not
-# the UTF-16 code-unit convention services/knowledge_service.py uses for its
-# own (much larger) 8000-unit bound.
-MAX_PREVIEW_WORDING_UNITS = 400
+# plain-language reading of the owner's original "400 characters"
+# instruction — not the UTF-16 code-unit convention
+# services/knowledge_service.py uses for its own (much larger) 8000-unit
+# bound.
+#
+# **Audit fix F1 (2026-08-04): this is now THE preview wording cap, and the
+# Work on Something answer cap is defined as this same number.** It was 400
+# while services/workshop_work_session.py's MAX_ANSWER_UNITS was 1000, and
+# the two disagreed in the worst possible place: the final-wording field on
+# the save screen is server-pre-filled with the whole answer, so a visitor
+# who accepted the session's own invitation to write up to 1000 characters
+# was handed a pre-filled box of (say) 429 characters and then told
+# "Preview wording is limited to 400 characters" when they pressed Save
+# privately. ``maxlength`` does not clamp a pre-filled value, so the app
+# filled the field past its own limit and then blamed the visitor for it.
+# The centrepiece flow could not be completed at all.
+#
+# workshop_work_session.py now does ``MAX_ANSWER_UNITS =
+# MAX_PREVIEW_WORDING_UNITS`` rather than declaring its own number, so the
+# two are the same object and cannot drift apart again. The standing
+# invariant: **the app never pre-fills a field beyond what it will accept.**
+#
+# The count cap (MAX_ADDED_ITEMS) and this length cap were never the only
+# bound — MAX_SESSION_BYTES below has always been able to refuse a write
+# that fits both, honestly and without losing the visitor's text (see
+# SESSION_FULL_MESSAGE). Raising this to 1000 shifts where that byte guard
+# starts to bind: measured, an anonymous visitor can save roughly two
+# MAXIMAL 1000-character items (2276 bytes) rather than four maximal
+# 400-character ones, and everything past that is refused honestly rather
+# than written. Real prose compresses far better than the random text those
+# figures are measured with. See MAX_SESSION_BYTES for the full numbers.
+MAX_PREVIEW_WORDING_UNITS = 1000
 # Defensive ceiling on the fully-encoded, signed session cookie value.
-# Measured worst case for THIS module alone (4 items at both caps,
-# near-random wording) is ~2KB. PS-WORKSHOP-001 W2a: this is now the SHARED
-# ceiling for the whole session["workshop_preview"] value, library delta plus
-# the Work on Something session state together (services/
+# PS-WORKSHOP-001 W2a: this is the SHARED ceiling for the whole
+# session["workshop_preview"] value — library delta, the Work on Something
+# session state, and Spark memory together (services/
 # workshop_work_session.py imports this constant rather than defining its
-# own) — measured combined worst case (this module's 4-item/400-char cap
-# PLUS a full 1000-UTF-16-unit work-session answer and a full context
-# selection) is ~3.0KB, still under this ~3KB ceiling, itself comfortably
-# under the ~4KB a browser allows for one cookie.
+# own). It sits comfortably under the ~4KB a browser allows for one cookie.
+#
+# **Audit fix F1 (2026-08-04) re-measurement.** With MAX_PREVIEW_WORDING_UNITS
+# raised to 1000 the arithmetic changed, so here are the real numbers, all
+# measured against the ACTUAL signed cookie with low-compressibility
+# (random alphanumeric) text — the honest worst case, not typical prose:
+#
+#   library items @1000 chars   with a live 1000-char answer   after save
+#   -------------------------   ---------------------------   ----------
+#   0                            1175                          102
+#   1                            2271                          1244
+#   2                            3312 (refused)                2276
+#   3                            4344 (refused)                3307 (refused)
+#
+# A cached Spark adds roughly 460 bytes on top of each figure, which is why
+# every write path here now sheds Spark memory before refusing (see
+# ``_fits_after_shedding_spark``): a cost-optimization cache must never be
+# the reason a visitor cannot save their own words.
+#
+# So the centrepiece — arrive with an empty added-items list, write up to the
+# full invited length, save — fits with room to spare, which is the whole
+# point of the F1 fix. Two maximal items still fit. Past that the byte guard
+# refuses honestly with SESSION_FULL_MESSAGE and the visitor's text stays on
+# screen; nothing is ever silently truncated or dropped. That refusal is not
+# new behaviour, and MAX_ADDED_ITEMS was never a promise that four items of
+# ANY length would fit — this module has always been "up to 4 items AND
+# within the byte budget". Raising the length cap moves where the second
+# clause starts to bind, in exchange for a guided session that can actually
+# be completed.
 MAX_SESSION_BYTES = 3072
 
 CAP_ITEMS_MESSAGE = (
@@ -94,12 +149,13 @@ CAP_ITEMS_MESSAGE = (
     "library."
 )
 CAP_WORDING_MESSAGE = (
-    "Preview wording is limited to 400 characters for this sample session "
-    "— shorten it and try again."
+    f"Preview wording is limited to {MAX_PREVIEW_WORDING_UNITS} characters "
+    "for this sample session — shorten it and try again."
 )
 SESSION_FULL_MESSAGE = (
-    "This preview session is full — sign in for an unlimited private "
-    "library."
+    "This preview session is full — nothing you wrote has been lost. Start "
+    "fresh to clear it, remove an item you added, or sign in for an "
+    "unlimited private library."
 )
 
 _CLASS_CODE = {"work": "w", "personal": "p", "both": "b", "unclassified": "u"}
@@ -614,6 +670,36 @@ def _would_fit(session, candidate_delta):
     return size <= MAX_SESSION_BYTES
 
 
+def _fits_after_shedding_spark(session, candidate_delta):
+    """True if this library write fits — reclaiming bytes from Spark memory,
+    in the documented priority order, if that is what makes room.
+
+    Audit fix F1 (2026-08-04). Every write below used to call ``_would_fit``
+    directly, which measures the cookie AS IT STANDS: a cached Spark
+    suggestion (~460 bytes of the shared ~3KB budget) counted fully against
+    the visitor's own save, even though that cache is a pure cost
+    optimization that can be regenerated on demand. The Work on Something
+    module already had exactly this shed order for its own writes; the
+    library did not, so the same visitor could be told their session was
+    full while ~460 bytes of a suggestion they never asked to keep sat in
+    the cookie. The priority order is Spark's, unchanged and documented at
+    ``workshop_work_session._fits_after_evicting_spark_cache``: the member's
+    own words are never sacrificed, and the regenerable cache goes first.
+
+    Imported lazily on purpose. ``workshop_work_session`` imports
+    MAX_SESSION_BYTES/SESSION_KEY from THIS module at import time, so a
+    module-level import here would be a cycle; by the time any session write
+    happens both modules are long since loaded.
+    """
+    if _would_fit(session, candidate_delta):
+        return True
+    from services import workshop_work_session
+
+    return workshop_work_session.shed_spark_memory_until_fits(
+        session, lambda: _would_fit(session, candidate_delta)
+    )
+
+
 # ---------------------------------------------------------------------------
 # Reads: merge base library + session delta into real-row-shaped output
 # ---------------------------------------------------------------------------
@@ -739,7 +825,7 @@ def add_item(session, *, title, wording, classification, status, authored_via="t
         "s": delta["s"],
         "d": delta["d"],
     }
-    if not _would_fit(session, candidate):
+    if not _fits_after_shedding_spark(session, candidate):
         return None, SESSION_FULL_MESSAGE
 
     write_session_delta(session, candidate)
@@ -763,7 +849,7 @@ def edit_item(session, item_key, *, title, wording, classification, status):
     overrides[item_key] = _STATUS_CODE.get(status, "c")
 
     candidate = {"a": delta["a"], "e": edits, "s": overrides, "d": delta["d"]}
-    if not _would_fit(session, candidate):
+    if not _fits_after_shedding_spark(session, candidate):
         return False, SESSION_FULL_MESSAGE
 
     write_session_delta(session, candidate)
@@ -780,7 +866,7 @@ def archive_item(session, item_key):
     overrides = dict(delta["s"])
     overrides[item_key] = _STATUS_CODE["archived"]
     candidate = {"a": delta["a"], "e": delta["e"], "s": overrides, "d": delta["d"]}
-    if not _would_fit(session, candidate):
+    if not _fits_after_shedding_spark(session, candidate):
         return False, SESSION_FULL_MESSAGE
 
     write_session_delta(session, candidate)
@@ -809,7 +895,7 @@ def restore_item(session, item_key):
     overrides = dict(delta["s"])
     overrides[item_key] = target_code
     candidate = {"a": delta["a"], "e": delta["e"], "s": overrides, "d": delta["d"]}
-    if not _would_fit(session, candidate):
+    if not _fits_after_shedding_spark(session, candidate):
         return False, SESSION_FULL_MESSAGE
 
     write_session_delta(session, candidate)
@@ -839,7 +925,7 @@ def delete_item(session, item_key):
         added = [entry for entry in delta["a"] if entry[0] != item_key]
         candidate = {"a": added, "e": edits, "s": overrides, "d": delta["d"]}
 
-    if not _would_fit(session, candidate):
+    if not _fits_after_shedding_spark(session, candidate):
         return False, SESSION_FULL_MESSAGE
 
     write_session_delta(session, candidate)

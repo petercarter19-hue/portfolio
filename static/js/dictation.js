@@ -58,10 +58,44 @@
         if (error.name === 'NotReadableError') return 'Another application may be using the microphone.';
         return 'The microphone could not be started in this browser.';
     }
+    /* Audit fix (2026-08-04): which fields have ever actually held a caret.
+       A textarea that has never been focused reports selectionStart === 0 —
+       a real number, not undefined — so the caret-aware insertion below
+       treated "never touched" as "caret at the very beginning" and dropped
+       the transcript in FRONT of everything already written. Someone who
+       typed a paragraph and then pressed the mic watched their dictation
+       land at the top of it.
+
+       Tracked with one capture-phase focusin listener rather than by
+       inspecting document.activeElement at insertion time: pressing the mic
+       button moves focus to the BUTTON, so by the time a transcript arrives
+       the field is never the active element, and checking that would break
+       deliberate mid-text dictation for everyone. Where WeakSet is
+       unavailable this degrades to the previous behaviour rather than
+       guessing. */
+    var CARET_KNOWN_FIELDS = typeof WeakSet === 'function' ? new WeakSet() : null;
+    if (CARET_KNOWN_FIELDS && typeof document !== 'undefined' && document.addEventListener) {
+        document.addEventListener('focusin', function (event) {
+            var el = event && event.target;
+            if (el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) {
+                CARET_KNOWN_FIELDS.add(el);
+            }
+        }, true);
+    }
+    function hasRealCaret(target) {
+        if (!CARET_KNOWN_FIELDS) return true;
+        return CARET_KNOWN_FIELDS.has(target);
+    }
+
     function appendTranscript(target, transcript) {
         if (!target || !transcript) return 0;
-        var start = typeof target.selectionStart === 'number' ? target.selectionStart : target.value.length;
-        var end = typeof target.selectionEnd === 'number' ? target.selectionEnd : start;
+        /* No caret was ever placed in this field, so there is no position to
+           respect — append at the end, after what is already there. */
+        var caretIsReal = hasRealCaret(target);
+        var start = caretIsReal && typeof target.selectionStart === 'number'
+            ? target.selectionStart
+            : target.value.length;
+        var end = caretIsReal && typeof target.selectionEnd === 'number' ? target.selectionEnd : start;
         var before = target.value.slice(0, start);
         var after = target.value.slice(end);
         var leadingSpace = before && !/\s$/.test(before) ? ' ' : '';

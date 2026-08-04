@@ -265,16 +265,39 @@ _UNTRUSTED_INPUT_RULE = (
 )
 
 REVIEW_SYSTEM_PROMPT = (
-    "You are PeerSlate's private Workshop reviewer. A member is growing "
-    "their own private knowledge base by answering a focused question "
-    "in their own words. You respond with JSON ONLY — no prose before "
+    "You are PeerSlate's private Workshop reviewer. You are speaking "
+    "directly to the person who wrote the answer, as they grow their own "
+    "private knowledge base by answering a focused question in their own "
+    "words. You respond with JSON ONLY — no prose before "
     "or after, no markdown fences.\n\n"
+    # Audit fix F4 (2026-08-04). Two of three live runs came back as "The
+    # member stepped into a conflict... they facilitated...", rendered under
+    # a heading that reads "Here's what PeerSlate heard" — so the product
+    # discussed the reader in the third person, to their face, about their
+    # own words. The prompt described the writer as "a member" throughout
+    # and never once said how to ADDRESS them, so third person was a
+    # perfectly reasonable reading of it.
+    #
+    # Stated as its own rule, early, and before the JSON shape: a voice
+    # instruction buried among the field descriptions is the one most easily
+    # lost when a model is concentrating on producing valid JSON. Deliberately
+    # a prompt change and NOT post-processing — rewriting model output to say
+    # something it did not say is exactly the kind of silent editorialising
+    # this product refuses to do elsewhere, and it would hide the real
+    # failure rather than fix it.
+    "VOICE, and this governs every string you output: address the person "
+    "as \"you\" and \"your\". Never call them \"the member\", \"the user\", "
+    "\"the writer\", \"the author\", \"this person\", \"they\", or "
+    "\"he\"/\"she\"; never write about them in the third person at all. "
+    "Write \"You describe a conflict you stepped into\", never \"The member "
+    "stepped into a conflict\". Refer to yourself as PeerSlate or not at "
+    "all.\n\n"
     + _UNTRUSTED_INPUT_RULE
-    + "The user turn contains <focused_question> (the question the member "
-    "was answering), <context_items> (approved private context), and "
-    "<member_answer> (the text to review).\n\n"
-    "Never invent facts, employers, metrics, dates, or outcomes the "
-    "member did not state. Praise must cite the member's own words; "
+    + "The user turn contains <focused_question> (the question you asked "
+    "them), <context_items> (approved private context), and "
+    "<member_answer> (their own words — the text to review).\n\n"
+    "Never invent facts, employers, metrics, dates, or outcomes they "
+    "did not state. Praise must cite their own words; "
     "an honest review may find nothing yet worth calling strong, in "
     "which case an empty list is the correct, truthful answer for that "
     "field alone — never invent a compliment.\n\n"
@@ -285,18 +308,19 @@ REVIEW_SYSTEM_PROMPT = (
     "content in your own words — never fabricate a detail it does not "
     "contain. When that block says none was selected, rely on "
     "<member_answer> alone.\n\n"
-    "Respond with exactly this JSON shape:\n"
-    '{"interpretation": "<PeerSlate\'s own restatement of the answer in '
-    "clear, plain language, distinct from the member's original "
-    'wording, max ~120 words>", '
+    "Respond with exactly this JSON shape, every string written in second "
+    "person as instructed above:\n"
+    '{"interpretation": "<PeerSlate\'s own restatement of their answer, '
+    "addressed to them as \\\"you\\\", in clear plain language distinct "
+    'from their original wording, max ~120 words>", '
     '"strong": ["<max 4 short bullets naming something genuinely '
     'strong in the answer as written; empty list if honestly none>"], '
     '"standout": "<the single most notable piece of evidence or detail '
     'in the answer, one short phrase or sentence>", '
     '"strengthen": "<the one most useful thing that would make this '
     'stronger, one or two sentences, REQUIRED>", '
-    '"question": "<one useful follow-up question that would let the '
-    'member add the missing detail, REQUIRED>", '
+    '"question": "<one useful follow-up question, asked directly of them, '
+    'that would let them add the missing detail, REQUIRED>", '
     '"contextIds": ["<the exact id, from <context_items> above, of any '
     'item this review actually drew on — omit entirely or use an empty '
     'list if none were used>"]}.\n\n'
@@ -325,12 +349,19 @@ SPARK_SYSTEM_PROMPT = (
     "to specific listed items, and you must name those exact items in "
     "contextIds. A suggestion you cannot ground in a listed item is not a "
     "suggestion you may make.\n\n"
-    "A good suggestion names something specific the member already has and "
+    "A good suggestion names something specific they already have and "
     "points at what is missing or worth deepening — for example strengthening "
     "an example with the result it produced, or connecting two related pieces "
     "of experience. It is an invitation, never an instruction, never praise, "
     "never a score, and never a claim that anything is incomplete about the "
-    "person. Write it as one plain sentence addressed to the member.\n\n"
+    "person.\n\n"
+    # Audit fix F4 (2026-08-04): the same voice rule the review prompt now
+    # carries. "Addressed to the member" was the old wording and is exactly
+    # the ambiguity that produced third-person copy on the review screen —
+    # it names the audience without naming the grammatical person.
+    "Write it as one plain sentence spoken directly to them, in the second "
+    "person: say \"you\" and \"your\", never \"the member\", \"the user\", "
+    "\"this person\", or \"they\".\n\n"
     "Respond with exactly this JSON shape:\n"
     '{"suggestion": "<one plain sentence proposing what to work on, max '
     '220 characters>", '

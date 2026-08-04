@@ -3163,3 +3163,71 @@ body.workshop-page[data-theme="dark"] .wk-followup-form__input {
 .wk-followup-form__field .wk-voice { right: 0.35rem; }
 
 .wk-voice-status[data-wk-voice-status-for="wk-followup-answer"] { margin-top: 0.35rem; }
+
+/* Audit fix F1 (2026-08-04) — capped-field character counter and the
+   paste-truncation notice. The counter is server-rendered (see
+   templates/partials/workshop/_field_counter.html) so these styles apply
+   with JavaScript on or off; workshop-fields.js only adds the --at-limit
+   state and the notice element. Right-aligned so it reads as metadata about
+   the field above rather than as instructions competing with the hint text
+   beside it. */
+.wk-field__count {
+    margin: 0.4rem 0 0;
+    color: var(--wk-muted);
+    font-size: 0.78rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.wk-field__count--at-limit {
+    color: var(--wk-danger, #b3261e);
+    font-weight: 600;
+}
+
+.wk-field__paste-notice {
+    margin: 0.4rem 0 0;
+    color: var(--wk-danger, #b3261e);
+    font-size: 0.82rem;
+}
+
+/* A field the server has marked as the reason a save was refused. Paired
+   with the role="alert" error banner, which carries the explanation — this
+   is the "which box" half of the same answer, and never the only signal
+   (colour alone is never the carrier: the field also receives focus). */
+.wk-field__input[aria-invalid="true"],
+.wk-field__textarea[aria-invalid="true"] {
+    border-color: var(--wk-danger, #b3261e);
+    box-shadow: 0 0 0 1px var(--wk-danger, #b3261e);
+}
+
+/* Audit fix F2 (2026-08-04) — the visitor's own opening thought, echoed on
+   the session screen above the focused question. Deliberately quieter than
+   the question (smaller, muted, rule on the leading edge) so the two can
+   never be mistaken for each other: one is the member's words, the other is
+   PeerSlate's. */
+.wk-session-echo {
+    margin: 0 0 1.25rem;
+    padding-inline-start: 0.85rem;
+    border-inline-start: 2px solid var(--wk-rule, rgb(128 128 128 / 30%));
+}
+
+.wk-session-echo__label {
+    margin: 0 0 0.3rem;
+    color: var(--wk-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.wk-session-echo__quote {
+    margin: 0;
+    color: var(--wk-text, inherit);
+    font-size: 0.95rem;
+    font-style: italic;
+}
+
+.wk-session-question__note {
+    margin: 0.4rem 0 0;
+    color: var(--wk-muted);
+    font-size: 0.82rem;
+}

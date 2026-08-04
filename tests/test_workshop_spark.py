@@ -1070,10 +1070,23 @@ class SparkCookieBudgetTests(SparkRouteTestCase):
                 spark_fingerprint=self.spark_fingerprint_in(body) or "",
             )
 
+    # Audit fix F1 (2026-08-04) raised wdl.MAX_PREVIEW_WORDING_UNITS from 400
+    # to 1000, so it matches the length the session actually invites. This
+    # class is not about that cap — it is about the SHED ORDER, which only
+    # engages in the narrow band where a write fits if and only if Spark
+    # memory is reclaimed. 400 characters x MAX_ADDED_ITEMS lands squarely in
+    # that band: measured, the library is then 1984 bytes, and a full
+    # 1000-character answer brings it to 3010 of the 3072 available — 62
+    # bytes spare, far less than the ~460 a cached Spark needs. Pinning the
+    # literal here rather than tracking the cap constant keeps these tests
+    # measuring what they claim to measure, instead of silently drifting into
+    # "the library alone is already over budget" the next time a cap moves.
+    PRESSURE_WORDING_CHARS = 400
+
     def _add_maxed_library_items(self):
         for i in range(wdl.MAX_ADDED_ITEMS):
             wording = "".join(
-                self.rng.choices(self.alphabet, k=wdl.MAX_PREVIEW_WORDING_UNITS)
+                self.rng.choices(self.alphabet, k=self.PRESSURE_WORDING_CHARS)
             )
             self.post(
                 "/app/workshop/items",
@@ -1110,15 +1123,16 @@ class SparkCookieBudgetTests(SparkRouteTestCase):
             self.post("/app/workshop/work/spark/another")
 
     def test_the_members_own_words_win_at_the_true_worst_case(self):
-        """Everything at once: the library at its own 4-item/400-character
-        cap, Spark memory at its cap WITH a maximal cached Spark, and a full
-        1000-unit answer.
+        """Everything at once: a library filled to PRESSURE_WORDING_CHARS on
+        every one of its 4 slots, Spark memory at its cap WITH a maximal
+        cached Spark, and a full-length answer.
 
-        The pre-W2c worst case already left only ~14 bytes spare — less than
-        one fingerprint — so Spark memory cannot simply coexist with it.
-        What must never happen is that adding Spark takes the session away
-        from the member: the answer is kept in full, Spark memory is
-        reclaimed to make room, and the cookie stays within the ceiling.
+        This combination leaves only ~62 bytes spare before Spark memory is
+        counted — far less than a cached Spark needs — so Spark memory cannot
+        simply coexist with it. What must never happen is that Spark takes
+        the session away from the member: the answer is kept in full, Spark
+        memory is reclaimed to make room, and the cookie stays within the
+        ceiling.
         """
         self._add_maxed_library_items()
         self._fill_spark_memory_to_cap()

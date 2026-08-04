@@ -21,10 +21,27 @@
    to Add information. #}
 {% from "partials/workshop/_icons.html" import workshop_icon %}
 {% set has_items = workshop.total_item_count > 0 %}
+{#
+  Audit fix F5 follow-ons (2026-08-04), both about this header telling the
+  truth about the list directly beneath it:
+
+  - The count was always workshop.total_item_count, so filtering to Archived
+    and seeing two rows still read "17 items". It now counts what is actually
+    listed. When that differs from the whole library — a filter, a search, or
+    the 200-item window — the footer below the list says so explicitly, so
+    the two together stay honest rather than either one guessing.
+  - "Last updated" is not a control. It sorts nothing, and there is no other
+    order to choose, but it was a focusable <button> with a chevron, so it
+    reached keyboard users as an interactive element that silently did
+    nothing when activated. Marked genuinely disabled, which takes it out of
+    the tab order, and given a title naming the order the list is actually
+    in. It becomes a real control when there is a second order to offer.
+#}
 {% macro list_header(extra_class='') %}
+{% set shown_count = workshop.library_items | length %}
 <div class="wk-list__header{% if extra_class %} {{ extra_class }}{% endif %}">
-    <span class="wk-list__count">{{ workshop.total_item_count }} item{{ 's' if workshop.total_item_count != 1 else '' }}</span>
-    <button type="button" class="wk-sort" aria-disabled="true">
+    <span class="wk-list__count">{{ shown_count }} item{{ 's' if shown_count != 1 else '' }}</span>
+    <button type="button" class="wk-sort" disabled title="Sorted by last updated">
         <span>Last updated</span>{{ workshop_icon("chevron-down") }}
     </button>
 </div>

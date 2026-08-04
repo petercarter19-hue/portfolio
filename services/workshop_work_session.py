@@ -35,22 +35,29 @@ value is a compact LIST (not a dict — matching workshop_demo_library's own
 "compact session encoding" convention of positional entries to keep the
 signed, base64-encoded cookie small). PS-WORKSHOP-001 W2b grew this from 4
 to 6 elements to track the per-session AI-call cap and whether an AI
-improvement proposal was ever accepted (``read_state`` degrades a stale
-4-element bucket gracefully rather than discarding the session — see its
-own docstring):
+improvement proposal was ever accepted; audit fix F2 (2026-08-04) grew it to
+7 to remember the visitor's own opening thought. ``read_state`` degrades a
+stale 4- or 6-element bucket gracefully rather than discarding the session —
+see its own docstring:
 
     [door_code, question_index, answer_text, context_mask, ai_call_count,
-     ai_assisted]
+     ai_assisted, opening_thought]
 
 - ``door_code``: one of DOOR_CONTINUE / DOOR_BROUGHT / DOOR_SOMETHING /
   DOOR_SPARK (single-character strings; a distinct namespace from
   workshop_demo_library's own status/classification codes — the two never
   appear in the same JSON key, so there is no collision risk, but codes are
   kept single-character here purely for byte-budget parity).
-- ``question_index``: index into QUESTION_SETS[door_code]. Selection is
-  DETERMINISTIC per door (always index 0 today) — see question_for_door.
-  The index is stored, not re-derived, so a later slice can let a member
-  cycle to a different curated question without changing this shape.
+- ``question_index``: index into QUESTION_SETS[door_code]. Audit fix F2
+  (2026-08-04): chosen with fresh entropy at session start so two people
+  starting side by side are not asked the identical question, and STORED
+  rather than re-derived so the choice cannot change under the member on a
+  re-render — see question_for_door. It was hardcoded to 0, which made
+  every curated question but the first unreachable.
+- ``opening_thought``: up to MAX_OPENING_THOUGHT_UNITS characters of what
+  the visitor actually typed to begin, echoed back on the session screen as
+  their own words. Optional by design: it is dropped rather than allowed to
+  cost the member their session when the cookie is tight.
 - ``answer_text``: the member's in-progress answer, seeded from an open
   thought at session start and updated on "Save unfinished" / "Stop for
   now" / "Review what I shared" (every one of the session screen's submit
@@ -93,10 +100,15 @@ instead.
 
 import hashlib
 import json
+import secrets
 
 from flask import current_app
 
-from services.workshop_demo_library import MAX_SESSION_BYTES, SESSION_KEY
+from services.workshop_demo_library import (
+    MAX_PREVIEW_WORDING_UNITS,
+    MAX_SESSION_BYTES,
+    SESSION_KEY,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -121,8 +133,35 @@ ALL_DOORS = (DOOR_CONTINUE, DOOR_BROUGHT, DOOR_SOMETHING, DOOR_SPARK)
 # have that text carry a Spark's provenance.
 STARTABLE_DOORS = (DOOR_CONTINUE, DOOR_SOMETHING, DOOR_SPARK)
 
-MAX_ANSWER_UNITS = 1000
+# Audit fix F1 (2026-08-04): DEFINED AS the anonymous preview's own wording
+# cap rather than as its own literal. These two numbers are the invited
+# length and the accepted length of the same piece of text — the session
+# screen's answer field is what the save screen's final-wording field is
+# pre-filled from — so a difference between them is never a policy, only a
+# bug. It was one: this was 1000 while the preview cap was 400, the save
+# screen pre-filled the full answer into a box it would then refuse, and the
+# guided session could not be completed at all. Binding them here means the
+# only way to change one is to change both. See
+# workshop_demo_library.MAX_PREVIEW_WORDING_UNITS for the full reasoning and
+# the re-measured cookie budget.
+MAX_ANSWER_UNITS = MAX_PREVIEW_WORDING_UNITS
 MAX_CONTEXT_ITEMS = 8
+
+# Audit fix F2 (2026-08-04): how much of the visitor's own opening thought
+# the session screen remembers in order to show it back to them.
+#
+# A short reminder, not a second copy of the content — the thought's full
+# text is already the working answer, and the answer is what the member
+# edits. This exists so the session screen can say "you started with THIS,
+# and here is what PeerSlate asked in response", which is the connection the
+# screen previously left the visitor to guess at.
+#
+# Deliberately small because it is spending the SHARED cookie budget on a
+# convenience: at the tightest legitimate worst case the whole cookie has
+# only tens of bytes spare, so the echo is written best-effort (see
+# start_session) and simply omitted when the member's own words need the
+# room. It never displaces content, only itself.
+MAX_OPENING_THOUGHT_UNITS = 160
 
 # PS-WORKSHOP-001 W2c: defensive re-caps for the cached Spark text. These
 # mirror services/workshop_review_service.py's MAX_SPARK_SUGGESTION_CHARS /
@@ -136,8 +175,8 @@ MAX_SPARK_SUGGESTION_UNITS = 220
 MAX_SPARK_FOCUS_SEED_UNITS = 160
 
 CAP_ANSWER_MESSAGE = (
-    "This session's answer is limited to 1000 characters — shorten it and "
-    "try again. Nothing above has been lost."
+    f"This session's answer is limited to {MAX_ANSWER_UNITS} characters — "
+    "shorten it and try again. Nothing above has been lost."
 )
 SESSION_FULL_MESSAGE = (
     "This preview session is full — sign in for an unlimited private "
@@ -201,34 +240,62 @@ QUESTION_SETS = {
 }
 
 
-def question_for_door(door):
-    """Deterministic per-door focused-question selection.
+def question_for_door(door, *, entropy=None):
+    """Choose ONE of this door's curated focused questions.
 
     Returns ``(question_index, question_text)``, or ``(None, None)`` for a
-    door with no question set — which in practice is only DOOR_BROUGHT and
-    DOOR_SPARK, neither of which is ever passed to start_session (both are
-    rejected before this is consulted; see workshop_work_routes.py).
+    door with no question set — which in practice is only DOOR_BROUGHT,
+    rejected before this is ever consulted (see workshop_work_routes.py).
+
+    Audit fix F2 (2026-08-04). This used to be ``return 0, questions[0]``,
+    which made all six curated questions but the first dead code and meant
+    two people starting a session side by side were asked the identical
+    thing — the opposite of the personal, responsive product the screen
+    claims to be. The questions were always there; nothing ever reached
+    them.
+
+    **Varied across sessions, fixed within one.** The index is chosen here,
+    once, at session start, and then STORED in the session bucket; every
+    later render calls ``question_text_for`` with that stored index rather
+    than calling this again. So a session's question cannot change under the
+    member between re-renders, a reload, or a validation failure — the
+    stability comes from persisting the choice, not from the choice being
+    reproducible.
+
+    ``entropy`` exists so a test can pin a selection. Left unset it is fresh
+    random bytes per call: deliberately NOT module-level ``random``, which
+    would make every worker process pick the same question after a deploy
+    and reintroduce this bug in a subtler form.
     """
     questions = QUESTION_SETS.get(door)
     if not questions:
         return None, None
-    return 0, questions[0]
+    if entropy is None:
+        entropy = secrets.token_bytes(16)
+    if not isinstance(entropy, bytes):
+        entropy = str(entropy).encode("utf-8")
+    index = int.from_bytes(hashlib.sha256(entropy).digest()[:8], "big") % len(questions)
+    return index, questions[index]
 
 
 def question_text_for(door, question_index):
     """Re-derive the exact question text for a stored (door, index) pair.
 
     Never trusts a stale or out-of-range index (e.g. a future question-set
-    edit shrinking a list): falls back to the door's own deterministic
-    first question rather than raising, so an old signed cookie from before
-    a copy change degrades gracefully instead of crashing the session
-    screen.
+    edit shrinking a list): falls back to the door's FIRST question rather
+    than raising, so an old signed cookie from before a copy change degrades
+    gracefully instead of crashing the session screen.
+
+    Audit fix F2: the fallback is the literal first entry, NOT
+    ``question_for_door``. Now that selection is varied, routing the
+    fallback through it would hand a member a different question every time
+    a stale index was re-rendered — turning one graceful degradation into a
+    question that visibly changes under them mid-session.
     """
     questions = QUESTION_SETS.get(door) or ()
     if isinstance(question_index, int) and 0 <= question_index < len(questions):
         return questions[question_index]
-    _, text = question_for_door(door)
-    return text
+    return questions[0] if questions else None
 
 
 # ---------------------------------------------------------------------------
@@ -255,13 +322,19 @@ def read_state(session):
     """
     raw = session.get(SESSION_KEY)
     bucket = raw.get("w") if isinstance(raw, dict) else None
-    if not isinstance(bucket, list) or len(bucket) not in (4, 6):
+    if not isinstance(bucket, list) or len(bucket) not in (4, 6, 7):
         return None
+    opening_thought = ""
     if len(bucket) == 4:
         door, question_index, answer, context_mask = bucket
         ai_call_count, ai_assisted = 0, 0
     else:
-        door, question_index, answer, context_mask, ai_call_count, ai_assisted = bucket
+        door, question_index, answer, context_mask, ai_call_count, ai_assisted = bucket[:6]
+        # Audit fix F2 (2026-08-04) grew the bucket to 7. A 6-element bucket
+        # from a cookie written before this slice is NOT "no session" — it is
+        # a member mid-answer who simply has no remembered opening thought.
+        if len(bucket) == 7 and isinstance(bucket[6], str):
+            opening_thought = bucket[6][:MAX_OPENING_THOUGHT_UNITS]
     if door not in ALL_DOORS:
         return None
     if not isinstance(question_index, int) or question_index < 0:
@@ -285,6 +358,7 @@ def read_state(session):
         "context_mask": context_mask & _context_full_mask(),
         "ai_call_count": min(ai_call_count, MAX_AI_CALLS_PER_SESSION),
         "ai_assisted": bool(ai_assisted),
+        "opening_thought": opening_thought,
     }
 
 
@@ -399,6 +473,62 @@ def _fits_after_evicting_spark_cache(session, bucket):
     return False
 
 
+def shed_spark_memory_until_fits(session, fits):
+    """Reclaim bytes from Spark memory, in this module's documented priority
+    order, until the caller's own ``fits()`` check passes. Returns True when
+    something was reclaimed that actually made it fit.
+
+    Audit fix F1 (2026-08-04). ``_fits_after_evicting_spark_cache`` above
+    does exactly this for a Work on Something write, but its shape is
+    hard-wired to a single sub-key of the shared cookie, and the anonymous
+    library's delta is four TOP-LEVEL keys rather than one bucket — so
+    services/workshop_demo_library.py could not reuse it and had no shed
+    order at all. A visitor could therefore be told their preview session
+    was full while ~460 bytes of a cached Spark suggestion they never asked
+    to keep sat in the cookie. ``fits`` is a zero-argument callable so the
+    caller keeps ownership of what "fits" means for its own write.
+
+    Priority is unchanged and non-negotiable (see
+    ``_fits_after_evicting_spark_cache``'s docstring): the member's own words
+    are never sacrificed; the regenerable ``current`` cache goes first, then
+    the grounding hints, then the oldest dismissal records. Every step is
+    measured against the real signed cookie, and if nothing reclaimable makes
+    the write fit, the ORIGINAL Spark memory is restored untouched and the
+    caller refuses honestly — a failed write never costs the visitor their
+    dismissal record as a side effect.
+    """
+    raw = session.get(SESSION_KEY)
+    original_bucket = raw.get(SPARK_KEY) if isinstance(raw, dict) else None
+    if original_bucket is None:
+        return False
+
+    state = read_spark_state(session)
+    trial = {"current": None, "offered": list(state["offered"]), "used": list(state["used"])}
+
+    def _commit_if_it_fits():
+        _write_bucket(session, _spark_bucket(trial), SPARK_KEY)
+        return bool(fits())
+
+    if state["current"] is not None and _commit_if_it_fits():
+        return True
+
+    while trial["used"] or trial["offered"]:
+        if trial["used"]:
+            trial["used"] = trial["used"][1:]
+        else:
+            trial["offered"] = trial["offered"][1:]
+        if _commit_if_it_fits():
+            return True
+
+    # Nothing left to reclaim inside the bucket — try dropping it entirely.
+    clear_spark_memory(session)
+    if fits():
+        return True
+
+    _write_bucket(session, original_bucket, SPARK_KEY)
+    return False
+
+
 def _write_bucket(session, bucket, key="w"):
     raw = session.get(SESSION_KEY)
     merged = dict(raw) if isinstance(raw, dict) else {}
@@ -407,7 +537,30 @@ def _write_bucket(session, bucket, key="w"):
     session.modified = True
 
 
-def start_session(session, *, door, answer):
+def _bucket_from(state, *, answer=None, context_mask=None, ai_call_count=None, ai_assisted=None):
+    """The 7-element bucket for ``state``, with selected fields overridden.
+
+    Audit fix F2 (2026-08-04) added the trailing opening-thought element.
+    Four separate call sites each rebuilt the bucket by hand from
+    ``read_state``'s dict, so growing it meant editing the same literal in
+    four places and silently dropping the new field anywhere that was
+    missed — which is exactly how a member's remembered opening thought
+    would disappear the first time they pressed Improve with AI. One
+    builder, so a field added to the bucket is carried by every write that
+    is not deliberately changing it.
+    """
+    return [
+        state["door"],
+        state["question_index"],
+        state["answer"] if answer is None else answer,
+        state["context_mask"] if context_mask is None else context_mask,
+        state["ai_call_count"] if ai_call_count is None else ai_call_count,
+        (1 if state["ai_assisted"] else 0) if ai_assisted is None else ai_assisted,
+        state["opening_thought"],
+    ]
+
+
+def start_session(session, *, door, answer, opening_thought=""):
     """Begin (replacing any prior) Work on Something session.
 
     Returns ``(ok, error_message, state)``. On success ``state`` is the same
@@ -426,9 +579,16 @@ def start_session(session, *, door, answer):
     if question_index is None:
         return False, DOOR_UNAVAILABLE_MESSAGE, None
 
-    bucket = [door, question_index, answer, 0, 0, 0]
+    echo = " ".join(str(opening_thought or "").split())[:MAX_OPENING_THOUGHT_UNITS]
+    bucket = [door, question_index, answer, 0, 0, 0, echo]
     if not _fits_after_evicting_spark_cache(session, bucket):
-        return False, SESSION_FULL_MESSAGE, None
+        # Audit fix F2: the echo is the ONLY thing here that is optional, so
+        # it is also the only thing dropped. Retry without it before
+        # refusing, so remembering a convenience can never be the reason a
+        # member cannot start writing.
+        bucket = [door, question_index, answer, 0, 0, 0, ""]
+        if not _fits_after_evicting_spark_cache(session, bucket):
+            return False, SESSION_FULL_MESSAGE, None
 
     _write_bucket(session, bucket)
     return True, None, read_state(session)
@@ -454,14 +614,9 @@ def update_session(session, *, answer, context_mask):
     if utf16_length(answer) > MAX_ANSWER_UNITS:
         return False, CAP_ANSWER_MESSAGE
 
-    bucket = [
-        state["door"],
-        state["question_index"],
-        answer,
-        int(context_mask) & _context_full_mask(),
-        state["ai_call_count"],
-        1 if state["ai_assisted"] else 0,
-    ]
+    bucket = _bucket_from(
+        state, answer=answer, context_mask=int(context_mask) & _context_full_mask()
+    )
     if not _fits_after_evicting_spark_cache(session, bucket):
         return False, SESSION_FULL_MESSAGE
 
@@ -504,14 +659,7 @@ def increment_ai_calls(session):
     if state is None:
         return False, None
 
-    bucket = [
-        state["door"],
-        state["question_index"],
-        state["answer"],
-        state["context_mask"],
-        state["ai_call_count"] + 1,
-        1 if state["ai_assisted"] else 0,
-    ]
+    bucket = _bucket_from(state, ai_call_count=state["ai_call_count"] + 1)
     if not _fits_after_evicting_spark_cache(session, bucket):
         return False, SESSION_FULL_MESSAGE
 
@@ -530,14 +678,7 @@ def mark_ai_assisted(session):
     if state is None:
         return False, None
 
-    bucket = [
-        state["door"],
-        state["question_index"],
-        state["answer"],
-        state["context_mask"],
-        state["ai_call_count"],
-        1,
-    ]
+    bucket = _bucket_from(state, ai_assisted=1)
     if not _fits_after_evicting_spark_cache(session, bucket):
         return False, SESSION_FULL_MESSAGE
 
@@ -556,6 +697,40 @@ def clear_session(session):
     merged.pop("w", None)
     session[SESSION_KEY] = merged
     session.modified = True
+
+
+def take_session_bucket(session):
+    """Remove the raw work-session bucket and hand it back to the caller,
+    so it can be restored verbatim if what follows fails.
+
+    Audit fix F1 (2026-08-04). A final save writes the working answer into
+    the library and then clears this bucket — but it cleared it AFTER the
+    add, so the byte guard measured the same text twice: once as the
+    library item being written and once as the answer still sitting in a
+    bucket this very request was about to delete. On a long answer that
+    phantom copy is the difference between saving and being told the
+    session is full. Callers now take the bucket first, attempt the write
+    against the cookie as it will ACTUALLY look afterwards, and restore on
+    failure so a refused save leaves the member's session exactly as it
+    was.
+
+    Returns the bucket (or ``None`` when no session is active), which is
+    the only value ``restore_session_bucket`` accepts.
+    """
+    raw = session.get(SESSION_KEY)
+    if not isinstance(raw, dict) or "w" not in raw:
+        return None
+    bucket = raw["w"]
+    clear_session(session)
+    return bucket
+
+
+def restore_session_bucket(session, bucket):
+    """Put back a bucket taken by ``take_session_bucket``. A ``None`` bucket
+    means there was nothing to take, so there is nothing to restore."""
+    if bucket is None:
+        return
+    _write_bucket(session, bucket)
 
 
 # ---------------------------------------------------------------------------

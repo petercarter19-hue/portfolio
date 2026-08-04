@@ -73,6 +73,17 @@ FAILED_B = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 # destination, or control semantics changed.
 FLAG_OFF_APP_RENDER_BYTE_LENGTH = 16840
 FLAG_OFF_APP_RENDER_SHA256 = (
+    "4be4db68e4477a82b218222ff9b7d9f842110ebb753dd887a730f59225de1d3a"
+)
+# Audit fix F3 (2026-08-04) recapture. static/css/style.css gained a
+# flex-wrap rule inside its existing max-width:743px mobile block, so the
+# mobile platform nav wraps instead of slicing the current page's own label
+# in half. That is a stylesheet content change and nothing else: the only
+# delta in THIS render is style.css's automatic ?v= content token, and the
+# first normalization step below swaps it back to reproduce the previously
+# locked hash byte for byte. No /app markup, layout, destination, or control
+# semantics changed.
+FLAG_OFF_APP_RENDER_PRE_NAV_WRAP_SHA256 = (
     "177d342fd52affde5ede1b3a21d9079229ac02b87d21c571c5923aa58e4c480c"
 )
 FLAG_OFF_APP_RENDER_THEME_PAUSE_BASE_SHA256 = (
@@ -86,7 +97,8 @@ FLAG_OFF_APP_RENDER_PREVIOUS_SHA256 = (
 )
 FLAG_OFF_CALLBACK_VERSION = b"fd13bc50ca97"
 FLAG_OFF_CALLBACK_PREVIOUS_VERSION = b"9a8e38ddf7ba"
-FLAG_OFF_STYLE_VERSION = b"ee65b37f38c5"
+FLAG_OFF_STYLE_VERSION = b"2b76a653fdca"
+FLAG_OFF_STYLE_PRE_NAV_WRAP_VERSION = b"ee65b37f38c5"
 FLAG_OFF_STYLE_PRE_THEME_PAUSE_VERSION = b"0b1b477c07af"
 FLAG_OFF_STYLE_PREVIOUS_VERSION = b"62c0e8511b80"
 
@@ -439,8 +451,20 @@ class OwnerHomeRouteTests(unittest.TestCase):
         # working-tree content hashes, so Windows CRLF checkout bytes are
         # intentional.)
         self.assertEqual(response.data.count(FLAG_OFF_STYLE_VERSION), 1)
-        theme_pause_base = response.data.replace(
+        # Audit fix F3 recapture step: swapping only the style token back
+        # must reproduce the previously locked render exactly. If the nav
+        # wrap had touched any /app markup, this is where it would fail.
+        nav_wrap_base = response.data.replace(
             FLAG_OFF_STYLE_VERSION,
+            FLAG_OFF_STYLE_PRE_NAV_WRAP_VERSION,
+        )
+        self.assertEqual(len(nav_wrap_base), FLAG_OFF_APP_RENDER_BYTE_LENGTH)
+        self.assertEqual(
+            hashlib.sha256(nav_wrap_base).hexdigest(),
+            FLAG_OFF_APP_RENDER_PRE_NAV_WRAP_SHA256,
+        )
+        theme_pause_base = nav_wrap_base.replace(
+            FLAG_OFF_STYLE_PRE_NAV_WRAP_VERSION,
             FLAG_OFF_STYLE_PRE_THEME_PAUSE_VERSION,
         )
         self.assertEqual(len(theme_pause_base), FLAG_OFF_APP_RENDER_BYTE_LENGTH)

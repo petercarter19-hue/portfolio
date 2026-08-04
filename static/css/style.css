@@ -8223,9 +8223,28 @@ a.ps-metric:hover {
         gap: 5px;
     }
 
+    /* Audit fix F3 (2026-08-04): wrap instead of clipping a word in half.
+       Measured at 390px the strip needed 389px inside a 358px box, so the
+       last link — the CURRENT page's own label, the one item a visitor most
+       needs to see — rendered as "...Interview Studio · Works", sliced
+       mid-word. The @media (max-width: 1180px) block above already makes
+       this a horizontal scroller, but a scroller with overlay scrollbars and
+       no affordance reads as a rendering fault rather than as something to
+       swipe, and at 320px the active label sat off-screen entirely.
+
+       Wrapping is chosen over adding a scroll affordance on purpose: it is a
+       reflow adaptation, which docs/AI_WORKFLOW.md lets a writer make when
+       documented, whereas introducing a swipe/fade interaction to shared
+       chrome would be a responsive-interaction change and belongs in the
+       owner/ChatGPT visual lane. Desktop is untouched — this is inside the
+       existing mobile block — and no label can be truncated at any width,
+       because there is no longer an axis to overflow on. The column gap
+       tightens slightly so four links still make a single row at 390px;
+       row-gap only ever applies once something actually wraps. */
     .platform-nav__links {
         grid-area: links;
-        gap: 20px;
+        flex-wrap: wrap;
+        gap: 7px 16px;
         padding-top: 8px;
         padding-bottom: 6px;
     }

@@ -388,16 +388,56 @@ def _ai_unavailable_test_seam_requested():
     )
 
 
-def _title_from_question(question_text):
-    """A short, honest title for a Save-unfinished item derived from the
-    session's focused question — bounded to MAX_TITLE_UNITS. Every curated
-    question in workshop_work_session.QUESTION_SETS is well under this
-    bound in practice; the slice is a defensive backstop only."""
-    if not question_text:
-        return "Work on Something"
-    if wws.utf16_length(question_text) <= MAX_TITLE_UNITS:
-        return question_text
-    return question_text[:MAX_TITLE_UNITS]
+TITLE_FALLBACK = "Work on Something"
+
+
+def _default_title_from_wording(wording, question_text=None):
+    """A sensible default title derived from the MEMBER'S OWN wording.
+
+    Audit fix F6 (2026-08-04). This used to be ``_title_from_question`` and
+    returned the focused question verbatim, so completing the guided session
+    produced a library item called "What's something you did that mattered,
+    and what changed because of it?". A library of questions is not a
+    library of information: the title is the only thing the list view shows,
+    so every item saved this way was indistinguishable from every other, and
+    it attributed PeerSlate's words to the member as the name of their own
+    content.
+
+    The question is never consulted now, not even as a fallback — seeding a
+    title from it is the whole defect. When there is no usable wording at
+    all the neutral TITLE_FALLBACK is used instead, which is honest about
+    naming nothing rather than borrowing a name from the wrong author.
+
+    The result is always a starting point, never a decision: the review
+    screen renders it in an editable, required Title field the member can
+    replace before anything is saved.
+
+    ``question_text`` is accepted and deliberately ignored so the remaining
+    call sites read clearly at a glance about what a title may be built
+    from. Kept as an explicit parameter rather than dropped so that a future
+    reader who reaches for the question finds this note instead.
+    """
+    text = " ".join(str(wording or "").split())
+    if not text:
+        return TITLE_FALLBACK
+
+    # Prefer the first natural clause: a sentence or a strong internal break
+    # is nearly always the member's own summary of what follows.
+    for separator in (". ", "? ", "! ", "; ", " — ", " – "):
+        head, found, _rest = text.partition(separator)
+        if found and head.strip():
+            text = head.strip()
+            break
+    text = text.rstrip(" .,;:—–-")
+
+    if wws.utf16_length(text) <= MAX_TITLE_UNITS:
+        return text or TITLE_FALLBACK
+
+    # Too long for a title: cut on a word boundary rather than mid-word, and
+    # mark the cut so the member can see it is a stub they may want to edit.
+    clipped = text[: MAX_TITLE_UNITS - 1]
+    spaced = clipped.rsplit(" ", 1)[0] if " " in clipped else clipped
+    return (spaced.rstrip(" .,;:—–-") or clipped) + "…"
 
 
 def _confirmed_rows(identity):
@@ -889,7 +929,17 @@ def start_work_session():
             current_app.logger.error("PeerSlate Work on Something opening is unavailable.")
             return _render_workshop_unavailable()
 
-    ok, error_message, _state = wws.start_session(session, door=door, answer=seed)
+    # Audit fix F2 (2026-08-04): remember what the visitor actually typed to
+    # begin, so the session screen can show it back to them as their own
+    # words. Only the "Work on something" door has a typed thought; resuming
+    # unfinished work starts from saved wording, and a Spark seed is
+    # PeerSlate's suggestion, not the member's — neither is theirs to echo.
+    ok, error_message, _state = wws.start_session(
+        session,
+        door=door,
+        answer=seed,
+        opening_thought=thought if door == wws.DOOR_SOMETHING else "",
+    )
     if not ok:
         try:
             return _render_opening(
@@ -1025,13 +1075,24 @@ def _render_session_screen(
             active_workshop_mode="work",
             anonymous_preview=(identity is None),
             question_text=state["question_text"],
+            # Audit fix F2: what the visitor typed to get here, shown back to
+            # them as theirs. Empty for a resumed item or a Spark seed, and
+            # empty when the cookie was too tight to remember it — the
+            # template renders nothing at all rather than an empty quote.
+            opening_thought=state["opening_thought"],
             answer_value=answer_override if answer_override is not None else state["answer"],
             max_answer_units=wws.MAX_ANSWER_UNITS,
-            # F9 correction: the field accepts wws.MAX_ANSWER_UNITS, but an
-            # anonymous preview SAVE keeps only this many — the template
-            # states the difference up front, and only for a visitor it
-            # actually applies to.
-            preview_wording_units=workshop_demo_library.MAX_PREVIEW_WORDING_UNITS,
+            # Audit fix F1 (2026-08-04): the answer field is the only thing
+            # on this screen a validation failure can be about, so naming it
+            # needs no error taxonomy — the template renders aria-invalid
+            # and moves focus there, instead of showing a banner beside a
+            # field that still looks perfectly valid.
+            #
+            # The old ``preview_wording_units`` variable is gone with it: it
+            # existed only to warn that an anonymous save kept fewer
+            # characters than this field accepts, and the two caps are now
+            # the same constant, so the warning would be false.
+            error_field="answer" if error_message else None,
             related_items=[
                 {
                     "item_key": row["item_key"],
@@ -1121,9 +1182,16 @@ def update_work_session():
         return redirect(url_for("workshop.work_opening", changed="session-stopped"))
 
     if wk_action == "save_unfinished":
-        title = _title_from_question(state["question_text"])
+        # Audit fix F6: named from the member's own answer, never from
+        # the question PeerSlate asked.
+        title = _default_title_from_wording(answer, state["question_text"])
 
         if identity is None:
+            # Audit fix F1: release the work-session bucket first so the
+            # answer is not counted twice against the shared cookie budget
+            # (see workshop_work_session.take_session_bucket). Restored
+            # verbatim if the add is refused.
+            released_bucket = wws.take_session_bucket(session)
             new_item_key, add_error = workshop_demo_library.add_item(
                 session,
                 title=title,
@@ -1132,6 +1200,7 @@ def update_work_session():
                 status="unfinished",
             )
             if new_item_key is None:
+                wws.restore_session_bucket(session, released_bucket)
                 return _render_session_screen(
                     identity=identity,
                     state=state,
@@ -1140,7 +1209,6 @@ def update_work_session():
                     error_message=add_error,
                     status_code=400,
                 )
-            wws.clear_session(session)
             return redirect(url_for("workshop.work_opening", changed="unfinished-preview"))
 
         idempotency_key = str(uuid4())
@@ -1729,7 +1797,12 @@ def work_session_finalize():
         current_app.logger.error("PeerSlate Work on Something review is unavailable.")
         return _render_workshop_unavailable()
 
-    title_default = _title_from_question(state["question_text"])
+    # Audit fix F6: the pre-filled title comes from the member's own
+    # wording. It stays editable on the review screen — a starting
+    # point, never a decision.
+    title_default = _default_title_from_wording(
+        state["answer"], state["question_text"]
+    )
     authored_via = "ai_assisted_approved" if state["ai_assisted"] else "typed"
     source_label = SOURCE_LABELS.get(authored_via, "Your words")
 
@@ -1816,6 +1889,14 @@ def work_session_save():
             return _rerender(workshop_demo_library.CAP_WORDING_MESSAGE)
 
         status = "confirmed" if save_action == "confirm" else "unfinished"
+        # Audit fix F1 (2026-08-04): take the work-session bucket BEFORE the
+        # add, not after. The answer in that bucket and the wording being
+        # saved are the same text, and this request always ends with the
+        # bucket gone — so measuring the add against a cookie that still
+        # holds it counts the member's words twice and can refuse a save
+        # that genuinely fits. Restored verbatim if the add fails, so a
+        # refusal leaves the session exactly as the member left it.
+        released_bucket = wws.take_session_bucket(session)
         new_item_key, add_error = workshop_demo_library.add_item(
             session,
             title=title,
@@ -1825,9 +1906,8 @@ def work_session_save():
             authored_via=authored_via,
         )
         if new_item_key is None:
+            wws.restore_session_bucket(session, released_bucket)
             return _rerender(add_error)
-
-        wws.clear_session(session)
         if save_action == "unfinished":
             return redirect(url_for("workshop.work_opening", changed="unfinished-preview"))
         return _render_anonymous_preview_saved(

@@ -1,0 +1,26 @@
+{#
+  Audit fix F1 (2026-08-04) — live character counter for a capped field.
+
+  Every capped Workshop field carried only a browser ``maxlength``, which
+  stops typing dead at the cap with no warning and no explanation, and does
+  not clamp a server-pre-filled value at all. A visitor writing a long answer
+  had no way to know how much room was left until the field silently stopped
+  accepting keystrokes.
+
+  Server-rendered with the real current count, so it is correct and useful
+  with JavaScript disabled; ``static/js/workshop-fields.js`` only keeps it in
+  step as the member types. Counted in Unicode code points (Jinja's
+  ``|length``), matching the ``len()`` bound
+  ``services/workshop_demo_library.py`` actually enforces on a preview save.
+
+  Deliberately NOT an ``aria-live`` region: announcing a new number on every
+  keystroke is noise, not help. It is wired to the field with
+  ``aria-describedby`` instead (see each field's own markup), so a screen
+  reader reads the limit when the field takes focus and on demand — and the
+  ``role="alert"`` error banner is what announces an actual failure.
+#}
+{% macro workshop_field_counter(field_id, value, limit) -%}
+<p class="wk-field__count" id="{{ field_id }}-count" data-wk-count-for="{{ field_id }}" data-wk-count-limit="{{ limit }}">
+    <span class="wk-field__count-used">{{ value|length }}</span> of {{ limit }} characters used
+</p>
+{%- endmacro %}

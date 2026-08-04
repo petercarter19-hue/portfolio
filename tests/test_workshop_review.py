@@ -13,6 +13,7 @@ member key, never a Pete-specific identifier.
 import hashlib
 import json
 import os
+import html
 import re
 import shutil
 import subprocess
@@ -25,6 +26,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import workshop_work_routes
+from services.knowledge_service import MAX_TITLE_UNITS
 from app import app, limiter
 from services import workshop_demo_library as wdl
 from services import workshop_review_service
@@ -342,9 +344,81 @@ class SystemPromptIsolationTests(unittest.TestCase):
         _args, kwargs = mock_messages.create.call_args
         return kwargs
 
+    def _call_spark(self, context=None):
+        if context is None:
+            context = [{"id": "ctx-1", "title": HOSTILE_TEXT, "wording": HOSTILE_TEXT}]
+        with patch.object(workshop_review_service.client, "messages") as mock_messages:
+            mock_messages.create.return_value = self._fake_response(
+                {"suggestion": "s", "focusSeed": "f", "contextIds": ["ctx-1"]}
+            )
+            workshop_review_service.generate_spark(context, [])
+        _args, kwargs = mock_messages.create.call_args
+        return kwargs
+
     def test_review_system_argument_is_exactly_the_module_constant(self):
         kwargs = self._call_review()
         self.assertEqual(kwargs["system"], workshop_review_service.REVIEW_SYSTEM_PROMPT)
+
+    def test_the_review_prompt_actually_sent_tells_the_model_to_say_you(self):
+        """Audit fix F4 (2026-08-04): two of three live runs came back as
+        "The member stepped into a conflict... they facilitated...", shown
+        under a heading reading "Here's what PeerSlate heard" — the product
+        discussing the reader in the third person, to their face, about
+        their own words. The prompt described the writer as "a member"
+        throughout and never said how to ADDRESS them.
+
+        Asserted against the system prompt ACTUALLY passed to the provider
+        rather than the module constant in isolation, so a later refactor
+        that assembles the prompt differently cannot quietly drop the rule.
+        """
+        system = self._call_review()["system"]
+        self.assertIn("VOICE", system)
+        self.assertIn('address the person as "you"', system)
+        self.assertIn("Never call them", system)
+        for banned in ('"the member"', '"the user"', '"they"'):
+            self.assertIn(banned, system)
+        # A corrected/incorrect pair is what makes the rule unambiguous.
+        self.assertIn("You describe a conflict you stepped into", system)
+        self.assertIn("The member stepped into a conflict", system)
+
+    def test_the_voice_rule_precedes_the_json_shape(self):
+        """A voice instruction placed after the field descriptions is the
+        one most easily lost while a model concentrates on valid JSON."""
+        system = workshop_review_service.REVIEW_SYSTEM_PROMPT
+        self.assertLess(
+            system.index("VOICE"),
+            system.index("Respond with exactly this JSON shape"),
+        )
+
+    def test_the_spark_prompt_names_the_grammatical_person_too(self):
+        """"Addressed to the member" named the audience without naming the
+        grammatical person — the same ambiguity that produced third-person
+        review copy."""
+        system = self._call_spark()["system"]
+        self.assertIn("second person", system)
+        self.assertIn('say "you" and "your"', system)
+        self.assertNotIn("addressed to the member", system)
+
+    def test_the_voice_fix_is_a_prompt_change_not_output_rewriting(self):
+        """The fix is a prompt change by design. Rewriting model output to
+        say something it did not say would hide the failure rather than fix
+        it, and is the silent editorialising this product refuses to do
+        everywhere else — so a third-person reply must survive validation
+        untouched rather than being quietly repaired."""
+        third_person = {
+            "interpretation": "The member stepped into a conflict.",
+            "strong": ["The member gives a clear example."],
+            "standout": "The member names a real outcome.",
+            "strengthen": "The member could add a metric.",
+            "question": "What did the member change?",
+            "contextIds": [],
+        }
+        review = workshop_review_service.validate_workshop_review(
+            third_person, allowed_context_ids=[]
+        )
+        self.assertEqual(review["interpretation"], "The member stepped into a conflict.")
+        self.assertEqual(review["standout"], "The member names a real outcome.")
+        self.assertEqual(review["strong"], ["The member gives a clear example."])
 
     def test_improve_system_argument_is_exactly_the_module_constant(self):
         kwargs = self._call_improve()
@@ -2021,47 +2095,171 @@ class CitedContextDisclosureTests(WorkshopReviewRouteTestCase):
         self.assertNotIn("Used as context:", body)
 
 
-class PreviewSaveLimitDisclosureTests(WorkshopReviewRouteTestCase):
-    """F9 correction (independent Opus review): the session answer field
-    accepts 1000 characters while an anonymous preview save keeps 400. A
-    visitor must learn that before doing the work, not at the moment they
-    try to save it."""
+class PreviewSaveCapAgreementTests(WorkshopReviewRouteTestCase):
+    """Audit fix F1 (2026-08-04) — THE BLOCKER.
 
-    NOTE = "Preview saves keep up to 400 characters"
+    The guided session invited a 1000-character answer, the save screen's
+    final-wording field was server-pre-filled with that whole answer, and the
+    anonymous save then refused anything over 400 with "Preview wording is
+    limited to 400 characters for this sample session". ``maxlength`` does
+    not clamp a pre-filled value, so the app filled a field past its own
+    limit and then blamed the visitor for it. The centrepiece flow could not
+    be completed at all.
 
-    def test_an_anonymous_visitor_is_told_the_preview_save_limit_up_front(self):
-        self._start(thought="A starting thought.")
-        body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
-        self.assertIn(self.NOTE, body)
-        self.assertIn("sign in for full length", body)
+    The standing invariant these tests hold: **the app never pre-fills a
+    field beyond what it will accept.**
 
-    def test_the_stated_number_is_the_real_enforced_one(self):
-        """A stated limit that drifts from the enforced one is worse than
-        no statement at all."""
-        self._start(thought="A starting thought.")
-        body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
-        self.assertIn(
-            "Preview saves keep up to %d characters" % wdl.MAX_PREVIEW_WORDING_UNITS, body
+    The old ``PreviewSaveLimitDisclosureTests`` (the F9 correction) lived
+    here and asserted an honest disclosure of the discrepancy. It is gone
+    because the discrepancy is gone — a note telling a visitor their save
+    keeps fewer characters than they are invited to write would now be false.
+    """
+
+    def _maximal_answer(self):
+        # Distinct words rather than one repeated character, so nothing here
+        # passes only because the text compresses unrealistically well.
+        return (" ".join("word%04d" % i for i in range(400)))[: wws.MAX_ANSWER_UNITS]
+
+    def test_the_two_caps_are_the_same_number_by_construction(self):
+        """Not merely equal today — the same object. The session's answer cap
+        IS the preview save cap, so the two cannot drift apart again."""
+        self.assertEqual(wws.MAX_ANSWER_UNITS, wdl.MAX_PREVIEW_WORDING_UNITS)
+
+    def test_the_prefilled_final_wording_never_exceeds_the_enforced_cap(self):
+        """The pre-fill invariant, checked against both the field's own
+        declared maxlength and the server's enforced cap."""
+        answer = self._maximal_answer()
+        self._start(thought=answer)
+        body = self.client.post(
+            "/app/workshop/work/session/finalize",
+            data={"answer": answer},
+            headers=SAME_ORIGIN_HEADERS,
+        ).data.decode("utf-8")
+
+        prefilled = re.search(
+            r'id="wk-review-wording"[^>]*>(.*?)</textarea>', body, re.DOTALL
+        )
+        self.assertIsNotNone(prefilled, "expected the final-wording field to be rendered")
+        rendered = html.unescape(prefilled.group(1))
+        self.assertGreater(len(rendered), 400, "the answer under test must exceed the old cap")
+        self.assertLessEqual(len(rendered), wdl.MAX_PREVIEW_WORDING_UNITS)
+
+        declared = re.search(r'id="wk-review-wording"[^>]*maxlength="(\d+)"', body)
+        self.assertIsNotNone(declared)
+        self.assertLessEqual(len(rendered), int(declared.group(1)))
+        self.assertEqual(int(declared.group(1)), wdl.MAX_PREVIEW_WORDING_UNITS)
+
+    def test_a_full_anonymous_session_with_a_maximal_answer_saves(self):
+        """The whole point: run the guided flow to the end with an answer at
+        the full invited length and reach the real saved state. No AI call is
+        needed — Review final wording never makes one."""
+        answer = self._maximal_answer()
+        self._start(thought=answer)
+
+        finalize = self.client.post(
+            "/app/workshop/work/session/finalize",
+            data={"answer": answer},
+            headers=SAME_ORIGIN_HEADERS,
+        )
+        self.assertEqual(finalize.status_code, 200)
+        body = finalize.data.decode("utf-8")
+        title = html.unescape(
+            re.search(r'id="wk-review-title"[^>]*value="([^"]*)"', body).group(1)
         )
 
-    def test_a_member_is_never_told_they_have_a_preview_limit(self):
-        identity_patch, list_patch, get_patch = _member_patches([], "member-f9")
-        with identity_patch, list_patch, get_patch:
-            self._start(thought="A starting thought.")
-            body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
+        saved = self.client.post(
+            "/app/workshop/work/session/save",
+            data={
+                "title": title,
+                "wording": answer,
+                "classification": "unclassified",
+                "save_action": "confirm",
+            },
+            headers=SAME_ORIGIN_HEADERS,
+        )
+        self.assertEqual(saved.status_code, 200)
+        saved_body = saved.data.decode("utf-8")
+        self.assertNotIn("Preview wording is limited", saved_body)
+        self.assertNotIn("preview session is full", saved_body)
 
-        self.assertNotIn(self.NOTE, body)
-        self.assertNotIn("sign in for full length", body)
+        # It really is in the visitor's own preview library, at full length.
+        with self.client.session_transaction() as sess:
+            delta = wdl.read_session_delta(sess)
+        self.assertEqual(len(delta["a"]), 1)
+        self.assertEqual(delta["a"][0][2], answer)
+        # And the work session it came from was cleared, not left behind.
+        with self.client.session_transaction() as sess:
+            self.assertIsNone(wws.read_state(sess))
 
-    def test_the_note_survives_a_validation_re_render(self):
+    def test_the_session_screen_renders_a_live_character_counter(self):
         self._start(thought="A starting thought.")
+        body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
+        self.assertIn('data-wk-count-for="wk-session-answer"', body)
+        self.assertIn("of %d characters used" % wws.MAX_ANSWER_UNITS, body)
+        self.assertIn('aria-describedby="wk-session-answer-count"', body)
+        self.assertIn("workshop-fields.js", body)
+
+    def test_the_final_wording_screen_counts_both_wording_and_title(self):
+        self._start(thought="A starting thought worth keeping.")
+        body = self.client.post(
+            "/app/workshop/work/session/finalize",
+            data={"answer": "A starting thought worth keeping."},
+            headers=SAME_ORIGIN_HEADERS,
+        ).data.decode("utf-8")
+        self.assertIn('data-wk-count-for="wk-review-wording"', body)
+        self.assertIn('data-wk-count-for="wk-review-title"', body)
+        self.assertIn("of %d characters used" % wdl.MAX_PREVIEW_WORDING_UNITS, body)
+
+    def test_the_counter_states_the_real_current_length_without_javascript(self):
+        """Server-rendered, so it stays honest with scripting disabled."""
+        self._start(thought="a" * 137)
+        body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
+        self.assertIn(
+            '<span class="wk-field__count-used">137</span> of %d characters used'
+            % wws.MAX_ANSWER_UNITS,
+            body,
+        )
+
+    def test_a_rejected_save_marks_and_focuses_the_offending_field(self):
+        """A single banner beside fields that all still look valid tells a
+        screen-reader user nothing about WHICH box to fix."""
+        self._start(thought="A starting thought worth keeping.")
         response = self.client.post(
-            "/app/workshop/work/session",
-            data={"answer": "y" * (wws.MAX_ANSWER_UNITS + 10), "wk_action": "save_unfinished"},
+            "/app/workshop/work/session/save",
+            data={
+                "title": "",
+                "wording": "Some perfectly valid wording.",
+                "classification": "unclassified",
+                "save_action": "confirm",
+            },
             headers=SAME_ORIGIN_HEADERS,
         )
         self.assertEqual(response.status_code, 400)
-        self.assertIn(self.NOTE, response.data.decode("utf-8"))
+        body = response.data.decode("utf-8")
+        field = re.search(r"<input\b[^>]*id=\"wk-review-title\"[^>]*>", body).group(0)
+        self.assertIn('aria-invalid="true"', field)
+        self.assertIn("autofocus", field)
+        wording = re.search(
+            r"<textarea\b[^>]*id=\"wk-review-wording\"[^>]*>", body
+        ).group(0)
+        self.assertNotIn('aria-invalid="true"', wording)
+
+    def test_an_over_cap_answer_marks_and_focuses_the_answer_field(self):
+        self._start(thought="A starting thought.")
+        response = self.client.post(
+            "/app/workshop/work/session",
+            data={
+                "answer": "y" * (wws.MAX_ANSWER_UNITS + 10),
+                "wk_action": "save_unfinished",
+            },
+            headers=SAME_ORIGIN_HEADERS,
+        )
+        self.assertEqual(response.status_code, 400)
+        body = response.data.decode("utf-8")
+        field = re.search(r"<textarea\b[^>]*id=\"wk-session-answer\"[^>]*>", body).group(0)
+        self.assertIn('aria-invalid="true"', field)
+        self.assertIn("autofocus", field)
+        self.assertIn(str(wws.MAX_ANSWER_UNITS), body)
 
 
 # ---------------------------------------------------------------------------
@@ -2526,3 +2724,102 @@ class OutputTokenCeilingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DefaultTitleTests(unittest.TestCase):
+    """Audit fix F6 (2026-08-04): saving from the guided session auto-filled
+    the title with the FOCUSED QUESTION, so the library ended up holding an
+    item called "What's something you did that mattered, and what changed
+    because of it?".
+
+    A library of questions is not a library of information. The title is the
+    only thing the list view shows, so every item saved this way looked
+    identical to every other one, and PeerSlate's words were attributed to
+    the member as the name of their own content.
+    """
+
+    def _title(self, wording):
+        return workshop_work_routes._default_title_from_wording(
+            wording, "What's something you did that mattered?"
+        )
+
+    def test_the_question_is_never_used_as_a_title(self):
+        for question in wws.QUESTION_SETS[wws.DOOR_SOMETHING]:
+            with self.subTest(question=question):
+                title = workshop_work_routes._default_title_from_wording(
+                    "I rebuilt the intake process.", question
+                )
+                self.assertNotEqual(title, question)
+                self.assertNotIn("something you did that mattered", title)
+
+    def test_a_title_is_taken_from_the_members_first_clause(self):
+        self.assertEqual(
+            self._title(
+                "I rebuilt the intake process. It went from 40 minutes to 9, "
+                "and front-desk overtime fell with it."
+            ),
+            "I rebuilt the intake process",
+        )
+
+    def test_other_natural_breaks_end_the_title_too(self):
+        cases = {
+            "Was it worth it? I still think so.": "Was it worth it",
+            "We shipped it; nobody noticed for a week.": "We shipped it",
+            "It worked — eventually, after three attempts.": "It worked",
+        }
+        for wording, expected in cases.items():
+            with self.subTest(wording=wording):
+                self.assertEqual(self._title(wording), expected)
+
+    def test_a_single_long_clause_is_cut_on_a_word_boundary_and_marked(self):
+        wording = " ".join("word%02d" % i for i in range(60))
+        title = self._title(wording)
+        self.assertLessEqual(wws.utf16_length(title), MAX_TITLE_UNITS)
+        self.assertTrue(title.endswith("…"), title)
+        # Cut between words, never through one.
+        self.assertNotIn("wor…", title)
+        self.assertTrue(wording.startswith(title[:-1].rstrip()))
+
+    def test_a_short_answer_becomes_the_whole_title(self):
+        self.assertEqual(self._title("I mentored four analysts"), "I mentored four analysts")
+
+    def test_empty_wording_falls_back_to_a_neutral_name_not_the_question(self):
+        for empty in ("", "   ", None):
+            with self.subTest(empty=empty):
+                self.assertEqual(self._title(empty), workshop_work_routes.TITLE_FALLBACK)
+                self.assertNotIn("?", self._title(empty))
+
+
+class DefaultTitleEndToEndTests(WorkshopReviewRouteTestCase):
+    def test_the_review_screen_prefills_a_title_from_the_members_own_words(self):
+        answer = "I rebuilt the intake process. It dropped from 40 minutes to 9."
+        self._start(thought=answer)
+        body = self.client.post(
+            "/app/workshop/work/session/finalize",
+            data={"answer": answer},
+            headers=SAME_ORIGIN_HEADERS,
+        ).data.decode("utf-8")
+
+        field = re.search(r'<input\b[^>]*id="wk-review-title"[^>]*>', body).group(0)
+        title = html.unescape(re.search(r'value="([^"]*)"', field).group(1))
+        self.assertEqual(title, "I rebuilt the intake process")
+        # Still the member's decision, not ours.
+        self.assertIn("required", field)
+        self.assertNotIn("readonly", field)
+        self.assertNotIn("disabled", field)
+
+    def test_save_unfinished_from_the_session_screen_titles_from_the_answer(self):
+        self._start(thought="A starting thought.")
+        self.client.post(
+            "/app/workshop/work/session",
+            data={
+                "answer": "I led a migration of 60,000 appointments. It took six weeks.",
+                "wk_action": "save_unfinished",
+            },
+            headers=SAME_ORIGIN_HEADERS,
+        )
+        with self.client.session_transaction() as sess:
+            delta = wdl.read_session_delta(sess)
+        self.assertEqual(len(delta["a"]), 1)
+        self.assertEqual(delta["a"][0][1], "I led a migration of 60,000 appointments")
+        self.assertNotIn(delta["a"][0][1], wws.QUESTION_SETS[wws.DOOR_SOMETHING])
