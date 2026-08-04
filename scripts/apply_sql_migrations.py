@@ -58,6 +58,13 @@ WORKSHOP_VERIFY_PATH = (
 )
 
 MIGRATION_FILENAMES = (
+    # PS-PLAT-000 exists because dbo.app_users predates the migration system.
+    # Six migrations declare foreign keys against it, but nothing created it,
+    # so a database could not be built from this repository at all. Found by
+    # the Community disposable SQL proof, 2026-08-03. It is a no-op plus one
+    # ledger row on any database that already has the table, including
+    # production.
+    "PS-PLAT-000_app_users_base.sql",
     "PS-PLAT-001_platform_governance.sql",
     "PS-PLAT-002_profiles_entities_access.sql",
     "PS-PLAT-003_evidence_ai.sql",

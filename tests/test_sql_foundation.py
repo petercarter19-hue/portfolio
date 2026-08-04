@@ -1,3 +1,4 @@
+import re
 import unittest
 import importlib.util
 from pathlib import Path
@@ -14,6 +15,7 @@ class SqlFoundationTests(unittest.TestCase):
         self.forward = [
             MIGRATIONS / name
             for name in (
+                "PS-PLAT-000_app_users_base.sql",
                 "PS-PLAT-001_platform_governance.sql",
                 "PS-PLAT-002_profiles_entities_access.sql",
                 "PS-PLAT-003_evidence_ai.sql",
@@ -26,10 +28,11 @@ class SqlFoundationTests(unittest.TestCase):
         ]
         self.rollbacks = sorted(MIGRATIONS.glob("PS-*-*_rollback.sql"))
 
-    def test_eight_ordered_forward_and_rollback_migrations_exist(self):
+    def test_nine_ordered_forward_and_rollback_migrations_exist(self):
         self.assertEqual(
             [path.name.split("_")[0] for path in self.forward],
             [
+                "PS-PLAT-000",
                 "PS-PLAT-001",
                 "PS-PLAT-002",
                 "PS-PLAT-003",
@@ -40,7 +43,27 @@ class SqlFoundationTests(unittest.TestCase):
                 "PS-AUTH-001",
             ],
         )
-        self.assertEqual(len(self.rollbacks), 8)
+        self.assertEqual(len(self.rollbacks), 9)
+
+    def test_every_foreign_key_target_is_created_by_some_migration(self):
+        """The gap PS-PLAT-000 closes must not reopen.
+
+        dbo.app_users was referenced by six migrations and created by none,
+        so a greenfield database could not be built from this repository.
+        Any future migration that references a table nothing creates fails
+        here rather than at the first real restore.
+        """
+        created, referenced = set(), set()
+        for path in self.forward:
+            sql = path.read_text(encoding="utf-8")
+            created.update(re.findall(r"CREATE TABLE dbo\.(\w+)", sql))
+            referenced.update(re.findall(r"REFERENCES dbo\.(\w+)", sql))
+        self.assertEqual(
+            referenced - created,
+            set(),
+            "these tables are referenced by a foreign key but no migration "
+            "creates them, so a fresh database cannot be built",
+        )
 
     def test_forward_migrations_are_transactional_and_recorded(self):
         for path in self.forward:
