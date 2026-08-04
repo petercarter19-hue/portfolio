@@ -802,6 +802,33 @@ class PipelineWiringTests(unittest.TestCase):
                 self.assertIsNotNone(command)
                 self.assertLess(block.index("--print-state"), command.start())
 
+    def test_connected_actions_run_inside_the_approved_azure_identity(self):
+        """The Entra connection string needs the service connection's CLI token.
+
+        Run 501 proved that a plain shell has no usable DefaultAzureCredential
+        on a Microsoft-hosted agent. Keep every connected action inside an
+        AzureCLI task while leaving the offline registry check unauthenticated.
+        """
+        schema_stage = self.pipeline.split("- stage: SchemaMigration", 1)[1]
+        schema_stage = schema_stage.split("- stage: CandidateDeploy", 1)[0]
+        for action in ("report", "apply", "rollback"):
+            with self.subTest(action=action):
+                marker = f"if eq(parameters.schemaAction, '{action}')"
+                block = schema_stage.split(marker, 1)[1].split(
+                    "- ${{ if eq(parameters.schemaAction", 1
+                )[0]
+                self.assertIn("- task: AzureCLI@2", block)
+                self.assertIn(
+                    "azureSubscription: $(azureServiceConnectionId)", block
+                )
+                self.assertIn("scriptType: bash", block)
+                self.assertIn("AZURE_SQL_CONNECTIONSTRING", block)
+
+        offline_block = schema_stage.split(
+            "displayName: Validate the migration registry and gate proofs", 1
+        )[0]
+        self.assertNotIn("AzureCLI@2", offline_block)
+
 
 class GovernanceDocumentationTests(unittest.TestCase):
     """The path must be documented where Protected operations live."""

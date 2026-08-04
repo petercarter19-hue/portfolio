@@ -38,6 +38,23 @@ production. It contains no OS-3 route, AI orchestration, or member-facing UI.
   `git diff --check`: pass.
 - **Release state:** Local schema-only branch; production unchanged. The
   disposable gate database was deleted after proof and its absence verified.
+- **Protected-path correction after merge:** PR 274 merged the schema at
+  `d3af4793734a11502375434b47f5e3b37cd7ee01`. Run 497 exposed invalid CLI
+  option ordering before any connection and PR 276 corrected it at
+  `304a5ecdd49afc52f7496440b1afdfa64593639e`. Corrected run 501 then reached
+  connection establishment and failed closed because a plain hosted-agent
+  shell had no usable Entra credential; its log showed
+  `DefaultAzureCredential` exhausting every provider. No migration SQL was
+  claimed or evidenced as applied. The follow-up change runs only the three
+  connected actions inside the existing approved Azure service connection;
+  it does not add a password, broaden the SQL firewall, or change migration
+  bytes. The service principal client id
+  `8948ceff-6f5c-4f88-91cd-aefc6e99fc32` is now mapped to the contained user
+  `peerslate-ado-schema`, which was verified as `db_ddladmin` with database
+  definition visibility, object-scoped ledger DML, and object-scoped audit
+  procedure execution only. It is not a member of a member-data reader/writer
+  role or `db_owner`. Final PR, run, and production ledger evidence remain
+  pending.
 - **Known limits, deferred work, or owner decision needed:** One of the three
   focused skips is deliberate and temporary: the OS-3 service-payload
   assertion cannot run before the service ships. The OS-3 application branch

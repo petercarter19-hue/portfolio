@@ -1,8 +1,10 @@
 # The governed database migration path
 
-**Status:** built and proven against a throwaway database; not yet exercised
-against `peerslate-database`. Two one-time Azure DevOps setup steps below must
-be completed before it can be.
+**Status:** built and proven against a throwaway database. Production runs 497
+and 501 proved its fail-closed parser and identity boundaries; neither applied
+migration SQL. The Azure environment, secret variable, and contained pipeline
+identity are now configured. A successful production apply and committed live
+state record remain outstanding.
 
 PeerSlate's application code has a reviewed, gated, auditable route to
 production: pull request, CI, Azure pipeline, release record. Until now its
@@ -144,7 +146,7 @@ describe fails there.
 > the 2026-08-03 and 2026-08-04 `PS-OPPSLATE-001` apply records. Those used a
 > different byte range. Do not compare them.
 
-### 4. Credentials from pipeline secrets only
+### 4. Credentials from pipeline secrets and the approved Azure identity only
 
 The connection string comes from a secret pipeline variable
 `schemaConnectionString`, defined in Azure pipeline metadata — the same pattern
@@ -155,6 +157,27 @@ environment data, never as Bash source, and is never echoed.
 The script never writes a connection string to disk, and scrubs the configured
 value, any `Pwd=`/`Password=`/`Uid=` fragment, and the password itself out of
 every message and evidence file before either is written.
+
+The production connection uses Microsoft Entra authentication rather than a
+database password. Each connected action (`report`, `apply`, and `rollback`)
+therefore runs inside `AzureCLI@2` with the repository's existing
+`azureServiceConnectionId`. That task supplies the short-lived Azure CLI token
+that `DefaultAzureCredential` needs on a Microsoft-hosted agent. The offline
+registry and gate-proof check remains a plain shell task and receives neither
+the connection string nor an Azure login. Run 501 demonstrated the fail-closed
+case: before these task boundaries were corrected, the hosted agent reported
+that every supported Azure credential was unavailable and no migration SQL was
+applied.
+
+Azure RBAC and Azure SQL data-plane authorization are separate. The service
+connection is mapped in `peerslate-database` to the contained external user
+`peerslate-ado-schema`. That user is a member of `db_ddladmin`, can view
+database definitions, can read and maintain only `dbo.schema_migrations`, and
+can execute only `dbo.usp_AppendAuditEvent` beyond the permissions supplied by
+the fixed role. It is not a member of `db_datareader`, `db_datawriter`, or
+`db_owner`. A migration that genuinely needs a data backfill must receive and
+document the additional narrow permission it needs; the runner does not gain
+standing read/write access to member tables merely for convenience.
 
 `--expect-database` is required for every action. The script reads `DB_NAME()`
 on the open connection and refuses to continue unless it matches. A stale or
