@@ -232,10 +232,57 @@ stages:
                     --base-url "$(productionBaseUrl)"
                     --expected-source-version "$(Build.SourceVersion)"
                     --expected-build-id "$(Build.BuildId)"
-                    --warmup-seconds 180
+                    --warmup-seconds 420
                     --retry-delay 10
                     --timeout 15
                   displayName: Verify liveness and canonical public routes
+
+  # A main run that builds but does not deploy must never read as a plain
+  # success. Build 438 (2026-08-04) was queued manually, skipped
+  # ProductionRelease on the condition above, reported `succeeded`, and was
+  # reasonably mistaken for a release; production stayed on the previous
+  # commit. This stage fires only in that exact case and downgrades the run to
+  # `succeededWithIssues` so both a human and `az pipelines runs list` can see
+  # that nothing shipped.
+  - stage: ProductionReleaseSkipped
+    displayName: Report that production was not deployed
+    dependsOn: Build
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+        eq(variables['Build.Reason'], 'Manual'),
+        ${{ eq(parameters.forceProductionDeploy, false) }}
+      )
+    jobs:
+      - job: AnnounceSkippedProductionRelease
+        displayName: Announce skipped production release
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: none
+
+          - script: |
+              set -euo pipefail
+              echo "This manually queued main run built $BUILT_SOURCE_VERSION"
+              echo "but did NOT deploy it. ProductionRelease is skipped for a"
+              echo "Manual run unless forceProductionDeploy is true."
+              echo ""
+              echo "Production is still running whatever the last automatic"
+              echo "run deployed. Confirm with /healthz before reporting any"
+              echo "change as live."
+              echo ""
+              echo "If an automatic run for this same commit is already active,"
+              echo "let it finish -- do not queue a manual fallback alongside"
+              echo "it. Only re-queue with forceProductionDeploy=true when no"
+              echo "automatic run will cover this commit."
+              echo "##vso[task.logissue type=warning]Built $BUILT_SOURCE_VERSION without deploying: manual main run, forceProductionDeploy=false. Production was NOT updated."
+              echo "##vso[task.complete result=SucceededWithIssues;]"
+            displayName: Warn that no production deployment occurred
+            env:
+              # Same discipline as the Build stage: the SHA enters the process
+              # as data, never as Bash source.
+              BUILT_SOURCE_VERSION: $(Build.SourceVersion)
 
   - stage: CandidateDeploy
     displayName: Deploy isolated candidate

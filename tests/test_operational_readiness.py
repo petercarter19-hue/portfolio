@@ -692,6 +692,7 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             [
                 'Build',
                 'ProductionRelease',
+                'ProductionReleaseSkipped',
                 'CandidateDeploy',
                 'CandidateSmoke',
                 'CandidateStop',
@@ -766,6 +767,38 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
                 'python scripts/verify_deployment_smoke.py'
             ),
         )
+        # Build 443 deployed correctly but reported `failed`: the container
+        # answered /healthz about 25 seconds after the 180-second budget ran
+        # out. Production cold start on this plan must fit inside the budget,
+        # or a real release keeps being reported as a failure.
+        self.assertIn('--warmup-seconds 420', production_stage)
+        self.assertNotIn('--warmup-seconds 180', production_stage)
+
+        # A manual main run that skips the deploy must announce itself rather
+        # than report a bare success.
+        skipped_stage = stage_bodies['ProductionReleaseSkipped']
+        self.assertRegex(skipped_stage, r'(?m)^    dependsOn: Build$')
+        self.assertIn(
+            "eq(variables['Build.SourceBranch'], 'refs/heads/main')",
+            skipped_stage,
+        )
+        self.assertIn(
+            "eq(variables['Build.Reason'], 'Manual')",
+            skipped_stage,
+        )
+        self.assertIn(
+            '${{ eq(parameters.forceProductionDeploy, false) }}',
+            skipped_stage,
+        )
+        self.assertIn('##vso[task.logissue type=warning]', skipped_stage)
+        self.assertIn(
+            '##vso[task.complete result=SucceededWithIssues;]',
+            skipped_stage,
+        )
+        # It reports only; it must never touch the web app.
+        self.assertNotIn('AzureWebApp@1', skipped_stage)
+        self.assertNotIn('az webapp', skipped_stage)
+
         self.assertRegex(
             stage_bodies['CandidateDeploy'],
             r'(?m)^    dependsOn: Build$',
@@ -839,6 +872,9 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             'scripts/verify_deployment_smoke.py',
             '--expected-source-version "$(Build.SourceVersion)"',
             '--expected-build-id "$(Build.BuildId)"',
+            # Production uses 420 (see the postdeploy-contract test); the
+            # isolated candidate keeps the shorter 180-second budget.
+            '--warmup-seconds 420',
             '--warmup-seconds 180',
             'az webapp start',
             'az webapp stop',
