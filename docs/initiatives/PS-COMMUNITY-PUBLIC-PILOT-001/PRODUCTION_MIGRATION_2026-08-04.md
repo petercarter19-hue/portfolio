@@ -80,22 +80,32 @@ FAILED: One or more members do not have discovery disabled by default.
 | member profile | `COUNT(dbo.member_profiles)` vs `COUNT(dbo.app_users)` |
 | discovery | `COUNT(dbo.connection_preferences WHERE discovery_opt_in = 0)` vs `COUNT(dbo.app_users)` |
 
-**Root cause: no application code creates either row.** Across the repository,
+**This root-cause analysis was wrong. Corrected below; left in place because the
+wrong version drove a prediction that also proved wrong.**
+
+~~Root cause: no application code creates either row. Across the repository,
 `member_profiles` and `connection_preferences` appear only in migrations,
-verification scripts, and tests — never in application code. They were populated
-once, by the `PS-PLAT-002` and `PS-PLAT-004` backfills. Any `app_users` row
-created after those migrations ran has neither, so these strict-equality checks
-drift the moment anyone new signs in.
+verification scripts, and tests — never in application code.~~
+
+That conclusion came from searching `*.py` files. Both rows are created by
+`dbo.usp_UpsertAppUserFromAuth` — a stored procedure, so SQL rather than
+Python, which the search could not have found. The seeding has been present
+since PS-AUTH-001 was first written on 2026-07-17 (`ca24d1f`, PR 50).
+
+**Actual root cause: production had drifted behind the repository's
+migrations**, and nothing detected it. The ledger was missing an entry and the
+procedures and backfills were behind, which is why a single `--apply` cleared
+all three findings at once. Followed up as `PS-PLAT-008`.
 
 **Not an active privacy problem.** Discovery is not implemented; nothing reads
 `connection_preferences`, so a missing row cannot expose anyone. The honest
 description is that the foundation verification asserts an invariant the
 application does not maintain.
 
-**Do not fix it by relaxing the check.** The check is right; user creation does
-not seed the rows. The fix is a one-time backfill plus seeding both rows
-wherever `app_users` rows are created — its own package, and not a Community
-blocker.
+**Do not fix it by relaxing the check.** The check was right and it caught real
+drift. No code change is needed: user creation already seeds both rows, and the
+backfills are idempotent. What is missing is any routine detection that
+production's applied state matches the repository — `PS-PLAT-008`.
 
 ---
 

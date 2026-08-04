@@ -104,25 +104,32 @@ retention schedule you approved — so I left it, and it is recorded in the code
 | Production | Healthy. Community flag still off. Nothing is live. |
 | Self-certification | **Conditional** — 13 of 14 fixed, F14 documented, not re-reviewed |
 
-## What needs you
+## Owner decisions, 2026-08-04 — all recorded and closed
 
-1. **The first production migration.** This is the next action and the one real
-   risk left. Everything proven so far ran against a throwaway container.
-   Merging PR 268 deploys to production — Community stays flag-off, so nothing
-   user-facing changes, but the deploy itself is real. I stopped here rather
-   than merge on my own.
-2. **A re-review of these corrections.** The lean policy says recheck the open
-   findings rather than replay the audit, but four of these changed real
-   behaviour.
-3. **Look at the Recently deleted link.** It sits in the existing policy line
-   at the bottom of the feed, owner-only. Public visitors do not see it —
-   verified by rendering the page both ways. It has not had your visual
-   acceptance.
-4. **Confirm the legal-hold limitation is acceptable**, or say the word and I
-   will hold attachments for the full 30 days instead.
-5. **Ownership scoping before a second member joins the pilot.** One cleanup
-   filter relies on the route's owner check rather than the database. Not
-   exploitable while you are the only writer.
+Pete accepted the following on the day. They are closed; do not reopen them as
+outstanding items.
+
+1. **Production migration and release — done.** Migrations applied, both
+   verifications pass against production, PR 268 merged as `0a53edb`, deployed,
+   and the Community flag is **on**. Community is live and publicly readable.
+2. **Re-review of the corrections — accepted without a further independent
+   review.** Pete's call as owner; the workflow permits acceptance on the
+   writer's self-certification.
+3. **Recently deleted screen and its entry point — visually accepted.** The
+   link sits in the existing policy line on the feed, owner-only; public
+   visitors do not see it, verified in production.
+4. **Legal-hold limitation — accepted as documented.** A hold applied after a
+   removal cannot recover attachment bytes; a hold placed before the removal
+   preserves them. The approved retention schedule is unchanged.
+5. **`www.peerslate.com`** — assigned to the ChatGPT lane.
+
+Remaining, and neither blocks the live pilot:
+
+- **`PS-PLAT-008`** — production drifted behind the repository's migrations
+  undetected. Package written; implementation unassigned.
+- **F14, ownership scoping** — one media cleanup filter relies on the route's
+  owner check rather than the database. Not exploitable while Pete is the only
+  writer; must be scoped in SQL before the pilot admits a second member.
 
 ## Honest note
 
