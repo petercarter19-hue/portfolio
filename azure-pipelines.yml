@@ -375,10 +375,10 @@ stages:
                         python scripts/govern_sql_migrations.py
                         --azure-pipelines
                         --emit-evidence "$(Build.ArtifactStagingDirectory)/schema/report.json"
+                        --print-state
                         report
                         --expect-database "$(schemaDatabaseName)"
                         --write-state
-                        --print-state
                       displayName: Read the ledger and render the repository record
                       env:
                         AZURE_SQL_CONNECTIONSTRING: $(schemaConnectionString)
@@ -393,10 +393,10 @@ stages:
                           --azure-pipelines
                           --emit-evidence
                           "$(Build.ArtifactStagingDirectory)/schema/apply.json"
+                          --print-state
                           apply
                           --expect-database "$(schemaDatabaseName)"
                           --write-state
-                          --print-state
                         )
                         # Naming the migration is optional but strongly
                         # preferred: it makes the applier compare the operator's
@@ -426,11 +426,11 @@ stages:
                           --azure-pipelines \
                           --emit-evidence \
                           "$(Build.ArtifactStagingDirectory)/schema/rollback.json" \
+                          --print-state \
                           rollback "$SCHEMA_MIGRATION_ID" \
                           --confirm "$SCHEMA_ROLLBACK_CONFIRM" \
                           --expect-database "$(schemaDatabaseName)" \
-                          --write-state \
-                          --print-state
+                          --write-state
                       displayName: Roll back the most recently applied migration
                       env:
                         AZURE_SQL_CONNECTIONSTRING: $(schemaConnectionString)

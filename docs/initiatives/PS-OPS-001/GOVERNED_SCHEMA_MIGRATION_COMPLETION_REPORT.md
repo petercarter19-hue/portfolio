@@ -58,3 +58,23 @@ applied.
 - **Actual handoff:** Pete is operational owner. Exact pushed implementation
   SHA is `90d3d575626a3d80508bf0868b406b7e46e710c1`; PR 273 remains open until the
   conditional release evidence above is complete.
+
+## First production-use correction — 2026-08-04
+
+- PR 273 subsequently passed build 488 and squash-merged as
+  `98d1565641b6476a85c7a58ff06ec54951c075a9`. The protected environment and
+  Pete-only approval check are active.
+- Opportunity Slate schema run 497 validated the registry, received both the
+  environment permission and explicit approval, then failed before opening a
+  database connection. `argparse` rejected global option `--print-state`
+  because the pipeline placed it after the `apply` subcommand. No migration
+  SQL executed and no production schema state changed in that run.
+- Follow-up branch `work/2026-08-04-schema-cli-order-fix`, based on current
+  `main` `2b0246c8d968d7e49b0762a0129aab4e6d99392b`, moves the global option ahead
+  of all three connected subcommands (`report`, `apply`, and `rollback`) and
+  adds an ordering regression test. Focused result: **45 passed, 1 skipped;
+  3 subtests passed**. Registry check: **23 registered, 11 gated and
+  hash-matched; pass**. `git diff --check`: pass.
+- The correction is not production-effective until its PR passes, merges, and
+  a new exact-main run proves the OS-3 apply. Run 497 is failure evidence, not
+  a partial schema release.

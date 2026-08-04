@@ -774,6 +774,35 @@ class ReporterTests(unittest.TestCase):
         self.assertNotIn("##vso", buffer.getvalue())
 
 
+class PipelineWiringTests(unittest.TestCase):
+    """The protected job must invoke the CLI with argparse-valid ordering."""
+
+    def setUp(self):
+        self.pipeline = (ROOT / "azure-pipelines.yml").read_text(encoding="utf-8")
+
+    def test_global_print_state_option_precedes_every_connected_subcommand(self):
+        """Run 497 reached the protected environment but failed before SQL.
+
+        ``--print-state`` belongs to the root parser; argparse rejects it when
+        YAML puts it after ``report``, ``apply``, or ``rollback``. Keep the
+        queue-time commands aligned with the parser rather than merely checking
+        that every expected word appears somewhere in the pipeline.
+        """
+        action_markers = {
+            "report": "if eq(parameters.schemaAction, 'report')",
+            "apply": "if eq(parameters.schemaAction, 'apply')",
+            "rollback": "if eq(parameters.schemaAction, 'rollback')",
+        }
+        for action, marker in action_markers.items():
+            with self.subTest(action=action):
+                block = self.pipeline.split(marker, 1)[1].split(
+                    "- ${{ if eq(parameters.schemaAction", 1
+                )[0]
+                command = re.search(rf"(?m)^\s+{action}(?:\s|$)", block)
+                self.assertIsNotNone(command)
+                self.assertLess(block.index("--print-state"), command.start())
+
+
 class GovernanceDocumentationTests(unittest.TestCase):
     """The path must be documented where Protected operations live."""
 
