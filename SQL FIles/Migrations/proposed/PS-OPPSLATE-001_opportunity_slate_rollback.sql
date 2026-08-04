@@ -3,16 +3,26 @@
 
    Refuses to discard any member Opportunity Slate record - working
    sessions, sources, captured versions, AI-proposal reviews, extraction
-   concerns, requirement sets, requirement-set versions, or requirement
-   statements - any later migration, or any protected procedure that changed
-   after this migration was applied. Removes only the thirteen Opportunity
-   Slate procedures and the eight tables this migration added.
+   concerns, requirement sets, requirement-set versions, requirement
+   statements, alignment analyses, per-qualification results, evidence
+   citations, or the member's own responses - any later migration, or any
+   protected procedure that changed after this migration was applied. Removes
+   only the seventeen Opportunity Slate procedures and the twelve tables this
+   migration added.
 
    SLICE OS-2 extended every list below. The proposal tables hold employer
    wording and the member's own corrections just as the OS-1 tables do, so
    they get exactly the same refusal: a rollback that quietly discarded
    PeerSlate's readings and a member's decisions about them would be a data
    loss dressed up as a schema change.
+
+   SLICE OS-3 extended them again and this header did not follow (2026-08-04
+   independent review, finding F12): the counts still read "thirteen
+   procedures and the eight tables" after four procedures and four tables had
+   been added. The lists below were correct throughout; the summary was not.
+   A member RESPONSE is the strongest case in the file for the refusal - it is
+   the member's own words about their own experience, and nothing else in this
+   store re-creates it.
 
    The working store is ephemeral by design, but "ephemeral" is not
    "disposable on an operator's behalf": a member with an open working
@@ -46,6 +56,10 @@ BEGIN TRY
            OR OBJECT_ID(N'dbo.opportunity_requirement_sets', N'U') IS NOT NULL
            OR OBJECT_ID(N'dbo.opportunity_requirement_set_versions', N'U') IS NOT NULL
            OR OBJECT_ID(N'dbo.opportunity_requirement_statements', N'U') IS NOT NULL
+           OR OBJECT_ID(N'dbo.opportunity_analyses', N'U') IS NOT NULL
+           OR OBJECT_ID(N'dbo.opportunity_analysis_statements', N'U') IS NOT NULL
+           OR OBJECT_ID(N'dbo.opportunity_analysis_citations', N'U') IS NOT NULL
+           OR OBJECT_ID(N'dbo.opportunity_responses', N'U') IS NOT NULL
        )
         THROW 53501, 'Rollback refused: Opportunity Slate objects exist without their migration record.', 1;
 
@@ -77,7 +91,11 @@ BEGIN TRY
         (N'usp_GetOpportunityRequirementsForOwner'),
         (N'usp_SaveOpportunityRequirementProposalForOwner'),
         (N'usp_CorrectOpportunityRequirementStatementForOwner'),
-        (N'usp_ConfirmOpportunityRequirementsForOwner');
+        (N'usp_ConfirmOpportunityRequirementsForOwner'),
+        (N'usp_ListOpportunityEvidenceForOwner'),
+        (N'usp_GetOpportunityAnalysisForOwner'),
+        (N'usp_SaveOpportunityAnalysisForOwner'),
+        (N'usp_SaveOpportunityResponseForOwner');
 
     IF @OppSlateAppliedAtUtc IS NOT NULL
        AND EXISTS
@@ -108,6 +126,24 @@ BEGIN TRY
        )
         THROW 53503, 'Rollback refused: a protected Opportunity Slate procedure changed after PS-OPPSLATE-001.', 1;
 
+    /* SLICE OS-3. Refuse before the children the analysis owns, in the
+       same order the drops below take, so an operator is told about the
+       innermost member record rather than about a table that only fails
+       later on a foreign key. opportunity_responses is listed first among
+       these because it is the only one of the four that holds text the
+       MEMBER wrote. */
+    IF OBJECT_ID(N'dbo.opportunity_responses', N'U') IS NOT NULL
+       AND EXISTS (SELECT 1 FROM dbo.opportunity_responses)
+        THROW 53512, 'Rollback refused: opportunity_responses contains member records.', 1;
+    IF OBJECT_ID(N'dbo.opportunity_analysis_citations', N'U') IS NOT NULL
+       AND EXISTS (SELECT 1 FROM dbo.opportunity_analysis_citations)
+        THROW 53513, 'Rollback refused: opportunity_analysis_citations contains member records.', 1;
+    IF OBJECT_ID(N'dbo.opportunity_analysis_statements', N'U') IS NOT NULL
+       AND EXISTS (SELECT 1 FROM dbo.opportunity_analysis_statements)
+        THROW 53514, 'Rollback refused: opportunity_analysis_statements contains member records.', 1;
+    IF OBJECT_ID(N'dbo.opportunity_analyses', N'U') IS NOT NULL
+       AND EXISTS (SELECT 1 FROM dbo.opportunity_analyses)
+        THROW 53515, 'Rollback refused: opportunity_analyses contains member records.', 1;
     IF OBJECT_ID(N'dbo.opportunity_source_concerns', N'U') IS NOT NULL
        AND EXISTS (SELECT 1 FROM dbo.opportunity_source_concerns)
         THROW 53507, 'Rollback refused: opportunity_source_concerns contains member records.', 1;
@@ -161,9 +197,25 @@ BEGIN TRY
         DROP PROCEDURE dbo.usp_CorrectOpportunityRequirementStatementForOwner;
     IF OBJECT_ID(N'dbo.usp_ConfirmOpportunityRequirementsForOwner', N'P') IS NOT NULL
         DROP PROCEDURE dbo.usp_ConfirmOpportunityRequirementsForOwner;
+    IF OBJECT_ID(N'dbo.usp_ListOpportunityEvidenceForOwner', N'P') IS NOT NULL
+        DROP PROCEDURE dbo.usp_ListOpportunityEvidenceForOwner;
+    IF OBJECT_ID(N'dbo.usp_GetOpportunityAnalysisForOwner', N'P') IS NOT NULL
+        DROP PROCEDURE dbo.usp_GetOpportunityAnalysisForOwner;
+    IF OBJECT_ID(N'dbo.usp_SaveOpportunityAnalysisForOwner', N'P') IS NOT NULL
+        DROP PROCEDURE dbo.usp_SaveOpportunityAnalysisForOwner;
+    IF OBJECT_ID(N'dbo.usp_SaveOpportunityResponseForOwner', N'P') IS NOT NULL
+        DROP PROCEDURE dbo.usp_SaveOpportunityResponseForOwner;
 
     /* Children before parents, so no drop ever runs against an object a
        foreign key still points at. */
+    IF OBJECT_ID(N'dbo.opportunity_responses', N'U') IS NOT NULL
+        DROP TABLE dbo.opportunity_responses;
+    IF OBJECT_ID(N'dbo.opportunity_analysis_citations', N'U') IS NOT NULL
+        DROP TABLE dbo.opportunity_analysis_citations;
+    IF OBJECT_ID(N'dbo.opportunity_analysis_statements', N'U') IS NOT NULL
+        DROP TABLE dbo.opportunity_analysis_statements;
+    IF OBJECT_ID(N'dbo.opportunity_analyses', N'U') IS NOT NULL
+        DROP TABLE dbo.opportunity_analyses;
     IF OBJECT_ID(N'dbo.opportunity_source_concerns', N'U') IS NOT NULL
         DROP TABLE dbo.opportunity_source_concerns;
     IF OBJECT_ID(N'dbo.opportunity_source_reviews', N'U') IS NOT NULL

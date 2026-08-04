@@ -34,6 +34,13 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_ResolveOpportunitySourceConcernForOwner",
         "usp_SaveOpportunityRequirementProposalForOwner",
         "usp_SaveOpportunitySourceReviewForOwner",
+        # PS-OPPSLATE-001 slice OS-3: the alignment analysis, its grounded
+        # citations, the member's own responses, and the READ-ONLY evidence
+        # allowlist the analysis is grounded in.
+        "usp_GetOpportunityAnalysisForOwner",
+        "usp_ListOpportunityEvidenceForOwner",
+        "usp_SaveOpportunityAnalysisForOwner",
+        "usp_SaveOpportunityResponseForOwner",
         "usp_CorrectCapture",
         "usp_CreateCapture",
         "usp_CreateVoiceDraft",

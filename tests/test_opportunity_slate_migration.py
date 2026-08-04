@@ -1,10 +1,12 @@
 """Static contract tests for the Opportunity Slate migration —
-PS-OPPSLATE-001, slices OS-1 and OS-2.
+PS-OPPSLATE-001, slices OS-1 through OS-3.
 
 Mirrors tests/test_workshop_migration.py: these assert the shape of the
 proposed SQL without needing a database, so the migration's guards, owner
 scoping, CHECK pins, and rollback refusals are held in place by the ordinary
-test run. The migration ships as proposed/ and is NOT applied by this slice.
+test run. OS-3's schema and procedure allowlist deliberately release before
+the OS-3 route/service code, so production can be upgraded before a live route
+can call a procedure that does not exist yet.
 """
 
 import os
@@ -42,7 +44,16 @@ OS2_PROCEDURE_NAMES = (
     "usp_ConfirmOpportunityRequirementsForOwner",
 )
 
-PROCEDURE_NAMES = OS1_PROCEDURE_NAMES + OS2_PROCEDURE_NAMES
+# Slice OS-3: the grounded alignment analysis, the member's responses, and the
+# READ-ONLY evidence allowlist the analysis is grounded in.
+OS3_PROCEDURE_NAMES = (
+    "usp_ListOpportunityEvidenceForOwner",
+    "usp_GetOpportunityAnalysisForOwner",
+    "usp_SaveOpportunityAnalysisForOwner",
+    "usp_SaveOpportunityResponseForOwner",
+)
+
+PROCEDURE_NAMES = OS1_PROCEDURE_NAMES + OS2_PROCEDURE_NAMES + OS3_PROCEDURE_NAMES
 
 # Every procedure that writes. The two read procedures are deliberately
 # absent: each is a single read and owns no transaction.
@@ -57,12 +68,16 @@ MUTATING_PROCEDURE_NAMES = (
     "usp_SaveOpportunityRequirementProposalForOwner",
     "usp_CorrectOpportunityRequirementStatementForOwner",
     "usp_ConfirmOpportunityRequirementsForOwner",
+    "usp_SaveOpportunityAnalysisForOwner",
+    "usp_SaveOpportunityResponseForOwner",
 )
 
 READ_PROCEDURE_NAMES = (
     "usp_GetOpportunityWorkingSessionForOwner",
     "usp_GetOpportunitySourceReviewForOwner",
     "usp_GetOpportunityRequirementsForOwner",
+    "usp_GetOpportunityAnalysisForOwner",
+    "usp_ListOpportunityEvidenceForOwner",
 )
 
 TABLE_NAMES = (
@@ -74,6 +89,10 @@ TABLE_NAMES = (
     "dbo.opportunity_requirement_sets",
     "dbo.opportunity_requirement_set_versions",
     "dbo.opportunity_requirement_statements",
+    "dbo.opportunity_analyses",
+    "dbo.opportunity_analysis_statements",
+    "dbo.opportunity_analysis_citations",
+    "dbo.opportunity_responses",
 )
 
 # Handoff section 1 and section 8: no overall score, percentage,
@@ -126,7 +145,7 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         self.assertTrue(ROLLBACK.exists())
         self.assertTrue(VERIFY.exists())
 
-    def test_all_thirteen_procedures_are_present_exactly_once(self):
+    def test_every_procedure_is_present_exactly_once(self):
         self.assertEqual(set(self.procedures), set(PROCEDURE_NAMES))
         self.assertEqual(
             self.forward.count("CREATE OR ALTER PROCEDURE"), len(PROCEDURE_NAMES)
@@ -224,7 +243,7 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         # Each prerequisite is a THROW, not a warning.
         self.assertEqual(self.forward.count("must be applied before PS-OPPSLATE-001"), 4)
 
-    def test_migration_creates_the_three_tables(self):
+    def test_migration_creates_every_table_it_owns(self):
         for table in TABLE_NAMES:
             self.assertIn(f"CREATE TABLE {table}", self.forward)
 
@@ -430,7 +449,10 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         # Owner-scoped with no all-owners branch: a member request can never
         # trigger a cross-owner destructive sweep. Slice OS-2 added five more
         # deletes (the proposal tables), each carrying the same predicate.
-        self.assertEqual(purge.count("owner_profile_id = @ProfileId"), 9)
+        # Slice OS-3 added four more (the analysis, its statements, its
+        # citations, and the member's responses), each carrying the same
+        # predicate.
+        self.assertEqual(purge.count("owner_profile_id = @ProfileId"), 13)
         self.assertNotIn("@AllOwners", purge)
         # Counts are opt-out so the internal caller does not emit a second
         # result set ahead of its own.
@@ -598,7 +620,7 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         ):
             self.assertIn(value, self.verification)
 
-    def test_verifier_object_definition_greps_check_all_six_procedures(self):
+    def test_verifier_names_every_procedure_the_migration_owns(self):
         self.assertIn("OBJECT_DEFINITION", self.verification)
         self.assertIn("@UserKey nvarchar(300)", self.verification)
         self.assertIn("@OwnerProfileId", self.verification)  # named as forbidden
@@ -617,12 +639,19 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
             with self.subTest(procedure=name):
                 self.assertEqual(database_source.count(f'"{name}"'), 1)
 
-    def test_the_service_calls_only_allowlisted_procedure_names(self):
+    def test_schema_first_service_stays_on_os1_and_os2_until_os3_code_lands(self):
+        """The schema release must not smuggle the OS-3 application in.
+
+        The four new procedure names are allowlisted above, but this isolated
+        release intentionally leaves the service on its already-live OS-1/2
+        calls. The OS-3 application branch replaces this assertion with exact
+        equality against all seventeen procedure names.
+        """
         service_source = (
             ROOT / "services" / "opportunity_slate_service.py"
         ).read_text(encoding="utf-8")
         called = set(re.findall(r'"(usp_[A-Za-z0-9_]+)"', service_source))
-        self.assertEqual(called, set(PROCEDURE_NAMES))
+        self.assertEqual(called, set(OS1_PROCEDURE_NAMES + OS2_PROCEDURE_NAMES))
 
     # ------------------------------------------------------------------
     # Slice OS-2
@@ -802,7 +831,7 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         self.assertIn("SET description = @OppSlateDescription", wrapper)
         self.assertIn("description <> @OppSlateDescription", wrapper)
         self.assertNotIn("SET applied_at_utc", wrapper)
-        self.assertIn("Slices OS-1 and OS-2:", wrapper)
+        self.assertIn("Slices OS-1/OS-2/OS-3:", wrapper)
 
     def test_json_parameters_are_validated_before_use(self):
         """A malformed JSON payload is refused by name rather than thrown as
@@ -816,6 +845,359 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
                 self.assertIn("ISJSON(", body)
                 self.assertIn("OPENJSON(", body)
                 self.assertIn("N''invalid''", body)
+
+    # ------------------------------------------------------------------
+    # Slice OS-3
+    # ------------------------------------------------------------------
+
+    def test_the_analysis_tables_hold_no_field_a_verdict_could_live_in(self):
+        """The schema-level half of the composition boundary.
+
+        There is no free-text column on any OS-3 table that a model's sentence
+        could reach. Every string column holds either a verbatim span of the
+        employer's clause, a verbatim excerpt of the member's own evidence, a
+        pinned title, or the member's own words.
+        """
+        analysis_block = self.forward.split("CREATE TABLE dbo.opportunity_analyses")[1]
+        analysis_block = analysis_block.split("CREATE TABLE dbo.opportunity_responses")[0]
+        for banned in (
+            "explanation",
+            "rationale",
+            "summary",
+            "narrative",
+            "commentary",
+            "reason",
+        ):
+            with self.subTest(column=banned):
+                self.assertNotIn(f"{banned} nvarchar", analysis_block)
+
+    def test_the_derived_status_is_the_three_named_states_and_nothing_else(self):
+        self.assertIn(
+            "derived_status IN (N'supported', N'partially_supported',\n"
+            "                                    N'not_enough_information')",
+            self.forward,
+        )
+
+    def test_a_status_cannot_disagree_with_its_own_citation_count(self):
+        """A "supported" row with nothing behind it, or a cited row that calls
+        itself "not enough information", is refused by the database as well as
+        by the application."""
+        self.assertIn("CK_opportunity_analysis_statements_citation_pair", self.forward)
+        self.assertIn(
+            "(citation_count = 0 AND derived_status = N'not_enough_information')",
+            self.forward,
+        )
+        self.assertIn(
+            "(citation_count > 0 AND derived_status <> N'not_enough_information')",
+            self.forward,
+        )
+
+    def test_evidence_is_referenced_and_never_written(self):
+        """Opportunity Slate reads the member's Workshop library and writes
+        none of it."""
+        for name in PROCEDURE_NAMES:
+            body = self.procedures[name]
+            with self.subTest(procedure=name):
+                for write in (
+                    "INSERT dbo.knowledge_item",
+                    "UPDATE dbo.knowledge_item",
+                    "DELETE dbo.knowledge_item",
+                    "INSERT dbo.moment",
+                    "UPDATE dbo.moment",
+                    "DELETE dbo.moment",
+                ):
+                    self.assertNotIn(write, body)
+        allowlist = self.procedures["usp_ListOpportunityEvidenceForOwner"]
+        self.assertIn("FROM dbo.knowledge_items AS item", allowlist)
+        self.assertIn("item.item_status = N''confirmed''", allowlist)
+        self.assertIn("item.archived_at_utc IS NULL", allowlist)
+
+    def test_the_response_shape_check_is_all_or_nothing_per_kind(self):
+        """"I do not have this experience" and "skip" carry no text and no
+        evidence, so neither can be made to look like an answer the member did
+        not give."""
+        self.assertIn("CONSTRAINT CK_opportunity_responses_shape CHECK", self.forward)
+        for kind in (
+            "N'tell_more', N'real_example'",
+            "response_kind = N'connect_evidence'",
+            "N'confirm_not_have', N'skip'",
+        ):
+            self.assertIn(kind, self.forward)
+
+    def test_every_rejection_returns_before_any_mutation(self):
+        """The 2026-08-04 gate's defect 1, applied to the two new writers: a
+        procedure that deletes first and validates afterwards destroys member
+        data and then reports that nothing happened."""
+        for name in (
+            "usp_SaveOpportunityAnalysisForOwner",
+            "usp_SaveOpportunityResponseForOwner",
+        ):
+            body = self.procedures[name]
+            with self.subTest(procedure=name):
+                first_mutation = min(
+                    (
+                        position
+                        for position in (
+                            body.find("DELETE dbo."),
+                            body.find("DELETE citation_record"),
+                            body.find("DELETE analysis_statement"),
+                            body.find("INSERT dbo."),
+                            body.find("UPDATE dbo."),
+                        )
+                        if position != -1
+                    ),
+                    default=len(body),
+                )
+                last_rejection = max(
+                    body.rfind("SELECT N''invalid''"),
+                    body.rfind("SELECT N''changed''"),
+                )
+                self.assertNotEqual(last_rejection, -1)
+                self.assertLess(
+                    last_rejection,
+                    first_mutation,
+                    f"{name} mutates before its final rejection returns",
+                )
+
+    def test_the_analysis_writer_re_derives_the_cited_evidence_identity(self):
+        """Independent review finding F7.
+
+        usp_SaveOpportunityAnalysisForOwner used to take evidence_key,
+        evidence_version, evidence_title AND evidence_kind straight out of the
+        payload and write them, with no lookup against dbo.knowledge_items at
+        all — so nothing checked that a cited key was the member's own, that
+        the item was confirmed and unarchived, or that the pinned version was
+        the confirmed one. Its sibling usp_SaveOpportunityResponseForOwner
+        already did this correctly. It now does the same lookup.
+        """
+        body = self.procedures["usp_SaveOpportunityAnalysisForOwner"]
+        self.assertIn("FROM @Citations AS citation", body)
+        self.assertIn("JOIN dbo.knowledge_items AS item", body)
+        self.assertIn("item.knowledge_item_key = citation.evidence_key", body)
+        self.assertIn("item.owner_profile_id = @ProfileId", body)
+        self.assertIn("item.item_status = N''confirmed''", body)
+        self.assertIn("item.archived_at_utc IS NULL", body)
+        self.assertIn(
+            "item_version.version_number = item.confirmed_version_number", body
+        )
+        # And the identity is no longer read out of the payload anywhere.
+        self.assertNotIn("evidence_version int ''$.evidence_version''", body)
+        self.assertNotIn("evidence_title nvarchar(200) ''$.evidence_title''", body)
+        self.assertNotIn("evidence_kind nvarchar(30) ''$.evidence_kind''", body)
+        # The one kind slice OS-3 grounds on is a literal, not a parameter.
+        self.assertIn("N''knowledge_item'',", body)
+
+    @unittest.skip(
+        "OS-3 service payload lands after this schema-first release; the OS-3 "
+        "application branch removes this skip and pins the payload"
+    )
+    def test_the_service_stops_sending_the_identity_the_database_derives(self):
+        """The other half of F7. Leaving three fields in the payload that
+        nothing reads is how a caller comes to believe it controls them."""
+        source = (ROOT / "services" / "opportunity_slate_service.py").read_text(
+            encoding="utf-8"
+        )
+        payload = source.split("def save_analysis_for_owner")[1].split(
+            "row = self.database.first_row"
+        )[0]
+        for retired in (
+            '"evidence_kind":',
+            '"evidence_version":',
+            '"evidence_title":',
+        ):
+            with self.subTest(field=retired):
+                self.assertNotIn(retired, payload)
+        for kept in ('"evidence_key":', '"excerpt":', '"covered_text":'):
+            with self.subTest(field=kept):
+                self.assertIn(kept, payload)
+
+    def test_the_citations_are_validated_before_the_first_delete(self):
+        """Independent review finding F8.
+
+        The header claimed every rejection returned before the first DELETE.
+        That was true of the per-qualification rows and false of the
+        CITATIONS: eight constraints on dbo.opportunity_analysis_citations
+        could not fire until the INSERT, which is after all three DELETEs, so
+        the caller got a 503 where it should have got 'invalid'. Member data
+        was never at risk — XACT_ABORT and the CATCH rollback restore
+        everything — but a claim in a header is either true or it is removed.
+        """
+        body = self.procedures["usp_SaveOpportunityAnalysisForOwner"]
+        shred = body.find("INSERT @Citations")
+        guard = body.find("SELECT 1 FROM @Citations AS citation")
+        first_delete = body.find("DELETE citation_record")
+        self.assertNotEqual(shred, -1)
+        self.assertNotEqual(guard, -1)
+        self.assertNotEqual(first_delete, -1)
+        self.assertLess(shred, first_delete)
+        self.assertLess(guard, first_delete)
+
+    def test_the_citation_guard_reads_wider_than_the_columns_it_writes(self):
+        """F8, second part. A narrow OPENJSON declaration TRUNCATES an
+        over-length value, so the guard measures a string the caller never
+        sent and the real length is discovered later by a CHECK constraint.
+        The file already documents the wider-parameter idiom for
+        @IdempotencyKey; the citation shred now follows it."""
+        body = self.procedures["usp_SaveOpportunityAnalysisForOwner"]
+        self.assertIn("covered_text nvarchar(max) ''$.covered_text''", body)
+        self.assertIn("excerpt nvarchar(max) ''$.excerpt''", body)
+        self.assertNotIn("covered_text nvarchar(400)", body)
+        self.assertNotIn("excerpt nvarchar(800)", body)
+        # And the lengths the columns really enforce are what the guard tests.
+        self.assertIn(
+            "DATALENGTH(citation.covered_text) / 2 NOT BETWEEN 1 AND 200", body
+        )
+        self.assertIn("DATALENGTH(citation.excerpt) / 2 NOT BETWEEN 1 AND 400", body)
+
+    def test_the_stored_citation_count_is_reconciled_with_the_rows_written(self):
+        """F8, third part. CK_opportunity_analysis_statements_citation_pair
+        carries a comment promising the screen's three states "cannot drift
+        away from the evidence behind them". That needs the stored count to be
+        the number of citation ROWS actually written — and the count came from
+        one part of the payload while the rows came from another."""
+        body = self.procedures["usp_SaveOpportunityAnalysisForOwner"]
+        self.assertIn("WHERE result.citation_count <>", body)
+        self.assertIn("SELECT COUNT(*) FROM @Citations AS citation", body)
+
+    def test_the_rollback_header_counts_what_the_rollback_removes(self):
+        """Independent review finding F12. The lists were right throughout;
+        the summary still said thirteen procedures and eight tables after four
+        of each had been added."""
+        header = self.rollback.split("SET NOCOUNT ON;")[0]
+        # The summary sentence itself, not the paragraph that explains why it
+        # was wrong — that one quotes the retired counts on purpose.
+        summary = " ".join(
+            header.split("Removes")[1].split("added.")[0].split()
+        )
+        self.assertIn("seventeen Opportunity Slate procedures", summary)
+        self.assertIn("twelve tables", summary)
+        self.assertNotIn("thirteen", summary)
+        self.assertNotIn("eight tables", summary)
+        procedures = set(re.findall(r"N'(usp_\w+)'", self.rollback))
+        tables = set(re.findall(r"N'(dbo\.opportunity_\w+)'", self.rollback))
+        self.assertEqual(len(procedures), 17)
+        self.assertEqual(len(tables), 12)
+
+    def test_the_verifier_no_aggregate_guard_matches_the_concept_not_four_names(self):
+        """Independent review finding F13. The guard matched `overall_score`,
+        `match_score`, `match_percentage` and `recommendation` exactly, so
+        `alignment_rating`, `fit_index` or `confidence` would have passed the
+        one check whose entire subject is "no aggregate verdict about a
+        person"."""
+        verify = VERIFY.read_text(encoding="utf-8")
+        for concept in (
+            "%score%",
+            "%rating%",
+            "%ranking%",
+            "%percentile%",
+            "%fit_index%",
+            "%confidence%",
+            "%likelihood%",
+            "%probability%",
+            "%verdict%",
+        ):
+            with self.subTest(concept=concept):
+                self.assertIn(f"LIKE N'{concept}'", verify)
+        # And no procedure body trips it, which is what makes it usable.
+        for name in PROCEDURE_NAMES:
+            lowered = self.procedures[name].lower()
+            for word in (
+                "score",
+                "rating",
+                "ranking",
+                "percentile",
+                "fit_index",
+                "confidence",
+                "likelihood",
+                "probability",
+                "verdict",
+            ):
+                with self.subTest(procedure=name, word=word):
+                    self.assertNotIn(word, lowered)
+
+    def test_the_verifier_does_not_capture_a_four_result_set_procedure(self):
+        """Independent review finding F13. `INSERT @Table EXEC` of
+        usp_GetOpportunityAnalysisForOwner into one nine-column table variable
+        can only succeed when the procedure returns NO result set — which is
+        what happens for an owner with no requirement set. It proved nothing,
+        and it became error 213 the moment the fixture changed."""
+        verify = VERIFY.read_text(encoding="utf-8")
+        self.assertNotIn(
+            "INSERT @AnalysisReadResult\n    EXEC dbo.usp_GetOpportunityAnalysisForOwner",
+            verify,
+        )
+        # Isolation is asserted on the tables, which no fixture shape can make
+        # vacuous, and the read procedure gains a positive path.
+        self.assertIn("Owner B owns alignment rows they never created.", verify)
+        self.assertIn(
+            "EXEC dbo.usp_GetOpportunityAnalysisForOwner @UserKey = @UserKeyA;", verify
+        )
+        self.assertIn(
+            "Owner A has no readable alignment analysis at its current version.",
+            verify,
+        )
+
+    def test_every_new_table_declares_its_composite_candidate_key_up_front(self):
+        """The 2026-08-04 gate's defect 1 from the round before: a table
+        another table will reference needs UNIQUE (id, owner_profile_id)
+        DECLARED, or the referencing foreign key cannot be created at all."""
+        for table, key in (
+            ("opportunity_analyses", "UQ_opportunity_analyses_id_owner"),
+            (
+                "opportunity_analysis_statements",
+                "UQ_opportunity_analysis_statements_id_owner",
+            ),
+            (
+                "opportunity_analysis_citations",
+                "UQ_opportunity_analysis_citations_id_owner",
+            ),
+            ("opportunity_responses", "UQ_opportunity_responses_id_owner"),
+        ):
+            with self.subTest(table=table):
+                self.assertIn(f"CONSTRAINT {key}", self.forward)
+
+    def test_the_new_child_rows_are_removed_by_purge_delete_and_re_read(self):
+        """Four procedures had to learn about them, and all four must have."""
+        for name in (
+            "usp_PurgeExpiredOpportunityWorkingData",
+            "usp_DeleteOpportunityWorkingSessionForOwner",
+            "usp_SaveOpportunityRequirementProposalForOwner",
+        ):
+            body = self.procedures[name]
+            with self.subTest(procedure=name):
+                for table in (
+                    "dbo.opportunity_analysis_citations",
+                    "dbo.opportunity_analysis_statements",
+                    "dbo.opportunity_analyses",
+                    "dbo.opportunity_responses",
+                ):
+                    self.assertIn(table, body)
+        # A statement correction takes the stale analysis and spares the
+        # member's own response.
+        correction = self.procedures[
+            "usp_CorrectOpportunityRequirementStatementForOwner"
+        ]
+        self.assertIn("dbo.opportunity_analyses", correction)
+        self.assertNotIn("DELETE response_record", correction)
+
+    def test_the_migration_header_states_what_it_assumes_and_upgrades_from(self):
+        header = self.forward.split("SET NOCOUNT ON;")[0]
+        self.assertIn("WHAT THIS REVISION ASSUMES, AND WHAT IT UPGRADES FROM", header)
+        self.assertIn("WHICH IS WHAT PRODUCTION CARRIES TODAY", header)
+        self.assertIn("THIS REVISION HAS NOT BEEN APPLIED TO PRODUCTION", header)
+        # And it names the one delete that destroys member-authored text.
+        self.assertIn("DESTROYS MEMBER-AUTHORED TEXT", header)
+
+    def test_the_ledger_description_fits_the_column_it_is_written_into(self):
+        """dbo.schema_migrations.description is nvarchar(500), and an
+        over-long value aborts the whole migration on its final statement."""
+        match = re.search(
+            r"DECLARE @OppSlateDescription nvarchar\((\d+)\) =\s*\n\s*N'((?:''|[^'])*)'",
+            self.forward,
+        )
+        self.assertIsNotNone(match)
+        self.assertLessEqual(int(match.group(1)), 500)
+        self.assertLessEqual(len(match.group(2).replace("''", "'")), 500)
 
     def test_the_migration_is_proposed_and_not_wired_into_the_apply_script(self):
         """Slice OS-1 ships the migration as proposed/ and applies it
