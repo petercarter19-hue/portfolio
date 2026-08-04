@@ -9,6 +9,11 @@
 > authorization, migration, or material-visual conflict; do not stop for an
 > unrelated historic gate. Use the proportional
 > [completion record](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
+> Before a write, also read
+> [CURRENT_LANES.json](docs/governance/CURRENT_LANES.json) and pass
+> `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write
+> --fetch --require-clean`. A failed preflight is a stop, not permission to
+> create another branch or worktree.
 
 ## Authority
 

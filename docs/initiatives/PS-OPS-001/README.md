@@ -98,7 +98,13 @@ pipeline:
   exact SHA. Do not create a same-SHA fallback while the automatic run exists.
 - A manual production deployment must be an explicit false-by-default override,
   not the default effect of clicking **Run pipeline**. Use it only after current
-  live identity and the automatic-run state have been inspected.
+  live identity and the automatic-run state have been inspected. It must name
+  the exact 40-character `manualProductionSourceVersion`; the pipeline queries
+  Azure and refuses the fallback when an automatic exact-SHA run is active or
+  has already succeeded.
+- Application deployment and schema work share the single sequential
+  `ProductionOperation` stage. They cannot overlap across runs, and one run is
+  not allowed to request both operations.
 - Production deployment and its exact source/build smoke must remain in one
   locked operation. Do not split verification outside the lock or weaken the
   build-specific release identity to make an overwritten run appear green.
@@ -142,12 +148,15 @@ deployment path.
 way to move PeerSlate schema. Read it before proposing, gating, applying, or
 rolling back a migration. In short:
 
-- the pipeline's `SchemaMigration` stage runs only when a person queues it with
-  an explicit `schemaAction` and an approver releases the
-  `peerslate-database-schema` environment; merging a migration file applies
-  nothing;
+- the pipeline's schema operation runs only when a person queues it with an
+  explicit `schemaAction` inside the shared `ProductionOperation` stage and an
+  approver releases the `peerslate-database-schema` environment; merging a
+  migration file applies nothing;
 - a migration cannot be applied unless `SQL FIles/Migrations/registry.json`
   carries a gate proof whose digest still matches its T-SQL;
+- apply and rollback require one exact migration ID, and a read-only hosted
+  preflight rejects an already-ledgered ID, stale digest, unexpected plan, or
+  invalid rollback target before approval;
 - what is pending is read from `dbo.schema_migrations`, and what production
   carries is recorded in the generated
   `docs/governance/PRODUCTION_SCHEMA_STATE.md`, not in migration header prose.

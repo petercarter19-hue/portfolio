@@ -20,6 +20,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 from scripts import govern_sql_migrations as governed
@@ -744,6 +745,81 @@ class CommandLineTests(ScratchRegistryMixin, unittest.TestCase):
             governed.main([])
 
 
+class SchemaPreflightTests(ScratchRegistryMixin, unittest.TestCase):
+    """The read-only preflight refuses unsafe applies before approval."""
+
+    def args(self, registry_path, **overrides):
+        values = {
+            "registry": str(registry_path),
+            "registry_root": str(self.directory),
+            "env_file": None,
+            "expect_database": "peerslate-database",
+            "emit_evidence": None,
+            "action": "apply",
+            "migration_id": "PS-TEST-001",
+            "confirm": "",
+        }
+        values.update(overrides)
+        return SimpleNamespace(**values)
+
+    def registry(self):
+        forward = self.sql("PS-TEST-001")
+        path = _write_registry(
+            self.directory,
+            [
+                _entry(
+                    "PS-TEST-001",
+                    forward,
+                    "sql/PS-TEST-001_rollback.sql",
+                    gate=_proof(self.digest(forward)),
+                )
+            ],
+        )
+        return path, forward
+
+    def run_preflight(self, args, ledger):
+        connection = mock.MagicMock()
+        connection.__enter__.return_value.cursor.return_value = mock.MagicMock()
+        reporter = governed.Reporter(azure=False)
+        with (
+            mock.patch.object(governed, "connect_for", return_value=connection),
+            mock.patch.object(
+                governed,
+                "confirm_target",
+                return_value=("peerslate-database", "server"),
+            ),
+            mock.patch.object(governed, "read_ledger", return_value=ledger),
+            mock.patch.object(governed, "execute_script") as execute,
+            redirect_stdout(io.StringIO()) as output,
+        ):
+            result = governed.command_preflight(args, reporter)
+        execute.assert_not_called()
+        return result, output.getvalue()
+
+    def test_already_ledgered_id_is_refused_before_any_sql_execution(self):
+        registry, _forward = self.registry()
+        result, output = self.run_preflight(
+            self.args(registry),
+            [{"migration_id": "PS-TEST-001", "applied_at_utc": "now"}],
+        )
+        self.assertEqual(1, result)
+        self.assertIn("Already recorded in the target ledger", output)
+        self.assertIn("before environment approval", output)
+
+    def test_stale_gate_digest_is_refused_before_approval(self):
+        registry, forward = self.registry()
+        (self.directory / forward).write_text("SELECT 42;", encoding="utf-8")
+        result, output = self.run_preflight(self.args(registry), [])
+        self.assertEqual(1, result)
+        self.assertIn("does not match the gated bytes", output)
+
+    def test_exact_one_migration_plan_passes_without_mutation(self):
+        registry, _forward = self.registry()
+        result, output = self.run_preflight(self.args(registry), [])
+        self.assertEqual(0, result)
+        self.assertIn("no schema changed", output)
+
+
 class ReporterTests(unittest.TestCase):
     """A run that did nothing must never read as a run that applied schema."""
 
@@ -809,8 +885,11 @@ class PipelineWiringTests(unittest.TestCase):
         on a Microsoft-hosted agent. Keep every connected action inside an
         AzureCLI task while leaving the offline registry check unauthenticated.
         """
-        schema_stage = self.pipeline.split("- stage: SchemaMigration", 1)[1]
-        schema_stage = schema_stage.split("- stage: CandidateDeploy", 1)[0]
+        schema_stage = self.pipeline.split("- stage: ProductionOperation", 1)[1]
+        schema_stage = schema_stage.split("- stage: ProductionReleaseSkipped", 1)[0]
+        schema_stage = schema_stage.split(
+            "- deployment: GovernedSchemaMigration", 1
+        )[1]
         for action in ("report", "apply", "rollback"):
             with self.subTest(action=action):
                 marker = f"if eq(parameters.schemaAction, '{action}')"

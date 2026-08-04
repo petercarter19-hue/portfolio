@@ -4,18 +4,18 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-03"
+updated_at: "2026-08-04"
 
 authority:
   remote: origin
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "5b24a3893dcc1bbbdcfec9aec260728c80d5fb26"
-  deployed_pipeline: 431
-  application_behavior_commit: "5b24a3893dcc1bbbdcfec9aec260728c80d5fb26"
-  application_behavior_pipeline: 431
-  note: "Azure PR 260 passed blocking policy build 430 and was squash-merged without bypass as exact main 5b24a3893dcc1bbbdcfec9aec260728c80d5fb26. Automatic batched-CI pipeline 431 passed Build and the single locked ProductionRelease stage for that exact source; /healthz release 45ebdb560abb2c66bd194fe6 matched the exact source/build identity. Redundant manual runs 432 and 433 were canceled after the delayed automatic-run listing became visible; neither deployed. Independent HTTP and in-app-browser checks verified the homepage, Interview Studio, and public resume render the light modern-blue theme without the header switch, page-local proxies, stored-dark bootstrap, or theme-toggle.js; the browser reported no console errors. Azure build policy 1 revision 2 remains blocking and requires fresh current-target PR validation with no 12-hour result reuse. This release changes application behavior, so 5b24a3893dcc1bbbdcfec9aec260728c80d5fb26 / pipeline 431 is both the deployed and application-behavior baseline. Update this record and tests/test_operational_readiness.py together. This record is not a substitute for fetching origin and verifying current Azure and live state before a new claim."
+  deployed_main_commit: "f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d"
+  deployed_pipeline: 505
+  application_behavior_commit: "2b0246c8d968d7e49b0762a0129aab4e6d99392b"
+  application_behavior_pipeline: 499
+  note: "Automatic pipeline 505 passed for exact main f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d and live /healthz release 21a77fc14df89aa4f4397f2d is healthy. The latest behavior-changing source is 2b0246c8d968d7e49b0762a0129aab4e6d99392b, first released by automatic pipeline 499; later commits through f59dd9a changed schema, pipeline, test, or operational records. Repository main af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3 adds documentation-only incident evidence and intentionally has no application deployment. Community remains flag-off and Opportunity Slate OS-3 schema remains unapplied. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
@@ -23,7 +23,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "See active_packages. A manager is required only when a package or actual cross-lane decision assigns one."
+  current_assignments: "PS-DELIVERY-RESET-001 is the sole writable lane. See docs/governance/CURRENT_LANES.json for the owner-directed reset and paused-lane ledger."
 
 governing_documents:
   bible:
@@ -38,6 +38,12 @@ governing_documents:
     path: "docs/governance/DECISIONS.md"
   delivery_workflow:
     path: "docs/AI_WORKFLOW.md"
+  current_lanes:
+    version: "1"
+    path: "docs/governance/CURRENT_LANES.json"
+  owner_delivery_guide:
+    version: "1"
+    path: "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md"
   visual_integrity:
     path: "docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md"
   story_composition:
@@ -48,49 +54,14 @@ governing_documents:
     version: "1.1"
     path: "docs/governance/PeerSlate_Repository_Source_of_Truth_and_Multi_Agent_Sync_Standard_v1.1.docx"
 
-theme: deep_navy_gold
+theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-COMMUNITY-PUBLIC-PILOT-001
-    owner: "Pete; current Codex task is designated manager and sole writer"
-    lane: community_owner_authored_public_read_runtime
-    package_path: "docs/initiatives/PS-COMMUNITY-PUBLIC-PILOT-001/README.md"
-    status: "active_protected_implementation"
-  - id: PS-CAPTURE-MEDIA-001
-    owner: "Enablement writer unassigned"
-    lane: capture_media_photo_enablement
-    package_path: "docs/initiatives/PS-CAPTURE-MEDIA-001/README.md"
-    status: "released_flag_off_direct_enablement_controls_open"
-  - id: PS-HOME-FRONTEND-001
-    owner: "Assigned package roles; verify current branch before work"
-    lane: owner_home_frontend
-    package_path: "docs/initiatives/PS-HOME-FRONTEND-001/README.md"
-    status: "activated_branch_state_requires_live_refresh"
-  - id: PS-JOURNAL-001
-    owner: "Implementation writer unassigned"
-    lane: private_journal_foundation
-    package_path: "docs/initiatives/PS-JOURNAL-001/README.md"
-    status: "architecture_ready_direct_entry_gate_only"
-  - id: PS-SLATE-STUDIO-IA-001
-    owner: "Pete; Fable architecture, Sonnet implementation, Opus review (doc 16 §5)"
-    lane: workshop_and_future_builder_direction
-    package_path: "docs/initiatives/PS-SLATE-STUDIO-IA-001/README.md"
-    status: "w1_knowledge_library_implemented_reviewed_release_in_progress_w2_gated_on_round3_visual_lock"
-  - id: PS-HOME-INTERVIEW-FOCUS-PARITY-001
-    owner: "Pete and ChatGPT visual-creation lane; runtime writer unassigned"
-    lane: homepage_interview_focus_parity
-    package_path: "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/HOMEPAGE_PARITY_FOLLOWUP.md"
-    status: "scoped_followup_unassigned"
-  - id: PS-AI-OPS-CHECKPOINT-001
-    owner: "Correction writers unassigned"
-    lane: three_scoped_runtime_corrections
-    package_path: "docs/initiatives/PS-AI-OPS-CHECKPOINT-001/README.md"
-    status: "conditional_on_affected_surfaces_no_global_hold"
-  - id: PS-OPPORTUNITY-SLATE-001
-    owner: "Pete; Fable 5 Extra High architect and fresh Fable 5 Extra High reviewer, Opus 5 Extra High implementation writer (owner decision 2026-08-02)"
-    lane: opportunity_slate_alignment_workbench
-    package_path: "docs/initiatives/PS-OPPORTUNITY-SLATE-001/README.md"
-    status: "architecture_phase_chatgpt_visual_authority_locked_no_runtime_writer"
+  - id: PS-DELIVERY-RESET-001
+    owner: "Pete; current Codex reset task is designated manager and sole writer"
+    lane: delivery_control_plane_reset
+    package_path: "docs/initiatives/PS-DELIVERY-RESET-001/README.md"
+    status: "active_owner_directed_reset_all_other_lanes_paused_read_only"
 scoped_findings:
   - id: candidate_admission
     blocks: "Only a future Protected release that uses Candidate until package-specific exact-SHA admission is corrected or explicitly bounded."
@@ -98,6 +69,10 @@ scoped_findings:
     blocks: "Only release or expansion of the affected Work and Impact overlay until profile ownership and second-profile regression pass."
   - id: interview_followup_mode_provenance
     blocks: "Only release or expansion of the affected Interview follow-up path until signed mode binding and generic-context isolation pass."
+  - id: opportunity_slate_schema_revision
+    blocks: "All Opportunity Slate OS-3 schema apply activity until a new additive migration ID, immutable digest, hosted read-only report, and exact production-baseline gate pass."
+  - id: community_reenablement
+    blocks: "Community public-pilot re-enablement until ownership is singular, maintenance leaves the request path, dependency waits are bounded, and release evidence passes."
 
 completed_packages:
   - PS-AZURE-RELEASE-RELIABILITY-001
@@ -141,6 +116,7 @@ completed_packages:
   - PS-COMMUNITY-TABS-001
   - PS-COMMUNITY-JOURNAL-HOME-MILESTONE-001
   - PS-GOV-LEAN-001
+  - PS-PRODUCTION-AVAILABILITY-INCIDENT-001
 
 retired_packages:
   - id: PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001
@@ -152,7 +128,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Each package may proceed independently when its direct owner, dependencies, and applicable Routine, Bounded, or Protected controls are ready."
+next_gate: "Complete PS-DELIVERY-RESET-001 R0-R3 exit criteria. No other lane writes, merges, deploys, applies schema, mutates production configuration, or creates an implementation worktree until Pete explicitly releases it from the reset ledger."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

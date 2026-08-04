@@ -30,6 +30,16 @@ git status --short --branch
 Read `docs/governance/CURRENT_BASELINE.yaml`, then classify the work before
 reading more:
 
+Also read `docs/governance/CURRENT_LANES.json` and run the executable preflight:
+
+```bash
+python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --fetch --require-clean
+```
+
+Use `--intent read` for a read-only audit. If the ledger reports an
+owner-directed reset, only its `writes_allowed_for` package may write. Do not
+create a branch or worktree to work around a failed preflight.
+
 | Path | Use for | Read next |
 |---|---|---|
 | Routine | Copy, isolated bug fix, test, or internal refactor with no trust, data, public-contract, or material-visual change | The relevant code and focused test. |
@@ -43,7 +53,7 @@ required reading assignment for ordinary work.
 
 ## 3. Confirm before writing
 
-Know the task purpose, owner/writer, files or domain, and the one verification
+Know the task purpose, owner/writer, files or domain, current ledger state, and the one verification
 that makes the result believable. Stop and ask when an ownership, identity,
 privacy, migration, or visual-authority conflict is real. Do not stop merely
 because an unrelated historical record is long or a global checkpoint is open.

@@ -37,10 +37,10 @@ new initiative.
 
 | Thing | What it is |
 |---|---|
-| `SQL FIles/Migrations/registry.json` | The ordered inventory of all 20 migrations. Identity, files, prerequisites, and a gate proof. Records **no** claim about what any database carries. |
+| `SQL FIles/Migrations/registry.json` | The ordered inventory of all 23 migrations. Identity, files, prerequisites, and a gate proof. Records **no** claim about what any database carries. |
 | `scripts/migration_registry.py` | Pure logic: ordering, digests, gate verification, plan resolution, state rendering. No connection, no credential, fully covered by tests that run on every build. |
-| `scripts/govern_sql_migrations.py` | The operational entry point: `check`, `report`, `gate`, `apply`, `rollback`. |
-| `azure-pipelines.yml` → `SchemaMigration` | The only supported way to move production schema. |
+| `scripts/govern_sql_migrations.py` | The operational entry point: `check`, `preflight`, `report`, `gate`, `apply`, `rollback`. |
+| `azure-pipelines.yml` → `ProductionOperation` | The one sequential reservation shared by production application and schema operations; it is the only supported way to move production schema. |
 | `docs/governance/PRODUCTION_SCHEMA_STATE.md` | The repository's record of what production carries. Generated from a live ledger read; never hand-written. |
 | `scripts/apply_sql_migrations.py` | Unchanged and still used for foundation verification. A test now pins its `MIGRATION_FILENAMES` to the registry so the two cannot disagree. |
 
@@ -52,21 +52,27 @@ production incident on 2026-08-04 when merging `PS-PLAT-000` was reported as
 "the database can now be rebuilt from the repository" while the ledger row did
 not exist.
 
-Moving schema requires all four of:
+Moving schema requires all five of:
 
 1. **A person queues the pipeline on `main`** and selects a `schemaAction` other
    than `none`. The parameter defaults to `none`, so every ordinary run —
    including every merge — skips the stage entirely.
 2. **The `Build` stage passes.** The stage `dependsOn: Build`, so the full test
-   suite, dependency audit, and secret scan all gate it.
-3. **An approver releases the `peerslate-database-schema` environment.** This is
+   suite, dependency audit, secret scan, and explicit registry/digest check all
+   gate it.
+3. **The hosted read-only preflight passes before approval.** It connects only
+   to identify the target and read `dbo.schema_migrations`. Apply is refused
+   when the named ID is already ledgered, the gated bytes changed, or the live
+   plan is not exactly the one migration the operator named.
+4. **An approver releases the `peerslate-database-schema` environment.** This is
    who can pull the trigger: whoever is on that environment's approval check.
-4. **The registry and every gate proof validate offline**, before any connection
-   is opened.
+5. **The mutation job revalidates the registry and proof** after approval and
+   before executing any migration SQL.
 
-The stage is `lockBehavior: sequential`, not `runLatest`. A deployment artifact
-is cumulative, so dropping a superseded release is correct; schema is not, so a
-queued schema run must never be discarded in favour of a later one.
+The shared `ProductionOperation` stage is `lockBehavior: sequential`, not
+`runLatest`. It serializes web deploys and schema actions across runs, and the
+request preflight refuses any run that asks for both. A schema run therefore
+cannot overlap a production deployment or be discarded in favour of one.
 
 ## Safety properties
 
@@ -237,9 +243,9 @@ ship a hand-written guess, and it means the record is derived from day one. See
 3. **Merge it.** Nothing happens to any database. This is correct.
 
 4. **Queue the pipeline on `main`** with `schemaAction: apply` and
-   `schemaMigrationId` set to the migration id. Naming it is optional but
-   strongly preferred — it makes the applier compare your expectation against
-   the plan the ledger produces and refuse if they differ.
+   `schemaMigrationId` set to the one migration id. The ID is required. The
+   read-only preflight and applier both compare it with the live-ledger plan
+   and refuse if they differ.
 
 5. **Approve the `peerslate-database-schema` environment.**
 
@@ -250,10 +256,11 @@ ship a hand-written guess, and it means the record is derived from day one. See
    Until you do, the repository's record lags by one apply and the next schema
    run will warn about it.
 
-Application code and schema are released by separate operations. A schema-only
-run is a manual `main` run that does not deploy, so `ProductionReleaseSkipped`
-will warn that production code is unchanged — that warning is true and useful
-here. Read the stage results, not the run icon.
+Application code and schema remain separate actions inside one shared
+production reservation. A deliberate schema-only run does not deploy the
+application and is not downgraded by `ProductionReleaseSkipped`; that warning
+stage is reserved for a manual run that requested neither web deployment nor
+schema work. Read the operation and stage results, not the run icon alone.
 
 ## Rolling a migration back
 
@@ -317,7 +324,7 @@ never meant what it said.
 
 The new rules:
 
-- **The registry is the authority, not the directory.** All 20 migrations are
+- **The registry is the authority, not the directory.** All 23 migrations are
   registered, wherever they physically live. A test fails if any `.sql` file in
   either directory is unregistered, so a new migration cannot quietly appear
   outside the path again.
@@ -395,9 +402,10 @@ Stated plainly, because a control that oversells itself is worse than none.
   not in this repository, and this YAML cannot assert that it exists. Until the
   `peerslate-database-schema` environment has an approval check, the queue-time
   parameter is the only gate. See setup below.
-- **The application/schema ordering question.** The path makes schema and code
-  separate deliberate operations. It does not enforce that schema goes first, and
-  nothing checks that the deployed application matches the schema it expects.
+- **The application/schema ordering question.** The path now prevents overlap,
+  but it does not infer whether schema or code should go first. The package
+  still has to name that order, and nothing yet checks that the deployed
+  application matches the schema revision it expects.
 
 ## One-time setup before first production use
 

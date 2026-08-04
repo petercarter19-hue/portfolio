@@ -7,10 +7,12 @@ read out of App Service settings, guided by prose. Each apply was careful. None
 of them was controlled.
 
 This script is that control. It is the only supported way to move PeerSlate
-schema, and it runs from the Azure pipeline's `SchemaMigration` stage.
+schema, and it runs from the Azure pipeline's shared `ProductionOperation`
+stage.
 
     check      Validate the registry against the files. No connection. Runs in CI.
     report     Read the ledger and write the repository's record. Changes nothing.
+    preflight  Read the ledger and refuse an unsafe queued action. Changes nothing.
     gate       Prove a migration against a throwaway database and emit its proof.
     apply      Apply every pending, gated migration in registry order.
     rollback   Reverse the most recently applied migration, deliberately awkwardly.
@@ -547,6 +549,99 @@ def command_report(args, reporter: Reporter) -> int:
     if args.print_state:
         print(rendered)
     reporter.downgrade()
+    return 0
+
+
+# --------------------------------------------------------------------------
+# preflight
+# --------------------------------------------------------------------------
+
+
+def command_preflight(args, reporter: Reporter) -> int:
+    """Validate a queued schema action before environment approval.
+
+    This command performs only target identification and ledger reads. It is
+    intentionally separate from ``apply`` so an already-ledgered ID, stale
+    gate digest, unexpected prerequisite plan, or invalid rollback target is
+    rejected before an approver is asked to release the mutation job.
+    """
+
+    registry = load(args)
+    with connect_for(args) as connection:
+        cursor = connection.cursor()
+        database, server = confirm_target(cursor, args.expect_database)
+        reporter.say(f"Target: {database} on {server}")
+        ledger = read_ledger(cursor)
+
+    applied_ids = [row["migration_id"] for row in ledger]
+    blockers: list[str] = []
+    plan: list[str] = []
+
+    if args.action == "apply":
+        plan_items, blockers, _held = resolve_apply_plan(
+            registry,
+            applied_ids,
+            (args.migration_id,),
+            root=registry_root(args),
+        )
+        plan = [item.migration_id for item in plan_items]
+        if plan != [args.migration_id] and not blockers:
+            blockers.append(
+                "The live ledger does not produce the one-migration plan "
+                f"{args.migration_id}; computed plan: "
+                + (", ".join(plan) or "(nothing)")
+                + "."
+            )
+    elif args.action == "rollback":
+        if args.confirm != args.migration_id:
+            blockers.append("Rollback confirmation does not match migration id.")
+        try:
+            registry.get(args.migration_id)
+        except RegistryError as error:
+            blockers.append(str(error))
+        if args.migration_id not in applied_ids:
+            blockers.append(
+                f"{args.migration_id} is not in {database}'s ledger."
+            )
+        applied_in_order = [
+            migration_id
+            for migration_id in registry.ids
+            if migration_id in set(applied_ids)
+        ]
+        if (
+            applied_in_order
+            and args.migration_id in applied_ids
+            and applied_in_order[-1] != args.migration_id
+        ):
+            blockers.append(
+                f"{args.migration_id} is not the most recently applied "
+                f"registered migration; {applied_in_order[-1]} is."
+            )
+
+    result = "pass" if not blockers else "refused"
+    write_evidence(
+        Path(args.emit_evidence) if args.emit_evidence else None,
+        {
+            "action": "preflight",
+            "requested_action": args.action,
+            "result": result,
+            "database": database,
+            "server": server,
+            "checked_at_utc": _now(),
+            "migration_id": args.migration_id,
+            "computed_plan": plan,
+            "blockers": blockers,
+            "ledger": ledger,
+        },
+    )
+    for blocker in blockers:
+        reporter.fail(blocker)
+    if blockers:
+        reporter.fail("Schema operation refused before environment approval.")
+        return 1
+    reporter.say(
+        f"Preflight passed for schema action {args.action}; no schema changed."
+    )
     return 0
 
 
@@ -1197,6 +1292,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate the registry against the files on disk. No connection.",
     )
 
+    preflight = subparsers.add_parser(
+        "preflight",
+        help="Read the target ledger and validate a queued action without mutation.",
+    )
+    preflight.add_argument(
+        "action", choices=("report", "apply", "rollback")
+    )
+    preflight.add_argument("--migration-id", default="")
+    preflight.add_argument("--confirm", default="")
+    preflight.add_argument("--expect-database", required=True)
+
     for name, help_text in (
         ("report", "Read the ledger and render the repository record."),
         ("apply", "Apply every pending, gated migration in registry order."),
@@ -1270,6 +1376,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 COMMANDS = {
     "check": command_check,
+    "preflight": command_preflight,
     "report": command_report,
     "apply": command_apply,
     "rollback": command_rollback,

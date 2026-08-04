@@ -7,6 +7,9 @@
 > `CURRENT_BASELINE.yaml`, choose the Routine, Bounded, or Protected path, and
 > read only the relevant package and specialist authority. Consult
 > `DOCUMENT_CONTROL.md` for a genuine conflict, not as a routine reading gate.
+> Before a write, read `CURRENT_LANES.json` and pass
+> `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write
+> --fetch --require-clean`.
 
 # Claude / Claude Code instructions
 

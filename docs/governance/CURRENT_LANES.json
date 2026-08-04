@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-08-04T22:33:47Z",
+  "authority": {
+    "remote": "origin",
+    "host": "azure_devops",
+    "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
+  },
+  "operating_mode": {
+    "state": "owner_directed_delivery_reset",
+    "authorized_by": "Pete",
+    "authorized_at": "2026-08-04",
+    "read_only_work_allowed": true,
+    "writes_allowed_for": [
+      "PS-DELIVERY-RESET-001"
+    ],
+    "merge_allowed_for": [
+      "PS-DELIVERY-RESET-001"
+    ],
+    "cleanup_allowed_for": [
+      "PS-DELIVERY-RESET-001"
+    ],
+    "release_allowed_for": [],
+    "blocked_actions": [
+      "new implementation worktree",
+      "new feature or product write",
+      "pull-request merge outside PS-DELIVERY-RESET-001",
+      "manual pipeline",
+      "production deployment",
+      "schema report, apply, or rollback",
+      "production configuration mutation",
+      "unverified or non-reset branch, worktree, stash, or artifact deletion"
+    ],
+    "exit_authority": "Pete after PS-DELIVERY-RESET-001 reset exit criteria pass"
+  },
+  "active_lanes": [
+    {
+      "package": "PS-DELIVERY-RESET-001",
+      "manager": "current Codex reset task",
+      "writer": "current Codex reset task",
+      "worktree": "C:/Users/peter/Documents/portfolio-delivery-reset-001",
+      "branch": "work/2026-08-04-delivery-reset-001",
+      "base_sha": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3",
+      "reserved_surfaces": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "START_HERE.md",
+        "docs/governance/CURRENT_BASELINE.yaml",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+        "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
+        "docs/initiatives/PS-DELIVERY-RESET-001/",
+        "azure-pipelines.yml",
+        "scripts/delivery_preflight.py",
+        "scripts/production_operation_preflight.py",
+        "scripts/govern_sql_migrations.py",
+        "tests/test_delivery_preflight.py",
+        "tests/test_production_operation_preflight.py",
+        "tests/test_schema_migration_path.py",
+        "tests/test_governance_pointers.py",
+        "tests/test_operational_readiness.py",
+        "docs/initiatives/PS-OPS-001/README.md",
+        "docs/initiatives/PS-OPS-001/GOVERNED_SCHEMA_MIGRATION_PATH.md"
+      ],
+      "production_reservation": "none",
+      "schema_reservation": "none",
+      "disposition": "active_reset_only"
+    }
+  ],
+  "paused_lanes": [
+    {
+      "package": "PS-COMMUNITY-PUBLIC-PILOT-001",
+      "reason": "flag-off containment and conflicting writer records require reconciliation",
+      "known_checkpoint": "work/2026-08-04-community-maintenance-off-request-path@e51c9c6122e4c2cd1d462b77230523f733f2fded",
+      "disposition": "paused_read_only"
+    },
+    {
+      "package": "PS-OPPORTUNITY-SLATE-001",
+      "reason": "OS-3 needs a new additive migration ID and hosted read-only proof; OS-4 is stacked",
+      "known_checkpoints": [
+        "work/2026-08-04-oppslate-os3-additive@8de31f686ccedbf0275b1cbaf0d61451a2370559",
+        "work/2026-08-04-opportunity-slate-os3@3ac0e9d5a5fb0a20ce1c9f70b1d73ae1ea2f02a9",
+        "work/2026-08-04-opportunity-slate-os4@de8735ced7673685ef7909b9d4bd72490b74f0c3"
+      ],
+      "disposition": "paused_read_only"
+    },
+    {
+      "package": "PS-DATA-FOUNDATION-001",
+      "reason": "definition gate exists but activation and implementation remain pending",
+      "known_checkpoint": "work/2026-08-04-data-foundation-gate-001@9952d6427f57dc5a38679f616158497cb945eec4",
+      "disposition": "paused_read_only"
+    },
+    {
+      "package": "ALL_OTHER_EXISTING_LANES",
+      "reason": "owner-directed reset requires exact safe-stop and disposition before restart",
+      "disposition": "paused_read_only"
+    }
+  ],
+  "workspace_snapshot": {
+    "captured_at": "2026-08-04T21:45:30Z",
+    "registered_worktrees": 69,
+    "dirty_worktrees": 17,
+    "tracked_dirty_worktrees": 6,
+    "untracked_only_worktrees": 11,
+    "worktrees_behind_25_or_more": 46,
+    "worktrees_behind_75_or_more": 33,
+    "local_branches": 93,
+    "gone_upstream_local_branches": 57,
+    "remote_non_main_branches": 32,
+    "active_pull_requests": 0,
+    "queued_or_running_pipelines": 0,
+    "cleanup_authorized": true,
+    "cleanup_authority": "Pete authorized controlled cleanup on 2026-08-04; exact targets require verification and recovery refs first"
+  },
+  "cleanup_progress": {
+    "completed_at": "2026-08-04",
+    "classification_rechecked_at": "2026-08-04T22:33:47Z",
+    "log": "docs/initiatives/PS-DELIVERY-RESET-001/CLEANUP_LOG.md",
+    "remaining_inventory": "docs/initiatives/PS-DELIVERY-RESET-001/REMAINING_WORKSPACE.md",
+    "removed_worktrees": 24,
+    "removed_local_branches": 43,
+    "recovery_refs_created": 47,
+    "remaining_worktrees": 45,
+    "remaining_local_branches": 50,
+    "remaining_gone_upstream_branches": 14,
+    "preexisting_dirty_or_untracked_worktrees_preserved": 17,
+    "forced_removals": 0,
+    "primary_worktree": {
+      "path": "C:/Users/peter/Documents/portfolio",
+      "branch": "main",
+      "head": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3",
+      "tracked_state": "clean",
+      "preserved_untracked_roots": 10,
+      "disposition": "current_read_only_session_entry"
+    }
+  },
+  "release_truth": {
+    "repository_main": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3",
+    "deployed_main_commit": "f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d",
+    "deployed_pipeline": 505,
+    "live_release": "21a77fc14df89aa4f4397f2d",
+    "application_behavior_commit": "2b0246c8d968d7e49b0762a0129aab4e6d99392b",
+    "application_behavior_pipeline": 499,
+    "live_health": "ok",
+    "community_public_pilot": "flag_off",
+    "opportunity_slate_os3_schema": "not_applied"
+  }
+}

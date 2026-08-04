@@ -65,7 +65,7 @@ class ControlPlaneTests(unittest.TestCase):
 
     def test_control_plane_is_current_and_concise(self):
         self.assertEqual("5", self.data.get("schema_version"))
-        self.assertEqual("2026-08-03", self.data.get("updated_at"))
+        self.assertEqual("2026-08-04", self.data.get("updated_at"))
         self.assertLess(len(self.body.split()), 900)
         self.assertNotIn("planned_packages:", self.body)
         self.assertNotIn("holds:", self.body)
@@ -94,10 +94,26 @@ class ControlPlaneTests(unittest.TestCase):
         active = self.data.get("active_packages") or []
         ids = [item["id"] for item in active]
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertIn("PS-AI-OPS-CHECKPOINT-001", ids)
-        checkpoint = next(item for item in active if item["id"] == "PS-AI-OPS-CHECKPOINT-001")
-        self.assertIn("no_global_hold", checkpoint["status"])
+        self.assertEqual(["PS-DELIVERY-RESET-001"], ids)
+        reset = active[0]
+        self.assertIn("owner_directed_reset", reset["status"])
         self.assertIn("PS-GOV-LEAN-001", self.data.get("completed_packages") or [])
+
+    def test_current_lane_ledger_is_named_and_machine_readable(self):
+        governing = self.data["governing_documents"]
+        self.assertEqual("1", governing["current_lanes"]["version"])
+        self.assertEqual(
+            "docs/governance/CURRENT_LANES.json",
+            governing["current_lanes"]["path"],
+        )
+        self.assertEqual(
+            "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
+            governing["owner_delivery_guide"]["path"],
+        )
+        ledger = _read("docs", "governance", "CURRENT_LANES.json")
+        self.assertIn('"owner_directed_delivery_reset"', ledger)
+        self.assertIn('"cleanup_authorized": true', ledger)
+        self.assertIn('"cleanup_allowed_for"', ledger)
 
     def test_production_truth_is_separate_from_current_git(self):
         authority = self.data["authority"]

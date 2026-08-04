@@ -690,9 +690,8 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
         self.assertEqual(
             [
                 'Build',
-                'ProductionRelease',
+                'ProductionOperation',
                 'ProductionReleaseSkipped',
-                'SchemaMigration',
                 'CandidateDeploy',
                 'CandidateSmoke',
                 'CandidateStop',
@@ -732,15 +731,30 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             r'(?m)^            condition\s*:',
         )
 
-        production_stage = stage_bodies['ProductionRelease']
+        production_stage = stage_bodies['ProductionOperation']
         self.assertIn('batch: true', pipeline)
         self.assertIn('name: forceProductionDeploy', pipeline)
         self.assertIn('type: boolean', pipeline)
         self.assertIn('default: false', pipeline)
+        self.assertIn('name: manualProductionSourceVersion', pipeline)
+        self.assertRegex(
+            pipeline,
+            r'(?ms)- name: manualProductionSourceVersion.*?default: \'\'',
+        )
+        self.assertIn(
+            'python scripts/production_operation_preflight.py',
+            production_stage,
+        )
+        self.assertIn('SYSTEM_ACCESSTOKEN: $(System.AccessToken)', production_stage)
+        self.assertIn(
+            'MANUAL_SOURCE_VERSION: '
+            '${{ parameters.manualProductionSourceVersion }}',
+            production_stage,
+        )
         self.assertRegex(production_stage, r'(?m)^    dependsOn: Build$')
         self.assertRegex(
             production_stage,
-            r'(?m)^    lockBehavior: runLatest$',
+            r'(?m)^    lockBehavior: sequential$',
         )
         self.assertIn(
             "eq(variables['Build.SourceBranch'], 'refs/heads/main')",
@@ -788,6 +802,10 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
         )
         self.assertIn(
             '${{ eq(parameters.forceProductionDeploy, false) }}',
+            skipped_stage,
+        )
+        self.assertIn(
+            "${{ eq(parameters.schemaAction, 'none') }}",
             skipped_stage,
         )
         self.assertIn('##vso[task.logissue type=warning]', skipped_stage)
@@ -920,7 +938,15 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
                 else len(pipeline)
             )
             stage_bodies[match.group(1)] = pipeline[match.start():end]
-        schema_stage = stage_bodies['SchemaMigration']
+        schema_stage = stage_bodies['ProductionOperation']
+        schema_jobs = schema_stage.split(
+            '- job: SchemaReadOnlyPreflight', 1
+        )[1]
+        schema_mutation_job = schema_stage.split(
+            '- deployment: GovernedSchemaMigration', 1
+        )[1]
+        production_job = schema_stage.split('- deployment: DeployWebApp', 1)[1]
+        production_job = production_job.split('- job: SchemaReadOnlyPreflight', 1)[0]
 
         # 1. Never automatic. The trigger is a queue-time parameter that
         #    defaults to doing nothing, plus an environment an approver must
@@ -939,7 +965,9 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             "${{ ne(parameters.schemaAction, 'none') }}",
             schema_stage,
         )
-        self.assertIn('environment: peerslate-database-schema', schema_stage)
+        self.assertIn(
+            'environment: peerslate-database-schema', schema_mutation_job
+        )
         # Only main. A task branch must not be able to move production schema.
         self.assertIn(
             "eq(variables['Build.SourceBranch'], 'refs/heads/main')",
@@ -952,13 +980,23 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
 
         # 2. Fail closed before connecting. The offline registry and gate-proof
         #    validation runs first, and it runs for every action.
+        self.assertIn('SchemaReadOnlyPreflight', schema_stage)
+        self.assertIn('preflight "$SCHEMA_ACTION"', schema_jobs)
+        self.assertIn('artifact: SchemaPreflightEvidence', schema_jobs)
         self.assertIn(
-            'python scripts/govern_sql_migrations.py check',
-            schema_stage,
+            'mkdir -p "$(Build.ArtifactStagingDirectory)/schema-preflight"',
+            schema_jobs,
         )
         self.assertLess(
-            schema_stage.index('govern_sql_migrations.py check'),
-            schema_stage.index("eq(parameters.schemaAction, 'report')"),
+            schema_stage.index('- job: SchemaReadOnlyPreflight'),
+            schema_stage.index('- deployment: GovernedSchemaMigration'),
+        )
+        self.assertIn(
+            'python scripts/govern_sql_migrations.py check', schema_jobs
+        )
+        self.assertLess(
+            schema_jobs.index('govern_sql_migrations.py check'),
+            schema_jobs.index('- deployment: GovernedSchemaMigration'),
         )
 
         # 3. Each action is its own guarded step, and the target database is
@@ -967,25 +1005,27 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
         for action in ('report', 'apply', 'rollback'):
             self.assertIn(
                 "${{ if eq(parameters.schemaAction, '%s') }}" % action,
-                schema_stage,
+                schema_mutation_job,
             )
         self.assertEqual(
             3,
-            schema_stage.count('--expect-database "$(schemaDatabaseName)"'),
+            schema_mutation_job.count('--expect-database "$(schemaDatabaseName)"'),
         )
         self.assertIn("schemaDatabaseName: 'peerslate-database'", pipeline)
         # Every action renders the repository's record of what production
         # carries, so the record cannot be forgotten.
-        self.assertEqual(3, schema_stage.count('--write-state'))
-        self.assertEqual(3, schema_stage.count('--azure-pipelines'))
+        self.assertEqual(3, schema_mutation_job.count('--write-state'))
+        self.assertEqual(3, schema_mutation_job.count('--azure-pipelines'))
+        self.assertIn('--migration "$SCHEMA_MIGRATION_ID"', schema_mutation_job)
+        self.assertIn('--expect "$SCHEMA_MIGRATION_ID"', schema_mutation_job)
 
         # 4. Rollback is deliberately awkward: two independently typed queue
         #    values must agree before anything destructive runs.
         self.assertIn('name: schemaRollbackConfirm', pipeline)
-        self.assertIn('--confirm "$SCHEMA_ROLLBACK_CONFIRM"', schema_stage)
+        self.assertIn('--confirm "$SCHEMA_ROLLBACK_CONFIRM"', schema_mutation_job)
         self.assertIn(
             'SCHEMA_ROLLBACK_CONFIRM: ${{ parameters.schemaRollbackConfirm }}',
-            schema_stage,
+            schema_mutation_job,
         )
 
         # 5. Credentials come from a secret pipeline variable and reach the
@@ -993,7 +1033,7 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
         #    from App Service settings read by an agent.
         self.assertEqual(
             3,
-            schema_stage.count(
+            schema_mutation_job.count(
                 'AZURE_SQL_CONNECTIONSTRING: $(schemaConnectionString)'
             ),
         )
@@ -1007,23 +1047,20 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
 
         # 6. This stage moves schema only. It must never deploy the web app,
         #    and the production deploy must never touch a database.
-        self.assertNotIn('AzureWebApp@1', schema_stage)
-        self.assertNotIn('az webapp', schema_stage)
-        self.assertNotIn(
-            'govern_sql_migrations.py',
-            stage_bodies['ProductionRelease'],
-        )
+        self.assertNotIn('AzureWebApp@1', schema_jobs)
+        self.assertNotIn('az webapp', schema_jobs)
+        self.assertNotIn('govern_sql_migrations.py', production_job)
         self.assertNotIn(
             'govern_sql_migrations.py',
             stage_bodies['ProductionReleaseSkipped'],
         )
 
         # 7. Evidence survives the agent.
-        self.assertIn('artifact: SchemaMigrationEvidence', schema_stage)
-        self.assertEqual(3, schema_stage.count('--emit-evidence'))
+        self.assertIn('artifact: SchemaMigrationEvidence', schema_mutation_job)
+        self.assertEqual(3, schema_mutation_job.count('--emit-evidence'))
 
         # The existing production controls must be untouched by all of this.
-        production_stage = stage_bodies['ProductionRelease']
+        production_stage = stage_bodies['ProductionOperation']
         self.assertIn(
             '${{ eq(parameters.forceProductionDeploy, true) }}',
             production_stage,
@@ -1163,22 +1200,22 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
         # record release evidence with [skip ci] unless this test was run
         # locally against the exact record being merged.
         self.assertIn(
-            'deployed_main_commit: "5b24a3893dcc1bbbdcfec9aec260728c80d5fb26"',
+            'deployed_main_commit: "f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d"',
             baseline,
         )
-        self.assertIn('deployed_pipeline: 431', baseline)
+        self.assertIn('deployed_pipeline: 505', baseline)
         expected_release = release_id_for_build(
-            '5b24a3893dcc1bbbdcfec9aec260728c80d5fb26',
-            '431',
+            'f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d',
+            '505',
         )
         self.assertIn(f'/healthz release {expected_release}', baseline)
         self.assertIn(
-            'application_behavior_commit: "5b24a3893dcc1bbbdcfec9aec260728c80d5fb26"',
+            'application_behavior_commit: "2b0246c8d968d7e49b0762a0129aab4e6d99392b"',
             baseline,
         )
-        self.assertIn('application_behavior_pipeline: 431', baseline)
+        self.assertIn('application_behavior_pipeline: 499', baseline)
         self.assertIn('PS-AZURE-RELEASE-RELIABILITY-001', baseline)
-        self.assertIn('PS-AI-OPS-CHECKPOINT-001', baseline)
+        self.assertIn('PS-DELIVERY-RESET-001', baseline)
         self.assertIn('PS-GOV-LEAN-001', baseline)
         self.assertIn('Historical narrative snapshot', state)
         self.assertIn('Historical lane snapshot', initiatives)

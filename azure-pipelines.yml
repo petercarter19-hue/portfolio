@@ -12,6 +12,11 @@ parameters:
     type: boolean
     default: false
 
+  - name: manualProductionSourceVersion
+    displayName: Exact 40-character main SHA for a manual production fallback
+    type: string
+    default: ''
+
   # Schema never moves because a pull request merged. It moves because a person
   # queued this pipeline, chose an action other than `none`, and an approver
   # released the `peerslate-database-schema` environment. Merging a migration
@@ -49,7 +54,7 @@ variables:
   # The build manifest verifies that all three exactly match the source Azure
   # actually checked out.
   pythonVersion: '3.12'
-  # The only database the SchemaMigration stage may touch. The script confirms
+  # The only database the schema operation may touch. The script confirms
   # it against DB_NAME() on the open connection before it reads or writes
   # anything, so a stale or mistyped secret fails closed instead of applying
   # somewhere unintended.
@@ -129,6 +134,9 @@ stages:
             displayName: Run application and security tests
             env:
               ANTHROPIC_API_KEY: test-key-for-ci-only
+
+          - script: python scripts/govern_sql_migrations.py check
+            displayName: Validate migration registry before any approval
 
           - script: python scripts/generate_control_room_snapshot.py
             displayName: Generate Control Room snapshot
@@ -212,24 +220,78 @@ stages:
             artifact: CandidateEvidence
             displayName: Upload redacted scanner evidence
 
-  - stage: ProductionRelease
-    displayName: Deploy and verify production
+  - stage: ProductionOperation
+    displayName: Serialize production application and schema operations
     dependsOn: Build
-    # Main is cumulative, so only the latest waiting release should proceed.
-    # Keeping deploy and smoke in this one locked stage prevents a later run
-    # from replacing the artifact before the current run verifies its identity.
-    lockBehavior: runLatest
+    # One stage-level sequential lock is the shared production reservation.
+    # Application deployment and schema actions cannot overlap across runs.
+    lockBehavior: sequential
     condition: >-
       and(
         succeeded(),
         eq(variables['Build.SourceBranch'], 'refs/heads/main'),
         or(
           ne(variables['Build.Reason'], 'Manual'),
-          ${{ eq(parameters.forceProductionDeploy, true) }}
+          ${{ eq(parameters.forceProductionDeploy, true) }},
+          ${{ ne(parameters.schemaAction, 'none') }}
         )
       )
     jobs:
+      - job: ValidateProductionOperationRequest
+        displayName: Validate the exact production operation request
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: self
+            fetchDepth: 1
+            persistCredentials: false
+            clean: true
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(pythonVersion)'
+            displayName: Use Python $(pythonVersion)
+
+          - script: |
+              python scripts/production_operation_preflight.py \
+                --build-reason "$BUILD_REASON" \
+                --source-branch "$BUILD_SOURCE_BRANCH" \
+                --source-version "$BUILD_SOURCE_VERSION" \
+                --force-production-deploy "$FORCE_PRODUCTION_DEPLOY" \
+                --manual-source-version "$MANUAL_SOURCE_VERSION" \
+                --schema-action "$SCHEMA_ACTION" \
+                --schema-migration-id "$SCHEMA_MIGRATION_ID" \
+                --schema-rollback-confirm "$SCHEMA_ROLLBACK_CONFIRM" \
+                --collection-uri "$SYSTEM_COLLECTION_URI" \
+                --project-id "$SYSTEM_PROJECT_ID" \
+                --definition-id "$SYSTEM_DEFINITION_ID" \
+                --build-id "$BUILD_ID"
+            displayName: Refuse overlapping or duplicate production work
+            env:
+              BUILD_REASON: $(Build.Reason)
+              BUILD_SOURCE_BRANCH: $(Build.SourceBranch)
+              BUILD_SOURCE_VERSION: $(Build.SourceVersion)
+              BUILD_ID: $(Build.BuildId)
+              FORCE_PRODUCTION_DEPLOY: ${{ parameters.forceProductionDeploy }}
+              MANUAL_SOURCE_VERSION: ${{ parameters.manualProductionSourceVersion }}
+              SCHEMA_ACTION: ${{ parameters.schemaAction }}
+              SCHEMA_MIGRATION_ID: ${{ parameters.schemaMigrationId }}
+              SCHEMA_ROLLBACK_CONFIRM: ${{ parameters.schemaRollbackConfirm }}
+              SYSTEM_COLLECTION_URI: $(System.CollectionUri)
+              SYSTEM_PROJECT_ID: $(System.TeamProjectId)
+              SYSTEM_DEFINITION_ID: $(System.DefinitionId)
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
       - deployment: DeployWebApp
+        dependsOn: ValidateProductionOperationRequest
+        condition: >-
+          and(
+            succeeded(),
+            or(
+              ne(variables['Build.Reason'], 'Manual'),
+              ${{ eq(parameters.forceProductionDeploy, true) }}
+            )
+          )
         environment: $(environmentName)
         pool:
           vmImage: $(vmImageName)
@@ -264,86 +326,75 @@ stages:
                     --timeout 15
                   displayName: Verify liveness and canonical public routes
 
-  # A main run that builds but does not deploy must never read as a plain
-  # success. Build 438 (2026-08-04) was queued manually, skipped
-  # ProductionRelease on the condition above, reported `succeeded`, and was
-  # reasonably mistaken for a release; production stayed on the previous
-  # commit. This stage fires only in that exact case and downgrades the run to
-  # `succeededWithIssues` so both a human and `az pipelines runs list` can see
-  # that nothing shipped.
-  - stage: ProductionReleaseSkipped
-    displayName: Report that production was not deployed
-    dependsOn: Build
-    condition: >-
-      and(
-        succeeded(),
-        eq(variables['Build.SourceBranch'], 'refs/heads/main'),
-        eq(variables['Build.Reason'], 'Manual'),
-        ${{ eq(parameters.forceProductionDeploy, false) }}
-      )
-    jobs:
-      - job: AnnounceSkippedProductionRelease
-        displayName: Announce skipped production release
+      - job: SchemaReadOnlyPreflight
+        displayName: Read and validate schema state before approval
+        dependsOn: ValidateProductionOperationRequest
+        condition: >-
+          and(
+            succeeded(),
+            ${{ ne(parameters.schemaAction, 'none') }}
+          )
         pool:
           vmImage: $(vmImageName)
         steps:
-          - checkout: none
+          - checkout: self
+            fetchDepth: 1
+            persistCredentials: false
+            clean: true
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(pythonVersion)'
+            displayName: Use Python $(pythonVersion)
 
           - script: |
-              set -euo pipefail
-              echo "This manually queued main run built $BUILT_SOURCE_VERSION"
-              echo "but did NOT deploy it. ProductionRelease is skipped for a"
-              echo "Manual run unless forceProductionDeploy is true."
-              echo ""
-              echo "Production is still running whatever the last automatic"
-              echo "run deployed. Confirm with /healthz before reporting any"
-              echo "change as live."
-              echo ""
-              echo "If an automatic run for this same commit is already active,"
-              echo "let it finish -- do not queue a manual fallback alongside"
-              echo "it. Only re-queue with forceProductionDeploy=true when no"
-              echo "automatic run will cover this commit."
-              echo "##vso[task.logissue type=warning]Built $BUILT_SOURCE_VERSION without deploying: manual main run, forceProductionDeploy=false. Production was NOT updated."
-              echo "##vso[task.complete result=SucceededWithIssues;]"
-            displayName: Warn that no production deployment occurred
-            env:
-              # Same discipline as the Build stage: the SHA enters the process
-              # as data, never as Bash source.
-              BUILT_SOURCE_VERSION: $(Build.SourceVersion)
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+            displayName: Install requirements
 
-  # The governed database migration path. Application code and database schema
-  # are released by separate, deliberate operations: this stage never deploys
-  # the web app, and ProductionRelease never touches a database. A schema-only
-  # run is therefore a manual main run that does not deploy, so
-  # ProductionReleaseSkipped correctly warns that production code is unchanged.
-  # That warning is true and useful here -- read the stage results, not the run
-  # icon, to see what actually happened.
-  #
-  # Requires three one-time controls outside this file:
-  #   * the `peerslate-database-schema` environment, with an approval check.
-  #     Until that approval exists, the queue-time parameter is the only gate.
-  #   * a secret pipeline variable `schemaConnectionString` holding the target
-  #     connection string. Like the Candidate queue values it is defined in
-  #     Azure pipeline metadata, never in this YAML, and it reaches the script
-  #     as process environment data rather than as Bash source.
-  #   * a contained Azure SQL user mapped to the service connection's client
-  #     id, with only the documented schema-runner permissions. Azure RBAC does
-  #     not by itself grant access to the SQL data plane.
-  - stage: SchemaMigration
-    displayName: Apply governed database schema migrations
-    dependsOn: Build
-    # Schema is not cumulative the way a deployment artifact is: a queued run
-    # must never be dropped in favour of a later one, so this serializes rather
-    # than running latest.
-    lockBehavior: sequential
-    condition: >-
-      and(
-        succeeded(),
-        eq(variables['Build.SourceBranch'], 'refs/heads/main'),
-        ${{ ne(parameters.schemaAction, 'none') }}
-      )
-    jobs:
+          - script: python scripts/govern_sql_migrations.py check
+            displayName: Revalidate migration registry and gate proofs
+
+          - script: mkdir -p "$(Build.ArtifactStagingDirectory)/schema-preflight"
+            displayName: Prepare schema preflight evidence directory
+
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(azureServiceConnectionId)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                python scripts/govern_sql_migrations.py \
+                  --azure-pipelines \
+                  --emit-evidence \
+                  "$(Build.ArtifactStagingDirectory)/schema-preflight/preflight.json" \
+                  preflight "$SCHEMA_ACTION" \
+                  --migration-id "$SCHEMA_MIGRATION_ID" \
+                  --confirm "$SCHEMA_ROLLBACK_CONFIRM" \
+                  --expect-database "$(schemaDatabaseName)"
+            displayName: Refuse unsafe schema request before approval
+            env:
+              AZURE_SQL_CONNECTIONSTRING: $(schemaConnectionString)
+              SCHEMA_ACTION: ${{ parameters.schemaAction }}
+              SCHEMA_MIGRATION_ID: ${{ parameters.schemaMigrationId }}
+              SCHEMA_ROLLBACK_CONFIRM: ${{ parameters.schemaRollbackConfirm }}
+              BUILD_SOURCEVERSION: $(Build.SourceVersion)
+              BUILD_BUILDID: $(Build.BuildId)
+
+          - publish: '$(Build.ArtifactStagingDirectory)/schema-preflight'
+            artifact: SchemaPreflightEvidence
+            condition: always()
+            displayName: Publish read-only schema preflight evidence
+
       - deployment: GovernedSchemaMigration
+        displayName: Run the approved schema operation
+        dependsOn: SchemaReadOnlyPreflight
+        condition: >-
+          and(
+            succeeded(),
+            ${{ ne(parameters.schemaAction, 'none') }}
+          )
         environment: peerslate-database-schema
         pool:
           vmImage: $(vmImageName)
@@ -366,10 +417,6 @@ stages:
                     pip install -r requirements.txt
                   displayName: Install requirements
 
-                # Offline and fail-closed. Validates registry order, that every
-                # registered file exists, and that every gate proof still
-                # matches the T-SQL on this commit. Nothing connects until this
-                # passes.
                 - script: python scripts/govern_sql_migrations.py check
                   displayName: Validate the migration registry and gate proofs
 
@@ -401,29 +448,18 @@ stages:
                         scriptLocation: inlineScript
                         inlineScript: |
                           set -euo pipefail
-                          arguments=(
-                            scripts/govern_sql_migrations.py
-                            --azure-pipelines
-                            --emit-evidence
-                            "$(Build.ArtifactStagingDirectory)/schema/apply.json"
-                            --print-state
-                            apply
-                            --expect-database "$(schemaDatabaseName)"
+                          python scripts/govern_sql_migrations.py \
+                            --azure-pipelines \
+                            --emit-evidence \
+                            "$(Build.ArtifactStagingDirectory)/schema/apply.json" \
+                            --print-state \
+                            apply \
+                            --migration "$SCHEMA_MIGRATION_ID" \
+                            --expect "$SCHEMA_MIGRATION_ID" \
+                            --expect-database "$(schemaDatabaseName)" \
                             --write-state
-                          )
-                          # Naming the migration is optional but strongly
-                          # preferred: it makes the applier compare the operator's
-                          # expectation with the plan the ledger produces, and
-                          # refuse when they differ.
-                          if [ -n "$SCHEMA_MIGRATION_ID" ]; then
-                            arguments+=(--expect "$SCHEMA_MIGRATION_ID")
-                          fi
-                          python "${arguments[@]}"
-                      displayName: Apply every pending gated migration
+                      displayName: Apply the one expected pending gated migration
                       env:
-                        # Queue values enter the process as data, never as Bash
-                        # source -- the same discipline the Build stage uses for
-                        # the Candidate admission values.
                         AZURE_SQL_CONNECTIONSTRING: $(schemaConnectionString)
                         SCHEMA_MIGRATION_ID: ${{ parameters.schemaMigrationId }}
                         BUILD_SOURCEVERSION: $(Build.SourceVersion)
@@ -437,9 +473,6 @@ stages:
                         scriptLocation: inlineScript
                         inlineScript: |
                           set -euo pipefail
-                          # Two independently typed queue values must agree. The
-                          # script checks it too; failing here first keeps a
-                          # destructive run from opening a connection at all.
                           python scripts/govern_sql_migrations.py \
                             --azure-pipelines \
                             --emit-evidence \
@@ -457,9 +490,6 @@ stages:
                         BUILD_SOURCEVERSION: $(Build.SourceVersion)
                         BUILD_BUILDID: $(Build.BuildId)
 
-                # The rendered record is the thing an operator commits, so it
-                # must survive the agent. The evidence JSON is scrubbed of
-                # credential-shaped text by the script before it is written.
                 - script: |
                     set -euo pipefail
                     mkdir -p "$(Build.ArtifactStagingDirectory)/schema"
@@ -474,6 +504,55 @@ stages:
                   artifact: SchemaMigrationEvidence
                   condition: always()
                   displayName: Publish schema migration evidence
+
+  # A manual main run that requests neither deploy nor schema must never read
+  # as a plain success. Build 438 (2026-08-04) was queued manually, skipped
+  # the production web deployment, reported `succeeded`, and was
+  # reasonably mistaken for a release; production stayed on the previous
+  # commit. This stage fires only in that exact case and downgrades the run to
+  # `succeededWithIssues` so both a human and `az pipelines runs list` can see
+  # that nothing shipped. Deliberate schema-only runs are excluded because
+  # their successful result describes the requested production operation.
+  - stage: ProductionReleaseSkipped
+    displayName: Report that production was not deployed
+    dependsOn: Build
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+        eq(variables['Build.Reason'], 'Manual'),
+        ${{ eq(parameters.forceProductionDeploy, false) }},
+        ${{ eq(parameters.schemaAction, 'none') }}
+      )
+    jobs:
+      - job: AnnounceSkippedProductionRelease
+        displayName: Announce skipped production release
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: none
+
+          - script: |
+              set -euo pipefail
+              echo "This manually queued main run built $BUILT_SOURCE_VERSION"
+              echo "but did NOT deploy it. The web deployment is skipped for a"
+              echo "Manual run unless forceProductionDeploy is true."
+              echo ""
+              echo "Production is still running whatever the last automatic"
+              echo "run deployed. Confirm with /healthz before reporting any"
+              echo "change as live."
+              echo ""
+              echo "If an automatic run for this same commit is already active,"
+              echo "let it finish -- do not queue a manual fallback alongside"
+              echo "it. Only re-queue with forceProductionDeploy=true when no"
+              echo "automatic run will cover this commit."
+              echo "##vso[task.logissue type=warning]Built $BUILT_SOURCE_VERSION without deploying: manual main run, forceProductionDeploy=false. Production was NOT updated."
+              echo "##vso[task.complete result=SucceededWithIssues;]"
+            displayName: Warn that no production deployment occurred
+            env:
+              # Same discipline as the Build stage: the SHA enters the process
+              # as data, never as Bash source.
+              BUILT_SOURCE_VERSION: $(Build.SourceVersion)
 
   - stage: CandidateDeploy
     displayName: Deploy isolated candidate
