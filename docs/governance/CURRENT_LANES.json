@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-05T03:00:00Z",
+  "updated_at": "2026-08-05T03:30:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -66,32 +66,39 @@
   "active_lanes": [
     {
       "package": "PS-OPPORTUNITY-SLATE-001",
-      "outcome": "Release the additive PS-OPPSLATE-002 Opportunity Slate OS-3 schema migration to production and record the resulting schema state. This restores the immutable PS-OPPSLATE-001 identity that PR 274 mutated.",
-      "branch": "work/2026-08-05-oppslate-os3-schema",
+      "outcome": "Deliver the complete public Opportunity Slate page to live, slice by slice, under Pete's 2026-08-05 standing order to keep going until the entire page is live and functional. Leg 1 (PS-OPPSLATE-002 schema) is complete and verified in production; the current leg is the OS-3 application release.",
+      "branch": "work/2026-08-05-oppslate-os3-app",
       "writer": "Claude continuation session, sole writer",
       "delivery_path": "Protected",
       "production_capable": true,
       "source_checkpoint": "Ported from Codex's read-only checkpoint work/2026-08-04-oppslate-os3-additive@f602c3fac9b867b12704a89850642de683c0779d. That branch stays read-only; this lane does not write to it.",
       "writable_surfaces": [
-        "SQL FIles/Migrations/proposed/PS-OPPSLATE-001_opportunity_slate.sql",
-        "SQL FIles/Migrations/proposed/PS-OPPSLATE-001_opportunity_slate_rollback.sql",
-        "SQL FIles/Migrations/proposed/PS-OPPSLATE-002_opportunity_slate_os3.sql",
-        "SQL FIles/Migrations/proposed/PS-OPPSLATE-002_opportunity_slate_os3_rollback.sql",
-        "SQL FIles/Migrations/registry.json",
-        "SQL FIles/Verification/PS-OPPSLATE-001_owner_isolation_verify.sql",
-        "SQL FIles/Verification/PS-OPPSLATE-002_owner_isolation_verify.sql",
-        "docs/initiatives/PS-OPPORTUNITY-SLATE-001/",
+        "app.py",
+        "opportunity_slate_routes.py",
+        "services/opportunity_slate_service.py",
+        "services/opportunity_analysis_service.py",
+        "services/database_service.py",
+        "static/css/opportunity-slate.css",
+        "static/js/opportunity-slate.js",
+        "templates/partials/opportunity_slate/",
+        "tests/test_opportunity_slate.py",
+        "tests/test_opportunity_slate_ai.py",
         "tests/test_opportunity_slate_migration.py",
+        "SQL FIles/Migrations/proposed/",
+        "SQL FIles/Verification/",
+        "SQL FIles/Migrations/registry.json",
+        "docs/initiatives/PS-OPPORTUNITY-SLATE-001/",
         "docs/governance/CURRENT_LANES.json",
-        "docs/governance/CURRENT_BASELINE.yaml"
+        "docs/governance/CURRENT_BASELINE.yaml",
+        "docs/governance/PRODUCTION_SCHEMA_STATE.md"
       ],
       "exclusions": [
-        "no application, route, service, template, or AI behaviour change",
-        "no OS-4, OS-5, or OS-6 work; those stay paused_read_only",
-        "no change to the already-applied PS-OPPSLATE-001 executable bytes",
         "no Community public-pilot re-enablement",
         "no cleanup or deletion of preserved branches, worktrees, or artifacts",
-        "no approval release without verifying the gate's plan first; for apply, the plan must show only PS-OPPSLATE-002 at digest 2af25b7d4f04984d88a30b7d65bc1948bc4bba810ab048963b4cd85a8d471dd0 with the PS-OPPSLATE-001 row untouched"
+        "no write to another writer's checkpoint branch",
+        "no schema apply without its own gate proof, additive ID, and verified plan",
+        "no approval release without verifying the gate's plan first",
+        "a merge is not a deployment; nothing is called live without a route smoke on the exact release"
       ],
       "completion_evidence": [
         "activation record merged",
@@ -111,6 +118,10 @@
         {
           "date": "2026-08-05",
           "decision": "Pete overruled the writer-approval blocker because this is the only session working the effort: the lane writer may release peerslate-database-schema and production environment approvals. Exercised for run 523 (read-only report) and run 521 (batchedCI web deploy of 07348e1). The separation-of-duties concern remains recorded as scoped finding schema_environment_approver_identity; this delegation supersedes it operationally for this lane while remaining a convention, not a control."
+        },
+        {
+          "date": "2026-08-05",
+          "decision": "Pete's standing order: after the schema apply, keep going through OS-3, OS-4, OS-5, and OS-6 until the entire Opportunity Slate page is live and functional, with Sonnet max implementing, Opus 5 max reviewing, and a Fable extra-high final review immediately before completion."
         }
       ],
       "model_routing": {
@@ -122,7 +133,37 @@
         "note": "Supersedes the package README's 2026-08-02 routing (Fable architect / fresh Fable reviewer / Opus implementation writer) for this lane's remaining work. The schema port already on this branch was written before this decision and is credited as implemented under the prior routing; the outstanding package-required independent review of the candidate schema SHA is executed by the Opus 5 reviewer under this decision.",
         "final_review": "Claude Fable 5 at extra-high effort performs the closing review immediately before the lane is declared complete: after the production apply and post-apply schema-state commit, before the completion record is finalized and the lane closes. A fresh Fable session or delegated Fable agent, not the architect context that produced the work.",
         "sequence": "architect plans -> Sonnet implements -> Opus 5 reviews the candidate SHA -> owner-delegated gates run -> Fable extra-high final review -> lane closes"
-      }
+      },
+      "legs": [
+        {
+          "leg": "1: PS-OPPSLATE-002 schema",
+          "status": "complete",
+          "evidence": "run 528 applied PS-OPPSLATE-002 at digest 2af25b7d, ledger 21->22 rows, zero removed or mutated, 001 applied_at unchanged; Opus 5 independent review APPROVE at 07348e1; regenerated PRODUCTION_SCHEMA_STATE.md committed"
+        },
+        {
+          "leg": "2: OS-3 application release",
+          "status": "active",
+          "branch": "work/2026-08-05-oppslate-os3-app",
+          "source_checkpoint": "work/2026-08-04-opportunity-slate-os3@3ac0e9d5a5fb0a20ce1c9f70b1d73ae1ea2f02a9 (Codex, read-only)",
+          "writer": "Sonnet max implements the port; Opus 5 max reviews; Fable architect orchestrates"
+        },
+        {
+          "leg": "3: OS-4 save lifecycle (schema as additive PS-OPPSLATE-003 + app)",
+          "status": "pending"
+        },
+        {
+          "leg": "4: OS-5 shared dictation",
+          "status": "pending"
+        },
+        {
+          "leg": "5: OS-6 upload/import with SSRF proof",
+          "status": "pending"
+        },
+        {
+          "leg": "6: Fable extra-high final review, then lane closes",
+          "status": "pending"
+        }
+      ]
     }
   ],
   "closing_lanes": [],

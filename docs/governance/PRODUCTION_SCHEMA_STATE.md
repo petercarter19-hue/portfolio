@@ -6,11 +6,11 @@ This file is the repository's record of which schema migrations the named databa
 
 - Database: `peerslate-database`
 - Server: `peerslate`
-- Read at: `2026-08-05T02:22:58Z` UTC
-- Pipeline source version: `d024e7cdb85d72e3c01ecb87739b8a35d3612f4b`
-- Pipeline build: `523`
+- Read at: `2026-08-05T02:47:47Z` UTC
+- Pipeline source version: `879d0d715dc94dbc2adc4b832145264dc510342a`
+- Pipeline build: `528`
 
-## Applied (21)
+## Applied (22)
 
 In registry order.
 
@@ -34,16 +34,16 @@ In registry order.
 | 16 | `PS-HOME-001` | 2026-07-20T11:16:08.0376217 | yes |
 | 17 | `PS-WORKSHOP-001` | 2026-08-02T15:29:49.9868441 | yes |
 | 18 | `PS-OPPSLATE-001` | 2026-08-04T00:39:49.9854805 | yes |
-| 19 | `PS-COMMUNITY-PUBLIC-PILOT-001` | 2026-08-04T12:13:38.9428360 | yes |
-| 20 | `PS-COMMUNITY-RETENTION-001` | 2026-08-04T12:13:39.0945281 | yes |
-| 21 | `PS-COMMUNITY-RESTORE-001` | 2026-08-04T12:13:39.1616332 | yes |
+| 19 | `PS-OPPSLATE-002` | 2026-08-05T02:47:45.8475524 | yes |
+| 20 | `PS-COMMUNITY-PUBLIC-PILOT-001` | 2026-08-04T12:13:38.9428360 | yes |
+| 21 | `PS-COMMUNITY-RETENTION-001` | 2026-08-04T12:13:39.0945281 | yes |
+| 22 | `PS-COMMUNITY-RESTORE-001` | 2026-08-04T12:13:39.1616332 | yes |
 
-## Registered but not applied (3)
+## Registered but not applied (2)
 
 | Migration | Gate proof | Summary |
 | --- | --- | --- |
 | `PS-JOURNAL-001` | **none or stale** | Derived private Journal read, idempotent Save Moment, and deterministic owner-authorized search. |
-| `PS-OPPSLATE-002` | matches file | Opportunity Slate OS-3 grounded alignment analysis and member-response additive delta. |
 | `PS-PLAT-008` | **none or stale** | People and Interests feed domain. Never approved for any database; see the file header. |
 
 ## Machine-readable record
@@ -99,6 +99,11 @@ In registry order.
     {
       "applied_at_utc": "2026-08-04T00:39:49.9854805",
       "id": "PS-OPPSLATE-001",
+      "registered": true
+    },
+    {
+      "applied_at_utc": "2026-08-05T02:47:45.8475524",
+      "id": "PS-OPPSLATE-002",
       "registered": true
     },
     {
@@ -158,14 +163,13 @@ In registry order.
     }
   ],
   "database": "peerslate-database",
-  "generated_at_utc": "2026-08-05T02:22:58Z",
+  "generated_at_utc": "2026-08-05T02:47:47Z",
   "pending": [
     "PS-JOURNAL-001",
-    "PS-OPPSLATE-002",
     "PS-PLAT-008"
   ],
-  "pipeline_build_id": "523",
-  "pipeline_source_version": "d024e7cdb85d72e3c01ecb87739b8a35d3612f4b",
+  "pipeline_build_id": "528",
+  "pipeline_source_version": "879d0d715dc94dbc2adc4b832145264dc510342a",
   "registry_version": 1,
   "server": "peerslate",
   "unregistered_in_ledger": []
