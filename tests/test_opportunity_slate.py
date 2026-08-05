@@ -96,6 +96,9 @@ MEMBER_POSTS = (
     "/opportunity-slate/requirements",
     "/opportunity-slate/requirements/corrections",
     "/opportunity-slate/requirements/confirm",
+    # Slice OS-6.
+    "/opportunity-slate/source/upload",
+    "/opportunity-slate/source/import",
 )
 PUBLIC_POST = "/opportunity-slate/public-session"
 PUBLIC_PROPOSE_POST = "/opportunity-slate/public-session/propose"
@@ -1707,7 +1710,11 @@ class ServiceDisciplineTests(unittest.TestCase):
         self.assertFalse(view.is_confirmed)
 
     def test_save_refuses_a_capture_method_this_slice_cannot_honestly_record(self):
-        for method in ("dictated", "uploaded", "imported", "typed", None):
+        # Slice OS-6 extends the accepted set to "uploaded" and "imported"
+        # (services/opportunity_source_intake_service.py's guarded upload
+        # and public-link import). "dictated" stays refused here: it is
+        # slice OS-5's own branch and this one does not carry its routes.
+        for method in ("dictated", "typed", None):
             with self.subTest(method=method):
                 with self.assertRaises(OpportunitySlateServiceError) as error:
                     self.service.save_source_for_owner(
@@ -1715,6 +1722,29 @@ class ServiceDisciplineTests(unittest.TestCase):
                     )
                 self.assertEqual(error.exception.code, "invalid")
         self.database.first_row.assert_not_called()
+
+    def test_save_accepts_the_slice_os6_capture_methods(self):
+        for method in ("uploaded", "imported"):
+            with self.subTest(method=method):
+                self.database.first_row.reset_mock()
+                self.database.first_row.return_value = {
+                    "outcome": "success",
+                    "working_session_key": SESSION_KEY,
+                    "source_key": SOURCE_KEY,
+                    "version_number": 1,
+                    "workbench_state": "review_source",
+                    "session_row_version": b"\x00" * 8,
+                    "source_row_version": b"\x00" * 8,
+                }
+                result = self.service.save_source_for_owner(
+                    "member-oppslate-1", "key", ROLE_TEXT, capture_method=method
+                )
+                self.assertTrue(result["saved"])
+                self.database.first_row.assert_called_once()
+                self.assertEqual(
+                    dict(self.database.first_row.call_args[0][1])["@CaptureMethod"],
+                    method,
+                )
 
     def test_save_requires_a_bounded_idempotency_key(self):
         for key, code in ((None, "required"), ("  ", "required"), ("k" * 201, "too_long")):

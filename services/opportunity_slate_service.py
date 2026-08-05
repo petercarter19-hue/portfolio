@@ -77,6 +77,14 @@ CAPTURE_METHODS = frozenset({"pasted", "dictated", "uploaded", "imported"})
 # Slice OS-1 only ever writes "pasted": dictation is OS-5, upload and
 # import are OS-6. The full enum is the contract, not the current surface.
 OS1_CAPTURE_METHODS = frozenset({"pasted"})
+# Slice OS-6 adds the two guarded capture paths this build now accepts:
+# "uploaded" (services/opportunity_source_intake_service.py's document
+# extraction) and "imported" (its SSRF-guarded public-link fetch). Both
+# call this same save path with pre-extracted, already-capped plain text —
+# neither capture method changes anything about how a version is stored.
+# "dictated" stays out of this set on purpose: it is slice OS-5's own scope
+# and this branch does not carry that slice's routes.
+OS6_CAPTURE_METHODS = OS1_CAPTURE_METHODS | {"uploaded", "imported"}
 
 WORKBENCH_STATES = frozenset(
     {
@@ -1177,11 +1185,11 @@ class OpportunitySlateService:
             raise OpportunitySlateServiceError(
                 "Idempotency key exceeds its limit.", code="too_long"
             )
-        if capture_method not in OS1_CAPTURE_METHODS:
-            # Slice OS-1 has no dictation, upload, or import path. Refusing
-            # the other enum values here keeps an unbuilt capture method
-            # from ever being recorded as provenance for text that was in
-            # fact pasted.
+        if capture_method not in OS6_CAPTURE_METHODS:
+            # Refusing every value this build does not actually implement
+            # keeps an unbuilt capture method (dictation is OS-5's own
+            # branch) from ever being recorded as provenance for text that
+            # arrived a different way.
             raise OpportunitySlateServiceError(
                 "Capture method is invalid.", code="invalid"
             )

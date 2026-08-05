@@ -1131,6 +1131,45 @@ body.opportunity-slate-page .main-content {
     font-weight: 600;
 }
 
+/* Slice OS-6, remediated after visual-materiality review: a signed-in
+   tile's own small <form> resets the browser's default form box model to
+   nothing, so the tile still reads as the same badge/title/body/state card
+   image 01 locks — no new visual object. The control itself is a native
+   <details>/<summary> using the room's EXISTING disclosure classes
+   verbatim (.os-disclosure / .os-disclosure__summary / .os-disclosure__body
+   / .os-disclosure__actions, the same "Correct the wording" grammar
+   _review.html already uses) — no new disclosure look is introduced here,
+   only reused. The two rules below fit that reused disclosure inside the
+   tile's narrower, centered column; nothing else about its appearance is
+   overridden. */
+.os-tile--action { margin: 0; border: 0; background: none; padding: 0 0.5rem; }
+.os-tile--action .os-disclosure { width: 100%; margin-top: 0.4rem; }
+.os-tile--action .os-disclosure__summary { justify-content: center; width: 100%; }
+.os-tile--action .os-disclosure__body { text-align: left; }
+.os-tile--action input[type="file"] { max-width: 100%; font-size: 0.85rem; }
+/* The one genuinely new visual element this slice adds: a single-line text
+   field for the import URL. No existing single-line input style exists
+   elsewhere in this room to reuse (every other field here is the
+   multi-line os-editor__field), so this borrows the same border/focus
+   language os-editor already uses rather than inventing a new one. */
+.os-tile__link-field {
+    display: block;
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--os-line);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-surface);
+    color: var(--os-ink);
+    font-family: var(--ps-font-ui);
+    font-size: 0.9rem;
+}
+.os-tile__link-field:focus-visible {
+    outline: none;
+    border-color: var(--os-focus);
+    box-shadow: 0 0 0 3px rgb(13 69 195 / 22%);
+}
+
 .os-note {
     display: flex;
     align-items: flex-start;
@@ -3036,6 +3075,16 @@ body.opportunity-slate-page .main-content {
     .os-tile__title { grid-column: 2; grid-row: 1; margin: 0; font-size: 1.05rem; }
     .os-tile__body { grid-column: 2; margin: 0; }
     .os-tile__state { grid-column: 2; margin: 0; justify-self: start; }
+    /* Independent review finding N4: .os-tile--action's <details> disclosure
+       (base rule, line ~1054, width:100% but no grid-column) has no
+       explicit placement of its own at this breakpoint. Grid auto-placement
+       fills row-major "holes" left by the explicitly-placed badge/title/
+       body/state above — the first such hole is column 1, the 32px badge
+       track — so without this rule the disclosure (and, once opened, its
+       file/URL field and submit button) is squeezed into 32px instead of
+       the tile's full width. Spanning both columns explicitly removes the
+       hole the auto-placement algorithm would otherwise fall into. */
+    .os-tile--action .os-disclosure { grid-column: 1 / -1; }
 
     /* The footer's "Correct wording" and "Delete source" are reveal links
        for the two disclosures — which, once the layout is one column,

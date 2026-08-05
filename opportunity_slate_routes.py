@@ -120,6 +120,12 @@ from services.opportunity_slate_service import (
     opportunity_slate_service,
     validate_source_text,
 )
+from services.opportunity_source_intake_service import (
+    MAX_UPLOAD_BYTES,
+    OpportunitySourceIntakeError,
+    extract_imported_link,
+    extract_uploaded_document,
+)
 from services.workshop_demo_library import BASE_ITEMS as WORKSHOP_DEMO_ITEMS
 from services.workshop_demo_library import PERSONA_DISPLAY_NAME as DEMO_PERSONA_NAME
 
@@ -147,6 +153,18 @@ PUBLIC_CONTEXT_VERSION = 3
 # correction; far below MAX_CONTENT_LENGTH.
 MAX_PUBLIC_CONTEXT_TOKEN_LENGTH = 400_000
 _SERIALIZER_EXTENSION_KEY = "peerslate_opportunity_slate_serializer"
+# Slice OS-6, independent review (non-blocking, fixed now): the truncation
+# notice must not be a bare, foreverreplayable query-string value — a
+# bookmarked or history-replayed ``?notice=upload_truncated`` URL would
+# otherwise resurface the banner for an event that may not have just
+# happened, or may never have happened for THIS visit. The notice value is
+# therefore a short-lived SIGNED token (own salt — never replayable against
+# the anonymous-session serializer above) carrying only the notice kind;
+# ``URLSafeTimedSerializer`` embeds and checks a timestamp natively, so
+# ``max_age`` below is the whole one-time-binding mechanism.
+NOTICE_TOKEN_SALT = "peerslate-opportunity-slate-notice-v1"
+NOTICE_TOKEN_MAX_AGE_SECONDS = 60
+_NOTICE_SERIALIZER_EXTENSION_KEY = "peerslate_opportunity_slate_notice_serializer"
 
 # Presentation-only mappings. The service returns validated enum values;
 # member-facing labels are a view concern and live here, not in the
@@ -310,6 +328,46 @@ PUBLIC_OVERSIZE_MESSAGE = (
     "text. Your text is still below, exactly as you pasted it — shorten it, or "
     "bring the full role in with membership."
 )
+# ---------------------------------------------------------------------------
+# Slice OS-6 failure copy — the two fallback contracts image 09-a defines for
+# document upload and public-link import (handoff section 7's failure
+# table). Both are reproduced as the single card that covers every internal
+# reason a member's document or link could not become a source: neither
+# route's error handling ever branches member-facing copy on which guard
+# rejected the input, because a reason-specific message would help calibrate
+# a probe against the SSRF/parsing guard rather than tell the member
+# anything they can act on. "Try again" and "paste the role text instead"
+# both work already: this card renders back on the same intake screen the
+# paste box and the two tiles are already on.
+# ---------------------------------------------------------------------------
+UPLOAD_FAILURE_HEADING = "We couldn't read this document."
+UPLOAD_FAILURE_MESSAGE = (
+    "Nothing was saved or analyzed, and the file you uploaded was not kept. "
+    "Try a different PDF, DOCX, or TXT file, or paste the role text instead."
+)
+IMPORT_FAILURE_HEADING = "We couldn't import that link."
+IMPORT_FAILURE_MESSAGE = (
+    "Nothing was saved or analyzed. Try a different public link, or paste "
+    "the role text instead."
+)
+INTAKE_FAILURE_TRUTH = "Session private • Nothing was saved or analyzed."
+# The one non-fatal notice this slice adds: the extracted text was longer
+# than PeerSlate can review and was cut to fit, truthfully labeled rather
+# than silently shortened. Never rendered for a paste/dictation version —
+# those already refuse an over-limit submission outright (validate_source_
+# text's "too_long" field error) instead of ever truncating the member's own
+# typed wording.
+UPLOAD_TRUNCATED_NOTICE = (
+    f"This document was longer than PeerSlate reviews. The first "
+    f"{MAX_SOURCE_TEXT_UNITS:,} characters of the extracted text were kept "
+    "— nothing else was read or saved."
+)
+IMPORT_TRUNCATED_NOTICE = (
+    f"That page was longer than PeerSlate reviews. The first "
+    f"{MAX_SOURCE_TEXT_UNITS:,} characters of the extracted text were kept "
+    "— nothing else was read or saved."
+)
+
 CLARIFICATION_TOO_LONG_MESSAGE = (
     f"That clarification is longer than {MAX_CLARIFICATION_UNITS:,} characters. "
     "Shorten it and try again — your text is still below."
@@ -458,6 +516,21 @@ def _opportunity_slate_enabled():
     )
 
 
+@opportunity_slate.before_request
+def _allow_bounded_document_upload():
+    """Override the small global form limit for the one route that accepts
+    a file (the ``owner_routes._allow_bounded_voice_upload`` idiom).
+
+    Every other route on this blueprint — including ``source/import``, whose
+    body is a short URL string — stays under the app-wide 2 MB
+    ``MAX_CONTENT_LENGTH``.
+    """
+    if request.endpoint == "opportunity_slate.upload_source":
+        # Multipart framing (boundary markers, per-part headers) adds a
+        # small amount beyond the enforced file cap.
+        request.max_content_length = MAX_UPLOAD_BYTES + (64 * 1024)
+
+
 def _is_same_origin_write():
     """Allow a state-changing Opportunity Slate request only when it proves
     same origin.
@@ -493,6 +566,39 @@ def _context_serializer():
         )
         current_app.extensions[_SERIALIZER_EXTENSION_KEY] = serializer
     return serializer
+
+
+def _notice_serializer():
+    """The short-lived truncation-notice token serializer, built once per
+    app. Same signing key as the anonymous context serializer, its own
+    salt — a token minted for one purpose can never be replayed as the
+    other."""
+    serializer = current_app.extensions.get(_NOTICE_SERIALIZER_EXTENSION_KEY)
+    if serializer is None:
+        serializer = URLSafeTimedSerializer(
+            current_app.config["PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY"],
+            salt=NOTICE_TOKEN_SALT,
+        )
+        current_app.extensions[_NOTICE_SERIALIZER_EXTENSION_KEY] = serializer
+    return serializer
+
+
+def _mint_notice_token(kind):
+    return _notice_serializer().dumps(kind)
+
+
+def _read_notice_token(token):
+    """Return the notice kind, or ``None`` for anything missing, tampered,
+    expired past :data:`NOTICE_TOKEN_MAX_AGE_SECONDS`, or simply not one of
+    the two known kinds — never an error, since a stale or absent notice is
+    an entirely ordinary page load, not a failure."""
+    if not token:
+        return None
+    try:
+        kind = _notice_serializer().loads(token, max_age=NOTICE_TOKEN_MAX_AGE_SECONDS)
+    except BadData:
+        return None
+    return kind if kind in {"upload_truncated", "import_truncated"} else None
 
 
 @opportunity_slate.after_request
@@ -656,6 +762,8 @@ def _base_room(mode, *, step, error=None):
         "back_url": "/",
         "room_url": url_for("opportunity_slate.room"),
         "source_url": url_for("opportunity_slate.set_source"),
+        "upload_url": url_for("opportunity_slate.upload_source"),
+        "import_url": url_for("opportunity_slate.import_source"),
         "correct_url": url_for("opportunity_slate.correct_source"),
         "confirm_url": url_for("opportunity_slate.confirm_source"),
         "delete_url": url_for("opportunity_slate.delete_source"),
@@ -696,6 +804,16 @@ def _intake_room(mode, *, text="", replace=False, error=None, has_source=False):
             "is_replace": replace,
             "has_source": has_source,
             "idempotency_key": str(uuid4()),
+            # Independent review (non-blocking, fixed now): the paste,
+            # upload, and import forms are three separate submissions of
+            # three separate intents, not three ways to re-send the same
+            # one. A single shared key meant a failed-then-retried paste
+            # and a subsequent upload on the same page load shared the
+            # same idempotency ledger row — the ledger's unique key is
+            # (owner_profile_id, idempotency_key) — so each form now gets
+            # its own, freshly minted every time this room is rendered.
+            "upload_idempotency_key": str(uuid4()),
+            "import_idempotency_key": str(uuid4()),
             "source": None,
         }
     )
@@ -733,6 +851,7 @@ def _review_room(
     error=None,
     review=None,
     concerns=(),
+    notice=None,
 ):
     display_text = corrected_text or original_text
     concerns = list(concerns)
@@ -743,6 +862,12 @@ def _review_room(
             "state_title_lead": "Review",
             "state_title_rest": "Source",
             "checkpoint_label": "Checkpoint 1 of 2",
+            # Slice OS-6. Set only by the room() GET handler immediately
+            # after a successful upload/import redirect whose extraction was
+            # truncated (a one-time, ephemeral, query-string-driven notice —
+            # nothing about the truncation fact is stored, exactly like the
+            # ``step`` query hint already is).
+            "notice": notice,
             "source_text": display_text,
             "is_replace": False,
             "has_source": True,
@@ -2291,7 +2416,15 @@ def room():
         )
     except (DatabaseServiceError, OpportunitySlateServiceError):
         return _render_unavailable()
-    return _render_room(_review_room_from_view(working, review=review))
+    notice_kind = _read_notice_token(request.args.get("notice"))
+    notice = (
+        UPLOAD_TRUNCATED_NOTICE
+        if notice_kind == "upload_truncated"
+        else IMPORT_TRUNCATED_NOTICE if notice_kind == "import_truncated" else None
+    )
+    return _render_room(
+        _review_room_from_view(working, review=review, notice=notice)
+    )
 
 
 @opportunity_slate.post(f"{ROOM_PATH}/source")
@@ -2354,6 +2487,174 @@ def set_source():
         )
 
     return redirect(url_for("opportunity_slate.room"))
+
+
+# ---------------------------------------------------------------------------
+# Slice OS-6 — document upload and public-link import
+#
+# Signed-in-only surfaces (handoff section 18 safeguard 1): the anonymous
+# public session's intake tiles stay in their existing honest "available
+# with membership" state and never reach either route below — there is no
+# anonymous branch to build here, unlike every other route in this module.
+# Both routes follow set_source's exact shape (flag check, same-origin
+# check, owner-only identity check, then the actual work) and land on the
+# same two outcomes: redirect to Review Source on success, or re-render
+# intake with the one truthful failure card for that route on any failure —
+# never a partial source, on any failure path, because the save only ever
+# happens after extraction has already fully succeeded.
+# ---------------------------------------------------------------------------
+
+
+@opportunity_slate.post(f"{ROOM_PATH}/source/upload")
+def upload_source():
+    """Upload a PDF, DOCX, or TXT document as the employer source.
+
+    Every failure reason — wrong declared type, spoofed magic bytes,
+    oversize body, corrupt or unreadable file — renders the same "We
+    couldn't read this document." card (handoff section 7 / 14-M13-f); the
+    uploaded bytes are never retried, never partially saved, and are
+    discarded the moment this request ends.
+    """
+    if not _opportunity_slate_enabled():
+        abort(404)
+    if not _is_same_origin_write():
+        abort(403)
+    identity, failure = _resolve_identity_or_unavailable()
+    if failure is not None:
+        return failure
+    if identity is None:
+        abort(404)
+
+    idempotency_key = request.form.get("idempotency_key") or str(uuid4())
+    replace = request.form.get("replace") == "1"
+
+    try:
+        extracted_text, truncated = extract_uploaded_document(
+            request.files.get("document")
+        )
+        clean_text = validate_source_text(extracted_text)
+    except (OpportunitySourceIntakeError, OpportunitySlateServiceError):
+        return _render_room(
+            _intake_room(
+                "member",
+                replace=replace,
+                error={
+                    "kind": "unavailable",
+                    "heading": UPLOAD_FAILURE_HEADING,
+                    "message": UPLOAD_FAILURE_MESSAGE,
+                    "truth": INTAKE_FAILURE_TRUTH,
+                },
+            ),
+            status=400,
+        )
+
+    try:
+        opportunity_slate_service.save_source_for_owner(
+            identity.user_key,
+            idempotency_key,
+            clean_text,
+            capture_method="uploaded",
+        )
+    except DatabaseServiceError:
+        return _render_unavailable()
+    except OpportunitySlateServiceError:
+        return _render_room(
+            _intake_room(
+                "member",
+                replace=replace,
+                error={
+                    "kind": "unavailable",
+                    "heading": UPLOAD_FAILURE_HEADING,
+                    "message": UPLOAD_FAILURE_MESSAGE,
+                    "truth": INTAKE_FAILURE_TRUTH,
+                },
+            ),
+            status=400,
+        )
+
+    return redirect(
+        url_for(
+            "opportunity_slate.room",
+            notice=_mint_notice_token("upload_truncated") if truncated else None,
+        )
+    )
+
+
+@opportunity_slate.post(f"{ROOM_PATH}/source/import")
+def import_source():
+    """Import a public employer or ATS page as the employer source.
+
+    The fetch itself runs entirely inside the SSRF-guarded
+    ``services/opportunity_source_intake_service.guarded_fetch_html`` — this
+    route never opens a socket. Every failure reason — non-https URL, a
+    private/loopback/link-local/metadata address, a redirect off the
+    validated boundary, an oversize or slow response, unreadable markup —
+    renders the same "Nothing was saved or analyzed." card (handoff section
+    7), so no response here can be used to distinguish one internal guard
+    reason from another.
+    """
+    if not _opportunity_slate_enabled():
+        abort(404)
+    if not _is_same_origin_write():
+        abort(403)
+    identity, failure = _resolve_identity_or_unavailable()
+    if failure is not None:
+        return failure
+    if identity is None:
+        abort(404)
+
+    idempotency_key = request.form.get("idempotency_key") or str(uuid4())
+    replace = request.form.get("replace") == "1"
+    source_url = request.form.get("source_url", "")
+
+    try:
+        extracted_text, truncated, _final_url = extract_imported_link(source_url)
+        clean_text = validate_source_text(extracted_text)
+    except (OpportunitySourceIntakeError, OpportunitySlateServiceError):
+        return _render_room(
+            _intake_room(
+                "member",
+                replace=replace,
+                error={
+                    "kind": "unavailable",
+                    "heading": IMPORT_FAILURE_HEADING,
+                    "message": IMPORT_FAILURE_MESSAGE,
+                    "truth": INTAKE_FAILURE_TRUTH,
+                },
+            ),
+            status=400,
+        )
+
+    try:
+        opportunity_slate_service.save_source_for_owner(
+            identity.user_key,
+            idempotency_key,
+            clean_text,
+            capture_method="imported",
+        )
+    except DatabaseServiceError:
+        return _render_unavailable()
+    except OpportunitySlateServiceError:
+        return _render_room(
+            _intake_room(
+                "member",
+                replace=replace,
+                error={
+                    "kind": "unavailable",
+                    "heading": IMPORT_FAILURE_HEADING,
+                    "message": IMPORT_FAILURE_MESSAGE,
+                    "truth": INTAKE_FAILURE_TRUTH,
+                },
+            ),
+            status=400,
+        )
+
+    return redirect(
+        url_for(
+            "opportunity_slate.room",
+            notice=_mint_notice_token("import_truncated") if truncated else None,
+        )
+    )
 
 
 def _reload_review_for_error(

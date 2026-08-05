@@ -67,6 +67,21 @@
   </span>
 </div>
 
+{% if room.notice %}
+{#
+  Slice OS-6. The one-time, ephemeral truncation notice: set only by
+  room() immediately after a redirect from a successful upload/import whose
+  extracted text was longer than PeerSlate reviews (handoff section 11's
+  extraction cap, truthfully labeled rather than silently shortened). It is
+  not stored anywhere and will not reappear on a later visit to this same
+  screen — matching how the ?step= navigation hint already behaves.
+#}
+<p class="os-note" data-os-notice>
+  {{ os_icon('info') }}
+  <span>{{ room.notice }}</span>
+</p>
+{% endif %}
+
 <h2 class="os-workbench__title os-workbench__title--doc" data-os-focus tabindex="-1">Reviewed source</h2>
 <p class="os-workbench__lead os-workbench__lead--ruled">
   Review the captured employer source. This is your text, laid out for

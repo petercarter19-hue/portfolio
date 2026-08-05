@@ -10,12 +10,27 @@
       touches the paste-only server boundary section 18 describes; a
       browser with no SpeechRecognition still gets a real, labelled inert
       button rather than one that looks live and does nothing;
-    * the Upload document and Import public link tiles render per image 01
-      but as honest unavailable states, never dead buttons; both are slice
-      OS-6, and section 18 safeguard 1 keeps them off the anonymous route
-      entirely even after they exist;
+    * the Upload document and Import public link tiles render per image 01.
+      For a signed-in member (slice OS-6) each tile's state pill is now a
+      real, keyboard-operable disclosure trigger — the room's EXISTING
+      <details>/<summary> "Correct the wording" grammar (_review.html),
+      reused verbatim, never a new interaction language — that reveals the
+      actual control (a file picker, or a URL field) plus an explicit
+      submit button; nothing submits itself, the member always presses a
+      named button. Anonymous mode keeps the exact original unavailable
+      tile — same markup, same DOM position — untouched (handoff section 18
+      safeguard 1: uploads and imports never reach the public route);
     * there is no processing stage rail, because this transition runs no
       AI and displaying invented stages would be theatre (handoff section 7).
+
+  Visual-materiality review (2026-08-05) found the first cut of this screen
+  moved the tiles below the footer/primary action, put a bare URL field
+  directly in the tile grammar, and auto-submitted on file choice. All
+  three are corrected here: the tiles stay in their original DOM position
+  (between the field-error message and the info note, exactly where the
+  locked set has them — see the CSS authority comment above .os-tiles
+  below), every control lives inside a reused disclosure rather than the
+  tile body itself, and every submission is an explicit member action.
 #}
 <h1 class="os-workbench__title" data-os-focus tabindex="-1">
   <span class="os-workbench__title-lead">Role</span>
@@ -36,6 +51,7 @@
 </p>
 
 <form class="os-form"
+      id="os-paste-form"
       method="post"
       action="{{ room.source_url }}"
       data-os-form="source"
@@ -115,69 +131,150 @@
   {% if room.error and room.error.kind == 'field' %}
   <p class="os-field-error" id="os-source-error">{{ room.error.field_hint or room.error.message }}</p>
   {% endif %}
+</form>
 
-  {# Owner visual review 2026-08-03, V6: the authority pairs a large cobalt
-     icon with a display-serif title above each option, rules the region
-     off above and below, and splits the two options with a vertical
-     hairline that breaks around the word "or". The divider is a single
-     aria-hidden decoration; the honest availability chips are unchanged. #}
-  <div class="os-tiles">
-    <div class="os-tile os-tile--unavailable">
-      <span class="os-tile__badge">{{ os_icon('upload') }}</span>
-      <p class="os-tile__title">Upload document</p>
-      <p class="os-tile__body">PDF, DOCX, and TXT.</p>
-      <p class="os-tile__state">
-        {% if room.is_public %}Available with membership{% else %}Arrives in a later update{% endif %}
-      </p>
-    </div>
-    <span class="os-tiles__divider" aria-hidden="true">
-      <span class="os-tiles__divider-line"></span>
-      <span class="os-tiles__divider-word">or</span>
-      <span class="os-tiles__divider-line"></span>
-    </span>
-    <div class="os-tile os-tile--unavailable">
-      <span class="os-tile__badge">{{ os_icon('link') }}</span>
-      <p class="os-tile__title">Import public link</p>
-      <p class="os-tile__body">A public employer or ATS page.</p>
-      <p class="os-tile__state">
-        {% if room.is_public %}Available with membership{% else %}Arrives in a later update{% endif %}
-      </p>
-    </div>
+{# Visual-materiality remediation, 2026-08-05: restored to the ORIGINAL DOM
+   position — between the field-error message above and the info note
+   below, exactly where the locked set and the V6 owner visual review put
+   it ("the authority pairs a large cobalt icon with a display-serif title
+   above each option, rules the region off above and below, and splits the
+   two options with a vertical hairline that breaks around the word 'or'").
+   A <form> cannot legally nest inside another <form>, so the paste form
+   above closes here rather than after the footer — its primary submit
+   button, in the footer below, is associated back to it by id (the
+   standard HTML `form="..."` attribute), so this is a DOM-order change
+   only, not a functional or visual one: the button still submits the
+   paste form, from the same visual position it always has.
+
+   The divider is a single aria-hidden decoration. Anonymous mode renders
+   the exact original unavailable tile markup, unchanged. #}
+<div class="os-tiles">
+  {% if room.is_public %}
+  <div class="os-tile os-tile--unavailable">
+    <span class="os-tile__badge">{{ os_icon('upload') }}</span>
+    <p class="os-tile__title">Upload document</p>
+    <p class="os-tile__body">PDF, DOCX, and TXT.</p>
+    <p class="os-tile__state">Available with membership</p>
   </div>
+  {% else %}
+  <form class="os-tile os-tile--action"
+        method="post"
+        action="{{ room.upload_url }}"
+        enctype="multipart/form-data"
+        data-os-form="upload"
+        novalidate>
+    <input type="hidden" name="idempotency_key" value="{{ room.upload_idempotency_key }}">
+    <input type="hidden" name="replace" value="{{ '1' if room.is_replace else '0' }}">
+    <span class="os-tile__badge">{{ os_icon('upload') }}</span>
+    <p class="os-tile__title">Upload document</p>
+    <p class="os-tile__body">PDF, DOCX, and TXT. Up to 15 MB.</p>
+    {# The room's existing <details>/<summary> disclosure grammar
+       (_review.html's "Correct the wording"), reused verbatim: the summary
+       is the tile's visible affordance in place of the old static state
+       pill; the file control and its own explicit submit button live in
+       the body, revealed only once opened. Nothing auto-submits — the
+       member chooses a file, then presses "Upload document" themselves. #}
+    <details class="os-disclosure" id="os-upload-disclosure">
+      <summary class="os-disclosure__summary">
+        {{ os_icon('upload', 'os-icon os-icon--sm') }}Choose a file
+      </summary>
+      <div class="os-disclosure__body">
+        <label class="os-visually-hidden" for="os-upload-file">Document to upload</label>
+        <input type="file"
+               id="os-upload-file"
+               name="document"
+               required
+               accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain">
+        <div class="os-disclosure__actions">
+          <button type="submit" class="os-btn os-btn--primary os-btn--sm">Upload document</button>
+        </div>
+      </div>
+    </details>
+  </form>
+  {% endif %}
+  <span class="os-tiles__divider" aria-hidden="true">
+    <span class="os-tiles__divider-line"></span>
+    <span class="os-tiles__divider-word">or</span>
+    <span class="os-tiles__divider-line"></span>
+  </span>
+  {% if room.is_public %}
+  <div class="os-tile os-tile--unavailable">
+    <span class="os-tile__badge">{{ os_icon('link') }}</span>
+    <p class="os-tile__title">Import public link</p>
+    <p class="os-tile__body">A public employer or ATS page.</p>
+    <p class="os-tile__state">Available with membership</p>
+  </div>
+  {% else %}
+  <form class="os-tile os-tile--action"
+        method="post"
+        action="{{ room.import_url }}"
+        data-os-form="import"
+        novalidate>
+    <input type="hidden" name="idempotency_key" value="{{ room.import_idempotency_key }}">
+    <input type="hidden" name="replace" value="{{ '1' if room.is_replace else '0' }}">
+    <span class="os-tile__badge">{{ os_icon('link') }}</span>
+    <p class="os-tile__title">Import public link</p>
+    <p class="os-tile__body">A public employer or ATS page.</p>
+    <details class="os-disclosure" id="os-import-disclosure">
+      <summary class="os-disclosure__summary">
+        {{ os_icon('link', 'os-icon os-icon--sm') }}Add a link
+      </summary>
+      <div class="os-disclosure__body">
+        <label class="os-visually-hidden" for="os-import-url">Public role link</label>
+        <input type="url"
+               id="os-import-url"
+               name="source_url"
+               class="os-tile__link-field"
+               placeholder="https://…"
+               required>
+        <div class="os-disclosure__actions">
+          <button type="submit" class="os-btn os-btn--primary os-btn--sm">Import link</button>
+        </div>
+      </div>
+    </details>
+  </form>
+  {% endif %}
+</div>
 
-  <p class="os-note">
-    {{ os_icon('info') }}
+<p class="os-note">
+  {{ os_icon('info') }}
+  <span>
+    Pasting or typing the role text is the way to bring in a role today.
+    {# The same transit-versus-storage correction as the truth card in
+       _room.html: the pasted text IS sent to PeerSlate to render the
+       screen, so this sentence may not imply it stays in the tab. What
+       is true is that no document or fetched page is handled here. #}
+    {% if room.is_public %}Uploads and link imports stay off this public
+    preview, so no file or fetched page is ever handled here.{% endif %}
+  </span>
+</p>
+
+<div class="os-footer-strip">
+  <p class="os-footer-strip__truth">
+    {{ os_icon('lock') }}
     <span>
-      Pasting or typing the role text is the way to bring in a role today.
-      {# The same transit-versus-storage correction as the truth card in
-         _room.html: the pasted text IS sent to PeerSlate to render the
-         screen, so this sentence may not imply it stays in the tab. What
-         is true is that no document or fetched page is handled here. #}
-      {% if room.is_public %}Uploads and link imports stay off this public
-      preview, so no file or fetched page is ever handled here.{% endif %}
+      <strong>{% if room.is_public %}Public session · Nothing analyzed yet{% else %}Nothing analyzed yet{% endif %}</strong>
+      Review the source before we analyze anything.
     </span>
   </p>
-
-  <div class="os-footer-strip">
-    <p class="os-footer-strip__truth">
-      {{ os_icon('lock') }}
-      <span>
-        <strong>{% if room.is_public %}Public session · Nothing analyzed yet{% else %}Nothing analyzed yet{% endif %}</strong>
-        Review the source before we analyze anything.
-      </span>
-    </p>
-    <div class="os-footer-strip__actions">
-      {% if room.has_source %}
-      <span class="os-footer-links">
-        <a class="os-link" href="{{ room.review_step_url }}" data-os-step="review">Back to the source</a>
-      </span>
-      {% endif %}
-      <button type="submit"
-              class="os-btn os-btn--primary"
-              data-os-primary
-              {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>
-        <span>Review source</span>{{ os_icon('arrow-right') }}
-      </button>
-    </div>
+  <div class="os-footer-strip__actions">
+    {% if room.has_source %}
+    <span class="os-footer-links">
+      <a class="os-link" href="{{ room.review_step_url }}" data-os-step="review">Back to the source</a>
+    </span>
+    {% endif %}
+    {# form="os-paste-form": this button is no longer a descendant of the
+       paste form (it closed above, before the tiles, to restore their
+       original DOM position — see the comment there) — the standard HTML
+       attribute re-associates a submit button with a form anywhere else
+       in the document by id, so it still submits exactly the same form
+       it always has. #}
+    <button type="submit"
+            form="os-paste-form"
+            class="os-btn os-btn--primary"
+            data-os-primary
+            {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>
+      <span>Review source</span>{{ os_icon('arrow-right') }}
+    </button>
   </div>
-</form>
+</div>

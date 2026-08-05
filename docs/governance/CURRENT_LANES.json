@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-05T17:00:00Z",
+  "updated_at": "2026-08-05T19:00:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -122,6 +122,10 @@
         {
           "date": "2026-08-05",
           "decision": "Pete's standing order: after the schema apply, keep going through OS-3, OS-4, OS-5, and OS-6 until the entire Opportunity Slate page is live and functional, with Sonnet max implementing, Opus 5 max reviewing, and a Fable extra-high final review immediately before completion."
+        },
+        {
+          "date": "2026-08-05",
+          "decision": "Pete granted blanket final authorization: 'i approve it all you have full permissions to finish everything.' Recorded as covering the OS-6 intake disclosure visual acceptance (reviewer-judged non-material), the OS-6 release, the OS-4 release steps once the owner's disposable-database gate proof lands, the final review, and the cleanup sweep (archive-tag then delete this effort's merged and superseded branches; sync the GitHub mirror). The PS-OPPSLATE-003 gate run itself still requires the owner's machine: credentials, not permission, are the constraint."
         }
       ],
       "model_routing": {
@@ -157,8 +161,8 @@
         },
         {
           "leg": "5: OS-6 upload/import",
-          "status": "active",
-          "evidence": "two security review rounds complete (four blockers fixed and verified, two residuals in the third pass now underway); intake visual remediated to non-material per the reviewer; release follows the third verdict"
+          "status": "released_pending_deploy",
+          "evidence": "three security-review rounds complete, final APPROVE at a361510; deflake and integration with live OS-5 at 71f7393; releasing via PR"
         },
         {
           "leg": "6: Fable extra-high final review, then lane closes",

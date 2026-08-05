@@ -821,6 +821,14 @@ for _oppslate_rate_limited_endpoint, _oppslate_rate_limit in (
     # budget rather than the ordinary write budget. save_response calls no model.
     ('opportunity_slate.run_analysis', '6 per minute'),
     ('opportunity_slate.save_response', '30 per minute'),
+    # PS-OPPSLATE-001 slice OS-6. Both routes do real, costly work per
+    # request — bounded document parsing (upload) or a guarded outbound
+    # fetch plus HTML parsing (import) — so they carry the AI budget rather
+    # than the ordinary 30/minute write floor, the same reasoning that
+    # already puts the photo/voice capture routes and the three AI-step
+    # routes above on the tighter tier.
+    ('opportunity_slate.upload_source', '6 per minute'),
+    ('opportunity_slate.import_source', '6 per minute'),
 ):
     app.view_functions[_oppslate_rate_limited_endpoint] = limiter.limit(
         _oppslate_rate_limit
