@@ -23,7 +23,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Controlled idle: no implementation, merge, cleanup, release, schema, or production lane is active. Pete must select one exact outcome and merge the bounded CURRENT_LANES activation record before implementation starts."
+  current_assignments: "Active delivery, one lane. Pete selected the Opportunity Slate OS-3 schema correction as the next exact outcome on 2026-08-04. PS-OPPORTUNITY-SLATE-001 is the single production-capable lane on branch work/2026-08-04-oppslate-os3-additive, scoped to releasing the additive PS-OPPSLATE-002 migration only; its OS-3/OS-4 application branches stay paused. Every other lane remains paused_read_only. See docs/governance/CURRENT_LANES.json."
 
 governing_documents:
   bible:
@@ -65,7 +65,7 @@ scoped_findings:
   - id: interview_followup_mode_provenance
     blocks: "Only release or expansion of the affected Interview follow-up path until signed mode binding and generic-context isolation pass."
   - id: opportunity_slate_schema_revision
-    blocks: "All Opportunity Slate OS-3 schema apply activity until a new additive migration ID, immutable digest, hosted read-only report, and exact production-baseline gate pass."
+    blocks: "Opportunity Slate OS-3 schema apply until the hosted read-only report and the exact production-baseline gate pass in the pipeline. The additive migration ID and immutable digest conditions are now met in source: PS-OPPSLATE-001 is restored byte-for-byte to its applied 2406ff6eedd44939ee5148982462a66935f13dfea45fe46076cf5895883c7273 identity that PR 274 mutated, and OS-3 moves to the new additive ID PS-OPPSLATE-002 at 2af25b7d4f04984d88a30b7d65bc1948bc4bba810ab048963b4cd85a8d471dd0. Applying any migration ID other than PS-OPPSLATE-002 remains blocked."
   - id: community_reenablement
     blocks: "Community public-pilot re-enablement until ownership is singular, maintenance leaves the request path, dependency waits are bounded, and release evidence passes."
 
@@ -125,7 +125,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Pete selects one exact post-reset outcome. Create and merge only the bounded activation record from current Azure main; it names the package, future implementation branch, writer, surfaces, exclusions, delivery path, and evidence. No implementation worktree, product write, release, schema action, or production mutation is authorized before that record is on main."
+next_gate: "Data/schema gate for PS-OPPSLATE-002. The activation record is merged and PS-OPPORTUNITY-SLATE-001 is the single production-capable lane. Next: merge the additive schema PR from work/2026-08-04-oppslate-os3-additive after current-target validation, then queue pipeline 1 on that exact main SHA with schemaAction=apply and schemaMigrationId=PS-OPPSLATE-002, and approve the peerslate-database-schema environment only when the plan shows migration 002 at digest 2af25b7d4f04984d88a30b7d65bc1948bc4bba810ab048963b4cd85a8d471dd0 and leaves the applied PS-OPPSLATE-001 ledger row untouched. No OS-3, OS-4, OS-5, or OS-6 application behaviour, and no Community re-enablement, is authorized by this lane. Applying PS-OPPSLATE-002 is a schema operation only; it does not make OS-3 live."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
