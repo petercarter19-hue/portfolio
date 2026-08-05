@@ -63,12 +63,17 @@ Authority hierarchy (from the set's
 | Image | Authority |
 |---|---|
 | 01–03 | Primary flow truth: Role intake, Review Source, Review Requirements |
-| 04 | **Exact Alignment authority** for geometry, separate cards, shadows, depth, and the uniform 12px card spacing |
+| 04 | **Exact Alignment authority** for geometry, separate cards, shadows, depth, and the owner-clarified uniform 24px card spacing |
 | 05 | Saved-state **content and actions only**; its flatter geometry, compressed spacing, and blue-heavy palette must **not** be implemented |
 | 06–09 | Supporting behavior and state truth (voice active, source processing, analysis processing, fallback/lifecycle sheet) |
 | 10 | Typography and palette **reference only**; does not place Opportunity Slate inside Workshop and does not authorize Workshop navigation |
 
 ## Locked product rules (binding)
+
+- Pete's 2026-08-04 visual clarification resolves the generated set's internal
+  spacing conflict in favor of image 04's measured geometry: the shared
+  Opportunity Slate card gap is **24px**. This supersedes references in the
+  original generated prose to a 12px gap; the image remains the authority.
 
 - Opportunity Slate is separate from Workshop. ~~Ask Slate AI remains in the
   Opportunity Slate subheader.~~ *Superseded by Pete's 2026-08-02 decision

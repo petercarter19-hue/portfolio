@@ -255,8 +255,10 @@ reference. Per the established room convention (`--wk-*`, `--jbook-*`,
   (`--os-surface`), muted panel tint for secondary cards. `color-scheme:
   light` for v1, matching Workshop's locked light room (§14-M8).
 - **Card system.** Separate elevated cards for the workbench panel and each
-  rail card. **Uniform 12px vertical card spacing** inside the Alignment
-  workbench (image 04's locked rule): `--os-card-gap: 12px`, applied as a
+  rail card. **Uniform 24px vertical card spacing** inside the Alignment
+  workbench (Pete's 2026-08-04 clarification of image 04's measured geometry,
+  superseding the generated prose's contradictory 12px rule):
+  `--os-card-gap: 24px`, applied as a
   single `gap` on card stacks — no ad-hoc margins. Card radius large-soft
   (~14–16px, matched visually to image 04 at implementation). Required
   qualifications, Preferred qualifications, Responsibilities, and
@@ -681,7 +683,7 @@ architecture's documented non-material adaptation (flagged in §14-M9 for
 Pete's acceptance at visual review):
 
 - **Desktop (≥1200px).** Three-zone grid per image 04: left rail ~260px,
-  workbench fluid center, right rail ~300px; 12px card gap throughout.
+  workbench fluid center, right rail ~300px; 24px card gap throughout.
   **Superseded per screen by the owner parity rounds, 2026-08-03.** The
   locked primaries do not share one proportion, and the difference is the
   design rather than drift: measured off the PNGs, image 01's workbench holds
@@ -797,7 +799,7 @@ drift before review, Pete's final acceptance on the corrected real build.
 - [ ] **08 Analysis processing:** three named stages incl. "Nothing is being
   saved, published, shared, or sent to an employer."; correction controls
   read-only; `Cancel analysis` restores editing.
-- [ ] **04 Alignment unsaved (exact geometry authority):** 12px uniform card
+- [ ] **04 Alignment unsaved (exact geometry authority):** 24px uniform card
   gap; separate Required/Preferred/Responsibilities/Informational cards;
   count summaries without any aggregate; amber `Results not saved` truth
   card; response rail with all five actions incl. `Review my response` as

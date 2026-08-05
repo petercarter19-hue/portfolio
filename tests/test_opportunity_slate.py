@@ -973,9 +973,13 @@ class MemberFlowTests(OpportunitySlateTestCase):
         self.assertNotIn("We design and sustain complex systems.", replacing)
 
     def test_an_unrecognized_step_falls_back_neutrally(self):
+        """Slice OS-1 used ?step=alignment as its example of a step that does
+        not exist. Slice OS-3 built it, so the example moves; the rule does
+        not, and an unknown step still lands on the member's real state rather
+        than on an error."""
         with self.signed_in(), self.service() as service:
             service.get_working_session_for_owner.return_value = working_view()
-            body = self.client.get(f"{ROOM_GET}?step=alignment").data.decode("utf-8")
+            body = self.client.get(f"{ROOM_GET}?step=not-a-step").data.decode("utf-8")
         self.assertIn("Reviewed source", body)
 
 

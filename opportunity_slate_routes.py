@@ -97,20 +97,31 @@ from itsdangerous import BadData, URLSafeTimedSerializer
 from identity import get_optional_identity
 from services.database_service import DatabaseServiceError
 from services.opportunity_analysis_service import (
+    ANALYSED_CLASSES,
+    locate_spans,
     MAX_PUBLIC_AI_SOURCE_UNITS,
+    MAX_PUBLIC_ANALYSED_STATEMENTS,
+    MAX_PUBLIC_CITATIONS_TOTAL,
+    MAX_PUBLIC_EVIDENCE_ITEMS,
     MAX_PUBLIC_STATEMENTS,
     OpportunityAnalysisError,
+    build_clause_vocabulary,
+    derive_alignment,
     opportunity_analysis_service,
 )
 from services.opportunity_slate_service import (
     MAX_CLARIFICATION_UNITS,
+    MAX_RESPONSE_TEXT_UNITS,
     MAX_SOURCE_TEXT_UNITS,
+    RESPONSE_KINDS,
     STATEMENT_CLASSES,
     OpportunitySlateServiceError,
     apply_concern_correction,
     opportunity_slate_service,
     validate_source_text,
 )
+from services.workshop_demo_library import BASE_ITEMS as WORKSHOP_DEMO_ITEMS
+from services.workshop_demo_library import PERSONA_DISPLAY_NAME as DEMO_PERSONA_NAME
 
 
 opportunity_slate = Blueprint("opportunity_slate", __name__)
@@ -127,7 +138,10 @@ PUBLIC_CONTEXT_SALT = "peerslate-opportunity-slate-working-v1"
 # proposals and the visitor's decisions on them. A slice OS-1 token no longer
 # validates, so an in-flight visitor is reset honestly to intake rather than
 # rehydrated into a half-shaped screen.
-PUBLIC_CONTEXT_VERSION = 2
+#
+# Bumped again by slice OS-3, which adds the alignment result and the
+# visitor's own responses. Same rule, same reason.
+PUBLIC_CONTEXT_VERSION = 3
 # Defensive bound on the inbound token string itself, before any signature
 # work. Comfortably above a signed, compressed 20,000-unit source plus its
 # correction; far below MAX_CONTENT_LENGTH.
@@ -147,11 +161,12 @@ CAPTURE_METHOD_LABELS = {
 STEP_ROLE = "role"
 STEP_REVIEW = "review"
 STEP_REQUIREMENTS = "requirements"
+STEP_ALIGNMENT = "alignment"
 # ``replace`` is a role-intake variant, not a third screen: it opens the
 # intake editor empty so the member can bring in a different role.
 STEP_REPLACE = "replace"
 _ALLOWED_STEPS = frozenset(
-    {STEP_ROLE, STEP_REVIEW, STEP_REPLACE, STEP_REQUIREMENTS}
+    {STEP_ROLE, STEP_REVIEW, STEP_REPLACE, STEP_REQUIREMENTS, STEP_ALIGNMENT}
 )
 
 # The anonymous session's actions, split across two endpoints for one
@@ -173,9 +188,13 @@ _PUBLIC_SESSION_ACTIONS = frozenset(
         "resolve",
         "statement",
         "confirm_requirements",
+        # Slice OS-3, and likewise no model: the visitor's own response to one
+        # qualification, and selecting which qualification the rails describe.
+        "respond",
+        "select",
     }
 )
-_PUBLIC_PROPOSE_ACTIONS = frozenset({"review", "interpret"})
+_PUBLIC_PROPOSE_ACTIONS = frozenset({"review", "interpret", "analyze"})
 _PUBLIC_ACTIONS = _PUBLIC_SESSION_ACTIONS | _PUBLIC_PROPOSE_ACTIONS
 
 # Presentation-only. The service returns validated enum values; the member
@@ -294,6 +313,132 @@ PUBLIC_OVERSIZE_MESSAGE = (
 CLARIFICATION_TOO_LONG_MESSAGE = (
     f"That clarification is longer than {MAX_CLARIFICATION_UNITS:,} characters. "
     "Shorten it and try again — your text is still below."
+)
+RESPONSE_TOO_LONG_MESSAGE = (
+    f"That response is longer than {MAX_RESPONSE_TEXT_UNITS:,} characters. "
+    "Shorten it and try again — your text is still below."
+)
+
+# ---------------------------------------------------------------------------
+# Slice OS-3 — image 09-b's analysis-failure card, word for word this time.
+#
+# Slice OS-2 reproduced image 09-b's GRAMMAR for two steps that were not the
+# evidence analysis, because naming a step that never ran would have been a
+# lie. This slice runs the step the card was drawn for, so the card is now
+# quoted exactly as the locked authority draws it (handoff section 14-M11:
+# trust-critical sentences are reproduced, never paraphrased).
+# ---------------------------------------------------------------------------
+ANALYSIS_FAILURE_HEADING = "We couldn't complete the evidence analysis."
+ANALYSIS_FAILURE_MESSAGE = "Your confirmed source and requirements are unchanged."
+ANALYSIS_FAILURE_TRUTH = "Results not generated • Nothing was saved."
+
+# ---------------------------------------------------------------------------
+# THE COMPOSITION TEMPLATES.
+#
+# These are the third and last author on the Alignment screen. The other two
+# are the employer (their own confirmed wording) and the member (their own
+# evidence and their own responses). The MODEL IS NOT AN AUTHOR HERE: it
+# returns citations, and the sentences below are what turn those citations
+# into English. See the composition-boundary block in
+# services/opportunity_analysis_service.py for why the room is built this way
+# rather than filtering a verdict out of model prose.
+#
+# Every string below is therefore reviewed copy, and
+# tests/test_opportunity_slate_ai.py asserts statically that not one of them
+# carries a score, a percentage, a ranking, a recommendation, or a judgement
+# about a person — including through OS-2's own prose scan, which has no
+# false-positive risk when it is pointed at a fixed set of constants instead
+# of at an input.
+#
+# The employer's and the member's own words are interpolated into them. Those
+# are deliberately NOT scanned: censoring an employer's requirement or a
+# member's evidence would be the wrong failure, which is the same reasoning
+# finding F3 used to keep `quote` and `text` out of the OS-2 scan.
+# ---------------------------------------------------------------------------
+ALIGNMENT_STATUS_LABELS = {
+    "supported": "Supported",
+    "partially_supported": "Partially supported",
+    "not_enough_information": "Not enough information",
+}
+# Three named states, in the order image 04 prints them in its count
+# summaries. An order of PRESENTATION, never a ranking: nothing in this module
+# sums, averages, weights, or compares them.
+ALIGNMENT_STATUS_ORDER = (
+    "supported",
+    "partially_supported",
+    "not_enough_information",
+)
+
+# Terse on purpose. Image 04 holds its explanations to one or two short
+# lines inside a 43%-wide cell, and the longer wording ran every supported
+# row onto a second line for no extra meaning.
+EXPLANATION_SUPPORTED = "Your evidence covers every part of this qualification."
+EXPLANATION_PARTIAL_COVERED = "Your evidence covers {covered}."
+# Finding F5's fallback. Used when every cited fragment was too short to read
+# back as a phrase — the state is still true and still partial, and naming it
+# plainly beats printing "Your evidence covers ." at the member.
+EXPLANATION_PARTIAL_UNNAMED = "Your evidence covers part of this qualification."
+EXPLANATION_PARTIAL_REMAINDER = " Not established: {remainder}."
+EXPLANATION_NOT_ENOUGH = "No authorized evidence was matched to this."
+EXPLANATION_NO_EVIDENCE = (
+    "There was no authorized evidence to compare this against."
+)
+
+RAIL_SUPPORTS_HEADING_SUPPORTED = "Why this evidence supports the qualification"
+RAIL_SUPPORTS_HEADING_PARTIAL = (
+    "Why this evidence supports part of the qualification"
+)
+RAIL_SUPPORTS_LINE = "{title} · Version {version} is cited for {covered}."
+# Finding F5's fallback, for the same reason and in the same grammar.
+RAIL_SUPPORTS_LINE_UNNAMED = (
+    "{title} · Version {version} is cited for part of this qualification."
+)
+RAIL_UNESTABLISHED_HEADING = "What remains unestablished"
+RAIL_UNESTABLISHED_LINE = (
+    "{remainder} — not established by the evidence you authorized."
+)
+RAIL_UNESTABLISHED_NONE = (
+    "Every part of this qualification is covered by the evidence you "
+    "authorized."
+)
+RAIL_NOT_ENOUGH_LINE = (
+    "Nothing you authorized was matched to these words. That is a gap in the "
+    "evidence PeerSlate could read, not a statement about you."
+)
+
+# The footer truth line. Image 04's own sentence describes what SAVING does,
+# and saving is slice OS-4 — so the sentence that would be a promise here is
+# replaced by one that is true here, in the same grammar (handoff section
+# 14-M11: the trust-critical sentences are quoted, the rest follow the
+# images' meaning). The first clause is image 04's, verbatim.
+#
+# Independent review finding F9. These three constants had ZERO references:
+# the sentences shipped hardcoded in _alignment.html, and the old single
+# ALIGNMENT_FOOTER_TRUTH ("Nothing is saved yet.") had already drifted away
+# from the two labels that actually render. A static guard that scans
+# ALIGNMENT_* was therefore partly pointed at strings no member ever saw.
+# They are now the only source of those sentences, carried to the template on
+# the room dict the way demo_label and demo_note already were, and
+# CompositionTemplateTests asserts that every one of them still reaches the
+# page.
+ALIGNMENT_FOOTER_TRUTH_PRIVATE = "Session private · Nothing is saved yet"
+ALIGNMENT_FOOTER_TRUTH_PUBLIC = "Public session · Nothing is stored"
+ALIGNMENT_FOOTER_DETAIL = (
+    "This analysis is session-private. Nothing here has been published, "
+    "shared, sent to an employer, or used to alter your evidence."
+)
+ALIGNMENT_SAVE_NOTE = (
+    "Saving this analysis privately arrives in a later update. Nothing is "
+    "waiting behind this button, and nothing has been saved."
+)
+
+# The demo evidence label. Handoff section 18 safeguard 5: anonymous mode
+# never claims the demo library is the visitor's own.
+DEMO_EVIDENCE_LABEL = f"Demo evidence · {DEMO_PERSONA_NAME}"
+DEMO_EVIDENCE_NOTE = (
+    f"This preview compares the role against a sample library belonging to "
+    f"{DEMO_PERSONA_NAME}, a fictional person. None of it is yours, and none "
+    "of it is stored."
 )
 
 
@@ -492,7 +637,9 @@ def _base_room(mode, *, step, error=None):
         # flight, so a server-rendered page can never show a stage that is
         # not happening.
         "requirements": None,
+        "alignment": None,
         "max_source_units": MAX_SOURCE_TEXT_UNITS,
+        "max_response_units": MAX_RESPONSE_TEXT_UNITS,
         # Slice OS-2 independent review, finding F5. The intake textarea's
         # maxlength is the STORAGE cap in both modes, but the anonymous AI
         # cap is far tighter (8,000 vs 20,000), so a visitor could paste and
@@ -527,6 +674,9 @@ def _base_room(mode, *, step, error=None):
         "requirements_step_url": url_for(
             "opportunity_slate.room", step=STEP_REQUIREMENTS
         ),
+        "alignment_step_url": url_for("opportunity_slate.room", step=STEP_ALIGNMENT),
+        "analysis_url": url_for("opportunity_slate.run_analysis"),
+        "response_url": url_for("opportunity_slate.save_response"),
         "max_clarification_units": MAX_CLARIFICATION_UNITS,
         "statement_class_options": [
             {"value": name, "label": STATEMENT_CLASS_LABELS[name]}
@@ -785,6 +935,461 @@ def _requirements_room(
     return room
 
 
+# ---------------------------------------------------------------------------
+# Slice OS-3 — composing the Alignment screen's sentences.
+#
+# Everything below turns validated citations plus the employer's and the
+# member's own words into English. No model output passes through it: a
+# `covered_text` is a verbatim span of the employer's confirmed clause and an
+# `excerpt` is a verbatim span of the member's own evidence, both already
+# resolved against the stored text by the analysis service.
+# ---------------------------------------------------------------------------
+
+MAX_LISTED_FRAGMENTS = 3
+
+# Independent review finding F5. A covered fragment is a SUB-SPAN of the
+# employer's clause chosen by the citation, so it can legitimately stop before
+# the clause does — and run together with PeerSlate's own connecting words it
+# printed as broken English on the primary member-facing surface:
+#
+#   Your evidence covers Bachelor's degree in, 3+ years of and a Master's
+#   degree, and 1 more.
+#
+# Three composition changes, and NOT a change to what a citation may claim:
+# the fragment is still a verbatim span of the employer's confirmed wording,
+# and the coverage rule that derives the status is untouched.
+#
+#   1. Each phrase is QUOTED, so a reader can see where PeerSlate's sentence
+#      stops and the employer's wording starts. That is the same grammar the
+#      evidence rail already uses for the member's own excerpt.
+#   2. A fragment that is nothing but a function word ("in", "of", "and") is
+#      dropped: it carries no requirement, and a citation is not made less
+#      true by PeerSlate declining to read a preposition back to the member.
+#      Deliberately NOT a character minimum — "SQL", "PhD" and "AWS" are real
+#      three-letter qualifications and a length rule would delete them.
+#   3. When nothing survives, the sentence falls back to naming the state
+#      rather than printing an empty list.
+#
+# Typographic quotes deliberately: a straight double quote is escaped to
+# &#34; by Jinja on the way into the page.
+FUNCTION_WORD_FRAGMENTS = frozenset(
+    {
+        "a", "an", "and", "as", "at", "by", "for", "from", "in", "into",
+        "of", "on", "or", "the", "to", "with", "within",
+    }
+)
+OPEN_QUOTE = "“"
+CLOSE_QUOTE = "”"
+
+
+def _join_fragments(fragments, limit=MAX_LISTED_FRAGMENTS, excerpts=False):
+    """Read a list of employer phrases as a sentence, quoted and bounded.
+
+    A qualification can carry eight clauses, and printing all eight inside a
+    table cell turns the row into a paragraph. Beyond the limit the sentence
+    says how many more there are rather than truncating one mid-phrase.
+
+    ``excerpts`` marks the covered FRAGMENTS, which are sub-spans a citation
+    chose. It is left False for unestablished CLAUSES, which are whole
+    confirmed statements: dropping one of those would hide a requirement from
+    the member.
+    """
+    items = []
+    seen = set()
+    for fragment in fragments:
+        cleaned = (fragment or "").strip().strip(",;:")
+        if not cleaned:
+            continue
+        if excerpts and cleaned.lower() in FUNCTION_WORD_FRAGMENTS:
+            continue
+        if cleaned.lower() in seen:
+            continue
+        seen.add(cleaned.lower())
+        items.append(f"{OPEN_QUOTE}{cleaned}{CLOSE_QUOTE}")
+    if not items:
+        return ""
+    shown = items[:limit]
+    remaining = len(items) - len(shown)
+    if len(shown) == 1:
+        joined = shown[0]
+    else:
+        joined = ", ".join(shown[:-1]) + " and " + shown[-1]
+    if remaining:
+        joined += f", and {remaining} more"
+    return joined
+
+
+def _alignment_explanation(result, evidence_considered):
+    """The sentence under the employer's wording in the table (image 04)."""
+    status = result["status"]
+    if status == "supported":
+        return EXPLANATION_SUPPORTED
+    if status == "not_enough_information":
+        if not evidence_considered:
+            return EXPLANATION_NO_EVIDENCE
+        return EXPLANATION_NOT_ENOUGH
+    covered = _join_fragments(result["covered_fragments"], excerpts=True)
+    sentence = (
+        EXPLANATION_PARTIAL_COVERED.format(covered=covered)
+        if covered
+        else EXPLANATION_PARTIAL_UNNAMED
+    )
+    remainder = _join_fragments(result["unestablished"])
+    if remainder:
+        sentence += EXPLANATION_PARTIAL_REMAINDER.format(remainder=remainder)
+    return sentence
+
+
+def _alignment_detail(result, evidence_considered):
+    """The evidence rail's composed blocks for one selected qualification."""
+    status = result["status"]
+    supports_lines = []
+    for reference in result["evidence_references"]:
+        covered = _join_fragments(
+            [item["covered_text"] for item in result["citations"]
+             if item["evidence_key"] == reference["evidence_key"]
+             and item["evidence_version"] == reference["evidence_version"]],
+            excerpts=True,
+        )
+        template = RAIL_SUPPORTS_LINE if covered else RAIL_SUPPORTS_LINE_UNNAMED
+        supports_lines.append(
+            template.format(
+                title=reference["evidence_title"],
+                version=reference["evidence_version"],
+                covered=covered,
+            )
+        )
+    if status == "not_enough_information":
+        supports_heading = None
+        if not evidence_considered:
+            unestablished_line = EXPLANATION_NO_EVIDENCE
+        else:
+            unestablished_line = RAIL_NOT_ENOUGH_LINE
+    else:
+        supports_heading = (
+            RAIL_SUPPORTS_HEADING_SUPPORTED
+            if status == "supported"
+            else RAIL_SUPPORTS_HEADING_PARTIAL
+        )
+        unestablished_line = (
+            RAIL_UNESTABLISHED_LINE.format(
+                remainder=_join_fragments(result["unestablished"])
+            )
+            if result["unestablished"]
+            else RAIL_UNESTABLISHED_NONE
+        )
+    return {
+        "supports_heading": supports_heading,
+        "supports_lines": supports_lines,
+        "unestablished_heading": RAIL_UNESTABLISHED_HEADING,
+        "unestablished_line": unestablished_line,
+    }
+
+
+def _qualifications_for_analysis(statements):
+    """Build the grounding vocabulary AI step 3 is allowed to cite.
+
+    Only the two qualification classes reach it (handoff: the locked
+    accounting counts Required and Preferred, and every statement handed to a
+    model is one a member will read a result about). A statement whose
+    confirmed structure carries no clause is skipped rather than sent with an
+    empty vocabulary, because a citation would have nothing to attach to.
+    """
+    qualifications = []
+    for statement in statements:
+        if statement["effective_class"] not in ANALYSED_CLASSES:
+            continue
+        clauses, membership = build_clause_vocabulary(statement["paths"])
+        if not clauses:
+            continue
+        qualifications.append(
+            {
+                "ordinal": len(qualifications) + 1,
+                "statement_key": statement["key"],
+                "employer_text": statement["text"],
+                "clauses": clauses,
+                "paths": membership,
+            }
+        )
+    return qualifications
+
+
+def _demo_evidence_allowlist(limit=MAX_PUBLIC_EVIDENCE_ITEMS):
+    """The anonymous grounding allowlist (handoff section 18).
+
+    Reuses Workshop's own demo library — the established public-preview
+    fixture pattern — rather than inventing a second one. It is a module-level
+    constant belonging to a named fictional person, it imports no database,
+    and every surface that shows it says whose it is.
+    """
+    items = []
+    for item in WORKSHOP_DEMO_ITEMS:
+        if item["status"] != "confirmed":
+            continue
+        items.append(
+            {
+                "id": f"e{len(items) + 1}",
+                "evidence_key": item["item_key"],
+                "title": item["title"],
+                "version": item["current_version"],
+                "body": item["wording"],
+            }
+        )
+        if len(items) >= limit:
+            break
+    return items
+
+
+def _evidence_allowlist(views):
+    """Map the member's own confirmed evidence into the grounding vocabulary.
+
+    The opaque short ids (``e1``…) are what the prompt sees. The real keys
+    never leave the server, so a reply cannot name a record it was not given
+    and a leaked prompt carries no addressable identifier.
+    """
+    items = []
+    for index, view in enumerate(views, start=1):
+        items.append(
+            {
+                "id": f"e{index}",
+                "evidence_key": view.evidence_key,
+                "title": view.title,
+                "version": view.version,
+                "body": view.body,
+            }
+        )
+    return items
+
+
+def _citations_for_storage(result, evidence_by_id):
+    """Resolve the analysis service's citations onto real evidence records."""
+    citations = []
+    for citation in result["citations"]:
+        item = evidence_by_id[citation["evidence_id"]]
+        citations.append(
+            {
+                "clause_ordinal": citation["clause_ordinal"],
+                "covered_text": citation["covered_text"],
+                "evidence_kind": "knowledge_item",
+                "evidence_key": item["evidence_key"],
+                "evidence_version": item["version"],
+                "evidence_title": item["title"],
+                "excerpt": citation["excerpt"],
+            }
+        )
+    return citations
+
+
+def _derive_from_stored(statement, citations):
+    """Re-derive one qualification's result from its stored citations.
+
+    The citations are the fact; the status, the covered fragments and the
+    remainder are all consequences of them. Re-deriving on read rather than
+    trusting a stored sentence keeps ONE derivation path for the write and the
+    read, so a correction to the rule cannot leave old rows describing
+    themselves by the old one. (``derived_status`` is still stored: OS-4's
+    saved snapshot needs it, and the database CHECK that pairs it with the
+    citation count is a real guard.)
+    """
+    clauses, membership = build_clause_vocabulary(statement["paths"])
+    resolved = []
+    for citation in citations:
+        index = citation["clause_ordinal"] - 1
+        if not 0 <= index < len(clauses):
+            continue
+        spans = locate_spans(clauses[index], citation["covered_text"])
+        if not spans:
+            continue
+        start, length = spans[0]
+        resolved.append(
+            {
+                "clause_ordinal": citation["clause_ordinal"],
+                "covered_text": citation["covered_text"],
+                "covered_start": start,
+                "covered_length": length,
+                "evidence_id": (
+                    f"{citation['evidence_key']}:{citation['evidence_version']}"
+                ),
+                "excerpt": citation["excerpt"],
+            }
+        )
+    derived = derive_alignment(
+        {"clauses": clauses, "paths": membership}, resolved
+    )
+    derived["citations"] = citations
+    references = []
+    seen = set()
+    for citation in citations:
+        key = (citation["evidence_key"], citation["evidence_version"])
+        if key in seen:
+            continue
+        seen.add(key)
+        references.append(
+            {
+                "evidence_key": citation["evidence_key"],
+                "evidence_version": citation["evidence_version"],
+                "evidence_title": citation["evidence_title"],
+                "excerpt": citation["excerpt"],
+            }
+        )
+    derived["evidence_references"] = references
+    return derived
+
+
+def _alignment_room(
+    mode,
+    *,
+    version_number,
+    statements,
+    results,
+    responses,
+    evidence_choices,
+    analysis,
+    is_demo_evidence,
+    selected_key=None,
+    error=None,
+):
+    """The Alignment workbench — image 04, the exact geometry authority.
+
+    Four SEPARATE cards, never merged (locked rule; handoff section 14-M14):
+    Required qualifications and Preferred qualifications carry the alignment
+    table and the count summaries, and Responsibilities and Informational
+    statements carry the employer's wording with NO status at all, because
+    they are not qualifications and PeerSlate has not compared them against
+    anything. Saying otherwise on a screen whose whole subject is evidence
+    would be the plainest kind of untruth available here.
+    """
+    statements = list(statements)
+    evidence_considered = analysis["evidence_considered_count"] if analysis else 0
+
+    prepared = []
+    for statement in statements:
+        entry = dict(statement)
+        result = results.get(statement["key"])
+        entry["is_qualification"] = statement["effective_class"] in ANALYSED_CLASSES
+        entry["result"] = result
+        if result:
+            entry["status"] = result["status"]
+            entry["status_label"] = ALIGNMENT_STATUS_LABELS[result["status"]]
+            entry["explanation"] = _alignment_explanation(result, evidence_considered)
+            entry["evidence_references"] = result["evidence_references"]
+            entry["detail"] = _alignment_detail(result, evidence_considered)
+        else:
+            entry["status"] = None
+            entry["status_label"] = None
+            entry["explanation"] = None
+            entry["evidence_references"] = []
+            entry["detail"] = None
+        entry["response"] = responses.get(statement["key"])
+        prepared.append(entry)
+
+    groups = []
+    summaries = []
+    opened = False
+    for name in STATEMENT_GROUP_ORDER:
+        members = [item for item in prepared if item["effective_class"] == name]
+        is_qualification = name in ANALYSED_CLASSES
+        # Image 04 opens the two qualification cards and leaves
+        # Responsibilities and Informational statements collapsed. The first
+        # non-empty qualification card opens; a card with nothing in it never
+        # greets the member with an empty table.
+        is_open = is_qualification and bool(members) and not opened
+        opened = opened or is_open
+        groups.append(
+            {
+                "class": name,
+                "label": STATEMENT_GROUP_LABELS[name],
+                "count": len(members),
+                "statements": members,
+                "is_open": is_open,
+                "is_qualification": is_qualification,
+            }
+        )
+        if is_qualification:
+            counts = {status: 0 for status in ALIGNMENT_STATUS_ORDER}
+            for item in members:
+                if item["status"]:
+                    counts[item["status"]] += 1
+            summaries.append(
+                {
+                    "class": name,
+                    "label": STATEMENT_GROUP_LABELS[name],
+                    "count": len(members),
+                    # Per-status counts only. Handoff section 1 and the locked
+                    # rules: no overall score, percentage, recommendation,
+                    # employer prediction, or traffic-light verdict at any
+                    # layer. Three independent counts is the whole accounting
+                    # image 04 performs, and this is where it is performed.
+                    "counts": [
+                        {
+                            "status": status,
+                            "label": ALIGNMENT_STATUS_LABELS[status],
+                            "value": counts[status],
+                        }
+                        for status in ALIGNMENT_STATUS_ORDER
+                    ],
+                }
+            )
+
+    qualifications = [item for item in prepared if item["is_qualification"]]
+    keys = [item["key"] for item in qualifications]
+    if keys and selected_key not in keys:
+        selected_key = next(
+            (
+                group["statements"][0]["key"]
+                for group in groups
+                if group["is_qualification"] and group["statements"]
+            ),
+            keys[0],
+        )
+    elif not keys:
+        selected_key = None
+
+    room = _base_room(mode, step=STEP_ALIGNMENT, error=error)
+    room.update(
+        {
+            "state_title_lead": "Alignment",
+            "state_title_rest": "Explore alignment",
+            "checkpoint_label": None,
+            "source_text": "",
+            "is_replace": False,
+            "has_source": True,
+            "idempotency_key": str(uuid4()),
+            "source": None,
+            "alignment": {
+                "version_label": f"Source Version {version_number}",
+                "groups": groups,
+                "summaries": summaries,
+                "statements": prepared,
+                "qualifications": qualifications,
+                "selected_key": selected_key,
+                "selected": next(
+                    (item for item in qualifications if item["key"] == selected_key),
+                    None,
+                ),
+                "has_qualifications": bool(qualifications),
+                "has_analysis": analysis is not None,
+                "analysis": analysis,
+                "evidence_choices": evidence_choices,
+                "evidence_considered": evidence_considered,
+                "is_demo_evidence": bool(is_demo_evidence),
+                "demo_label": DEMO_EVIDENCE_LABEL,
+                "demo_note": DEMO_EVIDENCE_NOTE,
+                # Finding F9: the footer's reviewed sentences, carried from
+                # the constants above rather than retyped in the template.
+                "footer_truth": (
+                    ALIGNMENT_FOOTER_TRUTH_PUBLIC
+                    if mode == "public"
+                    else ALIGNMENT_FOOTER_TRUTH_PRIVATE
+                ),
+                "footer_detail": ALIGNMENT_FOOTER_DETAIL,
+                "save_note": ALIGNMENT_SAVE_NOTE,
+            },
+        }
+    )
+    return room
+
+
 def _requirements_room_from_views(
     working, requirement_set=None, mode="member", **overrides
 ):
@@ -813,6 +1418,134 @@ def _requirements_room_from_views(
             else None
         ),
         statements=statements,
+        **overrides,
+    )
+
+
+def _alignment_room_from_views(
+    working,
+    requirement_set,
+    analysis,
+    responses,
+    evidence_views,
+    mode="member",
+    **overrides,
+):
+    statements = _statements_from_views(requirement_set.statements)
+    citations_by_key = {}
+    if analysis is not None:
+        for statement in analysis.statements:
+            citations_by_key[statement.statement_key] = [
+                {
+                    "clause_ordinal": citation.clause_ordinal,
+                    "covered_text": citation.covered_text,
+                    "evidence_kind": citation.evidence_kind,
+                    "evidence_key": citation.evidence_key,
+                    "evidence_version": citation.evidence_version,
+                    "evidence_title": citation.evidence_title,
+                    "excerpt": citation.excerpt,
+                }
+                for citation in statement.citations
+            ]
+    results = {}
+    for statement in statements:
+        if statement["key"] in citations_by_key:
+            results[statement["key"]] = _derive_from_stored(
+                statement, citations_by_key[statement["key"]]
+            )
+    return _alignment_room(
+        mode,
+        version_number=working.version_number,
+        statements=statements,
+        results=results,
+        responses={
+            key: {
+                "kind": view.response_kind,
+                "text": view.response_text,
+                "evidence_title": view.connected_evidence_title,
+                "evidence_version": view.connected_evidence_version,
+                "authored_via": view.authored_via,
+            }
+            for key, view in (responses or {}).items()
+        },
+        evidence_choices=[
+            {
+                "key": view.evidence_key,
+                "title": view.title,
+                "version": view.version,
+            }
+            for view in evidence_views
+        ],
+        analysis=(
+            {
+                "model": analysis.model_name,
+                "prompt_contract": analysis.prompt_contract_version,
+                "evidence_considered_count": analysis.evidence_considered_count,
+                "qualification_count": analysis.qualification_count,
+            }
+            if analysis is not None
+            else None
+        ),
+        is_demo_evidence=False,
+        **overrides,
+    )
+
+
+def _alignment_room_from_context(context, mode="public", **overrides):
+    statements = _public_statements(context)
+    stored = context.get("alignment")
+    results = {}
+    if stored:
+        by_key = {}
+        for entry in stored["results"]:
+            by_key[entry["k"]] = [
+                {
+                    "clause_ordinal": citation["cl"],
+                    "covered_text": citation["t"],
+                    "evidence_kind": "knowledge_item",
+                    "evidence_key": citation["ek"],
+                    "evidence_version": citation["ev"],
+                    "evidence_title": citation["et"],
+                    "excerpt": citation["x"],
+                }
+                for citation in entry["c"]
+            ]
+        for statement in statements:
+            if statement["key"] in by_key:
+                results[statement["key"]] = _derive_from_stored(
+                    statement, by_key[statement["key"]]
+                )
+    demo = _demo_evidence_allowlist()
+    return _alignment_room(
+        mode,
+        version_number=context["version"],
+        statements=statements,
+        results=results,
+        responses={
+            key: {
+                "kind": entry["k"],
+                "text": entry.get("t"),
+                "evidence_title": entry.get("et"),
+                "evidence_version": entry.get("ev"),
+                "authored_via": "typed",
+            }
+            for key, entry in (context.get("responses") or {}).items()
+        },
+        evidence_choices=[
+            {"key": item["evidence_key"], "title": item["title"], "version": item["version"]}
+            for item in demo
+        ],
+        analysis=(
+            {
+                "model": stored["model"],
+                "prompt_contract": stored["contract"],
+                "evidence_considered_count": stored["evidence"],
+                "qualification_count": len(stored["results"]),
+            }
+            if stored
+            else None
+        ),
+        is_demo_evidence=True,
         **overrides,
     )
 
@@ -884,35 +1617,43 @@ def _review_room_from_context(context, mode="public", **overrides):
     )
 
 
-def _requirements_room_from_context(context, mode="public", **overrides):
+def _public_statements(context):
+    """The anonymous session's statements, in the same shape the member path
+    builds from database rows, so one set of view code serves both modes."""
     stored = context.get("requirements")
     statements = []
-    if stored:
-        for entry in stored["statements"]:
-            effective = entry.get("mc") or entry["pc"]
-            statements.append(
-                {
-                    "key": entry["k"],
-                    "ordinal": entry["o"],
-                    "text": entry["t"],
-                    "proposed_class": entry["pc"],
-                    "proposed_class_label": STATEMENT_CLASS_LABELS[entry["pc"]],
-                    "effective_class": effective,
-                    "class_label": STATEMENT_CLASS_LABELS[effective],
-                    "explanation": entry["e"],
-                    "paths": [
-                        {"label": path["label"], "clauses": list(path["clauses"])}
-                        for path in entry["p"]
-                    ],
-                    "member_class": entry.get("mc"),
-                    "member_clarification": entry.get("mx"),
-                    "is_reclassified": bool(entry.get("mc"))
-                    and entry.get("mc") != entry["pc"],
-                    "has_member_input": bool(entry.get("mc"))
-                    or bool(entry.get("mx")),
-                    "version_token": None,
-                }
-            )
+    if not stored:
+        return statements
+    for entry in stored["statements"]:
+        effective = entry.get("mc") or entry["pc"]
+        statements.append(
+            {
+                "key": entry["k"],
+                "ordinal": entry["o"],
+                "text": entry["t"],
+                "proposed_class": entry["pc"],
+                "proposed_class_label": STATEMENT_CLASS_LABELS[entry["pc"]],
+                "effective_class": effective,
+                "class_label": STATEMENT_CLASS_LABELS[effective],
+                "explanation": entry["e"],
+                "paths": [
+                    {"label": path["label"], "clauses": list(path["clauses"])}
+                    for path in entry["p"]
+                ],
+                "member_class": entry.get("mc"),
+                "member_clarification": entry.get("mx"),
+                "is_reclassified": bool(entry.get("mc"))
+                and entry.get("mc") != entry["pc"],
+                "has_member_input": bool(entry.get("mc")) or bool(entry.get("mx")),
+                "version_token": None,
+            }
+        )
+    return statements
+
+
+def _requirements_room_from_context(context, mode="public", **overrides):
+    stored = context.get("requirements")
+    statements = _public_statements(context)
     counts = {name: 0 for name in STATEMENT_GROUP_ORDER}
     for statement in statements:
         counts[statement["effective_class"]] += 1
@@ -1057,6 +1798,15 @@ def _load_public_context(token):
     requirements = _load_public_requirements(context.get("requirements"))
     if requirements is False:
         return None
+    statement_keys = {
+        entry["k"] for entry in (requirements or {}).get("statements", ())
+    }
+    alignment = _load_public_alignment(context.get("alignment"), statement_keys)
+    if alignment is False:
+        return None
+    responses = _load_public_responses(context.get("responses"), statement_keys)
+    if responses is False:
+        return None
 
     return {
         "v": PUBLIC_CONTEXT_VERSION,
@@ -1066,7 +1816,172 @@ def _load_public_context(token):
         "confirmed": confirmed,
         "review": review,
         "requirements": requirements,
+        "alignment": alignment,
+        "responses": responses,
     }
+
+
+def _load_public_alignment(stored, statement_keys):
+    """Validate the AI step-3 result carried in the visitor's own token.
+
+    The same shape discipline the database rows get, applied to the other mode
+    so neither can drift into accepting something the other would refuse — and
+    with the same structural rule the validator applies: there is no free-text
+    field here either. Every string is a span of the employer's clause or of
+    the demo evidence, and a citation naming a statement the token does not
+    carry resets the session rather than rendering half a screen.
+    """
+    if stored is None:
+        return None
+    if not isinstance(stored, dict) or set(stored) != {
+        "model",
+        "contract",
+        "evidence",
+        "results",
+    }:
+        return False
+    model = _bounded_token_text(stored["model"], 100)
+    contract = _bounded_token_text(stored["contract"], 60)
+    if not model or not contract:
+        return False
+    evidence_count = stored["evidence"]
+    if (
+        not isinstance(evidence_count, int)
+        or isinstance(evidence_count, bool)
+        or not 0 <= evidence_count <= MAX_PUBLIC_EVIDENCE_ITEMS
+    ):
+        return False
+    entries = stored["results"]
+    if (
+        not isinstance(entries, list)
+        or not entries
+        or len(entries) > MAX_PUBLIC_ANALYSED_STATEMENTS
+    ):
+        return False
+
+    results = []
+    total = 0
+    seen = set()
+    for entry in entries:
+        if not isinstance(entry, dict) or set(entry) != {"k", "s", "c"}:
+            return False
+        key = _normalize_key(entry.get("k"))
+        if not key or key not in statement_keys or key in seen:
+            return False
+        seen.add(key)
+        if entry["s"] not in ALIGNMENT_STATUS_LABELS:
+            return False
+        citations = entry["c"]
+        if not isinstance(citations, list):
+            return False
+        total += len(citations)
+        if total > MAX_PUBLIC_CITATIONS_TOTAL:
+            return False
+        if (not citations) != (entry["s"] == "not_enough_information"):
+            return False
+        cleaned = []
+        for citation in citations:
+            if not isinstance(citation, dict) or set(citation) != {
+                "cl",
+                "t",
+                "ek",
+                "ev",
+                "et",
+                "x",
+            }:
+                return False
+            clause = citation["cl"]
+            version = citation["ev"]
+            if (
+                not isinstance(clause, int)
+                or isinstance(clause, bool)
+                or clause < 1
+                or not isinstance(version, int)
+                or isinstance(version, bool)
+                or version < 1
+            ):
+                return False
+            covered = _bounded_token_text(citation["t"], 200)
+            title = _bounded_token_text(citation["et"], 200)
+            excerpt = _bounded_token_text(citation["x"], 400)
+            evidence_key = _normalize_key(citation["ek"])
+            if not covered or not title or not excerpt or not evidence_key:
+                return False
+            cleaned.append(
+                {
+                    "cl": clause,
+                    "t": covered,
+                    "ek": evidence_key,
+                    "ev": version,
+                    "et": title,
+                    "x": excerpt,
+                }
+            )
+        results.append({"k": key, "s": entry["s"], "c": cleaned})
+    return {
+        "model": model,
+        "contract": contract,
+        "evidence": evidence_count,
+        "results": results,
+    }
+
+
+def _load_public_responses(stored, statement_keys):
+    """Validate the visitor's own responses carried in their token."""
+    if stored is None:
+        return None
+    if not isinstance(stored, dict) or len(stored) > MAX_PUBLIC_ANALYSED_STATEMENTS:
+        return False
+    responses = {}
+    for raw_key, entry in stored.items():
+        key = _normalize_key(raw_key)
+        if not key or key not in statement_keys:
+            return False
+        if not isinstance(entry, dict) or set(entry) - {"k", "t", "ek", "ev", "et"}:
+            return False
+        kind = entry.get("k")
+        if kind not in RESPONSE_KINDS:
+            return False
+        text = entry.get("t")
+        if text is not None:
+            text = _bounded_token_text(text, MAX_RESPONSE_TEXT_UNITS)
+            if text is None:
+                return False
+        title = entry.get("et")
+        if title is not None:
+            title = _bounded_token_text(title, 200)
+            if title is None:
+                return False
+        version = entry.get("ev")
+        if version is not None and (
+            not isinstance(version, int) or isinstance(version, bool) or version < 1
+        ):
+            return False
+        evidence_key = entry.get("ek")
+        if evidence_key is not None:
+            evidence_key = _normalize_key(evidence_key)
+            if not evidence_key:
+                return False
+        # The same pairing the database CHECK enforces for a member, so the
+        # public boundary cannot be the lenient one.
+        if kind in {"tell_more", "real_example"} and (
+            not text or evidence_key or title
+        ):
+            return False
+        if kind == "connect_evidence" and (
+            text or not evidence_key or not title or not version
+        ):
+            return False
+        if kind in {"confirm_not_have", "skip"} and (text or evidence_key or title):
+            return False
+        responses[key] = {
+            "k": kind,
+            "t": text,
+            "ek": evidence_key,
+            "ev": version,
+            "et": title,
+        }
+    return responses
 
 
 def _bounded_token_text(value, max_units):
@@ -1323,19 +2238,50 @@ def room():
 
     # A confirmed source lands on Review Requirements unless the member asked
     # for the source screen by name, so re-entering the room resumes where the
-    # member actually was rather than at checkpoint 1 again.
-    if step == STEP_REQUIREMENTS or (step is None and working.is_confirmed):
+    # member actually was rather than at checkpoint 1 again. Once an analysis
+    # exists it lands on the workbench for the same reason: that is where the
+    # member actually was.
+    if step in {STEP_REQUIREMENTS, STEP_ALIGNMENT} or (
+        step is None and working.is_confirmed
+    ):
         try:
             requirement_set = opportunity_slate_service.get_requirements_for_owner(
                 identity.user_key
             )
         except (DatabaseServiceError, OpportunitySlateServiceError):
             return _render_unavailable()
+        selected_key = _normalize_key(request.args.get("statement"))
+        if requirement_set is not None and step != STEP_REQUIREMENTS:
+            try:
+                analysis, responses = (
+                    opportunity_slate_service.get_analysis_for_owner(
+                        identity.user_key
+                    )
+                )
+            except (DatabaseServiceError, OpportunitySlateServiceError):
+                return _render_unavailable()
+            if analysis is not None or step == STEP_ALIGNMENT:
+                try:
+                    evidence = opportunity_slate_service.list_evidence_for_owner(
+                        identity.user_key
+                    )
+                except (DatabaseServiceError, OpportunitySlateServiceError):
+                    return _render_unavailable()
+                return _render_room(
+                    _alignment_room_from_views(
+                        working,
+                        requirement_set,
+                        analysis,
+                        responses,
+                        evidence,
+                        selected_key=selected_key,
+                    )
+                )
         return _render_room(
             _requirements_room_from_views(
                 working,
                 requirement_set,
-                selected_key=_normalize_key(request.args.get("statement")),
+                selected_key=selected_key,
             )
         )
 
@@ -2100,7 +3046,327 @@ def confirm_requirements():
             status=409 if error.code == "changed" else 400,
         )
 
-    return redirect(url_for("opportunity_slate.room", step=STEP_REQUIREMENTS))
+    # Image 03's primary action is "Confirm requirements and analyze", and
+    # slice OS-3 is the first slice in which the second half is true. The two
+    # halves stay two separately-fenced writes — checkpoint 2 is recorded
+    # first and stands on its own — but they are ONE explicit member action,
+    # which is exactly what image 08's processing frame draws happening on
+    # this screen. A failed analysis therefore leaves a confirmed requirement
+    # set behind it, which is the section 7 contract ("your confirmed source
+    # and requirements are unchanged") rather than a half-applied step.
+    error, status = _run_alignment_for_owner(identity)
+    if error is not None:
+        return _reload_requirements_for_error(identity, error=error, status=status)
+    return redirect(url_for("opportunity_slate.room", step=STEP_ALIGNMENT))
+
+
+# ---------------------------------------------------------------------------
+# Slice OS-3 — the alignment analysis, the workbench, and member responses.
+#
+# This is the first step in the room that is given a fact about the member.
+# Two things make that safe and both are structural rather than editorial:
+#
+#   * the grounding allowlist is built HERE, server-side, from the member's
+#     own confirmed evidence (or, anonymously, from the labelled demo
+#     fixture), and the validator refuses any reply that cites an id it was
+#     not given; and
+#   * the model returns citations, never prose — every sentence on the screen
+#     is composed above from the employer's confirmed wording, the member's
+#     own evidence, and PeerSlate's reviewed templates.
+#
+# See THE COMPOSITION BOUNDARY in services/opportunity_analysis_service.py.
+# ---------------------------------------------------------------------------
+
+
+def _reload_alignment_for_error(identity, *, error, status, selected_key=None):
+    """Re-render the workbench with every confirmed input and result intact."""
+    try:
+        working = opportunity_slate_service.get_working_session_for_owner(
+            identity.user_key
+        )
+        requirement_set = (
+            opportunity_slate_service.get_requirements_for_owner(identity.user_key)
+            if working is not None
+            else None
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        return _render_unavailable()
+    if working is None:
+        return _render_room(_intake_room("member"))
+    if requirement_set is None:
+        return _render_room(
+            _requirements_room_from_views(working, None, error=error), status=status
+        )
+    try:
+        analysis, responses = opportunity_slate_service.get_analysis_for_owner(
+            identity.user_key
+        )
+        evidence = opportunity_slate_service.list_evidence_for_owner(
+            identity.user_key
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        analysis, responses, evidence = None, {}, ()
+    return _render_room(
+        _alignment_room_from_views(
+            working,
+            requirement_set,
+            analysis,
+            responses,
+            evidence,
+            selected_key=selected_key,
+            error=error,
+        ),
+        status=status,
+    )
+
+
+def _run_alignment_for_owner(identity):
+    """Run AI step 3 for this owner. ``(error_card, status)``; ``(None, None)``
+    on success.
+
+    Shared by the two explicit member actions that reach it — image 03's
+    `Confirm requirements and analyze` and image 04's `Explore alignment` /
+    `Run this again` — so both get identical grounding, identical validation,
+    and identical failure truth. Nothing else calls it: no timer, no
+    navigation, and no voice event runs an AI step in this room (handoff
+    section 2, transition invariant 1).
+    """
+    try:
+        working = opportunity_slate_service.get_working_session_for_owner(
+            identity.user_key
+        )
+        requirement_set = (
+            opportunity_slate_service.get_requirements_for_owner(identity.user_key)
+            if working is not None
+            else None
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        return (
+            {
+                "kind": "unavailable",
+                "heading": ANALYSIS_FAILURE_HEADING,
+                "message": UNAVAILABLE_MESSAGE,
+                "truth": ANALYSIS_FAILURE_TRUTH,
+            },
+            503,
+        )
+    if working is None or requirement_set is None or not requirement_set.is_confirmed:
+        # Analysis reads the requirement set the member accepted. Without a
+        # confirmed set there is nothing to compare, and inventing one would
+        # put requirements in the employer's mouth.
+        return (
+            {
+                "kind": "proposal",
+                "heading": "Confirm these requirements first.",
+                "message": (
+                    "PeerSlate compares the qualifications you accepted. "
+                    "Nothing was analyzed."
+                ),
+                "truth": ANALYSIS_FAILURE_TRUTH,
+            },
+            400,
+        )
+
+    statements = _statements_from_views(requirement_set.statements)
+    qualifications = _qualifications_for_analysis(statements)
+    if not qualifications:
+        # No required or preferred qualification in the confirmed reading.
+        # The workbench says so on its own; this is not a failure.
+        return None, None
+
+    try:
+        evidence_views = opportunity_slate_service.list_evidence_for_owner(
+            identity.user_key
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        return (
+            {
+                "kind": "unavailable",
+                "heading": ANALYSIS_FAILURE_HEADING,
+                "message": UNAVAILABLE_MESSAGE,
+                "truth": ANALYSIS_FAILURE_TRUTH,
+            },
+            503,
+        )
+
+    allowlist = _evidence_allowlist(evidence_views)
+    evidence_by_id = {item["id"]: item for item in allowlist}
+
+    try:
+        proposal = opportunity_analysis_service.propose_alignment(
+            qualifications, evidence_by_id
+        )
+    except OpportunityAnalysisError as error:
+        if error.code == "no_evidence":
+            # Not a failure. The member has authorized nothing yet, so every
+            # qualification is honestly "not enough information" and no
+            # provider call is made and no budget is spent.
+            proposal = opportunity_analysis_service.empty_alignment(qualifications)
+        else:
+            return (
+                _proposal_failure(
+                    error, ANALYSIS_FAILURE_HEADING, ANALYSIS_FAILURE_MESSAGE
+                ),
+                _proposal_status(error),
+            )
+
+    results = [
+        {
+            "statement_key": result["statement_key"],
+            "status": result["status"],
+            "citations": _citations_for_storage(result, evidence_by_id),
+        }
+        for result in proposal["results"]
+    ]
+
+    try:
+        opportunity_slate_service.save_analysis_for_owner(
+            identity.user_key,
+            requirement_set.requirement_set_key,
+            requirement_set.version_token,
+            results,
+            proposal["model"] or "none",
+            proposal["prompt_contract"],
+            len(allowlist),
+        )
+    except DatabaseServiceError:
+        return (
+            _proposal_failure(
+                OpportunityAnalysisError("unavailable"),
+                ANALYSIS_FAILURE_HEADING,
+                UNAVAILABLE_MESSAGE,
+            ),
+            503,
+        )
+    except OpportunitySlateServiceError as error:
+        return (
+            _proposal_failure(
+                OpportunityAnalysisError("unavailable"),
+                "These requirements changed."
+                if error.code == "changed"
+                else ANALYSIS_FAILURE_HEADING,
+                CONFLICT_MESSAGE
+                if error.code == "changed"
+                else ANALYSIS_FAILURE_MESSAGE,
+            ),
+            409 if error.code == "changed" else 400,
+        )
+    return None, None
+
+
+@opportunity_slate.post(f"{ROOM_PATH}/analysis")
+def run_analysis():
+    """AI step 3. Compares the confirmed qualifications with authorized evidence.
+
+    Also the retry path: image 09-b's `Retry analysis` posts here. Running it
+    again replaces the previous result for this requirement-set version and
+    changes nothing else — the member's confirmed source, their confirmed
+    requirements, and every response they have written are untouched, in the
+    success case and in the failure case alike.
+    """
+    if not _opportunity_slate_enabled():
+        abort(404)
+    if not _is_same_origin_write():
+        abort(403)
+    identity, failure = _resolve_identity_or_unavailable()
+    if failure is not None:
+        return failure
+    if identity is None:
+        abort(404)
+
+    error, status = _run_alignment_for_owner(identity)
+    if error is not None:
+        return _reload_alignment_for_error(identity, error=error, status=status)
+    return redirect(url_for("opportunity_slate.room", step=STEP_ALIGNMENT))
+
+
+@opportunity_slate.post(f"{ROOM_PATH}/responses")
+def save_response():
+    """One member response to one qualification (image 04's response rail).
+
+    Member-attributed context, and only ever what the member chose: it never
+    becomes evidence, never becomes a citation, and never changes a status.
+    """
+    if not _opportunity_slate_enabled():
+        abort(404)
+    if not _is_same_origin_write():
+        abort(403)
+    identity, failure = _resolve_identity_or_unavailable()
+    if failure is not None:
+        return failure
+    if identity is None:
+        abort(404)
+
+    statement_key = _normalize_key(request.form.get("statement_key"))
+    version_token = request.form.get("statement_version_token")
+    response_kind = request.form.get("response_kind")
+    response_text = request.form.get("response_text", "")
+    evidence_key = request.form.get("connected_evidence_key")
+
+    if response_kind not in RESPONSE_KINDS:
+        return _reload_alignment_for_error(
+            identity,
+            error={
+                "kind": "field",
+                "heading": "We couldn't record that response.",
+                "message": DEFAULT_FIELD_ERROR,
+                "field_hint": DEFAULT_FIELD_HINT,
+                "truth": f"Session private • {TRUTH_NOTHING_SAVED}",
+            },
+            status=400,
+            selected_key=statement_key,
+        )
+
+    try:
+        opportunity_slate_service.save_response_for_owner(
+            identity.user_key,
+            statement_key,
+            version_token,
+            response_kind,
+            response_text=response_text,
+            connected_evidence_key=evidence_key,
+        )
+    except DatabaseServiceError:
+        return _reload_alignment_for_error(
+            identity,
+            error={
+                "kind": "unavailable",
+                "heading": "We couldn't record that response.",
+                "message": UNAVAILABLE_MESSAGE,
+                "truth": f"Session private • {TRUTH_NOTHING_SAVED}",
+            },
+            status=503,
+            selected_key=statement_key,
+        )
+    except OpportunitySlateServiceError as error:
+        return _reload_alignment_for_error(
+            identity,
+            error={
+                "kind": "field",
+                "heading": "This qualification changed."
+                if error.code == "changed"
+                else "We couldn't record that response.",
+                "message": CONFLICT_MESSAGE
+                if error.code == "changed"
+                else (
+                    RESPONSE_TOO_LONG_MESSAGE
+                    if error.code == "too_long"
+                    else FIELD_ERROR_MESSAGES.get(error.code, DEFAULT_FIELD_ERROR)
+                ),
+                "field_hint": FIELD_ERROR_HINTS.get(error.code, DEFAULT_FIELD_HINT),
+                "truth": f"Session private • {TRUTH_NOTHING_SAVED}",
+            },
+            status=409 if error.code == "changed" else 400,
+            selected_key=statement_key,
+        )
+
+    return redirect(
+        url_for(
+            "opportunity_slate.room",
+            step=STEP_ALIGNMENT,
+            statement=statement_key,
+        )
+    )
 
 
 @opportunity_slate.post(f"{ROOM_PATH}/public-session")
@@ -2199,6 +3465,8 @@ def public_session():
             "confirmed": False,
             "review": None,
             "requirements": None,
+            "alignment": None,
+            "responses": None,
         }
 
     elif action == "correct":
@@ -2238,6 +3506,8 @@ def public_session():
         context["confirmed"] = False
         context["review"] = None
         context["requirements"] = None
+        context["alignment"] = None
+        context["responses"] = None
 
     elif action == "confirm":
         if context is None:
@@ -2307,9 +3577,13 @@ def public_session():
             )
             # Changed wording is not the wording the visitor confirmed, and
             # any statements read out of it no longer describe what is on
-            # screen. Both go, exactly as they do for a signed-in member.
+            # screen. Both go, exactly as they do for a signed-in member —
+            # and with them the analysis and the responses, which describe
+            # statements that no longer exist.
             context["confirmed"] = False
             context["requirements"] = None
+            context["alignment"] = None
+            context["responses"] = None
         else:
             target["res"] = "dismissed"
 
@@ -2367,9 +3641,11 @@ def public_session():
         context = dict(context)
         requirements = dict(context["requirements"])
         requirements["statements"] = statements
-        # A corrected reading is not the reading the visitor confirmed.
+        # A corrected reading is not the reading the visitor confirmed, and an
+        # analysis of it describes requirements they have just changed.
         requirements["confirmed"] = False
         context["requirements"] = requirements
+        context["alignment"] = None
         requested_step = STEP_REQUIREMENTS
 
     elif action == "confirm_requirements":
@@ -2381,10 +3657,120 @@ def public_session():
         context["requirements"] = requirements
         requested_step = STEP_REQUIREMENTS
 
+    elif action == "select":
+        # Selecting a qualification changes what the rails describe and
+        # nothing else. It exists as a server action so the workbench works
+        # with JavaScript off; the room script intercepts it in place.
+        if context is None or not context.get("alignment"):
+            return _public_reset_response()
+        requested_step = STEP_ALIGNMENT
+
+    elif action == "respond":
+        if context is None or not context.get("alignment"):
+            return _public_reset_response()
+        updated, failure = _apply_public_response(context, body)
+        if failure is not None:
+            return failure
+        context = updated
+        requested_step = STEP_ALIGNMENT
+
     if context is None:
         return _public_reset_response()
     return _public_render_response(
         context, requested_step, _normalize_key(body.get("statement_key"))
+    )
+
+
+def _apply_public_response(context, body):
+    """Record one anonymous visitor's response in their own held state.
+
+    ``(context, None)`` on success, ``(None, response)`` when the request was
+    refused. Applies exactly the pairing rules the database CHECK applies to a
+    signed-in member, so the public boundary is not the lenient one.
+    """
+    statement_key = _normalize_key(body.get("statement_key"))
+    kind = body.get("response_kind")
+    keys = {
+        entry["k"] for entry in (context.get("requirements") or {})["statements"]
+    }
+    if not statement_key or statement_key not in keys or kind not in RESPONSE_KINDS:
+        return None, _public_invalid_request()
+
+    text = None
+    evidence_key = None
+    evidence_title = None
+    evidence_version = None
+
+    if kind in {"tell_more", "real_example"}:
+        raw = body.get("response_text")
+        text = raw.strip() if isinstance(raw, str) else ""
+        if not text:
+            return None, _public_response_error(
+                context,
+                statement_key,
+                "Add your response before continuing.",
+                FIELD_ERROR_HINTS["required"],
+            )
+        if len(text.encode("utf-16-le")) // 2 > MAX_RESPONSE_TEXT_UNITS:
+            return None, _public_response_error(
+                context,
+                statement_key,
+                RESPONSE_TOO_LONG_MESSAGE,
+                FIELD_ERROR_HINTS["too_long"],
+            )
+    elif kind == "connect_evidence":
+        evidence_key = _normalize_key(body.get("connected_evidence_key"))
+        match = next(
+            (
+                item
+                for item in _demo_evidence_allowlist()
+                if item["evidence_key"] == evidence_key
+            ),
+            None,
+        )
+        if match is None:
+            # The demo library is the only evidence vocabulary this mode has,
+            # so a key outside it is refused rather than stored as a label.
+            return None, _public_invalid_request()
+        evidence_title = match["title"]
+        evidence_version = match["version"]
+
+    updated = dict(context)
+    responses = dict(updated.get("responses") or {})
+    responses[statement_key] = {
+        "k": kind,
+        "t": text,
+        "ek": evidence_key,
+        "ev": evidence_version,
+        "et": evidence_title,
+    }
+    updated["responses"] = responses
+    return updated, None
+
+
+def _public_response_error(context, statement_key, message, hint):
+    room = _alignment_room_from_context(
+        context,
+        selected_key=statement_key,
+        error={
+            "kind": "field",
+            "heading": "We couldn't record that response.",
+            "message": message,
+            "field_hint": hint,
+            "truth": "Public session • Nothing is stored.",
+        },
+    )
+    token = _dump_public_context(context)
+    return (
+        jsonify(
+            {
+                "success": False,
+                "step": STEP_ALIGNMENT,
+                "html": _render_fragment(room, context_token=token),
+                "context_token": token,
+            }
+        ),
+        400,
     )
 
 
@@ -2455,6 +3841,77 @@ def public_propose():
         }
         return _public_render_response(context, STEP_REVIEW)
 
+    if action == "analyze":
+        requirements = context.get("requirements")
+        if not requirements or not requirements.get("confirmed"):
+            # Nothing to compare without a confirmed reading, and inventing
+            # one would put requirements in the employer's mouth.
+            return _public_render_response(context, STEP_REQUIREMENTS)
+
+        statements = _public_statements(context)
+        qualifications = _qualifications_for_analysis(statements)
+        if not qualifications:
+            return _public_render_response(context, STEP_ALIGNMENT)
+
+        allowlist = _demo_evidence_allowlist()
+        evidence_by_id = {item["id"]: item for item in allowlist}
+        try:
+            proposal = opportunity_analysis_service.propose_alignment(
+                qualifications,
+                evidence_by_id,
+                is_public=True,
+                daily_ceiling=_daily_ai_ceiling(),
+                max_citations=MAX_PUBLIC_CITATIONS_TOTAL,
+            )
+        except OpportunityAnalysisError as error:
+            if error.code == "no_evidence":
+                proposal = opportunity_analysis_service.empty_alignment(
+                    qualifications
+                )
+            else:
+                # Image 09-b promises "your confirmed source and requirements
+                # are unchanged", and a screen that says so while showing
+                # neither is only half honest. A first analysis therefore
+                # fails back onto Review Requirements, where the visitor can
+                # SEE the inputs the card is talking about and press Retry;
+                # a re-run fails back onto the workbench, where the previous
+                # result is still there and still theirs.
+                return _public_proposal_failure(
+                    context,
+                    STEP_ALIGNMENT if context.get("alignment") else STEP_REQUIREMENTS,
+                    error,
+                    ANALYSIS_FAILURE_HEADING,
+                    ANALYSIS_FAILURE_MESSAGE,
+                )
+
+        context = dict(context)
+        context["alignment"] = {
+            "model": proposal["model"] or "none",
+            "contract": proposal["prompt_contract"],
+            "evidence": len(allowlist),
+            "results": [
+                {
+                    "k": result["statement_key"],
+                    "s": result["status"],
+                    "c": [
+                        {
+                            "cl": citation["clause_ordinal"],
+                            "t": citation["covered_text"],
+                            "ek": evidence_by_id[citation["evidence_id"]][
+                                "evidence_key"
+                            ],
+                            "ev": evidence_by_id[citation["evidence_id"]]["version"],
+                            "et": evidence_by_id[citation["evidence_id"]]["title"],
+                            "x": citation["excerpt"],
+                        }
+                        for citation in result["citations"]
+                    ],
+                }
+                for result in proposal["results"]
+            ],
+        }
+        return _public_render_response(context, STEP_ALIGNMENT)
+
     if not context.get("confirmed"):
         # Nothing to interpret without a confirmed source, and inventing one
         # would put words in the employer's mouth.
@@ -2517,6 +3974,11 @@ def _public_render_response(context, requested_step, selected_key=None):
             has_source=True,
         )
         step = requested_step
+    elif requested_step == STEP_ALIGNMENT or (
+        requested_step is None and context.get("alignment")
+    ):
+        room = _alignment_room_from_context(context, selected_key=selected_key)
+        step = STEP_ALIGNMENT
     elif requested_step == STEP_REQUIREMENTS or (
         requested_step is None and context.get("confirmed")
     ):
@@ -2558,7 +4020,9 @@ def _public_proposal_failure(context, step, error, heading, message):
     """
     error_card = _proposal_failure(error, heading, message, mode="public")
     error_card["truth"] = "Public session • Nothing was generated or stored."
-    if step == STEP_REQUIREMENTS:
+    if step == STEP_ALIGNMENT:
+        room = _alignment_room_from_context(context, error=error_card)
+    elif step == STEP_REQUIREMENTS:
         room = _requirements_room_from_context(context, error=error_card)
     else:
         room = _review_room_from_context(context, error=error_card)

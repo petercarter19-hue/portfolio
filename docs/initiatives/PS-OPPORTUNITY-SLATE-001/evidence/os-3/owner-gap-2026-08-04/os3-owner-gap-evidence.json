@@ -1,0 +1,27 @@
+[
+  {
+    "file": "os3-alignment-owner-gap-desktop-1440x1024.png",
+    "viewport": [
+      1440,
+      1024
+    ],
+    "card_gap": "24px"
+  },
+  {
+    "file": "os3-alignment-owner-gap-mobile-390x844.png",
+    "viewport": [
+      390,
+      844
+    ],
+    "card_gap": "24px"
+  },
+  {
+    "file": "os3-alignment-owner-gap-mobile-cards-390x844.png",
+    "viewport": [
+      390,
+      844
+    ],
+    "card_gap": "24px",
+    "scroll_target": ".os-summary:first"
+  }
+]

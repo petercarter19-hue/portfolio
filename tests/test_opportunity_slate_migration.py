@@ -651,19 +651,12 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
             with self.subTest(procedure=name):
                 self.assertEqual(database_source.count(f'"{name}"'), 1)
 
-    def test_schema_first_service_stays_on_os1_and_os2_until_os3_code_lands(self):
-        """The schema release must not smuggle the OS-3 application in.
-
-        The four new procedure names are allowlisted above, but this isolated
-        release intentionally leaves the service on its already-live OS-1/2
-        calls. The OS-3 application branch replaces this assertion with exact
-        equality against all seventeen procedure names.
-        """
+    def test_the_service_calls_only_allowlisted_procedure_names(self):
         service_source = (
             ROOT / "services" / "opportunity_slate_service.py"
         ).read_text(encoding="utf-8")
         called = set(re.findall(r'"(usp_[A-Za-z0-9_]+)"', service_source))
-        self.assertEqual(called, set(OS1_PROCEDURE_NAMES + OS2_PROCEDURE_NAMES))
+        self.assertEqual(called, set(PROCEDURE_NAMES))
 
     # ------------------------------------------------------------------
     # Slice OS-2
@@ -1003,10 +996,6 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
         # The one kind slice OS-3 grounds on is a literal, not a parameter.
         self.assertIn("N''knowledge_item'',", body)
 
-    @unittest.skip(
-        "OS-3 service payload lands after this schema-first release; the OS-3 "
-        "application branch removes this skip and pins the payload"
-    )
     def test_the_service_stops_sending_the_identity_the_database_derives(self):
         """The other half of F7. Leaving three fields in the payload that
         nothing reads is how a caller comes to believe it controls them."""

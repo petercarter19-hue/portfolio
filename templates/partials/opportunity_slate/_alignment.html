@@ -1,0 +1,381 @@
+{% from "partials/opportunity_slate/_icons.html" import os_icon %}
+{#
+  Alignment · Explore alignment — image 04, THE EXACT GEOMETRY AUTHORITY for
+  this package.
+
+  Two things about this screen are structural rather than stylistic and must
+  survive any future edit:
+
+  1. SEPARATE CARDS ON THE CANVAS. Image 04 does not put the workbench inside
+     one containing card the way images 02 and 03 do — measured off the locked
+     PNG, the canvas shows between every card (the surface reads 253,253,253
+     and the gaps read 247,248,250, at x=270 and x=1100 alike). So this
+     partial renders its own cards and _room.html deliberately does not wrap
+     the alignment step in .os-card--workbench. Required, Preferred,
+     Responsibilities and Informational statements are four SEPARATE cards and
+     are never merged (locked rule; handoff section 14-M14 — image 05's merged
+     "Responsibilities and informational statements" card must not be
+     imported here).
+
+  2. NOT ONE SENTENCE HERE IS MODEL-AUTHORED. Everything on this screen is
+     written by the employer (their confirmed wording), by the member (their
+     own evidence and their own responses), or by PeerSlate (the composition
+     templates in opportunity_slate_routes.py). The model returned citations.
+     See THE COMPOSITION BOUNDARY in
+     services/opportunity_analysis_service.py.
+
+  The accounting is per-status counts and nothing else: no overall score,
+  percentage, ranking, recommendation, employer prediction, or traffic-light
+  verdict appears at any point (locked rule, handoff section 1). The status
+  pills carry a leading dot AND a label, never colour alone (section 13).
+#}
+{% set alignment = room.alignment %}
+
+<div class="os-card os-card--strip">
+  <div class="os-context-strip">
+    <span class="os-chip">
+      <span class="os-chip__badge">{{ os_icon('doc') }}</span>
+      <span>
+        <span class="os-chip__label">Source</span>
+        <span class="os-chip__value">Confirmed</span>
+      </span>
+    </span>
+    <span class="os-chip">
+      <span class="os-chip__badge">{{ os_icon('compare') }}</span>
+      <span>
+        <span class="os-chip__label">Version</span>
+        <span class="os-chip__value">{{ alignment.version_label }}</span>
+      </span>
+    </span>
+    <span class="os-chip">
+      <span class="os-chip__badge">{{ os_icon('globe' if room.is_public else 'lock') }}</span>
+      <span>
+        <span class="os-chip__label">Session</span>
+        <span class="os-chip__value">{% if room.is_public %}Public session{% else %}Session private{% endif %}</span>
+      </span>
+    </span>
+    <a class="os-context-strip__link" href="{{ room.requirements_step_url }}" data-os-step="requirements">
+      Review inputs{{ os_icon('external', 'os-icon os-icon--sm') }}
+    </a>
+  </div>
+
+  {% if alignment.is_demo_evidence %}
+  {# Handoff section 18 safeguard 5. It sits in the context strip rather than
+     only in the rail, because the strip is what a visitor reads to know what
+     they are looking at — and "whose evidence is this" is exactly that kind
+     of fact. It stays on screen for the whole analysed state. #}
+  <p class="os-demo-note">
+    {{ os_icon('globe', 'os-icon os-icon--sm') }}<span>{{ alignment.demo_note }}</span>
+  </p>
+  {% endif %}
+
+  {% if alignment.has_analysis %}
+  {# Image 04's count summaries. Three independent per-status counts per
+     class, and deliberately nothing that combines them. #}
+  <div class="os-summaries">
+    {% for summary in alignment.summaries %}
+    <section class="os-summary" aria-labelledby="os-summary-{{ summary.class }}">
+      <h3 class="os-summary__title" id="os-summary-{{ summary.class }}">
+        {{ summary.label }}<span class="os-summary__dot" aria-hidden="true">·</span><span class="os-summary__count">{{ summary.count }}</span>
+      </h3>
+      <ul class="os-summary__counts">
+        {% for entry in summary.counts %}
+        <li class="os-summary__entry">
+          <span class="os-dot os-dot--{{ entry.status }}" aria-hidden="true"></span>
+          <span class="os-summary__value">{{ entry.value }}</span>
+          <span class="os-summary__label">{{ entry.label }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{% if not alignment.has_qualifications %}
+{# Reachable when the confirmed reading contains no qualification at all —
+   an employer source that is all responsibilities and context. There is
+   nothing to compare, and this says so instead of showing an empty table. #}
+<div class="os-card os-card--panel">
+  <div class="os-prompt-card os-prompt-card--quiet">
+    <span class="os-prompt-card__badge">{{ os_icon('info') }}</span>
+    <div class="os-prompt-card__body">
+      {# Finding F10: every other screen in the room carries exactly one
+         [data-os-focus], so restoreFocus never leaves focus on <body> after
+         a fragment swap. This screen carried none. Each of its three states
+         marks its own first heading. #}
+      <p class="os-prompt-card__heading" data-os-focus tabindex="-1">No qualifications to compare</p>
+      <p>
+        PeerSlate did not read any required or preferred qualification in the
+        source you confirmed. Reclassify a statement on the previous screen if
+        you read one differently.
+      </p>
+    </div>
+    <p class="os-prompt-card__action">
+      <a class="os-btn os-btn--primary os-btn--sm" href="{{ room.requirements_step_url }}" data-os-step="requirements">Review requirements</a>
+    </p>
+  </div>
+</div>
+
+{% elif not alignment.has_analysis %}
+{# Server-authored, cloned into place by the room script while the request is
+   genuinely in flight. These are image 08's own stage names, and this is the
+   first slice in which every one of them is true. #}
+{% set stage_heading = 'Preparing your evidence alignment' %}
+{% set stage_truth = 'Nothing is being saved, published, shared, or sent to an employer.' %}
+{% set stages = [
+     ('Requirements confirmed', 'PeerSlate is working from the qualifications you accepted.'),
+     ('Checking authorized evidence', 'Comparing them with the evidence you authorized for this use.'),
+     ('Preparing the evidence map', 'Laying out what each piece of evidence establishes.')
+   ] %}
+<template data-os-stage-template>{% include "partials/opportunity_slate/_stage_rail.html" %}</template>
+
+<div class="os-card os-card--panel">
+  <div class="os-prompt-card">
+    <span class="os-prompt-card__badge">{{ os_icon('sparkle') }}</span>
+    <div class="os-prompt-card__body">
+      <p class="os-prompt-card__heading" data-os-focus tabindex="-1">Explore how your evidence aligns</p>
+      <p>
+        PeerSlate compares each confirmed qualification with the evidence you
+        authorized, and shows you which of the employer's own words each piece
+        of evidence establishes — with the excerpt it read, so you can check
+        it. It does not score you, rank you, or predict what an employer will
+        do.
+      </p>
+      {% if room.is_public %}
+      <p class="os-help os-help--muted">
+        {{ os_icon('globe', 'os-icon os-icon--sm') }}{{ alignment.demo_note }}
+      </p>
+      {% elif not alignment.evidence_choices %}
+      <p class="os-help os-help--muted">
+        {{ os_icon('info', 'os-icon os-icon--sm') }}You have no confirmed
+        Workshop evidence yet, so there is nothing for this to compare against.
+        Running it will honestly report that for every qualification.
+      </p>
+      {% else %}
+      {# Independent review finding F2. THIS IS THE FIRST STEP IN THE ROOM AT
+         WHICH MEMBER-OWNED CONTENT LEAVES PEERSLATE. Every earlier AI step
+         sent only the employer's role text, and the public-mode cards
+         disclose that in so many words ("This sends the role text to
+         PeerSlate's AI provider"). Here up to 24 of the member's own
+         confirmed Workshop items are serialised into the prompt, and a
+         signed-in member was told only that the items would be "read".
+
+         The transit sentence uses the room's established grammar and is
+         SCOPED TO PEERSLATE BY NAME. It does not say what the provider
+         retains — that promise is not PeerSlate's to make (see the block in
+         _room.html and test_no_surface_in_the_room_asserts_the_ai_providers_
+         retention). "Nothing in your library is changed" is kept: it is a
+         different fact, and it is one PeerSlate can guarantee. #}
+      <p class="os-help os-help--muted">
+        {{ os_icon('shield', 'os-icon os-icon--sm') }}{{ alignment.evidence_choices | length }} confirmed
+        Workshop item{{ '' if alignment.evidence_choices | length == 1 else 's' }} will
+        be read for this comparison. This sends the wording of those items to
+        PeerSlate's AI provider. Nothing in your library is changed.
+      </p>
+      {% endif %}
+    </div>
+    <form class="os-prompt-card__action" method="post" action="{{ room.analysis_url }}" data-os-form="analyze">
+      <button type="submit" class="os-btn os-btn--primary os-btn--sm" data-os-analyze>
+        {{ os_icon('sparkle') }}<span>Explore alignment</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+{% else %}
+
+{# Finding F10, the announcement half. The stage rail's last polite message
+   is stage 3, which fires immediately BEFORE the fragment swap, so a screen
+   reader user was told the screen was being rebuilt and then never told it
+   had been. The room script reads this element out of the freshly swapped
+   fragment and repeats it through the persistent live region that lives
+   OUTSIDE the fragment — a live region inserted together with its own text
+   is not reliably announced. The sentence is authored here, like every other
+   sentence on this screen; the script owns no copy. #}
+<p class="os-visually-hidden" data-os-swap-announce>
+  Evidence alignment ready. Each qualification below shows what the evidence
+  you authorized establishes, and the excerpt PeerSlate read.
+</p>
+
+{% for group in alignment.groups %}
+{% if group.is_qualification %}
+{# Image 04 draws the two qualification cards open, with their own visible
+   column headers. They are headed sections rather than disclosures because
+   the authority gives them no chevron and no collapsed state. #}
+<section class="os-card os-card--panel os-qual" aria-labelledby="os-qual-{{ group.class }}">
+  <h3 class="os-qual__title" id="os-qual-{{ group.class }}"
+      {% if loop.first %}data-os-focus tabindex="-1"{% endif %}>
+    {{ group.label }}<span class="os-qual__dot" aria-hidden="true">·</span><span class="os-qual__count">{{ group.count }}</span>
+  </h3>
+  {% if group.count %}
+  <table class="os-align">
+    <caption class="os-visually-hidden">
+      {{ group.label }} from the confirmed employer source, with what your
+      authorized evidence establishes for each
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col" class="os-align__num"><span class="os-visually-hidden">Number</span></th>
+        <th scope="col">Employer qualification and explanation</th>
+        <th scope="col">Status</th>
+        <th scope="col">Authorized evidence</th>
+        <th scope="col" class="os-align__review">Review</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for statement in group.statements %}
+      <tr class="os-align__row{% if statement.key == alignment.selected_key %} is-selected{% endif %}"
+          data-os-align-row="{{ statement.key }}">
+        <td class="os-align__num">{{ loop.index }}</td>
+        <td class="os-align__text">
+          <span class="os-align__wording">{{ statement.text }}</span>
+          {% if statement.explanation %}
+          <span class="os-align__explanation">{{ statement.explanation }}</span>
+          {% endif %}
+          {% if statement.response %}
+          <span class="os-align__response">{{ os_icon('check', 'os-icon os-icon--sm') }}You responded to this</span>
+          {% endif %}
+        </td>
+        <td class="os-align__status">
+          {% if statement.status %}
+          <span class="os-pill os-pill--{{ statement.status }}">
+            <span class="os-dot os-dot--{{ statement.status }}" aria-hidden="true"></span>{{ statement.status_label }}
+          </span>
+          {% else %}
+          <span class="os-align__none" aria-hidden="true">—</span>
+          <span class="os-visually-hidden">Not analyzed</span>
+          {% endif %}
+        </td>
+        <td class="os-align__evidence">
+          {% if statement.evidence_references %}
+          {% for reference in statement.evidence_references %}
+          <span class="os-evidence-ref">
+            <span class="os-evidence-ref__title">{{ reference.evidence_title }}</span>
+            <span class="os-evidence-ref__version">Version {{ reference.evidence_version }}</span>
+          </span>
+          {% endfor %}
+          {% else %}
+          <span class="os-align__none" aria-hidden="true">—</span>
+          <span class="os-visually-hidden">No authorized evidence cited</span>
+          {% endif %}
+        </td>
+        <td class="os-align__review">
+          {# A real link, so the workbench works with JavaScript off; the room
+             script intercepts it and swaps the rails in place. #}
+          <a class="os-align__select"
+             href="{{ room.alignment_step_url }}&amp;statement={{ statement.key }}#os-evidence-rail"
+             data-os-select-align="{{ statement.key }}"
+             {% if statement.key == alignment.selected_key %}aria-current="true"{% endif %}>
+            {{ os_icon('external', 'os-icon os-icon--sm') }}
+            <span class="os-visually-hidden">Review qualification {{ loop.index }}</span>
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="os-qual__empty">
+    PeerSlate did not read any of the employer's statements this way. That is a
+    reading, not a fact about the role — reclassify any statement on the
+    previous screen if you disagree.
+  </p>
+  {% endif %}
+</section>
+{% else %}
+{# Responsibilities and Informational statements: image 04 draws them as
+   collapsed cards with a leading chevron and NO status column. They are not
+   qualifications, PeerSlate compared them against nothing, and giving them a
+   status would claim an analysis that did not happen. #}
+<details class="os-card os-card--panel os-context-group" id="os-group-{{ group.class }}">
+  <summary class="os-context-group__summary">
+    <span class="os-context-group__chevron" aria-hidden="true">{{ os_icon('chevron', 'os-icon os-icon--sm') }}</span>
+    <span class="os-context-group__title">{{ group.label }}</span>
+    <span class="os-context-group__count">{{ group.count }}</span>
+  </summary>
+  <div class="os-context-group__body">
+    <p class="os-context-group__note">
+      These are not qualifications, so nothing here was compared against your
+      evidence.
+    </p>
+    {% if group.count %}
+    <ul class="os-context-group__list">
+      {% for statement in group.statements %}
+      <li>{{ statement.text }}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="os-context-group__note">PeerSlate read none of the employer's statements this way.</p>
+    {% endif %}
+  </div>
+</details>
+{% endif %}
+{% endfor %}
+
+<p class="os-help os-help--muted os-align__provenance">
+  {% if alignment.analysis.model %}
+  Compared by {{ alignment.analysis.model }} · contract {{ alignment.analysis.prompt_contract }} ·
+  {{ alignment.evidence_considered }} authorized evidence item{{ '' if alignment.evidence_considered == 1 else 's' }} read
+  {% else %}
+  No evidence was available to read, so no model was asked. Contract
+  {{ alignment.analysis.prompt_contract }}.
+  {% endif %}
+</p>
+{% endif %}
+
+{# Image 04's footer strip, and it stays INSIDE the workbench deliberately.
+
+   The independent recheck asked for it below the response and evidence rails,
+   as the page's closing actions. That was built and measured, and it costs a
+   desktop deviation from the locked authority: with the strip a sibling of the
+   rails, its row is shared with the response rail, and a role whose workbench
+   is shorter than the left column drops the strip away from the cards it
+   belongs to — 138px of bare canvas at 1440 in the public preview, measured.
+   CSS grid cannot decouple two columns' row flows without a wrapper, and no
+   wrapper can hold the workbench and the strip adjacent while the rails sit
+   between them in source order.
+
+   It also reads better here. The strip's dominant content is a truth
+   statement ABOUT THE RESULTS — "Session private · Nothing is saved yet" —
+   and keeping it directly under the results keeps that sentence beside the
+   thing it is true of instead of two thousand pixels below it on a phone.
+   The action it carries that can destroy work, `Run this again`, is likewise
+   next to the analysis it would replace. `Save privately` is inert until
+   slice OS-4, so nothing here is an action a member can complete too early.
+   Recorded in OS-3_COMPLETION_REPORT.md §5 with the measurements. #}
+<div class="os-card os-card--footer">
+  <div class="os-footer-strip">
+    {# Finding F9: these three sentences are reviewed copy and now come from
+       the ALIGNMENT_FOOTER_* / ALIGNMENT_SAVE_NOTE constants in
+       opportunity_slate_routes.py, which the static prose guard scans. They
+       were previously typed here as well, and had already drifted. #}
+    <p class="os-footer-strip__truth">
+      {{ os_icon('lock') }}
+      <span>
+        <strong>{{ alignment.footer_truth }}</strong>
+        {{ alignment.footer_detail }}
+      </span>
+    </p>
+    <div class="os-footer-strip__actions">
+      <a class="os-link" href="{{ room.requirements_step_url }}" data-os-step="requirements">Review inputs</a>
+      {% if alignment.has_analysis %}
+      <form method="post" action="{{ room.analysis_url }}" data-os-form="analyze">
+        <button type="submit" class="os-btn os-btn--quiet" data-os-analyze>
+          {{ os_icon('refresh', 'os-icon os-icon--sm') }}<span>Run this again</span>
+        </button>
+      </form>
+      {% endif %}
+      {# Honest inert primary, in the grammar slices OS-1 and OS-2 established.
+         Image 04 draws `Save privately` here and saving is slice OS-4, so the
+         control renders exactly as drawn and says plainly that it does
+         nothing yet rather than pretending to work. #}
+      <button type="button" class="os-btn os-btn--primary" aria-disabled="true"
+              aria-describedby="os-save-note" data-os-inert-save>
+        {{ os_icon('lock', 'os-icon os-icon--sm') }}<span>Save privately</span>
+      </button>
+    </div>
+  </div>
+</div>
+<p class="os-help os-help--muted os-footer-note" id="os-save-note">{{ alignment.save_note }}</p>

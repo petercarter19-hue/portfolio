@@ -807,12 +807,20 @@ for _oppslate_rate_limited_endpoint, _oppslate_rate_limit in (
     # PS-OPPSLATE-001 slice OS-2.
     ('opportunity_slate.resolve_source_concern', '30 per minute'),
     ('opportunity_slate.correct_statement', '30 per minute'),
-    ('opportunity_slate.confirm_requirements', '30 per minute'),
+    # Moved to the AI budget by slice OS-3: this endpoint now runs the
+    # alignment analysis in the same member action (see the OS-3 block below).
+    ('opportunity_slate.confirm_requirements', '6 per minute'),
     # The AI budget. Every route below reaches
     # services/opportunity_analysis_service.py and therefore a model.
     ('opportunity_slate.review_source_wording', '6 per minute'),
     ('opportunity_slate.interpret_requirements', '6 per minute'),
     ('opportunity_slate.public_propose', '6 per minute'),
+    # PS-OPPSLATE-001 slice OS-3. run_analysis calls a model; confirm_requirements
+    # now records checkpoint 2 AND runs that same analysis in one member action
+    # (image 03's "Confirm requirements and analyze"), so it moves onto the AI
+    # budget rather than the ordinary write budget. save_response calls no model.
+    ('opportunity_slate.run_analysis', '6 per minute'),
+    ('opportunity_slate.save_response', '30 per minute'),
 ):
     app.view_functions[_oppslate_rate_limited_endpoint] = limiter.limit(
         _oppslate_rate_limit

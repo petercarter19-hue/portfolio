@@ -221,6 +221,86 @@ CONFIRM_REQUIREMENTS_ROW_FIELDS = frozenset(
     {"outcome", "set_row_version", "confirmed_version_number"}
 )
 
+# Slice OS-3 row shapes.
+EVIDENCE_ROW_FIELDS = frozenset(
+    {
+        "evidence_key",
+        "evidence_version",
+        "evidence_title",
+        "evidence_body",
+        "evidence_updated_at_utc",
+    }
+)
+ANALYSIS_ROW_FIELDS = frozenset(
+    {
+        "analysis_key",
+        "analysis_row_version",
+        "source_version_number",
+        "requirement_version_number",
+        "model_name",
+        "prompt_contract_version",
+        "evidence_considered_count",
+        "qualification_count",
+        "analyzed_at_utc",
+    }
+)
+ANALYSIS_STATEMENT_ROW_FIELDS = frozenset(
+    {"statement_key", "ordinal", "derived_status", "citation_count"}
+)
+ANALYSIS_CITATION_ROW_FIELDS = frozenset(
+    {
+        "statement_key",
+        "ordinal",
+        "clause_ordinal",
+        "covered_text",
+        "evidence_kind",
+        "evidence_key",
+        "evidence_version",
+        "evidence_title",
+        "excerpt",
+    }
+)
+RESPONSE_ROW_FIELDS = frozenset(
+    {
+        "statement_key",
+        "response_key",
+        "response_row_version",
+        "response_kind",
+        "response_text",
+        "authored_via",
+        "connected_evidence_kind",
+        "connected_evidence_key",
+        "connected_evidence_version",
+        "connected_evidence_title",
+        "updated_at_utc",
+    }
+)
+SAVE_ANALYSIS_ROW_FIELDS = frozenset(
+    {"outcome", "analysis_key", "qualification_count"}
+)
+SAVE_RESPONSE_ROW_FIELDS = frozenset({"outcome", "response_key", "response_kind"})
+
+# Slice OS-3. The three named per-statement states image 04 draws, and the
+# whole of the qualification accounting. Not an order, not a scale, and not a
+# score: nothing in this module ever sums, averages, ranks, or weights them.
+ALIGNMENT_STATUSES = frozenset(
+    {"supported", "partially_supported", "not_enough_information"}
+)
+RESPONSE_KINDS = frozenset(
+    {"tell_more", "connect_evidence", "real_example", "confirm_not_have", "skip"}
+)
+AUTHORED_VIA_VALUES = frozenset({"typed", "spoken"})
+EVIDENCE_KINDS = frozenset({"knowledge_item", "moment"})
+
+MAX_EVIDENCE_ITEMS = 24
+MAX_EVIDENCE_TITLE_UNITS = 200
+MAX_EVIDENCE_BODY_UNITS = 8000
+MAX_COVERED_TEXT_UNITS = 200
+MAX_EXCERPT_UNITS = 400
+MAX_RESPONSE_TEXT_UNITS = 4000
+MAX_ANALYSED_STATEMENTS = 40
+MAX_CITATIONS_PER_STATEMENT = 24
+
 _SAVE_OUTCOMES = frozenset({"success", "existing", "unchanged"})
 
 
@@ -791,6 +871,202 @@ def _encode_structure(paths):
             "Invalid interpreted structure.", code="invalid"
         )
     return serialized
+
+
+@dataclass(frozen=True)
+class EvidenceItemView:
+    """One piece of the member's own confirmed evidence, READ ONLY.
+
+    Slice OS-3's fourth data class (handoff section 1). The member's library
+    is the one authoritative place this content lives: Opportunity Slate reads
+    it, grounds an analysis in it, and writes nothing back. ``version`` is the
+    confirmed version number, pinned into any citation that quotes it so the
+    member can still tell what the analysis actually read after they edit the
+    item.
+    """
+
+    evidence_key: str
+    version: int
+    title: str
+    body: str
+    updated_at: datetime
+
+    @property
+    def kind(self):
+        # Slice OS-3 grounds on confirmed Workshop knowledge items only.
+        # Moments are part of the architectural enum (handoff section 17-Q2)
+        # and are deliberately not read here; the screen says so plainly.
+        return "knowledge_item"
+
+
+@dataclass(frozen=True)
+class AnalysisCitationView:
+    """One grounded citation: employer words, evidence reference, excerpt.
+
+    ``covered_text`` is a verbatim span of the employer's own confirmed
+    clause and ``excerpt`` a verbatim span of the member's own evidence.
+    Neither is model prose — see the composition-boundary block in
+    ``services/opportunity_analysis_service.py``.
+    """
+
+    ordinal: int
+    clause_ordinal: int
+    covered_text: str
+    evidence_kind: str
+    evidence_key: str
+    evidence_version: int
+    evidence_title: str
+    excerpt: str
+
+
+@dataclass(frozen=True)
+class AnalysisStatementView:
+    """One qualification's result. ``status`` is derived, never model-authored."""
+
+    statement_key: str
+    ordinal: int
+    status: str
+    citation_count: int
+    citations: tuple
+
+    @property
+    def evidence_references(self):
+        """The distinct evidence records this result cites, in citation order."""
+        seen = []
+        for citation in self.citations:
+            key = (citation.evidence_key, citation.evidence_version)
+            if key not in [(item.evidence_key, item.evidence_version) for item in seen]:
+                seen.append(citation)
+        return tuple(seen)
+
+
+@dataclass(frozen=True)
+class AnalysisView:
+    """One alignment analysis of one confirmed requirement-set version."""
+
+    analysis_key: str
+    version_token: str
+    source_version_number: int
+    requirement_version_number: int
+    model_name: str
+    prompt_contract_version: str
+    evidence_considered_count: int
+    qualification_count: int
+    analyzed_at: datetime
+    statements: tuple
+
+    def counts_by_status(self):
+        """Per-status counts only.
+
+        Handoff section 1 and the locked rules: qualification accounting is
+        per-status counts, never an overall score, percentage, recommendation,
+        or verdict. This method and
+        ``RequirementSetView.counts_by_class`` are the only aggregation this
+        module performs, and both return independent counts of named states.
+        """
+        counts = {name: 0 for name in sorted(ALIGNMENT_STATUSES)}
+        for statement in self.statements:
+            counts[statement.status] = counts.get(statement.status, 0) + 1
+        return counts
+
+
+@dataclass(frozen=True)
+class ResponseView:
+    """One member response to one qualification.
+
+    Member-attributed context, stored apart from both the AI proposal and the
+    authorized evidence (handoff section 10): it never becomes a citation and
+    never changes a derived status.
+    """
+
+    statement_key: str
+    response_key: str
+    version_token: str
+    response_kind: str
+    response_text: str | None
+    authored_via: str
+    connected_evidence_kind: str | None
+    connected_evidence_key: str | None
+    connected_evidence_version: int | None
+    connected_evidence_title: str | None
+    updated_at: datetime
+
+
+def _serialize_evidence_row(row):
+    _require_exact_fields(row, EVIDENCE_ROW_FIELDS, "evidence row")
+    return EvidenceItemView(
+        evidence_key=_opaque_key(row["evidence_key"], "evidence key"),
+        version=_positive_int(row["evidence_version"], "evidence version"),
+        title=_bounded_text(
+            row["evidence_title"], "evidence title", MAX_EVIDENCE_TITLE_UNITS
+        ),
+        body=_bounded_text(
+            row["evidence_body"], "evidence wording", MAX_EVIDENCE_BODY_UNITS
+        ),
+        updated_at=_utc_timestamp(row["evidence_updated_at_utc"], "evidence time"),
+    )
+
+
+def _serialize_citation_row(row):
+    _require_exact_fields(row, ANALYSIS_CITATION_ROW_FIELDS, "citation row")
+    return AnalysisCitationView(
+        ordinal=_positive_int(row["ordinal"], "citation ordinal"),
+        clause_ordinal=_positive_int(row["clause_ordinal"], "clause ordinal"),
+        covered_text=_bounded_text(
+            row["covered_text"], "covered wording", MAX_COVERED_TEXT_UNITS
+        ),
+        evidence_kind=_bounded_choice(
+            row["evidence_kind"], EVIDENCE_KINDS, "evidence kind"
+        ),
+        evidence_key=_opaque_key(row["evidence_key"], "evidence key"),
+        evidence_version=_positive_int(row["evidence_version"], "evidence version"),
+        evidence_title=_bounded_text(
+            row["evidence_title"], "evidence title", MAX_EVIDENCE_TITLE_UNITS
+        ),
+        excerpt=_bounded_text(row["excerpt"], "evidence excerpt", MAX_EXCERPT_UNITS),
+    )
+
+
+def _serialize_response_row(row):
+    _require_exact_fields(row, RESPONSE_ROW_FIELDS, "response row")
+    text = row["response_text"]
+    if text is not None:
+        text = _bounded_text(text, "response", MAX_RESPONSE_TEXT_UNITS)
+    connected_kind = row["connected_evidence_kind"]
+    if connected_kind is not None:
+        connected_kind = _bounded_choice(
+            connected_kind, EVIDENCE_KINDS, "connected evidence kind"
+        )
+    connected_title = row["connected_evidence_title"]
+    if connected_title is not None:
+        connected_title = _bounded_text(
+            connected_title, "connected evidence title", MAX_EVIDENCE_TITLE_UNITS
+        )
+    return ResponseView(
+        statement_key=_opaque_key(row["statement_key"], "statement key"),
+        response_key=_opaque_key(row["response_key"], "response key"),
+        version_token=_version_token(
+            row["response_row_version"], "response row version"
+        ),
+        response_kind=_bounded_choice(
+            row["response_kind"], RESPONSE_KINDS, "response kind"
+        ),
+        response_text=text,
+        authored_via=_bounded_choice(
+            row["authored_via"], AUTHORED_VIA_VALUES, "response provenance"
+        ),
+        connected_evidence_kind=connected_kind,
+        connected_evidence_key=(
+            None
+            if row["connected_evidence_key"] is None
+            else _opaque_key(row["connected_evidence_key"], "connected evidence key")
+        ),
+        connected_evidence_version=_optional_positive_int(
+            row["connected_evidence_version"], "connected evidence version"
+        ),
+        connected_evidence_title=connected_title,
+        updated_at=_utc_timestamp(row["updated_at_utc"], "response time"),
+    )
 
 
 class OpportunitySlateService:
@@ -1515,6 +1791,355 @@ class OpportunitySlateService:
             ),
             "confirmed_version_number": _positive_int(
                 row["confirmed_version_number"], "confirmed version"
+            ),
+        }
+
+    # ------------------------------------------------------------------
+    # Slice OS-3: the evidence allowlist, the alignment analysis, and the
+    # member's responses.
+    #
+    # The evidence read is READ ONLY over the member's own Workshop library.
+    # Nothing in this module writes a knowledge item, a moment, or any other
+    # canonical record: an analysis references evidence by key and pinned
+    # version and copies only a bounded excerpt for identifiability.
+    # ------------------------------------------------------------------
+
+    def list_evidence_for_owner(self, user_key, *, max_items=MAX_EVIDENCE_ITEMS):
+        """This owner's confirmed evidence, bounded, newest first.
+
+        Only CONFIRMED, unarchived knowledge items: a draft or a suggestion is
+        not something the member has authorized as evidence about themselves,
+        so it never reaches a prompt. An empty list is an ordinary answer and
+        the caller renders a truthful "nothing to compare against" screen
+        rather than a failure.
+        """
+        self._require_user_key(user_key)
+        bounded = max(1, min(int(max_items or MAX_EVIDENCE_ITEMS), MAX_EVIDENCE_ITEMS))
+        result_sets = self.database.execute_procedure(
+            "usp_ListOpportunityEvidenceForOwner",
+            [("@UserKey", user_key), ("@MaxItems", bounded)],
+        )
+        rows = result_sets[0] if result_sets else []
+        return tuple(_serialize_evidence_row(row) for row in rows)
+
+    def get_analysis_for_owner(self, user_key):
+        """``(analysis_or_None, responses_by_statement_key)``.
+
+        The analysis is ``None`` when none has been run for the current
+        requirement-set version — deliberately a different fact from "it ran
+        and established nothing", which is an analysis whose statements are
+        all ``not_enough_information``, and the screen says the two
+        differently. Responses are returned either way: they are the member's
+        own words and belong to the qualification, not to any one run.
+        """
+        self._require_user_key(user_key)
+        result_sets = self.database.execute_procedure(
+            "usp_GetOpportunityAnalysisForOwner",
+            [("@UserKey", user_key)],
+        )
+        result_sets = list(result_sets or [])
+        while len(result_sets) < 4:
+            result_sets.append([])
+
+        responses = {}
+        for row in result_sets[3]:
+            view = _serialize_response_row(row)
+            responses[view.statement_key] = view
+
+        analysis_rows = result_sets[0]
+        if not analysis_rows:
+            return None, responses
+
+        row = analysis_rows[0]
+        _require_exact_fields(row, ANALYSIS_ROW_FIELDS, "analysis row")
+
+        citations_by_statement = {}
+        for citation_row in result_sets[2]:
+            _require_exact_fields(
+                citation_row, ANALYSIS_CITATION_ROW_FIELDS, "citation row"
+            )
+            key = _opaque_key(citation_row["statement_key"], "statement key")
+            citations_by_statement.setdefault(key, []).append(
+                _serialize_citation_row(citation_row)
+            )
+
+        statements = []
+        for statement_row in result_sets[1]:
+            _require_exact_fields(
+                statement_row, ANALYSIS_STATEMENT_ROW_FIELDS, "analysis statement row"
+            )
+            key = _opaque_key(statement_row["statement_key"], "statement key")
+            citations = tuple(
+                sorted(
+                    citations_by_statement.get(key, ()),
+                    key=lambda item: item.ordinal,
+                )
+            )
+            status = _bounded_choice(
+                statement_row["derived_status"], ALIGNMENT_STATUSES, "alignment status"
+            )
+            count = _non_negative_int(statement_row["citation_count"], "citation count")
+            if len(citations) != count:
+                # The stored count and the stored citations are two records of
+                # one fact. Disagreeing means the row is not trustworthy, and a
+                # trustworthy failure beats a plausible screen.
+                raise OpportunitySlateServiceError(
+                    "The analysis result is incomplete.", code="invalid"
+                )
+            if (count == 0) != (status == "not_enough_information"):
+                # The database CHECK says the same thing; asserted again here
+                # so a future procedure edit cannot quietly present a
+                # "supported" result with nothing behind it.
+                raise OpportunitySlateServiceError(
+                    "The analysis result is incomplete.", code="invalid"
+                )
+            statements.append(
+                AnalysisStatementView(
+                    statement_key=key,
+                    ordinal=_positive_int(statement_row["ordinal"], "ordinal"),
+                    status=status,
+                    citation_count=count,
+                    citations=citations,
+                )
+            )
+
+        if not statements:
+            raise OpportunitySlateServiceError(
+                "The analysis result is incomplete.", code="invalid"
+            )
+
+        analysis = AnalysisView(
+            analysis_key=_opaque_key(row["analysis_key"], "analysis key"),
+            version_token=_version_token(
+                row["analysis_row_version"], "analysis row version"
+            ),
+            source_version_number=_positive_int(
+                row["source_version_number"], "source version"
+            ),
+            requirement_version_number=_positive_int(
+                row["requirement_version_number"], "requirement version"
+            ),
+            model_name=_bounded_text(
+                row["model_name"], "model name", MAX_MODEL_NAME_UNITS
+            ),
+            prompt_contract_version=_bounded_text(
+                row["prompt_contract_version"],
+                "prompt contract version",
+                MAX_PROMPT_CONTRACT_UNITS,
+            ),
+            evidence_considered_count=_non_negative_int(
+                row["evidence_considered_count"], "evidence count"
+            ),
+            qualification_count=_positive_int(
+                row["qualification_count"], "qualification count"
+            ),
+            analyzed_at=_utc_timestamp(row["analyzed_at_utc"], "analysis time"),
+            statements=tuple(sorted(statements, key=lambda item: item.ordinal)),
+        )
+        return analysis, responses
+
+    def save_analysis_for_owner(
+        self,
+        user_key,
+        requirement_set_key,
+        expected_version_token,
+        results,
+        model_name,
+        prompt_contract_version,
+        evidence_considered_count,
+    ):
+        """Record one validated, grounded alignment analysis.
+
+        ``results`` arrive already validated and DERIVED by
+        ``services/opportunity_analysis_service.py``; every field is re-bounded
+        here before it reaches the database, because the two layers are
+        allowed to be corrected independently. Nothing in this method computes
+        or accepts an aggregate — there is no field for one.
+        """
+        self._require_user_key(user_key)
+        clean_set_key = self._require_source_key(requirement_set_key)
+        expected_row_version = self._require_expected_row_version(
+            expected_version_token
+        )
+        if not isinstance(results, (list, tuple)) or not results:
+            raise OpportunitySlateServiceError(
+                "Invalid analysis results.", code="invalid"
+            )
+        if len(results) > MAX_ANALYSED_STATEMENTS:
+            raise OpportunitySlateServiceError(
+                "Too many analysis results.", code="invalid"
+            )
+
+        payload = []
+        for result in results:
+            if not isinstance(result, dict):
+                raise OpportunitySlateServiceError(
+                    "Invalid analysis result.", code="invalid"
+                )
+            citations = result.get("citations") or []
+            if not isinstance(citations, (list, tuple)):
+                raise OpportunitySlateServiceError(
+                    "Invalid analysis citations.", code="invalid"
+                )
+            if len(citations) > MAX_CITATIONS_PER_STATEMENT:
+                raise OpportunitySlateServiceError(
+                    "Too many analysis citations.", code="invalid"
+                )
+            status = _bounded_choice(
+                result.get("status"), ALIGNMENT_STATUSES, "alignment status"
+            )
+            if (len(citations) == 0) != (status == "not_enough_information"):
+                raise OpportunitySlateServiceError(
+                    "Invalid analysis result.", code="invalid"
+                )
+            payload.append(
+                {
+                    "statement_key": _opaque_key(
+                        result.get("statement_key"), "statement key"
+                    ),
+                    "derived_status": status,
+                    "citation_count": len(citations),
+                    # Independent review finding F7. The evidence IDENTITY is
+                    # no longer sent: usp_SaveOpportunityAnalysisForOwner reads
+                    # the version, the title and the kind out of the member's
+                    # own confirmed Workshop item, exactly as its sibling
+                    # usp_SaveOpportunityResponseForOwner already did. Sending
+                    # them here would put three fields in the payload that
+                    # nothing reads, which is how a caller comes to believe it
+                    # controls them.
+                    "citations": [
+                        {
+                            "ordinal": ordinal,
+                            "clause_ordinal": _positive_int(
+                                citation.get("clause_ordinal"), "clause ordinal"
+                            ),
+                            "covered_text": _bounded_text(
+                                citation.get("covered_text"),
+                                "covered wording",
+                                MAX_COVERED_TEXT_UNITS,
+                            ),
+                            "evidence_key": _opaque_key(
+                                citation.get("evidence_key"), "evidence key"
+                            ),
+                            "excerpt": _bounded_text(
+                                citation.get("excerpt"),
+                                "evidence excerpt",
+                                MAX_EXCERPT_UNITS,
+                            ),
+                        }
+                        for ordinal, citation in enumerate(citations, start=1)
+                    ],
+                }
+            )
+
+        row = self.database.first_row(
+            "usp_SaveOpportunityAnalysisForOwner",
+            [
+                ("@UserKey", user_key),
+                ("@RequirementSetKey", clean_set_key),
+                ("@ExpectedRowVersion", expected_row_version),
+                (
+                    "@ModelName",
+                    _bounded_text(model_name, "model name", MAX_MODEL_NAME_UNITS),
+                ),
+                (
+                    "@PromptContractVersion",
+                    _bounded_text(
+                        prompt_contract_version,
+                        "prompt contract version",
+                        MAX_PROMPT_CONTRACT_UNITS,
+                    ),
+                ),
+                (
+                    "@EvidenceConsideredCount",
+                    _non_negative_int(
+                        evidence_considered_count, "evidence count"
+                    ),
+                ),
+                (
+                    "@ResultsJson",
+                    json.dumps(payload, separators=(",", ":"), ensure_ascii=False),
+                ),
+            ],
+        )
+        _require_exact_fields(row, SAVE_ANALYSIS_ROW_FIELDS, "analysis result")
+        self._raise_for_fenced_outcome(row["outcome"], "alignment analysis")
+        return {
+            "outcome": "success",
+            "analysis_key": _opaque_key(row["analysis_key"], "analysis key"),
+            "qualification_count": _positive_int(
+                row["qualification_count"], "qualification count"
+            ),
+        }
+
+    def save_response_for_owner(
+        self,
+        user_key,
+        statement_key,
+        expected_version_token,
+        response_kind,
+        response_text=None,
+        authored_via="typed",
+        connected_evidence_key=None,
+    ):
+        """Record the member's own answer to one qualification.
+
+        The connected-evidence path passes a KEY only: the procedure reads the
+        title and the confirmed version from the member's own library, so this
+        layer can never label somebody else's record or pin a version that
+        does not exist.
+        """
+        self._require_user_key(user_key)
+        clean_statement_key = self._require_source_key(statement_key)
+        expected_row_version = self._require_expected_row_version(
+            expected_version_token
+        )
+        kind = _bounded_choice(response_kind, RESPONSE_KINDS, "response kind")
+        provenance = _bounded_choice(
+            authored_via, AUTHORED_VIA_VALUES, "response provenance"
+        )
+
+        cleaned_text = None
+        if kind in {"tell_more", "real_example"}:
+            cleaned_text = response_text.strip() if isinstance(response_text, str) else ""
+            if not cleaned_text:
+                raise OpportunitySlateServiceError(
+                    "Add your response before continuing.", code="required"
+                )
+            if utf16_length(cleaned_text) > MAX_RESPONSE_TEXT_UNITS:
+                raise OpportunitySlateServiceError(
+                    f"That response is longer than {MAX_RESPONSE_TEXT_UNITS:,} "
+                    "characters.",
+                    code="too_long",
+                )
+
+        evidence_key = None
+        if kind == "connect_evidence":
+            evidence_key = normalize_source_key(connected_evidence_key)
+            if not evidence_key:
+                raise OpportunitySlateServiceError(
+                    "Choose which evidence to connect.", code="required"
+                )
+
+        row = self.database.first_row(
+            "usp_SaveOpportunityResponseForOwner",
+            [
+                ("@UserKey", user_key),
+                ("@StatementKey", clean_statement_key),
+                ("@ExpectedRowVersion", expected_row_version),
+                ("@ResponseKind", kind),
+                ("@ResponseText", cleaned_text),
+                ("@AuthoredVia", provenance),
+                ("@ConnectedEvidenceKey", evidence_key),
+            ],
+        )
+        _require_exact_fields(row, SAVE_RESPONSE_ROW_FIELDS, "response result")
+        self._raise_for_fenced_outcome(row["outcome"], "response")
+        return {
+            "outcome": "success",
+            "response_key": _opaque_key(row["response_key"], "response key"),
+            "response_kind": _bounded_choice(
+                row["response_kind"], RESPONSE_KINDS, "response kind"
             ),
         }
 

@@ -7,7 +7,7 @@
      02-PRIMARY-Review-Source.png          (review source)
      04-PRIMARY-Alignment-Unsaved-...png   (exact geometry authority:
                                             card system, depth, and the
-                                            uniform 12px card gap)
+                                            owner-clarified 24px card gap)
      09-SUPPORT-Fallback-...png            (failure-card grammar)
 
    Scoped entirely under body.opportunity-slate-page so nothing here can
@@ -109,9 +109,10 @@ body.opportunity-slate-page {
 
     --os-focus: #0d45c3;
 
-    /* The uniform 12px vertical card spacing image 04 locks. Applied as a
-       single `gap` on card stacks — never as ad-hoc margins. */
-    --os-card-gap: 12px;
+    /* Pete's 2026-08-04 clarification follows image 04's measured ~24px
+       spacing and supersedes the generated set's contradictory 12px prose.
+       Applied as one `gap` on card stacks — never as ad-hoc margins. */
+    --os-card-gap: 24px;
     --os-radius: 18px;
     --os-radius-sm: 12px;
 
@@ -457,6 +458,105 @@ body.opportunity-slate-page .main-content {
         clamp(1.1rem, 2.2vw, 1.75rem);
 }
 
+/* Alignment · Explore alignment: image 04's own proportions, measured the same
+   way the other three were — scanning each row of the locked PNG for the
+   near-white card surface (253,253,253) against the cool canvas (247,248,250)
+   and taking the modal edges.
+
+     image 01  1448px frame   workbench x332-1102   770px   53.2%
+     image 02  1295px frame   workbench x239-1075   836px   64.6%
+     image 03  1448px frame   workbench x269-1105   837px   57.8%
+     image 04  1365px frame   workbench x287-1087   800px   58.6%
+
+   Image 04 sits just above image 03, and that is the design rather than
+   noise. It is a table like image 03's, but each row now carries a status
+   column and an authorized-evidence column as well as the employer's wording,
+   and the right rail holds an evidence panel with a quoted excerpt in it. It
+   needs more width than the statement table and less air than the intake
+   form.
+
+   Image 04's own side zones, scaled to a 1440 viewport (x1.0549):
+
+     24 margin | 235 rail | 44 gap | 845 workbench | 56 gap | 211 rail | 27
+
+   The first correction round took the rails DOWN to fit the room's shared
+   40px page padding, and that was the wrong lever: the authority spends less
+   on page margin and more on rail than the other three screens do, and
+   shrinking the rails to preserve a margin the authority does not have left
+   "Confirm I do not have this experience" running to three lines in a panel
+   where image 04 holds it on two. The page padding moves instead, so the
+   rails, the gaps and the workbench are all the authority's own numbers:
+
+     25 | 235 | 44 | 844 | 44 + 12 | 211 | 25   ->  58.6%
+
+   The two gaps are unequal in the authority — the response rail sits CLOSER
+   to the workbench than the evidence rail does, which is the reverse of image
+   03 and reads correctly: the response panel is where the member acts, and
+   the evidence panel is where they check. A grid gap cannot be asymmetric, so
+   the column gap carries the smaller left-hand value and the right rail takes
+   the difference as a margin (the R1 idiom, mirrored). */
+/* THE ALIGNMENT STEP IS THE ONE LAYOUT WHOSE SOURCE ORDER IS THE PHONE'S
+   ORDER, AND WHOSE DESKTOP NEEDS THE OVERRIDE.
+
+   Independent review finding F4, second correction. The first correction
+   reordered the PAINT with `display: contents` + `order` below 640 and left
+   the DOM alone, so keyboard and screen-reader users still met the response
+   rail before any qualification. Measured on that build at 390 signed-in: tab
+   stops 6-13 sat in the response rail at y 3102-3699, stops 14-24 in the
+   qualification cards at y 443-2785, and stop 25 in the evidence rail at
+   y 4326 — down 3,699px, back up to 443, then down again.
+   `_room.html` now emits the four regions in reading order:
+
+     lead (title, intro, truth card)  ->  workbench, closing strip and all
+       ->  response rail  ->  evidence rail
+
+   which is exactly the single column a phone renders with no CSS at all. The
+   three-column authority is rebuilt here with grid AREAS rather than order:
+   grid placement is two-dimensional geometry, not a reordering of the reading
+   sequence, and the sequence above stays the sequence at every width.
+
+   Row sizing. `1fr` on the second row is load-bearing: a spanning item that
+   crosses a flexible track does not contribute to the intrinsic sizing of the
+   content-sized tracks it also crosses, so the tall workbench cannot push the
+   response rail down out of its place under the truth card. Row 1 is the
+   lead's own height, and the response rail starts one card gap below it —
+   exactly where it sat when it was that card's sibling. The row gap is
+   therefore the card gap, and the column gap keeps image 04's 44px.
+
+   The footer strip is NOT a region here, and that is a measured decision
+   rather than an oversight: a grid's rows are shared across its columns, so a
+   footer placed as a sibling of the rails takes its row from whichever column
+   is taller and detaches from the workbench whenever the response rail wins
+   (measured: 138px of canvas at 1440 in the public preview). It stays the
+   workbench's own last card. See the block above it in `_alignment.html`. */
+.os-layout--alignment {
+    --os-rail-left: 235px;
+    /* 223px = the authority's 211px of rail ink plus the 12px the margin
+       below takes back out of the column. */
+    --os-rail-right: 223px;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "lead     work evidence"
+        "response work evidence";
+    column-gap: clamp(0.9rem, 3.05vw, 44px);
+    row-gap: var(--os-card-gap);
+    padding-left: clamp(1rem, 1.75vw, 25px);
+    padding-right: clamp(1rem, 1.75vw, 25px);
+}
+.os-layout--alignment > .os-rail--left { grid-area: lead; }
+.os-layout--alignment > .os-workbench { grid-area: work; }
+.os-layout--alignment > .os-rail--response { grid-area: response; }
+.os-layout--alignment > .os-rail--right { grid-area: evidence; }
+.os-layout--alignment .os-rail--right { margin-left: clamp(0px, 0.85vw, 12px); }
+/* Image 04's left rail is the widest in the set (235 CSS px against image
+   01's 227), so it keeps the intake screen's rail scale rather than stepping
+   down the way images 02 and 03 do. The right rail is the narrowest (211
+   against image 01's 249) and holds a quoted excerpt, so it takes one notch
+   down on its own — the same "one notch, not two" the owner accepted at V15
+   and again at R12. */
+.os-layout--alignment .os-rail--right { font-size: 0.82rem; }
+.os-layout--alignment .os-state-title { font-size: clamp(1.2rem, 1.6vw, 1.45rem); }
+
 .os-rail {
     display: flex;
     flex-direction: column;
@@ -468,7 +568,7 @@ body.opportunity-slate-page .main-content {
     line-height: 1.5;
 }
 /* The authority gives the standing-help rail more air between sections
-   than the 12px card rhythm; card stacks keep the 12px rule. */
+   than the 24px card rhythm; card stacks keep the shared token. */
 .os-rail--right { gap: 0.65rem; }
 .os-rail--right > .os-rail-card + .os-rail-note--divided { margin-top: 0.25rem; }
 
@@ -2084,19 +2184,505 @@ body.opportunity-slate-page .main-content {
     background: var(--os-line);
 }
 
+/* =========================================================
+   SLICE OS-3 — Alignment · Explore alignment (image 04)
+
+   Image 04 is the exact geometry authority for this package, and the
+   structural fact about it is that the workbench is NOT one containing card:
+   measured off the locked PNG the canvas shows between every card, so the
+   alignment step stacks separate cards on the shared 24px gap. Wrapping them
+   would be the "card within a card" the owner rejected as V9 and again as R5.
+   ========================================================= */
+.os-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--os-card-gap);
+}
+.os-card--strip,
+.os-card--panel,
+.os-card--footer {
+    padding: 1.05rem 1.35rem;
+    /* Level 2, not level 3. --os-shadow-raised is the pool ONE workbench card
+       casts to darken the canvas behind both rails; six cards each casting it
+       is a different picture entirely, and side by side against image 04 the
+       stack read heavier and busier than the authority's. The authority gives
+       each card a soft float and lets the canvas gradient do the room
+       lighting — which is exactly the V4/V7/V17 finding ("most of the missing
+       shadow was the canvas modelling, not the cards") read the other way
+       round. */
+    box-shadow: var(--os-shadow-float);
+    /* Image 04's corners are gentler than the single workbench card's. */
+    border-radius: 14px;
+    container-type: inline-size;
+    container-name: os-workbench;
+}
+.os-card--strip { padding-bottom: 1.15rem; }
+.os-card--footer { padding: 0.95rem 1.35rem; }
+
+/* Image 04's context strip runs across the top of the first card with
+   "Review inputs" on its own line, right-aligned, under the chips. */
+.os-card--strip .os-context-strip { border-bottom: 0; padding-bottom: 0; margin-bottom: 0; }
+.os-context-strip__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: auto;
+    color: var(--os-action);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.os-context-strip__link:hover { text-decoration: underline; }
+
+.os-demo-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    margin: 0.7rem 0 0;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--os-warning);
+    border-radius: 8px;
+    background: var(--os-warning-tint);
+    color: var(--os-warning-ink);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+.os-demo-note .os-icon { flex: none; margin-top: 0.15em; color: var(--os-warning-ink); }
+
+/* Count summaries. Two equal boxes, each holding its class count and the
+   three per-status counts — and nothing that combines them. */
+.os-summaries {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--os-card-gap);
+    margin-top: 0.9rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--os-line-soft);
+}
+.os-summary {
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--os-line-soft);
+    border-radius: var(--os-radius-sm);
+    background: var(--os-surface-muted);
+}
+.os-summary__title {
+    display: flex;
+    align-items: baseline;
+    margin: 0 0 0.5rem;
+    color: var(--os-ink);
+    font-family: var(--ps-font-ui);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+.os-summary__dot { margin: 0 0.35rem; color: var(--os-muted); font-weight: 400; }
+.os-summary__count { color: var(--os-muted); font-weight: 700; }
+.os-summary__counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 1.05rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.os-summary__entry {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--os-muted);
+}
+.os-summary__value { color: var(--os-ink); font-weight: 700; }
+
+/* Status semantics. A dot AND a label, never colour alone (section 13), and
+   the three colours the locked rules fix: green supported, amber partially
+   supported, slate gray not enough information. */
+.os-dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--os-neutral);
+}
+.os-dot--supported { background: var(--os-success); }
+.os-dot--partially_supported { background: var(--os-warning); }
+.os-dot--not_enough_information { background: var(--os-neutral); }
+.os-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    color: var(--os-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+.os-pill--supported { color: var(--os-success-ink); }
+.os-pill--partially_supported { color: var(--os-warning-ink); }
+.os-pill--not_enough_information { color: var(--os-neutral-ink); }
+
+/* Qualification cards. Image 04 draws them open, with no chevron and no
+   collapsed state, so they are headed sections rather than disclosures. */
+.os-qual { padding-bottom: 0.35rem; }
+.os-qual__title {
+    display: flex;
+    align-items: baseline;
+    margin: 0 0 0.15rem;
+    color: var(--os-ink);
+    font-family: var(--ps-font-ui);
+    font-size: 1rem;
+    font-weight: 700;
+}
+.os-qual__dot { margin: 0 0.35rem; color: var(--os-muted); font-weight: 400; }
+.os-qual__count { color: var(--os-muted); font-weight: 700; }
+.os-qual__empty { margin: 0.4rem 0 0.6rem; color: var(--os-muted); font-size: 0.87rem; }
+
+/* The alignment table. Image 04's five columns, measured off the locked PNG:
+   its 800px card divides 5.3% number / 42.9% qualification / 18.1% status /
+   25.1% evidence / 8.6% review. Unlike image 03 the column headers are
+   VISIBLE here — five columns of mixed content need naming, and the authority
+   names them. */
+.os-align {
+    width: 100%;
+    margin-top: 0.55rem;
+    border-collapse: collapse;
+}
+.os-align thead th {
+    padding: 0.4rem 0.5rem 0.5rem 0;
+    border-bottom: 1px solid var(--os-line-soft);
+    color: var(--os-muted);
+    font-size: 0.76rem;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+}
+.os-align__row { border-top: 1px solid var(--os-line-soft); }
+.os-align tbody tr:first-child { border-top: 0; }
+/* Image 04's table is DENSE where image 03's is airy, and that is the design
+   rather than an inconsistency: image 03 is a reading list of employer
+   sentences, image 04 is an evidence map whose rows each carry two stacked
+   strings plus two more columns. Measured on the locked PNG its rows run
+   about 5px of padding around a 1.27 line, which at a legible type size would
+   be tighter than this room's own floor allows. Held to the same RATIO
+   instead — a small type on a tight line in a shallow row — which is the same
+   scale-free method the other three screens use. */
+.os-align td {
+    padding: 0.5rem 0.5rem 0.5rem 0;
+    vertical-align: top;
+}
+.os-align__num {
+    width: 5.3%;
+    min-width: 26px;
+    color: var(--os-neutral-ink);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+}
+.os-align__text { width: 42.9%; padding-right: 1rem; }
+.os-align__status { width: 18.1%; }
+.os-align__evidence { width: 25.1%; }
+.os-align__review { width: 8.6%; text-align: right; padding-right: 0; }
+.os-align__wording {
+    display: block;
+    color: var(--os-ink);
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+.os-align__explanation {
+    display: block;
+    margin-top: 0.15rem;
+    color: var(--os-muted);
+    font-size: 0.78rem;
+    line-height: 1.38;
+    overflow-wrap: anywhere;
+}
+.os-align__response {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.28rem;
+    color: var(--os-action-strong);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+.os-align__none { color: var(--os-neutral-ink); }
+.os-evidence-ref { display: block; font-size: 0.78rem; line-height: 1.35; }
+.os-evidence-ref + .os-evidence-ref { margin-top: 0.35rem; }
+.os-evidence-ref__title { display: block; color: var(--os-ink); }
+.os-evidence-ref__version { display: block; color: var(--os-muted); }
+.os-align__select {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    /* Cobalt, and deliberately so. R7 muted the equivalent control on image
+       03 because THAT authority draws it muted; image 04 draws its review
+       glyph in the accent, with no box around it, and the rule R7 established
+       is "match the authority", not "mute by default". Here the selected row
+       is distinguished by its fill and outline rather than by being the only
+       blue thing in the column. */
+    color: var(--os-action);
+    text-decoration: none;
+}
+.os-align__select:hover { background: var(--os-action-tint); }
+.os-align__row.is-selected {
+    background: color-mix(in srgb, var(--os-action-tint) 55%, var(--os-surface));
+    box-shadow: inset 0 0 0 2px var(--os-action);
+    border-radius: var(--os-radius-sm);
+}
+.os-align__provenance { margin-top: calc(var(--os-card-gap) * -0.25); }
+
+/* Responsibilities and Informational statements: collapsed cards with a
+   leading chevron and NO status, because nothing compared them against
+   anything. */
+.os-context-group { padding: 0; }
+.os-context-group__summary {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 46px;
+    padding: 0.5rem 1.35rem;
+    border-radius: 14px;
+    cursor: pointer;
+}
+.os-context-group__summary::-webkit-details-marker { display: none; }
+.os-context-group__chevron {
+    display: inline-flex;
+    color: var(--os-muted);
+    transform: rotate(-90deg);
+    transition: transform 0.15s ease;
+}
+.os-context-group[open] .os-context-group__chevron { transform: rotate(0deg); }
+.os-context-group__title { color: var(--os-ink); font-weight: 700; font-size: 1rem; }
+.os-context-group__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 22px;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: var(--os-surface-muted);
+    color: var(--os-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+.os-context-group__body { padding: 0 1.35rem 1.05rem; }
+.os-context-group__note { margin: 0 0 0.5rem; color: var(--os-muted); font-size: 0.83rem; }
+.os-context-group__list {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: var(--os-muted);
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+.os-context-group__list li + li { margin-top: 0.25rem; }
+
+/* ---------------------------------------------------------
+   Response rail (image 04's "For this qualification").
+   --------------------------------------------------------- */
+.os-rail-card--response { font-size: 0.86rem; }
+.os-response-panel { margin-top: 0.7rem; }
+.os-response-panel[hidden] { display: none; }
+.os-response-panel__subject {
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--os-line);
+    border-radius: 10px;
+    background: var(--os-surface-muted);
+}
+.os-response-panel__wording {
+    margin: 0 0 0.35rem;
+    color: var(--os-ink);
+    font-size: 0.86rem;
+    line-height: 1.4;
+}
+.os-response-panel__prompt {
+    margin: 0.75rem 0 0.45rem;
+    color: var(--os-muted);
+    font-size: 0.83rem;
+    font-weight: 600;
+}
+.os-response-stored {
+    margin-top: 0.6rem;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--os-success);
+    border-radius: 10px;
+    background: var(--os-success-tint);
+}
+.os-response-stored__label {
+    margin: 0 0 0.25rem;
+    color: var(--os-success-ink);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+.os-response-stored__text { margin: 0 0 0.35rem; color: var(--os-ink); line-height: 1.45; }
+.os-response-stored__note { margin: 0; color: var(--os-muted); font-size: 0.78rem; }
+
+/* The rail's own editor. The shared .os-editor reserves space on the RIGHT
+   for a 66px mic, which is right in a full-width paste box and wrong in a
+   211px panel: it left about 150px of writing width and broke the placeholder
+   across four lines. Here the mic sits under the field, at 36px — still well
+   past the 2.5.8 minimum — and the field keeps its measure. */
+.os-rail-card--response .os-editor--compact .os-editor__field {
+    padding-right: 0.75rem;
+    padding-bottom: 2.6rem;
+    min-height: 6.5rem;
+}
+.os-rail-card--response .os-mic--sm {
+    width: 36px;
+    height: 36px;
+    right: 0.5rem;
+    bottom: 0.5rem;
+}
+.os-rail-card--response .os-mic--sm .os-icon { width: 18px; height: 18px; }
+
+.os-response-actions { display: flex; flex-direction: column; gap: 0.35rem; }
+.os-response-action {
+    border: 1px solid var(--os-line);
+    border-radius: 10px;
+    background: var(--os-surface);
+}
+.os-response-action[open] { border-color: var(--os-action); }
+.os-response-action__summary,
+.os-response-action__button {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: 100%;
+    min-height: 40px;
+    padding: 0.5rem 0.6rem;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--os-ink);
+    font-family: var(--ps-font-ui);
+    /* Image 04 holds "Confirm I do not have this experience" on two lines in
+       a 211px panel; at 0.85rem the build ran it to three, which pushed Skip
+       below the fold on a 900px viewport. 0.8rem is one notch, and the room's
+       floor. */
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: left;
+    cursor: pointer;
+}
+.os-response-action__summary::-webkit-details-marker { display: none; }
+.os-response-action__summary .os-icon,
+.os-response-action__button .os-icon { flex: none; color: var(--os-action); }
+.os-response-action__summary > span:not([class]),
+.os-response-action__button > span:not([class]) { flex: 1 1 auto; }
+.os-response-action__chevron {
+    display: inline-flex;
+    color: var(--os-muted);
+    transform: rotate(-90deg);
+    transition: transform 0.15s ease;
+}
+.os-response-action__chevron .os-icon { color: var(--os-muted); }
+.os-response-action[open] .os-response-action__chevron { transform: rotate(0deg); }
+.os-response-action--direct { padding: 0; }
+.os-response-action--direct .os-response-action__chevron { transform: none; }
+.os-response-action__body { padding: 0 0.7rem 0.7rem; }
+.os-response-action__ask {
+    margin: 0 0 0.5rem;
+    color: var(--os-muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+.os-response-action__button[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+.os-choices { margin: 0; padding: 0; border: 0; }
+.os-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--os-line-soft);
+    border-radius: 8px;
+    background: var(--os-surface);
+    cursor: pointer;
+}
+.os-choice + .os-choice { margin-top: 0.3rem; }
+.os-choice input { margin-top: 0.2rem; flex: none; }
+.os-choice__title { display: block; color: var(--os-ink); font-size: 0.83rem; }
+.os-choice__version { display: block; color: var(--os-muted); font-size: 0.78rem; }
+
+/* ---------------------------------------------------------
+   Evidence rail (image 04's "Evidence review").
+   --------------------------------------------------------- */
+.os-rail-card--evidence { font-size: 0.84rem; }
+.os-evidence-panel { margin-top: 0.7rem; }
+.os-evidence-panel[hidden] { display: none; }
+.os-evidence-panel__wording {
+    margin: 0 0 0.7rem;
+    color: var(--os-ink);
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+.os-evidence-panel__value { margin: 0 0 0.6rem; color: var(--os-muted); }
+.os-evidence-panel__body { margin: 0 0 0.6rem; color: var(--os-muted); line-height: 1.5; }
+.os-rail-card--evidence .os-pair__label { margin-top: 0.75rem; }
+.os-rail-card--evidence .os-pill { margin-bottom: 0.2rem; }
+.os-evidence-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--os-line);
+    border-radius: 10px;
+    background: var(--os-surface);
+    box-shadow: var(--os-shadow-card);
+}
+.os-evidence-card + .os-evidence-card { margin-top: 0.35rem; }
+.os-evidence-card__badge { flex: none; color: var(--os-action); }
+.os-evidence-card__title { display: block; color: var(--os-ink); font-weight: 600; line-height: 1.35; }
+.os-evidence-card__version { display: block; color: var(--os-muted); font-size: 0.8rem; }
+/* The excerpt is what makes the screen checkable, so it reads as a quotation
+   from the member's own record rather than as PeerSlate's prose. */
+.os-excerpt {
+    margin: 0 0 0.5rem;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--os-line-soft);
+    border-left: 3px solid var(--os-action);
+    border-radius: 8px;
+    background: var(--os-surface-muted);
+    color: var(--os-ink);
+    font-size: 0.84rem;
+    line-height: 1.5;
+    max-height: 14rem;
+    overflow: auto;
+    overflow-wrap: anywhere;
+}
+.os-excerpt::before { content: "\201C"; }
+.os-excerpt::after { content: "\201D"; }
+
 /* ---------------------------------------------------------
    Focus visibility (handoff section 13). A 3:1-plus ring on every
    focusable control, never removed.
    --------------------------------------------------------- */
+/* Independent review finding F10. `input` and `select` were missing, so the
+   response rail's `connected_evidence_key` radios — the one native input the
+   room had shipped until slice OS-3 — fell through to the user-agent ring
+   while everything beside them carried the branded one. The rule is "every
+   focusable control", so it names every focusable control. */
 .os a:focus-visible,
 .os button:focus-visible,
 .os summary:focus-visible,
 .os [tabindex]:focus-visible,
+.os input:focus-visible,
+.os select:focus-visible,
 .os textarea:focus-visible {
     outline: 3px solid var(--os-focus);
     outline-offset: 2px;
     border-radius: 6px;
 }
+/* A radio is small and round; a 2px offset on a 6px radius reads as a square
+   box floating beside it. The ring hugs the control and keeps its shape. */
+.os input[type="radio"]:focus-visible { outline-offset: 1px; border-radius: 50%; }
+.os input[type="checkbox"]:focus-visible { outline-offset: 1px; border-radius: 3px; }
 
 /* ---------------------------------------------------------
    Responsive (handoff section 12). Rails leave the columns in document
@@ -2130,6 +2716,22 @@ body.opportunity-slate-page .main-content {
     /* Ambient only: below the three-column layout the props would push
        real content down the page for no gain. */
     .os-prop { display: none; }
+
+    /* The alignment layout's three columns collapse into the one column its
+       markup is already written in, so every explicit placement above is
+       handed back to auto-flow. Nothing is reordered here and nothing needs
+       to be: the source order IS this order. The right rail's `grid-row: 3`
+       belonged to a three-item layout and would now collide with the
+       response rail, so it goes with the rest. */
+    .os-layout--alignment {
+        grid-template-rows: none;
+        grid-template-areas: none;
+        row-gap: clamp(0.9rem, 3.05vw, 44px);
+    }
+    .os-layout--alignment > .os-rail--left,
+    .os-layout--alignment > .os-workbench,
+    .os-layout--alignment > .os-rail--response,
+    .os-layout--alignment > .os-rail--right { grid-area: auto; }
 }
 
 @media (max-width: 900px) {
@@ -2140,8 +2742,84 @@ body.opportunity-slate-page .main-content {
     .os-stage__step { flex-direction: row; align-items: center; text-align: left; }
 }
 
+@media (max-width: 900px) {
+    /* Two count summaries side by side stop being a comparison and start
+       being two cramped columns once the workbench is narrow. */
+    .os-summaries { grid-template-columns: minmax(0, 1fr); }
+}
+
 @media (max-width: 640px) {
     .os-layout { padding-left: 1rem; padding-right: 1rem; }
+
+    /* The alignment table restacks into one card per qualification,
+       preserving image 04's reading order: number and wording, then the
+       explanation, then status, then the authorized evidence, then the
+       review control (handoff section 12). The header row is hidden and each
+       stacked cell carries its own label instead, so nothing loses its name.
+
+       R16's lesson applies here directly: the desktop row rhythm is measured
+       off a FIVE-column row, and stacked it would be paid five times over.
+       The cells carry their own smaller spacing at this width. */
+    .os-align,
+    .os-align tbody,
+    .os-align tr,
+    .os-align td { display: block; width: 100%; }
+    .os-align thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+    }
+    .os-align__row {
+        margin-bottom: 0.6rem;
+        padding: 0.5rem 0.6rem 0.6rem;
+        border: 1px solid var(--os-line-soft);
+        border-radius: 10px;
+    }
+    .os-align td { padding: 0.25rem 0; }
+    .os-align__num {
+        width: auto;
+        font-weight: 700;
+        color: var(--os-muted);
+    }
+    .os-align__num::after { content: "."; }
+    .os-align__text,
+    .os-align__status,
+    .os-align__evidence,
+    .os-align__review { width: auto; padding-right: 0; text-align: left; }
+    .os-align__evidence::before {
+        content: "Authorized evidence";
+        display: block;
+        margin-bottom: 0.15rem;
+        color: var(--os-muted);
+        font-size: 0.76rem;
+        font-weight: 600;
+    }
+    .os-align__select {
+        width: 100%;
+        gap: 0.45rem;
+        min-height: 40px;
+        border: 1px solid var(--os-line);
+    }
+    .os-align__select .os-visually-hidden {
+        position: static;
+        width: auto;
+        height: auto;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        clip-path: none;
+        white-space: normal;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .os-card--strip,
+    .os-card--panel,
+    .os-card--footer { padding: 0.9rem 1rem; }
+    .os-context-group__summary,
+    .os-context-group__body { padding-left: 1rem; padding-right: 1rem; }
 
     /* The statement table restacks into one card per statement, preserving
        reading order: employer wording, then classification, then the review
@@ -2197,6 +2875,16 @@ body.opportunity-slate-page .main-content {
     .os-prompt-card__action .os-btn { width: 100%; }
     .os-rail--left,
     .os-rail--right { grid-template-columns: minmax(0, 1fr); }
+
+    /* Independent review finding F4, handoff section 12: below the phone
+       breakpoint the response and evidence rails are in-flow sections
+       BENEATH the selected qualification, and the closing actions come after
+       both. THERE IS NO RULE HERE ANY MORE, and that is the correction: the
+       first pass did it with `display: contents` plus `order`, which moved
+       the paint and left the DOM, so the tab order and the screen-reader
+       order still ran response rail first. The markup carries the order now
+       (see `.os-layout--alignment` above and the comments in `_room.html`),
+       and one column of auto-flow renders it. */
     .os-card--workbench { padding: 1.1rem; }
     .os-tiles {
         grid-template-columns: minmax(0, 1fr);
@@ -2281,6 +2969,12 @@ body.opportunity-slate-page .main-content {
        as margin: 1.1rem a side costs 35px of a 320px screen, which is
        four or five characters on every line of the member's document. */
     .os-card--workbench { padding: 0.9rem; }
+    /* At 320 the padding is worth more as measure than as margin here too. */
+    .os-card--strip,
+    .os-card--panel,
+    .os-card--footer { padding: 0.8rem 0.9rem; }
+    .os-context-group__summary,
+    .os-context-group__body { padding-left: 0.9rem; padding-right: 0.9rem; }
     .os-source-doc { font-size: 0.95rem; }
     /* The separators would wrap mid-cluster at this width and read as
        stray rules; the links stack instead. */

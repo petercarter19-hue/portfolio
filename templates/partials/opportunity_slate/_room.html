@@ -104,8 +104,17 @@
      screen it belongs to — the defect the third parity round was opened to
      fix, and the one slice OS-2 repeated by inheriting the intake
      proportion for Review Requirements. #}
+  {# Slice OS-3 measures image 04 the same way: scanning each row of the
+     locked PNG for the near-white card surface (253,253,253) against the cool
+     canvas (247,248,250). Image 04 is a 1365px frame and its workbench runs
+     x287-1087, so its centre holds 58.6% — between the requirements table's
+     57.8% and the reading document's 64.6%, and wider than the intake form's
+     53.2%. That is the design: it is a table like image 03's, but every row
+     now carries a second column of evidence and a third of status, so it
+     needs the width image 03 did not. #}
   <div class="os-layout
-              {%- if room.step == 'requirements' and room.requirements %} os-layout--requirements
+              {%- if room.step == 'alignment' and room.alignment %} os-layout--alignment
+              {%- elif room.step == 'requirements' and room.requirements %} os-layout--requirements
               {%- elif room.step == 'review' and room.source %} os-layout--review{% endif %}">
 
     {# ---------------------------------------------------------------
@@ -125,7 +134,18 @@
          beside an intake screen that carries its own. Tying both to one
          condition makes one-h1-per-state (handoff section 13) structural
          rather than a property of the current call sites. #}
-      {% if room.step == 'requirements' and room.requirements %}
+      {% if room.step == 'alignment' and room.alignment %}
+      <h1 class="os-state-title">
+        <span class="os-state-title__lead">{{ room.state_title_lead }}</span>
+        <span class="os-state-title__dot" aria-hidden="true">·</span>
+        <span class="os-state-title__rest">{{ room.state_title_rest }}</span>
+      </h1>
+      {# Image 04's left-rail lead, verbatim. #}
+      <p class="os-rail__intro">
+        PeerSlate compares the confirmed employer qualifications with your
+        authorized evidence.
+      </p>
+      {% elif room.step == 'requirements' and room.requirements %}
       <h1 class="os-state-title">
         <span class="os-state-title__lead">{{ room.state_title_lead }}</span>
         <span class="os-state-title__dot" aria-hidden="true">·</span>
@@ -290,11 +310,40 @@
       </div>
       {% endif %}
 
+      {# Image 04's amber truth card, and it belongs to the alignment screen
+         alone: a result now exists, and the one thing a member most needs to
+         know about it is that it is theirs, unsaved, and unshared. The three
+         sentences are reproduced from the authority (handoff section 14-M11).
+         It replaces the generic session-truth card below rather than sitting
+         beside it — two truth cards in one rail is the duplication finding
+         R14 rejected on the previous screen. #}
+      {% if room.step == 'alignment' and room.alignment %}
+      <div class="os-truth-card os-truth-card--warning">
+        <span class="os-truth-card__badge">{{ os_icon('warning') }}</span>
+        <div>
+          <p class="os-truth-card__heading">Results not saved</p>
+          <p>
+            {% if room.is_public %}
+            This analysis lives in this browser tab only. PeerSlate stores none
+            of it.
+            {% else %}
+            This analysis remains session-private until you explicitly save it.
+            {% endif %}
+          </p>
+          <p>Nothing was published or shared.</p>
+        </div>
+      </div>
+      {# The response rail used to be included HERE, and that was the whole of
+         independent-review finding F4's second half. See the block above
+         `.os-rail--response` below: it is now a sibling of the workbench in
+         SOURCE order, and desktop places it back in this column with grid
+         areas. Do not move it back into this rail. #}
+
       {# Session-truth card. The signed-in wording is reproduced exactly from
          image 01 (handoff section 14-M11 lists these as trust-critical
          sentences). The public variant states its own, different truth
          rather than borrowing a promise that does not apply. #}
-      {% if room.is_public %}
+      {% elif room.is_public %}
       <div class="os-truth-card os-truth-card--public">
         <span class="os-truth-card__badge">{{ os_icon('globe') }}</span>
         <div>
@@ -352,6 +401,9 @@
       </div>
       {% endif %}
 
+      {# Image 04 gives its left rail entirely to the state title, the truth
+         card and the response panel: there is no prop on this screen, and
+         adding one would push the member's own controls below the fold. #}
       {% if (room.step == 'review' and room.source) or (room.step == 'requirements' and room.requirements) %}
       {# Image 02 places the prop at the foot of the left rail on this
          screen rather than above the "Why" block. Image 03 places the same
@@ -372,6 +424,35 @@
        Central workbench.
        --------------------------------------------------------------- #}
     <div class="os-workbench">
+      {# Image 04 does NOT put the alignment workbench inside one containing
+         card. Measured off the locked PNG, the canvas shows between every
+         card, at x=270 and x=1100 alike — the surface reads 253,253,253 and
+         the gaps read 247,248,250. So the alignment step renders its own
+         cards straight onto the canvas, on the shared 24px card gap, and
+         every other step keeps the single workbench card images 01-03 draw.
+         Wrapping it would be the "card within a card" the owner rejected as
+         V9 and again as R5. #}
+      {% if room.step == 'alignment' and room.alignment %}
+      <div class="os-cards">
+        {% if room.error %}
+        <div class="os-card os-card--panel">
+          <div class="os-fallback" role="alert" tabindex="-1" data-os-error>
+            <span class="os-fallback__badge os-fallback__badge--{{ 'block' if room.error.kind == 'unavailable' else 'warning' }}">
+              {{ os_icon('warning' if room.error.kind != 'unavailable' else 'block') }}
+            </span>
+            <div class="os-fallback__body">
+              <p class="os-fallback__heading">{{ room.error.heading }}</p>
+              <p class="os-fallback__message">{{ room.error.message }}</p>
+            </div>
+            {% if room.error.truth %}
+            <p class="os-fallback__truth">{{ os_icon('lock', 'os-icon os-icon--sm') }}{{ room.error.truth }}</p>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+        {% include "partials/opportunity_slate/_alignment.html" %}
+      </div>
+      {% else %}
       <div class="os-card os-card--workbench">
 
         {% if room.error %}
@@ -400,7 +481,33 @@
           {% include "partials/opportunity_slate/_intake.html" %}
         {% endif %}
       </div>
+      {% endif %}
     </div>
+
+    {# ---------------------------------------------------------------
+       Response rail — image 04's "For this qualification" panel.
+
+       IT LIVES HERE, AFTER THE WORKBENCH, ON PURPOSE. Independent review
+       finding F4 was corrected once with `display: contents` plus `order`
+       below 640, which moved the PAINT order and left the DOM alone — so a
+       keyboard or screen-reader user still met the response panel before any
+       qualification, which is the half of the finding that actually names
+       WCAG 2.4.3 and 1.3.2. Measured on that build at 390 signed-in: tab
+       stops 6-13 landed in this rail at y 3102-3699, stops 14-24 in the
+       qualification cards at y 443-2785, and stop 25 in the evidence rail at
+       y 4326. Focus went down 3,699px, back up to 443, then down again.
+
+       Source order is now the reading order at every width: lead, then the
+       qualifications and the workbench's own closing strip, then respond,
+       then check the evidence. Desktop is what needs the override now, not
+       the phone — the `.os-layout--alignment` grid areas put this back in the
+       left column directly under the truth card, where image 04 draws it.
+       --------------------------------------------------------------- #}
+    {% if room.step == 'alignment' and room.alignment %}
+    <div class="os-rail os-rail--response">
+      {% include "partials/opportunity_slate/_response_rail.html" %}
+    </div>
+    {% endif %}
 
     {# ---------------------------------------------------------------
        Right rail: contextual help. Geometry is constant across states
@@ -408,10 +515,13 @@
        --------------------------------------------------------------- #}
     <div class="os-rail os-rail--right">
       {# Image 03 puts exactly one card in this rail: "Review this statement".
-         The standing help below belongs to the intake and source screens and
-         is deliberately not repeated here — on the requirements screen the
-         rail's whole job is the statement the member selected. #}
-      {% if room.step == 'requirements' and room.requirements %}
+         Image 04 does the same with "Evidence review". The standing help
+         below belongs to the intake and source screens and is deliberately
+         not repeated on either — on those screens the rail's whole job is the
+         thing the member selected. #}
+      {% if room.step == 'alignment' and room.alignment %}
+        {% include "partials/opportunity_slate/_evidence_rail.html" %}
+      {% elif room.step == 'requirements' and room.requirements %}
         {% include "partials/opportunity_slate/_statement_rail.html" %}
       {% else %}
       {# The locked set carries this rail's standing help as plain sections
@@ -430,10 +540,12 @@
         <p class="os-rail-note__eyebrow">
           {{ os_icon('sparkle', 'os-icon os-icon--sm') }}What happens next
         </p>
-        {# Truth adaptation. Image 01's rail promises requirement extraction
-           and an evidence alignment map. Slice OS-2 built the first of those,
-           so the copy moves with the build: requirement review is real and is
-           named, the evidence alignment map is not and still says so. #}
+        {# Truth adaptation, and slice OS-3 is where it stops being one. Image
+           01's rail promises requirement extraction and an evidence alignment
+           map. OS-2 built the first and said plainly that the second did not
+           exist; OS-3 built the second, so the disclaimer is retired and the
+           authority's own promise ships. The last sentence still carries the
+           fact that matters on THIS screen: nothing is compared here. #}
         {% if room.step == 'review' %}
         <p>Check the wording, correct anything that came through wrong, then confirm it.</p>
         <p>Then PeerSlate proposes how it reads each of the employer's statements, and you decide.</p>
@@ -442,8 +554,9 @@
         <p>Then you'll review how PeerSlate reads each employer statement.</p>
         {% endif %}
         <p>
-          The evidence alignment map is not built yet. Nothing on this screen
-          is compared against your evidence.
+          After that PeerSlate compares the qualifications you confirmed with
+          the evidence you authorized. Nothing on this screen is compared
+          against your evidence.
         </p>
       </div>
 

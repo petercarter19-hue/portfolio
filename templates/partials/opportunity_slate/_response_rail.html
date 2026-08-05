@@ -1,0 +1,265 @@
+{% from "partials/opportunity_slate/_icons.html" import os_icon %}
+{#
+  os-response-rail — image 04's "For this qualification" panel, in the LEFT
+  rail below the session-truth card, exactly where the authority draws it.
+
+  Five member-directed actions and no sixth (handoff section 4): Tell us more,
+  Connect existing evidence, Provide a real example, Confirm I do not have
+  this experience, and Skip.
+
+  WHAT A RESPONSE IS, AND IS NOT. It is member-attributed context about the
+  employer's requirement. It never becomes authorized evidence, never becomes
+  a citation, and never changes a status: the three states on this screen are
+  derived from the evidence the member had already confirmed elsewhere, and
+  writing a sentence here cannot move one. The panel says so in plain words,
+  because a member who thought otherwise would be misreading what they are
+  looking at.
+
+  Nothing auto-commits. The field alone stores nothing; the explicit button
+  under it is the apply step, and the response it stored is then shown back
+  for the member to read, change, or remove (handoff section 4).
+
+  One panel per qualification is rendered and all but the selected one is
+  hidden, which is what makes selection instant and keyboard-operable without
+  a round trip — and why the no-JavaScript path still works.
+#}
+{% set alignment = room.alignment %}
+
+<div class="os-rail-card os-rail-card--response" id="os-response-rail" data-os-response-rail>
+  <p class="os-rail-card__title">For this qualification</p>
+
+  {# Image 08's read-only rule, applied to this rail too: while a request
+     is genuinely in flight the controls are visibly disabled, never hidden,
+     and Cancel restores editing. Authored here so the room script never
+     composes member-facing copy. #}
+  <p class="os-rail-card__note os-rail-card__note--locked" role="status" data-os-rail-locked-note hidden>
+    {{ os_icon('lock', 'os-icon os-icon--sm') }}Responses are paused while
+    PeerSlate is working. Cancel to keep editing.
+  </p>
+
+  {% if not alignment.has_analysis or not alignment.has_qualifications %}
+  <p>
+    Once PeerSlate has compared the qualifications with your authorized
+    evidence, selecting one here lets you add your own context for it.
+  </p>
+  {% else %}
+  {% for statement in alignment.qualifications %}
+  <div class="os-response-panel"
+       data-os-response-panel="{{ statement.key }}"
+       {% if statement.key != alignment.selected_key %}hidden{% endif %}>
+
+    {# The employer's own wording and the derived state, so the member always
+       knows which qualification they are answering. #}
+    <div class="os-response-panel__subject">
+      <p class="os-response-panel__wording">{{ statement.text }}</p>
+      <p class="os-pill os-pill--{{ statement.status }}">
+        <span class="os-dot os-dot--{{ statement.status }}" aria-hidden="true"></span>{{ statement.status_label }}
+      </p>
+    </div>
+
+    {% if statement.response %}
+    {# The apply step's second half: what PeerSlate stored, shown back. #}
+    <div class="os-response-stored" role="status">
+      <p class="os-response-stored__label">Your response</p>
+      {% if statement.response.kind in ('tell_more', 'real_example') %}
+      <p class="os-response-stored__text">{{ statement.response.text }}</p>
+      {% elif statement.response.kind == 'connect_evidence' %}
+      <p class="os-response-stored__text">
+        Connected: {{ statement.response.evidence_title }} · Version {{ statement.response.evidence_version }}
+      </p>
+      {% elif statement.response.kind == 'confirm_not_have' %}
+      <p class="os-response-stored__text">You said you do not have this experience.</p>
+      {% else %}
+      <p class="os-response-stored__text">You skipped this qualification for now.</p>
+      {% endif %}
+      <p class="os-response-stored__note">
+        Yours, and only here. It was not added to your evidence and did not
+        change the status above.
+      </p>
+    </div>
+    {% endif %}
+
+    <p class="os-response-panel__prompt">What would you like to do?</p>
+
+    <div class="os-response-actions">
+      {# Image 04 draws "Tell us more" OPEN with its field showing and the
+         other four collapsed beneath it: the panel's job is to invite a
+         response, and five closed rows invite nothing. It closes only when
+         the member has already answered some other way, so their own answer
+         is what they see first. #}
+      <details class="os-response-action"
+               {% if not statement.response or statement.response.kind == 'tell_more' %}open{% endif %}>
+        <summary class="os-response-action__summary">
+          {{ os_icon('sparkle', 'os-icon os-icon--sm') }}
+          <span>Tell us more</span>
+          <span class="os-response-action__chevron" aria-hidden="true">{{ os_icon('chevron', 'os-icon os-icon--sm') }}</span>
+        </summary>
+        <div class="os-response-action__body">
+          <p class="os-response-action__ask">
+            {% if statement.detail and statement.detail.unestablished_line %}
+            {{ statement.detail.unestablished_line }}
+            {% endif %}
+          </p>
+          <form class="os-form os-form--rail" method="post" action="{{ room.response_url }}" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="{{ statement.key }}">
+            <input type="hidden" name="statement_version_token" value="{{ statement.version_token or '' }}">
+            <input type="hidden" name="response_kind" value="tell_more">
+            <label class="os-visually-hidden" for="os-tell-{{ statement.key }}">Your response for this qualification</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-tell-{{ statement.key }}"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="{{ room.max_response_units }}"
+                        placeholder="Type or speak your response…"
+                        aria-describedby="os-tell-help-{{ statement.key }}"
+                        data-os-response-input
+                       data-os-rail-control>{% if statement.response and statement.response.kind == 'tell_more' %}{{ statement.response.text }}{% endif %}</textarea>
+              {# Rendered to the authority and honestly inert until slice OS-5
+                 (handoff section 14-M18). #}
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-tell-help-{{ statement.key }}"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                {{ os_icon('mic') }}
+                <span class="os-visually-hidden">Dictate your response (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-tell-help-{{ statement.key }}">
+              Type your response. Only add experience that is true and yours.
+              Dictation arrives in a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>Review my response</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <details class="os-response-action" {% if statement.response and statement.response.kind == 'connect_evidence' %}open{% endif %}>
+        <summary class="os-response-action__summary">
+          {{ os_icon('link', 'os-icon os-icon--sm') }}
+          <span>Connect existing evidence</span>
+          <span class="os-response-action__chevron" aria-hidden="true">{{ os_icon('chevron', 'os-icon os-icon--sm') }}</span>
+        </summary>
+        <div class="os-response-action__body">
+          {% if alignment.evidence_choices %}
+          <form class="os-form os-form--rail" method="post" action="{{ room.response_url }}" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="{{ statement.key }}">
+            <input type="hidden" name="statement_version_token" value="{{ statement.version_token or '' }}">
+            <input type="hidden" name="response_kind" value="connect_evidence">
+            <fieldset class="os-choices">
+              <legend class="os-pair__label">
+                {% if alignment.is_demo_evidence %}{{ alignment.demo_label }}{% else %}Your confirmed evidence{% endif %}
+              </legend>
+              {% for choice in alignment.evidence_choices %}
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="{{ choice.key }}"
+                       data-os-response-input
+                       data-os-rail-control
+                       {% if statement.response and statement.response.kind == 'connect_evidence' and statement.response.evidence_title == choice.title %}checked{% endif %}>
+                <span>
+                  <span class="os-choice__title">{{ choice.title }}</span>
+                  <span class="os-choice__version">Version {{ choice.version }}</span>
+                </span>
+              </label>
+              {% endfor %}
+            </fieldset>
+            <p class="os-help os-help--muted">
+              Connecting points at a record you already own. It does not copy
+              it, change it, or add it to this analysis's citations.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>Connect this evidence</button>
+            </div>
+          </form>
+          {% else %}
+          <p class="os-help os-help--muted">
+            You have no confirmed Workshop evidence to connect yet. Confirming
+            an item in Workshop makes it available here.
+          </p>
+          {% endif %}
+        </div>
+      </details>
+
+      <details class="os-response-action" {% if statement.response and statement.response.kind == 'real_example' %}open{% endif %}>
+        <summary class="os-response-action__summary">
+          {{ os_icon('doc', 'os-icon os-icon--sm') }}
+          <span>Provide a real example</span>
+          <span class="os-response-action__chevron" aria-hidden="true">{{ os_icon('chevron', 'os-icon os-icon--sm') }}</span>
+        </summary>
+        <div class="os-response-action__body">
+          <form class="os-form os-form--rail" method="post" action="{{ room.response_url }}" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="{{ statement.key }}">
+            <input type="hidden" name="statement_version_token" value="{{ statement.version_token or '' }}">
+            <input type="hidden" name="response_kind" value="real_example">
+            <label class="os-pair__label" for="os-example-{{ statement.key }}">A real example from your own work</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-example-{{ statement.key }}"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="{{ room.max_response_units }}"
+                        placeholder="What you did, and where…"
+                        aria-describedby="os-example-help-{{ statement.key }}"
+                        data-os-response-input
+                       data-os-rail-control>{% if statement.response and statement.response.kind == 'real_example' %}{{ statement.response.text }}{% endif %}</textarea>
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-example-help-{{ statement.key }}"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                {{ os_icon('mic') }}
+                <span class="os-visually-hidden">Dictate your example (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-example-help-{{ statement.key }}">
+              Only add experience that is true and yours. Dictation arrives in
+              a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>Review my example</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="{{ room.response_url }}" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="{{ statement.key }}">
+        <input type="hidden" name="statement_version_token" value="{{ statement.version_token or '' }}">
+        <input type="hidden" name="response_kind" value="confirm_not_have">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>
+          {{ os_icon('no-entry', 'os-icon os-icon--sm') }}
+          <span>Confirm I do not have this experience</span>
+          <span class="os-response-action__chevron" aria-hidden="true">{{ os_icon('arrow-right', 'os-icon os-icon--sm') }}</span>
+        </button>
+      </form>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="{{ room.response_url }}" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="{{ statement.key }}">
+        <input type="hidden" name="statement_version_token" value="{{ statement.version_token or '' }}">
+        <input type="hidden" name="response_kind" value="skip">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                {% if room.is_public %}disabled data-os-needs-js="1"{% endif %}>
+          {{ os_icon('skip', 'os-icon os-icon--sm') }}
+          <span>Skip</span>
+          <span class="os-response-action__chevron" aria-hidden="true">{{ os_icon('arrow-right', 'os-icon os-icon--sm') }}</span>
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>

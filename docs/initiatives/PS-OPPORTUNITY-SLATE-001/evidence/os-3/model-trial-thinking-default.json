@@ -1,0 +1,94 @@
+{
+  "claude-haiku-4-5-20251001": {
+    "outcomes": {
+      "valid": 3
+    },
+    "detail": [
+      {
+        "run": 1,
+        "result": "valid",
+        "qualifications_cited": 6,
+        "statuses": [
+          "supported",
+          "supported",
+          "supported",
+          "not_enough_information",
+          "supported",
+          "partially_supported"
+        ]
+      },
+      {
+        "run": 2,
+        "result": "valid",
+        "qualifications_cited": 6,
+        "statuses": [
+          "supported",
+          "supported",
+          "supported",
+          "not_enough_information",
+          "supported",
+          "supported"
+        ]
+      },
+      {
+        "run": 3,
+        "result": "valid",
+        "qualifications_cited": 6,
+        "statuses": [
+          "supported",
+          "supported",
+          "supported",
+          "not_enough_information",
+          "supported",
+          "partially_supported"
+        ]
+      }
+    ]
+  },
+  "claude-sonnet-5": {
+    "outcomes": {
+      "valid": 3
+    },
+    "detail": [
+      {
+        "run": 1,
+        "result": "valid",
+        "qualifications_cited": 4,
+        "statuses": [
+          "supported",
+          "supported",
+          "partially_supported",
+          "not_enough_information",
+          "partially_supported",
+          "not_enough_information"
+        ]
+      },
+      {
+        "run": 2,
+        "result": "valid",
+        "qualifications_cited": 5,
+        "statuses": [
+          "supported",
+          "supported",
+          "partially_supported",
+          "not_enough_information",
+          "supported",
+          "partially_supported"
+        ]
+      },
+      {
+        "run": 3,
+        "result": "valid",
+        "qualifications_cited": 5,
+        "statuses": [
+          "supported",
+          "supported",
+          "partially_supported",
+          "not_enough_information",
+          "partially_supported",
+          "partially_supported"
+        ]
+      }
+    ]
+  }
+}

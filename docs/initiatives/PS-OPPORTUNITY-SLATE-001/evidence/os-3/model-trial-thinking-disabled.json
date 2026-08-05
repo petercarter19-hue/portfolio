@@ -1,0 +1,48 @@
+{
+  "claude-sonnet-5": {
+    "outcomes": {
+      "valid": 3
+    },
+    "detail": [
+      {
+        "run": 1,
+        "result": "valid",
+        "qualifications_cited": 4,
+        "statuses": [
+          "supported",
+          "supported",
+          "partially_supported",
+          "not_enough_information",
+          "supported",
+          "not_enough_information"
+        ]
+      },
+      {
+        "run": 2,
+        "result": "valid",
+        "qualifications_cited": 4,
+        "statuses": [
+          "supported",
+          "supported",
+          "partially_supported",
+          "not_enough_information",
+          "supported",
+          "not_enough_information"
+        ]
+      },
+      {
+        "run": 3,
+        "result": "valid",
+        "qualifications_cited": 4,
+        "statuses": [
+          "supported",
+          "supported",
+          "partially_supported",
+          "not_enough_information",
+          "supported",
+          "not_enough_information"
+        ]
+      }
+    ]
+  }
+}

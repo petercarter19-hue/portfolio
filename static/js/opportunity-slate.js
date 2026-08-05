@@ -157,6 +157,25 @@
         }
     }
 
+    /* Independent review finding F10. The stage rail's last polite message is
+       stage 3, fired immediately before this swap, so a screen-reader user
+       heard that the screen was being rebuilt and never heard that it had
+       been. A screen that has something to say about its new state renders
+       [data-os-swap-announce], and it is repeated through the persistent
+       region above — a live region inserted together with its own text is not
+       reliably announced. The sentence is server-authored; nothing here
+       composes member-facing copy. */
+    function announceSwap(node) {
+        var carrier = node.querySelector('[data-os-swap-announce]');
+        if (!carrier) {
+            return;
+        }
+        var message = carrier.textContent.replace(/\s+/g, ' ').trim();
+        if (message) {
+            announce(message);
+        }
+    }
+
     function swapRoom(html) {
         var node = room();
         if (!node || !html) {
@@ -167,6 +186,7 @@
         var fresh = room();
         if (fresh) {
             restoreFocus(fresh);
+            announceSwap(fresh);
         }
     }
 
@@ -179,7 +199,10 @@
     var RAIL_LOCKING_ACTIONS = {
         statement: true,
         confirm_requirements: true,
-        resolve: true
+        resolve: true,
+        /* Slice OS-3. A response is fired FROM the rail, so a second one must
+           not be typed into a control whose value is already on its way. */
+        respond: true
     };
 
     function send(payload) {
@@ -375,6 +398,37 @@
     /* Selecting a statement moves context to the rail WITHOUT stealing focus
        (handoff section 13). The member stays where they were and can Tab into
        the rail when they want it. */
+    /* Slice OS-3. Selecting a qualification moves BOTH rails to it — the
+       response panel on the left and the evidence panel on the right — and
+       likewise never steals focus. */
+    function selectAlignment(node, key) {
+        var groups = [
+            '[data-os-response-panel]',
+            '[data-os-evidence-panel]'
+        ];
+        for (var g = 0; g < groups.length; g += 1) {
+            var panels = node.querySelectorAll(groups[g]);
+            var attribute = groups[g].slice(1, -1);
+            for (var index = 0; index < panels.length; index += 1) {
+                panels[index].hidden =
+                    panels[index].getAttribute(attribute) !== key;
+            }
+        }
+        var rows = node.querySelectorAll('[data-os-align-row]');
+        for (var i = 0; i < rows.length; i += 1) {
+            var selected = rows[i].getAttribute('data-os-align-row') === key;
+            rows[i].classList.toggle('is-selected', selected);
+            var control = rows[i].querySelector('[data-os-select-align]');
+            if (control) {
+                if (selected) {
+                    control.setAttribute('aria-current', 'true');
+                } else {
+                    control.removeAttribute('aria-current');
+                }
+            }
+        }
+    }
+
     function selectStatement(node, key) {
         var panels = node.querySelectorAll('[data-os-statement-panel]');
         for (var index = 0; index < panels.length; index += 1) {
@@ -415,10 +469,34 @@
          stage 3  a response has arrived and the screen is being rebuilt
        Those are real boundaries. Nothing here reports progress the request
        has not actually made. */
+    function publicFetch(node, endpointAttribute, payload, controller, token) {
+        /* `token` is passed explicitly when one request has just minted a
+           fresher one than the rendered DOM carries. Reading it back off the
+           node would use the attribute from the PREVIOUS render, which is
+           exactly stale enough to make a chained request act on the state
+           before the first half of the member's action. */
+        payload.context_token = token || currentToken(node);
+        return window.fetch(node.getAttribute(endpointAttribute), {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller ? controller.signal : undefined,
+            body: JSON.stringify(payload)
+        });
+    }
+
     function beginProposal(node, form, publicAction) {
         var rail = stageRailFor(node);
+        if (!rail) {
+            return false;
+        }
+        /* The rail replaces the prompt card that started the request when
+           there is one (images 07/08), and otherwise appears at the head of
+           the workbench — the footer's "Confirm requirements and analyze" and
+           "Run this again" have no card to replace. */
         var card = form.closest('.os-prompt-card');
-        if (!rail || !card) {
+        var anchor = card || node.querySelector('.os-workbench');
+        if (!anchor) {
             return false;
         }
         var controller =
@@ -426,8 +504,12 @@
                 ? new window.AbortController()
                 : null;
 
-        card.parentNode.insertBefore(rail, card);
-        card.hidden = true;
+        if (card) {
+            card.parentNode.insertBefore(rail, card);
+            card.hidden = true;
+        } else {
+            anchor.insertBefore(rail, anchor.firstChild);
+        }
         setStage(rail, 1);
         lockRail(node, true);
         pending = {
@@ -436,24 +518,68 @@
                 if (rail.parentNode) {
                     rail.parentNode.removeChild(rail);
                 }
-                card.hidden = false;
+                if (card) {
+                    card.hidden = false;
+                }
                 lockRail(node, false);
                 pending = null;
             }
         };
 
+        /* Independent review finding F11. One member press, TWO bounded
+           requests in the anonymous path — and stage 2 was set synchronously
+           for both, so the stage that names the evidence check was on screen
+           for the whole of the confirm round-trip, which checks none. Stage 1
+           now covers the request that confirms the requirements, and stage 2
+           begins when the request that actually reads the member's records is
+           issued. The signed-in path is one request that does both, so its
+           stage 2 already spanned the real read and is unchanged. Every stage
+           NAME is server-authored in the calling template; this only decides
+           when each becomes true. */
+        var deferStageTwo = publicAction === 'confirm_requirements';
+
         var request;
-        if (publicAction) {
-            request = window.fetch(node.getAttribute('data-os-public-propose-url'), {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json' },
-                signal: controller ? controller.signal : undefined,
-                body: JSON.stringify({
-                    action: publicAction,
-                    context_token: currentToken(node)
-                })
+        if (publicAction === 'confirm_requirements') {
+            /* One member press, two bounded requests: the checkpoint on the
+               ordinary session budget, then the model call on the tighter AI
+               budget. The stage rail spans both, which is exactly what image
+               08 draws. */
+            request = publicFetch(
+                node,
+                'data-os-public-url',
+                { action: 'confirm_requirements', step: 'requirements' },
+                controller
+            ).then(function (response) {
+                if (!response.ok) {
+                    return response;
+                }
+                return response.json().then(function (data) {
+                    var fresh = data && data.context_token;
+                    if (
+                        data &&
+                        Object.prototype.hasOwnProperty.call(data, 'context_token')
+                    ) {
+                        writeStoredToken(data.context_token);
+                    }
+                    /* The confirm round-trip is done and the evidence read
+                       is the request about to leave (finding F11). */
+                    setStage(rail, 2);
+                    return publicFetch(
+                        node,
+                        'data-os-public-propose-url',
+                        { action: 'analyze' },
+                        controller,
+                        fresh
+                    );
+                });
             });
+        } else if (publicAction) {
+            request = publicFetch(
+                node,
+                'data-os-public-propose-url',
+                { action: publicAction },
+                controller
+            );
         } else {
             request = window.fetch(form.action, {
                 method: 'POST',
@@ -462,7 +588,9 @@
                 body: new window.FormData(form)
             });
         }
-        setStage(rail, 2);
+        if (!deferStageTwo) {
+            setStage(rail, 2);
+        }
 
         request
             .then(function (response) {
@@ -545,12 +673,28 @@
            rail template is missing for any reason, beginProposal returns
            false and the ordinary form post goes ahead — the flow degrades to
            a plain page load rather than breaking. */
-        if (kind === 'review' || kind === 'interpret') {
-            var action = kind === 'review' ? 'review' : 'interpret';
-            if (beginProposal(node, form, isPublic(node) ? action : null)) {
+        /* The three AI requests are intercepted in BOTH modes, because all
+           three have a real wait worth showing a bounded stage rail for. If
+           the rail template is missing for any reason, beginProposal returns
+           false and the ordinary form post goes ahead — the flow degrades to
+           a plain page load rather than breaking. */
+        var PROPOSAL_ACTIONS = {
+            review: 'review',
+            interpret: 'interpret',
+            analyze: 'analyze',
+            /* Image 03's primary is "Confirm requirements and analyze" and
+               that is one member action. A signed-in member gets both halves
+               in one request; anonymously the two halves have deliberately
+               different rate-limit budgets, so the confirm goes to the
+               session endpoint and the analysis follows on the propose
+               endpoint. Same single press, same single stage rail. */
+            'confirm-requirements': 'confirm_requirements'
+        };
+        if (Object.prototype.hasOwnProperty.call(PROPOSAL_ACTIONS, kind)) {
+            if (beginProposal(node, form, isPublic(node) ? PROPOSAL_ACTIONS[kind] : null)) {
                 event.preventDefault();
+                return;
             }
-            return;
         }
 
         if (!isPublic(node)) {
@@ -583,7 +727,23 @@
             return;
         }
         if (kind === 'confirm-requirements') {
+            /* Only reached when the stage rail could not be built; the staged
+               path above owns this action normally. */
             send({ action: 'confirm_requirements', step: 'requirements' });
+            return;
+        }
+        if (kind === 'respond') {
+            var kindField = form.querySelector('[name="response_kind"]');
+            var responseField = form.querySelector('[name="response_text"]');
+            var chosen = form.querySelector('[name="connected_evidence_key"]:checked');
+            send({
+                action: 'respond',
+                statement_key: form.querySelector('[name="statement_key"]').value,
+                response_kind: kindField ? kindField.value : '',
+                response_text: responseField ? responseField.value : null,
+                connected_evidence_key: chosen ? chosen.value : null,
+                step: 'alignment'
+            });
             return;
         }
         if (kind === 'source') {
@@ -658,6 +818,26 @@
         if (select && node.contains(select)) {
             event.preventDefault();
             selectStatement(node, select.getAttribute('data-os-select-statement'));
+            return;
+        }
+
+        /* The same, for the alignment workbench's two rails. */
+        var selectAlign = closestFrom(event.target, '[data-os-select-align]');
+        if (selectAlign && node.contains(selectAlign)) {
+            event.preventDefault();
+            selectAlignment(node, selectAlign.getAttribute('data-os-select-align'));
+            return;
+        }
+
+        /* Slice OS-3's honestly inert primary: image 04 draws `Save
+           privately` and saving is slice OS-4. */
+        var inertSave = closestFrom(event.target, '[data-os-inert-save]');
+        if (inertSave && node.contains(inertSave)) {
+            event.preventDefault();
+            announce(
+                'Saving this analysis privately is not built yet. Nothing was ' +
+                    'saved, and your analysis is still on this screen.'
+            );
             return;
         }
 

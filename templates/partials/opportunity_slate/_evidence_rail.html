@@ -1,0 +1,87 @@
+{% from "partials/opportunity_slate/_icons.html" import os_icon %}
+{#
+  os-evidence-rail — image 04's "Evidence review" panel, in the right rail.
+
+  Six blocks, in the authority's order: the qualification, its category, its
+  status, why this evidence supports it, what remains unestablished, the
+  evidence reference card, and the bounded excerpt.
+
+  EVERY SENTENCE HERE IS COMPOSED, NOT GENERATED. The headings and connecting
+  words come from the reviewed templates in opportunity_slate_routes.py; the
+  phrases inside them are the employer's own confirmed clause wording; the
+  excerpt is a verbatim span of the member's own evidence. The model
+  contributed the citations that decide WHICH of those phrases appear. See THE
+  COMPOSITION BOUNDARY in services/opportunity_analysis_service.py.
+
+  The excerpt is what makes the whole screen checkable: a member can read the
+  words PeerSlate actually matched against, in their own record, rather than
+  taking an assertion on trust.
+#}
+{% set alignment = room.alignment %}
+{% set selected = alignment.selected %}
+
+<div class="os-rail-card os-rail-card--evidence" id="os-evidence-rail" data-os-evidence-rail>
+  <p class="os-rail-card__title">Evidence review</p>
+
+  {% if not alignment.has_analysis or not selected %}
+  <p>
+    Once PeerSlate has compared the qualifications with your authorized
+    evidence, selecting one here shows what that evidence establishes — and
+    the exact words it read.
+  </p>
+  {% else %}
+  {% for statement in alignment.qualifications %}
+  <div class="os-evidence-panel"
+       data-os-evidence-panel="{{ statement.key }}"
+       {% if statement.key != alignment.selected_key %}hidden{% endif %}>
+
+    <p class="os-evidence-panel__wording">{{ statement.text }}</p>
+
+    <p class="os-pair__label">Category</p>
+    <p class="os-evidence-panel__value">{{ statement.class_label }}</p>
+
+    <p class="os-pair__label">Status</p>
+    <p class="os-pill os-pill--{{ statement.status }}">
+      <span class="os-dot os-dot--{{ statement.status }}" aria-hidden="true"></span>{{ statement.status_label }}
+    </p>
+
+    {% if statement.detail.supports_heading %}
+    <p class="os-pair__label">{{ statement.detail.supports_heading }}</p>
+    {% for line in statement.detail.supports_lines %}
+    <p class="os-evidence-panel__body">{{ line }}</p>
+    {% endfor %}
+    {% endif %}
+
+    <p class="os-pair__label">{{ statement.detail.unestablished_heading }}</p>
+    <p class="os-evidence-panel__body">{{ statement.detail.unestablished_line }}</p>
+
+    {% if statement.evidence_references %}
+    <p class="os-pair__label">Authorized evidence</p>
+    {% if alignment.is_demo_evidence %}
+    <p class="os-help os-help--muted">
+      {{ os_icon('globe', 'os-icon os-icon--sm') }}{{ alignment.demo_label }} — not yours.
+    </p>
+    {% endif %}
+    {% for reference in statement.evidence_references %}
+    <div class="os-evidence-card">
+      <span class="os-evidence-card__badge">{{ os_icon('doc') }}</span>
+      <span>
+        <span class="os-evidence-card__title">{{ reference.evidence_title }}</span>
+        <span class="os-evidence-card__version">Version {{ reference.evidence_version }}</span>
+      </span>
+    </div>
+    {% endfor %}
+
+    <p class="os-pair__label">Evidence excerpt</p>
+    {% for reference in statement.evidence_references %}
+    <blockquote class="os-excerpt" tabindex="0">{{ reference.excerpt }}</blockquote>
+    {% endfor %}
+    <p class="os-help os-help--muted">
+      Quoted from your own record, exactly as it is stored there. Nothing in
+      your library was changed.
+    </p>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
