@@ -11,11 +11,11 @@ authority:
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "a0336cf2d40489eae7d4160447bf06998188b802"
-  deployed_pipeline: 542
-  application_behavior_commit: "a0336cf2d40489eae7d4160447bf06998188b802"
-  application_behavior_pipeline: 542
-  note: "Automatic pipeline 542 passed for exact main a0336cf2d40489eae7d4160447bf06998188b802 and live /healthz release f5d8a1cc4f50496c242110fe is healthy. Opportunity Slate OS-1, OS-2, OS-3, OS-5, and OS-6 are live. PS-OPPSLATE-002 was applied by run 528. PS-OPPSLATE-003 (the OS-4 save lifecycle) is registered as a gated-later draft with its app branch held, pending integration onto current main and a focused re-review before the owner's gate run. Community remains flag-off. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
+  deployed_main_commit: "2174749bed22dbf25a3b1beaf3fda6b8682075fa"
+  deployed_pipeline: 546
+  application_behavior_commit: "2174749bed22dbf25a3b1beaf3fda6b8682075fa"
+  application_behavior_pipeline: 546
+  note: "Automatic pipeline 546 passed for exact main 2174749bed22dbf25a3b1beaf3fda6b8682075fa and live /healthz release cff0e215b7ca407744afc3dd is healthy. Later main commits are [skip ci] governance-only, so application behaviour remains that deploy. Opportunity Slate OS-1, OS-2, OS-3, OS-5, and OS-6 are live, with the owner-ordered navigation link. PS-OPPSLATE-002 was applied by run 528. PS-OPPSLATE-003 (the OS-4 save lifecycle) is registered as a gated-later draft with its app branch held pending the owner's gate run. Community remains flag-off. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
@@ -23,7 +23,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active delivery, one lane. PS-OPPORTUNITY-SLATE-001 delivered the Opportunity Slate page under Pete's standing order: OS-1/2/3/5/6 are live at release f5d8a1cc4f50496c242110fe. The lane's one remaining surface is the held OS-4 branch work/2026-08-05-oppslate-os4-app (PR 293), which merges after the owner's PS-OPPSLATE-003 gate run and the governed apply. Every other lane remains paused_read_only. See docs/governance/CURRENT_LANES.json."
+  current_assignments: "Active delivery, one lane. PS-OPPORTUNITY-SLATE-001 delivered the Opportunity Slate page under Pete's standing order: OS-1/2/3/5/6 and the navigation link are live at release cff0e215b7ca407744afc3dd. The lane's one remaining surface is the held OS-4 branch work/2026-08-05-oppslate-os4-app (PR 293), which merges after the owner's PS-OPPSLATE-003 gate run and the governed apply. Every other lane remains paused_read_only. See docs/governance/CURRENT_LANES.json."
 
 governing_documents:
   bible:

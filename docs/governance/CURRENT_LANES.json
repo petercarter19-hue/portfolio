@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-06T00:30:00Z",
+  "updated_at": "2026-08-05T23:30:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -243,7 +243,7 @@
     }
   },
   "release_truth": {
-    "repository_main": "1b0a3ee7782ae9e812f2ef35c08b79791b41c385",
+    "repository_main": "f81c13625e1d2a9125c2e8b6bd8d27510c136eb1",
     "reset_pull_request": 279,
     "reset_validation_pipeline": 512,
     "reset_validation_result": "succeeded",
@@ -253,14 +253,15 @@
     "preflight_repair_pull_request": 281,
     "preflight_repair_validation_pipeline": 514,
     "preflight_repair_validation_result": "succeeded",
-    "deployed_main_commit": "1b0a3ee7782ae9e812f2ef35c08b79791b41c385",
-    "deployed_pipeline": 540,
-    "live_release": "63b3fb49ee97c3a5930168ea",
-    "application_behavior_commit": "1b0a3ee7782ae9e812f2ef35c08b79791b41c385",
-    "application_behavior_pipeline": 540,
+    "deployed_main_commit": "2174749bed22dbf25a3b1beaf3fda6b8682075fa",
+    "deployed_pipeline": 546,
+    "live_release": "cff0e215b7ca407744afc3dd",
+    "application_behavior_commit": "2174749bed22dbf25a3b1beaf3fda6b8682075fa",
+    "application_behavior_pipeline": 546,
     "live_health": "ok",
     "community_public_pilot": "flag_off",
     "opportunity_slate_os3_schema": "applied_run_528",
-    "opportunity_slate_live_slices": "OS-1, OS-2, OS-3, OS-5, OS-6"
+    "opportunity_slate_live_slices": "OS-1, OS-2, OS-3, OS-5, OS-6",
+    "opportunity_slate_navigation_link": "live_run_546"
   }
 }
