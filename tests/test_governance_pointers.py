@@ -113,7 +113,11 @@ class ControlPlaneTests(unittest.TestCase):
             governing["owner_delivery_guide"]["path"],
         )
         ledger = _read("docs", "governance", "CURRENT_LANES.json")
-        self.assertIn('"controlled_idle"', ledger)
+        # The ledger records whichever operating state the owner selected; it
+        # must name one of the two valid states, not stay frozen at idle.
+        self.assertTrue(
+            '"controlled_idle"' in ledger or '"active_delivery"' in ledger
+        )
         self.assertIn('"activation_policy"', ledger)
         self.assertIn('"PS-DELIVERY-CONTROL-001"', ledger)
         self.assertIn('"cleanup_authorized": true', ledger)

@@ -31,6 +31,27 @@ class DeliveryPreflightTests(unittest.TestCase):
         cls.path = ROOT / "docs" / "governance" / "CURRENT_LANES.json"
         cls.ledger = load_ledger(cls.path)
 
+    def _idle_ledger(self) -> dict:
+        """The current ledger as it looks from controlled idle."""
+        idle = copy.deepcopy(self.ledger)
+        idle["operating_mode"]["state"] = "controlled_idle"
+        idle["operating_mode"]["writes_allowed_for"] = []
+        idle["operating_mode"]["release_allowed_for"] = []
+        idle["active_lanes"] = []
+        return idle
+
+    def _inactive_package(self) -> str:
+        """A package the current ledger does not permit writes for."""
+        engaged = {
+            lane["package"]
+            for lane in list(self.ledger.get("active_lanes") or [])
+            + list(self.ledger.get("closing_lanes") or [])
+        }
+        for lane in self.ledger.get("paused_lanes") or []:
+            if lane["package"] not in engaged:
+                return lane["package"]
+        return "PS-NOT-AN-ACTIVE-LANE-001"
+
     def test_lane_ledger_has_a_valid_operating_state(self):
         parsed = json.loads(self.path.read_text(encoding="utf-8"))
         self.assertEqual(1, parsed["schema_version"])
@@ -201,12 +222,22 @@ class DeliveryPreflightTests(unittest.TestCase):
         )
 
     def test_bootstrap_control_repair_is_exact_and_one_time(self):
+        # Activation is only ever evaluated from controlled_idle, so this
+        # exercises the exception against that state rather than against
+        # whichever lane happens to be active today.
+        idle_ledger = self._idle_ledger()
+        bootstrap = idle_ledger["bootstrap_control_repair"]
+        standing = set(idle_ledger["activation_policy"]["allowed_surfaces"])
+        # A surface the exception widens to, so losing the exception is visible.
+        widened = sorted(set(bootstrap["allowed_surfaces"]) - standing)
+        self.assertTrue(widened, "the one-time repair must widen some surface")
         exact = facts(
-            branch="work/2026-08-04-delivery-activation-preflight-output",
-            changed_paths=["scripts/delivery_preflight.py"],
+            branch=bootstrap["branch"],
+            origin_main=bootstrap["origin_main"],
+            changed_paths=[widened[0]],
         )
         exact_errors, exact_warnings = evaluate_policy(
-            self.ledger,
+            idle_ledger,
             exact,
             "PS-DELIVERY-CONTROL-001",
             "activate",
@@ -215,7 +246,7 @@ class DeliveryPreflightTests(unittest.TestCase):
         self.assertTrue(any("one-time" in warning for warning in exact_warnings))
 
         stale_errors, _ = evaluate_policy(
-            self.ledger,
+            idle_ledger,
             {**exact, "origin_main": "new-main-after-merge"},
             "PS-DELIVERY-CONTROL-001",
             "activate",
@@ -225,10 +256,13 @@ class DeliveryPreflightTests(unittest.TestCase):
         )
 
     def test_other_lane_write_is_blocked_but_read_is_allowed(self):
+        # Pick a package that is genuinely not an active or closing lane, so
+        # this keeps testing the block whichever lane the owner activates.
+        inactive_package = self._inactive_package()
         errors, _ = evaluate_policy(
             self.ledger,
             facts(branch="work/other"),
-            "PS-OPPORTUNITY-SLATE-001",
+            inactive_package,
             "write",
         )
         self.assertTrue(any("blocked" in error for error in errors))
@@ -236,7 +270,7 @@ class DeliveryPreflightTests(unittest.TestCase):
         read_errors, _ = evaluate_policy(
             self.ledger,
             facts(branch="work/other", behind=40),
-            "PS-OPPORTUNITY-SLATE-001",
+            inactive_package,
             "read",
         )
         self.assertTrue(any("behind" in error for error in read_errors))
@@ -244,7 +278,7 @@ class DeliveryPreflightTests(unittest.TestCase):
         current_read_errors, _ = evaluate_policy(
             self.ledger,
             facts(branch="work/other"),
-            "PS-OPPORTUNITY-SLATE-001",
+            inactive_package,
             "read",
         )
         self.assertEqual([], current_read_errors)
