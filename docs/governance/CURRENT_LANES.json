@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-05T04:30:00Z",
+  "updated_at": "2026-08-05T17:00:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -67,7 +67,7 @@
     {
       "package": "PS-OPPORTUNITY-SLATE-001",
       "outcome": "Deliver the complete public Opportunity Slate page to live, slice by slice, under Pete's 2026-08-05 standing order to keep going until the entire page is live and functional. Leg 1 (PS-OPPSLATE-002 schema) is complete and verified in production; the current leg is the OS-3 application release.",
-      "branch": "work/2026-08-05-oppslate-os3-app",
+      "branch": "work/2026-08-05-oppslate-os6-intake",
       "writer": "Claude continuation session, sole writer",
       "delivery_path": "Protected",
       "production_capable": true,
@@ -138,34 +138,34 @@
         {
           "leg": "1: PS-OPPSLATE-002 schema",
           "status": "complete",
-          "evidence": "run 528 applied PS-OPPSLATE-002 at digest 2af25b7d, ledger 21->22 rows, zero removed or mutated, 001 applied_at unchanged; Opus 5 independent review APPROVE at 07348e1; regenerated PRODUCTION_SCHEMA_STATE.md committed"
+          "evidence": "run 528 applied; ledger 21->22; PRODUCTION_SCHEMA_STATE.md committed"
         },
         {
-          "leg": "2: OS-3 application release",
+          "leg": "2: OS-3 application",
           "status": "complete_live",
-          "evidence": "PR 291 merged as main cb8591de after independent review APPROVE at 22296aa; automatic run 531 deployed it (redundant manual 532 canceled per the runs-432/433 precedent); live /healthz release a77f76340469625b8bb62dd9 matches the locally derived identity for exactly (cb8591de, build 531) and the live opportunity-slate.js is SHA-256-identical to the merged source; route serves 200 with no-store/private and noindex headers"
+          "evidence": "run 531 deployed cb8591de; live release a77f76340469625b8bb62dd9 verified"
         },
         {
           "leg": "3: OS-4 save lifecycle",
+          "status": "built_and_held",
+          "evidence": "PS-OPPSLATE-003 re-cut approved and merged as draft; app approved at 5b164c5, draft PR 293; blocked solely on the owner's disposable-database gate run, then apply, then merge"
+        },
+        {
+          "leg": "4: OS-5 dictation",
+          "status": "complete_live",
+          "evidence": "PR 294 merged as e1145498; automatic run 536 deployed it (redundant manual 537 refused by the pipeline's own overlap guard after a build-list API anomaly hid 536); live release 1e027874d245484ced4ab688 matches the derived identity; live JS SHA-identical; live intake shows the wired mic and privacy sentence"
+        },
+        {
+          "leg": "5: OS-6 upload/import",
           "status": "active",
-          "schema": "PS-OPPSLATE-003 re-cut at ebde2bb, independent review APPROVE, PR 292 open; draft (gate: null) until the disposable-database gate run records its proof - the one step requiring Azure SQL access this environment lacks",
-          "app": "port of checkpoint de8735ce pending; releases only after 003 is gated, merged, and applied",
-          "branch_schema": "work/2026-08-05-oppslate-os4-schema",
-          "branch_app": "work/2026-08-05-oppslate-os4-app"
-        },
-        {
-          "leg": "4: OS-5 shared dictation",
-          "status": "pending"
-        },
-        {
-          "leg": "5: OS-6 upload/import with SSRF proof",
-          "status": "pending"
+          "evidence": "two security review rounds complete (four blockers fixed and verified, two residuals in the third pass now underway); intake visual remediated to non-material per the reviewer; release follows the third verdict"
         },
         {
           "leg": "6: Fable extra-high final review, then lane closes",
           "status": "pending"
         }
-      ]
+      ],
+      "branch_note": "The lane runs parallel slice branches under one writer session: os4-schema and os4-app (built, held on the PS-OPPSLATE-003 gate), os5-dictation (released), os6-intake (active). The branch field names the branch currently receiving writes."
     }
   ],
   "closing_lanes": [],
