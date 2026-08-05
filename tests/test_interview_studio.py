@@ -2,6 +2,8 @@ import ast
 import json
 import os
 import re
+import shutil
+import subprocess
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -2317,9 +2319,34 @@ class InterviewStudioDictationTests(unittest.TestCase):
         html = self.html()
         self.assertIn('keeps listening until you stop it or you go quiet for 10 seconds', html)
         module = self.dictation
-        self.assertIn('Listening. Stops after 10 seconds of silence, or press Escape.', module)
         self.assertIn("'Listening. Stopping in ' + Math.ceil(remaining / 1000) + 's unless you speak.'", module)
-        self.assertIn('Dictation stopped after 10 seconds of silence.', module)
+
+    def test_the_silence_duration_is_derived_not_hardcoded(self):
+        """OS-5 bounded cleanup: the module takes a configurable silenceMs,
+        but every status/announcement string used to spell out "10 seconds"
+        as a literal — a host that configured a different duration would
+        show copy that disagreed with its own behaviour. The four sentences
+        that name the duration must all build it from silenceSeconds so
+        copy and behaviour cannot drift apart again; with no override this
+        still reads 10 for Interview Studio, since it configures none of
+        these options (test_the_timing_contract_survives_as_options_with_
+        the_same_defaults already asserts that override-free contract)."""
+        module = self.dictation
+        self.assertIn('var silenceSeconds = Math.round(silenceMs / 1000);', module)
+        for hardcoded in (
+            'Listening. Stops after 10 seconds of silence, or press Escape.',
+            'Dictation stopped after 10 seconds of silence.',
+            'silent for 10 seconds.',
+        ):
+            with self.subTest(literal=hardcoded):
+                self.assertNotIn(hardcoded, module)
+        for derived in (
+            "'Listening. Stops after ' + silenceSeconds + ' seconds of silence, or press Escape.'",
+            "'Dictation stopped after ' + silenceSeconds + ' seconds of silence. '",
+            "' seconds.'",
+        ):
+            with self.subTest(built_from=derived):
+                self.assertIn(derived, module)
 
     def test_the_public_route_claims_no_server_capture_or_account_history(self):
         html = self.html()
@@ -2412,3 +2439,44 @@ class InterviewStudioDictationTests(unittest.TestCase):
         self.assertRegex(html, r'css/interview-studio\.css\?v=[0-9a-f]{12}')
         self.assertRegex(html, r'js/interview-studio\.js\?v=[0-9a-f]{12}')
         self.assertRegex(html, r'js/dictation\.js\?v=[0-9a-f]{12}')
+
+
+# ---------------------------------------------------------------------------
+# The configurable-duration fix — run in Node against the real module
+# ---------------------------------------------------------------------------
+
+
+class DictationConfigurableDurationTests(unittest.TestCase):
+    """static/js/dictation.js's timing text is production code with no DOM
+    dependency once its window/document/navigator/SpeechRecognition surface
+    is stubbed, so it is executed directly rather than asserted about as
+    source text.
+
+    Driven from Python by subprocess in the same way
+    tests/test_workshop_voice.py drives tests/workshop_voice.test.js — this
+    repository has no npm/jest harness, and adding one for a single module
+    would be a larger change than the module itself. tests/dictation.test.js
+    proves the OS-5 handoff's "configurable-duration" bug is fixed: a host
+    that configures a non-default silenceMs gets status and announcement
+    text that names that duration, not a stale "10 seconds" literal — and
+    that a host configuring nothing (Interview Studio) is unaffected.
+    """
+
+    def test_the_duration_fix_holds_at_runtime(self):
+        node = shutil.which("node")
+        app_node = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+        if not node and os.path.isfile(app_node):
+            node = app_node
+        if not node:
+            self.skipTest("Node is not available to run the JS dictation tests.")
+
+        result = subprocess.run(
+            [node, os.path.join(str(Path(__file__).parents[1]), "tests", "dictation.test.js")],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+if __name__ == "__main__":
+    unittest.main()

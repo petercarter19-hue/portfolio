@@ -115,21 +115,31 @@
                         aria-describedby="os-tell-help-{{ statement.key }}"
                         data-os-response-input
                        data-os-rail-control>{% if statement.response and statement.response.kind == 'tell_more' %}{{ statement.response.text }}{% endif %}</textarea>
-              {# Rendered to the authority and honestly inert until slice OS-5
-                 (handoff section 14-M18). #}
+              {# Wired to the shared dictation module (slice OS-5, handoff
+                 section 14-M18: the live control gets the full treatment the
+                 inert render deliberately held back). #}
               <button type="button"
                       class="os-mic os-mic--sm"
-                      aria-disabled="true"
+                      aria-pressed="false"
+                      aria-label="Dictate your response"
                       aria-describedby="os-tell-help-{{ statement.key }}"
-                      data-os-inert-mic
-                      title="Dictation is not available yet">
+                      data-os-mic="tell-{{ statement.key }}"
+                      data-os-mic-noun="response"
+                      data-os-rail-control>
                 {{ os_icon('mic') }}
-                <span class="os-visually-hidden">Dictate your response (not available yet)</span>
               </button>
             </div>
+            <p class="os-dictation-live" data-os-dictation-status="tell-{{ statement.key }}" hidden></p>
+            <p class="os-dictation-interim" data-os-dictation-interim="tell-{{ statement.key }}" hidden>
+              <span class="os-dictation-interim-label">Heard so far</span>
+              <span data-os-dictation-interim-text></span>
+            </p>
+            <p class="os-mic-error" data-os-mic-error="tell-{{ statement.key }}" hidden></p>
             <p class="os-help" id="os-tell-help-{{ statement.key }}">
-              Type your response. Only add experience that is true and yours.
-              Dictation arrives in a later update.
+              Type or speak your response. Your transcript stays editable.
+              Only add experience that is true and yours. Your browser does
+              the transcribing — PeerSlate does not receive or keep the
+              audio.
             </p>
             <div class="os-disclosure__actions">
               <button type="submit" class="os-btn os-btn--primary os-btn--sm"
@@ -214,17 +224,26 @@
                        data-os-rail-control>{% if statement.response and statement.response.kind == 'real_example' %}{{ statement.response.text }}{% endif %}</textarea>
               <button type="button"
                       class="os-mic os-mic--sm"
-                      aria-disabled="true"
+                      aria-pressed="false"
+                      aria-label="Dictate your example"
                       aria-describedby="os-example-help-{{ statement.key }}"
-                      data-os-inert-mic
-                      title="Dictation is not available yet">
+                      data-os-mic="example-{{ statement.key }}"
+                      data-os-mic-noun="example"
+                      data-os-rail-control>
                 {{ os_icon('mic') }}
-                <span class="os-visually-hidden">Dictate your example (not available yet)</span>
               </button>
             </div>
+            <p class="os-dictation-live" data-os-dictation-status="example-{{ statement.key }}" hidden></p>
+            <p class="os-dictation-interim" data-os-dictation-interim="example-{{ statement.key }}" hidden>
+              <span class="os-dictation-interim-label">Heard so far</span>
+              <span data-os-dictation-interim-text></span>
+            </p>
+            <p class="os-mic-error" data-os-mic-error="example-{{ statement.key }}" hidden></p>
             <p class="os-help" id="os-example-help-{{ statement.key }}">
-              Only add experience that is true and yours. Dictation arrives in
-              a later update.
+              Type or speak your example. Your transcript stays editable.
+              Only add experience that is true and yours. Your browser does
+              the transcribing — PeerSlate does not receive or keep the
+              audio.
             </p>
             <div class="os-disclosure__actions">
               <button type="submit" class="os-btn os-btn--primary os-btn--sm"

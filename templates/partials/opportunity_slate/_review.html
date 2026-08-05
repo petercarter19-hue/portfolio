@@ -264,17 +264,24 @@
                       data-os-concern-input>{{ concern.quote }}</textarea>
             <button type="button"
                     class="os-mic os-mic--sm"
-                    aria-disabled="true"
+                    aria-pressed="false"
+                    aria-label="Dictate the correction"
                     aria-describedby="os-concern-help-{{ concern.key }}"
-                    data-os-inert-mic
-                    title="Dictation is not available yet">
+                    data-os-mic="concern-{{ concern.key }}"
+                    data-os-mic-noun="correction">
               {{ os_icon('mic') }}
-              <span class="os-visually-hidden">Dictate the correction (not available yet)</span>
             </button>
           </div>
+          <p class="os-dictation-live" data-os-dictation-status="concern-{{ concern.key }}" hidden></p>
+          <p class="os-dictation-interim" data-os-dictation-interim="concern-{{ concern.key }}" hidden>
+            <span class="os-dictation-interim-label">Heard so far</span>
+            <span data-os-dictation-interim-text></span>
+          </p>
+          <p class="os-mic-error" data-os-mic-error="concern-{{ concern.key }}" hidden></p>
           <p class="os-help" id="os-concern-help-{{ concern.key }}">
-            Type your correction. The original wording above is always kept.
-            Dictation arrives in a later update.
+            Type or speak your correction. Your transcript stays editable,
+            and the original wording above is always kept. Your browser does
+            the transcribing — PeerSlate does not receive or keep the audio.
           </p>
           <div class="os-disclosure__actions">
             {# The decision travels on the activated button itself, so a
@@ -345,17 +352,24 @@
                   {% if room.error and room.error.field_hint %}aria-invalid="true" aria-describedby="os-corrected-help os-corrected-error"{% else %}aria-describedby="os-corrected-help"{% endif %}>{{ room.source.editor_text }}</textarea>
         <button type="button"
                 class="os-mic os-mic--sm"
-                aria-disabled="true"
+                aria-pressed="false"
+                aria-label="Dictate the correction"
                 aria-describedby="os-corrected-help"
-                data-os-inert-mic
-                title="Dictation is not available yet">
+                data-os-mic="correction"
+                data-os-mic-noun="correction">
           {{ os_icon('mic') }}
-          <span class="os-visually-hidden">Dictate the correction (not available yet)</span>
         </button>
       </div>
+      <p class="os-dictation-live" data-os-dictation-status="correction" hidden></p>
+      <p class="os-dictation-interim" data-os-dictation-interim="correction" hidden>
+        <span class="os-dictation-interim-label">Heard so far</span>
+        <span data-os-dictation-interim-text></span>
+      </p>
+      <p class="os-mic-error" data-os-mic-error="correction" hidden></p>
       <p class="os-help" id="os-corrected-help">
-        Type your correction. Your text stays editable, and the original
-        wording above is always kept. Dictation arrives in a later update.
+        Type or speak your correction. Your transcript stays editable, and
+        the original wording above is always kept. Your browser does the
+        transcribing — PeerSlate does not receive or keep the audio.
       </p>
       {% if room.error and room.error.field_hint %}
       <p class="os-field-error" id="os-corrected-error">{{ room.error.field_hint }}</p>

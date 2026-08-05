@@ -4,8 +4,12 @@
 
   Truth adaptations in this slice, each visible on the screen rather than
   hidden in a comment:
-    * the microphone is rendered per image 01 but is honestly inert
-      (aria-disabled + a stated reason); dictation is slice OS-5;
+    * the microphone is wired to the shared dictation module (slice OS-5,
+      handoff sections 4 and 6) — live in both signed-in and anonymous
+      modes, since dictation never leaves the visitor's browser and never
+      touches the paste-only server boundary section 18 describes; a
+      browser with no SpeechRecognition still gets a real, labelled inert
+      button rather than one that looks live and does nothing;
     * the Upload document and Import public link tiles render per image 01
       but as honest unavailable states, never dead buttons; both are slice
       OS-6, and section 18 safeguard 1 keeps them off the anonymous route
@@ -51,19 +55,28 @@
               {%- set described = 'os-source-help' + (' os-source-limit' if room.is_public else '') %}
               {% if room.error and room.error.kind == 'field' %}aria-invalid="true" aria-describedby="{{ described }} os-source-error"{% else %}aria-describedby="{{ described }}"{% endif %}>{{ room.source_text }}</textarea>
 
-    {# Image 01's microphone, rendered honestly inert. It is a real button
-       element so its state is announced, and it says why it cannot be used
-       rather than failing silently on click. #}
+    {# Image 01's microphone, wired to the shared dictation module (slice
+       OS-5, handoff sections 4 and 6). It is a real button element so its
+       state is announced either way: live, it toggles listening; without
+       SpeechRecognition in this browser, the room script itself puts it
+       back into a labelled inert state rather than leaving it looking live
+       and doing nothing. #}
     <button type="button"
             class="os-mic"
-            aria-disabled="true"
+            aria-pressed="false"
+            aria-label="Dictate the role"
             aria-describedby="os-mic-note"
-            data-os-inert-mic
-            title="Dictation is not available yet">
+            data-os-mic="role"
+            data-os-mic-noun="role description">
       {{ os_icon('mic') }}
-      <span class="os-visually-hidden">Dictate the role (not available yet)</span>
     </button>
   </div>
+  <p class="os-dictation-live" data-os-dictation-status="role" hidden></p>
+  <p class="os-dictation-interim" data-os-dictation-interim="role" hidden>
+    <span class="os-dictation-interim-label">Heard so far</span>
+    <span data-os-dictation-interim-text></span>
+  </p>
+  <p class="os-mic-error" data-os-mic-error="role" hidden></p>
 
   <p class="os-help" id="os-source-help">
     Your text stays editable. Nothing is analyzed until you ask for it.
@@ -97,7 +110,7 @@
   </p>
   {% endif %}
   <p class="os-help os-help--muted" id="os-mic-note">
-    {{ os_icon('mic', 'os-icon os-icon--sm') }}Dictation arrives in a later update. Typing and pasting work now.
+    {{ os_icon('mic', 'os-icon os-icon--sm') }}Type or speak. Your transcript stays editable. Your browser does the transcribing — PeerSlate does not receive or keep the audio.
   </p>
   {% if room.error and room.error.kind == 'field' %}
   <p class="os-field-error" id="os-source-error">{{ room.error.field_hint or room.error.message }}</p>

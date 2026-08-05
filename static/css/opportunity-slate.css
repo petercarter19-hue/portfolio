@@ -939,6 +939,98 @@ body.opportunity-slate-page .main-content {
 .os-mic--sm .os-icon { width: 22px; height: 22px; }
 .os-mic[aria-disabled="true"] { opacity: 1; }
 
+/* Live dictation (slice OS-5). The comment above already states the plan:
+   the shipped-inert render is deliberately the quieter one, and the live
+   control gets "the outer glow" back — a soft periwinkle bloom past the
+   halo the inert render stops at — plus a listening pulse, so a live mic
+   reads as live at a glance and never only from its title text. */
+.os-mic:not([aria-disabled="true"]) {
+    cursor: pointer;
+    box-shadow:
+        0 0 0 7px rgb(214 227 251 / 62%),
+        0 0 0 8px rgb(160 190 240 / 55%),
+        0 0 22px 5px rgb(160 190 240 / 45%),
+        inset 0 1px 0 rgb(255 255 255 / 95%),
+        0 2px 4px rgb(24 36 76 / 14%),
+        0 12px 26px rgb(24 36 76 / 20%);
+}
+.os-mic--sm:not([aria-disabled="true"]) {
+    box-shadow:
+        0 0 0 5px rgb(214 227 251 / 62%),
+        0 0 0 6px rgb(160 190 240 / 50%),
+        0 0 16px 4px rgb(160 190 240 / 45%),
+        inset 0 1px 0 rgb(255 255 255 / 95%),
+        0 2px 4px rgb(24 36 76 / 12%),
+        0 8px 18px rgb(24 36 76 / 16%);
+}
+.os-mic:not([aria-disabled="true"]):hover { color: var(--os-action-strong); }
+/* Focus ring: the house rule (".os button:focus-visible" etc., below) already
+   covers every focusable control including this one at higher specificity
+   (a type selector plus the pseudo-class outranks a single class), so the
+   mic needs no rule of its own here. */
+/* is-listening is set by the shared dictation.js module (§6.6: gated by
+   prefers-reduced-motion, which the sheet-wide .os * rule above already
+   collapses to a near-static state). */
+.os-mic.is-listening { animation: os-mic-pulse 1.4s ease-in-out infinite; }
+@keyframes os-mic-pulse { 50% { opacity: 0.72; } }
+/* Progressive enhancement: the room script sets this when the browser has
+   no SpeechRecognition at all (handoff section 6 rule 5), which is a
+   distinct state from the honestly-inert pre-OS-5 render above — the
+   button still says what it is, just not "not available yet". */
+.os-mic.is-unavailable { cursor: not-allowed; opacity: 0.7; }
+
+/* The status line, interim preview, and error text every mic-equipped
+   field carries (handoff section 6). The accessible announcement itself
+   routes through the room's one shared live region (announce(), matching
+   the pattern already established for every other room announcement); these
+   are the matching VISIBLE text, hidden until the room script has something
+   to say. */
+.os-dictation-live {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0.5rem 0 0;
+    color: var(--os-action);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.os-dictation-live::before {
+    content: "";
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--os-action);
+    border-radius: 50%;
+    animation: os-mic-pulse 1.2s ease-in-out infinite;
+}
+.os-dictation-interim {
+    margin: 0.45rem 0 0;
+    padding: 0.5rem 0.65rem;
+    color: var(--os-muted);
+    background: var(--os-surface-muted);
+    border: 1px dashed var(--os-line);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-style: italic;
+    line-height: 1.55;
+}
+.os-dictation-interim-label {
+    display: block;
+    margin-bottom: 0.15rem;
+    color: var(--os-neutral-ink);
+    font-size: 0.62rem;
+    font-style: normal;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.os-mic-error {
+    margin: 0.4rem 0 0;
+    color: var(--os-danger-ink);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
 .os-help {
     margin: 0;
     display: flex;

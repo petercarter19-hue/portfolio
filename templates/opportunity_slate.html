@@ -32,5 +32,9 @@
 {% endblock %}
 
 {% block extra_scripts %}
+{# dictation.js must load first: opportunity-slate.js binds its mic controls
+   to window.PeerSlateDictation, exactly as interview-studio.js does (handoff
+   sections 4 and 6). Both are deferred, so they run in document order. #}
+<script src="{{ url_for('static', filename='js/dictation.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/opportunity-slate.js') }}" defer></script>
 {% endblock %}

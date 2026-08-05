@@ -145,6 +145,15 @@
         var countdownMs = numberOption(settings.countdownMs, DICTATION_COUNTDOWN_MS);
         var restartDelayMs = numberOption(settings.restartDelayMs, DICTATION_RESTART_DELAY_MS);
         var maxRestarts = numberOption(settings.maxRestarts, DICTATION_MAX_RESTARTS);
+        /* Bounded cleanup carried from the OS-5 handoff: silenceMs is a real
+           option a host can override, but every status/announcement string
+           below used to spell out "10 seconds" as a literal, so a host that
+           actually configured a different duration would show copy that
+           disagreed with its own behaviour. Deriving the displayed duration
+           from the configured value keeps them unable to drift apart. With
+           no override this is still exactly 10 — Interview Studio configures
+           none of these options, so its copy and behaviour are unchanged. */
+        var silenceSeconds = Math.round(silenceMs / 1000);
         var transientErrors = Array.isArray(settings.transientErrors)
             ? settings.transientErrors.slice()
             : TRANSIENT_SPEECH_ERRORS.slice();
@@ -173,7 +182,7 @@
         function renderDictationCountdown(state) {
             var remaining = Math.max(0, state.silenceDeadline - Date.now());
             if (remaining > countdownMs) {
-                state.binding.setStatus('Listening. Stops after 10 seconds of silence, or press Escape.');
+                state.binding.setStatus('Listening. Stops after ' + silenceSeconds + ' seconds of silence, or press Escape.');
                 return;
             }
             state.binding.setStatus('Listening. Stopping in ' + Math.ceil(remaining / 1000) + 's unless you speak.');
@@ -222,7 +231,7 @@
                 return;
             }
             var added = state.words === 1 ? '1 word was added to your ' + noun + '.' : state.words + ' words were added to your ' + noun + '.';
-            if (state.reason === 'silence') announce('Dictation stopped after 10 seconds of silence. ' + added + ' You can edit it.');
+            if (state.reason === 'silence') announce('Dictation stopped after ' + silenceSeconds + ' seconds of silence. ' + added + ' You can edit it.');
             else if (state.reason === 'interrupted') announce('Dictation stopped. ' + added);
             else announce('Dictation stopped. ' + added + ' You can edit it.');
         }
@@ -304,12 +313,12 @@
             };
             recognition.onstart = function () {
                 button.removeAttribute('aria-busy');
-                binding.setStatus('Listening. Stops after 10 seconds of silence, or press Escape.');
+                binding.setStatus('Listening. Stops after ' + silenceSeconds + ' seconds of silence, or press Escape.');
             };
             recognition.onerror = function (event) {
                 var code = event && event.error;
                 /* Continuous sessions emit these while the visitor is simply pausing.
-                   The 10-second silence deadline decides when to stop, not the browser. */
+                   The configured silence deadline decides when to stop, not the browser. */
                 if (transientErrors.indexOf(code) !== -1) return;
                 var message = friendlySpeechError(code);
                 state.stopping = true;
@@ -333,7 +342,7 @@
             button.setAttribute('aria-pressed', 'true');
             button.setAttribute('aria-label', binding.listeningLabel);
             binding.setButtonLabel('Stop dictation');
-            announce('Listening. Speak your ' + binding.noun + '. Dictation keeps running until you stop it or you are silent for 10 seconds.');
+            announce('Listening. Speak your ' + binding.noun + '. Dictation keeps running until you stop it or you are silent for ' + silenceSeconds + ' seconds.');
             armDictationSilence(state);
             try {
                 recognition.start();

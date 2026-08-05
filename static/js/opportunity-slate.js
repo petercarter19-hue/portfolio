@@ -4,10 +4,13 @@
  * Two jobs, and deliberately no more:
  *
  *   1. Progressive enhancement for BOTH modes — the primary action is
- *      disabled while the editor is empty (image 01), the inert microphone
- *      explains itself when someone presses it, and a rail action that
+ *      disabled while the editor is empty (image 01), a rail action that
  *      points at a collapsed disclosure opens it instead of leaving a link
- *      that appears to do nothing.
+ *      that appears to do nothing, and every mic is wired to the shared
+ *      static/js/dictation.js module (slice OS-5; see "Speech input"
+ *      below) unless the browser has no SpeechRecognition at all, in
+ *      which case it is put into a real, labelled inert state rather than
+ *      left looking live and doing nothing.
  *
  *   2. The anonymous public session's transport (handoff section 18). A
  *      signed-out visitor's working state lives in a signed context token
@@ -143,6 +146,7 @@
         }
         syncPrimary(node);
         syncSourceCount(node);
+        initDictation(node);
     }
 
     /* Replacing the fragment destroys whatever the visitor was focused on,
@@ -181,12 +185,176 @@
         if (!node || !html) {
             return;
         }
+        /* The fragment about to be replaced may hold an actively listening
+           mic bound to a field that is about to be detached. Flush it into
+           that field first (dictation's own stop path already commits
+           visible interim speech) rather than leaving a recognition session
+           running against markup nobody can see or reach any more. */
+        stopActiveDictation('interrupted');
         node.outerHTML = html;
         initRoom();
         var fresh = room();
         if (fresh) {
             restoreFocus(fresh);
             announceSwap(fresh);
+        }
+    }
+
+    /* ------------------------------------------------------------------
+       Slice OS-5 — speech input, shared with Interview Studio via
+       static/js/dictation.js (handoff sections 4 and 6). Recognition,
+       microphone permission, timers, restart handling, and caret insertion
+       live in that module, which this template loads first; this room only
+       binds it to its own mic markup, exactly as interview-studio.js binds
+       it to its own — the data-os-mic* attributes below are this room's
+       binding, not the module's.
+
+       Every mic surface renders identically in both modes (handoff section
+       18): dictation never leaves the visitor's own browser and never
+       touches the paste-only server boundary described there — whichever
+       mode a member is in, the server only ever receives whatever text
+       already sits in the field at submit time, spoken or typed, exactly
+       like a member who only ever typed. So the anonymous public session
+       gets the same live mic the signed-in workbench does, on every field
+       that has one.
+
+       This file still composes none of its own member-facing copy: the
+       accessible label, the noun used in an announcement, and the help
+       sentence beside each field are all read from what the template
+       already rendered. ------------------------------------------------ */
+    var dictationModule = window.PeerSlateDictation || null;
+    var dictation = dictationModule
+        ? dictationModule.createController({ announce: announce })
+        : null;
+
+    function stopActiveDictation(reason) {
+        if (dictation && dictation.isActive()) {
+            dictation.stop(reason);
+        }
+    }
+
+    function dictationStatusEl(key) {
+        return document.querySelector('[data-os-dictation-status="' + key + '"]');
+    }
+    function dictationInterimEl(key) {
+        return document.querySelector('[data-os-dictation-interim="' + key + '"]');
+    }
+    function dictationErrorEl(key) {
+        return document.querySelector('[data-os-mic-error="' + key + '"]');
+    }
+    function setDictationStatus(key, message) {
+        var target = dictationStatusEl(key);
+        if (!target) {
+            return;
+        }
+        target.textContent = message || '';
+        target.hidden = !message;
+    }
+    function setDictationInterim(key, value) {
+        var target = dictationInterimEl(key);
+        if (!target) {
+            return;
+        }
+        var textNode = target.querySelector('[data-os-dictation-interim-text]');
+        if (textNode) {
+            textNode.textContent = value || '';
+        }
+        target.hidden = !value;
+    }
+    function showMicError(key, message) {
+        var target = dictationErrorEl(key);
+        if (!target) {
+            return;
+        }
+        target.textContent = message;
+        target.hidden = false;
+    }
+    function hideMicError(key) {
+        var target = dictationErrorEl(key);
+        if (target) {
+            target.hidden = true;
+        }
+    }
+
+    /* One binding per mic button on screen. A field can render more than
+       one instance of the same surface at once — the response rail holds
+       one panel per qualification, and the source review holds one
+       correction card per flagged concern, all but the selected/relevant
+       one hidden rather than absent — so the template gives each button its
+       own key rather than one per surface TYPE. */
+    function bindMic(button) {
+        var key = button.getAttribute('data-os-mic');
+        if (!key || !dictation) {
+            return;
+        }
+        var editor = button.closest('.os-editor');
+        var field = editor ? editor.querySelector('textarea') : null;
+        if (!field) {
+            return;
+        }
+        dictation.register(key, {
+            button: button,
+            resolveTarget: function () {
+                return field;
+            },
+            /* The server already rendered an accurate aria-label ("Dictate
+               the role", …); the module keeps it in sync as the button
+               toggles. Falling back to its own default only matters if a
+               future surface ever omits one. */
+            label: button.getAttribute('aria-label') || undefined,
+            noun: button.getAttribute('data-os-mic-noun') || 'text',
+            setStatus: function (message) {
+                setDictationStatus(key, message);
+            },
+            setInterim: function (value) {
+                setDictationInterim(key, value);
+            },
+            showError: function (message) {
+                showMicError(key, message);
+            },
+            hideError: function () {
+                hideMicError(key);
+            }
+        });
+        button.addEventListener('click', function () {
+            dictation.toggle(key);
+        });
+    }
+
+    /* Progressive enhancement (handoff section 6 rule 5): with no
+       SpeechRecognition at all, every mic stays in a labelled inert state —
+       distinct from the pre-OS-5 "not available yet" render, because
+       dictation IS available, just not in this browser. Typing remains the
+       whole path either way. */
+    function disableUnsupportedMics(buttons) {
+        for (var index = 0; index < buttons.length; index += 1) {
+            var button = buttons[index];
+            button.setAttribute('aria-disabled', 'true');
+            button.disabled = true;
+            button.classList.add('is-unavailable');
+            setDictationStatus(
+                button.getAttribute('data-os-mic'),
+                'Speech input is not supported in this browser. Typing works normally.'
+            );
+        }
+    }
+
+    function initDictation(node) {
+        var buttons = node.querySelectorAll('[data-os-mic]');
+        /* Bind first, unconditionally, THEN disable if unsupported —
+           interview-studio.js's exact order for its own mics. A button that
+           was never registered has no click listener at all, so if
+           something later re-enables it (lockRail unlocking a rail, below)
+           a press does nothing and explains nothing. Binding first means
+           the shared module's own startDictation still gates on
+           SpeechRecognition at the moment of the click and reports an
+           honest "not supported" error either way, the same backstop
+           Interview Studio already relies on. */
+        for (var index = 0; index < buttons.length; index += 1) {
+            bindMic(buttons[index]);
+        }
+        if (!dictationModule || !dictationModule.isSupported()) {
+            disableUnsupportedMics(buttons);
         }
     }
 
@@ -219,6 +387,16 @@
                 : null;
         var locking = RAIL_LOCKING_ACTIONS[payload.action] === true;
         if (locking) {
+            /* Every caller that can reach a locking action flushes dictation
+               before it ever builds `payload` — the submit handler's own
+               flush above `kind = form.getAttribute(...)` is what protects
+               the field value this function was handed; by the time send()
+               runs, that value is already final. This second flush is a
+               backstop for send() as its own unit, not the fix for lost
+               interim speech: it exists so a rail is never locked while a
+               mic is still listening against it, the same invariant
+               beginProposal's own flush keeps at its own lockRail call. */
+            stopActiveDictation('interrupted');
             lockRail(node, true);
             pending = {
                 controller: controller,
@@ -370,8 +548,19 @@
             return;
         }
         for (var index = 0; index < controls.length; index += 1) {
-            controls[index].disabled = locked;
-            controls[index].setAttribute('aria-disabled', locked ? 'true' : 'false');
+            var control = controls[index];
+            /* A mic marked permanently unavailable (no SpeechRecognition in
+               this browser, set once by disableUnsupportedMics) is not this
+               mechanism's to touch — unlocking would clear its aria-disabled
+               and re-enable it, so a browser with no speech support would
+               show a glowing, apparently-live mic the moment a member
+               pressed Cancel. Its inert state has to survive every lock and
+               unlock the rail goes through, not just the first one. */
+            if (control.classList.contains('is-unavailable')) {
+                continue;
+            }
+            control.disabled = locked;
+            control.setAttribute('aria-disabled', locked ? 'true' : 'false');
         }
         var notice = node.querySelector('[data-os-rail-locked-note]');
         if (notice) {
@@ -511,6 +700,13 @@
             anchor.insertBefore(rail, anchor.firstChild);
         }
         setStage(rail, 1);
+        /* The submit handler above already flushed before it ever read a
+           field value, so by the time a proposal reaches here nothing is
+           normally still listening — this is the same backstop send()
+           keeps at its own lockRail call, so a mic can never be left
+           running against a textarea this is about to disable, from this
+           function alone regardless of what called it. */
+        stopActiveDictation('interrupted');
         lockRail(node, true);
         pending = {
             controller: controller,
@@ -666,6 +862,18 @@
         if (!form || !node || !node.contains(form)) {
             return;
         }
+        /* Flush BEFORE anything below reads a field's .value — matching
+           Interview Studio's submitReview(), which stops dictation first and
+           only then reads answer.value.trim(). Flushing any later (as this
+           used to, only inside send()'s locking branch) is too late: by
+           then every branch below has already copied a stale .value onto
+           the outgoing payload, so an unfinalised "Heard so far" phrase the
+           member can still see on screen is silently dropped from what gets
+           sent, not merely left running past its use. This also covers the
+           signed-in path, which never calls send() at all — an ordinary
+           native form submit reads the same .value moments after this
+           listener returns, so the flush has to land before that too. */
+        stopActiveDictation('interrupted');
         var kind = form.getAttribute('data-os-form');
 
         /* The two AI requests are intercepted in BOTH modes, because both
@@ -773,16 +981,6 @@
             return;
         }
 
-        var mic = closestFrom(event.target, '[data-os-inert-mic]');
-        if (mic && node.contains(mic)) {
-            event.preventDefault();
-            announce(
-                'Dictation is not available yet. Type or paste the wording instead — ' +
-                    'it arrives in a later update.'
-            );
-            return;
-        }
-
         var next = closestFrom(event.target, '[data-os-inert-next]');
         if (next && node.contains(next)) {
             event.preventDefault();
@@ -817,6 +1015,13 @@
         var select = closestFrom(event.target, '[data-os-select-statement]');
         if (select && node.contains(select)) {
             event.preventDefault();
+            /* Every statement's clarification panel — and its own mic —
+               stays in the DOM, only `hidden` toggling between them
+               (client-side, no round trip), so a mic left listening in the
+               PREVIOUS panel would otherwise keep listening invisibly
+               behind it. Same stale-context case swapRoom and send()
+               already flush. */
+            stopActiveDictation('interrupted');
             selectStatement(node, select.getAttribute('data-os-select-statement'));
             return;
         }
@@ -825,6 +1030,7 @@
         var selectAlign = closestFrom(event.target, '[data-os-select-align]');
         if (selectAlign && node.contains(selectAlign)) {
             event.preventDefault();
+            stopActiveDictation('interrupted');
             selectAlignment(node, selectAlign.getAttribute('data-os-select-align'));
             return;
         }
@@ -907,6 +1113,23 @@
         ) {
             syncPrimary(node);
             syncSourceCount(node);
+        }
+    });
+
+    /* The dictation status line itself says "or press Escape" (shared
+       module copy, handoff section 6); this is what makes that literally
+       true, exactly as interview-studio.js does for its own mics. */
+    document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') {
+            return;
+        }
+        stopActiveDictation('manual');
+    });
+    /* A visitor who switches tabs mid-dictation should not come back to a
+       microphone still silently listening. */
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            stopActiveDictation('interrupted');
         }
     });
 

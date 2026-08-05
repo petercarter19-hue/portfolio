@@ -108,17 +108,25 @@
                   data-os-rail-control>{{ statement.member_clarification or '' }}</textarea>
         <button type="button"
                 class="os-mic os-mic--sm"
-                aria-disabled="true"
+                aria-pressed="false"
+                aria-label="Dictate the clarification"
                 aria-describedby="os-clarify-help-{{ statement.key }}"
-                data-os-inert-mic
-                title="Dictation is not available yet">
+                data-os-mic="clarify-{{ statement.key }}"
+                data-os-mic-noun="clarification"
+                data-os-rail-control>
           {{ os_icon('mic') }}
-          <span class="os-visually-hidden">Dictate the clarification (not available yet)</span>
         </button>
       </div>
+      <p class="os-dictation-live" data-os-dictation-status="clarify-{{ statement.key }}" hidden></p>
+      <p class="os-dictation-interim" data-os-dictation-interim="clarify-{{ statement.key }}" hidden>
+        <span class="os-dictation-interim-label">Heard so far</span>
+        <span data-os-dictation-interim-text></span>
+      </p>
+      <p class="os-mic-error" data-os-mic-error="clarify-{{ statement.key }}" hidden></p>
       <p class="os-help" id="os-clarify-help-{{ statement.key }}">
-        Type your clarification. Your transcript stays editable. Dictation
-        arrives in a later update.
+        Type or speak your clarification. Your transcript stays editable.
+        Your browser does the transcribing — PeerSlate does not receive or
+        keep the audio.
       </p>
 
       <div class="os-disclosure__actions">

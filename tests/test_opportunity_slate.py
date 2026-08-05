@@ -13,7 +13,10 @@ Pete-specific identifier (tests/test_site_rules.py's OwnershipGuardrailTests
 enforces that separately for reusable service/route code).
 """
 
+import os
 import re
+import shutil
+import subprocess
 import unittest
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
@@ -440,12 +443,242 @@ class AnonymousPublicSessionTests(OpportunitySlateTestCase):
         self.assertEqual(body.count("Available with membership"), 2)
         self.assertNotIn('type="file"', body)
 
-    def test_microphone_is_present_but_honestly_inert(self):
+    def test_the_role_intake_microphone_is_wired_live(self):
+        """Slice OS-5: the intake mic is no longer honestly-inert placeholder
+        markup (handoff section 14-M18) — it is a real, live control wired to
+        the shared dictation module, and it renders identically for the
+        anonymous session as for a signed-in member (handoff section 18:
+        "same screens, same flow"; dictation is client-side speech-to-text
+        into the textarea, so it never touches the paste-only server
+        boundary and there is no reason for the two modes to differ here)."""
         with self.anonymous():
             body = self.client.get(ROOM_GET).data.decode("utf-8")
-        self.assertIn('data-os-inert-mic', body)
-        self.assertIn('aria-disabled="true"', body)
-        self.assertIn("Dictation arrives in a later update", body)
+        self.assertIn('data-os-mic="role"', body)
+        self.assertIn('aria-pressed="false"', body)
+        self.assertIn('aria-label="Dictate the role"', body)
+        self.assertNotIn("data-os-inert-mic", body)
+        self.assertNotIn("Dictation arrives in a later update", body)
+        self.assertNotIn("Dictation is not available yet", body)
+
+        with self.signed_in(), self.service() as service:
+            service.get_working_session_for_owner.return_value = None
+            signed_in_body = self.client.get(ROOM_GET).data.decode("utf-8")
+        self.assertIn('data-os-mic="role"', signed_in_body)
+        self.assertIn('aria-pressed="false"', signed_in_body)
+        self.assertNotIn("data-os-inert-mic", signed_in_body)
+
+    def test_the_microphone_privacy_sentence_covers_every_mic_equipped_field(self):
+        """Mirrors tests/test_interview_studio.py's
+        test_the_public_route_claims_no_server_capture_or_account_history,
+        which asserts this exact sentence against Interview Studio's own
+        rendered page. Held here as a template-source count across the four
+        partials that carry a mic, normalizing whitespace first because the
+        sentence wraps across source lines in some of them — a raw assertIn
+        against unrendered template text would otherwise pass or fail on
+        incidental line-wrapping rather than on whether the sentence is
+        actually there. Six because there are six mic-equipped fields
+        (handoff section 4): role intake; the per-concern correction card
+        AND the whole-document correction editor; requirement
+        clarification; and the response rail's Tell-us-more and
+        Provide-a-real-example fields."""
+        partials_dir = (
+            Path(__file__).resolve().parents[1]
+            / "templates"
+            / "partials"
+            / "opportunity_slate"
+        )
+        sentence = "PeerSlate does not receive or keep the audio."
+        total = 0
+        for name in (
+            "_intake.html",
+            "_review.html",
+            "_statement_rail.html",
+            "_response_rail.html",
+        ):
+            normalized = " ".join(
+                (partials_dir / name).read_text(encoding="utf-8").split()
+            )
+            count = normalized.count(sentence)
+            with self.subTest(file=name):
+                self.assertGreater(count, 0, name + " never states it")
+            total += count
+        self.assertEqual(total, 6)
+
+    def test_dictation_js_loads_before_the_room_script_that_binds_it(self):
+        """opportunity-slate.js reads window.PeerSlateDictation at bind time;
+        both tags are deferred, so only document order — not a race —
+        decides which runs first. Same requirement Interview Studio already
+        holds for its own two tags."""
+        with self.anonymous():
+            body = self.client.get(ROOM_GET).data.decode("utf-8")
+        dictation_at = body.index("js/dictation.js")
+        room_script_at = body.index("js/opportunity-slate.js")
+        self.assertLess(dictation_at, room_script_at)
+
+    def test_the_room_script_wires_a_mic_for_every_dictation_surface(self):
+        """The room script's own binding code, not just the template markup:
+        every data-os-mic button gets registered with the shared module, and
+        an unsupported browser gets a real inert state rather than a dead
+        live-looking button (handoff section 6 rule 5)."""
+        script = (
+            Path(__file__).resolve().parents[1]
+            / "static"
+            / "js"
+            / "opportunity-slate.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn("window.PeerSlateDictation", script)
+        self.assertIn("dictationModule.createController(", script)
+        self.assertIn("node.querySelectorAll('[data-os-mic]')", script)
+        self.assertIn("dictation.register(key,", script)
+        self.assertIn("if (!dictationModule || !dictationModule.isSupported())", script)
+        self.assertIn("disableUnsupportedMics(buttons)", script)
+        self.assertIn(
+            "'Speech input is not supported in this browser. Typing works normally.'",
+            script,
+        )
+
+    def test_every_mic_is_bound_before_the_unsupported_check_runs(self):
+        """Interview Studio's own order for its mics (bind, THEN disable if
+        unsupported), not the reverse. Binding first means a button that a
+        later bug — or a future lockRail-shaped one — re-enables still has
+        a real click listener, so a press reaches the shared module's own
+        SpeechRecognition check and reports an honest error, rather than a
+        button that looks live and silently does nothing because it was
+        never registered with the module in the first place."""
+        script = (
+            Path(__file__).resolve().parents[1]
+            / "static"
+            / "js"
+            / "opportunity-slate.js"
+        ).read_text(encoding="utf-8")
+        init_dictation = script.split("function initDictation(node)", 1)[1].split(
+            "\n    }\n", 1
+        )[0]
+        bind_at = init_dictation.index("bindMic(buttons[index]);")
+        disable_check_at = init_dictation.index(
+            "if (!dictationModule || !dictationModule.isSupported())"
+        )
+        self.assertLess(bind_at, disable_check_at)
+
+    def test_the_submit_flush_precedes_reading_which_form_was_submitted(self):
+        """Positional guard for the priority fix: the submit handler's flush
+        has to be the FIRST thing it does, ahead of even
+        `kind = form.getAttribute('data-os-form')` — the read every later
+        branch's own field-value reads are gated behind. A flush placed
+        after that line, or inside one specific branch, would still pass
+        every OTHER dictation test (they only check a flush exists
+        somewhere), which is exactly why this needs its own positional
+        assertion rather than relying on assertIn elsewhere. Same shape as
+        test_every_mic_is_bound_before_the_unsupported_check_runs above."""
+        script = (
+            Path(__file__).resolve().parents[1]
+            / "static"
+            / "js"
+            / "opportunity-slate.js"
+        ).read_text(encoding="utf-8")
+        submit_listener = script.split(
+            "document.addEventListener('submit', function (event) {", 1
+        )[1].split("document.addEventListener('click', function (event) {", 1)[0]
+        flush_at = submit_listener.index("stopActiveDictation(")
+        kind_at = submit_listener.index("form.getAttribute('data-os-form')")
+        self.assertLess(flush_at, kind_at)
+
+    def test_switching_panels_or_swapping_the_room_flushes_active_dictation(self):
+        """A statement or qualification panel is switched by toggling
+        `hidden` on the client — no round trip — so a mic left listening in
+        the panel a member just left would otherwise keep listening
+        invisibly behind it. Held at every point that changes what is on
+        screen: statement selection, alignment-row selection, EVERY rail
+        request that locks (send() and beginProposal each lock their own
+        rail independently — a single-occurrence .index() lookup would only
+        ever see the first and silently stop covering the second the moment
+        a call site like beginProposal's own lockRail(node, true) was
+        added, which is exactly what happened here), and a full room swap.
+        Same stale-context case Interview Studio already flushes before its
+        own state changes."""
+        script = (
+            Path(__file__).resolve().parents[1]
+            / "static"
+            / "js"
+            / "opportunity-slate.js"
+        ).read_text(encoding="utf-8")
+        self.assertGreaterEqual(script.count("stopActiveDictation("), 5)
+        for site in (
+            "selectStatement(node, select.getAttribute('data-os-select-statement'));",
+            "selectAlignment(node, selectAlign.getAttribute('data-os-select-align'));",
+            "node.outerHTML = html;",
+        ):
+            with self.subTest(site=site[:40]):
+                marker = script.index(site)
+                preceding = script[max(0, marker - 400) : marker]
+                self.assertIn("stopActiveDictation(", preceding)
+
+        # Every lockRail(node, true) call site, not just the first one a
+        # plain .index() would find — send() and beginProposal each lock
+        # independently and must each flush independently.
+        lock_sites = list(re.finditer(r"lockRail\(node, true\);", script))
+        self.assertGreaterEqual(len(lock_sites), 2)
+        for match in lock_sites:
+            with self.subTest(offset=match.start()):
+                preceding = script[max(0, match.start() - 400) : match.start()]
+                self.assertIn("stopActiveDictation(", preceding)
+
+    def test_no_mic_click_handler_ever_submits_anything(self):
+        """Handoff section 6 rule 3: voice never automatically submits,
+        confirms, analyzes, saves, publishes, or navigates. The shared
+        dictation.js module already asserts this for itself
+        (tests/test_interview_studio.py's
+        test_dictation_never_submits_confirms_or_navigates); this holds it
+        for the room script's OWN mic-wiring code, which is new in OS-5 and
+        is not covered by that test."""
+        script = (
+            Path(__file__).resolve().parents[1]
+            / "static"
+            / "js"
+            / "opportunity-slate.js"
+        ).read_text(encoding="utf-8")
+        binding = script.split("function bindMic(button)", 1)[1].split(
+            "function disableUnsupportedMics", 1
+        )[0]
+        for forbidden in (
+            ".submit(",
+            ".requestSubmit(",
+            ".click()",
+            "location.href",
+            "location.assign",
+        ):
+            with self.subTest(call=forbidden):
+                self.assertNotIn(forbidden, binding)
+
+    def test_every_wired_mic_button_is_type_button_not_submit(self):
+        """A mic that were ever type="submit" could fire a form post on
+        Enter/Space from a focused button — belt-and-suspenders alongside
+        the JS-level check above, held directly against the six button
+        instances across the four documented surfaces (handoff section 16's
+        OS-5 row; section 6's "everywhere a mic appears")."""
+        partials_dir = (
+            Path(__file__).resolve().parents[1]
+            / "templates"
+            / "partials"
+            / "opportunity_slate"
+        )
+        for name in (
+            "_intake.html",
+            "_review.html",
+            "_statement_rail.html",
+            "_response_rail.html",
+        ):
+            text = (partials_dir / name).read_text(encoding="utf-8")
+            mic_count = text.count("data-os-mic=")
+            self.assertGreater(mic_count, 0, name + " has no wired mic")
+            # Every button carrying data-os-mic is declared type="button" on
+            # the same tag — a submit type is never used for a mic anywhere.
+            for match in re.finditer(
+                r"<button[^>]*data-os-mic=[^>]*>", text, re.S
+            ):
+                with self.subTest(file=name, tag=match.group(0)[:60]):
+                    self.assertIn('type="button"', match.group(0))
+                    self.assertNotIn('type="submit"', match.group(0))
 
     def test_public_flow_captures_reviews_and_confirms_a_role(self):
         with self.anonymous():
@@ -1588,6 +1821,46 @@ class ServiceDisciplineTests(unittest.TestCase):
         self.assertEqual(parameters["@UserKey"], "member-oppslate-1")
         self.assertNotIn("@OwnerProfileId", parameters)
         self.assertNotIn("@ProfileId", parameters)
+
+
+# ---------------------------------------------------------------------------
+# lockRail vs. a permanently-unavailable mic — run in Node against the real
+# function, extracted straight out of the shipped file (opportunity-slate.js
+# has no CommonJS export the way dictation.js and workshop-voice.js do, so
+# it cannot be required() directly; see the .test.js file's own docstring).
+# ---------------------------------------------------------------------------
+
+
+class LockRailUnavailableMicTests(unittest.TestCase):
+    """Reviewer finding: an unsupported-browser mic came back to life —
+    aria-disabled cleared, native disabled cleared — the moment a member
+    pressed Cancel after any locking request, because lockRail's unlock path
+    unconditionally re-enabled every [data-os-rail-control] element. Driven
+    from Python by subprocess the same way tests/test_workshop_voice.py
+    drives tests/workshop_voice.test.js and
+    tests/test_interview_studio.py now drives tests/dictation.test.js."""
+
+    def test_an_unavailable_mic_survives_every_lock_and_unlock(self):
+        node = shutil.which("node")
+        app_node = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+        if not node and os.path.isfile(app_node):
+            node = app_node
+        if not node:
+            self.skipTest("Node is not available to run the JS lockRail tests.")
+
+        result = subprocess.run(
+            [
+                node,
+                os.path.join(
+                    str(Path(__file__).resolve().parents[1]),
+                    "tests",
+                    "opportunity_slate_lockrail.test.js",
+                ),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
 if __name__ == "__main__":

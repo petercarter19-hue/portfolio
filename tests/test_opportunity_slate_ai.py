@@ -1548,11 +1548,14 @@ class ProcessingAndReadOnlyRailTests(unittest.TestCase):
         self.assertIn("lockRail(node, true)", self.script)
         self.assertIn("data-os-rail-control", self.rail)
         # Visibly disabled, never hidden (image 08 + the locked rule).
-        self.assertIn("controls[index].disabled = locked", self.script)
+        lock_rail = self.script.split("function lockRail(", 1)[1].split(
+            "\n    }\n", 1
+        )[0]
+        self.assertIn("control.disabled = locked", lock_rail)
         self.assertIn(
-            "setAttribute('aria-disabled', locked ? 'true' : 'false')", self.script
+            "setAttribute('aria-disabled', locked ? 'true' : 'false')", lock_rail
         )
-        self.assertNotIn("controls[index].hidden = locked", self.script)
+        self.assertNotIn("control.hidden = locked", lock_rail)
 
     def test_cancel_aborts_the_request_and_restores_editing(self):
         self.assertIn("AbortController", self.script)
@@ -2778,6 +2781,14 @@ class NoAggregateSurvivesAnyLayerTests(unittest.TestCase):
         script = (ROOT / "static" / "js" / "opportunity-slate.js").read_text(
             encoding="utf-8"
         )
+        # Word-boundary search, not a bare substring check: slice OS-5 added
+        # a legitimate call to the shared dictation module's own
+        # isSupported() (static/js/dictation.js's public contract, also
+        # used unchanged by interview-studio.js), and a naive assertNotIn
+        # flags "Supported" inside that identifier as if it were invented
+        # alignment-status copy. \b does not match inside "isSupported" —
+        # both characters on either side of the split are word characters —
+        # so this still catches the real thing the test exists to catch.
         for invented in (
             "Supported",
             "Partially supported",
@@ -2786,7 +2797,11 @@ class NoAggregateSurvivesAnyLayerTests(unittest.TestCase):
             "Not established",
             "authorized evidence",
         ):
-            self.assertNotIn(invented, script)
+            with self.subTest(invented=invented):
+                self.assertIsNone(
+                    re.search(r"\b" + re.escape(invented) + r"\b", script),
+                    invented + " unexpectedly found in the room script",
+                )
         # And no score-shaped expression in anything it could render. The
         # comment prose is excluded on purpose: "images 07/08" is a citation,
         # not a rating, and a test that cannot tell those apart would push the
@@ -3398,3 +3413,129 @@ class ConcernCardStateTests(OpportunitySlateAiRouteTestCase):
             ):
                 with self.subTest(reviewed=reviewed, invented=invented):
                     self.assertNotIn(invented, html)
+
+
+# ---------------------------------------------------------------------------
+# Slice OS-5 — dictation wired live on the three AI-dependent surfaces the
+# non-AI test module cannot reach (test_opportunity_slate.py covers the
+# fourth, role intake, which needs no AI fixture at all).
+# ---------------------------------------------------------------------------
+
+
+class DictationReviewAndRequirementsSurfaceTests(OpportunitySlateAiRouteTestCase):
+    """Source concern correction and requirement clarification — the two
+    documented mic surfaces reached from Review Source and Review
+    Requirements. Deliberately single-inherits only the base fixture case
+    (setUp/tearDown/anonymous/capture), not ConcernCardStateTests or
+    AccessibilityCorrectionTests: both of those already carry their own
+    test_ methods, and inheriting a TestCase for its helper also inherits
+    every test on it, silently re-running unrelated tests under a new name.
+    review_html and requirements_html are therefore each redefined locally
+    (a few lines, matching the shape already used at their first
+    definitions) rather than pulled in through the class hierarchy."""
+
+    def review_html(self, *, concerns):
+        payload = concern_reply() if concerns else {"concerns": []}
+        with self.anonymous(), patch.object(
+            analysis.opportunity_analysis_service, "_client", fake_client(payload)
+        ):
+            token = self.capture()
+            response = self.client.post(
+                PUBLIC_PROPOSE,
+                json={"action": "review", "context_token": token},
+                headers=SAME_ORIGIN_HEADERS,
+            )
+            return response.get_json()["html"]
+
+    def requirements_html(self):
+        with self.anonymous(), patch.object(
+            analysis.opportunity_analysis_service,
+            "_client",
+            fake_client(statement_reply()),
+        ):
+            token = self.capture()
+            confirmed = self.client.post(
+                PUBLIC_POST,
+                json={"action": "confirm", "context_token": token},
+                headers=SAME_ORIGIN_HEADERS,
+            ).get_json()
+            payload = self.client.post(
+                PUBLIC_PROPOSE,
+                json={
+                    "action": "interpret",
+                    "context_token": confirmed["context_token"],
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            ).get_json()
+            return payload["html"]
+
+    def test_the_concern_correction_mic_is_wired_live(self):
+        html = self.review_html(concerns=True)
+        key = re.search(r'data-os-concern-card="([0-9a-f-]{36})"', html).group(1)
+        self.assertIn('data-os-mic="concern-%s"' % key, html)
+        self.assertIn('aria-label="Dictate the correction"', html)
+        self.assertNotIn("data-os-inert-mic", html)
+        self.assertNotIn("Dictation arrives in a later update", html)
+
+    def test_the_whole_document_correction_mic_is_wired_live(self):
+        """This field exists whether or not a concern was ever flagged — it
+        is the manual "Correct the wording" disclosure, not tied to any one
+        concern — so it is checked with concerns off too."""
+        for concerns in (False, True):
+            with self.subTest(concerns=concerns):
+                html = self.review_html(concerns=concerns)
+                self.assertIn('data-os-mic="correction"', html)
+                self.assertIn('id="os-corrected-text"', html)
+                self.assertNotIn('data-os-mic="correction" aria-disabled', html)
+
+    def test_the_requirement_clarification_mic_is_wired_live(self):
+        html = self.requirements_html()
+        key = re.search(r'data-os-statement-panel="([0-9a-f-]{36})"', html).group(1)
+        self.assertIn('data-os-mic="clarify-%s"' % key, html)
+        self.assertIn('aria-label="Dictate the clarification"', html)
+        self.assertIn(
+            "data-os-rail-control", html.split('data-os-mic="clarify-', 1)[1][:200]
+        )
+        self.assertNotIn("data-os-inert-mic", html)
+
+
+class DictationResponseRailSurfaceTests(AlignmentRouteTestCase):
+    """The response rail's two mic-equipped fields, "Tell us more" and
+    "Provide a real example" — reached through reach_alignment(), the
+    fixture AlignmentRouteTestCase already defines for exactly this state.
+    AlignmentRouteTestCase itself carries no test_ methods, so single
+    inheritance here adds nothing extra to the run."""
+
+    def test_the_response_rail_mics_are_wired_live(self):
+        """Both fields get their own mic and their own key, because one
+        panel per qualification is rendered at once (handoff section 4)."""
+        html = self.reach_alignment().get_json()["html"]
+        key = re.search(r'data-os-align-row="([0-9a-f-]{36})"', html).group(1)
+        self.assertIn('data-os-mic="tell-%s"' % key, html)
+        self.assertIn('aria-label="Dictate your response"', html)
+        self.assertIn('data-os-mic="example-%s"' % key, html)
+        self.assertIn('aria-label="Dictate your example"', html)
+        self.assertNotIn("data-os-inert-mic", html)
+        self.assertNotIn("Dictation arrives in a later update", html)
+
+
+class DictationDoesNotBranchOnModeTests(unittest.TestCase):
+    def test_no_mic_markup_reads_room_is_public(self):
+        """Handoff section 18: "same screens, same flow." All three rails
+        that carry a mic beyond role intake render from the one shared
+        partial regardless of who is asking, and dictation is client-side
+        speech-to-text into a textarea that already renders the same way in
+        both modes — so nothing in a mic button's own markup has any reason
+        to key off room.is_public, and this holds that structurally.
+        tests/test_opportunity_slate.py's
+        test_the_role_intake_microphone_is_wired_live already proves the
+        fourth surface renders byte-identical in a real signed-in response,
+        which this cannot do without a database fixture this AI-boundary
+        suite does not stand up."""
+        for name in ("_response_rail.html", "_statement_rail.html", "_review.html"):
+            text = (
+                ROOT / "templates" / "partials" / "opportunity_slate" / name
+            ).read_text(encoding="utf-8")
+            for mic_tag in re.findall(r"<button[^>]*data-os-mic=[^>]*>", text, re.S):
+                with self.subTest(file=name, tag=mic_tag[:60]):
+                    self.assertNotIn("is_public", mic_tag)
