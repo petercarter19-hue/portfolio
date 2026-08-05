@@ -1286,18 +1286,35 @@ class OpportunitySlateOs4AdditiveChainTests(unittest.TestCase):
             "SQL FIles/Migrations/proposed/PS-OPPSLATE-003_opportunity_slate_os4_rollback.sql",
         )
 
-    def test_registry_entry_has_no_gate_proof_yet(self):
-        """PS-OPPSLATE-003 stays a draft until a disposable-database gate
-        run is performed, the same ungated shape PS-JOURNAL-001 and the
-        other not-yet-gated entries carry: the key is present and null,
-        never simply omitted."""
+    def test_registry_entry_records_the_owner_gate_proof(self):
+        """PS-OPPSLATE-003 carries the owner's disposable-database gate
+        proof: run against a throwaway ps-oppslate-os4-gate-* database,
+        never a real one, with the digest matching the forward file on
+        disk so a later edit to the gated bytes fails here as well as in
+        the registry check."""
+        from scripts.govern_sql_migrations import executable_sha256
+
         entry = next(
             item
             for item in self.registry["migrations"]
             if item["id"] == "PS-OPPSLATE-003"
         )
-        self.assertIn("gate", entry)
-        self.assertIsNone(entry["gate"])
+        gate = entry["gate"]
+        self.assertIsNotNone(gate)
+        self.assertEqual("Pete", gate["operator"])
+        self.assertRegex(
+            gate["gate_database"], r"^ps-oppslate-os4-gate-\d{12}$"
+        )
+        self.assertEqual("peerslate", gate["gate_server"])
+        self.assertEqual(
+            executable_sha256(FORWARD_003), gate["executable_sha256"]
+        )
+        self.assertIn("verified = 1", gate["verification"])
+        # The gate rehearsed the full transitive chain, ending on the
+        # direct prerequisite, so every declared requirement was present.
+        for required in entry["requires"]:
+            self.assertIn(required, gate["prerequisites"])
+        self.assertEqual("PS-OPPSLATE-002", gate["prerequisites"][-1])
 
     def test_no_aggregate_verdict_concept_anywhere(self):
         for sql, label in (
