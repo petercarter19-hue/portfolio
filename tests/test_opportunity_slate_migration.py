@@ -9,6 +9,7 @@ the OS-3 route/service code, so production can be upgraded before a live route
 can call a procedure that does not exist yet.
 """
 
+import json
 import os
 import re
 import unittest
@@ -26,6 +27,14 @@ BASE_VERIFY = VERIFICATION / "PS-OPPSLATE-001_owner_isolation_verify.sql"
 FORWARD = MIGRATIONS / "PS-OPPSLATE-002_opportunity_slate_os3.sql"
 ROLLBACK = MIGRATIONS / "PS-OPPSLATE-002_opportunity_slate_os3_rollback.sql"
 VERIFY = VERIFICATION / "PS-OPPSLATE-002_owner_isolation_verify.sql"
+
+# PS-OPPSLATE-003 (OS-4): the save-lifecycle delta, re-cut as its own
+# additive migration over the 001+002 baseline exactly like OS-3 became
+# PS-OPPSLATE-002 rather than an in-place edit of PS-OPPSLATE-001.
+FORWARD_003 = MIGRATIONS / "PS-OPPSLATE-003_opportunity_slate_os4.sql"
+ROLLBACK_003 = MIGRATIONS / "PS-OPPSLATE-003_opportunity_slate_os4_rollback.sql"
+VERIFY_003 = VERIFICATION / "PS-OPPSLATE-003_owner_isolation_verify.sql"
+REGISTRY_PATH = ROOT / "SQL FIles" / "Migrations" / "registry.json"
 
 OS1_PROCEDURE_NAMES = (
     "usp_PurgeExpiredOpportunityWorkingData",
@@ -54,6 +63,22 @@ OS3_PROCEDURE_NAMES = (
     "usp_GetOpportunityAnalysisForOwner",
     "usp_SaveOpportunityAnalysisForOwner",
     "usp_SaveOpportunityResponseForOwner",
+)
+
+# Slice OS-4: the durable saved slate and its save lifecycle. Unlike every
+# earlier slice, OS-4 revises no existing procedure - see PS-OPPSLATE-003's
+# own header - so this tuple is purely additive.
+OS4_PROCEDURE_NAMES = (
+    "usp_GetOpportunitySavedSlateForOwner",
+    "usp_SaveOpportunitySlateForOwner",
+    "usp_DeleteOpportunitySavedSlateForOwner",
+)
+
+OS4_TABLE_NAMES = (
+    "dbo.opportunity_slates",
+    "dbo.opportunity_saved_results",
+    "dbo.opportunity_saved_qualifications",
+    "dbo.opportunity_saved_evidence",
 )
 
 PROCEDURE_NAMES = OS1_PROCEDURE_NAMES + OS2_PROCEDURE_NAMES + OS3_PROCEDURE_NAMES
@@ -1209,6 +1234,377 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertNotIn("PS-OPPSLATE-001", script_source)
+
+
+class OpportunitySlateOs4AdditiveChainTests(unittest.TestCase):
+    """PS-OPPSLATE-003 (OS-4) as a NEW additive migration over the applied
+    001+002 baseline - exactly how the OS-3 delta became PS-OPPSLATE-002
+    rather than an in-place edit of PS-OPPSLATE-001. A prior branch
+    (work/2026-08-04-opportunity-slate-os4) repeated the in-place-edit
+    defect for OS-4; these tests hold the additive re-cut in place, the same
+    way this file already holds PS-OPPSLATE-002's additive shape in place,
+    without needing a database.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.forward_003 = FORWARD_003.read_text(encoding="utf-8")
+        cls.rollback_003 = ROLLBACK_003.read_text(encoding="utf-8")
+        cls.verification_003 = VERIFY_003.read_text(encoding="utf-8")
+        cls.base_forward = BASE_FORWARD.read_text(encoding="utf-8")
+        cls.base_rollback = BASE_ROLLBACK.read_text(encoding="utf-8")
+        cls.forward_002 = FORWARD.read_text(encoding="utf-8")
+        cls.rollback_002 = ROLLBACK.read_text(encoding="utf-8")
+        cls.registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+
+    def test_forward_rollback_and_verification_exist(self):
+        for path in (FORWARD_003, ROLLBACK_003, VERIFY_003):
+            with self.subTest(path=path):
+                self.assertTrue(path.exists())
+
+    def test_registered_after_002_and_requires_both(self):
+        ids = [entry["id"] for entry in self.registry["migrations"]]
+        self.assertIn("PS-OPPSLATE-002", ids)
+        self.assertIn("PS-OPPSLATE-003", ids)
+        self.assertLess(
+            ids.index("PS-OPPSLATE-002"), ids.index("PS-OPPSLATE-003")
+        )
+        entry = next(
+            item
+            for item in self.registry["migrations"]
+            if item["id"] == "PS-OPPSLATE-003"
+        )
+        self.assertEqual(
+            set(entry["requires"]), {"PS-OPPSLATE-001", "PS-OPPSLATE-002"}
+        )
+        self.assertEqual(
+            entry["forward"],
+            "SQL FIles/Migrations/proposed/PS-OPPSLATE-003_opportunity_slate_os4.sql",
+        )
+        self.assertEqual(
+            entry["rollback"],
+            "SQL FIles/Migrations/proposed/PS-OPPSLATE-003_opportunity_slate_os4_rollback.sql",
+        )
+
+    def test_registry_entry_has_no_gate_proof_yet(self):
+        """PS-OPPSLATE-003 stays a draft until a disposable-database gate
+        run is performed, the same ungated shape PS-JOURNAL-001 and the
+        other not-yet-gated entries carry: the key is present and null,
+        never simply omitted."""
+        entry = next(
+            item
+            for item in self.registry["migrations"]
+            if item["id"] == "PS-OPPSLATE-003"
+        )
+        self.assertIn("gate", entry)
+        self.assertIsNone(entry["gate"])
+
+    def test_no_aggregate_verdict_concept_anywhere(self):
+        for sql, label in (
+            (self.forward_003, "forward migration"),
+            (self.rollback_003, "rollback"),
+            (self.verification_003, "verifier"),
+        ):
+            for forbidden in FORBIDDEN_VERDICT_IDENTIFIERS:
+                with self.subTest(file=label, identifier=forbidden):
+                    if label == "verifier" and forbidden in (
+                        "overall_score",
+                        "match_score",
+                        "match_percentage",
+                    ):
+                        # Section 0's procedure-body concept grep and the
+                        # forbidden-column check both name these
+                        # deliberately, as the patterns they refuse to find
+                        # in a definition - exactly like PS-OPPSLATE-002's
+                        # own verifier.
+                        continue
+                    self.assertNotIn(forbidden, sql)
+
+    def test_creates_every_os4_table_and_procedure(self):
+        for table in OS4_TABLE_NAMES:
+            with self.subTest(table=table):
+                self.assertIn(
+                    f"IF OBJECT_ID(N'{table}', N'U') IS NULL", self.forward_003
+                )
+        for name in OS4_PROCEDURE_NAMES:
+            with self.subTest(procedure=name):
+                self.assertIn(
+                    f"CREATE OR ALTER PROCEDURE dbo.{name}", self.forward_003
+                )
+
+    def test_revises_no_existing_procedure(self):
+        """Unlike PS-OPPSLATE-002 (which had to revise four OS-2 procedures
+        to remove the new child rows it added), the OS-4 delta touches none
+        of them - a saved slate is a COPY of the owner's own rows rather
+        than a pin on the ephemeral ones, so no purge or delete needs
+        conditional retention logic. See the forward file's own header."""
+        for name in OS1_PROCEDURE_NAMES + OS2_PROCEDURE_NAMES + OS3_PROCEDURE_NAMES:
+            with self.subTest(procedure=name):
+                self.assertNotIn(
+                    f"CREATE OR ALTER PROCEDURE dbo.{name}", self.forward_003
+                )
+
+    def test_migration_requires_its_dependency_guards(self):
+        self.assertIn("dbo.schema_migrations', N'U') IS NULL", self.forward_003)
+        self.assertIn("migration_id = N'PS-OPPSLATE-001'", self.forward_003)
+        self.assertIn("migration_id = N'PS-OPPSLATE-002'", self.forward_003)
+        self.assertIn(
+            "does not match the required OS-3 object baseline", self.forward_003
+        )
+        self.assertIn("partial OS-4 schema exists", self.forward_003)
+
+    def test_partial_shape_guard_admits_only_zero_or_all_new_objects(self):
+        match = re.search(
+            r"IF @ExistingOs4ObjectCount NOT IN \((\d+), (\d+)\)",
+            self.forward_003,
+        )
+        self.assertIsNotNone(match)
+        self.assertEqual((match.group(1), match.group(2)), ("0", "7"))
+
+    def test_ledger_only_ever_inserted(self):
+        """No UPDATE against dbo.schema_migrations anywhere in the file, so
+        the 001 and 002 ledger rows this migration reads (UPDLOCK/HOLDLOCK,
+        to prove they are applied) can never be the target of a write here
+        - only its own row is ever inserted."""
+        self.assertNotIn("UPDATE dbo.schema_migrations", self.forward_003)
+        self.assertEqual(
+            self.forward_003.count("INSERT dbo.schema_migrations"), 1
+        )
+        self.assertIn("N'PS-OPPSLATE-003'", self.forward_003)
+
+    def test_procedures_are_labeled_with_a_definition_hash(self):
+        self.assertIn("PS_OPPSLATE_003_DEFINITION_HASH", self.forward_003)
+        for name in OS4_PROCEDURE_NAMES:
+            with self.subTest(procedure=name):
+                self.assertIn(f"(N'{name}')", self.forward_003)
+
+    def test_every_procedure_resolves_user_key_and_never_accepts_owner_profile_id(
+        self,
+    ):
+        procedures = procedure_batches(self.forward_003)
+        self.assertEqual(set(procedures), set(OS4_PROCEDURE_NAMES))
+        for name, body in procedures.items():
+            with self.subTest(procedure=name):
+                self.assertIn("@UserKey nvarchar(300)", body)
+                self.assertNotIn("@OwnerProfileId", body)
+                self.assertIn("app_user.user_key = @UserKey", body)
+                self.assertIn("owner_profile_id = @ProfileId", body)
+
+    # ------------------------------------------------------------------
+    # Rollback
+    # ------------------------------------------------------------------
+
+    def test_rollback_refuses_on_data_later_migration_and_drift(self):
+        for phrase in (
+            "opportunity_slates contains member records",
+            "opportunity_saved_results contains member records",
+            "opportunity_saved_qualifications contains member records",
+            "opportunity_saved_evidence contains member records",
+            "a migration later than PS-OPPSLATE-003 is present",
+            "a protected OS-4 procedure changed after PS-OPPSLATE-003",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, self.rollback_003)
+
+    def test_rollback_checks_data_children_before_parents(self):
+        """Same ordering discipline PS-OPPSLATE-002's rollback uses: an
+        operator hears about the innermost record first."""
+        ordered = (
+            "opportunity_saved_evidence contains member records",
+            "opportunity_saved_qualifications contains member records",
+            "opportunity_saved_results contains member records",
+            "opportunity_slates contains member records",
+        )
+        positions = [self.rollback_003.index(phrase) for phrase in ordered]
+        self.assertEqual(positions, sorted(positions))
+
+    def test_rollback_deletes_only_its_own_ledger_row(self):
+        self.assertEqual(
+            self.rollback_003.count("DELETE dbo.schema_migrations"), 1
+        )
+        self.assertIn(
+            "DELETE dbo.schema_migrations WHERE migration_id=N'PS-OPPSLATE-003'",
+            self.rollback_003,
+        )
+        self.assertNotIn("UPDATE dbo.schema_migrations", self.rollback_003)
+        # The only ledger row this file ever names as a DELETE/UPDATE target
+        # is its own; PS-OPPSLATE-001/002 are named only in prose (the
+        # header, and the drift/ordering comments) or inside a read-only
+        # UPDLOCK/HOLDLOCK guard in the forward file, never here as a target.
+        self.assertNotIn("migration_id=N'PS-OPPSLATE-001'", self.rollback_003)
+        self.assertNotIn("migration_id=N'PS-OPPSLATE-002'", self.rollback_003)
+
+    def test_rollback_drops_only_what_003_created(self):
+        for table in OS4_TABLE_NAMES:
+            with self.subTest(table=table):
+                self.assertIn(f"DROP TABLE {table};", self.rollback_003)
+        for name in OS4_PROCEDURE_NAMES:
+            with self.subTest(procedure=name):
+                self.assertIn(f"DROP PROCEDURE dbo.{name};", self.rollback_003)
+        # Never a DROP against a 001/002-owned object.
+        for name in OS1_PROCEDURE_NAMES + OS2_PROCEDURE_NAMES + OS3_PROCEDURE_NAMES:
+            with self.subTest(procedure=name):
+                self.assertNotIn(f"DROP PROCEDURE dbo.{name};", self.rollback_003)
+        for table in TABLE_NAMES:
+            with self.subTest(table=table):
+                self.assertNotIn(f"DROP TABLE {table};", self.rollback_003)
+
+    def test_rollback_restores_no_prior_procedure_definition(self):
+        """PS-OPPSLATE-002's rollback has to reinstate four OS-2 procedure
+        bodies OS-3 changed. PS-OPPSLATE-003's forward file revises none, so
+        its rollback has nothing to restore - only DROPs."""
+        for name in OS1_PROCEDURE_NAMES + OS2_PROCEDURE_NAMES + OS3_PROCEDURE_NAMES:
+            with self.subTest(procedure=name):
+                self.assertNotIn(
+                    f"CREATE OR ALTER PROCEDURE dbo.{name}", self.rollback_003
+                )
+
+    # ------------------------------------------------------------------
+    # Verification
+    # ------------------------------------------------------------------
+
+    def test_verifier_registration_check_targets_003(self):
+        self.assertIn("migration_id = N'PS-OPPSLATE-003'", self.verification_003)
+        self.assertIn("is not registered", self.verification_003)
+
+    def test_verifier_covers_all_twenty_procedures(self):
+        for name in (
+            OS1_PROCEDURE_NAMES
+            + OS2_PROCEDURE_NAMES
+            + OS3_PROCEDURE_NAMES
+            + OS4_PROCEDURE_NAMES
+        ):
+            with self.subTest(procedure=name):
+                self.assertIn(f"(N'{name}')", self.verification_003)
+
+    def test_verifier_forbidden_column_check_covers_every_table(self):
+        """Recorded review finding against PS-OPPSLATE-002's own verifier:
+        its structural column check covered only the eight OS-1/OS-2
+        tables, missing every OS-3 table entirely. PS-OPPSLATE-003 extends
+        coverage to all twelve OS-1/OS-2/OS-3 tables plus its own four."""
+        for table in TABLE_NAMES + OS4_TABLE_NAMES:
+            with self.subTest(table=table):
+                self.assertIn(f"OBJECT_ID(N'{table}')", self.verification_003)
+
+    def test_verifier_forbidden_column_check_is_pattern_based(self):
+        """Same finding, second half: PS-OPPSLATE-002's own verifier used a
+        FIXED four-name list for the column check (unlike its own
+        concept-based procedure-body check, fixed under finding F13).
+        PS-OPPSLATE-003 uses a LIKE pattern instead, so it cannot be walked
+        around by an unlisted prefix or suffix."""
+        self.assertNotIn(
+            "name IN (N'overall_score', N'match_score', N'match_percentage', "
+            "N'recommendation')",
+            self.verification_003,
+        )
+        self.assertIn("name LIKE N'%score%'", self.verification_003)
+        self.assertIn("name LIKE N'%verdict%'", self.verification_003)
+
+    def test_verifier_is_two_owners_forged_key_single_outer_rollback(self):
+        self.assertEqual(
+            self.verification_003.count("BEGIN TRANSACTION"), 1
+        )
+        self.assertEqual(
+            self.verification_003.count("ROLLBACK TRANSACTION"), 2
+        )
+        self.assertNotIn("COMMIT TRANSACTION", self.verification_003)
+        self.assertIn("@ForgedUserKey", self.verification_003)
+        self.assertIn("@ProfileIdA", self.verification_003)
+        self.assertIn("@ProfileIdB", self.verification_003)
+
+    def test_verifier_exercises_save_lifecycle_isolation_and_idempotency(self):
+        for phrase in (
+            "usp_SaveOpportunitySlateForOwner",
+            "usp_GetOpportunitySavedSlateForOwner",
+            "usp_DeleteOpportunitySavedSlateForOwner",
+            "outcome = N'existing'",
+            "A malformed input fingerprint was not refused",
+            "A refused slate delete removed part of the slate",
+            "The purge destroyed a saved slate it does not own",
+            "A statement correction destroyed the member''s saved slate",
+            "Deleting a saved slate left rows behind",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, self.verification_003)
+
+    def test_verifier_never_ends_in_a_committed_state(self):
+        tail = self.verification_003[
+            self.verification_003.rindex("ROLLBACK TRANSACTION;") :
+        ]
+        self.assertNotIn("COMMIT TRANSACTION", tail)
+
+    # ------------------------------------------------------------------
+    # Cross-file discipline
+    # ------------------------------------------------------------------
+
+    def test_error_numbers_are_unique_across_all_three_migrations(self):
+        """Preflight/rollback THROW numbers for PS-OPPSLATE-001,
+        PS-OPPSLATE-002 and PS-OPPSLATE-003 must never collide, so an
+        operator reading a raised error number can trace it to exactly one
+        migration file."""
+
+        def numbers(sql):
+            return re.findall(r"THROW (\d+),", sql)
+
+        files = {
+            "PS-OPPSLATE-001 forward": self.base_forward,
+            "PS-OPPSLATE-001 rollback": self.base_rollback,
+            "PS-OPPSLATE-002 forward": self.forward_002,
+            "PS-OPPSLATE-002 rollback": self.rollback_002,
+            "PS-OPPSLATE-003 forward": self.forward_003,
+            "PS-OPPSLATE-003 rollback": self.rollback_003,
+        }
+        seen = {}
+        for label, sql in files.items():
+            file_numbers = numbers(sql)
+            self.assertEqual(
+                len(file_numbers),
+                len(set(file_numbers)),
+                f"{label} reuses one of its own error numbers",
+            )
+            for number in file_numbers:
+                self.assertNotIn(
+                    number,
+                    seen,
+                    f"error number {number} used by both {seen.get(number)!r} "
+                    f"and {label!r}",
+                )
+                seen[number] = label
+
+    def test_the_migration_header_credits_the_source_checkpoint(self):
+        header = self.forward_003.split("SET NOCOUNT ON;")[0]
+        self.assertIn("Immutable follow-on", header)
+        self.assertIn("PS-OPPSLATE-001", header)
+        self.assertIn("PS-OPPSLATE-002", header)
+        self.assertIn("additive", header)
+
+    def test_the_ledger_description_fits_the_column_it_is_written_into(self):
+        """dbo.schema_migrations.description is nvarchar(500), and an
+        over-long value aborts the whole migration on its final
+        statement."""
+        match = re.search(
+            r"VALUES \(N'PS-OPPSLATE-003', N'((?:''|[^'])*)'",
+            self.forward_003,
+        )
+        self.assertIsNotNone(match)
+        self.assertLessEqual(len(match.group(1).replace("''", "'")), 500)
+
+    def test_the_migration_is_proposed_and_not_wired_into_the_apply_script(self):
+        self.assertIn("proposed", str(FORWARD_003))
+        script_source = (ROOT / "scripts" / "apply_sql_migrations.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("PS-OPPSLATE-003", script_source)
+
+    def test_original_001_and_002_files_are_untouched_by_this_chain(self):
+        """Applied migrations are immutable. This suite must never assert
+        anything that requires editing PS-OPPSLATE-001 or PS-OPPSLATE-002,
+        so their own byte-for-byte content stays exactly what production
+        applied."""
+        self.assertNotIn("PS-OPPSLATE-003", self.base_forward)
+        self.assertNotIn("PS-OPPSLATE-003", self.base_rollback)
+        self.assertNotIn("PS-OPPSLATE-003", self.forward_002)
+        self.assertNotIn("PS-OPPSLATE-003", self.rollback_002)
 
 
 @unittest.skipUnless(

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-05T03:30:00Z",
+  "updated_at": "2026-08-05T04:30:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -142,14 +142,16 @@
         },
         {
           "leg": "2: OS-3 application release",
-          "status": "active",
-          "branch": "work/2026-08-05-oppslate-os3-app",
-          "source_checkpoint": "work/2026-08-04-opportunity-slate-os3@3ac0e9d5a5fb0a20ce1c9f70b1d73ae1ea2f02a9 (Codex, read-only)",
-          "writer": "Sonnet max implements the port; Opus 5 max reviews; Fable architect orchestrates"
+          "status": "complete_live",
+          "evidence": "PR 291 merged as main cb8591de after independent review APPROVE at 22296aa; automatic run 531 deployed it (redundant manual 532 canceled per the runs-432/433 precedent); live /healthz release a77f76340469625b8bb62dd9 matches the locally derived identity for exactly (cb8591de, build 531) and the live opportunity-slate.js is SHA-256-identical to the merged source; route serves 200 with no-store/private and noindex headers"
         },
         {
-          "leg": "3: OS-4 save lifecycle (schema as additive PS-OPPSLATE-003 + app)",
-          "status": "pending"
+          "leg": "3: OS-4 save lifecycle",
+          "status": "active",
+          "schema": "PS-OPPSLATE-003 re-cut at ebde2bb, independent review APPROVE, PR 292 open; draft (gate: null) until the disposable-database gate run records its proof - the one step requiring Azure SQL access this environment lacks",
+          "app": "port of checkpoint de8735ce pending; releases only after 003 is gated, merged, and applied",
+          "branch_schema": "work/2026-08-05-oppslate-os4-schema",
+          "branch_app": "work/2026-08-05-oppslate-os4-app"
         },
         {
           "leg": "4: OS-5 shared dictation",

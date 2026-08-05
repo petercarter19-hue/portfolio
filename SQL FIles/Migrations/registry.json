@@ -1045,6 +1045,17 @@
       }
     },
     {
+      "id": "PS-OPPSLATE-003",
+      "forward": "SQL FIles/Migrations/proposed/PS-OPPSLATE-003_opportunity_slate_os4.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-OPPSLATE-003_opportunity_slate_os4_rollback.sql",
+      "requires": [
+        "PS-OPPSLATE-001",
+        "PS-OPPSLATE-002"
+      ],
+      "summary": "Opportunity Slate OS-4 save-lifecycle additive delta: the durable saved slate, its append-only saved versions, and the currency fingerprint that keeps saved and still-accurate two separate truths. Revises no existing procedure.",
+      "gate": null
+    },
+    {
       "id": "PS-COMMUNITY-PUBLIC-PILOT-001",
       "forward": "SQL FIles/Migrations/proposed/PS-COMMUNITY-PUBLIC-PILOT-001_community.sql",
       "rollback": "SQL FIles/Migrations/proposed/PS-COMMUNITY-PUBLIC-PILOT-001_community_rollback.sql",
