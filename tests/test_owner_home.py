@@ -65,14 +65,39 @@ FAILED_B = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 # the first pass did not reach: the Slate Studio shell's own stored-preference
 # replay and switch, the toggle script's own gate, the Control Room's
 # operating-system-driven variant, and the missing color-scheme declaration.
-# For THIS render the only change is one added declaration in static/css/style.css,
-# so the byte length is unchanged at 16840 and the sole delta is that file's
-# automatic ?v= content token. The normalization chain below proves it: swapping
-# the new style token back reproduces the previous locked hash exactly, and the
-# older recaptures still chain from there. No owner workspace markup, layout,
-# destination, or control semantics changed.
-FLAG_OFF_APP_RENDER_BYTE_LENGTH = 16840
+# PS-OPPORTUNITY-SLATE-001 leg 7 (2026-08-05): Pete's order added an
+# unconditional "Opportunity Slate" link to the main navigation next to
+# Workshop's. The /app legacy shell has no mobile menu (base.html gates
+# that block on `not is_owner_app_path`), so this render only gains the one
+# desktop <li> and its matching nav-search record; the byte length moves
+# from 16840 to 17116. The recapture step below proves that markup is the
+# ONLY delta: stripping exactly those two additions reproduces the previous
+# locked baseline (now FLAG_OFF_APP_RENDER_PRE_OPPSLATE_NAV_SHA256) byte for
+# byte, and the older asset-token recaptures continue to chain from there
+# unchanged. No other owner workspace markup, layout, destination, or
+# control semantics changed.
+FLAG_OFF_APP_RENDER_BYTE_LENGTH = 17116
 FLAG_OFF_APP_RENDER_SHA256 = (
+    "1c1ff4a333b1caf2fe7080ad66655540a19d9df87e3f8b11144330531dd068f0"
+)
+FLAG_OFF_APP_RENDER_OPPSLATE_NAV_LI = (
+    b'<li><a href="/opportunity-slate" >Opportunity Slate</a></li>'
+)
+FLAG_OFF_APP_RENDER_OPPSLATE_NAV_SEARCH_RECORD = (
+    b'        {"title": "Opportunity Slate", "sub": "See how your evidence '
+    b'lines up with a role", "href": "/opportunity-slate", "keys": '
+    b'"opportunity slate role job posting alignment requirements evidence '
+    b'match analysis"},\n'
+)
+# For THIS render the only change is one added declaration in static/css/style.css,
+# so the byte length is unchanged at 16840 (of the pre-oppslate-nav baseline)
+# and the sole delta is that file's automatic ?v= content token. The
+# normalization chain below proves it: swapping the new style token back
+# reproduces the previous locked hash exactly, and the older recaptures
+# still chain from there. No owner workspace markup, layout, destination, or
+# control semantics changed.
+FLAG_OFF_APP_RENDER_PRE_OPPSLATE_NAV_BYTE_LENGTH = 16840
+FLAG_OFF_APP_RENDER_PRE_OPPSLATE_NAV_SHA256 = (
     "4be4db68e4477a82b218222ff9b7d9f842110ebb753dd887a730f59225de1d3a"
 )
 # Audit fix F3 (2026-08-04) recapture. static/css/style.css gained a
@@ -444,21 +469,43 @@ class OwnerHomeRouteTests(unittest.TestCase):
             hashlib.sha256(response.data).hexdigest(),
             FLAG_OFF_APP_RENDER_SHA256,
         )
+        # PS-OPPORTUNITY-SLATE-001 leg 7 recapture step: the desktop nav <li>
+        # and its nav-search record are the only new bytes this leg adds to
+        # the /app render (no mobile menu here to touch). Stripping exactly
+        # those two additions must reproduce the previously locked baseline
+        # byte for byte before the older asset-token chain below continues.
+        self.assertEqual(response.data.count(FLAG_OFF_APP_RENDER_OPPSLATE_NAV_LI), 1)
+        self.assertEqual(
+            response.data.count(FLAG_OFF_APP_RENDER_OPPSLATE_NAV_SEARCH_RECORD), 1
+        )
+        pre_oppslate_nav_base = response.data.replace(
+            FLAG_OFF_APP_RENDER_OPPSLATE_NAV_LI, b""
+        ).replace(FLAG_OFF_APP_RENDER_OPPSLATE_NAV_SEARCH_RECORD, b"")
+        self.assertEqual(
+            len(pre_oppslate_nav_base),
+            FLAG_OFF_APP_RENDER_PRE_OPPSLATE_NAV_BYTE_LENGTH,
+        )
+        self.assertEqual(
+            hashlib.sha256(pre_oppslate_nav_base).hexdigest(),
+            FLAG_OFF_APP_RENDER_PRE_OPPSLATE_NAV_SHA256,
+        )
         # style.css and the callback script are versioned assets, not Owner
         # Home markup. Their changed content fingerprints are the only allowed
         # flag-off render deltas: normalizing each 12 byte `?v=` token back in
         # turn reproduces the earlier locked baselines exactly. (The values are
         # working-tree content hashes, so Windows CRLF checkout bytes are
         # intentional.)
-        self.assertEqual(response.data.count(FLAG_OFF_STYLE_VERSION), 1)
+        self.assertEqual(pre_oppslate_nav_base.count(FLAG_OFF_STYLE_VERSION), 1)
         # Audit fix F3 recapture step: swapping only the style token back
         # must reproduce the previously locked render exactly. If the nav
         # wrap had touched any /app markup, this is where it would fail.
-        nav_wrap_base = response.data.replace(
+        nav_wrap_base = pre_oppslate_nav_base.replace(
             FLAG_OFF_STYLE_VERSION,
             FLAG_OFF_STYLE_PRE_NAV_WRAP_VERSION,
         )
-        self.assertEqual(len(nav_wrap_base), FLAG_OFF_APP_RENDER_BYTE_LENGTH)
+        self.assertEqual(
+            len(nav_wrap_base), FLAG_OFF_APP_RENDER_PRE_OPPSLATE_NAV_BYTE_LENGTH
+        )
         self.assertEqual(
             hashlib.sha256(nav_wrap_base).hexdigest(),
             FLAG_OFF_APP_RENDER_PRE_NAV_WRAP_SHA256,
@@ -467,7 +514,9 @@ class OwnerHomeRouteTests(unittest.TestCase):
             FLAG_OFF_STYLE_PRE_NAV_WRAP_VERSION,
             FLAG_OFF_STYLE_PRE_THEME_PAUSE_VERSION,
         )
-        self.assertEqual(len(theme_pause_base), FLAG_OFF_APP_RENDER_BYTE_LENGTH)
+        self.assertEqual(
+            len(theme_pause_base), FLAG_OFF_APP_RENDER_PRE_OPPSLATE_NAV_BYTE_LENGTH
+        )
         self.assertEqual(
             hashlib.sha256(theme_pause_base).hexdigest(),
             FLAG_OFF_APP_RENDER_THEME_PAUSE_BASE_SHA256,
@@ -476,7 +525,9 @@ class OwnerHomeRouteTests(unittest.TestCase):
             FLAG_OFF_STYLE_PRE_THEME_PAUSE_VERSION,
             FLAG_OFF_STYLE_PREVIOUS_VERSION,
         )
-        self.assertEqual(len(style_base), FLAG_OFF_APP_RENDER_BYTE_LENGTH)
+        self.assertEqual(
+            len(style_base), FLAG_OFF_APP_RENDER_PRE_OPPSLATE_NAV_BYTE_LENGTH
+        )
         self.assertEqual(
             hashlib.sha256(style_base).hexdigest(),
             FLAG_OFF_APP_RENDER_STYLE_BASE_SHA256,
@@ -486,7 +537,9 @@ class OwnerHomeRouteTests(unittest.TestCase):
             FLAG_OFF_CALLBACK_VERSION,
             FLAG_OFF_CALLBACK_PREVIOUS_VERSION,
         )
-        self.assertEqual(len(normalized), FLAG_OFF_APP_RENDER_BYTE_LENGTH)
+        self.assertEqual(
+            len(normalized), FLAG_OFF_APP_RENDER_PRE_OPPSLATE_NAV_BYTE_LENGTH
+        )
         self.assertEqual(
             hashlib.sha256(normalized).hexdigest(),
             FLAG_OFF_APP_RENDER_PREVIOUS_SHA256,

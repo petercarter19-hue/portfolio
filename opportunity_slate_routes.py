@@ -616,6 +616,22 @@ def _apply_room_headers(response):
     return response
 
 
+@opportunity_slate.app_context_processor
+def opportunity_slate_navigation_state():
+    """Expose the room URL globally so base.html's nav can link to it.
+
+    Registered with ``app_context_processor`` (not ``context_processor``) so
+    it runs for every template render in the app, not only this blueprint's
+    own routes — the same mechanism workshop_routes.py's
+    ``workshop_navigation_state`` uses for ``workshop_url``. Unlike Workshop,
+    the main-nav entry is unconditional (Pete's 2026-08-05 order): the room
+    is live for everyone, so there is no paired ``*_nav_enabled`` flag here.
+    The route itself still keeps its own noindex/nofollow headers and
+    anonymous demo-truth boundary regardless of nav visibility.
+    """
+    return {"opportunity_slate_url": url_for("opportunity_slate.room")}
+
+
 # ---------------------------------------------------------------------------
 # Display normalization
 #

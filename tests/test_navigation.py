@@ -240,6 +240,74 @@ class NavigationTests(unittest.TestCase):
         self.assertNotIn('Ask Pete', source)
         self.assertNotIn('data-ask-url', self.client.get('/').get_data(as_text=True))
 
+    def test_opportunity_slate_link_sits_next_to_workshop_in_both_menus(self):
+        """PS-OPPORTUNITY-SLATE-001 leg 7 (Pete's 2026-08-05 order): the link
+        is unconditional, unlike Workshop's flag-gated entry beside it."""
+        homepage_links = {
+            link['text']: link for link in self.parse_platform_links('/')
+        }
+        self.assertIn('Opportunity Slate', homepage_links)
+        self.assertEqual(
+            homepage_links['Opportunity Slate']['attributes']['href'],
+            '/opportunity-slate',
+        )
+        self.assertNotIn(
+            'aria-current', homepage_links['Opportunity Slate']['attributes']
+        )
+
+        mobile_menu = self.client.get('/', base_url='http://localhost').get_data(
+            as_text=True
+        )
+        menu = mobile_menu.split('id="platform-mobile-menu"', 1)[1].split(
+            '</nav>', 1
+        )[0]
+        self.assertEqual(menu.count('>Opportunity Slate</a>'), 1)
+
+    def test_opportunity_slate_link_shows_aria_current_on_its_own_room(self):
+        original_flag = app.config.get('PEERSLATE_OPPORTUNITY_SLATE_ENABLED')
+        app.config['PEERSLATE_OPPORTUNITY_SLATE_ENABLED'] = True
+        try:
+            links = {
+                link['text']: link
+                for link in self.parse_platform_links('/opportunity-slate')
+            }
+        finally:
+            app.config['PEERSLATE_OPPORTUNITY_SLATE_ENABLED'] = original_flag
+        self.assertIn('Opportunity Slate', links)
+        self.assertEqual(
+            links['Opportunity Slate']['attributes'].get('aria-current'), 'page'
+        )
+
+    def test_header_search_json_parses_with_opportunity_slate_in_both_workshop_states(self):
+        """The Opportunity Slate record sits after Workshop's
+        ``{% if workshop_nav_enabled %}...{% endif %}`` block, so the JSON
+        must stay valid whether or not that flag is on."""
+        original_workshop_flag = app.config.get('PEERSLATE_WORKSHOP_ENABLED')
+        try:
+            for workshop_enabled in (True, False):
+                with self.subTest(workshop_nav_enabled=workshop_enabled):
+                    app.config['PEERSLATE_WORKSHOP_ENABLED'] = workshop_enabled
+                    records = self.search_records()
+                    titles = [record['title'] for record in records]
+                    self.assertIn('Opportunity Slate', titles)
+                    self.assertEqual(
+                        titles.count('Opportunity Slate'), 1
+                    )
+                    entry = next(
+                        record
+                        for record in records
+                        if record['title'] == 'Opportunity Slate'
+                    )
+                    self.assertEqual(entry['href'], '/opportunity-slate')
+                    self.assertEqual(
+                        entry['sub'],
+                        'See how your evidence lines up with a role',
+                    )
+                    self.assertIn('role', entry['keys'])
+                    self.assertEqual('Workshop' in titles, workshop_enabled)
+        finally:
+            app.config['PEERSLATE_WORKSHOP_ENABLED'] = original_workshop_flag
+
     def test_sitemap_contains_only_current_canonical_public_routes(self):
         response = self.client.get(
             '/sitemap.xml',

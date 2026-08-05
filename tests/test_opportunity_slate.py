@@ -222,11 +222,18 @@ class HeaderPostureTests(OpportunitySlateTestCase):
             body = self.client.get(ROOM_GET).data.decode("utf-8")
         self.assertIn('<meta name="robots" content="noindex, nofollow, noarchive">', body)
 
-    def test_the_room_is_not_in_the_sitemap_and_not_in_navigation(self):
+    def test_the_room_stays_out_of_the_sitemap_though_it_is_now_in_navigation(self):
+        """PS-OPPORTUNITY-SLATE-001 leg 7 (Pete's 2026-08-05 order) reverses
+        the earlier unlisted-by-direct-link-only posture for site-internal
+        discoverability: the room now has a main-navigation link next to
+        Workshop's. Search-engine indexing is unaffected — the route keeps
+        its own noindex/nofollow headers (HeaderPostureTests above) and
+        stays out of the sitemap; see tests/test_navigation.py for the
+        navigation-link coverage this leg added."""
         sitemap = self.client.get("/sitemap.xml").data.decode("utf-8")
         self.assertNotIn("opportunity-slate", sitemap)
         home = self.client.get("/").data.decode("utf-8")
-        self.assertNotIn("/opportunity-slate", home)
+        self.assertIn("/opportunity-slate", home)
 
     def test_no_route_path_looks_like_a_job_surface(self):
         """Rule 34 / handoff section 1: not a job board. Guarded globally by
