@@ -566,8 +566,30 @@
         </p>
         <p>Paste or type the role text.</p>
         <p>
+          {# Slice OS-6 shipped document upload and public-link import for
+             signed-in members; this note used to say both were "not
+             available on this screen yet" for every visitor, member
+             included, which the closing review (Fable final review,
+             2026-08-05) found was still on screen next to the live upload
+             and import tiles it was describing as absent. The anonymous
+             sentence is untouched — handoff section 18 safeguard 1 keeps
+             uploads and imports off the public route for good, so "will be
+             for signed-in members only" stays true. The signed-in copy is
+             split on room.step because this same rail note is shared by the
+             role/replace screen, where the tiles are literally in view, and
+             the review screen, which carries no tiles of its own — a single
+             unconditional "available on this screen" would have traded one
+             falsehood for another. #}
+          {% if room.is_public %}
           Document upload and public-link import are not available on this
-          screen yet{% if room.is_public %}, and will be for signed-in members only{% endif %}.
+          screen yet, and will be for signed-in members only.
+          {% elif room.step == 'review' %}
+          Document upload and public-link import are available for
+          signed-in members, from the role screen.
+          {% else %}
+          Document upload and public-link import are available on this
+          screen for signed-in members.
+          {% endif %}
         </p>
       </div>
 

@@ -25,16 +25,15 @@
       "new implementation worktree outside the activated lane",
       "new feature or product write outside the activated lane",
       "pull-request merge for any package other than the activated lane",
-      "OS-3, OS-4, OS-5, or OS-6 application behaviour change in this lane",
       "production deployment of application behaviour from this lane",
       "environment approval without the gate's own verification: the writer may release an approval only after confirming the run's printed plan matches the registered migration, digest, verifier, and rollback expectations",
       "manual same-SHA fallback pipeline while an automatic run for that SHA exists",
       "production configuration mutation",
-      "schema apply for any migration ID other than PS-OPPSLATE-002",
+      "schema apply for any migration ID other than PS-OPPSLATE-003",
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Pete selects one exact outcome; a bounded activation PR records its package, branch, writer, surfaces, exclusions, and delivery path before implementation starts. This lane closes when PS-OPPSLATE-002 is applied and recorded, or when Pete pauses it."
+    "exit_authority": "Pete's standing order runs until the entire Opportunity Slate page is live and functional; the lane closes after the OS-4 apply/release completes and the Fable final review verdict is COMPLETE, or when Pete pauses it."
   },
   "activation_policy": {
     "enabled": true,
@@ -66,8 +65,8 @@
   "active_lanes": [
     {
       "package": "PS-OPPORTUNITY-SLATE-001",
-      "outcome": "Deliver the complete public Opportunity Slate page to live, slice by slice, under Pete's 2026-08-05 standing order to keep going until the entire page is live and functional. Leg 1 (PS-OPPSLATE-002 schema) is complete and verified in production; the current leg is the OS-3 application release.",
-      "branch": "work/2026-08-05-oppslate-os6-intake",
+      "outcome": "Deliver the complete public Opportunity Slate page to live, slice by slice, under Pete's 2026-08-05 standing order to keep going until the entire page is live and functional. Legs 1, 2, 4, and 5 (PS-OPPSLATE-002 schema, OS-3, OS-5, OS-6) are complete and verified live; leg 3 (OS-4 save lifecycle) is built and held pending an integration and re-review before the owner's gate run; the current leg is 6, the Fable extra-high final review, in progress with closing corrections after an INCOMPLETE verdict.",
+      "branch": "work/2026-08-05-oppslate-closing-fixes",
       "writer": "Claude continuation session, sole writer",
       "delivery_path": "Protected",
       "production_capable": true,
@@ -152,7 +151,7 @@
         {
           "leg": "3: OS-4 save lifecycle",
           "status": "built_and_held",
-          "evidence": "PS-OPPSLATE-003 re-cut approved and merged as draft; app approved at 5b164c5, draft PR 293; blocked solely on the owner's disposable-database gate run, then apply, then merge"
+          "evidence": "PS-OPPSLATE-003 gated-later draft on main; app approved at 5b164c5 but PR 293's merge preview is stale — the branch conflicts with current main (app.py, _intake.html, test_opportunity_slate.py) after OS-5/OS-6 landed; integration onto current main plus a focused re-review precedes the owner's gate run, apply, and merge"
         },
         {
           "leg": "4: OS-5 dictation",
@@ -161,15 +160,16 @@
         },
         {
           "leg": "5: OS-6 upload/import",
-          "status": "released_pending_deploy",
-          "evidence": "three security-review rounds complete, final APPROVE at a361510; deflake and integration with live OS-5 at 71f7393; releasing via PR"
+          "status": "complete_live",
+          "evidence": "PR 296 merged as main 1b0a3ee; automatic run 540 deployed it; live release 63b3fb49ee97c3a5930168ea matches the derived identity for exactly (1b0a3ee, 540); live assets SHA-identical; anonymous boundary verified (no signed-in disclosure leak); pypdf booted clean"
         },
         {
           "leg": "6: Fable extra-high final review, then lane closes",
-          "status": "pending"
+          "status": "in_progress",
+          "evidence": "Fable extra-high final review returned INCOMPLETE with three closing corrections (false rail copy, stale OS-4 merge path, stale release truth); corrections in flight on work/2026-08-05-oppslate-closing-fixes and the OS-4 integration"
         }
       ],
-      "branch_note": "The lane runs parallel slice branches under one writer session: os4-schema and os4-app (built, held on the PS-OPPSLATE-003 gate), os5-dictation (released), os6-intake (active). The branch field names the branch currently receiving writes."
+      "branch_note": "The lane runs parallel slice branches under one writer session: os4-schema and os4-app (built, held on the PS-OPPSLATE-003 gate, now also pending integration onto current main before its re-review), os5-dictation (released), os6-intake (released). The branch field names the branch currently receiving writes — closing-fixes, correcting the Fable final review's three findings before the OS-4 integration and re-review."
     }
   ],
   "closing_lanes": [],
@@ -231,7 +231,7 @@
     }
   },
   "release_truth": {
-    "repository_main": "aef71f081afff99da5acdb1cbdf3bb4acac3f922",
+    "repository_main": "1b0a3ee7782ae9e812f2ef35c08b79791b41c385",
     "reset_pull_request": 279,
     "reset_validation_pipeline": 512,
     "reset_validation_result": "succeeded",
@@ -241,13 +241,14 @@
     "preflight_repair_pull_request": 281,
     "preflight_repair_validation_pipeline": 514,
     "preflight_repair_validation_result": "succeeded",
-    "deployed_main_commit": "f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d",
-    "deployed_pipeline": 505,
-    "live_release": "21a77fc14df89aa4f4397f2d",
-    "application_behavior_commit": "2b0246c8d968d7e49b0762a0129aab4e6d99392b",
-    "application_behavior_pipeline": 499,
+    "deployed_main_commit": "1b0a3ee7782ae9e812f2ef35c08b79791b41c385",
+    "deployed_pipeline": 540,
+    "live_release": "63b3fb49ee97c3a5930168ea",
+    "application_behavior_commit": "1b0a3ee7782ae9e812f2ef35c08b79791b41c385",
+    "application_behavior_pipeline": 540,
     "live_health": "ok",
     "community_public_pilot": "flag_off",
-    "opportunity_slate_os3_schema": "not_applied"
+    "opportunity_slate_os3_schema": "applied_run_528",
+    "opportunity_slate_live_slices": "OS-1, OS-2, OS-3, OS-5, OS-6"
   }
 }

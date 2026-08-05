@@ -65,7 +65,7 @@ class ControlPlaneTests(unittest.TestCase):
 
     def test_control_plane_is_current_and_concise(self):
         self.assertEqual("5", self.data.get("schema_version"))
-        self.assertEqual("2026-08-04", self.data.get("updated_at"))
+        self.assertEqual("2026-08-05", self.data.get("updated_at"))
         self.assertLess(len(self.body.split()), 900)
         self.assertNotIn("planned_packages:", self.body)
         self.assertNotIn("holds:", self.body)

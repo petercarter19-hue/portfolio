@@ -1200,20 +1200,20 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
         # record release evidence with [skip ci] unless this test was run
         # locally against the exact record being merged.
         self.assertIn(
-            'deployed_main_commit: "f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d"',
+            'deployed_main_commit: "1b0a3ee7782ae9e812f2ef35c08b79791b41c385"',
             baseline,
         )
-        self.assertIn('deployed_pipeline: 505', baseline)
+        self.assertIn('deployed_pipeline: 540', baseline)
         expected_release = release_id_for_build(
-            'f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d',
-            '505',
+            '1b0a3ee7782ae9e812f2ef35c08b79791b41c385',
+            '540',
         )
         self.assertIn(f'/healthz release {expected_release}', baseline)
         self.assertIn(
-            'application_behavior_commit: "2b0246c8d968d7e49b0762a0129aab4e6d99392b"',
+            'application_behavior_commit: "1b0a3ee7782ae9e812f2ef35c08b79791b41c385"',
             baseline,
         )
-        self.assertIn('application_behavior_pipeline: 499', baseline)
+        self.assertIn('application_behavior_pipeline: 540', baseline)
         self.assertIn('PS-AZURE-RELEASE-RELIABILITY-001', baseline)
         self.assertIn('PS-DELIVERY-RESET-001', baseline)
         self.assertIn('PS-GOV-LEAN-001', baseline)

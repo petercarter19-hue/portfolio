@@ -446,6 +446,23 @@ class AnonymousPublicSessionTests(OpportunitySlateTestCase):
         self.assertEqual(body.count("Available with membership"), 2)
         self.assertNotIn('type="file"', body)
 
+    def test_the_anonymous_supported_sources_rail_keeps_its_true_sentence(self):
+        """Closing review, 2026-08-05 (B1). The "Supported sources" rail's
+        anonymous sentence — upload and import are not on this screen, and
+        will be for signed-in members only — was true before slice OS-6 and
+        stays true after it: handoff section 18 safeguard 1 keeps uploads and
+        imports off the public route permanently, not just "for now". This
+        locks the untouched anonymous variant so the signed-in fix below
+        cannot drift onto this branch."""
+        with self.anonymous():
+            body = self.client.get(ROOM_GET).data.decode("utf-8")
+        text = " ".join(body.split())
+        self.assertIn(
+            "Document upload and public-link import are not available on "
+            "this screen yet, and will be for signed-in members only.",
+            text,
+        )
+
     def test_the_role_intake_microphone_is_wired_live(self):
         """Slice OS-5: the intake mic is no longer honestly-inert placeholder
         markup (handoff section 14-M18) — it is a real, live control wired to
@@ -888,6 +905,49 @@ class MemberFlowTests(OpportunitySlateTestCase):
         self.assertIn("Session private", body)
         self.assertIn("Nothing is saved yet.", body)
         self.assertNotIn("Public session", body)
+
+    def test_the_signed_in_supported_sources_rail_tells_the_truth(self):
+        """Closing review, 2026-08-05 (B1): the final reviewer found a live
+        member-facing falsehood. The "Supported sources" rail told a
+        signed-in member that document upload and public-link import "are
+        not available on this screen yet" — on the same intake render where
+        slice OS-6's live upload and import disclosures (the "Upload
+        document" / "Import public link" tiles) already sit in view.
+
+        The corrected sentence is asserted here for the role/replace screen,
+        where the tiles are literally on screen, and separately for the
+        review screen (working_view()'s default state), which shares this
+        same rail note but carries no upload/import tiles of its own — a
+        single unconditional "available on this screen" claim would have
+        been true on one and false on the other, so the fix is asserted on
+        both rather than just the one the finding named."""
+        with self.signed_in(), self.service() as service:
+            service.get_working_session_for_owner.return_value = None
+            role_body = self.client.get(ROOM_GET).data.decode("utf-8")
+        role_text = " ".join(role_body.split())
+        self.assertIn(
+            "Document upload and public-link import are available on this "
+            "screen for signed-in members.",
+            role_text,
+        )
+        self.assertNotIn("not available on this screen yet", role_text)
+
+        with self.signed_in(), self.service() as service:
+            service.get_working_session_for_owner.return_value = working_view()
+            review_body = self.client.get(ROOM_GET).data.decode("utf-8")
+        review_text = " ".join(review_body.split())
+        self.assertIn(
+            "Document upload and public-link import are available for "
+            "signed-in members, from the role screen.",
+            review_text,
+        )
+        self.assertNotIn("not available on this screen yet", review_text)
+        # The review screen carries no upload/import tiles of its own, so
+        # the role/replace screen's more specific "on this screen" claim
+        # must not leak onto it.
+        self.assertNotIn(
+            "are available on this screen for signed-in members", review_text
+        )
 
     def test_the_room_purges_this_owners_expired_working_data(self):
         identity = member()

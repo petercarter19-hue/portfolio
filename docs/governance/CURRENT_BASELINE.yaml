@@ -4,18 +4,18 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-04"
+updated_at: "2026-08-05"
 
 authority:
   remote: origin
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d"
-  deployed_pipeline: 505
-  application_behavior_commit: "2b0246c8d968d7e49b0762a0129aab4e6d99392b"
-  application_behavior_pipeline: 499
-  note: "Automatic pipeline 505 passed for exact main f59dd9adb8d3da3e6faaae6691ecad1f801b0c2d and live /healthz release 21a77fc14df89aa4f4397f2d is healthy. The latest behavior-changing source is 2b0246c8d968d7e49b0762a0129aab4e6d99392b, first released by automatic pipeline 499; later commits through f59dd9a changed schema, pipeline, test, or operational records. Repository main aef71f081afff99da5acdb1cbdf3bb4acac3f922 is the validated preflight-control repair from PR 281/build 514 and intentionally has no application deployment. Community remains flag-off and Opportunity Slate OS-3 schema remains unapplied. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
+  deployed_main_commit: "1b0a3ee7782ae9e812f2ef35c08b79791b41c385"
+  deployed_pipeline: 540
+  application_behavior_commit: "1b0a3ee7782ae9e812f2ef35c08b79791b41c385"
+  application_behavior_pipeline: 540
+  note: "Automatic pipeline 540 passed for exact main 1b0a3ee7782ae9e812f2ef35c08b79791b41c385 and live /healthz release 63b3fb49ee97c3a5930168ea is healthy. Opportunity Slate OS-1, OS-2, OS-3, OS-5, and OS-6 are live. PS-OPPSLATE-002 was applied by run 528. PS-OPPSLATE-003 (the OS-4 save lifecycle) is registered as a gated-later draft with its app branch held, pending integration onto current main and a focused re-review before the owner's gate run. Community remains flag-off. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
