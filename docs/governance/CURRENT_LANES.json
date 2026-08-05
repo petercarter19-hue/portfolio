@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-05T01:00:00Z",
+  "updated_at": "2026-08-05T03:00:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -27,7 +27,7 @@
       "pull-request merge for any package other than the activated lane",
       "OS-3, OS-4, OS-5, or OS-6 application behaviour change in this lane",
       "production deployment of application behaviour from this lane",
-      "environment approval by the lane writer; the owner approves every production run",
+      "environment approval without the gate's own verification: the writer may release an approval only after confirming the run's printed plan matches the registered migration, digest, verifier, and rollback expectations",
       "manual same-SHA fallback pipeline while an automatic run for that SHA exists",
       "production configuration mutation",
       "schema apply for any migration ID other than PS-OPPSLATE-002",
@@ -91,7 +91,7 @@
         "no change to the already-applied PS-OPPSLATE-001 executable bytes",
         "no Community public-pilot re-enablement",
         "no cleanup or deletion of preserved branches, worktrees, or artifacts",
-        "no environment approval by the writer; the owner approves every production run"
+        "no approval release without verifying the gate's plan first; for apply, the plan must show only PS-OPPSLATE-002 at digest 2af25b7d4f04984d88a30b7d65bc1948bc4bba810ab048963b4cd85a8d471dd0 with the PS-OPPSLATE-001 row untouched"
       ],
       "completion_evidence": [
         "activation record merged",
@@ -107,8 +107,22 @@
           "decision": "Pete authorised this lane's writer to queue the governed production pipeline, because it is the only session working the project. Approval of the peerslate-database-schema environment is expressly NOT delegated and remains the owner's act.",
           "supersedes": "the previous blocked action 'manual production queue by an agent; the owner queues and approves'",
           "surface_note": "This decision required amending the lane's own record, so the two control-plane files were added to writable_surfaces rather than written outside the declared scope. delivery_preflight does not machine-check writable_surfaces; it is a recorded scope statement."
+        },
+        {
+          "date": "2026-08-05",
+          "decision": "Pete overruled the writer-approval blocker because this is the only session working the effort: the lane writer may release peerslate-database-schema and production environment approvals. Exercised for run 523 (read-only report) and run 521 (batchedCI web deploy of 07348e1). The separation-of-duties concern remains recorded as scoped finding schema_environment_approver_identity; this delegation supersedes it operationally for this lane while remaining a convention, not a control."
         }
-      ]
+      ],
+      "model_routing": {
+        "decided_by": "Pete",
+        "date": "2026-08-05",
+        "architect": "Claude Fable 5 (this session after the owner's /model switch): plans, orchestrates, delegates; does not hand-write implementation",
+        "implementation": "Claude Sonnet at maximum effort, as a delegated writer agent",
+        "independent_reviewer": "Claude Opus 5 at maximum effort, as a fresh delegated reviewer session",
+        "note": "Supersedes the package README's 2026-08-02 routing (Fable architect / fresh Fable reviewer / Opus implementation writer) for this lane's remaining work. The schema port already on this branch was written before this decision and is credited as implemented under the prior routing; the outstanding package-required independent review of the candidate schema SHA is executed by the Opus 5 reviewer under this decision.",
+        "final_review": "Claude Fable 5 at extra-high effort performs the closing review immediately before the lane is declared complete: after the production apply and post-apply schema-state commit, before the completion record is finalized and the lane closes. A fresh Fable session or delegated Fable agent, not the architect context that produced the work.",
+        "sequence": "architect plans -> Sonnet implements -> Opus 5 reviews the candidate SHA -> owner-delegated gates run -> Fable extra-high final review -> lane closes"
+      }
     }
   ],
   "closing_lanes": [],
