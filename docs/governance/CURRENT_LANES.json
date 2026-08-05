@@ -1,38 +1,31 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-04T23:58:00Z",
+  "updated_at": "2026-08-04T23:10:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-04",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-001"
-    ],
-    "merge_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-001"
-    ],
+    "writes_allowed_for": [],
+    "merge_allowed_for": [],
     "cleanup_allowed_for": [],
-    "release_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-001"
-    ],
+    "release_allowed_for": [],
     "blocked_actions": [
-      "new implementation worktree outside the activated lane",
-      "new feature or product write outside the activated lane",
-      "pull-request merge for any package other than the activated lane",
-      "OS-3, OS-4, OS-5, or OS-6 application behaviour change in this lane",
-      "production deployment of application behaviour from this lane",
-      "manual same-SHA fallback pipeline while an automatic run for that SHA exists",
+      "new implementation worktree before an accepted activation record",
+      "new feature or product write before an accepted activation record",
+      "pull-request merge except the bounded activation policy",
+      "manual pipeline",
+      "production deployment",
+      "schema report, apply, or rollback",
       "production configuration mutation",
-      "schema apply for any migration ID other than PS-OPPSLATE-002",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Pete selects one exact outcome; a bounded activation PR records its package, branch, writer, surfaces, exclusions, and delivery path before implementation starts. This lane closes when PS-OPPSLATE-002 is applied and recorded, or when Pete pauses it."
+    "exit_authority": "Pete selects one exact outcome; a bounded activation PR records its package, branch, writer, surfaces, exclusions, and delivery path before implementation starts"
   },
   "activation_policy": {
     "enabled": true,
@@ -49,60 +42,36 @@
   },
   "bootstrap_control_repair": {
     "status": "one_time_closeout",
+    "owner_authority": "Pete directed the 2026-08-04 reset to fix all discovered process blockers and prevent recurrence.",
     "package": "PS-DELIVERY-CONTROL-001",
-    "branch": "work/2026-08-04-delivery-activation-oppslate-os3",
-    "origin_main": "d58434869d7873ee16be9df6ca41174ef37c2ca1",
+    "branch": "work/2026-08-04-delivery-activation-preflight-output",
+    "origin_main": "b86053df749287d9dc4cdece0dbf4ad9a682283a",
     "allowed_surfaces": [
       "docs/governance/CURRENT_LANES.json",
       "docs/governance/CURRENT_BASELINE.yaml",
-      "tests/test_delivery_preflight.py",
-      "tests/test_governance_pointers.py"
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
     ],
-    "reason": "The first activation out of controlled idle exposed three reset-era tests that asserted the freeze itself rather than the invariant behind it: two hard-coded the literal controlled_idle state and one used PS-OPPORTUNITY-SLATE-001 as its example of an inactive lane. Together they made the activation policy unusable - any real activation failed the build that was supposed to validate it. This exact branch repairs those three assertions only, so they evaluate activation from a forced-idle ledger copy and derive the inactive package and the bootstrap branch/SHA from the ledger instead of pinning today's values. No product, schema, pipeline, release, or production behaviour changes, and no control is weakened: a ledger that wrongly permits a paused package is still rejected.",
+    "reason": "The first real activation exposed that the reset-era test hard-coded controlled_idle and that ordinary preflight output enumerated all preserved untracked paths. This exact branch may repair those two control-plane defects only; product, schema, pipeline, release, and production changes remain prohibited.",
     "inert_after_merge": "The exception requires the exact branch and origin/main SHA. The branch is deleted after merge, and any later checkout is behind current origin/main."
   },
-  "active_lanes": [
-    {
-      "package": "PS-OPPORTUNITY-SLATE-001",
-      "outcome": "Release the additive PS-OPPSLATE-002 Opportunity Slate OS-3 schema migration to production and record the resulting schema state. This restores the immutable PS-OPPSLATE-001 identity that PR 274 mutated.",
-      "branch": "work/2026-08-04-oppslate-os3-additive",
-      "writer": "Claude continuation session (sole writer), per the Codex handoff 05-CODEX-TO-CLAUDE-COMPREHENSIVE-HANDOFF-2026-08-04.md",
-      "delivery_path": "Protected",
-      "production_capable": true,
-      "writable_surfaces": [
-        "SQL FIles/Migrations/proposed/PS-OPPSLATE-001_opportunity_slate.sql",
-        "SQL FIles/Migrations/proposed/PS-OPPSLATE-001_opportunity_slate_rollback.sql",
-        "SQL FIles/Migrations/proposed/PS-OPPSLATE-002_opportunity_slate_os3.sql",
-        "SQL FIles/Migrations/proposed/PS-OPPSLATE-002_opportunity_slate_os3_rollback.sql",
-        "SQL FIles/Migrations/registry.json",
-        "SQL FIles/Verification/PS-OPPSLATE-001_owner_isolation_verify.sql",
-        "SQL FIles/Verification/PS-OPPSLATE-002_owner_isolation_verify.sql",
-        "docs/initiatives/PS-OPPORTUNITY-SLATE-001/",
-        "tests/test_opportunity_slate_migration.py"
-      ],
-      "exclusions": [
-        "no application, route, service, template, or AI behaviour change",
-        "no OS-4, OS-5, or OS-6 work; those stay paused_read_only",
-        "no change to the already-applied PS-OPPSLATE-001 executable bytes",
-        "no Community public-pilot re-enablement",
-        "no cleanup or deletion of preserved branches, worktrees, or artifacts"
-      ],
-      "completion_evidence": [
-        "activation record merged",
-        "schema PR merged to main with required current-target validation",
-        "SchemaMigration stage applied PS-OPPSLATE-002 with executable digest 2af25b7d4f04984d88a30b7d65bc1948bc4bba810ab048963b4cd85a8d471dd0",
-        "production ledger shows PS-OPPSLATE-002 and an unchanged PS-OPPSLATE-001 row",
-        "generated PRODUCTION_SCHEMA_STATE.md committed through a separate documentation PR"
-      ],
-      "known_checkpoint": "work/2026-08-04-oppslate-os3-additive@f602c3fac9b867b12704a89850642de683c0779d"
-    }
-  ],
+  "active_lanes": [],
   "closing_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-COMMUNITY-PUBLIC-PILOT-001",
       "reason": "flag-off containment and conflicting writer records require reconciliation",
       "known_checkpoint": "work/2026-08-04-community-maintenance-off-request-path@e51c9c6122e4c2cd1d462b77230523f733f2fded",
+      "disposition": "paused_read_only"
+    },
+    {
+      "package": "PS-OPPORTUNITY-SLATE-001",
+      "reason": "OS-3 needs a new additive migration ID and hosted read-only proof; OS-4 is stacked",
+      "known_checkpoints": [
+        "work/2026-08-04-oppslate-os3-additive@f602c3fac9b867b12704a89850642de683c0779d",
+        "work/2026-08-04-opportunity-slate-os3@3ac0e9d5a5fb0a20ce1c9f70b1d73ae1ea2f02a9",
+        "work/2026-08-04-opportunity-slate-os4@de8735ced7673685ef7909b9d4bd72490b74f0c3"
+      ],
       "disposition": "paused_read_only"
     },
     {
