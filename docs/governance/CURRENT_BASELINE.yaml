@@ -11,11 +11,11 @@ authority:
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "1b0a3ee7782ae9e812f2ef35c08b79791b41c385"
-  deployed_pipeline: 540
-  application_behavior_commit: "1b0a3ee7782ae9e812f2ef35c08b79791b41c385"
-  application_behavior_pipeline: 540
-  note: "Automatic pipeline 540 passed for exact main 1b0a3ee7782ae9e812f2ef35c08b79791b41c385 and live /healthz release 63b3fb49ee97c3a5930168ea is healthy. Opportunity Slate OS-1, OS-2, OS-3, OS-5, and OS-6 are live. PS-OPPSLATE-002 was applied by run 528. PS-OPPSLATE-003 (the OS-4 save lifecycle) is registered as a gated-later draft with its app branch held, pending integration onto current main and a focused re-review before the owner's gate run. Community remains flag-off. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
+  deployed_main_commit: "a0336cf2d40489eae7d4160447bf06998188b802"
+  deployed_pipeline: 542
+  application_behavior_commit: "a0336cf2d40489eae7d4160447bf06998188b802"
+  application_behavior_pipeline: 542
+  note: "Automatic pipeline 542 passed for exact main a0336cf2d40489eae7d4160447bf06998188b802 and live /healthz release f5d8a1cc4f50496c242110fe is healthy. Opportunity Slate OS-1, OS-2, OS-3, OS-5, and OS-6 are live. PS-OPPSLATE-002 was applied by run 528. PS-OPPSLATE-003 (the OS-4 save lifecycle) is registered as a gated-later draft with its app branch held, pending integration onto current main and a focused re-review before the owner's gate run. Community remains flag-off. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
@@ -23,7 +23,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active delivery, one lane. Pete selected the Opportunity Slate OS-3 schema correction as the next exact outcome on 2026-08-05. PS-OPPORTUNITY-SLATE-001 is the single production-capable lane on the fresh branch work/2026-08-05-oppslate-os3-schema, scoped to releasing the additive PS-OPPSLATE-002 migration only; its OS-3/OS-4 application branches stay paused and Codex's checkpoint stays read-only. Every other lane remains paused_read_only. See docs/governance/CURRENT_LANES.json."
+  current_assignments: "Active delivery, one lane. PS-OPPORTUNITY-SLATE-001 delivered the Opportunity Slate page under Pete's standing order: OS-1/2/3/5/6 are live at release f5d8a1cc4f50496c242110fe. The lane's one remaining surface is the held OS-4 branch work/2026-08-05-oppslate-os4-app (PR 293), which merges after the owner's PS-OPPSLATE-003 gate run and the governed apply. Every other lane remains paused_read_only. See docs/governance/CURRENT_LANES.json."
 
 governing_documents:
   bible:
@@ -127,7 +127,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Data/schema gate for PS-OPPSLATE-002. The activation record is merged and PS-OPPORTUNITY-SLATE-001 is the single production-capable lane on work/2026-08-05-oppslate-os3-schema. Next: merge the additive schema PR after current-target validation, then Pete queues the read-only schemaAction=report to create docs/governance/PRODUCTION_SCHEMA_STATE.md, then Pete queues schemaAction=apply with schemaMigrationId=PS-OPPSLATE-002 and approves the peerslate-database-schema environment only when the plan shows digest 2af25b7d4f04984d88a30b7d65bc1948bc4bba810ab048963b4cd85a8d471dd0 and leaves the applied PS-OPPSLATE-001 ledger row untouched. Agents do not queue production runs. No OS-3, OS-4, OS-5, or OS-6 application behaviour, and no Community re-enablement, is authorized by this lane. Applying PS-OPPSLATE-002 is a schema operation only; it does not make OS-3 live."
+next_gate: "Data/schema gate for PS-OPPSLATE-003 (the OS-4 save lifecycle). Pete runs the disposable-database gate from a machine with Azure SQL access (create throwaway DB, govern gate PS-OPPSLATE-003 --update-registry, delete DB), commits the registry proof, then queues schemaAction=apply with schemaMigrationId=PS-OPPSLATE-003 and approves only when the plan shows exactly that migration at its gate digest with prior ledger rows untouched. After the verified apply: merge the held PR 293, let the automatic run deploy, smoke the live saved-slate flow, commit the regenerated PRODUCTION_SCHEMA_STATE.md, and close the lane with the Fable final-review paragraph. Applying PS-OPPSLATE-003 is a schema operation only; OS-4 becomes live only with PR 293's deploy."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

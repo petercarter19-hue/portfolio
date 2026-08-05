@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-05T19:00:00Z",
+  "updated_at": "2026-08-05T22:30:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -66,7 +66,7 @@
     {
       "package": "PS-OPPORTUNITY-SLATE-001",
       "outcome": "Deliver the complete public Opportunity Slate page to live, slice by slice, under Pete's 2026-08-05 standing order to keep going until the entire page is live and functional. Legs 1, 2, 4, and 5 (PS-OPPSLATE-002 schema, OS-3, OS-5, OS-6) are complete and verified live; leg 3 (OS-4 save lifecycle) is built and held pending an integration and re-review before the owner's gate run; the current leg is 6, the Fable extra-high final review, in progress with closing corrections after an INCOMPLETE verdict.",
-      "branch": "work/2026-08-05-oppslate-closing-fixes",
+      "branch": "work/2026-08-05-oppslate-os4-app",
       "writer": "Claude continuation session, sole writer",
       "delivery_path": "Protected",
       "production_capable": true,
@@ -150,8 +150,8 @@
         },
         {
           "leg": "3: OS-4 save lifecycle",
-          "status": "built_and_held",
-          "evidence": "PS-OPPSLATE-003 gated-later draft on main; app approved at 5b164c5 but PR 293's merge preview is stale — the branch conflicts with current main (app.py, _intake.html, test_opportunity_slate.py) after OS-5/OS-6 landed; integration onto current main plus a focused re-review precedes the owner's gate run, apply, and merge"
+          "status": "ready_held_on_owner_gate",
+          "evidence": "integrated onto current main at 7edff7e and approved by focused re-review; final tip 3670525 pushed; PR 293 merge preview clean against current main; merges immediately after the owner's disposable-database gate run for PS-OPPSLATE-003 and the governed apply"
         },
         {
           "leg": "4: OS-5 dictation",
@@ -165,11 +165,11 @@
         },
         {
           "leg": "6: Fable extra-high final review, then lane closes",
-          "status": "in_progress",
-          "evidence": "Fable extra-high final review returned INCOMPLETE with three closing corrections (false rail copy, stale OS-4 merge path, stale release truth); corrections in flight on work/2026-08-05-oppslate-closing-fixes and the OS-4 integration"
+          "status": "verdict_recorded_lane_open_for_os4_only",
+          "evidence": "Fable extra-high final review verdict INCOMPLETE with three closing corrections, all resolved: the false intake-rail copy fixed and deployed live (release f5d8a1cc4f50496c242110fe, run 542, smoked); the stale OS-4 merge path repaired by integration and focused re-review; the closing records reconciled. The reviewer's completion paragraph is adopted with the corrections noted; the lane stays open solely for the OS-4 gate-apply-merge-smoke sequence, then closes"
         }
       ],
-      "branch_note": "The lane runs parallel slice branches under one writer session: os4-schema and os4-app (built, held on the PS-OPPSLATE-003 gate, now also pending integration onto current main before its re-review), os5-dictation (released), os6-intake (released). The branch field names the branch currently receiving writes — closing-fixes, correcting the Fable final review's three findings before the OS-4 integration and re-review."
+      "branch_note": "All slice branches are merged and deleted (archive-tagged) except the held OS-4 application branch, which is the lane's one remaining writable surface pending the owner's PS-OPPSLATE-003 gate run."
     }
   ],
   "closing_lanes": [],
