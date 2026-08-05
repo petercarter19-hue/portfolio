@@ -66,6 +66,8 @@ scoped_findings:
     blocks: "Only release or expansion of the affected Interview follow-up path until signed mode binding and generic-context isolation pass."
   - id: opportunity_slate_schema_revision
     blocks: "Opportunity Slate OS-3 schema apply until the owner-queued hosted read-only report and the exact production-baseline gate pass. The additive migration ID and immutable digest conditions are met in source: PS-OPPSLATE-001 is restored byte-for-byte to its applied 2406ff6eedd44939ee5148982462a66935f13dfea45fe46076cf5895883c7273 identity that PR 274 mutated, and OS-3 moves to the new additive ID PS-OPPSLATE-002 at 2af25b7d4f04984d88a30b7d65bc1948bc4bba810ab048963b4cd85a8d471dd0. Applying any migration ID other than PS-OPPSLATE-002 remains blocked."
+  - id: schema_environment_approver_identity
+    blocks: "Nothing yet; recorded so it is not lost. The peerslate-database-schema environment's only approver is peerslate19@gmail.com, and the agent PAT in use authenticates as that same identity, with requesterCannotBeApprover unset. A writer holding that PAT can therefore both queue and approve a production schema run, so the owner-approval step is currently a convention rather than an enforced control. Pete authorised the writer to queue on 2026-08-05 and expressly retained approval. Making it enforceable needs a second approver identity, or a distinct agent identity plus requesterCannotBeApprover."
   - id: community_reenablement
     blocks: "Community public-pilot re-enablement until ownership is singular, maintenance leaves the request path, dependency waits are bounded, and release evidence passes."
 
