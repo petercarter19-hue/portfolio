@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-05T23:30:00Z",
+  "updated_at": "2026-08-06T00:30:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -66,7 +66,7 @@
     {
       "package": "PS-OPPORTUNITY-SLATE-001",
       "outcome": "Deliver the complete public Opportunity Slate page to live, slice by slice, under Pete's 2026-08-05 standing order to keep going until the entire page is live and functional. Legs 1, 2, 4, and 5 (PS-OPPSLATE-002 schema, OS-3, OS-5, OS-6) are complete and verified live; leg 3 (OS-4 save lifecycle) is built and held pending an integration and re-review before the owner's gate run; the current leg is 6, the Fable extra-high final review, in progress with closing corrections after an INCOMPLETE verdict.",
-      "branch": "work/2026-08-05-oppslate-nav-link",
+      "branch": "work/2026-08-05-oppslate-os4-app",
       "writer": "Claude continuation session, sole writer",
       "delivery_path": "Protected",
       "production_capable": true,
@@ -91,7 +91,8 @@
         "docs/governance/CURRENT_BASELINE.yaml",
         "docs/governance/PRODUCTION_SCHEMA_STATE.md",
         "templates/base.html",
-        "tests/"
+        "tests/",
+        "scripts/gate_os4.ps1"
       ],
       "exclusions": [
         "no Community public-pilot re-enablement",
@@ -176,11 +177,11 @@
         },
         {
           "leg": "7: owner-ordered navigation link",
-          "status": "active",
-          "evidence": "Pete ordered a main-navigation link to Opportunity Slate next to Workshop; implemented on work/2026-08-05-oppslate-nav-link after this authorization records the surface extension on main"
+          "status": "complete_live",
+          "evidence": "PR 300 merged as main 2174749; automatic run 546 deployed it; live release cff0e215b7ca407744afc3dd matches the derived identity; the link renders next to Workshop on the live homepage; noindex and sitemap exclusion retained"
         }
       ],
-      "branch_note": "The lane's currently-writing branch is the owner-ordered navigation link. The held OS-4 branch work/2026-08-05-oppslate-os4-app (PR 293) remains the other outstanding surface; the branch field returns to it for the OS-4 merge step after the owner's gate run."
+      "branch_note": "The lane's remaining writable surface is the held OS-4 branch (PR 293). The owner runs scripts/gate_os4.ps1 once; the waiting automation then applies PS-OPPSLATE-003, merges PR 293, deploys, and smokes."
     }
   ],
   "closing_lanes": [],
