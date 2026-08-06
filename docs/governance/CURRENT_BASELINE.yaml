@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-OPPORTUNITY-SLATE-001 is complete and moved to closing history. PS-DATA-FOUNDATION-001 remains the sole active non-production additive lane on work/2026-08-06-ai-foundation-ask-pete-slice-1, with Ask Pete as the first reference consumer. See docs/governance/CURRENT_LANES.json."
+  current_assignments: "PS-DATA-FOUNDATION-001 slice 1 merged as 779ab5f and moved to closing history. PS-ASK-PETE-AI-001 is the sole active non-production backend lane on work/2026-08-06-grounded-ask-pete-backend-v1. It stops at the backend-to-visual handoff. See docs/governance/CURRENT_LANES.json."
 
 governing_documents:
   bible:
@@ -58,9 +58,9 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-DATA-FOUNDATION-001
+  - id: PS-ASK-PETE-AI-001
     status: active_delivery
-    scope: "Parallel non-production additive AI-foundation slice with Ask Pete as the first reference consumer."
+    scope: "Backend-only Grounded Ask Pete v1: public source manifest/version adapter, recruiter services, structured citations/support states, evaluation/debugging, and dormant default-off app compatibility through the visual handoff."
 scoped_findings:
   - id: candidate_admission
     blocks: "Only a future Protected release that uses Candidate until package-specific exact-SHA admission is corrected or explicitly bounded."
@@ -123,6 +123,7 @@ completed_packages:
   - PS-GOV-LEAN-001
   - PS-PRODUCTION-AVAILABILITY-INCIDENT-001
   - PS-OPPORTUNITY-SLATE-001
+  - PS-DATA-FOUNDATION-001
 
 retired_packages:
   - id: PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001
@@ -134,7 +135,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-DATA-FOUNDATION-001 continues only its additive AI contracts, citation validation, support states, and debugging/evaluation seams on its registered branch/worktree. No schema, provider configuration, shared runtime wiring, resume-page integration, deployment, or production action is authorized in that first AI slice."
+next_gate: "PS-ASK-PETE-AI-001 implements only the registered backend surfaces through a dormant default-off compatibility seam, then stops for Pete's ChatGPT visual-creation round. No material visual file, SQL/database mutation, provider/secret setting, pipeline configuration, environment approval, deployment, or production enablement is authorized."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
