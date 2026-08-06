@@ -4,18 +4,19 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-05"
+updated_at: "2026-08-06"
 
 authority:
   remote: origin
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "75faf4b219440702dab23b127b213f0a4305f776"
-  deployed_pipeline: 557
-  application_behavior_commit: "75faf4b219440702dab23b127b213f0a4305f776"
-  application_behavior_pipeline: 557
-  note: "Automatic pipeline 557 passed for exact main 75faf4b219440702dab23b127b213f0a4305f776 and live /healthz release 388372b370f407bb104795fe is healthy. Member-authored Workshop saves confirm at save time; the gated backlog confirmation (leg 9) is authorized but not started. The entire Opportunity Slate page is live: OS-1 through OS-6 including the OS-4 save lifecycle, plus the owner-ordered navigation link. PS-OPPSLATE-002 was applied by run 528 and PS-OPPSLATE-003 by run 551 after the owner's disposable-database gate. Community remains flag-off. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
+  deployed_main_commit: "896fd056b3c43248b9474e37bf6b9d253dc856b0"
+  deployed_pipeline: 560
+  live_release: "668080a833260b3aeed84104"
+  application_behavior_commit: "896fd056b3c43248b9474e37bf6b9d253dc856b0"
+  application_behavior_pipeline: 560
+  note: "Automatic pipeline 560 passed for exact main 896fd056b3c43248b9474e37bf6b9d253dc856b0 and live /healthz release 668080a833260b3aeed84104 is healthy. The entire Opportunity Slate plus the save-means-confirmed rule and dormant Workshop backlog wiring are live. Governed schema run 565 applied only PS-WORKSHOP-002 at exact source d7e996e45449579fbf370a9e1263f8725b1d753f, moving the production ledger 23->24 with all prior rows unchanged. Pete's existing member-authored knowledge backlog becomes confirmed on his next signed-in visit; no further application deployment is required. Community remains flag-off. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
@@ -23,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active parallel delivery, two deliberately separated lanes. PS-OPPORTUNITY-SLATE-001 retains only its existing Opportunity/Workshop closeout surfaces. PS-DATA-FOUNDATION-001 begins the non-production additive shared AI foundation on work/2026-08-06-ai-foundation-ask-pete-slice-1, with Ask Pete as the first reference consumer. The lanes use separate branches/worktrees and may not write each other's recorded surfaces. See docs/governance/CURRENT_LANES.json."
+  current_assignments: "PS-OPPORTUNITY-SLATE-001 is complete and moved to closing history. PS-DATA-FOUNDATION-001 remains the sole active non-production additive lane on work/2026-08-06-ai-foundation-ask-pete-slice-1, with Ask Pete as the first reference consumer. See docs/governance/CURRENT_LANES.json."
 
 governing_documents:
   bible:
@@ -57,9 +58,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-OPPORTUNITY-SLATE-001
-    status: active_delivery
-    scope: "Existing Opportunity Slate and Workshop closeout surfaces recorded in CURRENT_LANES.json."
   - id: PS-DATA-FOUNDATION-001
     status: active_delivery
     scope: "Parallel non-production additive AI-foundation slice with Ask Pete as the first reference consumer."
@@ -73,7 +71,9 @@ scoped_findings:
   - id: opportunity_slate_schema_revision
     blocks: "Nothing since 2026-08-05: resolved. Run 528 applied PS-OPPSLATE-002 at digest 2af25b7d4f04984d88a30b7d65bc1948bc4bba810ab048963b4cd85a8d471dd0 with the preflight plan exactly that one migration, ledger 21->22 rows, zero removed or mutated rows, and the applied PS-OPPSLATE-001 row untouched. Opus 5 independent review approved candidate 07348e1. docs/governance/PRODUCTION_SCHEMA_STATE.md is the derived record. Kept for provenance; any future Opportunity Slate schema change still requires its own additive ID, gate proof, and verified plan."
   - id: schema_environment_approver_identity
-    blocks: "Nothing yet; recorded so it is not lost. The peerslate-database-schema environment's only approver is peerslate19@gmail.com, and the agent PAT in use authenticates as that same identity, with requesterCannotBeApprover unset. A writer holding that PAT can therefore both queue and approve a production schema run, so the owner-approval step is currently a convention rather than an enforced control. Pete authorised the writer to queue on 2026-08-05 and expressly retained approval. Making it enforceable needs a second approver identity, or a distinct agent identity plus requesterCannotBeApprover."
+    blocks: "Only a future claim that schema approval is independent separation of duties. The peerslate-database-schema environment's only approver is peerslate19@gmail.com, and the agent credential authenticates as that same identity, with requesterCannotBeApprover unset. Under Pete's explicit no-per-step-click delegation, the writer approved exact governed run 565 after verifying its SHA, migration ID, gate digest, verifier, rollback rehearsal, and expected ledger transition. Destructive or rollback actions still require Pete's break-glass decision; a distinct agent identity plus requesterCannotBeApprover is required before calling this an enforced independent approval."
+  - id: pipeline_schema_checkpoint_order
+    blocks: "Only unattended release claims under the current combined production stage. Automatic run 563 had schemaAction=none but still entered the database-schema approval because Azure evaluates the deployment environment before the schema job condition; it was canceled without production mutation. Run 565 also required approval before its read-only production preflight could print the plan. PS-AGENT-OPERATIONS-001 must split ordinary web and schema stages, put read-only schema preflight before any mutating checkpoint, and retain break-glass approval only for destructive operations."
   - id: community_reenablement
     blocks: "Community public-pilot re-enablement until ownership is singular, maintenance leaves the request path, dependency waits are bounded, and release evidence passes."
 
@@ -122,6 +122,7 @@ completed_packages:
   - PS-COMMUNITY-JOURNAL-HOME-MILESTONE-001
   - PS-GOV-LEAN-001
   - PS-PRODUCTION-AVAILABILITY-INCIDENT-001
+  - PS-OPPORTUNITY-SLATE-001
 
 retired_packages:
   - id: PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001
@@ -133,7 +134,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Two independent next actions may proceed. Opportunity Slate completes its already-owned protected closeout separately. In parallel, PS-DATA-FOUNDATION-001 merges this bounded activation record, creates work/2026-08-06-ai-foundation-ask-pete-slice-1 from the resulting origin/main, and implements only the additive AI contracts, citation validation, support states, and debugging/evaluation seams. No schema, provider configuration, shared runtime wiring, resume-page integration, deployment, or production action is authorized in that first AI slice."
+next_gate: "PS-DATA-FOUNDATION-001 continues only its additive AI contracts, citation validation, support states, and debugging/evaluation seams on its registered branch/worktree. No schema, provider configuration, shared runtime wiring, resume-page integration, deployment, or production action is authorized in that first AI slice."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

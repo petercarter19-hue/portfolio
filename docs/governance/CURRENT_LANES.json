@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-06T11:37:20Z",
+  "updated_at": "2026-08-06T12:09:53Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,17 +12,16 @@
     "authorized_at": "2026-08-05",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-001",
       "PS-DATA-FOUNDATION-001"
     ],
     "merge_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-001",
-      "PS-DATA-FOUNDATION-001"
-    ],
-    "cleanup_allowed_for": [],
-    "release_allowed_for": [
+      "PS-DATA-FOUNDATION-001",
       "PS-OPPORTUNITY-SLATE-001"
     ],
+    "cleanup_allowed_for": [
+      "PS-OPPORTUNITY-SLATE-001"
+    ],
+    "release_allowed_for": [],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
       "new feature or product write outside the exact surfaces recorded for its activated lane",
@@ -31,11 +30,11 @@
       "environment approval without the gate's own verification: the writer may release an approval only after confirming the run's printed plan matches the registered migration, digest, verifier, and rollback expectations",
       "manual same-SHA fallback pipeline while an automatic run for that SHA exists",
       "production configuration mutation",
-      "schema apply for any migration ID other than PS-OPPSLATE-003",
+      "production schema apply or application deployment from the non-production PS-DATA-FOUNDATION-001 lane",
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Opportunity Slate retains its existing independent closeout authority. The parallel PS-DATA-FOUNDATION-001 lane is non-production and closes or advances under its own recorded outcome; neither lane may write the other's surfaces."
+    "exit_authority": "PS-OPPORTUNITY-SLATE-001 completed its protected closeout and is retained under closing_lanes as history. PS-DATA-FOUNDATION-001 is the sole active non-production lane and may write only its recorded additive surfaces."
   },
   "activation_policy": {
     "enabled": true,
@@ -64,12 +63,12 @@
     "reason": "Leaving controlled idle exposed three reset-era assertions that encoded the freeze itself rather than the invariant behind it: two hard-coded the literal controlled_idle state and one used PS-OPPORTUNITY-SLATE-001 as its example of an inactive lane. Together they made the activation policy unusable, because any real activation failed the build meant to validate it. This exact branch repairs those three assertions only, so they evaluate activation from a forced-idle ledger copy and derive the inactive package and the bootstrap branch/SHA from the ledger instead of pinning today's values. No product, schema, pipeline, release, or production behaviour changes, and no control is weakened: a ledger that wrongly permits a paused package is still rejected.",
     "inert_after_merge": "The exception requires the exact branch and origin/main SHA. The branch is deleted after merge, and any later checkout is behind current origin/main."
   },
-  "active_lanes": [
+  "closing_lanes": [
     {
       "package": "PS-OPPORTUNITY-SLATE-001",
-      "outcome": "Deliver the complete public Opportunity Slate page to live, slice by slice, under Pete's 2026-08-05 standing order to keep going until the entire page is live and functional. Legs 1, 2, 4, and 5 (PS-OPPSLATE-002 schema, OS-3, OS-5, OS-6) are complete and verified live; leg 3 (OS-4 save lifecycle) is built and held pending an integration and re-review before the owner's gate run; the current leg is 6, the Fable extra-high final review, in progress with closing corrections after an INCOMPLETE verdict.",
+      "outcome": "Complete. The full public Opportunity Slate, OS-4 save lifecycle, navigation link, member-authored save-means-confirmed rule, and governed PS-WORKSHOP-002 backlog-confirmation procedure are delivered. Application release 668080a833260b3aeed84104 is live from exact main 896fd056 via run 560; schema run 565 applied only PS-WORKSHOP-002 and moved the production ledger 23->24 with every prior row unchanged.",
       "branch": "work/2026-08-06-oppslate-knowledge-backfill",
-      "writer": "Claude continuation session, sole writer",
+      "writer": "Claude implementation and review sequence, followed by an explicit Claude-to-Codex handoff; Codex was the sole writer for gate proof, production apply, and closeout",
       "delivery_path": "Protected",
       "production_capable": true,
       "source_checkpoint": "Ported from Codex's read-only checkpoint work/2026-08-04-oppslate-os3-additive@f602c3fac9b867b12704a89850642de683c0779d. That branch stays read-only; this lane does not write to it.",
@@ -118,7 +117,10 @@
         "owner-queued read-only schemaAction=report produces docs/governance/PRODUCTION_SCHEMA_STATE.md",
         "SchemaMigration stage applied PS-OPPSLATE-002 with executable digest 2af25b7d4f04984d88a30b7d65bc1948bc4bba810ab048963b4cd85a8d471dd0",
         "production ledger shows PS-OPPSLATE-002 and an unchanged PS-OPPSLATE-001 row",
-        "regenerated PRODUCTION_SCHEMA_STATE.md committed"
+        "regenerated PRODUCTION_SCHEMA_STATE.md committed",
+        "PS-WORKSHOP-002 disposable gate passed on ps-workshop-002-gate-202608060646 at executable digest 12baa0a9196e3ea5fb9c8430348cc4964ec5fcc7aa668fd79fcb485d205cbc50; apply, idempotent reapply, verifier, rollback, and forward-after-rollback all passed; disposable database deletion verified",
+        "PR 310 merged the gate proof as exact main d7e996e45449579fbf370a9e1263f8725b1d753f after required PR validation run 562 passed",
+        "governed run 565 applied only PS-WORKSHOP-002; production ledger 23->24; all 23 prior migration timestamps unchanged; generated schema-state evidence recorded build 565 and source d7e996e45449579fbf370a9e1263f8725b1d753f"
       ],
       "owner_decisions": [
         {
@@ -146,6 +148,10 @@
         {
           "date": "2026-08-06",
           "decision": "Pete rewrote the confirmation model: 'anything in your knowledge database is confirmed. You put it there... It's when you have new stuff that gets confirmed, not existing stuff', and ordered the fix with full authority and no per-step clicks ('I'm not pressing it... one deployment at a time'; 'the one blocker you said was coming, the approved press. I approve it.'). The owner-authored permission grant branch work/2026-08-06-agent-permissions remains parked unmerged: the writer's safety layer requires the owner to execute the whole permission chain, so environment checkpoint releases stay owner acts unless a run's release attempt happens to be permitted."
+        },
+        {
+          "date": "2026-08-06",
+          "decision": "Pete explicitly transferred the departing Claude lane to Codex, required one writer, directed Codex to review its own completion, and authorized completion without further per-step deployment clicks. This is recorded as the owner-approved closeout routing for the final gate/apply/record sequence; the earlier fresh-Fable final-review requirement was not rerun after the transfer."
         }
       ],
       "model_routing": {
@@ -155,8 +161,8 @@
         "implementation": "Claude Sonnet at maximum effort, as a delegated writer agent",
         "independent_reviewer": "Claude Opus 5 at maximum effort, as a fresh delegated reviewer session",
         "note": "Supersedes the package README's 2026-08-02 routing (Fable architect / fresh Fable reviewer / Opus implementation writer) for this lane's remaining work. The schema port already on this branch was written before this decision and is credited as implemented under the prior routing; the outstanding package-required independent review of the candidate schema SHA is executed by the Opus 5 reviewer under this decision.",
-        "final_review": "Claude Fable 5 at extra-high effort performs the closing review immediately before the lane is declared complete: after the production apply and post-apply schema-state commit, before the completion record is finalized and the lane closes. A fresh Fable session or delegated Fable agent, not the architect context that produced the work.",
-        "sequence": "architect plans -> Sonnet implements -> Opus 5 reviews the candidate SHA -> owner-delegated gates run -> Fable extra-high final review -> lane closes"
+        "final_review": "The earlier Fable extra-high review produced an INCOMPLETE verdict whose three named corrections were resolved. After Claude's explicit handoff, Pete required Codex to remain the sole writer and self-review the final gate/apply/closeout work; no additional fresh Fable session was run.",
+        "sequence": "architect plans -> Sonnet implements -> Opus 5 reviews the candidate SHA -> explicit Claude-to-Codex handoff -> Codex gate/apply/self-review -> lane closes"
       },
       "legs": [
         {
@@ -186,8 +192,8 @@
         },
         {
           "leg": "6: Fable extra-high final review, then lane closes",
-          "status": "verdict_recorded_lane_open_for_os4_only",
-          "evidence": "Fable extra-high final review verdict INCOMPLETE with three closing corrections, all resolved: the false intake-rail copy fixed and deployed live (release f5d8a1cc4f50496c242110fe, run 542, smoked); the stale OS-4 merge path repaired by integration and focused re-review; the closing records reconciled. The reviewer's completion paragraph is adopted with the corrections noted; the lane stays open solely for the OS-4 gate-apply-merge-smoke sequence, then closes"
+          "status": "complete_with_owner_directed_final_self_review",
+          "evidence": "Fable extra-high verdict INCOMPLETE named three closing corrections; all were resolved and the affected app work was subsequently released. After the explicit Claude-to-Codex transfer, Pete directed one writer and Codex self-review for the remaining gate/apply/closeout. Codex reviewed the final diff, gate evidence, exact-SHA PR integration, run parameters, approval record, apply log, and ledger transition; no unresolved release blocker remains."
         },
         {
           "leg": "7: owner-ordered navigation link",
@@ -196,17 +202,19 @@
         },
         {
           "leg": "8: owner-ordered knowledge confirmation rule",
-          "status": "save_time_rule_complete_live_backfill_deferred",
-          "evidence": "Shipped tip a787b2b (squash 75faf4b2) merged as PR 306 after the Opus delta APPROVE; automatic run 557 deployed it and the writer released the checkpoint under the owner's standing pre-approval; live release 388372b370f407bb104795fe matches the derived identity and the pipeline live smoke passed. Member-authored saves now confirm at save time with alias tolerance and truthful copy; the refused write-based backlog reconciliation is fully excised. Deep interactive smoke of the signed-in save screens was not driven; release identity plus the suite's copy assertions carry that claim."
+          "status": "complete_live",
+          "evidence": "Save-means-confirmed and degrade-safe backlog wiring are live in exact application SHA 896fd056b3c43248b9474e37bf6b9d253dc856b0 via automatic run 560; /healthz release 668080a833260b3aeed84104 was live-verified. The refused write-based backlog reconciliation remains fully excised."
         },
         {
           "leg": "9: gated in-place backlog confirmation",
-          "status": "authorized_not_started",
-          "evidence": "Owner requirement: the existing member-authored knowledge base becomes status confirmed with zero member action. The approved design is a purpose-built in-place confirmation procedure in a gated additive migration (PS-WORKSHOP-002): preserves authored_via, original_member_wording, version numbers and updated_at_utc; system-attributed audit; only unfinished member-authored rows, never suggested or archived. Must also close the reviewer's carried findings: usp_ArchiveKnowledgeItemForOwner accepts a suggested row and usp_RestoreKnowledgeItemForOwner returns it as unfinished, which becomes live the moment auto-confirmation exists; add the two missing demo-status mutation tests. Requires the owner's disposable-database gate paste, then apply, wiring, deploy. Implementation branch work/2026-08-06-oppslate-knowledge-backfill."
+          "status": "complete_production_schema_applied",
+          "evidence": "Disposable DB ps-workshop-002-gate-202608060646 passed the full governed gate at digest 12baa0a9196e3ea5fb9c8430348cc4964ec5fcc7aa668fd79fcb485d205cbc50, including owner-isolation verifier and rollback rehearsal. PR 310 merged the proof as d7e996e4. Governed run 565 applied exactly PS-WORKSHOP-002 to peerslate-database; ledger 23->24, all prior timestamps unchanged, state artifact regenerated. Existing member-authored backlog rows become confirmed on the owner's next signed-in visit through the already-live wiring; no further app deployment is needed. The two named carried risks in the migration header remain explicit."
         }
       ],
-      "branch_note": "The lane's remaining writable surface is the held OS-4 branch (PR 293). The owner runs scripts/gate_os4.ps1 once; the waiting automation then applies PS-OPPSLATE-003, merges PR 293, deploys, and smokes."
-    },
+      "branch_note": "Closed after PS-WORKSHOP-002 production apply and schema-state reconciliation. The branch is retained until the proportional closeout PR merges; cleanup remains a separately verified, recoverable operation."
+    }
+  ],
+  "active_lanes": [
     {
       "package": "PS-DATA-FOUNDATION-001",
       "outcome": "Implement the first additive slice of the shared PeerSlate AI, Knowledge, and Evidence foundation, with Ask Pete AI as the first reference consumer: durable architecture package, provider-neutral request and response contracts, source and citation validation, support-state semantics, and debugging/evaluation seams. This slice deliberately stops before runtime route wiring, schema, provider configuration, resume-page integration, deployment, or production mutation.",
@@ -250,7 +258,6 @@
       "sequence": "merge this bounded concurrency record -> create the clean implementation worktree from the resulting origin/main -> run the package write preflight -> implement and test only additive foundation surfaces -> self-review and open a separate Azure PR; integrate shared runtime files only in a later explicitly coordinated slice"
     }
   ],
-  "closing_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-COMMUNITY-PUBLIC-PILOT-001",
@@ -303,7 +310,7 @@
     }
   },
   "release_truth": {
-    "repository_main": "75faf4b219440702dab23b127b213f0a4305f776",
+    "repository_main": "d7e996e45449579fbf370a9e1263f8725b1d753f",
     "reset_pull_request": 279,
     "reset_validation_pipeline": 512,
     "reset_validation_result": "succeeded",
@@ -313,17 +320,18 @@
     "preflight_repair_pull_request": 281,
     "preflight_repair_validation_pipeline": 514,
     "preflight_repair_validation_result": "succeeded",
-    "deployed_main_commit": "75faf4b219440702dab23b127b213f0a4305f776",
-    "deployed_pipeline": 557,
-    "live_release": "388372b370f407bb104795fe",
-    "application_behavior_commit": "75faf4b219440702dab23b127b213f0a4305f776",
-    "application_behavior_pipeline": 557,
+    "deployed_main_commit": "896fd056b3c43248b9474e37bf6b9d253dc856b0",
+    "deployed_pipeline": 560,
+    "live_release": "668080a833260b3aeed84104",
+    "application_behavior_commit": "896fd056b3c43248b9474e37bf6b9d253dc856b0",
+    "application_behavior_pipeline": 560,
     "live_health": "ok",
     "community_public_pilot": "flag_off",
     "opportunity_slate_os3_schema": "applied_run_528",
     "opportunity_slate_live_slices": "OS-1, OS-2, OS-3, OS-4, OS-5, OS-6",
     "opportunity_slate_navigation_link": "live_run_546",
     "opportunity_slate_os4_schema": "applied_run_551",
-    "workshop_save_semantics": "member_authored_saves_confirm_run_557"
+    "workshop_save_semantics": "member_authored_saves_confirm_run_560",
+    "workshop_backlog_schema": "PS-WORKSHOP-002_applied_run_565_ledger_23_to_24"
   }
 }

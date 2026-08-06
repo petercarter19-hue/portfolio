@@ -14,12 +14,15 @@ owner routing exceptions recorded here per
 review). Independent review is mandatory for this package regardless of
 ecosystem: it is architecture-heavy, touches private cross-referenced member
 data, includes consequential AI behavior, and includes deletion behavior.
-**Branch:** `work/2026-08-02-opportunity-slate-architecture` from `origin/main`
-at `803b34b364b53eb77edc34c197b3b38d02431b56`.
-**Status:** ARCHITECTURE PHASE. The ChatGPT visual-creation round is complete
-and locked. This package contains the architecture-ready visual-authority and
-implementation handoff. **No runtime code is authorized.** The implementation
-lane opens only when Pete explicitly activates it against this package.
+**Architecture branch:** `work/2026-08-02-opportunity-slate-architecture` from
+`origin/main` at `803b34b364b53eb77edc34c197b3b38d02431b56`.
+**Final delivery branch:** `work/2026-08-06-oppslate-knowledge-backfill`.
+**Status:** COMPLETE 2026-08-06. The architecture phase below is retained as
+the implementation authority that Pete later activated. The entire Opportunity
+Slate is live in application release `668080a833260b3aeed84104` from run 560,
+and governed schema run 565 applied `PS-WORKSHOP-002` as the final backlog-
+confirmation leg. See `COMPLETION_REPORT_2026-08-06.md` for the proportional
+release record.
 
 ## What this package is
 
@@ -107,7 +110,7 @@ Authority hierarchy (from the set's
 | D2 | Architecture-ready visual-authority and implementation handoff ([01](01_ARCHITECTURE_AND_IMPLEMENTATION_HANDOFF.md)) | complete 2026-08-02, review findings incorporated |
 | D3 | Fresh Fable 5 independent review of D2 at the exact package SHA | complete 2026-08-02 at `9e423de7bd8a3d03091597887f1fa0913a7d40e0` — verdict **Conditional**: 3 Major (nonexistent purge mechanism cited; unregistered authority-gap surfaces; missing homepage determination), 5 Minor; every runtime citation in the handoff verified true; no locked-rule, trust, or governance violation found |
 | D4 | Correction of accepted findings by the same architect | complete 2026-08-02 — all eight findings corrected in place (purge defined as OS-1 in-scope work; §14-M13/M14 authority-gap register; homepage determination recorded; paste-path processing, upload-failure contract, `Review my response`, OS-1 Protected relabel, Python 3.14 dependency note, manifest normalization); focused reviewer recheck of the correction diff at `184e5caf94c9910d5397f5a97a6bf0c1b1666444` returned **Pass** — all eight findings resolved, no new defects requiring correction |
-| D5 | Pete's acceptance and implementation-lane activation decision | §17 questions answered by Pete 2026-08-02 and recorded, with the public-v1 mode added as §18 (delta-reviewed); final acceptance of the amended handoff pending |
+| D5 | Pete's acceptance and implementation-lane activation decision | complete; runtime delivery and final protected closeout completed 2026-08-06 |
 
 ## Implementation entry gate
 

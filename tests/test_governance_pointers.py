@@ -66,7 +66,7 @@ class ControlPlaneTests(unittest.TestCase):
 
     def test_control_plane_is_current_and_concise(self):
         self.assertEqual("5", self.data.get("schema_version"))
-        self.assertEqual("2026-08-05", self.data.get("updated_at"))
+        self.assertEqual("2026-08-06", self.data.get("updated_at"))
         self.assertLess(len(self.body.split()), 900)
         self.assertNotIn("planned_packages:", self.body)
         self.assertNotIn("holds:", self.body)
@@ -138,6 +138,28 @@ class ControlPlaneTests(unittest.TestCase):
         self.assertEqual("azure_devops", authority["host"])
         self.assertRegex(authority["application_behavior_commit"], r"^[0-9a-f]{40}$")
         self.assertIn("not a substitute", authority["note"])
+
+    def test_baseline_and_lane_ledger_pin_the_same_production_release(self):
+        """The two live control-plane records must move in lockstep.
+
+        This catches the exact drift that left the baseline on run 557 while
+        production was already serving run 560.
+        """
+        authority = self.data["authority"]
+        lane_document = json.loads(
+            _read("docs", "governance", "CURRENT_LANES.json")
+        )
+        release = lane_document["release_truth"]
+        for key in (
+            "deployed_main_commit",
+            "live_release",
+            "application_behavior_commit",
+        ):
+            with self.subTest(key=key):
+                self.assertEqual(authority[key], release[key])
+        for key in ("deployed_pipeline", "application_behavior_pipeline"):
+            with self.subTest(key=key):
+                self.assertEqual(authority[key], str(release[key]))
 
 
 class ProductTrustTests(unittest.TestCase):

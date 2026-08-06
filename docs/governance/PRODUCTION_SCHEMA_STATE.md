@@ -6,11 +6,11 @@ This file is the repository's record of which schema migrations the named databa
 
 - Database: `peerslate-database`
 - Server: `peerslate`
-- Read at: `2026-08-06T00:48:15Z` UTC
-- Pipeline source version: `2e65aead541d12cc8d28592296dde8fb10a22adc`
-- Pipeline build: `551`
+- Read at: `2026-08-06T12:09:40Z` UTC
+- Pipeline source version: `d7e996e45449579fbf370a9e1263f8725b1d753f`
+- Pipeline build: `565`
 
-## Applied (23)
+## Applied (24)
 
 In registry order.
 
@@ -36,9 +36,10 @@ In registry order.
 | 18 | `PS-OPPSLATE-001` | 2026-08-04T00:39:49.9854805 | yes |
 | 19 | `PS-OPPSLATE-002` | 2026-08-05T02:47:45.8475524 | yes |
 | 20 | `PS-OPPSLATE-003` | 2026-08-06T00:48:14.4860869 | yes |
-| 21 | `PS-COMMUNITY-PUBLIC-PILOT-001` | 2026-08-04T12:13:38.9428360 | yes |
-| 22 | `PS-COMMUNITY-RETENTION-001` | 2026-08-04T12:13:39.0945281 | yes |
-| 23 | `PS-COMMUNITY-RESTORE-001` | 2026-08-04T12:13:39.1616332 | yes |
+| 21 | `PS-WORKSHOP-002` | 2026-08-06T12:09:39.9479194 | yes |
+| 22 | `PS-COMMUNITY-PUBLIC-PILOT-001` | 2026-08-04T12:13:38.9428360 | yes |
+| 23 | `PS-COMMUNITY-RETENTION-001` | 2026-08-04T12:13:39.0945281 | yes |
+| 24 | `PS-COMMUNITY-RESTORE-001` | 2026-08-04T12:13:39.1616332 | yes |
 
 ## Registered but not applied (2)
 
@@ -166,16 +167,21 @@ In registry order.
       "applied_at_utc": "2026-08-02T15:29:49.9868441",
       "id": "PS-WORKSHOP-001",
       "registered": true
+    },
+    {
+      "applied_at_utc": "2026-08-06T12:09:39.9479194",
+      "id": "PS-WORKSHOP-002",
+      "registered": true
     }
   ],
   "database": "peerslate-database",
-  "generated_at_utc": "2026-08-06T00:48:15Z",
+  "generated_at_utc": "2026-08-06T12:09:40Z",
   "pending": [
     "PS-JOURNAL-001",
     "PS-PLAT-008"
   ],
-  "pipeline_build_id": "551",
-  "pipeline_source_version": "2e65aead541d12cc8d28592296dde8fb10a22adc",
+  "pipeline_build_id": "565",
+  "pipeline_source_version": "d7e996e45449579fbf370a9e1263f8725b1d753f",
   "registry_version": 1,
   "server": "peerslate",
   "unregistered_in_ledger": []
