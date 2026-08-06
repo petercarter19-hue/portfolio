@@ -13,9 +13,10 @@
 > [CURRENT_LANES.json](docs/governance/CURRENT_LANES.json) and pass
 > `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write
 > --fetch --require-clean`. A failed preflight is a stop, not permission to
-> create another branch or worktree. The only idle-state bootstrap is the
-> package/branch/surface-bounded `--intent activate` flow in `START_HERE.md`,
-> and it requires Pete to select the exact next outcome first.
+> create another branch or worktree. The package/branch/surface-bounded
+> `--intent activate` flow in `START_HERE.md` may reserve a lane from
+> `controlled_idle` or add lane two during `active_delivery` while capacity
+> remains; it always requires Pete to select the exact next outcome first.
 
 ## Authority
 

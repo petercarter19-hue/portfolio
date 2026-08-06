@@ -77,6 +77,10 @@ class DeliveryPreflightTests(unittest.TestCase):
         else:
             self.assertTrue(active)
         self.assertTrue(parsed["activation_policy"]["enabled"])
+        self.assertEqual(
+            {"controlled_idle", "active_delivery"},
+            set(parsed["activation_policy"]["allowed_operating_states"]),
+        )
         self.assertTrue(parsed["workspace_snapshot"]["cleanup_authorized"])
 
     def test_closing_lanes_are_merge_and_cleanup_only(self):
@@ -101,7 +105,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             )
             self.assertEqual([], cleanup_errors)
 
-    def test_controlled_activation_requires_exact_package_and_branch(self):
+    def test_activation_requires_exact_package_branch_and_capacity(self):
         activation_facts = facts(
             branch="work/2026-08-05-delivery-activation-opportunity-slate"
         )
@@ -137,7 +141,21 @@ class DeliveryPreflightTests(unittest.TestCase):
             any("branch does not match" in error for error in wrong_branch)
         )
 
-        busy = copy.deepcopy(activation_ledger)
+        active_delivery = copy.deepcopy(activation_ledger)
+        active_delivery["operating_mode"]["state"] = "active_delivery"
+        active_delivery["active_lanes"] = [
+            {"package": "PS-EXISTING-001"},
+        ]
+        active_errors, _ = evaluate_policy(
+            active_delivery,
+            activation_facts,
+            "PS-DELIVERY-CONTROL-001",
+            "activate",
+            require_clean=True,
+        )
+        self.assertEqual([], active_errors)
+
+        busy = copy.deepcopy(active_delivery)
         busy["active_lanes"] = [
             {"package": "PS-EXISTING-001"},
             {"package": "PS-EXISTING-002"},
@@ -151,6 +169,46 @@ class DeliveryPreflightTests(unittest.TestCase):
         self.assertIn(
             "activation refused because the lane limit is full",
             busy_errors,
+        )
+
+        inconsistent_idle = copy.deepcopy(active_delivery)
+        inconsistent_idle["operating_mode"]["state"] = "controlled_idle"
+        inconsistent_errors, _ = evaluate_policy(
+            inconsistent_idle,
+            activation_facts,
+            "PS-DELIVERY-CONTROL-001",
+            "activate",
+        )
+        self.assertIn(
+            "controlled_idle cannot contain active lanes",
+            inconsistent_errors,
+        )
+
+        inconsistent_active = copy.deepcopy(activation_ledger)
+        inconsistent_active["operating_mode"]["state"] = "active_delivery"
+        inconsistent_active["active_lanes"] = []
+        empty_active_errors, _ = evaluate_policy(
+            inconsistent_active,
+            activation_facts,
+            "PS-DELIVERY-CONTROL-001",
+            "activate",
+        )
+        self.assertIn(
+            "active_delivery must contain an existing active lane",
+            empty_active_errors,
+        )
+
+        unsupported = copy.deepcopy(activation_ledger)
+        unsupported["operating_mode"]["state"] = "paused"
+        unsupported_errors, _ = evaluate_policy(
+            unsupported,
+            activation_facts,
+            "PS-DELIVERY-CONTROL-001",
+            "activate",
+        )
+        self.assertIn(
+            "activation is allowed only from controlled_idle or active_delivery",
+            unsupported_errors,
         )
 
         product_change, _ = evaluate_policy(
@@ -222,12 +280,9 @@ class DeliveryPreflightTests(unittest.TestCase):
         )
 
     def test_bootstrap_control_repair_is_exact_and_one_time(self):
-        # Activation is only ever evaluated from controlled_idle, so this
-        # exercises the exception against that state rather than against
-        # whichever lane happens to be active today.
-        idle_ledger = self._idle_ledger()
-        bootstrap = idle_ledger["bootstrap_control_repair"]
-        standing = set(idle_ledger["activation_policy"]["allowed_surfaces"])
+        repair_ledger = copy.deepcopy(self.ledger)
+        bootstrap = repair_ledger["bootstrap_control_repair"]
+        standing = set(repair_ledger["activation_policy"]["allowed_surfaces"])
         # A surface the exception widens to, so losing the exception is visible.
         widened = sorted(set(bootstrap["allowed_surfaces"]) - standing)
         self.assertTrue(widened, "the one-time repair must widen some surface")
@@ -237,7 +292,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             changed_paths=[widened[0]],
         )
         exact_errors, exact_warnings = evaluate_policy(
-            idle_ledger,
+            repair_ledger,
             exact,
             "PS-DELIVERY-CONTROL-001",
             "activate",
@@ -246,7 +301,7 @@ class DeliveryPreflightTests(unittest.TestCase):
         self.assertTrue(any("one-time" in warning for warning in exact_warnings))
 
         stale_errors, _ = evaluate_policy(
-            idle_ledger,
+            repair_ledger,
             {**exact, "origin_main": "new-main-after-merge"},
             "PS-DELIVERY-CONTROL-001",
             "activate",

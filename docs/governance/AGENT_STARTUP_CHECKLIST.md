@@ -10,8 +10,10 @@ Use this for a change, not for a read-only discussion.
   or Protected under `START_HERE.md`.
 - [ ] Read `CURRENT_LANES.json` and passed `scripts/delivery_preflight.py` for
   the exact package and intended read/write/release action.
-- [ ] If the ledger is `controlled_idle`, confirmed Pete selected one exact
-  outcome and used the ledger-only activation flow before implementation.
+- [ ] For a new lane, confirmed Pete selected one exact outcome and used the
+  ledger-only activation flow before implementation. Activation may start
+  from `controlled_idle`, or from `active_delivery` only when lane two is free
+  and its mutable surfaces do not conflict with the existing lane.
 - [ ] Read the package and specialist contract only when the selected path
   requires them.
 - [ ] Confirmed the writer and editable files/domain; a manager handoff is

@@ -9,8 +9,10 @@
 > `DOCUMENT_CONTROL.md` for a genuine conflict, not as a routine reading gate.
 > Before a write, read `CURRENT_LANES.json` and pass
 > `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write
-> --fetch --require-clean`. In `controlled_idle`, use the bounded
-> `START_HERE.md` activation flow only after Pete selects the exact outcome.
+> --fetch --require-clean`. Use the bounded `START_HERE.md` activation flow
+> only after Pete selects the exact outcome. It may reserve a lane from
+> `controlled_idle` or add lane two during `active_delivery` while the recorded
+> two-lane limit has capacity; a full limit remains a stop.
 
 # Claude / Claude Code instructions
 

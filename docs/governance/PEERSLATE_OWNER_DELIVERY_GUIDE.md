@@ -160,10 +160,13 @@ release, the agent must identify the exact source SHA and active production
 reservation. After release, the agent must close the branch/worktree and update
 the live ledger so finished work does not remain operationally active.
 
-In `controlled_idle`, the activation record is the one deliberate setup step.
-Its purpose is to make the selected lane visible to every other session before
-implementation begins. It is not an architecture round, feature review, or
-second implementation package.
+The activation record is the one deliberate setup step from
+`controlled_idle`, and it is also how lane two is added during
+`active_delivery` when capacity remains. Its purpose is to make the selected
+lane, branch, worktree, and non-overlapping surfaces visible to every other
+session before implementation begins. It is not an architecture round,
+feature review, or second implementation package. A full two-lane limit is a
+real stop.
 
 The process is successful when Pete can keep having fun with the product while
 the delivery system permits only a small, visible amount of work to become

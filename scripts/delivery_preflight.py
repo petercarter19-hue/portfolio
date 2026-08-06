@@ -108,8 +108,21 @@ def evaluate_policy(
 
     if intent == "activate":
         policy = ledger.get("activation_policy") or {}
-        if mode.get("state") != "controlled_idle":
-            errors.append("activation is allowed only from controlled_idle")
+        state = mode.get("state")
+        allowed_states = set(
+            policy.get("allowed_operating_states") or ["controlled_idle"]
+        )
+        expected_states = {"controlled_idle", "active_delivery"}
+        if allowed_states != expected_states:
+            errors.append(
+                "activation policy operating states must be controlled_idle "
+                "and active_delivery"
+            )
+        elif state not in allowed_states:
+            errors.append(
+                "activation is allowed only from controlled_idle or "
+                "active_delivery"
+            )
         if not policy.get("enabled", False):
             errors.append("the lane activation policy is disabled")
         if package_id != policy.get("package"):
@@ -122,16 +135,23 @@ def evaluate_policy(
             errors.append(
                 f"activation branch does not match {branch_pattern!r}"
             )
+        active_lanes = list(ledger.get("active_lanes") or [])
+        if state == "controlled_idle" and active_lanes:
+            errors.append("controlled_idle cannot contain active lanes")
+        elif state == "active_delivery" and not active_lanes:
+            errors.append("active_delivery must contain an existing active lane")
+
         lane_limit = policy.get("max_active_lanes")
         if lane_limit != 2:
             errors.append("activation policy must retain the two-lane limit")
-        elif len(ledger.get("active_lanes") or []) >= lane_limit:
+        elif len(active_lanes) >= lane_limit:
             errors.append("activation refused because the lane limit is full")
         allowed_surfaces = set(policy.get("allowed_surfaces") or [])
         bootstrap = ledger.get("bootstrap_control_repair") or {}
         bootstrap_matches = all(
             (
-                bootstrap.get("status") == "one_time_closeout",
+                bootstrap.get("status")
+                in {"one_time_closeout", "one_time_owner_authorized_repair"},
                 bootstrap.get("package") == package_id,
                 bootstrap.get("branch") == facts.get("branch"),
                 bootstrap.get("origin_main") == facts.get("origin_main"),

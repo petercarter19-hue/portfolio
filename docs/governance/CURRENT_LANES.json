@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-06T12:09:53Z",
+  "updated_at": "2026-08-06T16:08:59Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -43,25 +43,33 @@
     "intent": "activate",
     "requires_explicit_owner_outcome": true,
     "max_active_lanes": 2,
+    "allowed_operating_states": [
+      "controlled_idle",
+      "active_delivery"
+    ],
     "allowed_surfaces": [
       "docs/governance/CURRENT_LANES.json",
       "docs/governance/CURRENT_BASELINE.yaml"
     ],
-    "instruction": "Create a clean activation branch from current origin/main, run delivery_preflight.py with --intent activate, record exactly one selected outcome and its new implementation branch, merge the activation record, then create that implementation worktree from the new main. Do not implement product work on the activation branch."
+    "instruction": "Create a clean activation branch from current origin/main, run delivery_preflight.py with --intent activate, record exactly one selected outcome and its new implementation branch, merge the activation record, then create that implementation worktree from the new main. Activation is valid from controlled_idle or from active_delivery only while fewer than two lanes are active. Do not implement product work on the activation branch or displace an existing lane."
   },
   "bootstrap_control_repair": {
-    "status": "one_time_closeout",
+    "status": "one_time_owner_authorized_repair",
     "package": "PS-DELIVERY-CONTROL-001",
-    "branch": "work/2026-08-05-delivery-activation-oppslate-os3",
-    "origin_main": "19a355613ebdbc5d19ff72525e907915206c735e",
+    "branch": "work/2026-08-06-delivery-activation-parallel-lane-repair",
+    "origin_main": "779ab5f4524a5094dae512c8dec9a341286da243",
     "allowed_surfaces": [
       "docs/governance/CURRENT_LANES.json",
-      "docs/governance/CURRENT_BASELINE.yaml",
+      "scripts/delivery_preflight.py",
       "tests/test_delivery_preflight.py",
-      "tests/test_governance_pointers.py"
+      "START_HERE.md",
+      "AGENTS.md",
+      "CLAUDE.md",
+      "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+      "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md"
     ],
-    "reason": "Leaving controlled idle exposed three reset-era assertions that encoded the freeze itself rather than the invariant behind it: two hard-coded the literal controlled_idle state and one used PS-OPPORTUNITY-SLATE-001 as its example of an inactive lane. Together they made the activation policy unusable, because any real activation failed the build meant to validate it. This exact branch repairs those three assertions only, so they evaluate activation from a forced-idle ledger copy and derive the inactive package and the bootstrap branch/SHA from the ledger instead of pinning today's values. No product, schema, pipeline, release, or production behaviour changes, and no control is weakened: a ledger that wrongly permits a paused package is still rejected.",
-    "inert_after_merge": "The exception requires the exact branch and origin/main SHA. The branch is deleted after merge, and any later checkout is behind current origin/main."
+    "reason": "Pete explicitly authorized this one-time PS-DELIVERY-CONTROL-001 bootstrap repair on 2026-08-06 after the clean Interview Studio activation branch proved that the advertised second lane could not be activated: delivery_preflight allowed activation only from controlled_idle even though active_delivery had one open slot. This exact branch changes only the preflight, its focused tests, the machine-readable policy, and synchronized Codex/Claude/owner guidance. It permits lane two only while the two-lane limit has capacity and retains the existing exact package, branch, clean-checkout, current-main, and control-surface checks. No product, schema, pipeline, release, or production behaviour changes.",
+    "inert_after_merge": "The exception requires this exact branch and the pre-repair origin/main SHA. After squash merge, every later checkout has a different origin/main, so the widened repair surfaces cannot be reused."
   },
   "closing_lanes": [
     {
