@@ -325,6 +325,110 @@ class WorkshopCheckpointRouteTests(unittest.TestCase):
         self.assertEqual(rule.methods - {"HEAD", "OPTIONS"}, {"GET"})
 
 
+class WorkshopBacklogConfirmationWiringTests(unittest.TestCase):
+    """Leg 9 (PS-WORKSHOP-002): the standing-rule backlog confirmation runs
+    once per real (non-fixture) library read for a signed-in member, and a
+    failure there degrades to skip-not-fail rather than denying the member
+    their page — the same discipline the Opportunity Slate room applies to
+    its own opportunistic working-data purge."""
+
+    def setUp(self):
+        self.client = app.test_client()
+        self.original_flag = app.config.get("PEERSLATE_WORKSHOP_ENABLED")
+        self.original_fixture_flag = app.config.get("PEERSLATE_WORKSHOP_DEV_FIXTURE")
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        app.config["PEERSLATE_WORKSHOP_DEV_FIXTURE"] = False
+
+    def tearDown(self):
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = self.original_flag
+        app.config["PEERSLATE_WORKSHOP_DEV_FIXTURE"] = self.original_fixture_flag
+
+    def test_a_signed_in_real_library_read_triggers_the_backlog_confirmation_once(self):
+        with patch(
+            "workshop_routes.get_current_identity",
+            return_value=member("Checkpoint Member", "member-checkpoint-1"),
+        ), patch(
+            "workshop_routes.knowledge_service.confirm_authored_knowledge_backlog_for_owner",
+            return_value={"confirmed_count": 0, "remaining_count": 0},
+        ) as confirm_mock, patch(
+            "workshop_routes.knowledge_service.list_knowledge_items_for_owner",
+            return_value=list_result([]),
+        ):
+            response = self.client.get(ROUTE)
+
+        self.assertEqual(response.status_code, 200)
+        confirm_mock.assert_called_once_with("member-checkpoint-1")
+
+    def test_a_backlog_confirmation_database_failure_never_denies_the_page(self):
+        with patch(
+            "workshop_routes.get_current_identity",
+            return_value=member("Checkpoint Member", "member-checkpoint-1"),
+        ), patch(
+            "workshop_routes.knowledge_service.confirm_authored_knowledge_backlog_for_owner",
+            side_effect=DatabaseServiceError("procedure not applied yet"),
+        ), patch(
+            "workshop_routes.knowledge_service.list_knowledge_items_for_owner",
+            return_value=list_result([service_list_row()]),
+        ), patch(
+            "workshop_routes.knowledge_service.get_knowledge_item_for_owner",
+            return_value=service_get_row(),
+        ):
+            response = self.client.get(ROUTE)
+
+        self.assertEqual(response.status_code, 200)
+        body = response.data.decode("utf-8")
+        self.assertIn("Systems Engineering Leadership", body)
+
+    def test_a_backlog_confirmation_knowledge_service_failure_never_denies_the_page(self):
+        with patch(
+            "workshop_routes.get_current_identity",
+            return_value=member("Checkpoint Member", "member-checkpoint-1"),
+        ), patch(
+            "workshop_routes.knowledge_service.confirm_authored_knowledge_backlog_for_owner",
+            side_effect=KnowledgeServiceError("no identity", code="no_identity"),
+        ), patch(
+            "workshop_routes.knowledge_service.list_knowledge_items_for_owner",
+            return_value=list_result([]),
+        ):
+            response = self.client.get(ROUTE)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_the_backlog_confirmation_never_runs_for_a_signed_out_visitor(self):
+        with patch(
+            "workshop_routes.get_current_identity",
+            side_effect=AuthenticationRequired("anonymous"),
+        ), patch(
+            "workshop_routes.knowledge_service.confirm_authored_knowledge_backlog_for_owner"
+        ) as confirm_mock:
+            response = self.client.get(ROUTE)
+
+        self.assertEqual(response.status_code, 200)
+        confirm_mock.assert_not_called()
+
+    def test_the_backlog_confirmation_never_runs_in_dev_fixture_preview(self):
+        original_allow_dev_identity = app.config.get("PEERSLATE_ALLOW_DEV_IDENTITY")
+        app.config["PEERSLATE_WORKSHOP_DEV_FIXTURE"] = True
+        app.config["PEERSLATE_ALLOW_DEV_IDENTITY"] = True
+        try:
+            with patch(
+                "workshop_routes.get_current_identity",
+                return_value=member("Checkpoint Member", "member-checkpoint-1"),
+            ), patch(
+                "workshop_routes.knowledge_service.confirm_authored_knowledge_backlog_for_owner"
+            ) as confirm_mock:
+                # get_my_information_checkpoint runs for real here (a pure
+                # fixture builder, no database call), exercising the genuine
+                # dev-preview branch; only the backlog-confirmation call is
+                # asserted.
+                response = self.client.get(ROUTE)
+        finally:
+            app.config["PEERSLATE_ALLOW_DEV_IDENTITY"] = original_allow_dev_identity
+
+        self.assertEqual(response.status_code, 200)
+        confirm_mock.assert_not_called()
+
+
 class WorkshopEnabledConfigDefaultTests(unittest.TestCase):
     """Test gap 12: PEERSLATE_WORKSHOP_ENABLED is off by default — no
     setUp/tearDown override here, so this reads the app's actual startup
@@ -1095,6 +1199,60 @@ class WorkshopPublicPreviewTests(unittest.TestCase):
         # title either. The member's wording stays visible; nothing is lost.
         self.assertIn("My real preview wording that must stay visible.", body)
         self.assertIn("Sign in to save", body)
+
+    def test_signed_out_add_saves_the_demo_item_as_confirmed(self):
+        """Owner-ordered knowledge confirmation rule (2026-08-06): a
+        member-authored save confirms immediately, and that rule applies to
+        the anonymous preview library exactly as it applies to the real
+        store. Independent review carried this as a missing guard: nothing
+        asserted that workshop_routes.py's anonymous add_item call actually
+        passes status="confirmed" rather than the retired "unfinished"
+        outcome, so a regression there would pass silently."""
+        with patch(
+            "workshop_routes.workshop_demo_library.add_item",
+            return_value=("11111111-1111-1111-1111-111111111111", None),
+        ) as add_mock:
+            response = self.client.post(
+                "/app/workshop/items",
+                data={
+                    "title": "My real preview title",
+                    "wording": "My real preview wording.",
+                    "classification": "work",
+                    "idempotency_key": "anon-key-status-guard",
+                    "save_action": "confirm",
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        add_mock.assert_called_once()
+        _, kwargs = add_mock.call_args
+        self.assertEqual(kwargs["status"], "confirmed")
+
+    def test_signed_out_edit_saves_the_demo_item_as_confirmed(self):
+        """The edit-confirm sibling of the add guard immediately above:
+        workshop_routes.py's anonymous edit_item call must also pass
+        status="confirmed", never "unfinished"."""
+        item_key = "22222222-2222-2222-2222-222222222222"
+        with patch(
+            "workshop_routes.workshop_demo_library.edit_item",
+            return_value=(True, None),
+        ) as edit_mock:
+            response = self.client.post(
+                f"/app/workshop/items/{item_key}",
+                data={
+                    "title": "My real preview title",
+                    "wording": "My real preview wording.",
+                    "classification": "work",
+                    "save_action": "confirm",
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            )
+
+        self.assertEqual(response.status_code, 302)
+        edit_mock.assert_called_once()
+        _, kwargs = edit_mock.call_args
+        self.assertEqual(kwargs["status"], "confirmed")
 
     def test_signed_out_stale_unfinished_action_still_only_previews(self):
         # Owner-ordered knowledge confirmation rule (2026-08-06): every save

@@ -634,6 +634,22 @@ def my_information():
             return _render_workshop_unavailable()
         view = _fixture_view(checkpoint)
     else:
+        # Leg 9 (PS-WORKSHOP-002): the owner's standing-rule backlog
+        # confirmation, once per real library read. Best-effort and
+        # degrade-safe like the Opportunity Slate working-data purge this
+        # mirrors: a DatabaseServiceError here (including "the procedure
+        # does not exist yet" before the owner's gate/apply) must never
+        # deny the member their page.
+        try:
+            knowledge_service.confirm_authored_knowledge_backlog_for_owner(
+                identity.user_key
+            )
+        except (KnowledgeServiceError, DatabaseServiceError):
+            current_app.logger.info(
+                "PeerSlate Workshop backlog confirmation skipped; continuing "
+                "with the ordinary library read."
+            )
+
         try:
             list_result = knowledge_service.list_knowledge_items_for_owner(
                 identity.user_key, include_archived=True

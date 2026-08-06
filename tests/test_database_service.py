@@ -193,6 +193,10 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_GetOwnerHomeForOwner",
             "usp_GetPeerSlateUserDashboard",
             "usp_ArchiveKnowledgeItemForOwner",
+            # PS-WORKSHOP-002 (leg 9): the gated in-place knowledge backlog
+            # confirmation. Draft/gate not yet applied anywhere; allowlisted
+            # ahead of the apply, degrade-safe.
+            "usp_ConfirmAuthoredKnowledgeBacklogForOwner",
             "usp_DeleteKnowledgeItemForOwner",
             "usp_ListCapturesForOwner",
             "usp_ListKnowledgeItemsForOwner",
@@ -304,7 +308,7 @@ class DatabaseServiceTests(unittest.TestCase):
             community,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 129)
+        self.assertEqual(len(expected), 130)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_photo_procedures_are_explicitly_allowlisted(self):

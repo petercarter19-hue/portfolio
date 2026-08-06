@@ -119,6 +119,7 @@ UPDATE_ROW_FIELDS = frozenset({"outcome", "version_number", "row_version"})
 ARCHIVE_ROW_FIELDS = frozenset({"outcome", "row_version"})
 RESTORE_ROW_FIELDS = frozenset({"outcome", "row_version"})
 DELETE_ROW_FIELDS = frozenset({"outcome", "deleted_version_count"})
+BACKLOG_CONFIRM_ROW_FIELDS = frozenset({"confirmed_count", "remaining_count"})
 
 _SAVE_OUTCOMES = frozenset({"success", "existing"})
 _FENCED_OUTCOMES = frozenset({"success", "changed"})
@@ -1005,6 +1006,47 @@ class KnowledgeService:
                 row["deleted_version_count"], "deleted version count"
             ),
             "deleted": True,
+        }
+
+    def confirm_authored_knowledge_backlog_for_owner(self, user_key, *, max_items=None):
+        """Leg 9 (PS-WORKSHOP-002): the owner's standing-rule reconciliation
+        (usp_ConfirmAuthoredKnowledgeBacklogForOwner).
+
+        Sweeps this owner's PRE-EXISTING ``unfinished`` knowledge items to
+        ``confirmed`` in place, with zero member action. This is not an
+        edit: the procedure never touches ``updated_at_utc`` (the sole
+        ordering column for both this module's own list read and
+        ``usp_ListOpportunityEvidenceForOwner``'s evidence window) and never
+        writes a ``knowledge_item_versions`` row, so title, approved
+        wording, original wording, and authored-via provenance are
+        untouched. A ``suggested`` (unaccepted AI proposal) or ``archived``
+        row can never be touched by this call.
+
+        Callers wire this in degrade-safe: a ``DatabaseServiceError`` here
+        (including "the procedure does not exist yet" before the owner's
+        gate/apply) must be treated as skip-not-fail, never as a reason to
+        deny the member their page. See workshop_routes.py and
+        opportunity_slate_routes.py.
+        """
+        self._require_user_key(user_key)
+        parameters = [("@UserKey", user_key)]
+        if max_items is not None:
+            parameters.append(("@MaxItems", _positive_int(max_items, "max items")))
+
+        row = self.database.first_row(
+            "usp_ConfirmAuthoredKnowledgeBacklogForOwner", parameters
+        )
+        _require_exact_fields(
+            row, BACKLOG_CONFIRM_ROW_FIELDS, "backlog confirmation result"
+        )
+
+        return {
+            "confirmed_count": _non_negative_int(
+                row["confirmed_count"], "confirmed count"
+            ),
+            "remaining_count": _non_negative_int(
+                row["remaining_count"], "remaining count"
+            ),
         }
 
 

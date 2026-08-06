@@ -68,6 +68,11 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_GetOwnerHomeForOwner",
         "usp_GetPeerSlateUserDashboard",
         "usp_ArchiveKnowledgeItemForOwner",
+        # PS-WORKSHOP-002 (leg 9): the gated in-place knowledge backlog
+        # confirmation. Draft/gate not yet applied anywhere (registry.json
+        # gate is null); allowlisted ahead of the apply, degrade-safe --
+        # see workshop_routes.py and opportunity_slate_routes.py.
+        "usp_ConfirmAuthoredKnowledgeBacklogForOwner",
         "usp_DeleteKnowledgeItemForOwner",
         "usp_ListCapturesForOwner",
         "usp_ListKnowledgeItemsForOwner",

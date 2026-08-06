@@ -96,6 +96,7 @@ from itsdangerous import BadData, URLSafeTimedSerializer
 
 from identity import get_optional_identity
 from services.database_service import DatabaseServiceError
+from services.knowledge_service import KnowledgeServiceError, knowledge_service
 from services.opportunity_analysis_service import (
     ANALYSED_CLASSES,
     locate_spans,
@@ -2754,6 +2755,19 @@ def room():
             identity.user_key
         )
     except (DatabaseServiceError, OpportunitySlateServiceError):
+        pass
+
+    # Leg 9 (PS-WORKSHOP-002): the owner's standing-rule knowledge backlog
+    # confirmation, once per room request, before the evidence read paths
+    # below ever consult this owner's Workshop library. Best-effort and
+    # degrade-safe, the same rule as the purge above: a DatabaseServiceError
+    # here (including "the procedure does not exist yet" before the owner's
+    # gate/apply) must never deny the member their room.
+    try:
+        knowledge_service.confirm_authored_knowledge_backlog_for_owner(
+            identity.user_key
+        )
+    except (DatabaseServiceError, KnowledgeServiceError):
         pass
 
     try:

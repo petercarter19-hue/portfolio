@@ -1034,6 +1034,39 @@ class MemberFlowTests(OpportunitySlateTestCase):
             response = self.client.get(ROOM_GET)
         self.assertEqual(response.status_code, 200)
 
+    def test_the_room_confirms_this_owners_knowledge_backlog(self):
+        """Leg 9 (PS-WORKSHOP-002): the standing-rule backlog confirmation
+        runs once per room request for a signed-in member, before the
+        evidence read paths ever consult the Workshop library."""
+        identity = member()
+        with self.signed_in(identity), self.service() as service, patch(
+            "opportunity_slate_routes.knowledge_service"
+        ) as knowledge:
+            service.get_working_session_for_owner.return_value = None
+            self.client.get(ROOM_GET)
+        knowledge.confirm_authored_knowledge_backlog_for_owner.assert_called_once_with(
+            identity.user_key
+        )
+
+    def test_a_backlog_confirmation_failure_never_denies_the_member_their_room(self):
+        with self.signed_in(), self.service() as service, patch(
+            "opportunity_slate_routes.knowledge_service"
+        ) as knowledge:
+            knowledge.confirm_authored_knowledge_backlog_for_owner.side_effect = (
+                DatabaseServiceError("procedure not applied yet")
+            )
+            service.get_working_session_for_owner.return_value = None
+            response = self.client.get(ROOM_GET)
+        self.assertEqual(response.status_code, 200)
+
+    def test_the_backlog_confirmation_never_runs_for_an_anonymous_visitor(self):
+        with self.anonymous(), patch(
+            "opportunity_slate_routes.knowledge_service"
+        ) as knowledge:
+            response = self.client.get(ROOM_GET)
+        self.assertEqual(response.status_code, 200)
+        knowledge.confirm_authored_knowledge_backlog_for_owner.assert_not_called()
+
     def test_capturing_a_role_redirects_into_review_source(self):
         identity = member()
         with self.signed_in(identity), self.service() as service:
