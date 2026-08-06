@@ -23,7 +23,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active delivery, one lane. PS-OPPORTUNITY-SLATE-001 delivered the complete Opportunity Slate page under Pete's standing order: OS-1 through OS-6 and the navigation link are live at release e520cb838882f23669ff13e5. The lane's remaining leg is the owner-ordered knowledge confirmation rule on branch work/2026-08-06-oppslate-knowledge-rule. Every other lane remains paused_read_only. See docs/governance/CURRENT_LANES.json."
+  current_assignments: "Active parallel delivery, two deliberately separated lanes. PS-OPPORTUNITY-SLATE-001 retains only its existing Opportunity/Workshop closeout surfaces. PS-DATA-FOUNDATION-001 begins the non-production additive shared AI foundation on work/2026-08-06-ai-foundation-ask-pete-slice-1, with Ask Pete as the first reference consumer. The lanes use separate branches/worktrees and may not write each other's recorded surfaces. See docs/governance/CURRENT_LANES.json."
 
 governing_documents:
   bible:
@@ -57,6 +57,12 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
+  - id: PS-OPPORTUNITY-SLATE-001
+    status: active_delivery
+    scope: "Existing Opportunity Slate and Workshop closeout surfaces recorded in CURRENT_LANES.json."
+  - id: PS-DATA-FOUNDATION-001
+    status: active_delivery
+    scope: "Parallel non-production additive AI-foundation slice with Ask Pete as the first reference consumer."
 scoped_findings:
   - id: candidate_admission
     blocks: "Only a future Protected release that uses Candidate until package-specific exact-SHA admission is corrected or explicitly bounded."
@@ -127,7 +133,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Leg 8: the owner-ordered knowledge confirmation rule (Pete, 2026-08-06). App-side only, no schema change: the slate's evidence read includes the member's own authored knowledge items (confirmed and unfinished; never unaccepted AI suggestions, never archived), member-authored Workshop saves confirm at save time, and screen copy stays truthful. Sonnet implements on work/2026-08-06-oppslate-knowledge-rule, Opus 5 reviews, one deployment; the owner pre-approved the single deploy checkpoint press. After its live smoke the lane closes with the Fable final-review paragraph updated to actuals."
+next_gate: "Two independent next actions may proceed. Opportunity Slate completes its already-owned protected closeout separately. In parallel, PS-DATA-FOUNDATION-001 merges this bounded activation record, creates work/2026-08-06-ai-foundation-ask-pete-slice-1 from the resulting origin/main, and implements only the additive AI contracts, citation validation, support states, and debugging/evaluation seams. No schema, provider configuration, shared runtime wiring, resume-page integration, deployment, or production action is authorized in that first AI slice."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

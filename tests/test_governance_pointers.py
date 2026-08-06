@@ -4,6 +4,7 @@ These tests protect safety and unambiguous pointers. Historical release wording
 belongs to package evidence and must not be hard-coded into the startup gate.
 """
 
+import json
 import os
 import re
 import unittest
@@ -94,7 +95,15 @@ class ControlPlaneTests(unittest.TestCase):
         active = self.data.get("active_packages") or []
         ids = [item["id"] for item in active]
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertEqual([], ids)
+        lane_document = json.loads(
+            _read("docs", "governance", "CURRENT_LANES.json")
+        )
+        lane_ids = [item["package"] for item in lane_document["active_lanes"]]
+        self.assertEqual(set(lane_ids), set(ids))
+        for item in active:
+            with self.subTest(package=item["id"]):
+                self.assertEqual("active_delivery", item["status"])
+                self.assertTrue(item["scope"].strip())
         self.assertIn(
             "PS-DELIVERY-RESET-001",
             self.data.get("completed_packages") or [],

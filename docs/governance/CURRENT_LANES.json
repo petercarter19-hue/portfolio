@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-06T03:25:00Z",
+  "updated_at": "2026-08-06T11:37:20Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,19 +12,21 @@
     "authorized_at": "2026-08-05",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-001"
+      "PS-OPPORTUNITY-SLATE-001",
+      "PS-DATA-FOUNDATION-001"
     ],
     "merge_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-001"
+      "PS-OPPORTUNITY-SLATE-001",
+      "PS-DATA-FOUNDATION-001"
     ],
     "cleanup_allowed_for": [],
     "release_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001"
     ],
     "blocked_actions": [
-      "new implementation worktree outside the activated lane",
-      "new feature or product write outside the activated lane",
-      "pull-request merge for any package other than the activated lane",
+      "new implementation worktree outside an activated lane",
+      "new feature or product write outside the exact surfaces recorded for its activated lane",
+      "pull-request merge for any package other than the activated lanes",
       "production deployment of application behaviour from this lane",
       "environment approval without the gate's own verification: the writer may release an approval only after confirming the run's printed plan matches the registered migration, digest, verifier, and rollback expectations",
       "manual same-SHA fallback pipeline while an automatic run for that SHA exists",
@@ -33,7 +35,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Pete's standing order runs until the entire Opportunity Slate page is live and functional; the lane closes after the OS-4 apply/release completes and the Fable final review verdict is COMPLETE, or when Pete pauses it."
+    "exit_authority": "Opportunity Slate retains its existing independent closeout authority. The parallel PS-DATA-FOUNDATION-001 lane is non-production and closes or advances under its own recorded outcome; neither lane may write the other's surfaces."
   },
   "activation_policy": {
     "enabled": true,
@@ -204,6 +206,48 @@
         }
       ],
       "branch_note": "The lane's remaining writable surface is the held OS-4 branch (PR 293). The owner runs scripts/gate_os4.ps1 once; the waiting automation then applies PS-OPPSLATE-003, merges PR 293, deploys, and smokes."
+    },
+    {
+      "package": "PS-DATA-FOUNDATION-001",
+      "outcome": "Implement the first additive slice of the shared PeerSlate AI, Knowledge, and Evidence foundation, with Ask Pete AI as the first reference consumer: durable architecture package, provider-neutral request and response contracts, source and citation validation, support-state semantics, and debugging/evaluation seams. This slice deliberately stops before runtime route wiring, schema, provider configuration, resume-page integration, deployment, or production mutation.",
+      "branch": "work/2026-08-06-ai-foundation-ask-pete-slice-1",
+      "writer": "Codex in a separate clean worktree; sole writer for only the listed additive surfaces",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "source_checkpoint": "PS-DATA-FOUNDATION-001 setup checkpoint work/2026-08-04-data-foundation-gate-001@9952d6427f57dc5a38679f616158497cb945eec4 plus Pete's accepted 2026-08-05 Ask Pete AI direction package.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-DATA-FOUNDATION-001/",
+        "docs/initiatives/PS-ASK-PETE-AI-001/",
+        "services/ai_foundation/",
+        "prompts/ai_foundation/",
+        "tests/ai_foundation/"
+      ],
+      "exclusions": [
+        "no edit to app.py, Opportunity Slate, Workshop routes/services/templates, services/database_service.py, or services/knowledge_service.py",
+        "no SQL migration, migration registry, production schema, provider setting, secret, dependency, pipeline, or deployment change",
+        "no resume template, stylesheet, script, or live Ask Pete route integration in this additive slice",
+        "no write to another writer's branch, worktree, checkpoint, or listed surface",
+        "no claim that a contract, test harness, or prototype is deployed or live"
+      ],
+      "completion_evidence": [
+        "the accepted architecture package is reconciled into repository authority",
+        "provider-neutral AI request and structured-answer contracts are executable and tested",
+        "claim-level citations can be validated only against supplied authorized source versions and spans",
+        "supported, partially supported, not established, ambiguous, unavailable, and refusal states are covered by deterministic tests",
+        "privacy-safe trace and evaluation contracts exist without logging source payloads or private content",
+        "the complete diff remains inside the listed additive surfaces and passes focused tests plus self-review"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-06",
+          "decision": "Pete rejected repository-wide serialization and directed ordinary parallel branch development: multiple efforts may proceed concurrently when each has a separate branch/worktree and non-overlapping mutable surfaces, with deliberate integration and merge. The controlling rule is one writer per mutable file or contract, not one writer for the entire repository."
+        },
+        {
+          "date": "2026-08-05",
+          "decision": "Pete accepted the site-wide AI foundation scope with Ask Pete as the first reference implementation, including evidence citations, honest unknowns, human handoff, debugging/observability/evaluation, and later warm resume-page refinement. Production schema/configuration and material visual activation remain separately gated."
+        }
+      ],
+      "sequence": "merge this bounded concurrency record -> create the clean implementation worktree from the resulting origin/main -> run the package write preflight -> implement and test only additive foundation surfaces -> self-review and open a separate Azure PR; integrate shared runtime files only in a later explicitly coordinated slice"
     }
   ],
   "closing_lanes": [],
@@ -212,12 +256,6 @@
       "package": "PS-COMMUNITY-PUBLIC-PILOT-001",
       "reason": "flag-off containment and conflicting writer records require reconciliation",
       "known_checkpoint": "work/2026-08-04-community-maintenance-off-request-path@e51c9c6122e4c2cd1d462b77230523f733f2fded",
-      "disposition": "paused_read_only"
-    },
-    {
-      "package": "PS-DATA-FOUNDATION-001",
-      "reason": "definition gate exists but activation and implementation remain pending",
-      "known_checkpoint": "work/2026-08-04-data-foundation-gate-001@9952d6427f57dc5a38679f616158497cb945eec4",
       "disposition": "paused_read_only"
     },
     {
