@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-05T23:30:00Z",
+  "updated_at": "2026-08-06T01:55:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -66,7 +66,7 @@
     {
       "package": "PS-OPPORTUNITY-SLATE-001",
       "outcome": "Deliver the complete public Opportunity Slate page to live, slice by slice, under Pete's 2026-08-05 standing order to keep going until the entire page is live and functional. Legs 1, 2, 4, and 5 (PS-OPPSLATE-002 schema, OS-3, OS-5, OS-6) are complete and verified live; leg 3 (OS-4 save lifecycle) is built and held pending an integration and re-review before the owner's gate run; the current leg is 6, the Fable extra-high final review, in progress with closing corrections after an INCOMPLETE verdict.",
-      "branch": "work/2026-08-05-oppslate-os4-app",
+      "branch": "work/2026-08-06-oppslate-knowledge-rule",
       "writer": "Claude continuation session, sole writer",
       "delivery_path": "Protected",
       "production_capable": true,
@@ -92,7 +92,12 @@
         "docs/governance/PRODUCTION_SCHEMA_STATE.md",
         "templates/base.html",
         "tests/",
-        "scripts/gate_os4.ps1"
+        "scripts/gate_os4.ps1",
+        "workshop_routes.py",
+        "workshop_work_routes.py",
+        "services/knowledge_service.py",
+        "services/workshop_demo_library.py",
+        "templates/partials/workshop/"
       ],
       "exclusions": [
         "no Community public-pilot re-enablement",
@@ -132,6 +137,10 @@
         {
           "date": "2026-08-05",
           "decision": "Pete ordered, verbatim in the owner conversation held by the coordinating session: 'Yes. I need a link. I added next to the workshop link on the main page so it can be accessed anywhere.' This reverses the 2026-08-02 unlisted-by-direct-link-only posture for site-internal discoverability. The route keeps its noindex/nofollow headers and the anonymous demo truth boundary; search-engine indexing remains off. The lane's writable surfaces are extended to templates/base.html for this leg. Attested by the coordinating session that holds the owner conversation; two delegated implementers correctly refused to make this attestation from relayed messages, and this commit is the durable authorization they required."
+        },
+        {
+          "date": "2026-08-06",
+          "decision": "Pete rewrote the confirmation model: 'anything in your knowledge database is confirmed. You put it there... It's when you have new stuff that gets confirmed, not existing stuff', and ordered the fix with full authority and no per-step clicks ('I'm not pressing it... one deployment at a time'; 'the one blocker you said was coming, the approved press. I approve it.'). The owner-authored permission grant branch work/2026-08-06-agent-permissions remains parked unmerged: the writer's safety layer requires the owner to execute the whole permission chain, so environment checkpoint releases stay owner acts unless a run's release attempt happens to be permitted."
         }
       ],
       "model_routing": {
@@ -157,8 +166,8 @@
         },
         {
           "leg": "3: OS-4 save lifecycle",
-          "status": "ready_held_on_owner_gate",
-          "evidence": "integrated onto current main at 7edff7e and approved by focused re-review; final tip 3670525 pushed; PR 293 merge preview clean against current main; merges immediately after the owner's disposable-database gate run for PS-OPPSLATE-003 and the governed apply"
+          "status": "complete_live",
+          "evidence": "PR 293 merged as main 20c75baa after focused re-validation on the final target; the owner ran the PS-OPPSLATE-003 disposable-database gate via scripts/gate_os4.ps1 and released the schema checkpoint; run 551 applied the migration (ledger 22->23, prior rows untouched); automatic run 554 deployed the merge after the owner released the production checkpoint; live release e520cb838882f23669ff13e5 matches the derived identity for exactly (20c75baa, 554); live assets SHA-identical; the slate route serves 200"
         },
         {
           "leg": "4: OS-5 dictation",
@@ -179,6 +188,11 @@
           "leg": "7: owner-ordered navigation link",
           "status": "complete_live",
           "evidence": "PR 300 merged as main 2174749; automatic run 546 deployed it; live release cff0e215b7ca407744afc3dd matches the derived identity; the link renders next to Workshop on the live homepage; noindex and sitemap exclusion retained"
+        },
+        {
+          "leg": "8: owner-ordered knowledge confirmation rule",
+          "status": "authorized_build_starting",
+          "evidence": "Pete's 2026-08-06 ruling, verbatim intent from the owner conversation: information a member provides themselves IS the confirmation; the confirm gate applies to AI-suggested material, not member-authored items. Scope: the slate's evidence read includes the member's own authored knowledge items (confirmed and unfinished; never unaccepted AI suggestions, never archived items); member-authored Workshop saves confirm at save time; truthful screen copy. App-side only, no schema change. Implementation branch work/2026-08-06-oppslate-knowledge-rule; Sonnet implements, Opus 5 reviews, one deployment, the owner pre-approved the single deploy checkpoint press"
         }
       ],
       "branch_note": "The lane's remaining writable surface is the held OS-4 branch (PR 293). The owner runs scripts/gate_os4.ps1 once; the waiting automation then applies PS-OPPSLATE-003, merges PR 293, deploys, and smokes."
@@ -243,7 +257,7 @@
     }
   },
   "release_truth": {
-    "repository_main": "f81c13625e1d2a9125c2e8b6bd8d27510c136eb1",
+    "repository_main": "20c75baa95c84d9f52f7de3f61826c2f2a15642d",
     "reset_pull_request": 279,
     "reset_validation_pipeline": 512,
     "reset_validation_result": "succeeded",
@@ -253,15 +267,16 @@
     "preflight_repair_pull_request": 281,
     "preflight_repair_validation_pipeline": 514,
     "preflight_repair_validation_result": "succeeded",
-    "deployed_main_commit": "2174749bed22dbf25a3b1beaf3fda6b8682075fa",
-    "deployed_pipeline": 546,
-    "live_release": "cff0e215b7ca407744afc3dd",
-    "application_behavior_commit": "2174749bed22dbf25a3b1beaf3fda6b8682075fa",
-    "application_behavior_pipeline": 546,
+    "deployed_main_commit": "20c75baa95c84d9f52f7de3f61826c2f2a15642d",
+    "deployed_pipeline": 554,
+    "live_release": "e520cb838882f23669ff13e5",
+    "application_behavior_commit": "20c75baa95c84d9f52f7de3f61826c2f2a15642d",
+    "application_behavior_pipeline": 554,
     "live_health": "ok",
     "community_public_pilot": "flag_off",
     "opportunity_slate_os3_schema": "applied_run_528",
-    "opportunity_slate_live_slices": "OS-1, OS-2, OS-3, OS-5, OS-6",
-    "opportunity_slate_navigation_link": "live_run_546"
+    "opportunity_slate_live_slices": "OS-1, OS-2, OS-3, OS-4, OS-5, OS-6",
+    "opportunity_slate_navigation_link": "live_run_546",
+    "opportunity_slate_os4_schema": "applied_run_551"
   }
 }
