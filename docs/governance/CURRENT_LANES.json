@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-06T03:10:00Z",
+  "updated_at": "2026-08-06T03:25:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -66,7 +66,7 @@
     {
       "package": "PS-OPPORTUNITY-SLATE-001",
       "outcome": "Deliver the complete public Opportunity Slate page to live, slice by slice, under Pete's 2026-08-05 standing order to keep going until the entire page is live and functional. Legs 1, 2, 4, and 5 (PS-OPPSLATE-002 schema, OS-3, OS-5, OS-6) are complete and verified live; leg 3 (OS-4 save lifecycle) is built and held pending an integration and re-review before the owner's gate run; the current leg is 6, the Fable extra-high final review, in progress with closing corrections after an INCOMPLETE verdict.",
-      "branch": "work/2026-08-06-oppslate-knowledge-rule",
+      "branch": "work/2026-08-06-oppslate-knowledge-backfill",
       "writer": "Claude continuation session, sole writer",
       "delivery_path": "Protected",
       "production_capable": true,
@@ -194,8 +194,13 @@
         },
         {
           "leg": "8: owner-ordered knowledge confirmation rule",
-          "status": "split_after_independent_refuse",
-          "evidence": "Pete's 2026-08-06 ruling, verbatim intent from the owner conversation: information a member provides themselves IS the confirmation; the confirm gate applies to AI-suggested material, not member-authored items. Save-time confirm is APPROVED and shipping on work/2026-08-06-oppslate-knowledge-rule (255ea98, follow-up commit removing reconciliation): every member-authored Workshop save (direct entry and Work on Something, signed-in and anonymous-preview alike) now confirms at save time; the AI-suggestion queue is untouched. The write-based backlog reconciliation (re-saving a signed-in owner's legacy 'unfinished' items with Confirm=1 via usp_UpdateKnowledgeItemForOwner) was REFUSED by the Opus 5 independent review: that procedure hard-codes authored_via=N'typed' and original_member_wording:=@ApprovedWording on the new version row (PS-WORKSHOP-001_knowledge_items.sql:671-682), so reconciling a legacy row saved via ai_assisted_approved would silently rewrite the member's provenance label; it also resets updated_at_utc, which is the sole ordering of both the TOP(24) AI evidence window and My Information, so a reconciled draft would displace a genuinely maintained item; and it writes member-attributed audit/version rows for a page the member merely opened, not acted on. Backlog confirmation of existing legacy rows moves to a gated in-place procedure (no provenance rewrite, no updated_at_utc mutation, no member-attributed write) in a future, separate leg — not implemented on this branch."
+          "status": "save_time_rule_complete_live_backfill_deferred",
+          "evidence": "Shipped tip a787b2b (squash 75faf4b2) merged as PR 306 after the Opus delta APPROVE; automatic run 557 deployed it and the writer released the checkpoint under the owner's standing pre-approval; live release 388372b370f407bb104795fe matches the derived identity and the pipeline live smoke passed. Member-authored saves now confirm at save time with alias tolerance and truthful copy; the refused write-based backlog reconciliation is fully excised. Deep interactive smoke of the signed-in save screens was not driven; release identity plus the suite's copy assertions carry that claim."
+        },
+        {
+          "leg": "9: gated in-place backlog confirmation",
+          "status": "authorized_not_started",
+          "evidence": "Owner requirement: the existing member-authored knowledge base becomes status confirmed with zero member action. The approved design is a purpose-built in-place confirmation procedure in a gated additive migration (PS-WORKSHOP-002): preserves authored_via, original_member_wording, version numbers and updated_at_utc; system-attributed audit; only unfinished member-authored rows, never suggested or archived. Must also close the reviewer's carried findings: usp_ArchiveKnowledgeItemForOwner accepts a suggested row and usp_RestoreKnowledgeItemForOwner returns it as unfinished, which becomes live the moment auto-confirmation exists; add the two missing demo-status mutation tests. Requires the owner's disposable-database gate paste, then apply, wiring, deploy. Implementation branch work/2026-08-06-oppslate-knowledge-backfill."
         }
       ],
       "branch_note": "The lane's remaining writable surface is the held OS-4 branch (PR 293). The owner runs scripts/gate_os4.ps1 once; the waiting automation then applies PS-OPPSLATE-003, merges PR 293, deploys, and smokes."
@@ -260,7 +265,7 @@
     }
   },
   "release_truth": {
-    "repository_main": "20c75baa95c84d9f52f7de3f61826c2f2a15642d",
+    "repository_main": "75faf4b219440702dab23b127b213f0a4305f776",
     "reset_pull_request": 279,
     "reset_validation_pipeline": 512,
     "reset_validation_result": "succeeded",
@@ -270,16 +275,17 @@
     "preflight_repair_pull_request": 281,
     "preflight_repair_validation_pipeline": 514,
     "preflight_repair_validation_result": "succeeded",
-    "deployed_main_commit": "20c75baa95c84d9f52f7de3f61826c2f2a15642d",
-    "deployed_pipeline": 554,
-    "live_release": "e520cb838882f23669ff13e5",
-    "application_behavior_commit": "20c75baa95c84d9f52f7de3f61826c2f2a15642d",
-    "application_behavior_pipeline": 554,
+    "deployed_main_commit": "75faf4b219440702dab23b127b213f0a4305f776",
+    "deployed_pipeline": 557,
+    "live_release": "388372b370f407bb104795fe",
+    "application_behavior_commit": "75faf4b219440702dab23b127b213f0a4305f776",
+    "application_behavior_pipeline": 557,
     "live_health": "ok",
     "community_public_pilot": "flag_off",
     "opportunity_slate_os3_schema": "applied_run_528",
     "opportunity_slate_live_slices": "OS-1, OS-2, OS-3, OS-4, OS-5, OS-6",
     "opportunity_slate_navigation_link": "live_run_546",
-    "opportunity_slate_os4_schema": "applied_run_551"
+    "opportunity_slate_os4_schema": "applied_run_551",
+    "workshop_save_semantics": "member_authored_saves_confirm_run_557"
   }
 }

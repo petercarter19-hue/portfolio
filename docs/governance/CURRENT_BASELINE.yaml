@@ -11,11 +11,11 @@ authority:
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "20c75baa95c84d9f52f7de3f61826c2f2a15642d"
-  deployed_pipeline: 554
-  application_behavior_commit: "20c75baa95c84d9f52f7de3f61826c2f2a15642d"
-  application_behavior_pipeline: 554
-  note: "Automatic pipeline 554 passed for exact main 20c75baa95c84d9f52f7de3f61826c2f2a15642d and live /healthz release e520cb838882f23669ff13e5 is healthy. The entire Opportunity Slate page is live: OS-1 through OS-6 including the OS-4 save lifecycle, plus the owner-ordered navigation link. PS-OPPSLATE-002 was applied by run 528 and PS-OPPSLATE-003 by run 551 after the owner's disposable-database gate. Community remains flag-off. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
+  deployed_main_commit: "75faf4b219440702dab23b127b213f0a4305f776"
+  deployed_pipeline: 557
+  application_behavior_commit: "75faf4b219440702dab23b127b213f0a4305f776"
+  application_behavior_pipeline: 557
+  note: "Automatic pipeline 557 passed for exact main 75faf4b219440702dab23b127b213f0a4305f776 and live /healthz release 388372b370f407bb104795fe is healthy. Member-authored Workshop saves confirm at save time; the gated backlog confirmation (leg 9) is authorized but not started. The entire Opportunity Slate page is live: OS-1 through OS-6 including the OS-4 save lifecycle, plus the owner-ordered navigation link. PS-OPPSLATE-002 was applied by run 528 and PS-OPPSLATE-003 by run 551 after the owner's disposable-database gate. Community remains flag-off. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
