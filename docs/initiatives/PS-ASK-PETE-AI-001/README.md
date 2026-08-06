@@ -1,5 +1,28 @@
 # PS-ASK-PETE-AI-001 — Public Ask Pete AI
 
+## Activated refinement direction — 2026-08-06
+
+Pete accepted a recruiter-first Ask Pete refinement and directed normal
+parallel branch development rather than waiting for unrelated site work.
+Ask Pete is the first reference consumer of PS-DATA-FOUNDATION-001.
+
+The flagship interaction is a concise recruiter brief that:
+
+1. explains Pete's professional through-line;
+2. surfaces consequential claims rather than merely listing roles;
+3. attaches each supported claim to an inspectable exact source version/span;
+4. separates evidence, interpretation, partial support, and what is not
+   established publicly;
+5. proposes thoughtful human interview questions; and
+6. offers a private Ask Pete directly path when approved public information is
+   insufficient.
+
+The current additive slice builds the shared contracts and test seam only. It
+does not yet change POST /api/chat, the resume page, provider configuration,
+schema, or production behavior. Material resume-page visual implementation
+remains tied to Pete's accepted warm recruiter-evidence direction and its later
+code-level accessibility and contrast verification.
+
 ## Package status
 
 - Status: **Public typed assistant live; future public refinement planned, not
