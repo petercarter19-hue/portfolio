@@ -17,21 +17,51 @@ The flagship interaction is a concise recruiter brief that:
 6. offers a private Ask Pete directly path when approved public information is
    insufficient.
 
-The current additive slice builds the shared contracts and test seam only. It
-does not yet change POST /api/chat, the resume page, provider configuration,
-schema, or production behavior. Material resume-page visual implementation
-remains tied to Pete's accepted warm recruiter-evidence direction and its later
+The current backend candidate now adds the explicit public-source manifest,
+deterministic resume adapter, structured grounded-answer service, recruiter
+quality contract, privacy-safe diagnostics, and a default-off `POST /api/chat`
+integration seam. It does not change the resume page, provider configuration,
+schema, or production behavior. The new path remains disabled unless a later
+release decision explicitly enables `PEERSLATE_ASK_PETE_GROUNDED_ENABLED`.
+Material resume-page visual implementation remains tied to Pete's accepted
+warm recruiter-evidence direction, ChatGPT-created visual authority, and later
 code-level accessibility and contrast verification.
 
 ## Package status
 
-- Status: **Public typed assistant live; future public refinement planned, not
-  active**
+- Status: **Backend candidate implemented on its isolated branch; not yet
+  merged, deployed, enabled, or live**
 - Product name: **Ask Pete AI**
 - Audience: Logged-out/public visitors using approved public Pete sources only
-- Future manager/writer: Unassigned
+- Current manager/writer: Codex on the recorded isolated backend lane
 - Private member intelligence: `PS-ASK-SLATE-AI-001`, not this package
-- Runtime effect of this governance update: None
+- Runtime effect while the new flag is false: None; the legacy JSON response
+  remains unchanged
+
+## Current backend candidate
+
+- `data/ai_sources/ask_pete_public_v1.json` is the explicit AI-use allowlist.
+  Public resume visibility alone does not grant AI use.
+- `services/ask_pete/manifest.py` renders only approved fields from the
+  structured public resume and requires every rendered record to match its
+  approved SHA-256 content digest.
+- `services/ask_pete/service.py` applies the shared provider-neutral request,
+  source authorization, execution limit, citation, support-state, and trace
+  contracts from `services/ai_foundation/`.
+- `services/ask_pete/response.py` returns claim-level support labels, exact
+  citation spans, openable resume locators, visible limitations, follow-up
+  questions, and an honest contact handoff.
+- The current contact handoff opens Pete's existing contact options. It does
+  not falsely claim that on-platform private messaging, notification, or
+  knowledge-base updating is live.
+- The legacy `docs/knowledge/*.md` bundle is not silently included in the new
+  recruiter source set.
+- The first implementation is data-driven: Pete's name and profile slug come
+  from the manifest, not shared backend logic, preserving the future
+  Ask-[Name] pattern.
+
+The exact backend-to-visual contract is recorded in
+`02_BACKEND_CONTRACT_AND_VISUAL_HANDOFF.md`.
 
 ## Current owner decision
 
@@ -87,4 +117,6 @@ package.
 - No private uploads, OCR, job-posting analysis, or Qualification Alignment.
 - No cold outreach, application, public job listing, or hiring probability.
 - No automatic content/profile/publication change.
-- No implementation branch or runtime expansion is authorized here.
+- No visual implementation, provider-setting change, production enablement,
+  deployment, or private-message persistence is authorized by this backend
+  candidate.

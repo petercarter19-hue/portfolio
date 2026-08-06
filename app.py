@@ -12,6 +12,7 @@ import hashlib                                  # Creates opaque, per-member bro
 import gzip                                     # Compresses eligible public text responses without a runtime dependency
 import ipaddress                                # Validates the forwarded caller address used for rate limiting
 from datetime import datetime, timedelta        # Lets the Slate Feed compute live "2h ago" labels and week ranges
+from pathlib import Path
 from flask import Flask, g, make_response, render_template, request, jsonify, url_for, redirect, abort, session  # Added: request (reads incoming data), jsonify (sends JSON back)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -45,6 +46,9 @@ from services.community_media_service import community_media_maintenance
 from services.community_retention_service import (
     community_retention_maintenance,
 )
+from services.ai_foundation.errors import AIFoundationError
+from services.ask_pete.errors import AskPeteRequestError
+from services.ask_pete.runtime import answer_public_question
 from overview_projection_service import (
     STYLE_MANIFESTS,
     OverviewProjectionError,
@@ -299,6 +303,13 @@ app.config.update(
     # Launch gate (handoff section 18), not a casual config change.
     PEERSLATE_OPPORTUNITY_SLATE_ENABLED=(
         os.environ.get('PEERSLATE_OPPORTUNITY_SLATE_ENABLED', 'false').lower() == 'true'
+    ),
+    # PS-ASK-PETE-AI-001 backend slice: the structured, source-grounded
+    # response path is dormant by default. False preserves the established
+    # /api/chat request and response behavior exactly. Enabling this flag is a
+    # separate release decision after the material visual contract is approved.
+    PEERSLATE_ASK_PETE_GROUNDED_ENABLED=(
+        os.environ.get('PEERSLATE_ASK_PETE_GROUNDED_ENABLED', 'false').lower() == 'true'
     ),
     PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY=PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY,
     # Spend guard for handoff section 18 safeguard 3. LIVE AS OF SLICE OS-2:
@@ -2968,6 +2979,27 @@ def profile_resume_ledger(profile_slug):
 # { "response": "Pete is proficient in..." }
 # -------------------------------------------------------
 
+def _record_ask_pete_trace(trace):
+    """Log only the payload-free foundation trace contract."""
+    app.logger.info(
+        (
+            'Ask Pete trace request_id=%s purpose=%s outcome=%s '
+            'state=%s sources=%s claims=%s citations=%s provider_called=%s '
+            'duration_ms=%s error_category=%s'
+        ),
+        trace.request_id,
+        trace.purpose,
+        trace.outcome,
+        trace.answer_state,
+        trace.source_count,
+        trace.claim_count,
+        trace.citation_count,
+        trace.provider_called,
+        trace.duration_ms,
+        trace.error_category,
+    )
+
+
 @app.route('/api/chat', methods=['POST'])
 @limiter.limit('10 per minute')
 def chat():
@@ -2995,6 +3027,32 @@ def chat():
         return jsonify({
             'error': 'Message is too long. Please keep questions under 1000 characters.'
         }), 400
+
+    if app.config.get('PEERSLATE_ASK_PETE_GROUNDED_ENABLED', False):
+        try:
+            result = answer_public_question(
+                root_path=Path(__file__).resolve().parent,
+                client=client,
+                question=user_message,
+                requested_action=data.get('action'),
+                context_key=data.get('context_key'),
+                trace_sink=_record_ask_pete_trace,
+            )
+            return jsonify(result.payload)
+        except AskPeteRequestError:
+            return jsonify({
+                'error': 'Ask Pete could not use that question context.'
+            }), 400
+        except AIFoundationError:
+            app.logger.exception('Grounded Ask Pete answer failed validation.')
+            return jsonify({
+                'error': 'Ask Pete could not verify a grounded answer. Please try again.'
+            }), 502
+        except Exception:
+            app.logger.exception('Unexpected Grounded Ask Pete failure.')
+            return jsonify({
+                'error': 'Something went wrong. Please try again.'
+            }), 500
 
     try:
         # Build a focused prompt for this question instead of sending every knowledge file.
