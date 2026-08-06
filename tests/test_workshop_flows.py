@@ -196,12 +196,18 @@ class AddInformationComposerTests(WorkshopFlowTestCase):
         self.assertEqual(args[2]["authored_via"], "typed")
         self.assertEqual(args[2]["approved_wording"], args[2]["original_wording"])
 
-    def test_save_unfinished_calls_service_with_confirm_false_and_redirects_to_library(self):
+    def test_stale_save_unfinished_action_still_confirms_and_redirects_to_saved(self):
+        # Owner-ordered knowledge confirmation rule (2026-08-06): information
+        # a member provides themselves IS the confirmation, so a
+        # member-authored save always confirms now — there is no
+        # "unfinished" save outcome left. save_action="unfinished" is only
+        # accepted so a stale cached page does not error out; it produces
+        # exactly the same confirmed save "confirm" does.
         with patch(
             "workshop_routes.knowledge_service.save_knowledge_item_for_owner",
             return_value={
                 "item_key": ITEM_KEY,
-                "status": "unfinished",
+                "status": "confirmed",
                 "version_token": VERSION_TOKEN,
                 "saved": True,
             },
@@ -219,11 +225,9 @@ class AddInformationComposerTests(WorkshopFlowTestCase):
             )
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/app/workshop", response.headers["Location"])
-        self.assertIn("changed=unfinished", response.headers["Location"])
-        _, kwargs = save_mock.call_args if save_mock.call_args.kwargs else (save_mock.call_args[0], {})
+        self.assertIn(f"/app/workshop/items/{ITEM_KEY}/saved", response.headers["Location"])
         args, _ = save_mock.call_args
-        self.assertFalse(args[2]["confirm"])
+        self.assertTrue(args[2]["confirm"])
         self.assertEqual(args[2]["classification"], "unclassified")
 
     def test_idempotency_key_from_composer_survives_keep_working_round_trip(self):

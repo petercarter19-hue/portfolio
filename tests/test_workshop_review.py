@@ -1071,7 +1071,14 @@ class FinalWordingAndSaveTests(WorkshopReviewRouteTestCase):
             raw = sess.get(wdl.SESSION_KEY)
         self.assertNotIn("w", raw or {})
 
-    def test_save_unfinished_from_finalize_also_carries_authored_via(self):
+    def test_stale_save_unfinished_action_from_finalize_still_confirms_and_carries_authored_via(self):
+        # Owner-ordered knowledge confirmation rule (2026-08-06): a stale
+        # posted save_action="unfinished" confirms exactly like "confirm"
+        # does (see workshop_routes.save_item's docstring) — it renders the
+        # confirming-save page (200), not a redirect to an "unfinished"
+        # library state, and the item lands in the session delta as
+        # status "confirmed" while still carrying its authored_via
+        # provenance correctly.
         self._start(thought="Original wording here.")
         with _mock_generate_review(REVIEW_JSON_1):
             first = self._post_review(answer="Original wording here.")
@@ -1088,11 +1095,13 @@ class FinalWordingAndSaveTests(WorkshopReviewRouteTestCase):
             },
             headers=SAME_ORIGIN_HEADERS,
         )
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Added to this preview", response.data.decode("utf-8"))
         with self.client.session_transaction() as sess:
             delta = wdl.read_session_delta(sess)
         added = delta["a"][0]
-        self.assertEqual(added[5], "a")
+        self.assertEqual(added[4], "c")  # status code "c" == confirmed
+        self.assertEqual(added[5], "a")  # authored_via code "a" == ai_assisted_approved
 
     def test_member_save_uses_the_real_owner_scoped_save_path_with_authored_via(self):
         test_member = member("Test Member", "member-w2b-1")
@@ -1190,7 +1199,11 @@ class AiCallCapTests(WorkshopReviewRouteTestCase):
         self.assertIn(wws.AI_CALL_CAP_MESSAGE, response.data.decode("utf-8"))
         mock_call.assert_not_called()
 
-    def test_save_unfinished_still_works_at_the_cap(self):
+    def test_save_to_library_still_works_at_the_cap(self):
+        # Owner-ordered knowledge confirmation rule (2026-08-06): this quick
+        # save confirms now (see workshop_work_routes.update_work_session's
+        # comment on the "save_to_library" action), so it redirects with
+        # "saved-preview", not "unfinished-preview".
         self._start(thought="Answer text.")
         with self.client.session_transaction() as sess:
             with app.test_request_context():
@@ -1203,7 +1216,7 @@ class AiCallCapTests(WorkshopReviewRouteTestCase):
             headers=SAME_ORIGIN_HEADERS,
         )
         self.assertEqual(response.status_code, 302)
-        self.assertIn("unfinished-preview", response.headers["Location"])
+        self.assertIn("saved-preview", response.headers["Location"])
 
     def test_finalize_still_works_at_the_cap(self):
         self._start(thought="Answer text.")
@@ -1250,7 +1263,7 @@ class AiUnavailableTests(WorkshopReviewRouteTestCase):
         self.assertIn("Keep my words safe.", body)
         self.assertIn("PeerSlate&#39;s review is unavailable right now.", body)
 
-    def test_save_unfinished_still_works_after_an_ai_failure(self):
+    def test_save_to_library_still_works_after_an_ai_failure(self):
         self._start(thought="Do not lose this.")
         with _mock_generate_review(side_effect=RuntimeError("boom")):
             self._post_review(answer="Do not lose this.")
@@ -1261,7 +1274,7 @@ class AiUnavailableTests(WorkshopReviewRouteTestCase):
             headers=SAME_ORIGIN_HEADERS,
         )
         self.assertEqual(response.status_code, 302)
-        self.assertIn("unfinished-preview", response.headers["Location"])
+        self.assertIn("saved-preview", response.headers["Location"])
 
     def test_improve_provider_exception_renders_ai_unavailable(self):
         self._start(thought="Original wording here.")
@@ -1819,7 +1832,7 @@ class DailySpendCeilingRouteTests(WorkshopReviewRouteTestCase):
         self.assertIn(self._escaped(workshop_spend_guard.DAILY_CAP_MESSAGE), body)
         self.assertNotIn(wws.AI_CALL_CAP_MESSAGE, body)
 
-    def test_save_unfinished_still_works_at_the_daily_ceiling(self):
+    def test_save_to_library_still_works_at_the_daily_ceiling(self):
         self._start(thought="Answer text.")
         with patch.object(workshop_spend_guard, "GLOBAL_DAILY_AI_CALLS", 0):
             self._post_review(answer="Answer text.")
@@ -1830,7 +1843,7 @@ class DailySpendCeilingRouteTests(WorkshopReviewRouteTestCase):
             headers=SAME_ORIGIN_HEADERS,
         )
         self.assertEqual(response.status_code, 302)
-        self.assertIn("unfinished-preview", response.headers["Location"])
+        self.assertIn("saved-preview", response.headers["Location"])
 
     def test_finalize_still_works_at_the_daily_ceiling(self):
         self._start(thought="Answer text.")

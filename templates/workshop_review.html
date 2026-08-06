@@ -121,11 +121,15 @@
                         <span class="wk-review__source-value">{{ source_label }}</span>
                     </div>
 
+                    {#
+                      Owner-ordered knowledge confirmation rule (2026-08-06):
+                      information a member provides themselves IS the
+                      confirmation, so there is no separate "save it but
+                      don't confirm it yet" choice for a member's own words
+                      any more — Save privately is the only save action on
+                      this screen, and it always confirms.
+                    #}
                     <div class="wk-actions-row">
-                        <button type="submit" name="save_action" value="unfinished" class="wk-btn wk-btn--outline">
-                            {{ workshop_icon("archive") }}
-                            <span>Save unfinished</span>
-                        </button>
                         <button type="submit" formaction="{{ keep_working_url }}" formnovalidate class="wk-btn-link">Keep working</button>
                         <button type="submit" name="save_action" value="confirm" class="wk-btn wk-btn--primary">Save privately</button>
                     </div>

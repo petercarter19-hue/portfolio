@@ -1096,13 +1096,16 @@ class WorkshopPublicPreviewTests(unittest.TestCase):
         self.assertIn("My real preview wording that must stay visible.", body)
         self.assertIn("Sign in to save", body)
 
-    def test_signed_out_unfinished_save_never_writes_or_claims_saved(self):
-        # Owner instruction 2026-08-02 (doc 20 section 6e): an anonymous
-        # "Save unfinished" now really persists to this visitor's own
-        # session (services/workshop_demo_library.py) and redirects to the
-        # library, exactly like the signed-in path's own unfinished-save
-        # redirect — never save_knowledge_item_for_owner, never "Saved
-        # privately".
+    def test_signed_out_stale_unfinished_action_still_only_previews(self):
+        # Owner-ordered knowledge confirmation rule (2026-08-06): every save
+        # confirms now, member-authored or anonymous alike — there is no
+        # "unfinished" save outcome left. A stale posted
+        # save_action="unfinished" (from a cached pre-2026-08-06 page)
+        # produces exactly the same confirmed preview-session save "confirm"
+        # would — added to this visitor's own session only, never the real
+        # database, never save_knowledge_item_for_owner, never "Saved
+        # privately" (that phrase describes a real, permanent save, which
+        # this is not).
         with patch(
             "workshop_routes.knowledge_service.save_knowledge_item_for_owner"
         ) as save_mock:
@@ -1123,7 +1126,11 @@ class WorkshopPublicPreviewTests(unittest.TestCase):
         save_mock.assert_not_called()
         body = response.data.decode("utf-8")
         self.assertNotIn("Saved privately", body)
-        self.assertIn("Another preview title", body)
+        # The confirming save's own template only ever surfaces wording (not
+        # title) on this screen — see this class's earlier assertion of the
+        # same fact for the "confirm" case.
+        self.assertIn("Added to this preview session", body)
+        self.assertIn("Another preview wording.", body)
 
     # 4. The signed-out response never contains another member's data —
     #    sample content only, even if the real store somehow held data.

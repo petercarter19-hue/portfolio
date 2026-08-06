@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-06T01:55:00Z",
+  "updated_at": "2026-08-06T03:10:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -97,7 +97,10 @@
         "workshop_work_routes.py",
         "services/knowledge_service.py",
         "services/workshop_demo_library.py",
-        "templates/partials/workshop/"
+        "templates/partials/workshop/",
+        "templates/workshop_review.html",
+        "templates/workshop_work_session.html",
+        "templates/workshop_work_review.html"
       ],
       "exclusions": [
         "no Community public-pilot re-enablement",
@@ -191,8 +194,8 @@
         },
         {
           "leg": "8: owner-ordered knowledge confirmation rule",
-          "status": "authorized_build_starting",
-          "evidence": "Pete's 2026-08-06 ruling, verbatim intent from the owner conversation: information a member provides themselves IS the confirmation; the confirm gate applies to AI-suggested material, not member-authored items. Scope: the slate's evidence read includes the member's own authored knowledge items (confirmed and unfinished; never unaccepted AI suggestions, never archived items); member-authored Workshop saves confirm at save time; truthful screen copy. App-side only, no schema change. Implementation branch work/2026-08-06-oppslate-knowledge-rule; Sonnet implements, Opus 5 reviews, one deployment, the owner pre-approved the single deploy checkpoint press"
+          "status": "split_after_independent_refuse",
+          "evidence": "Pete's 2026-08-06 ruling, verbatim intent from the owner conversation: information a member provides themselves IS the confirmation; the confirm gate applies to AI-suggested material, not member-authored items. Save-time confirm is APPROVED and shipping on work/2026-08-06-oppslate-knowledge-rule (255ea98, follow-up commit removing reconciliation): every member-authored Workshop save (direct entry and Work on Something, signed-in and anonymous-preview alike) now confirms at save time; the AI-suggestion queue is untouched. The write-based backlog reconciliation (re-saving a signed-in owner's legacy 'unfinished' items with Confirm=1 via usp_UpdateKnowledgeItemForOwner) was REFUSED by the Opus 5 independent review: that procedure hard-codes authored_via=N'typed' and original_member_wording:=@ApprovedWording on the new version row (PS-WORKSHOP-001_knowledge_items.sql:671-682), so reconciling a legacy row saved via ai_assisted_approved would silently rewrite the member's provenance label; it also resets updated_at_utc, which is the sole ordering of both the TOP(24) AI evidence window and My Information, so a reconciled draft would displace a genuinely maintained item; and it writes member-attributed audit/version rows for a page the member merely opened, not acted on. Backlog confirmation of existing legacy rows moves to a gated in-place procedure (no provenance rewrite, no updated_at_utc mutation, no member-attributed write) in a future, separate leg — not implemented on this branch."
         }
       ],
       "branch_note": "The lane's remaining writable surface is the held OS-4 branch (PR 293). The owner runs scripts/gate_os4.ps1 once; the waiting automation then applies PS-OPPSLATE-003, merges PR 293, deploys, and smokes."

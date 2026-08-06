@@ -148,22 +148,32 @@ CLASSIFICATION_CHOICES = (
 )
 
 WORKSHOP_SUCCESS_MESSAGES = {
-    "unfinished": "Saved as unfinished. Resume anytime from My Information.",
+    # Owner-ordered knowledge confirmation rule (2026-08-06): a
+    # member-authored save always confirms, so there is no longer a
+    # "saved as unfinished" outcome to report here — see "saved" /
+    # "saved-preview" below for the truthful replacement.
     "archived": "Item archived. It no longer grounds AI suggestions.",
     "restored": "Item restored to your active information.",
     "deleted": "Item and its version history were permanently deleted.",
+    # The quick save-without-review action (workshop_work_routes.py's
+    # "Save to knowledge base") confirms immediately, exactly like every
+    # other member-authored save — this is the one place that outcome is
+    # reported via a flash message rather than the dedicated Saved page,
+    # because it redirects to the Work on Something opening, not to
+    # workshop.saved_item.
+    "saved": "Saved to your knowledge base. It's confirmed, just like everything else you've saved.",
     # Anonymous preview session equivalents (owner instruction 2026-08-02,
     # doc 20 section 6e): distinct keys so the signed-in messages above stay
     # byte-for-byte unchanged. Every preview message names "this preview
     # session" and points at sign-in — never implying a real, permanent save.
-    "unfinished-preview": "Kept as unfinished in this preview session. Sign in to save it for real.",
+    "saved-preview": "Saved to this preview session. Sign in to save it for real.",
     "updated-preview": "Updated in this preview session. Sign in to make this permanent.",
     "archived-preview": "Archived in this preview session. Sign in to keep your own permanent library.",
     "restored-preview": "Restored in this preview session. Sign in to keep changes permanently.",
     "deleted-preview": "Removed from this preview session.",
     # PS-WORKSHOP-001 W2a (workshop_work_routes.py): Work on Something
     # session outcomes, redirected here to the opening screen.
-    "session-stopped": "You stopped this session. Nothing new was saved — Save unfinished keeps your answer next time.",
+    "session-stopped": "You stopped this session. Nothing new was saved — Save to knowledge base keeps your answer next time.",
     "reset-preview": "This preview session was reset. Everything is back to the way it started.",
     # PS-WORKSHOP-001 W2c: confirms the dismissal actually stuck, and
     # promises only what the code delivers — "this visit", for an anonymous
@@ -1045,7 +1055,16 @@ def review_add():
 
 @workshop.post("/app/workshop/items")
 def save_item():
-    """The confirming save for a brand-new item (Save privately / Save unfinished)."""
+    """The confirming save for a brand-new item (Save privately).
+
+    Owner-ordered knowledge confirmation rule (2026-08-06): information a
+    member provides themselves IS the confirmation, so every member-authored
+    save confirms — there is no longer an "unfinished" save outcome from
+    this route. ``save_action`` still accepts the legacy "unfinished" value
+    (the review screen no longer offers it, but a stale cached page might
+    still post it) purely so an old form does not error out; either
+    accepted value produces exactly the same confirmed save.
+    """
     if not _workshop_enabled():
         abort(404)
     if not _is_same_origin_write():
@@ -1103,25 +1122,16 @@ def save_item():
         if len(wording) > workshop_demo_library.MAX_PREVIEW_WORDING_UNITS:
             return _rerender(workshop_demo_library.CAP_WORDING_MESSAGE)
 
-        status = "confirmed" if save_action == "confirm" else "unfinished"
         new_item_key, error_message = workshop_demo_library.add_item(
             session,
             title=title,
             wording=wording,
             classification=classification,
-            status=status,
+            status="confirmed",
         )
         if new_item_key is None:
             return _rerender(error_message)
 
-        if save_action == "unfinished":
-            return redirect(
-                url_for(
-                    "workshop.my_information",
-                    item=new_item_key,
-                    changed="unfinished-preview",
-                )
-            )
         return _render_anonymous_preview_saved(
             item_key=new_item_key,
             title=title,
@@ -1134,26 +1144,24 @@ def save_item():
         # asserted off-by-default in tests): the local owner preview has no
         # database, so the confirmation renders from the validated submission
         # without persisting anything. Production never reaches this branch.
-        if save_action == "confirm":
-            return render_template(
-                "workshop_saved.html",
-                page_title="Saved privately — Workshop",
-                item={
-                    "item_key": None,
-                    "title": title,
-                    "body": wording,
-                    "classification": classification,
-                    "classification_label": CLASSIFICATION_LABELS.get(
-                        classification, classification.title()
-                    ),
-                    "source_label": SOURCE_LABELS.get("typed", "Your words"),
-                },
-                view_in_my_information_url=url_for("workshop.my_information"),
-                add_something_else_url=url_for("workshop.add_information"),
-                close_for_now_url=url_for("workshop.my_information"),
-                dev_preview=True,
-            )
-        return redirect(url_for("workshop.my_information", changed="unfinished"))
+        return render_template(
+            "workshop_saved.html",
+            page_title="Saved privately — Workshop",
+            item={
+                "item_key": None,
+                "title": title,
+                "body": wording,
+                "classification": classification,
+                "classification_label": CLASSIFICATION_LABELS.get(
+                    classification, classification.title()
+                ),
+                "source_label": SOURCE_LABELS.get("typed", "Your words"),
+            },
+            view_in_my_information_url=url_for("workshop.my_information"),
+            add_something_else_url=url_for("workshop.add_information"),
+            close_for_now_url=url_for("workshop.my_information"),
+            dev_preview=True,
+        )
 
     try:
         result = knowledge_service.save_knowledge_item_for_owner(
@@ -1166,7 +1174,7 @@ def save_item():
                 "body_format": "plain",
                 "classification": classification,
                 "authored_via": "typed",
-                "confirm": save_action == "confirm",
+                "confirm": True,
             },
         )
     except KnowledgeServiceError as error:
@@ -1176,9 +1184,7 @@ def save_item():
         return _rerender(UNAVAILABLE_FORM_MESSAGE)
 
     item_key = result["item_key"]
-    if save_action == "confirm":
-        return redirect(url_for("workshop.saved_item", item_key=item_key))
-    return redirect(url_for("workshop.my_information", item=item_key, changed="unfinished"))
+    return redirect(url_for("workshop.saved_item", item_key=item_key))
 
 
 # ---------------------------------------------------------------------------
@@ -1361,7 +1367,13 @@ def review_edit(item_key):
 
 @workshop.post("/app/workshop/items/<item_key>")
 def update_item(item_key):
-    """The confirming save for an edit (Save privately / Save unfinished)."""
+    """The confirming save for an edit (Save privately).
+
+    Owner-ordered knowledge confirmation rule (2026-08-06): every
+    member-authored save confirms, so an edit's save always confirms too —
+    see save_item's docstring for the full rule and why ``save_action``
+    still tolerates the legacy "unfinished" value from a stale cached page.
+    """
     if not _workshop_enabled():
         abort(404)
     if not _is_same_origin_write():
@@ -1419,14 +1431,13 @@ def update_item(item_key):
         if len(wording) > workshop_demo_library.MAX_PREVIEW_WORDING_UNITS:
             return _rerender(workshop_demo_library.CAP_WORDING_MESSAGE)
 
-        status = "confirmed" if save_action == "confirm" else "unfinished"
         ok, error_message = workshop_demo_library.edit_item(
             session,
             normalized_item_key,
             title=title,
             wording=wording,
             classification=classification,
-            status=status,
+            status="confirmed",
         )
         if not ok:
             if error_message:
@@ -1435,9 +1446,12 @@ def update_item(item_key):
             # deleted in another tab) — neutral fallback, never an error.
             return redirect(url_for("workshop.my_information"))
 
-        changed = "updated-preview" if save_action == "confirm" else "unfinished-preview"
         return redirect(
-            url_for("workshop.my_information", item=normalized_item_key, changed=changed)
+            url_for(
+                "workshop.my_information",
+                item=normalized_item_key,
+                changed="updated-preview",
+            )
         )
 
     try:
@@ -1450,7 +1464,7 @@ def update_item(item_key):
                 "approved_wording": wording,
                 "body_format": "plain",
                 "classification": classification,
-                "confirm": save_action == "confirm",
+                "confirm": True,
             },
         )
     except KnowledgeServiceError as error:
@@ -1470,11 +1484,7 @@ def update_item(item_key):
         current_app.logger.error("PeerSlate Workshop update is unavailable.")
         return _rerender(UNAVAILABLE_FORM_MESSAGE)
 
-    if save_action == "confirm":
-        return redirect(url_for("workshop.saved_item", item_key=normalized_item_key))
-    return redirect(
-        url_for("workshop.my_information", item=normalized_item_key, changed="unfinished")
-    )
+    return redirect(url_for("workshop.saved_item", item_key=normalized_item_key))
 
 
 # ---------------------------------------------------------------------------

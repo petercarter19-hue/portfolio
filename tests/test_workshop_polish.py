@@ -95,7 +95,6 @@ PREVIEW_BANNER_SCREENS = [
     "templates/workshop_work.html",
     "templates/workshop_work_session.html",
     "templates/workshop_work_review.html",
-    "templates/workshop_work_holding.html",
     "templates/workshop_add.html",
     "templates/workshop_review.html",
     "templates/workshop_saved.html",

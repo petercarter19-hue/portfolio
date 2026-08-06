@@ -2,7 +2,7 @@
 
 {% block title %}{{ page_title }}{% endblock %}
 
-{% block meta_description %}PeerSlate's private review of what you shared — nothing is saved until you choose Save privately.{% endblock %}
+{% block meta_description %}PeerSlate's private review of what you shared — nothing is saved until you choose to save it.{% endblock %}
 
 {% block body_class %} workshop-page{% endblock %}
 
@@ -19,15 +19,15 @@
 {#
   PS-WORKSHOP-001 W2b — the real AI review loop. Visual authority: R09
   (desktop) / R10 (mobile), workshop-facelift-2026-08-02/. Replaces W2a's
-  honest "AI review arrives next" holding card (workshop_work_holding.html,
-  now unused) with a real, validated model result.
+  honest "AI review arrives next" holding card (the now-deleted
+  workshop_work_holding.html) with a real, validated model result.
 
   Branches on ``screen_state`` (an explicit state field, in the style of
   partials/owner_studio/_state_panel.html):
     - "review": the full R09/R10 composition.
     - "cap_reached": this session's AI-call cap has been reached (an
-      honest state, never an error) — Save unfinished / Stop for now /
-      Edit myself / Review final wording still work.
+      honest state, never an error) — Save to knowledge base / Stop for now
+      / Edit myself / Review final wording still work.
     - "unavailable": a real provider/validation failure — same actions
       still available (architecture doc 17 section 9.3).
     - "expired": the signed review token was missing, tampered, or past
@@ -229,8 +229,8 @@
                         {% for item in related_items if item.selected %}
                         <input type="hidden" name="context" value="{{ item.item_key }}">
                         {% endfor %}
-                        <button type="submit" name="wk_action" value="save_unfinished" class="wk-btn-link">
-                            {{ workshop_icon("archive") }}<span>Save unfinished</span>
+                        <button type="submit" name="wk_action" value="save_to_library" class="wk-btn-link">
+                            {{ workshop_icon("check") }}<span>Save to knowledge base</span>
                         </button>
                         <button type="submit" name="wk_action" value="stop" class="wk-btn-link">
                             {{ workshop_icon("clock") }}<span>Stop for now</span>
@@ -253,8 +253,14 @@
                     </form>
                 </div>
 
+                {#
+                  Owner-ordered knowledge confirmation rule (2026-08-06):
+                  your own words are confirmed the moment you save them —
+                  right away with Save to knowledge base, or after reviewing
+                  the final wording and choosing Save privately there.
+                #}
                 <p class="wk-field__hint" style="margin-top:1rem;">
-                    Nothing is saved as confirmed information until you choose Save privately. Changing this here will not silently change another draft.
+                    Save to knowledge base saves this answer as confirmed information right away. Review final wording lets you polish the wording first — either way, once you save it, it's confirmed. Changing this here will not silently change another draft.
                 </p>
             </div>
         </div>
@@ -322,7 +328,7 @@
             <path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"></path>
             <path d="M8.5 12.5l2.4 2.4 4.8-5"></path>
         </svg>
-        Nothing is saved as confirmed information until you choose Save privately.
+        Nothing is saved until you choose to save it, with Save to knowledge base or Save privately.
     </p>
 </div>
 {% endblock %}

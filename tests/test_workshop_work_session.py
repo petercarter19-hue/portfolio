@@ -535,24 +535,30 @@ class ReviewPathRedirectTests(WorkOnSomethingTestCase):
 
 
 class SaveUnfinishedTests(WorkOnSomethingTestCase):
-    def test_anonymous_save_unfinished_lands_in_the_session_library(self):
+    def test_anonymous_save_to_library_lands_confirmed_in_the_session_library(self):
+        # Owner-ordered knowledge confirmation rule (2026-08-06): information
+        # a member (or an anonymous visitor's own preview) provides IS the
+        # confirmation, so this quick save lands as "confirmed", not
+        # "unfinished" — see workshop_work_routes.update_work_session's
+        # comment on the "save_to_library" action (still accepting the
+        # legacy "save_unfinished" posted value here, to prove the alias
+        # produces exactly the same confirmed outcome).
         self._start(door=wws.DOOR_SOMETHING, thought="seed")
         response = self._update(
             answer="A concrete answer worth keeping.", wk_action="save_unfinished"
         )
         self.assertEqual(response.status_code, 302)
-        self.assertIn("unfinished-preview", response.headers["Location"])
+        self.assertIn("saved-preview", response.headers["Location"])
 
         opening_body = self.client.get(response.headers["Location"]).data.decode("utf-8")
         # Body text is never in the list view (title-only list read, by
         # design — see workshop_routes.py/_filter_library_rows).
         self.assertNotIn("A concrete answer worth keeping.", opening_body)
-        self.assertIn("Kept as unfinished in this preview session", opening_body)
-        self.assertIn("wk-door--continue-active", opening_body)
+        self.assertIn("Saved to this preview session", opening_body)
 
         # Confirm it actually landed as a session item (title-only list
         # read carries no body text, but the item must be present, titled
-        # from the MEMBER'S OWN wording, and marked unfinished).
+        # from the MEMBER'S OWN wording, and marked confirmed).
         with self.client.session_transaction() as sess:
             delta = wdl.read_session_delta(sess)
         self.assertEqual(len(delta["a"]), 1)
@@ -561,7 +567,7 @@ class SaveUnfinishedTests(WorkOnSomethingTestCase):
         # never seeded from the question PeerSlate asked.
         self.assertEqual(added_title, "A concrete answer worth keeping")
         self.assertNotIn(added_title, wws.QUESTION_SETS[wws.DOOR_SOMETHING])
-        self.assertEqual(delta["a"][0][4], "f")  # status code "f" == unfinished
+        self.assertEqual(delta["a"][0][4], "c")  # status code "c" == confirmed
 
     def test_anonymous_save_unfinished_clears_the_active_session(self):
         self._start(door=wws.DOOR_SOMETHING, thought="seed")
@@ -571,7 +577,12 @@ class SaveUnfinishedTests(WorkOnSomethingTestCase):
             raw = sess.get(wdl.SESSION_KEY)
         self.assertNotIn("w", raw or {})
 
-    def test_member_save_unfinished_uses_the_real_owner_scoped_save_path(self):
+    def test_member_save_to_library_uses_the_real_owner_scoped_save_path(self):
+        # Owner-ordered knowledge confirmation rule (2026-08-06): this quick
+        # save confirms now — see this class's earlier anonymous test for
+        # the full rule. Still posts the legacy "save_unfinished" wk_action
+        # value to prove the backward-compat alias produces the same
+        # confirmed outcome as "save_to_library" would.
         test_member = member("Test Member", "member-w2a-1")
         with patch(
             "workshop_work_routes.get_current_identity", return_value=test_member
@@ -589,14 +600,14 @@ class SaveUnfinishedTests(WorkOnSomethingTestCase):
             response = self._update(answer="member answer", wk_action="save_unfinished")
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("changed=unfinished", response.headers["Location"])
+        self.assertIn("changed=saved", response.headers["Location"])
         self.assertNotIn("preview", response.headers["Location"])
         mock_save.assert_called_once()
         args, _kwargs = mock_save.call_args
         self.assertEqual(args[0], "member-w2a-1")
         fields = args[2]
         self.assertEqual(fields["approved_wording"], "member answer")
-        self.assertIs(fields["confirm"], False)
+        self.assertIs(fields["confirm"], True)
 
     def test_member_save_unfinished_preserves_text_on_a_database_failure(self):
         test_member = member("Test Member", "member-w2a-2")

@@ -1188,7 +1188,16 @@ def update_work_session():
         wws.clear_session(session)
         return redirect(url_for("workshop.work_opening", changed="session-stopped"))
 
-    if wk_action == "save_unfinished":
+    # "save_to_library" is the current action name for this quick,
+    # skip-the-AI-review save. "save_unfinished" is accepted as a legacy
+    # alias purely so a stale cached copy of workshop_work_session.html /
+    # workshop_work_review.html (which used to post that value) does not
+    # error out — both now produce the exact same confirmed save. Owner-
+    # ordered knowledge confirmation rule (2026-08-06): a member-authored
+    # save always confirms, so this quick save is no longer "unfinished"
+    # either — it saves straight to the confirmed knowledge base, exactly
+    # like the full Review flow's Save privately.
+    if wk_action in {"save_to_library", "save_unfinished"}:
         # Audit fix F6: named from the member's own answer, never from
         # the question PeerSlate asked.
         title = _default_title_from_wording(answer, state["question_text"])
@@ -1204,7 +1213,7 @@ def update_work_session():
                 title=title,
                 wording=answer,
                 classification="unclassified",
-                status="unfinished",
+                status="confirmed",
             )
             if new_item_key is None:
                 wws.restore_session_bucket(session, released_bucket)
@@ -1216,7 +1225,7 @@ def update_work_session():
                     error_message=add_error,
                     status_code=400,
                 )
-            return redirect(url_for("workshop.work_opening", changed="unfinished-preview"))
+            return redirect(url_for("workshop.work_opening", changed="saved-preview"))
 
         idempotency_key = str(uuid4())
         try:
@@ -1230,7 +1239,7 @@ def update_work_session():
                     "body_format": "plain",
                     "classification": "unclassified",
                     "authored_via": "typed",
-                    "confirm": False,
+                    "confirm": True,
                 },
             )
         except KnowledgeServiceError as error:
@@ -1253,7 +1262,7 @@ def update_work_session():
                 status_code=400,
             )
         wws.clear_session(session)
-        return redirect(url_for("workshop.work_opening", changed="unfinished"))
+        return redirect(url_for("workshop.work_opening", changed="saved"))
 
     return _render_session_screen(
         identity=identity,
@@ -1838,6 +1847,11 @@ def work_session_save():
     answer this session (wws state's ai_assisted flag), and the active
     Work on Something session is cleared on success — direct entry has no
     such session to clear.
+
+    Owner-ordered knowledge confirmation rule (2026-08-06): every
+    member-authored save confirms — see workshop_routes.save_item's
+    docstring for the full rule and why ``save_action`` still tolerates the
+    legacy "unfinished" value from a stale cached page.
     """
     if not _work_flag_gate():
         abort(404)
@@ -1895,7 +1909,6 @@ def work_session_save():
         if len(wording) > workshop_demo_library.MAX_PREVIEW_WORDING_UNITS:
             return _rerender(workshop_demo_library.CAP_WORDING_MESSAGE)
 
-        status = "confirmed" if save_action == "confirm" else "unfinished"
         # Audit fix F1 (2026-08-04): take the work-session bucket BEFORE the
         # add, not after. The answer in that bucket and the wording being
         # saved are the same text, and this request always ends with the
@@ -1909,14 +1922,12 @@ def work_session_save():
             title=title,
             wording=wording,
             classification=classification,
-            status=status,
+            status="confirmed",
             authored_via=authored_via,
         )
         if new_item_key is None:
             wws.restore_session_bucket(session, released_bucket)
             return _rerender(add_error)
-        if save_action == "unfinished":
-            return redirect(url_for("workshop.work_opening", changed="unfinished-preview"))
         return _render_anonymous_preview_saved(
             item_key=new_item_key,
             title=title,
@@ -1936,7 +1947,7 @@ def work_session_save():
                 "body_format": "plain",
                 "classification": classification,
                 "authored_via": authored_via,
-                "confirm": save_action == "confirm",
+                "confirm": True,
             },
         )
     except KnowledgeServiceError as error:
@@ -1947,9 +1958,7 @@ def work_session_save():
 
     wws.clear_session(session)
     item_key = result["item_key"]
-    if save_action == "confirm":
-        return redirect(url_for("workshop.saved_item", item_key=item_key))
-    return redirect(url_for("workshop.my_information", item=item_key, changed="unfinished"))
+    return redirect(url_for("workshop.saved_item", item_key=item_key))
 
 
 # ---------------------------------------------------------------------------

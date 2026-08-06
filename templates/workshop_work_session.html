@@ -24,9 +24,9 @@
   INSIDE the SAME <form> as the answer textarea (the form wraps both the
   main card and the aside rail, exactly like workshop_review.html's
   existing pattern) so the member's current answer is never lost
-  regardless of which submit button is pressed — every action (Save
-  unfinished / Stop for now / Review what I shared) carries the full form
-  (answer + selection) forward together. W2b: "Review what I shared"
+  regardless of which submit button is pressed — every action (Save to
+  knowledge base / Stop for now / Review what I shared) carries the full
+  form (answer + selection) forward together. W2b: "Review what I shared"
   submits this SAME form directly to the real AI review endpoint
   (review_url, via formaction) instead of routing through this screen's
   own POST handler — workshop_work_review.html renders the real review.
@@ -120,9 +120,9 @@
                     #}
 
                     <div class="wk-actions-row" style="margin-top:1.25rem;">
-                        <button type="submit" name="wk_action" value="save_unfinished" class="wk-btn wk-btn--outline">
-                            {{ workshop_icon("archive") }}
-                            <span>Save unfinished</span>
+                        <button type="submit" name="wk_action" value="save_to_library" class="wk-btn wk-btn--outline">
+                            {{ workshop_icon("check") }}
+                            <span>Save to knowledge base</span>
                         </button>
                         <button type="submit" name="wk_action" value="stop" class="wk-btn-link">Stop for now</button>
                         <button type="submit" formaction="{{ review_url }}" formnovalidate class="wk-btn wk-btn--primary">
@@ -131,8 +131,16 @@
                         </button>
                     </div>
 
+                    {#
+                      Owner-ordered knowledge confirmation rule (2026-08-06):
+                      your own words are confirmed the moment you save them —
+                      right away with Save to knowledge base, or after
+                      reviewing with Save privately below. PeerSlate only
+                      ever asks you to separately confirm ITS OWN suggested
+                      wording, never yours.
+                    #}
                     <p class="wk-field__hint" style="margin-top:1rem;">
-                        Nothing becomes confirmed information until you review the exact wording and choose Save privately. Save unfinished is a private working draft. It does not confirm the answer.
+                        Save to knowledge base saves your answer as confirmed information right away, skipping AI review. Review what I shared lets you see PeerSlate's read on it first — either way, once you save it, it's confirmed.
                     </p>
                 </div>
             </div>

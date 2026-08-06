@@ -193,8 +193,14 @@
           </form>
           {% else %}
           <p class="os-help os-help--muted">
-            You have no confirmed Workshop evidence to connect yet. Confirming
-            an item in Workshop makes it available here.
+            {#
+              Owner-ordered knowledge confirmation rule (2026-08-06): saving
+              your own words in Workshop confirms them right away, so this
+              no longer names a separate "confirm" step — see
+              PS-OPPORTUNITY-SLATE-001's leg 8 completion record.
+            #}
+            You have no confirmed Workshop evidence to connect yet. Save an
+            item in Workshop to make it available here.
           </p>
           {% endif %}
         </div>
