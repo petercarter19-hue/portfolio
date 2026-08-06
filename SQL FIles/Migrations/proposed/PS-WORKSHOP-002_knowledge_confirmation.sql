@@ -82,7 +82,7 @@
    was not needed: it would add a schema column and a second code path to
    solve a problem the one-line archive predicate already closes
    completely, and no production code path writes item_status = N'suggested'
-   today (grep services/*.py; the checkpoint dev fixture and
+   today (grep the Python modules under services/; the checkpoint dev fixture and
    workshop_demo_library are the only source of that string, and neither
    calls a real procedure), so the change costs nothing operationally and
    forecloses the laundering path before any AI-suggestion write path ships.
@@ -134,17 +134,15 @@
    definition no longer matches its own gated hash -- fails before the
    first DDL statement.
 
-   ORDERING (state explicitly, per the task brief): this file and its
-   rollback/verifier ship on this branch together with the degrade-safe
-   application wiring (services/knowledge_service.py,
-   workshop_routes.py, opportunity_slate_routes.py) that calls the new
-   procedure. The branch merges only AFTER the owner runs the disposable-
-   database gate (scripts/gate_workshop_002.ps1) and the governed apply
-   completes -- until then this migration is a registered DRAFT
-   ("gate": null in registry.json) and the application wiring's own
+   ORDERING (state explicitly, per the task brief): the degrade-safe
+   application wiring (services/knowledge_service.py, workshop_routes.py,
+   opportunity_slate_routes.py) has already shipped and remains dormant.
+   This migration, rollback, and verifier passed the owner's disposable-
+   database gate before their proof branch merges. The production apply is
+   then queued on that exact merged SHA through the separately governed
+   schema path. Until that apply completes, the application wiring's own
    DatabaseServiceError handling (including "procedure does not exist yet")
-   degrades to skip-not-fail, so shipping the wiring ahead of the apply
-   changes no live behavior.
+   degrades to skip-not-fail, so the deployed wiring changes no live behavior.
 
    Rollback: PS-WORKSHOP-002_knowledge_confirmation_rollback.sql
    Verification: ../../Verification/PS-WORKSHOP-002_owner_isolation_verify.sql
@@ -399,6 +397,7 @@ BEGIN TRY
                 DECLARE @AuditItemId bigint;
                 DECLARE @AuditItemKey uniqueidentifier;
                 DECLARE @AuditVersionNumber int;
+                DECLARE @AuditMetadataJson nvarchar(max);
                 DECLARE @AuditResult TABLE
                 (
                     audit_event_id bigint, event_key uniqueidentifier,
@@ -417,6 +416,9 @@ BEGIN TRY
                     FROM @Candidates
                     ORDER BY knowledge_item_id;
 
+                    SET @AuditMetadataJson = CONCAT(N''{"confirmed_version_number":'', @AuditVersionNumber,
+                        N'',"reconciliation":"owner_standing_rule_2026_08_06"}'');
+
                     INSERT @AuditResult
                     EXEC dbo.usp_AppendAuditEvent
                         @ActorUserId = @UserId,
@@ -425,8 +427,7 @@ BEGIN TRY
                         @EntityType = N''knowledge_item'',
                         @EntityKey = @AuditItemKey,
                         @Outcome = N''success'',
-                        @MetadataJson = CONCAT(N''{"confirmed_version_number":'', @AuditVersionNumber,
-                            N'',"reconciliation":"owner_standing_rule_2026_08_06"}'');
+                        @MetadataJson = @AuditMetadataJson;
 
                     DELETE @Candidates WHERE knowledge_item_id = @AuditItemId;
                 END;

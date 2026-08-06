@@ -1150,8 +1150,30 @@
       "requires": [
         "PS-WORKSHOP-001"
       ],
-      "summary": "Leg 9: gated in-place confirmation of the pre-existing member-authored Workshop knowledge backlog (usp_ConfirmAuthoredKnowledgeBacklogForOwner), bounded and audited under a distinct action name, with zero content/version/updated_at mutation; and the closing fix to usp_ArchiveKnowledgeItemForOwner so an unaccepted suggested item can never launder into auto-confirmed truth via archive/restore. Draft: not yet gated.",
-      "gate": null
+      "summary": "Leg 9: gated in-place confirmation of the pre-existing member-authored Workshop knowledge backlog (usp_ConfirmAuthoredKnowledgeBacklogForOwner), bounded and audited under a distinct action name, with zero content/version/updated_at mutation; and the closing fix to usp_ArchiveKnowledgeItemForOwner so an unaccepted suggested item can never launder into auto-confirmed truth via archive/restore. Disposable-database gate passed 2026-08-06; production apply remains separately governed.",
+      "gate": {
+        "executable_sha256": "12baa0a9196e3ea5fb9c8430348cc4964ec5fcc7aa668fd79fcb485d205cbc50",
+        "gated_at_utc": "2026-08-06T11:47:40Z",
+        "gate_database": "ps-workshop-002-gate-202608060646",
+        "gate_server": "peerslate",
+        "prerequisites": [
+          "PS-PLAT-000",
+          "PS-PLAT-001",
+          "PS-PLAT-002",
+          "PS-PLAT-003",
+          "PS-PLAT-004",
+          "PS-PLAT-005",
+          "PS-PLAT-006",
+          "PS-PLAT-007",
+          "PS-AUTH-001",
+          "PS-WORKSHOP-001"
+        ],
+        "objects": [
+          "SQL_STORED_PROCEDURE:dbo.usp_ConfirmAuthoredKnowledgeBacklogForOwner"
+        ],
+        "verification": "PS-WORKSHOP-002_owner_isolation_verify.sql returned verified = 1",
+        "operator": "Pete"
+      }
     },
     {
       "id": "PS-COMMUNITY-PUBLIC-PILOT-001",

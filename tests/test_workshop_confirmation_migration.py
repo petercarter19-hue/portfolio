@@ -4,10 +4,10 @@ knowledge backlog confirmation).
 Mirrors tests/test_opportunity_slate_migration.py's idiom: these assert the
 shape of the proposed SQL without needing a database, so the migration's
 guards, the structural exclusion of suggested/archived rows, the byte-exact
-rollback restoration, and the registry's draft shape are held in place by
-the ordinary test run. Draft: PS-WORKSHOP-002 is registered with
-"gate": null and ships nowhere until the owner runs the disposable-database
-gate (scripts/gate_workshop_002.ps1).
+rollback restoration, and the registry's recorded gate proof are held in place by
+the ordinary test run. PS-WORKSHOP-002 carries the recorded owner proof from
+its disposable-database gate and still ships nowhere until the separately
+governed production schema apply.
 """
 
 import json
@@ -79,6 +79,21 @@ class WorkshopConfirmationMigrationTests(unittest.TestCase):
         self.assertTrue(FORWARD.exists())
         self.assertTrue(ROLLBACK.exists())
         self.assertTrue(VERIFY.exists())
+
+    def test_sql_block_comment_delimiters_are_balanced(self):
+        """A glob-like ``/*`` inside a SQL block comment is still nested SQL.
+
+        The first disposable gate caught this in the migration header before
+        any PS-WORKSHOP-002 SQL executed. Pin the raw delimiter balance so a
+        prose-only header edit cannot make the migration unparsable again.
+        """
+        for label, source in (
+            ("forward", self.forward),
+            ("rollback", self.rollback),
+            ("verification", self.verification),
+        ):
+            with self.subTest(file=label):
+                self.assertEqual(source.count("/*"), source.count("*/"))
 
     def test_forward_creates_exactly_one_new_procedure_and_revises_exactly_one(self):
         self.assertEqual(set(self.procedures), {NEW_PROCEDURE, REVISED_PROCEDURE})
@@ -324,6 +339,16 @@ class WorkshopConfirmationMigrationTests(unittest.TestCase):
         self.assertIn("WHILE EXISTS (SELECT 1 FROM @Candidates)", batch)
         self.assertEqual(batch.count("EXEC dbo.usp_AppendAuditEvent"), 1)
 
+    def test_new_procedure_materializes_audit_json_before_the_exec_call(self):
+        """SQL Server procedure arguments accept a variable here, not a
+        CONCAT expression.  The disposable gate caught the direct-expression
+        form as a syntax error before this migration ever reached production."""
+        batch = self.procedures[NEW_PROCEDURE]
+        self.assertIn("DECLARE @AuditMetadataJson nvarchar(max);", batch)
+        self.assertIn("SET @AuditMetadataJson = CONCAT(", batch)
+        self.assertIn("@MetadataJson = @AuditMetadataJson;", batch)
+        self.assertNotIn("@MetadataJson = CONCAT(", batch)
+
     def test_new_procedure_returns_confirmed_and_remaining_counts(self):
         batch = self.procedures[NEW_PROCEDURE]
         self.assertIn("confirmed_count", batch)
@@ -549,14 +574,26 @@ class WorkshopConfirmationMigrationTests(unittest.TestCase):
     # Registry, allowlist, and error-number hygiene.
     # ------------------------------------------------------------------
 
-    def test_registry_entry_is_a_draft_requiring_ps_workshop_001(self):
+    def test_registry_entry_records_the_owner_gate_proof(self):
+        from scripts.migration_registry import executable_sha256
+
         document = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
         entries = {entry["id"]: entry for entry in document["migrations"]}
         self.assertIn("PS-WORKSHOP-002", entries)
         entry = entries["PS-WORKSHOP-002"]
         self.assertEqual(entry["requires"], ["PS-WORKSHOP-001"])
-        self.assertIn("gate", entry)
-        self.assertIsNone(entry["gate"])
+        gate = entry["gate"]
+        self.assertIsNotNone(gate)
+        self.assertEqual("Pete", gate["operator"])
+        self.assertRegex(
+            gate["gate_database"], r"^ps-workshop-002-gate-\d{12}$"
+        )
+        self.assertEqual("peerslate", gate["gate_server"])
+        self.assertEqual(executable_sha256(FORWARD), gate["executable_sha256"])
+        self.assertIn("verified = 1", gate["verification"])
+        for required in entry["requires"]:
+            self.assertIn(required, gate["prerequisites"])
+        self.assertEqual("PS-WORKSHOP-001", gate["prerequisites"][-1])
         self.assertEqual(
             entry["forward"],
             "SQL FIles/Migrations/proposed/PS-WORKSHOP-002_knowledge_confirmation.sql",
@@ -660,8 +697,10 @@ class WorkshopConfirmationMigrationTests(unittest.TestCase):
     def test_the_ordering_of_gate_apply_and_merge_is_stated_in_the_header(self):
         for value in (
             "ORDERING",
-            "gate",
-            "merges only AFTER",
+            "passed the owner's disposable-",
+            "proof branch merges",
+            "production apply is",
+            "queued on that exact merged SHA",
         ):
             self.assertIn(value, self.forward)
 
