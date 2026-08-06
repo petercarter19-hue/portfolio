@@ -47,11 +47,18 @@
         <span class="os-chip__value">{{ alignment.version_label }}</span>
       </span>
     </span>
-    <span class="os-chip">
+    {# Image 05 changes exactly one thing in this strip: the Session chip
+       reads "Saved privately" with a green lock. Everything else about the
+       strip is identical between the two states. #}
+    <span class="os-chip{% if room.saved and room.saved.state != 'unsaved' %} os-chip--saved{% endif %}">
       <span class="os-chip__badge">{{ os_icon('globe' if room.is_public else 'lock') }}</span>
       <span>
         <span class="os-chip__label">Session</span>
-        <span class="os-chip__value">{% if room.is_public %}Public session{% else %}Session private{% endif %}</span>
+        <span class="os-chip__value">
+          {%- if room.is_public %}Public session
+          {%- elif room.saved and room.saved.state != 'unsaved' %}Saved privately
+          {%- else %}Session private{% endif -%}
+        </span>
       </span>
     </span>
     <a class="os-context-strip__link" href="{{ room.requirements_step_url }}" data-os-step="requirements">
@@ -92,6 +99,45 @@
   </div>
   {% endif %}
 </div>
+
+{% if alignment.has_analysis and alignment.has_qualifications %}
+{# THE FILTER ROW — image 05's authority, image 04's grammar (handoff section
+   14-M4). Slice OS-3 deferred it here because image 05 is the only image that
+   draws it.
+
+   PLACEMENT is image 05's exactly: below the two count summary cards, above
+   the first qualification card, spanning the workbench. STYLING is image 04's,
+   because image 05's flatter, blue-heavy treatment is prohibited (locked
+   rule; section 14-M2).
+
+   It filters the rows inside BOTH status-bearing cards at once. It does not
+   reach Responsibilities or Informational statements, which carry no status
+   because PeerSlate compared them against nothing — and those two cards are
+   never merged into one (section 14-M14).
+
+   The summaries above it stay UNFILTERED. They are the locked accounting;
+   a filtered total would be a different number wearing the same label.
+
+   Real links, so the filter works with JavaScript off exactly as row
+   selection does; the room script intercepts them for an instant filter. #}
+<nav class="os-card os-card--filters" aria-label="Filter qualifications by status">
+  <ul class="os-filters" data-os-filters>
+    {% for filter in alignment.status_filters %}
+    <li>
+      <a class="os-filter{% if filter.is_active %} is-active{% endif %}"
+         href="{{ room.alignment_step_url }}&amp;status={{ filter.value }}{% if alignment.selected_key %}&amp;statement={{ alignment.selected_key }}{% endif %}"
+         data-os-filter="{{ filter.value }}"
+         {% if filter.is_active %}aria-current="true"{% endif %}>{{ filter.label }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+  {# Section 13: the filtered result is announced politely rather than left
+     for the member to discover. The script writes the same sentence the
+     per-card "showing N of M" labels carry, so nothing is announced that is
+     not also on screen. #}
+  <p class="os-visually-hidden" role="status" data-os-filter-live></p>
+</nav>
+{% endif %}
 
 {% if not alignment.has_qualifications %}
 {# Reachable when the confirmed reading contains no qualification at all —
@@ -204,10 +250,17 @@
 {# Image 04 draws the two qualification cards open, with their own visible
    column headers. They are headed sections rather than disclosures because
    the authority gives them no chevron and no collapsed state. #}
-<section class="os-card os-card--panel os-qual" aria-labelledby="os-qual-{{ group.class }}">
+<section class="os-card os-card--panel os-qual" aria-labelledby="os-qual-{{ group.class }}"
+         data-os-qual-card="{{ group.class }}">
   <h3 class="os-qual__title" id="os-qual-{{ group.class }}"
       {% if loop.first %}data-os-focus tabindex="-1"{% endif %}>
     {{ group.label }}<span class="os-qual__dot" aria-hidden="true">·</span><span class="os-qual__count">{{ group.count }}</span>
+    {# "showing N of M" appears only while a filter is applied. Printing
+       "showing 6 of 6" unfiltered would be noise, and the count beside the
+       heading is already the total. The pair is announced politely by the
+       live region below rather than by each heading shouting on its own. #}
+    <span class="os-qual__showing" data-os-showing
+          {% if not group.is_filtered %}hidden{% endif %}>Showing {{ group.shown }} of {{ group.count }}</span>
   </h3>
   {% if group.count %}
   <table class="os-align">
@@ -227,7 +280,9 @@
     <tbody>
       {% for statement in group.statements %}
       <tr class="os-align__row{% if statement.key == alignment.selected_key %} is-selected{% endif %}"
-          data-os-align-row="{{ statement.key }}">
+          data-os-align-row="{{ statement.key }}"
+          data-os-row-status="{{ statement.status or 'none' }}"
+          {% if alignment.status_filter != 'all' and statement.status != alignment.status_filter %}hidden{% endif %}>
         <td class="os-align__num">{{ loop.index }}</td>
         <td class="os-align__text">
           <span class="os-align__wording">{{ statement.text }}</span>
@@ -276,6 +331,15 @@
       {% endfor %}
     </tbody>
   </table>
+  {# A filter that matches nothing in this card says so, rather than leaving
+     an empty table under a heading. It never claims the qualifications are
+     gone — the count beside the heading is still the real total. #}
+  <p class="os-qual__filtered-empty" data-os-filter-empty
+     {% if group.shown %}hidden{% endif %}>
+    None of these {{ group.count }} qualification{{ '' if group.count == 1 else 's' }}
+    is <span data-os-filter-label>{{ alignment.status_filter_label | lower }}</span>.
+    Choose All to see them again.
+  </p>
   {% else %}
   <p class="os-qual__empty">
     PeerSlate did not read any of the employer's statements this way. That is a
@@ -325,6 +389,18 @@
 </p>
 {% endif %}
 
+{# ---------------------------------------------------------------------------
+   SLICE OS-4's footer. Image 04 and image 05 draw the SAME strip in the same
+   place at the same size; what differs is the truth line and the action set.
+   That is the state prop, and it is the only thing that changes between the
+   two Alignment states (handoff section 3): the geometry, the cards, the
+   table and the rails are identical, because image 04 is the geometry
+   authority and image 05 supplies saved content and actions only.
+
+   Saving does not move the member. There is no confirmation screen and no
+   navigation: the same workbench comes back with the same qualification
+   selected and the same filter applied, and this strip changes.
+   --------------------------------------------------------------------------- #}
 {# Image 04's footer strip, and it stays INSIDE the workbench deliberately.
 
    The independent recheck asked for it below the response and evidence rails,
@@ -342,24 +418,70 @@
    and keeping it directly under the results keeps that sentence beside the
    thing it is true of instead of two thousand pixels below it on a phone.
    The action it carries that can destroy work, `Run this again`, is likewise
-   next to the analysis it would replace. `Save privately` is inert until
-   slice OS-4, so nothing here is an action a member can complete too early.
-   Recorded in OS-3_COMPLETION_REPORT.md §5 with the measurements. #}
+   next to the analysis it would replace. Recorded in
+   OS-3_COMPLETION_REPORT.md §5 with the measurements.
+
+   SLICE OS-4 CORRECTION to the sentence that used to close this block: it
+   said `Save privately` is inert, "so nothing here is an action a member can
+   complete too early". That was true of OS-3 and is false now — the control
+   is live. The placement argument above is unaffected and stands on its own
+   two reasons (the measured 138px of bare canvas, and the truth statement
+   belonging beside the results it describes); the reassurance did not survive
+   the control being built, so it is retired rather than left to mislead. #}
+{% set is_saved = room.saved and room.saved.exists and room.saved.state != 'unsaved' %}
 <div class="os-card os-card--footer">
   <div class="os-footer-strip">
-    {# Finding F9: these three sentences are reviewed copy and now come from
-       the ALIGNMENT_FOOTER_* / ALIGNMENT_SAVE_NOTE constants in
+    {# Finding F9: these sentences are reviewed copy and come from the
+       ALIGNMENT_FOOTER_* / SAVED_FOOTER_* constants in
        opportunity_slate_routes.py, which the static prose guard scans. They
        were previously typed here as well, and had already drifted. #}
-    <p class="os-footer-strip__truth">
+    <p class="os-footer-strip__truth{% if is_saved %} os-footer-strip__truth--saved{% endif %}">
       {{ os_icon('lock') }}
       <span>
+        {% if is_saved %}
+        <strong>{{ alignment.saved_footer_truth }}</strong>
+        {{ alignment.saved_footer_detail }}
+        <span class="os-footer-strip__promise">{{ alignment.saved_footer_promise }}</span>
+        {% else %}
         <strong>{{ alignment.footer_truth }}</strong>
         {{ alignment.footer_detail }}
+        {% endif %}
       </span>
     </p>
     <div class="os-footer-strip__actions">
+      {# Image 05's saved footer carries exactly two actions. `Review inputs`
+         is already in the context strip a few hundred pixels above, and the
+         authority does not repeat it here — the duplication finding R14
+         rejected on the requirements screen. Image 09-c DOES list it, so the
+         stale branch below carries it. #}
+      {% if not is_saved %}
       <a class="os-link" href="{{ room.requirements_step_url }}" data-os-step="requirements">Review inputs</a>
+      {% endif %}
+
+      {% if room.saved and room.saved.state == 'saved_stale' %}
+      <a class="os-link" href="{{ room.requirements_step_url }}" data-os-step="requirements">Review inputs</a>
+      {# Image 09-c's action set. `Reanalyze` runs a NEW analysis into the
+         unsaved state alongside the still-identifiable saved result; it never
+         overwrites it and nothing here reanalyzes on its own. #}
+      <a class="os-link" href="{{ room.saved_details_url }}">View saved result</a>
+      <form method="post" action="{{ room.reanalyze_url }}" data-os-form="analyze">
+        <button type="submit" class="os-btn os-btn--primary" data-os-analyze>
+          {{ os_icon('refresh', 'os-icon os-icon--sm') }}<span>Reanalyze</span>
+        </button>
+      </form>
+
+      {% elif is_saved %}
+      {# Image 05's action set, exactly: `View saved details` as a bordered
+         white button and `Done for now` as the primary. Done for now leaves
+         the workbench without mutating anything (section 2, invariant 4). #}
+      <a class="os-btn os-btn--quiet" href="{{ room.saved_details_url }}">
+        {{ os_icon('doc', 'os-icon os-icon--sm') }}<span>View saved details</span>
+      </a>
+      <a class="os-btn os-btn--primary" href="{{ room.back_url }}">
+        <span>Done for now</span>
+      </a>
+
+      {% else %}
       {% if alignment.has_analysis %}
       <form method="post" action="{{ room.analysis_url }}" data-os-form="analyze">
         <button type="submit" class="os-btn os-btn--quiet" data-os-analyze>
@@ -367,15 +489,31 @@
         </button>
       </form>
       {% endif %}
-      {# Honest inert primary, in the grammar slices OS-1 and OS-2 established.
-         Image 04 draws `Save privately` here and saving is slice OS-4, so the
-         control renders exactly as drawn and says plainly that it does
-         nothing yet rather than pretending to work. #}
-      <button type="button" class="os-btn os-btn--primary" aria-disabled="true"
-              aria-describedby="os-save-note" data-os-inert-save>
-        {{ os_icon('lock', 'os-icon os-icon--sm') }}<span>Save privately</span>
-      </button>
+      {% if alignment.can_save and alignment.has_analysis %}
+      {# Image 04's primary, live for the first time. It carries the
+         qualification the member is on and the filter they applied, so
+         saving returns them to exactly the screen they were reading. #}
+      <form method="post" action="{{ room.save_url }}">
+        <input type="hidden" name="idempotency_key" value="{{ room.idempotency_key }}">
+        <input type="hidden" name="statement_key" value="{{ alignment.selected_key or '' }}">
+        <input type="hidden" name="status" value="{{ alignment.status_filter }}">
+        <button type="submit" class="os-btn os-btn--primary"
+                aria-describedby="os-save-note" data-os-save>
+          {{ os_icon('lock', 'os-icon os-icon--sm') }}<span>Save privately</span>
+        </button>
+      </form>
+      {% elif not alignment.can_save %}
+      {# Handoff section 18: saving is signed-in only. The public side gets an
+         honest note where the control would be, not a control that cannot
+         work. Same grammar as the intake screen's unavailable tiles. #}
+      <p class="os-availability">
+        {{ os_icon('lock', 'os-icon os-icon--sm') }}<span>Saving is available with membership</span>
+      </p>
+      {% endif %}
+      {% endif %}
     </div>
   </div>
 </div>
+{% if not is_saved %}
 <p class="os-help os-help--muted os-footer-note" id="os-save-note">{{ alignment.save_note }}</p>
+{% endif %}

@@ -49,6 +49,7 @@ precedent, so this file has no edit-time dependency on another package's
 reserved file.
 """
 
+import hashlib
 import json
 import re
 from dataclasses import dataclass
@@ -311,6 +312,228 @@ MAX_CITATIONS_PER_STATEMENT = 24
 
 _SAVE_OUTCOMES = frozenset({"success", "existing", "unchanged"})
 
+# ---------------------------------------------------------------------------
+# Slice OS-4 — the durable saved slate.
+# ---------------------------------------------------------------------------
+SLATE_ROW_FIELDS = frozenset(
+    {
+        "slate_key",
+        "slate_row_version",
+        "current_save_version_number",
+        "slate_created_at_utc",
+        "saved_result_key",
+        "save_version_number",
+        "source_version_number",
+        "requirement_version_number",
+        "saved_analysis_key",
+        "source_text",
+        "model_name",
+        "prompt_contract_version",
+        "evidence_considered_count",
+        "qualification_count",
+        "input_fingerprint",
+        "saved_at_utc",
+    }
+)
+SAVED_VERSION_ROW_FIELDS = frozenset(
+    {
+        "saved_result_key",
+        "save_version_number",
+        "source_version_number",
+        "requirement_version_number",
+        "qualification_count",
+        "saved_at_utc",
+    }
+)
+SAVED_QUALIFICATION_ROW_FIELDS = frozenset(
+    {
+        "qualification_id",
+        "ordinal",
+        "statement_class",
+        "employer_text",
+        "derived_status",
+        "citation_count",
+        "response_kind",
+        "response_text",
+        "authored_via",
+        "connected_evidence_title",
+        "connected_evidence_version",
+    }
+)
+SAVED_EVIDENCE_ROW_FIELDS = frozenset(
+    {
+        "qualification_id",
+        "ordinal",
+        "clause_ordinal",
+        "covered_text",
+        "evidence_kind",
+        "evidence_key",
+        "evidence_version",
+        "evidence_title",
+        "excerpt",
+    }
+)
+SAVED_CURRENCY_ROW_FIELDS = frozenset(
+    {"evidence_kind", "evidence_key", "pinned_version", "current_version"}
+)
+
+# The evidence kinds whose CURRENT version this revision can actually resolve.
+#
+# 2026-08-04 independent review, finding F6. opportunity_saved_evidence's CHECK
+# permits `moment` because handoff §17-Q2 plans for it, but the currency query
+# resolves only against dbo.knowledge_items, so a saved slate citing a Moment
+# would read permanently stale with no action able to clear it. That is the
+# quiet kind of wrong, so it is refused loudly instead: a kind this revision
+# cannot price is a structural error, not a display state. A slice that adds
+# Moment grounding must extend BOTH this set and the procedure's currency
+# join in the same change; neither works without the other.
+SAVED_EVIDENCE_CURRENCY_KINDS = frozenset({"knowledge_item"})
+SAVE_SLATE_ROW_FIELDS = frozenset(
+    {
+        "outcome",
+        "slate_key",
+        "saved_result_key",
+        "save_version_number",
+        "qualification_count",
+    }
+)
+DELETE_SLATE_ROW_FIELDS = frozenset({"outcome", "deleted_result_count"})
+
+# The full four-class enum, matching the migration's own CHECK. A saved
+# snapshot records the class the analysis actually held; narrowing it here
+# would refuse on read a row the database legitimately accepted (2026-08-04
+# SQL gate).
+SAVED_STATEMENT_CLASSES = STATEMENT_CLASSES
+MAX_SAVED_VERSIONS_LISTED = 50
+
+# The canonical input-digest format. Versioned in its own first line so a
+# future change to what counts as an input is a NEW fingerprint rather than a
+# silent reinterpretation of the old one: every stored fingerprint would then
+# stop matching, which reads as "inputs changed" — conservative, honest, and
+# never a false "still current".
+#
+# v2 (2026-08-04 independent review, finding F1) added ``content_digest``.
+# v1 hashed only the two version NUMBERS and the evidence versions, and two
+# ordinary member actions change a confirmed input without moving either
+# number: correcting the captured source wording rewrites
+# ``member_corrected_text`` in place, and correcting a requirement statement
+# rewrites ``member_class`` in place. Both left a saved result reading
+# "Current for these inputs" over wording the member had since changed. Under
+# the copy model that is the expensive lie — the member is reading retained
+# old text that the banner labels current — so the digest now covers the
+# CONTENT of those inputs, not just their version numbers. Every fingerprint
+# stored under v1 stops matching and reads as stale, which is the correct
+# conservative fallout.
+_FINGERPRINT_VERSION = "os4-input-fingerprint-v2"
+_CONTENT_DIGEST_VERSION = "os4-input-content-v1"
+
+
+def compute_content_digest(source_text, statement_signature):
+    """The digest of the input CONTENT a saved result was computed from.
+
+    Two facts, both of which a member can change in place without any version
+    number moving:
+
+      * the confirmed employer wording — the correction overlay when there is
+        one, otherwise the captured original. This is the text the analysis
+        was read from and the text the saved result copied.
+      * the analysed statement set: for every statement the analysis actually
+        covered, its ordinal, the class in force (the member's correction when
+        they made one, otherwise PeerSlate's proposal), and the employer text.
+        A reclassification that moves a statement into or out of the analysed
+        set changes this signature, as does one that only relabels it.
+
+    Deliberately computable from BOTH sides without a schema change, which is
+    what makes it a fair comparison rather than a stored assertion: the live
+    side reads the working session and the requirement set; the pinned side
+    reads the snapshot's own copied ``source_text`` and saved qualifications,
+    which carry exactly these three fields per statement.
+
+    NOT covered, and named here so the omission is a decision rather than an
+    oversight: ``member_clarification``. It is member context attached to a
+    statement, it is not sent to any AI step (`_qualifications_for_analysis`
+    passes ordinal, employer text and clause vocabulary only), and it is not
+    part of what a saved result holds. Changing it cannot make a saved result
+    wrong. The un-confirmed state it produces is still refused as current by
+    the confirmation guard in ``is_current_for``.
+    """
+    entries = sorted(
+        (int(ordinal), str(statement_class), str(employer_text))
+        for ordinal, statement_class, employer_text in statement_signature
+    )
+    canonical = "\n".join(
+        [
+            _CONTENT_DIGEST_VERSION,
+            "source=" + _text_digest(source_text),
+            "statements="
+            + "|".join(
+                f"{ordinal}:{statement_class}:{_text_digest(employer_text)}"
+                for ordinal, statement_class, employer_text in entries
+            ),
+        ]
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _text_digest(text):
+    """Hash member text rather than concatenating it.
+
+    Keeps the canonical string a fixed shape whatever the wording contains,
+    so no delimiter appearing inside an employer statement can make two
+    different readings collide.
+    """
+    return hashlib.sha256((text or "").encode("utf-8")).hexdigest()
+
+
+def compute_input_fingerprint(
+    source_version_number,
+    requirement_version_number,
+    evidence_versions,
+    *,
+    content_digest,
+):
+    """The digest that decides "Saved" from "Saved but no longer current".
+
+    Handoff section 7 makes savedness and currency two different truths, and
+    this function is the whole mechanism. It is deliberately a PURE function
+    of four facts, so the same code computes both sides of the comparison:
+
+      * the confirmed source version the result was computed from;
+      * the confirmed requirement-set version it was computed from;
+      * every evidence record the result cites, paired with a version;
+      * ``content_digest`` — the wording of those confirmed inputs, because
+        a member can rewrite the source correction or a statement's class in
+        place and neither version number moves (finding F1).
+
+    At save time the versions are the ones the analysis PINNED. At read time
+    the same evidence keys are paired with the version the member's library
+    carries NOW. Equal digests mean "Current for these inputs"; different
+    digests mean "Inputs changed - Reanalysis required".
+
+    A record that has been archived, un-confirmed or deleted has no current
+    version, and the caller passes ``None``. That is encoded as ``0`` rather
+    than dropped: dropping it would make a vanished evidence record
+    indistinguishable from one that was never cited, which is precisely the
+    change the member most needs to be told about.
+
+    ``evidence_versions`` is sorted here rather than trusted, because the two
+    call sites read from different result sets and a digest that depended on
+    row order would report spurious staleness.
+    """
+    pairs = sorted(
+        (str(key), int(version or 0)) for key, version in evidence_versions
+    )
+    canonical = "\n".join(
+        [
+            _FINGERPRINT_VERSION,
+            f"source={int(source_version_number)}",
+            f"requirements={int(requirement_version_number)}",
+            "evidence=" + "|".join(f"{key}:{version}" for key, version in pairs),
+            f"content={content_digest}",
+        ]
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
 
 class OpportunitySlateServiceError(RuntimeError):
     """Raised when an Opportunity Slate working-session operation cannot be
@@ -441,6 +664,24 @@ def _bounded_choice(value, allowed, label):
     if value not in allowed:
         raise OpportunitySlateServiceError(f"Invalid {label}.", code="invalid")
     return value
+
+
+_FINGERPRINT_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _fingerprint(value):
+    """A 64-character lowercase hex digest, or a refusal.
+
+    The database CHECK says the same thing. Asserted here as well so a
+    malformed value is refused before the round trip rather than arriving as
+    a constraint violation the caller has to interpret.
+    """
+    text = value.strip().lower() if isinstance(value, str) else ""
+    if not _FINGERPRINT_PATTERN.match(text):
+        raise OpportunitySlateServiceError(
+            "The input fingerprint is invalid.", code="invalid"
+        )
+    return text
 
 
 def _bounded_text(value, label, max_units):
@@ -998,6 +1239,288 @@ class ResponseView:
     connected_evidence_version: int | None
     connected_evidence_title: str | None
     updated_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Slice OS-4 views — the durable saved slate.
+#
+# Every one of these is a COPY the saved result owns, not a live read. That is
+# what lets a saved slate outlive the working session, the analysis and the
+# purge, and it is why nothing below carries a row-version fence except the
+# slate itself: an append-only snapshot has nothing to concurrently update.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class SavedEvidenceView:
+    """One pinned evidence reference inside a saved qualification."""
+
+    ordinal: int
+    clause_ordinal: int
+    covered_text: str
+    evidence_kind: str
+    evidence_key: str
+    evidence_version: int
+    evidence_title: str
+    excerpt: str
+
+
+@dataclass(frozen=True)
+class SavedQualificationView:
+    """One qualification as it stood when the member saved it."""
+
+    ordinal: int
+    statement_class: str
+    employer_text: str
+    status: str
+    citation_count: int
+    response_kind: str | None
+    response_text: str | None
+    authored_via: str | None
+    connected_evidence_title: str | None
+    connected_evidence_version: int | None
+    evidence: tuple
+
+    @property
+    def has_response(self):
+        return self.response_kind is not None
+
+
+@dataclass(frozen=True)
+class SavedVersionView:
+    """One entry in the versions list (`View saved details`)."""
+
+    saved_result_key: str
+    save_version_number: int
+    source_version_number: int
+    requirement_version_number: int
+    qualification_count: int
+    saved_at: datetime
+
+
+@dataclass(frozen=True)
+class SavedSlateView:
+    """The member's saved slate, opened at one of its saved versions.
+
+    ``is_current`` is the answer to a question the member is entitled to ask
+    and that "saved" alone cannot answer: does this result still apply to my
+    inputs? It is computed by comparing the fingerprint stored at save time
+    with one recomputed from the current inputs. Nothing here reanalyzes,
+    and nothing here changes a stored row.
+    """
+
+    slate_key: str
+    version_token: str
+    created_at: datetime
+    # The slate's own highest save version number, which — because saves only
+    # ever append and a delete removes the whole slate — is the TRUE number of
+    # saved versions this member has. ``versions`` below is capped at
+    # MAX_SAVED_VERSIONS_LISTED for the rail, so the two can legitimately
+    # disagree and the screen must not quote the capped one as the total
+    # (2026-08-04 independent review, finding F5).
+    total_version_count: int
+    saved_result_key: str
+    save_version_number: int
+    source_version_number: int
+    requirement_version_number: int
+    saved_analysis_key: str
+    source_text: str
+    model_name: str
+    prompt_contract_version: str
+    evidence_considered_count: int
+    qualification_count: int
+    input_fingerprint: str
+    saved_at: datetime
+    qualifications: tuple
+    versions: tuple
+    # ((evidence_key, pinned_version, current_version_or_None), ...)
+    evidence_currency: tuple
+
+    def counts_by_status(self):
+        """Per-status counts only — the same locked accounting the live
+        workbench performs, and for the same reason: there is no aggregate."""
+        counts = {name: 0 for name in sorted(ALIGNMENT_STATUSES)}
+        for qualification in self.qualifications:
+            counts[qualification.status] = counts.get(qualification.status, 0) + 1
+        return counts
+
+    def pinned_content_digest(self):
+        """The content digest rebuilt from what this snapshot itself copied.
+
+        The copy model pays for currency here: because the saved result owns
+        the confirmed source wording and each qualification's ordinal, class
+        and employer text, the pinned side of the content comparison needs no
+        extra stored column and no extra read.
+        """
+        return compute_content_digest(
+            self.source_text,
+            (
+                (
+                    qualification.ordinal,
+                    qualification.statement_class,
+                    qualification.employer_text,
+                )
+                for qualification in self.qualifications
+            ),
+        )
+
+    def pinned_fingerprint(self):
+        """Recompute the digest from what this snapshot PINNED and COPIED.
+
+        An integrity check rather than a display value: it must equal
+        ``input_fingerprint``. If it does not, this row and its evidence rows
+        disagree about what was saved, and the caller treats the result as not
+        current rather than presenting a reassurance it cannot support.
+        """
+        return compute_input_fingerprint(
+            self.source_version_number,
+            self.requirement_version_number,
+            ((key, pinned) for key, pinned, _ in self.evidence_currency),
+            content_digest=self.pinned_content_digest(),
+        )
+
+    def current_fingerprint(
+        self, source_version_number, requirement_version_number, content_digest
+    ):
+        """The digest of the member's CURRENT inputs, over the same evidence
+        records this snapshot cites, at the versions their library carries
+        now, and over the wording those inputs carry now."""
+        return compute_input_fingerprint(
+            source_version_number,
+            requirement_version_number,
+            ((key, current) for key, _, current in self.evidence_currency),
+            content_digest=content_digest,
+        )
+
+    def is_current_for(
+        self,
+        source_version_number,
+        requirement_version_number,
+        content_digest,
+        *,
+        inputs_confirmed,
+    ):
+        """Does this saved result still apply to the member's current inputs?
+
+        Three independent conditions, each able to answer "no" on its own,
+        and the order is worst-consequence-first:
+
+        1. ``inputs_confirmed`` — a structural backstop rather than a content
+           test. PeerSlate's whole flow rests on two explicit confirmation
+           checkpoints, and a member sitting on a reading they have NOT
+           confirmed is mid-edit. Refusing "current" there costs a member at
+           worst one unnecessary reanalysis; granting it costs them a wrong
+           answer they had no reason to doubt. It also catches any future
+           in-place mutation the content digest has not been taught about
+           yet, which is exactly how finding F1 happened.
+        2. The snapshot agrees with itself.
+        3. The current inputs digest to what was saved.
+        """
+        if not inputs_confirmed:
+            return False
+        if self.pinned_fingerprint() != self.input_fingerprint:
+            return False
+        return (
+            self.current_fingerprint(
+                source_version_number, requirement_version_number, content_digest
+            )
+            == self.input_fingerprint
+        )
+
+
+def _serialize_saved_qualification_row(row, evidence):
+    _require_exact_fields(
+        row, SAVED_QUALIFICATION_ROW_FIELDS, "saved qualification row"
+    )
+    status = _bounded_choice(
+        row["derived_status"], ALIGNMENT_STATUSES, "alignment status"
+    )
+    count = _non_negative_int(row["citation_count"], "citation count")
+    if len(evidence) != count:
+        # The stored count and the stored rows are two records of one fact.
+        # The live workbench refuses when they disagree; a SAVED result that
+        # disagreed with itself would be worse, because the member cannot
+        # re-run it to find out which one is right.
+        raise OpportunitySlateServiceError(
+            "The saved result is incomplete.", code="invalid"
+        )
+    if (count == 0) != (status == "not_enough_information"):
+        raise OpportunitySlateServiceError(
+            "The saved result is incomplete.", code="invalid"
+        )
+    kind = row["response_kind"]
+    if kind is not None:
+        kind = _bounded_choice(kind, RESPONSE_KINDS, "response kind")
+    text = row["response_text"]
+    if text is not None:
+        text = _bounded_text(text, "response", MAX_RESPONSE_TEXT_UNITS)
+    provenance = row["authored_via"]
+    if provenance is not None:
+        provenance = _bounded_choice(
+            provenance, AUTHORED_VIA_VALUES, "response provenance"
+        )
+    title = row["connected_evidence_title"]
+    if title is not None:
+        title = _bounded_text(title, "evidence title", MAX_EVIDENCE_TITLE_UNITS)
+    return SavedQualificationView(
+        ordinal=_positive_int(row["ordinal"], "ordinal"),
+        statement_class=_bounded_choice(
+            row["statement_class"], SAVED_STATEMENT_CLASSES, "statement class"
+        ),
+        employer_text=_bounded_text(
+            row["employer_text"], "employer wording", MAX_STATEMENT_TEXT_UNITS
+        ),
+        status=status,
+        citation_count=count,
+        response_kind=kind,
+        response_text=text,
+        authored_via=provenance,
+        connected_evidence_title=title,
+        connected_evidence_version=_optional_positive_int(
+            row["connected_evidence_version"], "evidence version"
+        ),
+        evidence=evidence,
+    )
+
+
+def _serialize_saved_evidence_row(row):
+    _require_exact_fields(row, SAVED_EVIDENCE_ROW_FIELDS, "saved evidence row")
+    return SavedEvidenceView(
+        ordinal=_positive_int(row["ordinal"], "evidence ordinal"),
+        clause_ordinal=_positive_int(row["clause_ordinal"], "clause ordinal"),
+        covered_text=_bounded_text(
+            row["covered_text"], "covered wording", MAX_COVERED_TEXT_UNITS
+        ),
+        evidence_kind=_bounded_choice(
+            row["evidence_kind"], EVIDENCE_KINDS, "evidence kind"
+        ),
+        evidence_key=_opaque_key(row["evidence_key"], "evidence key"),
+        evidence_version=_positive_int(row["evidence_version"], "evidence version"),
+        evidence_title=_bounded_text(
+            row["evidence_title"], "evidence title", MAX_EVIDENCE_TITLE_UNITS
+        ),
+        excerpt=_bounded_text(row["excerpt"], "evidence excerpt", MAX_EXCERPT_UNITS),
+    )
+
+
+def _serialize_saved_version_row(row):
+    _require_exact_fields(row, SAVED_VERSION_ROW_FIELDS, "saved version row")
+    return SavedVersionView(
+        saved_result_key=_opaque_key(row["saved_result_key"], "saved result key"),
+        save_version_number=_positive_int(
+            row["save_version_number"], "save version"
+        ),
+        source_version_number=_positive_int(
+            row["source_version_number"], "source version"
+        ),
+        requirement_version_number=_positive_int(
+            row["requirement_version_number"], "requirement version"
+        ),
+        qualification_count=_positive_int(
+            row["qualification_count"], "qualification count"
+        ),
+        saved_at=_utc_timestamp(row["saved_at_utc"], "save time"),
+    )
 
 
 def _serialize_evidence_row(row):
@@ -2148,6 +2671,249 @@ class OpportunitySlateService:
             "response_key": _opaque_key(row["response_key"], "response key"),
             "response_kind": _bounded_choice(
                 row["response_kind"], RESPONSE_KINDS, "response kind"
+            ),
+        }
+
+    # -----------------------------------------------------------------
+    # Slice OS-4 — the save lifecycle.
+    # -----------------------------------------------------------------
+
+    def get_saved_slate_for_owner(self, user_key, saved_result_key=None):
+        """This owner's saved slate opened at one saved version, or ``None``.
+
+        ``None`` means "no saved slate", which is a different fact from "the
+        working analysis is unsaved" and the screen says the two differently.
+        A ``saved_result_key`` that is not this owner's also returns ``None``:
+        not-found and not-yours are indistinguishable here, exactly as they
+        are on every route in this room.
+        """
+        self._require_user_key(user_key)
+        requested = (
+            self._require_source_key(saved_result_key)
+            if saved_result_key
+            else None
+        )
+        result_sets = self.database.execute_procedure(
+            "usp_GetOpportunitySavedSlateForOwner",
+            [("@UserKey", user_key), ("@SavedResultKey", requested)],
+        )
+        result_sets = list(result_sets or [])
+        while len(result_sets) < 5:
+            result_sets.append([])
+
+        slate_rows = result_sets[0]
+        if not slate_rows:
+            return None
+        row = slate_rows[0]
+        _require_exact_fields(row, SLATE_ROW_FIELDS, "saved slate row")
+
+        evidence_by_qualification = {}
+        for evidence_row in result_sets[3]:
+            view = _serialize_saved_evidence_row(evidence_row)
+            evidence_by_qualification.setdefault(
+                evidence_row["qualification_id"], []
+            ).append(view)
+
+        qualifications = []
+        for qualification_row in result_sets[2]:
+            key = qualification_row["qualification_id"]
+            evidence = tuple(
+                sorted(
+                    evidence_by_qualification.get(key, ()),
+                    key=lambda item: item.ordinal,
+                )
+            )
+            qualifications.append(
+                _serialize_saved_qualification_row(qualification_row, evidence)
+            )
+        if not qualifications:
+            # A saved result with no qualifications cannot be created — the
+            # procedure refuses a payload with none — so an empty read means
+            # the rows disagree, and a trustworthy failure beats a plausible
+            # screen.
+            raise OpportunitySlateServiceError(
+                "The saved result is incomplete.", code="invalid"
+            )
+
+        currency = []
+        for currency_row in result_sets[4]:
+            _require_exact_fields(
+                currency_row, SAVED_CURRENCY_ROW_FIELDS, "saved currency row"
+            )
+            if currency_row["evidence_kind"] not in SAVED_EVIDENCE_CURRENCY_KINDS:
+                # Finding F6. Unreachable today — AI step 3 stores the literal
+                # `knowledge_item` and nothing else writes saved evidence — and
+                # deliberately loud rather than silently stale if that changes.
+                raise OpportunitySlateServiceError(
+                    "The saved result is incomplete.", code="invalid"
+                )
+            currency.append(
+                (
+                    _opaque_key(currency_row["evidence_key"], "evidence key"),
+                    _positive_int(currency_row["pinned_version"], "pinned version"),
+                    _optional_positive_int(
+                        currency_row["current_version"], "current version"
+                    ),
+                )
+            )
+
+        versions = tuple(
+            _serialize_saved_version_row(version_row)
+            for version_row in result_sets[1][:MAX_SAVED_VERSIONS_LISTED]
+        )
+
+        return SavedSlateView(
+            slate_key=_opaque_key(row["slate_key"], "slate key"),
+            version_token=_version_token(
+                row["slate_row_version"], "slate row version"
+            ),
+            created_at=_utc_timestamp(row["slate_created_at_utc"], "slate time"),
+            total_version_count=_positive_int(
+                row["current_save_version_number"], "save version count"
+            ),
+            saved_result_key=_opaque_key(
+                row["saved_result_key"], "saved result key"
+            ),
+            save_version_number=_positive_int(
+                row["save_version_number"], "save version"
+            ),
+            source_version_number=_positive_int(
+                row["source_version_number"], "source version"
+            ),
+            requirement_version_number=_positive_int(
+                row["requirement_version_number"], "requirement version"
+            ),
+            saved_analysis_key=_opaque_key(
+                row["saved_analysis_key"], "analysis key"
+            ),
+            source_text=_bounded_text(
+                row["source_text"], "saved source", MAX_SOURCE_TEXT_UNITS
+            ),
+            model_name=_bounded_text(
+                row["model_name"], "model name", MAX_MODEL_NAME_UNITS
+            ),
+            prompt_contract_version=_bounded_text(
+                row["prompt_contract_version"],
+                "prompt contract version",
+                MAX_PROMPT_CONTRACT_UNITS,
+            ),
+            evidence_considered_count=_non_negative_int(
+                row["evidence_considered_count"], "evidence count"
+            ),
+            qualification_count=_positive_int(
+                row["qualification_count"], "qualification count"
+            ),
+            input_fingerprint=_fingerprint(row["input_fingerprint"]),
+            saved_at=_utc_timestamp(row["saved_at_utc"], "save time"),
+            qualifications=tuple(
+                sorted(qualifications, key=lambda item: item.ordinal)
+            ),
+            versions=versions,
+            evidence_currency=tuple(currency),
+        )
+
+    def save_slate_for_owner(
+        self,
+        user_key,
+        idempotency_key,
+        requirement_set_key,
+        expected_version_token,
+        input_fingerprint,
+    ):
+        """`Save privately`. Creates one immutable saved result.
+
+        Idempotent: a repeated ``idempotency_key`` for the same owner returns
+        the saved version it already created (outcome ``existing``) rather
+        than appending a second one, so a double-submitted footer cannot make
+        two saves out of one intention.
+
+        The CONTENT is not passed. The procedure builds the snapshot from this
+        owner's own confirmed source, confirmed requirement set, current
+        analysis and responses, so this layer cannot choose what a saved
+        result says about the member. The only two values it supplies are the
+        idempotency key and the fingerprint — and the fingerprint is a derived
+        currency cache, not a permission: a wrong one can make a result look
+        stale, never make a stale one look current, because the read side
+        recomputes both sides from server-read facts.
+        """
+        self._require_user_key(user_key)
+        if not isinstance(idempotency_key, str) or not idempotency_key.strip():
+            raise OpportunitySlateServiceError(
+                "An idempotency key is required.", code="required"
+            )
+        if utf16_length(idempotency_key) > MAX_IDEMPOTENCY_KEY_UNITS:
+            raise OpportunitySlateServiceError(
+                "Idempotency key exceeds its limit.", code="too_long"
+            )
+        clean_set_key = self._require_source_key(requirement_set_key)
+        expected_row_version = self._require_expected_row_version(
+            expected_version_token
+        )
+
+        row = self.database.first_row(
+            "usp_SaveOpportunitySlateForOwner",
+            [
+                ("@UserKey", user_key),
+                ("@IdempotencyKey", idempotency_key),
+                ("@RequirementSetKey", clean_set_key),
+                ("@ExpectedRowVersion", expected_row_version),
+                ("@InputFingerprint", _fingerprint(input_fingerprint)),
+            ],
+        )
+        _require_exact_fields(row, SAVE_SLATE_ROW_FIELDS, "saved slate result")
+        outcome = row["outcome"]
+        if outcome not in {"success", "existing"} or not row["saved_result_key"]:
+            # Reuse the shared fence so `changed` and `invalid` raise the
+            # codes the route already knows how to render, and never report a
+            # save without an exact, non-falsy key.
+            self._raise_for_fenced_outcome(outcome, "saved slate")
+            raise OpportunitySlateServiceError(
+                "The saved slate could not be created.", code="not_found"
+            )
+        return {
+            "outcome": outcome,
+            "slate_key": _opaque_key(row["slate_key"], "slate key"),
+            "saved_result_key": _opaque_key(
+                row["saved_result_key"], "saved result key"
+            ),
+            "save_version_number": _positive_int(
+                row["save_version_number"], "save version"
+            ),
+            "qualification_count": _positive_int(
+                row["qualification_count"], "qualification count"
+            ),
+        }
+
+    def delete_saved_slate_for_owner(
+        self, user_key, slate_key, expected_version_token
+    ):
+        """The member's explicit deletion of their saved slate.
+
+        Atomic and complete: pinned evidence, saved qualifications, every
+        saved version, then the slate. It reaches no working data — the
+        member may still be using their session — and a failure leaves the
+        slate whole, which is the promise image 09-d makes on screen.
+        """
+        self._require_user_key(user_key)
+        clean_slate_key = self._require_source_key(slate_key)
+        expected_row_version = self._require_expected_row_version(
+            expected_version_token
+        )
+
+        row = self.database.first_row(
+            "usp_DeleteOpportunitySavedSlateForOwner",
+            [
+                ("@UserKey", user_key),
+                ("@SlateKey", clean_slate_key),
+                ("@ExpectedRowVersion", expected_row_version),
+            ],
+        )
+        _require_exact_fields(row, DELETE_SLATE_ROW_FIELDS, "slate delete result")
+        self._raise_for_fenced_outcome(row["outcome"], "saved slate")
+        return {
+            "outcome": "success",
+            "deleted_result_count": _non_negative_int(
+                row["deleted_result_count"], "deleted result count"
             ),
         }
 

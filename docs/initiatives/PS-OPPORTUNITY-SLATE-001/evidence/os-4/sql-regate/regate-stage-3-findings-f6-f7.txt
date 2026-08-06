@@ -1,0 +1,25 @@
+    save analysis: {'outcome': 'success', 'analysis_key': UUID('2ed81234-0d90-f111-9b33-002248458a47'), 'qualification_count': 3}
+    save response: {'outcome': 'success', 'response_key': UUID('2fd81234-0d90-f111-9b33-002248458a47'), 'response_kind': 'tell_more'}
+== F7. two SIMULTANEOUS saves carrying the same idempotency key ==
+  PASS neither request raised -> ['existing', 'success']
+  PASS one created the row and the other reported it as existing -> ['existing', 'success']
+  PASS exactly one saved version exists for that key
+  PASS both requests named the same saved result -> ['31d81234-0d90-f111-9b33-002248458a47', '31d81234-0d90-f111-9b33-002248458a47']
+== F7b. four at once, on a fresh key ==
+  PASS no request raised -> ['existing', 'existing', 'existing', 'success']
+  PASS exactly one success, the rest existing -> ['existing', 'existing', 'existing', 'success']
+  PASS still exactly one row for that key
+== F6. the currency read prices only the kind it can resolve ==
+  PASS the currency result set now carries the evidence kind -> [{'evidence_kind': 'knowledge_item', 'evidence_key': UUID('aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'), 'pinned_version': 1, 'current_version': 1}]
+  PASS a knowledge item still resolves to its current version -> [{'evidence_kind': 'knowledge_item', 'evidence_key': UUID('aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'), 'pinned_version': 1, 'current_version': 1}]
+  re-label one pinned reference as a Moment: OK
+  PASS a Moment reference is reported AS a Moment -> [{'evidence_kind': 'moment', 'evidence_key': UUID('aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'), 'pinned_version': 1, 'current_version': None}]
+  PASS and is NOT resolved against the knowledge item that shares its key -> [{'evidence_kind': 'moment', 'evidence_key': UUID('aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'), 'pinned_version': 1, 'current_version': None}]
+  restore the pinned reference: OK
+== F6b. the application refuses that row rather than showing it stale ==
+  PASS the service prices exactly one kind, matching the procedure -> ['knowledge_item']
+== clean up the rows this stage created ==
+    delete the stage-3 slate: {'outcome': 'success', 'deleted_result_count': 2}
+  PASS nothing of it is left
+
+FAILURES: none

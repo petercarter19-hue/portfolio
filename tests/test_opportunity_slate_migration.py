@@ -681,7 +681,13 @@ class OpportunitySlateMigrationTests(unittest.TestCase):
             ROOT / "services" / "opportunity_slate_service.py"
         ).read_text(encoding="utf-8")
         called = set(re.findall(r'"(usp_[A-Za-z0-9_]+)"', service_source))
-        self.assertEqual(called, set(PROCEDURE_NAMES))
+        # OS-4's three procedures are called by the service and allowlisted
+        # in services/database_service.py. PS-OPPSLATE-003's SQL is now
+        # merged into main, so this file can assert against it directly —
+        # but it is neither gated nor applied (registry.json gate is null;
+        # see test_registry_entry_has_no_gate_proof_yet). This branch does
+        # not go live until PS-OPPSLATE-003 is gated and applied.
+        self.assertEqual(called, set(PROCEDURE_NAMES) | set(OS4_PROCEDURE_NAMES))
 
     # ------------------------------------------------------------------
     # Slice OS-2
@@ -1348,6 +1354,30 @@ class OpportunitySlateOs4AdditiveChainTests(unittest.TestCase):
                 self.assertIn(
                     f"CREATE OR ALTER PROCEDURE dbo.{name}", self.forward_003
                 )
+
+    def test_the_currency_read_prices_only_the_kind_it_can_resolve(self):
+        """Independent review finding F6 (OS-4 checkpoint,
+        work/2026-08-04-opportunity-slate-os4, carried into this additive
+        re-cut). opportunity_saved_evidence permits `moment` for handoff
+        section 17-Q2, but the currency read that decides "Inputs changed"
+        prices knowledge_items only. Without an explicit kind predicate a
+        Moment citation would resolve to current_version = NULL forever, with
+        no member action able to clear it.
+
+        Both halves of the guard are asserted together so they cannot drift
+        apart: the SQL predicate that actually restricts the join, and the
+        application-side constant the service layer reads the same fact
+        from.
+        """
+        procedures = procedure_batches(self.forward_003)
+        read = procedures["usp_GetOpportunitySavedSlateForOwner"]
+        self.assertIn("pinned.evidence_kind = N''knowledge_item''", read)
+        self.assertIn("pinned.evidence_kind,", read)
+        from services.opportunity_slate_service import (
+            SAVED_EVIDENCE_CURRENCY_KINDS,
+        )
+
+        self.assertEqual(SAVED_EVIDENCE_CURRENCY_KINDS, frozenset({"knowledge_item"}))
 
     def test_revises_no_existing_procedure(self):
         """Unlike PS-OPPSLATE-002 (which had to revise four OS-2 procedures

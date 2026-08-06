@@ -1,0 +1,2547 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive, noimageindex">
+    
+    <script src="/static/js/easy-auth-callback.js?v=fd13bc50ca97"></script><script src="/static/js/auth-state.js?v=70ef068d4d73" defer></script>
+
+    <!-- REAL TABLETS GET THE DESKTOP LAYOUT (added 2026-07-05, reworked
+         2026-07-06)
+         On a genuine touch tablet (iPad Mini and up), this forces the
+         browser to render the page as if the screen were 1280px wide and
+         shrink it to fit — real desktop layout, pixel-perfect, handled
+         natively by the browser (like <meta name="viewport" width=1024">
+         tricks other sites use). This runs before the CSS loads so
+         there's no flash of the wrong size.
+
+         This does NOT apply to a desktop browser window that's simply
+         been resized narrower — those keep using style.css's normal
+         tablet breakpoints (1180/1040/860/780px etc.) instead.
+         An earlier version of this script ALSO scaled narrow desktop
+         browser windows down with CSS `zoom`, to pixel-match the real
+         desktop the same way. That broke the profile header bar's
+         background: it uses background-attachment: fixed so its
+         stone-photo texture lines up with the page behind it, and fixed
+         backgrounds stay pinned to the true browser viewport instead of
+         moving with `zoom` — so once zoomed, the header's texture no
+         longer lined up with the page around it (worse in Safari, which
+         Macs default to). Real tablets don't hit this bug because forcing
+         the viewport width is native browser behavior, not a CSS scaling
+         trick — that's why this script only touches touch devices now. -->
+    <script>
+        (function () {
+            var DESKTOP_WIDTH = 1280;  /* width the desktop layout is designed at */
+            var TABLET_MIN = 744;      /* iPad Mini portrait width */
+
+            /* Touch devices (iPads, tablets): swap the viewport tag so the
+               browser itself renders the page 1280px wide and shrinks it to
+               the screen — pixel-perfect desktop, handled natively. */
+            var nativeResponsivePath = window.location.pathname === '/resume'
+                || window.location.pathname === '/_internal/living-resume-v2'
+                || /\/resume2?$/.test(window.location.pathname)
+                || /\/slate-board$/.test(window.location.pathname)
+                || window.location.pathname.indexOf('/interview-studio') === 0;
+            if (navigator.maxTouchPoints > 1 && !nativeResponsivePath) {
+                if (Math.min(screen.width, screen.height) >= TABLET_MIN) {
+                    document.querySelector('meta[name="viewport"]')
+                        .setAttribute('content', 'width=' + DESKTOP_WIDTH);
+                }
+            }
+        })();
+    </script>
+
+    <meta
+        name="description"
+        content="Bring in one role, review its wording, and keep it private to your working session."
+    >
+
+    <title>Opportunity Slate | PeerSlate</title>
+
+    <link
+        rel="icon"
+        type="image/png"
+        href="/static/images/peerslate-favicon.png?v=0f3efd869a36"
+    >
+    <link
+        rel="apple-touch-icon"
+        href="/static/images/peerslate-apple-touch.png?v=b8a56717f552"
+    >
+    <meta name="theme-color" content="#111719">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+    >
+    <!-- Newsreader: the Iris Foundry editorial serif (Bible v1.2) — page
+         titles, section headings, names, and metric values site-wide. -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..800&display=swap"
+        rel="stylesheet"
+    >
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css?v=2b76a653fdca"
+    >
+    <link
+        rel="stylesheet"
+        href="/static/css/sky-glass.css?v=ff88a4e2ebb0"
+    >
+    
+    <link
+        rel="stylesheet"
+        href="/static/css/editorial-glass.css?v=d2ffe616d918"
+    >
+    <link
+        rel="stylesheet"
+        href="/static/css/chatbot.css?v=3a2c08622721"
+    >
+
+    
+
+<meta name="robots" content="noindex, nofollow, noarchive">
+<link rel="stylesheet" href="/static/css/opportunity-slate.css?v=1bfbd7af5196">
+
+    
+    
+    <link
+        rel="stylesheet"
+        href="/static/css/public-navigation.css?v=a114a19fa481"
+    >
+    
+</head>
+
+
+<body data-room="iris" class="platform-shell slate-light ps-editorial-surface  opportunity-slate-page" data-theme="modern-blue" style="--site-circuit-image: url('/static/images/circuit-banner-option-2.webp?v=f4d2e4bfda82');">
+
+    
+
+    
+
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    
+    <div class="site-sky" aria-hidden="true"></div>
+
+    <!-- Global platform navigation: the PeerSlate logo is the home link, so
+         the text navigation stays focused on three distinct destinations. -->
+    <header class="global-header">
+        <nav class="platform-nav" aria-label="PeerSlate platform navigation">
+            <div class="site-container platform-nav__inner">
+                <div class="platform-brand">
+                    
+                    <a class="platform-brand__logo" href="/" aria-label="PeerSlate home">
+                        
+                        <img
+                            src="/static/images/peerslate-logo-header.png?v=d810c3097de6"
+                            alt="PeerSlate"
+                        >
+                    </a>
+                </div>
+
+                <ul class="platform-nav__links" data-platform-links>
+                    
+                    <li><a href="/petec/resume#overview" >Pete's Slate</a></li>
+                    
+                    
+                    <li><a href="/the-slate" >Community</a></li>
+                    <li><a href="/interview-studio" >Interview Studio</a></li>
+                    
+                </ul>
+
+                <div class="platform-actions" data-ps-auth-controls data-ps-auth-state="authenticated">
+                    
+                    <div class="nav-search" id="nav-search" data-nav-search>
+                        <svg class="nav-search__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>
+                        <input
+                            class="nav-search__input"
+                            id="nav-search-input"
+                            type="search"
+                            placeholder="Search..."
+                            autocomplete="off"
+                            aria-label="Search PeerSlate"
+                            role="combobox"
+                            aria-expanded="false"
+                            aria-controls="nav-search-results"
+                        >
+                        <div class="nav-search__results" id="nav-search-results" role="listbox" hidden></div>
+                    </div>
+
+                    
+
+                    
+                    <button
+                        class="platform-menu-toggle"
+                        type="button"
+                        aria-expanded="false"
+                        aria-controls="platform-mobile-menu"
+                        data-platform-menu-toggle
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 7h16M4 12h16M4 17h16"/>
+                        </svg>
+                        <span>Menu</span>
+                    </button>
+                    
+
+                    
+                    
+                    <a class="sign-in-btn" href="/app" data-ps-auth-control="authenticated">My Slate</a>
+                    <form class="nav-sign-out" method="post" action="/auth/sign-out" data-ps-auth-control="authenticated">
+                        <button class="nav-sign-out__btn" type="submit">Sign out</button>
+                    </form>
+                    <a class="sign-in-btn" href="/app" data-ps-auth-control="workspace_waking" hidden>Workspace waking</a>
+                    <a class="sign-in-btn" href="/auth/complete?return_to=/app" data-ps-auth-control="account_issue" hidden>Account issue</a>
+                    <a class="sign-in-btn" href="/auth/sign-in?return_to=/app" data-ps-auth-control="signed_out" hidden>Sign In</a>
+                    
+                </div>
+            </div>
+
+            
+            <div class="platform-menu" id="platform-mobile-menu" data-platform-menu hidden>
+                <div class="platform-menu__inner">
+                    <ul class="platform-menu__links">
+                        <li><a href="/petec/resume#overview" >Pete's Slate</a></li>
+                        <li><a href="/the-slate" >Community</a></li>
+                        <li><a href="/interview-studio" >Interview Studio</a></li>
+                    </ul>
+                    <div class="nav-search nav-search--mobile" data-nav-search>
+                        <svg class="nav-search__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>
+                        <input
+                            class="nav-search__input"
+                            id="nav-search-input-mobile"
+                            type="search"
+                            placeholder="Search PeerSlate"
+                            autocomplete="off"
+                            aria-label="Search PeerSlate"
+                            role="combobox"
+                            aria-expanded="false"
+                            aria-controls="nav-search-results-mobile"
+                            data-nav-search-input
+                        >
+                        <div
+                            class="nav-search__results"
+                            id="nav-search-results-mobile"
+                            role="listbox"
+                            data-nav-search-results
+                            hidden
+                        ></div>
+                    </div>
+                </div>
+            </div>
+            
+        </nav>
+
+        
+        
+    </header>
+
+    
+    
+
+    <main id="main-content" class="main-content">
+        
+
+
+
+<div class="os"
+     data-os-room
+     data-os-mode="member"
+     data-os-step="alignment"
+     
+     data-os-public-url="/opportunity-slate/public-session"
+     data-os-public-propose-url="/opportunity-slate/public-session/propose">
+
+  
+  <div class="os-subheader">
+    <a class="os-subheader__back" href="/">
+      <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19.5 12h-14"></path><path d="M10.5 7l-5 5 5 5"></path></svg><span>Back</span>
+    </a>
+    <span class="os-subheader__rule" aria-hidden="true"></span>
+    <span class="os-subheader__title">Opportunity Slate</span>
+  </div>
+
+  
+
+  
+  
+  
+  <div class="os-layout os-layout--alignment">
+
+    
+    <div class="os-rail os-rail--left">
+      
+      
+      
+      <h1 class="os-state-title">
+        <span class="os-state-title__lead">Alignment</span>
+        <span class="os-state-title__dot" aria-hidden="true">·</span>
+        <span class="os-state-title__rest">Explore alignment</span>
+      </h1>
+      
+      <p class="os-rail__intro">
+        PeerSlate compares the confirmed employer qualifications with your
+        authorized evidence.
+      </p>
+      
+
+      
+      
+
+      
+      
+      
+      
+      <div class="os-truth-card os-truth-card--warning">
+        <span class="os-truth-card__badge"><svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4.4 21 19.2H3z"></path><path d="M12 10v4"></path><path d="M12 16.6v.6"></path></svg></span>
+        <div>
+          <p class="os-truth-card__heading">Results not saved</p>
+          <p>
+            
+            This analysis remains session-private until you explicitly save it.
+            
+          </p>
+          <p>Nothing was published or shared.</p>
+          
+        </div>
+      </div>
+      
+      
+
+      
+
+      
+      
+
+      
+
+      
+      
+    </div>
+
+    
+    <div class="os-workbench">
+      
+      
+      <div class="os-cards">
+        
+        
+
+
+
+<div class="os-card os-card--strip">
+  <div class="os-context-strip">
+    <span class="os-chip">
+      <span class="os-chip__badge"><svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path></svg></span>
+      <span>
+        <span class="os-chip__label">Source</span>
+        <span class="os-chip__value">Confirmed</span>
+      </span>
+    </span>
+    <span class="os-chip">
+      <span class="os-chip__badge"><svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="7" height="14" rx="1.4"></rect><rect x="13.5" y="5" width="7" height="14" rx="1.4"></rect></svg></span>
+      <span>
+        <span class="os-chip__label">Version</span>
+        <span class="os-chip__value">Source Version 2</span>
+      </span>
+    </span>
+    
+    <span class="os-chip">
+      <span class="os-chip__badge"><svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2"></rect><path d="M8.2 10.5V7.8a3.8 3.8 0 0 1 7.6 0v2.7"></path></svg></span>
+      <span>
+        <span class="os-chip__label">Session</span>
+        <span class="os-chip__value">Session private</span>
+      </span>
+    </span>
+    <a class="os-context-strip__link" href="/opportunity-slate?step=requirements" data-os-step="requirements">
+      Review inputs<svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M13.5 4.5h6v6"></path><path d="M19.5 4.5l-8 8"></path><path d="M18 13.5v5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6h5"></path></svg>
+    </a>
+  </div>
+
+  
+
+  
+  
+  <div class="os-summaries">
+    
+    <section class="os-summary" aria-labelledby="os-summary-required_qualification">
+      <h3 class="os-summary__title" id="os-summary-required_qualification">
+        Required qualifications<span class="os-summary__dot" aria-hidden="true">·</span><span class="os-summary__count">4</span>
+      </h3>
+      <ul class="os-summary__counts">
+        
+        <li class="os-summary__entry">
+          <span class="os-dot os-dot--supported" aria-hidden="true"></span>
+          <span class="os-summary__value">1</span>
+          <span class="os-summary__label">Supported</span>
+        </li>
+        
+        <li class="os-summary__entry">
+          <span class="os-dot os-dot--partially_supported" aria-hidden="true"></span>
+          <span class="os-summary__value">2</span>
+          <span class="os-summary__label">Partially supported</span>
+        </li>
+        
+        <li class="os-summary__entry">
+          <span class="os-dot os-dot--not_enough_information" aria-hidden="true"></span>
+          <span class="os-summary__value">1</span>
+          <span class="os-summary__label">Not enough information</span>
+        </li>
+        
+      </ul>
+    </section>
+    
+    <section class="os-summary" aria-labelledby="os-summary-preferred_qualification">
+      <h3 class="os-summary__title" id="os-summary-preferred_qualification">
+        Preferred qualifications<span class="os-summary__dot" aria-hidden="true">·</span><span class="os-summary__count">2</span>
+      </h3>
+      <ul class="os-summary__counts">
+        
+        <li class="os-summary__entry">
+          <span class="os-dot os-dot--supported" aria-hidden="true"></span>
+          <span class="os-summary__value">1</span>
+          <span class="os-summary__label">Supported</span>
+        </li>
+        
+        <li class="os-summary__entry">
+          <span class="os-dot os-dot--partially_supported" aria-hidden="true"></span>
+          <span class="os-summary__value">0</span>
+          <span class="os-summary__label">Partially supported</span>
+        </li>
+        
+        <li class="os-summary__entry">
+          <span class="os-dot os-dot--not_enough_information" aria-hidden="true"></span>
+          <span class="os-summary__value">1</span>
+          <span class="os-summary__label">Not enough information</span>
+        </li>
+        
+      </ul>
+    </section>
+    
+  </div>
+  
+</div>
+
+
+
+<nav class="os-card os-card--filters" aria-label="Filter qualifications by status">
+  <ul class="os-filters" data-os-filters>
+    
+    <li>
+      <a class="os-filter is-active"
+         href="/opportunity-slate?step=alignment&amp;status=all&amp;statement=00000001-4444-4444-8444-444444444444"
+         data-os-filter="all"
+         aria-current="true">All</a>
+    </li>
+    
+    <li>
+      <a class="os-filter"
+         href="/opportunity-slate?step=alignment&amp;status=supported&amp;statement=00000001-4444-4444-8444-444444444444"
+         data-os-filter="supported"
+         >Supported</a>
+    </li>
+    
+    <li>
+      <a class="os-filter"
+         href="/opportunity-slate?step=alignment&amp;status=partially_supported&amp;statement=00000001-4444-4444-8444-444444444444"
+         data-os-filter="partially_supported"
+         >Partially supported</a>
+    </li>
+    
+    <li>
+      <a class="os-filter"
+         href="/opportunity-slate?step=alignment&amp;status=not_enough_information&amp;statement=00000001-4444-4444-8444-444444444444"
+         data-os-filter="not_enough_information"
+         >Not enough information</a>
+    </li>
+    
+  </ul>
+  
+  <p class="os-visually-hidden" role="status" data-os-filter-live></p>
+</nav>
+
+
+
+
+
+<p class="os-visually-hidden" data-os-swap-announce>
+  Evidence alignment ready. Each qualification below shows what the evidence
+  you authorized establishes, and the excerpt PeerSlate read.
+</p>
+
+
+
+
+<section class="os-card os-card--panel os-qual" aria-labelledby="os-qual-required_qualification"
+         data-os-qual-card="required_qualification">
+  <h3 class="os-qual__title" id="os-qual-required_qualification"
+      data-os-focus tabindex="-1">
+    Required qualifications<span class="os-qual__dot" aria-hidden="true">·</span><span class="os-qual__count">4</span>
+    
+    <span class="os-qual__showing" data-os-showing
+          hidden>Showing 4 of 4</span>
+  </h3>
+  
+  <table class="os-align">
+    <caption class="os-visually-hidden">
+      Required qualifications from the confirmed employer source, with what your
+      authorized evidence establishes for each
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col" class="os-align__num"><span class="os-visually-hidden">Number</span></th>
+        <th scope="col">Employer qualification and explanation</th>
+        <th scope="col">Status</th>
+        <th scope="col">Authorized evidence</th>
+        <th scope="col" class="os-align__review">Review</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr class="os-align__row is-selected"
+          data-os-align-row="00000001-4444-4444-8444-444444444444"
+          data-os-row-status="supported"
+          >
+        <td class="os-align__num">1</td>
+        <td class="os-align__text">
+          <span class="os-align__wording">Bachelor&#39;s degree in Engineering and 3+ years of relevant experience.</span>
+          
+          <span class="os-align__explanation">Your evidence covers every part of this qualification.</span>
+          
+          
+        </td>
+        <td class="os-align__status">
+          
+          <span class="os-pill os-pill--supported">
+            <span class="os-dot os-dot--supported" aria-hidden="true"></span>Supported
+          </span>
+          
+        </td>
+        <td class="os-align__evidence">
+          
+          
+          <span class="os-evidence-ref">
+            <span class="os-evidence-ref__title">Systems Engineering Experience Summary</span>
+            <span class="os-evidence-ref__version">Version 3</span>
+          </span>
+          
+          
+        </td>
+        <td class="os-align__review">
+          
+          <a class="os-align__select"
+             href="/opportunity-slate?step=alignment&amp;statement=00000001-4444-4444-8444-444444444444#os-evidence-rail"
+             data-os-select-align="00000001-4444-4444-8444-444444444444"
+             aria-current="true">
+            <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M13.5 4.5h6v6"></path><path d="M19.5 4.5l-8 8"></path><path d="M18 13.5v5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6h5"></path></svg>
+            <span class="os-visually-hidden">Review qualification 1</span>
+          </a>
+        </td>
+      </tr>
+      
+      <tr class="os-align__row"
+          data-os-align-row="00000002-4444-4444-8444-444444444444"
+          data-os-row-status="partially_supported"
+          >
+        <td class="os-align__num">2</td>
+        <td class="os-align__text">
+          <span class="os-align__wording">Strong understanding of systems engineering processes.</span>
+          
+          <span class="os-align__explanation">Your evidence covers “Strong understanding of systems engineering”. Not established: “Strong understanding of systems engineering processes”.</span>
+          
+          
+        </td>
+        <td class="os-align__status">
+          
+          <span class="os-pill os-pill--partially_supported">
+            <span class="os-dot os-dot--partially_supported" aria-hidden="true"></span>Partially supported
+          </span>
+          
+        </td>
+        <td class="os-align__evidence">
+          
+          
+          <span class="os-evidence-ref">
+            <span class="os-evidence-ref__title">Systems Engineering Experience Summary</span>
+            <span class="os-evidence-ref__version">Version 3</span>
+          </span>
+          
+          
+        </td>
+        <td class="os-align__review">
+          
+          <a class="os-align__select"
+             href="/opportunity-slate?step=alignment&amp;statement=00000002-4444-4444-8444-444444444444#os-evidence-rail"
+             data-os-select-align="00000002-4444-4444-8444-444444444444"
+             >
+            <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M13.5 4.5h6v6"></path><path d="M19.5 4.5l-8 8"></path><path d="M18 13.5v5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6h5"></path></svg>
+            <span class="os-visually-hidden">Review qualification 2</span>
+          </a>
+        </td>
+      </tr>
+      
+      <tr class="os-align__row"
+          data-os-align-row="00000003-4444-4444-8444-444444444444"
+          data-os-row-status="partially_supported"
+          >
+        <td class="os-align__num">3</td>
+        <td class="os-align__text">
+          <span class="os-align__wording">Experience of verification and validation in a regulated environment.</span>
+          
+          <span class="os-align__explanation">Your evidence covers “Experience of verification” and “in a regulated environment”. Not established: “Experience of verification and validation”.</span>
+          
+          
+          <span class="os-align__response"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.2 12.3l2.6 2.6 5-5.2"></path></svg>You responded to this</span>
+          
+        </td>
+        <td class="os-align__status">
+          
+          <span class="os-pill os-pill--partially_supported">
+            <span class="os-dot os-dot--partially_supported" aria-hidden="true"></span>Partially supported
+          </span>
+          
+        </td>
+        <td class="os-align__evidence">
+          
+          
+          <span class="os-evidence-ref">
+            <span class="os-evidence-ref__title">Model-Based Systems Engineering Project Record</span>
+            <span class="os-evidence-ref__version">Version 2</span>
+          </span>
+          
+          
+        </td>
+        <td class="os-align__review">
+          
+          <a class="os-align__select"
+             href="/opportunity-slate?step=alignment&amp;statement=00000003-4444-4444-8444-444444444444#os-evidence-rail"
+             data-os-select-align="00000003-4444-4444-8444-444444444444"
+             >
+            <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M13.5 4.5h6v6"></path><path d="M19.5 4.5l-8 8"></path><path d="M18 13.5v5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6h5"></path></svg>
+            <span class="os-visually-hidden">Review qualification 3</span>
+          </a>
+        </td>
+      </tr>
+      
+      <tr class="os-align__row"
+          data-os-align-row="00000004-4444-4444-8444-444444444444"
+          data-os-row-status="not_enough_information"
+          >
+        <td class="os-align__num">4</td>
+        <td class="os-align__text">
+          <span class="os-align__wording">Ability to obtain and maintain a security clearance.</span>
+          
+          <span class="os-align__explanation">No authorized evidence was matched to this.</span>
+          
+          
+        </td>
+        <td class="os-align__status">
+          
+          <span class="os-pill os-pill--not_enough_information">
+            <span class="os-dot os-dot--not_enough_information" aria-hidden="true"></span>Not enough information
+          </span>
+          
+        </td>
+        <td class="os-align__evidence">
+          
+          <span class="os-align__none" aria-hidden="true">—</span>
+          <span class="os-visually-hidden">No authorized evidence cited</span>
+          
+        </td>
+        <td class="os-align__review">
+          
+          <a class="os-align__select"
+             href="/opportunity-slate?step=alignment&amp;statement=00000004-4444-4444-8444-444444444444#os-evidence-rail"
+             data-os-select-align="00000004-4444-4444-8444-444444444444"
+             >
+            <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M13.5 4.5h6v6"></path><path d="M19.5 4.5l-8 8"></path><path d="M18 13.5v5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6h5"></path></svg>
+            <span class="os-visually-hidden">Review qualification 4</span>
+          </a>
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+  
+  <p class="os-qual__filtered-empty" data-os-filter-empty
+     hidden>
+    None of these 4 qualifications
+    is <span data-os-filter-label>all</span>.
+    Choose All to see them again.
+  </p>
+  
+</section>
+
+
+
+
+<section class="os-card os-card--panel os-qual" aria-labelledby="os-qual-preferred_qualification"
+         data-os-qual-card="preferred_qualification">
+  <h3 class="os-qual__title" id="os-qual-preferred_qualification"
+      >
+    Preferred qualifications<span class="os-qual__dot" aria-hidden="true">·</span><span class="os-qual__count">2</span>
+    
+    <span class="os-qual__showing" data-os-showing
+          hidden>Showing 2 of 2</span>
+  </h3>
+  
+  <table class="os-align">
+    <caption class="os-visually-hidden">
+      Preferred qualifications from the confirmed employer source, with what your
+      authorized evidence establishes for each
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col" class="os-align__num"><span class="os-visually-hidden">Number</span></th>
+        <th scope="col">Employer qualification and explanation</th>
+        <th scope="col">Status</th>
+        <th scope="col">Authorized evidence</th>
+        <th scope="col" class="os-align__review">Review</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr class="os-align__row"
+          data-os-align-row="00000005-4444-4444-8444-444444444444"
+          data-os-row-status="supported"
+          >
+        <td class="os-align__num">1</td>
+        <td class="os-align__text">
+          <span class="os-align__wording">Knowledge of Model-Based Systems Engineering methods.</span>
+          
+          <span class="os-align__explanation">Your evidence covers every part of this qualification.</span>
+          
+          
+        </td>
+        <td class="os-align__status">
+          
+          <span class="os-pill os-pill--supported">
+            <span class="os-dot os-dot--supported" aria-hidden="true"></span>Supported
+          </span>
+          
+        </td>
+        <td class="os-align__evidence">
+          
+          
+          <span class="os-evidence-ref">
+            <span class="os-evidence-ref__title">Model-Based Systems Engineering Project Record</span>
+            <span class="os-evidence-ref__version">Version 2</span>
+          </span>
+          
+          
+        </td>
+        <td class="os-align__review">
+          
+          <a class="os-align__select"
+             href="/opportunity-slate?step=alignment&amp;statement=00000005-4444-4444-8444-444444444444#os-evidence-rail"
+             data-os-select-align="00000005-4444-4444-8444-444444444444"
+             >
+            <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M13.5 4.5h6v6"></path><path d="M19.5 4.5l-8 8"></path><path d="M18 13.5v5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6h5"></path></svg>
+            <span class="os-visually-hidden">Review qualification 1</span>
+          </a>
+        </td>
+      </tr>
+      
+      <tr class="os-align__row"
+          data-os-align-row="00000006-4444-4444-8444-444444444444"
+          data-os-row-status="not_enough_information"
+          >
+        <td class="os-align__num">2</td>
+        <td class="os-align__text">
+          <span class="os-align__wording">Chartered Engineer status or working towards it.</span>
+          
+          <span class="os-align__explanation">No authorized evidence was matched to this.</span>
+          
+          
+        </td>
+        <td class="os-align__status">
+          
+          <span class="os-pill os-pill--not_enough_information">
+            <span class="os-dot os-dot--not_enough_information" aria-hidden="true"></span>Not enough information
+          </span>
+          
+        </td>
+        <td class="os-align__evidence">
+          
+          <span class="os-align__none" aria-hidden="true">—</span>
+          <span class="os-visually-hidden">No authorized evidence cited</span>
+          
+        </td>
+        <td class="os-align__review">
+          
+          <a class="os-align__select"
+             href="/opportunity-slate?step=alignment&amp;statement=00000006-4444-4444-8444-444444444444#os-evidence-rail"
+             data-os-select-align="00000006-4444-4444-8444-444444444444"
+             >
+            <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M13.5 4.5h6v6"></path><path d="M19.5 4.5l-8 8"></path><path d="M18 13.5v5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6h5"></path></svg>
+            <span class="os-visually-hidden">Review qualification 2</span>
+          </a>
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+  
+  <p class="os-qual__filtered-empty" data-os-filter-empty
+     hidden>
+    None of these 2 qualifications
+    is <span data-os-filter-label>all</span>.
+    Choose All to see them again.
+  </p>
+  
+</section>
+
+
+
+
+<details class="os-card os-card--panel os-context-group" id="os-group-responsibility">
+  <summary class="os-context-group__summary">
+    <span class="os-context-group__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+    <span class="os-context-group__title">Responsibilities</span>
+    <span class="os-context-group__count">1</span>
+  </summary>
+  <div class="os-context-group__body">
+    <p class="os-context-group__note">
+      These are not qualifications, so nothing here was compared against your
+      evidence.
+    </p>
+    
+    <ul class="os-context-group__list">
+      
+      <li>Own the verification strategy for one product line.</li>
+      
+    </ul>
+    
+  </div>
+</details>
+
+
+
+
+<details class="os-card os-card--panel os-context-group" id="os-group-informational_statement">
+  <summary class="os-context-group__summary">
+    <span class="os-context-group__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+    <span class="os-context-group__title">Informational statements</span>
+    <span class="os-context-group__count">1</span>
+  </summary>
+  <div class="os-context-group__body">
+    <p class="os-context-group__note">
+      These are not qualifications, so nothing here was compared against your
+      evidence.
+    </p>
+    
+    <ul class="os-context-group__list">
+      
+      <li>The team works a hybrid pattern of three days on site.</li>
+      
+    </ul>
+    
+  </div>
+</details>
+
+
+
+<p class="os-help os-help--muted os-align__provenance">
+  
+  Compared by claude-sonnet-5 · contract os-alignment-v1 ·
+  3 authorized evidence items read
+  
+</p>
+
+
+
+
+
+<div class="os-card os-card--footer">
+  <div class="os-footer-strip">
+    
+    <p class="os-footer-strip__truth">
+      <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2"></rect><path d="M8.2 10.5V7.8a3.8 3.8 0 0 1 7.6 0v2.7"></path></svg>
+      <span>
+        
+        <strong>Session private · Nothing is saved yet</strong>
+        This analysis is session-private. Nothing here has been published, shared, sent to an employer, or used to alter your evidence.
+        
+      </span>
+    </p>
+    <div class="os-footer-strip__actions">
+      
+      
+      <a class="os-link" href="/opportunity-slate?step=requirements" data-os-step="requirements">Review inputs</a>
+      
+
+      
+      
+      <form method="post" action="/opportunity-slate/analysis" data-os-form="analyze">
+        <button type="submit" class="os-btn os-btn--quiet" data-os-analyze>
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 12a8 8 0 1 1-2.6-5.9"></path><path d="M20 4.2v4.4h-4.4"></path></svg><span>Run this again</span>
+        </button>
+      </form>
+      
+      
+      
+      <form method="post" action="/opportunity-slate/save">
+        <input type="hidden" name="idempotency_key" value="13388f7b-779b-4f94-b9e0-be008d522b05">
+        <input type="hidden" name="statement_key" value="00000001-4444-4444-8444-444444444444">
+        <input type="hidden" name="status" value="all">
+        <button type="submit" class="os-btn os-btn--primary"
+                aria-describedby="os-save-note" data-os-save>
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2"></rect><path d="M8.2 10.5V7.8a3.8 3.8 0 0 1 7.6 0v2.7"></path></svg><span>Save privately</span>
+        </button>
+      </form>
+      
+      
+    </div>
+  </div>
+</div>
+
+<p class="os-help os-help--muted os-footer-note" id="os-save-note">Saving keeps this result in your private account. It publishes nothing and shares nothing.</p>
+
+      </div>
+      
+    </div>
+
+    
+    
+    <div class="os-rail os-rail--response">
+      
+
+
+
+<div class="os-rail-card os-rail-card--response" id="os-response-rail" data-os-response-rail>
+  <p class="os-rail-card__title">For this qualification</p>
+
+  
+  <p class="os-rail-card__note os-rail-card__note--locked" role="status" data-os-rail-locked-note hidden>
+    <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2"></rect><path d="M8.2 10.5V7.8a3.8 3.8 0 0 1 7.6 0v2.7"></path></svg>Responses are paused while
+    PeerSlate is working. Cancel to keep editing.
+  </p>
+
+  
+  
+  <div class="os-response-panel"
+       data-os-response-panel="00000001-4444-4444-8444-444444444444"
+       >
+
+    
+    <div class="os-response-panel__subject">
+      <p class="os-response-panel__wording">Bachelor&#39;s degree in Engineering and 3+ years of relevant experience.</p>
+      <p class="os-pill os-pill--supported">
+        <span class="os-dot os-dot--supported" aria-hidden="true"></span>Supported
+      </p>
+    </div>
+
+    
+
+    <p class="os-response-panel__prompt">What would you like to do?</p>
+
+    <div class="os-response-actions">
+      
+      <details class="os-response-action"
+               open>
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5l1.9 4.9 4.9 1.9-4.9 1.9L12 17.1l-1.9-4.9L5.2 10.3l4.9-1.9z"></path><path d="M18.5 16.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"></path></svg>
+          <span>Tell us more</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          <p class="os-response-action__ask">
+            
+            Every part of this qualification is covered by the evidence you authorized.
+            
+          </p>
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000001-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="tell_more">
+            <label class="os-visually-hidden" for="os-tell-00000001-4444-4444-8444-444444444444">Your response for this qualification</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-tell-00000001-4444-4444-8444-444444444444"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="4000"
+                        placeholder="Type or speak your response…"
+                        aria-describedby="os-tell-help-00000001-4444-4444-8444-444444444444"
+                        data-os-response-input
+                       data-os-rail-control></textarea>
+              
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-tell-help-00000001-4444-4444-8444-444444444444"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><path d="M12 18v3"></path></svg>
+                <span class="os-visually-hidden">Dictate your response (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-tell-help-00000001-4444-4444-8444-444444444444">
+              Type your response. Only add experience that is true and yours.
+              Dictation arrives in a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Review my response</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <details class="os-response-action" >
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.2 13.8a3.6 3.6 0 0 0 5.1 0l2.6-2.6a3.6 3.6 0 0 0-5.1-5.1l-1.2 1.2"></path><path d="M13.8 10.2a3.6 3.6 0 0 0-5.1 0l-2.6 2.6a3.6 3.6 0 0 0 5.1 5.1l1.2-1.2"></path></svg>
+          <span>Connect existing evidence</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000001-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="connect_evidence">
+            <fieldset class="os-choices">
+              <legend class="os-pair__label">
+                Your confirmed evidence
+              </legend>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Systems Engineering Experience Summary</span>
+                  <span class="os-choice__version">Version 3</span>
+                </span>
+              </label>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Model-Based Systems Engineering Project Record</span>
+                  <span class="os-choice__version">Version 2</span>
+                </span>
+              </label>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="cccccccc-3333-4333-8333-cccccccccccc"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Supplier Quality Review Notes</span>
+                  <span class="os-choice__version">Version 1</span>
+                </span>
+              </label>
+              
+            </fieldset>
+            <p class="os-help os-help--muted">
+              Connecting points at a record you already own. It does not copy
+              it, change it, or add it to this analysis's citations.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Connect this evidence</button>
+            </div>
+          </form>
+          
+        </div>
+      </details>
+
+      <details class="os-response-action" >
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path></svg>
+          <span>Provide a real example</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000001-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="real_example">
+            <label class="os-pair__label" for="os-example-00000001-4444-4444-8444-444444444444">A real example from your own work</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-example-00000001-4444-4444-8444-444444444444"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="4000"
+                        placeholder="What you did, and where…"
+                        aria-describedby="os-example-help-00000001-4444-4444-8444-444444444444"
+                        data-os-response-input
+                       data-os-rail-control></textarea>
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-example-help-00000001-4444-4444-8444-444444444444"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><path d="M12 18v3"></path></svg>
+                <span class="os-visually-hidden">Dictate your example (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-example-help-00000001-4444-4444-8444-444444444444">
+              Only add experience that is true and yours. Dictation arrives in
+              a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Review my example</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="/opportunity-slate/responses" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="00000001-4444-4444-8444-444444444444">
+        <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+        <input type="hidden" name="response_kind" value="confirm_not_have">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                >
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"></circle><path d="M6.6 6.6l10.8 10.8"></path></svg>
+          <span>Confirm I do not have this experience</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 12h14"></path><path d="M13.5 7l5 5-5 5"></path></svg></span>
+        </button>
+      </form>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="/opportunity-slate/responses" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="00000001-4444-4444-8444-444444444444">
+        <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+        <input type="hidden" name="response_kind" value="skip">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                >
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 6.5l6 5.5-6 5.5z"></path><path d="M13 6.5l6 5.5-6 5.5z"></path></svg>
+          <span>Skip</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 12h14"></path><path d="M13.5 7l5 5-5 5"></path></svg></span>
+        </button>
+      </form>
+    </div>
+  </div>
+  
+  <div class="os-response-panel"
+       data-os-response-panel="00000002-4444-4444-8444-444444444444"
+       hidden>
+
+    
+    <div class="os-response-panel__subject">
+      <p class="os-response-panel__wording">Strong understanding of systems engineering processes.</p>
+      <p class="os-pill os-pill--partially_supported">
+        <span class="os-dot os-dot--partially_supported" aria-hidden="true"></span>Partially supported
+      </p>
+    </div>
+
+    
+
+    <p class="os-response-panel__prompt">What would you like to do?</p>
+
+    <div class="os-response-actions">
+      
+      <details class="os-response-action"
+               open>
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5l1.9 4.9 4.9 1.9-4.9 1.9L12 17.1l-1.9-4.9L5.2 10.3l4.9-1.9z"></path><path d="M18.5 16.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"></path></svg>
+          <span>Tell us more</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          <p class="os-response-action__ask">
+            
+            “Strong understanding of systems engineering processes” — not established by the evidence you authorized.
+            
+          </p>
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000002-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="tell_more">
+            <label class="os-visually-hidden" for="os-tell-00000002-4444-4444-8444-444444444444">Your response for this qualification</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-tell-00000002-4444-4444-8444-444444444444"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="4000"
+                        placeholder="Type or speak your response…"
+                        aria-describedby="os-tell-help-00000002-4444-4444-8444-444444444444"
+                        data-os-response-input
+                       data-os-rail-control></textarea>
+              
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-tell-help-00000002-4444-4444-8444-444444444444"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><path d="M12 18v3"></path></svg>
+                <span class="os-visually-hidden">Dictate your response (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-tell-help-00000002-4444-4444-8444-444444444444">
+              Type your response. Only add experience that is true and yours.
+              Dictation arrives in a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Review my response</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <details class="os-response-action" >
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.2 13.8a3.6 3.6 0 0 0 5.1 0l2.6-2.6a3.6 3.6 0 0 0-5.1-5.1l-1.2 1.2"></path><path d="M13.8 10.2a3.6 3.6 0 0 0-5.1 0l-2.6 2.6a3.6 3.6 0 0 0 5.1 5.1l1.2-1.2"></path></svg>
+          <span>Connect existing evidence</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000002-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="connect_evidence">
+            <fieldset class="os-choices">
+              <legend class="os-pair__label">
+                Your confirmed evidence
+              </legend>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Systems Engineering Experience Summary</span>
+                  <span class="os-choice__version">Version 3</span>
+                </span>
+              </label>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Model-Based Systems Engineering Project Record</span>
+                  <span class="os-choice__version">Version 2</span>
+                </span>
+              </label>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="cccccccc-3333-4333-8333-cccccccccccc"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Supplier Quality Review Notes</span>
+                  <span class="os-choice__version">Version 1</span>
+                </span>
+              </label>
+              
+            </fieldset>
+            <p class="os-help os-help--muted">
+              Connecting points at a record you already own. It does not copy
+              it, change it, or add it to this analysis's citations.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Connect this evidence</button>
+            </div>
+          </form>
+          
+        </div>
+      </details>
+
+      <details class="os-response-action" >
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path></svg>
+          <span>Provide a real example</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000002-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="real_example">
+            <label class="os-pair__label" for="os-example-00000002-4444-4444-8444-444444444444">A real example from your own work</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-example-00000002-4444-4444-8444-444444444444"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="4000"
+                        placeholder="What you did, and where…"
+                        aria-describedby="os-example-help-00000002-4444-4444-8444-444444444444"
+                        data-os-response-input
+                       data-os-rail-control></textarea>
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-example-help-00000002-4444-4444-8444-444444444444"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><path d="M12 18v3"></path></svg>
+                <span class="os-visually-hidden">Dictate your example (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-example-help-00000002-4444-4444-8444-444444444444">
+              Only add experience that is true and yours. Dictation arrives in
+              a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Review my example</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="/opportunity-slate/responses" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="00000002-4444-4444-8444-444444444444">
+        <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+        <input type="hidden" name="response_kind" value="confirm_not_have">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                >
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"></circle><path d="M6.6 6.6l10.8 10.8"></path></svg>
+          <span>Confirm I do not have this experience</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 12h14"></path><path d="M13.5 7l5 5-5 5"></path></svg></span>
+        </button>
+      </form>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="/opportunity-slate/responses" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="00000002-4444-4444-8444-444444444444">
+        <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+        <input type="hidden" name="response_kind" value="skip">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                >
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 6.5l6 5.5-6 5.5z"></path><path d="M13 6.5l6 5.5-6 5.5z"></path></svg>
+          <span>Skip</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 12h14"></path><path d="M13.5 7l5 5-5 5"></path></svg></span>
+        </button>
+      </form>
+    </div>
+  </div>
+  
+  <div class="os-response-panel"
+       data-os-response-panel="00000003-4444-4444-8444-444444444444"
+       hidden>
+
+    
+    <div class="os-response-panel__subject">
+      <p class="os-response-panel__wording">Experience of verification and validation in a regulated environment.</p>
+      <p class="os-pill os-pill--partially_supported">
+        <span class="os-dot os-dot--partially_supported" aria-hidden="true"></span>Partially supported
+      </p>
+    </div>
+
+    
+    
+    <div class="os-response-stored" role="status">
+      <p class="os-response-stored__label">Your response</p>
+      
+      <p class="os-response-stored__text">I ran verification for a Class II medical device programme under a notified-body audit, which is the regulated part.</p>
+      
+      <p class="os-response-stored__note">
+        Yours, and only here. It was not added to your evidence and did not
+        change the status above.
+      </p>
+    </div>
+    
+
+    <p class="os-response-panel__prompt">What would you like to do?</p>
+
+    <div class="os-response-actions">
+      
+      <details class="os-response-action"
+               open>
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5l1.9 4.9 4.9 1.9-4.9 1.9L12 17.1l-1.9-4.9L5.2 10.3l4.9-1.9z"></path><path d="M18.5 16.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"></path></svg>
+          <span>Tell us more</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          <p class="os-response-action__ask">
+            
+            “Experience of verification and validation” — not established by the evidence you authorized.
+            
+          </p>
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000003-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="tell_more">
+            <label class="os-visually-hidden" for="os-tell-00000003-4444-4444-8444-444444444444">Your response for this qualification</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-tell-00000003-4444-4444-8444-444444444444"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="4000"
+                        placeholder="Type or speak your response…"
+                        aria-describedby="os-tell-help-00000003-4444-4444-8444-444444444444"
+                        data-os-response-input
+                       data-os-rail-control>I ran verification for a Class II medical device programme under a notified-body audit, which is the regulated part.</textarea>
+              
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-tell-help-00000003-4444-4444-8444-444444444444"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><path d="M12 18v3"></path></svg>
+                <span class="os-visually-hidden">Dictate your response (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-tell-help-00000003-4444-4444-8444-444444444444">
+              Type your response. Only add experience that is true and yours.
+              Dictation arrives in a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Review my response</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <details class="os-response-action" >
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.2 13.8a3.6 3.6 0 0 0 5.1 0l2.6-2.6a3.6 3.6 0 0 0-5.1-5.1l-1.2 1.2"></path><path d="M13.8 10.2a3.6 3.6 0 0 0-5.1 0l-2.6 2.6a3.6 3.6 0 0 0 5.1 5.1l1.2-1.2"></path></svg>
+          <span>Connect existing evidence</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000003-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="connect_evidence">
+            <fieldset class="os-choices">
+              <legend class="os-pair__label">
+                Your confirmed evidence
+              </legend>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Systems Engineering Experience Summary</span>
+                  <span class="os-choice__version">Version 3</span>
+                </span>
+              </label>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Model-Based Systems Engineering Project Record</span>
+                  <span class="os-choice__version">Version 2</span>
+                </span>
+              </label>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="cccccccc-3333-4333-8333-cccccccccccc"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Supplier Quality Review Notes</span>
+                  <span class="os-choice__version">Version 1</span>
+                </span>
+              </label>
+              
+            </fieldset>
+            <p class="os-help os-help--muted">
+              Connecting points at a record you already own. It does not copy
+              it, change it, or add it to this analysis's citations.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Connect this evidence</button>
+            </div>
+          </form>
+          
+        </div>
+      </details>
+
+      <details class="os-response-action" >
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path></svg>
+          <span>Provide a real example</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000003-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="real_example">
+            <label class="os-pair__label" for="os-example-00000003-4444-4444-8444-444444444444">A real example from your own work</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-example-00000003-4444-4444-8444-444444444444"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="4000"
+                        placeholder="What you did, and where…"
+                        aria-describedby="os-example-help-00000003-4444-4444-8444-444444444444"
+                        data-os-response-input
+                       data-os-rail-control></textarea>
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-example-help-00000003-4444-4444-8444-444444444444"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><path d="M12 18v3"></path></svg>
+                <span class="os-visually-hidden">Dictate your example (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-example-help-00000003-4444-4444-8444-444444444444">
+              Only add experience that is true and yours. Dictation arrives in
+              a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Review my example</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="/opportunity-slate/responses" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="00000003-4444-4444-8444-444444444444">
+        <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+        <input type="hidden" name="response_kind" value="confirm_not_have">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                >
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"></circle><path d="M6.6 6.6l10.8 10.8"></path></svg>
+          <span>Confirm I do not have this experience</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 12h14"></path><path d="M13.5 7l5 5-5 5"></path></svg></span>
+        </button>
+      </form>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="/opportunity-slate/responses" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="00000003-4444-4444-8444-444444444444">
+        <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+        <input type="hidden" name="response_kind" value="skip">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                >
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 6.5l6 5.5-6 5.5z"></path><path d="M13 6.5l6 5.5-6 5.5z"></path></svg>
+          <span>Skip</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 12h14"></path><path d="M13.5 7l5 5-5 5"></path></svg></span>
+        </button>
+      </form>
+    </div>
+  </div>
+  
+  <div class="os-response-panel"
+       data-os-response-panel="00000004-4444-4444-8444-444444444444"
+       hidden>
+
+    
+    <div class="os-response-panel__subject">
+      <p class="os-response-panel__wording">Ability to obtain and maintain a security clearance.</p>
+      <p class="os-pill os-pill--not_enough_information">
+        <span class="os-dot os-dot--not_enough_information" aria-hidden="true"></span>Not enough information
+      </p>
+    </div>
+
+    
+
+    <p class="os-response-panel__prompt">What would you like to do?</p>
+
+    <div class="os-response-actions">
+      
+      <details class="os-response-action"
+               open>
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5l1.9 4.9 4.9 1.9-4.9 1.9L12 17.1l-1.9-4.9L5.2 10.3l4.9-1.9z"></path><path d="M18.5 16.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"></path></svg>
+          <span>Tell us more</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          <p class="os-response-action__ask">
+            
+            Nothing you authorized was matched to these words. That is a gap in the evidence PeerSlate could read, not a statement about you.
+            
+          </p>
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000004-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="tell_more">
+            <label class="os-visually-hidden" for="os-tell-00000004-4444-4444-8444-444444444444">Your response for this qualification</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-tell-00000004-4444-4444-8444-444444444444"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="4000"
+                        placeholder="Type or speak your response…"
+                        aria-describedby="os-tell-help-00000004-4444-4444-8444-444444444444"
+                        data-os-response-input
+                       data-os-rail-control></textarea>
+              
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-tell-help-00000004-4444-4444-8444-444444444444"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><path d="M12 18v3"></path></svg>
+                <span class="os-visually-hidden">Dictate your response (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-tell-help-00000004-4444-4444-8444-444444444444">
+              Type your response. Only add experience that is true and yours.
+              Dictation arrives in a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Review my response</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <details class="os-response-action" >
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.2 13.8a3.6 3.6 0 0 0 5.1 0l2.6-2.6a3.6 3.6 0 0 0-5.1-5.1l-1.2 1.2"></path><path d="M13.8 10.2a3.6 3.6 0 0 0-5.1 0l-2.6 2.6a3.6 3.6 0 0 0 5.1 5.1l1.2-1.2"></path></svg>
+          <span>Connect existing evidence</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000004-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="connect_evidence">
+            <fieldset class="os-choices">
+              <legend class="os-pair__label">
+                Your confirmed evidence
+              </legend>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Systems Engineering Experience Summary</span>
+                  <span class="os-choice__version">Version 3</span>
+                </span>
+              </label>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Model-Based Systems Engineering Project Record</span>
+                  <span class="os-choice__version">Version 2</span>
+                </span>
+              </label>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="cccccccc-3333-4333-8333-cccccccccccc"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Supplier Quality Review Notes</span>
+                  <span class="os-choice__version">Version 1</span>
+                </span>
+              </label>
+              
+            </fieldset>
+            <p class="os-help os-help--muted">
+              Connecting points at a record you already own. It does not copy
+              it, change it, or add it to this analysis's citations.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Connect this evidence</button>
+            </div>
+          </form>
+          
+        </div>
+      </details>
+
+      <details class="os-response-action" >
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path></svg>
+          <span>Provide a real example</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000004-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="real_example">
+            <label class="os-pair__label" for="os-example-00000004-4444-4444-8444-444444444444">A real example from your own work</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-example-00000004-4444-4444-8444-444444444444"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="4000"
+                        placeholder="What you did, and where…"
+                        aria-describedby="os-example-help-00000004-4444-4444-8444-444444444444"
+                        data-os-response-input
+                       data-os-rail-control></textarea>
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-example-help-00000004-4444-4444-8444-444444444444"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><path d="M12 18v3"></path></svg>
+                <span class="os-visually-hidden">Dictate your example (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-example-help-00000004-4444-4444-8444-444444444444">
+              Only add experience that is true and yours. Dictation arrives in
+              a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Review my example</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="/opportunity-slate/responses" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="00000004-4444-4444-8444-444444444444">
+        <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+        <input type="hidden" name="response_kind" value="confirm_not_have">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                >
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"></circle><path d="M6.6 6.6l10.8 10.8"></path></svg>
+          <span>Confirm I do not have this experience</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 12h14"></path><path d="M13.5 7l5 5-5 5"></path></svg></span>
+        </button>
+      </form>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="/opportunity-slate/responses" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="00000004-4444-4444-8444-444444444444">
+        <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+        <input type="hidden" name="response_kind" value="skip">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                >
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 6.5l6 5.5-6 5.5z"></path><path d="M13 6.5l6 5.5-6 5.5z"></path></svg>
+          <span>Skip</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 12h14"></path><path d="M13.5 7l5 5-5 5"></path></svg></span>
+        </button>
+      </form>
+    </div>
+  </div>
+  
+  <div class="os-response-panel"
+       data-os-response-panel="00000005-4444-4444-8444-444444444444"
+       hidden>
+
+    
+    <div class="os-response-panel__subject">
+      <p class="os-response-panel__wording">Knowledge of Model-Based Systems Engineering methods.</p>
+      <p class="os-pill os-pill--supported">
+        <span class="os-dot os-dot--supported" aria-hidden="true"></span>Supported
+      </p>
+    </div>
+
+    
+
+    <p class="os-response-panel__prompt">What would you like to do?</p>
+
+    <div class="os-response-actions">
+      
+      <details class="os-response-action"
+               open>
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5l1.9 4.9 4.9 1.9-4.9 1.9L12 17.1l-1.9-4.9L5.2 10.3l4.9-1.9z"></path><path d="M18.5 16.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"></path></svg>
+          <span>Tell us more</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          <p class="os-response-action__ask">
+            
+            Every part of this qualification is covered by the evidence you authorized.
+            
+          </p>
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000005-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="tell_more">
+            <label class="os-visually-hidden" for="os-tell-00000005-4444-4444-8444-444444444444">Your response for this qualification</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-tell-00000005-4444-4444-8444-444444444444"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="4000"
+                        placeholder="Type or speak your response…"
+                        aria-describedby="os-tell-help-00000005-4444-4444-8444-444444444444"
+                        data-os-response-input
+                       data-os-rail-control></textarea>
+              
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-tell-help-00000005-4444-4444-8444-444444444444"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><path d="M12 18v3"></path></svg>
+                <span class="os-visually-hidden">Dictate your response (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-tell-help-00000005-4444-4444-8444-444444444444">
+              Type your response. Only add experience that is true and yours.
+              Dictation arrives in a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Review my response</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <details class="os-response-action" >
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.2 13.8a3.6 3.6 0 0 0 5.1 0l2.6-2.6a3.6 3.6 0 0 0-5.1-5.1l-1.2 1.2"></path><path d="M13.8 10.2a3.6 3.6 0 0 0-5.1 0l-2.6 2.6a3.6 3.6 0 0 0 5.1 5.1l1.2-1.2"></path></svg>
+          <span>Connect existing evidence</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000005-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="connect_evidence">
+            <fieldset class="os-choices">
+              <legend class="os-pair__label">
+                Your confirmed evidence
+              </legend>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Systems Engineering Experience Summary</span>
+                  <span class="os-choice__version">Version 3</span>
+                </span>
+              </label>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Model-Based Systems Engineering Project Record</span>
+                  <span class="os-choice__version">Version 2</span>
+                </span>
+              </label>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="cccccccc-3333-4333-8333-cccccccccccc"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Supplier Quality Review Notes</span>
+                  <span class="os-choice__version">Version 1</span>
+                </span>
+              </label>
+              
+            </fieldset>
+            <p class="os-help os-help--muted">
+              Connecting points at a record you already own. It does not copy
+              it, change it, or add it to this analysis's citations.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Connect this evidence</button>
+            </div>
+          </form>
+          
+        </div>
+      </details>
+
+      <details class="os-response-action" >
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path></svg>
+          <span>Provide a real example</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000005-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="real_example">
+            <label class="os-pair__label" for="os-example-00000005-4444-4444-8444-444444444444">A real example from your own work</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-example-00000005-4444-4444-8444-444444444444"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="4000"
+                        placeholder="What you did, and where…"
+                        aria-describedby="os-example-help-00000005-4444-4444-8444-444444444444"
+                        data-os-response-input
+                       data-os-rail-control></textarea>
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-example-help-00000005-4444-4444-8444-444444444444"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><path d="M12 18v3"></path></svg>
+                <span class="os-visually-hidden">Dictate your example (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-example-help-00000005-4444-4444-8444-444444444444">
+              Only add experience that is true and yours. Dictation arrives in
+              a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Review my example</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="/opportunity-slate/responses" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="00000005-4444-4444-8444-444444444444">
+        <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+        <input type="hidden" name="response_kind" value="confirm_not_have">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                >
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"></circle><path d="M6.6 6.6l10.8 10.8"></path></svg>
+          <span>Confirm I do not have this experience</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 12h14"></path><path d="M13.5 7l5 5-5 5"></path></svg></span>
+        </button>
+      </form>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="/opportunity-slate/responses" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="00000005-4444-4444-8444-444444444444">
+        <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+        <input type="hidden" name="response_kind" value="skip">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                >
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 6.5l6 5.5-6 5.5z"></path><path d="M13 6.5l6 5.5-6 5.5z"></path></svg>
+          <span>Skip</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 12h14"></path><path d="M13.5 7l5 5-5 5"></path></svg></span>
+        </button>
+      </form>
+    </div>
+  </div>
+  
+  <div class="os-response-panel"
+       data-os-response-panel="00000006-4444-4444-8444-444444444444"
+       hidden>
+
+    
+    <div class="os-response-panel__subject">
+      <p class="os-response-panel__wording">Chartered Engineer status or working towards it.</p>
+      <p class="os-pill os-pill--not_enough_information">
+        <span class="os-dot os-dot--not_enough_information" aria-hidden="true"></span>Not enough information
+      </p>
+    </div>
+
+    
+
+    <p class="os-response-panel__prompt">What would you like to do?</p>
+
+    <div class="os-response-actions">
+      
+      <details class="os-response-action"
+               open>
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5l1.9 4.9 4.9 1.9-4.9 1.9L12 17.1l-1.9-4.9L5.2 10.3l4.9-1.9z"></path><path d="M18.5 16.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"></path></svg>
+          <span>Tell us more</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          <p class="os-response-action__ask">
+            
+            Nothing you authorized was matched to these words. That is a gap in the evidence PeerSlate could read, not a statement about you.
+            
+          </p>
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000006-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="tell_more">
+            <label class="os-visually-hidden" for="os-tell-00000006-4444-4444-8444-444444444444">Your response for this qualification</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-tell-00000006-4444-4444-8444-444444444444"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="4000"
+                        placeholder="Type or speak your response…"
+                        aria-describedby="os-tell-help-00000006-4444-4444-8444-444444444444"
+                        data-os-response-input
+                       data-os-rail-control></textarea>
+              
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-tell-help-00000006-4444-4444-8444-444444444444"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><path d="M12 18v3"></path></svg>
+                <span class="os-visually-hidden">Dictate your response (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-tell-help-00000006-4444-4444-8444-444444444444">
+              Type your response. Only add experience that is true and yours.
+              Dictation arrives in a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Review my response</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <details class="os-response-action" >
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.2 13.8a3.6 3.6 0 0 0 5.1 0l2.6-2.6a3.6 3.6 0 0 0-5.1-5.1l-1.2 1.2"></path><path d="M13.8 10.2a3.6 3.6 0 0 0-5.1 0l-2.6 2.6a3.6 3.6 0 0 0 5.1 5.1l1.2-1.2"></path></svg>
+          <span>Connect existing evidence</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000006-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="connect_evidence">
+            <fieldset class="os-choices">
+              <legend class="os-pair__label">
+                Your confirmed evidence
+              </legend>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Systems Engineering Experience Summary</span>
+                  <span class="os-choice__version">Version 3</span>
+                </span>
+              </label>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Model-Based Systems Engineering Project Record</span>
+                  <span class="os-choice__version">Version 2</span>
+                </span>
+              </label>
+              
+              <label class="os-choice">
+                <input type="radio"
+                       name="connected_evidence_key"
+                       value="cccccccc-3333-4333-8333-cccccccccccc"
+                       data-os-response-input
+                       data-os-rail-control
+                       >
+                <span>
+                  <span class="os-choice__title">Supplier Quality Review Notes</span>
+                  <span class="os-choice__version">Version 1</span>
+                </span>
+              </label>
+              
+            </fieldset>
+            <p class="os-help os-help--muted">
+              Connecting points at a record you already own. It does not copy
+              it, change it, or add it to this analysis's citations.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Connect this evidence</button>
+            </div>
+          </form>
+          
+        </div>
+      </details>
+
+      <details class="os-response-action" >
+        <summary class="os-response-action__summary">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path></svg>
+          <span>Provide a real example</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+        </summary>
+        <div class="os-response-action__body">
+          <form class="os-form os-form--rail" method="post" action="/opportunity-slate/responses" data-os-form="respond" novalidate>
+            <input type="hidden" name="statement_key" value="00000006-4444-4444-8444-444444444444">
+            <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+            <input type="hidden" name="response_kind" value="real_example">
+            <label class="os-pair__label" for="os-example-00000006-4444-4444-8444-444444444444">A real example from your own work</label>
+            <div class="os-editor os-editor--compact">
+              <textarea id="os-example-00000006-4444-4444-8444-444444444444"
+                        class="os-editor__field"
+                        name="response_text"
+                        rows="4"
+                        maxlength="4000"
+                        placeholder="What you did, and where…"
+                        aria-describedby="os-example-help-00000006-4444-4444-8444-444444444444"
+                        data-os-response-input
+                       data-os-rail-control></textarea>
+              <button type="button"
+                      class="os-mic os-mic--sm"
+                      aria-disabled="true"
+                      aria-describedby="os-example-help-00000006-4444-4444-8444-444444444444"
+                      data-os-inert-mic
+                      title="Dictation is not available yet">
+                <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><path d="M12 18v3"></path></svg>
+                <span class="os-visually-hidden">Dictate your example (not available yet)</span>
+              </button>
+            </div>
+            <p class="os-help" id="os-example-help-00000006-4444-4444-8444-444444444444">
+              Only add experience that is true and yours. Dictation arrives in
+              a later update.
+            </p>
+            <div class="os-disclosure__actions">
+              <button type="submit" class="os-btn os-btn--primary os-btn--sm"
+                      data-os-rail-control
+                      >Review my example</button>
+            </div>
+          </form>
+        </div>
+      </details>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="/opportunity-slate/responses" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="00000006-4444-4444-8444-444444444444">
+        <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+        <input type="hidden" name="response_kind" value="confirm_not_have">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                >
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"></circle><path d="M6.6 6.6l10.8 10.8"></path></svg>
+          <span>Confirm I do not have this experience</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 12h14"></path><path d="M13.5 7l5 5-5 5"></path></svg></span>
+        </button>
+      </form>
+
+      <form class="os-response-action os-response-action--direct" method="post" action="/opportunity-slate/responses" data-os-form="respond">
+        <input type="hidden" name="statement_key" value="00000006-4444-4444-8444-444444444444">
+        <input type="hidden" name="statement_version_token" value="dGVzdC10b2tlbg==">
+        <input type="hidden" name="response_kind" value="skip">
+        <button type="submit" class="os-response-action__button" data-os-rail-control
+                >
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 6.5l6 5.5-6 5.5z"></path><path d="M13 6.5l6 5.5-6 5.5z"></path></svg>
+          <span>Skip</span>
+          <span class="os-response-action__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 12h14"></path><path d="M13.5 7l5 5-5 5"></path></svg></span>
+        </button>
+      </form>
+    </div>
+  </div>
+  
+  
+</div>
+    </div>
+    
+
+    
+    <div class="os-rail os-rail--right">
+      
+      
+        
+
+
+
+
+<div class="os-rail-card os-rail-card--evidence" id="os-evidence-rail" data-os-evidence-rail>
+  <p class="os-rail-card__title">Evidence review</p>
+
+  
+  
+  <div class="os-evidence-panel"
+       data-os-evidence-panel="00000001-4444-4444-8444-444444444444"
+       >
+
+    <p class="os-evidence-panel__wording">Bachelor&#39;s degree in Engineering and 3+ years of relevant experience.</p>
+
+    <p class="os-pair__label">Category</p>
+    <p class="os-evidence-panel__value">Required qualification</p>
+
+    <p class="os-pair__label">Status</p>
+    <p class="os-pill os-pill--supported">
+      <span class="os-dot os-dot--supported" aria-hidden="true"></span>Supported
+    </p>
+
+    
+    <p class="os-pair__label">Why this evidence supports the qualification</p>
+    
+    <p class="os-evidence-panel__body">Systems Engineering Experience Summary · Version 3 is cited for “Bachelor&#39;s degree in Engineering” and “3+ years of relevant experience”.</p>
+    
+    
+
+    <p class="os-pair__label">What remains unestablished</p>
+    <p class="os-evidence-panel__body">Every part of this qualification is covered by the evidence you authorized.</p>
+
+    
+    <p class="os-pair__label">Authorized evidence</p>
+    
+    
+    <div class="os-evidence-card">
+      <span class="os-evidence-card__badge"><svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path></svg></span>
+      <span>
+        <span class="os-evidence-card__title">Systems Engineering Experience Summary</span>
+        <span class="os-evidence-card__version">Version 3</span>
+      </span>
+    </div>
+    
+
+    <p class="os-pair__label">Evidence excerpt</p>
+    
+    <blockquote class="os-excerpt" tabindex="0">holds a BEng</blockquote>
+    
+    <p class="os-help os-help--muted">
+      Quoted from your own record, exactly as it is stored there. Nothing in
+      your library was changed.
+    </p>
+    
+  </div>
+  
+  <div class="os-evidence-panel"
+       data-os-evidence-panel="00000002-4444-4444-8444-444444444444"
+       hidden>
+
+    <p class="os-evidence-panel__wording">Strong understanding of systems engineering processes.</p>
+
+    <p class="os-pair__label">Category</p>
+    <p class="os-evidence-panel__value">Required qualification</p>
+
+    <p class="os-pair__label">Status</p>
+    <p class="os-pill os-pill--partially_supported">
+      <span class="os-dot os-dot--partially_supported" aria-hidden="true"></span>Partially supported
+    </p>
+
+    
+    <p class="os-pair__label">Why this evidence supports part of the qualification</p>
+    
+    <p class="os-evidence-panel__body">Systems Engineering Experience Summary · Version 3 is cited for “Strong understanding of systems engineering”.</p>
+    
+    
+
+    <p class="os-pair__label">What remains unestablished</p>
+    <p class="os-evidence-panel__body">“Strong understanding of systems engineering processes” — not established by the evidence you authorized.</p>
+
+    
+    <p class="os-pair__label">Authorized evidence</p>
+    
+    
+    <div class="os-evidence-card">
+      <span class="os-evidence-card__badge"><svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path></svg></span>
+      <span>
+        <span class="os-evidence-card__title">Systems Engineering Experience Summary</span>
+        <span class="os-evidence-card__version">Version 3</span>
+      </span>
+    </div>
+    
+
+    <p class="os-pair__label">Evidence excerpt</p>
+    
+    <blockquote class="os-excerpt" tabindex="0">systems-integration and verification-readiness work</blockquote>
+    
+    <p class="os-help os-help--muted">
+      Quoted from your own record, exactly as it is stored there. Nothing in
+      your library was changed.
+    </p>
+    
+  </div>
+  
+  <div class="os-evidence-panel"
+       data-os-evidence-panel="00000003-4444-4444-8444-444444444444"
+       hidden>
+
+    <p class="os-evidence-panel__wording">Experience of verification and validation in a regulated environment.</p>
+
+    <p class="os-pair__label">Category</p>
+    <p class="os-evidence-panel__value">Required qualification</p>
+
+    <p class="os-pair__label">Status</p>
+    <p class="os-pill os-pill--partially_supported">
+      <span class="os-dot os-dot--partially_supported" aria-hidden="true"></span>Partially supported
+    </p>
+
+    
+    <p class="os-pair__label">Why this evidence supports part of the qualification</p>
+    
+    <p class="os-evidence-panel__body">Model-Based Systems Engineering Project Record · Version 2 is cited for “Experience of verification” and “in a regulated environment”.</p>
+    
+    
+
+    <p class="os-pair__label">What remains unestablished</p>
+    <p class="os-evidence-panel__body">“Experience of verification and validation” — not established by the evidence you authorized.</p>
+
+    
+    <p class="os-pair__label">Authorized evidence</p>
+    
+    
+    <div class="os-evidence-card">
+      <span class="os-evidence-card__badge"><svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path></svg></span>
+      <span>
+        <span class="os-evidence-card__title">Model-Based Systems Engineering Project Record</span>
+        <span class="os-evidence-card__version">Version 2</span>
+      </span>
+    </div>
+    
+
+    <p class="os-pair__label">Evidence excerpt</p>
+    
+    <blockquote class="os-excerpt" tabindex="0">verification evidence</blockquote>
+    
+    <p class="os-help os-help--muted">
+      Quoted from your own record, exactly as it is stored there. Nothing in
+      your library was changed.
+    </p>
+    
+  </div>
+  
+  <div class="os-evidence-panel"
+       data-os-evidence-panel="00000004-4444-4444-8444-444444444444"
+       hidden>
+
+    <p class="os-evidence-panel__wording">Ability to obtain and maintain a security clearance.</p>
+
+    <p class="os-pair__label">Category</p>
+    <p class="os-evidence-panel__value">Required qualification</p>
+
+    <p class="os-pair__label">Status</p>
+    <p class="os-pill os-pill--not_enough_information">
+      <span class="os-dot os-dot--not_enough_information" aria-hidden="true"></span>Not enough information
+    </p>
+
+    
+
+    <p class="os-pair__label">What remains unestablished</p>
+    <p class="os-evidence-panel__body">Nothing you authorized was matched to these words. That is a gap in the evidence PeerSlate could read, not a statement about you.</p>
+
+    
+  </div>
+  
+  <div class="os-evidence-panel"
+       data-os-evidence-panel="00000005-4444-4444-8444-444444444444"
+       hidden>
+
+    <p class="os-evidence-panel__wording">Knowledge of Model-Based Systems Engineering methods.</p>
+
+    <p class="os-pair__label">Category</p>
+    <p class="os-evidence-panel__value">Preferred qualification</p>
+
+    <p class="os-pair__label">Status</p>
+    <p class="os-pill os-pill--supported">
+      <span class="os-dot os-dot--supported" aria-hidden="true"></span>Supported
+    </p>
+
+    
+    <p class="os-pair__label">Why this evidence supports the qualification</p>
+    
+    <p class="os-evidence-panel__body">Model-Based Systems Engineering Project Record · Version 2 is cited for “Knowledge of Model-Based Systems Engineering methods”.</p>
+    
+    
+
+    <p class="os-pair__label">What remains unestablished</p>
+    <p class="os-evidence-panel__body">Every part of this qualification is covered by the evidence you authorized.</p>
+
+    
+    <p class="os-pair__label">Authorized evidence</p>
+    
+    
+    <div class="os-evidence-card">
+      <span class="os-evidence-card__badge"><svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path></svg></span>
+      <span>
+        <span class="os-evidence-card__title">Model-Based Systems Engineering Project Record</span>
+        <span class="os-evidence-card__version">Version 2</span>
+      </span>
+    </div>
+    
+
+    <p class="os-pair__label">Evidence excerpt</p>
+    
+    <blockquote class="os-excerpt" tabindex="0">Built and maintained SysML models</blockquote>
+    
+    <p class="os-help os-help--muted">
+      Quoted from your own record, exactly as it is stored there. Nothing in
+      your library was changed.
+    </p>
+    
+  </div>
+  
+  <div class="os-evidence-panel"
+       data-os-evidence-panel="00000006-4444-4444-8444-444444444444"
+       hidden>
+
+    <p class="os-evidence-panel__wording">Chartered Engineer status or working towards it.</p>
+
+    <p class="os-pair__label">Category</p>
+    <p class="os-evidence-panel__value">Preferred qualification</p>
+
+    <p class="os-pair__label">Status</p>
+    <p class="os-pill os-pill--not_enough_information">
+      <span class="os-dot os-dot--not_enough_information" aria-hidden="true"></span>Not enough information
+    </p>
+
+    
+
+    <p class="os-pair__label">What remains unestablished</p>
+    <p class="os-evidence-panel__body">Nothing you authorized was matched to these words. That is a gap in the evidence PeerSlate could read, not a statement about you.</p>
+
+    
+  </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</div>
+
+    </main>
+
+    <footer class="footer">
+        
+        <p class="footer-privacy">
+            <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;">
+                <path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/>
+                <path d="M8.5 12.5l2.4 2.4 4.8-5"/>
+            </svg>
+            Your data is private. You control what you share.
+        </p>
+        <div class="footer-container footer-container--brand">
+            
+            <a class="footer-brand" href="/peerslate" aria-label="PeerSlate home">
+                <img
+                    src="/static/images/peerslate-mark.png?v=21b5be67f9b0"
+                    alt=""
+                    aria-hidden="true"
+                >
+                <span>PeerSlate</span>
+            </a>
+            <p>&copy; 2026 PeerSlate <span>|</span> Your Work. Your Story. Your Future. <span>|</span> <a class="footer-why-link" href="/peerslate">Why PeerSlate</a></p>
+            
+        </div>
+    </footer>
+
+    
+    
+
+    
+    <script id="nav-search-data" type="application/json">
+    [
+        
+        {"title": "Pete's Slate", "sub": "Pete Carter's public Overview", "href": "/petec/resume#overview", "keys": "pete slate profile overview public"},
+        {"title": "My Story", "sub": "The person behind the work", "href": "/petec/my-story", "keys": "story about journey bio my story personal life"},
+        {"title": "Skills in practice", "sub": "Sources behind the skills", "href": "/petec/skills", "keys": "skills sources mbse sysml cameo doors expertise supporting work"},
+        {"title": "Slate Board", "sub": "Goals, wins, and progress", "href": "/petec/slate-board", "keys": "board goals whiteboard badges tracking momentum trophy streak"},
+        {"title": "Résumé", "sub": "Detailed career record", "href": "/petec/resume#resume-start", "keys": "resume résumé career experience education certifications pmp jobs roles clearance"},
+        {"title": "Interview Studio", "sub": "Practice, coaching, video, and growth", "href": "/interview-studio", "keys": "interview me interview ai video practice questions star behavioral coach mock answer"},
+        {"title": "Contact", "sub": "Email and LinkedIn", "href": "/petec/contact", "keys": "contact email message linkedin reach hire connect"},
+        {"title": "Download résumé", "sub": "One-page PDF", "href": "/static/files/pete-carter-resume.pdf?v=95aff8484e21", "keys": "download resume résumé pdf file print ats"},
+        {"title": "Community Feed", "sub": "People, progress, and interests", "href": "/the-slate", "keys": "community feed people progress interests posts milestones"},
+        {"title": "The Break", "sub": "Step back and recharge", "href": "/the-slate/break", "keys": "community break recharge rest quotes shout-outs spark"},
+        {"title": "Why PeerSlate", "sub": "Why the platform exists", "href": "/peerslate", "keys": "why peerslate about mission journal private first how it works"}
+        
+    ]
+    </script>
+
+    
+    <nav class="mobile-tabbar" id="mobile-tabbar" aria-label="Section navigation" hidden></nav>
+
+    <script src="/static/js/chatbot.js?v=15e32d0a79e8"></script>
+    
+    <script src="/static/js/public-site-search.js?v=ac0a916d4374"></script>
+    <script src="/static/js/public-mobile-nav.js?v=15e15ab11db9"></script>
+    
+    
+    
+<script src="/static/js/opportunity-slate.js?v=1d265174165a" defer></script>
+
+
+</body>
+
+</html>

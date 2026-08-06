@@ -1,0 +1,71 @@
+== 7. negatives, every one of them BEFORE any mutation ==
+  PASS forged key cannot save -> {'outcome': 'changed', 'slate_key': None, 'saved_result_key': None, 'save_version_number': None, 'qualification_count': None}
+  PASS owner B cannot save owner A's set -> {'outcome': 'changed', 'slate_key': None, 'saved_result_key': None, 'save_version_number': None, 'qualification_count': None}
+  PASS a stale requirement-set fence refuses -> {'outcome': 'changed', 'slate_key': None, 'saved_result_key': None, 'save_version_number': None, 'qualification_count': None}
+  PASS a malformed fingerprint refuses -> {'outcome': 'invalid', 'slate_key': None, 'saved_result_key': None, 'save_version_number': None, 'qualification_count': None}
+  PASS an over-length idempotency key refuses -> {'outcome': 'invalid', 'slate_key': None, 'saved_result_key': None, 'save_version_number': None, 'qualification_count': None}
+  PASS no slate was created by any refusal
+  PASS no member content changed by any refusal
+== 8. the real save, and the idempotency ledger ==
+  PASS owner A saved -> {'outcome': 'success', 'slate_key': UUID('761271d4-0c90-f111-9b33-002248458a47'), 'saved_result_key': UUID('771271d4-0c90-f111-9b33-002248458a47'), 'save_version_number': 1, 'qualification_count': 3}
+  PASS the snapshot copied the member's response context
+  PASS the snapshot pinned the cited evidence at its version
+  PASS the snapshot copied the confirmed employer wording
+  PASS a replayed key returns the existing version -> {'outcome': 'existing', 'slate_key': UUID('761271d4-0c90-f111-9b33-002248458a47'), 'saved_result_key': UUID('771271d4-0c90-f111-9b33-002248458a47'), 'save_version_number': 1, 'qualification_count': 3}
+  PASS the replay appended nothing
+  PASS the replay did not overwrite the stored fingerprint
+  PASS a fresh key appends a new version -> {'outcome': 'success', 'slate_key': UUID('761271d4-0c90-f111-9b33-002248458a47'), 'saved_result_key': UUID('781271d4-0c90-f111-9b33-002248458a47'), 'save_version_number': 2, 'qualification_count': 3}
+  PASS nothing was overwritten
+  PASS the first version is still identifiable
+  PASS owner B has their own slate
+== 9. the read, and currency both ways ==
+  PASS the read returns the latest version
+  PASS currency reports the pinned and the current version -> [{'evidence_kind': 'knowledge_item', 'evidence_key': UUID('aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'), 'pinned_version': 1, 'current_version': 1}]
+  member edits the cited evidence item: OK
+  PASS an edited evidence record reports a NEW current version -> [{'evidence_kind': 'knowledge_item', 'evidence_key': UUID('aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'), 'pinned_version': 1, 'current_version': 2}]
+  PASS the pinned snapshot itself did not move
+  member un-confirms the cited evidence item: OK
+  PASS an un-confirmed evidence record reports NO current version -> [{'evidence_kind': 'knowledge_item', 'evidence_key': UUID('aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'), 'pinned_version': 1, 'current_version': None}]
+  restore the evidence item: OK
+== 10. cross-owner reads see nothing ==
+  PASS owner B cannot open owner A's saved version by key -> []
+  PASS a forged key reads nothing -> []
+== 11. the working store and the saved slate have separate lifetimes ==
+  PASS a statement correction took the working analysis
+  PASS the saved slate is untouched by it
+    delete working session: {'outcome': 'success', 'deleted_version_count': 2}
+  PASS the working session is gone
+  PASS the saved slate SURVIVED the member's working-session delete
+  PASS and it is still fully readable
+  age owner B's session past expiry: OK
+    purge owner B: {'purged_session_count': 1, 'purged_version_count': 2}
+  PASS the purge removed owner B's working rows
+  PASS owner B's saved slate SURVIVED the purge
+== 12. delete: refused, then atomic ==
+  PASS delete refused for forged key -> {'outcome': 'changed', 'deleted_result_count': None}
+  PASS delete refused for owner B -> {'outcome': 'changed', 'deleted_result_count': None}
+  PASS delete refused for stale fence -> {'outcome': 'changed', 'deleted_result_count': None}
+  PASS every refused delete left the slate WHOLE
+    owner A deletes their slate: {'outcome': 'success', 'deleted_result_count': 2}
+  PASS the delete removed both versions -> {'outcome': 'success', 'deleted_result_count': 2}
+  PASS nothing of owner A's slate is left
+  PASS owner B's slate is untouched by owner A's delete
+== 13. the owner-isolation verifier ==
+  owner isolation verification: OK
+    ['verified', 'detail'] [True]
+== 14. rollback: refuses on data, then removes what it owns ==
+  rollback with SAVED data present: refused as required (opportunity_saved_evidence contains member records)
+    owner B deletes their slate: {'outcome': 'success', 'deleted_result_count': 1}
+  PASS a working session is open, so the next refusal means something -> 1
+  rollback with WORKING data present: refused as required (contains member records)
+  rollback with the store empty: OK
+  PASS the rollback removed every Opportunity Slate object
+  PASS and left the ten prerequisite migrations intact -> 10
+== 15. re-apply from empty, then a second apply must be a no-op ==
+  clean re-apply: OK
+  PASS 16 tables, 20 procedures from empty
+  second apply over itself: OK
+  PASS the second apply changed nothing
+  PASS a clean re-apply carries no member rows
+
+FAILURES: none

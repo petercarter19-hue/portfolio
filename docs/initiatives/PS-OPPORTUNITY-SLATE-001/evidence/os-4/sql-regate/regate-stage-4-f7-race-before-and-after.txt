@@ -1,0 +1,23 @@
+    save analysis: {'outcome': 'success', 'analysis_key': UUID('9e12a55a-0d90-f111-9b33-002248458a47'), 'qualification_count': 3}
+    save response: {'outcome': 'success', 'response_key': UUID('9f12a55a-0d90-f111-9b33-002248458a47'), 'response_kind': 'tell_more'}
+== the PRE-FIX procedure (8b0db12): unlocked probe, no catch ==
+  OS-4 revision as it stood at 8b0db12: OK
+  race 1: outcomes=['existing', 'existing', 'existing', 'success'] rows_for_key=1
+  race 2: outcomes=["EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", "EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", "EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", 'success'] rows_for_key=1
+  race 3: outcomes=["EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", "EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", "EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", 'success'] rows_for_key=1
+  race 4: outcomes=["EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", "EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", 'existing', 'success'] rows_for_key=1
+  race 5: outcomes=["EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", "EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", "EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", 'success'] rows_for_key=1
+  PASS the pre-fix probe DOES lose the race -> 4 of 5 races raised; first=["EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", "EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", "EXCEPTION: Driver Error: Integrity constraint violation; DDBC Error: [Microsoft][SQL Server]Violation of UNIQUE KEY constraint 'UQ_opportunity_saved_results_idempotency'. ", 'success']
+== the FIXED procedure, same races ==
+  OS-4 revision with the F7 fix: OK
+  race 1: outcomes=['existing', 'existing', 'existing', 'success'] rows_for_key=1
+  race 2: outcomes=['existing', 'existing', 'existing', 'success'] rows_for_key=1
+  race 3: outcomes=['existing', 'existing', 'existing', 'success'] rows_for_key=1
+  race 4: outcomes=['existing', 'existing', 'existing', 'success'] rows_for_key=1
+  race 5: outcomes=['existing', 'existing', 'existing', 'success'] rows_for_key=1
+  PASS the fixed probe never raises -> [['existing', 'existing', 'existing', 'success'], ['existing', 'existing', 'existing', 'success'], ['existing', 'existing', 'existing', 'success'], ['existing', 'existing', 'existing', 'success'], ['existing', 'existing', 'existing', 'success']]
+  PASS and every race left exactly one row for its key -> [1, 1, 1, 1, 1]
+  PASS with exactly one success each -> [['existing', 'existing', 'existing', 'success'], ['existing', 'existing', 'existing', 'success'], ['existing', 'existing', 'existing', 'success'], ['existing', 'existing', 'existing', 'success'], ['existing', 'existing', 'existing', 'success']]
+    clean up: {'outcome': 'success', 'deleted_result_count': 10}
+
+FAILURES: none

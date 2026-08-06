@@ -117,6 +117,8 @@ from services.opportunity_slate_service import (
     STATEMENT_CLASSES,
     OpportunitySlateServiceError,
     apply_concern_correction,
+    compute_content_digest,
+    compute_input_fingerprint,
     opportunity_slate_service,
     validate_source_text,
 )
@@ -186,6 +188,22 @@ STEP_REPLACE = "replace"
 _ALLOWED_STEPS = frozenset(
     {STEP_ROLE, STEP_REVIEW, STEP_REPLACE, STEP_REQUIREMENTS, STEP_ALIGNMENT}
 )
+# Slice OS-4's `View saved details`. Deliberately NOT in _ALLOWED_STEPS: it
+# has its own route because it reads a different record — the durable saved
+# slate rather than the ephemeral working session — and a ?step= that could
+# reach it would let a member ask the room route for a screen the room route
+# has no data for.
+STEP_SAVED = "saved"
+
+# Presentation-only, like every other label map in this module. The service
+# returns the validated enum; the member-facing wording lives here.
+RESPONSE_KIND_LABELS = {
+    "tell_more": "You told us more",
+    "connect_evidence": "You connected existing evidence",
+    "real_example": "You provided a real example",
+    "confirm_not_have": "You confirmed you do not have this experience",
+    "skip": "You skipped this",
+}
 
 # The anonymous session's actions, split across two endpoints for one
 # reason: rate limiting. Handoff section 18 safeguard 2 sets the AI budget at
@@ -245,6 +263,12 @@ STATEMENT_GROUP_ORDER = (
 # they are quoted, never paraphrased. The rest live in the templates beside
 # the markup they belong to.
 TRUTH_NOTHING_SAVED = "Nothing is saved yet."
+# The same promise for a member who already HAS a saved slate. Not a locked
+# sentence — the locked set has no failure state for a save attempted beside
+# an existing saved result — so it is written in the established grammar and
+# says the two things that are true: this attempt stored nothing, and the
+# thing they can see on screen is still theirs.
+TRUTH_NOTHING_NEW_SAVED = "Nothing new was saved. Your saved slate is unchanged."
 
 UNAVAILABLE_MESSAGE = (
     "We couldn't reach your Opportunity Slate right now. Nothing was saved "
@@ -480,15 +504,118 @@ RAIL_NOT_ENOUGH_LINE = (
 # CompositionTemplateTests asserts that every one of them still reaches the
 # page.
 ALIGNMENT_FOOTER_TRUTH_PRIVATE = "Session private · Nothing is saved yet"
+# 2026-08-05 independent review, finding F-3. ALIGNMENT_FOOTER_TRUTH_PRIVATE
+# is only true of a member with NO saved slate at all. A member who reanalyzed
+# — a saved slate exists, but the result on screen is a newer one they have
+# not saved — has `room.saved.exists` True while the footer still claimed
+# nothing was saved, directly contradicting the rail a few hundred pixels
+# above it ("A saved result ... remains available"). Same fact,
+# same fix as `_nothing_saved_truth`'s save-failure card (finding F2): tell
+# the member what is actually true of THEM, not the generic unsaved sentence.
+ALIGNMENT_FOOTER_TRUTH_PRIVATE_HAS_SAVED = f"Session private · {TRUTH_NOTHING_NEW_SAVED}"
 ALIGNMENT_FOOTER_TRUTH_PUBLIC = "Public session · Nothing is stored"
 ALIGNMENT_FOOTER_DETAIL = (
     "This analysis is session-private. Nothing here has been published, "
     "shared, sent to an employer, or used to alter your evidence."
 )
 ALIGNMENT_SAVE_NOTE = (
-    "Saving this analysis privately arrives in a later update. Nothing is "
-    "waiting behind this button, and nothing has been saved."
+    "Saving keeps this result in your private account. It publishes nothing "
+    "and shares nothing."
 )
+# Handoff section 18: saving is signed-in only, and the public side says so
+# plainly instead of rendering a control that cannot work. This is the
+# "available with membership" grammar the intake tiles already use.
+ALIGNMENT_SAVE_NOTE_PUBLIC = (
+    "Saving arrives with membership. This preview keeps nothing, so there is "
+    "nothing here to save into."
+)
+
+# ---------------------------------------------------------------------------
+# Slice OS-4 — the save lifecycle.
+#
+# THREE STATES, AND THE DIFFERENCE BETWEEN THEM IS THE WHOLE SLICE.
+#
+#   unsaved      image 04. Nothing has been saved, OR a newer analysis is on
+#                screen that the member has not saved. The amber truth card.
+#   saved        image 05. The result on screen IS the saved one, and it still
+#                applies to the member's current inputs.
+#   saved_stale  image 09-c. The result on screen is the saved one, but an
+#                input has changed underneath it — a different confirmed
+#                source or requirement version, or a cited evidence record the
+#                member has since edited, archived or removed.
+#
+# "Saved" and "still accurate" are two different truths (locked rule; handoff
+# section 7), and nothing in this room collapses them. Nothing is ever
+# silently reanalyzed and no saved version is ever overwritten: saving again
+# appends, and every earlier version stays identifiable by its source version
+# and its save time.
+#
+# Every sentence below is reproduced from the locked authority. Image 09-c's
+# two lines and image 09-d's two lines are trust-critical (handoff section
+# 14-M11) and are quoted exactly, not paraphrased.
+# ---------------------------------------------------------------------------
+SAVED_STATE_UNSAVED = "unsaved"
+SAVED_STATE_SAVED = "saved"
+SAVED_STATE_STALE = "saved_stale"
+
+# Image 05's left-rail card, verbatim.
+SAVED_HEADING = "Saved privately"
+SAVED_CHIP_CURRENT = "Current for these inputs"
+SAVED_DETAIL = (
+    "PeerSlate retained the reviewed source version, confirmed requirements, "
+    "this analysis, and the authorized evidence snapshot used for it."
+)
+SAVED_TRUTH = "Nothing was published or shared."
+
+# Image 09-c, verbatim.
+STALE_CHIP = "Inputs changed · Reanalysis required"
+STALE_LINE_ONE = "The saved result remains available for Source Version {version}."
+STALE_LINE_TWO = "It does not apply to your changed inputs."
+
+# Image 09-d, verbatim.
+DELETE_FAILURE_HEADING = "We couldn't delete this saved slate."
+DELETE_FAILURE_MESSAGE = "It remains saved privately. Nothing was removed."
+
+# Image 05's footer. The second sentence is the trust-critical one and is
+# quoted exactly. The first is image 05's own summary of what saving does,
+# with its AI-generated tail ("It does not publish in qualification
+# accounting") corrected to say the thing it was reaching for — handoff
+# section 14-M11: trust sentences are reproduced, the rest follow the images'
+# meaning with corrected typography.
+SAVED_FOOTER_TRUTH = "Saved privately"
+SAVED_FOOTER_DETAIL = (
+    "Saving retains your current reviewed inputs. It does not publish "
+    "anything, and it does not change your qualification accounting."
+)
+SAVED_FOOTER_PROMISE = (
+    "Saved privately. Nothing was published, shared, sent to an employer, or "
+    "used to alter your canonical evidence."
+)
+
+SAVE_FAILURE_HEADING = "We couldn't save this slate."
+SAVE_CONFLICT_HEADING = "These inputs changed."
+SAVE_CONFLICT_MESSAGE = (
+    "Nothing was saved. Review your inputs and run the analysis again before "
+    "saving."
+)
+SAVE_NOTHING_MESSAGE = (
+    "There is no completed analysis to save yet. Nothing was saved, and "
+    "nothing was lost."
+)
+
+# Image 05's filter row (handoff section 14-M4). OS-3 deferred it here
+# because image 05 is its authority. It filters the rows inside BOTH
+# status-bearing cards at once; the count summaries above it stay unfiltered,
+# because those are the locked accounting and a filtered total would be a
+# different — and quietly wrong — number.
+STATUS_FILTER_ALL = "all"
+STATUS_FILTERS = (
+    (STATUS_FILTER_ALL, "All"),
+    ("supported", "Supported"),
+    ("partially_supported", "Partially supported"),
+    ("not_enough_information", "Not enough information"),
+)
+_STATUS_FILTER_VALUES = frozenset(name for name, _ in STATUS_FILTERS)
 
 # The demo evidence label. Handoff section 18 safeguard 5: anonymous mode
 # never claims the demo library is the visitor's own.
@@ -760,6 +887,9 @@ def _base_room(mode, *, step, error=None):
         # not happening.
         "requirements": None,
         "alignment": None,
+        # Slice OS-4. None on every screen but Alignment: a saved slate is
+        # only ever presented beside the result it is a snapshot of.
+        "saved": None,
         "max_source_units": MAX_SOURCE_TEXT_UNITS,
         "max_response_units": MAX_RESPONSE_TEXT_UNITS,
         # Slice OS-2 independent review, finding F5. The intake textarea's
@@ -801,6 +931,11 @@ def _base_room(mode, *, step, error=None):
         "alignment_step_url": url_for("opportunity_slate.room", step=STEP_ALIGNMENT),
         "analysis_url": url_for("opportunity_slate.run_analysis"),
         "response_url": url_for("opportunity_slate.save_response"),
+        # Slice OS-4.
+        "save_url": url_for("opportunity_slate.save_slate"),
+        "reanalyze_url": url_for("opportunity_slate.reanalyze"),
+        "delete_slate_url": url_for("opportunity_slate.delete_slate"),
+        "saved_details_url": url_for("opportunity_slate.saved_details"),
         "max_clarification_units": MAX_CLARIFICATION_UNITS,
         "statement_class_options": [
             {"value": name, "label": STATEMENT_CLASS_LABELS[name]}
@@ -809,7 +944,9 @@ def _base_room(mode, *, step, error=None):
     }
 
 
-def _intake_room(mode, *, text="", replace=False, error=None, has_source=False):
+def _intake_room(
+    mode, *, text="", replace=False, error=None, has_source=False, saved=None
+):
     room = _base_room(mode, step=STEP_REPLACE if replace else STEP_ROLE, error=error)
     room.update(
         {
@@ -831,6 +968,17 @@ def _intake_room(mode, *, text="", replace=False, error=None, has_source=False):
             "upload_idempotency_key": str(uuid4()),
             "import_idempotency_key": str(uuid4()),
             "source": None,
+            # 2026-08-05 independent review, finding F-4. A saved slate
+            # outlives the working session it was computed from (that is the
+            # whole design point of slice OS-4), so a member who deleted or
+            # never restarted their working session can land here with a
+            # saved result and no route back to it anywhere on the page.
+            # `saved` is the owner's saved slate or None (`_load_saved_slate`
+            # already under-claims on a read failure), and this is a modest
+            # existence note, not the full saved view — the intake screen has
+            # no "current inputs" to resolve currency against, so there is no
+            # meaningful state/chip to show here the way the workbench does.
+            "has_saved_slate": saved is not None,
         }
     )
     return room
@@ -1377,6 +1525,166 @@ def _derive_from_stored(statement, citations):
     return derived
 
 
+def _saved_at_label(moment):
+    """A plain, unambiguous save time. UTC is named rather than implied."""
+    if moment is None:
+        return None
+    return moment.strftime("%d %B %Y at %H:%M UTC").lstrip("0")
+
+
+def _analysed_statement_signature(statements):
+    """The analysed statement set, in exactly the shape the snapshot copies.
+
+    Built by running the real ``_qualifications_for_analysis`` filter rather
+    than re-deriving it, so the signature cannot drift away from the set that
+    is actually analysed and saved. Each entry is
+    ``(requirement-statement ordinal, class in force, employer text)`` — the
+    three fields ``opportunity_saved_qualifications`` carries per row.
+    """
+    by_key = {statement["key"]: statement for statement in statements}
+    signature = []
+    for qualification in _qualifications_for_analysis(statements):
+        statement = by_key[qualification["statement_key"]]
+        signature.append(
+            (
+                statement["ordinal"],
+                statement["effective_class"],
+                qualification["employer_text"],
+            )
+        )
+    return signature
+
+
+def _current_content_digest(working, requirement_set):
+    """The content digest of the member's CURRENT confirmed inputs.
+
+    ``working.display_text`` is the correction overlay when there is one and
+    the captured original otherwise — the same COALESCE the save procedure
+    copies into the snapshot, so the two sides compare like for like.
+    """
+    return compute_content_digest(
+        working.display_text,
+        _analysed_statement_signature(
+            _statements_from_views(requirement_set.statements)
+        ),
+    )
+
+
+def _saved_currency(saved, working, requirement_set):
+    """Does the saved result still apply to what the member has in front of
+    them right now?
+
+    The single place this question is answered, so the alignment screen, the
+    saved-details screen and the delete-failure re-render cannot disagree
+    about it. Missing working state answers "no": a member with no session
+    has no current inputs for the result to be current FOR, and claiming
+    currency against inputs PeerSlate cannot read would be a guess.
+    """
+    if saved is None or working is None or requirement_set is None:
+        return False
+    return saved.is_current_for(
+        requirement_set.source_version_number,
+        requirement_set.version_number,
+        _current_content_digest(working, requirement_set),
+        inputs_confirmed=working.is_confirmed and requirement_set.is_confirmed,
+    )
+
+
+def _resolve_saved_state(saved, analysis_key, is_current):
+    """Which of the three saved states the screen is in.
+
+    Pure, and deliberately so: this is the one decision in the slice that
+    decides what a member is told about their own data, so it is a function of
+    three facts and nothing else.
+
+    ``analysis_key`` is the key of the analysis CURRENTLY on screen, or
+    ``None`` when there is none. It is compared with the analysis key the
+    saved result snapshotted, which is what separates "you are looking at the
+    saved result" from "you are looking at something newer that you have not
+    saved". Without that comparison a member who pressed `Run this again`
+    would be shown a green "Saved privately" banner over a result that was
+    never saved — the exact untruth this slice exists to prevent.
+    """
+    if saved is None:
+        return SAVED_STATE_UNSAVED
+    if analysis_key is not None and analysis_key != saved.saved_analysis_key:
+        # A newer analysis is on screen. The prior saved result is still
+        # there and still identifiable; the screen it is NOT is image 05.
+        return SAVED_STATE_UNSAVED
+    return SAVED_STATE_SAVED if is_current else SAVED_STATE_STALE
+
+
+def _saved_view(saved, *, state, mode):
+    """The saved-slate view model, or the honest absence of one."""
+    if saved is None:
+        return {
+            "state": SAVED_STATE_UNSAVED,
+            "exists": False,
+            "is_public": mode == "public",
+        }
+    return {
+        "state": state,
+        "exists": True,
+        "is_public": mode == "public",
+        "slate_key": saved.slate_key,
+        "version_token": saved.version_token,
+        "saved_result_key": saved.saved_result_key,
+        "save_version_number": saved.save_version_number,
+        "source_version_number": saved.source_version_number,
+        "source_version_label": f"Source Version {saved.source_version_number}",
+        "saved_at_label": _saved_at_label(saved.saved_at),
+        # Two different numbers, and the screen must not confuse them
+        # (2026-08-04 independent review, finding F5). `version_count` is how
+        # many the rail can list; `version_total` is how many the member
+        # actually has, and it is the one the delete confirmation quotes,
+        # because delete removes ALL of them and nothing caps saving.
+        "version_count": len(saved.versions),
+        "version_total": saved.total_version_count,
+        "versions_truncated": saved.total_version_count > len(saved.versions),
+        "qualification_count": saved.qualification_count,
+        "heading": SAVED_HEADING,
+        "chip": (
+            SAVED_CHIP_CURRENT if state == SAVED_STATE_SAVED else STALE_CHIP
+        ),
+        "detail": SAVED_DETAIL,
+        "truth": SAVED_TRUTH,
+        "stale_lines": (
+            STALE_LINE_ONE.format(version=saved.source_version_number),
+            STALE_LINE_TWO,
+        ),
+    }
+
+
+def _filter_statements(groups, status_filter):
+    """Image 05's filter row, applied to the rows inside BOTH status cards.
+
+    Responsibilities and Informational statements carry no status at all —
+    PeerSlate compared them against nothing — so the filter does not apply to
+    them and they are never merged into one card (handoff section 14-M14).
+
+    Each qualification card gains a truthful "showing N of M" and the pair is
+    announced politely; the count summaries above the filter are deliberately
+    left at their unfiltered totals, because those are the locked accounting
+    and a filtered total would be a different number wearing the same label.
+    """
+    for group in groups:
+        if not group["is_qualification"]:
+            group["shown"] = group["count"]
+            group["is_filtered"] = False
+            continue
+        group["shown"] = (
+            group["count"]
+            if status_filter == STATUS_FILTER_ALL
+            else sum(
+                1
+                for item in group["statements"]
+                if item["status"] == status_filter
+            )
+        )
+        group["is_filtered"] = status_filter != STATUS_FILTER_ALL
+    return groups
+
+
 def _alignment_room(
     mode,
     *,
@@ -1389,6 +1697,9 @@ def _alignment_room(
     is_demo_evidence,
     selected_key=None,
     error=None,
+    saved=None,
+    saved_state=SAVED_STATE_UNSAVED,
+    status_filter=STATUS_FILTER_ALL,
 ):
     """The Alignment workbench — image 04, the exact geometry authority.
 
@@ -1486,6 +1797,11 @@ def _alignment_room(
     elif not keys:
         selected_key = None
 
+    status_filter = (
+        status_filter if status_filter in _STATUS_FILTER_VALUES else STATUS_FILTER_ALL
+    )
+    groups = _filter_statements(groups, status_filter)
+
     room = _base_room(mode, step=STEP_ALIGNMENT, error=error)
     room.update(
         {
@@ -1518,14 +1834,52 @@ def _alignment_room(
                 "demo_note": DEMO_EVIDENCE_NOTE,
                 # Finding F9: the footer's reviewed sentences, carried from
                 # the constants above rather than retyped in the template.
+                #
+                # Finding F-3 (2026-08-05 independent review): this branch
+                # renders whenever `is_saved` is False in the template, which
+                # is ALSO true of a reanalyzed screen where `saved` (the
+                # argument, not the resolved on-screen state) is not None —
+                # the member has a saved slate, just not of the result
+                # currently shown. `saved is None` is the only fact that
+                # makes ALIGNMENT_FOOTER_TRUTH_PRIVATE true.
                 "footer_truth": (
                     ALIGNMENT_FOOTER_TRUTH_PUBLIC
                     if mode == "public"
-                    else ALIGNMENT_FOOTER_TRUTH_PRIVATE
+                    else (
+                        ALIGNMENT_FOOTER_TRUTH_PRIVATE
+                        if saved is None
+                        else ALIGNMENT_FOOTER_TRUTH_PRIVATE_HAS_SAVED
+                    )
                 ),
                 "footer_detail": ALIGNMENT_FOOTER_DETAIL,
-                "save_note": ALIGNMENT_SAVE_NOTE,
+                "save_note": (
+                    ALIGNMENT_SAVE_NOTE_PUBLIC
+                    if mode == "public"
+                    else ALIGNMENT_SAVE_NOTE
+                ),
+                # Slice OS-4. Saving is signed-in only by construction
+                # (handoff section 18): the anonymous preview persists nothing
+                # anywhere, so there is no account for a saved slate to live
+                # in. The public side says that plainly rather than rendering
+                # a control that cannot work.
+                "can_save": mode != "public",
+                "saved_footer_truth": SAVED_FOOTER_TRUTH,
+                "saved_footer_detail": SAVED_FOOTER_DETAIL,
+                "saved_footer_promise": SAVED_FOOTER_PROMISE,
+                "status_filters": [
+                    {
+                        "value": value,
+                        "label": label,
+                        "is_active": value == status_filter,
+                    }
+                    for value, label in STATUS_FILTERS
+                ],
+                "status_filter": status_filter,
+                "status_filter_label": next(
+                    label for value, label in STATUS_FILTERS if value == status_filter
+                ),
             },
+            "saved": _saved_view(saved, state=saved_state, mode=mode),
         }
     )
     return room
@@ -1563,6 +1917,24 @@ def _requirements_room_from_views(
     )
 
 
+def _load_saved_slate(identity):
+    """This owner's saved slate, or ``None``.
+
+    A read failure is not allowed to hide the workbench: the member's
+    analysis, responses and confirmed inputs are all still there, and the
+    only thing that is missing is knowledge of whether a saved copy exists.
+    The screen falls back to the unsaved state, which under-claims rather
+    than over-claims — it never tells a member something is saved when
+    PeerSlate could not confirm that it is.
+    """
+    try:
+        return opportunity_slate_service.get_saved_slate_for_owner(
+            identity.user_key
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        return None
+
+
 def _alignment_room_from_views(
     working,
     requirement_set,
@@ -1570,6 +1942,7 @@ def _alignment_room_from_views(
     responses,
     evidence_views,
     mode="member",
+    saved=None,
     **overrides,
 ):
     statements = _statements_from_views(requirement_set.statements)
@@ -1628,6 +2001,15 @@ def _alignment_room_from_views(
             else None
         ),
         is_demo_evidence=False,
+        saved=saved,
+        # Currency is computed here, from the CURRENT confirmed inputs — their
+        # versions, their WORDING, and the current version of every evidence
+        # record the snapshot cites. All server reads; none a stored sentence.
+        saved_state=_resolve_saved_state(
+            saved,
+            analysis.analysis_key if analysis is not None else None,
+            _saved_currency(saved, working, requirement_set),
+        ),
         **overrides,
     )
 
@@ -2329,6 +2711,19 @@ def _requested_step():
     return requested if requested in _ALLOWED_STEPS else None
 
 
+def _requested_status_filter():
+    """Image 05's filter row, read from the query string.
+
+    The tabs are real links, so the filter works with JavaScript off exactly
+    as the row selection does; the room script intercepts them for an instant
+    filter. An unrecognised value falls back to `All` rather than showing an
+    empty table, because a filter is a view preference and a wrong one must
+    never look like an empty result.
+    """
+    requested = request.args.get("status")
+    return requested if requested in _STATUS_FILTER_VALUES else STATUS_FILTER_ALL
+
+
 @opportunity_slate.get(ROOM_PATH)
 def room():
     # Flag check outermost, before any identity resolution: flag-off is
@@ -2369,7 +2764,14 @@ def room():
         return _render_unavailable()
 
     if working is None:
-        return _render_room(_intake_room("member"))
+        # Finding F-4: the only way this member's saved slate (if any) is
+        # reachable from a bare intake screen is this note. Without it, a
+        # member whose working session was deleted or expired — but whose
+        # saved slate survived, exactly as designed — sees no path to it
+        # anywhere on the page.
+        return _render_room(
+            _intake_room("member", saved=_load_saved_slate(identity))
+        )
     if step == STEP_REPLACE:
         return _render_room(_intake_room("member", replace=True, has_source=True))
     if step == STEP_ROLE:
@@ -2416,6 +2818,8 @@ def room():
                         responses,
                         evidence,
                         selected_key=selected_key,
+                        saved=_load_saved_slate(identity),
+                        status_filter=_requested_status_filter(),
                     )
                 )
         return _render_room(
@@ -3432,6 +3836,8 @@ def _reload_alignment_for_error(identity, *, error, status, selected_key=None):
             evidence,
             selected_key=selected_key,
             error=error,
+            saved=_load_saved_slate(identity),
+            status_filter=_requested_status_filter(),
         ),
         status=status,
     )
@@ -3684,6 +4090,460 @@ def save_response():
             statement=statement_key,
         )
     )
+
+
+# ---------------------------------------------------------------------------
+# Slice OS-4 — the save lifecycle. SIGNED-IN ONLY, all four routes.
+#
+# There is no account for an anonymous visitor to save into (handoff section
+# 18), so these are not merely gated: they are absent. A signed-out caller
+# gets the same neutral 404 they would get for a path that does not exist,
+# the public transport imports none of them, and the anonymous session's
+# action allowlist has no name for any of them.
+# ---------------------------------------------------------------------------
+
+
+def _member_gate():
+    """``(identity, response)`` — the four-line preamble every owner-only
+    route in this module already uses, factored out because slice OS-4 adds
+    four more of them and repeating it a fourth time is how one of them ends
+    up missing a check."""
+    if not _opportunity_slate_enabled():
+        abort(404)
+    if not _is_same_origin_write():
+        abort(403)
+    identity, failure = _resolve_identity_or_unavailable()
+    if failure is not None:
+        return None, failure
+    if identity is None:
+        abort(404)
+    return identity, None
+
+
+def _current_input_fingerprint(working, requirement_set, analysis):
+    """The digest of the inputs the analysis on screen was computed from.
+
+    Computed at SAVE time over the versions the analysis pinned and the
+    wording those inputs carried, which is the same function the read side
+    runs over the current ones. Returns ``None`` when there is nothing to
+    save, which the caller reports honestly rather than saving an empty
+    snapshot.
+
+    The source wording read here and the one the procedure copies are read a
+    moment apart, so a correction landing between them makes the stored digest
+    disagree with the stored snapshot. That is caught by
+    ``pinned_fingerprint`` and reads as "inputs changed" — the failure lands
+    on the safe side, never on a false "current".
+    """
+    if working is None or requirement_set is None or analysis is None:
+        return None
+    pairs = []
+    seen = set()
+    for statement in analysis.statements:
+        for citation in statement.citations:
+            key = (citation.evidence_key, citation.evidence_version)
+            if key in seen:
+                continue
+            seen.add(key)
+            pairs.append(key)
+    return compute_input_fingerprint(
+        requirement_set.source_version_number,
+        requirement_set.version_number,
+        pairs,
+        content_digest=_current_content_digest(working, requirement_set),
+    )
+
+
+def _nothing_saved_truth(identity):
+    """The save-failure truth line, told against what this member actually has.
+
+    A member with nothing saved is told nothing is saved. A member WITH a
+    saved slate is told nothing NEW was saved and the saved one is untouched,
+    because the failure card renders directly beside the green `Saved
+    privately` banner and the two sentences contradicted each other
+    (2026-08-04 independent review, finding F2). One extra read, on a failure
+    path only, buys a screen that does not argue with itself.
+    """
+    if _load_saved_slate(identity) is None:
+        return f"Session private • {TRUTH_NOTHING_SAVED}"
+    return f"Session private • {TRUTH_NOTHING_NEW_SAVED}"
+
+
+@opportunity_slate.post(f"{ROOM_PATH}/save")
+def save_slate():
+    """`Save privately` (image 04's footer primary).
+
+    Creates an immutable saved result: the pinned source version, the
+    confirmed requirement set, the full analysis, every evidence reference
+    pinned to item + version with its bounded excerpt, and the member's own
+    response context.
+
+    IT DOES NOT MOVE THE MEMBER. Saving must not flatten, close, regenerate
+    or navigate away from the evidence workspace (handoff section 7) — the
+    member stays exactly where they were, on the same qualification, with the
+    same filter applied, and the banner, the session chip and the footer
+    actions are what change. That is why this redirects back to the alignment
+    step carrying both, rather than rendering a confirmation screen.
+    """
+    identity, failure = _member_gate()
+    if failure is not None:
+        return failure
+
+    idempotency_key = request.form.get("idempotency_key") or str(uuid4())
+    selected_key = _normalize_key(request.form.get("statement_key"))
+    status_filter = request.form.get("status")
+
+    try:
+        working = opportunity_slate_service.get_working_session_for_owner(
+            identity.user_key
+        )
+        requirement_set = (
+            opportunity_slate_service.get_requirements_for_owner(identity.user_key)
+            if working is not None
+            else None
+        )
+        analysis, _ = (
+            opportunity_slate_service.get_analysis_for_owner(identity.user_key)
+            if requirement_set is not None
+            else (None, {})
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        return _reload_alignment_for_error(
+            identity,
+            error={
+                "kind": "unavailable",
+                "heading": SAVE_FAILURE_HEADING,
+                "message": UNAVAILABLE_MESSAGE,
+                "truth": _nothing_saved_truth(identity),
+            },
+            status=503,
+            selected_key=selected_key,
+        )
+
+    fingerprint = _current_input_fingerprint(working, requirement_set, analysis)
+    if fingerprint is None:
+        return _reload_alignment_for_error(
+            identity,
+            error={
+                "kind": "field",
+                "heading": SAVE_FAILURE_HEADING,
+                "message": SAVE_NOTHING_MESSAGE,
+                "field_hint": "Run the analysis before saving.",
+                "truth": _nothing_saved_truth(identity),
+            },
+            status=400,
+            selected_key=selected_key,
+        )
+
+    try:
+        opportunity_slate_service.save_slate_for_owner(
+            identity.user_key,
+            idempotency_key,
+            requirement_set.requirement_set_key,
+            requirement_set.version_token,
+            fingerprint,
+        )
+    except DatabaseServiceError:
+        return _reload_alignment_for_error(
+            identity,
+            error={
+                "kind": "unavailable",
+                "heading": SAVE_FAILURE_HEADING,
+                "message": UNAVAILABLE_MESSAGE,
+                "truth": _nothing_saved_truth(identity),
+            },
+            status=503,
+            selected_key=selected_key,
+        )
+    except OpportunitySlateServiceError as error:
+        return _reload_alignment_for_error(
+            identity,
+            error={
+                "kind": "field",
+                "heading": (
+                    SAVE_CONFLICT_HEADING
+                    if error.code == "changed"
+                    else SAVE_FAILURE_HEADING
+                ),
+                "message": (
+                    SAVE_CONFLICT_MESSAGE
+                    if error.code == "changed"
+                    else SAVE_NOTHING_MESSAGE
+                ),
+                "field_hint": "Nothing was saved.",
+                "truth": _nothing_saved_truth(identity),
+            },
+            status=409 if error.code == "changed" else 400,
+            selected_key=selected_key,
+        )
+
+    return redirect(
+        url_for(
+            "opportunity_slate.room",
+            step=STEP_ALIGNMENT,
+            statement=selected_key,
+            status=status_filter
+            if status_filter in _STATUS_FILTER_VALUES
+            else None,
+        )
+    )
+
+
+@opportunity_slate.post(f"{ROOM_PATH}/reanalyze")
+def reanalyze():
+    """`Reanalyze` (image 09-c).
+
+    An explicit member action and the only way a stale saved result is ever
+    re-run: nothing on this surface reanalyzes on a timer, on navigation, or
+    because an input changed. It produces a NEW unsaved analysis alongside the
+    still-identifiable prior saved result — the saved snapshot is never
+    touched, never overwritten, and remains available for the source version
+    it was computed from until the member saves again or deletes it.
+
+    It shares :func:`_run_alignment_for_owner` with `Explore alignment` and
+    `Retry analysis`, so all three get identical grounding, identical
+    validation and identical failure truth.
+    """
+    identity, failure = _member_gate()
+    if failure is not None:
+        return failure
+
+    error, status = _run_alignment_for_owner(identity)
+    if error is not None:
+        return _reload_alignment_for_error(identity, error=error, status=status)
+    return redirect(url_for("opportunity_slate.room", step=STEP_ALIGNMENT))
+
+
+@opportunity_slate.get(f"{ROOM_PATH}/saved")
+def saved_details():
+    """`View saved details` — the saved-result versions list.
+
+    A documented authority-gap adaptation (handoff section 14-M13): the
+    locked set names this surface and never draws it, so it is built strictly
+    in the room's established grammar — the same shell, the same rails, the
+    same workbench card, the same status pills and the same evidence-excerpt
+    treatment. It introduces no new composition, hierarchy or interaction
+    language.
+
+    Read-only, and honestly so: nothing on this screen re-runs, re-derives or
+    re-saves anything. It shows what each saved version pinned, and it is
+    where the member starts a deletion.
+    """
+    if not _opportunity_slate_enabled():
+        abort(404)
+    identity, failure = _resolve_identity_or_unavailable()
+    if failure is not None:
+        return failure
+    if identity is None:
+        abort(404)
+
+    requested = _normalize_key(request.args.get("version"))
+    try:
+        saved = opportunity_slate_service.get_saved_slate_for_owner(
+            identity.user_key, saved_result_key=requested
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        return _render_unavailable()
+    if saved is None:
+        # No saved slate, or a version key that is not this member's. Both
+        # send them back to the workbench rather than to a tombstone.
+        return redirect(url_for("opportunity_slate.room", step=STEP_ALIGNMENT))
+
+    try:
+        working = opportunity_slate_service.get_working_session_for_owner(
+            identity.user_key
+        )
+        requirement_set = (
+            opportunity_slate_service.get_requirements_for_owner(identity.user_key)
+            if working is not None
+            else None
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        working, requirement_set = None, None
+
+    is_current = _saved_currency(saved, working, requirement_set)
+    confirm_delete = request.args.get("confirm") == "delete"
+    return _render_room(
+        _saved_details_room(
+            saved,
+            is_current=is_current,
+            confirm_delete=confirm_delete,
+        )
+    )
+
+
+@opportunity_slate.post(f"{ROOM_PATH}/delete")
+def delete_slate():
+    """Delete the saved slate, and image 09-d when it fails.
+
+    ATOMIC. The procedure removes the pinned evidence, the saved
+    qualifications, every saved version and the slate in one transaction, so
+    a failure leaves the slate FULLY intact — and this route then re-renders
+    the saved details with image 09-d's card above them, which is what makes
+    "It remains saved privately. Nothing was removed." visibly true rather
+    than merely asserted.
+
+    It reaches no working data. The member's session, source, requirements
+    and current analysis are untouched by a slate deletion, in success and in
+    failure alike.
+    """
+    identity, failure = _member_gate()
+    if failure is not None:
+        return failure
+
+    slate_key = _normalize_key(request.form.get("slate_key"))
+    version_token = request.form.get("slate_version_token")
+
+    try:
+        opportunity_slate_service.delete_saved_slate_for_owner(
+            identity.user_key, slate_key, version_token
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError) as error:
+        return _reload_saved_details_for_error(
+            identity,
+            code=getattr(error, "code", "unavailable"),
+            status=503 if isinstance(error, DatabaseServiceError) else 409,
+        )
+
+    return redirect(url_for("opportunity_slate.room", step=STEP_ALIGNMENT))
+
+
+def _reload_saved_details_for_error(identity, *, code, status):
+    """Image 09-d, over a slate that is still whole."""
+    try:
+        saved = opportunity_slate_service.get_saved_slate_for_owner(
+            identity.user_key
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        saved = None
+    if saved is None:
+        # The read failed too. Say nothing about the slate's state rather
+        # than guess at it.
+        return _render_unavailable()
+    # The delete failed; the member's INPUTS did not change. Re-reading
+    # currency rather than passing False keeps this screen — the one whose
+    # whole job is to be believed after a failure — from adding a second,
+    # invented untruth on top of the first (2026-08-04 independent review,
+    # finding F4). A read failure here still resolves to "not current",
+    # which under-claims rather than over-claims.
+    try:
+        working = opportunity_slate_service.get_working_session_for_owner(
+            identity.user_key
+        )
+        requirement_set = (
+            opportunity_slate_service.get_requirements_for_owner(identity.user_key)
+            if working is not None
+            else None
+        )
+    except (DatabaseServiceError, OpportunitySlateServiceError):
+        working, requirement_set = None, None
+    return _render_room(
+        _saved_details_room(
+            saved,
+            is_current=_saved_currency(saved, working, requirement_set),
+            confirm_delete=False,
+            error={
+                "kind": "delete_failed",
+                "heading": DELETE_FAILURE_HEADING,
+                "message": DELETE_FAILURE_MESSAGE,
+                "truth": SAVED_FOOTER_TRUTH,
+            },
+        ),
+        status=status,
+    )
+
+
+def _saved_details_room(saved, *, is_current, confirm_delete, error=None):
+    room = _base_room("member", step=STEP_SAVED, error=None)
+    room.update(
+        {
+            "state_title_lead": "Saved",
+            "state_title_rest": "Saved slate",
+            "checkpoint_label": None,
+            "source_text": "",
+            "is_replace": False,
+            "has_source": True,
+            "idempotency_key": str(uuid4()),
+            "source": None,
+            "saved": _saved_view(
+                saved,
+                state=SAVED_STATE_SAVED if is_current else SAVED_STATE_STALE,
+                mode="member",
+            ),
+            "saved_details": {
+                "confirm_delete": confirm_delete,
+                "error": error,
+                "is_current": is_current,
+                # Finding F9's lesson, applied up front: the footer's reviewed
+                # sentences are carried from the constants the static prose
+                # guard scans, never retyped in the template where they can
+                # drift away from what is checked.
+                "footer_truth": SAVED_FOOTER_TRUTH,
+                "footer_promise": SAVED_FOOTER_PROMISE,
+                "source_text": saved.source_text,
+                "model_name": saved.model_name,
+                "prompt_contract": saved.prompt_contract_version,
+                "evidence_considered": saved.evidence_considered_count,
+                "counts": [
+                    {
+                        "status": status,
+                        "label": ALIGNMENT_STATUS_LABELS[status],
+                        "value": saved.counts_by_status().get(status, 0),
+                    }
+                    for status in ALIGNMENT_STATUS_ORDER
+                ],
+                "qualifications": [
+                    {
+                        "ordinal": qualification.ordinal,
+                        "class_label": STATEMENT_CLASS_LABELS[
+                            qualification.statement_class
+                        ],
+                        "text": qualification.employer_text,
+                        "status": qualification.status,
+                        "status_label": ALIGNMENT_STATUS_LABELS[
+                            qualification.status
+                        ],
+                        "evidence": [
+                            {
+                                "title": item.evidence_title,
+                                "version": item.evidence_version,
+                                "excerpt": item.excerpt,
+                            }
+                            for item in qualification.evidence
+                        ],
+                        "response_kind": qualification.response_kind,
+                        "response_label": RESPONSE_KIND_LABELS.get(
+                            qualification.response_kind
+                        ),
+                        "response_text": qualification.response_text,
+                        "connected_evidence_title": (
+                            qualification.connected_evidence_title
+                        ),
+                        "connected_evidence_version": (
+                            qualification.connected_evidence_version
+                        ),
+                    }
+                    for qualification in saved.qualifications
+                ],
+                "versions": [
+                    {
+                        "key": version.saved_result_key,
+                        "save_version_number": version.save_version_number,
+                        "source_version_label": (
+                            f"Source Version {version.source_version_number}"
+                        ),
+                        "qualification_count": version.qualification_count,
+                        "saved_at_label": _saved_at_label(version.saved_at),
+                        "is_open": (
+                            version.saved_result_key == saved.saved_result_key
+                        ),
+                    }
+                    for version in saved.versions
+                ],
+            },
+        }
+    )
+    return room
 
 
 @opportunity_slate.post(f"{ROOM_PATH}/public-session")

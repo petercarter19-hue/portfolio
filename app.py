@@ -821,6 +821,14 @@ for _oppslate_rate_limited_endpoint, _oppslate_rate_limit in (
     # budget rather than the ordinary write budget. save_response calls no model.
     ('opportunity_slate.run_analysis', '6 per minute'),
     ('opportunity_slate.save_response', '30 per minute'),
+    # PS-OPPSLATE-001 slice OS-4: the saved-slate lifecycle. save_slate and
+    # delete_slate write a row and call no model, so they carry the ordinary
+    # write budget. reanalyze shares _run_alignment_for_owner with
+    # run_analysis and therefore reaches a model exactly the same way, so it
+    # carries the same AI budget rather than the write budget.
+    ('opportunity_slate.save_slate', '30 per minute'),
+    ('opportunity_slate.delete_slate', '30 per minute'),
+    ('opportunity_slate.reanalyze', '6 per minute'),
     # PS-OPPSLATE-001 slice OS-6. Both routes do real, costly work per
     # request — bounded document parsing (upload) or a guarded outbound
     # fetch plus HTML parsing (import) — so they carry the AI budget rather

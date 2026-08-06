@@ -1,0 +1,39 @@
+== 1. prerequisites ==
+  PS-PLAT-000_app_users_base.sql: OK
+  PS-PLAT-001_platform_governance.sql: OK
+  PS-PLAT-002_profiles_entities_access.sql: OK
+  PS-PLAT-003_evidence_ai.sql: OK
+  PS-PLAT-004_connections_notifications.sql: OK
+  PS-PLAT-005_tenant_integrity.sql: OK
+  PS-PLAT-006_living_resume_domain.sql: OK
+  PS-PLAT-007_living_resume_reads.sql: OK
+  PS-AUTH-001_identity_foundation.sql: OK
+  PS-WORKSHOP-001_knowledge_items.sql: OK
+== 2. the SLICE OS-1 revision, exactly as origin/main carries it ==
+  OS-1 revision (baseline = production): OK
+  PASS OS-1 baseline object counts -> 3 tables
+== 3. two owners, populated through the real OS-1 procedures ==
+  seed owners: OK
+  owner A evidence: OK
+  owner B evidence: OK
+   sessions: 2 versions: 4
+== 4. the OS-2 then OS-3 revisions over the populated database ==
+  OS-2 revision (origin/main): OK
+  PASS OS-1 member content survived the OS-2 upgrade byte for byte -> FAE0920013C69A3E5247B19F38594822F1074438CDC02B65ADE3FE95F667ED2F -> FAE0920013C69A3E5247B19F38594822F1074438CDC02B65ADE3FE95F667ED2F
+  OS-3 revision: OK
+  PASS member content survived the OS-3 upgrade byte for byte -> FAE0920013C69A3E5247B19F38594822F1074438CDC02B65ADE3FE95F667ED2F -> FAE0920013C69A3E5247B19F38594822F1074438CDC02B65ADE3FE95F667ED2F
+== 5. populate the OS-2/OS-3 rows through the real procedures ==
+    save analysis: {'outcome': 'success', 'analysis_key': UUID('df68bf93-0c90-f111-9b33-002248458a47'), 'qualification_count': 3}
+    save response: {'outcome': 'success', 'response_key': UUID('a2df9a9a-0c90-f111-9b33-002248458a47'), 'response_kind': 'tell_more'}
+    save analysis: {'outcome': 'success', 'analysis_key': UUID('1a9552a1-0c90-f111-9b33-002248458a47'), 'qualification_count': 3}
+    save response: {'outcome': 'success', 'response_key': UUID('1b9552a1-0c90-f111-9b33-002248458a47'), 'response_kind': 'tell_more'}
+   statements: 6 analyses: 2 responses: 2
+== 6. THE UPGRADE THAT MATTERS: the OS-4 revision ==
+  OS-4 revision: OK
+  PASS member content survived the OS-4 upgrade BYTE FOR BYTE -> 43120447DD88C3ADDA0F891D382880BDDEB73A36E23D31F6A3A3A17746B366E8 -> 43120447DD88C3ADDA0F891D382880BDDEB73A36E23D31F6A3A3A17746B366E8
+  PASS row counts unchanged by the upgrade -> {'opportunity_source_versions': 4, 'opportunity_requirement_statements': 6, 'opportunity_responses': 2, 'opportunity_analysis_citations': 2, 'opportunity_source_concerns': 2} -> {'opportunity_source_versions': 4, 'opportunity_requirement_statements': 6, 'opportunity_responses': 2, 'opportunity_analysis_citations': 2, 'opportunity_source_concerns': 2}
+  PASS 16 tables, 20 procedures
+  PASS every constraint enabled and trusted
+  PASS the ledger now describes what is here
+
+FAILURES: none

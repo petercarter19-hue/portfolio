@@ -41,6 +41,14 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_ListOpportunityEvidenceForOwner",
         "usp_SaveOpportunityAnalysisForOwner",
         "usp_SaveOpportunityResponseForOwner",
+        # PS-OPPSLATE-001 slice OS-4: the durable saved slate — the first
+        # Opportunity Slate record that outlives the working session it was
+        # computed from. Same owner-scoping rule, and the save procedure
+        # additionally builds its snapshot from the owner's own rows rather
+        # than from any payload.
+        "usp_DeleteOpportunitySavedSlateForOwner",
+        "usp_GetOpportunitySavedSlateForOwner",
+        "usp_SaveOpportunitySlateForOwner",
         "usp_CorrectCapture",
         "usp_CreateCapture",
         "usp_CreateVoiceDraft",

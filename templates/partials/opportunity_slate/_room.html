@@ -112,8 +112,13 @@
      53.2%. That is the design: it is a table like image 03's, but every row
      now carries a second column of evidence and a third of status, so it
      needs the width image 03 did not. #}
+  {# Slice OS-4's saved details borrows the alignment proportion deliberately:
+     it is the same table of qualifications, read-only, so giving it a
+     different geometry would make one screen look like a different product
+     from the screen it is a snapshot of. #}
   <div class="os-layout
               {%- if room.step == 'alignment' and room.alignment %} os-layout--alignment
+              {%- elif room.step == 'saved' and room.saved_details %} os-layout--alignment
               {%- elif room.step == 'requirements' and room.requirements %} os-layout--requirements
               {%- elif room.step == 'review' and room.source %} os-layout--review{% endif %}">
 
@@ -144,6 +149,16 @@
       <p class="os-rail__intro">
         PeerSlate compares the confirmed employer qualifications with your
         authorized evidence.
+      </p>
+      {% elif room.step == 'saved' and room.saved_details %}
+      <h1 class="os-state-title">
+        <span class="os-state-title__lead">{{ room.state_title_lead }}</span>
+        <span class="os-state-title__dot" aria-hidden="true">·</span>
+        <span class="os-state-title__rest">{{ room.state_title_rest }}</span>
+      </h1>
+      <p class="os-rail__intro">
+        Every result you saved privately, newest first. Nothing here was
+        published, shared, or sent to an employer.
       </p>
       {% elif room.step == 'requirements' and room.requirements %}
       <h1 class="os-state-title">
@@ -318,6 +333,35 @@
          beside it — two truth cards in one rail is the duplication finding
          R14 rejected on the previous screen. #}
       {% if room.step == 'alignment' and room.alignment %}
+      {# Slice OS-4. Image 05 replaces image 04's amber card with a GREEN
+         "Saved privately" card carrying a state chip, and image 09-c is that
+         same card with the stale chip and two extra sentences. Saved and
+         unsaved are one component with a state prop (handoff section 3): the
+         card sits in the same place, at the same size, in the same rail — the
+         icon, the accent and the content are what differ.
+
+         "Saved" and "still accurate" are two different truths (locked rule),
+         so the chip is a separate line from the heading and never merged into
+         it. A saved result that no longer applies still says "Saved
+         privately", because it IS still saved. #}
+      {% if room.saved and room.saved.state != 'unsaved' %}
+      <div class="os-truth-card os-truth-card--saved{% if room.saved.state == 'saved_stale' %} os-truth-card--saved-stale{% endif %}">
+        <span class="os-truth-card__badge">{{ os_icon('check') }}</span>
+        <div>
+          <p class="os-truth-card__heading">{{ room.saved.heading }}</p>
+          <p class="os-saved-chip">{{ room.saved.chip }}</p>
+          {% if room.saved.state == 'saved_stale' %}
+          {# Image 09-c, word for word. #}
+          {% for line in room.saved.stale_lines %}
+          <p>{{ line }}</p>
+          {% endfor %}
+          {% else %}
+          <p>{{ room.saved.detail }}</p>
+          {% endif %}
+          <p class="os-truth-card__rule">{{ room.saved.truth }}</p>
+        </div>
+      </div>
+      {% else %}
       <div class="os-truth-card os-truth-card--warning">
         <span class="os-truth-card__badge">{{ os_icon('warning') }}</span>
         <div>
@@ -331,13 +375,59 @@
             {% endif %}
           </p>
           <p>Nothing was published or shared.</p>
+          {% if room.saved and room.saved.exists %}
+          {# A saved result exists, but it is not the one on screen — the
+             member reanalyzed. Section 7: the prior saved result stays
+             identifiable, so the card that says "not saved" also says what
+             IS saved, rather than leaving the member to wonder. #}
+          <p class="os-truth-card__rule">
+            A saved result from {{ room.saved.saved_at_label }} remains
+            available for {{ room.saved.source_version_label }}.
+            <a class="os-link os-link--inline" href="{{ room.saved_details_url }}">View saved details</a>
+          </p>
+          {% endif %}
         </div>
       </div>
+      {% endif %}
       {# The response rail used to be included HERE, and that was the whole of
          independent-review finding F4's second half. See the block above
          `.os-rail--response` below: it is now a sibling of the workbench in
          SOURCE order, and desktop places it back in this column with grid
          areas. Do not move it back into this rail. #}
+
+      {% elif room.step == 'saved' and room.saved_details %}
+      {# `View saved details`. No mockup draws this screen (handoff section
+         14-M13a), so it is built from the room's own grammar and nothing
+         else: the same rail, the same truth card, the same status pills. #}
+      <div class="os-truth-card os-truth-card--saved{% if room.saved.state == 'saved_stale' %} os-truth-card--saved-stale{% endif %}">
+        <span class="os-truth-card__badge">{{ os_icon('check') }}</span>
+        <div>
+          <p class="os-truth-card__heading">{{ room.saved.heading }}</p>
+          <p class="os-saved-chip">{{ room.saved.chip }}</p>
+          {% if room.saved.state == 'saved_stale' %}
+          {% for line in room.saved.stale_lines %}
+          <p>{{ line }}</p>
+          {% endfor %}
+          {% else %}
+          <p>{{ room.saved.detail }}</p>
+          {% endif %}
+          <p class="os-truth-card__rule">{{ room.saved.truth }}</p>
+        </div>
+      </div>
+      <div class="os-rail-note">
+        <p class="os-rail-note__eyebrow">
+          {{ os_icon('sparkle', 'os-icon os-icon--sm') }}What a saved result keeps
+        </p>
+        <p>
+          The employer wording you confirmed, the requirements you accepted,
+          this analysis, and the exact evidence records and excerpts it read —
+          each pinned to the version it was read at.
+        </p>
+        <p>
+          Editing an evidence record later does not change what is saved here.
+          It changes whether the saved result still applies to your inputs.
+        </p>
+      </div>
 
       {# Session-truth card. The signed-in wording is reproduced exactly from
          image 01 (handoff section 14-M11 lists these as trust-critical
@@ -452,6 +542,10 @@
         {% endif %}
         {% include "partials/opportunity_slate/_alignment.html" %}
       </div>
+      {% elif room.step == 'saved' and room.saved_details %}
+      <div class="os-cards">
+        {% include "partials/opportunity_slate/_saved_details.html" %}
+      </div>
       {% else %}
       <div class="os-card os-card--workbench">
 
@@ -521,6 +615,50 @@
          thing the member selected. #}
       {% if room.step == 'alignment' and room.alignment %}
         {% include "partials/opportunity_slate/_evidence_rail.html" %}
+      {% elif room.step == 'saved' and room.saved_details %}
+      {# The versions list. Image 05's `View saved details` names it and no
+         image draws it, so it takes the rail-card grammar image 03 uses for
+         its own state-specific data — one card, in the rail reserved for it. #}
+      <div class="os-rail-card">
+        <p class="os-rail-card__title">
+          {{ os_icon('doc', 'os-icon os-icon--sm') }}Saved versions
+        </p>
+        <p class="os-rail-card__note">
+          Saving again adds a version. Nothing here was ever overwritten.
+        </p>
+        <ul class="os-saved-versions">
+          {% for version in room.saved_details.versions %}
+          <li class="os-saved-version{% if version.is_open %} is-open{% endif %}">
+            <a class="os-saved-version__link"
+               href="{{ room.saved_details_url }}?version={{ version.key }}"
+               {% if version.is_open %}aria-current="true"{% endif %}>
+              {# The save number IS the label. Two saves of the same source
+                 version in the same minute rendered byte-identical entries,
+                 so the list could not do the one job §7 gives it — keep prior
+                 saved versions identifiable (independent review, finding F3).
+                 The save number is unique per slate by construction, and it
+                 leads so the heading never wraps at rail width; the source
+                 version it pinned moves down beside the other facts about
+                 that save rather than being lost. #}
+              <span class="os-saved-version__label">Save {{ version.save_version_number }}</span>
+              <span class="os-saved-version__meta">
+                {{ version.source_version_label }} ·
+                {{ version.qualification_count }} qualification{{ '' if version.qualification_count == 1 else 's' }}
+              </span>
+              <span class="os-saved-version__meta">Saved {{ version.saved_at_label }}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+        {% if room.saved.versions_truncated %}
+        {# Finding F5: the list is capped, the member's saves are not. Say so
+           rather than let the rail read as the whole record. #}
+        <p class="os-rail-card__note">
+          Showing the {{ room.saved.version_count }} most recent of
+          {{ room.saved.version_total }} saved versions.
+        </p>
+        {% endif %}
+      </div>
       {% elif room.step == 'requirements' and room.requirements %}
         {% include "partials/opportunity_slate/_statement_rail.html" %}
       {% else %}

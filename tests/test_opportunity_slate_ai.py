@@ -1664,31 +1664,43 @@ class AccessibilityCorrectionTests(OpportunitySlateAiRouteTestCase):
         html = self.requirements_html()
         self.assertIn("os-statements__row is-selected", html)
 
-    def test_the_inert_primary_says_why_it_is_inert(self):
+    def test_the_primary_describes_itself_wherever_it_is_not_yet_live(self):
         """Finding F8. aria-disabled announced that the control does nothing
         and stopped there; the sentence explaining why sat below it,
-        available to a sighted member by proximity and to nobody else."""
-        # Slice OS-3 retired the inert primary this test was written for:
-        # "Explore alignment" is a real destination now, so it is a real link.
-        # The rule it established did not retire, and the screen that now
-        # carries an honestly inert primary is the workbench, whose `Save
-        # privately` waits on slice OS-4. Same contract, same assertion,
-        # applied where an inert control actually is.
+        available to a sighted member by proximity and to nobody else.
+
+        SLICE OS-4 RETIRED THE LAST INERT PRIMARY IN THIS ROOM. `Save
+        privately` was the one remaining control rendered as drawn but
+        honestly doing nothing, and this slice built it — so there is no
+        `data-os-inert-save` left to assert against, and asserting one would
+        be asserting a lie.
+
+        The contract the finding established did not retire. What it requires
+        now is that the live control still carries its describing sentence
+        programmatically, and that the ONE place saving genuinely is not
+        available — the anonymous preview, which has no account to save into
+        — says so in words rather than by disabling a button.
+        """
         alignment = alignment_step_markup()
-        self.assertIn("data-os-inert-save", alignment)
-        self.assertIn('aria-disabled="true"', alignment)
+        # The inert control is gone, not disabled-in-place.
+        self.assertNotIn("data-os-inert-save", alignment)
+        self.assertIn("data-os-save", alignment)
         self.assertIn('aria-describedby="os-save-note"', alignment)
         # The referenced element exists on the same screen — an
         # aria-describedby pointing at nothing is worse than none at all.
         self.assertIn('id="os-save-note"', alignment)
-        # Finding F9: the sentence moved out of the template and into the
-        # reviewed constant that the prose guard scans. Assert it at its one
-        # source, and assert the template still renders that source.
+        # Finding F9: the sentence lives in the reviewed constant the prose
+        # guard scans, and the template renders that source rather than a
+        # retyped copy.
         self.assertIn("{{ alignment.save_note }}", alignment)
-        self.assertIn(
-            "Saving this analysis privately arrives in a later update",
+        self.assertIn("Saving keeps this result", routes.ALIGNMENT_SAVE_NOTE)
+        self.assertIn("membership", routes.ALIGNMENT_SAVE_NOTE_PUBLIC)
+        # Neither sentence may claim the room publishes or shares anything.
+        for note in (
             routes.ALIGNMENT_SAVE_NOTE,
-        )
+            routes.ALIGNMENT_SAVE_NOTE_PUBLIC,
+        ):
+            self.assertNotIn("publish anything else", note)
 
         # And the control it replaced is genuinely gone, rather than left
         # inert beside a working one.
@@ -2993,7 +3005,14 @@ class AlignmentWorkbenchTests(AlignmentRouteTestCase):
         # which doubles every control for a screen reader.
         self.assertEqual(html.count("data-os-response-rail"), 1)
         self.assertEqual(html.count('id="os-evidence-rail"'), 1)
-        self.assertEqual(html.count("data-os-inert-save"), 1)
+        # Slice OS-4 built the save control, so the inert one this line used
+        # to count is gone. What the line was guarding — one closing strip,
+        # not a duplicated one — is what it counts now. Anonymously that
+        # strip carries the honest "available with membership" note in place
+        # of a control, because there is no account to save into.
+        self.assertEqual(html.count("os-card--footer"), 1)
+        self.assertNotIn("data-os-inert-save", html)
+        self.assertEqual(html.count("Saving is available with membership"), 1)
 
     def test_no_css_rule_reorders_the_alignment_regions_away_from_the_markup(self):
         """The mechanism that caused the defect, refused at its source.
@@ -3059,10 +3078,22 @@ class AlignmentWorkbenchTests(AlignmentRouteTestCase):
             html,
         )
 
-    def test_the_save_control_is_honestly_inert(self):
+    def test_saving_is_not_offered_anonymously_and_says_so(self):
+        """Handoff section 18: saving is signed-in only, because there is no
+        account for an anonymous visitor to save into.
+
+        The preview therefore renders no save control at all — not a disabled
+        one. A disabled primary reads as a capability being withheld; an
+        honest note reads as what it is.
+        """
         html = self.reach_alignment().get_json()["html"]
-        self.assertIn("data-os-inert-save", html)
-        self.assertIn("Saving this analysis privately arrives in a later update", html)
+        self.assertNotIn("data-os-save", html)
+        self.assertNotIn("data-os-inert-save", html)
+        self.assertIn("Saving is available with membership", html)
+        self.assertIn("Saving arrives with membership", html)
+        # And nothing on the anonymous screen claims anything was saved.
+        self.assertNotIn("Saved privately", html)
+        self.assertNotIn("Current for these inputs", html)
 
     def test_the_demo_library_is_never_presented_as_the_visitors_own(self):
         """Handoff section 18 safeguard 5."""

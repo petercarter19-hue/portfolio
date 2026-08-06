@@ -258,9 +258,19 @@
     </span>
   </p>
   <div class="os-footer-strip__actions">
-    {% if room.has_source %}
+    {% if room.has_source or room.has_saved_slate %}
     <span class="os-footer-links">
+      {% if room.has_source %}
       <a class="os-link" href="{{ room.review_step_url }}" data-os-step="review">Back to the source</a>
+      {% endif %}
+      {# Finding F-4: a saved slate outlives the working session it was
+         computed from, so a member can land on a bare intake screen — no
+         working session, only this note — with a saved result nowhere
+         else on the page to reach. Same link, same label as the
+         workbench's own `View saved details`. #}
+      {% if room.has_saved_slate %}
+      <a class="os-link" href="{{ room.saved_details_url }}">View saved details</a>
+      {% endif %}
     </span>
     {% endif %}
     {# form="os-paste-form": this button is no longer a descendant of the

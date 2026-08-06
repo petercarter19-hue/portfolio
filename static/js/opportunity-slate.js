@@ -618,6 +618,73 @@
         }
     }
 
+    /* Slice OS-4. Image 05's filter row, applied to the rows inside BOTH
+       status-bearing cards at once.
+
+       Three things it deliberately does NOT touch:
+         * the count summaries, which are the locked per-status accounting;
+         * the Responsibilities and Informational cards, which carry no
+           status because nothing compared them against anything;
+         * the selected qualification and its two rails, so filtering never
+           silently changes what the member is reading. */
+    function applyStatusFilter(node, status) {
+        var value = status || 'all';
+        var tabs = node.querySelectorAll('[data-os-filter]');
+        var index;
+        var label = 'All';
+        for (index = 0; index < tabs.length; index += 1) {
+            var active = tabs[index].getAttribute('data-os-filter') === value;
+            tabs[index].classList.toggle('is-active', active);
+            if (active) {
+                tabs[index].setAttribute('aria-current', 'true');
+                label = (tabs[index].textContent || 'All').trim();
+            } else {
+                tabs[index].removeAttribute('aria-current');
+            }
+        }
+
+        var cards = node.querySelectorAll('[data-os-qual-card]');
+        var sentences = [];
+        for (index = 0; index < cards.length; index += 1) {
+            var card = cards[index];
+            var rows = card.querySelectorAll('[data-os-row-status]');
+            var shown = 0;
+            for (var r = 0; r < rows.length; r += 1) {
+                var visible =
+                    value === 'all' ||
+                    rows[r].getAttribute('data-os-row-status') === value;
+                rows[r].hidden = !visible;
+                if (visible) {
+                    shown += 1;
+                }
+            }
+            var showing = card.querySelector('[data-os-showing]');
+            if (showing) {
+                showing.textContent = 'Showing ' + shown + ' of ' + rows.length;
+                showing.hidden = value === 'all';
+            }
+            var empty = card.querySelector('[data-os-filter-empty]');
+            if (empty) {
+                empty.hidden = shown !== 0;
+                var emptyLabel = empty.querySelector('[data-os-filter-label]');
+                if (emptyLabel) {
+                    emptyLabel.textContent = label.toLowerCase();
+                }
+            }
+            var heading = card.querySelector('.os-qual__title');
+            var name = heading ? (heading.childNodes[0].textContent || '').trim() : '';
+            sentences.push(name + ': showing ' + shown + ' of ' + rows.length);
+        }
+
+        var live = node.querySelector('[data-os-filter-live]');
+        if (live) {
+            live.textContent =
+                value === 'all'
+                    ? 'Filter cleared. Showing every qualification.'
+                    : 'Filtered to ' + label + '. ' + sentences.join('. ') + '.';
+        }
+    }
+
     function selectStatement(node, key) {
         var panels = node.querySelectorAll('[data-os-statement-panel]');
         for (var index = 0; index < panels.length; index += 1) {
@@ -1035,15 +1102,16 @@
             return;
         }
 
-        /* Slice OS-3's honestly inert primary: image 04 draws `Save
-           privately` and saving is slice OS-4. */
-        var inertSave = closestFrom(event.target, '[data-os-inert-save]');
-        if (inertSave && node.contains(inertSave)) {
+        /* Slice OS-4's filter row (image 05's authority, image 04's
+           grammar). The tabs are real links and the server renders the
+           filtered table, so this is an enhancement only: it filters in
+           place, updates each card's "showing N of M", and announces the
+           result politely. It changes NO count summary — those are the
+           locked accounting and stay at their unfiltered totals. */
+        var filterLink = closestFrom(event.target, '[data-os-filter]');
+        if (filterLink && node.contains(filterLink)) {
             event.preventDefault();
-            announce(
-                'Saving this analysis privately is not built yet. Nothing was ' +
-                    'saved, and your analysis is still on this screen.'
-            );
+            applyStatusFilter(node, filterLink.getAttribute('data-os-filter'));
             return;
         }
 

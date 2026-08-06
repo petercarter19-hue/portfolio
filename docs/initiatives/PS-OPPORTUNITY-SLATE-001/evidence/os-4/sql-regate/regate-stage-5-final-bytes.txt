@@ -1,0 +1,15 @@
+forward SHA-256: da7952f06d63fa9c4cc84d5f6dbddf4cb2c93579988f2882ee4dc415f9d24fee
+== clear working data through the member-facing delete only ==
+    delete working session: {'outcome': 'success', 'deleted_version_count': 2}
+  PASS no working rows remain
+  PASS no saved rows remain
+  rollback with the store empty: OK
+  PASS the rollback removed every Opportunity Slate object
+  PASS and left the ten prerequisite migrations intact
+  clean re-apply from empty: OK
+  PASS 16 tables, 20 procedures from empty
+  second apply over itself: OK
+  PASS the second apply changed nothing
+  PASS a clean re-apply carries no member rows
+
+FAILURES: none

@@ -1,0 +1,227 @@
+{% from "partials/opportunity_slate/_icons.html" import os_icon %}
+{#
+  `View saved details` — PS-OPPSLATE-001 slice OS-4.
+
+  A DOCUMENTED AUTHORITY-GAP ADAPTATION (handoff section 14-M13a). Image 05
+  names this surface in its footer and no image in the locked set draws it, so
+  it is built strictly from the grammar images 01–05 already established and
+  introduces no new composition, hierarchy, or interaction language:
+
+    * the same workbench cards on the same canvas as image 04;
+    * the same status pills — leading dot plus label, never colour alone;
+    * the same per-status count summary, with no aggregate of any kind;
+    * the same evidence-excerpt treatment as image 04's evidence rail;
+    * image 09-d's own fallback-card grammar for a failed deletion.
+
+  Read-only. Nothing on this screen re-runs, re-derives, or re-saves anything;
+  the one thing it can start is the member's own deletion, and that asks first.
+#}
+{% set details = room.saved_details %}
+
+{% if details.error %}
+{# Image 09-d, and the whole point of rendering it HERE rather than on a
+   dedicated failure page: the saved slate is still on screen underneath it,
+   still complete, still listed. "It remains saved privately. Nothing was
+   removed." is shown to be true rather than merely asserted. #}
+<div class="os-card os-card--panel">
+  <div class="os-fallback os-fallback--delete" role="alert" tabindex="-1" data-os-error>
+    <span class="os-fallback__badge os-fallback__badge--block">{{ os_icon('block') }}</span>
+    <div class="os-fallback__body">
+      <p class="os-fallback__heading">{{ details.error.heading }}</p>
+      <p class="os-fallback__message">{{ details.error.message }}</p>
+    </div>
+    <div class="os-fallback__actions">
+      <form method="post" action="{{ room.delete_slate_url }}">
+        <input type="hidden" name="slate_key" value="{{ room.saved.slate_key }}">
+        <input type="hidden" name="slate_version_token" value="{{ room.saved.version_token }}">
+        <button type="submit" class="os-btn os-btn--primary os-btn--sm">
+          {{ os_icon('refresh', 'os-icon os-icon--sm') }}<span>Try again</span>
+        </button>
+      </form>
+      <a class="os-btn os-btn--quiet os-btn--sm" href="{{ room.saved_details_url }}">
+        {{ os_icon('close', 'os-icon os-icon--sm') }}<span>Cancel</span>
+      </a>
+    </div>
+    <p class="os-fallback__truth os-fallback__truth--saved">
+      {{ os_icon('lock', 'os-icon os-icon--sm') }}{{ details.error.truth }}
+    </p>
+  </div>
+</div>
+{% endif %}
+
+<div class="os-card os-card--strip">
+  <div class="os-context-strip">
+    <span class="os-chip">
+      <span class="os-chip__badge">{{ os_icon('doc') }}</span>
+      <span>
+        <span class="os-chip__label">Source</span>
+        <span class="os-chip__value">{{ room.saved.source_version_label }}</span>
+      </span>
+    </span>
+    <span class="os-chip">
+      <span class="os-chip__badge">{{ os_icon('compare') }}</span>
+      <span>
+        <span class="os-chip__label">Saved</span>
+        <span class="os-chip__value">{{ room.saved.saved_at_label }}</span>
+      </span>
+    </span>
+    <span class="os-chip">
+      <span class="os-chip__badge">{{ os_icon('lock') }}</span>
+      <span>
+        <span class="os-chip__label">Session</span>
+        <span class="os-chip__value">Saved privately</span>
+      </span>
+    </span>
+    <a class="os-context-strip__link" href="{{ room.alignment_step_url }}" data-os-step="alignment">
+      Back to workbench{{ os_icon('external', 'os-icon os-icon--sm') }}
+    </a>
+  </div>
+
+  {# The same accounting image 04 performs: three independent per-status
+     counts, and deliberately nothing that combines them. #}
+  <div class="os-summaries os-summaries--single">
+    <section class="os-summary" aria-labelledby="os-saved-summary">
+      <h2 class="os-summary__title" id="os-saved-summary" data-os-focus tabindex="-1">
+        Saved qualifications<span class="os-summary__dot" aria-hidden="true">·</span><span class="os-summary__count">{{ room.saved.qualification_count }}</span>
+      </h2>
+      <ul class="os-summary__counts">
+        {% for entry in details.counts %}
+        <li class="os-summary__entry">
+          <span class="os-dot os-dot--{{ entry.status }}" aria-hidden="true"></span>
+          <span class="os-summary__value">{{ entry.value }}</span>
+          <span class="os-summary__label">{{ entry.label }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</div>
+
+<section class="os-card os-card--panel os-qual" aria-labelledby="os-saved-qualifications">
+  <h3 class="os-qual__title" id="os-saved-qualifications">
+    What this saved result holds
+  </h3>
+  <ul class="os-saved-list">
+    {% for qualification in details.qualifications %}
+    <li class="os-saved-item">
+      <p class="os-saved-item__head">
+        <span class="os-saved-item__num">{{ qualification.ordinal }}</span>
+        <span class="os-saved-item__class">{{ qualification.class_label }}</span>
+        <span class="os-pill os-pill--{{ qualification.status }}">
+          <span class="os-dot os-dot--{{ qualification.status }}" aria-hidden="true"></span>{{ qualification.status_label }}
+        </span>
+      </p>
+      <p class="os-saved-item__text">{{ qualification.text }}</p>
+      {% if qualification.evidence %}
+      <ul class="os-saved-item__evidence">
+        {% for reference in qualification.evidence %}
+        <li>
+          <span class="os-evidence-ref">
+            <span class="os-evidence-ref__title">{{ reference.title }}</span>
+            <span class="os-evidence-ref__version">Version {{ reference.version }}</span>
+          </span>
+          {# The bounded verbatim excerpt the analysis read, retained so the
+             member can still see WHAT was read after they edit the record. #}
+          <blockquote class="os-excerpt">{{ reference.excerpt }}</blockquote>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="os-saved-item__none">No authorized evidence was matched to this.</p>
+      {% endif %}
+      {% if qualification.response_kind %}
+      <p class="os-saved-item__response">
+        {{ os_icon('check', 'os-icon os-icon--sm') }}<span>{{ qualification.response_label }}</span>
+      </p>
+      {% if qualification.response_text %}
+      <blockquote class="os-excerpt os-excerpt--response">{{ qualification.response_text }}</blockquote>
+      {% elif qualification.connected_evidence_title %}
+      <p class="os-saved-item__connected">
+        {{ qualification.connected_evidence_title }} · Version {{ qualification.connected_evidence_version }}
+      </p>
+      {% endif %}
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="os-help os-help--muted os-align__provenance">
+    Compared by {{ details.model_name }} · contract {{ details.prompt_contract }} ·
+    {{ details.evidence_considered }} authorized evidence item{{ '' if details.evidence_considered == 1 else 's' }} read
+  </p>
+</section>
+
+<details class="os-card os-card--panel os-context-group" id="os-saved-source">
+  <summary class="os-context-group__summary">
+    <span class="os-context-group__chevron" aria-hidden="true">{{ os_icon('chevron', 'os-icon os-icon--sm') }}</span>
+    <span class="os-context-group__title">The employer wording you confirmed</span>
+    <span class="os-context-group__count">{{ room.saved.source_version_label }}</span>
+  </summary>
+  <div class="os-context-group__body">
+    <p class="os-context-group__note">
+      Kept exactly as you confirmed it. Replacing the role later does not
+      change this copy.
+    </p>
+    <pre class="os-saved-source">{{ details.source_text }}</pre>
+  </div>
+</details>
+
+<div class="os-card os-card--footer">
+  <div class="os-footer-strip">
+    <p class="os-footer-strip__truth">
+      {{ os_icon('lock') }}
+      <span>
+        <strong>{{ details.footer_truth }}</strong>
+        {{ details.footer_promise }}
+      </span>
+    </p>
+    <div class="os-footer-strip__actions">
+      <a class="os-link" href="{{ room.alignment_step_url }}" data-os-step="alignment">Back to workbench</a>
+      {% if details.confirm_delete %}
+      {# The house confirm pattern (handoff section 14-M13c). Deletion is
+         irreversible and the saved slate is the one thing in this room the
+         member explicitly asked PeerSlate to keep, so it asks first, in
+         words, and says exactly what goes. #}
+      {% else %}
+      <a class="os-link os-link--danger" href="{{ room.saved_details_url }}?version={{ room.saved.saved_result_key }}&amp;confirm=delete">
+        Delete saved slate
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if details.confirm_delete %}
+<div class="os-card os-card--panel">
+  <div class="os-confirm" role="group" aria-labelledby="os-delete-confirm-heading">
+    <span class="os-confirm__badge">{{ os_icon('trash') }}</span>
+    <div class="os-confirm__body">
+      <p class="os-confirm__heading" id="os-delete-confirm-heading" data-os-focus tabindex="-1">
+        Delete this saved slate?
+      </p>
+      <p>
+        {# The TRUE total, not the rail's capped list: delete removes every
+           saved version and nothing caps saving (finding F5). #}
+        This removes all {{ room.saved.version_total }} saved version{{ '' if room.saved.version_total == 1 else 's' }},
+        with the analysis, the evidence references and your own responses
+        inside them. It cannot be undone.
+      </p>
+      <p>
+        Your role source, your confirmed requirements and your current working
+        session are not affected.
+      </p>
+    </div>
+    <div class="os-confirm__actions">
+      <form method="post" action="{{ room.delete_slate_url }}">
+        <input type="hidden" name="slate_key" value="{{ room.saved.slate_key }}">
+        <input type="hidden" name="slate_version_token" value="{{ room.saved.version_token }}">
+        <button type="submit" class="os-btn os-btn--danger os-btn--sm">
+          {{ os_icon('trash', 'os-icon os-icon--sm') }}<span>Delete saved slate</span>
+        </button>
+      </form>
+      <a class="os-btn os-btn--quiet os-btn--sm" href="{{ room.saved_details_url }}">
+        {{ os_icon('close', 'os-icon os-icon--sm') }}<span>Cancel</span>
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}

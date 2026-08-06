@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive, noimageindex">
+    
+    <script src="/static/js/easy-auth-callback.js?v=fd13bc50ca97"></script><script src="/static/js/auth-state.js?v=70ef068d4d73" defer></script>
+
+    <!-- REAL TABLETS GET THE DESKTOP LAYOUT (added 2026-07-05, reworked
+         2026-07-06)
+         On a genuine touch tablet (iPad Mini and up), this forces the
+         browser to render the page as if the screen were 1280px wide and
+         shrink it to fit — real desktop layout, pixel-perfect, handled
+         natively by the browser (like <meta name="viewport" width=1024">
+         tricks other sites use). This runs before the CSS loads so
+         there's no flash of the wrong size.
+
+         This does NOT apply to a desktop browser window that's simply
+         been resized narrower — those keep using style.css's normal
+         tablet breakpoints (1180/1040/860/780px etc.) instead.
+         An earlier version of this script ALSO scaled narrow desktop
+         browser windows down with CSS `zoom`, to pixel-match the real
+         desktop the same way. That broke the profile header bar's
+         background: it uses background-attachment: fixed so its
+         stone-photo texture lines up with the page behind it, and fixed
+         backgrounds stay pinned to the true browser viewport instead of
+         moving with `zoom` — so once zoomed, the header's texture no
+         longer lined up with the page around it (worse in Safari, which
+         Macs default to). Real tablets don't hit this bug because forcing
+         the viewport width is native browser behavior, not a CSS scaling
+         trick — that's why this script only touches touch devices now. -->
+    <script>
+        (function () {
+            var DESKTOP_WIDTH = 1280;  /* width the desktop layout is designed at */
+            var TABLET_MIN = 744;      /* iPad Mini portrait width */
+
+            /* Touch devices (iPads, tablets): swap the viewport tag so the
+               browser itself renders the page 1280px wide and shrinks it to
+               the screen — pixel-perfect desktop, handled natively. */
+            var nativeResponsivePath = window.location.pathname === '/resume'
+                || window.location.pathname === '/_internal/living-resume-v2'
+                || /\/resume2?$/.test(window.location.pathname)
+                || /\/slate-board$/.test(window.location.pathname)
+                || window.location.pathname.indexOf('/interview-studio') === 0;
+            if (navigator.maxTouchPoints > 1 && !nativeResponsivePath) {
+                if (Math.min(screen.width, screen.height) >= TABLET_MIN) {
+                    document.querySelector('meta[name="viewport"]')
+                        .setAttribute('content', 'width=' + DESKTOP_WIDTH);
+                }
+            }
+        })();
+    </script>
+
+    <meta
+        name="description"
+        content="Bring in one role, review its wording, and keep it private to your working session."
+    >
+
+    <title>Opportunity Slate | PeerSlate</title>
+
+    <link
+        rel="icon"
+        type="image/png"
+        href="/static/images/peerslate-favicon.png?v=0f3efd869a36"
+    >
+    <link
+        rel="apple-touch-icon"
+        href="/static/images/peerslate-apple-touch.png?v=b8a56717f552"
+    >
+    <meta name="theme-color" content="#111719">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+    >
+    <!-- Newsreader: the Iris Foundry editorial serif (Bible v1.2) — page
+         titles, section headings, names, and metric values site-wide. -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..800&display=swap"
+        rel="stylesheet"
+    >
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css?v=2b76a653fdca"
+    >
+    <link
+        rel="stylesheet"
+        href="/static/css/sky-glass.css?v=ff88a4e2ebb0"
+    >
+    
+    <link
+        rel="stylesheet"
+        href="/static/css/editorial-glass.css?v=d2ffe616d918"
+    >
+    <link
+        rel="stylesheet"
+        href="/static/css/chatbot.css?v=3a2c08622721"
+    >
+
+    
+
+<meta name="robots" content="noindex, nofollow, noarchive">
+<link rel="stylesheet" href="/static/css/opportunity-slate.css?v=1bfbd7af5196">
+
+    
+    
+    <link
+        rel="stylesheet"
+        href="/static/css/public-navigation.css?v=a114a19fa481"
+    >
+    
+</head>
+
+
+<body data-room="iris" class="platform-shell slate-light ps-editorial-surface  opportunity-slate-page" data-theme="modern-blue" style="--site-circuit-image: url('/static/images/circuit-banner-option-2.webp?v=f4d2e4bfda82');">
+
+    
+
+    
+
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    
+    <div class="site-sky" aria-hidden="true"></div>
+
+    <!-- Global platform navigation: the PeerSlate logo is the home link, so
+         the text navigation stays focused on three distinct destinations. -->
+    <header class="global-header">
+        <nav class="platform-nav" aria-label="PeerSlate platform navigation">
+            <div class="site-container platform-nav__inner">
+                <div class="platform-brand">
+                    
+                    <a class="platform-brand__logo" href="/" aria-label="PeerSlate home">
+                        
+                        <img
+                            src="/static/images/peerslate-logo-header.png?v=d810c3097de6"
+                            alt="PeerSlate"
+                        >
+                    </a>
+                </div>
+
+                <ul class="platform-nav__links" data-platform-links>
+                    
+                    <li><a href="/petec/resume#overview" >Pete's Slate</a></li>
+                    
+                    
+                    <li><a href="/the-slate" >Community</a></li>
+                    <li><a href="/interview-studio" >Interview Studio</a></li>
+                    
+                </ul>
+
+                <div class="platform-actions" data-ps-auth-controls data-ps-auth-state="authenticated">
+                    
+                    <div class="nav-search" id="nav-search" data-nav-search>
+                        <svg class="nav-search__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>
+                        <input
+                            class="nav-search__input"
+                            id="nav-search-input"
+                            type="search"
+                            placeholder="Search..."
+                            autocomplete="off"
+                            aria-label="Search PeerSlate"
+                            role="combobox"
+                            aria-expanded="false"
+                            aria-controls="nav-search-results"
+                        >
+                        <div class="nav-search__results" id="nav-search-results" role="listbox" hidden></div>
+                    </div>
+
+                    
+
+                    
+                    <button
+                        class="platform-menu-toggle"
+                        type="button"
+                        aria-expanded="false"
+                        aria-controls="platform-mobile-menu"
+                        data-platform-menu-toggle
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 7h16M4 12h16M4 17h16"/>
+                        </svg>
+                        <span>Menu</span>
+                    </button>
+                    
+
+                    
+                    
+                    <a class="sign-in-btn" href="/app" data-ps-auth-control="authenticated">My Slate</a>
+                    <form class="nav-sign-out" method="post" action="/auth/sign-out" data-ps-auth-control="authenticated">
+                        <button class="nav-sign-out__btn" type="submit">Sign out</button>
+                    </form>
+                    <a class="sign-in-btn" href="/app" data-ps-auth-control="workspace_waking" hidden>Workspace waking</a>
+                    <a class="sign-in-btn" href="/auth/complete?return_to=/app" data-ps-auth-control="account_issue" hidden>Account issue</a>
+                    <a class="sign-in-btn" href="/auth/sign-in?return_to=/app" data-ps-auth-control="signed_out" hidden>Sign In</a>
+                    
+                </div>
+            </div>
+
+            
+            <div class="platform-menu" id="platform-mobile-menu" data-platform-menu hidden>
+                <div class="platform-menu__inner">
+                    <ul class="platform-menu__links">
+                        <li><a href="/petec/resume#overview" >Pete's Slate</a></li>
+                        <li><a href="/the-slate" >Community</a></li>
+                        <li><a href="/interview-studio" >Interview Studio</a></li>
+                    </ul>
+                    <div class="nav-search nav-search--mobile" data-nav-search>
+                        <svg class="nav-search__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>
+                        <input
+                            class="nav-search__input"
+                            id="nav-search-input-mobile"
+                            type="search"
+                            placeholder="Search PeerSlate"
+                            autocomplete="off"
+                            aria-label="Search PeerSlate"
+                            role="combobox"
+                            aria-expanded="false"
+                            aria-controls="nav-search-results-mobile"
+                            data-nav-search-input
+                        >
+                        <div
+                            class="nav-search__results"
+                            id="nav-search-results-mobile"
+                            role="listbox"
+                            data-nav-search-results
+                            hidden
+                        ></div>
+                    </div>
+                </div>
+            </div>
+            
+        </nav>
+
+        
+        
+    </header>
+
+    
+    
+
+    <main id="main-content" class="main-content">
+        
+
+
+
+<div class="os"
+     data-os-room
+     data-os-mode="member"
+     data-os-step="saved"
+     
+     data-os-public-url="/opportunity-slate/public-session"
+     data-os-public-propose-url="/opportunity-slate/public-session/propose">
+
+  
+  <div class="os-subheader">
+    <a class="os-subheader__back" href="/">
+      <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19.5 12h-14"></path><path d="M10.5 7l-5 5 5 5"></path></svg><span>Back</span>
+    </a>
+    <span class="os-subheader__rule" aria-hidden="true"></span>
+    <span class="os-subheader__title">Opportunity Slate</span>
+  </div>
+
+  
+
+  
+  
+  
+  <div class="os-layout os-layout--alignment">
+
+    
+    <div class="os-rail os-rail--left">
+      
+      
+      
+      <h1 class="os-state-title">
+        <span class="os-state-title__lead">Saved</span>
+        <span class="os-state-title__dot" aria-hidden="true">·</span>
+        <span class="os-state-title__rest">Saved slate</span>
+      </h1>
+      <p class="os-rail__intro">
+        Every result you saved privately, newest first. Nothing here was
+        published, shared, or sent to an employer.
+      </p>
+      
+
+      
+      
+
+      
+      
+      
+      <div class="os-truth-card os-truth-card--saved os-truth-card--saved-stale">
+        <span class="os-truth-card__badge"><svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.2 12.3l2.6 2.6 5-5.2"></path></svg></span>
+        <div>
+          <p class="os-truth-card__heading">Saved privately</p>
+          <p class="os-saved-chip">Inputs changed · Reanalysis required</p>
+          
+          
+          <p>The saved result remains available for Source Version 2.</p>
+          
+          <p>It does not apply to your changed inputs.</p>
+          
+          
+          <p class="os-truth-card__rule">Nothing was published or shared.</p>
+        </div>
+      </div>
+      <div class="os-rail-note">
+        <p class="os-rail-note__eyebrow">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5l1.9 4.9 4.9 1.9-4.9 1.9L12 17.1l-1.9-4.9L5.2 10.3l4.9-1.9z"></path><path d="M18.5 16.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"></path></svg>What a saved result keeps
+        </p>
+        <p>
+          The employer wording you confirmed, the requirements you accepted,
+          this analysis, and the exact evidence records and excerpts it read —
+          each pinned to the version it was read at.
+        </p>
+        <p>
+          Editing an evidence record later does not change what is saved here.
+          It changes whether the saved result still applies to your inputs.
+        </p>
+      </div>
+
+      
+      
+
+      
+      
+
+      
+
+      
+      
+    </div>
+
+    
+    <div class="os-workbench">
+      
+      
+      <div class="os-cards">
+        
+
+
+
+
+
+<div class="os-card os-card--strip">
+  <div class="os-context-strip">
+    <span class="os-chip">
+      <span class="os-chip__badge"><svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path></svg></span>
+      <span>
+        <span class="os-chip__label">Source</span>
+        <span class="os-chip__value">Source Version 2</span>
+      </span>
+    </span>
+    <span class="os-chip">
+      <span class="os-chip__badge"><svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="7" height="14" rx="1.4"></rect><rect x="13.5" y="5" width="7" height="14" rx="1.4"></rect></svg></span>
+      <span>
+        <span class="os-chip__label">Saved</span>
+        <span class="os-chip__value">4 August 2026 at 06:12 UTC</span>
+      </span>
+    </span>
+    <span class="os-chip">
+      <span class="os-chip__badge"><svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2"></rect><path d="M8.2 10.5V7.8a3.8 3.8 0 0 1 7.6 0v2.7"></path></svg></span>
+      <span>
+        <span class="os-chip__label">Session</span>
+        <span class="os-chip__value">Saved privately</span>
+      </span>
+    </span>
+    <a class="os-context-strip__link" href="/opportunity-slate?step=alignment" data-os-step="alignment">
+      Back to workbench<svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M13.5 4.5h6v6"></path><path d="M19.5 4.5l-8 8"></path><path d="M18 13.5v5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6h5"></path></svg>
+    </a>
+  </div>
+
+  
+  <div class="os-summaries os-summaries--single">
+    <section class="os-summary" aria-labelledby="os-saved-summary">
+      <h2 class="os-summary__title" id="os-saved-summary" data-os-focus tabindex="-1">
+        Saved qualifications<span class="os-summary__dot" aria-hidden="true">·</span><span class="os-summary__count">6</span>
+      </h2>
+      <ul class="os-summary__counts">
+        
+        <li class="os-summary__entry">
+          <span class="os-dot os-dot--supported" aria-hidden="true"></span>
+          <span class="os-summary__value">2</span>
+          <span class="os-summary__label">Supported</span>
+        </li>
+        
+        <li class="os-summary__entry">
+          <span class="os-dot os-dot--partially_supported" aria-hidden="true"></span>
+          <span class="os-summary__value">2</span>
+          <span class="os-summary__label">Partially supported</span>
+        </li>
+        
+        <li class="os-summary__entry">
+          <span class="os-dot os-dot--not_enough_information" aria-hidden="true"></span>
+          <span class="os-summary__value">2</span>
+          <span class="os-summary__label">Not enough information</span>
+        </li>
+        
+      </ul>
+    </section>
+  </div>
+</div>
+
+<section class="os-card os-card--panel os-qual" aria-labelledby="os-saved-qualifications">
+  <h3 class="os-qual__title" id="os-saved-qualifications">
+    What this saved result holds
+  </h3>
+  <ul class="os-saved-list">
+    
+    <li class="os-saved-item">
+      <p class="os-saved-item__head">
+        <span class="os-saved-item__num">1</span>
+        <span class="os-saved-item__class">Required qualification</span>
+        <span class="os-pill os-pill--supported">
+          <span class="os-dot os-dot--supported" aria-hidden="true"></span>Supported
+        </span>
+      </p>
+      <p class="os-saved-item__text">Bachelor&#39;s degree in Engineering and 3+ years of relevant experience.</p>
+      
+      <ul class="os-saved-item__evidence">
+        
+        <li>
+          <span class="os-evidence-ref">
+            <span class="os-evidence-ref__title">Systems Engineering Experience Summary</span>
+            <span class="os-evidence-ref__version">Version 3</span>
+          </span>
+          
+          <blockquote class="os-excerpt">holds a BEng</blockquote>
+        </li>
+        
+        <li>
+          <span class="os-evidence-ref">
+            <span class="os-evidence-ref__title">Systems Engineering Experience Summary</span>
+            <span class="os-evidence-ref__version">Version 3</span>
+          </span>
+          
+          <blockquote class="os-excerpt">for four years</blockquote>
+        </li>
+        
+      </ul>
+      
+      
+    </li>
+    
+    <li class="os-saved-item">
+      <p class="os-saved-item__head">
+        <span class="os-saved-item__num">2</span>
+        <span class="os-saved-item__class">Required qualification</span>
+        <span class="os-pill os-pill--partially_supported">
+          <span class="os-dot os-dot--partially_supported" aria-hidden="true"></span>Partially supported
+        </span>
+      </p>
+      <p class="os-saved-item__text">Strong understanding of systems engineering processes.</p>
+      
+      <ul class="os-saved-item__evidence">
+        
+        <li>
+          <span class="os-evidence-ref">
+            <span class="os-evidence-ref__title">Systems Engineering Experience Summary</span>
+            <span class="os-evidence-ref__version">Version 3</span>
+          </span>
+          
+          <blockquote class="os-excerpt">systems-integration and verification-readiness work</blockquote>
+        </li>
+        
+      </ul>
+      
+      
+    </li>
+    
+    <li class="os-saved-item">
+      <p class="os-saved-item__head">
+        <span class="os-saved-item__num">3</span>
+        <span class="os-saved-item__class">Required qualification</span>
+        <span class="os-pill os-pill--partially_supported">
+          <span class="os-dot os-dot--partially_supported" aria-hidden="true"></span>Partially supported
+        </span>
+      </p>
+      <p class="os-saved-item__text">Experience of verification and validation in a regulated environment.</p>
+      
+      <ul class="os-saved-item__evidence">
+        
+        <li>
+          <span class="os-evidence-ref">
+            <span class="os-evidence-ref__title">Model-Based Systems Engineering Project Record</span>
+            <span class="os-evidence-ref__version">Version 2</span>
+          </span>
+          
+          <blockquote class="os-excerpt">verification evidence</blockquote>
+        </li>
+        
+        <li>
+          <span class="os-evidence-ref">
+            <span class="os-evidence-ref__title">Model-Based Systems Engineering Project Record</span>
+            <span class="os-evidence-ref__version">Version 2</span>
+          </span>
+          
+          <blockquote class="os-excerpt">a regulated avionics</blockquote>
+        </li>
+        
+      </ul>
+      
+      
+      <p class="os-saved-item__response">
+        <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.2 12.3l2.6 2.6 5-5.2"></path></svg><span>You told us more</span>
+      </p>
+      
+      <blockquote class="os-excerpt os-excerpt--response">I ran verification for a Class II medical device programme under a notified-body audit, which is the regulated part.</blockquote>
+      
+      
+    </li>
+    
+    <li class="os-saved-item">
+      <p class="os-saved-item__head">
+        <span class="os-saved-item__num">4</span>
+        <span class="os-saved-item__class">Required qualification</span>
+        <span class="os-pill os-pill--not_enough_information">
+          <span class="os-dot os-dot--not_enough_information" aria-hidden="true"></span>Not enough information
+        </span>
+      </p>
+      <p class="os-saved-item__text">Ability to obtain and maintain a security clearance.</p>
+      
+      <p class="os-saved-item__none">No authorized evidence was matched to this.</p>
+      
+      
+    </li>
+    
+    <li class="os-saved-item">
+      <p class="os-saved-item__head">
+        <span class="os-saved-item__num">5</span>
+        <span class="os-saved-item__class">Preferred qualification</span>
+        <span class="os-pill os-pill--supported">
+          <span class="os-dot os-dot--supported" aria-hidden="true"></span>Supported
+        </span>
+      </p>
+      <p class="os-saved-item__text">Knowledge of Model-Based Systems Engineering methods.</p>
+      
+      <ul class="os-saved-item__evidence">
+        
+        <li>
+          <span class="os-evidence-ref">
+            <span class="os-evidence-ref__title">Model-Based Systems Engineering Project Record</span>
+            <span class="os-evidence-ref__version">Version 2</span>
+          </span>
+          
+          <blockquote class="os-excerpt">Built and maintained SysML models</blockquote>
+        </li>
+        
+      </ul>
+      
+      
+    </li>
+    
+    <li class="os-saved-item">
+      <p class="os-saved-item__head">
+        <span class="os-saved-item__num">6</span>
+        <span class="os-saved-item__class">Preferred qualification</span>
+        <span class="os-pill os-pill--not_enough_information">
+          <span class="os-dot os-dot--not_enough_information" aria-hidden="true"></span>Not enough information
+        </span>
+      </p>
+      <p class="os-saved-item__text">Chartered Engineer status or working towards it.</p>
+      
+      <p class="os-saved-item__none">No authorized evidence was matched to this.</p>
+      
+      
+    </li>
+    
+  </ul>
+  <p class="os-help os-help--muted os-align__provenance">
+    Compared by claude-sonnet-5 · contract os-alignment-v1 ·
+    3 authorized evidence items read
+  </p>
+</section>
+
+<details class="os-card os-card--panel os-context-group" id="os-saved-source">
+  <summary class="os-context-group__summary">
+    <span class="os-context-group__chevron" aria-hidden="true"><svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"></path></svg></span>
+    <span class="os-context-group__title">The employer wording you confirmed</span>
+    <span class="os-context-group__count">Source Version 2</span>
+  </summary>
+  <div class="os-context-group__body">
+    <p class="os-context-group__note">
+      Kept exactly as you confirmed it. Replacing the role later does not
+      change this copy.
+    </p>
+    <pre class="os-saved-source">Overview
+
+We design, integrate and sustain complex airborne systems for defence and civil customers.
+
+Required qualifications
+
+- Bachelor&#39;s degree in Engineering and 3+ years of relevant experience.
+- Strong understanding of systems engineering processes.
+- Experience of verification and validation in a regulated environment.
+- Ability to obtain and maintain a security clearance.
+
+Preferred qualifications
+
+- Knowledge of Model-Based Systems Engineering methods.
+- Chartered Engineer status or working towards it.
+</pre>
+  </div>
+</details>
+
+<div class="os-card os-card--footer">
+  <div class="os-footer-strip">
+    <p class="os-footer-strip__truth">
+      <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="9.5" rx="2.2"></rect><path d="M8.2 10.5V7.8a3.8 3.8 0 0 1 7.6 0v2.7"></path></svg>
+      <span>
+        <strong>Saved privately</strong>
+        Saved privately. Nothing was published, shared, sent to an employer, or used to alter your canonical evidence.
+      </span>
+    </p>
+    <div class="os-footer-strip__actions">
+      <a class="os-link" href="/opportunity-slate?step=alignment" data-os-step="alignment">Back to workbench</a>
+      
+      <a class="os-link os-link--danger" href="/opportunity-slate/saved?version=dddddddd-3333-4333-8333-dddddddddddd&amp;confirm=delete">
+        Delete saved slate
+      </a>
+      
+    </div>
+  </div>
+</div>
+
+
+      </div>
+      
+    </div>
+
+    
+    
+
+    
+    <div class="os-rail os-rail--right">
+      
+      
+      
+      <div class="os-rail-card">
+        <p class="os-rail-card__title">
+          <svg class="os-icon os-icon--sm" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path></svg>Saved versions
+        </p>
+        <p class="os-rail-card__note">
+          Saving again adds a version. Nothing here was ever overwritten.
+        </p>
+        <ul class="os-saved-versions">
+          
+          <li class="os-saved-version is-open">
+            <a class="os-saved-version__link"
+               href="/opportunity-slate/saved?version=dddddddd-3333-4333-8333-dddddddddddd"
+               aria-current="true">
+              
+              <span class="os-saved-version__label">Save 2</span>
+              <span class="os-saved-version__meta">
+                Source Version 2 ·
+                6 qualifications
+              </span>
+              <span class="os-saved-version__meta">Saved 4 August 2026 at 06:12 UTC</span>
+            </a>
+          </li>
+          
+          <li class="os-saved-version">
+            <a class="os-saved-version__link"
+               href="/opportunity-slate/saved?version=11111111-3333-4333-8333-dddddddddddd"
+               >
+              
+              <span class="os-saved-version__label">Save 1</span>
+              <span class="os-saved-version__meta">
+                Source Version 2 ·
+                6 qualifications
+              </span>
+              <span class="os-saved-version__meta">Saved 4 August 2026 at 06:12 UTC</span>
+            </a>
+          </li>
+          
+        </ul>
+        
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+    </main>
+
+    <footer class="footer">
+        
+        <p class="footer-privacy">
+            <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;">
+                <path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/>
+                <path d="M8.5 12.5l2.4 2.4 4.8-5"/>
+            </svg>
+            Your data is private. You control what you share.
+        </p>
+        <div class="footer-container footer-container--brand">
+            
+            <a class="footer-brand" href="/peerslate" aria-label="PeerSlate home">
+                <img
+                    src="/static/images/peerslate-mark.png?v=21b5be67f9b0"
+                    alt=""
+                    aria-hidden="true"
+                >
+                <span>PeerSlate</span>
+            </a>
+            <p>&copy; 2026 PeerSlate <span>|</span> Your Work. Your Story. Your Future. <span>|</span> <a class="footer-why-link" href="/peerslate">Why PeerSlate</a></p>
+            
+        </div>
+    </footer>
+
+    
+    
+
+    
+    <script id="nav-search-data" type="application/json">
+    [
+        
+        {"title": "Pete's Slate", "sub": "Pete Carter's public Overview", "href": "/petec/resume#overview", "keys": "pete slate profile overview public"},
+        {"title": "My Story", "sub": "The person behind the work", "href": "/petec/my-story", "keys": "story about journey bio my story personal life"},
+        {"title": "Skills in practice", "sub": "Sources behind the skills", "href": "/petec/skills", "keys": "skills sources mbse sysml cameo doors expertise supporting work"},
+        {"title": "Slate Board", "sub": "Goals, wins, and progress", "href": "/petec/slate-board", "keys": "board goals whiteboard badges tracking momentum trophy streak"},
+        {"title": "Résumé", "sub": "Detailed career record", "href": "/petec/resume#resume-start", "keys": "resume résumé career experience education certifications pmp jobs roles clearance"},
+        {"title": "Interview Studio", "sub": "Practice, coaching, video, and growth", "href": "/interview-studio", "keys": "interview me interview ai video practice questions star behavioral coach mock answer"},
+        {"title": "Contact", "sub": "Email and LinkedIn", "href": "/petec/contact", "keys": "contact email message linkedin reach hire connect"},
+        {"title": "Download résumé", "sub": "One-page PDF", "href": "/static/files/pete-carter-resume.pdf?v=95aff8484e21", "keys": "download resume résumé pdf file print ats"},
+        {"title": "Community Feed", "sub": "People, progress, and interests", "href": "/the-slate", "keys": "community feed people progress interests posts milestones"},
+        {"title": "The Break", "sub": "Step back and recharge", "href": "/the-slate/break", "keys": "community break recharge rest quotes shout-outs spark"},
+        {"title": "Why PeerSlate", "sub": "Why the platform exists", "href": "/peerslate", "keys": "why peerslate about mission journal private first how it works"}
+        
+    ]
+    </script>
+
+    
+    <nav class="mobile-tabbar" id="mobile-tabbar" aria-label="Section navigation" hidden></nav>
+
+    <script src="/static/js/chatbot.js?v=15e32d0a79e8"></script>
+    
+    <script src="/static/js/public-site-search.js?v=ac0a916d4374"></script>
+    <script src="/static/js/public-mobile-nav.js?v=15e15ab11db9"></script>
+    
+    
+    
+<script src="/static/js/opportunity-slate.js?v=1d265174165a" defer></script>
+
+
+</body>
+
+</html>

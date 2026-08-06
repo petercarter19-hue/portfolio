@@ -430,7 +430,8 @@
   <div class="os-disclosure__body" id="os-delete-body">
     <p class="os-disclosure__warning">
       This removes the role wording and this whole working session. It cannot
-      be undone, and nothing was saved anywhere else.
+      be undone. Any result you saved privately is a separate copy and is not
+      affected — deleting this working session never removes a saved slate.
     </p>
     <form class="os-form" method="post" action="{{ room.delete_url }}" data-os-form="delete">
       <input type="hidden" name="session_key" value="{{ room.source.session_key or '' }}">
