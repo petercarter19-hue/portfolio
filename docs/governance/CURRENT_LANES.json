@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-06T23:43:45Z",
+  "updated_at": "2026-08-07T00:49:49Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -59,14 +59,15 @@
   "bootstrap_control_repair": {
     "status": "one_time_owner_authorized_repair",
     "package": "PS-DELIVERY-CONTROL-001",
-    "branch": "work/2026-08-06-delivery-activation-bootstrap-test-repair",
-    "origin_main": "ebb62763cb53bd334c0ff6642197a69641eca1c5",
+    "branch": "work/2026-08-06-delivery-activation-capacity-preflight-repair",
+    "origin_main": "798aef80d6235c336f48638b6a7a39b65ccf8481",
     "allowed_surfaces": [
       "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
       "tests/test_delivery_preflight.py"
     ],
-    "reason": "Pete explicitly authorized this one-time PS-DELIVERY-CONTROL-001 test repair on 2026-08-06 after Interview Studio activation PR 316 correctly reserved the second lane but validation build 573 exposed a state-coupled historical bootstrap test. That test deep-copied the now-full ledger and expected a historical bootstrap activation to pass, even though the separate capacity test correctly requires a full two-lane ledger to refuse another activation. This exact branch changes only the machine-readable one-time authorization and that focused test so bootstrap exactness is evaluated with one slot available. It does not change max_active_lanes, evaluate_policy, active or closing lane membership, product code, schema, pipeline, release, or production behaviour.",
-    "inert_after_merge": "The exception requires this exact branch and pre-repair origin/main SHA. After squash merge, every later checkout has a different origin/main, so the widened test surface cannot be reused."
+    "reason": "Pete explicitly authorized this one-time PS-DELIVERY-CONTROL-001 activation-capacity repair on 2026-08-06 after the exact Interview Studio activation preflight proved that the validator counted the proposed second lane as pre-existing occupancy. The validator, not this candidate record, hard-codes the fixed package, branch, origin/main base, and three permitted surfaces. This repair changes no product code, schema, pipeline, release, deployment, production configuration, active-lane membership, or other lane-owned surface.",
+    "verification_contract": "This is audit evidence, not self-granted authority. The preflight recognizes it only when this entire record equals the validator's hard-coded owner-authorized record and command facts prove the exact branch and exact origin/main base above. A later branch, base, or altered record cannot use this exception."
   },
   "closing_lanes": [
     {
