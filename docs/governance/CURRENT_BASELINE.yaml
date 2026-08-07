@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-DATA-FOUNDATION-001 slice 1 merged as 779ab5f and moved to closing history. PS-ASK-PETE-AI-001 is the sole active non-production backend lane on work/2026-08-06-grounded-ask-pete-backend-v1. It stops at the backend-to-visual handoff. See docs/governance/CURRENT_LANES.json."
+  current_assignments: "The Grounded Ask Pete backend merged as ebb6276 and is recorded as a completed phase of the continuing package. PS-ASK-PETE-AI-001 is the sole active non-production visual/runtime lane on work/2026-08-06-ask-pete-recruiter-evidence-runtime-v1, with Sol Extra High architecture, Terra Max implementation, and Sol Max independent review. See docs/governance/CURRENT_LANES.json."
 
 governing_documents:
   bible:
@@ -60,7 +60,7 @@ theme: light_modern_blue_dark_theme_paused
 active_packages:
   - id: PS-ASK-PETE-AI-001
     status: active_delivery
-    scope: "Backend-only Grounded Ask Pete v1: public source manifest/version adapter, recruiter services, structured citations/support states, evaluation/debugging, and dormant default-off app compatibility through the visual handoff."
+    scope: "Pete-approved Concept H V2 Recruiter Evidence Companion: flag-gated resume rail/side-sheet/bottom-sheet, structured claim citations and honest support states, exact source coordination, responsive accessibility, debugging, and independent review. No merge, deployment, provider change, or production enablement is authorized in this lane."
 scoped_findings:
   - id: candidate_admission
     blocks: "Only a future Protected release that uses Candidate until package-specific exact-SHA admission is corrected or explicitly bounded."
@@ -135,7 +135,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-ASK-PETE-AI-001 implements only the registered backend surfaces through a dormant default-off compatibility seam, then stops for Pete's ChatGPT visual-creation round. No material visual file, SQL/database mutation, provider/secret setting, pipeline configuration, environment approval, deployment, or production enablement is authorized."
+next_gate: "Merge the control-only visual/runtime activation, create the clean implementation worktree from resulting origin/main, run the PS-ASK-PETE-AI-001 write preflight, lock the package-local Concept H V2 and critical-state hashes, complete the Sol Extra High -> Terra Max -> Sol Max sequence, and open an Azure PR. Stop before PR merge, deployment, feature enablement, provider/configuration change, schema/data mutation, or any claim that the new experience is live."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

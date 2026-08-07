@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-06T16:08:59Z",
+  "updated_at": "2026-08-06T23:43:45Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -37,7 +37,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-DATA-FOUNDATION-001 slice 1 merged through PR 311 as main 779ab5f and is retained under closing_lanes. PS-ASK-PETE-AI-001 is the sole active non-production backend lane. Cleanup is bounded to clean, merged, recoverable branches and worktrees created by these exact lanes; unrelated or dirty worktrees, branches, artifacts, and user files remain preserved."
+    "exit_authority": "The Grounded Ask Pete backend merged through PR 315 as main ebb6276 and is recorded as a completed phase inside the continuing package lane. PS-ASK-PETE-AI-001 now has one active non-production visual/runtime lane on work/2026-08-06-ask-pete-recruiter-evidence-runtime-v1. Cleanup is bounded to clean, merged, recoverable branches and worktrees created by the Ask Pete program; unrelated, dirty, unverified, or user-owned work remains preserved."
   },
   "activation_policy": {
     "enabled": true,
@@ -253,53 +253,88 @@
   "active_lanes": [
     {
       "package": "PS-ASK-PETE-AI-001",
-      "outcome": "Implement the complete backend-only Grounded Ask Pete v1 foundation through the visual handoff: an explicit allowlisted public-AI source manifest, deterministic current-resume-to-SourceVersion adapter, profile/object context, recruiter brief, evidence finder, interview-preparation service, structured support/citation/unknown/private-handoff response contract, privacy-safe diagnostics, curated evaluation, legacy response compatibility, and dormant default-off app integration. Stop before material visual work, database/schema mutation, provider or secret configuration, contact sending, deployment, or production enablement.",
-      "branch": "work/2026-08-06-grounded-ask-pete-backend-v1",
-      "writer": "Codex in a new dedicated clean worktree; sole writer for exactly the listed backend surfaces",
+      "outcome": "Implement the Pete-approved Concept H V2 Recruiter Evidence Companion on the public resume using the merged Grounded Ask Pete contract: one canonical flag-gated component that is a persistent desktop rail, narrow-desktop side sheet, and mobile bottom sheet; structured recruiter brief and claim-level evidence; honest partial, unknown, ambiguous, validation, slow, and unavailable states; contextual editable prefill; exact source opening/highlighting; and a truthful current contact handoff. Preserve the existing resume information architecture and legacy flag-off behavior. Stop at an independently reviewed Azure PR; do not merge, deploy, enable the feature flag, or mutate production in this lane.",
+      "branch": "work/2026-08-06-ask-pete-recruiter-evidence-runtime-v1",
+      "writer": "Sequential handoff: Sol Extra High writes the architecture record only, then Terra Max becomes sole implementation writer for the listed runtime surfaces; Sol Max reviews the exact candidate SHA read-only",
       "delivery_path": "Protected",
       "production_capable": false,
-      "source_checkpoint": "Merged PS-DATA-FOUNDATION-001 contracts at main 779ab5f4524a5094dae512c8dec9a341286da243, current control base 2ef46711d777a66e4aba347d141d6bc4573cff0d, and Pete's accepted recruiter-evidence direction.",
+      "source_checkpoint": "Current Azure main ebb62763cb53bd334c0ff6642197a69641eca1c5 with Grounded Ask Pete backend merged; Pete-accepted Concept H aligned V2 family plus critical-state board under the 2026-08-06 Ask Pete visual round.",
+      "completed_phases": [
+        {
+          "phase": "Grounded Ask Pete backend v1",
+          "branch": "work/2026-08-06-grounded-ask-pete-backend-v1",
+          "merge_commit": "ebb62763cb53bd334c0ff6642197a69641eca1c5",
+          "pull_request": 315,
+          "result": "Approved public-source manifest, structured grounded answer contract, recruiter jobs, exact citations/support states, evaluation and payload-free diagnostics, and dormant default-off app compatibility merged with no material visual, provider, schema, deployment, enablement, or live behavior change.",
+          "verification": "30 Ask Pete tests, 36 AI-foundation tests, and 139 relevant regressions passed before PR; 205 tests total.",
+          "cleanup_rule": "After recovery and merge equivalence are verified, remove only this clean merged backend phase's branch/worktree/activation artifacts; preserve all unrelated or dirty material."
+        }
+      ],
       "writable_surfaces": [
         "app.py",
+        "templates/base.html",
+        "templates/resume2.html",
+        "templates/partials/profile_tabs.html",
+        "templates/partials/ask_pete_evidence_companion.html",
+        "static/css/ask-pete-resume-evidence.css",
+        "static/js/ask-pete-evidence-companion.js",
+        "static/js/living-resume-v2.js",
         "docs/initiatives/PS-ASK-PETE-AI-001/",
-        "data/ai_sources/",
-        "services/ai_foundation/",
-        "services/ask_pete/",
-        "prompts/ask_pete/",
-        "tests/ai_foundation/",
-        "tests/ask_pete/"
+        "data/ai_sources/ask_pete_public_v1.json",
+        "tests/ask_pete/",
+        "tests/test_resume2.py",
+        "tests/test_living_resume_preview.py",
+        "tests/test_navigation.py"
       ],
       "exclusions": [
-        "no template, stylesheet, JavaScript, image, résumé layout, color, rail, card, side-sheet, or other material visual change; stop and hand the stable visual contract to Pete for ChatGPT visual creation",
-        "no edit to Opportunity Slate, Workshop, Community, Journal, Interview Studio, services/database_service.py, or services/knowledge_service.py",
-        "no SQL migration, migration registry, production schema/data mutation, provider setting, secret, dependency, pipeline configuration, environment approval, deployment, or production enablement",
-        "no private Slate, Journal, Workshop, Opportunity, visitor-contact, upload, voice, OCR, or job-description retrieval",
-        "no message send, inbox persistence, knowledge update, save, publish, delete, canonical mutation, fit score, or employment decision",
-        "default-off backend integration must preserve the existing public /api/chat contract and behavior when disabled",
-        "no write to another writer's branch, worktree, checkpoint, or listed surface",
-        "no claim that backend code, a contract, test harness, or dormant integration is deployed or live"
+        "no new route or endpoint; use the existing POST /api/chat contract",
+        "no edit to shared services/ai_foundation, shared chatbot.js or chatbot.css, provider configuration, secret, dependency, pipeline, environment approval, or feature-flag setting",
+        "no SQL, persistence, inbox, notification, message sending, private reply, automatic knowledge update, publication, deletion, or canonical mutation",
+        "no edit to Opportunity Slate, Workshop, Community, Journal, Interview Studio, homepage, services/database_service.py, or services/knowledge_service.py",
+        "no voice, uploads, OCR, job-description matching, fit score, hiring judgment, or private Slate retrieval",
+        "no resume information-architecture or canonical-content rewrite",
+        "default-off rendering and /api/chat behavior must remain unchanged when PEERSLATE_ASK_PETE_GROUNDED_ENABLED is false",
+        "no pull-request merge, application deployment, production feature enablement, provider change, or claim that this implementation is live",
+        "no write to another writer's branch, worktree, checkpoint, or unlisted surface",
+        "no cleanup of unrelated branches, worktrees, artifacts, stashes, dirty files, or user-owned material"
       ],
       "completion_evidence": [
-        "one explicit server-side manifest distinguishes public visibility from approval for Ask Pete use and maps only current Pete public résumé records",
-        "the adapter emits immutable authorized SourceVersion records plus exact résumé locators without reading private data",
-        "recruiter brief, evidence finder, and interview preparation produce bounded structured responses with exact citation linkage, limitations, follow-ups, and private handoff proposals",
-        "supported, partial, not established, ambiguous, refused, unavailable, prompt-injection, stale-source, wrong-subject, wrong-purpose, and oversized-input paths are tested",
-        "the default-off app seam and legacy response serializer preserve current /api/chat behavior when disabled and are exercised with fake providers when enabled",
-        "traces and evaluation results contain no question, source, excerpt, answer, exception payload, contact data, or private content",
-        "the backend-to-visual handoff defines every state, field, source-opening locator, loading/failure behavior, and accessibility obligation needed for ChatGPT visual creation",
-        "focused and relevant regression tests pass, the diff stays inside listed surfaces, self-review is complete, and the worktree contains no task-created debris"
+        "the accepted Concept H V2 authority and critical-state board are copied into package-local visual authority with exact hashes",
+        "Sol Extra High records one component/state/source-coordination architecture without changing the accepted visual direction",
+        "the same grounded feature flag gates both structured backend and new resume companion while flag-off HTML and legacy behavior remain unchanged",
+        "one DOM component reflows as wide rail, narrow side sheet, and mobile bottom sheet without duplicate conversation state",
+        "recruiter brief, evidence finder, interview preparation, supported, partial, not established, ambiguous, validation, slow, and unavailable fixtures render truthfully",
+        "contextual Ask actions prefill editable text and never auto-submit; starter selection is an explicit submit",
+        "every source opens an exact stable resume record, preserves the answer, announces navigation, and uses temporary non-color-only highlighting",
+        "non-string and malformed input fail with 400 before provider work; stale requests and timeouts recover safely",
+        "keyboard, focus return, Escape, reduced motion, forced colors, contrast, 200 percent zoom, touch targets, overflow, and scroll traps pass at representative desktop, narrow, and mobile widths",
+        "Terra Max completes focused and relevant regression tests, a full changed-path audit, browser screenshot comparison, and task-created debris cleanup",
+        "Sol Max independently reviews the exact candidate SHA and all findings are resolved or explicitly reported before the Azure PR is handed to Pete"
       ],
       "owner_decisions": [
         {
           "date": "2026-08-06",
-          "decision": "Pete directed Codex to do everything possible for the backend program and to stop and notify him when material visual work begins so the visual direction can be handed to ChatGPT."
+          "decision": "Pete selected the aligned Concept H eucalyptus, ivory, forest, aged-gold, editorial, selectively layered direction and responded 'Looks excellent' after reviewing the corrected desktop, source-open, contextual, narrow-desktop, and mobile family."
         },
         {
           "date": "2026-08-06",
-          "decision": "Pete required clean-kitchen delivery: after each merge, verify current main and recovery first, then clean only this program's clean merged branches, worktrees, temporary files, stale PRs, and duplicate task artifacts. Preserve all unrelated, dirty, unverified, or user-owned work."
+          "decision": "Pete explicitly authorized implementation and model routing: 'Do a great job. Have terra max implement, sol max review, if architecture still needs to made, sol extra high.'"
+        },
+        {
+          "date": "2026-08-06",
+          "decision": "Pete required clean-kitchen delivery and active lane awareness. Create only dedicated worktrees, verify current main and recovery before cleanup, remove only this program's clean merged artifacts, and preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact."
         }
       ],
-      "sequence": "merge this activation record -> verify and clean the completed PS-DATA task worktree/branch only -> create the backend worktree from resulting origin/main -> run package write preflight -> reconcile public sources -> implement manifest/adapter/services/evals -> add dormant default-off app compatibility seam -> self-review and Azure PR -> verify merge/current main -> clean only task-created merged artifacts -> stop and deliver the backend-to-visual handoff to Pete"
+      "model_routing": {
+        "decided_by": "Pete",
+        "date": "2026-08-06",
+        "architect": "GPT-5.6 Sol at extra-high effort; architecture record only, then explicit handoff",
+        "implementation": "GPT-5.6 Terra at maximum effort; sole implementation writer in the dedicated runtime worktree",
+        "independent_reviewer": "Fresh GPT-5.6 Sol at maximum effort; read-only review of the exact candidate SHA",
+        "coordinator": "Root Codex session verifies authority, lane isolation, preflight, review closure, Azure PR truth, and bounded cleanup; it does not hand-write product implementation",
+        "sequence": "activation merge -> Sol Extra High architecture record -> Terra Max implementation and self-review -> Sol Max independent review -> Terra resolves findings -> Azure PR handoff without merge or deploy"
+      },
+      "sequence": "merge this control-only activation -> create one clean implementation worktree from resulting origin/main -> run PS-ASK-PETE-AI-001 write preflight -> preserve package-local visual hashes -> Sol Extra High commits architecture record and relinquishes -> Terra Max implements in vertical slices and cleans task debris -> Sol Max reviews exact candidate SHA read-only -> Terra resolves findings and opens an Azure PR -> stop before merge, deployment, provider/configuration change, or feature enablement"
     }
   ],
   "paused_lanes": [
