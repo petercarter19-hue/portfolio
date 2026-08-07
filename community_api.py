@@ -21,6 +21,13 @@ from services.community_contracts import (
     CommunityValidationError,
 )
 from services.community_feed_service import community_feed_service
+from services.community_demo_feed import (
+    demo_feed_page,
+    demo_post_detail,
+    demo_search,
+    demo_selected_contribution,
+    demo_shelf_page,
+)
 from services.community_media_service import community_media_service
 from services.community_voice_service import (
     CommunityVoiceError,
@@ -192,37 +199,47 @@ def community_rate_limited(error):
 @community_api.get("/feed")
 def feed():
     identity = get_optional_identity()
+    cursor = request.args.get("cursor")
     page = community_feed_service.feed_page(
-        request.args.get("cursor"),
+        cursor,
         page_size=12,
         viewer_user_key=(
             identity.user_key if identity and is_owner(identity) else None
         ),
     )
+    if not cursor and not page.get("items"):
+        page = demo_feed_page()
     return jsonify(success=True, **page)
 
 
 @community_api.get("/posts/<string:post_key>")
 def post_detail(post_key):
     identity = get_optional_identity()
-    detail = community_feed_service.post_detail(
-        post_key,
-        viewer_user_key=identity.user_key if identity and is_owner(identity) else None,
-        contribution_cursor=request.args.get("cursor"),
-    )
+    try:
+        detail = community_feed_service.post_detail(
+            post_key,
+            viewer_user_key=identity.user_key if identity and is_owner(identity) else None,
+            contribution_cursor=request.args.get("cursor"),
+        )
+    except CommunityNotFoundError:
+        detail = demo_post_detail(post_key)
     return jsonify(success=True, post=detail)
 
 
 @community_api.get("/posts/<string:post_key>/shelf")
 def contribution_shelf(post_key):
     identity = get_optional_identity()
-    page = community_feed_service.shelf_page(
-        post_key,
-        request.args.get("cursor"),
-        viewer_user_key=(
-            identity.user_key if identity and is_owner(identity) else None
-        ),
-    )
+    cursor = request.args.get("cursor")
+    try:
+        page = community_feed_service.shelf_page(
+            post_key,
+            cursor,
+            viewer_user_key=(
+                identity.user_key if identity and is_owner(identity) else None
+            ),
+        )
+    except CommunityNotFoundError:
+        page = demo_shelf_page(post_key, cursor)
     return jsonify(success=True, **page)
 
 
@@ -231,27 +248,42 @@ def contribution_shelf(post_key):
 )
 def selected_contribution(post_key, contribution_key):
     identity = get_optional_identity()
-    detail = community_feed_service.selected_contribution(
-        post_key,
-        contribution_key,
-        viewer_user_key=(
-            identity.user_key if identity and is_owner(identity) else None
-        ),
-    )
+    try:
+        detail = community_feed_service.selected_contribution(
+            post_key,
+            contribution_key,
+            viewer_user_key=(
+                identity.user_key if identity and is_owner(identity) else None
+            ),
+        )
+    except CommunityNotFoundError:
+        detail = demo_selected_contribution(post_key, contribution_key)
     return jsonify(success=True, **detail)
 
 
 @community_api.post("/search")
 def search():
     identity = get_optional_identity()
+    query = _json_body().get("query")
+    viewer_user_key = (
+        identity.user_key if identity and is_owner(identity) else None
+    )
+    items = community_feed_service.search(
+        query,
+        viewer_user_key=viewer_user_key,
+    )
+    demo_mode = False
+    if not items:
+        first_page = community_feed_service.feed_page(
+            None, page_size=1, viewer_user_key=viewer_user_key
+        )
+        if not first_page.get("items"):
+            demo_mode = True
+            items = demo_search(query)
     return jsonify(
         success=True,
-        items=community_feed_service.search(
-            _json_body().get("query"),
-            viewer_user_key=(
-                identity.user_key if identity and is_owner(identity) else None
-            ),
-        ),
+        items=items,
+        demo_mode=demo_mode,
     )
 
 

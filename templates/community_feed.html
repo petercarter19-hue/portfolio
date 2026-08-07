@@ -26,6 +26,10 @@
         <p><strong>Local fixture preview</strong> · Pete-only sample content · Sample content is not persisted or published.</p>
     </aside>
     {% endif %}
+    <aside class="cv1-preview-note cv1-demo-note" aria-label="Public Community demo" data-community-demo-note hidden>
+        <span aria-hidden="true">ⓘ</span>
+        <p><strong>Public demo</strong> · Illustrative Pete-only content from the owner-approved Community mockups · Try the controls; nothing in the demo is sent, published, or stored as member activity.</p>
+    </aside>
     <section class="cv1-mobile-tools" aria-label="Community tools">
         <button class="cv1-mobile-tool-control cv1-mobile-catchup" type="button" data-open-catchup data-mobile-catchup>
             <span aria-hidden="true">✓</span><span>Catch up</span><small>Return context, Spark, and activity</small><span aria-hidden="true">›</span>
@@ -76,6 +80,14 @@
                 <button class="cv1-quick-compose-action cv1-quick-compose-action--voice" type="button" data-top-voice aria-label="Start a Voice post" aria-pressed="false" title="Start a private Voice post draft"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v4M8.5 21h7"></path></svg></button>
             </section>
             {% endif %}
+
+            <section class="cv1-quick-compose cv1-demo-quick-compose" aria-label="Try the Community post composer" data-demo-quick-compose hidden>
+                <span class="cv1-avatar cv1-demo-avatar" aria-hidden="true">D</span>
+                <button class="cv1-prompt" type="button" data-open-demo-composer>Try a Community post with text or Voice</button>
+                <button class="cv1-quick-compose-action cv1-quick-compose-action--media" type="button" data-open-demo-composer aria-label="Try a local photo or file in the demo composer"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m5 17 4.5-4.5 3.2 3.2 2.3-2.3 4 3.6"></path></svg></button>
+                <button class="cv1-quick-compose-action cv1-quick-compose-action--voice" type="button" data-demo-top-voice aria-label="Try Voice in the demo composer" aria-pressed="false" title="Try a Voice post without publishing"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v4M8.5 21h7"></path></svg></button>
+                {% if community_owner %}<button class="cv1-demo-real-post" type="button" data-open-composer>Create a real post</button>{% endif %}
+            </section>
 
             <section class="cv1-feed" aria-live="polite" aria-busy="true" data-feed-list>
                 {% for _ in range(3) %}
@@ -137,7 +149,7 @@
         </aside>
     </div>
 
-    <p class="cv1-policy-line">Public owner pilot · <a href="{{ url_for('community_routes.community_pilot_policy') }}">Policy, reporting, and takedown contact</a>{% if community_owner %} · <a href="{{ url_for('community_routes.community_recently_deleted') }}">Recently deleted</a>{% endif %} · Published content is not sent to a generative model or used for AI ranking. Optional Voice dictation sends a transient private recording to Speech only for an editable proposal.</p>
+    <p class="cv1-policy-line">Public owner pilot · <a href="{{ url_for('community_routes.community_pilot_policy') }}">Policy, reporting, and takedown contact</a>{% if community_owner %} · <a href="{{ url_for('community_routes.community_recently_deleted') }}">Recently deleted</a>{% endif %} · Published content is not sent to a generative model or used for AI ranking. Optional Voice dictation sends a transient private recording to Speech only after sign-in and only for an editable proposal; signed-out demo Voice stays in the browser.</p>
 
     {% if community_owner %}
     <dialog class="cv1-dialog cv1-composer" data-composer aria-labelledby="cv1-composer-title">
@@ -216,6 +228,39 @@
         </form>
     </dialog>
     {% endif %}
+
+    <dialog class="cv1-dialog cv1-composer cv1-demo-composer" data-demo-composer aria-labelledby="cv1-demo-composer-title">
+        <form class="cv1-dialog-frame" data-demo-composer-form>
+            <header class="cv1-dialog-head">
+                <div>
+                    <h2 id="cv1-demo-composer-title">Try the Community composer</h2>
+                    <p><span aria-hidden="true">◇</span> Public demo · nothing is saved, sent, or published</p>
+                </div>
+                <button class="cv1-icon-button" type="button" data-close-demo-composer aria-label="Close demo composer">×</button>
+            </header>
+            <div class="cv1-demo-composer-notice" role="note">
+                <strong>Hands-on sandbox</strong>
+                <span>Type, add local examples, and try Voice. This draft disappears when this page closes.</span>
+            </div>
+            <label><span>What’s on your mind?</span>
+                <textarea name="body" maxlength="4000" rows="7" placeholder="Try writing a Community post…"></textarea>
+                <span class="cv1-character-count" data-demo-character-count>0 / 4,000</span>
+            </label>
+            <div data-demo-composer-voice-panel-host></div>
+            <div class="cv1-attachment-list cv1-demo-attachment-list" data-demo-attachment-list aria-live="polite"></div>
+            <footer class="cv1-dialog-actions">
+                <div class="cv1-composer-tool-strip" aria-label="Demo post tools">
+                    <label class="cv1-composer-tool" title="Try a local PDF or macro-free XLSX file">⌇<span>File</span><input type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" data-demo-attachment-input></label>
+                    <label class="cv1-composer-tool" title="Try a local JPEG or PNG photo">▧<span>Photo</span><input type="file" accept="image/jpeg,image/png" data-demo-photo-input></label>
+                    <button class="cv1-composer-tool" type="button" data-demo-composer-voice aria-label="Start a Voice demo post" aria-pressed="false" title="Try Voice without publishing">♩<span>Voice</span></button>
+                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-video-unavailable aria-label="Video — unavailable in this pilot" aria-disabled="true">▻<span>Video</span></button>
+                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-public-audio-unavailable aria-label="Public audio — unavailable in this pilot" aria-disabled="true">⌁<span>Public audio</span></button>
+                </div>
+                <span class="cv1-draft-safe cv1-demo-draft-safe" role="status">Demo only · there is deliberately no Publish button.</span>
+                <button class="cv1-secondary" type="button" data-close-demo-composer>Close</button>
+            </footer>
+        </form>
+    </dialog>
 
     <dialog class="cv1-dialog cv1-conversation" data-conversation aria-labelledby="cv1-conversation-title">
         <div class="cv1-dialog-frame">

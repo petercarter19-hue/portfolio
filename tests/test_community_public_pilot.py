@@ -20,6 +20,7 @@ from werkzeug.datastructures import FileStorage
 from app import app
 from services.community_command_service import CommunityCommandService
 from services.community_contracts import (
+    CommunityNotFoundError,
     CommunityUnavailableError,
     CommunityValidationError,
     FEED_WINDOW_MAX,
@@ -28,6 +29,14 @@ from services.community_contracts import (
     revision_number,
     safe_display_name,
     utf16_length,
+)
+from services.community_demo_feed import (
+    DEMO_POST_KEY,
+    demo_feed_page,
+    demo_post,
+    demo_post_detail,
+    demo_search,
+    demo_selected_contribution,
 )
 from services.community_cursor import (
     decode_contribution_token,
@@ -401,7 +410,6 @@ class CommunityProjectionServiceTests(unittest.TestCase):
             decoded["before_key"], preview_rows[-1]["contribution_key"]
         )
         self.assertEqual(database.call[0], "usp_ListPublicCommunityFeed")
-
     def test_feed_advances_when_every_selected_candidate_is_revoked(self):
         boundary_key = str(uuid4())
 
@@ -528,6 +536,55 @@ class CommunityProjectionServiceTests(unittest.TestCase):
         self.assertEqual(detail["ancestors"][0]["state"], "unavailable")
         self.assertEqual(detail["ancestors"][0]["body"], "")
         self.assertIsNone(detail["ancestors"][0]["author"]["display_name"])
+
+
+class CommunityPublicDemoProjectionTests(unittest.TestCase):
+    def test_demo_is_stable_labelled_read_only_and_detached_from_persistence(self):
+        first = demo_feed_page()
+        second = demo_feed_page()
+
+        self.assertTrue(first["demo_mode"])
+        self.assertEqual(first["next_cursor"], None)
+        self.assertEqual(len(first["items"]), 1)
+        post = first["items"][0]
+        self.assertTrue(post["demo"])
+        self.assertEqual(post["demo_label"], "Illustrative demo")
+        self.assertEqual(post["audience"], "Public demo")
+        self.assertEqual(post["contribution_count"], 12)
+        self.assertEqual(len(post["preview_contributions"]), 12)
+        self.assertTrue(all(item["demo"] for item in post["preview_contributions"]))
+
+        post["body"] = "mutated request copy"
+        self.assertNotEqual(second["items"][0]["body"], post["body"])
+
+    def test_demo_detail_and_motion_card_deep_link_return_the_locked_conversation(self):
+        detail = demo_post_detail(DEMO_POST_KEY)
+        selected_key = detail["contributions"][5]["key"]
+        selected = demo_selected_contribution(DEMO_POST_KEY, selected_key)
+
+        self.assertEqual(len(detail["contributions"]), 12)
+        self.assertEqual(selected["contribution"]["key"], selected_key)
+        self.assertEqual(selected["ancestors"], [])
+        self.assertTrue(selected["demo_mode"])
+        with self.assertRaises(CommunityNotFoundError):
+            demo_post_detail(str(uuid4()))
+
+    def test_demo_search_is_bounded_and_never_claims_unrelated_matches(self):
+        self.assertEqual(demo_search("decision guide")[0]["key"], DEMO_POST_KEY)
+        self.assertEqual(demo_search("unrelated phrase"), [])
+        with self.assertRaises(CommunityValidationError):
+            demo_search("x")
+
+    def test_demo_documents_are_visual_ribbons_not_fake_downloads(self):
+        attachments = [
+            attachment
+            for item in demo_post()["preview_contributions"]
+            for attachment in item["attachments"]
+            if not attachment["preview_url"]
+        ]
+        self.assertGreaterEqual(len(attachments), 3)
+        self.assertTrue(all(item["demo"] for item in attachments))
+        self.assertTrue(all(item["download_url"] is None for item in attachments))
 
 
 class CommunityUploadValidationTests(unittest.TestCase):
@@ -1300,15 +1357,110 @@ class CommunityRouteAndApiTests(unittest.TestCase):
             app.config["TESTING"] = True
 
     @patch("community_api.community_feed_service.feed_page")
-    def test_signed_out_public_feed_read_succeeds(self, feed_page):
+    def test_signed_out_empty_real_feed_returns_truthful_public_demo(self, feed_page):
         feed_page.return_value = {"items": [], "next_cursor": None, "caught_up": True}
         response = self.client.get("/api/v1/community/feed?limit=1")
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.get_json()["caught_up"])
+        payload = response.get_json()
+        self.assertTrue(payload["caught_up"])
+        self.assertTrue(payload["demo_mode"])
+        self.assertTrue(payload["items"][0]["demo"])
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
         feed_page.assert_called_once_with(
             None, page_size=12, viewer_user_key=None
         )
+
+    @patch("community_api.demo_feed_page")
+    @patch("community_api.community_feed_service.feed_page")
+    def test_real_public_posts_take_precedence_over_the_demo(self, feed_page, demo_page):
+        feed_page.return_value = {
+            "items": [{"key": POST_KEY, "demo": False}],
+            "next_cursor": None,
+            "caught_up": True,
+        }
+
+        response = self.client.get("/api/v1/community/feed")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["items"][0]["key"], POST_KEY)
+        demo_page.assert_not_called()
+
+    @patch("community_api.demo_feed_page")
+    @patch("community_api.community_feed_service.feed_page")
+    def test_feed_dependency_failure_is_not_masked_by_the_demo(self, feed_page, demo_page):
+        feed_page.side_effect = CommunityUnavailableError("Community is unavailable.")
+
+        response = self.client.get("/api/v1/community/feed")
+
+        self.assertEqual(response.status_code, 503)
+        demo_page.assert_not_called()
+
+    @patch("community_api.community_feed_service.post_detail")
+    def test_demo_post_deep_link_falls_back_only_after_a_real_not_found(self, post_detail):
+        post_detail.side_effect = CommunityNotFoundError("Post not found.")
+
+        response = self.client.get(f"/api/v1/community/posts/{DEMO_POST_KEY}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_json()["post"]["demo"])
+
+    @patch("community_api.community_feed_service.post_detail")
+    def test_unknown_valid_post_remains_neutral_not_found(self, post_detail):
+        post_detail.side_effect = CommunityNotFoundError("Post not found.")
+
+        response = self.client.get(f"/api/v1/community/posts/{uuid4()}")
+
+        self.assertEqual(response.status_code, 404)
+
+    @patch("community_api.demo_search")
+    @patch("community_api.community_feed_service.feed_page")
+    @patch("community_api.community_feed_service.search")
+    def test_real_feed_prevents_demo_search_results(self, search, feed_page, demo_search):
+        search.return_value = []
+        feed_page.return_value = {"items": [{"key": POST_KEY}], "next_cursor": None}
+
+        response = self.client.post(
+            "/api/v1/community/search",
+            json={"query": "decision guide"},
+            headers={"X-PeerSlate-Request": "same-origin"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["items"], [])
+        self.assertFalse(response.get_json()["demo_mode"])
+        demo_search.assert_not_called()
+
+    @patch("community_api.community_feed_service.feed_page")
+    @patch("community_api.community_feed_service.search")
+    def test_empty_real_feed_can_return_bounded_demo_search_results(self, search, feed_page):
+        search.return_value = []
+        feed_page.return_value = {"items": [], "next_cursor": None}
+
+        response = self.client.post(
+            "/api/v1/community/search",
+            json={"query": "decision guide"},
+            headers={"X-PeerSlate-Request": "same-origin"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_json()["demo_mode"])
+        self.assertEqual(response.get_json()["items"][0]["key"], DEMO_POST_KEY)
+
+    @patch("community_api.community_feed_service.feed_page")
+    @patch("community_api.community_feed_service.search")
+    def test_unmatched_demo_search_keeps_the_truthful_demo_shell(self, search, feed_page):
+        search.return_value = []
+        feed_page.return_value = {"items": [], "next_cursor": None}
+
+        response = self.client.post(
+            "/api/v1/community/search",
+            json={"query": "unrelated phrase"},
+            headers={"X-PeerSlate-Request": "same-origin"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_json()["demo_mode"])
+        self.assertEqual(response.get_json()["items"], [])
 
     @patch("community_api.community_feed_service.shelf_page")
     def test_signed_out_shelf_page_is_public_and_post_bound(self, shelf_page):
@@ -1770,7 +1922,7 @@ class CommunityFrontendContractTests(unittest.TestCase):
         self.assertIn("function primaryCommentComposer(post)", self.script)
         self.assertIn("input.rows = 1", self.script)
         self.assertIn("input.maxLength = 2000", self.script)
-        self.assertIn("input.placeholder = 'Write a comment…'", self.script)
+        self.assertIn("input.placeholder = demo ? 'Try writing a comment…' : 'Write a comment…'", self.script)
         self.assertIn("Math.min(input.scrollHeight, 112)", self.script)
         self.assertIn("primaryCommentStorageKey(post.key, 'draft')", self.script)
         self.assertIn("parent_key: null, attachment_keys: []", self.script)
@@ -1810,6 +1962,28 @@ class CommunityFrontendContractTests(unittest.TestCase):
         self.assertNotIn("DatabaseService", self.preview)
         self.assertNotIn("from services.", self.preview)
 
+    def test_public_demo_is_labelled_and_exposes_only_local_no_submit_interactions(self):
+        self.assertIn("Public demo", self.template)
+        self.assertIn("nothing in the demo is sent, published, or stored as member activity", self.template)
+        self.assertIn("data-community-demo-note", self.template)
+        self.assertIn("data-demo-quick-compose", self.template)
+        self.assertIn("data-demo-composer", self.template)
+        self.assertIn("there is deliberately no Publish button", self.template)
+        demo_start = self.template.index('data-demo-composer aria-labelledby=')
+        demo_end = self.template.index('data-conversation aria-labelledby=', demo_start)
+        demo_markup = self.template[demo_start:demo_end]
+        self.assertNotIn('data-publish', demo_markup)
+        self.assertNotIn('type="submit"', demo_markup)
+        self.assertIn("if (post.demo) {", self.script)
+        self.assertIn("Demo response selected only in this tab", self.script)
+        self.assertIn("localOnly: demo && !owner", self.script)
+        self.assertIn("localOnly: !owner", self.script)
+        self.assertIn("Recording captured locally. It was not uploaded or transcribed", self.script)
+        self.assertIn("if (self.localOnly)", self.script)
+        self.assertIn("Local example added. It was not uploaded.", self.script)
+        self.assertIn("if (replyForm) replyForm.hidden = true", self.script)
+        self.assertIn("item.demo ? fileKind + ' · illustrative file'", self.script)
+
     def test_motion_cards_have_locked_density_attachment_cues_and_owner_approved_color(self):
         self.assertIn("grid-auto-columns: 145px", self.styles)
         self.assertIn("grid-auto-columns: 96px", self.styles)
@@ -1825,9 +1999,9 @@ class CommunityFrontendContractTests(unittest.TestCase):
         self.assertIn("font-size: .82rem", self.styles)
         self.assertIn("[data-conversation-shelf-card] > strong", self.styles)
 
-    def test_xlsx_is_selectable_but_described_as_a_public_download(self):
-        self.assertEqual(self.template.count(XLSX_CONTENT_TYPE), 2)
-        self.assertEqual(self.template.count(".xlsx"), 2)
+    def test_xlsx_is_selectable_in_post_reply_and_local_demo_but_described_as_a_public_download(self):
+        self.assertEqual(self.template.count(XLSX_CONTENT_TYPE), 3)
+        self.assertEqual(self.template.count(".xlsx"), 3)
         self.assertIn("macro-free XLSX", self.policy)
         self.assertIn("document properties become public", self.policy)
 
