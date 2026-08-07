@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "The Grounded Ask Pete backend merged as ebb6276 and is recorded as a completed phase of the continuing package. PS-ASK-PETE-AI-001 is the sole active non-production visual/runtime lane on work/2026-08-06-ask-pete-recruiter-evidence-runtime-v1, with Sol Extra High architecture, Terra Max implementation, and Sol Max independent review. See docs/governance/CURRENT_LANES.json."
+  current_assignments: "PS-ASK-PETE-AI-001 remains the sole active lane and is unchanged. PS-DELIVERY-CONTROL-001 is closing through Pete-authorized atomic fixture-only PR 321; no validator, lane-limit, product, release, deployment, or Ask Pete change is included."
 
 governing_documents:
   bible:
@@ -135,7 +135,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Merge the control-only visual/runtime activation, create the clean implementation worktree from resulting origin/main, run the PS-ASK-PETE-AI-001 write preflight, lock the package-local Concept H V2 and critical-state hashes, complete the Sol Extra High -> Terra Max -> Sol Max sequence, and open an Azure PR. Stop before PR merge, deployment, feature enablement, provider/configuration change, schema/data mutation, or any claim that the new experience is live."
+next_gate: "Merge PS-DELIVERY-CONTROL-001 PR 321 only after required policies pass, verify exact main and clean its recoverable task artifacts, then refresh and validate the already-prepared Interview Studio activation without displacing Ask Pete."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

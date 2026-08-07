@@ -204,6 +204,39 @@ class DeliveryPreflightTests(unittest.TestCase):
         idle["active_lanes"] = []
         return idle
 
+    def _one_lane_origin(self) -> dict:
+        """Build the stable one-lane origin required by 1->2 tests.
+
+        These transition tests validate the standing one-to-two activation
+        contract.  They must not inherit a second lane that happens to be
+        recorded in the checked-in repository while an unrelated activation
+        PR is under review.
+        """
+        origin = copy.deepcopy(self.ledger)
+        active_lanes = list(origin.get("active_lanes") or [])
+        retained = next(
+            (
+                lane
+                for lane in active_lanes
+                if lane.get("package") == "PS-ASK-PETE-AI-001"
+            ),
+            active_lanes[0] if active_lanes else None,
+        )
+        if retained is None:
+            retained = self._lane("PS-FIRST-001")
+        origin["active_lanes"] = [copy.deepcopy(retained)]
+        retained_package = retained["package"]
+        origin["operating_mode"]["state"] = "active_delivery"
+        origin["operating_mode"]["writes_allowed_for"] = [retained_package]
+        origin["operating_mode"]["release_allowed_for"] = [
+            package
+            for package in origin["operating_mode"].get(
+                "release_allowed_for", []
+            )
+            if package == retained_package
+        ]
+        return origin
+
     def _inactive_package(self) -> str:
         """A package the current ledger does not permit writes for."""
         engaged = {
@@ -560,7 +593,7 @@ class DeliveryPreflightTests(unittest.TestCase):
         )
 
     def test_actual_interview_one_to_two_activation_delta_is_permitted(self):
-        origin = copy.deepcopy(self.ledger)
+        origin = self._one_lane_origin()
         candidate = self._interview_activation_candidate(origin)
         origin_baseline, candidate_baseline = self._actual_pr316_baselines(
             origin,
@@ -587,7 +620,7 @@ class DeliveryPreflightTests(unittest.TestCase):
 
     def test_activation_baseline_allows_only_the_recorded_pr316_delta(self):
         """Changing an activation's companion baseline cannot smuggle policy edits."""
-        origin = copy.deepcopy(self.ledger)
+        origin = self._one_lane_origin()
         candidate = self._interview_activation_candidate(origin)
         origin_baseline, approved_baseline = self._actual_pr316_baselines(
             origin,
@@ -717,7 +750,7 @@ class DeliveryPreflightTests(unittest.TestCase):
         self.assertEqual([], errors)
 
     def test_activation_baseline_rejects_ambiguous_and_unsafe_scalars(self):
-        origin = copy.deepcopy(self.ledger)
+        origin = self._one_lane_origin()
         candidate = self._interview_activation_candidate(origin)
         origin_baseline, approved_baseline = self._actual_pr316_baselines(
             origin,
@@ -821,7 +854,7 @@ class DeliveryPreflightTests(unittest.TestCase):
                 )
 
     def test_activation_baseline_fails_closed_for_missing_or_malformed_bytes(self):
-        origin = copy.deepcopy(self.ledger)
+        origin = self._one_lane_origin()
         candidate = self._interview_activation_candidate(origin)
         origin_baseline, approved_baseline = self._actual_pr316_baselines(
             origin,
@@ -1096,7 +1129,7 @@ class DeliveryPreflightTests(unittest.TestCase):
         activation_facts = facts(
             branch="work/2026-08-05-delivery-activation-opportunity-slate"
         )
-        origin = copy.deepcopy(self.ledger)
+        origin = self._one_lane_origin()
 
         active_branch = origin["active_lanes"][0]["branch"]
         active_candidate = self._activation_candidate(origin, "PS-SECOND-001")
@@ -1689,7 +1722,7 @@ class DeliveryPreflightTests(unittest.TestCase):
         )
 
     def test_activation_preserves_non_lane_authority_and_paused_lanes(self):
-        origin = copy.deepcopy(self.ledger)
+        origin = self._one_lane_origin()
         candidate = self._interview_activation_candidate(origin)
         activation_facts = facts(
             branch=(

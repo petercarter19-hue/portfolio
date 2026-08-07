@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-07T00:49:49Z",
+  "updated_at": "2026-08-07T06:00:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -17,12 +17,14 @@
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
       "PS-DATA-FOUNDATION-001",
-      "PS-ASK-PETE-AI-001"
+      "PS-ASK-PETE-AI-001",
+      "PS-DELIVERY-CONTROL-001"
     ],
     "cleanup_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
       "PS-DATA-FOUNDATION-001",
-      "PS-ASK-PETE-AI-001"
+      "PS-ASK-PETE-AI-001",
+      "PS-DELIVERY-CONTROL-001"
     ],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -37,7 +39,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "The Grounded Ask Pete backend merged through PR 315 as main ebb6276 and is recorded as a completed phase inside the continuing package lane. PS-ASK-PETE-AI-001 now has one active non-production visual/runtime lane on work/2026-08-06-ask-pete-recruiter-evidence-runtime-v1. Cleanup is bounded to clean, merged, recoverable branches and worktrees created by the Ask Pete program; unrelated, dirty, unverified, or user-owned work remains preserved."
+    "exit_authority": "PS-ASK-PETE-AI-001 remains the sole active lane and is unchanged. Pete authorized PR 321 as a one-time atomic three-file PS-DELIVERY-CONTROL-001 bootstrap repair after its activation-only build proved the stale-fixture circularity. That control PR may merge only after required policies pass, then its clean worktree and branch may be removed after recoverability is verified. No product, validator, lane-limit, release, deployment, or Ask Pete change is authorized."
   },
   "activation_policy": {
     "enabled": true,
@@ -70,6 +72,39 @@
     "verification_contract": "This is audit evidence, not self-granted authority. The preflight recognizes it only when this entire record equals the validator's hard-coded owner-authorized record and command facts prove the exact branch and exact origin/main base above. A later branch, base, or altered record cannot use this exception."
   },
   "closing_lanes": [
+    {
+      "package": "PS-DELIVERY-CONTROL-001",
+      "outcome": "Complete pending policy-approved PR 321 merge. The one-time atomic bootstrap stabilizes only delivery-preflight transition fixtures so one-to-two activation tests synthesize their intended one-lane origin instead of inheriting a transient second lane from the checked-in ledger.",
+      "branch": "work/2026-08-07-delivery-activation-preflight-fixture-stability",
+      "writer": "Root Codex session in portfolio-delivery-activation-preflight-fixture-stability-20260807",
+      "delivery_path": "Bounded owner-authorized atomic bootstrap exception",
+      "production_capable": false,
+      "source_checkpoint": "Refreshed Azure origin/main d154d3455b09a2c337530a60608bdfb6c95897e9 after Ask Pete PR 320 merged; rebased activation-only commit ba9b1fc55d4c4c967626d664608d4d16eb8ee057; failed required run 580 on its pre-refresh equivalent proved exactly two stale-fixture failures across 2,847 tests.",
+      "writable_surfaces": [
+        "tests/test_delivery_preflight.py",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml"
+      ],
+      "exclusions": [
+        "no change to scripts/delivery_preflight.py or validator behavior",
+        "no change to activation_policy.max_active_lanes and no removal, modification, or displacement of Ask Pete",
+        "no product code, route, backend, schema, migration, visual, release, deployment, configuration, or production behavior change",
+        "no write or cleanup outside the three listed surfaces and this task's verified clean branch/worktree"
+      ],
+      "completion_evidence": [
+        "activation-only commit ba9b1fc passed the exact --intent activate --fetch --require-clean preflight after refresh to current main",
+        "required Azure run 580 failed only the two expected stale transition fixtures and passed the other 2,845 tests",
+        "the stable one-lane fixture preserves full-capacity, path-overlap, and case-folded branch-collision refusal coverage",
+        "focused and full repository verification must pass on the final exact candidate before PR 321 merges"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-07",
+          "decision": "Pete first authorized the exact temporary fixture-only lane, then explicitly approved the recommended one-time atomic three-file bootstrap exception with 'Okay, make it happen.'"
+        }
+      ],
+      "branch_note": "PR 321 may squash-merge only after required policies pass on the exact candidate. After merge equivalence and recoverability are verified, remove only this task's clean worktree and branches; preserve all unrelated or dirty material."
+    },
     {
       "package": "PS-DATA-FOUNDATION-001",
       "outcome": "Complete. The first provider-neutral AI, knowledge, evidence, citation, support-state, evaluation, bounded-input, and payload-free debugging foundation merged through Azure PR 311 as exact main 779ab5f4524a5094dae512c8dec9a341286da243. It has no live route, provider, schema, visual, deployment, or production effect.",
