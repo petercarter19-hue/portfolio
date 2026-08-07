@@ -1,0 +1,142 @@
+{#
+    PS-ASK-PETE-AI-001
+
+    The grounded companion is intentionally one DOM instance. CSS turns this
+    same labelled complementary region into the desktop rail, narrow sheet,
+    and mobile bottom sheet; the controller retains only page-memory state.
+    Do not place generated text in this template. The client renderer uses
+    safe DOM APIs for the structured response contract.
+#}
+<aside
+    class="ask-pete-evidence-companion"
+    id="ask-pete-evidence-companion"
+    data-ask-pete-companion
+    data-ask-pete-contact-url="{{ portfolio_contact_url }}"
+    aria-labelledby="ask-pete-evidence-title"
+>
+    <div class="ask-pete-evidence-companion__scroll">
+        <header class="ask-pete-evidence-companion__header">
+            <div>
+                <p class="ask-pete-evidence-companion__kicker">
+                    <span aria-hidden="true">&#10022;</span>
+                    Ask Pete AI
+                </p>
+                <h2 id="ask-pete-evidence-title">A resume you can question.</h2>
+            </div>
+            <button
+                class="ask-pete-evidence-companion__close"
+                type="button"
+                data-ask-pete-close
+                aria-label="Close Ask Pete AI"
+            >
+                <span aria-hidden="true">&times;</span>
+                <span>Close</span>
+            </button>
+        </header>
+
+        <section class="ask-pete-evidence-companion__capability" data-ask-pete-capability>
+            <p class="ask-pete-evidence-companion__promise">
+                Recruiter-ready answers grounded in information Pete approved for Ask Pete.
+            </p>
+
+            <div class="ask-pete-evidence-companion__starters" role="group" aria-label="Ask Pete AI starters">
+                <button
+                    class="ask-pete-evidence-companion__starter ask-pete-evidence-companion__starter--primary"
+                    type="button"
+                    data-ask-pete-starter="recruiter_brief"
+                    data-ask-pete-question="Give me Pete's 60-second recruiter brief."
+                >
+                    <span>Give me Pete's 60-second recruiter brief</span>
+                    <span aria-hidden="true">&rarr;</span>
+                </button>
+                <button
+                    class="ask-pete-evidence-companion__starter"
+                    type="button"
+                    data-ask-pete-starter="evidence_finder"
+                    data-ask-pete-question="Show the strongest evidence of Pete's systems leadership."
+                >Show the strongest evidence of systems leadership</button>
+                <button
+                    class="ask-pete-evidence-companion__starter"
+                    type="button"
+                    data-ask-pete-starter="interview_preparation"
+                    data-ask-pete-question="What should I ask Pete in a first interview?"
+                >What should I ask Pete in a first interview?</button>
+            </div>
+
+            {% if ask_pete_evidence_preview %}
+            <article class="ask-pete-evidence-preview" aria-label="Citation preview">
+                <header>
+                    <span class="ask-pete-support-badge ask-pete-support-badge--supported">Supported</span>
+                    <span>Evidence preview</span>
+                </header>
+                <p>&ldquo;{{ ask_pete_evidence_preview.excerpt }}&rdquo;</p>
+                <footer>
+                    <span>{{ ask_pete_evidence_preview.source_title }}</span>
+                    <button
+                        type="button"
+                        data-ask-pete-source
+                        data-ask-pete-section="{{ ask_pete_evidence_preview.section }}"
+                        data-ask-pete-anchor="{{ ask_pete_evidence_preview.anchor }}"
+                        data-ask-pete-record-kind="{{ ask_pete_evidence_preview.record_kind }}"
+                        data-ask-pete-record-id="{{ ask_pete_evidence_preview.record_id }}"
+                        data-ask-pete-highlight-key="{{ ask_pete_evidence_preview.highlight_key }}"
+                    >Open on resume <span aria-hidden="true">&rarr;</span></button>
+                </footer>
+            </article>
+            {% endif %}
+        </section>
+
+        <section class="ask-pete-evidence-context" data-ask-pete-context hidden aria-live="polite">
+            <span>Current context</span>
+            <strong data-ask-pete-context-label></strong>
+            <small data-ask-pete-context-count></small>
+        </section>
+
+        <section
+            class="ask-pete-evidence-answer"
+            data-ask-pete-answer
+            aria-label="Ask Pete answer"
+            hidden
+        ></section>
+
+        <section class="ask-pete-evidence-recovery" data-ask-pete-recovery hidden aria-labelledby="ask-pete-recovery-title">
+            <h3 id="ask-pete-recovery-title" data-ask-pete-recovery-title>Continue with Pete's public resume</h3>
+            <p data-ask-pete-recovery-message></p>
+            <div class="ask-pete-evidence-recovery__actions">
+                <a href="{{ portfolio_resume_url }}#resume-start">Continue reviewing the resume</a>
+                <a href="{{ url_for('static', filename='files/pete-carter-resume.pdf') }}">Open resume PDF</a>
+                <a href="{{ portfolio_contact_url }}">Contact Pete directly</a>
+            </div>
+        </section>
+
+        <p
+            class="ask-pete-evidence-companion__status"
+            data-ask-pete-status
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+        ></p>
+
+        <form class="ask-pete-evidence-composer" data-ask-pete-form novalidate>
+            <label for="ask-pete-evidence-input">Ask about Pete's experience</label>
+            <div class="ask-pete-evidence-composer__field">
+                <textarea
+                    id="ask-pete-evidence-input"
+                    data-ask-pete-input
+                    rows="2"
+                    maxlength="1000"
+                    aria-describedby="ask-pete-evidence-help"
+                    placeholder="Ask about Pete's experience..."
+                ></textarea>
+                <button type="submit" data-ask-pete-submit>
+                    <span>Ask</span>
+                    <span aria-hidden="true">&rarr;</span>
+                </button>
+            </div>
+            <div class="ask-pete-evidence-composer__meta">
+                <span id="ask-pete-evidence-help">Public sources only - Third-person answers</span>
+                <button type="button" data-ask-pete-cancel hidden>Cancel</button>
+            </div>
+        </form>
+    </div>
+</aside>

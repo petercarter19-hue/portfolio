@@ -118,10 +118,10 @@
         rel="stylesheet"
         href="{{ url_for('static', filename='css/editorial-glass.css') }}"
     >
-    <link
+    {% if not (ask_pete_evidence_companion_enabled | default(false)) %}<link
         rel="stylesheet"
         href="{{ url_for('static', filename='css/chatbot.css') }}"
-    >
+    >{% endif %}
 
     {% block extra_head %}{% endblock %}
     {% if request.path != '/app' and not request.path.startswith('/app/') %}
@@ -403,7 +403,7 @@
        Ask Pete AI button is on screen, then fades in once the visitor
        scrolls past it (chatbot.js watches that button and toggles the
        is-visible class), so long pages always keep the AI one click away. #}
-    {% if (is_portfolio_path or is_owner_app_path) and not is_private_journal_path and not is_workshop_path %}
+    {% if (is_portfolio_path or is_owner_app_path) and not is_private_journal_path and not is_workshop_path and not (ask_pete_evidence_companion_enabled | default(false)) %}
     <button id="chat-toggle" aria-label="Open Pete's AI assistant">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2"
@@ -505,7 +505,7 @@
        Hidden on desktop via CSS. #}
     <nav class="mobile-tabbar" id="mobile-tabbar" aria-label="Section navigation" hidden></nav>
 
-    <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+    {% if not (ask_pete_evidence_companion_enabled | default(false)) %}<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>{% endif %}
     {% if is_owner_app_path %}
     <script src="{{ url_for('static', filename='js/site-search.js') }}"></script>
     <script src="{{ url_for('static', filename='js/mobile-nav.js') }}"></script>

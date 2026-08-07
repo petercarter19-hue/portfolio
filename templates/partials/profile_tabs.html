@@ -25,6 +25,15 @@
             </a>
         </div>
         {% if is_resume_page %}
+        {% if ask_pete_evidence_companion_enabled | default(false) %}
+        <button
+            type="button"
+            class="profile-tabs__ask-btn profile-tabs__ask-btn--resume"
+            data-ask-pete-open
+            aria-controls="ask-pete-evidence-companion"
+            aria-expanded="false"
+        >Ask Pete AI</button>
+        {% else %}
         {# This compact field takes over in the sticky sub-header after the
            résumé's larger opening assistant scrolls away. #}
         <div
@@ -36,6 +45,7 @@
                 {% include "partials/portfolio_ai_search.html" %}
             {% endwith %}
         </div>
+        {% endif %}
         {% else %}
         {# Ask Pete AI launcher, pinned to the right of the tab strip. Replaces
            the old floating bottom-right chat bubble (hidden via CSS on pages

@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (aiContextSection) {
             aiContextSection.textContent = sectionLabels[sectionId] || 'Résumé';
         }
+        page.dispatchEvent(new CustomEvent('r2:section-change', {
+            detail: { sectionId, label: sectionLabels[sectionId] || 'Resume' },
+        }));
     }
 
     function updatePersistentNavigation() {
@@ -645,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (options.restoreFocus) restoreOrigin(returnTo, '.r2-skill-card');
         }
 
-        function openSkill(button) {
+        function openSkill(button, origin = button) {
             const skillId = button.dataset.r2SkillToggle;
             const panel = panels.find((candidate) => candidate.dataset.r2SkillPanel === skillId);
             if (!panel) return;
@@ -655,7 +658,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             panels.forEach((candidate) => { candidate.hidden = candidate !== panel; });
             if (overview) overview.hidden = true;
-            activeOrigin = button;
+            activeOrigin = origin;
 
             const heading = panel.querySelector('h3');
             announceSkill(heading
@@ -673,12 +676,20 @@ document.addEventListener('DOMContentLoaded', () => {
         toggles.forEach((button) => {
             button.addEventListener('click', () => openSkill(button));
         });
+        page.addEventListener('r2:open-skill', (event) => {
+            const detail = event.detail || {};
+            const button = toggles.find(
+                (candidate) => candidate.dataset.r2SkillToggle === detail.skillId
+            );
+            if (button) openSkill(button, detail.origin || button);
+        });
         skillsSection.querySelectorAll('[data-r2-skill-close]').forEach((button) => {
             button.addEventListener('click', () => closeSkill({ restoreFocus: true }));
         });
         skillsSection.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape' || !activeOrigin) return;
             event.preventDefault();
+            event.stopPropagation();
             closeSkill({ restoreFocus: true });
         });
     }
@@ -784,6 +795,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (event.key !== 'Escape') return;
             const open = cards.find((card) => card.classList.contains('is-open'));
             if (!open) return;
+            event.preventDefault();
+            event.stopPropagation();
             closeAll({ restoreFocus: true });
         });
 
@@ -868,6 +881,7 @@ document.addEventListener('DOMContentLoaded', () => {
         credentialsSection.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape' || !activeOrigin) return;
             event.preventDefault();
+            event.stopPropagation();
             closeCredential({ restoreFocus: true });
         });
     }

@@ -120,3 +120,33 @@ package.
 - No visual implementation, provider-setting change, production enablement,
   deployment, or private-message persistence is authorized by this backend
   candidate.
+
+## Deterministic local browser evidence
+
+The browser harness uses a local flag-gated Flask process and synthetic,
+schema-valid POST /api/chat responses only. It does not call a provider,
+production endpoint, or persistent store.
+
+Use the repository-local virtual environment first. In a linked .wt
+worktree, the second candidate resolves the primary checkout's configured
+virtual environment:
+
+~~~powershell
+$worktreeContainer = Split-Path -Parent $PWD.Path
+$primaryCheckout = Split-Path -Parent $worktreeContainer
+$pythonCandidates = @(
+    (Join-Path $PWD.Path "venv\Scripts\python.exe"),
+    (Join-Path $primaryCheckout "venv\Scripts\python.exe")
+)
+$python = $pythonCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $python) { $python = (Get-Command python -ErrorAction Stop).Source }
+& $python tests\ask_pete\run_recruiter_evidence_browser.py
+~~~
+
+The harness refreshes exactly six package-local captures in browser-evidence/.
+contextual-mbse.png includes a harness-only visible badge proving zero
+POST /api/chat requests for the prefill action. critical-states.png is
+explicitly a local evidence board: it copies asserted runtime treatments for
+loading, partial support, unknown information, ambiguity, temporary
+unavailability, human handoff, and source focus. It is not presented as one
+simultaneous production interface.

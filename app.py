@@ -47,7 +47,8 @@ from services.community_retention_service import (
     community_retention_maintenance,
 )
 from services.ai_foundation.errors import AIFoundationError
-from services.ask_pete.errors import AskPeteRequestError
+from services.ask_pete.errors import AskPeteRequestError, PublicSourceManifestError
+from services.ask_pete.manifest import load_public_source_catalog
 from services.ask_pete.runtime import answer_public_question
 from overview_projection_service import (
     STYLE_MANIFESTS,
@@ -2285,6 +2286,68 @@ def _apply_overview_style_presentation(resume_data, style_id):
     return selected_data
 
 
+def _ask_pete_evidence_companion_data(profile_slug):
+    """Return manifest-derived preview and allowed contextual records, fail closed.
+
+    Both values come from the same approved manifest the structured runtime
+    validates. That prevents the visible citation preview or contextual actions
+    from becoming a separately maintained body of claims.
+    """
+    empty = {'preview': None, 'context_keys': frozenset()}
+    if profile_slug != 'petec':
+        return empty
+
+    root_path = Path(__file__).resolve().parent
+    try:
+        catalog = load_public_source_catalog(
+            manifest_path=root_path / 'data' / 'ai_sources' / 'ask_pete_public_v1.json',
+            resume_path=root_path / 'static' / 'data' / 'resume_data.json',
+        )
+    except PublicSourceManifestError:
+        app.logger.exception('Ask Pete companion data could not verify approved source data.')
+        return empty
+
+    if not catalog.records:
+        return empty
+
+    # A role record is a useful recruiter-facing citation example. Selection is
+    # by manifest record kind only; its title and locator are never duplicated.
+    record = next(
+        (item for item in catalog.records if item.locator.record_kind == 'career_role'),
+        catalog.records[0],
+    )
+    locator = record.locator
+    # Surface an exact excerpt from the same approved source that powers Ask
+    # Pete. A missing structured summary suppresses the preview rather than
+    # substituting a separately maintained product claim.
+    excerpt = next(
+        (
+            line.removeprefix('Summary: ').strip()
+            for line in record.source.content.splitlines()
+            if line.startswith('Summary: ') and line.removeprefix('Summary: ').strip()
+        ),
+        None,
+    )
+    return {
+        'preview': (
+            {
+                'source_title': record.source.title,
+                'excerpt': excerpt,
+                'section': locator.section,
+                'anchor': locator.anchor,
+                'record_kind': locator.record_kind,
+                'record_id': locator.record_id,
+                'highlight_key': locator.highlight_key,
+            }
+            if excerpt
+            else None
+        ),
+        'context_keys': frozenset(
+            f'{item.locator.record_kind}:{item.locator.record_id}'
+            for item in catalog.records
+        ),
+    }
+
 def _render_living_resume(
     profile_slug='petec',
     template_name='resume2.html',
@@ -2823,6 +2886,18 @@ def _render_living_resume(
             for style_id in STYLE_MANIFESTS
         }
 
+    ask_pete_evidence_companion_enabled = (
+        app.config.get('PEERSLATE_ASK_PETE_GROUNDED_ENABLED', False)
+        and profile_slug == 'petec'
+    )
+    ask_pete_evidence_data = (
+        _ask_pete_evidence_companion_data(profile_slug)
+        if ask_pete_evidence_companion_enabled
+        else {'preview': None, 'context_keys': frozenset()}
+    )
+    ask_pete_evidence_preview = ask_pete_evidence_data['preview']
+    ask_pete_evidence_context_keys = ask_pete_evidence_data['context_keys']
+
     return render_template(
         template_name,
         resume=resume_data,
@@ -2857,6 +2932,11 @@ def _render_living_resume(
         overview_style_urls=overview_style_urls,
         selected_overview_style=selected_overview_style,
         internal_capture=internal_capture,
+        # PS-ASK-PETE-AI-001: one flag-gated, Pete-only render seam preserves
+        # the established assistant and its legacy /api/chat contract by default.
+        ask_pete_evidence_companion_enabled=ask_pete_evidence_companion_enabled,
+        ask_pete_evidence_preview=ask_pete_evidence_preview,
+        ask_pete_evidence_context_keys=ask_pete_evidence_context_keys,
     )
 
 
@@ -3010,14 +3090,23 @@ def chat():
     if refusal:
         return refusal
 
-    # Read the JSON body sent by the browser
-    data = request.get_json()
+    # Read the JSON body sent by the browser without Flask raising its default
+    # HTML 415/400 response. Every malformed, text/plain, scalar, or list body
+    # becomes a bounded JSON client error before provider work.
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({'error': 'Request body must be a JSON object.'}), 400
 
     # Make sure we actually received a message
-    if not data or 'message' not in data:
+    if 'message' not in data:
         return jsonify({'error': 'No message provided'}), 400
 
-    user_message = data['message'].strip()
+    raw_message = data['message']
+    if not isinstance(raw_message, str):
+        return jsonify({'error': 'Message must be text'}), 400
+
+    user_message = raw_message.strip()
 
     # Reject empty messages
     if not user_message:

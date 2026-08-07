@@ -172,7 +172,7 @@
       "public_visibility": true,
       "approved_for_ask_pete": true,
       "allowed_purposes": ["public_profile_answer", "recruiter_brief", "evidence_finder", "interview_preparation"],
-      "locator": {"section": "credentials", "anchor": "resume-achievements", "record_kind": "achievement", "record_id": "burdick", "highlight_key": "achievement:burdick"}
+      "locator": {"section": "credentials", "anchor": "r2-credential-record-achievement-burdick", "record_kind": "achievement", "record_id": "burdick", "highlight_key": "achievement:burdick"}
     },
     {
       "source_key": "ask-pete:achievement:engineer-of-year",
@@ -186,7 +186,7 @@
       "public_visibility": true,
       "approved_for_ask_pete": true,
       "allowed_purposes": ["public_profile_answer", "recruiter_brief", "evidence_finder", "interview_preparation"],
-      "locator": {"section": "credentials", "anchor": "resume-achievements", "record_kind": "achievement", "record_id": "engineer-of-year", "highlight_key": "achievement:engineer-of-year"}
+      "locator": {"section": "credentials", "anchor": "r2-credential-record-achievement-engineer-of-year", "record_kind": "achievement", "record_id": "engineer-of-year", "highlight_key": "achievement:engineer-of-year"}
     },
     {
       "source_key": "ask-pete:achievement:emerging-leader",
@@ -200,7 +200,7 @@
       "public_visibility": true,
       "approved_for_ask_pete": true,
       "allowed_purposes": ["public_profile_answer", "recruiter_brief", "evidence_finder", "interview_preparation"],
-      "locator": {"section": "credentials", "anchor": "resume-achievements", "record_kind": "achievement", "record_id": "emerging-leader", "highlight_key": "achievement:emerging-leader"}
+      "locator": {"section": "credentials", "anchor": "r2-credential-record-achievement-emerging-leader", "record_kind": "achievement", "record_id": "emerging-leader", "highlight_key": "achievement:emerging-leader"}
     },
     {
       "source_key": "ask-pete:achievement:outstanding-team",
@@ -214,7 +214,7 @@
       "public_visibility": true,
       "approved_for_ask_pete": true,
       "allowed_purposes": ["public_profile_answer", "recruiter_brief", "evidence_finder", "interview_preparation"],
-      "locator": {"section": "credentials", "anchor": "resume-achievements", "record_kind": "achievement", "record_id": "outstanding-team", "highlight_key": "achievement:outstanding-team"}
+      "locator": {"section": "credentials", "anchor": "r2-credential-record-achievement-outstanding-team", "record_kind": "achievement", "record_id": "outstanding-team", "highlight_key": "achievement:outstanding-team"}
     }
   ]
 }

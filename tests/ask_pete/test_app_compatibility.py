@@ -21,14 +21,20 @@ class AskPeteAppCompatibilityTests(TestCase):
     def setUp(self) -> None:
         self.original = {
             "TESTING": app_module.app.config.get("TESTING"),
+            "RATELIMIT_ENABLED": app_module.app.config.get("RATELIMIT_ENABLED"),
             "PEERSLATE_ASK_PETE_GROUNDED_ENABLED": app_module.app.config.get(
                 "PEERSLATE_ASK_PETE_GROUNDED_ENABLED"
             ),
         }
-        app_module.app.config.update(TESTING=True)
+        self.limiter_enabled = app_module.limiter.enabled
+        app_module.limiter.enabled = False
+        app_module.limiter.reset()
+        app_module.app.config.update(TESTING=True, RATELIMIT_ENABLED=False)
         self.client = app_module.app.test_client()
 
     def tearDown(self) -> None:
+        app_module.limiter.reset()
+        app_module.limiter.enabled = self.limiter_enabled
         app_module.app.config.update(**self.original)
 
     def test_grounded_path_is_default_off(self) -> None:
@@ -137,3 +143,49 @@ class AskPeteAppCompatibilityTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
         grounded.assert_not_called()
+
+    @patch("app.answer_public_question")
+    @patch("app.client.messages.create")
+    def test_malformed_or_non_text_messages_are_rejected_before_any_provider_call(
+        self, create, grounded
+    ) -> None:
+        app_module.app.config["PEERSLATE_ASK_PETE_GROUNDED_ENABLED"] = True
+
+        for payload in ([], {"message": None}, {"message": 42}, {"text": "missing"}):
+            response = self.client.post(
+                "/api/chat",
+                json=payload,
+                headers=SAME_ORIGIN_HEADERS,
+            )
+            self.assertEqual(response.status_code, 400)
+
+        grounded.assert_not_called()
+        create.assert_not_called()
+
+    @patch("app.answer_public_question")
+    @patch("app.client.messages.create")
+    def test_non_json_and_malformed_json_bodies_are_json_400_before_provider_work(
+        self, create, grounded
+    ) -> None:
+        app_module.app.config["PEERSLATE_ASK_PETE_GROUNDED_ENABLED"] = True
+
+        for body, content_type in (
+            (b"plain text", "text/plain"),
+            (b'{"message":', "application/json"),
+            (b'"a scalar"', "application/json"),
+        ):
+            response = self.client.post(
+                "/api/chat",
+                data=body,
+                content_type=content_type,
+                headers=SAME_ORIGIN_HEADERS,
+            )
+            self.assertEqual(response.status_code, 400)
+            self.assertTrue(response.is_json)
+            self.assertEqual(
+                response.get_json(),
+                {"error": "Request body must be a JSON object."},
+            )
+
+        grounded.assert_not_called()
+        create.assert_not_called()

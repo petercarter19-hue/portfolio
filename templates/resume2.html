@@ -24,14 +24,17 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/member-overview.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume2.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/member-overview-work-impact.css') }}">
+{% if ask_pete_evidence_companion_enabled %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ask-pete-resume-evidence.css') }}">
+{% endif %}
 {% endblock %}
 
-{% block body_class %} living-resume-v2-page resume-v2-page resume-consolidated-page{% if public_overview_projection %} resume-overview-public-page{% endif %}{% endblock %}
+{% block body_class %} living-resume-v2-page resume-v2-page resume-consolidated-page{% if public_overview_projection %} resume-overview-public-page{% endif %}{% if ask_pete_evidence_companion_enabled %} ask-pete-evidence-enabled{% endif %}{% endblock %}
 
 {% block profile_band %}{% endblock %}
 
 {% block content %}
-<div class="lr-page resume-v2 resume-consolidated" id="living-resume-page"{% if public_overview_projection %} data-public-overview{% endif %}>
+<div class="lr-page resume-v2 resume-consolidated" id="living-resume-page"{% if public_overview_projection %} data-public-overview{% endif %}{% if ask_pete_evidence_companion_enabled %} data-ask-pete-evidence-active{% endif %}>
     {% include "partials/living_resume_icon_sprite.html" %}
 
     <div class="r2-page-grid">
@@ -125,12 +128,29 @@
                         <svg aria-hidden="true"><use href="#lr-icon-award"></use></svg>
                         <span>Credentials</span>
                     </a>
+                    {% if ask_pete_evidence_companion_enabled %}
+                    <button type="button" data-ask-pete-open aria-controls="ask-pete-evidence-companion" aria-expanded="false">
+                        <svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>
+                        <span>Ask {{ profile_first_name }} AI</span>
+                    </button>
+                    {% else %}
                     <button type="button" data-chat-open>
                         <svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>
                         <span>Ask {{ profile_first_name }} AI</span>
                     </button>
+                    {% endif %}
                 </nav>
             </details>
+            {% if ask_pete_evidence_companion_enabled %}
+            <button
+                class="r2-overview-mobile-ask-pete"
+                type="button"
+                data-ask-pete-open
+                aria-controls="ask-pete-evidence-companion"
+                aria-expanded="false"
+                aria-label="Ask Pete AI"
+            ><svg aria-hidden="true"><use href="#lr-icon-message"></use></svg><span>Ask Pete</span></button>
+            {% endif %}
         </div>
 
         <div class="r2-content">
@@ -277,7 +297,14 @@
                             </ul>
                             <div class="r2-skill-panel__actions">
                                 <a class="r2-button r2-button--primary" href="{{ portfolio_skills_url }}#skf-panel-{{ skill.id }}">See All Sources</a>
+                                {% set ask_pete_context_key = 'skill:' ~ skill.id %}
+                                {% if ask_pete_evidence_companion_enabled and ask_pete_context_key in ask_pete_evidence_context_keys %}
+                                <button class="r2-button" type="button" data-ask-pete-context-action data-ask-pete-context-key="{{ ask_pete_context_key }}" data-ask-pete-context-label="Skills &rarr; {{ skill.display_name }}" data-ask-pete-context-count="{{ skill.resume2_evidence_items|length }}" data-ask-pete-action="evidence_finder" data-ask-pete-draft="Show evidence of {{ resume.profile.name }}'s {{ skill.display_name }} work." aria-controls="ask-pete-evidence-companion" aria-expanded="false">Ask {{ profile_first_name }} About This</button>
+                                {% elif ask_pete_evidence_companion_enabled %}
+                                <button class="r2-button" type="button" data-ask-pete-open aria-controls="ask-pete-evidence-companion" aria-expanded="false">Ask {{ profile_first_name }} AI</button>
+                                {% else %}
                                 <button class="r2-button" type="button" data-chat-open data-ask-resume data-ask="Explain the approved public evidence behind {{ resume.profile.name }}'s {{ skill.display_name }} capability.">Ask {{ profile_first_name }} About This</button>
+                                {% endif %}
                             </div>
                             <button class="r2-panel-close" type="button" data-r2-skill-close>Close Skill Evidence</button>
                         </article>
@@ -356,12 +383,26 @@
                                     <li>{{ item }}</li>
                                     {% endfor %}
                                 </ul>
+                                {% set ask_pete_context_key = 'career_role:' ~ role.id %}
                                 <button
                                     class="r2-exp-ask"
                                     type="button"
-                                    data-chat-open
-                                    data-ask-resume
-                                    data-ask="Summarize {{ resume.profile.name }}'s approved public evidence from {{ role.employer }}, {{ role.title }}, {{ role.dates }}. Focus on {{ role.resume2_ai_context }}."
+                                    {% if ask_pete_evidence_companion_enabled and ask_pete_context_key in ask_pete_evidence_context_keys %}
+                                    data-ask-pete-context-action
+                                    data-ask-pete-context-key="{{ ask_pete_context_key }}"
+                                    data-ask-pete-context-label="Experience &rarr; {{ role.employer }}"
+                                    data-ask-pete-context-count="{{ role.resume2_accomplishments|length }}"
+                                    data-ask-pete-action="evidence_finder"
+                                    data-ask-pete-draft="Show the approved public evidence from {{ role.employer }} that is most relevant to a recruiter."
+                                    aria-controls="ask-pete-evidence-companion"
+                                    aria-expanded="false"
+                                    {% elif ask_pete_evidence_companion_enabled %}
+                                    data-ask-pete-open
+                                    aria-controls="ask-pete-evidence-companion"
+                                    aria-expanded="false"
+                                    {% else %}
+                                    data-chat-open data-ask-resume data-ask="Summarize {{ resume.profile.name }}'s approved public evidence from {{ role.employer }}, {{ role.title }}, {{ role.dates }}. Focus on {{ role.resume2_ai_context }}."
+                                    {% endif %}
                                 >
                                     <svg aria-hidden="true"><use href="#lr-icon-message"></use></svg>
                                     Ask {{ profile_first_name }} AI about {{ role.employer }}
@@ -441,7 +482,7 @@
                         </header>
                         <div class="r2-credential-panel__records{% if category.id == 'education' %} is-timeline{% endif %}">
                             {% for item in category['items'] %}
-                            <section class="r2-credential-record">
+                            <section class="r2-credential-record"{% if category.id == 'recognition' %} id="r2-credential-record-achievement-{{ item.id }}" data-r2-credential-record="achievement:{{ item.id }}"{% endif %}>
                                 <div class="r2-credential-record__heading">
                                     <p>{% if item.date %}{{ item.date }} · {% endif %}{{ item.status }}</p>
                                     <h4>{{ item.credential }}</h4>
@@ -464,7 +505,11 @@
                             {% endfor %}
                         </div>
                         <div class="r2-credential-panel__actions">
+                            {% if ask_pete_evidence_companion_enabled %}
+                            <button class="r2-button r2-button--primary" type="button" data-ask-pete-open aria-controls="ask-pete-evidence-companion" aria-expanded="false">Ask {{ profile_first_name }} AI</button>
+                            {% else %}
                             <button class="r2-button r2-button--primary" type="button" data-chat-open data-ask-resume data-ask="Explain {{ resume.profile.name }}'s approved public {{ category.title|lower }} records.">Ask {{ profile_first_name }} AI</button>
+                            {% endif %}
                         </div>
                         <button class="r2-panel-close" type="button" data-r2-credential-close>Close {{ category.title }}</button>
                     </article>
@@ -473,6 +518,9 @@
             </section>
         </div>
 
+        {% if ask_pete_evidence_companion_enabled %}
+        {% include "partials/ask_pete_evidence_companion.html" %}
+        {% else %}
         <aside class="overview-ai-rail r2-ai-card r2-overview-ai-rail resume-ai-panel" aria-labelledby="r2-ai-title" data-hero-ai-takeover>
             <header class="r2-ai-rail-header">
                 <img
@@ -510,6 +558,7 @@
                 <span>Ask {{ profile_first_name }} AI cannot access private Slate information.</span>
             </div>
         </aside>
+        {% endif %}
     </div>
 
     <div class="lr-chapter-transition" aria-hidden="true"><span></span></div>
@@ -527,4 +576,7 @@
 
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/living-resume-v2.js') }}"></script>
+{% if ask_pete_evidence_companion_enabled %}
+<script src="{{ url_for('static', filename='js/ask-pete-evidence-companion.js') }}"></script>
+{% endif %}
 {% endblock %}

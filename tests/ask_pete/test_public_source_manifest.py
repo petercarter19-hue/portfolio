@@ -101,8 +101,8 @@ class PublicSourceManifestTests(TestCase):
                 self.assertEqual(locator.anchor, f"r2-skill-panel-{locator.record_id}")
                 self.assertIn('id="r2-skill-panel-{{ skill.id }}"', template)
             else:
-                self.assertEqual(locator.anchor, "resume-achievements")
-                self.assertIn('id="resume-achievements"', template)
+                self.assertEqual(locator.anchor, f"r2-credential-record-achievement-{locator.record_id}")
+                self.assertIn('id="r2-credential-record-achievement-{{ item.id }}"', template)
 
     def test_context_source_is_ordered_first_without_expanding_scope(self) -> None:
         catalog = load_public_source_catalog(
