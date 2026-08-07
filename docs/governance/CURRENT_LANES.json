@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-07T12:22:19Z",
+  "updated_at": "2026-08-07T12:43:06Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-05",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-INTERVIEW-STUDIO-CALIBRATION-001"
+      "PS-INTERVIEW-STUDIO-CALIBRATION-001",
+      "PS-COMMUNITY-PUBLIC-PILOT-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -39,7 +40,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Ask Pete source implementation is complete: PR 320 merged reviewed candidate 7c6efbe0f620ec28e460e359877f6eabac65e2fe as d154d3455b09a2c337530a60608bdfb6c95897e9. The feature remains default-off and is not claimed deployed, enabled, or live. Pete explicitly directed this lane complete and formally relinquished every active Ask Pete surface, including app.py. PS-INTERVIEW-STUDIO-CALIBRATION-001 remains the sole active writer on its recorded surfaces; one activation slot is available. PS-DELIVERY-CONTROL-001 remains a separate closing record. Community remains paused and read-only until a separately authorized activation from current main."
+    "exit_authority": "Ask Pete source implementation is complete: PR 320 merged reviewed candidate 7c6efbe0f620ec28e460e359877f6eabac65e2fe as d154d3455b09a2c337530a60608bdfb6c95897e9. The feature remains default-off and is not claimed deployed, enabled, or live. Pete explicitly directed this lane complete and formally relinquished every active Ask Pete surface, including app.py. PS-INTERVIEW-STUDIO-CALIBRATION-001 remains the sole active writer on its recorded surfaces. Pete then explicitly activated PS-COMMUNITY-PUBLIC-PILOT-001 as the second disjoint lane and authorized its bounded Protected recovery through debugging, review, governed integration, exact additive migration, deployment, staged configuration, and live verification without per-step approval. Real policy, privacy, authorization, migration, evidence, and safety failures still fail closed. PS-DELIVERY-CONTROL-001 remains a separate closing record."
   },
   "activation_policy": {
     "enabled": true,
@@ -444,15 +445,77 @@
       },
       "cleanup_contract": "After activation merge, remove only the clean merged activation worktree/branch after verifying origin/main contains the activation and a recovery reference exists. After implementation PR merge is separately authorized and completed, apply the same rule to only this implementation lane. Do not touch the active Ask Pete worktree/branch or any unrelated, dirty, unverified, or user-owned material.",
       "sequence": "merge the activation-only PR -> fetch resulting origin/main -> create work/2026-08-06-interview-studio-calibration-001 at C:\\Users\\peter\\Documents\\portfolio-interview-studio-calibration-20260806 -> run package write preflight -> copy and hash the exact selected visual authority into the package -> reconcile the read-only Sol architecture verdict -> Terra implements, tests, and self-reviews only the five surfaces -> Sol max reviews exact candidate SHA -> Terra resolves validated findings -> open Azure implementation PR; stop before merge or deployment"
+    },
+    {
+      "package": "PS-COMMUNITY-PUBLIC-PILOT-001",
+      "outcome": "Recover the already approved owner-only Community public pilot from current authoritative main without changing its locked Feed direction: reconcile the preserved e51c9c maintenance repair file-by-file, remove Community maintenance from every request path, schedule independently default-off bounded maintenance, add the immutable additive uploader-scoped cleanup correction with governed disposable proof, bound Community dependency waits, debug the complete existing experience, and take only the exact reviewed candidate through governed PR, migration, deployment, staged maintenance enablement, staged pilot enablement, and exact-source live verification.",
+      "branch": "work/2026-08-07-community-revival-safety-v1",
+      "writer": "Codex in the dedicated portfolio-community-revival-safety-v1 worktree; sole active writer for the exact recorded Community surfaces",
+      "delivery_path": "Protected",
+      "production_capable": true,
+      "source_checkpoint": "Current authoritative origin/main e9c6fe18ce0dc31a9d3ed39d8ae30eb538596de5 after Ask Pete PR 320 completion and formal app.py relinquishment, plus preserved read-only Community maintenance checkpoint work/2026-08-04-community-maintenance-off-request-path@e51c9c6122e4c2cd1d462b77230523f733f2fded. Community remains feature-default-off and is not claimed live at activation.",
+      "writable_surfaces": [
+        "app.py",
+        "db.py",
+        "services/database_service.py",
+        "services/community_media_service.py",
+        "services/community_retention_service.py",
+        "scripts/run_community_maintenance.py",
+        "scripts/run_community_disposable_sql_proof.py",
+        "azure-pipelines-community-maintenance.yml",
+        "SQL FIles/Migrations/registry.json",
+        "SQL FIles/Migrations/proposed/PS-COMMUNITY-REVIVAL-001_maintenance.sql",
+        "SQL FIles/Migrations/proposed/PS-COMMUNITY-REVIVAL-001_maintenance_rollback.sql",
+        "SQL FIles/Verification/PS-COMMUNITY-REVIVAL-001_verify.sql",
+        "templates/community_feed.html",
+        "templates/partials/community/",
+        "static/css/community-feed.css",
+        "static/js/community-feed.js",
+        "tests/test_community_maintenance_off_request_path.py",
+        "tests/test_community_public_pilot.py",
+        "tests/test_community_revival.py",
+        "tests/test_db_connection_retry.py",
+        "docs/initiatives/PS-COMMUNITY-PUBLIC-PILOT-001/",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml",
+        "docs/governance/PRODUCTION_SCHEMA_STATE.md"
+      ],
+      "exclusions": [
+        "no competing visual direction, material Feed redesign, or regression of the approved Feed, Motion-card, Respond, compact comment-entry, media, Voice, identity, privacy, authorization, and publication contracts",
+        "no new navigation, audience, messaging system, member-authorship expansion, AI publishing, public audio or video capability, moderation system, or Journal functionality",
+        "no rewrite, replay, or mutation of an already applied migration ID; the uploader-scoped cleanup correction must use one new immutable additive migration with exact digest, verifier, rollback rehearsal, and disposable proof",
+        "no production schema, configuration, feature-flag, deployment, or live claim during implementation; each production mutation must follow the recorded Protected gate and exact-source evidence",
+        "no write to Interview Studio or any unrelated lane, checkpoint, branch, worktree, stash, artifact, user content, secret, or production data",
+        "no bypass of failed tests, branch policy, authorization, privacy, migration guard, owner collision, destructive-action gate, or evidence mismatch"
+      ],
+      "completion_evidence": [
+        "activation record merges and the implementation worktree starts clean from resulting origin/main with package write preflight passing",
+        "the preserved e51c9c repair is reconciled file-by-file and no TESTING=false request path invokes Community maintenance with the pilot flag either off or on",
+        "maintenance is independently scheduled, separately default-off, singleton-safe for the owner pilot, batch- and wall-clock-bounded, observable, and unable to change Community visibility",
+        "the new additive migration, verifier, rollback, registry digest, and disposable apply/reapply/verify/rollback/forward proof all pass before any production plan is released",
+        "Community database and provider waits are bounded without weakening identity, authorization, private-draft, transcript-review, separate-send, media, or retention guarantees",
+        "focused and full relevant tests, TESTING=false outage paths, browser desktop and narrow checks, provider boundaries, migration and rollback rehearsal, diff hygiene, debugging, and independent exact-SHA review pass",
+        "the Azure PR satisfies branch policy without bypass and only the exact merged SHA proceeds through the controlled pipeline",
+        "production maintenance is enabled first and proves one clean bounded run before the pilot flag is enabled",
+        "signed-out and owner flows, Voice, media, comments and replies, Respond add/remove, deletion and restore, health, latency, logs, release identity, and rollback readiness pass on the exact live source before any live claim"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-07",
+          "decision": "Pete explicitly transferred sole Community ownership to this task and directed it to revive the full existing pilot, finish what remained, debug before and after release, complete the governed PR and merge, apply only the exact approved additive migration, deploy the exact merged SHA, enable maintenance first, then enable and verify the pilot without waiting for per-step approval. This is durable owner authority for the bounded Protected sequence, not permission to bypass a real safety, privacy, authorization, migration, policy, or evidence failure."
+        }
+      ],
+      "model_routing": {
+        "architecture": "Codex reconciles current-main authority, the preserved e51c9c repair, scheduling, migration, dependency-timeout, and release seams before runtime writes",
+        "implementation": "Codex is the sole implementation writer in the dedicated clean worktree",
+        "independent_reviewer": "A fresh read-only reviewer inspects the exact candidate SHA after implementation and self-review, before the Azure PR proceeds",
+        "sequence": "activation merge -> clean implementation worktree -> write preflight -> architecture reconciliation -> implementation and focused validation -> full relevant and outage validation -> self-review -> independent exact-SHA review -> finding closure -> Azure PR and policy -> exact additive migration -> exact merged-SHA deploy -> maintenance enable and clean run -> pilot enable -> live debug and verification -> truthful closeout"
+      },
+      "cleanup_contract": "Preserve the e51c9c checkpoint and all unrelated evidence. Cleanup, if later appropriate, is limited to this task's verified clean merged branches and worktrees after recovery references and merge equivalence are proven.",
+      "sequence": "Merge the activation-only PR; create the dedicated implementation worktree from resulting origin/main; pass package write preflight; reconcile e51c9c without wholesale overwrite; implement the minimum maintenance, additive schema, timeout, evidence, and defect corrections; validate and independently review the exact SHA; close findings; use Azure PR and branch policy; verify the exact production plan before mutation; apply only the approved additive migration; deploy only the exact merge; enable and verify maintenance; enable and verify the owner pilot; debug safe live diagnostics; record exact truth and remaining limitations."
     }
   ],
   "paused_lanes": [
-    {
-      "package": "PS-COMMUNITY-PUBLIC-PILOT-001",
-      "reason": "flag-off containment and conflicting writer records require reconciliation",
-      "known_checkpoint": "work/2026-08-04-community-maintenance-off-request-path@e51c9c6122e4c2cd1d462b77230523f733f2fded",
-      "disposition": "paused_read_only"
-    },
     {
       "package": "ALL_OTHER_EXISTING_LANES",
       "reason": "owner-directed reset requires exact safe-stop and disposition before restart",
