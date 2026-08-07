@@ -1,6 +1,6 @@
 # PS-ASK-PETE-AI-001 — Public Ask Pete AI
 
-## Activated refinement direction — 2026-08-06
+## Merged source implementation - 2026-08-07
 
 Pete accepted a recruiter-first Ask Pete refinement and directed normal
 parallel branch development rather than waiting for unrelated site work.
@@ -14,31 +14,35 @@ The flagship interaction is a concise recruiter brief that:
 4. separates evidence, interpretation, partial support, and what is not
    established publicly;
 5. proposes thoughtful human interview questions; and
-6. offers a private Ask Pete directly path when approved public information is
+6. offers a current contact handoff when approved public information is
    insufficient.
 
-The current backend candidate now adds the explicit public-source manifest,
+The merged source implementation includes the explicit public-source manifest,
 deterministic resume adapter, structured grounded-answer service, recruiter
-quality contract, privacy-safe diagnostics, and a default-off `POST /api/chat`
-integration seam. It does not change the resume page, provider configuration,
-schema, or production behavior. The new path remains disabled unless a later
-release decision explicitly enables `PEERSLATE_ASK_PETE_GROUNDED_ENABLED`.
-Material resume-page visual implementation remains tied to Pete's accepted
-warm recruiter-evidence direction, ChatGPT-created visual authority, and later
-code-level accessibility and contrast verification.
+quality contract, privacy-safe diagnostics, and one responsive evidence
+companion that reflows as a desktop rail, narrow side sheet, and mobile bottom
+sheet. Grounded backend source merged through Azure PR 315; the reviewed runtime
+source merged through Azure PR 320. The new path remains disabled unless a
+later Protected release explicitly enables
+`PEERSLATE_ASK_PETE_GROUNDED_ENABLED`. No deployment, provider change, schema
+change, feature enablement, or live behavior is claimed by this closeout.
 
 ## Package status
 
-- Status: **Backend candidate implemented on its isolated branch; not yet
-  merged, deployed, enabled, or live**
+- Status: **Complete in repository source through Azure PRs 315 and 320;
+  default-off; not deployed, enabled, or claimed live**
 - Product name: **Ask Pete AI**
 - Audience: Logged-out/public visitors using approved public Pete sources only
-- Current manager/writer: Codex on the recorded isolated backend lane
+- Lane ownership: **Relinquished after source merge and control closeout;
+  `app.py` and every other historical Ask Pete surface are no longer actively
+  owned by this package**
 - Private member intelligence: `PS-ASK-SLATE-AI-001`, not this package
 - Runtime effect while the new flag is false: None; the legacy JSON response
-  remains unchanged
+  and flag-off `/app` rendering remain unchanged
+- Runtime completion evidence:
+  `RECRUITER_EVIDENCE_RUNTIME_V1_COMPLETION_REPORT.md`
 
-## Current backend candidate
+## Merged grounded source implementation
 
 - `data/ai_sources/ask_pete_public_v1.json` is the explicit AI-use allowlist.
   Public resume visibility alone does not grant AI use.
@@ -117,9 +121,9 @@ package.
 - No private uploads, OCR, job-posting analysis, or Qualification Alignment.
 - No cold outreach, application, public job listing, or hiring probability.
 - No automatic content/profile/publication change.
-- No visual implementation, provider-setting change, production enablement,
-  deployment, or private-message persistence is authorized by this backend
-  candidate.
+- No provider-setting change, production enablement, deployment,
+  private-message persistence, automatic knowledge update, or canonical
+  mutation is authorized by the merged source implementation.
 
 ## Deterministic local browser evidence
 

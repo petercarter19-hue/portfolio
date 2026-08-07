@@ -73,11 +73,25 @@ class DeliveryPreflightTests(unittest.TestCase):
             )
         )
         recorded = {block.group("id") for block in blocks}
-        if not packages or not packages.issubset(recorded):
+        if not packages:
             return self.baseline
-        retained = "".join(
-            block.group(0) for block in blocks if block.group("id") in packages
-        )
+        if packages.issubset(recorded):
+            retained = "".join(
+                block.group(0)
+                for block in blocks
+                if block.group("id") in packages
+            )
+        elif len(packages) == 1 and len(blocks) == 1:
+            package = next(iter(packages))
+            retained = re.sub(
+                r"^  - id: [^\n]+$",
+                f"  - id: {package}",
+                blocks[0].group(0),
+                count=1,
+                flags=re.MULTILINE,
+            )
+        else:
+            return self.baseline
         candidate = (
             source[: section.start()]
             + "active_packages:\n"
@@ -259,16 +273,17 @@ class DeliveryPreflightTests(unittest.TestCase):
         """
         origin = copy.deepcopy(self.ledger)
         active_lanes = list(origin.get("active_lanes") or [])
+        target_package = self._interview_lane()["package"]
         retained = next(
             (
                 lane
                 for lane in active_lanes
-                if lane.get("package") == "PS-ASK-PETE-AI-001"
+                if lane.get("package") != target_package
             ),
-            active_lanes[0] if active_lanes else None,
+            None,
         )
         if retained is None:
-            retained = self._lane("PS-FIRST-001")
+            retained = self._lane("PS-DELIVERY-PREFLIGHT-ORIGIN-001")
         origin["active_lanes"] = [copy.deepcopy(retained)]
         retained_package = retained["package"]
         origin["operating_mode"]["state"] = "active_delivery"
@@ -682,6 +697,9 @@ class DeliveryPreflightTests(unittest.TestCase):
             ],
         )
         approved_text = approved_baseline.decode("utf-8")
+        existing_package = origin["active_lanes"][0]["package"]
+        added_package = self._interview_lane()["package"]
+        self.assertNotEqual(existing_package, added_package)
         mutations = {
             "updated_at": (
                 approved_text.replace(
@@ -733,11 +751,19 @@ class DeliveryPreflightTests(unittest.TestCase):
             ),
             "existing active package": (
                 approved_text.replace(
-                    "  - id: PS-ASK-PETE-AI-001",
+                    f"  - id: {existing_package}",
                     "  - id: PS-FORGED-001",
                     1,
                 ).encode("utf-8"),
                 "activation baseline active_packages must preserve origin/main entries byte-for-byte and append one item",
+            ),
+            "appended active package": (
+                approved_text.replace(
+                    f"  - id: {added_package}",
+                    "  - id: PS-FORGED-001",
+                    1,
+                ).encode("utf-8"),
+                "activation baseline active_packages appended id must match the newly activated package",
             ),
             "next gate": (
                 re.sub(

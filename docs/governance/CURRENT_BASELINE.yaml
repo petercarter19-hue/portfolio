@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Two disjoint non-production lanes are active: PS-ASK-PETE-AI-001 on work/2026-08-06-ask-pete-recruiter-evidence-runtime-v1 and visual-only PS-INTERVIEW-STUDIO-CALIBRATION-001 on work/2026-08-06-interview-studio-calibration-001. Ask Pete uses Sol Extra High architecture, Terra Max implementation, and Sol Max review; Interview Studio has completed Sol Extra High architecture and uses Terra Max implementation plus Sol Max review. See docs/governance/CURRENT_LANES.json."
+  current_assignments: "PS-INTERVIEW-STUDIO-CALIBRATION-001 is the sole active writer on its recorded visual-only surfaces. PS-ASK-PETE-AI-001 and PS-DELIVERY-CONTROL-001 are separate closing records with merge/cleanup authority only; every former Ask Pete surface, including app.py, is relinquished. Community remains paused until a fresh owner-selected activation."
 
 governing_documents:
   bible:
@@ -58,9 +58,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-ASK-PETE-AI-001
-    status: active_delivery
-    scope: "Pete-approved Concept H V2 Recruiter Evidence Companion: flag-gated resume rail/side-sheet/bottom-sheet, structured claim citations and honest support states, exact source coordination, responsive accessibility, debugging, and independent review. No merge, deployment, provider change, or production enablement is authorized in this lane."
   - id: PS-INTERVIEW-STUDIO-CALIBRATION-001
     status: active_delivery
     scope: "Visual-only calibration of public Interview Studio to the locked sage authority and V3 structure within four runtime/test files and one package folder; no behavior, backend, schema, private-member, merge, deployment, or production change."
@@ -127,6 +124,7 @@ completed_packages:
   - PS-PRODUCTION-AVAILABILITY-INCIDENT-001
   - PS-OPPORTUNITY-SLATE-001
   - PS-DATA-FOUNDATION-001
+  - PS-ASK-PETE-AI-001
 
 retired_packages:
   - id: PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001
@@ -138,7 +136,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-ASK-PETE-AI-001 continues its recorded sequence. After this activation merges, create the PS-INTERVIEW-STUDIO-CALIBRATION-001 worktree from resulting origin/main and pass its write preflight; then Terra Max implements the locked visual authority and Sol Max reviews the exact SHA. Neither lane may merge an implementation PR, deploy, change schema or configuration, or enable production."
+next_gate: "PS-INTERVIEW-STUDIO-CALIBRATION-001 remains the sole active lane. After this Ask Pete closeout merges, Community revival may activate separately as the second lane from current origin/main through PS-DELIVERY-CONTROL-001. This closeout authorizes no Community write. Ask Pete release or enablement remains a separate future Protected decision."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

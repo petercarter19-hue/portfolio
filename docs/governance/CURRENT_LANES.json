@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-07T12:00:00Z",
+  "updated_at": "2026-08-07T12:22:19Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,6 @@
     "authorized_at": "2026-08-05",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-ASK-PETE-AI-001",
       "PS-INTERVIEW-STUDIO-CALIBRATION-001"
     ],
     "merge_allowed_for": [
@@ -40,7 +39,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Two disjoint non-production lanes fill the configured limit: PS-ASK-PETE-AI-001 visual/runtime on work/2026-08-06-ask-pete-recruiter-evidence-runtime-v1 and PS-INTERVIEW-STUDIO-CALIBRATION-001 visual-only on work/2026-08-06-interview-studio-calibration-001. Interview Studio may implement and open an Azure PR only after this activation merges and its clean implementation worktree passes the write preflight. Neither lane may merge or deploy its implementation in the active record. Cleanup remains bounded to each task's clean, merged, recoverable artifacts; unrelated, dirty, unverified, or user-owned work remains preserved."
+    "exit_authority": "Ask Pete source implementation is complete: PR 320 merged reviewed candidate 7c6efbe0f620ec28e460e359877f6eabac65e2fe as d154d3455b09a2c337530a60608bdfb6c95897e9. The feature remains default-off and is not claimed deployed, enabled, or live. Pete explicitly directed this lane complete and formally relinquished every active Ask Pete surface, including app.py. PS-INTERVIEW-STUDIO-CALIBRATION-001 remains the sole active writer on its recorded surfaces; one activation slot is available. PS-DELIVERY-CONTROL-001 remains a separate closing record. Community remains paused and read-only until a separately authorized activation from current main."
   },
   "activation_policy": {
     "enabled": true,
@@ -279,17 +278,15 @@
         }
       ],
       "branch_note": "Closed after PS-WORKSHOP-002 production apply and schema-state reconciliation. The branch is retained until the proportional closeout PR merges; cleanup remains a separately verified, recoverable operation."
-    }
-  ],
-  "active_lanes": [
+    },
     {
       "package": "PS-ASK-PETE-AI-001",
-      "outcome": "Implement the Pete-approved Concept H V2 Recruiter Evidence Companion on the public resume using the merged Grounded Ask Pete contract: one canonical flag-gated component that is a persistent desktop rail, narrow-desktop side sheet, and mobile bottom sheet; structured recruiter brief and claim-level evidence; honest partial, unknown, ambiguous, validation, slow, and unavailable states; contextual editable prefill; exact source opening/highlighting; and a truthful current contact handoff. Preserve the existing resume information architecture and legacy flag-off behavior. Stop at an independently reviewed Azure PR; do not merge, deploy, enable the feature flag, or mutate production in this lane.",
+      "outcome": "Complete. The Grounded Ask Pete backend and Pete-approved Recruiter Evidence Companion source merged through Azure PRs 315 and 320. PR 320 squash-merged reviewed candidate 7c6efbe0f620ec28e460e359877f6eabac65e2fe as d154d3455b09a2c337530a60608bdfb6c95897e9. The feature remains default-off; no provider, schema, deployment, enablement, or live change is claimed. This closing record is historical merge and cleanup evidence only and grants no write authority; every active Ask Pete surface, including app.py, is formally relinquished.",
       "branch": "work/2026-08-06-ask-pete-recruiter-evidence-runtime-v1",
-      "writer": "Sequential handoff: Sol Extra High writes the architecture record only, then Terra Max becomes sole implementation writer for the listed runtime surfaces; Sol Max reviews the exact candidate SHA read-only",
+      "writer": "Relinquished after the recorded Sol Extra High architecture, Terra Max implementation, Sol Max independent review, Azure PR 320 merge, and coordinator closeout sequence",
       "delivery_path": "Protected",
       "production_capable": false,
-      "source_checkpoint": "Current Azure main ebb62763cb53bd334c0ff6642197a69641eca1c5 with Grounded Ask Pete backend merged; Pete-accepted Concept H aligned V2 family plus critical-state board under the 2026-08-06 Ask Pete visual round.",
+      "source_checkpoint": "Runtime base cc151d1ff0c24071dce8cb110a1c1896ede59594; exact reviewed candidate 7c6efbe0f620ec28e460e359877f6eabac65e2fe; PR 320 squash merge d154d3455b09a2c337530a60608bdfb6c95897e9; merged tree 8d7bb88950482079d89d5358a5e4caff8b7b6c03 exactly matches the candidate tree.",
       "completed_phases": [
         {
           "phase": "Grounded Ask Pete backend v1",
@@ -299,6 +296,15 @@
           "result": "Approved public-source manifest, structured grounded answer contract, recruiter jobs, exact citations/support states, evaluation and payload-free diagnostics, and dormant default-off app compatibility merged with no material visual, provider, schema, deployment, enablement, or live behavior change.",
           "verification": "30 Ask Pete tests, 36 AI-foundation tests, and 139 relevant regressions passed before PR; 205 tests total.",
           "cleanup_rule": "After recovery and merge equivalence are verified, remove only this clean merged backend phase's branch/worktree/activation artifacts; preserve all unrelated or dirty material."
+        },
+        {
+          "phase": "Recruiter Evidence Companion runtime v1",
+          "branch": "work/2026-08-06-ask-pete-recruiter-evidence-runtime-v1",
+          "merge_commit": "d154d3455b09a2c337530a60608bdfb6c95897e9",
+          "pull_request": 320,
+          "result": "The accepted eucalyptus, ivory, forest, and aged-gold evidence companion merged as one flag-gated desktop rail, narrow side sheet, and mobile bottom sheet with structured recruiter jobs, claim-level citations, honest support states, exact source coordination, current contact handoff, responsive accessibility, and payload-free diagnostics.",
+          "verification": "121 bounded tests plus 70 subtests passed; the deterministic provider-free browser harness produced exactly six captures; Azure policy build 579 passed; Sol Max reported zero P0-P3 findings; flag-off /app remained exactly 17,116 bytes.",
+          "cleanup_rule": "After the documentation-only closeout PR merges and recoverability is verified, remove only this clean Ask Pete runtime worktree and local/remote task branch; preserve every unrelated or dirty artifact."
         }
       ],
       "writable_surfaces": [
@@ -315,7 +321,8 @@
         "tests/ask_pete/",
         "tests/test_resume2.py",
         "tests/test_living_resume_preview.py",
-        "tests/test_navigation.py"
+        "tests/test_navigation.py",
+        "tests/test_delivery_preflight.py"
       ],
       "exclusions": [
         "no new route or endpoint; use the existing POST /api/chat contract",
@@ -325,9 +332,10 @@
         "no voice, uploads, OCR, job-description matching, fit score, hiring judgment, or private Slate retrieval",
         "no resume information-architecture or canonical-content rewrite",
         "default-off rendering and /api/chat behavior must remain unchanged when PEERSLATE_ASK_PETE_GROUNDED_ENABLED is false",
-        "no pull-request merge, application deployment, production feature enablement, provider change, or claim that this implementation is live",
+        "no application deployment, production feature enablement, provider change, or claim that this source implementation is live; PR 320 is source integration only",
         "no write to another writer's branch, worktree, checkpoint, or unlisted surface",
-        "no cleanup of unrelated branches, worktrees, artifacts, stashes, dirty files, or user-owned material"
+        "no cleanup of unrelated branches, worktrees, artifacts, stashes, dirty files, or user-owned material",
+        "no delivery-preflight validator change; the owner-authorized closeout repair is limited to synthetic test-fixture correctness in tests/test_delivery_preflight.py"
       ],
       "completion_evidence": [
         "the accepted Concept H V2 authority and critical-state board are copied into package-local visual authority with exact hashes",
@@ -339,8 +347,11 @@
         "every source opens an exact stable resume record, preserves the answer, announces navigation, and uses temporary non-color-only highlighting",
         "non-string and malformed input fail with 400 before provider work; stale requests and timeouts recover safely",
         "keyboard, focus return, Escape, reduced motion, forced colors, contrast, 200 percent zoom, touch targets, overflow, and scroll traps pass at representative desktop, narrow, and mobile widths",
-        "Terra Max completes focused and relevant regression tests, a full changed-path audit, browser screenshot comparison, and task-created debris cleanup",
-        "Sol Max independently reviews the exact candidate SHA and all findings are resolved or explicitly reported before the Azure PR is handed to Pete"
+        "Terra Max completed focused and relevant regression tests, a 29-path authorized-surface audit, six-capture browser comparison, and task-created debris cleanup",
+        "Sol Max independently reviewed exact candidate 7c6efbe0f620ec28e460e359877f6eabac65e2fe and reported zero actionable P0-P3 findings",
+        "Azure PR validation build 579 passed all required policies before PR 320 merged",
+        "PR 320 merge tree 8d7bb88950482079d89d5358a5e4caff8b7b6c03 exactly matches the reviewed candidate tree",
+        "Owner-authorized closeout fixture repair changed only tests/test_delivery_preflight.py; delivery_preflight.py and runtime behavior are unchanged; the final governance and operational suite passed 80 tests and 128 subtests"
       ],
       "owner_decisions": [
         {
@@ -354,6 +365,14 @@
         {
           "date": "2026-08-06",
           "decision": "Pete required clean-kitchen delivery and active lane awareness. Create only dedicated worktrees, verify current main and recovery before cleanup, remove only this program's clean merged artifacts, and preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact."
+        },
+        {
+          "date": "2026-08-07",
+          "decision": "Pete explicitly directed: 'Merge PR 320, record the lane complete, and formally relinquish app.py so the Community revival lane can activate.' This authorizes Ask Pete source integration and closeout only; Community remains a separate future activation and implementation lane."
+        },
+        {
+          "date": "2026-08-07",
+          "decision": "Pete's closeout follow-up directed Codex to wrap this up, include whatever emerges, and pause so waiting lanes can proceed. This explicitly covers the one-file tests/test_delivery_preflight.py fixture correction exposed by truthful Ask Pete relinquishment. The correction may make synthetic activation tests independent of Ask Pete and Interview lane membership; it may not change delivery_preflight.py, validator behavior, product code, runtime behavior, Community, Interview Studio, deployment, or production."
         }
       ],
       "model_routing": {
@@ -365,8 +384,11 @@
         "coordinator": "Root Codex session verifies authority, lane isolation, preflight, review closure, Azure PR truth, and bounded cleanup; it does not hand-write product implementation",
         "sequence": "activation merge -> Sol Extra High architecture record -> Terra Max implementation and self-review -> Sol Max independent review -> Terra resolves findings -> Azure PR handoff without merge or deploy"
       },
-      "sequence": "merge this control-only activation -> create one clean implementation worktree from resulting origin/main -> run PS-ASK-PETE-AI-001 write preflight -> preserve package-local visual hashes -> Sol Extra High commits architecture record and relinquishes -> Terra Max implements in vertical slices and cleans task debris -> Sol Max reviews exact candidate SHA read-only -> Terra resolves findings and opens an Azure PR -> stop before merge, deployment, provider/configuration change, or feature enablement"
-    },
+      "sequence": "PR 315 backend merge -> accepted visual authority -> Sol Extra High architecture -> Terra Max implementation and self-review -> Sol Max independent review -> PR 320 source merge -> documentation-only control closeout -> recoverability verification -> bounded Ask Pete artifact cleanup",
+      "branch_note": "Closing record only. writes_allowed_for lists only PS-INTERVIEW-STUDIO-CALIBRATION-001, so the historical Ask Pete writable_surfaces list confers no write authority. Every prior Ask Pete surface, including app.py, is relinquished. After the closeout PR merges and recovery is verified, remove only the clean Ask Pete runtime worktree and local/remote branch; preserve the active Interview Studio lane, PS-DELIVERY-CONTROL-001, and every unrelated, dirty, unverified, or user-owned artifact."
+    }
+  ],
+  "active_lanes": [
     {
       "package": "PS-INTERVIEW-STUDIO-CALIBRATION-001",
       "outcome": "Calibrate the existing public /interview-studio experience to the exact owner-selected Smoked Eucalyptus sage visual system while preserving the already released PS-INTERVIEW-FOCUS-UI-001 V3 structure, all three modes, browser-local history and drafts, AI request boundaries, voice/video truth, responsive behavior, accessibility, and every existing interaction contract. This is implementation of locked visual authority, not a new page or product redesign, and stops before merge or deployment.",
