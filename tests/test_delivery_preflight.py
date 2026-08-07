@@ -44,6 +44,48 @@ class DeliveryPreflightTests(unittest.TestCase):
         cls.ledger = load_ledger(cls.path)
         cls.baseline = load_baseline_bytes()
 
+    def _baseline_for_origin(self, origin: dict) -> bytes:
+        """Return a baseline whose active packages match a real origin fixture.
+
+        A checked-in activation candidate can contain the lane that a 1->2
+        transition test is trying to add.  Keep the fixture independent from
+        that transient repository state by retaining only packages present in
+        the synthetic origin.  Synthetic package names used by other tests do
+        not appear in the real baseline, so those fixtures intentionally keep
+        the checked-in bytes unchanged.
+        """
+        packages = {
+            lane["package"]
+            for lane in origin.get("active_lanes", [])
+            if isinstance(lane, dict) and isinstance(lane.get("package"), str)
+        }
+        source = self.baseline.decode("utf-8")
+        section = re.search(
+            r"(?ms)^active_packages:\n(?P<body>.*?)(?=^scoped_findings:\n)",
+            source,
+        )
+        if section is None:
+            return self.baseline
+        blocks = list(
+            re.finditer(
+                r"(?ms)^  - id: (?P<id>[^\n]+)\n.*?(?=^  - id: |\Z)",
+                section.group("body"),
+            )
+        )
+        recorded = {block.group("id") for block in blocks}
+        if not packages or not packages.issubset(recorded):
+            return self.baseline
+        retained = "".join(
+            block.group(0) for block in blocks if block.group("id") in packages
+        )
+        candidate = (
+            source[: section.start()]
+            + "active_packages:\n"
+            + retained
+            + source[section.end() :]
+        )
+        return candidate.encode("utf-8")
+
     def _activation_baselines(
         self,
         origin: dict,
@@ -61,6 +103,8 @@ class DeliveryPreflightTests(unittest.TestCase):
         ):
             return self.baseline, self.baseline
 
+        origin_baseline = self._baseline_for_origin(origin)
+
         origin_packages = {
             lane["package"].casefold()
             for lane in origin.get("active_lanes", [])
@@ -74,12 +118,12 @@ class DeliveryPreflightTests(unittest.TestCase):
             and lane["package"].casefold() not in origin_packages
         ]
         if len(added_lanes) != 1:
-            return self.baseline, self.baseline
+            return origin_baseline, origin_baseline
 
         lane = added_lanes[0]
         package = lane["package"]
         branch = lane.get("branch", "work/test-implementation")
-        source = self.baseline.decode("utf-8")
+        source = origin_baseline.decode("utf-8")
         candidate_text = re.sub(
             r'^  current_assignments: .+$',
             (
@@ -107,7 +151,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             count=1,
             flags=re.MULTILINE,
         )
-        return self.baseline, candidate_text.encode("utf-8")
+        return origin_baseline, candidate_text.encode("utf-8")
 
     def _actual_pr316_baselines(
         self,
@@ -125,7 +169,8 @@ class DeliveryPreflightTests(unittest.TestCase):
             for lane in candidate["active_lanes"]
             if lane["package"] == "PS-INTERVIEW-STUDIO-CALIBRATION-001"
         )
-        source = self.baseline.decode("utf-8")
+        origin_baseline = self._baseline_for_origin(origin)
+        source = origin_baseline.decode("utf-8")
         candidate_text = re.sub(
             r'^  current_assignments: .+$',
             (
@@ -165,7 +210,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             count=1,
             flags=re.MULTILINE,
         )
-        return self.baseline, candidate_text.encode("utf-8")
+        return origin_baseline, candidate_text.encode("utf-8")
 
     def _evaluate_activation(
         self,

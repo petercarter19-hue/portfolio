@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-ASK-PETE-AI-001 remains the sole active lane and is unchanged. PS-DELIVERY-CONTROL-001 is closing through Pete-authorized atomic fixture-only PR 321; no validator, lane-limit, product, release, deployment, or Ask Pete change is included."
+  current_assignments: "PS-ASK-PETE-AI-001 remains the sole active lane and is unchanged. PS-DELIVERY-CONTROL-001 is closing through one fixture-only follow-up after PR 321; no validator, lane-limit, product, release, deployment, or Ask Pete change is included."
 
 governing_documents:
   bible:
@@ -135,7 +135,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Merge PS-DELIVERY-CONTROL-001 PR 321 only after required policies pass, verify exact main and clean its recoverable task artifacts, then refresh and validate the already-prepared Interview Studio activation without displacing Ask Pete."
+next_gate: "Merge the PS-DELIVERY-CONTROL-001 fixture-only follow-up only after required policies pass, then refresh the already-prepared Interview Studio activation to resulting main and require its clean activation preflight and complete control suite before merge."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

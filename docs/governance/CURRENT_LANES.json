@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-07T06:00:00Z",
+  "updated_at": "2026-08-07T12:00:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -74,12 +74,12 @@
   "closing_lanes": [
     {
       "package": "PS-DELIVERY-CONTROL-001",
-      "outcome": "Complete pending policy-approved PR 321 merge. The one-time atomic bootstrap stabilizes only delivery-preflight transition fixtures so one-to-two activation tests synthesize their intended one-lane origin instead of inheriting a transient second lane from the checked-in ledger.",
-      "branch": "work/2026-08-07-delivery-activation-preflight-fixture-stability",
-      "writer": "Root Codex session in portfolio-delivery-activation-preflight-fixture-stability-20260807",
+      "outcome": "PR 321 merged as exact main 7e3a949 after required run 582 passed. A fixture-only follow-up now makes the companion baseline use the same synthetic one-lane origin as the ledger, preventing a duplicate Interview package when the checked-in branch is itself an activation candidate.",
+      "branch": "work/2026-08-07-delivery-preflight-fixture-stability-followup",
+      "writer": "Root Codex session in portfolio-delivery-preflight-fixture-stability-followup-20260807",
       "delivery_path": "Bounded owner-authorized atomic bootstrap exception",
       "production_capable": false,
-      "source_checkpoint": "Refreshed Azure origin/main d154d3455b09a2c337530a60608bdfb6c95897e9 after Ask Pete PR 320 merged; rebased activation-only commit ba9b1fc55d4c4c967626d664608d4d16eb8ee057; failed required run 580 on its pre-refresh equivalent proved exactly two stale-fixture failures across 2,847 tests.",
+      "source_checkpoint": "Azure origin/main 7e3a949e87174043b24ad703241a40cac46052dd after PR 321; refreshed Interview activation candidate 747cad7 proved the remaining baseline/ledger mismatch without any product write.",
       "writable_surfaces": [
         "tests/test_delivery_preflight.py",
         "docs/governance/CURRENT_LANES.json",
@@ -92,10 +92,10 @@
         "no write or cleanup outside the three listed surfaces and this task's verified clean branch/worktree"
       ],
       "completion_evidence": [
-        "activation-only commit ba9b1fc passed the exact --intent activate --fetch --require-clean preflight after refresh to current main",
-        "required Azure run 580 failed only the two expected stale transition fixtures and passed the other 2,845 tests",
-        "the stable one-lane fixture preserves full-capacity, path-overlap, and case-folded branch-collision refusal coverage",
-        "focused and full repository verification must pass on the final exact candidate before PR 321 merges"
+        "PR 321 required Azure run 582 passed and squash-merged as exact main 7e3a949",
+        "the follow-up derives both origin ledger and origin baseline from the same retained active package set",
+        "full-capacity, path-overlap, case-folded branch-collision, baseline-smuggling, and malformed-baseline refusal coverage remains intact",
+        "focused control tests, exact Interview activation fixture tests, and the required full Azure policy must pass before the follow-up merges"
       ],
       "owner_decisions": [
         {
@@ -103,7 +103,7 @@
           "decision": "Pete first authorized the exact temporary fixture-only lane, then explicitly approved the recommended one-time atomic three-file bootstrap exception with 'Okay, make it happen.'"
         }
       ],
-      "branch_note": "PR 321 may squash-merge only after required policies pass on the exact candidate. After merge equivalence and recoverability are verified, remove only this task's clean worktree and branches; preserve all unrelated or dirty material."
+      "branch_note": "The follow-up may squash-merge only after required policies pass on the exact candidate. Then verify merge equivalence and remove only this clean follow-up worktree/branch; preserve every unrelated or dirty artifact."
     },
     {
       "package": "PS-DATA-FOUNDATION-001",
