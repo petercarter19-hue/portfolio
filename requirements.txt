@@ -31,7 +31,7 @@ azure-identity==1.25.3  # Passwordless DefaultAzureCredential for private Blob a
 azure-storage-blob==12.30.0  # Private Voice source storage; no key or SAS authentication
 requests==2.34.2       # Bounded Azure Speech fast-transcription HTTP client
 Pillow==12.3.0         # Strict JPEG/PNG decode and metadata-free Photo derivatives
-pypdf==6.14.2          # Pure-Python, dependency-free PDF text extraction for
+pypdf==6.15.0          # Pure-Python, dependency-free PDF text extraction for
                        # Opportunity Slate document upload (structure-only:
                        # no rendering engine, no JavaScript evaluation).
                        # Needs its own Azure App Service Python 3.14 boot
