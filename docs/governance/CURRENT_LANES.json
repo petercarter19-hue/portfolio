@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-05",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-ASK-PETE-AI-001"
+      "PS-ASK-PETE-AI-001",
+      "PS-INTERVIEW-STUDIO-CALIBRATION-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -39,7 +40,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-ASK-PETE-AI-001 remains the sole active lane and is unchanged. Pete authorized PR 321 as a one-time atomic three-file PS-DELIVERY-CONTROL-001 bootstrap repair after its activation-only build proved the stale-fixture circularity. That control PR may merge only after required policies pass, then its clean worktree and branch may be removed after recoverability is verified. No product, validator, lane-limit, release, deployment, or Ask Pete change is authorized."
+    "exit_authority": "Two disjoint non-production lanes fill the configured limit: PS-ASK-PETE-AI-001 visual/runtime on work/2026-08-06-ask-pete-recruiter-evidence-runtime-v1 and PS-INTERVIEW-STUDIO-CALIBRATION-001 visual-only on work/2026-08-06-interview-studio-calibration-001. Interview Studio may implement and open an Azure PR only after this activation merges and its clean implementation worktree passes the write preflight. Neither lane may merge or deploy its implementation in the active record. Cleanup remains bounded to each task's clean, merged, recoverable artifacts; unrelated, dirty, unverified, or user-owned work remains preserved."
   },
   "activation_policy": {
     "enabled": true,
@@ -365,6 +366,62 @@
         "sequence": "activation merge -> Sol Extra High architecture record -> Terra Max implementation and self-review -> Sol Max independent review -> Terra resolves findings -> Azure PR handoff without merge or deploy"
       },
       "sequence": "merge this control-only activation -> create one clean implementation worktree from resulting origin/main -> run PS-ASK-PETE-AI-001 write preflight -> preserve package-local visual hashes -> Sol Extra High commits architecture record and relinquishes -> Terra Max implements in vertical slices and cleans task debris -> Sol Max reviews exact candidate SHA read-only -> Terra resolves findings and opens an Azure PR -> stop before merge, deployment, provider/configuration change, or feature enablement"
+    },
+    {
+      "package": "PS-INTERVIEW-STUDIO-CALIBRATION-001",
+      "outcome": "Calibrate the existing public /interview-studio experience to the exact owner-selected Smoked Eucalyptus sage visual system while preserving the already released PS-INTERVIEW-FOCUS-UI-001 V3 structure, all three modes, browser-local history and drafts, AI request boundaries, voice/video truth, responsive behavior, accessibility, and every existing interaction contract. This is implementation of locked visual authority, not a new page or product redesign, and stops before merge or deployment.",
+      "branch": "work/2026-08-06-interview-studio-calibration-001",
+      "writer": "Terra at maximum reasoning in C:\\Users\\peter\\Documents\\portfolio-interview-studio-calibration-20260806; sole writer for exactly the five listed surfaces",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "source_checkpoint": "Repository-controlled structure and interaction authority: docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/ revision v3-all-modes-complete, archive SHA-256 7FF3187C7F7E62A29FFD15433454AA0742302308249B4AACA9ED8DBED809814F; v2-white is supplemental only at SHA-256 F968CEDF57CD064B748861472658FEAB87EF7C0603C277BAAAEDA2C2649B7E4D; binding compact-height decision: docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/01_OWNER_ACTIVATION_AND_RELEASE_DECISION.md. Owner-selected palette/surface/background authority: iCloud file 34 - Green Hue Only - Smoked Eucalyptus.png at SHA-256 1802FB9D3B0F43CCEB84400448A8E628FDB5B8F5D54DB3CCD253581DFB4AEC1F. Owner-approved critical-state validation: file 46 Active Voice Answer SHA-256 E24F517ABD8CCFE25BDBD4392AC598DE8B44355E8C48FA1F7BBAB0311B551729, file 47 Video Delivery Review SHA-256 C69F9D4BFC40435C556D89B8A264AEE0E62C4AC9EEFDD4F7D1CCAC2E4D38A4D5, and file 48 History and Progress SHA-256 97CD8883E18BF8F1EAA85DA800CBCA06B10793BA5C9657FF70577493EE7134DB, all under C:\\Users\\peter\\iCloudDrive\\PeerSlate\\Interview Studio Color Studies - 2026-08-06. The first package-local write copies these exact bytes into the new initiative source-authority folder and records their hashes before runtime edits. docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md is required. Released code and tests control any functionality or truth-boundary conflict.",
+      "writable_surfaces": [
+        "templates/interview_studio.html",
+        "static/css/interview-studio.css",
+        "static/js/interview-studio.js",
+        "tests/test_interview_studio.py",
+        "docs/initiatives/PS-INTERVIEW-STUDIO-CALIBRATION-001/"
+      ],
+      "exclusions": [
+        "no route rename, app.py, backend, endpoint, payload, prompt, rubric, provider, model, storage key, authentication, database, schema, dependency, pipeline, shared shell, or deployment change",
+        "no private-member Interview Studio, account-backed history, My Knowledge integration, Opportunity Slate integration, media upload or retention, delivery analysis, or other product expansion",
+        "no behavior change: typing, optional dictation, Interview AI, Video Practice, browser-local drafts/history, request boundaries, failure recovery, and public truth remain as released",
+        "no new visual invention: implementation must compare against the exact named V3/V2 authority, owner-selected sage files and hashes, compact-height correction, and OWNER_VISUAL_INTEGRITY_STANDARD.md",
+        "no write outside the five listed surfaces and no write to another branch, worktree, checkpoint, stash, artifact, or lane-owned surface",
+        "no implementation PR merge, release, deployment, production configuration change, or claim that the candidate is live"
+      ],
+      "completion_evidence": [
+        "the activation PR is merged and the implementation worktree is created from that resulting origin/main",
+        "the package write preflight passes with --fetch --require-clean before implementation begins",
+        "the exact owner-selected files 34, 46, 47, and 48 are copied byte-for-byte into the new package source-authority folder with a hash manifest before runtime edits",
+        "desktop and mobile browser comparisons use the exact repository V3 mockups plus the selected sage authority and binding compact-height correction",
+        "all three modes and browser-local public truth remain intact, with no route, request, persistence, media, backend, or product-semantic change",
+        "focused Interview Studio tests, relevant responsive/accessibility checks, git diff --check, and complete-diff self-review pass",
+        "Sol at maximum reasoning independently reviews the exact candidate SHA after Terra finishes and before the Azure implementation PR is opened",
+        "validated review findings are resolved and the Azure implementation PR is opened; merge and deployment remain separately unauthorized"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-06",
+          "decision": "Pete approved file 34 Smoked Eucalyptus as the controlling Interview Studio color, texture, surface, shadow, and background direction, then approved files 46-48 as successful Voice, Video Review, and History validation. Existing V3/V2 and released behavior remain controlling for structure, interaction, responsive states, and truth where the new images are silent."
+        },
+        {
+          "date": "2026-08-06",
+          "decision": "Pete authorized this exact five-surface implementation after the activation PR merges and the clean implementation worktree passes its write preflight. No additional generic implementation-authorization pause is required. Stop only for missing or contradictory exact authority, a newly active surface overlap, failed preflight, behavior change, or work outside the five-surface boundary."
+        },
+        {
+          "date": "2026-08-06",
+          "decision": "Pete assigned Terra at maximum reasoning as the sole implementation writer, Sol at maximum reasoning as the independent exact-SHA reviewer, and Sol at extra-high reasoning for a read-only architecture reconciliation only if architecture remained unresolved. Cleanup must remain task-local, recoverability-verified, and must preserve all other lanes."
+        }
+      ],
+      "model_routing": {
+        "architecture": "Sol at extra-high reasoning performs one read-only authority/architecture reconciliation; no write authority",
+        "implementation": "Terra at maximum reasoning, sole implementation writer in the dedicated clean worktree",
+        "independent_reviewer": "Sol at maximum reasoning in a fresh read-only review context after the candidate SHA is complete",
+        "sequence": "activation merge -> clean implementation worktree -> write preflight -> Sol extra-high architecture result is reconciled -> Terra implements and self-reviews -> Sol max independently reviews exact candidate SHA -> Terra resolves validated findings -> Azure implementation PR opens; no merge or deployment"
+      },
+      "cleanup_contract": "After activation merge, remove only the clean merged activation worktree/branch after verifying origin/main contains the activation and a recovery reference exists. After implementation PR merge is separately authorized and completed, apply the same rule to only this implementation lane. Do not touch the active Ask Pete worktree/branch or any unrelated, dirty, unverified, or user-owned material.",
+      "sequence": "merge the activation-only PR -> fetch resulting origin/main -> create work/2026-08-06-interview-studio-calibration-001 at C:\\Users\\peter\\Documents\\portfolio-interview-studio-calibration-20260806 -> run package write preflight -> copy and hash the exact selected visual authority into the package -> reconcile the read-only Sol architecture verdict -> Terra implements, tests, and self-reviews only the five surfaces -> Sol max reviews exact candidate SHA -> Terra resolves validated findings -> open Azure implementation PR; stop before merge or deployment"
     }
   ],
   "paused_lanes": [
