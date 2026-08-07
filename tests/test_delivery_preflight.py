@@ -281,6 +281,18 @@ class DeliveryPreflightTests(unittest.TestCase):
 
     def test_bootstrap_control_repair_is_exact_and_one_time(self):
         repair_ledger = copy.deepcopy(self.ledger)
+        # This test isolates the exact, one-time bootstrap boundary. Capacity
+        # enforcement has its own assertions above, so keep one slot available
+        # rather than inheriting a full live ledger and conflating the rules.
+        lane_limit = repair_ledger["activation_policy"]["max_active_lanes"]
+        repair_ledger["active_lanes"] = list(
+            repair_ledger.get("active_lanes") or []
+        )[: lane_limit - 1]
+        repair_ledger["operating_mode"]["state"] = (
+            "active_delivery"
+            if repair_ledger["active_lanes"]
+            else "controlled_idle"
+        )
         bootstrap = repair_ledger["bootstrap_control_repair"]
         standing = set(repair_ledger["activation_policy"]["allowed_surfaces"])
         # A surface the exception widens to, so losing the exception is visible.

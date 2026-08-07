@@ -59,20 +59,14 @@
   "bootstrap_control_repair": {
     "status": "one_time_owner_authorized_repair",
     "package": "PS-DELIVERY-CONTROL-001",
-    "branch": "work/2026-08-06-delivery-activation-parallel-lane-repair",
-    "origin_main": "779ab5f4524a5094dae512c8dec9a341286da243",
+    "branch": "work/2026-08-06-delivery-activation-bootstrap-test-repair",
+    "origin_main": "ebb62763cb53bd334c0ff6642197a69641eca1c5",
     "allowed_surfaces": [
       "docs/governance/CURRENT_LANES.json",
-      "scripts/delivery_preflight.py",
-      "tests/test_delivery_preflight.py",
-      "START_HERE.md",
-      "AGENTS.md",
-      "CLAUDE.md",
-      "docs/governance/AGENT_STARTUP_CHECKLIST.md",
-      "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md"
+      "tests/test_delivery_preflight.py"
     ],
-    "reason": "Pete explicitly authorized this one-time PS-DELIVERY-CONTROL-001 bootstrap repair on 2026-08-06 after the clean Interview Studio activation branch proved that the advertised second lane could not be activated: delivery_preflight allowed activation only from controlled_idle even though active_delivery had one open slot. This exact branch changes only the preflight, its focused tests, the machine-readable policy, and synchronized Codex/Claude/owner guidance. It permits lane two only while the two-lane limit has capacity and retains the existing exact package, branch, clean-checkout, current-main, and control-surface checks. No product, schema, pipeline, release, or production behaviour changes.",
-    "inert_after_merge": "The exception requires this exact branch and the pre-repair origin/main SHA. After squash merge, every later checkout has a different origin/main, so the widened repair surfaces cannot be reused."
+    "reason": "Pete explicitly authorized this one-time PS-DELIVERY-CONTROL-001 test repair on 2026-08-06 after Interview Studio activation PR 316 correctly reserved the second lane but validation build 573 exposed a state-coupled historical bootstrap test. That test deep-copied the now-full ledger and expected a historical bootstrap activation to pass, even though the separate capacity test correctly requires a full two-lane ledger to refuse another activation. This exact branch changes only the machine-readable one-time authorization and that focused test so bootstrap exactness is evaluated with one slot available. It does not change max_active_lanes, evaluate_policy, active or closing lane membership, product code, schema, pipeline, release, or production behaviour.",
+    "inert_after_merge": "The exception requires this exact branch and pre-repair origin/main SHA. After squash merge, every later checkout has a different origin/main, so the widened test surface cannot be reused."
   },
   "closing_lanes": [
     {
