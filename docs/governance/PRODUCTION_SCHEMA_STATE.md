@@ -6,11 +6,9 @@ This file is the repository's record of which schema migrations the named databa
 
 - Database: `peerslate-database`
 - Server: `peerslate`
-- Read at: `2026-08-06T12:09:40Z` UTC
-- Pipeline source version: `d7e996e45449579fbf370a9e1263f8725b1d753f`
-- Pipeline build: `565`
+- Read at: `2026-08-07T16:19:24Z` UTC
 
-## Applied (24)
+## Applied (25)
 
 In registry order.
 
@@ -40,6 +38,7 @@ In registry order.
 | 22 | `PS-COMMUNITY-PUBLIC-PILOT-001` | 2026-08-04T12:13:38.9428360 | yes |
 | 23 | `PS-COMMUNITY-RETENTION-001` | 2026-08-04T12:13:39.0945281 | yes |
 | 24 | `PS-COMMUNITY-RESTORE-001` | 2026-08-04T12:13:39.1616332 | yes |
+| 25 | `PS-COMMUNITY-REVIVAL-001` | 2026-08-07T16:08:11.6886179 | yes |
 
 ## Registered but not applied (2)
 
@@ -86,6 +85,11 @@ In registry order.
     {
       "applied_at_utc": "2026-08-04T12:13:39.0945281",
       "id": "PS-COMMUNITY-RETENTION-001",
+      "registered": true
+    },
+    {
+      "applied_at_utc": "2026-08-07T16:08:11.6886179",
+      "id": "PS-COMMUNITY-REVIVAL-001",
       "registered": true
     },
     {
@@ -175,13 +179,13 @@ In registry order.
     }
   ],
   "database": "peerslate-database",
-  "generated_at_utc": "2026-08-06T12:09:40Z",
+  "generated_at_utc": "2026-08-07T16:19:24Z",
   "pending": [
     "PS-JOURNAL-001",
     "PS-PLAT-008"
   ],
-  "pipeline_build_id": "565",
-  "pipeline_source_version": "d7e996e45449579fbf370a9e1263f8725b1d753f",
+  "pipeline_build_id": "",
+  "pipeline_source_version": "",
   "registry_version": 1,
   "server": "peerslate",
   "unregistered_in_ledger": []

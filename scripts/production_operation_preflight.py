@@ -22,6 +22,7 @@ SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 MIGRATION_ID_RE = re.compile(r"^PS-[A-Z0-9]+(?:-[A-Z0-9]+)*$")
 ACTIVE_STATUSES = {"notStarted", "inProgress", "postponed"}
 AUTOMATIC_REASONS = {"individualCI", "batchedCI"}
+MAX_BUILD_PAGES = 20
 
 
 class PreflightError(ValueError):
@@ -134,34 +135,62 @@ def read_exact_sha_runs(
         )
 
     base = collection_uri.rstrip("/") + "/"
-    query = urllib.parse.urlencode(
-        {
+    matching = []
+    continuation_token = ""
+    seen_tokens = set()
+    for _page in range(MAX_BUILD_PAGES):
+        parameters = {
             "definitions": definition_id,
-            "sourceVersion": source_version,
+            # Azure DevOps' build-list API does not support sourceVersion as
+            # a server-side filter. Unknown query parameters are silently
+            # ignored, so exact-SHA matching must happen on every response
+            # page.
+            "branchName": "refs/heads/main",
             "queryOrder": "queueTimeDescending",
             "$top": "50",
             "api-version": "7.1",
         }
-    )
-    url = (
-        f"{base}{urllib.parse.quote(project_id, safe='')}/"
-        f"_apis/build/builds?{query}"
-    )
-    request = urllib.request.Request(
-        url,
-        headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
-    )
-    try:
-        with opener(request, timeout=20) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-    except Exception as exc:  # fail closed without exposing token or URL query
-        raise PreflightError(
-            f"could not read exact-SHA Azure run state: {type(exc).__name__}"
-        ) from exc
-    values = payload.get("value")
-    if not isinstance(values, list):
-        raise PreflightError("Azure build-state response has an invalid shape")
-    return [item for item in values if isinstance(item, dict)]
+        if continuation_token:
+            parameters["continuationToken"] = continuation_token
+        query = urllib.parse.urlencode(parameters)
+        url = (
+            f"{base}{urllib.parse.quote(project_id, safe='')}/"
+            f"_apis/build/builds?{query}"
+        )
+        request = urllib.request.Request(
+            url,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json",
+            },
+        )
+        try:
+            with opener(request, timeout=20) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+                headers = getattr(response, "headers", {}) or {}
+                next_token = str(
+                    headers.get("x-ms-continuationtoken", "") or ""
+                ).strip()
+        except Exception as exc:  # fail closed without exposing token or URL query
+            raise PreflightError(
+                f"could not read exact-SHA Azure run state: {type(exc).__name__}"
+            ) from exc
+        values = payload.get("value")
+        if not isinstance(values, list):
+            raise PreflightError("Azure build-state response has an invalid shape")
+        matching.extend(
+            item
+            for item in values
+            if isinstance(item, dict)
+            and item.get("sourceVersion") == source_version
+        )
+        if not next_token:
+            return matching
+        if next_token in seen_tokens:
+            raise PreflightError("Azure build-state pagination repeated a token")
+        seen_tokens.add(next_token)
+        continuation_token = next_token
+    raise PreflightError("Azure build-state pagination exceeded its safe bound")
 
 
 def reject_duplicate_manual_fallback(

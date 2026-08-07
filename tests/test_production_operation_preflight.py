@@ -140,6 +140,8 @@ class ExactShaRunTests(unittest.TestCase):
         captured = {}
 
         class Response:
+            headers = {}
+
             def __enter__(self):
                 return self
 
@@ -147,7 +149,14 @@ class ExactShaRunTests(unittest.TestCase):
                 return False
 
             def read(self):
-                return json.dumps({"value": [{"id": 1}]}).encode()
+                return json.dumps(
+                    {
+                        "value": [
+                            {"id": 1, "sourceVersion": SHA},
+                            {"id": 2, "sourceVersion": "b" * 40},
+                        ]
+                    }
+                ).encode()
 
         def opener(request, timeout):
             captured["url"] = request.full_url
@@ -163,10 +172,82 @@ class ExactShaRunTests(unittest.TestCase):
             token="secret-token",
             opener=opener,
         )
-        self.assertEqual([{"id": 1}], runs)
-        self.assertIn("sourceVersion=" + SHA, captured["url"])
+        self.assertEqual([{"id": 1, "sourceVersion": SHA}], runs)
+        self.assertNotIn("sourceVersion=", captured["url"])
+        self.assertIn("branchName=refs%2Fheads%2Fmain", captured["url"])
         self.assertEqual("Bearer secret-token", captured["authorization"])
         self.assertNotIn("secret-token", captured["url"])
+
+    def test_azure_query_filters_exact_sha_across_continuation_pages(self):
+        urls = []
+
+        class Response:
+            def __init__(self, value, continuation=""):
+                self.value = value
+                self.headers = (
+                    {"x-ms-continuationtoken": continuation}
+                    if continuation
+                    else {}
+                )
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return json.dumps({"value": self.value}).encode()
+
+        pages = [
+            Response(
+                [{"id": index, "sourceVersion": "b" * 40} for index in range(50)],
+                "page-two",
+            ),
+            Response([{"id": 51, "sourceVersion": SHA}]),
+        ]
+
+        def opener(request, timeout):
+            urls.append(request.full_url)
+            self.assertEqual(20, timeout)
+            return pages.pop(0)
+
+        runs = read_exact_sha_runs(
+            collection_uri="https://dev.azure.com/peerslate19/",
+            project_id="project-id",
+            definition_id="1",
+            source_version=SHA,
+            token="secret-token",
+            opener=opener,
+        )
+
+        self.assertEqual([{"id": 51, "sourceVersion": SHA}], runs)
+        self.assertEqual(2, len(urls))
+        self.assertNotIn("continuationToken=", urls[0])
+        self.assertIn("continuationToken=page-two", urls[1])
+
+    def test_azure_query_fails_closed_on_repeated_continuation_token(self):
+        class Response:
+            headers = {"x-ms-continuationtoken": "same-token"}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return json.dumps({"value": []}).encode()
+
+        with self.assertRaisesRegex(PreflightError, "repeated a token"):
+            read_exact_sha_runs(
+                collection_uri="https://dev.azure.com/peerslate19/",
+                project_id="project-id",
+                definition_id="1",
+                source_version=SHA,
+                token="secret-token",
+                opener=lambda _request, timeout: Response(),
+            )
 
 
 if __name__ == "__main__":
