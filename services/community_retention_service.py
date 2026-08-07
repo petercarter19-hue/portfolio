@@ -1,16 +1,13 @@
-"""Run the approved Community retention purges on the request cadence.
+"""Run the approved Community retention purge operations.
 
 Implements the scheduling half of
 docs/initiatives/PS-COMMUNITY-PUBLIC-PILOT-001/APPROVED_RETENTION_AND_DELETION_DECISION.md
 The SQL itself lives in PS-COMMUNITY-RETENTION-001 and is proven by the
-disposable SQL proof; this module only decides when to call it.
-
-Why the request cadence rather than a timer thread: it is the mechanism the
-media cleanup worker already uses, it needs no scheduler infrastructure, and a
-missed window simply means the next request purges a slightly older batch.
-Nothing here deletes live content. Every procedure it calls acts only on rows
-the author already removed, on body-free audit rows, or on processed outbox
-rows.
+disposable SQL proof. The operational schedule is outside the Flask process in
+``scripts/run_community_maintenance.py``; importing this module never schedules
+work. Nothing here deletes live content. Every procedure it calls acts only on
+rows the author already removed, on body-free audit rows, or on processed
+outbox rows.
 """
 
 from __future__ import annotations
@@ -20,7 +17,7 @@ import os
 from threading import Lock
 import time
 
-from services.database_service import DatabaseServiceError, database_service
+from services.database_service import database_service
 
 
 LOGGER = logging.getLogger(__name__)
@@ -73,13 +70,11 @@ class CommunityRetentionService:
         try:
             return self.purge_content(batch_size=batch_size)
         except Exception as error:
-            # Deliberately broad. This runs from an app-wide before_request,
-            # so anything that escapes here returns 500 on every route on the
-            # site. Catching only DatabaseServiceError let a ValueError from
-            # the procedure allowlist through and did exactly that
-            # (independent review 2026-08-04, F1). Housekeeping must never be
-            # able to take the site down; the next cadence retries and the row
-            # stays eligible meanwhile.
+            # Deliberately broad. Catching only DatabaseServiceError let a
+            # ValueError from the procedure allowlist escape in the retired
+            # request-path scheduler (independent review 2026-08-04, F1).
+            # Scheduled housekeeping still fails closed and leaves the row
+            # eligible for a later run.
             LOGGER.error(
                 "Community content purge failed: error_type=%s.",
                 type(error).__name__,
@@ -107,7 +102,11 @@ class CommunityRetentionService:
 
 
 class CommunityRetentionMaintenance:
-    """Hourly content purge and daily audit/outbox purge, as approved."""
+    """Legacy deterministic cadence helper retained for regression tests.
+
+    The Flask app does not instantiate or call this helper. Production uses
+    the bounded out-of-process maintenance command.
+    """
 
     def __init__(
         self,
@@ -119,12 +118,9 @@ class CommunityRetentionMaintenance:
         self.service = service or community_retention_service
         self.content_interval_seconds = content_interval_seconds
         self.daily_interval_seconds = daily_interval_seconds
-        # Both timers previously started at zero, so every worker swept on its
-        # own first request: a restart across N workers meant N simultaneous
-        # sweeps, each inline on a real member request. The app supplies a
-        # per-process delay to spread them. It defaults to zero here so the
-        # cadence stays deterministic under test — the staggering is a
-        # deployment concern, not a behaviour of the scheduler.
+        # The retired request-path implementation used this offset to avoid a
+        # restart stampede. It defaults to zero so the compatibility helper
+        # remains deterministic under test.
         # Independent review, 2026-08-04, F13.
         self.startup_delay_seconds = startup_delay_seconds
         self._next_content_run = None
@@ -143,14 +139,9 @@ class CommunityRetentionMaintenance:
     def maybe_run(self):
         """Run whichever cadences are due.
 
-        This runs the sweep inline, inside the request that finds it due. It
-        never blocks a *concurrent* request — the non-blocking lock means a
-        second request returns immediately rather than queueing — but the
-        request that triggers it does wait for it. The docstring previously
-        claimed it never blocks a request at all, which was not true
-        (independent review, 2026-08-04, F13). The procedures are batched and
-        use READPAST, so the cost is bounded; if it ever stops being bounded,
-        the fix is a timer-based worker, not a longer docstring.
+        This compatibility helper performs synchronous work for callers and
+        never queues a concurrent call. It is intentionally not wired to an
+        HTTP lifecycle.
         """
         if not self._lock.acquire(blocking=False):
             return {}
@@ -172,7 +163,3 @@ class CommunityRetentionMaintenance:
 
 
 community_retention_service = CommunityRetentionService()
-community_retention_maintenance = CommunityRetentionMaintenance(
-    community_retention_service,
-    startup_delay_seconds=CommunityRetentionMaintenance.process_startup_delay(),
-)

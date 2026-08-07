@@ -6,6 +6,21 @@ trigger:
     include:
       - main
 
+# Community retention obligations are independent of Community visibility.
+# This schedule uses a dedicated workload identity with only five SQL procedure
+# grants and one private-container Blob data role. Its nonsecret service
+# connection and ActiveDirectoryDefault SQL connection are Azure pipeline
+# metadata. Scheduled runs skip the ordinary Build/deploy/schema/Candidate path
+# below and execute only the separately default-off maintenance stage.
+schedules:
+  - cron: '17 * * * *'
+    displayName: Community maintenance hourly
+    branches:
+      include:
+        - main
+    always: true
+    batch: true
+
 parameters:
   - name: forceProductionDeploy
     displayName: Force production deploy for a manually queued main run
@@ -68,6 +83,7 @@ variables:
 stages:
   - stage: Build
     displayName: Build
+    condition: ne(variables['Build.Reason'], 'Schedule')
     jobs:
       - job: BuildJob
         pool:
@@ -282,8 +298,51 @@ stages:
               SYSTEM_DEFINITION_ID: $(System.DefinitionId)
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
-      - deployment: DeployWebApp
+      - job: VerifyCommunitySchemaBeforeDeploy
+        displayName: Require Community schema before web deployment
         dependsOn: ValidateProductionOperationRequest
+        condition: >-
+          and(
+            succeeded(),
+            or(
+              ne(variables['Build.Reason'], 'Manual'),
+              ${{ eq(parameters.forceProductionDeploy, true) }}
+            )
+          )
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: self
+            fetchDepth: 1
+            persistCredentials: false
+            clean: true
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(pythonVersion)'
+            displayName: Use Python $(pythonVersion)
+
+          - script: |
+              python -m pip install --upgrade pip
+              pip install -r requirements-sql.txt
+            displayName: Install SQL release-gate dependencies
+
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(azureServiceConnectionId)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: >-
+                python scripts/verify_community_release_schema.py
+                --expect-database "$(schemaDatabaseName)"
+            displayName: Fail closed until the additive Community migration is applied
+            env:
+              AZURE_SQL_CONNECTIONSTRING: $(schemaConnectionString)
+
+      - deployment: DeployWebApp
+        dependsOn:
+          - ValidateProductionOperationRequest
+          - VerifyCommunitySchemaBeforeDeploy
         condition: >-
           and(
             succeeded(),
@@ -676,3 +735,89 @@ stages:
                 test "$state" = "Stopped"
                 echo "Candidate stop action passed; state=$state"
             displayName: Stop candidate and verify Azure state
+
+  - stage: CommunityMaintenance
+    displayName: Run independently gated Community maintenance
+    dependsOn: []
+    condition: >-
+      and(
+        eq(variables['Build.Reason'], 'Schedule'),
+        eq(variables['Build.SourceBranch'], 'refs/heads/main')
+      )
+    jobs:
+      - job: RunCommunityMaintenance
+        displayName: Run bounded media and retention maintenance
+        timeoutInMinutes: 10
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: self
+            fetchDepth: 1
+            persistCredentials: false
+            clean: true
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(pythonVersion)'
+            displayName: Use Python $(pythonVersion)
+
+          - script: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+              python -m pip check
+            displayName: Install and verify maintenance dependencies
+            condition: eq(variables['communityMaintenanceEnabled'], 'true')
+
+          - script: |
+              set -euo pipefail
+              mkdir -p "$(Build.ArtifactStagingDirectory)/community-maintenance"
+              python scripts/run_community_maintenance.py \
+                --budget-seconds 120 \
+                --media-batch 20 \
+                --expect-database "$(schemaDatabaseName)" \
+                | tee "$(Build.ArtifactStagingDirectory)/community-maintenance/report.json"
+            displayName: Record independently disabled maintenance
+            condition: ne(variables['communityMaintenanceEnabled'], 'true')
+            env:
+              PEERSLATE_COMMUNITY_MAINTENANCE_ENABLED: $(communityMaintenanceEnabled)
+
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(communityMaintenanceServiceConnectionId)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                python scripts/configure_community_maintenance_sql_authority.py verify \
+                  --principal-client-id "$(communityMaintenancePrincipalClientId)"
+            displayName: Verify narrow maintenance SQL authority
+            condition: eq(variables['communityMaintenanceEnabled'], 'true')
+
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(communityMaintenanceServiceConnectionId)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                mkdir -p "$(Build.ArtifactStagingDirectory)/community-maintenance"
+                python scripts/run_community_maintenance.py \
+                  --budget-seconds 120 \
+                  --media-batch 20 \
+                  --expect-database "$(schemaDatabaseName)" \
+                  | tee "$(Build.ArtifactStagingDirectory)/community-maintenance/report.json"
+            displayName: Run the default-off bounded maintenance command
+            condition: eq(variables['communityMaintenanceEnabled'], 'true')
+            env:
+              # All values are pipeline metadata, not App Service reads.
+              # communityMaintenanceEnabled is created as false before this
+              # schedule is merged and is the only maintenance enable switch.
+              PEERSLATE_COMMUNITY_MAINTENANCE_ENABLED: $(communityMaintenanceEnabled)
+              CAPTURE_MEDIA_BLOB_ACCOUNT_URL: $(communityMediaBlobAccountUrl)
+              CAPTURE_MEDIA_BLOB_CONTAINER: $(communityMediaBlobContainer)
+              AZURE_SQL_CONNECTIONSTRING: $(communityMaintenanceSqlConnectionString)
+
+          - publish: '$(Build.ArtifactStagingDirectory)/community-maintenance'
+            artifact: CommunityMaintenanceEvidence
+            condition: always()
+            displayName: Publish content-free maintenance evidence

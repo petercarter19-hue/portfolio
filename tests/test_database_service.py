@@ -34,6 +34,26 @@ class DatabaseServiceTests(unittest.TestCase):
         self.assertEqual(result["first"], [{"id": 1}])
         self.assertEqual(result["second"], [])
 
+    def test_database_target_rejects_an_invalid_name_without_connecting(self):
+        with patch("services.database_service.get_connection") as connection:
+            with self.assertRaises(ValueError):
+                self.service.assert_database_target("prod]; DROP DATABASE prod")
+        connection.assert_not_called()
+
+    @patch("services.database_service.get_connection")
+    def test_database_target_mismatch_fails_closed(self, get_connection):
+        connection = MagicMock()
+        cursor = connection.__enter__.return_value.cursor.return_value
+        cursor.description = [("database_name",)]
+        cursor.fetchall.return_value = [("unexpected",)]
+        cursor.nextset.return_value = False
+        get_connection.return_value = connection
+
+        with self.assertRaises(DatabaseServiceError):
+            self.service.assert_database_target("peerslate-database")
+
+        cursor.execute.assert_called_once_with("SELECT DB_NAME() AS database_name;")
+
     def test_last_result_selects_final_procedure_output(self):
         self.service.execute_procedure = lambda *args, **kwargs: [
             [{"helper": True}],
@@ -282,6 +302,7 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_CompensatePublicCommunityMediaCompletion",
             "usp_RejectPublicCommunityMedia",
             "usp_ClaimPublicCommunityMediaCleanup",
+            "usp_ClaimPublicCommunityMediaCleanupForOwner",
             "usp_CompletePublicCommunityMediaCleanup",
             "usp_GetPublicCommunityMedia",
             "usp_DeletePublicCommunityMedia",
@@ -308,7 +329,7 @@ class DatabaseServiceTests(unittest.TestCase):
             community,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 130)
+        self.assertEqual(len(expected), 131)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_photo_procedures_are_explicitly_allowlisted(self):

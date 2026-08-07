@@ -26,7 +26,12 @@ class SqlFoundationTests(unittest.TestCase):
                 "PS-AUTH-001_identity_foundation.sql",
             )
         ]
-        self.rollbacks = sorted(MIGRATIONS.glob("PS-*-*_rollback.sql"))
+        # This module proves the nine platform/identity foundation migrations,
+        # not every additive migration that correctly lives in the governed
+        # root directory.
+        self.rollbacks = [
+            path.with_name(f"{path.stem}_rollback.sql") for path in self.forward
+        ]
 
     def test_no_sql_file_carries_a_byte_order_mark(self):
         # A UTF-8 BOM is invisible in an editor but is sent verbatim to the
@@ -59,6 +64,7 @@ class SqlFoundationTests(unittest.TestCase):
             ],
         )
         self.assertEqual(len(self.rollbacks), 9)
+        self.assertTrue(all(path.is_file() for path in self.rollbacks))
 
     def test_every_foreign_key_target_is_created_by_some_migration(self):
         """The gap PS-PLAT-000 closes must not reopen.

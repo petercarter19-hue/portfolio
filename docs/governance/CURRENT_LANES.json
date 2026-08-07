@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-07T12:43:06Z",
+  "updated_at": "2026-08-07T14:15:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -19,7 +19,8 @@
       "PS-OPPORTUNITY-SLATE-001",
       "PS-DATA-FOUNDATION-001",
       "PS-ASK-PETE-AI-001",
-      "PS-DELIVERY-CONTROL-001"
+      "PS-DELIVERY-CONTROL-001",
+      "PS-COMMUNITY-PUBLIC-PILOT-001"
     ],
     "cleanup_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -27,15 +28,17 @@
       "PS-ASK-PETE-AI-001",
       "PS-DELIVERY-CONTROL-001"
     ],
-    "release_allowed_for": [],
+    "release_allowed_for": [
+      "PS-COMMUNITY-PUBLIC-PILOT-001"
+    ],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
       "new feature or product write outside the exact surfaces recorded for its activated lane",
       "pull-request merge for any package other than the activated lanes",
-      "production deployment of application behaviour from this lane",
+      "production deployment of application behaviour outside an exact release_allowed_for Protected sequence",
       "environment approval without the gate's own verification: the writer may release an approval only after confirming the run's printed plan matches the registered migration, digest, verifier, and rollback expectations",
       "manual same-SHA fallback pipeline while an automatic run for that SHA exists",
-      "production configuration mutation",
+      "production configuration mutation outside an exact release_allowed_for Protected sequence",
       "production schema apply or application deployment from the non-production PS-ASK-PETE-AI-001 lane",
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
@@ -453,19 +456,25 @@
       "writer": "Codex in the dedicated portfolio-community-revival-safety-v1 worktree; sole active writer for the exact recorded Community surfaces",
       "delivery_path": "Protected",
       "production_capable": true,
-      "source_checkpoint": "Current authoritative origin/main e9c6fe18ce0dc31a9d3ed39d8ae30eb538596de5 after Ask Pete PR 320 completion and formal app.py relinquishment, plus preserved read-only Community maintenance checkpoint work/2026-08-04-community-maintenance-off-request-path@e51c9c6122e4c2cd1d462b77230523f733f2fded. Community remains feature-default-off and is not claimed live at activation.",
+      "source_checkpoint": "Current authoritative origin/main 819d348928f73ac3b526801f43dd370b1b6b06c1 after Ask Pete PR 320 completion, formal app.py relinquishment, and the merged Community activation record, plus preserved read-only Community maintenance checkpoint work/2026-08-04-community-maintenance-off-request-path@e51c9c6122e4c2cd1d462b77230523f733f2fded. Community remains feature-default-off and is not claimed live at activation.",
       "writable_surfaces": [
         "app.py",
+        "community_api.py",
         "db.py",
         "services/database_service.py",
         "services/community_media_service.py",
+        "services/community_media_storage.py",
         "services/community_retention_service.py",
         "scripts/run_community_maintenance.py",
+        "scripts/configure_community_maintenance_sql_authority.py",
+        "scripts/provision_community_maintenance_blob_access.ps1",
+        "scripts/verify_community_release_schema.py",
         "scripts/run_community_disposable_sql_proof.py",
-        "azure-pipelines-community-maintenance.yml",
+        "azure-pipelines.yml",
         "SQL FIles/Migrations/registry.json",
-        "SQL FIles/Migrations/proposed/PS-COMMUNITY-REVIVAL-001_maintenance.sql",
-        "SQL FIles/Migrations/proposed/PS-COMMUNITY-REVIVAL-001_maintenance_rollback.sql",
+        "SQL FIles/Migrations/proposed/PS-COMMUNITY-PUBLIC-PILOT-001_community.sql",
+        "SQL FIles/Migrations/PS-COMMUNITY-REVIVAL-001_maintenance.sql",
+        "SQL FIles/Migrations/PS-COMMUNITY-REVIVAL-001_maintenance_rollback.sql",
         "SQL FIles/Verification/PS-COMMUNITY-REVIVAL-001_verify.sql",
         "templates/community_feed.html",
         "templates/partials/community/",
@@ -475,6 +484,10 @@
         "tests/test_community_public_pilot.py",
         "tests/test_community_revival.py",
         "tests/test_db_connection_retry.py",
+        "tests/test_database_service.py",
+        "tests/test_migration_state.py",
+        "tests/test_operational_readiness.py",
+        "tests/test_sql_foundation.py",
         "docs/initiatives/PS-COMMUNITY-PUBLIC-PILOT-001/",
         "docs/governance/CURRENT_LANES.json",
         "docs/governance/CURRENT_BASELINE.yaml",

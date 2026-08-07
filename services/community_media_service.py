@@ -484,7 +484,6 @@ class CommunityMediaService:
         self.storage = storage or community_media_storage
 
     def reserve_and_upload(self, user_key, upload):
-        self.sweep_best_effort(limit=4)
         item = validate_upload(upload)
         opaque = uuid4().hex
         original = f"community/v1/{opaque[:2]}/{opaque}.{item.extension}"
@@ -541,7 +540,6 @@ class CommunityMediaService:
                     )
                 except DatabaseServiceError:
                     pass
-                self.sweep_best_effort(limit=4, media_key=row["media_key"])
             raise CommunityUnavailableError("Attachment upload unavailable.") from error
 
     def reconcile(self, user_key, media_key):
@@ -554,8 +552,6 @@ class CommunityMediaService:
             if not row:
                 raise CommunityNotFoundError("Attachment not found.")
             if row.get("media_state") in {"ready", "rejected", "removed", "failed"}:
-                if row.get("media_state") != "ready":
-                    self.sweep_best_effort(limit=1, media_key=media_key)
                 return self._safe_state(row)
             scan = self.storage.scan_result(row["original_blob_name"])
             if scan["result"] == "malicious":
@@ -677,7 +673,6 @@ class CommunityMediaService:
         )
         if not row or row.get("outcome") not in {"rejected", "failed", "existing"}:
             raise CommunityUnavailableError("Attachment processing unavailable.")
-        self.sweep_best_effort(limit=4, media_key=media_key)
         return {"key": media_key, "state": row.get("media_state") or state}
 
     @staticmethod
@@ -715,9 +710,8 @@ class CommunityMediaService:
         if outcome == "cleanup_reopened":
             LOGGER.warning(
                 "Community media derivative completion lost a terminal race; "
-                "cleanup was reopened."
+                "cleanup is eligible for the independent scheduler."
             )
-            self.sweep_best_effort(limit=1, media_key=media_key)
         return None
 
     def sweep(
@@ -732,15 +726,18 @@ class CommunityMediaService:
 
         `uploader_user_key` scopes a targeted claim to one member's uploads in
         SQL rather than relying only on the route having checked ownership
-        first (independent review, 2026-08-04, F14). Server-initiated lifecycle
-        sweeps pass none and stay unscoped, which is correct for a janitor.
+        first (independent review, 2026-08-04, F14). The independent scheduler
+        passes no target and retains the bounded unscoped janitor path.
         """
         selectors = [media_key, post_key, contribution_key]
-        if sum(value is not None for value in selectors) > 1:
+        target_count = sum(value is not None for value in selectors)
+        if target_count > 1 or (uploader_user_key is not None and target_count != 1):
             raise CommunityValidationError("The cleanup target is invalid.")
+        procedure_name = "usp_ClaimPublicCommunityMediaCleanup"
         parameters = [("@Take", limit)]
         if uploader_user_key is not None:
-            parameters.append(("@UploaderUserKey", uploader_user_key))
+            procedure_name = "usp_ClaimPublicCommunityMediaCleanupForOwner"
+            parameters.append(("@UserKey", uploader_user_key))
         if media_key is not None:
             parameters.append(
                 ("@MediaKey", opaque_key(media_key, field="attachment key"))
@@ -755,7 +752,7 @@ class CommunityMediaService:
                 )
             )
         claims = self.database.first_result(
-            "usp_ClaimPublicCommunityMediaCleanup", parameters
+            procedure_name, parameters
         )
         completed = 0
         storage_failures = 0
@@ -787,6 +784,8 @@ class CommunityMediaService:
             completed,
             storage_failures,
         )
+        if storage_failures:
+            raise CommunityMediaStorageError("community_cleanup_incomplete")
         return completed
 
     def sweep_best_effort(
@@ -855,11 +854,14 @@ class CommunityMediaService:
                 raise CommunityNotFoundError("Attachment not found.")
         except DatabaseServiceError as error:
             raise CommunityUnavailableError("Attachment removal unavailable.") from error
-        self.sweep_best_effort(limit=1, media_key=media_key)
 
 
 class CommunityMediaMaintenance:
-    """Run one bounded cleanup batch on the Always On request cadence."""
+    """Legacy cadence helper retained only for deterministic regression tests.
+
+    The Flask app does not instantiate or call this helper. Production invokes
+    ``CommunityMediaService.sweep`` only from the bounded scheduled command.
+    """
 
     def __init__(self, service=None, interval_seconds=3600):
         self.service = service or community_media_service
@@ -882,4 +884,3 @@ class CommunityMediaMaintenance:
 
 
 community_media_service = CommunityMediaService()
-community_media_maintenance = CommunityMediaMaintenance(community_media_service)

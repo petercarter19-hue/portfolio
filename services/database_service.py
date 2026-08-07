@@ -2,11 +2,14 @@
 
 import re
 
-from db import fetch_all_result_sets, get_connection
+from mssql_python import Connection
+
+from db import SQL_QUERY_TIMEOUT_SECONDS, fetch_all_result_sets, get_connection
 
 
 _PROCEDURE_NAME = re.compile(r"^usp_[A-Za-z0-9_]+$")
 _PARAMETER_NAME = re.compile(r"^@[A-Za-z][A-Za-z0-9_]*$")
+_DATABASE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
 
 ALLOWED_PROCEDURES = frozenset(
     {
@@ -128,10 +131,9 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_UpsertAppUserFromAuth",
         # PS-COMMUNITY-RETENTION-001 and PS-COMMUNITY-RESTORE-001. Omitting a
         # procedure here does not merely disable it: execute_procedure raises
-        # ValueError, which is not a DatabaseServiceError, so it escapes the
-        # best-effort retention handlers and — because the sweep runs from an
-        # app-wide before_request — would return 500 on every route once the
-        # Community flag was enabled.
+        # ValueError before the database boundary. The retired request-path
+        # scheduler turned that omission into a site-wide outage. Maintenance
+        # is now out of process, but the allowlist remains fail closed.
         "usp_PurgeCommunityContent",
         "usp_PurgeCommunityAuditEvents",
         "usp_PurgeCommunityOutbox",
@@ -161,6 +163,7 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_CompensatePublicCommunityMediaCompletion",
         "usp_RejectPublicCommunityMedia",
         "usp_ClaimPublicCommunityMediaCleanup",
+        "usp_ClaimPublicCommunityMediaCleanupForOwner",
         "usp_CompletePublicCommunityMediaCleanup",
         "usp_GetPublicCommunityMedia",
         "usp_DeletePublicCommunityMedia",
@@ -174,6 +177,56 @@ class DatabaseServiceError(RuntimeError):
 
 class DatabaseService:
     """Execute known stored procedures with positional parameter binding."""
+
+    @staticmethod
+    def _cursor(connection):
+        """Create one cursor and prove the pinned driver carried the bound.
+
+        mssql-python 1.11's public ``Connection.cursor`` constructs
+        ``Cursor(connection, timeout=connection.timeout)``. The defensive
+        checks below turn a future driver-contract change into a closed
+        dependency failure instead of silently restoring unbounded queries.
+        """
+
+        real_driver_connection = isinstance(connection, Connection)
+        if (
+            real_driver_connection
+            and getattr(connection, "timeout", None) != SQL_QUERY_TIMEOUT_SECONDS
+        ):
+            raise DatabaseServiceError("Database query timeout is unavailable.")
+        cursor = connection.cursor()
+        if (
+            real_driver_connection
+            and getattr(cursor, "_timeout", None) != SQL_QUERY_TIMEOUT_SECONDS
+        ):
+            try:
+                cursor.close()
+            except Exception:
+                pass
+            raise DatabaseServiceError("Database query timeout is unavailable.")
+        return cursor
+
+    def assert_database_target(self, expected_database):
+        """Fail closed unless the connection reaches the exact database."""
+
+        if (
+            not isinstance(expected_database, str)
+            or not _DATABASE_NAME.fullmatch(expected_database)
+        ):
+            raise ValueError("Invalid expected database name.")
+        try:
+            with get_connection() as connection:
+                cursor = self._cursor(connection)
+                cursor.execute("SELECT DB_NAME() AS database_name;")
+                rows = fetch_all_result_sets(cursor)
+        except DatabaseServiceError:
+            raise
+        except Exception as error:
+            raise DatabaseServiceError("Database target check failed.") from error
+        actual = rows[0][0].get("database_name") if rows and rows[0] else None
+        if actual != expected_database:
+            raise DatabaseServiceError("Database target check failed.")
+        return True
 
     def execute_procedure(self, procedure_name, parameters=None):
         if (
@@ -199,7 +252,7 @@ class DatabaseService:
 
         try:
             with get_connection() as connection:
-                cursor = connection.cursor()
+                cursor = self._cursor(connection)
                 if values:
                     cursor.execute(statement, tuple(values))
                 else:

@@ -66,7 +66,7 @@ active_packages:
     scope: "Protected recovery of the existing owner-only Community pilot without new visual or product direction: reconcile e51c9c, remove maintenance from request paths, add independently default-off bounded maintenance, add the immutable uploader-scoped correction with governed disposable proof, bound waits, debug, review, then use exact-source governed migration, deployment, staged enablement, and live verification."
 scoped_findings:
   - id: candidate_admission
-    blocks: "Only a future Protected release that uses Candidate until package-specific exact-SHA admission is corrected or explicitly bounded."
+    blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
   - id: work_impact_profile_provenance
     blocks: "Only release or expansion of the affected Work and Impact overlay until profile ownership and second-profile regression pass."
   - id: interview_followup_mode_provenance

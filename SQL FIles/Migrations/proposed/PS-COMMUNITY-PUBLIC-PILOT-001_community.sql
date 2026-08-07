@@ -1582,8 +1582,7 @@ BEGIN TRY
     EXEC(N'
     CREATE OR ALTER PROCEDURE dbo.usp_ClaimPublicCommunityMediaCleanup
         @Take int = 8,@MediaKey uniqueidentifier = NULL,
-        @PostKey uniqueidentifier = NULL,@ContributionKey uniqueidentifier = NULL,
-        @UploaderUserKey nvarchar(300) = NULL
+        @PostKey uniqueidentifier = NULL,@ContributionKey uniqueidentifier = NULL
     AS
     BEGIN
         SET NOCOUNT ON;SET XACT_ABORT ON;
@@ -1592,24 +1591,6 @@ BEGIN TRY
              + CASE WHEN @PostKey IS NULL THEN 0 ELSE 1 END
              + CASE WHEN @ContributionKey IS NULL THEN 0 ELSE 1 END)>1
             THROW 52452,''Invalid cleanup batch.'',1;
-        /* Independent review, 2026-08-04, F14. A targeted claim names one
-           member''s record, and its safety rested entirely on the route
-           checking ownership first. That is one deployment mistake away from
-           a member claiming cleanup of another member''s attachment. When the
-           caller supplies an uploader, the claim is scoped to that uploader in
-           SQL as well. Server-initiated lifecycle sweeps pass no uploader and
-           stay unscoped, which is correct for a janitor. An unresolvable key
-           scopes to nothing rather than to everything. */
-        DECLARE @UploaderUserId int = NULL;
-        IF @UploaderUserKey IS NOT NULL
-        BEGIN
-            SET @UploaderUserId =
-            (
-                SELECT id FROM dbo.app_users
-                WHERE user_key=@UploaderUserKey AND active=1 AND account_status=N''active''
-            );
-            IF @UploaderUserId IS NULL THROW 52453,''Cleanup uploader is unavailable.'',1;
-        END
         DECLARE @Now datetime2(7)=SYSUTCDATETIME(),@ClaimToken uniqueidentifier=NEWID(),@StartedTransaction bit=0;
         DECLARE @Candidates TABLE(community_media_id bigint NOT NULL PRIMARY KEY);
         IF @@TRANCOUNT=0
@@ -1629,7 +1610,6 @@ BEGIN TRY
           AND (@MediaKey IS NULL OR media.media_key=@MediaKey)
           AND (@PostKey IS NULL OR direct_post.post_key=@PostKey OR contribution_post.post_key=@PostKey)
           AND (@ContributionKey IS NULL OR contribution.contribution_key=@ContributionKey)
-          AND (@UploaderUserId IS NULL OR media.uploader_user_id=@UploaderUserId)
           AND (media.cleanup_claim_token IS NULL OR media.cleanup_claimed_at_utc<DATEADD(minute,-10,@Now))
           /* A hold anywhere on the chain that owns these bytes stops cleanup.
              Without this a feature named "legal hold" destroys exactly the

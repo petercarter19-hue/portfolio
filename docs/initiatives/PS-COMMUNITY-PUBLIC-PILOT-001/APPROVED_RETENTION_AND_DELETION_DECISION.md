@@ -105,18 +105,14 @@ retention lease 616 protects the evidence).
 | Idempotent, bounded, concurrency-safe (item 2) | Done — batch-limited, `UPDLOCK`/`READPAST` claiming, range-checked parameters |
 | Rollback safety | Done — refuses while any record is held, since dropping the hold columns would silently release it |
 
-**Scheduler — done.** `services/community_retention_service.py` runs the
-purges on the same request cadence the media cleanup worker already uses:
-hourly content purge, daily audit and outbox purge, matching the table above.
-It is best-effort by design — a failed batch is logged and retried on the next
-cadence rather than failing a member's request — and a busy worker is skipped
-rather than queued. It runs only when the Community flag is on.
-
-One consequence worth stating plainly: because the cadence is driven by
-request traffic, a site with no visitors runs no purges. For the owner pilot
-that is acceptable, since content only becomes eligible 30 days after the
-owner removed it and the owner is the traffic. If Community later serves real
-volume with quiet periods, move this to a timer-based worker.
+**Scheduler — superseded 2026-08-07.** The earlier request-cadence scheduler
+created an avoidable site-wide failure and latency boundary. The recovery in
+`COMMUNITY_REVIVAL_SAFETY_ARCHITECTURE_2026-08-07.md` removes all Community
+maintenance from Flask request paths. `scripts/run_community_maintenance.py`
+runs the same bounded purges on an hourly Azure schedule under a separate,
+default-off maintenance flag. A failed batch fails the scheduler run, remains
+eligible for retry, and cannot fail or delay a member request. Community
+visibility and already-owed retention work are independent controls.
 
 **Restore window — added 2026-08-03.** Pete: "I want people to be able to come
 back and see what they did later on." Deletion was one-way, so the 30-day

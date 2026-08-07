@@ -695,6 +695,7 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
                 'CandidateDeploy',
                 'CandidateSmoke',
                 'CandidateStop',
+                'CommunityMaintenance',
             ],
             stages,
         )
@@ -1172,7 +1173,7 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
             ),
             'docs/governance/CURRENT_BASELINE.yaml': (
                 'id: candidate_admission',
-                'Only a future Protected release that uses Candidate',
+                'resolved by PS-OPS-CANDIDATE-ADMISSION-001',
             ),
         }
         for relative_path, phrases in paths_and_phrases.items():

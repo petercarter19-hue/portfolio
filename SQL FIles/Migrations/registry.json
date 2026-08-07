@@ -1206,6 +1206,40 @@
       "gate": null
     },
     {
+      "id": "PS-COMMUNITY-REVIVAL-001",
+      "forward": "SQL FIles/Migrations/PS-COMMUNITY-REVIVAL-001_maintenance.sql",
+      "rollback": "SQL FIles/Migrations/PS-COMMUNITY-REVIVAL-001_maintenance_rollback.sql",
+      "requires": [
+        "PS-COMMUNITY-RESTORE-001"
+      ],
+      "summary": "Additive owner-scoped targeted Community media cleanup; the existing unscoped cleanup procedure remains janitor-only.",
+      "gate": {
+        "executable_sha256": "f572fc6f835ae860a304b0f36184ac680110d3ee734c4da94d49bc5fb972360e",
+        "gated_at_utc": "2026-08-07T14:03:42Z",
+        "gate_database": "ps-community-revival-gate-20260807c",
+        "gate_server": "peerslate",
+        "prerequisites": [
+          "PS-PLAT-000",
+          "PS-PLAT-001",
+          "PS-PLAT-002",
+          "PS-PLAT-003",
+          "PS-PLAT-004",
+          "PS-PLAT-005",
+          "PS-PLAT-006",
+          "PS-PLAT-007",
+          "PS-AUTH-001",
+          "PS-COMMUNITY-PUBLIC-PILOT-001",
+          "PS-COMMUNITY-RETENTION-001",
+          "PS-COMMUNITY-RESTORE-001"
+        ],
+        "objects": [
+          "SQL_STORED_PROCEDURE:dbo.usp_ClaimPublicCommunityMediaCleanupForOwner"
+        ],
+        "verification": "PS-COMMUNITY-REVIVAL-001_verify.sql returned verified = 1",
+        "operator": "Codex / work-2026-08-07-community-revival-safety-v1"
+      }
+    },
+    {
       "id": "PS-PLAT-008",
       "forward": "SQL FIles/Migrations/proposed/PS-PLAT-008_people_interests_feed.sql",
       "rollback": "SQL FIles/Migrations/proposed/PS-PLAT-008_people_interests_feed_rollback.sql",

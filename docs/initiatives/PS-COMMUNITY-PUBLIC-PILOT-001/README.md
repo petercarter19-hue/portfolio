@@ -6,27 +6,30 @@
 - **Designated manager and sole writer:** current Codex task
 - **Delivery path:** Protected — identity, public publication, schema,
   attachments, deletion, and material visual implementation
-- **Branch:** `codex/2026-08-01-community-primary-feed-sol-ultra`
+- **Branch:** `work/2026-08-07-community-revival-safety-v1`
 - **Authoritative base:** Azure DevOps `origin/main` at
-  `2494aa73ed95bfbe97d8cf42f712b9929759e0b2`
+  `819d348928f73ac3b526801f43dd370b1b6b06c1`
 - **Runtime flag:** `PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED`, default `false`
 - **Route authority:** Feed remains `/the-slate`; The Break remains
   `/the-slate/break`; post and contribution URLs are subordinate deep links
 - **Exact visual authority:**
   `PS-COMMUNITY-FEED-VISUAL-001/visual-authority/2026-08-01-pete-voice-first-lock/`
 - **Retention decision:** `APPROVED_RETENTION_AND_DELETION_DECISION.md` —
-  **approved by Pete 2026-08-03 exactly as proposed, live for this release
-  wave; not yet implemented.** Pete committed to readdressing the schedule
-  when Community moves behind the sign-in experience. The deletion jobs and
-  their evidence must still pass before production collects content.
+  **approved by Pete 2026-08-03.** The retention procedures are present; the
+  2026-08-07 recovery replaces request-path cadence with an independently
+  scheduled, separately default-off bounded command. Its additive owner-scope
+  correction and live clean-run evidence remain release gates.
 - **Community Voice status:** **P0 usable-release requirement; exact visual
   authority locked; the primary-comment slice and its propagation to the
   remaining approved composers passed local Protected review.**
-- **Status:** Pete approved the real local primary Feed on 2026-08-02 and
-  authorized continuation into the remaining package work. Full conversation,
-  reply, and protected Community Voice implementation are now the active local
-  tranche. The broader pilot remains default-off and is not usable or
-  releasable while the Voice and other release gates below remain open.
+- **Status:** Recovery implementation is active from current `origin/main`.
+  The approved Feed, full conversation, replies, attachments, and protected
+  Voice implementation are preserved. Community maintenance has been removed
+  from HTTP request paths, the additive owner-scoped cleanup migration passed
+  disposable proof, and release validation is in progress. Both maintenance
+  and the Community pilot remain disabled in production until the governed
+  release sequence in
+  `COMMUNITY_REVIVAL_SAFETY_ARCHITECTURE_2026-08-07.md` passes.
 
 ## PC-to-Mac continuation
 
@@ -196,9 +199,10 @@ The production pilot is useful with one author only when:
   current SQL publication, lifecycle, moderation, owner, and media state.
 - Failed, rejected, abandoned, removed, and expired objects remain unavailable;
   cleanup uses SQL lease tokens plus idempotent Blob deletion and can be
-  retried. A bounded cleanup batch runs at most hourly on the production App
-  Service Always On request cadence, with targeted best-effort cleanup after
-  owner removal and terminal scan outcomes.
+  retried. A bounded cleanup batch runs on the separately enabled hourly Azure
+  schedule, never on an App Service request path. Owner removal and terminal
+  scan outcomes only mark SQL lifecycle state during the request; that state
+  makes the object eligible for the next scheduled cleanup batch.
 
 ### Moderation, public-content readiness, and AI
 
@@ -286,16 +290,28 @@ Before merge:
 
 Release sequence:
 
-1. apply and verify the backward-compatible migration through the approved
-   secure connection while the flag remains off;
-2. squash-merge through Azure and verify the exact production pipeline with
-   the flag still off;
-3. enable `PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=true` for `peerslate-pete`
+1. create the dedicated passwordless maintenance identity, WIF service
+   connection, and nonsecret pipeline metadata before merge, with maintenance
+   explicitly false and no SQL/Blob authority yet; the disabled schedule must
+   produce its content-free report without Azure login;
+2. prove the exact reviewed branch/SHA through package-specific isolated
+   Candidate deploy/smoke/stop while both flags remain off;
+3. squash-merge through Azure; the automatic main run must fail closed at the
+   package's pre-deploy schema gate and must not deploy the runtime while
+   `PS-COMMUNITY-REVIVAL-001` is absent;
+4. apply and verify only that backward-compatible additive migration through a
+   separate manual governed main run while both flags remain off;
+5. apply and verify the dedicated identity's five direct SQL procedure grants,
+   no SQL role, and one exact-container Blob data role;
+6. deploy the exact merged SHA through a separate manual forced pipeline run
+   and verify release identity and ordinary-route health with both flags off;
+7. enable maintenance only and prove one clean bounded content-free run;
+8. enable `PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=true` for `peerslate-pete`
    only after the Community Voice gate and every other gate above passes;
-4. verify signed-out public-read/no-write behavior, signed-in Pete authoring,
+9. verify signed-out public-read/no-write behavior, signed-in Pete authoring,
    public attachment delivery, edit/remove revocation, and exact live build;
-5. leave broader member authoring and public interaction disabled; and
-6. record a Conditional—not broad-launch—Gate Launch result unless qualified
+10. leave broader member authoring and public interaction disabled; and
+11. record a Conditional—not broad-launch—Gate Launch result unless qualified
    legal/security review has independently passed.
 
 ## Completion record

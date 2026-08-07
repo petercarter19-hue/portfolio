@@ -16,6 +16,7 @@ SCAN_RESULT_TAG = "Malware scanning scan result"
 SCAN_TIME_TAG = "Malware scanning scan time"
 SCAN_TIME_UTC_TAG = "Malware Scanning scan time UTC"
 MAX_BLOB_BYTES = 10 * 1024 * 1024
+BLOB_OPERATION_TIMEOUT_SECONDS = 5
 
 
 class CommunityMediaStorageError(RuntimeError):
@@ -65,10 +66,31 @@ class CommunityMediaStorage:
                 account_url=self.account_url,
                 container_name=self.container_name,
                 credential=self._credential or DefaultAzureCredential(),
+                connection_timeout=BLOB_OPERATION_TIMEOUT_SECONDS,
+                read_timeout=BLOB_OPERATION_TIMEOUT_SECONDS,
+                retry_total=0,
             )
             return self._container_client
         except Exception as error:
             raise CommunityMediaStorageError("storage_unavailable") from error
+
+    def assert_container_access(self):
+        """Prove the active identity can reach only the configured container.
+
+        The scheduled maintenance runner calls this data-plane preflight before
+        any retention work. No key, SAS, account listing, blob name, or member
+        content is read or returned.
+        """
+
+        try:
+            self._client().get_container_properties(
+                timeout=BLOB_OPERATION_TIMEOUT_SECONDS
+            )
+            return True
+        except CommunityMediaStorageError:
+            raise
+        except Exception as error:
+            raise CommunityMediaStorageError("storage_access_denied") from error
 
     def upload(self, blob_name, data, content_type):
         _require_blob_name(blob_name)
@@ -152,7 +174,11 @@ class CommunityMediaStorage:
             from azure.core.exceptions import ResourceNotFoundError
 
             try:
-                self._client().delete_blob(blob_name, delete_snapshots="include")
+                self._client().delete_blob(
+                    blob_name,
+                    delete_snapshots="include",
+                    timeout=BLOB_OPERATION_TIMEOUT_SECONDS,
+                )
             except ResourceNotFoundError:
                 return
         except CommunityMediaStorageError:

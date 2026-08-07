@@ -14,9 +14,32 @@ load_dotenv()    # Loads the protected connection string from .env
 
 logger = logging.getLogger(__name__)
 
-SQL_CONNECT_ATTEMPTS = 2
-SQL_CONNECT_TIMEOUT_SECONDS = 60
-SQL_CONNECT_RETRY_DELAY_SECONDS = 1
+def _bounded_number(name, default, minimum, maximum, cast):
+    """Read an operational timeout without permitting an unbounded wait."""
+
+    try:
+        value = cast(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+    return min(max(value, minimum), maximum)
+
+
+SQL_CONNECT_ATTEMPTS = _bounded_number(
+    "PEERSLATE_SQL_CONNECT_ATTEMPTS", 2, 1, 2, int
+)
+SQL_CONNECT_TIMEOUT_SECONDS = _bounded_number(
+    "PEERSLATE_SQL_CONNECT_TIMEOUT_SECONDS", 5, 1, 10, int
+)
+SQL_CONNECT_RETRY_DELAY_SECONDS = _bounded_number(
+    "PEERSLATE_SQL_CONNECT_RETRY_DELAY_SECONDS", 0.25, 0.0, 1.0, float
+)
+SQL_QUERY_TIMEOUT_SECONDS = _bounded_number(
+    "PEERSLATE_SQL_QUERY_TIMEOUT_SECONDS", 15, 5, 30, int
+)
+SQL_CONNECT_MAX_WAIT_SECONDS = (
+    SQL_CONNECT_ATTEMPTS * SQL_CONNECT_TIMEOUT_SECONDS
+    + (SQL_CONNECT_ATTEMPTS - 1) * SQL_CONNECT_RETRY_DELAY_SECONDS
+)
 
 
 def normalize_connection_string(connection_string):
@@ -39,9 +62,11 @@ def normalize_connection_string(connection_string):
 def get_connection():
     """Open and return an Azure SQL connection.
 
-    Azure SQL serverless deliberately rejects the first login that wakes a
-    paused database. Retry only connection establishment so a stored procedure
-    or other database operation is never replayed.
+    Production is continuously provisioned, so a dependency failure must fail
+    quickly enough to preserve web availability. Retry only connection
+    establishment once; a stored procedure or other operation is never
+    replayed. Import-time bounds cap the total login budget even if an
+    environment value is stale or mistyped.
     """
 
     connection_string = os.getenv("AZURE_SQL_CONNECTIONSTRING")    # Reads the connection string
@@ -60,6 +85,11 @@ def get_connection():
                 normalized_connection_string,
                 timeout=SQL_CONNECT_TIMEOUT_SECONDS,
             )
+            # Pinned mssql-python 1.11 propagates Connection.timeout into every
+            # Cursor it creates, and Cursor applies it as
+            # SQL_ATTR_QUERY_TIMEOUT before execution. Keep this assignment
+            # before any cursor can be created.
+            connection.timeout = SQL_QUERY_TIMEOUT_SECONDS
             connection.setautocommit(True)
             return connection
         except MssqlError:
@@ -74,7 +104,7 @@ def get_connection():
 
             logger.warning(
                 "Azure SQL connection attempt %s/%s failed; retrying after "
-                "the bounded serverless wake-up delay.",
+                "the bounded transient-failure delay.",
                 attempt,
                 SQL_CONNECT_ATTEMPTS,
             )

@@ -531,6 +531,34 @@ class CommunityProjectionServiceTests(unittest.TestCase):
 
 
 class CommunityUploadValidationTests(unittest.TestCase):
+    def test_storage_preflight_uses_only_container_properties(self):
+        class Container:
+            def __init__(self):
+                self.calls = []
+
+            def get_container_properties(self, **kwargs):
+                self.calls.append(kwargs)
+                return {"etag": "not-returned"}
+
+        container = Container()
+        service = CommunityMediaStorage()
+        service._container_client = container
+
+        self.assertTrue(service.assert_container_access())
+        self.assertEqual(container.calls, [{"timeout": 5}])
+
+    def test_storage_preflight_fails_with_a_content_free_error(self):
+        class Container:
+            def get_container_properties(self, **_):
+                raise RuntimeError("provider detail with member content")
+
+        service = CommunityMediaStorage()
+        service._container_client = Container()
+        with self.assertRaisesRegex(
+            CommunityMediaStorageError, "storage_access_denied"
+        ):
+            service.assert_container_access()
+
     def test_safe_display_name_counts_utf16_units_and_preserves_real_extension(self):
         display_name = safe_display_name(
             ("🧭" * 100) + ".spoofed", content_type="image/png"
@@ -853,7 +881,7 @@ class CommunityUploadValidationTests(unittest.TestCase):
         )
 
     @patch("services.community_media_service.normalize_photo")
-    def test_remove_cleanup_race_reopens_and_deletes_late_derivative(self, normalize):
+    def test_remove_cleanup_race_defers_late_derivative_to_scheduler(self, normalize):
         media_key = str(uuid4())
         claim_token = str(uuid4())
         original_name = "community/v1/aa/" + "f" * 32 + ".jpg"
@@ -934,13 +962,14 @@ class CommunityUploadValidationTests(unittest.TestCase):
         with patch("services.community_media_service.LOGGER"):
             with self.assertRaises(CommunityUnavailableError):
                 CommunityMediaService(database, storage).reconcile(OWNER_KEY, media_key)
-        self.assertEqual(storage.blobs, {})
+        # The compensating SQL write makes the late derivative eligible again,
+        # but the request never performs maintenance. The Blob remains private
+        # and inaccessible until the next scheduled batch removes it.
+        self.assertEqual(storage.blobs, {safe_name: derivative})
         procedures = [call[0] for call in database.calls]
-        self.assertLess(
-            procedures.index("usp_CompensatePublicCommunityMediaCompletion"),
-            procedures.index("usp_ClaimPublicCommunityMediaCleanup"),
-        )
-        self.assertIn("usp_CompletePublicCommunityMediaCleanup", procedures)
+        self.assertIn("usp_CompensatePublicCommunityMediaCompletion", procedures)
+        self.assertNotIn("usp_ClaimPublicCommunityMediaCleanup", procedures)
+        self.assertNotIn("usp_CompletePublicCommunityMediaCleanup", procedures)
 
     @patch("services.community_media_service.normalize_photo")
     def test_oversize_normalized_derivative_is_terminal_before_upload(self, normalize):
@@ -1073,6 +1102,34 @@ class CommunityUploadValidationTests(unittest.TestCase):
         self.assertEqual(database.claim_call[0], "usp_ClaimPublicCommunityMediaCleanup")
         self.assertEqual(len(storage.deleted), 2)
         self.assertEqual(database.completed[0][0], "usp_CompletePublicCommunityMediaCleanup")
+
+    def test_targeted_cleanup_uses_the_additive_owner_scoped_procedure(self):
+        class CleanupDatabase:
+            def first_result(self, procedure, parameters):
+                self.claim_call = (procedure, parameters)
+                return []
+
+        database = CleanupDatabase()
+        completed = CommunityMediaService(database, object()).sweep(
+            limit=1,
+            post_key=POST_KEY,
+            uploader_user_key=OWNER_KEY,
+        )
+
+        self.assertEqual(completed, 0)
+        self.assertEqual(
+            database.claim_call[0],
+            "usp_ClaimPublicCommunityMediaCleanupForOwner",
+        )
+        self.assertIn(("@UserKey", OWNER_KEY), database.claim_call[1])
+        self.assertIn(("@PostKey", POST_KEY), database.claim_call[1])
+
+    def test_owner_scoped_cleanup_requires_exactly_one_target(self):
+        with self.assertRaises(CommunityValidationError):
+            CommunityMediaService(object(), object()).sweep(
+                limit=1,
+                uploader_user_key=OWNER_KEY,
+            )
 
     def test_cleanup_storage_failure_leaves_sql_claim_uncompleted_for_retry(self):
         class CleanupDatabase:
@@ -1229,12 +1286,18 @@ class CommunityRouteAndApiTests(unittest.TestCase):
             "2026-07-31T12:00:00Z",
         )
 
-    @patch("app.community_media_maintenance.maybe_run")
-    def test_health_check_never_runs_media_maintenance(self, maybe_run):
+    @patch(
+        "services.community_media_service.community_media_service"
+        ".sweep_best_effort"
+    )
+    def test_health_check_never_runs_media_maintenance(self, sweep):
         app.config["TESTING"] = False
-        response = self.client.get("/healthz")
-        self.assertEqual(response.status_code, 200)
-        maybe_run.assert_not_called()
+        try:
+            response = self.client.get("/healthz")
+            self.assertEqual(response.status_code, 200)
+            sweep.assert_not_called()
+        finally:
+            app.config["TESTING"] = True
 
     @patch("community_api.community_feed_service.feed_page")
     def test_signed_out_public_feed_read_succeeds(self, feed_page):
@@ -1392,7 +1455,7 @@ class CommunityRouteAndApiTests(unittest.TestCase):
 
     @patch("community_api.community_media_service.sweep_best_effort")
     @patch("community_api.community_command_service.delete_post")
-    def test_post_delete_triggers_retryable_blob_cleanup(self, delete_post, sweep):
+    def test_post_delete_defers_blob_cleanup_to_scheduler(self, delete_post, sweep):
         delete_post.return_value = {"outcome": "deleted"}
         app.config["PEERSLATE_DEV_USER_KEY"] = OWNER_KEY
         response = self.client.delete(
@@ -1401,12 +1464,7 @@ class CommunityRouteAndApiTests(unittest.TestCase):
             headers={"X-PeerSlate-Request": "same-origin"},
         )
         self.assertEqual(response.status_code, 200)
-        # The uploader key scopes the claim in SQL as well as by the route's
-        # ownership check (independent review, 2026-08-04, F14). Asserting it
-        # here means the scoping cannot be dropped without a test failing.
-        sweep.assert_called_once_with(
-            limit=20, post_key=POST_KEY, uploader_user_key=OWNER_KEY
-        )
+        sweep.assert_not_called()
 
     @patch("community_api.community_media_service.reserve_and_upload")
     def test_attachment_limit_override_does_not_raise_global_request_limit(self, upload):

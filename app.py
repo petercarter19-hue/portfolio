@@ -42,10 +42,8 @@ from opportunity_slate_routes import opportunity_slate
 import workshop_work_routes  # noqa: F401
 from community_api import community_api
 from community_routes import community_routes
-from services.community_media_service import community_media_maintenance
-from services.community_retention_service import (
-    community_retention_maintenance,
-)
+# Community maintenance is deliberately not imported by the web application.
+# Its only entry point is scripts/run_community_maintenance.py.
 from services.ai_foundation.errors import AIFoundationError
 from services.ask_pete.errors import AskPeteRequestError, PublicSourceManifestError
 from services.ask_pete.manifest import load_public_source_catalog
@@ -694,20 +692,9 @@ if not app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED']:
     app.register_blueprint(people_interests_api)
 
 
-@app.before_request
-def run_community_media_maintenance():
-    if (
-        app.config.get('PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED', False)
-        and not app.config.get('TESTING', False)
-        and request.endpoint not in {'healthz', 'static'}
-    ):
-        community_media_maintenance.maybe_run()
-        # The approved retention schedule. Purges only content the author
-        # already removed, body-free audit rows, and processed outbox rows;
-        # live content is never touched. Best-effort by design: a failed
-        # batch is logged and retried on the next cadence rather than
-        # failing a member's request.
-        community_retention_maintenance.maybe_run()
+# Community maintenance has no before_request hook. The August 4 outage proved
+# that ordinary visitors must never carry the latency or failure risk of
+# housekeeping. Visibility and maintenance also remain independently gated.
 
 # MAJOR 5 correction (independent review): rate limit Workshop's five
 # state-changing routes the same way the AI-cost routes above are limited.
