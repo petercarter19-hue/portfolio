@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-WORKSHOP-ACCESS-001 remains the Workshop access writer on work/2026-08-07-workshop-access-001. PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 is the second disjoint writer on work/2026-08-08-interview-studio-functional-v1-001 for the public/browser-local Functional V1 only. Release authority remains empty."
+  current_assignments: "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 is the sole active writer on work/2026-08-08-interview-studio-functional-v1-001 for the public/browser-local Functional V1 only. PS-WORKSHOP-ACCESS-001 was owner-canceled before implementation and is closing without a Workshop behavior change. Release authority remains empty."
 
 governing_documents:
   bible:
@@ -58,9 +58,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-WORKSHOP-ACCESS-001
-    status: active_delivery
-    scope: "Workshop-wide sign-in boundary across library, guided work, AI/Spark/review, preview reset, saves, and voice; signed-out nav/search removal; no redesign, product-flow change, schema, auth-provider change, Opportunity Slate change, Interview Studio change, deployment, or production mutation."
   - id: PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001
     status: active_delivery
     scope: "Public/browser-local Interview Studio Functional V1 within the five existing runtime/test surfaces: open-ended tailored practice, persistent Interview Me/Interview AI/Video Practice modes, question-aware score-free coaching, local voice/video truth, and meaningful browser-local history/progress; no private-member, schema, Opportunity Slate write, global shell, deployment, or production change."
@@ -136,6 +133,9 @@ completed_packages:
   - PS-INTERVIEW-STUDIO-INTEGRATION-001
 
 retired_packages:
+  - id: PS-WORKSHOP-ACCESS-001
+    package_path: "docs/governance/CURRENT_LANES.json"
+    status: "owner_canceled_before_implementation; no sign-in, Workshop runtime, template, test, schema, configuration, deployment, or production change"
   - id: PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001
     package_path: "docs/initiatives/PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001/README.md"
     status: "owner_withdrew_material_visual_direction_before_release; PR_223 released only session-editing-in-rail plus Interview AI overlap fix; historical evidence retained for provenance"
@@ -145,7 +145,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-WORKSHOP-ACCESS-001 continues on its disjoint access surfaces. Pete selected PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 with 'Go' on 2026-08-08; after this activation merges, create its dedicated implementation worktree from the resulting origin/main, pass write preflight, then implement and debug the recorded public/browser-local slices with Terra max and obtain Sol max independent review. Merge and deployment remain separate control-plane decisions."
+next_gate: "PS-WORKSHOP-ACCESS-001 is canceled and closing with no product change. PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 continues as the sole active lane: create its dedicated implementation worktree from current origin/main, pass write preflight, then implement and debug the recorded public/browser-local slices with Terra max and obtain Sol max independent review. Merge and deployment remain separate control-plane decisions."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

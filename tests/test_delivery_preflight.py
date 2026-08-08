@@ -280,12 +280,31 @@ class DeliveryPreflightTests(unittest.TestCase):
         """
         origin = copy.deepcopy(self.ledger)
         active_lanes = list(origin.get("active_lanes") or [])
-        target_package = self._interview_lane()["package"]
+        target_lane = self._interview_lane()
+        target_package = target_lane["package"]
+        target_surfaces = {
+            surface.replace("\\", "/").rstrip("/").casefold()
+            for surface in target_lane["writable_surfaces"]
+        }
+
+        def is_disjoint(lane: dict) -> bool:
+            lane_surfaces = {
+                surface.replace("\\", "/").rstrip("/").casefold()
+                for surface in lane.get("writable_surfaces", [])
+            }
+            return not any(
+                left == right
+                or left.startswith(right + "/")
+                or right.startswith(left + "/")
+                for left in lane_surfaces
+                for right in target_surfaces
+            )
+
         retained = next(
             (
                 lane
                 for lane in active_lanes
-                if lane.get("package") != target_package
+                if lane.get("package") != target_package and is_disjoint(lane)
             ),
             None,
         )

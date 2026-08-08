@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-08T16:26:00Z",
+  "updated_at": "2026-08-08T16:30:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -9,10 +9,9 @@
   "operating_mode": {
     "state": "active_delivery",
     "authorized_by": "Pete",
-    "authorized_at": "2026-08-05",
+    "authorized_at": "2026-08-08",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-WORKSHOP-ACCESS-001",
       "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001"
     ],
     "merge_allowed_for": [
@@ -24,7 +23,8 @@
       "PS-INTERVIEW-STUDIO-INTEGRATION-001",
       "PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001",
       "PS-ASK-PETE-AI-READINESS-002",
-      "PS-ASK-PETE-AI-RELEASE-001"
+      "PS-ASK-PETE-AI-RELEASE-001",
+      "PS-WORKSHOP-ACCESS-001"
     ],
     "cleanup_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -35,7 +35,8 @@
       "PS-INTERVIEW-STUDIO-INTEGRATION-001",
       "PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001",
       "PS-ASK-PETE-AI-READINESS-002",
-      "PS-ASK-PETE-AI-RELEASE-001"
+      "PS-ASK-PETE-AI-RELEASE-001",
+      "PS-WORKSHOP-ACCESS-001"
     ],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -50,7 +51,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Pete explicitly selected the next outcome on 2026-08-07: put the complete Workshop experience behind PeerSlate sign-in now. PS-WORKSHOP-ACCESS-001 remains the Protected writer for that disjoint boundary. Ask Pete RELEASE-001 closed live on 2026-08-08 at release 9aa5080402d802b5f09b8627 (source 7bde4d0). Pete then selected the public Interview Studio Functional V1 outcome with 'Go' on 2026-08-08 after the scope was stated: preserve /interview-studio and its browser-local truth while replacing fixed session and universal-score mechanics with open-ended tailored practice, persistent modes, question-aware coaching, local voice/video, and meaningful browser-local history/progress. PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 may use the second lane only on its five runtime/test surfaces plus package folder, under the named repository visual authority and OWNER_VISUAL_INTEGRITY_STANDARD.md. It may not touch Workshop, the shared header, private-member data, schema, Opportunity Slate writes, deployment, or production state. Release authority remains empty."
+    "exit_authority": "Pete reversed the 2026-08-07 Workshop sign-in direction on 2026-08-08: 'No, no, no sign in. You got way ahead of yourself. Just close the lane.' PS-WORKSHOP-ACCESS-001 was canceled before product implementation; no Workshop runtime, template, test, schema, configuration, deployment, or production mutation occurred. PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 remains the sole active writer on its five recorded runtime/test surfaces plus package folder. It may not touch Workshop, the shared header, private-member data, schema, Opportunity Slate writes, deployment, or production state. Ask Pete is live at release 9aa5080402d802b5f09b8627 (source 7bde4d0). Release authority remains empty."
   },
   "activation_policy": {
     "enabled": true,
@@ -626,60 +627,50 @@
       "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged worktree and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
       "sequence": "Merge the activation-only PR; create the dedicated implementation worktree from resulting origin/main; pass the package write preflight; implement the 429 and manifest-error app-seam corrections and .env.example documentation in small reviewed slices; validate and review the exact candidate; merge under recorded authority; resolve the automatic-trigger finding; deploy the exact merged SHA flag-off through a governed path; verify release identity and flag-off smoke; assemble the Candidate record; stop for Pete's enablement review; after his decision, staged enablement, live grounded verification, and rollback proof follow as their own recorded steps",
       "branch_note": "Closed live. Cleanup follows recovery references. The owner revived the automatic CI trigger during this lane; the one stale-SHA automatic run was handed to the owner for cancellation."
-    }
-  ],
-  "active_lanes": [
+    },
     {
       "package": "PS-WORKSHOP-ACCESS-001",
-      "outcome": "Require a trusted signed-in PeerSlate identity before any Workshop library, guided work, AI, Spark, review, preview-reset, save, or voice endpoint can render, mutate state, reserve spend, or call a provider; keep flag-off capability routes neutral and remove signed-out Workshop navigation and search discovery.",
+      "outcome": "Canceled by the owner before implementation. Workshop remains unchanged; no sign-in protection was added.",
       "branch": "work/2026-08-07-workshop-access-001",
       "writer": "Root Codex in C:\\Users\\peter\\Documents\\portfolio-workshop-access-20260807",
-      "delivery_path": "Protected",
-      "production_capable": true,
-      "source_checkpoint": "Authoritative Azure origin/main 85d0bd153bb7c49727c8845ca2017dc2de51a7af after PR 336 closed Interview Studio delivery to controlled idle with zero active lanes.",
+      "delivery_path": "Protected cancellation closeout",
+      "production_capable": false,
+      "source_checkpoint": "Activation PR 337 merged as main 2cb1ce056f149588d7096e8cde3868689b00cf4a. The implementation branch remained free of product commits, fast-forwarded through main 6013ab52de40a1535d61836cf6a041ce5b5fe97b, and then rebased onto current Azure origin/main cdf27269b8e6c62199e9c1e6517b000cb8d94bdf after PR 345 activated the disjoint Interview Studio lane.",
       "writable_surfaces": [
-        "workshop_routes.py",
-        "workshop_work_routes.py",
-        "templates/base.html",
-        "tests/test_auth.py",
-        "tests/test_navigation.py",
-        "tests/test_workshop_checkpoint.py",
-        "tests/test_workshop_flows.py",
-        "tests/test_workshop_work_session.py",
-        "tests/test_workshop_review.py",
-        "tests/test_workshop_spark.py",
-        "tests/test_workshop_voice.py",
-        "tests/test_workshop_polish.py",
-        "tests/test_workshop_access.py",
-        "docs/initiatives/PS-WORKSHOP-ACCESS-001/",
         "docs/governance/CURRENT_LANES.json",
-        "docs/governance/CURRENT_BASELINE.yaml"
+        "docs/governance/CURRENT_BASELINE.yaml",
+        "tests/test_delivery_preflight.py"
       ],
       "exclusions": [
-        "no Workshop product-flow, question, AI prompt, model, persistence, save-semantics, or visual redesign change",
-        "no Opportunity Slate, Interview Studio, Community, Journal, public profile, or homepage behavior change beyond hiding signed-out Workshop navigation and search entries",
-        "no schema, migration, canonical-data, authentication-provider, Easy Auth, secret, dependency, pipeline, or production-configuration change",
-        "no deletion of the dormant anonymous-preview implementation in this bounded access correction; production and ordinary development remain sign-in-required",
-        "no write to another branch, worktree, lane, dirty checkout, user-authored content, production data, or unrelated artifact",
-        "no merge, deployment, or live claim until separately authorized by the current control plane"
+        "no Workshop runtime, template, test, product-flow, question, AI, persistence, save-semantics, navigation, or visual change",
+        "no sign-in or authentication behavior change",
+        "no Opportunity Slate, Interview Studio, Community, Journal, public profile, homepage, schema, migration, dependency, pipeline, configuration, deployment, or production change",
+        "no cleanup of unrelated branches, worktrees, stashes, screenshots, mockups, or user-owned artifacts"
       ],
       "completion_evidence": [
-        "activation record merges from current origin/main and the exact implementation worktree passes PS-WORKSHOP-ACCESS-001 write preflight before any implementation write",
-        "all 29 Workshop endpoints have a centralized pre-execution boundary; ordinary anonymous HTML requests redirect safely to sign-in, anonymous voice returns a payload-free 401, and cross-site writes still fail before authentication",
-        "flag-off, session-subflag-off, and voice-off routes remain neutral 404s before identity resolution",
-        "anonymous requests cannot mutate preview/session state, read owner data, reserve AI or voice spend, or call Anthropic or Azure Speech; signed-in behavior and private no-store handling remain intact",
-        "Workshop navigation and search discovery are absent signed out and present only for a trusted principal while the Workshop flag is on",
-        "focused Workshop/auth/navigation tests, wider affected guardrails, complete-diff self-review, and independent Protected review pass on the exact candidate"
+        "the implementation sub-agent was stopped before it changed any tracked file",
+        "the only local planning artifact was removed before closeout",
+        "git diff from current origin/main contains only CURRENT_LANES.json, CURRENT_BASELINE.yaml, and the delivery-preflight test fixture",
+        "no product commit, provider call, schema action, deployment, or production mutation occurred",
+        "the delivery-preflight one-to-two activation fixture selects a synthetic disjoint origin when the sole real active lane overlaps the historical Interview calibration fixture",
+        "governance pointer and delivery-control validation pass on the closeout candidate"
       ],
       "owner_decisions": [
         {
           "date": "2026-08-07",
           "decision": "Pete directed: 'Also, we need to put this behind the sign in page now.' This selects the exact Workshop-wide sign-in outcome and authorizes its bounded Protected implementation; it does not authorize a Workshop redesign or changes to the linked Opportunity Slate and Interview Studio products."
+        },
+        {
+          "date": "2026-08-08",
+          "decision": "Pete reversed the prior direction before implementation: 'No, no, no sign in. No sign in. You got way ahead of yourself. Just close the lane. Clean up whatever you gotta do and close it. We're not doing sign-in protection.' This supersedes the 2026-08-07 Workshop access outcome and authorizes governance closeout plus task-local cleanup only.",
+          "surface_note": "After the disjoint Interview Studio activation merged, removing Workshop exposed a test-only fixture assumption: the historical Interview calibration activation test selected the sole active Interview Functional V1 lane as its synthetic origin and therefore overlapped itself. tests/test_delivery_preflight.py is added only to make that fixture choose a disjoint origin; scripts/delivery_preflight.py and runtime policy remain unchanged."
         }
       ],
-      "cleanup_contract": "Preserve all unrelated, dirty, user-owned, other-lane, legacy, visual-authority, mockup, and recovery material. After exact merge verification, remove only this package's verified clean activation and implementation worktrees/branches after package cleanup preflight.",
-      "sequence": "activation merge -> implementation worktree from new main -> write preflight -> centralized access boundary and signed-out nav correction -> focused and wider verification -> independent Protected review -> governed merge/release decision -> truthful closeout and bounded cleanup"
-    },
+      "cleanup_contract": "After this governance-only closeout merges, verify exact tree equivalence, pass PS-WORKSHOP-ACCESS-001 cleanup preflight, preserve recovery references, and remove only this verified clean implementation branch/worktree and the task-created merged activation branch/worktree. Preserve all unrelated and dirty material.",
+      "sequence": "owner cancellation -> remove untracked planning artifact -> synchronize with current origin/main -> governance-only closeout -> Azure policy -> exact merge verification -> bounded task-local cleanup"
+    }
+  ],
+  "active_lanes": [
     {
       "package": "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
       "outcome": "Deliver the public/browser-local Interview Studio Functional V1 without adding pages or a setup wizard: remove fixed five-question session semantics; let visitors practice as much or as little as they want; add an inline New Session choice for General Practice, Type of Role, or visitor-supplied opportunity context; keep Interview Me, Interview AI, and Video Practice visible as equal modes on the same question; make typed and voice answers share one editable transcript; keep video local and explicit; replace the universal 100-point/STAR rubric with substantial question-family-aware coaching; and turn browser-local History into meaningful score-free progress, coverage, carry-through, and next-focus guidance.",
