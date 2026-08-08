@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-08T06:35:00Z",
+  "updated_at": "2026-08-08T07:05:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-05",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-WORKSHOP-ACCESS-001"
+      "PS-WORKSHOP-ACCESS-001",
+      "PS-ASK-PETE-AI-RELEASE-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -47,7 +48,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Pete explicitly selected the next outcome on 2026-08-07: put the complete Workshop experience behind PeerSlate sign-in now. PS-WORKSHOP-ACCESS-001 is the sole Protected writer for that boundary and its direct-bypass evidence. It may not change Workshop product flow, AI behavior, visual composition, schema, Opportunity Slate, Interview Studio, authentication-provider configuration, deployment, or production state. Release authority remains empty; production remains 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610. Pete then activated PS-ASK-PETE-AI-READINESS-002 as the second disjoint lane on Ask-specific surfaces only, under his 2026-08-08 recorded authority: sole overnight delivery by this program, full permission for the entire governed Ask Pete readiness-and-release sequence, Opus 5 extra-high implementing with Fable orchestrating and reviewing, and an explicit stop before live enablement: PEERSLATE_ASK_PETE_GROUNDED_ENABLED stays off pending Pete's review. READINESS-002 closed 2026-08-08 after PR 339 merged as exact main b7afdc6 with verified tree equivalence; the merge is source integration only. A key operational finding is recorded: no automatic batchedCI deployment has fired for any main merge since pipeline 610 (2026-08-07 21:31 UTC) although the merge messages carry no skip marker, so deployed production remains 1806d20c/release a00f609a and does not yet include the Interview calibration or the Ask Pete readiness fixes. Resolving the trigger state and deploying belong to PS-ASK-PETE-AI-RELEASE-001 with owner-reviewed enablement."
+    "exit_authority": "Pete explicitly selected the next outcome on 2026-08-07: put the complete Workshop experience behind PeerSlate sign-in now. PS-WORKSHOP-ACCESS-001 is the sole Protected writer for that boundary and its direct-bypass evidence. It may not change Workshop product flow, AI behavior, visual composition, schema, Opportunity Slate, Interview Studio, authentication-provider configuration, deployment, or production state. Release authority remains empty; production remains 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610. Pete then activated PS-ASK-PETE-AI-READINESS-002 as the second disjoint lane on Ask-specific surfaces only, under his 2026-08-08 recorded authority: sole overnight delivery by this program, full permission for the entire governed Ask Pete readiness-and-release sequence, Opus 5 extra-high implementing with Fable orchestrating and reviewing, and an explicit stop before live enablement: PEERSLATE_ASK_PETE_GROUNDED_ENABLED stays off pending Pete's review. READINESS-002 closed 2026-08-08 after PR 339 merged as exact main b7afdc6 with verified tree equivalence; the merge is source integration only. A key operational finding is recorded: no automatic batchedCI deployment has fired for any main merge since pipeline 610 (2026-08-07 21:31 UTC) although the merge messages carry no skip marker, so deployed production remains 1806d20c/release a00f609a and does not yet include the Interview calibration or the Ask Pete readiness fixes. Resolving the trigger state and deploying belong to PS-ASK-PETE-AI-RELEASE-001 with owner-reviewed enablement. Pete's standing overnight authority then activated PS-ASK-PETE-AI-RELEASE-001 as the second disjoint lane for app-seam corrections, Candidate/release evidence, resolution of the automatic-trigger finding, and governed flag-off deployment; enablement remains excluded until Pete's review."
   },
   "activation_policy": {
     "enabled": true,
@@ -607,6 +608,61 @@
       ],
       "cleanup_contract": "Preserve all unrelated, dirty, user-owned, other-lane, legacy, visual-authority, mockup, and recovery material. After exact merge verification, remove only this package's verified clean activation and implementation worktrees/branches after package cleanup preflight.",
       "sequence": "activation merge -> implementation worktree from new main -> write preflight -> centralized access boundary and signed-out nav correction -> focused and wider verification -> independent Protected review -> governed merge/release decision -> truthful closeout and bounded cleanup"
+    },
+    {
+      "package": "PS-ASK-PETE-AI-RELEASE-001",
+      "outcome": "Take the merged, default-off Ask Pete Recruiter Evidence Companion through Protected release readiness: correct the app-seam findings (JSON 429 handler with Retry-After for limited routes, classified fail-closed response for a public-source manifest failure at /api/chat, .env.example documentation of PEERSLATE_ASK_PETE_GROUNDED_ENABLED), resolve the recorded automatic-CI-trigger finding, produce the PS-OPS-001 Candidate record, deploy the exact merged SHA flag-off through a governed pipeline path, and prepare owner-reviewed staged enablement with a proven flag-off rollback. The flag is not enabled and nothing is called live without Pete's review decision and exact-source verification.",
+      "branch": "work/2026-08-08-ask-pete-release-001",
+      "writer": "Claude Opus 5 at extra-high effort as the sole delegated implementation writer in the dedicated portfolio-ask-pete-release-001 worktree, orchestrated by Claude Fable 5, which architects and reviews but does not hand-write the implementation",
+      "delivery_path": "Protected",
+      "production_capable": true,
+      "source_checkpoint": "Current authoritative origin/main d09dce06ffcdb65ee77897d778f8f1bfa3f31d83 after the readiness closeout PR 340. Readiness facts: PR 339 merged reviewed content as exact main b7afdc6 (not deployed); deployed production remains 1806d20c/release a00f609a via pipeline 610; no automatic CI run has fired for any main merge since 2026-08-07 21:31 UTC despite clean merge messages, an unchanged YAML trigger, an enabled definition unrevised since 16:40 UTC, and healthy PR/scheduled runs — resolution or a governed manual deploy per the recorded PS-OPS override rules is in scope.",
+      "writable_surfaces": [
+        "app.py",
+        ".env.example",
+        "tests/ask_pete/",
+        "docs/initiatives/PS-ASK-PETE-AI-RELEASE-001/"
+      ],
+      "exclusions": [
+        "no feature enablement: PEERSLATE_ASK_PETE_GROUNDED_ENABLED stays off in every environment until Pete's explicit recorded review decision",
+        "no live claim without exact source, release-identity, and flag-off smoke verification on the deployed target",
+        "no deployment outside the governed pipeline: an automatic run for the exact merged SHA, or the explicit false-by-default manual override naming the exact 40-character manualProductionSourceVersion per recorded PS-OPS rules; never a same-SHA fallback while an automatic run exists",
+        "no services/ask_pete, services/ai_foundation, prompts, manifest, or resume-data change; readiness is complete and closed",
+        "no schema, SQL, migration, secret, dependency, or azure-pipelines.yml change; a pipeline correction, if the trigger finding requires one, must be recorded here first as a scoped addition with its own evidence",
+        "no visual change; the locked Concept H authority stands",
+        "no write to PS-WORKSHOP-ACCESS-001 surfaces (workshop_routes.py, workshop_work_routes.py, templates/base.html, workshop tests) or any other lane, branch, worktree, checkpoint, or artifact",
+        "no weakening of a failing test and no bypass of preflight, policy, review, or evidence"
+      ],
+      "completion_evidence": [
+        "activation record merges and the implementation worktree starts clean from resulting origin/main with the package write preflight passing",
+        "app.py returns a JSON 429 body with Retry-After for rate-limited routes and a classified fail-closed error when the public-source manifest is invalid, with the readiness characterization test updated to the new contract",
+        ".env.example documents the flag with its keep-off-through-deploy contract",
+        "focused tests, full tests/ask_pete, and relevant regressions pass; complete-diff self-review and Fable non-writer review of the exact candidate SHA report no unresolved actionable finding",
+        "the PS-OPS-001 Candidate record names exact source SHA, artifact, target, flag state, newly load-bearing settings verified against the real target, failure paths, and a named stop/rollback action and operator",
+        "the automatic-trigger finding is resolved or the governed manual override path is used with its evidence recorded",
+        "the exact merged SHA is deployed flag-off, release identity is verified from /healthz against the derived identity, and flag-off smoke passes on the live target",
+        "staged enablement and live grounded verification occur only after Pete's recorded review decision, followed by a proven flag-off rollback and payload-free monitoring notes"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-08",
+          "decision": "Pete's standing overnight authority covers this package: 'You have full permission just to keep going with this thing. I approve whatever you do. I'll just... we'll just review this before it goes live. I'm talking about the... everything, the entire package. That's my authority.', with 'Merger granted' and 'Keep going afterwards' after the readiness merge. Live enablement remains excluded until Pete's review; real safety, privacy, authorization, policy, or evidence failures still fail closed."
+        },
+        {
+          "date": "2026-08-08",
+          "decision": "Control-file surfaces are not claimable at activation while PS-WORKSHOP-ACCESS-001 records them (the activate validator refuses the overlap). When this lane's merge grant and closeout require ledger or baseline edits, they follow the recorded-grant surface-note pattern proven by PS-OPPORTUNITY-SLATE-001 and PS-ASK-PETE-AI-READINESS-002, each with the owner decision quoted in place."
+        }
+      ],
+      "model_routing": {
+        "decided_by": "Pete",
+        "date": "2026-08-08",
+        "architecture": "Claude Fable 5 plans, orchestrates, and slices; does not hand-write implementation",
+        "implementation": "Claude Opus 5 at extra-high effort, sole delegated implementation writer in the dedicated clean worktree",
+        "independent_reviewer": "Claude Fable 5 reviews each slice and the exact final candidate SHA; it did not write the code",
+        "sequence": "activation merge -> clean implementation worktree -> write preflight -> Opus implements app-seam slices -> Fable reviews -> full validation -> exact-SHA review -> Azure PR and policy -> recorded merge grant -> governed deploy flag-off -> Candidate/release evidence -> stop for Pete's enablement review"
+      },
+      "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged worktree and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
+      "sequence": "Merge the activation-only PR; create the dedicated implementation worktree from resulting origin/main; pass the package write preflight; implement the 429 and manifest-error app-seam corrections and .env.example documentation in small reviewed slices; validate and review the exact candidate; merge under recorded authority; resolve the automatic-trigger finding; deploy the exact merged SHA flag-off through a governed path; verify release identity and flag-off smoke; assemble the Candidate record; stop for Pete's enablement review; after his decision, staged enablement, live grounded verification, and rollback proof follow as their own recorded steps"
     }
   ],
   "paused_lanes": [
