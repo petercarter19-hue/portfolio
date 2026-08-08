@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-07T18:30:00Z",
+  "updated_at": "2026-08-08T00:24:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-05",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-INTERVIEW-STUDIO-CALIBRATION-001"
+      "PS-INTERVIEW-STUDIO-CALIBRATION-001",
+      "PS-INTERVIEW-STUDIO-INTEGRATION-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -41,7 +42,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-COMMUNITY-PUBLIC-PILOT-001 completed its bounded Protected recovery and public-demo release as exact main 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610. The labelled Pete-only public demo, owner-only canonical runtime, additive PS-COMMUNITY-REVIVAL-001 schema correction, and independently scheduled maintenance are live with the recorded limitations. Pete directed truthful closeout; all active Community write, merge, and release authority is relinquished. PS-INTERVIEW-STUDIO-CALIBRATION-001 remains the sole active lane on its disjoint surfaces. Future Community expansion requires a new activated package."
+    "exit_authority": "PS-COMMUNITY-PUBLIC-PILOT-001 completed its bounded Protected recovery and public-demo release as exact main 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610. The labelled Pete-only public demo, owner-only canonical runtime, additive PS-COMMUNITY-REVIVAL-001 schema correction, and independently scheduled maintenance are live with the recorded limitations. Pete directed truthful closeout; all active Community write, merge, and release authority is relinquished. PS-INTERVIEW-STUDIO-CALIBRATION-001 remains the sole product writer on its five disjoint surfaces. Pete then selected PS-INTERVIEW-STUDIO-INTEGRATION-001 as the second, governance-only lane to record the already completed candidate's governed squash-merge and cleanup authorization without changing product code or authorizing deployment. Future Community expansion requires a new activated package."
   },
   "activation_policy": {
     "enabled": true,
@@ -495,6 +496,50 @@
       },
       "cleanup_contract": "After activation merge, remove only the clean merged activation worktree/branch after verifying origin/main contains the activation and a recovery reference exists. After implementation PR merge is separately authorized and completed, apply the same rule to only this implementation lane. Do not touch the active Ask Pete worktree/branch or any unrelated, dirty, unverified, or user-owned material.",
       "sequence": "merge the activation-only PR -> fetch resulting origin/main -> create work/2026-08-06-interview-studio-calibration-001 at C:\\Users\\peter\\Documents\\portfolio-interview-studio-calibration-20260806 -> run package write preflight -> copy and hash the exact selected visual authority into the package -> reconcile the read-only Sol architecture verdict -> Terra implements, tests, and self-reviews only the five surfaces -> Sol max reviews exact candidate SHA -> Terra resolves validated findings -> open Azure implementation PR; stop before merge or deployment"
+    },
+    {
+      "package": "PS-INTERVIEW-STUDIO-INTEGRATION-001",
+      "outcome": "Record Pete's current authorization to take the completed, independently reviewed PS-INTERVIEW-STUDIO-CALIBRATION-001 candidate in Azure PR 325 through refreshed exact-SHA verification, governed squash merge, authoritative-main verification, and task-local cleanup while preserving every product, privacy, behavior, visual-authority, and no-deployment boundary.",
+      "branch": "work/2026-08-07-interview-studio-integration-001",
+      "writer": "Root Codex in C:\\Users\\peter\\Documents\\portfolio-interview-studio-integration-20260807; sole writer for the governance and package-record surfaces listed here",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "source_checkpoint": "Authoritative origin/main 58e6a9c1f76a8ab1596a9a16c9b2b4be297900c4 after Community PR 330 closeout relinquished every active Community surface. Interview Studio PR 325 remains active at reviewed source e695dde2dcd48882106952054fe0a72240bef088; Azure build 613 and all required policies passed against target 1806d20c23736140fea787ea7cd8fb105c99e7f9, and the candidate must be refreshed after this control change moves main.",
+      "writable_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml",
+        "docs/initiatives/PS-INTERVIEW-STUDIO-INTEGRATION-001/"
+      ],
+      "exclusions": [
+        "no Interview Studio template, CSS, JavaScript, test, source-authority, route, backend, schema, dependency, pipeline, provider, prompt, persistence, authentication, production configuration, or product-behavior change",
+        "no merge-policy, validator, lane-limit, branch-policy, visual-authority, privacy, accessibility, or evidence weakening",
+        "no deployment, release, production mutation, live claim, or addition to release_allowed_for",
+        "no write to Community, another lane, another branch or worktree, a dirty checkout, user-authored content, secrets, or production data",
+        "no cleanup before exact merge verification and a successful cleanup preflight"
+      ],
+      "completion_evidence": [
+        "the activation-only PR changes exactly CURRENT_LANES.json and CURRENT_BASELINE.yaml and passes the repository activate preflight from current origin/main",
+        "the integration worktree starts from the activation merge and passes PS-INTERVIEW-STUDIO-INTEGRATION-001 write preflight before governance writes",
+        "the control update authorizes only the existing Interview Studio PR 325 squash merge and task-local cleanup, keeps release_allowed_for empty, and reconciles every contradictory stop-before-merge sentence",
+        "governance, delivery-preflight, JSON/YAML, and diff-hygiene checks pass before the control PR merges through Azure policy",
+        "the Interview candidate is rebased onto the resulting main with range-diff patch equivalence, focused tests, exact-SHA independent review, and a new successful Azure build",
+        "PS-INTERVIEW-STUDIO-CALIBRATION-001 merge preflight passes before PR 325 is squash-merged",
+        "authoritative main contains the reviewed Interview tree and cleanup removes only verified clean task-local branches and worktrees after cleanup preflight"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-07",
+          "decision": "Pete directed the team to finish Interview Studio and authorized the minimum safe governance transition, PR 325 governed squash merge, exact-main verification, aggressive bounded debugging, and cleanup after each other. This does not authorize deployment, production configuration, new product behavior, or bypass of any failed preflight or Azure policy."
+        }
+      ],
+      "model_routing": {
+        "coordinator": "Root Codex owns the governance-only integration sequence and cleanup accounting",
+        "implementation": "Terra's existing reviewed product candidate remains controlling; the integration lane writes no product code",
+        "independent_reviewer": "Sol at maximum reasoning reviews any rebased Interview candidate SHA before merge",
+        "sequence": "activation merge -> clean integration worktree -> write preflight -> governance authorization PR -> refreshed Interview rebase and exact-SHA review -> Azure policy -> merge preflight -> PR 325 squash merge -> exact-main verification -> cleanup preflight -> bounded cleanup"
+      },
+      "cleanup_contract": "Stop task-created servers and temporary processes. Preserve all dirty, unmerged, unrelated, PC-owned, user-owned, Community, and source-authority material. Remove only clean merged activation, integration, and Interview worktrees or branches after origin/main equivalence, recovery references, and the package cleanup preflight are proven.",
+      "sequence": "Merge this activation-only PR; create the exact integration worktree from resulting main; pass write preflight; record Interview merge and cleanup authority without release authority; validate and merge the governance PR; refresh and re-review PR 325 on resulting main; pass merge preflight; squash-merge PR 325; verify exact main; run cleanup preflight; clean only task-local verified artifacts; stop before deployment."
     }
   ],
   "paused_lanes": [
