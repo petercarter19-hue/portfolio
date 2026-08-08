@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-WORKSHOP-ACCESS-001 is the sole Protected writer on work/2026-08-07-workshop-access-001 for the owner-selected Workshop sign-in boundary and direct-bypass evidence. Release authority remains empty."
+  current_assignments: "PS-WORKSHOP-ACCESS-001 is the sole Protected writer on work/2026-08-07-workshop-access-001 for the owner-selected Workshop sign-in boundary and direct-bypass evidence. PS-ASK-PETE-AI-READINESS-002 is the second disjoint Protected writer on work/2026-08-08-ask-pete-readiness-002 (Ask-specific surfaces; Opus 5 implements, Fable reviews). Release authority remains empty; the Ask Pete flag stays off pending Pete's review."
 
 governing_documents:
   bible:
@@ -61,6 +61,9 @@ active_packages:
   - id: PS-WORKSHOP-ACCESS-001
     status: active_delivery
     scope: "Workshop-wide sign-in boundary across library, guided work, AI/Spark/review, preview reset, saves, and voice; signed-out nav/search removal; no redesign, product-flow change, schema, auth-provider change, Opportunity Slate change, Interview Studio change, deployment, or production mutation."
+  - id: PS-ASK-PETE-AI-READINESS-002
+    status: active_delivery
+    scope: "Source-only Ask Pete readiness fixes on Ask-specific surfaces: bounded provider timeout/retries, action-gated strict classification, missing rate-limit/timeout/legacy-seam tests; no deployment, enablement, provider, schema, visual, manifest, or configuration change."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -140,7 +143,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Merge the PS-WORKSHOP-ACCESS-001 activation record, create its exact implementation worktree from the new main, pass write preflight, prove all 29 endpoints fail closed before preview/AI/voice/save work, and obtain exact-SHA Protected review before any governed merge or release decision."
+next_gate: "PS-WORKSHOP-ACCESS-001 continues its recorded sequence. PS-ASK-PETE-AI-READINESS-002 begins after this record merges, its worktree starts from resulting origin/main on work/2026-08-08-ask-pete-readiness-002, and write preflight passes; live enablement waits for Pete's review."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
