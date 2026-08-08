@@ -693,14 +693,45 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertNotIn('background-templates', css)
         self.assertNotIn('nth-child(n+5)', css)
 
-    def test_v3_light_palette_uses_cool_cobalt_and_teal_tokens(self):
+    def test_smoked_eucalyptus_light_palette_uses_semantic_material_and_contrast_guardrails(self):
         css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
-        self.assertIn('--is-canvas: #f8faff', css)
-        self.assertIn('--is-gold-text: #2858c7', css)
-        self.assertIn('--is-text-muted: #5b6d89', css)
-        self.assertIn('--is-success: #08776e', css)
+        for token, value in (
+            ('--is-canvas', '#c9d8cf'),
+            ('--is-surface', '#fffefa'),
+            ('--is-surface-2', '#f1f3ee'),
+            ('--is-ink', '#10263c'),
+            ('--is-text-muted', '#4b5c67'),
+            ('--is-active', '#1f6248'),
+            ('--is-gold', '#a96c0b'),
+            ('--is-success', '#1d704d'),
+        ):
+            with self.subTest(token=token):
+                self.assertIn(f'{token}: {value}', css)
+        self.assertIn('repeating-linear-gradient', css)
+        self.assertIn(
+            'body:not([data-theme="dark"]) .is__mode[aria-selected="true"]',
+            css,
+        )
+        self.assertIn('var(--is-active)', css)
+        for selector in (
+            'body:not([data-theme="dark"]) .is__stage-progress::-webkit-progress-value',
+            'body:not([data-theme="dark"]) .is__stage-progress::-moz-progress-bar',
+        ):
+            with self.subTest(progress_selector=selector):
+                self.assertIn(
+                    f'{selector} {{\n    background: var(--is-active);\n}}',
+                    css,
+                )
+        self.assertNotIn(
+            '::-webkit-progress-value,\n'
+            'body:not([data-theme="dark"]) .is__stage-progress::-moz-progress-bar',
+            css,
+        )
+        calibration_block = css.split('20. Smoked Eucalyptus light calibration.', 1)[1]
+        self.assertIn('@media (forced-colors: active)', calibration_block)
+        self.assertIn('background: Canvas;', calibration_block)
         light_block = css.split('body[data-theme="dark"] .is {', 1)[0]
-        for retired in ('#fbf8f2', '#fffdfa', '#fffefa', '#f7f1e7', '#8a5a00'):
+        for retired in ('#f8faff', '#f3f6fc', '#2f63df', '#2858c7', '#7ea4ff'):
             self.assertNotIn(retired, light_block.lower())
 
         def luminance(value):
@@ -716,9 +747,14 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
             first, second = luminance(foreground), luminance(background)
             return (max(first, second) + 0.05) / (min(first, second) + 0.05)
 
-        for surface in ('#ffffff', '#f8faff', '#f3f6fc'):
-            self.assertGreaterEqual(contrast('#5b6d89', surface), 4.5)
-        self.assertGreaterEqual(contrast('#08776e', '#e2f3f1'), 4.5)
+        for surface in ('#fffefa', '#f1f3ee'):
+            self.assertGreaterEqual(contrast('#4b5c67', surface), 4.5)
+            self.assertGreaterEqual(contrast('#10263c', surface), 4.5)
+        self.assertGreaterEqual(contrast('#4b5c67', '#c9d8cf'), 4.5)
+        self.assertGreaterEqual(contrast('#7a550d', '#fffefa'), 4.5)
+        self.assertGreaterEqual(contrast('#fffefa', '#98600a'), 4.5)
+        self.assertGreaterEqual(contrast('#1d704d', '#e1f0e6'), 4.5)
+        self.assertGreaterEqual(contrast('#fffefa', '#1f6248'), 4.5)
 
     def test_compact_multiline_fields_share_one_autogrow_contract(self):
         html = self.html('/interview-studio?mode=me')

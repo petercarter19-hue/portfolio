@@ -22,32 +22,35 @@ body.interview-studio-page .footer { position: relative; }
    theme directly.
    --------------------------------------------------------------------- */
 .is {
-    --is-canvas: #f8faff;
-    --is-canvas-2: #ffffff;
-    --is-surface: #ffffff;
-    --is-surface-2: #f3f6fc;
-    --is-ink: #0c2b52;
-    --is-text: #1f3554;
-    --is-text-muted: #5b6d89;
-    --is-gold-text: #2858c7;
-    --is-gold: #2f63df;
-    --is-gold-bright: #7ea4ff;
-    --is-gold-soft: #eaf0ff;
-    --is-line: #d6e0ee;
-    --is-line-strong: #b9c8dc;
-    --is-action-primary: #0d3562;
-    --is-action-primary-strong: #08284d;
-    --is-action-primary-text: #ffffff;
-    --is-focus: #2f63df;
-    --is-success: #08776e;
-    --is-success-soft: #e2f3f1;
+    --is-canvas: #c9d8cf;
+    --is-canvas-2: #eaf1eb;
+    --is-surface: #fffefa;
+    --is-surface-2: #f1f3ee;
+    --is-ink: #10263c;
+    --is-text: #293e4e;
+    --is-text-muted: #4b5c67;
+    --is-gold-text: #7a550d;
+    --is-gold: #a96c0b;
+    --is-gold-bright: #c6902e;
+    --is-gold-soft: #f8eedc;
+    --is-active: #1f6248;
+    --is-active-strong: #164934;
+    --is-active-soft: #e1eee5;
+    --is-line: #ced8d0;
+    --is-line-strong: #acbdb1;
+    --is-action-primary: #98600a;
+    --is-action-primary-strong: #744707;
+    --is-action-primary-text: #fffefa;
+    --is-focus: #285e8f;
+    --is-success: #1d704d;
+    --is-success-soft: #e1f0e6;
     --is-caution-text: #8a4c19;
     --is-caution-soft: #fff1e5;
     --is-error: #b33b45;
     --is-error-soft: #fdecef;
-    --is-shadow: 0 10px 30px rgb(24 55 98 / 8%), 0 1px 4px rgb(24 55 98 / 5%);
-    --is-shadow-soft: 0 5px 16px rgb(24 55 98 / 7%);
-    --is-overlay: rgb(7 28 56 / 32%);
+    --is-shadow: 0 18px 42px rgb(24 54 41 / 18%), 0 3px 9px rgb(24 54 41 / 10%);
+    --is-shadow-soft: 0 8px 22px rgb(24 54 41 / 13%), 0 2px 6px rgb(24 54 41 / 8%);
+    --is-overlay: rgb(12 34 27 / 38%);
     --is-radius: 0.85rem;
     --is-radius-lg: 1rem;
     --is-control-radius: 0.65rem;
@@ -64,7 +67,11 @@ body.interview-studio-page .footer { position: relative; }
     position: fixed;
     z-index: -1;
     inset: 0;
-    background: var(--is-canvas);
+    background:
+        radial-gradient(84rem 42rem at 8% -12%, rgb(255 255 255 / 48%), transparent 62%),
+        radial-gradient(58rem 36rem at 100% 4%, rgb(62 101 78 / 18%), transparent 68%),
+        repeating-linear-gradient(135deg, rgb(36 78 58 / 2%) 0 1px, transparent 1px 10px),
+        var(--is-canvas);
 }
 
 body[data-theme="dark"] .is__backdrop {
@@ -3516,5 +3523,115 @@ body[data-theme="dark"] .is__select select option {
 
     .is__panel[data-is-panel="ai"] .is__ai-form {
         padding-right: 0;
+    }
+}
+
+/* =====================================================================
+   20. Smoked Eucalyptus light calibration.
+   The owner-selected files define material, palette, and depth only. The
+   existing V3 grid, breakpoints, DOM, and dark-token twin remain untouched.
+   ===================================================================== */
+body:not([data-theme="dark"]) .is__card,
+body:not([data-theme="dark"]) .is__disclosure,
+body:not([data-theme="dark"]) .is__history-filters label {
+    background: linear-gradient(145deg, rgb(255 254 250 / 99%), rgb(245 247 242 / 98%));
+    border-color: color-mix(in srgb, var(--is-line-strong) 72%, #fffefa);
+}
+
+body:not([data-theme="dark"]) .is__task-stage,
+body:not([data-theme="dark"]) .is__ai-question-frame {
+    background: linear-gradient(145deg, rgb(255 254 250 / 99%), rgb(245 247 242 / 98%));
+    border-color: color-mix(in srgb, var(--is-line-strong) 78%, #fffefa);
+    box-shadow: var(--is-shadow);
+}
+
+body:not([data-theme="dark"]) .is__mode[aria-selected="true"],
+body:not([data-theme="dark"]) .is__history-link[aria-current="page"] {
+    color: var(--is-action-primary-text);
+    background: linear-gradient(135deg, var(--is-active) 0%, var(--is-active-strong) 100%);
+    border-color: var(--is-active-strong);
+    box-shadow: inset 0 -3px rgb(0 0 0 / 14%), var(--is-shadow-soft);
+}
+
+body:not([data-theme="dark"]) .is__mode[aria-selected="true"] strong,
+body:not([data-theme="dark"]) .is__history-link[aria-current="page"] strong {
+    color: var(--is-action-primary-text);
+}
+
+body:not([data-theme="dark"]) .is__mode[aria-selected="true"] small {
+    color: rgb(255 254 250 / 84%);
+}
+
+body:not([data-theme="dark"]) .is__mode[aria-selected="true"] svg,
+body:not([data-theme="dark"]) .is__history-link[aria-current="page"] svg {
+    color: var(--is-action-primary-text);
+    background: rgb(255 254 250 / 14%);
+}
+
+body:not([data-theme="dark"]) .is__mode-option--selected {
+    color: var(--is-active-strong);
+    background: var(--is-active-soft);
+    border-color: var(--is-active);
+}
+
+body:not([data-theme="dark"]) .is__evidence-option input:checked + span {
+    color: var(--is-action-primary-text);
+    background: var(--is-active);
+    border-color: var(--is-active-strong);
+}
+
+body:not([data-theme="dark"]) .is__stage-progress::-webkit-progress-value {
+    background: var(--is-active);
+}
+
+body:not([data-theme="dark"]) .is__stage-progress::-moz-progress-bar {
+    background: var(--is-active);
+}
+
+body:not([data-theme="dark"]) .is__stages li.is-current,
+body:not([data-theme="dark"]) .is__status-row.is-current .is__status-dot {
+    color: var(--is-action-primary-text);
+    background: var(--is-active);
+    border-color: var(--is-active-strong);
+}
+
+body:not([data-theme="dark"]) .is__status-row.is-current .is__status-dot {
+    box-shadow: 0 0 0 4px var(--is-active-soft);
+}
+
+body:not([data-theme="dark"]) .is__button--primary {
+    box-shadow: 0 9px 20px rgb(102 65 10 / 28%), 0 2px 5px rgb(102 65 10 / 15%);
+}
+
+@media (forced-colors: active) {
+    body:not([data-theme="dark"]) .is__card,
+    body:not([data-theme="dark"]) .is__disclosure,
+    body:not([data-theme="dark"]) .is__history-filters label,
+    body:not([data-theme="dark"]) .is__task-stage,
+    body:not([data-theme="dark"]) .is__ai-question-frame {
+        background: Canvas;
+        border-color: CanvasText;
+        box-shadow: none;
+    }
+
+    body:not([data-theme="dark"]) .is__mode[aria-selected="true"],
+    body:not([data-theme="dark"]) .is__history-link[aria-current="page"],
+    body:not([data-theme="dark"]) .is__mode-option--selected,
+    body:not([data-theme="dark"]) .is__evidence-option input:checked + span,
+    body:not([data-theme="dark"]) .is__stages li.is-current,
+    body:not([data-theme="dark"]) .is__status-row.is-current .is__status-dot {
+        color: HighlightText;
+        background: Highlight;
+        border-color: Highlight;
+        box-shadow: none;
+    }
+
+    body:not([data-theme="dark"]) .is__mode[aria-selected="true"] strong,
+    body:not([data-theme="dark"]) .is__history-link[aria-current="page"] strong,
+    body:not([data-theme="dark"]) .is__mode[aria-selected="true"] small,
+    body:not([data-theme="dark"]) .is__mode[aria-selected="true"] svg,
+    body:not([data-theme="dark"]) .is__history-link[aria-current="page"] svg {
+        color: HighlightText;
+        background: transparent;
     }
 }
