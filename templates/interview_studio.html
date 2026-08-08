@@ -12,7 +12,7 @@
 {% endblock %}
 
 {% block content %}
-{% set is_orientation = interview_initial_view != 'history' and not request.args.get('mode') %}
+{% set is_orientation = false %}
 <div
     class="is"
     data-interview-studio
@@ -28,7 +28,7 @@
     data-is-workspace-state="draft"
     data-is-ai-state="empty"
     data-is-video-state="camera-off"
-    data-is-active-mode="{{ 'history' if interview_initial_view == 'history' else ('orientation' if is_orientation else interview_initial_mode) }}"
+    data-is-active-mode="{{ 'history' if interview_initial_view == 'history' else interview_initial_mode }}"
 >
     <div class="is__backdrop" aria-hidden="true"></div>
 
@@ -90,6 +90,7 @@
                 <a
                     class="is__history-link"
                     href="{{ url_for('interview_studio_history') }}"
+                    aria-label="History"
                     aria-current="{{ 'page' if interview_initial_view == 'history' else 'false' }}"
                     aria-disabled="{{ 'false' if interview_entitlements.progress_history != 'disabled' else 'true' }}"
                     {% if interview_entitlements.progress_history == 'disabled' %}tabindex="-1"{% endif %}
@@ -113,12 +114,49 @@
             </div>
         </header>
 
-        <details class="is__disclosure" data-is-controls data-is-session-setup {% if interview_initial_view == 'history' or is_orientation %}hidden{% endif %}>
-            <summary data-is-setup-summary>
-                <span data-is-setup-summary-text>Experienced · Behavioral · 5-question mock</span>
-                <span class="is__setup-edit">Edit session</span>
-            </summary>
-            <div class="is__disclosure-body is__setup-body">
+        <section class="is__disclosure is__session-setup" data-is-controls data-is-session-setup {% if interview_initial_view == 'history' %}hidden{% endif %} aria-label="New Session">
+            <div class="is__setup-summary">
+                <div><p class="is__eyebrow">New Session</p><strong data-is-setup-summary-text>General practice / Experienced / Behavioral / open session</strong></div>
+                <button class="is__button is__button--quiet" type="button" data-is-new-session-focus>Change setup</button>
+            </div>
+            <form class="is__disclosure-body is__setup-body" data-is-new-session-form>
+                <label class="is__select">
+                    <span>Preparing for</span>
+                    <select data-is-session-kind>
+                        <option value="general">General practice</option>
+                        <option value="role">Type of role</option>
+                        <option value="opportunity">Paste opportunity details</option>
+                    </select>
+                </label>
+                <label class="is__select" data-is-session-role-field hidden>
+                    <span>Type of role</span>
+                    <input type="text" maxlength="120" data-is-session-role placeholder="For example, Operations Manager">
+                </label>
+                <label class="is__select" data-is-session-opportunity-field hidden>
+                    <span>Opportunity details</span>
+                    <textarea rows="2" maxlength="4000" data-is-session-opportunity data-is-autogrow placeholder="Paste a job description, responsibilities, or requirements. This stays in this browser until you explicitly request AI help."></textarea>
+                </label>
+                <label class="is__select">
+                    <span>Interview stage <small>Optional</small></span>
+                    <select data-is-session-stage>
+                        <option value="general" selected>General</option>
+                        <option value="recruiter_screen">Recruiter screen</option>
+                        <option value="hiring_manager">Hiring manager</option>
+                        <option value="panel_final">Panel or final</option>
+                        <option value="not_sure">Not sure yet</option>
+                    </select>
+                </label>
+                <label class="is__select">
+                    <span>Question mix <small>Optional</small></span>
+                    <select data-is-session-mix>
+                        <option value="behavioral" selected>Behavioral</option>
+                        <option value="professional_intro">Professional introduction</option>
+                        <option value="motivation_fit">Motivation and fit</option>
+                        <option value="situational">Situational</option>
+                        <option value="role_specific">Role-specific</option>
+                        <option value="technical_case">Technical or case</option>
+                    </select>
+                </label>
                 <label class="is__select" data-is-ai-mode-group{% if interview_initial_mode != 'ai' or is_orientation %} hidden{% endif %}>
                     <span>Answer source</span>
                     <select data-is-ai-mode aria-describedby="is-ai-mode-note">
@@ -128,12 +166,40 @@
                     </select>
                     <span id="is-ai-mode-note" class="is__sr-only" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</span>
                 </label>
-            </div>
-        </details>
+                <button class="is__button is__button--primary" type="submit" data-is-start-session>Start this session</button>
+            </form>
+        </section>
 
         <p class="is__live" role="status" aria-live="polite" data-is-live></p>
 
-        <main class="is__workspace">
+        {# base.html already provides the page's one main landmark; nesting a
+           second one is non-conforming, so the workspace is a labelled section. #}
+        <section class="is__workspace" aria-label="Interview Studio workspace">
+            <aside class="is__session-rail" aria-label="Current Interview Studio session" data-is-session-rail>
+                <div class="is__session-rail-head">
+                    <p class="is__eyebrow">Interview Studio</p>
+                    <h2>Practice your way.</h2>
+                    <p>Open-ended, browser-local rehearsal.</p>
+                </div>
+                <button class="is__button is__button--quiet is__session-rail-action" type="button" data-is-new-session-focus>
+                    New Session
+                </button>
+                <section class="is__session-rail-section" aria-labelledby="is-rail-context-title">
+                    <p id="is-rail-context-title" class="is__eyebrow">Preparing for</p>
+                    <strong data-is-rail-context>General practice</strong>
+                    <span data-is-rail-stage>Stage: General</span>
+                    <span data-is-rail-mix>Mix: Behavioral</span>
+                </section>
+                <section class="is__session-rail-section" aria-labelledby="is-rail-session-title">
+                    <p id="is-rail-session-title" class="is__eyebrow">Current session</p>
+                    <strong data-is-rail-question>Tell me about a time you disagreed with a supervisor.</strong>
+                    <button class="is__text-action" type="button" data-is-queue-open aria-haspopup="dialog">Question trail</button>
+                </section>
+                <button class="is__button is__button--soft is__session-rail-action" type="button" data-is-finish-session>
+                    Finish Session
+                </button>
+                <p class="is__session-rail-privacy">Public practice stays in this browser. It is not added to a private member record.</p>
+            </aside>
             <section
                 class="is__panel"
                 data-is-panel="orientation"
@@ -168,7 +234,7 @@
                         <a class="is__card is__orientation-card" href="{{ url_for('interview_studio_history') }}" data-is-orientation-link="history" aria-disabled="{{ 'false' if interview_entitlements.progress_history != 'disabled' else 'true' }}">
                             <span class="is__orientation-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 7v5l3 2M5.6 5.6 3 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
                             <strong>History</strong>
-                            <p>Your drafts, goals, attempts, and completed practice—saved only in this browser.</p>
+                            <p>Your drafts, reviewed attempts, and completed practice—saved only in this browser.</p>
                         </a>
                     </div>
                 </div>
@@ -195,19 +261,18 @@
                             <p class="is__section-label">Interview Me Practice</p>
                             <h2 class="is__title is__title--stage" data-is-question>Tell me about a time you disagreed with a supervisor.</h2>
                         </div>
-                        <div class="is__est-chip" data-is-est-chip hidden>Est. time<br><strong>15–20 min</strong></div>
                     </div>
 
                     <div class="is__progress-head">
-                        <span class="is__question-position" data-is-question-position>Question 1 of 5 · 0% complete</span>
-                        <ol class="is__stages" data-is-stage-rail aria-label="Answer progress">
-                            <li data-is-stage="1" class="is-current" aria-current="step"><span class="is__sr-only">Draft</span><span aria-hidden="true">1</span></li>
-                            <li data-is-stage="2"><span class="is__sr-only">Coaching request</span><span aria-hidden="true">2</span></li>
-                            <li data-is-stage="3"><span class="is__sr-only">Review</span><span aria-hidden="true">3</span></li>
-                            <li data-is-stage="4"><span class="is__sr-only">Improve</span><span aria-hidden="true">4</span></li>
-                            <li data-is-stage="5"><span class="is__sr-only">Continue</span><span aria-hidden="true">5</span></li>
+                        <span class="is__question-position" data-is-question-position>Open session · choose as many questions as you need</span>
+                        <ol class="is__stages" data-is-workflow-progress aria-label="Answer workflow progress">
+                            <li data-is-workflow-step="1" class="is-current" aria-current="step"><span class="is__sr-only">Draft</span><span aria-hidden="true">1</span></li>
+                            <li data-is-workflow-step="2"><span class="is__sr-only">Coaching request</span><span aria-hidden="true">2</span></li>
+                            <li data-is-workflow-step="3"><span class="is__sr-only">Review</span><span aria-hidden="true">3</span></li>
+                            <li data-is-workflow-step="4"><span class="is__sr-only">Improve</span><span aria-hidden="true">4</span></li>
+                            <li data-is-workflow-step="5"><span class="is__sr-only">Continue</span><span aria-hidden="true">5</span></li>
                         </ol>
-                        <progress class="is__stage-progress" data-is-progress max="100" value="0">0%</progress>
+                        <span class="is__stage-progress" data-is-progress aria-live="off">Open session</span>
                         <span class="is__state-pill" data-is-stage-label>Drafting</span>
                     </div>
 
@@ -217,8 +282,8 @@
                             <ul class="is__chips" aria-label="Question details">
                                 <li class="is__chip is__chip--family" data-is-family-chip>Behavioral</li>
                                 <li class="is__chip is__chip--competency" data-is-competency-chip>Competency: Conflict</li>
-                                <li class="is__chip is__chip--framework" data-is-framework-chip>STAR recommended</li>
-                                <li class="is__chip is__chip--time" data-is-time-chip>Approximately 2 minutes</li>
+                                <li class="is__chip is__chip--framework" data-is-framework-chip>Question-aware coaching</li>
+                                <li class="is__chip is__chip--time" data-is-time-chip>Answer at your own pace</li>
                             </ul>
                             <div class="is__question-actions" aria-label="Change the current question">
                                 <button class="is__question-action" type="button" data-is-different-question>
@@ -276,8 +341,8 @@
                                         <span data-is-mic-label>Dictate</span>
                                     </button>
                                     <button class="is__button is__queue-mobile" type="button" data-is-queue-open aria-haspopup="dialog">
-                                        <span class="is__dock-label-full">Up next · <span data-is-up-next-count>4</span></span>
-                                        <span class="is__dock-label-compact">Next · <span data-is-up-next-count>4</span></span>
+                                        <span class="is__dock-label-full">Question trail</span>
+                                        <span class="is__dock-label-compact">Questions</span>
                                     </button>
                                     <button class="is__button is__button--primary is__composer-submit" type="submit" data-is-review disabled>
                                         <span class="is__dock-label-full">Review My Answer</span>
@@ -329,7 +394,7 @@
 
                                 <div class="is__empty" data-is-feedback-empty>
                                     <strong>Your review space is ready.</strong>
-                                    <span>Submit any nonempty answer above to see your score, STAR completeness, strengths, and next improvements here.</span>
+                                    <span>Submit any nonempty answer above to see question-aware coaching, what came through clearly, and one focused next improvement here.</span>
                                 </div>
 
                                 <div data-is-feedback-content hidden>
@@ -339,17 +404,16 @@
                                             <h2 data-is-verdict>Your verdict</h2>
                                             <p class="is__success-line">✓ <span data-is-encouragement></span></p>
                                         </div>
-                                        <div class="is__bl-score">
-                                            <div class="is__score" role="img" data-is-score-ring aria-label="No score yet" style="--score:0">
-                                                <strong data-is-score>—</strong><span>/100</span>
-                                            </div>
-                                            <span class="is__ring-caption">Practice signal — not an employer prediction</span>
-                                        </div>
+                                        <p class="is__review-caption">Question-aware coaching — not an employer prediction</p>
                                     </div>
 
                                     <div class="is__review-columns">
                                         <section class="is__card is__review-card">
-                                            <h4 class="is__section-label">What worked well</h4>
+                                            <h4 class="is__section-label">What came through clearly</h4>
+                                            <ul class="is__bullets" data-is-clear-points></ul>
+                                        </section>
+                                        <section class="is__card is__review-card">
+                                            <h4 class="is__section-label">What worked</h4>
                                             <ul class="is__bullets" data-is-strengths></ul>
                                         </section>
                                         <section class="is__card is__review-card is__review-card--improve">
@@ -358,15 +422,17 @@
                                         </section>
                                     </div>
 
-                                    <section class="is__card is__star">
-                                        <h4 class="is__section-label">Framework map · STAR</h4>
-                                        <ul class="is__star-grid" data-is-star aria-label="STAR framework completeness"></ul>
+                                    <section class="is__card is__approach">
+                                        <h4 class="is__section-label">A stronger approach</h4>
+                                        <p data-is-stronger-approach></p>
+                                        <h4 class="is__section-label" style="margin-top:1rem">One focused follow-up</h4>
+                                        <p data-is-focused-follow-up></p>
                                     </section>
 
-                                    <details class="is__disclosure is__score-detail" data-is-score-detail>
-                                        <summary>Score detail</summary>
+                                    <details class="is__disclosure is__dimension-detail" data-is-dimension-detail>
+                                        <summary>Question-aware dimensions</summary>
                                         <div class="is__disclosure-body">
-                                            <ul class="is__dimensions" data-is-dimensions aria-label="Scoring dimensions"></ul>
+                                            <ul class="is__dimensions" data-is-dimensions aria-label="Question-aware dimensions"></ul>
                                         </div>
                                     </details>
 
@@ -378,7 +444,7 @@
                                     </div>
                                     <div class="is__next-step">
                                         <button class="is__button is__button--primary" type="button" data-is-next-question>
-                                            Next Question
+                                            Next question
                                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
                                         </button>
                                     </div>
@@ -466,17 +532,22 @@
                                         <label class="is__select">
                                             <span>Question family</span>
                                             <select data-is-family>
-                                                <option value="situational">Situational</option>
+                                                <option value="professional_intro">Professional introduction</option>
                                                 <option value="behavioral" selected>Behavioral</option>
-                                                <option value="mixed">Mixed</option>
+                                                <option value="motivation_fit">Motivation and fit</option>
+                                                <option value="situational">Situational</option>
+                                                <option value="role_specific">Role-specific</option>
+                                                <option value="technical_case">Technical or case</option>
                                             </select>
                                         </label>
-                                        <label class="is__select" data-is-format-control>
-                                            <span>Session</span>
-                                            <select data-is-format>
-                                                <option value="single">Single question</option>
-                                                <option value="5" selected>5-question mock</option>
-                                                <option value="10">10-question mock</option>
+                                        <label class="is__select">
+                                            <span>Interview stage</span>
+                                            <select data-is-active-stage>
+                                                <option value="general" selected>General</option>
+                                                <option value="recruiter_screen">Recruiter screen</option>
+                                                <option value="hiring_manager">Hiring manager</option>
+                                                <option value="panel_final">Panel or final</option>
+                                                <option value="not_sure">Not sure yet</option>
                                             </select>
                                         </label>
                                     </div>
@@ -484,7 +555,7 @@
 
                                 <section class="is__card is__context-card is__context-actions" aria-label="Question navigation and optional example">
                                     <button class="is__context-link" type="button" data-is-queue-open aria-haspopup="dialog">
-                                        <span><strong>Up next · <span data-is-up-next-count>4</span> questions</strong></span>
+                                        <span><strong>Question trail</strong><small>Open-ended session</small></span>
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
                                     </button>
                                     <button class="is__context-link" type="button" data-is-nudge-open aria-expanded="false">
@@ -516,9 +587,9 @@
                                 <section class="is__card is__context-card">
                                     <p class="is__eyebrow">Current state</p>
                                     <dl class="is__context-list">
-                                        <div><dt>Question</dt><dd data-is-review-question>1 of 5</dd></div>
+                                        <div><dt>Question</dt><dd data-is-review-question>Open session</dd></div>
                                         <div><dt>Attempt</dt><dd data-is-review-attempt>1</dd></div>
-                                        <div><dt>Practice signal</dt><dd data-is-review-score>—</dd></div>
+                                        <div><dt>Coaching</dt><dd data-is-review-focus>Question-aware</dd></div>
                                     </dl>
                                 </section>
                                 <section class="is__card is__context-card">
@@ -568,8 +639,8 @@
                                 <ul class="is__chips" aria-label="Question details">
                                     <li class="is__chip is__chip--family" data-is-ai-family-chip>Behavioral</li>
                                     <li class="is__chip is__chip--competency" data-is-ai-competency-chip>Competency: Conflict</li>
-                                    <li class="is__chip is__chip--framework" data-is-ai-framework-chip>STAR recommended</li>
-                                    <li class="is__chip is__chip--time" data-is-ai-time-chip>Approximately 2 minutes</li>
+                                    <li class="is__chip is__chip--framework" data-is-ai-framework-chip>Question-aware example</li>
+                                    <li class="is__chip is__chip--time" data-is-ai-time-chip>Use it as a guide</li>
                                 </ul>
                                 <div class="is__question-actions" aria-label="Change the current question">
                                     <button class="is__question-action" type="button" data-is-different-question>
@@ -663,7 +734,7 @@
                         </section>
                     </div>
 
-                    <aside class="is__side-column">
+                    <aside class="is__side-column" aria-label="Interview AI context">
                         <section class="is__card is__card-pad">
                             <p class="is__eyebrow">Source boundaries</p>
                             <h3 class="is__title" style="font-size:1.2rem">Three views. No private history.</h3>
@@ -704,9 +775,8 @@
                     <p class="is__sub">Review your delivery locally. PeerSlate does not upload or analyze the recording.</p>
 
                     <div class="is__progress-head" style="margin-top:1rem">
-                        <span class="is__question-position"><span data-is-video-question-position>Question 1 of 5</span> · Local rehearsal</span>
-                        <span class="is__save-pill" data-is-video-progress-percent hidden>0%</span>
-                        <progress class="is__sr-only" data-is-video-progress max="100" value="0">0%</progress>
+                        <span class="is__question-position"><span data-is-video-question-position>Open session</span> · Local rehearsal</span>
+                        <span class="is__sr-only" data-is-video-progress>Open session</span>
                     </div>
                     <div class="is__question-block is__question-block--compact is__question-controls-row">
                         <div class="is__question-icon" aria-hidden="true">?</div>
@@ -715,8 +785,8 @@
                             <ul class="is__chips">
                                 <li class="is__chip is__chip--family" data-is-video-family>Behavioral</li>
                                 <li class="is__chip is__chip--competency" data-is-video-competency>Competency: Conflict</li>
-                                <li class="is__chip is__chip--framework" data-is-video-framework-chip>STAR recommended</li>
-                                <li class="is__chip is__chip--time" data-is-video-time-chip>Approximately 2 minutes</li>
+                                <li class="is__chip is__chip--framework" data-is-video-framework-chip>Question-aware practice</li>
+                                <li class="is__chip is__chip--time" data-is-video-time-chip>Answer at your own pace</li>
                             </ul>
                             <div class="is__question-actions" aria-label="Change the current question">
                                 <button class="is__question-action" type="button" data-is-different-question>
@@ -753,7 +823,7 @@
 
                             <form class="is__card is__video-content-review" data-is-video-transcript-form>
                                 <h3>Get content coaching from a transcript</h3>
-                                <p>Automatic transcription is not enabled. Type, paste, or dictate what you said to use the same content review as Interview Me, grounded in the approved history. You can use this before or after recording.</p>
+                                <p>Automatic transcription is not enabled. Type, paste, or dictate what you said to use the same content review as Interview Me, grounded in the approved history. You can use this before or after recording. Submitting the transcript removes the local recording.</p>
                                 <label for="is-video-transcript">Answer transcript</label>
                                 <div class="is__transcript-composer">
                                     <textarea id="is-video-transcript" rows="3" maxlength="5000" placeholder="Type or paste the answer you recorded…" required data-is-video-transcript data-is-autogrow></textarea>
@@ -770,7 +840,7 @@
                             </form>
                         </div>
 
-                        <aside class="is__side-column">
+                        <aside class="is__side-column" aria-label="Video Practice context">
                             <section class="is__card is__video-device-card" aria-labelledby="is-video-device-title">
                                 <p class="is__eyebrow">Device status</p>
                                 <h3 id="is-video-device-title">Local rehearsal state</h3>
@@ -784,7 +854,7 @@
                             </section>
                             <section class="is__card is__context-card is__context-actions" aria-label="Video question help">
                                 <button class="is__context-link" type="button" data-is-queue-open aria-haspopup="dialog">
-                                    <span><strong>Up next · <span data-is-up-next-count>4</span> questions</strong></span>
+                                    <span><strong>Question trail</strong><small>Open-ended session</small></span>
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
                                 </button>
                                 <button class="is__context-link" type="button" data-is-nudge-open aria-expanded="false">
@@ -807,8 +877,8 @@
                                 <div data-is-video-result-content hidden>
                                     <p><strong data-is-video-duration>—</strong> recorded. Playback is available above until you leave or discard it.</p>
                                     <div class="is__analysis-unavailable">
-                                        <strong>Delivery analysis is not enabled yet.</strong>
-                                        <span>PeerSlate will not show pace, pauses, filler words, clarity, or replay moments until a real processing service produces them.</span>
+                                        <strong>Delivery analysis is not part of this public practice session.</strong>
+                                        <span>PeerSlate does not score pace, pauses, filler words, appearance, confidence, or any personal trait here.</span>
                                     </div>
                                     <div class="is__local-list">
                                         <div>✓ Review the recording yourself</div>
@@ -836,20 +906,56 @@
                 </article>
             </section>
 
+            <section class="is__panel is__complete-panel" data-is-panel="complete" hidden aria-labelledby="is-complete-title">
+                <div class="is__content-grid is__content-grid--complete">
+                    <div class="is__main-column is__task-stage">
+                        <p class="is__eyebrow">Session complete</p>
+                        <h2 id="is-complete-title" class="is__title is__title--section" data-is-complete-title>Practice session complete.</h2>
+                        <p class="is__sub" data-is-complete-summary>Your browser-local session is ready for you to revisit or continue.</p>
+                        <div class="is__complete-facts" aria-label="Session summary">
+                            <div><strong data-is-complete-reviewed>0</strong><span>reviewed answers</span></div>
+                            <div><strong data-is-complete-questions>0</strong><span>questions practiced</span></div>
+                            <div><strong data-is-complete-context>General practice</strong><span>practice context</span></div>
+                        </div>
+                        <section class="is__card is__complete-outcomes" aria-labelledby="is-complete-outcomes-title">
+                            <h3 id="is-complete-outcomes-title">Session answers</h3>
+                            <p class="is__empty" data-is-complete-empty>No reviewed answers were added in this session. Your local draft remains available when you return to practice.</p>
+                            <ul class="is__complete-list" data-is-complete-list hidden></ul>
+                        </section>
+                        <div class="is__actions is__complete-actions">
+                            <button class="is__button is__button--primary" type="button" data-is-complete-practice-next>Practice another question</button>
+                            <button class="is__button" type="button" data-is-complete-new-session>Start a new session</button>
+                            <a class="is__button is__button--quiet" href="{{ url_for('interview_studio_history') }}" data-is-complete-history>View History &amp; Progress</a>
+                        </div>
+                    </div>
+                    <aside class="is__side-column" aria-label="Session completion guidance">
+                        <section class="is__card is__context-card">
+                            <p class="is__eyebrow">What changed</p>
+                            <p data-is-complete-next-focus>Complete a reviewed answer to see one focused next practice suggestion.</p>
+                        </section>
+                        <section class="is__card is__context-card">
+                            <p class="is__eyebrow">Public by default</p>
+                            <p>This session remains in this browser only. No private reflection, My Knowledge item, account history, or Opportunity Slate update is created here.</p>
+                        </section>
+                    </aside>
+                </div>
+            </section>
+
             <section class="is__panel" data-is-panel="history" {% if interview_initial_view != 'history' %}hidden{% endif %} aria-labelledby="is-history-title">
                 <p class="is__eyebrow">History · this browser only</p>
                 <div class="is__history-head">
-                    <div><h2 id="is-history-title" class="is__title is__title--section">Your practice history on this device.</h2><p class="is__sub">Drafts, goals, completed attempts, and coaching results are stored only in this browser.</p></div>
+                    <div><h2 id="is-history-title" class="is__title is__title--section">Your practice history on this device.</h2><p class="is__sub">Reviewed answers, retries, question coverage, and coaching carry-through are stored only in this browser.</p></div>
                     <div class="is__history-filters">
                         <label><span>Mode</span><select data-is-history-mode><option value="all">All modes</option><option value="me">Interview Me</option><option value="video">Video Practice</option></select></label>
                         <label><span>Competency</span><select data-is-history-competency><option value="all">All competencies</option></select></label>
                         <label><span>Time</span><select data-is-history-time><option value="all">All time</option><option value="7">Past 7 days</option><option value="30">Past 30 days</option></select></label>
                     </div>
                 </div>
+                <span id="is-history-summary-label" class="is__sr-only" data-is-history-summary-label>History summary: no reviewed answers yet.</span>
 
                 <div class="is__band is__band--caution" data-is-storage-note hidden>
                     <strong>This browser is blocking local storage.</strong>
-                    Practice still works, but drafts, history, and goals cannot be saved on this device.
+                    Practice still works, but drafts and history cannot be saved on this device.
                 </div>
                 <div class="is__band" data-is-storage-ok>
                     <strong>No account or cloud history.</strong>
@@ -862,38 +968,35 @@
                             <h3 class="is__section-label" style="font-size:0.78rem;text-transform:uppercase">Recent completed attempts</h3>
                             <div class="is__empty" data-is-history-empty>
                                 <strong>No completed sessions yet</strong>
-                                <span>Submit a written answer or finish a camera rehearsal to begin your history.</span>
+                                <span>Submit a written answer or submit a video transcript for coaching to begin your history.</span>
                                 <a class="is__button is__button--primary" style="margin-top:0.6rem" href="{{ url_for('interview_studio', mode='me') }}">Start practicing</a>
                             </div>
                             <div class="is__session-list" data-is-session-list hidden></div>
                         </section>
 
-                        <section class="is__card is__history-card is__goal" style="margin-top:1rem">
-                            <h3 class="is__section-label" style="font-size:0.78rem;text-transform:uppercase">Practice goals</h3>
-                            <label for="is-goal-score">Target average score</label>
-                            <div><input id="is-goal-score" type="number" min="1" max="100" value="85" data-is-goal-score><button class="is__button" type="button" data-is-goal-save>Save</button></div>
-                            <p data-is-goal-progress>No scored attempts yet.</p>
-                            <progress class="is__goal-progress" max="100" value="0" data-is-goal-progress>0%</progress>
-
+                        <section class="is__card is__history-card is__history-summary" style="margin-top:1rem" aria-labelledby="is-history-progress-title is-history-summary-label">
+                            <h3 id="is-history-progress-title" class="is__section-label" style="font-size:0.78rem;text-transform:uppercase">History &amp; Progress</h3>
+                            <p>See which question families you have practiced and whether a coaching improvement appears in a later comparable answer.</p>
                             <div class="is__divider"></div>
                             <h4 style="margin:0;color:var(--is-ink);font-family:var(--ps-font-display,Newsreader,Georgia,serif);font-size:1.05rem" data-is-recommendation-question>Tell me about a time you disagreed with a supervisor.</h4>
-                            <p class="is__section-label" style="margin-top:0.4rem" data-is-recommendation-reason>Start with one focused answer</p>
-                            <button class="is__button is__button--primary" style="margin-top:0.6rem" type="button" data-is-practice-recommendation>Practice this</button>
+                            <p class="is__section-label" style="margin-top:0.4rem" data-is-recommendation-reason>Not enough comparable practice yet.</p>
+                            <button class="is__button is__button--primary" style="margin-top:0.6rem" type="button" data-is-practice-recommendation>Practice this focus</button>
                         </section>
 
                         <details class="is__disclosure" style="margin-top:1rem" data-is-history-detail-toggle>
-                            <summary>Practice detail</summary>
+                            <summary>How your progress is calculated</summary>
                             <div class="is__disclosure-body">
                                 <dl style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0.75rem;margin:0">
                                     <div><dt style="color:var(--is-text-muted);font-size:0.68rem">Questions answered</dt><dd style="margin:0.25rem 0 0;color:var(--is-ink);font-weight:700" data-is-history-count>0</dd></div>
-                                    <div><dt style="color:var(--is-text-muted);font-size:0.68rem">Average score</dt><dd style="margin:0.25rem 0 0;color:var(--is-ink);font-weight:700" data-is-history-average>—</dd></div>
-                                    <div><dt style="color:var(--is-text-muted);font-size:0.68rem">Strongest competency</dt><dd style="margin:0.25rem 0 0;color:var(--is-ink);font-weight:700" data-is-history-strongest>Not enough practice yet</dd></div>
-                                    <div><dt style="color:var(--is-text-muted);font-size:0.68rem">Most important improvement</dt><dd style="margin:0.25rem 0 0;color:var(--is-ink);font-weight:700" data-is-history-improvement>Complete a scored answer</dd></div>
+                                    <div><dt style="color:var(--is-text-muted);font-size:0.68rem">Question coverage</dt><dd style="margin:0.25rem 0 0;color:var(--is-ink);font-weight:700" data-is-history-coverage>0 families practiced</dd></div>
+                                    <div><dt style="color:var(--is-text-muted);font-size:0.68rem">Coaching carry-through</dt><dd style="margin:0.25rem 0 0;color:var(--is-ink);font-weight:700" data-is-history-carry-through>Not enough comparable practice yet.</dd></div>
+                                    <div><dt style="color:var(--is-text-muted);font-size:0.68rem">Next focus</dt><dd style="margin:0.25rem 0 0;color:var(--is-ink);font-weight:700" data-is-history-next-focus>Choose one question family</dd></div>
                                 </dl>
                                 <div class="is__divider"></div>
-                                <p class="is__section-label">Growth</p>
-                                <p data-is-growth-empty style="color:var(--is-text-muted);font-size:0.78rem">Complete at least two scored answers in a competency to see a meaningful trend.</p>
+                                <p class="is__section-label">Comparable practice</p>
+                                <p data-is-growth-empty style="color:var(--is-text-muted);font-size:0.78rem">Not enough comparable practice yet. Complete two reviewed answers in the same family to see a trend.</p>
                                 <div class="is__growth-list" data-is-growth-list></div>
+                                <p data-is-history-legacy-note style="color:var(--is-text-muted);font-size:0.78rem"></p>
                             </div>
                         </details>
 
@@ -903,7 +1006,7 @@
                         </div>
                     </div>
 
-                    <aside class="is__side-column">
+                    <aside class="is__side-column" aria-label="History context">
                         <section class="is__card is__card-pad">
                             <p class="is__eyebrow">Local storage</p>
                             <h3 class="is__title" style="font-size:1.2rem">Your history does not follow you.</h3>
@@ -922,15 +1025,15 @@
                         </section>
                     </aside>
                 </div>
-                <p class="is__history-disclosure">History and goals in this preview are stored only in this browser for {{ interview_profile.name }}’s public profile. They are not synced to a PeerSlate account.</p>
+                <p class="is__history-disclosure">History in this preview is stored only in this browser for {{ interview_profile.name }}’s public profile. It is not synced to a PeerSlate account.</p>
             </section>
-        </main>
+        </section>
 
         <ul class="is__truth" data-is-truth-strip aria-label="Studio truth and privacy summary">
             <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">⇧</span><p>Question text is sent only when you request coaching, a nudge, or an example. Answer text is sent only for coaching.</p></li>
-            <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">▤</span><p>Drafts, goals, attempts, and History are saved only in this browser.</p></li>
+            <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">▤</span><p>Drafts, reviewed attempts, and History are saved only in this browser.</p></li>
             <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">▣</span><p>Video Practice remains local. Media is not uploaded or analyzed.</p></li>
-            <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">◇</span><p>Scores are practice signals, not employer predictions.</p></li>
+            <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">◇</span><p>Coaching is question-aware practice, not a prediction about you.</p></li>
         </ul>
         <p style="margin-top:0.65rem;color:var(--is-text-muted);font-size:0.7rem;text-align:center">Public Interview Studio · browser-local practice</p>
     </div>
@@ -992,7 +1095,7 @@
         <div class="is__history-detail-body">
             <div class="is__history-detail-meta">
                 <span data-is-history-detail-date></span>
-                <strong data-is-history-detail-score></strong>
+                <strong data-is-history-detail-coaching></strong>
             </div>
             <h3 data-is-history-detail-question></h3>
             <p data-is-history-detail-context></p>

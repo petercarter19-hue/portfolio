@@ -40,7 +40,6 @@
     var storagePrefix = 'peerslate:interview-studio:' + profileSlug + ':v1';
     var historyKey = storagePrefix + ':history';
     var sessionKey = storagePrefix + ':session';
-    var goalKey = storagePrefix + ':goal';
     var writtenPracticeEnabled = root.getAttribute('data-written-practice') === 'enabled';
     var modelAnswersEnabled = root.getAttribute('data-model-answers') === 'enabled';
     var videoCapability = root.getAttribute('data-video-capability') || 'disabled';
@@ -152,10 +151,6 @@
         Failure: 'Spend less time defending the miss and more time on learning and changed behavior.'
     };
 
-    function labelFamily(value) {
-        return value ? value.charAt(0).toUpperCase() + value.slice(1) : 'Behavioral';
-    }
-
     function cloneQuestion(item) {
         return {
             text: item.text,
@@ -173,120 +168,416 @@
         leadership: ['Leadership', 'Decisions', 'Communication', 'Conflict', 'Accountability', 'Pressure', 'Teamwork']
     };
 
-    function questionsForSession(family, level) {
-        var source = questions.filter(function (item) {
-            return family === 'mixed' || item.family === family;
+    var FAMILY_LABELS = {
+        professional_intro: 'Professional introduction',
+        behavioral: 'Behavioral',
+        motivation_fit: 'Motivation and fit',
+        situational: 'Situational',
+        role_specific: 'Role-specific',
+        technical_case: 'Technical or case'
+    };
+    var FAMILY_DIMENSIONS = {
+        professional_intro: ['identity', 'relevant_proof', 'value', 'direction'],
+        behavioral: ['situation_clarity', 'action_ownership', 'evidence', 'outcome', 'reflection'],
+        motivation_fit: ['authentic_rationale', 'specificity', 'role_connection', 'forward_direction'],
+        situational: ['problem_framing', 'judgment', 'tradeoffs', 'action_plan', 'communication'],
+        role_specific: ['relevance', 'reasoning', 'evidence', 'priorities', 'execution'],
+        technical_case: ['framing', 'assumptions', 'reasoning', 'tradeoffs', 'conclusion']
+    };
+    var DIMENSION_STATUSES = ['strong', 'clear', 'developing', 'missing'];
+    var FAMILY_BLUEPRINTS = {
+        professional_intro: [
+            { text: 'Tell me about yourself and the value you bring to a team.', competency: 'Professional identity' },
+            { text: 'What experience best prepares you for the work you want to do next?', competency: 'Relevant proof' }
+        ],
+        behavioral: [],
+        motivation_fit: [
+            { text: 'Why are you interested in this role and this kind of work now?', competency: 'Role connection' },
+            { text: 'What would make this opportunity a meaningful next step for you?', competency: 'Forward direction' }
+        ],
+        situational: [],
+        role_specific: [
+            { text: 'How would you prioritize your first month in a role like this?', competency: 'Priorities' },
+            { text: 'What would you need to understand before making an important decision in this role?', competency: 'Reasoning' }
+        ],
+        technical_case: [
+            { text: 'How would you approach a new problem when the information is incomplete?', competency: 'Problem framing' },
+            { text: 'Walk me through how you would make and explain a tradeoff in a complex project.', competency: 'Tradeoffs' }
+        ]
+    };
+    var ACTIVE_FAMILIES = Object.keys(FAMILY_LABELS);
+
+    function normalizeFamily(value) {
+        return ACTIVE_FAMILIES.indexOf(value) !== -1 ? value : 'behavioral';
+    }
+
+    function labelFamily(value) {
+        return FAMILY_LABELS[normalizeFamily(value)] || 'Behavioral';
+    }
+
+    function questionId(question) {
+        return String(question.id || (question.family + ':' + question.text))
+            .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 160);
+    }
+
+    function normalizedQuestion(item, family) {
+        var question = cloneQuestion(item);
+        question.family = normalizeFamily(question.family || family);
+        question.id = questionId(question);
+        return question;
+    }
+
+    function localBlueprintsFor(family, level) {
+        family = normalizeFamily(family);
+        var source = questions.filter(function (item) { return item.family === family; })
+            .map(function (item) { return normalizedQuestion(item, family); });
+        (FAMILY_BLUEPRINTS[family] || []).forEach(function (item) {
+            source.push(normalizedQuestion({
+                text: item.text,
+                family: family,
+                competency: item.competency,
+                levels: [level],
+                custom: false
+            }, family));
         });
-        if (!source.length) source = questions.slice();
+        if (!source.length) source = questions.map(function (item) { return normalizedQuestion(item, 'behavioral'); });
         var preferred = preferredCompetenciesByLevel[level] || [];
-        if (!preferred.length || level === 'mixed') return source;
-        return source.slice().sort(function (left, right) {
+        return source.filter(function (item, index, list) {
+            return list.findIndex(function (candidate) { return candidate.text === item.text; }) === index;
+        }).sort(function (left, right) {
             var leftRank = preferred.indexOf(left.competency);
             var rightRank = preferred.indexOf(right.competency);
             leftRank = leftRank === -1 ? preferred.length : leftRank;
             rightRank = rightRank === -1 ? preferred.length : rightRank;
-            return leftRank - rightRank;
+            return leftRank - rightRank || left.text.localeCompare(right.text);
         });
     }
 
-    function buildQueue(family, length, level) {
-        var source = questionsForSession(family, level);
+    function articleForRole(roleTitle) {
+        var raw = typeof roleTitle === 'string' ? roleTitle.trim() : '';
+        var value = raw.toLowerCase();
+        if (!value) return '';
+        // Initialisms follow their spoken first letter, not their printed
+        // vowel. This keeps role tailoring natural for HR, MBA, SRE, UX, and
+        // similar titles without trying to infer a visitor's job history.
+        var firstToken = raw.split(/[\s/-]+/, 1)[0].replace(/\./g, '');
+        if (/^[A-Z]{2,}$/.test(firstToken)) {
+            return /^[AEFHILMNORSX]/.test(firstToken) ? 'an' : 'a';
+        }
+        if (/^(8|11|18)\b/.test(value)) return 'an';
+        if (/^(honest|hour|heir)/.test(value)) return 'an';
+        if (/^(uni([^nmd]|$)|use|user|euro|one)/.test(value)) return 'a';
+        return /^[aeiou]/.test(value) ? 'an' : 'a';
+    }
 
-        var ordered = [];
-        if (family === 'mixed') {
-            var behavioral = source.filter(function (item) { return item.family === 'behavioral'; });
-            var situational = source.filter(function (item) { return item.family === 'situational'; });
-            var firstBehavioral = (level === 'experienced' || level === 'mixed')
-                ? (behavioral.filter(function (item) { return item.text === defaultQuestion.text; })[0] || behavioral[0])
-                : behavioral[0];
-            if (firstBehavioral) ordered.push(cloneQuestion(firstBehavioral));
-            behavioral = behavioral.filter(function (item) { return !firstBehavioral || item.text !== firstBehavioral.text; });
-            var pairCount = Math.max(behavioral.length, situational.length);
-            for (var pairIndex = 0; pairIndex < pairCount; pairIndex += 1) {
-                if (situational[pairIndex]) ordered.push(cloneQuestion(situational[pairIndex]));
-                if (behavioral[pairIndex]) ordered.push(cloneQuestion(behavioral[pairIndex]));
+    function roleReference(context) {
+        context = context || {};
+        if (context.kind === 'opportunity') return 'this opportunity';
+        var title = String(context.role_title || '').trim();
+        if (!title) return '';
+        var role = /\brole$/i.test(title) ? title : title + ' role';
+        return articleForRole(title) + ' ' + role;
+    }
+
+    function tailorQuestionForContext(question, context) {
+        var tailored = cloneQuestion(question);
+        /* A visitor-authored custom question is their exact words; role
+           tailoring must never rewrite or append to it. */
+        if (tailored.custom) return normalizedQuestion(tailored, tailored.family);
+        context = context || {};
+        var target = roleReference(context);
+        if (!target) return normalizedQuestion(tailored, tailored.family);
+
+        if (tailored.family === 'role_specific') {
+            tailored.text = tailored.text
+                .replace(/a role like this/gi, target)
+                .replace(/this role/gi, target);
+            if (tailored.text === question.text) {
+                tailored.text += ' Focus on the needs of ' + target + '.';
             }
-            return ordered.slice(0, Math.max(1, length));
+        } else if (tailored.family === 'professional_intro') {
+            tailored.text = tailored.text.replace(
+                /a team\.$/i,
+                'a team, especially in ' + target + '.'
+            );
         }
-        if (
-            family !== 'situational' &&
-            (level === 'experienced' || level === 'mixed' || !level) &&
-            source.some(function (item) { return item.text === defaultQuestion.text; })
-        ) {
-            ordered.push(cloneQuestion(defaultQuestion));
+        return normalizedQuestion(tailored, tailored.family);
+    }
+
+    function nextLocalQuestion(family, level, trail, seen, context) {
+        trail = trail || [];
+        seen = seen || [];
+        var candidates = localBlueprintsFor(family, level);
+        var occupied = trail.map(function (question) { return question.text; }).concat(seen);
+        function tailoredText(question) {
+            return tailorQuestionForContext(normalizedQuestion(question, family), context).text;
         }
-        source.forEach(function (item) {
-            if (!ordered.some(function (existing) { return existing.text === item.text; })) ordered.push(cloneQuestion(item));
-        });
-        return ordered.slice(0, Math.max(1, length));
+        var choice = candidates.filter(function (question) { return occupied.indexOf(tailoredText(question)) === -1; })[0];
+        if (!choice) {
+            choice = candidates.filter(function (question) {
+                return !trail.length || tailoredText(question) !== trail[trail.length - 1].text;
+            })[0] || candidates[0] || normalizedQuestion(defaultQuestion, family);
+        }
+        return tailorQuestionForContext(normalizedQuestion(choice, family), context);
     }
 
     var initialMode = root.getAttribute('data-initial-mode') || 'me';
     var initialView = root.getAttribute('data-initial-view') || 'me';
     function currentModeParam() { return new URLSearchParams(window.location.search).get('mode'); }
-    var isOrientation = initialView !== 'history' && !currentModeParam();
+    // The public product opens directly into practice. The old orientation view
+    // remains only as a defensive legacy region, never as the default path.
+    var isOrientation = false;
+    var legacyStoragePrefix = 'peerslate:interview-studio:' + profileSlug + ':v1';
+    var legacySessionKey = legacyStoragePrefix + ':session';
+    var legacyHistoryKey = legacyStoragePrefix + ':history';
+    storagePrefix = 'peerslate:interview-studio:' + profileSlug + ':v2';
+    historyKey = storagePrefix + ':history';
+    sessionKey = storagePrefix + ':session';
+
+    function migrateLegacyBrowserState() {
+        /* V2 uses its own keys so a failed migration never destroys V1 local
+           work. Copy browser-only drafts and history once, leaving the V1 copy
+           intact until the visitor clears local Studio data. */
+        try {
+            var local = window.localStorage;
+            if (local.getItem(historyKey) === null) {
+                var legacyHistory = readJSON(legacyHistoryKey, []);
+                if (Array.isArray(legacyHistory)) {
+                    writeJSON(historyKey, legacyHistory.map(function (record) {
+                        if (!record || typeof record !== 'object') return record;
+                        return Object.assign({}, record, { reviewVersion: 'legacy-v1' });
+                    }));
+                }
+            }
+            Object.keys(local).filter(function (key) {
+                return key.indexOf(legacyStoragePrefix + ':draft:') === 0;
+            }).forEach(function (key) {
+                var v2Key = storagePrefix + key.slice(legacyStoragePrefix.length);
+                if (local.getItem(v2Key) === null) local.setItem(v2Key, local.getItem(key));
+            });
+        } catch (error) {
+            /* Local storage is optional; a migration failure cannot block practice. */
+        }
+    }
+
+    migrateLegacyBrowserState();
+
+    function boundedSessionText(value, maximum) {
+        return typeof value === 'string' ? value.trim().slice(0, maximum) : '';
+    }
+
+    function normalizedContextText(value) {
+        return boundedSessionText(value, 4000).replace(/\s+/g, ' ').toLowerCase();
+    }
+
+    function localContextFingerprint(value) {
+        /* This is a browser-local stable grouping key, not a security digest and
+           never part of an AI request. It prevents unlike role contexts from
+           being compared simply because they share a question family. */
+        var textValue = normalizedContextText(value);
+        var hash = 2166136261;
+        for (var index = 0; index < textValue.length; index += 1) {
+            hash ^= textValue.charCodeAt(index);
+            hash = Math.imul(hash, 16777619);
+        }
+        return ('00000000' + (hash >>> 0).toString(16)).slice(-8);
+    }
+
+    function stableContextIdentity(context) {
+        context = context || {};
+        var kind = ['general', 'role', 'opportunity'].indexOf(context.kind) !== -1 ? context.kind : 'general';
+        return 'ctx-' + localContextFingerprint([
+            kind,
+            normalizedContextText(context.role_title),
+            normalizedContextText(context.opportunity_text_local)
+        ].join('\u001f'));
+    }
+
+    function makeSessionContext(value) {
+        value = value || {};
+        var kind = ['general', 'role', 'opportunity'].indexOf(value.kind) !== -1 ? value.kind : 'general';
+        var context = {
+            kind: kind,
+            role_title: boundedSessionText(value.role_title, 120),
+            interview_stage: boundedSessionText(value.interview_stage, 80) || 'general',
+            question_mix: normalizeFamily(value.question_mix || value.family || 'behavioral'),
+            opportunity_text_local: boundedSessionText(value.opportunity_text_local, 4000)
+        };
+        context.context_identity = stableContextIdentity(context);
+        context.context_id = context.context_identity;
+        return context;
+    }
+
+    function newSessionInstanceId() {
+        /* A session instance is deliberately distinct from the stable context
+           identity used by History & Progress. Two sessions for the same role
+           should be comparable, but their completion summaries must not merge. */
+        return 'session-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    }
+
+    function safeSessionInstanceId(value, fallback) {
+        return typeof value === 'string' && /^session-[a-z0-9-]{8,80}$/i.test(value)
+            ? value
+            : (fallback == null ? '' : fallback);
+    }
+
+    function contextLabel(context) {
+        if (context.kind === 'role' && context.role_title) return context.role_title;
+        if (context.kind === 'opportunity') return 'visitor-provided opportunity';
+        return 'general practice';
+    }
+
+    function labelInterviewStage(value) {
+        return {
+            general: 'General',
+            recruiter_screen: 'Recruiter screen',
+            hiring_manager: 'Hiring manager',
+            panel_final: 'Panel or final',
+            not_sure: 'Not sure yet'
+        }[value] || 'General';
+    }
+
+    // Setup stays wholly local. This bounded, plain-text context is assembled
+    // only at an explicit coaching/example request, never while a visitor is
+    // configuring or simply practicing a session.
+    function explicitContextForAi() {
+        var context = session.context || makeSessionContext();
+        var details = [];
+        if (context.role_title) details.push('Requested role: ' + context.role_title);
+        if (context.interview_stage && context.interview_stage !== 'general') {
+            details.push('Interview stage: ' + context.interview_stage.replace(/_/g, ' '));
+        }
+        if (context.question_mix) details.push('Question family: ' + labelFamily(context.question_mix));
+        if (context.opportunity_text_local) {
+            details.push('Visitor-pasted opportunity details:\n' + context.opportunity_text_local);
+        }
+        return details.join('\n').slice(0, 4000);
+    }
+
+    function migrateLegacySession(legacy) {
+        if (!legacy || !Array.isArray(legacy.queue) || !legacy.queue.length) return null;
+        var migratedTrail = legacy.queue.map(function (item) {
+            return storedQuestion(item, legacy.family || 'behavioral');
+        }).filter(Boolean);
+        if (!migratedTrail.length) return null;
+        return {
+            version: 2,
+            sessionId: newSessionInstanceId(),
+            level: legacy.level || 'experienced',
+            family: normalizeFamily(legacy.family),
+            context: makeSessionContext({ family: legacy.family }),
+            questionTrail: migratedTrail,
+            currentQuestionIndex: Math.min(Math.max(Number(legacy.index) || 0, 0), migratedTrail.length - 1),
+            reviewedQuestionIds: (legacy.completedSlots || []).map(function (index) {
+                return migratedTrail[index] && migratedTrail[index].id;
+            }).filter(Boolean),
+            replacementSeen: Array.isArray(legacy.replacementSeen)
+                ? legacy.replacementSeen.filter(function (value) { return typeof value === 'string'; })
+                : []
+        };
+    }
+
+    function storedQuestion(item, fallbackFamily) {
+        /* Browser storage is user-controlled. Keep a malformed old or V2
+           session from preventing a visitor from returning to local practice. */
+        if (!item || typeof item !== 'object' || typeof item.text !== 'string') return null;
+        var questionText = item.text.trim();
+        if (!questionText || questionText.length > 1200) return null;
+        var competency = typeof item.competency === 'string' ? item.competency.trim().slice(0, 80) : '';
+        return normalizedQuestion({
+            text: questionText,
+            family: normalizeFamily(item.family || fallbackFamily),
+            competency: competency || 'Communication',
+            levels: Array.isArray(item.levels)
+                ? item.levels.filter(function (level) { return typeof level === 'string'; }).slice(0, 8)
+                : [],
+            custom: Boolean(item.custom)
+        }, fallbackFamily);
+    }
+
     var persistedSession = readJSON(sessionKey, null);
+    var restoredSession = persistedSession && Array.isArray(persistedSession.questionTrail) && persistedSession.questionTrail.length
+        ? persistedSession
+        : migrateLegacySession(readJSON(legacySessionKey, null));
+    var shouldPersistRecoveredSession = Boolean(restoredSession) || persistedSession !== null;
     var session = {
-        mode: isOrientation ? 'orientation' : initialMode,
+        version: 2,
+        sessionId: newSessionInstanceId(),
+        mode: initialMode,
         level: 'experienced',
         family: 'behavioral',
-        format: '5',
-        queue: [],
-        index: 0,
+        context: makeSessionContext(),
+        questionTrail: [],
+        currentQuestionIndex: 0,
         attemptNumber: 1,
         currentReview: null,
         currentAnswer: '',
         reviewSource: 'me',
         reviewRecordId: '',
+        reviewDurationSeconds: 0,
         aiReference: '',
         aiReferenceQuestion: '',
-        completedSlots: [],
+        reviewedQuestionIds: [],
         replacementSeen: []
     };
 
-    if (persistedSession && Array.isArray(persistedSession.queue) && persistedSession.queue.length) {
-        session.level = persistedSession.level || session.level;
-        session.family = persistedSession.family || session.family;
-        session.format = persistedSession.format || session.format;
-        session.queue = persistedSession.queue.map(cloneQuestion);
-        session.index = Math.min(Math.max(Number(persistedSession.index) || 0, 0), session.queue.length - 1);
-        session.completedSlots = Array.isArray(persistedSession.completedSlots)
-            ? persistedSession.completedSlots.filter(function (index) { return Number.isInteger(index) && index >= 0 && index < session.queue.length; })
+    if (restoredSession) {
+        session.sessionId = safeSessionInstanceId(restoredSession.sessionId, newSessionInstanceId());
+        session.level = restoredSession.level || session.level;
+        session.family = normalizeFamily(restoredSession.family || (restoredSession.context && restoredSession.context.question_mix));
+        session.context = makeSessionContext(restoredSession.context || { family: session.family });
+        session.questionTrail = restoredSession.questionTrail.map(function (item) {
+            return storedQuestion(item, session.family);
+        }).filter(Boolean);
+        session.currentQuestionIndex = Math.min(
+            Math.max(Number(restoredSession.currentQuestionIndex) || 0, 0),
+            session.questionTrail.length - 1
+        );
+        session.reviewedQuestionIds = Array.isArray(restoredSession.reviewedQuestionIds)
+            ? restoredSession.reviewedQuestionIds.filter(function (id) { return typeof id === 'string'; })
             : [];
-        session.replacementSeen = Array.isArray(persistedSession.replacementSeen)
-            ? persistedSession.replacementSeen.filter(function (value) { return typeof value === 'string'; })
+        session.replacementSeen = Array.isArray(restoredSession.replacementSeen)
+            ? restoredSession.replacementSeen.filter(function (value) { return typeof value === 'string'; })
             : [];
-    } else {
-        session.queue = buildQueue(session.family, 5, session.level);
     }
+    if (!session.questionTrail.length) {
+        session.questionTrail.push(nextLocalQuestion(session.family, session.level, [], [], session.context));
+    }
+    /* An all-malformed stored trail restores as [] and leaves the index at -1
+       from the clamp above; re-clamp after the fallback question is added. */
+    session.currentQuestionIndex = Math.max(0, Math.min(session.currentQuestionIndex, session.questionTrail.length - 1));
 
     function persistSession() {
         writeJSON(sessionKey, {
+            version: 2,
+            sessionId: session.sessionId,
             level: session.level,
             family: session.family,
-            format: session.format,
-            queue: session.queue,
-            index: session.index,
-            completedSlots: session.completedSlots,
+            context: session.context,
+            questionTrail: session.questionTrail,
+            currentQuestionIndex: session.currentQuestionIndex,
+            reviewedQuestionIds: session.reviewedQuestionIds,
             replacementSeen: session.replacementSeen
         });
         updateSetupSummary();
     }
-
+    if (shouldPersistRecoveredSession) persistSession();
     function updateSetupSummary() {
         var summary = one('[data-is-setup-summary-text]');
-        if (!summary) return;
-        var levelOption = levelSelect.options[levelSelect.selectedIndex];
+        var levelOption = levelSelect && levelSelect.options[levelSelect.selectedIndex];
         var levelLabel = levelOption ? levelOption.text : session.level;
-        var formatLabelText = session.format === 'single' ? 'Single question' : session.format === '10' ? '10-question mock' : '5-question mock';
-        summary.textContent = levelLabel + ' · ' + labelFamily(session.family) + ' · ' + formatLabelText;
+        if (summary) {
+            summary.textContent = contextLabel(session.context) + ' / ' + labelInterviewStage(session.context.interview_stage) + ' / ' + levelLabel + ' / ' + labelFamily(session.family) + ' / open session';
+        }
         text(one('[data-is-session-level]'), levelLabel);
         text(one('[data-is-session-family]'), labelFamily(session.family));
-        text(one('[data-is-session-format]'), formatLabelText.replace('-question mock', ' questions').replace('Single question', '1 question'));
+        text(one('[data-is-rail-context]'), contextLabel(session.context));
+        text(one('[data-is-rail-stage]'), 'Stage: ' + labelInterviewStage(session.context.interview_stage));
+        text(one('[data-is-rail-mix]'), 'Mix: ' + labelFamily(session.family));
     }
 
     function currentQuestion() {
-        return session.queue[session.index] || defaultQuestion;
+        return session.questionTrail[session.currentQuestionIndex] || defaultQuestion;
     }
 
     var modeTabs = all('[data-is-mode]');
@@ -295,10 +586,10 @@
     var panels = all('[data-is-panel]');
     var orientationPanel = one('[data-is-panel="orientation"]');
     var controls = one('[data-is-controls]');
-    var stageRailItems = all('[data-is-stage-rail] li');
+    var stageRailItems = all('[data-is-workflow-progress] li');
 
     function currentQuestionIsCompleted() {
-        return session.completedSlots.indexOf(session.index) !== -1;
+        return session.reviewedQuestionIds.indexOf(questionId(currentQuestion())) !== -1;
     }
 
     function syncQuestionChangeControls() {
@@ -326,7 +617,7 @@
         text(one('[data-is-stage-label]'), stageNames[stage] || 'Drafting');
         syncQuestionChangeControls();
         stageRailItems.forEach(function (item) {
-            var n = Number(item.getAttribute('data-is-stage'));
+            var n = Number(item.getAttribute('data-is-workflow-step'));
             var current = n === stage;
             item.classList.toggle('is-done', n < stage);
             item.classList.toggle('is-current', current);
@@ -339,10 +630,6 @@
             }
         });
     }
-    var formatControl = one('[data-is-format-control]');
-    var formatSelect = one('[data-is-format]');
-    var formatLabel = formatControl ? formatControl.querySelector('span') : null;
-    var formatOptions = formatSelect ? formatSelect.innerHTML : '';
     var aiModeControl = one('[data-is-ai-mode-group]');
 
     var answer = one('[data-is-answer]');
@@ -386,21 +673,7 @@
     }
 
     function syncModeControls(mode) {
-        if (!formatControl || !formatSelect || !formatLabel) return;
         setHidden(aiModeControl, mode !== 'ai');
-        if (mode === 'ai') {
-            // The source choice belongs with the other session controls. AI has
-            // no length setting, so keep that unrelated control out of this mode.
-            setHidden(formatControl, true);
-        } else {
-            setHidden(formatControl, false);
-            if (formatLabel.textContent !== 'Session') {
-                formatLabel.textContent = 'Session';
-                formatSelect.innerHTML = formatOptions;
-                formatSelect.value = session.format;
-                formatSelect.disabled = false;
-            }
-        }
     }
 
     function releaseMedia(discardRecording, preservePermissionRequest) {
@@ -431,6 +704,10 @@
            and persist Interview Me under the old question key before the
            mode/session context can change. */
         if (mode !== session.mode) {
+            /* Close the trail before the panel that hosts it is hidden. A
+               non-modal dialog left open would otherwise survive the switch
+               and, being already open, skip the re-parent on its next use. */
+            closeQueue({ restoreFocus: false });
             stopDictation('interrupted');
             if (session.mode === 'me') persistCurrentAnswerDraft();
         }
@@ -502,6 +779,7 @@
 
     function showHistoryView() {
         if (historyCapability === 'disabled') return false;
+        closeQueue({ restoreFocus: false });
         stopDictation('interrupted');
         if (session.mode === 'me') persistCurrentAnswerDraft();
         if (session.mode === 'video' && !prepareVideoContextChange('Discard the active recording or transcript draft and return to History?')) {
@@ -586,7 +864,7 @@
             return;
         }
         if (!currentModeParam()) {
-            if (!showOrientationView()) window.history.forward();
+            setMode('me', false);
             return;
         }
         isOrientation = false;
@@ -611,6 +889,7 @@
         session.currentAnswer = '';
         session.reviewSource = 'me';
         session.reviewRecordId = '';
+        session.reviewDurationSeconds = 0;
         session.attemptNumber = 1;
         setHidden(answeringBlock, false);
         answer.readOnly = false;
@@ -656,29 +935,27 @@
     var renderedQuestionContextKey = '';
 
     function renderSessionProgress() {
-        var total = session.queue.length || 1;
-        var number = session.index + 1;
-        var completed = session.completedSlots.length;
-        var percent = Math.round((completed / total) * 100);
-        text(one('[data-is-question-position]'), 'Question ' + number + ' of ' + total + ' · ' + percent + '% complete');
-        text(one('[data-is-progress-percent]'), percent + '%');
-        text(one('[data-is-video-question-position]'), 'Question ' + number + ' of ' + total);
-        text(one('[data-is-video-progress-percent]'), percent + '%');
-        text(one('[data-is-review-question]'), number + ' of ' + total);
-        updateUpNextCount(session.queue.filter(function (_question, index) {
-            return index !== session.index && session.completedSlots.indexOf(index) === -1;
-        }).length);
+        var reviewed = session.reviewedQuestionIds.length;
+        var trailCount = session.questionTrail.length;
+        var progressCopy = reviewed
+            ? reviewed + (reviewed === 1 ? ' answer reviewed · open session' : ' answers reviewed · open session')
+            : 'Open session · answer as much or as little as you need';
+        text(one('[data-is-question-position]'), progressCopy);
+        text(one('[data-is-video-question-position]'), progressCopy);
+        text(one('[data-is-review-question]'), 'Question ' + (session.currentQuestionIndex + 1) + ' in an open session');
+        updateUpNextCount(Math.max(0, trailCount - session.currentQuestionIndex - 1));
+        text(one('[data-is-rail-question]'), currentQuestion().text);
         var progress = one('[data-is-progress]');
-        if (progress) { progress.value = percent; progress.textContent = percent + '%'; }
-        var videoProgress = one('[data-is-video-progress]');
-        if (videoProgress) { videoProgress.value = percent; videoProgress.textContent = percent + '%'; }
-        var nextButton = one('[data-is-next-question]');
-        if (nextButton) {
-            var nextLabel = completed >= total ? 'Finish Session' : 'Next Question';
-            var labelNode = nextButton.firstChild;
-            if (labelNode && labelNode.nodeType === Node.TEXT_NODE) labelNode.nodeValue = '\n                                            ' + nextLabel + '\n                                            ';
-            nextButton.setAttribute('aria-label', nextLabel);
+        if (progress) {
+            progress.textContent = 'Open session';
+            progress.setAttribute('aria-label', progressCopy);
         }
+        var videoProgress = one('[data-is-video-progress]');
+        if (videoProgress) {
+            videoProgress.textContent = progressCopy;
+        }
+        var nextButton = one('[data-is-next-question]');
+        if (nextButton) nextButton.setAttribute('aria-label', 'Choose the next question');
     }
 
     function renderQuestionMetadata(question) {
@@ -698,7 +975,6 @@
     function renderQuestion(options) {
         options = options || {};
         var question = currentQuestion();
-        var total = session.queue.length || 1;
         var questionContextKey = [question.text, session.level, question.family].join('\u001f');
         var questionContextChanged = Boolean(
             renderedQuestionContextKey && renderedQuestionContextKey !== questionContextKey
@@ -712,7 +988,6 @@
         renderQuestionMetadata(question);
         text(one('[data-is-intent]'), intentByCompetency[question.competency] || 'A clear example, your personal contribution, and an outcome.');
         text(one('[data-is-tip]'), tipByCompetency[question.competency] || 'Keep the context concise, make your action specific, and close with the result.');
-        setHidden(one('[data-is-est-chip]'), total < 5);
         text(one('[data-is-video-question]'), question.text);
         text(one('[data-is-review-attempt]'), session.attemptNumber);
         renderSessionProgress();
@@ -799,21 +1074,36 @@
         return true;
     }
 
-    function advanceQuestion(mode) {
-        var nextIndex = -1;
-        for (var offset = 1; offset <= session.queue.length; offset += 1) {
-            var candidateIndex = (session.index + offset) % session.queue.length;
-            if (session.completedSlots.indexOf(candidateIndex) === -1) {
-                nextIndex = candidateIndex;
-                break;
+    function prepareNewSessionChange() {
+        stopDictation('interrupted');
+        if (session.mode === 'me') {
+            persistCurrentAnswerDraft();
+            if (hasDraft() && !window.confirm('Start a new session? Your typed draft stays saved in this browser, but this workspace will move to the new session.')) {
+                announce('New session cancelled. Your browser-local draft is unchanged.');
+                return false;
             }
         }
-        if (nextIndex === -1) {
-            showHistoryView();
-            announce('Session complete. Your browser-local Interview History is open.');
-            return;
+        if (session.mode === 'video' && !prepareVideoContextChange('Start a new session and discard the current local recording or transcript draft?')) return false;
+        if (session.mode === 'ai') cancelPendingAi(true);
+        cancelPendingReview();
+        cancelPendingImprovement();
+        return true;
+    }
+
+    function advanceQuestion(mode) {
+        var nextIndex = session.currentQuestionIndex + 1;
+        if (!session.questionTrail[nextIndex]) {
+            session.questionTrail.push(nextLocalQuestion(
+                session.family,
+                session.level,
+                session.questionTrail,
+                session.replacementSeen,
+                session.context
+            ));
         }
-        session.index = nextIndex;
+        session.currentQuestionIndex = nextIndex;
+        session.attemptNumber = 1;
+        persistSession();
         renderQuestion();
         if (mode === 'video') {
             one('[data-is-video-stage]').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
@@ -825,11 +1115,6 @@
     }
 
     one('[data-is-next-question]').addEventListener('click', function () {
-        if (session.completedSlots.length >= session.queue.length) {
-            showHistoryView();
-            announce('Session complete. Your browser-local Interview History is open.');
-            return;
-        }
         var source = session.reviewSource;
         if (source === 'video') {
             if (!setMode('video', true)) return;
@@ -842,11 +1127,95 @@
 
     var levelSelect = one('[data-is-level]');
     var familySelect = one('[data-is-family]');
-    levelSelect.value = session.level;
-    familySelect.value = session.family;
-    formatSelect.value = session.format;
+    var stageSelect = one('[data-is-active-stage]');
+    var newSessionForm = one('[data-is-new-session-form]');
+    var sessionKindSelect = one('[data-is-session-kind]');
+    var sessionRoleInput = one('[data-is-session-role]');
+    var sessionOpportunityInput = one('[data-is-session-opportunity]');
+    var sessionRoleField = one('[data-is-session-role-field]');
+    var sessionOpportunityField = one('[data-is-session-opportunity-field]');
+    var sessionStageSelect = one('[data-is-session-stage]');
+    var sessionMixSelect = one('[data-is-session-mix]');
 
-    levelSelect.addEventListener('change', function () {
+    function syncNewSessionFields() {
+        if (!sessionKindSelect) return;
+        var kind = sessionKindSelect.value;
+        setHidden(sessionRoleField, kind !== 'role');
+        setHidden(sessionOpportunityField, kind !== 'opportunity');
+        if (sessionRoleInput) sessionRoleInput.required = kind === 'role';
+        if (sessionOpportunityInput) sessionOpportunityInput.required = kind === 'opportunity';
+    }
+
+    function syncNewSessionInputs() {
+        if (sessionKindSelect) sessionKindSelect.value = session.context.kind;
+        if (sessionRoleInput) sessionRoleInput.value = session.context.role_title;
+        if (sessionOpportunityInput) sessionOpportunityInput.value = session.context.opportunity_text_local;
+        if (sessionStageSelect) sessionStageSelect.value = session.context.interview_stage;
+        if (sessionMixSelect) sessionMixSelect.value = session.context.question_mix || session.family;
+        if (stageSelect) stageSelect.value = session.context.interview_stage;
+        syncNewSessionFields();
+    }
+
+    function startNewSession(event) {
+        if (event) event.preventDefault();
+        var kind = sessionKindSelect ? sessionKindSelect.value : 'general';
+        var roleTitle = sessionRoleInput ? sessionRoleInput.value.trim() : '';
+        var opportunityText = sessionOpportunityInput ? sessionOpportunityInput.value.trim() : '';
+        var nextStage = sessionStageSelect ? sessionStageSelect.value : session.context.interview_stage;
+        var nextFamily = normalizeFamily(sessionMixSelect ? sessionMixSelect.value : session.family);
+        if (kind === 'role' && !roleTitle) {
+            sessionRoleInput.focus();
+            announce('Name the type of role you want to practice for.');
+            return;
+        }
+        if (kind === 'opportunity' && !opportunityText) {
+            sessionOpportunityInput.focus();
+            announce('Paste the opportunity details you want to use.');
+            return;
+        }
+        if (!prepareNewSessionChange()) return;
+        var nextMode = modeIsEnabled(session.mode)
+            ? session.mode
+            : modeIsEnabled('me') ? 'me' : modeIsEnabled('ai') ? 'ai' : 'video';
+        session.context = makeSessionContext({
+            kind: kind,
+            role_title: roleTitle,
+            interview_stage: nextStage,
+            question_mix: nextFamily,
+            opportunity_text_local: opportunityText
+        });
+        session.sessionId = newSessionInstanceId();
+        session.family = nextFamily;
+        if (familySelect) familySelect.value = session.family;
+        if (stageSelect) stageSelect.value = session.context.interview_stage;
+        session.questionTrail = [nextLocalQuestion(session.family, session.level, [], [], session.context)];
+        session.currentQuestionIndex = 0;
+        session.reviewedQuestionIds = [];
+        session.replacementSeen = [];
+        session.attemptNumber = 1;
+        clearReviewState();
+        resetAiAnswerForContextChange();
+        persistSession();
+        if (!setMode(nextMode, true)) return;
+        renderQuestion();
+        if (nextMode === 'me') answer.focus();
+        else if (nextMode === 'video') cameraEnable.focus();
+        else if (aiQuestionInput) aiQuestionInput.focus();
+        announce('New ' + contextLabel(session.context) + ' session ready. Practice as many questions as you need.');
+    }
+
+    if (levelSelect) levelSelect.value = session.level;
+    if (familySelect) familySelect.value = session.family;
+    syncNewSessionInputs();
+    if (sessionKindSelect) sessionKindSelect.addEventListener('change', syncNewSessionFields);
+    if (newSessionForm) newSessionForm.addEventListener('submit', startNewSession);
+    all('[data-is-new-session-focus]').forEach(function (newSessionFocus) {
+        newSessionFocus.addEventListener('click', function () {
+            if (sessionKindSelect) sessionKindSelect.focus();
+        });
+    });
+
+    if (levelSelect) levelSelect.addEventListener('change', function () {
         stopDictation('interrupted');
         if (session.mode === 'me') persistCurrentAnswerDraft();
         if (!prepareVideoContextChange('Discard this recording and change experience level?') || (session.mode === 'me' && !confirmReplace())) {
@@ -854,38 +1223,34 @@
             return;
         }
         session.level = levelSelect.value;
-        session.index = 0;
-        session.queue = buildQueue(session.family, Number(session.format) || 1, session.level);
-        session.completedSlots = [];
-        session.replacementSeen = [];
+        session.context.question_mix = session.family;
         resetAiAnswerForContextChange();
+        persistSession();
         renderQuestion();
     });
-    familySelect.addEventListener('change', function () {
+    if (stageSelect) stageSelect.addEventListener('change', function () {
+        session.context.interview_stage = stageSelect.value || 'general';
+        if (sessionStageSelect) sessionStageSelect.value = session.context.interview_stage;
+        /* The stage is part of the AI context string; a stale AI answer would
+           otherwise send a mismatched follow-up against its signed token. */
+        resetAiAnswerForContextChange();
+        persistSession();
+        announce('Interview stage updated for this browser-local session.');
+    });
+    if (familySelect) familySelect.addEventListener('change', function () {
         if (!prepareVideoContextChange('Discard this recording and change question family?') || (session.mode === 'me' && !prepareAnswerContextChange())) {
             familySelect.value = session.family;
             return;
         }
         if (session.mode === 'ai') stopDictation('interrupted');
         resetAiAnswerForContextChange();
-        session.family = familySelect.value;
-        session.index = 0;
-        session.queue = buildQueue(session.family, Number(session.format) || 1, session.level);
-        session.completedSlots = [];
-        session.replacementSeen = [];
-        renderQuestion();
-    });
-    formatSelect.addEventListener('change', function () {
-        if (session.mode === 'ai') return;
-        if (!prepareVideoContextChange('Discard this recording and change session length?') || (session.mode === 'me' && !prepareAnswerContextChange())) {
-            formatSelect.value = session.format;
-            return;
-        }
-        session.format = formatSelect.value;
-        session.index = 0;
-        session.queue = buildQueue(session.family, Number(session.format) || 1, session.level);
-        session.completedSlots = [];
-        session.replacementSeen = [];
+        session.family = normalizeFamily(familySelect.value);
+        session.context.question_mix = session.family;
+        if (sessionMixSelect) sessionMixSelect.value = session.family;
+        session.questionTrail.push(nextLocalQuestion(session.family, session.level, session.questionTrail, session.replacementSeen, session.context));
+        session.currentQuestionIndex = session.questionTrail.length - 1;
+        session.attemptNumber = 1;
+        persistSession();
         renderQuestion();
     });
 
@@ -931,10 +1296,22 @@
     }
 
     function openQueueForCurrentLayout() {
+        /* The trail only means something during active practice. The rail
+           trigger stays visible in the complete and history views, where
+           picking a question would change the index behind a screen that
+           never returns to practice, so refuse to open it there. */
+        if (['me', 'ai', 'video'].indexOf(root.getAttribute('data-is-active-mode')) === -1) return;
         setQueueOpenState(true);
         if (queueDialog.open) return;
+        /* The dialog is markup-embedded in the Interview Me panel. Opened from
+           the always-visible session rail while another panel is active, it
+           must move to a visible host or it paints 0x0 inside the hidden
+           panel subtree. */
         var activeRail = queueTrigger && queueTrigger.closest('.is__side-column');
-        if (activeRail && queueDialog.parentNode !== activeRail) activeRail.appendChild(queueDialog);
+        var host = activeRail && activeRail.offsetParent !== null
+            ? activeRail
+            : all('.is__side-column').filter(function (column) { return column.offsetParent !== null; })[0] || root;
+        if (queueDialog.parentNode !== host) host.appendChild(queueDialog);
         if (queueUsesModalLayout() && typeof queueDialog.showModal === 'function') {
             queueDialog.showModal();
         } else if (typeof queueDialog.show === 'function') {
@@ -947,12 +1324,12 @@
     function renderQueue() {
         if (!queueList) return;
         queueList.replaceChildren();
-        session.queue.forEach(function (question, index) {
+        session.questionTrail.forEach(function (question, index) {
             var item = document.createElement('li');
-            item.className = 'is__queue-item' + (index === session.index ? ' is-current' : '');
+            item.className = 'is__queue-item' + (index === session.currentQuestionIndex ? ' is-current' : '');
             var button = document.createElement('button');
             button.type = 'button';
-            if (index === session.index) button.setAttribute('aria-current', 'true');
+            if (index === session.currentQuestionIndex) button.setAttribute('aria-current', 'true');
             var number = document.createElement('i');
             number.textContent = String(index + 1);
             var label = document.createElement('strong');
@@ -961,9 +1338,10 @@
             competency.textContent = 'Competency: ' + question.competency;
             button.append(number, label, competency);
             button.addEventListener('click', function () {
-                if (index === session.index) { closeQueue(); return; }
-                if (!prepareCurrentQuestionChange('Move to this queued question?')) return;
-                session.index = index;
+                if (index === session.currentQuestionIndex) { closeQueue(); return; }
+                if (!prepareCurrentQuestionChange('Move to this question in your open session?')) return;
+                session.currentQuestionIndex = index;
+                persistSession();
                 renderQuestion();
                 closeQueue({ restoreFocus: false });
                 focusCurrentQuestionWorkspace();
@@ -1030,30 +1408,22 @@
         return true;
     }
 
-    function shuffle(items) {
-        var result = items.slice();
-        for (var index = result.length - 1; index > 0; index -= 1) {
-            var swapIndex = Math.floor(Math.random() * (index + 1));
-            var value = result[index];
-            result[index] = result[swapIndex];
-            result[swapIndex] = value;
-        }
-        return result;
-    }
-
     function pickDifferentQuestion() {
         var currentText = currentQuestion().text;
-        var occupied = session.queue.map(function (question, index) {
-            return index === session.index ? '' : question.text;
+        var occupied = session.questionTrail.map(function (question, index) {
+            return index === session.currentQuestionIndex ? '' : question.text;
         });
-        var pool = questionsForSession(session.family, session.level).filter(function (question) {
+        function tailored(question) {
+            return tailorQuestionForContext(normalizedQuestion(question, session.family), session.context);
+        }
+        var pool = localBlueprintsFor(session.family, session.level).map(tailored).filter(function (question) {
             return question.text !== currentText &&
                 occupied.indexOf(question.text) === -1 &&
                 session.replacementSeen.indexOf(question.text) === -1;
         });
         if (!pool.length) {
             session.replacementSeen = [];
-            pool = questionsForSession(session.family, session.level).filter(function (question) {
+            pool = localBlueprintsFor(session.family, session.level).map(tailored).filter(function (question) {
                 return question.text !== currentText && occupied.indexOf(question.text) === -1;
             });
         }
@@ -1063,23 +1433,27 @@
             return preferred.indexOf(question.competency) !== -1;
         });
         if (preferredPool.length) pool = preferredPool;
-        return cloneQuestion(shuffle(pool)[0]);
+        return pool[0];
     }
 
     function replaceCurrentQuestion(question, message) {
         if (currentQuestionIsCompleted()) {
-            announce('This answer already counts toward session progress. Move to an unanswered question before replacing it.');
+            announce('This answer is already in your practice history. Choose the next question to keep this record intact.');
             return false;
         }
         session.replacementSeen.push(currentQuestion().text);
         session.replacementSeen = session.replacementSeen.slice(-Math.max(20, questions.length));
-        session.completedSlots = session.completedSlots.filter(function (slot) { return slot !== session.index; });
-        session.queue[session.index] = question;
+        /* Callers hand over final text: pickDifferentQuestion already tailored
+           the bank question, and a custom question is the visitor's own words.
+           Tailoring again here double-applies the role fallback sentence. */
+        session.questionTrail[session.currentQuestionIndex] =
+            normalizedQuestion(question, session.family);
         session.attemptNumber = 1;
         if (session.mode === 'video') {
             releaseMedia(true);
             resetVideoUi();
         }
+        persistSession();
         renderQuestion();
         focusCurrentQuestionWorkspace();
         announce(message);
@@ -1089,7 +1463,7 @@
     all('[data-is-different-question]').forEach(function (button) {
         button.addEventListener('click', function () {
             if (currentQuestionIsCompleted()) {
-                announce('Move to an unanswered question before choosing a different one.');
+                announce('Choose the next question to keep this reviewed answer in your history.');
                 return;
             }
             if (!prepareCurrentQuestionChange('Discard the active recording or transcript draft and load a different question?')) return;
@@ -1098,7 +1472,7 @@
                 announce('No other unused question matches this session yet. Change the experience or question family to widen the pool.');
                 return;
             }
-            replaceCurrentQuestion(replacement, 'A different ' + labelFamily(replacement.family).toLowerCase() + ' question is ready. Session progress did not change.');
+            replaceCurrentQuestion(replacement, 'A different ' + labelFamily(replacement.family).toLowerCase() + ' question is ready.');
         });
     });
 
@@ -1208,7 +1582,8 @@
             level: session.level,
             family: currentQuestion().family,
             competency: currentQuestion().competency,
-            practice_mode: session.mode
+            practice_mode: session.mode,
+            opportunity_context: explicitContextForAi()
         }, nudgeController.signal).then(function (payload) {
             nudgeController = null;
             if (nudgeQuestion !== currentQuestion().text) return;
@@ -1269,16 +1644,111 @@
         });
     }
 
+    function readHistoryStore() {
+        var stored = readJSON(historyKey, []);
+        return Array.isArray(stored) ? stored : [];
+    }
+
+    function safeHistoryText(value, maximum) {
+        return typeof value === 'string' ? value.trim().slice(0, maximum) : '';
+    }
+
+    function safeHistoryDimensions(value, family) {
+        var expected = FAMILY_DIMENSIONS[normalizeFamily(family)] || [];
+        if (!Array.isArray(value) || value.length !== expected.length) return [];
+        var seen = {};
+        var dimensions = [];
+        for (var index = 0; index < value.length; index += 1) {
+            var dimension = value[index];
+            if (!dimension || typeof dimension !== 'object' || Array.isArray(dimension)) return [];
+            var key = safeHistoryText(dimension.key, 80);
+            var status = safeHistoryText(dimension.status, 40).toLowerCase();
+            var rationale = safeHistoryText(dimension.rationale, 400);
+            var nextAction = safeHistoryText(dimension.nextAction, 300);
+            if (expected.indexOf(key) === -1 || seen[key] || DIMENSION_STATUSES.indexOf(status) === -1 || !rationale || !nextAction) return [];
+            seen[key] = true;
+            dimensions.push({ key: key, status: status, rationale: rationale, nextAction: nextAction });
+        }
+        return dimensions.length === expected.length ? dimensions : [];
+    }
+
+    function sanitizeHistoryRecord(record) {
+        if (!record || typeof record !== 'object' || Array.isArray(record)) return null;
+        var id = safeHistoryText(record.id, 160);
+        var question = safeHistoryText(record.question, 1200);
+        var createdAt = safeHistoryText(record.createdAt, 80);
+        if (!id || !question || !createdAt || Number.isNaN(new Date(createdAt).getTime())) return null;
+        var family = normalizeFamily(record.family);
+        var mode = record.mode === 'video' ? 'video' : 'me';
+        var context = makeSessionContext(
+            record.context && typeof record.context === 'object' && !Array.isArray(record.context)
+                ? record.context
+                : {}
+        );
+        var dimensions = safeHistoryDimensions(record.dimensions, family);
+        // A browser-local video take is not a legacy score. Only an explicitly
+        // migrated record or a record carrying a legacy score field gets the
+        // legacy label; an unreviewed local take remains a local-only state.
+        var hasLegacyScore = record.reviewVersion === 'legacy-v1' ||
+            ['overallScore', 'score', 'star', 'targetAverage'].some(function (key) {
+                return Object.prototype.hasOwnProperty.call(record, key);
+            });
+        var reviewVersion = record.reviewVersion === 'v2' && dimensions.length
+            ? 'v2'
+            : hasLegacyScore || record.reviewVersion == null
+                    ? 'legacy-v1'
+                    : mode === 'video' && !record.verdict
+                        ? 'local-recording'
+                    : 'invalid-local';
+        var experience = ['entry', 'experienced', 'management', 'leadership', 'mixed'].indexOf(record.experience) !== -1
+            ? record.experience
+            : ['entry', 'experienced', 'management', 'leadership', 'mixed'].indexOf(record.level) !== -1
+                ? record.level
+                : 'experienced';
+        return {
+            id: id,
+            createdAt: createdAt,
+            mode: mode,
+            question: question,
+            family: family,
+            competency: safeHistoryText(record.competency, 80) || 'Communication',
+            reviewVersion: reviewVersion,
+            dimensions: dimensions,
+            answer: safeHistoryText(record.answer, 5000),
+            verdict: safeHistoryText(record.verdict, 160),
+            encouragement: safeHistoryText(record.encouragement, 600),
+            whatCameThroughClearly: Array.isArray(record.whatCameThroughClearly) ? record.whatCameThroughClearly.filter(function (item) { return typeof item === 'string'; }).slice(0, 4) : [],
+            strengths: Array.isArray(record.strengths) ? record.strengths.filter(function (item) { return typeof item === 'string'; }).slice(0, 4) : [],
+            improvements: Array.isArray(record.improvements) ? record.improvements.filter(function (item) { return typeof item === 'string'; }).slice(0, 4) : [],
+            strongerApproach: safeHistoryText(record.strongerApproach, 900),
+            focusedFollowUp: safeHistoryText(record.focusedFollowUp, 300),
+            context: context,
+            contextIdentity: stableContextIdentity(context),
+            sessionContextId: safeHistoryText(record.sessionContextId, 80) || context.context_id,
+            sessionId: safeSessionInstanceId(record.sessionId),
+            experience: experience,
+            attemptNumber: Number.isFinite(record.attemptNumber) ? Math.max(1, Math.floor(record.attemptNumber)) : 1,
+            durationSeconds: Number.isFinite(record.durationSeconds) ? Math.max(0, Math.floor(record.durationSeconds)) : 0,
+            status: safeHistoryText(record.status, 120) || (reviewVersion === 'v2' ? 'Completed' : 'Local browser record')
+        };
+    }
+
+    // Read untrusted browser storage through one non-destructive boundary. The
+    // raw V1/V2 array is never rewritten simply because one entry is malformed.
+    function readHistoryRecords() {
+        return readHistoryStore().map(sanitizeHistoryRecord).filter(Boolean);
+    }
+
     function addHistoryRecord(record) {
-        var records = readJSON(historyKey, []);
+        var records = readHistoryStore();
         records.unshift(record);
         writeJSON(historyKey, records.slice(0, 100));
     }
 
     function updateHistoryRecord(recordId, updates) {
         var found = false;
-        var records = readJSON(historyKey, []).map(function (record) {
-            if (record.id !== recordId) return record;
+        var records = readHistoryStore().map(function (record) {
+            if (!record || typeof record !== 'object' || Array.isArray(record) || record.id !== recordId) return record;
             found = true;
             return Object.assign({}, record, updates, { createdAt: record.createdAt });
         });
@@ -1288,7 +1758,9 @@
 
     function removeHistoryRecord(recordId) {
         if (!recordId) return;
-        var records = readJSON(historyKey, []).filter(function (record) { return record.id !== recordId; });
+        var records = readHistoryStore().filter(function (record) {
+            return !record || typeof record !== 'object' || Array.isArray(record) || record.id !== recordId;
+        });
         writeJSON(historyKey, records);
     }
 
@@ -1297,6 +1769,7 @@
     // strengths. When a caller supplies emptyMessage the absence is stated
     // plainly instead of leaving a heading above an empty box.
     function renderList(element, items, emptyMessage) {
+        if (!element) return;
         element.replaceChildren();
         var list = items || [];
         if (!list.length) {
@@ -1330,61 +1803,48 @@
     var EMPTY_STRENGTHS_MESSAGE = 'No clear strength stood out yet — start with the improvements.';
     var EMPTY_IMPROVEMENTS_MESSAGE = 'The coach did not list an improvement for this answer.';
 
+    function readableDimensionKey(key) {
+        return String(key || '').replace(/_/g, ' ').replace(/(^|\s)(\S)/g, function (_match, prefix, letter) {
+            return prefix + letter.toUpperCase();
+        });
+    }
+
     function renderReview(review) {
         session.currentReview = review;
-        var score = Number(review.overallScore) || 0;
-        text(one('[data-is-score]'), score);
-        text(one('[data-is-review-score]'), score);
+        text(one('[data-is-review-focus]'), (review.improvements && review.improvements[0]) || EMPTY_IMPROVEMENTS_MESSAGE);
         text(one('[data-is-priority-improvement]'), (review.improvements && review.improvements[0]) || EMPTY_IMPROVEMENTS_MESSAGE);
-        var ring = one('[data-is-score-ring]');
-        ring.style.setProperty('--score', score);
-        ring.setAttribute('aria-label', 'Overall interview score: ' + score + ' out of 100');
         text(one('[data-is-verdict]'), review.verdict);
         text(one('[data-is-encouragement]'), review.encouragement);
+        renderList(one('[data-is-clear-points]'), review.whatCameThroughClearly || [], 'The coach did not identify a clear signal yet.');
         renderList(one('[data-is-strengths]'), review.strengths, EMPTY_STRENGTHS_MESSAGE);
         renderList(one('[data-is-improvements]'), review.improvements, EMPTY_IMPROVEMENTS_MESSAGE);
-
-        var starList = one('[data-is-star]');
-        var starDisplayStatus = { strong: 'strong', present: 'clear', partial: 'needs more', missing: 'missing' };
-        starList.replaceChildren();
-        ['situation', 'task', 'action', 'result'].forEach(function (part) {
-            var item = review.star[part];
-            var partLabel = part.charAt(0).toUpperCase() + part.slice(1);
-            var tile = document.createElement('li');
-            tile.className = 'is__star-item';
-            tile.setAttribute('data-status', item.status);
-            tile.title = item.reason;
-            var letter = document.createElement('span');
-            letter.className = 'is__star-letter';
-            letter.setAttribute('aria-hidden', 'true');
-            letter.textContent = part.charAt(0).toUpperCase();
-            var label = document.createElement('span');
-            label.className = 'is__star-label';
-            label.setAttribute('aria-hidden', 'true');
-            label.textContent = partLabel + ' · ' + (starDisplayStatus[item.status] || item.status);
-            var srText = document.createElement('span');
-            srText.className = 'is__sr-only';
-            srText.textContent = partLabel + ' — ' + item.status.charAt(0).toUpperCase() + item.status.slice(1) + ': ' + item.reason;
-            tile.append(letter, label, srText);
-            starList.appendChild(tile);
-        });
+        text(one('[data-is-stronger-approach]'), review.strongerApproach || '');
+        text(one('[data-is-focused-follow-up]'), review.focusedFollowUp || '');
 
         var dimensions = one('[data-is-dimensions]');
-        dimensions.replaceChildren();
-        review.dimensions.forEach(function (dimension) {
-            var li = document.createElement('li');
-            var name = document.createElement('strong');
-            name.textContent = dimension.key.charAt(0).toUpperCase() + dimension.key.slice(1);
-            var value = document.createElement('span');
-            value.textContent = dimension.score + ' / 20';
-            var rationale = document.createElement('small');
-            rationale.textContent = dimension.rationale;
-            li.append(name, value, rationale);
-            dimensions.appendChild(li);
-        });
+        if (dimensions) {
+            dimensions.replaceChildren();
+            (review.dimensions || []).forEach(function (dimension) {
+                var li = document.createElement('li');
+                li.setAttribute('data-status', dimension.status);
+                var name = document.createElement('strong');
+                name.textContent = readableDimensionKey(dimension.key);
+                var status = document.createElement('span');
+                status.className = 'is__dimension-status';
+                status.textContent = dimension.status;
+                var rationale = document.createElement('small');
+                rationale.textContent = dimension.rationale;
+                var nextAction = document.createElement('small');
+                nextAction.className = 'is__dimension-next';
+                nextAction.textContent = 'Next: ' + dimension.nextAction;
+                li.append(name, status, rationale, nextAction);
+                dimensions.appendChild(li);
+            });
+        }
 
         var suggestionSection = one('[data-is-evidence-suggestions]');
         var suggestionOptions = one('[data-is-evidence-options]');
+        if (!suggestionSection || !suggestionOptions) return;
         suggestionOptions.replaceChildren();
         (review.evidenceSuggestions || []).forEach(function (suggestion) {
             var item = evidenceById[suggestion.evidenceId];
@@ -1449,7 +1909,8 @@
             answer: responseText,
             level: session.level,
             family: question.family,
-            competency: question.competency
+            competency: question.competency,
+            opportunity_context: explicitContextForAi()
         }, controller.signal).then(function (payload) {
             if (requestId !== reviewRequestId) return;
             reviewController = null;
@@ -1459,9 +1920,8 @@
             setHidden(reviewingBlock, true);
             setStage(3);
             renderReview(payload.review);
-            if (session.completedSlots.indexOf(session.index) === -1) {
-                session.completedSlots.push(session.index);
-                session.completedSlots.sort(function (left, right) { return left - right; });
+            if (session.reviewedQuestionIds.indexOf(questionId(question)) === -1) {
+                session.reviewedQuestionIds.push(questionId(question));
                 persistSession();
                 renderSessionProgress();
             }
@@ -1475,20 +1935,35 @@
                 question: question.text,
                 family: question.family,
                 competency: question.competency,
-                score: payload.review.overallScore,
-                dimensions: payload.review.dimensions.reduce(function (result, item) { result[item.key] = item.score; return result; }, {}),
+                reviewVersion: 'v2',
+                dimensions: payload.review.dimensions,
                 answer: responseText,
                 verdict: payload.review.verdict,
                 encouragement: payload.review.encouragement,
+                whatCameThroughClearly: payload.review.whatCameThroughClearly,
                 strengths: payload.review.strengths,
                 improvements: payload.review.improvements,
-                star: payload.review.star,
+                strongerApproach: payload.review.strongerApproach,
+                focusedFollowUp: payload.review.focusedFollowUp,
+                context: {
+                    kind: session.context.kind,
+                    role_title: session.context.role_title,
+                    interview_stage: session.context.interview_stage,
+                    question_mix: session.context.question_mix,
+                    opportunity_text_local: session.context.opportunity_text_local,
+                    context_id: session.context.context_id
+                },
+                contextIdentity: stableContextIdentity(session.context),
+                sessionContextId: session.context.context_id,
+                sessionId: session.sessionId,
+                experience: session.level,
                 attemptNumber: session.attemptNumber,
+                durationSeconds: reviewSource === 'video' ? (session.reviewDurationSeconds || 0) : 0,
                 status: reviewSource === 'video' ? 'Content reviewed' : 'Completed'
             };
             if (!reviewRecordId || !updateHistoryRecord(reviewRecordId, record)) addHistoryRecord(record);
             removeStored(draftKey(question.text));
-            announce('Coach review ready. Score ' + payload.review.overallScore + ' out of 100.');
+            announce('Coach review ready. Review the clear strengths and one focused next step.');
             feedbackBlock.focus({ preventScroll: true });
             feedbackBlock.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest' });
         }).catch(function (error) {
@@ -1557,7 +2032,7 @@
             if (!setMode('video', true)) return;
             resetVideoUi();
             one('[data-is-camera-enable]').focus();
-            announce('New Video Practice attempt ready. The original score remains in History.');
+            announce('New Video Practice attempt ready. The original answer remains in browser-local History.');
             return;
         }
         session.attemptNumber += 1;
@@ -1574,7 +2049,7 @@
         setHidden(answeringBlock, false);
         setStage(1);
         answer.focus();
-        announce('New attempt started. Your original answer and score remain in History.');
+        announce('New attempt started. Your original answer remains in browser-local History.');
     });
 
     function requestImprovement(selectedIds, additionalContext, statusMessage) {
@@ -1597,9 +2072,11 @@
             profile_slug: profileSlug,
             question: currentQuestion().text,
             answer: session.currentAnswer,
+            family: currentQuestion().family,
             improvements: session.currentReview.improvements,
             evidence_ids: selectedIds || [],
-            additional_context: additionalContext || ''
+            additional_context: additionalContext || '',
+            opportunity_context: explicitContextForAi()
         }, controller.signal).then(function (payload) {
             if (requestId !== improveRequestId) return;
             improveController = null;
@@ -2029,7 +2506,8 @@
             context_token: followUp ? currentModelContextToken : '',
             level: session.level,
             family: session.family,
-            mode: selectedAiMode()
+            mode: selectedAiMode(),
+            opportunity_context: explicitContextForAi()
         }, controller.signal).then(function (payload) {
             if (requestId !== aiRequestId) return;
             aiController = null;
@@ -2118,14 +2596,14 @@
             return;
         }
         if (!setMode('me', true)) return;
-        session.queue[session.index] = {
+        session.questionTrail[session.currentQuestionIndex] = normalizedQuestion({
             text: modelQuestion,
-            family: session.family === 'mixed' ? 'behavioral' : session.family,
+            family: session.family,
             competency: 'Communication',
             custom: true
-        };
+        }, session.family);
         session.aiReference = modelAnswer.answer;
-        session.aiReferenceQuestion = session.queue[session.index].text;
+        session.aiReferenceQuestion = session.questionTrail[session.currentQuestionIndex].text;
         persistSession();
         renderQuestion();
         removeStored(draftKey(currentQuestion().text));
@@ -2144,7 +2622,7 @@
         timer: null,
         playbackUrl: null,
         question: null,
-        historyRecordId: '',
+        durationSeconds: 0,
         permissionRequestId: 0,
         returnFocusAfterStop: false
     };
@@ -2279,7 +2757,7 @@
         if (!media.stream || !window.MediaRecorder) return;
         stopDictation('interrupted');
         media.chunks = [];
-        media.historyRecordId = '';
+        media.durationSeconds = 0;
         var mimeType = supportedMimeType();
         try {
             media.recorder = mimeType
@@ -2294,7 +2772,18 @@
         media.recorder.onstop = finishRecording;
         media.startedAt = Date.now();
         media.question = cloneQuestion(currentQuestion());
-        media.recorder.start(1000);
+        try {
+            media.recorder.start(1000);
+        } catch (error) {
+            media.recorder = null;
+            /* Clear the take metadata set just above so a later transcript
+               submit cannot attribute itself to this never-recorded question. */
+            media.question = null;
+            media.startedAt = 0;
+            text(videoError, 'This browser could not start a compatible local recording.');
+            setHidden(videoError, false);
+            return;
+        }
         setVideoState('recording');
         setHidden(one('[data-is-recording-badge]'), false);
         setHidden(startRecord, true);
@@ -2368,23 +2857,12 @@
         setHidden(videoResultContent, false);
         setDeviceStatus(cameraStatus, 'Local recording complete', 'is-ready');
         setDeviceStatus(microphoneStatus, 'Audio captured locally', 'is-ready');
-        media.historyRecordId = 'video-' + Date.now();
-        addHistoryRecord({
-            id: media.historyRecordId,
-            createdAt: new Date().toISOString(),
-            mode: 'video',
-            question: recordedQuestion.text,
-            family: recordedQuestion.family,
-            competency: recordedQuestion.competency,
-            score: null,
-            durationSeconds: durationSeconds,
-            status: 'Recorded locally'
-        });
+        media.durationSeconds = durationSeconds;
         media.recorder = null;
         media.chunks = [];
         setVideoState('playback');
         if (moveFocusToPlaybackActions) retakeRecord.focus();
-        announce('Recording complete. Local playback is ready. No upload or analysis occurred.');
+        announce('Recording complete. Local playback is ready. No upload or analysis occurred. Submit a transcript only if you want a meaningful reviewed outcome in browser-local History. Submitting the transcript removes the local recording.');
     }
 
     function resetVideoUi(options) {
@@ -2409,7 +2887,7 @@
         setHidden(videoResultEmpty, false);
         setHidden(videoResultContent, true);
         media.question = null;
-        media.historyRecordId = '';
+        media.durationSeconds = 0;
         media.returnFocusAfterStop = false;
         if (!options.preserveTranscript) videoTranscript.value = '';
         videoReviewContent.disabled = !writtenPracticeEnabled || !videoTranscript.value.trim();
@@ -2430,21 +2908,17 @@
     stopRecord.addEventListener('click', stopRecording);
     retakeRecord.addEventListener('click', function () {
         if (!window.confirm('Record another take? The current local recording will be deleted. Transcript text will stay.')) return;
-        var recordId = media.historyRecordId;
         releaseMedia(true);
         resetVideoUi({ preserveTranscript: true });
-        removeHistoryRecord(recordId);
         cameraEnable.focus();
         enableCamera();
     });
     discardRecord.addEventListener('click', function () {
         if (!window.confirm('Delete this local recording? Any transcript text will stay in the composer.')) return;
-        var recordId = media.historyRecordId;
         releaseMedia(true);
         resetVideoUi({ preserveTranscript: true });
-        removeHistoryRecord(recordId);
         cameraEnable.focus();
-        announce('Local recording and its browser record discarded. Transcript text was preserved.');
+        announce('Local recording discarded. No browser-history record was created. Transcript text was preserved.');
     });
     videoTranscript.addEventListener('input', function () {
         videoReviewContent.disabled = !writtenPracticeEnabled || !videoTranscript.value.trim();
@@ -2460,19 +2934,26 @@
             return;
         }
         var recordedQuestion = media.question ? cloneQuestion(media.question) : cloneQuestion(currentQuestion());
-        var recordId = media.historyRecordId;
+        var durationSeconds = media.durationSeconds;
         videoTranscript.value = '';
         autoGrowTextarea(videoTranscript);
+        /* Submitting the transcript is the explicit hand-off to coaching.
+           Release the local take now so the leave-video guard cannot raise a
+           misleading discard prompt in the middle of the user's own submit. */
+        releaseMedia(true);
+        resetVideoUi();
         if (!setMode('me', true)) {
             videoTranscript.value = transcript;
             autoGrowTextarea(videoTranscript);
             videoReviewContent.disabled = false;
             return;
         }
-        session.queue[session.index] = recordedQuestion;
+        session.questionTrail[session.currentQuestionIndex] = normalizedQuestion(recordedQuestion, recordedQuestion.family || session.family);
+        persistSession();
         renderQuestion();
         session.reviewSource = 'video';
-        session.reviewRecordId = recordId;
+        session.reviewRecordId = '';
+        session.reviewDurationSeconds = durationSeconds;
         answer.value = transcript;
         syncAnswerState();
         saveDraft(false);
@@ -2504,6 +2985,7 @@
     var historyDetail = one('[data-is-history-detail]');
     var historyDetailRecordId = '';
     var historyDetailOpenedWithPush = false;
+    var historyRecommendation = null;
 
     function historyDetailUrl(recordId) {
         var params = new URLSearchParams(window.location.search);
@@ -2516,7 +2998,13 @@
         historyDetailRecordId = record.id;
         text(one('[data-is-history-detail-mode]'), record.mode === 'video' ? 'Video Practice attempt' : 'Interview Me attempt');
         text(one('[data-is-history-detail-date]'), new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(record.createdAt)));
-        text(one('[data-is-history-detail-score]'), record.score == null ? 'Not scored' : record.score + ' / 100');
+        text(one('[data-is-history-detail-coaching]'), record.reviewVersion === 'v2'
+            ? 'Question-aware coaching'
+            : record.reviewVersion === 'local-recording'
+                ? 'Local recording — no coaching or analysis'
+                : record.reviewVersion === 'legacy-v1'
+                    ? 'Legacy scored review — excluded from V2 trends'
+                    : 'Unavailable local record — excluded from trends');
         text(one('[data-is-history-detail-question]'), record.question);
         text(one('[data-is-history-detail-context]'), labelFamily(record.family) + ' · Competency: ' + record.competency + ' · ' + record.status);
 
@@ -2552,7 +3040,7 @@
             if (historyDetail.open) historyDetail.close();
             return;
         }
-        var records = readJSON(historyKey, []);
+        var records = readHistoryRecords();
         var record = records.filter(function (item) { return item.id === recordId; })[0];
         if (record) openHistoryDetail(record, false);
     }
@@ -2569,10 +3057,6 @@
         var params = new URLSearchParams(window.location.search);
         params.delete('session');
         window.history.replaceState({}, '', root.getAttribute('data-history-url') + (params.toString() ? '?' + params.toString() : ''));
-    }
-
-    function average(values) {
-        return values.length ? Math.round(values.reduce(function (sum, value) { return sum + value; }, 0) / values.length) : null;
     }
 
     function populateHistoryCompetencies(records) {
@@ -2601,105 +3085,254 @@
         });
     }
 
-    function renderHistory() {
+    // V2 history deliberately avoids an overall score. It only compares
+    // completed, family-aware reviews and explains when the local evidence is
+    // too thin to describe a trend.
+    function statusRank(status) {
+        return { missing: 0, developing: 1, clear: 2, strong: 3 }[status] == null
+            ? -1
+            : { missing: 0, developing: 1, clear: 2, strong: 3 }[status];
+    }
+
+    function v2ReviewedRecords(records) {
+        return records.filter(function (record) {
+            return record && record.reviewVersion === 'v2' && Array.isArray(record.dimensions);
+        });
+    }
+
+    function comparableContextKey(record) {
+        var context = record && record.context ? record.context : {};
+        return [
+            normalizeFamily(record && record.family),
+            String(record && record.experience || 'experienced'),
+            String(record && record.contextIdentity || stableContextIdentity(context)),
+            String(context.interview_stage || 'general'),
+            String(context.question_mix || normalizeFamily(record && record.family))
+        ].join('\u001f');
+    }
+
+    function comparableDimensionGroups(records) {
+        var groups = {};
+        records.slice().reverse().forEach(function (record) {
+            record.dimensions.forEach(function (dimension) {
+                if (!dimension || statusRank(dimension.status) < 0) return;
+                var groupKey = comparableContextKey(record) + '\u001f' + dimension.key;
+                if (!groups[groupKey]) groups[groupKey] = [];
+                groups[groupKey].push({ record: record, dimension: dimension });
+            });
+        });
+        return groups;
+    }
+
+    function renderV2History() {
         var hasStorage = storageAvailable();
         setHidden(storageNote, hasStorage);
         setHidden(storageOk, !hasStorage);
-        var allRecords = readJSON(historyKey, []);
+        var allRecords = readHistoryRecords();
         populateHistoryCompetencies(allRecords);
         var records = filteredHistory(allRecords);
-        var scored = records.filter(function (record) {
-            return (record.mode === 'me' || record.mode === 'video') && record.score != null && Number.isFinite(Number(record.score));
+        var reviewed = v2ReviewedRecords(records);
+        var legacyCount = records.filter(function (record) { return record && record.reviewVersion === 'legacy-v1'; }).length;
+        var localRecordingCount = records.filter(function (record) { return record && record.reviewVersion === 'local-recording'; }).length;
+        var families = reviewed.map(function (record) { return normalizeFamily(record.family); })
+            .filter(function (family, index, list) { return list.indexOf(family) === index; });
+        var groups = comparableDimensionGroups(reviewed);
+        var groupKeys = Object.keys(groups);
+        var carryThrough = groupKeys.filter(function (key) {
+            var entries = groups[key];
+            if (entries.length < 2) return false;
+            return statusRank(entries[0].dimension.status) < 2 &&
+                statusRank(entries[entries.length - 1].dimension.status) >= 2;
         });
-        var avg = average(scored.map(function (record) { return Number(record.score); }));
-        text(one('[data-is-history-count]'), records.length);
-        text(one('[data-is-history-average]'), avg == null ? '—' : avg + '%');
-
-        var byCompetency = {};
-        scored.forEach(function (record) {
-            if (!byCompetency[record.competency]) byCompetency[record.competency] = [];
-            byCompetency[record.competency].push(record);
-        });
-        var comparable = Object.keys(byCompetency).filter(function (name) { return byCompetency[name].length >= 2; });
-        var strongest = comparable.sort(function (a, b) {
-            return average(byCompetency[b].map(function (record) { return Number(record.score); })) - average(byCompetency[a].map(function (record) { return Number(record.score); }));
+        var focusGroup = groupKeys.filter(function (key) { return groups[key].length >= 2; })
+            .sort(function (left, right) {
+                return statusRank(groups[left][groups[left].length - 1].dimension.status) -
+                    statusRank(groups[right][groups[right].length - 1].dimension.status);
         })[0];
-        text(one('[data-is-history-strongest]'), strongest || 'Not enough practice yet');
+        var focusDimension = focusGroup && groups[focusGroup][groups[focusGroup].length - 1].dimension;
+        var focusRecord = focusGroup && groups[focusGroup][groups[focusGroup].length - 1].record;
+        var focusFamily = focusRecord ? normalizeFamily(focusRecord.family) : session.family;
+        var focusContext = focusRecord ? makeSessionContext(focusRecord.context) : session.context;
+        var focusExperience = focusRecord ? focusRecord.experience : session.level;
+        var recommendation = nextLocalQuestion(focusFamily, focusExperience, session.questionTrail, [], focusContext);
+        historyRecommendation = {
+            question: recommendation,
+            family: focusFamily,
+            level: focusExperience,
+            context: focusContext
+        };
+        var recommendationReason = focusDimension
+            ? 'Practice ' + readableDimensionKey(focusDimension.key) + ' in another ' + labelFamily(focusFamily).toLowerCase() + ' answer.'
+            : 'Not enough comparable practice yet. Try one more answer in a question family you want to strengthen.';
 
-        var dimensionNames = ['relevance', 'structure', 'specificity', 'evidence', 'impact'];
-        var dimensionAverages = dimensionNames.map(function (name) {
-            var values = scored.map(function (record) { return record.dimensions && Number(record.dimensions[name]); }).filter(Number.isFinite);
-            return { name: name, value: average(values) };
-        }).filter(function (item) { return item.value != null; }).sort(function (a, b) { return a.value - b.value; });
-        var lowest = dimensionAverages[0];
-        text(one('[data-is-history-improvement]'), scored.length >= 2 && lowest ? lowest.name.charAt(0).toUpperCase() + lowest.name.slice(1) : 'Complete another scored answer');
-
-        var recommendation = defaultQuestion;
-        var reason = 'Start with one focused answer';
-        if (scored.length && lowest) {
-            var lastCompetency = scored[0].competency;
-            recommendation = questions.filter(function (question) { return question.competency === lastCompetency && question.text !== scored[0].question; })[0] || defaultQuestion;
-            reason = 'Practice ' + lastCompetency + ' to strengthen ' + lowest.name;
-        }
-        text(one('[data-is-recommendation-reason]'), reason);
+        text(one('[data-is-history-count]'), reviewed.length);
+        text(one('[data-is-history-coverage]'), families.length + (families.length === 1 ? ' family practiced' : ' families practiced'));
+        text(one('[data-is-history-carry-through]'), carryThrough.length
+            ? carryThrough.length + (carryThrough.length === 1 ? ' coaching improvement carried forward' : ' coaching improvements carried forward')
+            : 'Not enough comparable practice yet.');
+        text(one('[data-is-history-next-focus]'), focusDimension
+            ? readableDimensionKey(focusDimension.key)
+            : 'Choose one question family');
+        text(one('[data-is-history-summary-label]'), 'History summary: ' + reviewed.length + (reviewed.length === 1 ? ' reviewed answer, ' : ' reviewed answers, ') + families.length + (families.length === 1 ? ' question family practiced, ' : ' question families practiced, ') + (carryThrough.length ? carryThrough.length + ' coaching improvement carried forward.' : 'not enough comparable practice yet.'));
+        text(one('[data-is-recommendation-reason]'), recommendationReason);
         text(one('[data-is-recommendation-question]'), recommendation.text);
-        one('[data-is-practice-recommendation]').dataset.question = recommendation.text;
+        var practiceButton = one('[data-is-practice-recommendation]');
+        if (practiceButton) practiceButton.dataset.question = recommendation.text;
 
         var empty = one('[data-is-history-empty]');
         var list = one('[data-is-session-list]');
         setHidden(empty, records.length > 0);
         setHidden(list, records.length === 0);
-        list.replaceChildren();
-        records.slice(0, 12).forEach(function (record) {
-            var row = document.createElement('a');
-            row.className = 'is__session-row';
-            row.href = historyDetailUrl(record.id);
-            var date = document.createElement('time');
-            date.dateTime = record.createdAt;
-            date.textContent = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(record.createdAt));
-            var body = document.createElement('span');
-            var title = document.createElement('strong');
-            title.textContent = record.question;
-            var meta = document.createElement('small');
-            meta.textContent = (record.mode === 'video' ? 'Video Practice' : 'Interview Me') + ' · ' + record.competency + ' · ' + record.status;
-            body.append(title, meta);
-            var result = document.createElement('b');
-            result.textContent = record.score == null ? '—' : record.score + '%';
-            row.append(date, body, result);
-            row.addEventListener('click', function (event) {
-                event.preventDefault();
-                openHistoryDetail(record, true);
+        if (list) {
+            list.replaceChildren();
+            records.slice(0, 12).forEach(function (record) {
+                var row = document.createElement('a');
+                row.className = 'is__session-row';
+                row.href = historyDetailUrl(record.id);
+                var date = document.createElement('time');
+                date.dateTime = record.createdAt;
+                date.textContent = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(record.createdAt));
+                var body = document.createElement('span');
+                var title = document.createElement('strong');
+                title.textContent = record.question;
+                var meta = document.createElement('small');
+                meta.textContent = (record.mode === 'video' ? 'Video Practice' : 'Interview Me') + ' / ' + labelFamily(record.family) + ' / ' + (record.status || 'Completed');
+                body.append(title, meta);
+                var result = document.createElement('b');
+                result.textContent = record.reviewVersion === 'v2' ? 'Reviewed' : record.reviewVersion === 'local-recording' ? 'Local only' : record.reviewVersion === 'legacy-v1' ? 'Legacy' : 'Unavailable';
+                row.append(date, body, result);
+                row.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    openHistoryDetail(record, true);
+                });
+                list.appendChild(row);
             });
-            list.appendChild(row);
-        });
+        }
 
         var growthEmpty = one('[data-is-growth-empty]');
         var growthList = one('[data-is-growth-list]');
-        growthList.replaceChildren();
-        setHidden(growthEmpty, comparable.length > 0);
-        comparable.forEach(function (name) {
-            var score = average(byCompetency[name].map(function (record) { return Number(record.score); }));
-            var row = document.createElement('div');
-            row.className = 'is__growth-row';
-            row.style.setProperty('--growth', score + '%');
-            var label = document.createElement('span');
-            label.textContent = name;
-            var value = document.createElement('b');
-            value.textContent = score + '%';
-            var bar = document.createElement('i');
-            bar.setAttribute('aria-label', name + ' average ' + score + ' percent');
-            row.append(label, value, bar);
-            growthList.appendChild(row);
-        });
-
-        var goal = Number(readJSON(goalKey, 85)) || 85;
-        one('[data-is-goal-score]').value = goal;
-        var progressValue = avg == null ? 0 : Math.min(100, Math.round((avg / goal) * 100));
-        text(one('[data-is-goal-progress]'), avg == null ? 'No scored attempts yet.' : avg + '% average toward a ' + goal + '% target.');
-        var progress = one('progress[data-is-goal-progress]');
-        progress.value = progressValue;
-        progress.textContent = progressValue + '%';
+        if (growthList) {
+            growthList.replaceChildren();
+            var trendGroups = groupKeys.filter(function (key) { return groups[key].length >= 2; });
+            setHidden(growthEmpty, trendGroups.length > 0);
+            trendGroups.slice(0, 5).forEach(function (key) {
+                var entries = groups[key];
+                var first = entries[0].dimension;
+                var last = entries[entries.length - 1].dimension;
+                var row = document.createElement('div');
+                row.className = 'is__growth-row';
+                var label = document.createElement('span');
+                label.textContent = labelFamily(entries[entries.length - 1].record.family) + ': ' + readableDimensionKey(last.key);
+                var value = document.createElement('b');
+                var changed = statusRank(last.status) - statusRank(first.status);
+                value.textContent = changed > 0 ? 'Improving' : changed < 0 ? 'Needs attention' : 'Holding steady';
+                var detail = document.createElement('i');
+                detail.textContent = first.status + ' to ' + last.status;
+                detail.setAttribute('aria-label', label.textContent + ': ' + detail.textContent);
+                row.append(label, value, detail);
+                growthList.appendChild(row);
+            });
+        }
+        var legacyNote = one('[data-is-history-legacy-note]');
+        if (legacyNote) {
+            text(legacyNote, legacyCount
+                ? legacyCount + (legacyCount === 1 ? ' legacy scored review is kept for reference but excluded from new trends.' : ' legacy scored reviews are kept for reference but excluded from new trends.')
+                : localRecordingCount
+                    ? localRecordingCount + (localRecordingCount === 1 ? ' local recording is kept without coaching and excluded from trends.' : ' local recordings are kept without coaching and excluded from trends.')
+                    : 'Only score-free, question-aware reviews are used for these trends.');
+        }
     }
+
+    function renderHistory() {
+        renderV2History();
+    }
+
+    function completedSessionRecords() {
+        var sessionId = session.sessionId;
+        return readHistoryRecords().filter(function (record) {
+            return record.reviewVersion === 'v2' && record.sessionId === sessionId;
+        });
+    }
+
+    function renderSessionComplete() {
+        closeQueue({ restoreFocus: false });
+        var records = completedSessionRecords();
+        var completeTitle = contextLabel(session.context) + ' session complete.';
+        text(one('[data-is-complete-title]'), completeTitle);
+        text(one('[data-is-complete-summary]'), records.length
+            ? 'You completed an open-ended practice session with ' + records.length + (records.length === 1 ? ' reviewed answer.' : ' reviewed answers.')
+            : 'You finished an open-ended practice session. No reviewed answer was added, and any typed draft remains in this browser.');
+        text(one('[data-is-complete-reviewed]'), records.length);
+        text(one('[data-is-complete-questions]'), session.questionTrail.length);
+        text(one('[data-is-complete-context]'), contextLabel(session.context));
+        var list = one('[data-is-complete-list]');
+        var empty = one('[data-is-complete-empty]');
+        setHidden(empty, records.length > 0);
+        setHidden(list, records.length === 0);
+        if (list) {
+            list.replaceChildren();
+            records.forEach(function (record) {
+                var item = document.createElement('li');
+                var question = document.createElement('strong');
+                question.textContent = record.question;
+                var status = document.createElement('span');
+                status.textContent = record.status + ' · ' + labelFamily(record.family);
+                item.append(question, status);
+                list.appendChild(item);
+            });
+        }
+        var latest = records[0];
+        text(one('[data-is-complete-next-focus]'), latest && latest.improvements && latest.improvements[0]
+            ? latest.improvements[0]
+            : 'Complete a reviewed answer to see one focused next practice suggestion.');
+        panels.forEach(function (panel) { panel.hidden = panel.getAttribute('data-is-panel') !== 'complete'; });
+        root.setAttribute('data-is-active-mode', 'complete');
+        if (historyLink) historyLink.removeAttribute('aria-current');
+        var title = one('[data-is-complete-title]');
+        if (title) {
+            title.setAttribute('tabindex', '-1');
+            title.focus();
+        }
+        announce('Session complete. Your reviewed answers remain only in this browser.');
+    }
+
+    function finishCurrentSession() {
+        stopDictation('interrupted');
+        if (session.mode === 'me') {
+            persistCurrentAnswerDraft();
+            cancelPendingReview();
+            cancelPendingImprovement();
+        }
+        if (session.mode === 'video' && !prepareVideoContextChange('Finish this session and discard the current local recording or transcript draft?')) return;
+        if (session.mode === 'video') {
+            /* A live camera preview passes the discard guard untouched; the
+               camera must still stop when the session ends. */
+            releaseMedia(true);
+            resetVideoUi();
+        }
+        if (session.mode === 'ai') cancelPendingAi(true);
+        renderSessionComplete();
+    }
+
+    all('[data-is-finish-session]').forEach(function (button) {
+        button.addEventListener('click', finishCurrentSession);
+    });
+    var completePracticeNext = one('[data-is-complete-practice-next]');
+    if (completePracticeNext) completePracticeNext.addEventListener('click', function () {
+        var mode = modeIsEnabled(session.mode) ? session.mode : 'me';
+        if (!setMode(mode, true)) return;
+        if (currentQuestionIsCompleted()) advanceQuestion(mode);
+        else renderQuestion();
+        if (mode === 'me') answer.focus();
+        else if (mode === 'video') cameraEnable.focus();
+    });
+    var completeNewSession = one('[data-is-complete-new-session]');
+    if (completeNewSession) completeNewSession.addEventListener('click', function () {
+        if (sessionKindSelect) {
+            sessionKindSelect.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+            sessionKindSelect.focus();
+        }
+    });
 
     [historyMode, historyCompetency, historyTime].forEach(function (select) {
         if (!select) return;
@@ -2713,18 +3346,25 @@
         });
     });
 
-    one('[data-is-goal-save]').addEventListener('click', function () {
-        var goal = Math.min(100, Math.max(1, Number(one('[data-is-goal-score]').value) || 85));
-        writeJSON(goalKey, goal);
-        renderHistory();
-        announce('Practice goal saved in this browser.');
-    });
-
     one('[data-is-practice-recommendation]').addEventListener('click', function (event) {
-        var questionText = event.currentTarget.dataset.question;
-        var match = questions.filter(function (question) { return question.text === questionText; })[0] || defaultQuestion;
+        var recommendation = historyRecommendation || {
+            question: defaultQuestion,
+            family: session.family,
+            level: session.level,
+            context: session.context
+        };
         if (!setMode('me', true)) return;
-        session.queue[session.index] = cloneQuestion(match);
+        session.family = normalizeFamily(recommendation.family);
+        session.level = recommendation.level;
+        session.context = makeSessionContext(recommendation.context);
+        if (familySelect) familySelect.value = session.family;
+        if (levelSelect) levelSelect.value = session.level;
+        if (stageSelect) stageSelect.value = session.context.interview_stage;
+        if (sessionStageSelect) sessionStageSelect.value = session.context.interview_stage;
+        if (sessionMixSelect) sessionMixSelect.value = session.family;
+        syncNewSessionInputs();
+        session.questionTrail.push(normalizedQuestion(recommendation.question, session.family));
+        session.currentQuestionIndex = session.questionTrail.length - 1;
         persistSession();
         renderQuestion();
         answer.focus();
@@ -2747,8 +3387,7 @@
     historyDetail.addEventListener('click', function (event) { if (event.target === historyDetail) closeHistoryDetail(); });
     one('[data-is-history-detail-delete]').addEventListener('click', function () {
         if (!historyDetailRecordId || !window.confirm('Delete this Interview Studio record from this browser?')) return;
-        var records = readJSON(historyKey, []).filter(function (record) { return record.id !== historyDetailRecordId; });
-        writeJSON(historyKey, records);
+        removeHistoryRecord(historyDetailRecordId);
         historyDetailOpenedWithPush = false;
         if (historyDetail.open) historyDetail.close();
         historyDetailRecordId = '';
@@ -2772,7 +3411,7 @@
     if (settingsClose && settingsDialog) settingsClose.addEventListener('click', function () { settingsDialog.close(); });
     if (settingsDialog) settingsDialog.addEventListener('click', function (event) { if (event.target === settingsDialog) settingsDialog.close(); });
     function clearLocalData() {
-        if (!window.confirm('Clear Interview Studio drafts, sessions, and goals stored in this browser, and discard any active local recording?')) return;
+        if (!window.confirm('Clear Interview Studio drafts and history stored in this browser, and discard any active local recording?')) return;
         stopDictation('interrupted');
         cancelPendingReview();
         cancelPendingImprovement();
@@ -2780,21 +3419,28 @@
         releaseMedia(true);
         resetVideoUi();
         try {
-            Object.keys(window.localStorage).forEach(function (key) { if (key.indexOf(storagePrefix) === 0) window.localStorage.removeItem(key); });
+            Object.keys(window.localStorage).forEach(function (key) {
+                if (key.indexOf(storagePrefix) === 0 || key.indexOf(legacyStoragePrefix) === 0) {
+                    window.localStorage.removeItem(key);
+                }
+            });
         } catch (error) { /* storage unavailable */ }
-        session.queue = buildQueue('behavioral', 5, 'experienced');
-        session.index = 0;
+        session.questionTrail = [nextLocalQuestion('behavioral', 'experienced', [], [], makeSessionContext())];
+        session.currentQuestionIndex = 0;
         session.level = 'experienced';
         session.family = 'behavioral';
-        session.format = '5';
+        session.context = makeSessionContext();
+        session.sessionId = newSessionInstanceId();
         session.aiReference = '';
         session.aiReferenceQuestion = '';
-        session.completedSlots = [];
+        session.reviewedQuestionIds = [];
         session.replacementSeen = [];
         levelSelect.value = session.level;
         familySelect.value = session.family;
-        formatSelect.value = session.format;
         resetAiAnswerForContextChange();
+        /* The New Session form and rail selects must mirror the reset context,
+           or the next start would silently re-apply the cleared choices. */
+        syncNewSessionInputs();
         renderQuestion();
         renderHistory();
         if (settingsDialog) settingsDialog.close();
@@ -2809,14 +3455,15 @@
     var incomingQuestion = new URLSearchParams(window.location.search).get('question');
     if (initialMode === 'ai' && incomingQuestion && incomingQuestion.trim() && incomingQuestion.length <= 300) {
         var incomingMatch = questions.filter(function (item) { return item.text === incomingQuestion.trim(); })[0];
-        session.queue[session.index] = incomingMatch
+        session.questionTrail[session.currentQuestionIndex] = incomingMatch
             ? cloneQuestion(incomingMatch)
             : {
                 text: incomingQuestion.trim(),
-                family: session.family === 'mixed' ? 'behavioral' : session.family,
+                family: normalizeFamily(session.family),
                 competency: 'Custom',
                 levels: [session.level],
-                custom: true
+                custom: true,
+                id: questionId({ family: session.family, text: incomingQuestion.trim() })
             };
     }
 
