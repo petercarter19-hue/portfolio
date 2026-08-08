@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-08T00:30:16Z",
+  "updated_at": "2026-08-08T01:24:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,6 @@
     "authorized_at": "2026-08-05",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-INTERVIEW-STUDIO-CALIBRATION-001",
       "PS-INTERVIEW-STUDIO-INTEGRATION-001"
     ],
     "merge_allowed_for": [
@@ -21,7 +20,6 @@
       "PS-ASK-PETE-AI-001",
       "PS-DELIVERY-CONTROL-001",
       "PS-COMMUNITY-PUBLIC-PILOT-001",
-      "PS-INTERVIEW-STUDIO-CALIBRATION-001",
       "PS-INTERVIEW-STUDIO-INTEGRATION-001"
     ],
     "cleanup_allowed_for": [
@@ -30,7 +28,6 @@
       "PS-ASK-PETE-AI-001",
       "PS-DELIVERY-CONTROL-001",
       "PS-COMMUNITY-PUBLIC-PILOT-001",
-      "PS-INTERVIEW-STUDIO-CALIBRATION-001",
       "PS-INTERVIEW-STUDIO-INTEGRATION-001"
     ],
     "release_allowed_for": [],
@@ -46,7 +43,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-COMMUNITY-PUBLIC-PILOT-001 completed its bounded Protected recovery and public-demo release as exact main 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610. The labelled Pete-only public demo, owner-only canonical runtime, additive PS-COMMUNITY-REVIVAL-001 schema correction, and independently scheduled maintenance are live with the recorded limitations. Pete directed truthful closeout; all active Community write, merge, and release authority is relinquished. PS-INTERVIEW-STUDIO-CALIBRATION-001 remains the sole product writer on its five disjoint surfaces. PS-INTERVIEW-STUDIO-INTEGRATION-001 now records Pete's bounded authorization for refreshed exact-SHA verification, PR 325 squash merge, exact-main verification, and recoverability-checked cleanup. Release authority remains empty and deployment remains prohibited. Future Community expansion requires a new activated package."
+    "exit_authority": "PS-INTERVIEW-STUDIO-CALIBRATION-001 completed its exact owner-selected Smoked Eucalyptus visual-only source integration through reviewed candidate 284c6c79586526b52b69c4d9ff15172c862e6b56, successful Azure build 621, and PR 325 squash merge 8ee04e317f4ee4cbb3f057fd7a12d7a446121f8d. The merged tree exactly matches the reviewed candidate; 199 focused Interview and delivery tests passed with one expected skip. Its cleanup preflight passed and its clean task branch/worktree were removed with recovery references preserved. PS-INTERVIEW-STUDIO-INTEGRATION-001 remains the sole governance-only writer to repair state-coupled delivery-test fixtures and complete controlled-idle closeout. Release authority remains empty; deployed production remains 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610."
   },
   "activation_policy": {
     "enabled": true,
@@ -446,73 +443,10 @@
   ],
   "active_lanes": [
     {
-      "package": "PS-INTERVIEW-STUDIO-CALIBRATION-001",
-      "outcome": "Calibrate the existing public /interview-studio experience to the exact owner-selected Smoked Eucalyptus sage visual system while preserving the already released PS-INTERVIEW-FOCUS-UI-001 V3 structure, all three modes, browser-local history and drafts, AI request boundaries, voice/video truth, responsive behavior, accessibility, and every existing interaction contract. This is implementation of locked visual authority, not a new page or product redesign. Pete has now authorized the exact reviewed candidate to proceed through refreshed verification, governed squash merge, exact-main verification, and bounded cleanup; deployment remains prohibited.",
-      "branch": "work/2026-08-06-interview-studio-calibration-001",
-      "writer": "Terra at maximum reasoning in C:\\Users\\peter\\Documents\\portfolio-interview-studio-calibration-20260806; sole writer for exactly the five listed surfaces",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "source_checkpoint": "Repository-controlled structure and interaction authority: docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/ revision v3-all-modes-complete, archive SHA-256 7FF3187C7F7E62A29FFD15433454AA0742302308249B4AACA9ED8DBED809814F; v2-white is supplemental only at SHA-256 F968CEDF57CD064B748861472658FEAB87EF7C0603C277BAAAEDA2C2649B7E4D; binding compact-height decision: docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/01_OWNER_ACTIVATION_AND_RELEASE_DECISION.md. Owner-selected palette/surface/background authority: iCloud file 34 - Green Hue Only - Smoked Eucalyptus.png at SHA-256 1802FB9D3B0F43CCEB84400448A8E628FDB5B8F5D54DB3CCD253581DFB4AEC1F. Owner-approved critical-state validation: file 46 Active Voice Answer SHA-256 E24F517ABD8CCFE25BDBD4392AC598DE8B44355E8C48FA1F7BBAB0311B551729, file 47 Video Delivery Review SHA-256 C69F9D4BFC40435C556D89B8A264AEE0E62C4AC9EEFDD4F7D1CCAC2E4D38A4D5, and file 48 History and Progress SHA-256 97CD8883E18BF8F1EAA85DA800CBCA06B10793BA5C9657FF70577493EE7134DB, all under C:\\Users\\peter\\iCloudDrive\\PeerSlate\\Interview Studio Color Studies - 2026-08-06. The first package-local write copies these exact bytes into the new initiative source-authority folder and records their hashes before runtime edits. docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md is required. Released code and tests control any functionality or truth-boundary conflict.",
-      "writable_surfaces": [
-        "templates/interview_studio.html",
-        "static/css/interview-studio.css",
-        "static/js/interview-studio.js",
-        "tests/test_interview_studio.py",
-        "docs/initiatives/PS-INTERVIEW-STUDIO-CALIBRATION-001/"
-      ],
-      "exclusions": [
-        "no route rename, app.py, backend, endpoint, payload, prompt, rubric, provider, model, storage key, authentication, database, schema, dependency, pipeline, shared shell, or deployment change",
-        "no private-member Interview Studio, account-backed history, My Knowledge integration, Opportunity Slate integration, media upload or retention, delivery analysis, or other product expansion",
-        "no behavior change: typing, optional dictation, Interview AI, Video Practice, browser-local drafts/history, request boundaries, failure recovery, and public truth remain as released",
-        "no new visual invention: implementation must compare against the exact named V3/V2 authority, owner-selected sage files and hashes, compact-height correction, and OWNER_VISUAL_INTEGRITY_STANDARD.md",
-        "no write outside the five listed surfaces and no write to another branch, worktree, checkpoint, stash, artifact, or lane-owned surface",
-        "no release, deployment, production configuration change, or claim that the merged candidate is deployed or live"
-      ],
-      "completion_evidence": [
-        "the activation PR is merged and the implementation worktree is created from that resulting origin/main",
-        "the package write preflight passes with --fetch --require-clean before implementation begins",
-        "the exact owner-selected files 34, 46, 47, and 48 are copied byte-for-byte into the new package source-authority folder with a hash manifest before runtime edits",
-        "desktop and mobile browser comparisons use the exact repository V3 mockups plus the selected sage authority and binding compact-height correction",
-        "all three modes and browser-local public truth remain intact, with no route, request, persistence, media, backend, or product-semantic change",
-        "focused Interview Studio tests, relevant responsive/accessibility checks, git diff --check, and complete-diff self-review pass",
-        "Sol at maximum reasoning independently reviews the exact candidate SHA after Terra finishes and before the Azure implementation PR is opened",
-        "validated review findings are resolved and Azure implementation PR 325 is open",
-        "after every target-main change, the candidate is rebased with range-diff patch equivalence, focused tests, independent exact-SHA review, and a new successful Azure build",
-        "the package merge preflight passes before PR 325 is squash-merged through Azure policy",
-        "authoritative main contains the reviewed Interview tree before cleanup preflight permits any task-local artifact removal; deployment remains unauthorized"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-06",
-          "decision": "Pete approved file 34 Smoked Eucalyptus as the controlling Interview Studio color, texture, surface, shadow, and background direction, then approved files 46-48 as successful Voice, Video Review, and History validation. Existing V3/V2 and released behavior remain controlling for structure, interaction, responsive states, and truth where the new images are silent."
-        },
-        {
-          "date": "2026-08-06",
-          "decision": "Pete authorized this exact five-surface implementation after the activation PR merges and the clean implementation worktree passes its write preflight. No additional generic implementation-authorization pause is required. Stop only for missing or contradictory exact authority, a newly active surface overlap, failed preflight, behavior change, or work outside the five-surface boundary."
-        },
-        {
-          "date": "2026-08-06",
-          "decision": "Pete assigned Terra at maximum reasoning as the sole implementation writer, Sol at maximum reasoning as the independent exact-SHA reviewer, and Sol at extra-high reasoning for a read-only architecture reconciliation only if architecture remained unresolved. Cleanup must remain task-local, recoverability-verified, and must preserve all other lanes."
-        },
-        {
-          "date": "2026-08-07",
-          "decision": "Pete directed the team to finish Interview Studio and authorized the minimum safe governance transition, PR 325 governed squash merge, exact-main verification, aggressive bounded debugging, and cleanup after each other. This does not authorize deployment, production configuration, new product behavior, or bypass of any failed applicable preflight or Azure policy."
-        }
-      ],
-      "model_routing": {
-        "architecture": "Sol at extra-high reasoning performs one read-only authority/architecture reconciliation; no write authority",
-        "implementation": "Terra at maximum reasoning, sole implementation writer in the dedicated clean worktree",
-        "independent_reviewer": "Sol at maximum reasoning in a fresh read-only review context after the candidate SHA is complete",
-        "sequence": "activation merge -> clean implementation worktree -> write preflight -> Sol extra-high architecture result is reconciled -> Terra implements and self-reviews -> Sol max independently reviews exact candidate SHA -> Terra resolves validated findings -> Azure implementation PR -> refreshed rebase and exact-SHA review -> Azure policy -> merge preflight -> squash merge -> exact-main verification -> cleanup preflight; no deployment"
-      },
-      "cleanup_contract": "After activation merge, remove only the clean merged activation worktree/branch after verifying origin/main contains the activation and a recovery reference exists. After implementation PR merge is separately authorized and completed, apply the same rule to only this implementation lane. Do not touch the active Ask Pete worktree/branch or any unrelated, dirty, unverified, or user-owned material.",
-      "sequence": "activation and implementation are complete through green PR 325 -> merge the PS-INTERVIEW-STUDIO-INTEGRATION-001 governance authorization -> fetch resulting main -> rebase the existing Interview branch with range-diff proof -> rerun focused tests and Sol exact-SHA review -> push with force-with-lease -> require a new successful Azure build and every policy -> run Interview merge preflight -> squash-merge PR 325 -> verify exact authoritative-main tree -> run cleanup preflight -> remove only clean task-local artifacts -> stop before deployment"
-    },
-    {
       "package": "PS-INTERVIEW-STUDIO-INTEGRATION-001",
-      "outcome": "Record Pete's current authorization to take the completed, independently reviewed PS-INTERVIEW-STUDIO-CALIBRATION-001 candidate in Azure PR 325 through refreshed exact-SHA verification, governed squash merge, authoritative-main verification, and task-local cleanup while preserving every product, privacy, behavior, visual-authority, and no-deployment boundary.",
+      "outcome": "Complete the governance-only closeout after the Interview Studio calibration merged and its task artifacts were safely cleaned. This lane remains active only to admit a separate test-fixture-only correction through the normal second slot, then record controlled idle and clean its own task artifacts. No product, validator, release, deployment, or production change is authorized.",
       "branch": "work/2026-08-07-interview-studio-integration-001",
-      "writer": "Root Codex in C:\\Users\\peter\\Documents\\portfolio-interview-studio-integration-20260807; sole writer for the governance and package-record surfaces listed here",
+      "writer": "Root Codex in C:\\Users\\peter\\Documents\\portfolio-interview-studio-integration-20260807; sole governance-only writer until controlled-idle closeout",
       "delivery_path": "Protected",
       "production_capable": false,
       "source_checkpoint": "Authoritative origin/main 58e6a9c1f76a8ab1596a9a16c9b2b4be297900c4 after Community PR 330 closeout relinquished every active Community surface. Interview Studio PR 325 remains active at reviewed source e695dde2dcd48882106952054fe0a72240bef088; Azure build 613 and all required policies passed against target 1806d20c23736140fea787ea7cd8fb105c99e7f9, and the candidate must be refreshed after this control change moves main.",
@@ -550,7 +484,7 @@
         "sequence": "activation merge -> clean integration worktree -> write preflight -> governance authorization PR -> refreshed Interview rebase and exact-SHA review -> Azure policy -> merge preflight -> PR 325 squash merge -> exact-main verification -> cleanup preflight -> bounded cleanup"
       },
       "cleanup_contract": "Stop task-created servers and temporary processes. Preserve all dirty, unmerged, unrelated, PC-owned, user-owned, Community, and source-authority material. Remove only clean merged activation, integration, and Interview worktrees or branches after origin/main equivalence, recovery references, and the package cleanup preflight are proven.",
-      "sequence": "Merge this activation-only PR; create the exact integration worktree from resulting main; pass write preflight; record Interview merge and cleanup authority without release authority; validate and merge the governance PR; refresh and re-review PR 325 on resulting main; pass merge preflight; squash-merge PR 325; verify exact main; run cleanup preflight; clean only task-local verified artifacts; stop before deployment."
+      "sequence": "Merge this phase-one closeout -> activate a disjoint test-fixture-only lane in the available second slot -> correct only state-coupled delivery tests -> merge and clean that fixture lane -> finalize controlled idle -> pass integration cleanup preflight -> remove only integration task artifacts -> stop before deployment."
     }
   ],
   "paused_lanes": [
@@ -599,7 +533,7 @@
     }
   },
   "release_truth": {
-    "repository_main": "1806d20c23736140fea787ea7cd8fb105c99e7f9",
+    "repository_main": "8ee04e317f4ee4cbb3f057fd7a12d7a446121f8d",
     "reset_pull_request": 279,
     "reset_validation_pipeline": 512,
     "reset_validation_result": "succeeded",

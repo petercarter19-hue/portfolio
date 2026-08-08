@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-INTERVIEW-STUDIO-CALIBRATION-001 owns its visual-only product surfaces. PS-INTERVIEW-STUDIO-INTEGRATION-001 owns governance records on work/2026-08-07-interview-studio-integration-001 for PR 325 merge and cleanup. Community is released and closed."
+  current_assignments: "PS-INTERVIEW-STUDIO-INTEGRATION-001 is the sole governance-only writer while a separate fixture-only delivery test correction is admitted through the available second slot; no product or release work is active."
 
 governing_documents:
   bible:
@@ -58,12 +58,9 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-INTERVIEW-STUDIO-CALIBRATION-001
-    status: active_delivery
-    scope: "Visual-only public Interview Studio calibration; refreshed verification, squash merge, and bounded cleanup are authorized with no behavior, backend, schema, private-member, deployment, or production change."
   - id: PS-INTERVIEW-STUDIO-INTEGRATION-001
     status: active_delivery
-    scope: "Governance-only completion of the already reviewed Interview Studio candidate through refreshed exact-SHA evidence, PR 325 squash merge, authoritative-main verification, and task-local cleanup; no product, release, deployment, or production change."
+    scope: "Governance-only controlled-idle closeout after completed Interview source integration; no product, validator, release, deployment, or production change."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -129,6 +126,7 @@ completed_packages:
   - PS-DATA-FOUNDATION-001
   - PS-ASK-PETE-AI-001
   - PS-COMMUNITY-PUBLIC-PILOT-001
+  - PS-INTERVIEW-STUDIO-CALIBRATION-001
 
 retired_packages:
   - id: PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001
@@ -140,7 +138,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Merge PS-INTERVIEW-STUDIO-INTEGRATION-001 through Azure policy; refresh and re-review PR 325 on resulting main; require a new successful build and merge preflight; squash-merge; verify authoritative main; run cleanup preflight; remove only clean task-local artifacts; stop before deployment."
+next_gate: "Activate one disjoint test-fixture-only lane in the available second slot, make activation tests independent of a fixed date and nonempty active-package state without changing the validator, merge and clean it, then finalize PS-INTERVIEW-STUDIO-INTEGRATION-001 to controlled idle and bounded cleanup."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
