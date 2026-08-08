@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-08T07:55:00Z",
+  "updated_at": "2026-08-08T16:25:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,8 +12,7 @@
     "authorized_at": "2026-08-05",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-WORKSHOP-ACCESS-001",
-      "PS-ASK-PETE-AI-RELEASE-001"
+      "PS-WORKSHOP-ACCESS-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -34,7 +33,8 @@
       "PS-COMMUNITY-PUBLIC-PILOT-001",
       "PS-INTERVIEW-STUDIO-INTEGRATION-001",
       "PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001",
-      "PS-ASK-PETE-AI-READINESS-002"
+      "PS-ASK-PETE-AI-READINESS-002",
+      "PS-ASK-PETE-AI-RELEASE-001"
     ],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -49,7 +49,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Pete explicitly selected the next outcome on 2026-08-07: put the complete Workshop experience behind PeerSlate sign-in now. PS-WORKSHOP-ACCESS-001 is the sole Protected writer for that boundary and its direct-bypass evidence. It may not change Workshop product flow, AI behavior, visual composition, schema, Opportunity Slate, Interview Studio, authentication-provider configuration, deployment, or production state. Release authority remains empty; production remains 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610. Pete then activated PS-ASK-PETE-AI-READINESS-002 as the second disjoint lane on Ask-specific surfaces only, under his 2026-08-08 recorded authority: sole overnight delivery by this program, full permission for the entire governed Ask Pete readiness-and-release sequence, Opus 5 extra-high implementing with Fable orchestrating and reviewing, and an explicit stop before live enablement: PEERSLATE_ASK_PETE_GROUNDED_ENABLED stays off pending Pete's review. READINESS-002 closed 2026-08-08 after PR 339 merged as exact main b7afdc6 with verified tree equivalence; the merge is source integration only. A key operational finding is recorded: no automatic batchedCI deployment has fired for any main merge since pipeline 610 (2026-08-07 21:31 UTC) although the merge messages carry no skip marker, so deployed production remains 1806d20c/release a00f609a and does not yet include the Interview calibration or the Ask Pete readiness fixes. Resolving the trigger state and deploying belong to PS-ASK-PETE-AI-RELEASE-001 with owner-reviewed enablement. Pete's standing overnight authority then activated PS-ASK-PETE-AI-RELEASE-001 as the second disjoint lane for app-seam corrections, Candidate/release evidence, resolution of the automatic-trigger finding, and governed flag-off deployment; enablement remains excluded until Pete's review."
+    "exit_authority": "Pete explicitly selected the next outcome on 2026-08-07: put the complete Workshop experience behind PeerSlate sign-in now. PS-WORKSHOP-ACCESS-001 is the sole Protected writer for that boundary and its direct-bypass evidence. It may not change Workshop product flow, AI behavior, visual composition, schema, Opportunity Slate, Interview Studio, authentication-provider configuration, deployment, or production state. Release authority remains empty; production remains 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610. Pete then activated PS-ASK-PETE-AI-READINESS-002 as the second disjoint lane on Ask-specific surfaces only, under his 2026-08-08 recorded authority: sole overnight delivery by this program, full permission for the entire governed Ask Pete readiness-and-release sequence, Opus 5 extra-high implementing with Fable orchestrating and reviewing, and an explicit stop before live enablement: PEERSLATE_ASK_PETE_GROUNDED_ENABLED stays off pending Pete's review. READINESS-002 closed 2026-08-08 after PR 339 merged as exact main b7afdc6 with verified tree equivalence; the merge is source integration only. A key operational finding is recorded: no automatic batchedCI deployment has fired for any main merge since pipeline 610 (2026-08-07 21:31 UTC) although the merge messages carry no skip marker, so deployed production remains 1806d20c/release a00f609a and does not yet include the Interview calibration or the Ask Pete readiness fixes. Resolving the trigger state and deploying belong to PS-ASK-PETE-AI-RELEASE-001 with owner-reviewed enablement. Pete's standing overnight authority then activated PS-ASK-PETE-AI-RELEASE-001 as the second disjoint lane for app-seam corrections, Candidate/release evidence, resolution of the automatic-trigger finding, and governed flag-off deployment; enablement remains excluded until Pete's review. RELEASE-001 closed 2026-08-08 with Ask Pete deployed and enabled live at release 9aa5080402d802b5f09b8627 (source 7bde4d0) under Pete's recorded approval. The owner-selected next outcome is PS-AGENT-OPERATIONS-001 via normal activation."
   },
   "activation_policy": {
     "enabled": true,
@@ -556,63 +556,10 @@
       "cleanup_contract": "Task-local only: after the implementation PR merges under its own authorization and recoverability is verified, remove only this lane's clean merged worktree and local/remote branch; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
       "sequence": "Merge the activation-only PR; create the dedicated implementation worktree from resulting origin/main; pass the package write preflight; implement the provider timeout, classification hardening, and test additions in small reviewed slices; run the provider-free debug matrix; self-review; independent exact-SHA review; close findings; open the Azure implementation PR and report; merge, deployment, and any enablement remain separately authorized",
       "branch_note": "Closed after merge-equivalence verification. Deployment was excluded from this lane and did not occur. After this closeout merges, cleanup removes only this lane's clean merged worktree and local/remote branch behind recovery tag archive/2026-08-08/ask-pete-readiness-002."
-    }
-  ],
-  "active_lanes": [
-    {
-      "package": "PS-WORKSHOP-ACCESS-001",
-      "outcome": "Require a trusted signed-in PeerSlate identity before any Workshop library, guided work, AI, Spark, review, preview-reset, save, or voice endpoint can render, mutate state, reserve spend, or call a provider; keep flag-off capability routes neutral and remove signed-out Workshop navigation and search discovery.",
-      "branch": "work/2026-08-07-workshop-access-001",
-      "writer": "Root Codex in C:\\Users\\peter\\Documents\\portfolio-workshop-access-20260807",
-      "delivery_path": "Protected",
-      "production_capable": true,
-      "source_checkpoint": "Authoritative Azure origin/main 85d0bd153bb7c49727c8845ca2017dc2de51a7af after PR 336 closed Interview Studio delivery to controlled idle with zero active lanes.",
-      "writable_surfaces": [
-        "workshop_routes.py",
-        "workshop_work_routes.py",
-        "templates/base.html",
-        "tests/test_auth.py",
-        "tests/test_navigation.py",
-        "tests/test_workshop_checkpoint.py",
-        "tests/test_workshop_flows.py",
-        "tests/test_workshop_work_session.py",
-        "tests/test_workshop_review.py",
-        "tests/test_workshop_spark.py",
-        "tests/test_workshop_voice.py",
-        "tests/test_workshop_polish.py",
-        "tests/test_workshop_access.py",
-        "docs/initiatives/PS-WORKSHOP-ACCESS-001/",
-        "docs/governance/CURRENT_LANES.json",
-        "docs/governance/CURRENT_BASELINE.yaml"
-      ],
-      "exclusions": [
-        "no Workshop product-flow, question, AI prompt, model, persistence, save-semantics, or visual redesign change",
-        "no Opportunity Slate, Interview Studio, Community, Journal, public profile, or homepage behavior change beyond hiding signed-out Workshop navigation and search entries",
-        "no schema, migration, canonical-data, authentication-provider, Easy Auth, secret, dependency, pipeline, or production-configuration change",
-        "no deletion of the dormant anonymous-preview implementation in this bounded access correction; production and ordinary development remain sign-in-required",
-        "no write to another branch, worktree, lane, dirty checkout, user-authored content, production data, or unrelated artifact",
-        "no merge, deployment, or live claim until separately authorized by the current control plane"
-      ],
-      "completion_evidence": [
-        "activation record merges from current origin/main and the exact implementation worktree passes PS-WORKSHOP-ACCESS-001 write preflight before any implementation write",
-        "all 29 Workshop endpoints have a centralized pre-execution boundary; ordinary anonymous HTML requests redirect safely to sign-in, anonymous voice returns a payload-free 401, and cross-site writes still fail before authentication",
-        "flag-off, session-subflag-off, and voice-off routes remain neutral 404s before identity resolution",
-        "anonymous requests cannot mutate preview/session state, read owner data, reserve AI or voice spend, or call Anthropic or Azure Speech; signed-in behavior and private no-store handling remain intact",
-        "Workshop navigation and search discovery are absent signed out and present only for a trusted principal while the Workshop flag is on",
-        "focused Workshop/auth/navigation tests, wider affected guardrails, complete-diff self-review, and independent Protected review pass on the exact candidate"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-07",
-          "decision": "Pete directed: 'Also, we need to put this behind the sign in page now.' This selects the exact Workshop-wide sign-in outcome and authorizes its bounded Protected implementation; it does not authorize a Workshop redesign or changes to the linked Opportunity Slate and Interview Studio products."
-        }
-      ],
-      "cleanup_contract": "Preserve all unrelated, dirty, user-owned, other-lane, legacy, visual-authority, mockup, and recovery material. After exact merge verification, remove only this package's verified clean activation and implementation worktrees/branches after package cleanup preflight.",
-      "sequence": "activation merge -> implementation worktree from new main -> write preflight -> centralized access boundary and signed-out nav correction -> focused and wider verification -> independent Protected review -> governed merge/release decision -> truthful closeout and bounded cleanup"
     },
     {
       "package": "PS-ASK-PETE-AI-RELEASE-001",
-      "outcome": "Take the merged, default-off Ask Pete Recruiter Evidence Companion through Protected release readiness: correct the app-seam findings (JSON 429 handler with Retry-After for limited routes, classified fail-closed response for a public-source manifest failure at /api/chat, .env.example documentation of PEERSLATE_ASK_PETE_GROUNDED_ENABLED), resolve the recorded automatic-CI-trigger finding, produce the PS-OPS-001 Candidate record, deploy the exact merged SHA flag-off through a governed pipeline path, and prepare owner-reviewed staged enablement with a proven flag-off rollback. The flag is not enabled and nothing is called live without Pete's review decision and exact-source verification.",
+      "outcome": "Complete and live. App-seam corrections merged via PR 342 (main 20e7051); live-provider fixes via PR 343 (main 7bde4d0, candidate afacb2d, tree-verified). Deployed by governed runs 642 and 652 with owner approval; live release 9aa5080402d802b5f09b8627. The grounded flag is enabled under Pete's recorded approval ('Live', 2026-08-08). Live verification: companion renders on the public resume, general questions answer with verified citations, the recruiter brief passed three of three final live attempts with the full flagship contract, cross-page routes healthy, legacy chat intact, and the flag-off rollback was proven live earlier the same day. Five real-provider convergence rounds and the accepted limitations are recorded in the completion report.",
       "branch": "work/2026-08-08-ask-pete-release-001",
       "writer": "Claude Opus 5 at extra-high effort as the sole delegated implementation writer in the dedicated portfolio-ask-pete-release-001 worktree, orchestrated by Claude Fable 5, which architects and reviews but does not hand-write the implementation",
       "delivery_path": "Protected",
@@ -676,7 +623,61 @@
         "sequence": "activation merge -> clean implementation worktree -> write preflight -> Opus implements app-seam slices -> Fable reviews -> full validation -> exact-SHA review -> Azure PR and policy -> recorded merge grant -> governed deploy flag-off -> Candidate/release evidence -> stop for Pete's enablement review"
       },
       "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged worktree and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
-      "sequence": "Merge the activation-only PR; create the dedicated implementation worktree from resulting origin/main; pass the package write preflight; implement the 429 and manifest-error app-seam corrections and .env.example documentation in small reviewed slices; validate and review the exact candidate; merge under recorded authority; resolve the automatic-trigger finding; deploy the exact merged SHA flag-off through a governed path; verify release identity and flag-off smoke; assemble the Candidate record; stop for Pete's enablement review; after his decision, staged enablement, live grounded verification, and rollback proof follow as their own recorded steps"
+      "sequence": "Merge the activation-only PR; create the dedicated implementation worktree from resulting origin/main; pass the package write preflight; implement the 429 and manifest-error app-seam corrections and .env.example documentation in small reviewed slices; validate and review the exact candidate; merge under recorded authority; resolve the automatic-trigger finding; deploy the exact merged SHA flag-off through a governed path; verify release identity and flag-off smoke; assemble the Candidate record; stop for Pete's enablement review; after his decision, staged enablement, live grounded verification, and rollback proof follow as their own recorded steps",
+      "branch_note": "Closed live. Cleanup follows recovery references. The owner revived the automatic CI trigger during this lane; the one stale-SHA automatic run was handed to the owner for cancellation."
+    }
+  ],
+  "active_lanes": [
+    {
+      "package": "PS-WORKSHOP-ACCESS-001",
+      "outcome": "Require a trusted signed-in PeerSlate identity before any Workshop library, guided work, AI, Spark, review, preview-reset, save, or voice endpoint can render, mutate state, reserve spend, or call a provider; keep flag-off capability routes neutral and remove signed-out Workshop navigation and search discovery.",
+      "branch": "work/2026-08-07-workshop-access-001",
+      "writer": "Root Codex in C:\\Users\\peter\\Documents\\portfolio-workshop-access-20260807",
+      "delivery_path": "Protected",
+      "production_capable": true,
+      "source_checkpoint": "Authoritative Azure origin/main 85d0bd153bb7c49727c8845ca2017dc2de51a7af after PR 336 closed Interview Studio delivery to controlled idle with zero active lanes.",
+      "writable_surfaces": [
+        "workshop_routes.py",
+        "workshop_work_routes.py",
+        "templates/base.html",
+        "tests/test_auth.py",
+        "tests/test_navigation.py",
+        "tests/test_workshop_checkpoint.py",
+        "tests/test_workshop_flows.py",
+        "tests/test_workshop_work_session.py",
+        "tests/test_workshop_review.py",
+        "tests/test_workshop_spark.py",
+        "tests/test_workshop_voice.py",
+        "tests/test_workshop_polish.py",
+        "tests/test_workshop_access.py",
+        "docs/initiatives/PS-WORKSHOP-ACCESS-001/",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml"
+      ],
+      "exclusions": [
+        "no Workshop product-flow, question, AI prompt, model, persistence, save-semantics, or visual redesign change",
+        "no Opportunity Slate, Interview Studio, Community, Journal, public profile, or homepage behavior change beyond hiding signed-out Workshop navigation and search entries",
+        "no schema, migration, canonical-data, authentication-provider, Easy Auth, secret, dependency, pipeline, or production-configuration change",
+        "no deletion of the dormant anonymous-preview implementation in this bounded access correction; production and ordinary development remain sign-in-required",
+        "no write to another branch, worktree, lane, dirty checkout, user-authored content, production data, or unrelated artifact",
+        "no merge, deployment, or live claim until separately authorized by the current control plane"
+      ],
+      "completion_evidence": [
+        "activation record merges from current origin/main and the exact implementation worktree passes PS-WORKSHOP-ACCESS-001 write preflight before any implementation write",
+        "all 29 Workshop endpoints have a centralized pre-execution boundary; ordinary anonymous HTML requests redirect safely to sign-in, anonymous voice returns a payload-free 401, and cross-site writes still fail before authentication",
+        "flag-off, session-subflag-off, and voice-off routes remain neutral 404s before identity resolution",
+        "anonymous requests cannot mutate preview/session state, read owner data, reserve AI or voice spend, or call Anthropic or Azure Speech; signed-in behavior and private no-store handling remain intact",
+        "Workshop navigation and search discovery are absent signed out and present only for a trusted principal while the Workshop flag is on",
+        "focused Workshop/auth/navigation tests, wider affected guardrails, complete-diff self-review, and independent Protected review pass on the exact candidate"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-07",
+          "decision": "Pete directed: 'Also, we need to put this behind the sign in page now.' This selects the exact Workshop-wide sign-in outcome and authorizes its bounded Protected implementation; it does not authorize a Workshop redesign or changes to the linked Opportunity Slate and Interview Studio products."
+        }
+      ],
+      "cleanup_contract": "Preserve all unrelated, dirty, user-owned, other-lane, legacy, visual-authority, mockup, and recovery material. After exact merge verification, remove only this package's verified clean activation and implementation worktrees/branches after package cleanup preflight.",
+      "sequence": "activation merge -> implementation worktree from new main -> write preflight -> centralized access boundary and signed-out nav correction -> focused and wider verification -> independent Protected review -> governed merge/release decision -> truthful closeout and bounded cleanup"
     }
   ],
   "paused_lanes": [

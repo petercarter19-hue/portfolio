@@ -484,3 +484,17 @@ Latency observed round 5: 6.7–28.4 s typical; 63.8 s worst (one recovered
 retry chain) — beyond the 45 s browser abort, shown to the visitor as the
 honest retry UI; accepted limitation, recorded. Ceiling 4 provider calls per
 question; typical 1.
+
+## Final release facts (closeout, 2026-08-08)
+
+- Deployed: runs 642 (20e7051) and 652 (7bde4d0), owner-approved; live release
+  9aa5080402d802b5f09b8627 verified via /healthz.
+- Enabled: PEERSLATE_ASK_PETE_GROUNDED_ENABLED=true under Pete's recorded
+  approvals ("go all the way", "Full approval", final confirmation "Live").
+- Live verified: companion renders on /petec/resume; general questions answer
+  with verified citations; recruiter brief 3/3 final live attempts with the
+  full flagship contract; homepage/contact 200; legacy chat intact.
+- Rollback: proven live same day (flag off -> legacy restored -> re-enabled).
+- Operational notes: automatic CI trigger revived by the owner during this
+  lane; one stale-SHA automatic run handed to the owner for cancellation;
+  worst-case retry latency and blind-resample limitations recorded above.
