@@ -118,3 +118,22 @@ influences a server-side contract decision, and a paid call can no longer run
 past the point where anyone can see it. Source authorization is untouched, and a
 test now pins that all four public purposes offer an identical approved source
 set, so the classification change moved no authorization boundary.
+
+## Closeout addendum (2026-08-08, orchestrator)
+
+- Reviewed implementation candidate: `8777a26307f60ecafffbff0bb761eb8b0ba74d7d`
+  (Opus 5 sole writer; Fable non-writer review, zero P0-P3 findings).
+- Final PR head: `28cd0ba` (candidate plus Pete's recorded merge grant).
+- PR 339 squash merge: exact main `b7afdc6bc95532da0cb62cd1cc021bcac62152f1`;
+  merged tree verified identical to the PR head tree.
+- Truth ladder: Implemented, Tested (58 ask_pete tests + 26 subtests; repo
+  suite 2,930 passed), Committed, Pushed, Reviewed, PR open, Merged.
+  NOT deployed, NOT enabled, NOT live.
+- Deployment finding for the release package: no automatic batchedCI run has
+  fired for any main merge since pipeline 610 (2026-08-07 21:31 UTC,
+  1806d20c), although merge messages carry no skip marker. Live /healthz
+  remains release a00f609a (source 1806d20c), which also predates the
+  Interview calibration merge. PS-ASK-PETE-AI-RELEASE-001 must resolve the
+  trigger state before claiming any deploy.
+- Flag state: PEERSLATE_ASK_PETE_GROUNDED_ENABLED off everywhere; live
+  enablement waits for Pete's review.

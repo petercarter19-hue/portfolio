@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-08T05:12:00Z",
+  "updated_at": "2026-08-08T06:35:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,8 +12,7 @@
     "authorized_at": "2026-08-05",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-WORKSHOP-ACCESS-001",
-      "PS-ASK-PETE-AI-READINESS-002"
+      "PS-WORKSHOP-ACCESS-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -32,7 +31,8 @@
       "PS-DELIVERY-CONTROL-001",
       "PS-COMMUNITY-PUBLIC-PILOT-001",
       "PS-INTERVIEW-STUDIO-INTEGRATION-001",
-      "PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001"
+      "PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001",
+      "PS-ASK-PETE-AI-READINESS-002"
     ],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -47,7 +47,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Pete explicitly selected the next outcome on 2026-08-07: put the complete Workshop experience behind PeerSlate sign-in now. PS-WORKSHOP-ACCESS-001 is the sole Protected writer for that boundary and its direct-bypass evidence. It may not change Workshop product flow, AI behavior, visual composition, schema, Opportunity Slate, Interview Studio, authentication-provider configuration, deployment, or production state. Release authority remains empty; production remains 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610. Pete then activated PS-ASK-PETE-AI-READINESS-002 as the second disjoint lane on Ask-specific surfaces only, under his 2026-08-08 recorded authority: sole overnight delivery by this program, full permission for the entire governed Ask Pete readiness-and-release sequence, Opus 5 extra-high implementing with Fable orchestrating and reviewing, and an explicit stop before live enablement: PEERSLATE_ASK_PETE_GROUNDED_ENABLED stays off pending Pete's review."
+    "exit_authority": "Pete explicitly selected the next outcome on 2026-08-07: put the complete Workshop experience behind PeerSlate sign-in now. PS-WORKSHOP-ACCESS-001 is the sole Protected writer for that boundary and its direct-bypass evidence. It may not change Workshop product flow, AI behavior, visual composition, schema, Opportunity Slate, Interview Studio, authentication-provider configuration, deployment, or production state. Release authority remains empty; production remains 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610. Pete then activated PS-ASK-PETE-AI-READINESS-002 as the second disjoint lane on Ask-specific surfaces only, under his 2026-08-08 recorded authority: sole overnight delivery by this program, full permission for the entire governed Ask Pete readiness-and-release sequence, Opus 5 extra-high implementing with Fable orchestrating and reviewing, and an explicit stop before live enablement: PEERSLATE_ASK_PETE_GROUNDED_ENABLED stays off pending Pete's review. READINESS-002 closed 2026-08-08 after PR 339 merged as exact main b7afdc6 with verified tree equivalence; the merge is source integration only. A key operational finding is recorded: no automatic batchedCI deployment has fired for any main merge since pipeline 610 (2026-08-07 21:31 UTC) although the merge messages carry no skip marker, so deployed production remains 1806d20c/release a00f609a and does not yet include the Interview calibration or the Ask Pete readiness fixes. Resolving the trigger state and deploying belong to PS-ASK-PETE-AI-RELEASE-001 with owner-reviewed enablement."
   },
   "activation_policy": {
     "enabled": true,
@@ -486,6 +486,74 @@
         "release_allowed_for remains empty and production remains 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610"
       ],
       "cleanup_contract": "Cleanup only. After the final closeout PR merges, pass package cleanup preflight, preserve recovery references, and remove only the verified clean synchronized integration and task-created activation branches/worktrees. Preserve the unrelated legacy Interview activation worktree and every dirty or user-owned artifact."
+    },
+    {
+      "package": "PS-ASK-PETE-AI-READINESS-002",
+      "outcome": "Complete. The audited P1 readiness risks are merged: PR 339 squash-merged reviewed content as exact main b7afdc6bc95532da0cb62cd1cc021bcac62152f1 (implementation candidate 8777a26 by Opus 5 sole writer, Fable zero-findings non-writer review, plus Pete's recorded merge grant 28cd0ba; merged tree verified identical to the candidate tree). Provider calls are bounded to one 30 s attempt with no SDK retries, strict recruiter purposes require an explicit action, and rate-limit/timeout/legacy-seam coverage is in place; tests/ask_pete 40->58, full repo suite 2930 passed. The feature remains default-off. NOT deployed: no automatic CI run fired for this merge (none has fired for any main merge since pipeline 610 at 1806d20c on 2026-08-07); production remains 1806d20c/release a00f609a. Deployment, enablement, and live verification belong to the separate release package.",
+      "branch": "work/2026-08-08-ask-pete-readiness-002",
+      "writer": "Claude Opus 5 at extra-high effort as the sole delegated implementation writer in the dedicated portfolio-ask-pete-readiness-002 worktree, orchestrated by Claude Fable 5, which architects and reviews but does not hand-write the implementation",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "source_checkpoint": "Current authoritative origin/main 2cb1ce056f149588d7096e8cde3868689b00cf4a after the Interview closeout and Workshop access activation, plus the 2026-08-07 read-only release-readiness audit against 1806d20c (Ask Pete source merged via PRs 315/320, deployed dormant via pipeline 610, flag off, no manifest drift, recovery tag archive/2026-08-07/ask-pete-recruiter-evidence-runtime-v1). The audit record and prep brief live in the owner's iCloud Claude folder, Ask Pete Release Prep 2026-08-07.",
+      "writable_surfaces": [
+        "services/ask_pete/",
+        "tests/ask_pete/",
+        "prompts/ask_pete/grounded_public_v1.md",
+        "docs/initiatives/PS-ASK-PETE-AI-READINESS-002/",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml"
+      ],
+      "exclusions": [
+        "no app.py, templates, static, azure-pipelines.yml, .env.example, SQL, secrets, provider settings, or shared operational tests",
+        "no services/ai_foundation, prompts/ai_foundation, or tests/ai_foundation change; a shared foundation change requires its own cross-consumer package",
+        "no manifest or resume-data change: data/ai_sources/ask_pete_public_v1.json and static/data/resume_data.json verified drift-free on 2026-08-07 and stay untouched",
+        "no visual change of any kind; the accepted Concept H eucalyptus, ivory, forest, aged-gold authority remains locked",
+        "no new route or endpoint; the existing POST /api/chat request and response contract is unchanged",
+        "no deployment, production configuration mutation, feature enablement, or live claim; PEERSLATE_ASK_PETE_GROUNDED_ENABLED stays default-off and flag-off behavior stays byte-identical",
+        "no write to Community, Interview Studio, or any other lane's surface, branch, worktree, checkpoint, stash, or artifact",
+        "no weakening of a failing test to make it pass and no bypass of preflight, policy, or review"
+      ],
+      "completion_evidence": [
+        "activation record merges and the implementation worktree starts clean from resulting origin/main with the package write preflight passing",
+        "the provider call carries an explicit bounded timeout and retry limit inside services/ask_pete/provider.py, degrading to the existing honest unavailable state",
+        "keyword-only /api/chat traffic resolves under the general public-profile contract; strict recruiter purposes require an explicit recognized action; the companion experience is unchanged",
+        "new tests cover the 429 rate-limit path, the server-side timeout degrade, and the flag-on legacy-page seam; all existing tests/ask_pete and tests/ai_foundation suites pass with deterministic provider-free fixtures",
+        "the PR 320 flag-off malformed-body hardening delta is documented truthfully in the package record",
+        "complete-diff self-review, git diff --check, and a changed-path allowlist audit pass",
+        "a fresh independent high-reasoning reviewer that did not write the code reviews the exact final candidate SHA and reports P0-P3; no merge with unresolved actionable findings",
+        "the Azure PR passes required policies without bypass; merge, deployment, enablement, and release remain separate facts and are not claimed"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-07",
+          "decision": "Pete received the read-only Ask Pete release-readiness packet recommending a source-only readiness package before any release package and replied 'Okay. Sounds good. Uh, let's get going however we can.', then 'go'. Recorded as owner selection of PS-ASK-PETE-AI-READINESS-002 as the next outcome; release integration and enablement remain a separate future Protected package."
+        },
+        {
+          "date": "2026-08-08",
+          "decision": "Pete assigned model routing in chat: Opus 5 at extra-high effort implements; Fable also reviews. Combined with his same-night grant of full permission for the entire package with review before anything goes live."
+        },
+        {
+          "date": "2026-08-08",
+          "decision": "After PR 339 went fully green on reviewed candidate 8777a26307f60ecafffbff0bb761eb8b0ba74d7d with a zero-findings non-writer review, Pete granted the merge in chat: 'Go', then explicitly 'Merger granted', and 'Keep going afterwards'. This authorizes adding this package to merge_allowed_for and completing PR 339, then continuing the governed sequence. Live enablement of PEERSLATE_ASK_PETE_GROUNDED_ENABLED remains excluded until Pete's review.",
+          "surface_note": "Recording this grant required amending the lane's own record, so docs/governance/CURRENT_LANES.json is added to writable_surfaces rather than written outside the declared scope, following the recorded PS-OPPORTUNITY-SLATE-001 precedent. delivery_preflight does not machine-check writable_surfaces; this is a recorded scope statement."
+        },
+        {
+          "date": "2026-08-08",
+          "decision": "Completing the closeout requires the paired baseline edit: tests/test_governance_pointers.py enforces that baseline active_packages exactly mirror ledger active_lanes, so no closeout can merge without touching CURRENT_BASELINE.yaml. Under Pete's standing 'Keep going afterwards' authority, the baseline is added to this lane's surfaces for the closeout commit only, with the same recorded-scope pattern as the merge grant."
+        }
+      ],
+      "model_routing": {
+        "decided_by": "Pete",
+        "date": "2026-08-08",
+        "architecture": "Claude Fable 5 (the session holding the owner conversation): plans, orchestrates, and slices the work from the 2026-08-07 read-only audit; does not hand-write implementation",
+        "implementation": "Claude Opus 5 at extra-high effort, sole delegated implementation writer in the dedicated clean worktree",
+        "independent_reviewer": "Claude Fable 5 reviews each slice and the exact final candidate SHA; it did not write the code",
+        "note": "Owner routing given verbatim in chat on 2026-08-08: Opus 5 extra-high implementing, Fable reviewing. Supersedes the earlier Sol-Max-preferred reviewer suggestion from the coordinator handoff.",
+        "sequence": "activation merge -> clean implementation worktree -> write preflight -> Fable slices and briefs -> Opus 5 extra-high implements per slice -> Fable reviews each slice -> full matrix and suites -> Fable complete-diff review of the exact candidate SHA -> finding closure -> Azure PR"
+      },
+      "cleanup_contract": "Task-local only: after the implementation PR merges under its own authorization and recoverability is verified, remove only this lane's clean merged worktree and local/remote branch; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
+      "sequence": "Merge the activation-only PR; create the dedicated implementation worktree from resulting origin/main; pass the package write preflight; implement the provider timeout, classification hardening, and test additions in small reviewed slices; run the provider-free debug matrix; self-review; independent exact-SHA review; close findings; open the Azure implementation PR and report; merge, deployment, and any enablement remain separately authorized",
+      "branch_note": "Closed after merge-equivalence verification. Deployment was excluded from this lane and did not occur. After this closeout merges, cleanup removes only this lane's clean merged worktree and local/remote branch behind recovery tag archive/2026-08-08/ask-pete-readiness-002."
     }
   ],
   "active_lanes": [
@@ -539,68 +607,6 @@
       ],
       "cleanup_contract": "Preserve all unrelated, dirty, user-owned, other-lane, legacy, visual-authority, mockup, and recovery material. After exact merge verification, remove only this package's verified clean activation and implementation worktrees/branches after package cleanup preflight.",
       "sequence": "activation merge -> implementation worktree from new main -> write preflight -> centralized access boundary and signed-out nav correction -> focused and wider verification -> independent Protected review -> governed merge/release decision -> truthful closeout and bounded cleanup"
-    },
-    {
-      "package": "PS-ASK-PETE-AI-READINESS-002",
-      "outcome": "Resolve the audited P1 enablement risks in the source-complete, default-off Ask Pete Recruiter Evidence Companion entirely inside Ask-specific surfaces: bound the provider call with an explicit server-side timeout and retry limit, stop keyword-only classification from escalating legacy /api/chat traffic into strict recruiter contracts, add the missing rate-limit, timeout, and flag-on legacy-seam tests, and record the flag-off hardening delta honestly. No deployment, enablement, provider, schema, visual, manifest, or configuration change; flag-off behavior remains byte-unchanged.",
-      "branch": "work/2026-08-08-ask-pete-readiness-002",
-      "writer": "Claude Opus 5 at extra-high effort as the sole delegated implementation writer in the dedicated portfolio-ask-pete-readiness-002 worktree, orchestrated by Claude Fable 5, which architects and reviews but does not hand-write the implementation",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "source_checkpoint": "Current authoritative origin/main 2cb1ce056f149588d7096e8cde3868689b00cf4a after the Interview closeout and Workshop access activation, plus the 2026-08-07 read-only release-readiness audit against 1806d20c (Ask Pete source merged via PRs 315/320, deployed dormant via pipeline 610, flag off, no manifest drift, recovery tag archive/2026-08-07/ask-pete-recruiter-evidence-runtime-v1). The audit record and prep brief live in the owner's iCloud Claude folder, Ask Pete Release Prep 2026-08-07.",
-      "writable_surfaces": [
-        "services/ask_pete/",
-        "tests/ask_pete/",
-        "prompts/ask_pete/grounded_public_v1.md",
-        "docs/initiatives/PS-ASK-PETE-AI-READINESS-002/",
-        "docs/governance/CURRENT_LANES.json"
-      ],
-      "exclusions": [
-        "no app.py, templates, static, azure-pipelines.yml, .env.example, SQL, secrets, provider settings, or shared operational tests",
-        "no services/ai_foundation, prompts/ai_foundation, or tests/ai_foundation change; a shared foundation change requires its own cross-consumer package",
-        "no manifest or resume-data change: data/ai_sources/ask_pete_public_v1.json and static/data/resume_data.json verified drift-free on 2026-08-07 and stay untouched",
-        "no visual change of any kind; the accepted Concept H eucalyptus, ivory, forest, aged-gold authority remains locked",
-        "no new route or endpoint; the existing POST /api/chat request and response contract is unchanged",
-        "no deployment, production configuration mutation, feature enablement, or live claim; PEERSLATE_ASK_PETE_GROUNDED_ENABLED stays default-off and flag-off behavior stays byte-identical",
-        "no write to Community, Interview Studio, or any other lane's surface, branch, worktree, checkpoint, stash, or artifact",
-        "no weakening of a failing test to make it pass and no bypass of preflight, policy, or review"
-      ],
-      "completion_evidence": [
-        "activation record merges and the implementation worktree starts clean from resulting origin/main with the package write preflight passing",
-        "the provider call carries an explicit bounded timeout and retry limit inside services/ask_pete/provider.py, degrading to the existing honest unavailable state",
-        "keyword-only /api/chat traffic resolves under the general public-profile contract; strict recruiter purposes require an explicit recognized action; the companion experience is unchanged",
-        "new tests cover the 429 rate-limit path, the server-side timeout degrade, and the flag-on legacy-page seam; all existing tests/ask_pete and tests/ai_foundation suites pass with deterministic provider-free fixtures",
-        "the PR 320 flag-off malformed-body hardening delta is documented truthfully in the package record",
-        "complete-diff self-review, git diff --check, and a changed-path allowlist audit pass",
-        "a fresh independent high-reasoning reviewer that did not write the code reviews the exact final candidate SHA and reports P0-P3; no merge with unresolved actionable findings",
-        "the Azure PR passes required policies without bypass; merge, deployment, enablement, and release remain separate facts and are not claimed"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-07",
-          "decision": "Pete received the read-only Ask Pete release-readiness packet recommending a source-only readiness package before any release package and replied 'Okay. Sounds good. Uh, let's get going however we can.', then 'go'. Recorded as owner selection of PS-ASK-PETE-AI-READINESS-002 as the next outcome; release integration and enablement remain a separate future Protected package."
-        },
-        {
-          "date": "2026-08-08",
-          "decision": "Pete assigned model routing in chat: Opus 5 at extra-high effort implements; Fable also reviews. Combined with his same-night grant of full permission for the entire package with review before anything goes live."
-        },
-        {
-          "date": "2026-08-08",
-          "decision": "After PR 339 went fully green on reviewed candidate 8777a26307f60ecafffbff0bb761eb8b0ba74d7d with a zero-findings non-writer review, Pete granted the merge in chat: 'Go', then explicitly 'Merger granted', and 'Keep going afterwards'. This authorizes adding this package to merge_allowed_for and completing PR 339, then continuing the governed sequence. Live enablement of PEERSLATE_ASK_PETE_GROUNDED_ENABLED remains excluded until Pete's review.",
-          "surface_note": "Recording this grant required amending the lane's own record, so docs/governance/CURRENT_LANES.json is added to writable_surfaces rather than written outside the declared scope, following the recorded PS-OPPORTUNITY-SLATE-001 precedent. delivery_preflight does not machine-check writable_surfaces; this is a recorded scope statement."
-        }
-      ],
-      "model_routing": {
-        "decided_by": "Pete",
-        "date": "2026-08-08",
-        "architecture": "Claude Fable 5 (the session holding the owner conversation): plans, orchestrates, and slices the work from the 2026-08-07 read-only audit; does not hand-write implementation",
-        "implementation": "Claude Opus 5 at extra-high effort, sole delegated implementation writer in the dedicated clean worktree",
-        "independent_reviewer": "Claude Fable 5 reviews each slice and the exact final candidate SHA; it did not write the code",
-        "note": "Owner routing given verbatim in chat on 2026-08-08: Opus 5 extra-high implementing, Fable reviewing. Supersedes the earlier Sol-Max-preferred reviewer suggestion from the coordinator handoff.",
-        "sequence": "activation merge -> clean implementation worktree -> write preflight -> Fable slices and briefs -> Opus 5 extra-high implements per slice -> Fable reviews each slice -> full matrix and suites -> Fable complete-diff review of the exact candidate SHA -> finding closure -> Azure PR"
-      },
-      "cleanup_contract": "Task-local only: after the implementation PR merges under its own authorization and recoverability is verified, remove only this lane's clean merged worktree and local/remote branch; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
-      "sequence": "Merge the activation-only PR; create the dedicated implementation worktree from resulting origin/main; pass the package write preflight; implement the provider timeout, classification hardening, and test additions in small reviewed slices; run the provider-free debug matrix; self-review; independent exact-SHA review; close findings; open the Azure implementation PR and report; merge, deployment, and any enablement remain separately authorized"
     }
   ],
   "paused_lanes": [
