@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 is the sole active writer on work/2026-08-08-interview-studio-functional-v1-001 for the public/browser-local Functional V1 only. PS-WORKSHOP-ACCESS-001 was owner-canceled before implementation and is closing without a Workshop behavior change. Release authority remains empty."
+  current_assignments: "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 owns its recorded Interview surfaces including app.py. PS-ASK-PETE-DIRECT-001 is the second disjoint Protected writer on work/2026-08-08-ask-pete-direct-001 (Opus 5 implements, Fable reviews). Release authority remains empty."
 
 governing_documents:
   bible:
@@ -61,6 +61,9 @@ active_packages:
   - id: PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001
     status: active_delivery
     scope: "Public/browser-local Interview Studio Functional V1 within the five existing runtime/test surfaces: open-ended tailored practice, persistent Interview Me/Interview AI/Video Practice modes, question-aware score-free coaching, local voice/video truth, and meaningful browser-local history/progress; no private-member, schema, Opportunity Slate write, global shell, deployment, or production change."
+  - id: PS-ASK-PETE-DIRECT-001
+    status: active_delivery
+    scope: "Dark private recruiter-question path: consent-first companion form, unregistered blueprint, gated additive migration, owner-only pull inbox; no app.py, sending, schema apply, deployment, or enablement."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -145,7 +148,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-WORKSHOP-ACCESS-001 is canceled and closing with no product change. PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 continues as the sole active lane: create its dedicated implementation worktree from current origin/main, pass write preflight, then implement and debug the recorded public/browser-local slices with Terra max and obtain Sol max independent review. Merge and deployment remain separate control-plane decisions."
+next_gate: "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 continues its recorded sequence. PS-ASK-PETE-DIRECT-001 begins after this record merges, its worktree starts from resulting origin/main on work/2026-08-08-ask-pete-direct-001, and write preflight passes; registration, schema apply, and enablement wait for their own recorded legs."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

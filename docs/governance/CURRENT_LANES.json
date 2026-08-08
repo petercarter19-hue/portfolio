@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-08T16:30:00Z",
+  "updated_at": "2026-08-08T17:35:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-08",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001"
+      "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
+      "PS-ASK-PETE-DIRECT-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -51,7 +52,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Pete reversed the 2026-08-07 Workshop sign-in direction on 2026-08-08: 'No, no, no sign in. You got way ahead of yourself. Just close the lane.' PS-WORKSHOP-ACCESS-001 was canceled before product implementation; no Workshop runtime, template, test, schema, configuration, deployment, or production mutation occurred. PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 remains the sole active writer on its five recorded runtime/test surfaces plus package folder. It may not touch Workshop, the shared header, private-member data, schema, Opportunity Slate writes, deployment, or production state. Ask Pete is live at release 9aa5080402d802b5f09b8627 (source 7bde4d0). Release authority remains empty."
+    "exit_authority": "Pete reversed the 2026-08-07 Workshop sign-in direction on 2026-08-08: 'No, no, no sign in. You got way ahead of yourself. Just close the lane.' PS-WORKSHOP-ACCESS-001 was canceled before product implementation; no Workshop runtime, template, test, schema, configuration, deployment, or production mutation occurred. PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 remains the sole active writer on its five recorded runtime/test surfaces plus package folder. It may not touch Workshop, the shared header, private-member data, schema, Opportunity Slate writes, deployment, or production state. Ask Pete is live at release 9aa5080402d802b5f09b8627 (source 7bde4d0). Release authority remains empty. Pete's standing authority then activated PS-ASK-PETE-DIRECT-001 as the second disjoint lane: the dark-by-construction private recruiter-question path on new and companion surfaces only, with app.py registration, schema apply, deployment, and enablement deferred to later recorded legs."
   },
   "activation_policy": {
     "enabled": true,
@@ -736,6 +737,66 @@
       },
       "cleanup_contract": "Preserve every unrelated, dirty, user-owned, other-lane, legacy, recovery, and visual-authority artifact. After an authorized merge and exact recoverability verification, remove only this package's verified clean activation and implementation worktrees and branches; never clean the primary checkout or another lane.",
       "sequence": "activation-only PR -> merge activation record -> implementation worktree from resulting origin/main -> package write preflight -> copy and SHA-256-lock the four exact approved functional-state sources into the package -> Sol xhigh architecture findings incorporated -> Terra max implements in phased slices -> focused and wider debugging -> complete-diff self-review -> Sol max exact-candidate review -> correct findings -> Azure implementation PR and required policy -> stop before deployment unless release authority is separately recorded"
+    },
+    {
+      "package": "PS-ASK-PETE-DIRECT-001",
+      "outcome": "Build the private recruiter-question path dark-by-construction: a consent-first bounded question form in the accepted companion's handoff card, one rate-limited idempotent POST endpoint in a new unregistered blueprint, an additive gated migration and allowlisted owner-scoped procedures for private storage, and an owner-only pull-based inbox page with read/archive — no outbound sending, no AI knowledge change, no public display, nothing registered in app.py yet. The two-line app.py blueprint registration is a later leg taken via the recorded-grant pattern only after PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 releases app.py; until then the feature has zero runtime effect. Replying never teaches Ask Pete; nothing becomes public without a separate explicit decision; the flag defaults off.",
+      "branch": "work/2026-08-08-ask-pete-direct-001",
+      "writer": "Claude Opus 5 at extra-high effort as the sole delegated implementation writer in the dedicated portfolio-ask-pete-direct-001 worktree, orchestrated by Claude Fable 5, which architects and reviews but does not hand-write the implementation",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "source_checkpoint": "Current authoritative origin/main cadbc55 after the Interview functional activation. Authority: the owner-approved package brief (iCloud, Ask Pete Release Prep 2026-08-07/05-DIRECT-001-PACKAGE-BRIEF.md) built from the 2026-08-08 read-only discovery; the PS-ASK-PETE-AI-001 backend-contract future-work section; Pete's standing full approval for all remaining packages.",
+      "writable_surfaces": [
+        "ask_pete_direct_routes.py",
+        "services/ask_pete_direct_service.py",
+        "services/database_service.py",
+        "templates/partials/ask_pete_evidence_companion.html",
+        "static/css/ask-pete-resume-evidence.css",
+        "static/js/ask-pete-evidence-companion.js",
+        "templates/ask_pete_inbox.html",
+        "SQL FIles/Migrations/proposed/",
+        "SQL FIles/Migrations/registry.json",
+        "SQL FIles/Verification/",
+        "tests/ask_pete_direct/",
+        ".env.example",
+        "docs/initiatives/PS-ASK-PETE-DIRECT-001/"
+      ],
+      "exclusions": [
+        "no app.py edit and no blueprint registration: the feature stays dark and unreachable until the later recorded-grant leg after the Interview lane releases app.py",
+        "no outbound email, SMS, push, or any new dependency or secret; the inbox is pull-based",
+        "no AI-knowledge change from questions or replies; no automatic publication; no public display of any question",
+        "no hard delete: archive-only in v1, so no destructive-operation gate is triggered",
+        "no production schema apply from this lane: the migration ships with registry, verifier, rollback, and disposable-gate rehearsal; the governed production apply happens with the registration leg",
+        "no material visual invention: the form reuses the accepted companion composer and handoff-card idioms; anything beyond returns to the owner/ChatGPT visual lane",
+        "no write to PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 surfaces (including app.py) or any other lane, branch, worktree, or artifact",
+        "no weakening of a failing test and no bypass of preflight, policy, review, or evidence"
+      ],
+      "completion_evidence": [
+        "activation record merges and the implementation worktree passes the package write preflight from resulting origin/main",
+        "the migration follows the house template with registry entry, verifier, rollback, and a local disposable-database apply/reapply/verify/rollback/forward rehearsal",
+        "the service resolves nothing itself, passes @UserKey through, mirrors SQL bounds app-side, and every new procedure is allowlisted",
+        "the POST endpoint enforces the /api/chat validation ladder, the 30-per-hour write floor, idempotency, and consent-required storage with truthful retention copy",
+        "the companion form reuses the accepted idioms, never auto-submits, renders sent/limited/error/unavailable states truthfully, and passes accessibility checks",
+        "the owner inbox is @owner_required on page and data routes, server-rendered, hardened, with read/archive as same-origin-strict POSTs",
+        "all tests run against a test app registering the blueprint directly; flag-off and unregistered states leave every existing page byte-identical",
+        "complete-diff self-review and Fable non-writer review of the exact candidate SHA report no unresolved actionable finding before the Azure PR"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-08",
+          "decision": "Pete's standing authority ('go all the way... Full approval', 'The approval is for all remaining packages', 'Keep going') selected this package after the Ask Pete release went live. Retention defaults (90-day auto-archive, 180-day purge) and consent copy are conservative drafts for Pete to revise before the flag ever turns on; live enablement remains his alone."
+        }
+      ],
+      "model_routing": {
+        "decided_by": "Pete",
+        "date": "2026-08-08",
+        "architecture": "Claude Fable 5 plans and slices from the banked discovery and brief; does not hand-write implementation",
+        "implementation": "Claude Opus 5 at extra-high effort, sole delegated writer in the dedicated clean worktree",
+        "independent_reviewer": "Claude Fable 5 reviews each slice and the exact final candidate SHA; it did not write the code",
+        "sequence": "activation merge -> clean worktree -> write preflight -> migration/service slice -> endpoint slice -> companion form slice -> inbox slice -> full validation -> exact-SHA review -> Azure PR under recorded authority; registration, schema apply, deployment, and enablement are later recorded legs"
+      },
+      "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged worktree and branches behind archive tags; preserve everything else.",
+      "sequence": "Merge the activation-only PR; create the implementation worktree; pass write preflight; implement the four dark slices with tests; self-review; Fable exact-SHA review; open and merge the Azure PR under recorded authority; hold registration, schema apply, deployment, and enablement for their own recorded legs."
     }
   ],
   "paused_lanes": [
