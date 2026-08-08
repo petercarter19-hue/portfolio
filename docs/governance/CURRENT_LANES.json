@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-08T07:05:00Z",
+  "updated_at": "2026-08-08T07:55:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -23,7 +23,8 @@
       "PS-COMMUNITY-PUBLIC-PILOT-001",
       "PS-INTERVIEW-STUDIO-INTEGRATION-001",
       "PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001",
-      "PS-ASK-PETE-AI-READINESS-002"
+      "PS-ASK-PETE-AI-READINESS-002",
+      "PS-ASK-PETE-AI-RELEASE-001"
     ],
     "cleanup_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -621,7 +622,8 @@
         "app.py",
         ".env.example",
         "tests/ask_pete/",
-        "docs/initiatives/PS-ASK-PETE-AI-RELEASE-001/"
+        "docs/initiatives/PS-ASK-PETE-AI-RELEASE-001/",
+        "docs/governance/CURRENT_LANES.json"
       ],
       "exclusions": [
         "no feature enablement: PEERSLATE_ASK_PETE_GROUNDED_ENABLED stays off in every environment until Pete's explicit recorded review decision",
@@ -651,6 +653,11 @@
         {
           "date": "2026-08-08",
           "decision": "Control-file surfaces are not claimable at activation while PS-WORKSHOP-ACCESS-001 records them (the activate validator refuses the overlap). When this lane's merge grant and closeout require ledger or baseline edits, they follow the recorded-grant surface-note pattern proven by PS-OPPORTUNITY-SLATE-001 and PS-ASK-PETE-AI-READINESS-002, each with the owner decision quoted in place."
+        },
+        {
+          "date": "2026-08-08",
+          "decision": "Merge grant under Pete's standing overnight authority recorded at activation ('full permission... the entire package', 'Merger granted', 'Keep going afterwards'). The implementation candidate passed Fable's zero-findings non-writer review and independent test verification; the slice-2 stop was accepted because the manifest failure already returns a classified fail-closed 502 (the readiness audit's premise was wrong and is corrected in the package README). Deployment and enablement remain separate recorded steps; enablement waits for Pete's review.",
+          "surface_note": "Recording this grant required amending the lane's own record, so docs/governance/CURRENT_LANES.json is added to writable_surfaces with the same recorded-scope pattern used by PS-OPPORTUNITY-SLATE-001 and PS-ASK-PETE-AI-READINESS-002."
         }
       ],
       "model_routing": {

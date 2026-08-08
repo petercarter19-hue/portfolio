@@ -335,19 +335,18 @@ class AskPeteChatRateLimitTests(TestCase):
 
     @patch("app.answer_public_question")
     @patch("app.client.messages.create")
-    def test_the_refused_request_body_is_flask_limiters_html_default(
+    def test_the_refused_request_is_json_with_a_retry_after_hint(
         self, create, grounded
     ) -> None:
-        """Recorded truth, not an endorsement.
+        """The refusal contract PS-ASK-PETE-AI-RELEASE-001 put in place.
 
-        /api/chat is otherwise a JSON contract, but app.py registers no 429
-        error handler, so a refused request returns Flask-Limiter's HTML page.
-        static/js/chatbot.js survives it — it falls back to {} when a body
-        will not parse and shows its own 429 sentence — so no visitor sees a
-        broken state. A JSON client that trusts the content type does not get
-        the shape it expects. PS-ASK-PETE-AI-READINESS-002 records this as an
-        open gap; closing it means an app.py error handler, which is outside
-        this package. Update this test when that lands.
+        PS-ASK-PETE-AI-READINESS-002 characterized the previous behavior: with
+        no 429 error handler registered, a refused request to this otherwise
+        JSON route returned Flask-Limiter's HTML page and no Retry-After, so a
+        JSON client got a body it could not parse and no idea when to retry.
+        That package recorded it as an open gap and said to update this test
+        when an app.py handler landed. It has, so these assertions pin the new
+        contract: a JSON error sentence, and a wait the caller can act on.
         """
         grounded.return_value = SimpleNamespace(payload={"response": "Answer."})
         question = "A distinctive visitor question that must not be echoed back."
@@ -357,9 +356,23 @@ class AskPeteChatRateLimitTests(TestCase):
         response = self.post_chat(question)
 
         self.assertEqual(response.status_code, 429)
-        self.assertFalse(response.is_json)
-        self.assertIn("text/html", response.content_type)
+        self.assertTrue(response.is_json)
+        self.assertEqual(
+            response.get_json(),
+            {"error": "Too many requests. Please wait a moment and try again."},
+        )
+
+        retry_after = response.headers.get("Retry-After")
+        self.assertIsNotNone(retry_after, "a refused caller is not told when to wait")
+        # The route's window is a minute, so the reset can never be further
+        # away than that (the extension's reset_at rounds one second up).
+        self.assertTrue(
+            1 <= int(retry_after) <= 61,
+            f"Retry-After {retry_after!r} is not a usable wait for a per-minute limit",
+        )
+
         body = response.get_data(as_text=True)
-        self.assertIn("Too Many Requests", body)
         self.assertNotIn(question, body)
+        # The exception description carries the limit string; it stays internal.
+        self.assertNotIn("per 1 minute", body)
         create.assert_not_called()

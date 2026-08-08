@@ -11,6 +11,7 @@ import re                                       # Lets us clean Markdown symbols
 import hashlib                                  # Creates opaque, per-member browser storage scopes
 import gzip                                     # Compresses eligible public text responses without a runtime dependency
 import ipaddress                                # Validates the forwarded caller address used for rate limiting
+import time                                     # Turns the limiter's own window reset into a Retry-After hint
 from datetime import datetime, timedelta        # Lets the Slate Feed compute live "2h ago" labels and week ranges
 from pathlib import Path
 from flask import Flask, g, make_response, render_template, request, jsonify, url_for, redirect, abort, session  # Added: request (reads incoming data), jsonify (sends JSON back)
@@ -4058,6 +4059,46 @@ def page_not_found(e):
         error_title='Page not found',
         error_message="That address doesn't exist on this site. It may have moved during a redesign, or the link had a typo.",
     ), 404
+
+
+def _rate_limit_retry_after_seconds():
+    """Whole seconds until the rate-limit window this request breached resets.
+
+    Flask-Limiter records the breached limit on the request context before it
+    raises, so the real reset timestamp is available to the handler below.
+    Werkzeug's own `retry_after` attribute is never populated by that
+    exception, which is why the value is read from the extension instead.
+    Fall back to a minute — the shortest window any limit in this file uses —
+    rather than omit the header, and never let this computation fail a
+    response that has already been decided.
+    """
+    try:
+        breached = limiter.current_limit
+        if breached is not None:
+            return max(1, int(breached.reset_at - time.time()))
+    except Exception:
+        app.logger.exception('Rate limit reset time was unavailable.')
+    return 60
+
+
+@app.errorhandler(429)
+def too_many_requests(_error):
+    # Every rate-limited route in this application is a JSON contract, but
+    # Flask-Limiter refuses a caller by raising werkzeug's TooManyRequests,
+    # whose default body is an HTML page carrying no Retry-After. A refused
+    # JSON client therefore received a body it could not parse and no idea
+    # when to try again. Answer in JSON — app-wide, so every limited route
+    # gains the same contract — and say when.
+    #
+    # The sentence is static on purpose. The exception's description holds the
+    # limit string ('10 per 1 minute'), which is operational detail a visitor
+    # does not need and an abusive caller should not be handed.
+    response = jsonify({
+        'error': 'Too many requests. Please wait a moment and try again.'
+    })
+    response.status_code = 429
+    response.headers['Retry-After'] = str(_rate_limit_retry_after_seconds())
+    return response
 
 
 @app.errorhandler(500)
