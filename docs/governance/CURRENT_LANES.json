@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-08T01:24:00Z",
+  "updated_at": "2026-08-08T02:05:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-05",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-INTERVIEW-STUDIO-INTEGRATION-001"
+      "PS-INTERVIEW-STUDIO-INTEGRATION-001",
+      "PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -43,7 +44,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-INTERVIEW-STUDIO-CALIBRATION-001 completed its exact owner-selected Smoked Eucalyptus visual-only source integration through reviewed candidate 284c6c79586526b52b69c4d9ff15172c862e6b56, successful Azure build 621, and PR 325 squash merge 8ee04e317f4ee4cbb3f057fd7a12d7a446121f8d. The merged tree exactly matches the reviewed candidate; 199 focused Interview and delivery tests passed with one expected skip. Its cleanup preflight passed and its clean task branch/worktree were removed with recovery references preserved. PS-INTERVIEW-STUDIO-INTEGRATION-001 remains the sole governance-only writer to repair state-coupled delivery-test fixtures and complete controlled-idle closeout. Release authority remains empty; deployed production remains 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610."
+    "exit_authority": "PS-INTERVIEW-STUDIO-CALIBRATION-001 completed its exact owner-selected Smoked Eucalyptus visual-only source integration through reviewed candidate 284c6c79586526b52b69c4d9ff15172c862e6b56, successful Azure build 621, and PR 325 squash merge 8ee04e317f4ee4cbb3f057fd7a12d7a446121f8d. The merged tree exactly matches the reviewed candidate; 199 focused Interview and delivery tests passed with one expected skip. Its cleanup preflight passed and its clean task branch/worktree were removed with recovery references preserved. PS-INTERVIEW-STUDIO-INTEGRATION-001 remains the governance-only closeout writer. PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001 may correct only the two state-coupled test-fixture assumptions recorded in its lane and package, without changing validator behavior, product code, schema, pipeline, release, deployment, or production state. Release authority remains empty; deployed production remains 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610."
   },
   "activation_policy": {
     "enabled": true,
@@ -485,6 +486,41 @@
       },
       "cleanup_contract": "Stop task-created servers and temporary processes. Preserve all dirty, unmerged, unrelated, PC-owned, user-owned, Community, and source-authority material. Remove only clean merged activation, integration, and Interview worktrees or branches after origin/main equivalence, recovery references, and the package cleanup preflight are proven.",
       "sequence": "Merge this phase-one closeout -> activate a disjoint test-fixture-only lane in the available second slot -> correct only state-coupled delivery tests -> merge and clean that fixture lane -> finalize controlled idle -> pass integration cleanup preflight -> remove only integration task artifacts -> stop before deployment."
+    },
+    {
+      "package": "PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001",
+      "outcome": "Make the delivery-preflight test fixtures independent of the checked-in baseline date and of a nonempty checked-in active-package list, so the already-authorized Interview Studio governance lane can complete an honest controlled-idle closeout without changing validator behavior.",
+      "branch": "work/2026-08-08-delivery-preflight-closeout-fixture-001",
+      "writer": "Root Codex in C:\\Users\\peter\\Documents\\portfolio-delivery-preflight-closeout-fixture-20260808",
+      "delivery_path": "Bounded",
+      "production_capable": false,
+      "source_checkpoint": "Authoritative origin/main 778d51ee8cdebb611b246138321322888def9983 after Interview Studio integration phase-one PR 333 merged; activation must merge before the implementation worktree is created.",
+      "writable_surfaces": [
+        "tests/test_delivery_preflight.py",
+        "docs/initiatives/PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001/"
+      ],
+      "exclusions": [
+        "no change to scripts/delivery_preflight.py, validator behavior, activation policy, or max_active_lanes",
+        "no removal, modification, displacement, or write to PS-INTERVIEW-STUDIO-INTEGRATION-001 or another lane",
+        "no product code, route, backend, schema, migration, visual, pipeline, configuration, release, deployment, or production behavior change",
+        "no write outside the exact test file and new package folder",
+        "no cleanup before exact merge verification and a successful cleanup preflight"
+      ],
+      "completion_evidence": [
+        "activation merges from current origin/main and the implementation worktree passes PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001 write preflight before any implementation write",
+        "the updated_at mutation derives from the fixture's current value instead of hard-coding 2026-08-07",
+        "the synthetic origin baseline creates one ordinary active-package item only when the synthetic ledger has exactly one package and the checked-in active_packages list is empty",
+        "focused delivery-preflight and governance-pointer tests, JSON/YAML validation, and exact diff-boundary checks pass",
+        "Azure PR policy passes on the exact candidate before merge; merged-main equivalence and cleanup preflight pass before removing only this lane's clean branch/worktree"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-08",
+          "decision": "Pete explicitly authorized the temporary bounded PS-DELIVERY-CONTROL-001 fixture-stability lane as test-fixture correction only, with no validator change, lane-limit change, product code, or displacement of Ask Pete, and then directed this session to finish the Interview Studio closeout."
+        }
+      ],
+      "cleanup_contract": "Preserve all unrelated, dirty, user-owned, other-lane, legacy activation, and recovery material. After exact merge verification and cleanup preflight, remove only this clean implementation worktree, its local and remote task branch, and task-created temporary artifacts, with recovery references preserved.",
+      "sequence": "activation merge -> create implementation worktree from new origin/main -> write preflight -> two fixture-only corrections -> focused verification and self-review -> Azure PR policy -> merge -> exact-main verification -> cleanup preflight -> bounded cleanup -> return control to PS-INTERVIEW-STUDIO-INTEGRATION-001"
     }
   ],
   "paused_lanes": [
