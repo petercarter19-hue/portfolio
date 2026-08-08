@@ -1,5 +1,65 @@
 # PeerSlate Completion Record
 
+## 2026-08-07 protected recovery and public-demo release closeout
+
+- **Task/package and delivery path:** `PS-COMMUNITY-PUBLIC-PILOT-001`,
+  Protected.
+- **Outcome and member/site effect:** **Conditional owner pilot live.** The
+  owner-only canonical Community runtime, protected Voice workflow, media and
+  conversation lifecycle, retention/restore procedures, and independent
+  maintenance runner are deployed. When the successful canonical Feed read is
+  empty, `/the-slate` presents the owner-approved, clearly labelled Pete-only
+  public demo. Its text, local attachment preview, Respond, comment, Motion
+  cards, conversation, and Voice controls are hands-on but have no publish or
+  send action and create no Community record. A real public post replaces the
+  demo automatically; demo and canonical rows never mix.
+- **Branch, base, final SHA, and changed paths:** recovery branch
+  `work/2026-08-07-community-revival-safety-v1`, activated from
+  `819d348928f73ac3b526801f43dd370b1b6b06c1`; reviewed recovery merged through
+  PR 326, deployment guard through PR 327, and public demo through PR 328 as
+  exact main `1806d20c23736140fea787ea7cd8fb105c99e7f9`. Changed paths are the
+  package-recorded Community runtime, maintenance, additive migration,
+  pipeline, tests, demo projection, and Community-only UI/evidence surfaces.
+- **Verification performed and result:** recovery validation passed 489
+  relevant tests and 2,901 repository tests with 5 intentional skips; the
+  public-demo follow-up passed 329 relevant tests, JavaScript/Python/dependency
+  checks, desktop/narrow browser checks, and deterministic signed-out and
+  signed-in Voice proofs. Independent Protected review reproduced 116 focused
+  tests plus the Voice browser proof with no blocking finding. Azure PR policy
+  passed without bypass. Production pipeline 610 succeeded for the exact
+  merged SHA. Live `/healthz` is healthy, the Feed API returns
+  `demo_mode=true` with one item and a truthful caught-up state, the browser
+  shows 12 Motion cards with no console error, and unsigned post/Voice commands
+  fail closed at the same-origin and authentication boundaries.
+- **Schema, maintenance, and release state:** generated production state shows
+  all 25 registered production migrations through additive
+  `PS-COMMUNITY-REVIVAL-001`; no existing migration was rewritten. Community
+  visibility is enabled on `peerslate-pete`. The independent hourly
+  maintenance flag is enabled; scheduled runs 609, 611, and 612 succeeded
+  under the narrow maintenance identity. Production reports opaque release
+  `a00f609a6f82870292a3a0d5` for exact deployed source `1806d20c...`.
+- **Protected boundaries:** identity remains server-derived; only the
+  configured owner can mutate canonical Community state; drafts remain local
+  and private; Public selection, confirmation, reviewed Voice transcript
+  insertion, and publish/send remain separate actions. Signed-out and
+  non-owner mutation is denied. Public demo Voice never uploads or transcribes;
+  signed-in owner Voice uses the existing transient Speech boundary.
+- **Known limits:** this is not broad Community launch. No broader member
+  authorship, messaging, AI publication, public audio/video, alternate
+  audience, or Journal projection is enabled. No canonical public post exists
+  at closeout, so the live demo is intentionally visible. The final automated
+  browser was signed out and therefore did not create a production post or
+  exercise a real authenticated mutation; doing so would contradict Pete's
+  requested no-submit review boundary. The real owner path is deployed and
+  test-covered, but its first live publish remains a deliberate owner action.
+- **Next action:** `None` for this release task. A later owner-authored post may
+  be published through the separate signed-in composer when Pete chooses; any
+  expansion beyond the narrow owner pilot requires a new activated package.
+
+The earlier local-only records below remain historical evidence and are
+superseded wherever they describe Community as unmerged, flag-off, or lacking
+Voice/release work.
+
 ## 2026-08-01 primary Feed continuation addendum
 
 The current bounded result is recorded in

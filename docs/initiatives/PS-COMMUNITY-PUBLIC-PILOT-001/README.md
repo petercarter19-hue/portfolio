@@ -22,14 +22,17 @@
 - **Community Voice status:** **P0 usable-release requirement; exact visual
   authority locked; the primary-comment slice and its propagation to the
   remaining approved composers passed local Protected review.**
-- **Status:** Recovery implementation is active from current `origin/main`.
-  The approved Feed, full conversation, replies, attachments, and protected
-  Voice implementation are preserved. Community maintenance has been removed
-  from HTTP request paths, the additive owner-scoped cleanup migration passed
-  disposable proof, and release validation is in progress. Both maintenance
-  and the Community pilot remain disabled in production until the governed
-  release sequence in
-  `COMMUNITY_REVIVAL_SAFETY_ARCHITECTURE_2026-08-07.md` passes.
+- **Status:** **Conditional owner pilot live.** Recovery and the public-demo
+  amendment are merged at `1806d20c23736140fea787ea7cd8fb105c99e7f9` and
+  production pipeline 610 succeeded. The Community flag is enabled; the
+  approved labelled Pete-only demo appears only when the canonical Feed is
+  empty and is replaced—not blended—when a real public post exists. The
+  no-publish sandbox exposes text, local attachment preview, Respond, comment,
+  conversation, and Voice behavior without creating Community activity.
+  Separately scheduled maintenance is enabled and succeeded in hourly runs
+  609, 611, and 612. This is not broad member launch: signed-out writes,
+  non-owner writes, messaging, AI publishing, and broader authorship remain
+  unavailable.
 
 ## PC-to-Mac continuation
 

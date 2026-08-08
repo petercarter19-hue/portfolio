@@ -703,7 +703,7 @@ class DeliveryPreflightTests(unittest.TestCase):
         mutations = {
             "updated_at": (
                 approved_text.replace(
-                    'updated_at: "2026-08-06"',
+                    'updated_at: "2026-08-07"',
                     'updated_at: "2099-01-01"',
                     1,
                 ).encode("utf-8"),

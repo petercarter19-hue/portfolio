@@ -4,19 +4,19 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-06"
+updated_at: "2026-08-07"
 
 authority:
   remote: origin
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "896fd056b3c43248b9474e37bf6b9d253dc856b0"
-  deployed_pipeline: 560
-  live_release: "668080a833260b3aeed84104"
-  application_behavior_commit: "896fd056b3c43248b9474e37bf6b9d253dc856b0"
-  application_behavior_pipeline: 560
-  note: "Automatic pipeline 560 passed for exact main 896fd056b3c43248b9474e37bf6b9d253dc856b0 and live /healthz release 668080a833260b3aeed84104 is healthy. The entire Opportunity Slate plus the save-means-confirmed rule and dormant Workshop backlog wiring are live. Governed schema run 565 applied only PS-WORKSHOP-002 at exact source d7e996e45449579fbf370a9e1263f8725b1d753f, moving the production ledger 23->24 with all prior rows unchanged. Pete's existing member-authored knowledge backlog becomes confirmed on his next signed-in visit; no further application deployment is required. Community remains flag-off. This record is not a substitute for fetching origin and verifying Azure/live state before a new claim."
+  deployed_main_commit: "1806d20c23736140fea787ea7cd8fb105c99e7f9"
+  deployed_pipeline: 610
+  live_release: "a00f609a6f82870292a3a0d5"
+  application_behavior_commit: "1806d20c23736140fea787ea7cd8fb105c99e7f9"
+  application_behavior_pipeline: 610
+  note: "Pipeline 610 passed Build and Deploy for exact main 1806d20c23736140fea787ea7cd8fb105c99e7f9. The protected Community recovery, exact additive PS-COMMUNITY-REVIVAL-001 migration, independently scheduled maintenance, owner-pilot flag, and clearly labelled Pete-only public demo are live. /healthz release a00f609a6f82870292a3a0d5 is healthy; /api/v1/community/feed returns demo_mode=true with one item because no canonical public post exists. The public sandbox has no publish/send action and stores no Community activity. Scheduled maintenance runs 609, 611, and 612 succeeded. Broader member authoring remains unavailable. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-INTERVIEW-STUDIO-CALIBRATION-001 remains the sole active writer on its recorded visual-only surfaces. PS-COMMUNITY-PUBLIC-PILOT-001 is the second disjoint active writer on its exact recovery surfaces from work/2026-08-07-community-revival-safety-v1. PS-ASK-PETE-AI-001 and PS-DELIVERY-CONTROL-001 remain separate closing records; every former Ask Pete surface, including app.py, was relinquished before Community activation."
+  current_assignments: "PS-INTERVIEW-STUDIO-CALIBRATION-001 remains the sole active writer on its recorded visual-only surfaces. PS-COMMUNITY-PUBLIC-PILOT-001 is released and relinquished to a closing record; no active Community writer remains. PS-ASK-PETE-AI-001 and PS-DELIVERY-CONTROL-001 remain separate closing records."
 
 governing_documents:
   bible:
@@ -61,9 +61,6 @@ active_packages:
   - id: PS-INTERVIEW-STUDIO-CALIBRATION-001
     status: active_delivery
     scope: "Visual-only calibration of public Interview Studio to the locked sage authority and V3 structure within four runtime/test files and one package folder; no behavior, backend, schema, private-member, merge, deployment, or production change."
-  - id: PS-COMMUNITY-PUBLIC-PILOT-001
-    status: active_delivery
-    scope: "Protected recovery of the existing owner-only Community pilot without new visual or product direction: reconcile e51c9c, remove maintenance from request paths, add independently default-off bounded maintenance, add the immutable uploader-scoped correction with governed disposable proof, bound waits, debug, review, then use exact-source governed migration, deployment, staged enablement, and live verification."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -78,7 +75,7 @@ scoped_findings:
   - id: pipeline_schema_checkpoint_order
     blocks: "Only unattended release claims under the current combined production stage. Automatic run 563 had schemaAction=none but still entered the database-schema approval because Azure evaluates the deployment environment before the schema job condition; it was canceled without production mutation. Run 565 also required approval before its read-only production preflight could print the plan. PS-AGENT-OPERATIONS-001 must split ordinary web and schema stages, put read-only schema preflight before any mutating checkpoint, and retain break-glass approval only for destructive operations."
   - id: community_reenablement
-    blocks: "Community public-pilot re-enablement until ownership is singular, maintenance leaves the request path, dependency waits are bounded, and release evidence passes."
+    blocks: "Nothing since 2026-08-07: resolved by the singular Community recovery lane, request-path maintenance removal, bounded waits, additive schema proof/apply, exact-source deployment, staged maintenance and pilot enablement, and live public-demo verification. Kept for provenance; broader member authoring still requires its own package."
 
 completed_packages:
   - PS-DELIVERY-PREFLIGHT-001
@@ -128,6 +125,7 @@ completed_packages:
   - PS-OPPORTUNITY-SLATE-001
   - PS-DATA-FOUNDATION-001
   - PS-ASK-PETE-AI-001
+  - PS-COMMUNITY-PUBLIC-PILOT-001
 
 retired_packages:
   - id: PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001
@@ -139,7 +137,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-INTERVIEW-STUDIO-CALIBRATION-001 continues independently on its five disjoint visual-only surfaces. PS-COMMUNITY-PUBLIC-PILOT-001 may begin only after this activation record merges, a dedicated implementation worktree starts from resulting origin/main, and package write preflight passes. Community remains flag-off through implementation and review; production migration, deployment, maintenance enablement, and pilot enablement follow only the exact recorded Protected evidence sequence."
+next_gate: "PS-INTERVIEW-STUDIO-CALIBRATION-001 continues independently on its five disjoint visual-only surfaces. Community is a Conditional owner pilot with a live labelled public demo and no active writer. Any broader member authorship, messaging, AI use, or new audience requires a separate activated package."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
