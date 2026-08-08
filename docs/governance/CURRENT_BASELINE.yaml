@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-INTERVIEW-STUDIO-CALIBRATION-001 remains the sole product writer on its recorded visual-only surfaces. PS-INTERVIEW-STUDIO-INTEGRATION-001 is the second disjoint, governance-only writer on work/2026-08-07-interview-studio-integration-001 for the bounded PR 325 merge-authorization and cleanup sequence. PS-COMMUNITY-PUBLIC-PILOT-001 is released and relinquished to a closing record; no active Community writer remains."
+  current_assignments: "PS-INTERVIEW-STUDIO-CALIBRATION-001 owns its visual-only product surfaces. PS-INTERVIEW-STUDIO-INTEGRATION-001 owns governance records on work/2026-08-07-interview-studio-integration-001 for PR 325 merge and cleanup. Community is released and closed."
 
 governing_documents:
   bible:
@@ -60,7 +60,7 @@ theme: light_modern_blue_dark_theme_paused
 active_packages:
   - id: PS-INTERVIEW-STUDIO-CALIBRATION-001
     status: active_delivery
-    scope: "Visual-only calibration of public Interview Studio to the locked sage authority and V3 structure within four runtime/test files and one package folder; no behavior, backend, schema, private-member, merge, deployment, or production change."
+    scope: "Visual-only public Interview Studio calibration; refreshed verification, squash merge, and bounded cleanup are authorized with no behavior, backend, schema, private-member, deployment, or production change."
   - id: PS-INTERVIEW-STUDIO-INTEGRATION-001
     status: active_delivery
     scope: "Governance-only completion of the already reviewed Interview Studio candidate through refreshed exact-SHA evidence, PR 325 squash merge, authoritative-main verification, and task-local cleanup; no product, release, deployment, or production change."
@@ -140,7 +140,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "After this activation record merges, create only PS-INTERVIEW-STUDIO-INTEGRATION-001 on work/2026-08-07-interview-studio-integration-001 from the resulting origin/main, pass its write preflight, and record Pete's bounded PR 325 merge and cleanup authority without deployment authority. The existing Interview candidate must then be refreshed, independently reviewed at its new exact SHA, pass Azure policy and merge preflight, and merge by squash before any cleanup."
+next_gate: "Merge PS-INTERVIEW-STUDIO-INTEGRATION-001 through Azure policy; refresh and re-review PR 325 on resulting main; require a new successful build and merge preflight; squash-merge; verify authoritative main; run cleanup preflight; remove only clean task-local artifacts; stop before deployment."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
