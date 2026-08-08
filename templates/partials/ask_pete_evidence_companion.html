@@ -99,6 +99,36 @@
             hidden
         ></section>
 
+        {%- if config.get('PEERSLATE_ASK_PETE_DIRECT_ENABLED', false) is sameas true %}
+        {#
+            PS-ASK-PETE-DIRECT-001. This element renders nothing a visitor can
+            see. It exists only to tell the companion controller that the
+            private question path is available and where it lives; the form
+            itself is built inside the accepted handoff card by
+            ask-pete-evidence-companion.js, reusing the composer classes and
+            the same safe DOM APIs as the rest of that card.
+
+            The endpoint is a literal, not url_for(...): ask_pete_direct_routes
+            is deliberately left unregistered until its recorded registration
+            leg, and url_for would raise BuildError for an endpoint no
+            application knows. tests/ask_pete_direct/test_companion.py asserts
+            this literal and DIRECT_QUESTION_PATH are the same string.
+
+            `is sameas true` rather than plain truthiness, matching the
+            blueprint's own `is True` check: a "false" string from an
+            environment file must never open this.
+
+            The whole block is inside the conditional so that with the flag off
+            - which is every deployment today - this partial renders
+            byte-for-byte what it rendered before this package existed.
+        #}
+        <div
+            data-ask-pete-direct-config
+            data-ask-pete-direct-endpoint="/api/ask-pete/direct-question"
+            hidden
+        ></div>
+        {% endif %}
+
         <section class="ask-pete-evidence-recovery" data-ask-pete-recovery hidden aria-labelledby="ask-pete-recovery-title">
             <h3 id="ask-pete-recovery-title" data-ask-pete-recovery-title>Continue with Pete's public resume</h3>
             <p data-ask-pete-recovery-message></p>

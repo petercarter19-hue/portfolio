@@ -13,6 +13,57 @@
     const RECOVERY_PHASES = new Set(['rate_limited', 'unverifiable', 'network_error', 'timeout', 'unavailable', 'validation_error']);
     const ANSWER_FIRST_PHASES = new Set(['loading', 'slow', 'answered', ...RECOVERY_PHASES]);
 
+    /* PS-ASK-PETE-DIRECT-001: the private question form inside the handoff
+       card. It appears only when the server rendered the direct-config element
+       (flag on), and it sends nothing until a person ticks the consent box and
+       chooses Send. Every string below is authored here, exactly like the rest
+       of the handoff card's copy; no model output is ever placed in markup by
+       anything other than textContent / value. */
+    const MAX_DIRECT_QUESTION_LENGTH = 2000;
+    const MAX_DIRECT_CONTACT_LENGTH = 300;
+    const DIRECT_HONEYPOT_FIELD = 'company_website';
+    const DIRECT_COPY = {
+        summary: 'Send this question to Pete privately',
+        intro: 'Ask Pete answers only from information Pete approved for the public. If your question needs Pete himself, send it to him here.',
+        questionLabel: 'Your question for Pete',
+        contactLabel: 'How Pete can reach you (optional)',
+        contactHelp: 'Whatever you want him to have - a name, a company, an email address. Leave it blank and he will have no way to reply.',
+        honeypotLabel: 'Company website',
+        consent: "What happens to this: your question, and anything you type above, are stored privately for Pete. Only Pete can read them. They are never published, never shown on this site, and never used to teach Ask Pete anything. Pete replies himself, using the contact details you chose to leave - nothing is sent back automatically, and he reads these on his own schedule. Pete's retention policy for these messages is to archive them after 90 days and remove them after 180.",
+        agree: 'I agree to send this question, and anything I typed above, to Pete privately.',
+        submit: 'Send to Pete',
+        meta: 'Nothing is sent until you choose Send to Pete.',
+        needQuestion: 'Not sent - write the question you want Pete to answer.',
+        tooLong: `Not sent - keep the question to ${MAX_DIRECT_QUESTION_LENGTH.toLocaleString()} characters or fewer.`,
+        contactTooLong: `Not sent - keep the contact details to ${MAX_DIRECT_CONTACT_LENGTH} characters or fewer.`,
+        needConsent: 'Not sent - agree to the note above first.',
+        sending: 'Sending your question to Pete...',
+        sent: 'Sent privately to Pete. He reads these on his own schedule and replies himself if he has something useful to say.',
+        alreadySent: 'That question was already sent. Pete reads these on his own schedule.',
+        limited: 'Not sent - too many questions from this connection just now. You can try again later, or use the contact link above.',
+        unavailable: 'Not sent - sending a question to Pete directly is unavailable right now. You can use the contact link above.',
+        error: 'Not sent - the service could not be reached. You can try again, or use the contact link above.',
+    };
+
+    function directRequestKey() {
+        const uuid = window.crypto && typeof window.crypto.randomUUID === 'function'
+            ? window.crypto.randomUUID()
+            : null;
+        if (uuid) return uuid;
+        /* A non-secure context (plain http, e.g. a local preview) has no
+           randomUUID. Any unpredictable, per-attempt string satisfies the
+           idempotency contract; it is never an identifier of anything. */
+        const bytes = new Uint8Array(16);
+        if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+            window.crypto.getRandomValues(bytes);
+        } else {
+            for (let index = 0; index < bytes.length; index += 1) {
+                bytes[index] = Math.floor(Math.random() * 256);
+            }
+        }
+        return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+    }
+
     function isPlainObject(value) {
         return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
     }
@@ -130,6 +181,19 @@
             recoveryMessage: companion.querySelector('[data-ask-pete-recovery-message]'),
         };
         if (Object.values(elements).some((value) => !value)) return;
+
+        /* PS-ASK-PETE-DIRECT-001. Deliberately NOT a member of `elements`: that
+           object's all-or-nothing guard above would disable the ENTIRE
+           companion whenever this optional element is absent, which is every
+           deployment today. Absent config simply means no private form, and
+           everything else behaves exactly as it did before. The endpoint is
+           re-validated as a same-origin path here rather than trusted because
+           it arrives from the DOM. */
+        const directConfig = companion.querySelector('[data-ask-pete-direct-config]');
+        const directEndpoint = directConfig
+            && isSafeSameOriginPath(directConfig.dataset.askPeteDirectEndpoint)
+            ? directConfig.dataset.askPeteDirectEndpoint
+            : null;
 
         const state = {
             layout: 'wide_rail', open: false, phase: 'idle', draft: '',
@@ -496,6 +560,201 @@
             return typeof value === 'string' && /^\/[a-z0-9/_-]*$/i.test(value);
         }
 
+        function renderDirectQuestionForm(payload, sequence) {
+            /* Rendered only when the server said the private path exists. With
+               the flag off the config element is not in the document at all,
+               so this returns null and the handoff card is exactly what it was
+               before this package. */
+            if (!directEndpoint) return null;
+
+            const details = makeElement('details', 'ask-pete-direct');
+            const summary = makeElement('summary', 'ask-pete-direct__summary', DIRECT_COPY.summary);
+            details.appendChild(summary);
+            appendText(details, 'p', 'ask-pete-direct__intro', DIRECT_COPY.intro);
+
+            const form = makeElement('form', 'ask-pete-evidence-composer ask-pete-direct__form');
+            form.noValidate = true;
+
+            const questionId = `ask-pete-direct-question-${sequence}`;
+            const questionLabel = appendText(form, 'label', null, DIRECT_COPY.questionLabel);
+            questionLabel.htmlFor = questionId;
+            const field = makeElement('div', 'ask-pete-evidence-composer__field');
+            const questionInput = makeElement('textarea');
+            questionInput.id = questionId;
+            questionInput.rows = 3;
+            questionInput.maxLength = MAX_DIRECT_QUESTION_LENGTH;
+            /* The model's suggested wording, placed as a VALUE - never as
+               markup - and fully editable. The person sends their own words. */
+            questionInput.value = safeText(payload.handoff.question).trim();
+            const submit = makeElement('button', null, DIRECT_COPY.submit);
+            submit.type = 'submit';
+            submit.dataset.askPeteSubmit = '';
+            field.appendChild(questionInput);
+            field.appendChild(submit);
+            form.appendChild(field);
+
+            const contactId = `ask-pete-direct-contact-${sequence}`;
+            const contactHelpId = `ask-pete-direct-contact-help-${sequence}`;
+            const contactLabel = appendText(form, 'label', null, DIRECT_COPY.contactLabel);
+            contactLabel.htmlFor = contactId;
+            const contactInput = makeElement('textarea');
+            contactInput.id = contactId;
+            contactInput.rows = 2;
+            contactInput.maxLength = MAX_DIRECT_CONTACT_LENGTH;
+            contactInput.setAttribute('aria-describedby', contactHelpId);
+            form.appendChild(contactInput);
+            const contactHelp = appendText(form, 'p', 'ask-pete-direct__help', DIRECT_COPY.contactHelp);
+            contactHelp.id = contactHelpId;
+
+            const honeypot = makeElement('div', 'ask-pete-direct__honeypot');
+            honeypot.setAttribute('aria-hidden', 'true');
+            const honeypotId = `ask-pete-direct-hp-${sequence}`;
+            const honeypotLabel = appendText(honeypot, 'label', null, DIRECT_COPY.honeypotLabel);
+            honeypotLabel.htmlFor = honeypotId;
+            const honeypotInput = makeElement('textarea');
+            honeypotInput.id = honeypotId;
+            honeypotInput.rows = 1;
+            honeypotInput.tabIndex = -1;
+            honeypotInput.autocomplete = 'off';
+            honeypot.appendChild(honeypotInput);
+            form.appendChild(honeypot);
+
+            appendText(form, 'p', 'ask-pete-direct__consent', DIRECT_COPY.consent);
+
+            const agree = makeElement('label', 'ask-pete-direct__agree');
+            const consentInput = document.createElement('input');
+            consentInput.type = 'checkbox';
+            agree.appendChild(consentInput);
+            agree.appendChild(makeElement('span', null, DIRECT_COPY.agree));
+            form.appendChild(agree);
+
+            const meta = makeElement('div', 'ask-pete-evidence-composer__meta');
+            appendText(meta, 'span', null, DIRECT_COPY.meta);
+            form.appendChild(meta);
+
+            const stateLine = makeElement('p', 'ask-pete-direct__state');
+            stateLine.setAttribute('role', 'status');
+            stateLine.setAttribute('aria-live', 'polite');
+            stateLine.setAttribute('aria-atomic', 'true');
+            form.appendChild(stateLine);
+
+            let requestKey = null;
+            let sending = false;
+
+            function announce(message, tone) {
+                stateLine.textContent = message;
+                stateLine.classList.toggle('ask-pete-direct__state--sent', tone === 'sent');
+                stateLine.classList.toggle('ask-pete-direct__state--problem', tone === 'problem');
+                /* The companion's own live region carries it too, so the
+                   announcement reaches a reader whose focus is elsewhere. */
+                setStatus(message);
+            }
+
+            function setSending(isSending) {
+                sending = isSending;
+                submit.disabled = isSending;
+                form.setAttribute('aria-busy', String(isSending));
+            }
+
+            /* Editing after an attempt is a NEW question, so it gets a new
+               idempotency key. Retrying unchanged text keeps the old key, which
+               is what makes a double tap or a retry after a dropped connection
+               store one question rather than two. */
+            const forgetKey = () => { requestKey = null; };
+            questionInput.addEventListener('input', forgetKey);
+            contactInput.addEventListener('input', forgetKey);
+
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                if (sending) return;
+
+                const question = questionInput.value.trim();
+                const contact = contactInput.value.trim();
+                if (!question) {
+                    announce(DIRECT_COPY.needQuestion, 'problem');
+                    questionInput.focus();
+                    return;
+                }
+                if (question.length > MAX_DIRECT_QUESTION_LENGTH) {
+                    announce(DIRECT_COPY.tooLong, 'problem');
+                    questionInput.focus();
+                    return;
+                }
+                if (contact.length > MAX_DIRECT_CONTACT_LENGTH) {
+                    announce(DIRECT_COPY.contactTooLong, 'problem');
+                    contactInput.focus();
+                    return;
+                }
+                if (!consentInput.checked) {
+                    announce(DIRECT_COPY.needConsent, 'problem');
+                    consentInput.focus();
+                    return;
+                }
+
+                if (!requestKey) requestKey = directRequestKey();
+                setSending(true);
+                announce(DIRECT_COPY.sending, null);
+
+                const body = { question, consent: true };
+                if (contact) body.contact = contact;
+                if (honeypotInput.value) body[DIRECT_HONEYPOT_FIELD] = honeypotInput.value;
+
+                window.fetch(directEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-PeerSlate-Request': 'same-origin',
+                        'Idempotency-Key': requestKey,
+                    },
+                    body: JSON.stringify(body),
+                })
+                    .then(async (response) => {
+                        let result = null;
+                        try { result = await response.json(); } catch (error) { result = null; }
+                        return { response, result };
+                    })
+                    .then(({ response, result }) => {
+                        setSending(false);
+                        if (response.ok && isPlainObject(result) && result.success === true) {
+                            announce(
+                                result.state === 'already_sent' ? DIRECT_COPY.alreadySent : DIRECT_COPY.sent,
+                                'sent'
+                            );
+                            submit.disabled = true;
+                            questionInput.readOnly = true;
+                            contactInput.readOnly = true;
+                            consentInput.disabled = true;
+                            return;
+                        }
+                        if (response.status === 429) {
+                            announce(DIRECT_COPY.limited, 'problem');
+                            return;
+                        }
+                        if (response.status === 422 || response.status === 413) {
+                            /* The server's validation sentences are authored
+                               server-side for a sender to read; they are placed
+                               with textContent regardless. */
+                            announce(
+                                isPlainObject(result) && typeof result.message === 'string'
+                                    ? result.message
+                                    : DIRECT_COPY.error,
+                                'problem'
+                            );
+                            return;
+                        }
+                        announce(DIRECT_COPY.unavailable, 'problem');
+                    })
+                    .catch(() => {
+                        setSending(false);
+                        announce(DIRECT_COPY.error, 'problem');
+                    });
+            });
+
+            details.appendChild(form);
+            return details;
+        }
+
         function renderHandoff(payload) {
             if (!payload.handoff || payload.handoff.available !== true) return null;
             const section = makeElement('section', 'ask-pete-evidence-handoff');
@@ -510,6 +769,8 @@
                 section.appendChild(link);
             }
             appendText(section, 'p', null, 'Nothing is sent automatically. On-platform private messaging is not live.');
+            const directForm = renderDirectQuestionForm(payload, state.requestSequence);
+            if (directForm) section.appendChild(directForm);
             return section;
         }
 

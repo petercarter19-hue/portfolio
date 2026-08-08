@@ -1,0 +1,246 @@
+<!DOCTYPE html>{#
+    PS-ASK-PETE-DIRECT-001 - the owner's private recruiter question inbox.
+
+    Standalone and fully server-rendered, exactly like control_room.html: no
+    hydration, no JavaScript at all, and therefore no moment where private
+    content exists on a page an unauthorized viewer could be holding. The
+    server-side @owner_required check is the access control; the noindex meta
+    and the blueprint's no-store headers are defence in depth.
+
+    It carries its own <style> rather than a stylesheet because this package's
+    only writable stylesheet is the public companion's, and an owner utility
+    page has no business in it. There is no prefers-color-scheme dark variant:
+    the operating-system-driven dark route is closed everywhere except the
+    Control Room's gated one (tests/test_dark_theme_availability.py), and this
+    page is not going to reopen it.
+
+    Every control is a plain form. There is no delete button, because there is
+    no delete procedure.
+#}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="referrer" content="no-referrer">
+    <title>Questions sent to you &middot; PeerSlate</title>
+    <style>
+        :root {
+            --api-canvas: #f6f7fa;
+            --api-surface: #ffffff;
+            --api-ink: #141a28;
+            --api-ink-soft: #445068;
+            --api-muted: #6b7488;
+            --api-navy: #203767;
+            --api-marigold-text: #8a5a00;
+            --api-marigold-soft: #f4e4b4;
+            --api-teal: #1e725f;
+            --api-border: #d9dee8;
+        }
+        :root:not([data-ps-dark-theme]) { color-scheme: light; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 1.5rem 1rem 4rem;
+            background: var(--api-canvas);
+            color: var(--api-ink);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        .api-shell { margin: 0 auto; max-width: 46rem; }
+        h1 { margin: 0 0 0.25rem; font-size: 1.5rem; line-height: 1.25; }
+        .api-owner { margin: 0 0 1rem; color: var(--api-muted); font-size: 0.85rem; }
+        .api-truth {
+            margin: 0 0 1.25rem;
+            border-left: 4px solid var(--api-navy);
+            padding: 0.7rem 0.9rem;
+            background: var(--api-surface);
+            color: var(--api-ink-soft);
+            font-size: 0.9rem;
+        }
+        .api-notice {
+            margin: 0 0 1rem;
+            border: 1px solid var(--api-marigold-soft);
+            border-radius: 0.5rem;
+            padding: 0.7rem 0.9rem;
+            background: #fdf7e6;
+            color: var(--api-marigold-text);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .api-counts { margin: 0 0 0.75rem; color: var(--api-ink-soft); font-size: 0.9rem; }
+        .api-toggle {
+            display: inline-flex;
+            align-items: center;
+            min-height: 2.75rem;
+            color: var(--api-navy);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .api-list { display: grid; gap: 0.9rem; margin: 0; padding: 0; list-style: none; }
+        .api-item {
+            border: 1px solid var(--api-border);
+            border-radius: 0.6rem;
+            padding: 0.9rem 1rem;
+            background: var(--api-surface);
+        }
+        .api-item--new { border-left: 4px solid var(--api-teal); }
+        .api-item__top {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--api-muted);
+            font-size: 0.78rem;
+        }
+        .api-chip {
+            border: 1px solid var(--api-border);
+            border-radius: 999px;
+            padding: 0.1rem 0.55rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .api-chip--new { border-color: var(--api-teal); color: var(--api-teal); }
+        .api-chip--read { border-color: var(--api-navy); color: var(--api-navy); }
+        .api-chip--archived { border-color: var(--api-border); color: var(--api-muted); }
+        .api-question { margin: 0 0 0.6rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .api-contact {
+            margin: 0 0 0.7rem;
+            border-top: 1px dashed var(--api-border);
+            padding-top: 0.55rem;
+            color: var(--api-ink-soft);
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+        .api-contact__label { display: block; color: var(--api-muted); font-size: 0.75rem; font-weight: 700; }
+        .api-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .api-actions form { margin: 0; }
+        .api-actions button {
+            min-height: 2.75rem;
+            min-width: 2.75rem;
+            border: 1px solid var(--api-navy);
+            border-radius: 0.45rem;
+            padding: 0 0.9rem;
+            background: var(--api-surface);
+            color: var(--api-navy);
+            font: inherit;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .api-actions button:hover { background: #eef1f6; }
+        a:focus-visible, button:focus-visible { outline: 3px solid #145fc1; outline-offset: 3px; }
+        .api-empty { margin: 0; border: 1px dashed var(--api-border); border-radius: 0.6rem; padding: 1.25rem; background: var(--api-surface); color: var(--api-ink-soft); }
+        .api-retention { margin: 1.5rem 0 0; color: var(--api-muted); font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <main class="api-shell">
+        <h1>Questions sent to you</h1>
+        <p class="api-owner">Private to {{ owner_label }}. Nobody else can open this page.</p>
+
+        <p class="api-truth">
+            These arrived through Ask Pete when it could not answer from public
+            information. PeerSlate cannot send a reply for you &mdash; there is no
+            outbound channel here. Reply using whatever contact details the sender
+            chose to leave. Nothing on this page is public, and answering a question
+            here never teaches Ask Pete anything.
+        </p>
+
+        {% if notice %}
+        <p class="api-notice" role="status">{{ notice }}</p>
+        {% endif %}
+
+        {% if unavailable %}
+        <p class="api-empty">
+            The question store could not be read just now, so this page cannot show
+            whether anything is waiting. Nothing has been changed or lost. Try again
+            shortly.
+        </p>
+        {% else %}
+        <p class="api-counts">
+            {{ new_count }} unread of {{ total_count }}
+            {%- if include_archived %} (including archived){%- endif -%}
+            .
+            {%- if questions|length < total_count %}
+            Showing the {{ questions|length }} most recent.
+            {%- endif %}
+        </p>
+
+        <p>
+            {% if include_archived %}
+            <a class="api-toggle" href="{{ url_for('ask_pete_direct.owner_inbox') }}">Hide archived</a>
+            {% else %}
+            <a class="api-toggle" href="{{ url_for('ask_pete_direct.owner_inbox', archived='1') }}">Show archived</a>
+            {% endif %}
+        </p>
+
+        {% if questions %}
+        <ul class="api-list">
+            {% for question in questions %}
+            <li class="api-item{% if question.status == 'new' %} api-item--new{% endif %}">
+                <div class="api-item__top">
+                    <span class="api-chip api-chip--{{ question.status }}">
+                        {%- if question.status == 'new' -%}Unread
+                        {%- elif question.status == 'read' -%}Read
+                        {%- else -%}Archived
+                        {%- endif -%}
+                    </span>
+                    <time datetime="{{ question.created_at }}">Sent {{ question.created_at }}</time>
+                    {% if question.status_changed_at %}
+                    <span>&middot; you last changed it {{ question.status_changed_at }}</span>
+                    {% endif %}
+                </div>
+
+                <p class="api-question">{{ question.question }}</p>
+
+                <p class="api-contact">
+                    <span class="api-contact__label">How they said you can reach them</span>
+                    {% if question.contact %}{{ question.contact }}{% else %}They left no contact details, so there is no way to reply to this one.{% endif %}
+                </p>
+
+                <div class="api-actions">
+                    {% for action, label in [('read', 'Mark read'), ('new', 'Mark unread'), ('archived', 'Archive')] %}
+                    {% if question.status != action %}
+                    <form method="post"
+                          action="{{ url_for('ask_pete_direct.set_question_status', question_key=question.question_key) }}">
+                        <input type="hidden" name="status" value="{{ action }}">
+                        <input type="hidden" name="expected_version" value="{{ question.version_token }}">
+                        {% if include_archived %}<input type="hidden" name="archived" value="1">{% endif %}
+                        <button type="submit">
+                            {%- if action == 'new' and question.status == 'archived' -%}Restore to unread
+                            {%- else -%}{{ label }}
+                            {%- endif -%}
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="api-empty">
+            {% if include_archived %}
+            Nothing here yet &mdash; no questions have been sent to you, archived or otherwise.
+            {% else %}
+            Nothing waiting. Anything you archive stays available under &ldquo;Show archived&rdquo;.
+            {% endif %}
+        </p>
+        {% endif %}
+        {% endif %}
+
+        <p class="api-retention">
+            Senders are told these are stored privately for you, never published,
+            never used to teach Ask Pete, and that your retention policy is to
+            archive after 90 days and remove after 180. Archiving is reversible and
+            nothing on this page deletes anything.
+        </p>
+    </main>
+</body>
+</html>

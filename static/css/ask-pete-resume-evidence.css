@@ -719,3 +719,98 @@ body.ask-pete-evidence-enabled .profile-tabs {
     .ask-pete-evidence-composer [data-ask-pete-submit] { background: Highlight; color: HighlightText; }
     .ask-pete-evidence-highlight { outline: 3px solid Highlight !important; box-shadow: none !important; }
 }
+
+/* =========================================================================
+   PS-ASK-PETE-DIRECT-001 - the private question form inside the accepted
+   handoff card.
+
+   Additive only, and appended after every existing rule so nothing above is
+   reordered or overridden by accident. No new visual language: the form
+   itself carries .ask-pete-evidence-composer, so its label, field grid,
+   textarea, and submit are the accepted composer treatment unchanged, and the
+   only rules below are the ones that idiom does not already provide - the
+   disclosure, the consent block, the visually-hidden honeypot, and a state
+   line. Every colour is an existing token.
+
+   Reduced motion needs no rule here: nothing below animates or transitions,
+   and the existing `.ask-pete-evidence-enabled *` reduced-motion block already
+   covers these elements. Forced colours DO need one, because the checkbox and
+   the disclosure are the two controls the accepted forced-colours block never
+   saw; a second block is appended rather than editing the accepted one.
+   ========================================================================= */
+.ask-pete-direct { display: grid; gap: 0.42rem; margin-top: 0.55rem; }
+.ask-pete-direct > summary {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    color: var(--ape-forest);
+    font-size: 0.72rem;
+    font-weight: 820;
+    cursor: pointer;
+}
+.ask-pete-direct > summary:hover { color: var(--ape-gold); }
+.ask-pete-direct__intro { margin: 0; color: #544a2f; font-size: 0.7rem; line-height: 1.45; }
+/* The composer's own top border and padding separate it from an answer. Inside
+   the handoff card it is already inside a bordered region, so both are removed
+   rather than doubled. */
+.ask-pete-direct__form.ask-pete-evidence-composer { border-top: 0; padding-top: 0.35rem; }
+.ask-pete-direct__help { color: var(--ape-muted); font-size: 0.64rem; line-height: 1.35; }
+.ask-pete-direct__consent {
+    margin: 0;
+    color: #544a2f;
+    font-size: 0.68rem;
+    line-height: 1.45;
+}
+.ask-pete-direct__agree {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 0.45rem;
+    min-height: 2.75rem;
+    color: var(--ape-ink);
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.4;
+    cursor: pointer;
+}
+.ask-pete-direct__agree input {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0.15rem 0 0;
+    accent-color: var(--ape-forest);
+}
+/* The accepted focus ring covers a, button, and textarea only (an input was
+   not reachable in the companion before this form existed). Same ring, same
+   offset - extended to the two controls this form adds. */
+.ask-pete-evidence-enabled .ask-pete-direct__agree input:focus-visible,
+.ask-pete-evidence-enabled .ask-pete-direct > summary:focus-visible { outline: 3px solid #145fc1; outline-offset: 3px; }
+/* Visually hidden, aria-hidden, and out of the tab order: a person never meets
+   this field, so anything in it did not come from a person. */
+.ask-pete-direct__honeypot {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+/* Every state's text says what happened in words. Colour is a second signal,
+   never the only one (WCAG 2.2 1.4.1). */
+.ask-pete-direct__state { margin: 0; color: var(--ape-ink-soft); font-size: 0.7rem; font-weight: 800; line-height: 1.4; }
+.ask-pete-direct__state:empty { display: none; }
+.ask-pete-direct__state--sent { color: var(--ape-forest); }
+.ask-pete-direct__state--problem { color: var(--ape-gold); }
+
+@media (max-width: 31rem) {
+    .ask-pete-direct__agree { font-size: 0.72rem; }
+}
+
+@media (forced-colors: active) {
+    .ask-pete-direct > summary,
+    .ask-pete-direct__agree,
+    .ask-pete-direct__state {
+        color: CanvasText;
+        forced-color-adjust: auto;
+    }
+    .ask-pete-direct__agree input { forced-color-adjust: auto; }
+}

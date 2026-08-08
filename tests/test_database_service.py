@@ -307,6 +307,18 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_GetPublicCommunityMedia",
             "usp_DeletePublicCommunityMedia",
         }
+        # PS-ASK-PETE-DIRECT-001: the private recruiter question inbox. One
+        # anonymous-capable consent-required write and two owner-scoped
+        # reads/status changes. Archive-only, so there is deliberately no
+        # delete or purge procedure in this group — see
+        # test_no_recruiter_question_delete_or_purge_is_allowlisted in
+        # tests/ask_pete_direct/test_service.py, which asserts that upper
+        # bound independently of this literal.
+        ask_pete_direct = {
+            "usp_SubmitRecruiterQuestion",
+            "usp_ListRecruiterQuestionsForOwner",
+            "usp_SetRecruiterQuestionStatusForOwner",
+        }
         expected = (
             base
             | oppslate_os1
@@ -314,6 +326,7 @@ class DatabaseServiceTests(unittest.TestCase):
             | oppslate_os3
             | oppslate_os4
             | general
+            | ask_pete_direct
             | community
         )
         # The groups above must not overlap each other — a name counted
@@ -326,10 +339,11 @@ class DatabaseServiceTests(unittest.TestCase):
             oppslate_os3,
             oppslate_os4,
             general,
+            ask_pete_direct,
             community,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 131)
+        self.assertEqual(len(expected), 134)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_photo_procedures_are_explicitly_allowlisted(self):

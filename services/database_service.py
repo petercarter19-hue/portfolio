@@ -129,6 +129,19 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_UpdateKnowledgeItemForOwner",
         "usp_UpdateSlateItem",
         "usp_UpsertAppUserFromAuth",
+        # PS-ASK-PETE-DIRECT-001: the private recruiter question inbox.
+        # Draft/gate not yet applied anywhere (registry.json gate is null),
+        # and the blueprint that calls these is not registered in app.py, so
+        # nothing reaches them today.
+        # Anonymous-capable write; requires consent and resolves the RECIPIENT
+        # key it is given. It is the only procedure here whose caller is not
+        # the owner, and it returns an outcome word and nothing else.
+        "usp_SubmitRecruiterQuestion",
+        # Owner-scoped bounded read of that recipient's own questions.
+        "usp_ListRecruiterQuestionsForOwner",
+        # Owner-scoped, version-fenced new/read/archived change. Archive-only:
+        # there is deliberately no delete or purge procedure to allowlist.
+        "usp_SetRecruiterQuestionStatusForOwner",
         # PS-COMMUNITY-RETENTION-001 and PS-COMMUNITY-RESTORE-001. Omitting a
         # procedure here does not merely disable it: execute_procedure raises
         # ValueError before the database boundary. The retired request-path

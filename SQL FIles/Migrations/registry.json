@@ -1248,6 +1248,18 @@
       ],
       "summary": "People and Interests feed domain. Never approved for any database; see the file header.",
       "gate": null
+    },
+    {
+      "id": "PS-ASK-PETE-DIRECT-001",
+      "forward": "SQL FIles/Migrations/proposed/PS-ASK-PETE-DIRECT-001_recruiter_questions.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-ASK-PETE-DIRECT-001_recruiter_questions_rollback.sql",
+      "requires": [
+        "PS-PLAT-001",
+        "PS-PLAT-002",
+        "PS-AUTH-001"
+      ],
+      "summary": "Private recruiter question inbox: an owner-addressed question store, an idempotent submission ledger, one anonymous-capable consent-required submit procedure, and two owner-scoped read/status procedures. Archive-only, no delete procedure.",
+      "gate": null
     }
   ]
 }

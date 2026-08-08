@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-08T17:35:00Z",
+  "updated_at": "2026-08-08T18:55:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -25,7 +25,8 @@
       "PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001",
       "PS-ASK-PETE-AI-READINESS-002",
       "PS-ASK-PETE-AI-RELEASE-001",
-      "PS-WORKSHOP-ACCESS-001"
+      "PS-WORKSHOP-ACCESS-001",
+      "PS-ASK-PETE-DIRECT-001"
     ],
     "cleanup_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -759,7 +760,8 @@
         "SQL FIles/Verification/",
         "tests/ask_pete_direct/",
         ".env.example",
-        "docs/initiatives/PS-ASK-PETE-DIRECT-001/"
+        "docs/initiatives/PS-ASK-PETE-DIRECT-001/",
+        "docs/governance/CURRENT_LANES.json"
       ],
       "exclusions": [
         "no app.py edit and no blueprint registration: the feature stays dark and unreachable until the later recorded-grant leg after the Interview lane releases app.py",
@@ -785,6 +787,15 @@
         {
           "date": "2026-08-08",
           "decision": "Pete's standing authority ('go all the way... Full approval', 'The approval is for all remaining packages', 'Keep going') selected this package after the Ask Pete release went live. Retention defaults (90-day auto-archive, 180-day purge) and consent copy are conservative drafts for Pete to revise before the flag ever turns on; live enablement remains his alone."
+        },
+        {
+          "date": "2026-08-08",
+          "decision": "Merge grant under Pete's standing full approval for all remaining packages, after Fable's zero-findings non-writer review of the five dark slices (188 package tests, whole suite 3174, migration governance check clean). The dark contract held review: three independent gates keep every new path unreachable in production; the served companion assets render byte-identically flag-off. The recorded open finding for Pete before any enablement: the consent copy's retention promise (90/180) must be automated or reworded first.",
+          "surface_note": "Recording this grant required amending the lane's own record; docs/governance/CURRENT_LANES.json joins writable_surfaces per the established recorded-scope pattern."
+        },
+        {
+          "date": "2026-08-08",
+          "decision": "Pete's relayed directive for the red validation: inspect findings, narrowest fix, keep dark, merge when green. Both findings were UUID-shaped deterministic test fixtures (verified non-secret; nothing rotated). The repo's own guard tests forbid both commit-pinned allowlists (they die on squash merge) and entries for lines that no longer exist, so no allowlist is the correct resolution. Instead the branch history is squashed by the owner's own hand to the reviewed final tree (fixture constants renamed throughout), which removes the transient flagged lines from every scanned history. .gitleaks.toml stays untouched."
         }
       ],
       "model_routing": {
