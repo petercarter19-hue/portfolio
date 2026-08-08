@@ -70,6 +70,14 @@ passed independent review, 199 focused tests with one expected skip, and Azure
 build 621. PR 325 squash-merged as
 `8ee04e317f4ee4cbb3f057fd7a12d7a446121f8d`; its tree exactly matches the
 reviewed candidate. The calibration lane has relinquished authority and its
-clean task artifacts were removed after a passing cleanup preflight. The
-integration lane remains temporarily active only to complete fixture-stable
-controlled-idle closeout. Production remains unchanged.
+clean task artifacts were removed after a passing cleanup preflight.
+
+Fixture activation PR 334 merged as
+`4f1ab7121e6ae8a0b58deb71b953a264fd242af6`. The bounded fixture candidate
+passed 54 focused tests and Azure build 626; PR 335 squash-merged as
+`851a508de0cab6ecf029ccf5860a4273380ad350` with merged-tree equivalence.
+
+The final governance candidate records zero active writers, empty write and
+release authority, both task lanes as cleanup-only closing evidence, and the
+two packages as completed. After that exact candidate passes Azure policy and
+merges, the repository is controlled idle. Production remains unchanged.

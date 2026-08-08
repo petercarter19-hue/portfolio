@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-INTERVIEW-STUDIO-INTEGRATION-001 remains the governance-only closeout writer on work/2026-08-07-interview-studio-integration-001. PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001 is the disjoint test-fixture-only writer on work/2026-08-08-delivery-preflight-closeout-fixture-001; no validator, product, release, or deployment work is active."
+  current_assignments: "No active writer. PS-INTERVIEW-STUDIO-INTEGRATION-001 and PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001 are cleanup-only closing lanes after their final controlled-idle PR merges; no product, release, or deployment work is active."
 
 governing_documents:
   bible:
@@ -58,12 +58,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-INTERVIEW-STUDIO-INTEGRATION-001
-    status: active_delivery
-    scope: "Governance-only controlled-idle closeout after completed Interview source integration; no product, validator, release, deployment, or production change."
-  - id: PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001
-    status: active_delivery
-    scope: "Two state-coupled corrections in tests/test_delivery_preflight.py plus package-local evidence only; no validator, product, schema, pipeline, release, deployment, or production change."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -130,6 +124,8 @@ completed_packages:
   - PS-ASK-PETE-AI-001
   - PS-COMMUNITY-PUBLIC-PILOT-001
   - PS-INTERVIEW-STUDIO-CALIBRATION-001
+  - PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001
+  - PS-INTERVIEW-STUDIO-INTEGRATION-001
 
 retired_packages:
   - id: PS-INTERVIEW-STUDIO-VISUAL-FACELIFT-001
@@ -141,7 +137,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Merge the PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001 activation record, create its exact implementation worktree from the new main, pass write preflight, correct only the two state-coupled fixtures, merge and clean it, then finalize PS-INTERVIEW-STUDIO-INTEGRATION-001 to controlled idle and bounded cleanup."
+next_gate: "Controlled idle. Complete verified cleanup of the two Interview closeout task lanes; after that, Pete must select an exact next outcome before any new activation or implementation work."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

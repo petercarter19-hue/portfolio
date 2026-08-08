@@ -6,8 +6,9 @@
 
 ## Status
 
-Source integration and calibration cleanup complete; governance closeout is in
-progress. No deployment or production change is authorized or claimed.
+Source integration, calibration cleanup, and fixture-stable controlled-idle
+governance are complete as a final PR candidate. No deployment or production
+change is authorized or claimed.
 
 ## Starting authority
 
@@ -40,15 +41,28 @@ progress. No deployment or production change is authorized or claimed.
   `1806d20c23736140fea787ea7cd8fb105c99e7f9` through pipeline 610.
 - No route, backend, schema, JavaScript behavior, persistence, provider,
   dependency, pipeline, configuration, or release surface changed.
+- Integration phase-one PR 333 squash-merged as
+  `778d51ee8cdebb611b246138321322888def9983` after Azure build 623 passed.
+- Fixture activation PR 334 passed Azure build 624 and squash-merged as
+  `4f1ab7121e6ae8a0b58deb71b953a264fd242af6`.
+- Fixture candidate `05e385733e505b7d14c04874b3d72dbc8507a1f9`
+  passed the package write preflight and 54 focused tests without warnings.
+- Fixture PR 335 passed Azure build 626 and squash-merged as
+  `851a508de0cab6ecf029ccf5860a4273380ad350`; the merged tree exactly matches
+  the reviewed source.
+- The final governance candidate records `controlled_idle`, zero active
+  packages, zero writers, and zero release authority. The final Azure PR is the
+  external non-self-referential source and merge record for this completion
+  report.
 
 ## Cleanup contract
 
 The calibration cleanup preflight passed after its existing branch incorporated
 authoritative main without changing the tree. Recovery references preserve the
 reviewed candidate and cleanup proof; its clean local/remote task branch and
-worktree were removed. The integration branch remains until a separate
-fixture-only correction makes controlled-idle delivery tests independent of a
-fixed date and nonempty active-package list. Then rerun integration cleanup
-preflight and remove only its clean task artifacts and the temporary verification
-environment. Preserve every unrelated, dirty, unmerged, user-owned, or
-source-authority artifact.
+worktree were removed. After the final controlled-idle PR merges, rerun cleanup
+preflights for the fixture and integration closing lanes. Preserve recovery
+references, then remove only their clean synchronized worktrees/branches, the
+task-created activation worktrees/branches, and the temporary verification
+environment. Preserve every unrelated, dirty, unmerged, user-owned, legacy
+Interview activation, or source-authority artifact.
