@@ -48,11 +48,11 @@ class DeliveryPreflightTests(unittest.TestCase):
         """Return a baseline whose active packages match a real origin fixture.
 
         A checked-in activation candidate can contain the lane that a 1->2
-        transition test is trying to add.  Keep the fixture independent from
+        transition test is trying to add. Keep the fixture independent from
         that transient repository state by retaining only packages present in
-        the synthetic origin.  Synthetic package names used by other tests do
-        not appear in the real baseline, so those fixtures intentionally keep
-        the checked-in bytes unchanged.
+        the synthetic origin. When controlled idle leaves no recorded package
+        block, synthesize the one normal package required by a one-lane origin.
+        Other incompatible synthetic combinations keep the checked-in bytes.
         """
         packages = {
             lane["package"]
@@ -80,6 +80,13 @@ class DeliveryPreflightTests(unittest.TestCase):
                 block.group(0)
                 for block in blocks
                 if block.group("id") in packages
+            )
+        elif len(packages) == 1 and not blocks:
+            package = next(iter(packages))
+            retained = (
+                f"  - id: {package}\n"
+                "    status: active_delivery\n"
+                '    scope: "Synthetic active-package fixture."\n'
             )
         elif len(packages) == 1 and len(blocks) == 1:
             package = next(iter(packages))
@@ -429,6 +436,28 @@ class DeliveryPreflightTests(unittest.TestCase):
             )
             self.assertEqual([], cleanup_errors)
 
+    def test_baseline_for_origin_synthesizes_one_package_from_idle(self):
+        source = self.baseline.decode("utf-8")
+        idle_baseline = re.sub(
+            r"(?ms)^active_packages:\n.*?(?=^scoped_findings:\n)",
+            "active_packages:\n",
+            source,
+            count=1,
+        ).encode("utf-8")
+        origin = self._idle_ledger()
+        origin["active_lanes"] = [self._lane("PS-SYNTHETIC-001")]
+
+        with patch.object(self, "baseline", idle_baseline):
+            actual = self._baseline_for_origin(origin).decode("utf-8")
+
+        self.assertIn(
+            "active_packages:\n"
+            "  - id: PS-SYNTHETIC-001\n"
+            "    status: active_delivery\n"
+            '    scope: "Synthetic active-package fixture."\n',
+            actual,
+        )
+
     def test_activation_requires_exact_package_branch_and_capacity(self):
         activation_facts = facts(
             branch="work/2026-08-05-delivery-activation-opportunity-slate"
@@ -702,10 +731,12 @@ class DeliveryPreflightTests(unittest.TestCase):
         self.assertNotEqual(existing_package, added_package)
         mutations = {
             "updated_at": (
-                approved_text.replace(
-                    'updated_at: "2026-08-07"',
+                re.sub(
+                    r'^updated_at: "[^"\r\n]+"$',
                     'updated_at: "2099-01-01"',
-                    1,
+                    approved_text,
+                    count=1,
+                    flags=re.MULTILINE,
                 ).encode("utf-8"),
                 "activation may not change baseline section updated_at",
             ),
