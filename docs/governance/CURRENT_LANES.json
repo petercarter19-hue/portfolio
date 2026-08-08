@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-08T16:25:00Z",
+  "updated_at": "2026-08-08T16:26:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-05",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-WORKSHOP-ACCESS-001"
+      "PS-WORKSHOP-ACCESS-001",
+      "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -49,7 +50,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Pete explicitly selected the next outcome on 2026-08-07: put the complete Workshop experience behind PeerSlate sign-in now. PS-WORKSHOP-ACCESS-001 is the sole Protected writer for that boundary and its direct-bypass evidence. It may not change Workshop product flow, AI behavior, visual composition, schema, Opportunity Slate, Interview Studio, authentication-provider configuration, deployment, or production state. Release authority remains empty; production remains 1806d20c23736140fea787ea7cd8fb105c99e7f9 through pipeline 610. Pete then activated PS-ASK-PETE-AI-READINESS-002 as the second disjoint lane on Ask-specific surfaces only, under his 2026-08-08 recorded authority: sole overnight delivery by this program, full permission for the entire governed Ask Pete readiness-and-release sequence, Opus 5 extra-high implementing with Fable orchestrating and reviewing, and an explicit stop before live enablement: PEERSLATE_ASK_PETE_GROUNDED_ENABLED stays off pending Pete's review. READINESS-002 closed 2026-08-08 after PR 339 merged as exact main b7afdc6 with verified tree equivalence; the merge is source integration only. A key operational finding is recorded: no automatic batchedCI deployment has fired for any main merge since pipeline 610 (2026-08-07 21:31 UTC) although the merge messages carry no skip marker, so deployed production remains 1806d20c/release a00f609a and does not yet include the Interview calibration or the Ask Pete readiness fixes. Resolving the trigger state and deploying belong to PS-ASK-PETE-AI-RELEASE-001 with owner-reviewed enablement. Pete's standing overnight authority then activated PS-ASK-PETE-AI-RELEASE-001 as the second disjoint lane for app-seam corrections, Candidate/release evidence, resolution of the automatic-trigger finding, and governed flag-off deployment; enablement remains excluded until Pete's review. RELEASE-001 closed 2026-08-08 with Ask Pete deployed and enabled live at release 9aa5080402d802b5f09b8627 (source 7bde4d0) under Pete's recorded approval. The owner-selected next outcome is PS-AGENT-OPERATIONS-001 via normal activation."
+    "exit_authority": "Pete explicitly selected the next outcome on 2026-08-07: put the complete Workshop experience behind PeerSlate sign-in now. PS-WORKSHOP-ACCESS-001 remains the Protected writer for that disjoint boundary. Ask Pete RELEASE-001 closed live on 2026-08-08 at release 9aa5080402d802b5f09b8627 (source 7bde4d0). Pete then selected the public Interview Studio Functional V1 outcome with 'Go' on 2026-08-08 after the scope was stated: preserve /interview-studio and its browser-local truth while replacing fixed session and universal-score mechanics with open-ended tailored practice, persistent modes, question-aware coaching, local voice/video, and meaningful browser-local history/progress. PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 may use the second lane only on its five runtime/test surfaces plus package folder, under the named repository visual authority and OWNER_VISUAL_INTEGRITY_STANDARD.md. It may not touch Workshop, the shared header, private-member data, schema, Opportunity Slate writes, deployment, or production state. Release authority remains empty."
   },
   "activation_policy": {
     "enabled": true,
@@ -678,6 +679,72 @@
       ],
       "cleanup_contract": "Preserve all unrelated, dirty, user-owned, other-lane, legacy, visual-authority, mockup, and recovery material. After exact merge verification, remove only this package's verified clean activation and implementation worktrees/branches after package cleanup preflight.",
       "sequence": "activation merge -> implementation worktree from new main -> write preflight -> centralized access boundary and signed-out nav correction -> focused and wider verification -> independent Protected review -> governed merge/release decision -> truthful closeout and bounded cleanup"
+    },
+    {
+      "package": "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
+      "outcome": "Deliver the public/browser-local Interview Studio Functional V1 without adding pages or a setup wizard: remove fixed five-question session semantics; let visitors practice as much or as little as they want; add an inline New Session choice for General Practice, Type of Role, or visitor-supplied opportunity context; keep Interview Me, Interview AI, and Video Practice visible as equal modes on the same question; make typed and voice answers share one editable transcript; keep video local and explicit; replace the universal 100-point/STAR rubric with substantial question-family-aware coaching; and turn browser-local History into meaningful score-free progress, coverage, carry-through, and next-focus guidance.",
+      "branch": "work/2026-08-08-interview-studio-functional-v1-001",
+      "writer": "Terra max as the sole implementation writer in C:\\Users\\peter\\Documents\\portfolio-interview-studio-functional-v1-20260808, orchestrated by Root Codex; Sol xhigh provides the read-only architecture audit and Sol max independently reviews the exact candidate",
+      "delivery_path": "Protected",
+      "production_capable": true,
+      "source_checkpoint": "Authoritative Azure origin/main 6013ab52de40a1535d61836cf6a041ce5b5fe97b after PR 344 closed the Ask Pete release lane and left PS-WORKSHOP-ACCESS-001 as the only active writer.",
+      "writable_surfaces": [
+        "app.py",
+        "templates/interview_studio.html",
+        "static/css/interview-studio.css",
+        "static/js/interview-studio.js",
+        "tests/test_interview_studio.py",
+        "docs/initiatives/PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001/"
+      ],
+      "exclusions": [
+        "no route rename, redirect change, new top-level destination, or templates/base.html/global navigation write",
+        "no Workshop file, Workshop behavior, Workshop test, or PS-WORKSHOP-ACCESS-001 worktree/branch write",
+        "no authentication, private-member persistence, My Knowledge save, Opportunity Slate read/write integration, canonical-data change, schema, migration, or database service change",
+        "no raw audio/video upload, cloud media storage, automatic transcription claim, appearance/emotion/personality/confidence/honesty/employability inference, or composite delivery score",
+        "no provider/model configuration, new external retrieval, secret, dependency, pipeline, deployment, production configuration, or production mutation",
+        "no material visual invention: preserve the V3 shell and the exact Smoked Eucalyptus color/surface/texture/depth authority; stop if a required functional state cannot be expressed with those locked components",
+        "no write outside the five runtime/test surfaces and the new package folder; governance files belong only to the activation/closeout control path"
+      ],
+      "visual_authority": {
+        "required_standard": "docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md",
+        "structure_and_interaction_continuity": "docs/initiatives/PS-INTERVIEW-FOCUS-UI-001/source-authority/v3/ including its authoritative mockups and shared-shell contracts, superseded only for the fixed-length, universal-score, and STAR behaviors explicitly replaced by this package",
+        "controlling_material_direction": "docs/initiatives/PS-INTERVIEW-STUDIO-CALIBRATION-001/source-authority/owner-selected-2026-08-06/34 - Green Hue Only - Smoked Eucalyptus.png",
+        "critical_state_material_references": [
+          "docs/initiatives/PS-INTERVIEW-STUDIO-CALIBRATION-001/source-authority/owner-selected-2026-08-06/46 - Selected Sage - Active Voice Answer.png",
+          "docs/initiatives/PS-INTERVIEW-STUDIO-CALIBRATION-001/source-authority/owner-selected-2026-08-06/47 - Selected Sage - Video Delivery Review.png",
+          "docs/initiatives/PS-INTERVIEW-STUDIO-CALIBRATION-001/source-authority/owner-selected-2026-08-06/48 - Selected Sage - History and Progress.png"
+        ],
+        "approved_functional_state_sources_to_hash_lock_before_runtime_work": [
+          "New Session structure: C:\\Users\\peter\\.codex\\codex-remote-attachments\\019fc926-3fa7-7df1-b2e6-faf676a3c8fe\\710EAFD1-CF48-4532-AD59-F1440A59996F\\1-Pasted-Image-1.jpg; SHA-256 61708812519549D3BC67B2CF20697B01D34A595A23078EBBCE30AEAD3B20E328",
+          "Scoreless question-aware Answer and Delivery Review structure: C:\\Users\\peter\\.codex\\codex-remote-attachments\\019fc926-3fa7-7df1-b2e6-faf676a3c8fe\\751E8296-0E1F-480C-94EC-0C63895D1CCC\\1-Pasted-Image-1.jpg; SHA-256 A06787723318D0484EC6CB4124B0B04BA5EBF08E2505FF332F126765CF75202E",
+          "Session Complete and private-reflection structure, private portions deferred: C:\\Users\\peter\\.codex\\codex-remote-attachments\\019fc926-3fa7-7df1-b2e6-faf676a3c8fe\\F936E1EB-4354-450A-8A61-D5AD75010003\\1-Pasted-Image-1.jpg; SHA-256 A1ADCAF83FE43C853B988C7237CCFE226B7CA0A7D5F58E5937772AF1E3630272",
+          "Score-free History and Progress structure: C:\\Users\\peter\\.codex\\codex-remote-attachments\\019fc926-3fa7-7df1-b2e6-faf676a3c8fe\\4BE4E160-0004-42BE-8D57-CB83299B94B2\\1-Pasted-Image-1.jpg; SHA-256 EF6D795C9C1DBE9AAB1246C943A548B3C8466525A71DFC03CCDF6811D775E26F"
+        ],
+        "lock_sequence": "Before any runtime edit, copy these exact four owner-approved source images into docs/initiatives/PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001/source-authority/, verify the recorded SHA-256 values, and record that Smoked Eucalyptus controls color/material while the copied images control only the applicable functional composition. If any file or hash is missing or contradictory, stop; do not invent a replacement.",
+        "owner_lock": "Pete selected the Smoked Eucalyptus screen with 'we will use this', approved the carried blue/green accents and layering, and then directed the team to continue. These concrete repository artifacts control; withdrawn facelift artifacts and new visual invention do not."
+      },
+      "completion_evidence": [
+        "activation-only PR changes exactly CURRENT_LANES.json and CURRENT_BASELINE.yaml; after it merges, the dedicated implementation worktree starts from the resulting origin/main and passes PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 write preflight",
+        "the public route remains /interview-studio with accurate browser-local privacy language and graceful AI/media/storage unavailable paths",
+        "open-ended session, inline tailoring, persistent cross-mode context, answer preservation, voice/editable transcript, local video, question-aware coaching, and score-free history/progress contracts pass focused deterministic tests",
+        "AI coaching is explicit-request only, validates a question-family-specific structured contract, rejects malformed/partial output, never silently saves, and remains useful through a provider-unavailable fallback",
+        "desktop, iPad Pro 13-class, mobile, 200 percent zoom/reflow, keyboard/focus, reduced-motion, long-content, storage-unavailable, media-denied, and AI-failure checks are completed proportionately against the locked authority",
+        "Terra performs complete-diff self-review; Sol max independently reviews the exact candidate and its test evidence; all actionable findings are corrected before an Azure implementation PR is opened"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-08",
+          "decision": "After the calibration was live-verified and the remaining old fixed-session/score behavior was explained, Pete selected the next Interview Studio functional outcome with 'Go'. His earlier delivery direction also names Terra max to implement, Sol max to review, Sol extra-high for architecture if needed, aggressive debugging, clean-kitchen worktree discipline, and awareness of other lanes. This authorizes the exact bounded implementation and Azure PR opening after activation and write preflight; it does not authorize deployment or expansion beyond this record."
+        }
+      ],
+      "model_routing": {
+        "architecture": "Sol xhigh performs the read-only package, trust, state-machine, visual-authority, and collision audit",
+        "implementation": "Terra max is the sole delegated implementation writer in the dedicated clean worktree",
+        "independent_review": "Sol max reviews the exact final candidate and verification evidence without hand-writing the implementation",
+        "orchestration": "Root Codex owns governance, sequencing, preflight, Azure PR evidence, findings closure, and task-local cleanup"
+      },
+      "cleanup_contract": "Preserve every unrelated, dirty, user-owned, other-lane, legacy, recovery, and visual-authority artifact. After an authorized merge and exact recoverability verification, remove only this package's verified clean activation and implementation worktrees and branches; never clean the primary checkout or another lane.",
+      "sequence": "activation-only PR -> merge activation record -> implementation worktree from resulting origin/main -> package write preflight -> copy and SHA-256-lock the four exact approved functional-state sources into the package -> Sol xhigh architecture findings incorporated -> Terra max implements in phased slices -> focused and wider debugging -> complete-diff self-review -> Sol max exact-candidate review -> correct findings -> Azure implementation PR and required policy -> stop before deployment unless release authority is separately recorded"
     }
   ],
   "paused_lanes": [
