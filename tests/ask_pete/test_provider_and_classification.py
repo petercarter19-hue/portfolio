@@ -152,8 +152,34 @@ class ProviderAndClassificationTests(TestCase):
         self.assertEqual(document["context_key"], "skill:systems-engineering")
         self.assertEqual(document["approved_source_records"][0]["content"], source().content)
 
-    def test_non_json_provider_output_is_rejected_without_repair_guessing(self) -> None:
-        messages = FakeMessages("```json\n{}\n```")
+    def test_one_fenced_object_is_unwrapped_and_still_fully_validated(self) -> None:
+        # The live model wraps its object in a ```json fence. That is transport
+        # packaging, so the fence is removed — and nothing else is relaxed: the
+        # interior below still has its citation located and verified in the
+        # approved source, and the server still owns the answer's identity.
+        model_payload = {
+            "state": "supported",
+            "summary": "The source contains approved evidence.",
+            "claims": [
+                {
+                    "claim_id": "claim-1",
+                    "text": "The approved source contains evidence text.",
+                    "kind": "evidence",
+                    "state": "supported",
+                    "citations": [
+                        {
+                            "claim_id": "claim-1",
+                            "source_version_key": "source:v1",
+                            "excerpt": "Evidence text.",
+                        }
+                    ],
+                    "limitation": None,
+                }
+            ],
+            "follow_up_questions": [],
+            "handoff": None,
+        }
+        messages = FakeMessages(f"```json\n{json.dumps(model_payload)}\n```")
         provider = AnthropicGroundedProvider(
             SimpleNamespace(messages=messages),
             model_name="configured-model",
@@ -161,8 +187,33 @@ class ProviderAndClassificationTests(TestCase):
             prompt_path=PROMPT_PATH,
         )
 
-        with self.assertRaisesRegex(AnswerContractError, "not strict JSON"):
-            provider.answer(request(), (source(),))
+        answer = provider.answer(request(), (source(),))
+        citation = answer["claims"][0]["citations"][0]
+
+        self.assertEqual(citation["start"], 0)
+        self.assertEqual(citation["end"], len("Evidence text."))
+        self.assertEqual(answer["answer_id"], "provider-request-1:answer")
+        self.assertEqual(answer["prompt_contract_version"], PROMPT_CONTRACT_VERSION)
+
+    def test_non_json_provider_output_is_rejected_without_repair_guessing(self) -> None:
+        # Tolerating one outer fence is not tolerating markdown. A preamble
+        # before the fence, or a fence inside a fence, is still an unparseable
+        # reply and is still refused rather than mined for an object.
+        for description, text in (
+            ("prose preamble", 'Here is the answer:\n\n```json\n{"state": "supported"}\n```'),
+            ("double fenced", '```\n```json\n{"state": "supported"}\n```\n```'),
+        ):
+            with self.subTest(description):
+                messages = FakeMessages(text)
+                provider = AnthropicGroundedProvider(
+                    SimpleNamespace(messages=messages),
+                    model_name="configured-model",
+                    subject_display_name="Pete Carter",
+                    prompt_path=PROMPT_PATH,
+                )
+
+                with self.assertRaisesRegex(AnswerContractError, "not strict JSON"):
+                    provider.answer(request(), (source(),))
 
     def test_provider_derives_an_exact_unique_span_server_side(self) -> None:
         model_payload = {

@@ -623,7 +623,9 @@
         ".env.example",
         "tests/ask_pete/",
         "docs/initiatives/PS-ASK-PETE-AI-RELEASE-001/",
-        "docs/governance/CURRENT_LANES.json"
+        "docs/governance/CURRENT_LANES.json",
+        "services/ask_pete/",
+        "prompts/ask_pete/grounded_public_v1.md"
       ],
       "exclusions": [
         "no feature enablement: PEERSLATE_ASK_PETE_GROUNDED_ENABLED stays off in every environment until Pete's explicit recorded review decision",
@@ -658,6 +660,11 @@
           "date": "2026-08-08",
           "decision": "Merge grant under Pete's standing overnight authority recorded at activation ('full permission... the entire package', 'Merger granted', 'Keep going afterwards'). The implementation candidate passed Fable's zero-findings non-writer review and independent test verification; the slice-2 stop was accepted because the manifest failure already returns a classified fail-closed 502 (the readiness audit's premise was wrong and is corrected in the package README). Deployment and enablement remain separate recorded steps; enablement waits for Pete's review.",
           "surface_note": "Recording this grant required amending the lane's own record, so docs/governance/CURRENT_LANES.json is added to writable_surfaces with the same recorded-scope pattern used by PS-OPPORTUNITY-SLATE-001 and PS-ASK-PETE-AI-READINESS-002."
+        },
+        {
+          "date": "2026-08-08",
+          "decision": "Evidenced release-blocker correction: the first real-provider verification (deploy ee5ee842, flag briefly enabled) showed every grounded answer failing 502 with 'provider response is not strict JSON'. Reproduced locally with the exact deployed code: the live model wraps its JSON in a markdown fence, and the reply truncates at the 1600-token output cap (captured output ends mid-array at ~5,950 chars). The flag was returned to off, which also served as the recorded rollback proof. Under Pete's standing full authority ('Approve yourself for everything... keep moving'), services/ask_pete/ and the prompt contract are added to this lane's surfaces for exactly this correction, with the same recorded-scope pattern as prior grants. Real-provider verification must pass locally before any redeploy.",
+          "surface_note": "The release sequence's own rule — make only evidenced release-blocker corrections — is the basis; the evidence is the captured raw model output recorded in the package folder."
         }
       ],
       "model_routing": {
