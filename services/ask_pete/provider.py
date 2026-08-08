@@ -20,6 +20,22 @@ from services.ai_foundation.errors import (
 
 PROMPT_CONTRACT_VERSION = "ask-pete-grounded-public.v1"
 
+# The browser gives up on an Ask Pete question after 45 s
+# (static/js/chatbot.js aborts the fetch), so the server has to give up
+# first. Without an explicit bound the SDK default read timeout is 600 s: a
+# hung call would hold a gunicorn worker — and keep paying for a generation
+# nobody can still see — for ten minutes after the visitor was told the
+# question failed. One 30 s attempt leaves room for source assembly,
+# validation, and the honest "unavailable" answer to reach the browser
+# inside its own budget.
+PROVIDER_TIMEOUT_SECONDS = 30.0
+
+# The SDK retries a timeout by default (max_retries=2), which would turn one
+# bounded attempt into three and put the total back past the browser's abort.
+# Ask Pete degrades honestly instead: a timed-out call becomes
+# ProviderUnavailableError and the gateway answers "unavailable".
+PROVIDER_MAX_RETRIES = 0
+
 
 class AnthropicGroundedProvider:
     """Adapt an injected Anthropic-compatible Messages client."""
@@ -50,6 +66,26 @@ class AnthropicGroundedProvider:
         self._subject_display_name = subject_display_name
         self._prompt = prompt
         self._maximum_output_tokens = maximum_output_tokens
+
+    def _bounded_client(self) -> Any:
+        """Return the injected client bounded to one short attempt.
+
+        `messages.create` accepts a per-request `timeout` but not
+        `max_retries` (anthropic 0.112.0), so the retry bound has to come
+        from client options. `with_options` returns a copy that shares the
+        underlying HTTP connection pool and leaves the application's client
+        untouched, so bounding this call never changes any other caller's
+        settings. A client that does not offer `with_options` still receives
+        the per-request timeout passed on the create call.
+        """
+
+        with_options = getattr(self._client, "with_options", None)
+        if not callable(with_options):
+            return self._client
+        return with_options(
+            timeout=PROVIDER_TIMEOUT_SECONDS,
+            max_retries=PROVIDER_MAX_RETRIES,
+        )
 
     @staticmethod
     def _response_text(response: Any) -> str:
@@ -163,7 +199,7 @@ class AnthropicGroundedProvider:
             "approved_source_records": source_records,
         }
         try:
-            response = self._client.messages.create(
+            response = self._bounded_client().messages.create(
                 model=self._model_name,
                 max_tokens=self._maximum_output_tokens,
                 system=self._prompt,
@@ -177,6 +213,7 @@ class AnthropicGroundedProvider:
                         ),
                     }
                 ],
+                timeout=PROVIDER_TIMEOUT_SECONDS,
             )
         except Exception as exc:
             raise ProviderUnavailableError("configured provider call failed") from exc

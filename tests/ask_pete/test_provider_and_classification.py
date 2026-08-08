@@ -61,16 +61,62 @@ class ProviderAndClassificationTests(TestCase):
             Purpose.RECRUITER_BRIEF,
         )
         self.assertIs(
-            classify_public_purpose("What should I ask in a first interview?"),
+            classify_public_purpose(
+                "What should I ask in a first interview?",
+                requested_action="interview_preparation",
+            ),
             Purpose.INTERVIEW_PREPARATION,
         )
         self.assertIs(
-            classify_public_purpose("Show evidence of requirements work."),
+            classify_public_purpose(
+                "Show evidence of requirements work.",
+                requested_action="evidence_finder",
+            ),
             Purpose.EVIDENCE_FINDER,
         )
         self.assertIs(
             classify_public_purpose("Tell me about Pete.", requested_action="private_coaching"),
             Purpose.PUBLIC_PROFILE_ANSWER,
+        )
+
+    def test_visitor_wording_alone_never_selects_a_strict_purpose(self) -> None:
+        # static/js/chatbot.js posts {"message": ...} with no action, so these
+        # are exactly the questions a legacy visitor can already send. Each one
+        # used to be escalated into a stricter quality contract by keyword.
+        for question in (
+            "Give me Pete's 60-second recruiter brief.",
+            "Give me a recruiter overview of Pete.",
+            "What is Pete's professional through-line?",
+            "What should I ask in a first interview?",
+            "What interview questions suit Pete?",
+            "Show evidence of requirements work.",
+            "What are Pete's strongest measurable results?",
+            "How has Pete applied MBSE and requirements management?",
+        ):
+            with self.subTest(question=question):
+                self.assertIs(
+                    classify_public_purpose(question),
+                    Purpose.PUBLIC_PROFILE_ANSWER,
+                )
+
+    def test_an_unrecognized_action_cannot_escalate_matching_wording(self) -> None:
+        for action in ("private_coaching", "", "   ", 42, None, ["recruiter_brief"]):
+            with self.subTest(action=action):
+                self.assertIs(
+                    classify_public_purpose(
+                        "Give me Pete's 60-second recruiter brief.",
+                        requested_action=action,
+                    ),
+                    Purpose.PUBLIC_PROFILE_ANSWER,
+                )
+
+    def test_a_recognized_action_is_matched_after_ordinary_normalization(self) -> None:
+        self.assertIs(
+            classify_public_purpose(
+                "Give me Pete's 60-second recruiter brief.",
+                requested_action="  RECRUITER_BRIEF  ",
+            ),
+            Purpose.RECRUITER_BRIEF,
         )
 
     def test_provider_sends_structured_evidence_and_owns_metadata(self) -> None:

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-08T03:14:00Z",
+  "updated_at": "2026-08-08T05:12:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -22,7 +22,8 @@
       "PS-DELIVERY-CONTROL-001",
       "PS-COMMUNITY-PUBLIC-PILOT-001",
       "PS-INTERVIEW-STUDIO-INTEGRATION-001",
-      "PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001"
+      "PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001",
+      "PS-ASK-PETE-AI-READINESS-002"
     ],
     "cleanup_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -551,7 +552,8 @@
         "services/ask_pete/",
         "tests/ask_pete/",
         "prompts/ask_pete/grounded_public_v1.md",
-        "docs/initiatives/PS-ASK-PETE-AI-READINESS-002/"
+        "docs/initiatives/PS-ASK-PETE-AI-READINESS-002/",
+        "docs/governance/CURRENT_LANES.json"
       ],
       "exclusions": [
         "no app.py, templates, static, azure-pipelines.yml, .env.example, SQL, secrets, provider settings, or shared operational tests",
@@ -581,6 +583,11 @@
         {
           "date": "2026-08-08",
           "decision": "Pete assigned model routing in chat: Opus 5 at extra-high effort implements; Fable also reviews. Combined with his same-night grant of full permission for the entire package with review before anything goes live."
+        },
+        {
+          "date": "2026-08-08",
+          "decision": "After PR 339 went fully green on reviewed candidate 8777a26307f60ecafffbff0bb761eb8b0ba74d7d with a zero-findings non-writer review, Pete granted the merge in chat: 'Go', then explicitly 'Merger granted', and 'Keep going afterwards'. This authorizes adding this package to merge_allowed_for and completing PR 339, then continuing the governed sequence. Live enablement of PEERSLATE_ASK_PETE_GROUNDED_ENABLED remains excluded until Pete's review.",
+          "surface_note": "Recording this grant required amending the lane's own record, so docs/governance/CURRENT_LANES.json is added to writable_surfaces rather than written outside the declared scope, following the recorded PS-OPPORTUNITY-SLATE-001 precedent. delivery_preflight does not machine-check writable_surfaces; this is a recorded scope statement."
         }
       ],
       "model_routing": {

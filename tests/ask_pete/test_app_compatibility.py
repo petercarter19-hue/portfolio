@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 from types import SimpleNamespace
@@ -9,12 +10,57 @@ os.environ.setdefault("ANTHROPIC_API_KEY", "ask-pete-app-test-key")
 
 import app as app_module
 from services.ask_pete.errors import AskPeteRequestError, AskPeteResponseError
+from services.ask_pete.provider import PROVIDER_TIMEOUT_SECONDS
 
 
 SAME_ORIGIN_HEADERS = {
     "Origin": "http://localhost",
     "Sec-Fetch-Site": "same-origin",
 }
+
+# app.py: @limiter.limit('10 per minute') on /api/chat.
+CHAT_REQUESTS_PER_MINUTE = 10
+
+
+class RecordingMessages:
+    """Stand in for the Anthropic messages resource and record every call."""
+
+    def __init__(self, text: str) -> None:
+        self.text = text
+        self.calls: list[dict] = []
+
+    def create(self, **kwargs):
+        self.calls.append(kwargs)
+        return SimpleNamespace(content=[SimpleNamespace(text=self.text)])
+
+
+def modest_general_answer() -> str:
+    """A correctly grounded answer that no strict quality contract accepts."""
+
+    return json.dumps(
+        {
+            "state": "not_established",
+            "summary": (
+                "Pete's approved public information does not establish a full "
+                "recruiter brief."
+            ),
+            "claims": [
+                {
+                    "claim_id": "boundary-1",
+                    "text": "A complete recruiter brief is not publicly established.",
+                    "kind": "boundary",
+                    "state": "not_established",
+                    "citations": [],
+                    "limitation": (
+                        "No approved public record covers this at the depth a "
+                        "recruiter brief needs."
+                    ),
+                }
+            ],
+            "follow_up_questions": [],
+            "handoff": None,
+        }
+    )
 
 
 class AskPeteAppCompatibilityTests(TestCase):
@@ -94,6 +140,36 @@ class AskPeteAppCompatibilityTests(TestCase):
         self.assertEqual(call["context_key"], "skill:mbse")
         self.assertIs(call["client"], app_module.client)
         self.assertTrue(call["root_path"].is_dir())
+
+    def test_flag_on_answers_a_legacy_recruiter_question_instead_of_502ing(self) -> None:
+        """The whole grounded path, driven the way chatbot.js drives it.
+
+        static/js/chatbot.js posts {"message": ...} with no action and reads
+        data.response. Recruiter wording used to escalate that request into
+        the flagship brief contract, and a modest answer then failed the
+        request as a 502. Nothing is patched below the app seam except the
+        model itself, so classification, the quality gate, serialization and
+        the provider bound all run for real.
+        """
+        app_module.app.config["PEERSLATE_ASK_PETE_GROUNDED_ENABLED"] = True
+        messages = RecordingMessages(modest_general_answer())
+
+        with patch.object(app_module, "client", SimpleNamespace(messages=messages)):
+            response = self.client.post(
+                "/api/chat",
+                json={"message": "Give me Pete's 60-second recruiter brief."},
+                headers=SAME_ORIGIN_HEADERS,
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload["purpose"], "public_profile_answer")
+        self.assertEqual(payload["state"], "not_established")
+        # Legacy clients render data.response and nothing else.
+        self.assertTrue(payload["response"].strip())
+        self.assertEqual(payload["response"], payload["summary"])
+        self.assertEqual(len(messages.calls), 1)
+        self.assertEqual(messages.calls[0]["timeout"], PROVIDER_TIMEOUT_SECONDS)
 
     @patch("app.answer_public_question")
     def test_invalid_public_context_returns_a_bounded_client_error(self, grounded) -> None:
@@ -188,4 +264,102 @@ class AskPeteAppCompatibilityTests(TestCase):
             )
 
         grounded.assert_not_called()
+        create.assert_not_called()
+
+
+class AskPeteChatRateLimitTests(TestCase):
+    """The 10-per-minute limit is the ceiling on anonymous AI spend.
+
+    Every other test in this file disables the limiter so it cannot interfere.
+    This one enables it, because an unverified spend ceiling is not a ceiling.
+    """
+
+    def setUp(self) -> None:
+        self.original = {
+            "TESTING": app_module.app.config.get("TESTING"),
+            "RATELIMIT_ENABLED": app_module.app.config.get("RATELIMIT_ENABLED"),
+            "PEERSLATE_ASK_PETE_GROUNDED_ENABLED": app_module.app.config.get(
+                "PEERSLATE_ASK_PETE_GROUNDED_ENABLED"
+            ),
+        }
+        self.limiter_enabled = app_module.limiter.enabled
+        app_module.limiter.enabled = True
+        # The default storage is in-process and shared, so start from zero.
+        app_module.limiter.reset()
+        app_module.app.config.update(
+            TESTING=True,
+            RATELIMIT_ENABLED=True,
+            PEERSLATE_ASK_PETE_GROUNDED_ENABLED=True,
+        )
+        self.client = app_module.app.test_client()
+
+    def tearDown(self) -> None:
+        app_module.limiter.reset()
+        app_module.limiter.enabled = self.limiter_enabled
+        app_module.app.config.update(**self.original)
+
+    def post_chat(self, message: str = "Tell me about Pete."):
+        return self.client.post(
+            "/api/chat",
+            json={"message": message},
+            headers=SAME_ORIGIN_HEADERS,
+        )
+
+    @patch("app.answer_public_question")
+    @patch("app.client.messages.create")
+    def test_one_client_is_refused_past_the_limit_without_further_provider_work(
+        self, create, grounded
+    ) -> None:
+        grounded.return_value = SimpleNamespace(
+            payload={
+                "schema_version": "ask-pete-public-answer.v1",
+                "state": "supported",
+                "response": "Grounded answer.",
+                "claims": [],
+            }
+        )
+
+        statuses = [
+            self.post_chat().status_code
+            for _ in range(CHAT_REQUESTS_PER_MINUTE + 1)
+        ]
+
+        self.assertEqual(
+            statuses[:CHAT_REQUESTS_PER_MINUTE],
+            [200] * CHAT_REQUESTS_PER_MINUTE,
+        )
+        self.assertEqual(statuses[CHAT_REQUESTS_PER_MINUTE], 429)
+        # The refused request costs nothing: no grounded work, no legacy call.
+        self.assertEqual(grounded.call_count, CHAT_REQUESTS_PER_MINUTE)
+        create.assert_not_called()
+
+    @patch("app.answer_public_question")
+    @patch("app.client.messages.create")
+    def test_the_refused_request_body_is_flask_limiters_html_default(
+        self, create, grounded
+    ) -> None:
+        """Recorded truth, not an endorsement.
+
+        /api/chat is otherwise a JSON contract, but app.py registers no 429
+        error handler, so a refused request returns Flask-Limiter's HTML page.
+        static/js/chatbot.js survives it — it falls back to {} when a body
+        will not parse and shows its own 429 sentence — so no visitor sees a
+        broken state. A JSON client that trusts the content type does not get
+        the shape it expects. PS-ASK-PETE-AI-READINESS-002 records this as an
+        open gap; closing it means an app.py error handler, which is outside
+        this package. Update this test when that lands.
+        """
+        grounded.return_value = SimpleNamespace(payload={"response": "Answer."})
+        question = "A distinctive visitor question that must not be echoed back."
+
+        for _ in range(CHAT_REQUESTS_PER_MINUTE):
+            self.post_chat(question)
+        response = self.post_chat(question)
+
+        self.assertEqual(response.status_code, 429)
+        self.assertFalse(response.is_json)
+        self.assertIn("text/html", response.content_type)
+        body = response.get_data(as_text=True)
+        self.assertIn("Too Many Requests", body)
+        self.assertNotIn(question, body)
         create.assert_not_called()

@@ -60,6 +60,32 @@ class PublicEvaluationCatalogTests(TestCase):
             )
             self.assertTrue(expectation.allowed_states)
 
+    def test_only_an_explicit_action_case_expects_a_strict_purpose(self) -> None:
+        """Purpose escalation is a client request, so a case has to name it.
+
+        A stricter-than-general purpose carries a stricter quality contract
+        and can only be selected by a recognized action. Only the resume
+        evidence companion sends `action` or `context_key`, and it always
+        sends an action, so a case with a context but no action describes a
+        request no client makes.
+        """
+        cases = json.loads(EVAL_PATH.read_text(encoding="utf-8"))["cases"]
+        strict_purposes = {
+            Purpose.RECRUITER_BRIEF,
+            Purpose.EVIDENCE_FINDER,
+            Purpose.INTERVIEW_PREPARATION,
+        }
+
+        for case in cases:
+            with self.subTest(case_id=case["case_id"]):
+                expected = Purpose(case["expected_purpose"])
+                if expected in strict_purposes:
+                    self.assertEqual(case["requested_action"], expected.value)
+                else:
+                    self.assertIsNone(case["requested_action"])
+                if case["context_key"] is not None:
+                    self.assertIsNotNone(case["requested_action"])
+
     def test_catalog_preserves_the_five_recruiter_quality_questions(self) -> None:
         cases = json.loads(EVAL_PATH.read_text(encoding="utf-8"))["cases"]
         case_ids = {case["case_id"] for case in cases}

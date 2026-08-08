@@ -9,6 +9,7 @@ from services.ai_foundation import (
     GroundedAnswer,
     HandoffProposal,
     HandoffReason,
+    Purpose,
 )
 from services.ai_foundation.errors import (
     GroundingValidationError,
@@ -55,6 +56,28 @@ class FailingProvider:
         raise ProviderUnavailableError("provider unavailable")
 
 
+def thin_answer(_request, sources):
+    """One modest, correctly grounded answer, well under the brief contract."""
+
+    source = sources[0]
+    return GroundedAnswer(
+        answer_id="too-thin",
+        state=AnswerState.SUPPORTED,
+        summary="Pete is an engineer.",
+        claims=(
+            AnswerClaim(
+                claim_id="thin-1",
+                text="Pete is an engineer.",
+                kind=AnswerKind.EVIDENCE,
+                state=AnswerState.SUPPORTED,
+                citations=(
+                    citation_for(source, claim_id="thin-1", needle="Pete Carter"),
+                ),
+            ),
+        ),
+    )
+
+
 class AskPeteServiceTests(TestCase):
     def test_evidence_answer_serializes_exact_openable_source_locator(self) -> None:
         def factory(_request, sources):
@@ -84,6 +107,7 @@ class AskPeteServiceTests(TestCase):
         service = AskPeteService(catalog=catalog(), provider=provider)
         result = service.answer(
             "Show evidence of Pete's MBSE work.",
+            requested_action="evidence_finder",
             context_key="skill:mbse",
             request_id="request-evidence-1",
         )
@@ -195,34 +219,34 @@ class AskPeteServiceTests(TestCase):
         self.assertNotIn("Model-Based Systems Engineering", diagnostic_text)
 
     def test_recruiter_brief_must_meet_the_flagship_quality_contract(self) -> None:
-        def factory(_request, sources):
-            source = sources[0]
-            return GroundedAnswer(
-                answer_id="too-thin",
-                state=AnswerState.SUPPORTED,
-                summary="Pete is an engineer.",
-                claims=(
-                    AnswerClaim(
-                        claim_id="thin-1",
-                        text="Pete is an engineer.",
-                        kind=AnswerKind.EVIDENCE,
-                        state=AnswerState.SUPPORTED,
-                        citations=(
-                            citation_for(source, claim_id="thin-1", needle="Pete Carter"),
-                        ),
-                    ),
-                ),
-            )
-
-        service = AskPeteService(catalog=catalog(), provider=StaticProvider(factory))
+        service = AskPeteService(catalog=catalog(), provider=StaticProvider(thin_answer))
         with self.assertRaisesRegex(
             AskPeteResponseError,
             "product quality contract",
         ):
             service.answer(
                 "Give me Pete's 60-second recruiter brief.",
+                requested_action="recruiter_brief",
                 request_id="request-thin-brief",
             )
+
+    def test_the_same_wording_without_an_action_answers_instead_of_failing(self) -> None:
+        # The legacy chat surface posts no action. Identical provider output —
+        # the one that correctly fails the flagship brief contract above — must
+        # be delivered as a general public answer, not lost to a 502.
+        result = AskPeteService(
+            catalog=catalog(),
+            provider=StaticProvider(thin_answer),
+        ).answer(
+            "Give me Pete's 60-second recruiter brief.",
+            request_id="request-legacy-brief",
+        )
+
+        self.assertEqual(result.payload["purpose"], "public_profile_answer")
+        self.assertEqual(result.payload["state"], "supported")
+        self.assertEqual(result.payload["response"], "Pete is an engineer.")
+        self.assertEqual(len(result.payload["claims"]), 1)
+        self.assertEqual(result.diagnostic.outcome, "completed")
 
     def test_recruiter_brief_can_satisfy_the_complete_contract(self) -> None:
         def factory(request, sources):
@@ -271,6 +295,7 @@ class AskPeteServiceTests(TestCase):
             provider=StaticProvider(factory),
         ).answer(
             "Give me Pete's 60-second recruiter brief.",
+            requested_action="recruiter_brief",
             request_id="request-complete-brief",
         )
 
@@ -278,3 +303,19 @@ class AskPeteServiceTests(TestCase):
         self.assertEqual(result.payload["source_summary"]["used_count"], 3)
         self.assertEqual(len(result.payload["follow_up_questions"]), 2)
         self.assertIsNotNone(result.payload["handoff"])
+
+    def test_purpose_choice_does_not_change_the_approved_sources_offered(self) -> None:
+        # Classification decides which quality contract applies. It must not
+        # quietly widen or narrow what the model is allowed to read, or moving
+        # a question between purposes would move an authorization boundary too.
+        source_catalog = catalog()
+        general = source_catalog.sources_for(Purpose.PUBLIC_PROFILE_ANSWER)
+
+        self.assertTrue(general)
+        for purpose in (
+            Purpose.RECRUITER_BRIEF,
+            Purpose.EVIDENCE_FINDER,
+            Purpose.INTERVIEW_PREPARATION,
+        ):
+            with self.subTest(purpose=purpose):
+                self.assertEqual(source_catalog.sources_for(purpose), general)

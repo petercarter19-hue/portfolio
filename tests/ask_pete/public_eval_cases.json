@@ -30,7 +30,7 @@
     {
       "case_id": "measurable-results",
       "question": "What are Pete's strongest measurable results?",
-      "requested_action": null,
+      "requested_action": "evidence_finder",
       "context_key": "career_role:dod",
       "expected_purpose": "evidence_finder",
       "allowed_states": ["supported", "partially_supported"],
@@ -43,7 +43,7 @@
     {
       "case_id": "mbse-and-requirements",
       "question": "How has Pete applied MBSE and requirements management?",
-      "requested_action": null,
+      "requested_action": "evidence_finder",
       "context_key": "skill:mbse",
       "expected_purpose": "evidence_finder",
       "allowed_states": ["supported", "partially_supported"],
