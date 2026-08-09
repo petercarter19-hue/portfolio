@@ -3,6 +3,17 @@
 _Implementation build, 2026-08-08. Uses
 `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`._
 
+> **Update, later on 2026-08-08 — the schema gate has since passed.** This
+> record was written while the migration was ungated, and it is left standing
+> as the record of that state rather than rewritten. One thing it says
+> repeatedly is now superseded: the migration is **no longer** `gate: null`.
+> Pete gated it on `ps-ask-pete-direct-gate-202608082309` at 23:10:49Z, the
+> verifier returned `verified = 1`, and the proof is recorded against digest
+> `ec3d21d0…`. Everything else in this record still holds — in particular
+> **no production database carries these tables**, because the Part 4 apply
+> has not been run. Current state always lives in
+> [`SCHEMA_GATE_RUNBOOK.md`](SCHEMA_GATE_RUNBOOK.md), not here.
+
 ## Core record
 
 **Task/package and delivery path:** PS-ASK-PETE-DIRECT-001 — the private
@@ -75,27 +86,52 @@ behaviour whatsoever, which is the point.
 
 **Known limits, deferred work, or owner decision needed:**
 
-1. **The consent copy's retention sentence is a policy statement, not an
-   automated mechanism, and must be reconciled before the flag is ever turned
-   on.** Senders are told Pete's retention policy is to archive at 90 days and
-   remove at 180. This package automates neither, and cannot automate the
-   removal half: it is a hard delete, which the lane's recorded exclusions
-   forbid. **Owner decision required:** either the scheduled maintenance leg
-   lands first, or the sentence is rewritten to describe only what happens.
+1. **~~The consent copy's retention sentence~~ — CLOSED 2026-08-08 by owner
+   decision, follow-up commit.** The copy promised "archive after 90 days and
+   remove after 180"; this package automates neither, and cannot automate the
+   removal half (a hard delete, outside the lane). Pete's "published always"
+   decision — the path goes live as soon as its remaining legs land, so every
+   visitor-facing sentence must be true *today* — resolved it by rewriting the
+   sentence rather than by waiting for automation. It now reads: *"Pete manages
+   these himself: he archives what he has read, and keeps a message for as long
+   as he needs it — nothing here is removed on an automatic timetable."*
+
+   **Automated retention remains possible future work.** The
+   `usp_PurgeCommunityContent` out-of-process pattern is the model, and a
+   timed-expiry leg would be an ordinary Protected change of its own. At that
+   point — and only in the same change that implements it — the consent copy
+   can make the stronger, timed promise. The claim made now is strictly weaker
+   than the withdrawn draft, so strengthening it later misleads nobody
+   retroactively. Two tests hold the line in both directions: one asserts the
+   claims the copy does make, and one asserts it names no period, no
+   "retention policy", and no expiry anywhere — on the sender-facing copy and
+   on the owner page that repeats it back.
 2. **Rate limiting is declared, not applied.** A blueprint cannot reach
    `app.py`'s `Limiter`. `PLANNED_RATE_LIMITS` states the budgets (30/hour
    public write, 60/hour owner action) and a test asserts the mapping covers
    every state-changing endpoint, but until the registration leg wires them the
    endpoint is unlimited — which is safe only because it is also unreachable.
    No parallel counter was invented as a substitute.
-3. **The migration has no gate proof**, so nothing may apply it. The
-   disposable-database apply/reapply/verify/rollback/forward rehearsal is an
-   owner-attended leg.
-4. **No browser evidence exists, and none could be produced in this lane.** The
-   form cannot render anywhere until the blueprint is registered. Its markup,
-   labelling, live regions, focus ring, target sizes, and state copy are
-   asserted at source level; the visual and keyboard pass belongs to the
-   registration leg, before enablement.
+3. **~~The migration has no gate proof~~ — HALF CLOSED later on 2026-08-08.**
+   The disposable-database apply/reapply/verify/rollback/forward rehearsal
+   passed (`ps-ask-pete-direct-gate-202608082309`, `verified = 1`) and the
+   proof is recorded, so the applier will now accept it. **The production
+   apply is still outstanding** and remains owner-attended: Part 4 of
+   `SCHEMA_GATE_RUNBOOK.md`, behind an approver on the
+   `peerslate-database-schema` environment.
+4. **No *deployed* browser evidence exists — but both surfaces are now
+   reviewable locally.** `tests/ask_pete_direct/run_direct_preview.py`
+   constructs the real application, registers the blueprint on it with exactly
+   the line the registration leg will add, turns both flags on, stubs the
+   provider with a deterministic handoff answer and the store with an
+   in-memory fixture, and serves `/petec/resume` and `/owner/ask-pete-inbox` on
+   127.0.0.1. `--check` boots it headlessly and asserts 19 properties across
+   both pages; all 19 pass, with no provider call and no database. The
+   remaining gap is narrow and stated honestly: this proves the markup, the
+   copy, the full send-to-inbox round trip, and that the registration composes
+   with the rest of the application — it does not prove how the page looks on a
+   deployed host. Pete's own visual pass and the deployed capture still belong
+   to the registration leg, before enablement.
 5. **Enablement additionally requires `PEERSLATE_OWNER_USER_KEYS` to name
    exactly one key.** Zero, several, or an email-only owner allowlist leaves
    every send answering an honest 503 rather than guessing a recipient.
@@ -114,9 +150,14 @@ behaviour whatsoever, which is the point.
    one; every surface that could host it belongs to another lane. The count
    exists (`new_count`) for whichever lane later owns that surface.
 
-**Next action:** Fable's non-writer review of this exact candidate SHA, then
-Pete's decision on limit 1 (the retention sentence). Registration, gate,
-apply, deployment, and enablement remain separate recorded legs in that order.
+**Next action:** Fable's non-writer review of this exact candidate SHA, and
+Pete's visual pass in the local preview
+(`tests/ask_pete_direct/run_direct_preview.py`). Limit 1 is closed. The
+remaining legs are specified rather than left to memory —
+[`SCHEMA_GATE_RUNBOOK.md`](SCHEMA_GATE_RUNBOOK.md) for the gate and the
+governed apply, [`REGISTRATION_LEG_SPEC.md`](REGISTRATION_LEG_SPEC.md) for the
+four `app.py` edits — and run in that order, followed by the owner key,
+Pete's copy review, and only then the flag.
 
 ## Protected additions
 

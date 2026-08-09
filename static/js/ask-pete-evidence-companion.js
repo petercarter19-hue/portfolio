@@ -29,7 +29,18 @@
         contactLabel: 'How Pete can reach you (optional)',
         contactHelp: 'Whatever you want him to have - a name, a company, an email address. Leave it blank and he will have no way to reply.',
         honeypotLabel: 'Company website',
-        consent: "What happens to this: your question, and anything you type above, are stored privately for Pete. Only Pete can read them. They are never published, never shown on this site, and never used to teach Ask Pete anything. Pete replies himself, using the contact details you chose to leave - nothing is sent back automatically, and he reads these on his own schedule. Pete's retention policy for these messages is to archive them after 90 days and remove them after 180.",
+        /* Owner decision 2026-08-08 ("published always"): every sentence a
+           visitor reads has to be true TODAY, not once a later leg lands. The
+           closing sentence therefore describes only what actually happens -
+           Pete archives, and no automated retention exists to expire or delete
+           anything. It previously promised "archive after 90 days and remove
+           after 180", which nothing in this package implements and which it
+           could not implement, because a hard delete is outside the package.
+           The claim made now is strictly weaker than that draft, so if the
+           scheduled-maintenance leg ever lands this sentence can be
+           strengthened to the timed promise without having misled anyone in
+           the meantime. */
+        consent: "What happens to this: your question, and anything you type above, are stored privately for Pete. Only Pete can read them. They are never published, never shown on this site, and never used to teach Ask Pete anything. Pete replies himself, using the contact details you chose to leave - nothing is sent back automatically, and he reads these on his own schedule. Pete manages these himself: he archives what he has read, and keeps a message for as long as he needs it - nothing here is removed on an automatic timetable.",
         agree: 'I agree to send this question, and anything I typed above, to Pete privately.',
         submit: 'Send to Pete',
         meta: 'Nothing is sent until you choose Send to Pete.',
@@ -195,10 +206,19 @@
             ? directConfig.dataset.askPeteDirectEndpoint
             : null;
 
+        /* The rail's OWN scroll container (`overflow: auto`). Kept out of
+           `elements` for the same reason as directConfig: the all-or-nothing
+           guard above must never be able to disable the whole companion over a
+           scrolling nicety. */
+        const scroller = companion.querySelector('.ask-pete-evidence-companion__scroll');
+
         const state = {
             layout: 'wide_rail', open: false, phase: 'idle', draft: '',
             requestedAction: null, explicitContext: null, viewingSection: 'overview',
-            answer: null, lastInvoker: null, requestSequence: 0, abortController: null,
+            /* `previousAnswer` retains exactly ONE prior answer, never a
+               growing history - see restorePreviousAnswer below. */
+            answer: null, previousAnswer: null,
+            lastInvoker: null, requestSequence: 0, abortController: null,
             slowTimer: null, timeoutTimer: null, timeoutSequence: null,
             highlightedTargets: new Set(), highlightTimers: new Map(), selectedSourceTarget: null,
         };
@@ -433,6 +453,9 @@
                         state.explicitContext = null;
                         elements.context.hidden = true;
                     }
+                    /* Retain exactly one prior answer before replacing it, so
+                       "Back to previous answer" has something to return to. */
+                    if (state.answer) state.previousAnswer = state.answer;
                     state.answer = payload;
                     setPhase('answered');
                     setRequestControls(false);
@@ -588,6 +611,14 @@
             questionInput.value = safeText(payload.handoff.question).trim();
             const submit = makeElement('button', null, DIRECT_COPY.submit);
             submit.type = 'submit';
+            /* A STYLING hook, shared deliberately with the composer so this
+               button is the accepted submit treatment
+               (`.ask-pete-evidence-composer [data-ask-pete-submit]`) rather
+               than a new one. It is not a controller hook: `elements.submit`
+               is resolved once at init, before this form can exist, so the two
+               never collide. Select it as
+               `[data-ask-pete-form] [data-ask-pete-submit]` when you mean the
+               composer's. */
             submit.dataset.askPeteSubmit = '';
             field.appendChild(questionInput);
             field.appendChild(submit);
@@ -774,6 +805,53 @@
             return section;
         }
 
+        /* Owner-reported defect (Pete, 2026-08-08): "the sixty second recruiter
+           view is a two second recruiter view... a lot of information, sorted
+           out weird."
+
+           The DOM order was already answer-first - heading, support state,
+           summary, claims, then sources, follow-ups and the handoff card. What
+           was missing was any scroll management of the rail AT ALL: the two
+           existing scrollIntoView calls both move the RESUME, never this
+           container. So the rail kept whatever scrollTop it had, and a
+           recruiter who has just typed in the composer is scrolled to the
+           bottom of the rail. Inserting a tall answer above the composer left
+           them looking at its tail - follow-ups and the contact card - with
+           the summary scrolled off the top. That is what "sorted out weird"
+           was seeing.
+
+           The accepted authority is explicit that state 4 renders "answer
+           first, followed by clearly associated claims and inspectable
+           evidence" (02_BACKEND_CONTRACT_AND_VISUAL_HANDOFF), that `summary`
+           is "the concise answer-first synthesis"
+           (03_VISUAL_RUNTIME_ARCHITECTURE), and that the flagship desktop
+           answer is "compact enough to inspect in one rail view"
+           (this stylesheet, the is-answer-first block). So this is a DEFECT
+           against the locked design, not a change to it.
+
+           Only this container is scrolled. scrollIntoView is deliberately not
+           used: it walks every scrollable ancestor, which would drag the
+           résumé behind the rail as a side effect. */
+        function revealAnswerTop() {
+            if (!scroller || elements.answer.hidden) return;
+            const offset = elements.answer.getBoundingClientRect().top
+                - scroller.getBoundingClientRect().top;
+            if (Math.abs(offset) < 2) return;
+            const top = Math.max(0, scroller.scrollTop + offset);
+            if (typeof scroller.scrollTo === 'function') {
+                scroller.scrollTo({ top, behavior: hasReducedMotion() ? 'auto' : 'smooth' });
+                return;
+            }
+            scroller.scrollTop = top;
+        }
+
+        function makeBackButton() {
+            const button = makeElement('button', 'ask-pete-evidence-back', 'Back to previous answer');
+            button.type = 'button';
+            button.dataset.askPeteBack = '';
+            return button;
+        }
+
         function renderAnswer(payload) {
             const fragment = document.createDocumentFragment();
             const heading = makeElement('h3', 'ask-pete-evidence-answer__heading', readablePurpose(payload.purpose));
@@ -783,6 +861,11 @@
             const meta = makeElement('div', 'ask-pete-evidence-answer__meta');
             meta.appendChild(makeSupportBadge(payload.state, payload.support_label));
             appendText(meta, 'span', null, 'Claim-level evidence and limitations');
+            /* Prepended, never appended: the accepted compact rail hides
+               `.ask-pete-evidence-answer__meta > span:last-child`, so adding a
+               trailing child would silently stop that rule matching and
+               un-compact the flagship view. */
+            if (state.previousAnswer) meta.insertBefore(makeBackButton(), meta.firstChild);
             fragment.appendChild(meta);
             appendText(fragment, 'p', 'ask-pete-evidence-answer__summary', payload.summary);
 
@@ -796,6 +879,35 @@
             if (handoff) fragment.appendChild(handoff);
             elements.answer.replaceChildren(fragment);
             elements.answer.hidden = false;
+            revealAnswerTop();
+        }
+
+        /* Owner-reported gap (Pete, 2026-08-08): "there's no way to go back."
+           Asking a second question replaced the first answer outright, with
+           nothing that could return to it.
+
+           The accepted state model holds a single `answer`
+           (03_VISUAL_RUNTIME_ARCHITECTURE, client state) and names
+           multi-answer history as "future conversation-state work"
+           (02_BACKEND_CONTRACT_AND_VISUAL_HANDOFF), so this is an
+           owner-directed ADAPTATION rather than a defect fix: exactly one
+           prior answer is retained, and one inline control returns to it.
+           There is no history panel and no stack.
+
+           It swaps rather than pops, so the control is truthful in both
+           directions and using it can never destroy the newer answer. Two
+           answers live in memory at most, and neither is ever sent back to the
+           model - a follow-up stays independently grounded, exactly as the
+           architecture requires. */
+        function restorePreviousAnswer() {
+            if (!state.previousAnswer) return;
+            const restored = state.previousAnswer;
+            state.previousAnswer = state.answer;
+            state.answer = restored;
+            clearEvidenceMarkers();
+            setPhase('answered');
+            renderAnswer(restored);
+            setStatus('Showing the previous answer. Select it again to return to the newer one.');
         }
 
         function readLocatorFromElement(element) {
@@ -1027,6 +1139,11 @@
         });
 
         companion.addEventListener('click', (event) => {
+            const back = event.target.closest('[data-ask-pete-back]');
+            if (back && companion.contains(back)) {
+                restorePreviousAnswer();
+                return;
+            }
             const citationToggle = event.target.closest('[data-ask-pete-citation-toggle]');
             if (citationToggle && companion.contains(citationToggle)) {
                 toggleCitation(citationToggle);

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import unittest
 from pathlib import Path
 
@@ -24,6 +25,32 @@ REGISTRY = ROOT / "SQL FIles" / "Migrations" / "registry.json"
 FORWARD = MIGRATIONS / "PS-ASK-PETE-DIRECT-001_recruiter_questions.sql"
 ROLLBACK = MIGRATIONS / "PS-ASK-PETE-DIRECT-001_recruiter_questions_rollback.sql"
 VERIFY = VERIFICATION / "PS-ASK-PETE-DIRECT-001_owner_isolation_verify.sql"
+
+# The governed migration tooling, reused rather than re-implemented: the gate
+# proof assertions below must judge the file exactly as the applier judges it.
+# tests/test_schema_migration_path.py imports it the same way.
+if str(ROOT / "scripts") not in sys.path:
+    sys.path.insert(0, str(ROOT / "scripts"))
+from migration_registry import (  # noqa: E402
+    FORBIDDEN_GATE_DATABASES,
+    executable_sha256,
+    gate_status,
+    load_registry,
+)
+from migration_registry import ROOT as REGISTRY_ROOT  # noqa: E402
+
+
+def computed_prerequisite_chain() -> list[str]:
+    """The transitive prerequisite chain the gate would apply, computed live
+    from the registry rather than restated as a literal that could drift."""
+    import govern_sql_migrations as governed
+
+    registry = load_registry()
+    migration = registry.get("PS-ASK-PETE-DIRECT-001")
+    return [
+        item.migration_id
+        for item in governed._prerequisite_chain(registry, migration)
+    ]
 
 PROCEDURE_NAMES = (
     "usp_SubmitRecruiterQuestion",
@@ -369,12 +396,59 @@ class RegistryTests(unittest.TestCase):
             set(self.entry),
         )
 
-    def test_the_entry_is_registered_ungated(self):
-        """gate: null is the truthful state. This migration has never been
+    def test_the_entry_carries_its_passed_gate_proof(self):
+        """Until 2026-08-08 this asserted ``gate`` was ``None``.
 
-        proven against a throwaway database, so the governed applier must
-        refuse it. The gate proof is a later, owner-attended leg."""
-        self.assertIsNone(self.entry["gate"])
+        That was the truthful state while the migration had never been proven
+        against a throwaway database, and the guard existed so that leaving
+        that state could never happen quietly. On 2026-08-08 Pete ran the gate
+        (``ps-ask-pete-direct-gate-202608082309`` at 23:10:49Z, verifier
+        returned ``verified = 1``) and the proof was recorded - so the guard
+        fired exactly as designed, and is replaced here rather than deleted.
+
+        Its successor guards the opposite risk. A gate proof is worth
+        something only while it still describes the bytes it vouches for, so
+        this pins the proof's substance: the digest must equal the file's
+        digest today, the rehearsal must have happened somewhere disposable,
+        and the verification and prerequisites must be the ones that run
+        actually produced. Editing the T-SQL without re-gating, or
+        hand-editing a stale proof to look current, fails here.
+        """
+        gate = self.entry["gate"]
+        self.assertIsNotNone(gate, "the recorded gate proof has gone missing")
+
+        # The digest is the whole point of the proof: it binds the recorded
+        # rehearsal to exact bytes. Computed the way the tool computes it -
+        # the executable body after the leading block comment - so a comment
+        # edit is correctly tolerated and a T-SQL edit is not.
+        self.assertEqual(
+            gate["executable_sha256"],
+            executable_sha256(FORWARD),
+            "the T-SQL on disk no longer matches the gated bytes; re-gate it",
+        )
+
+        # Somewhere disposable, and named so it cannot be mistaken for real.
+        self.assertRegex(gate["gate_database"], r"^ps-ask-pete-direct-gate-\d{12}$")
+        self.assertNotIn(gate["gate_database"], FORBIDDEN_GATE_DATABASES)
+
+        self.assertTrue(str(gate["operator"]).strip(), "a gate needs a named operator")
+        self.assertIn("verified = 1", gate["verification"])
+        self.assertIn(VERIFY.name, gate["verification"])
+
+        # The rehearsal applied the real prerequisite chain, not a shorter one
+        # that would have made the forward apply easier than production's.
+        self.assertEqual(list(gate["prerequisites"]), computed_prerequisite_chain())
+
+    def test_the_tools_own_gate_check_agrees(self):
+        """Belt and braces: the digest comparison above re-implements a rule
+        the applier already owns, so this asks ``gate_status`` itself - the
+        code that actually decides whether production may apply this - rather
+        than trusting a second implementation of the same rule."""
+        registry = load_registry()
+        ok, reason = gate_status(
+            registry.get("PS-ASK-PETE-DIRECT-001"), REGISTRY_ROOT
+        )
+        self.assertTrue(ok, reason)
 
     def test_the_entry_points_at_files_that_exist(self):
         for key in ("forward", "rollback"):

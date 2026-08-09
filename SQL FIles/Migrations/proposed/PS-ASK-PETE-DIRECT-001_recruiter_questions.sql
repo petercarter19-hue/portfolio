@@ -11,20 +11,23 @@
    Owner decision, 2026-08-08 (Pete's standing full approval for the
    remaining packages, recorded in docs/governance/CURRENT_LANES.json for
    PS-ASK-PETE-DIRECT-001): build the private recruiter-question path
-   dark. The retention defaults quoted to the sender (archive at 90 days,
-   remove at 180) are conservative drafts Pete revises before the feature
-   flag is ever turned on.
+   dark. A second owner decision the same day ("published always") settled
+   what the sender is told about retention: this path goes live as soon as
+   its remaining legs land, so the consent copy states only what actually
+   happens - the member archives what they have read, and nothing is
+   removed on an automatic timetable. The earlier 90/180-day draft was
+   withdrawn because nothing implements it (see below).
 
    What this file deliberately does NOT contain:
 
-   * No hard delete. Removal is archive-only in v1, so no destructive
-     operation gate is triggered and no procedure here executes a DELETE
-     against either new table. The 180-day removal half of the retention
-     policy is NOT implemented by this migration; it is a separate,
-     independently scheduled maintenance leg (the
-     usp_PurgeCommunityContent pattern), and the package README records
-     that the consent copy's retention sentence and that leg must be
-     reconciled before the flag turns on.
+   * No hard delete, and no scheduled expiry. Removal is archive-only in
+     v1, so no destructive operation gate is triggered and no procedure
+     here executes a DELETE against either new table. Because nothing
+     expires or purges, the consent copy makes no timed promise; an
+     automated retention leg (the usp_PurgeCommunityContent out-of-process
+     pattern) is possible future work, and the copy can be strengthened to
+     a timed promise in the same change that implements one - never
+     before it.
    * No AI, no proposal, and no knowledge write. A question stored here
      never becomes Ask Pete grounding; the two stores share no table,
      column, or procedure.

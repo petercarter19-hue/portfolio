@@ -188,11 +188,38 @@ class ConsentAndTruthfulnessTests(unittest.TestCase):
             "never published",
             "never used to teach Ask Pete",
             "nothing is sent back automatically",
-            "archive them after 90 days",
-            "remove them after 180",
+            "he archives what he has read",
+            "nothing here is removed on an automatic timetable",
         ):
             with self.subTest(claim=claim):
                 self.assertIn(claim, consent)
+
+    def test_the_consent_copy_promises_no_retention_this_package_cannot_keep(self):
+        """Owner decision 2026-08-08 ("published always"): a sentence a visitor
+        reads must be true today.
+
+        Nothing in this package expires, purges, or deletes a stored question -
+        there is no delete procedure at all, by design - so the copy must not
+        name a period after which anything happens on its own. If the
+        scheduled-maintenance leg lands, the promise can be strengthened AND
+        this test tightened in the same change; until then a timed claim here
+        would be false the moment it was published.
+        """
+        consent = re.search(r"consent: \"(.*?)\",\n", self.section, re.S).group(1)
+        for false_promise in (
+            "90 days",
+            "180",
+            "retention policy",
+            "automatically deleted",
+            "will be deleted",
+            "expire",
+        ):
+            with self.subTest(false_promise=false_promise):
+                self.assertNotIn(false_promise, consent)
+        self.assertIsNone(
+            re.search(r"\b\d+\s*(day|month|year)", consent),
+            "the consent copy names a retention period nothing implements",
+        )
 
     def test_no_state_claims_a_reply_or_a_receipt(self):
         for overclaim in (

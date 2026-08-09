@@ -310,6 +310,25 @@ body.ask-pete-evidence-enabled .profile-tabs {
 }
 .ask-pete-evidence-answer { display: grid; gap: 0.9rem; border-top: 1px solid var(--ape-line); padding-top: 1rem; }
 .ask-pete-evidence-answer__meta { display: flex; align-items: center; gap: 0.45rem; color: var(--ape-muted); font-size: 0.68rem; font-weight: 760; }
+/* Owner-directed adaptation (Pete, 2026-08-08: "there's no way to go back").
+   The answer's one inline action, in the same transparent text-button
+   treatment the composer meta's Cancel already uses - no new visual language,
+   no new token. 2.75rem keeps it at the 44px the flagship compact block below
+   requires of "every interactive control". The shared companion focus-visible
+   rule already covers it, because it is a <button> inside the companion. */
+.ask-pete-evidence-back {
+    min-height: 2.75rem;
+    flex: 0 0 auto;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--ape-forest);
+    font: inherit;
+    font-weight: 820;
+    text-align: left;
+    cursor: pointer;
+}
+.ask-pete-evidence-back:hover { color: var(--ape-gold); text-decoration: underline; text-underline-offset: 0.18em; }
 .ask-pete-evidence-answer__summary { margin: 0; color: #243f34; font-size: 0.87rem; line-height: 1.52; }
 .ask-pete-evidence-claim { display: grid; gap: 0.55rem; border: 1px solid var(--ape-line); border-radius: 0.72rem; background: rgb(255 255 252 / 68%); padding: 0.78rem; }
 .ask-pete-evidence-claim--boundary,

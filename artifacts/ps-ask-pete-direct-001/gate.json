@@ -1,0 +1,75 @@
+{
+  "action": "gate",
+  "database": "ps-ask-pete-direct-gate-202608082309",
+  "migration_id": "PS-ASK-PETE-DIRECT-001",
+  "proof": {
+    "executable_sha256": "ec3d21d08bb186551b4b5053603c5cd5a9c536ded095a33f3e84e99d6f58c311",
+    "gate_database": "ps-ask-pete-direct-gate-202608082309",
+    "gate_server": "peerslate",
+    "gated_at_utc": "2026-08-08T23:10:49Z",
+    "objects": [
+      "CHECK_CONSTRAINT:dbo.CK_recruiter_questions_consent_version_length",
+      "CHECK_CONSTRAINT:dbo.CK_recruiter_questions_contact_length",
+      "CHECK_CONSTRAINT:dbo.CK_recruiter_questions_question_length",
+      "CHECK_CONSTRAINT:dbo.CK_recruiter_questions_status",
+      "CHECK_CONSTRAINT:dbo.CK_recruiter_questions_status_change_pair",
+      "DEFAULT_CONSTRAINT:dbo.DF_recruiter_question_save_requests_created",
+      "DEFAULT_CONSTRAINT:dbo.DF_recruiter_questions_created",
+      "DEFAULT_CONSTRAINT:dbo.DF_recruiter_questions_key",
+      "DEFAULT_CONSTRAINT:dbo.DF_recruiter_questions_status",
+      "FOREIGN_KEY_CONSTRAINT:dbo.FK_recruiter_question_save_requests_owner",
+      "FOREIGN_KEY_CONSTRAINT:dbo.FK_recruiter_question_save_requests_question",
+      "FOREIGN_KEY_CONSTRAINT:dbo.FK_recruiter_questions_owner",
+      "FOREIGN_KEY_CONSTRAINT:dbo.FK_recruiter_questions_status_actor",
+      "PRIMARY_KEY_CONSTRAINT:dbo.PK_recruiter_question_save_requests",
+      "PRIMARY_KEY_CONSTRAINT:dbo.PK_recruiter_questions",
+      "SQL_STORED_PROCEDURE:dbo.usp_ListRecruiterQuestionsForOwner",
+      "SQL_STORED_PROCEDURE:dbo.usp_SetRecruiterQuestionStatusForOwner",
+      "SQL_STORED_PROCEDURE:dbo.usp_SubmitRecruiterQuestion",
+      "UNIQUE_CONSTRAINT:dbo.UQ_recruiter_question_save_requests_owner_key",
+      "UNIQUE_CONSTRAINT:dbo.UQ_recruiter_questions_id_owner",
+      "UNIQUE_CONSTRAINT:dbo.UQ_recruiter_questions_key",
+      "USER_TABLE:dbo.recruiter_question_save_requests",
+      "USER_TABLE:dbo.recruiter_questions"
+    ],
+    "operator": "Pete",
+    "prerequisites": [
+      "PS-PLAT-000",
+      "PS-PLAT-001",
+      "PS-PLAT-002",
+      "PS-PLAT-003",
+      "PS-PLAT-004",
+      "PS-PLAT-005",
+      "PS-PLAT-006",
+      "PS-PLAT-007",
+      "PS-AUTH-001"
+    ],
+    "verification": "PS-ASK-PETE-DIRECT-001_owner_isolation_verify.sql returned verified = 1"
+  },
+  "steps": [
+    {
+      "detail": "PS-PLAT-000, PS-PLAT-001, PS-PLAT-002, PS-PLAT-003, PS-PLAT-004, PS-PLAT-005, PS-PLAT-006, PS-PLAT-007, PS-AUTH-001",
+      "step": "prerequisites"
+    },
+    {
+      "detail": "23 object(s) created",
+      "step": "forward apply"
+    },
+    {
+      "detail": "objects and ledger unchanged",
+      "step": "re-apply is a no-op"
+    },
+    {
+      "detail": "PS-ASK-PETE-DIRECT-001_owner_isolation_verify.sql returned verified = 1",
+      "step": "verification"
+    },
+    {
+      "detail": "23 object(s) reversed",
+      "step": "rollback rehearsal"
+    },
+    {
+      "detail": "ledger row restored",
+      "step": "forward apply after rollback"
+    }
+  ]
+}

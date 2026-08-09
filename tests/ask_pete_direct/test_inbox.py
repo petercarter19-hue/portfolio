@@ -408,8 +408,22 @@ class TemplateTruthfulnessTests(DirectRouteTestCase):
         )
 
     def test_the_retention_note_matches_what_senders_are_told(self):
-        self.assertIn("archive after 90 days and remove after 180", self.template)
+        """The owner page reports the sender's promise back, so the two cannot
+        drift into saying different things about the same data."""
         self.assertIn("never used to teach Ask Pete", self.template)
+        for claim in (
+            "you archive what you have read",
+            "nothing removed on an automatic timetable",
+        ):
+            with self.subTest(claim=claim):
+                self.assertIn(claim, " ".join(self.template.split()))
+
+    def test_the_owner_page_repeats_no_retention_promise_nothing_implements(self):
+        """Same rule as the sender-facing copy: no timed claim, because no
+        automated retention exists in this package."""
+        for false_promise in ("90 days", "180", "retention policy"):
+            with self.subTest(false_promise=false_promise):
+                self.assertNotIn(false_promise, self.rendered)
 
     def test_nothing_on_the_page_deletes(self):
         self.assertIn("nothing on this page deletes anything", self.template.lower())
