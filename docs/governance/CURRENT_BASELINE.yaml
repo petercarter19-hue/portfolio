@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-ASK-PETE-DIRECT-001 is the sole active Protected writer on work/2026-08-08-ask-pete-direct-001 (Opus 5 implements, Fable reviews). PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 is complete and live; its Interview surfaces including app.py are relinquished, which unblocks the Ask Pete Direct registration leg's recorded-grant path. Release authority remains empty."
+  current_assignments: "PS-ASK-PETE-DIRECT-001 continues on work/2026-08-08-ask-pete-direct-001 and owns app.py. PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001 activates on work/2026-08-08-interview-studio-visual-fidelity-001 for the four studio surfaces plus its package folder. Release authority remains empty."
 
 governing_documents:
   bible:
@@ -61,6 +61,9 @@ active_packages:
   - id: PS-ASK-PETE-DIRECT-001
     status: active_delivery
     scope: "Dark private recruiter-question path: consent-first companion form, unregistered blueprint, gated additive migration, owner-only pull inbox; no app.py, sending, schema apply, deployment, or enablement."
+  - id: PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001
+    status: active_delivery
+    scope: "Owner-directed finish fidelity for /interview-studio toward the locked Smoked Eucalyptus authority: layered depth, texture, deep shadows, typography, wider center/narrower right rail, interaction debugging; four studio surfaces plus its package folder; no app.py or new visual direction."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -146,7 +149,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-ASK-PETE-DIRECT-001 continues as the sole active lane. With Interview Studio Functional V1 complete, live, and its app.py surface relinquished, the Ask Pete Direct two-line registration leg may proceed via the recorded-grant pattern when its own sequence reaches it; schema apply and enablement still wait for their own recorded legs."
+next_gate: "Two disjoint lanes: PS-ASK-PETE-DIRECT-001 (schema apply and enablement still wait for their recorded legs) and PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001 (owner-directed fidelity through deploy under its recorded decision)."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
