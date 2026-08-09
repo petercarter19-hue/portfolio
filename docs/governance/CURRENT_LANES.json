@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-08",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-COMMUNITY-AUTH-WALL-001"
+      "PS-COMMUNITY-AUTH-WALL-001",
+      "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -897,6 +898,42 @@
       ],
       "cleanup_contract": "Task-local only: remove the activation worktree after the activation PR merges; dispose of the implementation worktree and branch per BRANCH_DISPOSITION_RECORD only after a verified squash merge.",
       "sequence": "Merge the activation-only PR; create the implementation worktree from the resulting origin/main; pass write preflight; implement the code-only containment package with tests; self-review; independent adversarial review; record the merge grant through the control plane when the ledger surface is available; stop before deployment pending a recorded release sequence and Pete's retention reapproval."
+    },
+    {
+      "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
+      "outcome": "Create one self-contained external ChatGPT visual-research handoff that explains current live PeerSlate, approved and in-progress direction, planned upgrades, selected current mockups and visual authorities, critical product and behind-the-scenes trust behavior, the owner review conversation, and an exact independent-research assignment. Label live, approved direction, in progress, proposed, historical, and superseded material distinctly so the external reviewer can assess what PeerSlate is becoming without confusing aspiration with production truth.",
+      "branch": "work/2026-08-08-external-visual-review-handoff-001",
+      "writer": "Root Codex session in a dedicated clean worktree; read-only specialist agents may inventory product truth, assets, and handoff structure, but Root Codex is the sole writer and final assembler.",
+      "delivery_path": "Bounded",
+      "production_capable": false,
+      "source_checkpoint": "Authoritative Azure origin/main 72ea183eaed45e7d09b50950e112167da3eafa77. Production remains fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6 via run 688, live release 090ed9967daf7a00c798898e; later source or live facts must be refreshed and labeled at export time.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001/",
+        "artifacts/2026-08-08-chatgpt-visual-research-handoff/",
+        "output/PeerSlate_ChatGPT_Complete_Visual_Research_Handoff_2026-08-08.zip"
+      ],
+      "exclusions": [
+        "No application, route, template, stylesheet, script, test, schema, configuration, provider, pipeline, deployment, or production change.",
+        "No new visual authority or owner lock; mockups and directions retain their existing approved, candidate, in-progress, proposed, historical, or superseded status.",
+        "No change to Community or any surface owned by PS-COMMUNITY-AUTH-WALL-001.",
+        "No secrets, credentials, private member data, production database extracts, private media, or unpublished personal information.",
+        "No overwrite, deletion, or reinterpretation of source mockups, handoffs, branches, worktrees, artifacts, or release evidence.",
+        "No external research conclusion is treated as a product decision, implementation authorization, merge, deployment, or live proof."
+      ],
+      "completion_evidence": [
+        "Master START_HERE and research prompt explain the reviewer task, truth labels, current/future product model, critical workflows, open questions, and required report structure.",
+        "Selected mockups, live screenshots, source extracts, conversation record, and evidence catalogs are complete, provenance-labeled, and referenced by a SHA-256 manifest.",
+        "Archive opens successfully, internal required files resolve, duplicate or missing asset references are reported, and the final ZIP hash and size are recorded.",
+        "Complete-diff self-review confirms the package contains no runtime or active-lane surface change and states honest limitations."
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-08",
+          "decision": "Pete requested a huge, complete handoff package for ChatGPT to perform a comprehensive visual and independent-research review. It must include new mockups, current direction, completed work, critical behind-the-scenes functions, this review conversation, and enough context to understand what the website is becoming rather than only how it looks today."
+        }
+      ],
+      "cleanup_contract": "Preserve every source artifact. After a verified merge, remove only this task's clean activation and implementation worktrees/branches when recoverability and the delivered ZIP are confirmed.",
+      "sequence": "Merge the activation-only PR; create the implementation worktree from the resulting origin/main; pass write preflight; inventory and assemble the documentation/export package; validate content, provenance, hashes, links, and archive integrity; self-review; merge documentation through an Azure PR if retained source files are changed; deliver the ZIP without deployment."
     }
   ],
   "paused_lanes": [

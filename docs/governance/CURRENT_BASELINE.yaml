@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-COMMUNITY-AUTH-WALL-001 is the sole active writer on work/2026-08-08-community-auth-wall-001. Ask Pete direct-question path is LIVE (2026-08-09) and closing. Release authority remains empty."
+  current_assignments: "PS-COMMUNITY-AUTH-WALL-001 owns the Community sign-in-wall surfaces on work/2026-08-08-community-auth-wall-001. PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 owns only its documentation, artifact-export, and final ZIP surfaces on work/2026-08-08-external-visual-review-handoff-001. Ask Pete direct-question path is LIVE (2026-08-09) and closing. Release authority remains empty."
 
 governing_documents:
   bible:
@@ -61,6 +61,9 @@ active_packages:
   - id: PS-COMMUNITY-AUTH-WALL-001
     status: active_delivery
     scope: "Protected containment: authenticate every Community HTML, API, search, Voice, and media path; retire demo and legacy public routes; fail closed; no Feed redesign, schema change, or deployment."
+  - id: PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001
+    status: active_delivery
+    scope: "Bounded documentation/export only: assemble a complete, provenance-labeled ChatGPT visual-research handoff with selected mockups, product direction, critical functional truth, conversation context, and independent-research instructions; no runtime or new visual authority."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -148,7 +151,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-COMMUNITY-AUTH-WALL-001 continues the Community sign-in wall. One lane slot is free. Ask Pete direct-question inbox is live and its lane is closing; PS-AGENT-OPERATIONS-001 (gate-free deploys) and PS-ASK-PETE-ROLE-LENS-001 are queued briefs."
+next_gate: "PS-COMMUNITY-AUTH-WALL-001 continues the Community sign-in wall. PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 assembles the complete external ChatGPT visual-research package without runtime or visual-authority change. Both lane slots are occupied; release authority remains empty."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
