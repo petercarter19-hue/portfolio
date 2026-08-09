@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-09T00:45:00Z",
+  "updated_at": "2026-08-09T02:20:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,8 +12,7 @@
     "authorized_at": "2026-08-08",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-ASK-PETE-DIRECT-001",
-      "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001"
+      "PS-ASK-PETE-DIRECT-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -27,7 +26,8 @@
       "PS-ASK-PETE-AI-RELEASE-001",
       "PS-WORKSHOP-ACCESS-001",
       "PS-ASK-PETE-DIRECT-001",
-      "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001"
+      "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
+      "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001"
     ],
     "cleanup_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -40,7 +40,8 @@
       "PS-ASK-PETE-AI-READINESS-002",
       "PS-ASK-PETE-AI-RELEASE-001",
       "PS-WORKSHOP-ACCESS-001",
-      "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001"
+      "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
+      "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001"
     ],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -55,7 +56,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 closed complete and live on 2026-08-08. Terra max's candidate e3fed2b passed Sol review; an independent Fable exact-SHA review rejected with 4 P1 / 5 P2 findings; Pete authorized the correction round in chat ('I give you permission to fix everything') and designated the model-switched Fable session as the independent re-reviewer ('I just changed the fable. That's more than enough.'). A second fresh-context adversarial review caught one residual P2 in the first correction, fixed as 85387db with zero regressions (focused 204, full suite 3212). Pete then ordered 'Go ahead and deploy. Merge and deploy.': PR 349 squash-merged as exact main 0dbed0d with verified tree equivalence; the automatic trigger did not fire, so the recorded manual-override path deployed via governed run 674 (schemaAction=none; the known spurious schema checkpoint was verified and released); /healthz release 224806c2175d4d4f4b1e2aa9 matches the derived identity and the live route serves the corrected markers. Every Interview surface including app.py is relinquished. PS-ASK-PETE-DIRECT-001 remains the sole active writer; its app.py registration leg is now unblocked for its own recorded sequence. Release authority remains empty."
+    "exit_authority": "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001 closed complete and live on 2026-08-09. Under Pete's recorded end-to-end authority the fidelity candidate 7d604dc (implementation plus a fresh-context adversarial review whose findings — dead edits behind later same-specificity sections, an AI-mode rail overlap, a textured-canvas AA regression, and a dark token-contract breach — were all corrected) merged via PR 354 as exact main fb55cd5 with verified tree equivalence, deployed by governed manual-override run 688 (schemaAction=none; spurious checkpoint verified and released), and live-verified: /healthz release 090ed9967daf7a00c798898e matches the derived identity and the live assets serve the depth system, SVG grain, proportions, and the experience-picker fix. One lane slot is free; PS-ASK-PETE-DIRECT-001 continues as the sole active writer. Release authority remains empty."
   },
   "activation_policy": {
     "enabled": true,
@@ -717,6 +718,38 @@
       ],
       "cleanup_contract": "After this closeout record merges and recoverability is verified, archive-tag and remove only this lane's merged branches (work/2026-08-08-interview-studio-functional-v1-001 and work/2026-08-08-interview-studio-functional-v1-001-review-fixes); the Windows implementation worktree is removed from that machine separately. Preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
       "sequence": "activation -> Terra implementation -> Sol review -> independent Fable exact-SHA review (REJECT) -> owner-directed correction round -> owner-designated re-review plus fresh-context adversarial delta review -> residual fix -> PR 349 merge -> governed manual-override deploy 674 -> live verification -> this closeout"
+    },
+    {
+      "package": "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001",
+      "outcome": "Complete and live. Owner-directed finish fidelity toward the locked Smoked Eucalyptus board merged via PR 354 as exact main fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6 (tree byte-identical to reviewed candidate 7d604dc) and deployed by governed manual-override run 688. Live release 090ed9967daf7a00c798898e matches the derived identity; live assets verified.",
+      "branch": "work/2026-08-08-interview-studio-visual-fidelity-001",
+      "writer": "Claude (the Fable session holding Pete's conversation) architects, implements, and ships end-to-end under Pete's explicit authority; a fresh-context adversarial agent reviews the exact candidate diff before merge",
+      "delivery_path": "Bounded",
+      "production_capable": true,
+      "source_checkpoint": "Base 0658982 (activation merge); candidate 7d604dca01836ee6bafd094e1a461df194c204f8; PR 354 squash merge fb55cd5; deploy run 688; live release 090ed9967daf7a00c798898e.",
+      "completion_evidence": [
+        "three-tier ink-green depth system with the task stage on the deep front layer via the winning light-calibration rule; dark token twins keep the dark block's token-only contract; light-only gradients scoped to light; prefers-contrast forces gradients back to the surface token",
+        "real SVG feTurbulence canvas grain (measured on-canvas luminance stddev ~3) over tonal mottles and vignette; canvas-exposed muted text raised to mid ink, computed AA-safe",
+        "question title clamp(1.9rem, 3.3vw, 2.7rem) at the winning rule (43.2px live at 1920); mode cards enlarged; sub-legible sizes raised; card padding opened",
+        "right rail 18.25rem -> 15.75rem across practice/video/complete AND the AI mode's absolute rail and grounding card; live-measured zero overlap in AI mode",
+        "experience-level picker fixed (stray question-replacement confirm removed, level applies immediately, video guard kept, live-region announcement); full-page debug pass found no other broken interaction",
+        "fresh-context adversarial review's three blocking findings and P2/P3 notes all corrected and re-verified live before merge",
+        "focused suite 206 passed; full repository suite 3270 passed / 5 skipped / 0 failures; no overflow or clipped controls at 1920/1366/1024/390/200 percent proxy",
+        "PR 354 build policy approved; merge tree byte-identical to the candidate; run 688 deployed with schemaAction=none and a verified checkpoint release; /healthz identity exact-matched and live assets confirmed"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-08",
+          "decision": "Pete reviewed the live release against the mockups and directed: more texture, way more layers, deep shadow so it pops off the screen like the mockups; fix the font/text issues; make the center frame wider and the right rail a little more narrow with appropriately resized, spaced type; visually judge the result ('does it look right, does it look weird, play around with it'); debug the page hard including the experience picker ('that doesn't really work well'); 'architect implement review all the way through... you have permission to work all the way through.' This covers implementation, review, the Azure PR, merge, governed deployment, live verification, and closeout for this lane."
+        }
+      ],
+      "known_limits": [
+        "grain visibility was verified by objective pixel measurement and native-resolution reasoning; the screenshot pipeline cannot reproduce fine grain, so Pete's own screen is the final judge of taste",
+        "dark theme remains dormant; the new tokens have dark twins but the dark composition was not visually exercised",
+        "the pre-existing unscoped session-rail light gradient (latent dark issue, recorded previously) remains deferred to the dark-theme lane"
+      ],
+      "cleanup_contract": "After this closeout merges, archive-tag and remove only this lane's merged branch and worktrees; preserve everything else.",
+      "sequence": "activation -> implementation -> fresh-context adversarial review -> corrections re-verified live -> PR 354 -> governed deploy 688 -> live verification -> this closeout"
     }
   ],
   "active_lanes": [
@@ -798,50 +831,6 @@
       },
       "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged worktree and branches behind archive tags; preserve everything else.",
       "sequence": "Merge the activation-only PR; create the implementation worktree; pass write preflight; implement the four dark slices with tests; self-review; Fable exact-SHA review; open and merge the Azure PR under recorded authority; hold registration, schema apply, deployment, and enablement for their own recorded legs."
-    },
-    {
-      "package": "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001",
-      "outcome": "Make the live /interview-studio implementation match the locked authority's material finish: pronounced layered depth (texture, foreground/midground/background separation, deep soft shadows so surfaces visibly lift off the canvas exactly as the locked mockups show), corrected typography scale and spacing, a wider center stage with a narrower right rail inside the locked three-column composition, and a hands-on debug pass of page interactions starting with the experience-level picker. This is fidelity to the existing Smoked Eucalyptus and functional-state lock; it creates no new visual direction.",
-      "branch": "work/2026-08-08-interview-studio-visual-fidelity-001",
-      "writer": "Claude (the Fable session holding Pete's conversation) architects, implements, and ships end-to-end under Pete's explicit authority; a fresh-context adversarial agent reviews the exact candidate diff before merge",
-      "delivery_path": "Bounded",
-      "production_capable": true,
-      "source_checkpoint": "Authoritative Azure origin/main 21751b8d709c9b463046686682b83983d67fd706 after the Ask Pete Direct blueprint registration. Production is 0dbed0d via run 674, live release 224806c2175d4d4f4b1e2aa9.",
-      "writable_surfaces": [
-        "templates/interview_studio.html",
-        "static/css/interview-studio.css",
-        "static/js/interview-studio.js",
-        "tests/test_interview_studio.py",
-        "docs/initiatives/PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001/"
-      ],
-      "exclusions": [
-        "no app.py write: PS-ASK-PETE-DIRECT-001 owns app.py for its registration leg; this lane's debug fixes stay in the studio JS/template",
-        "no templates/base.html, global style.css, shared dictation code, route, provider/model, schema, dependency, pipeline, or production-configuration change",
-        "no new visual direction: the Smoked Eucalyptus material authority and hash-locked functional compositions remain the lock; this lane raises finish fidelity (depth, texture, type, proportion) toward them and stops if a change would materially revise composition, hierarchy, or color language",
-        "no write to another lane's surface, branch, worktree, or artifact"
-      ],
-      "visual_authority": {
-        "required_standard": "docs/governance/OWNER_VISUAL_INTEGRITY_STANDARD.md",
-        "controlling_material_direction": "docs/initiatives/PS-INTERVIEW-STUDIO-CALIBRATION-001/source-authority/owner-selected-2026-08-06/34 - Green Hue Only - Smoked Eucalyptus.png",
-        "functional_composition": "docs/initiatives/PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001/source-authority/ (hash-locked 01-04) plus repository files 46-48 for critical states",
-        "note": "Owner-directed fidelity correction toward the existing lock ('it should have more of a 3D look... just like the mockups did'); per the standard this is implementation of a locked authority, not ChatGPT-lane visual creation. Pete holds final visual acceptance."
-      },
-      "owner_decisions": [
-        {
-          "date": "2026-08-08",
-          "decision": "Pete reviewed the live release against the mockups and directed: more texture, way more layers, deep shadow so it pops off the screen like the mockups; fix the font/text issues; make the center frame wider and the right rail a little more narrow with appropriately resized, spaced type; visually judge the result ('does it look right, does it look weird, play around with it'); debug the page hard including the experience picker ('that doesn't really work well'); 'architect implement review all the way through... you have permission to work all the way through.' This covers implementation, review, the Azure PR, merge, governed deployment, live verification, and closeout for this lane."
-        }
-      ],
-      "cleanup_contract": "After an authorized merge, deployment, live verification, and closeout, archive-tag and remove only this lane's clean merged branches and worktrees; preserve everything else.",
-      "sequence": "activation record -> implementation worktree from resulting origin/main -> write preflight -> mockup-anchored visual fidelity implementation and debug -> browser comparison and iteration at all recorded viewports -> complete-diff self-review plus fresh-context adversarial review -> Azure PR and policy -> merge under recorded owner authority -> governed deploy -> live verification -> closeout",
-      "completion_evidence": [
-        "write preflight passes in the dedicated implementation worktree from resulting origin/main",
-        "side-by-side browser comparison against the locked Smoked Eucalyptus board and functional compositions shows the intended layered depth, texture, shadow, typography, and center/rail proportion at 1920, 1366x1024, 1024x1366, 390, and a 200 percent reflow proxy, with no overflow, clipped controls, contrast, focus, or reduced-motion regressions",
-        "the experience-picker defect is reproduced, root-caused, fixed, and regression-tested; the hands-on debug pass finds no broken interaction on the page",
-        "focused Interview Studio suite and the full repository suite pass with zero failures",
-        "complete-diff self-review plus a fresh-context adversarial review of the exact candidate report no unresolved actionable finding before the Azure PR",
-        "merge, governed deploy, exact release-identity verification, and live-route smoke are recorded before any live claim"
-      ]
     }
   ],
   "paused_lanes": [
@@ -900,11 +889,11 @@
     "preflight_repair_pull_request": 281,
     "preflight_repair_validation_pipeline": 514,
     "preflight_repair_validation_result": "succeeded",
-    "deployed_main_commit": "0dbed0d6b69a91e8ce851f9c9d127cadd83f31b5",
-    "deployed_pipeline": 674,
-    "live_release": "224806c2175d4d4f4b1e2aa9",
-    "application_behavior_commit": "0dbed0d6b69a91e8ce851f9c9d127cadd83f31b5",
-    "application_behavior_pipeline": 674,
+    "deployed_main_commit": "fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6",
+    "deployed_pipeline": 688,
+    "live_release": "090ed9967daf7a00c798898e",
+    "application_behavior_commit": "fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6",
+    "application_behavior_pipeline": 688,
     "live_health": "ok",
     "community_public_pilot": "conditional_owner_pilot_live_with_labelled_empty-feed_demo",
     "community_schema": "PS-COMMUNITY-REVIVAL-001_applied_ledger_25",
