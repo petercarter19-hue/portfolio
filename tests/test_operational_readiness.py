@@ -690,7 +690,9 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
         self.assertEqual(
             [
                 'Build',
-                'ProductionOperation',
+                'ProductionWebDeploy',
+                'SchemaReadOnlyPreflight',
+                'SchemaApply',
                 'ProductionReleaseSkipped',
                 'CandidateDeploy',
                 'CandidateSmoke',
@@ -732,7 +734,7 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             r'(?m)^            condition\s*:',
         )
 
-        production_stage = stage_bodies['ProductionOperation']
+        production_stage = stage_bodies['ProductionWebDeploy']
         self.assertIn('batch: true', pipeline)
         self.assertIn('name: forceProductionDeploy', pipeline)
         self.assertIn('type: boolean', pipeline)
@@ -939,15 +941,20 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
                 else len(pipeline)
             )
             stage_bodies[match.group(1)] = pipeline[match.start():end]
-        schema_stage = stage_bodies['ProductionOperation']
-        schema_jobs = schema_stage.split(
+        # The schema path spans two stages so that a run which touches no
+        # database never references the environment carrying the approval:
+        # `SchemaReadOnlyPreflight` reads and plans, `SchemaApply` mutates.
+        # Assertions that used to cover one stage now name the stage they mean.
+        web_stage = stage_bodies['ProductionWebDeploy']
+        preflight_stage = stage_bodies['SchemaReadOnlyPreflight']
+        apply_stage = stage_bodies['SchemaApply']
+        schema_jobs = preflight_stage.split(
             '- job: SchemaReadOnlyPreflight', 1
         )[1]
-        schema_mutation_job = schema_stage.split(
+        schema_mutation_job = apply_stage.split(
             '- deployment: GovernedSchemaMigration', 1
-        )[1]
-        production_job = schema_stage.split('- deployment: DeployWebApp', 1)[1]
-        production_job = production_job.split('- job: SchemaReadOnlyPreflight', 1)[0]
+        )[1].split('- deployment: HoldSharedProductionReservation', 1)[0]
+        production_job = web_stage.split('- deployment: DeployWebApp', 1)[1]
 
         # 1. Never automatic. The trigger is a queue-time parameter that
         #    defaults to doing nothing, plus an environment an approver must
@@ -962,42 +969,72 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             r'(?ms)- name: schemaAction.*?values:\s*\n'
             r'\s*- none\s*\n\s*- report\s*\n\s*- apply\s*\n\s*- rollback',
         )
-        self.assertIn(
-            "${{ ne(parameters.schemaAction, 'none') }}",
-            schema_stage,
-        )
+        # Both schema stages are gated on the action, so neither can run for a
+        # `none` request.
+        for stage_name, body in (
+            ('SchemaReadOnlyPreflight', preflight_stage),
+            ('SchemaApply', apply_stage),
+        ):
+            with self.subTest(stage=stage_name):
+                self.assertIn(
+                    "${{ ne(parameters.schemaAction, 'none') }}",
+                    body,
+                )
+                # Only main. A task branch must not move production schema.
+                self.assertIn(
+                    "eq(variables['Build.SourceBranch'], 'refs/heads/main')",
+                    body,
+                )
+        # Exact literal, deliberately not built from a variable: a typo in an
+        # environment name makes Azure silently auto-create a new, check-free
+        # environment, which would evaporate the approval with no error.
         self.assertIn(
             'environment: peerslate-database-schema', schema_mutation_job
         )
-        # Only main. A task branch must not be able to move production schema.
-        self.assertIn(
-            "eq(variables['Build.SourceBranch'], 'refs/heads/main')",
-            schema_stage,
-        )
         # A queued schema run must be serialized, never dropped for a later
-        # one: schema is not a cumulative artifact.
-        self.assertRegex(schema_stage, r'(?m)^    lockBehavior: sequential$')
-        self.assertRegex(schema_stage, r'(?m)^    dependsOn: Build$')
+        # one: schema is not a cumulative artifact. `lockBehavior` defaults to
+        # `runLatest`, so the apply stage must say `sequential` out loud.
+        self.assertRegex(apply_stage, r'(?m)^    lockBehavior: sequential$')
+        # The full Build gate still precedes every schema action: the apply
+        # stage waits on the preflight stage, which waits on the web-deploy
+        # stage, which waits on Build.
+        self.assertRegex(web_stage, r'(?m)^    dependsOn: Build$')
+        self.assertRegex(
+            preflight_stage, r'(?m)^    dependsOn: ProductionWebDeploy$'
+        )
+        self.assertRegex(
+            apply_stage, r'(?m)^    dependsOn: SchemaReadOnlyPreflight$'
+        )
 
         # 2. Fail closed before connecting. The offline registry and gate-proof
         #    validation runs first, and it runs for every action.
-        self.assertIn('SchemaReadOnlyPreflight', schema_stage)
+        self.assertIn('- job: SchemaReadOnlyPreflight', preflight_stage)
         self.assertIn('preflight "$SCHEMA_ACTION"', schema_jobs)
         self.assertIn('artifact: SchemaPreflightEvidence', schema_jobs)
         self.assertIn(
             'mkdir -p "$(Build.ArtifactStagingDirectory)/schema-preflight"',
             schema_jobs,
         )
+        # The read-only work is a whole stage earlier than the mutation, and
+        # the mutation never appears in the preflight stage.
         self.assertLess(
-            schema_stage.index('- job: SchemaReadOnlyPreflight'),
-            schema_stage.index('- deployment: GovernedSchemaMigration'),
+            pipeline.index('- stage: SchemaReadOnlyPreflight'),
+            pipeline.index('- stage: SchemaApply'),
         )
+        self.assertNotIn('GovernedSchemaMigration', preflight_stage)
+        # The offline registry check runs in the earlier stage, before any
+        # approval is requested, and the mutation job revalidates it again
+        # after approval and before executing any migration SQL.
         self.assertIn(
             'python scripts/govern_sql_migrations.py check', schema_jobs
         )
+        self.assertIn(
+            'python scripts/govern_sql_migrations.py check',
+            schema_mutation_job,
+        )
         self.assertLess(
-            schema_jobs.index('govern_sql_migrations.py check'),
-            schema_jobs.index('- deployment: GovernedSchemaMigration'),
+            schema_mutation_job.index('govern_sql_migrations.py check'),
+            schema_mutation_job.index("if eq(parameters.schemaAction, "),
         )
 
         # 3. Each action is its own guarded step, and the target database is
@@ -1046,11 +1083,19 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
         ):
             self.assertNotIn(f'echo {leaked}', pipeline)
 
-        # 6. This stage moves schema only. It must never deploy the web app,
-        #    and the production deploy must never touch a database.
-        self.assertNotIn('AzureWebApp@1', schema_jobs)
-        self.assertNotIn('az webapp', schema_jobs)
+        # 6. These stages move schema only. Neither may deploy the web app,
+        #    and the production deploy must never touch a database. The
+        #    apply stage does reference the application environment, but only
+        #    to hold its lock -- it must ship nothing.
+        for stage_name, body in (
+            ('SchemaReadOnlyPreflight', preflight_stage),
+            ('SchemaApply', apply_stage),
+        ):
+            with self.subTest(stage=stage_name):
+                self.assertNotIn('AzureWebApp@1', body)
+                self.assertNotIn('az webapp', body)
         self.assertNotIn('govern_sql_migrations.py', production_job)
+        self.assertNotIn('govern_sql_migrations.py', web_stage)
         self.assertNotIn(
             'govern_sql_migrations.py',
             stage_bodies['ProductionReleaseSkipped'],
@@ -1061,7 +1106,7 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
         self.assertEqual(3, schema_mutation_job.count('--emit-evidence'))
 
         # The existing production controls must be untouched by all of this.
-        production_stage = stage_bodies['ProductionOperation']
+        production_stage = stage_bodies['ProductionWebDeploy']
         self.assertIn(
             '${{ eq(parameters.forceProductionDeploy, true) }}',
             production_stage,
@@ -1070,6 +1115,166 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             '${{ eq(parameters.forceProductionDeploy, false) }}',
             stage_bodies['ProductionReleaseSkipped'],
         )
+
+    def test_a_routine_deploy_never_references_the_approved_environment(self):
+        """Run 711 proved a stage's environments gate it, not its jobs.
+
+        That run was batchedCI with `schemaAction=none` and
+        `forceProductionDeploy=false`. `GovernedSchemaMigration` was skipped by
+        its own condition, and the run still parked at the
+        `peerslate-database-schema` approval, because Azure evaluates every
+        environment a stage *references* before the stage starts. Three stages
+        are what separate a routine deploy from that approval, so the
+        separation itself needs assertions -- collapsing them back into one
+        stage would restore the defect with every other test still green.
+        """
+
+        with open(
+            os.path.join(ROOT, 'azure-pipelines.yml'),
+            encoding='utf-8',
+        ) as pipeline_file:
+            pipeline = pipeline_file.read()
+
+        stage_matches = list(
+            re.finditer(r'(?m)^  - stage: ([A-Za-z0-9_]+)\s*$', pipeline)
+        )
+        stage_bodies = {}
+        for index, match in enumerate(stage_matches):
+            end = (
+                stage_matches[index + 1].start()
+                if index + 1 < len(stage_matches)
+                else len(pipeline)
+            )
+            stage_bodies[match.group(1)] = pipeline[match.start():end]
+
+        for stage_name in (
+            'ProductionWebDeploy',
+            'SchemaReadOnlyPreflight',
+            'SchemaApply',
+        ):
+            self.assertIn(stage_name, stage_bodies)
+        # The single stage they replaced must be gone, not merely renamed
+        # alongside a surviving copy.
+        self.assertNotIn('ProductionOperation', stage_bodies)
+        self.assertNotIn('- stage: ProductionOperation', pipeline)
+
+        environment_lines = re.findall(
+            r'(?m)^\s+environment:\s*(\S+)\s*$', pipeline
+        )
+        self.assertEqual(
+            [
+                '$(environmentName)',
+                'peerslate-database-schema',
+                '$(environmentName)',
+                '$(candidateEnvironmentName)',
+            ],
+            environment_lines,
+        )
+
+        # 1. The approved environment is named in exactly one stage. If any
+        #    other stage referenced it, that stage would request the approval.
+        for stage_name, body in stage_bodies.items():
+            with self.subTest(stage=stage_name):
+                if stage_name == 'SchemaApply':
+                    self.assertIn('environment: peerslate-database-schema', body)
+                else:
+                    self.assertNotIn(
+                        'environment: peerslate-database-schema', body
+                    )
+
+        # 2. The web-deploy stage references only the application environment,
+        #    which carries an exclusive lock and no approval.
+        web_stage = stage_bodies['ProductionWebDeploy']
+        self.assertEqual(
+            ['$(environmentName)'],
+            re.findall(r'(?m)^\s+environment:\s*(\S+)\s*$', web_stage),
+        )
+
+        # 3. The read-only preflight stage references no environment at all.
+        #    Its connected step runs on a service connection, which carries no
+        #    checks, so the plan prints before any approval is requested. An
+        #    `environment:` here would silently put the read-only plan behind
+        #    the approval again -- the recorded ordering defect.
+        preflight_stage = stage_bodies['SchemaReadOnlyPreflight']
+        self.assertNotRegex(preflight_stage, r'(?m)^\s+environment:')
+        self.assertIn(
+            'azureSubscription: $(azureServiceConnectionId)', preflight_stage
+        )
+
+        # 4. Cross-run serialization survives the split. The old single stage
+        #    serialized web deploys against schema actions because both lived
+        #    behind one lock. Now the apply stage re-borrows the application
+        #    environment's lock through a job that ships nothing.
+        apply_stage = stage_bodies['SchemaApply']
+        self.assertIn(
+            '- deployment: HoldSharedProductionReservation', apply_stage
+        )
+        reservation_job = apply_stage.split(
+            '- deployment: HoldSharedProductionReservation', 1
+        )[1]
+        self.assertIn('environment: $(environmentName)', reservation_job)
+        # It reserves; it must not deploy, install, or touch a database.
+        for forbidden in (
+            'AzureWebApp@1',
+            'AzureCLI@2',
+            'az webapp',
+            'govern_sql_migrations.py',
+            'AZURE_SQL_CONNECTIONSTRING',
+            'pip install',
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, reservation_job)
+        # Both stages that hold the lock must queue rather than cancel:
+        # `lockBehavior` defaults to `runLatest`, which would discard a waiting
+        # run in favour of a later one.
+        for stage_name in ('ProductionWebDeploy', 'SchemaApply'):
+            with self.subTest(stage=stage_name):
+                self.assertRegex(
+                    stage_bodies[stage_name],
+                    r'(?m)^    lockBehavior: sequential$',
+                )
+
+        # 5. The stages run in order, so a schema run cannot reach the
+        #    mutation without the full Build gate and the read-only plan.
+        self.assertRegex(web_stage, r'(?m)^    dependsOn: Build$')
+        self.assertRegex(
+            preflight_stage, r'(?m)^    dependsOn: ProductionWebDeploy$'
+        )
+        self.assertRegex(
+            apply_stage, r'(?m)^    dependsOn: SchemaReadOnlyPreflight$'
+        )
+
+        # 6. The three stage conditions, compared exactly. The web stage keeps
+        #    the original admission rule verbatim -- `schemaAction` appears only
+        #    inside its `or(...)`, admitting a schema-only run to the request
+        #    validator, and never as a requirement for deploying. Each schema
+        #    stage is that same rule with `schemaAction != none` added as a
+        #    conjunct, so a `none` run enters neither.
+        def stage_condition(body):
+            # Stop at the next stage-level key (four spaces, then content),
+            # otherwise the block scan runs on into the stage's jobs. No
+            # DOTALL here: `.` must stay within one line or the lazy
+            # repetition backtracks catastrophically.
+            match = re.search(
+                r'(?m)^    condition: >-\n((?:^      .*\n)+?)(?=^    \S)',
+                body,
+            )
+            self.assertIsNotNone(match)
+            return ' '.join(match.group(1).split())
+
+        admission = (
+            "and( succeeded(), "
+            "eq(variables['Build.SourceBranch'], 'refs/heads/main'), "
+            "or( ne(variables['Build.Reason'], 'Manual'), "
+            "${{ eq(parameters.forceProductionDeploy, true) }}, "
+            "${{ ne(parameters.schemaAction, 'none') }} ) )"
+        )
+        schema_admission = admission[:-1].rstrip() + (
+            ", ${{ ne(parameters.schemaAction, 'none') }} )"
+        )
+        self.assertEqual(admission, stage_condition(web_stage))
+        self.assertEqual(schema_admission, stage_condition(preflight_stage))
+        self.assertEqual(schema_admission, stage_condition(apply_stage))
 
 
 class ProfessionalReadinessGovernanceTests(unittest.TestCase):

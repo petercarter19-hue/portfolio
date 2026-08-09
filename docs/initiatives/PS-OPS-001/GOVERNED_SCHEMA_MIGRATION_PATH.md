@@ -40,7 +40,7 @@ new initiative.
 | `SQL FIles/Migrations/registry.json` | The ordered inventory of all 23 migrations. Identity, files, prerequisites, and a gate proof. Records **no** claim about what any database carries. |
 | `scripts/migration_registry.py` | Pure logic: ordering, digests, gate verification, plan resolution, state rendering. No connection, no credential, fully covered by tests that run on every build. |
 | `scripts/govern_sql_migrations.py` | The operational entry point: `check`, `preflight`, `report`, `gate`, `apply`, `rollback`. |
-| `azure-pipelines.yml` → `ProductionOperation` | The one sequential reservation shared by production application and schema operations; it is the only supported way to move production schema. |
+| `azure-pipelines.yml` → `SchemaReadOnlyPreflight` then `SchemaApply` | The two schema stages, and the only supported way to move production schema. The preflight stage reads and plans without referencing any environment; the apply stage is the only stage that references `peerslate-database-schema` and therefore the only one that requests its approval. |
 | `docs/governance/PRODUCTION_SCHEMA_STATE.md` | The repository's record of what production carries. Generated from a live ledger read; never hand-written. |
 | `scripts/apply_sql_migrations.py` | Unchanged and still used for foundation verification. A test now pins its `MIGRATION_FILENAMES` to the registry so the two cannot disagree. |
 
@@ -56,11 +56,15 @@ Moving schema requires all five of:
 
 1. **A person queues the pipeline on `main`** and selects a `schemaAction` other
    than `none`. The parameter defaults to `none`, so every ordinary run —
-   including every merge — skips the stage entirely.
-2. **The `Build` stage passes.** The stage `dependsOn: Build`, so the full test
-   suite, dependency audit, secret scan, and explicit registry/digest check all
-   gate it.
-3. **The hosted read-only preflight passes before approval.** It connects only
+   including every merge — skips both schema stages entirely, and a skipped
+   stage never requests its environment's approval.
+2. **The `Build` stage passes.** The schema stages sit downstream of
+   `ProductionWebDeploy`, which is `dependsOn: Build`, so the full test suite,
+   dependency audit, secret scan, and explicit registry/digest check all gate
+   them.
+3. **The hosted read-only preflight passes before approval.** It runs in its own
+   stage, which references no environment, so its plan is printed before the
+   approval is requested rather than after it. It connects only
    to identify the target and read `dbo.schema_migrations`. Apply is refused
    when the named ID is already ledgered, the gated bytes changed, or the live
    plan is not exactly the one migration the operator named.
@@ -69,10 +73,30 @@ Moving schema requires all five of:
 5. **The mutation job revalidates the registry and proof** after approval and
    before executing any migration SQL.
 
-The shared `ProductionOperation` stage is `lockBehavior: sequential`, not
-`runLatest`. It serializes web deploys and schema actions across runs, and the
-request preflight refuses any run that asks for both. A schema run therefore
-cannot overlap a production deployment or be discarded in favour of one.
+Both `ProductionWebDeploy` and `SchemaApply` are `lockBehavior: sequential`,
+not `runLatest`, and both reference `$(environmentName)` — the web stage to
+deploy, the apply stage through a job that ships nothing and exists only to
+borrow that environment's exclusive lock. So a production deployment and a
+schema operation still cannot execute at the same time, in the same run or in
+different ones, and two schema runs still queue behind each other rather than
+the later one discarding the earlier. The request preflight separately refuses
+any single run that asks for both.
+
+Two details are worth stating precisely, because the earlier single-stage
+wording implied more than the pipeline now does:
+
+- Azure evaluates the exclusive lock **after** approvals, not before. A schema
+  run waiting on its approval therefore does **not** hold the production lock,
+  and a merge that lands during that wait deploys normally. Serialization
+  covers the execution window, which is the window that matters; it is no
+  longer a queue behind a human.
+- `SchemaReadOnlyPreflight` holds no lock at all, by design. It only reads.
+
+This replaced a single `ProductionOperation` stage that held both environments.
+That arrangement dragged every routine deploy through the schema approval,
+because Azure evaluates the checks of every environment a stage references
+before the stage starts — a skipped job does not remove its environment from
+that evaluation. See `docs/initiatives/PS-AGENT-OPERATIONS-001/README.md`.
 
 ## Safety properties
 

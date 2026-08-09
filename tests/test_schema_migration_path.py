@@ -885,11 +885,16 @@ class PipelineWiringTests(unittest.TestCase):
         on a Microsoft-hosted agent. Keep every connected action inside an
         AzureCLI task while leaving the offline registry check unauthenticated.
         """
-        schema_stage = self.pipeline.split("- stage: ProductionOperation", 1)[1]
+        schema_stage = self.pipeline.split("- stage: SchemaApply", 1)[1]
         schema_stage = schema_stage.split("- stage: ProductionReleaseSkipped", 1)[0]
         schema_stage = schema_stage.split(
             "- deployment: GovernedSchemaMigration", 1
         )[1]
+        # The reservation job holds the shared lock and runs no SQL; it must
+        # not be mistaken for part of the mutation job below.
+        schema_stage = schema_stage.split(
+            "- deployment: HoldSharedProductionReservation", 1
+        )[0]
         for action in ("report", "apply", "rollback"):
             with self.subTest(action=action):
                 marker = f"if eq(parameters.schemaAction, '{action}')"

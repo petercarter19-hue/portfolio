@@ -32,8 +32,13 @@ class CommunityScheduledMaintenanceContractTests(unittest.TestCase):
 
     def test_scheduled_runs_skip_the_deploy_build_path(self):
         build = self.pipeline.split("- stage: Build", 1)[1].split(
-            "- stage: ProductionOperation", 1
+            "- stage: ProductionWebDeploy", 1
         )[0]
+        # The split must actually bound the Build stage. `str.split` on a
+        # missing separator returns the whole remainder, so a stage rename
+        # would silently widen this to the entire file and the assertion
+        # below would keep passing while testing nothing.
+        self.assertNotIn("- stage: ", build)
         self.assertIn("ne(variables['Build.Reason'], 'Schedule')", build)
         maintenance = self.pipeline.split("- stage: CommunityMaintenance", 1)[1]
         self.assertIn("dependsOn: []", maintenance)

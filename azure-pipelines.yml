@@ -22,6 +22,11 @@ schedules:
     batch: true
 
 parameters:
+  # Break-glass, not routine. A merge to `main` deploys on its own and no
+  # longer stops at an approval, so the manual fallback below should be rare.
+  # Reach for it only when no automatic run will cover the commit: the request
+  # preflight refuses a manual fallback while an automatic run for the same SHA
+  # is still active, and names the competing run id when it does.
   - name: forceProductionDeploy
     displayName: Force production deploy for a manually queued main run
     type: boolean
@@ -236,11 +241,28 @@ stages:
             artifact: CandidateEvidence
             displayName: Upload redacted scanner evidence
 
-  - stage: ProductionOperation
-    displayName: Serialize production application and schema operations
+  # Azure evaluates the checks of every environment a stage references before
+  # that stage starts, and it does so from the stage's static text -- a job
+  # condition that skips the job does not remove its environment from the
+  # evaluation. Keeping the web deployment and the schema operation in one
+  # stage therefore dragged every routine deploy through the
+  # `peerslate-database-schema` approval: run 711 was batchedCI with
+  # schemaAction=none and forceProductionDeploy=false, had no database work to
+  # do, and still parked at that gate.
+  #
+  # The three stages below separate the environments so a routine deploy asks
+  # nobody, while the schema approval is left exactly as it was. No Azure
+  # environment or check configuration was changed to achieve this; the schema
+  # gate is still a human decision, by intent. See
+  # docs/initiatives/PS-AGENT-OPERATIONS-001/README.md.
+  - stage: ProductionWebDeploy
+    displayName: Deploy the production application
     dependsOn: Build
-    # One stage-level sequential lock is the shared production reservation.
-    # Application deployment and schema actions cannot overlap across runs.
+    # This stage references only `$(environmentName)`, which carries an
+    # exclusive lock and no approval, so nothing here waits on a person.
+    # `sequential` is required rather than decorative: the default lock
+    # behaviour is `runLatest`, which would cancel a queued run in favour of a
+    # later one.
     lockBehavior: sequential
     condition: >-
       and(
@@ -385,9 +407,36 @@ stages:
                     --timeout 15
                   displayName: Verify liveness and canonical public routes
 
+  # This stage deliberately references no `environment:` at all. Its connected
+  # step authenticates through a service connection, and a service connection
+  # carries no checks, so the read-only plan is printed BEFORE the schema
+  # approval is requested rather than after it. Adding an `environment:` here
+  # would reinstate the ordering defect recorded as
+  # `pipeline_schema_checkpoint_order` without any test or run failing loudly.
+  - stage: SchemaReadOnlyPreflight
+    displayName: Read schema state before any approval is requested
+    dependsOn: ProductionWebDeploy
+    # The production admission rule above, plus the schema trigger. The
+    # `or(...)` is repeated verbatim so all three production stages share one
+    # admission rule; it is redundant with the trailing clause on purpose and
+    # is never a substitute for it. A schema-only run leaves the deploy jobs
+    # skipped, so the stage above still succeeds and this one still runs.
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+        or(
+          ne(variables['Build.Reason'], 'Manual'),
+          ${{ eq(parameters.forceProductionDeploy, true) }},
+          ${{ ne(parameters.schemaAction, 'none') }}
+        ),
+        ${{ ne(parameters.schemaAction, 'none') }}
+      )
+    jobs:
       - job: SchemaReadOnlyPreflight
         displayName: Read and validate schema state before approval
-        dependsOn: ValidateProductionOperationRequest
+        # The stage condition already gates this, and the job repeats it so a
+        # future stage-condition edit cannot quietly let a `none` run connect.
         condition: >-
           and(
             succeeded(),
@@ -446,9 +495,31 @@ stages:
             condition: always()
             displayName: Publish read-only schema preflight evidence
 
+  # The only stage that references `peerslate-database-schema`, and therefore
+  # the only stage that requests its approval. That approval is a human
+  # decision by intent and is untouched by this split.
+  - stage: SchemaApply
+    displayName: Run the approved schema operation
+    dependsOn: SchemaReadOnlyPreflight
+    # Required, not decorative. Without it the exclusive lock this stage
+    # borrows below defaults to `runLatest`, and a queued schema run would be
+    # cancelled in favour of a later one. Schema is not a cumulative artifact,
+    # so a dropped run is a lost operation rather than a superseded one.
+    lockBehavior: sequential
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+        or(
+          ne(variables['Build.Reason'], 'Manual'),
+          ${{ eq(parameters.forceProductionDeploy, true) }},
+          ${{ ne(parameters.schemaAction, 'none') }}
+        ),
+        ${{ ne(parameters.schemaAction, 'none') }}
+      )
+    jobs:
       - deployment: GovernedSchemaMigration
         displayName: Run the approved schema operation
-        dependsOn: SchemaReadOnlyPreflight
         condition: >-
           and(
             succeeded(),
@@ -564,9 +635,50 @@ stages:
                   condition: always()
                   displayName: Publish schema migration evidence
 
+      # Serialization, not a deployment. Do not delete this job to tidy the
+      # stage: it is the only thing restoring a property the previous single
+      # `ProductionOperation` stage provided for free.
+      #
+      # A stage takes an environment's exclusive lock only if the stage
+      # references that environment. `$(environmentName)` carries that lock, so
+      # referencing it here means `ProductionWebDeploy` in one run and
+      # `SchemaApply` in another still cannot overlap, and two schema runs
+      # still queue behind each other. The property is written down in
+      # docs/initiatives/PS-OPS-001/GOVERNED_SCHEMA_MIGRATION_PATH.md; removing
+      # this job makes that document untrue with nothing failing.
+      #
+      # It installs nothing, ships no package, and issues no database command.
+      # It does leave a deployment record against the application environment,
+      # so read that environment's history by the stage name rather than
+      # assuming every entry shipped code.
+      - deployment: HoldSharedProductionReservation
+        displayName: Hold the shared production reservation (ships nothing)
+        environment: $(environmentName)
+        pool:
+          vmImage: $(vmImageName)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: none
+
+                - download: none
+
+                # Same discipline as the Build and skipped-release stages: no
+                # macro is expanded into Bash source here. The environment this
+                # job reserves is the one named on the `environment:` key above.
+                - script: |
+                    echo "Reservation only. This job deploys no application"
+                    echo "package and runs no database command. It exists so"
+                    echo "that this stage references the application"
+                    echo "environment and takes its exclusive lock, which"
+                    echo "serializes schema operations against production"
+                    echo "deployments across runs."
+                  displayName: Record that this reservation ships nothing
+
   # A manual main run that requests neither deploy nor schema must never read
   # as a plain success. Build 438 (2026-08-04) was queued manually, skipped
-  # the production web deployment, reported `succeeded`, and was
+  # the `ProductionWebDeploy` stage, reported `succeeded`, and was
   # reasonably mistaken for a release; production stayed on the previous
   # commit. This stage fires only in that exact case and downgrades the run to
   # `succeededWithIssues` so both a human and `az pipelines runs list` can see
@@ -594,8 +706,9 @@ stages:
           - script: |
               set -euo pipefail
               echo "This manually queued main run built $BUILT_SOURCE_VERSION"
-              echo "but did NOT deploy it. The web deployment is skipped for a"
-              echo "Manual run unless forceProductionDeploy is true."
+              echo "but did NOT deploy it. The ProductionWebDeploy stage is"
+              echo "skipped for a Manual run unless forceProductionDeploy is"
+              echo "true."
               echo ""
               echo "Production is still running whatever the last automatic"
               echo "run deployed. Confirm with /healthz before reporting any"
