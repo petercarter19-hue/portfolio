@@ -784,3 +784,27 @@ and Roadmap named in `CURRENT_BASELINE.yaml` remain the product authority.
   intentionally unchanged. It remains behind `PEERSLATE_OWNER_HOME_ENABLED`.
 - `tests/test_dark_theme_availability.py` pins both halves: the entry points
   stay closed, and the dark work stays in the repository.
+
+## 2026-08-09 - Ship to live by default; owner reviews after release
+
+Owner decision, given directly: "Unless I say otherwise, send this stuff
+live... If I don't say explicitly I need a review at this stage, assume you
+can push it all the way to deployment."
+
+- The delivery default is now architecture -> implement -> writer self-review
+  -> live -> owner review of the live result. Per-item owner approval is no
+  longer a release gate.
+- Pre-release owner review happens only when the owner explicitly flags a
+  piece of work, or when it involves a production database migration or
+  schema change, deleting or rewriting real users' data, sending real
+  messages to real people, new or increased spending, or granting access or
+  credentials.
+- Accordingly the risky-path Required Reviewers branch policy on main
+  (policy id 4, 22 path filters, created 2026-08-08) was DISABLED, not
+  deleted, so it can be re-enabled if the owner reverses course. Build
+  validation, comment resolution, and the squash-merge requirement remain.
+  The schema-environment approval check (id 11) remains in force.
+- Context: the policy's first live exercise (PR 364) required an owner tap
+  for a plumbing change with no visitor-visible effect, which is exactly the
+  friction the owner declined to carry. This supersedes the 2026-08-08
+  reviewer-policy decision.

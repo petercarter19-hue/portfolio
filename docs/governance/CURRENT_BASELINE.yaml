@@ -11,12 +11,12 @@ authority:
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "7a7c99de085a8d25ab12ce386c7cb2509cda2057"
-  deployed_pipeline: 711
-  live_release: "e1a3b800aec6444f1a35c80a"
-  application_behavior_commit: "7a7c99de085a8d25ab12ce386c7cb2509cda2057"
-  application_behavior_pipeline: 711
-  note: "Automatic governed run 711 (batchedCI, schemaAction=none), approved by Pete at the production checkpoint, deployed exact main 7a7c99de085a8d25ab12ce386c7cb2509cda2057: PS-COMMUNITY-AUTH-WALL-001, which places Community behind PeerSlate sign-in and retires the anonymous public and demo experience. /healthz release e1a3b800aec6444f1a35c80a exactly matches the identity derived from (7a7c99d, 711). Anonymous production sweep verified: Community HTML redirects to sign-in with exact return paths, Community APIs and both attachment endpoints return 401 before any storage call, retired surfaces 404 or redirect, robots.txt excludes /the-slate, the sitemap advertises no Community path, and no fabricated demo content is served. Both Ask Pete halves remain live. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
+  deployed_main_commit: "aa4a4ec6a12d334805298f81041fee49c6fdc51a"
+  deployed_pipeline: 722
+  live_release: "689d0be742c2c8d02c585827"
+  application_behavior_commit: "aa4a4ec6a12d334805298f81041fee49c6fdc51a"
+  application_behavior_pipeline: 722
+  note: "Runs 720 (eeefaa0, PR 364 three-stage pipeline) and 722 (aa4a4ec, PR 365 Ask Pete companion redesign + rule-10 refusal wording + hidden-tab scroll fix) deployed with ZERO approval checkpoints - run 720's timeline shows no Checkpoint.Approval records, the web stage succeeded, and both schema stages skipped, which is PS-AGENT-OPERATIONS-001's proof. /healthz release 689d0be742c2c8d02c585827; live resume serves the docked companion and the folded-evidence script. Owner decision 2026-08-09: risky-path Required Reviewers branch policy (id 4) DISABLED at Pete's direction - delivery default is now ship-to-live with owner review after release; the schema-environment approval check (id 11) remains. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 continues. PS-AGENT-OPERATIONS-001 is the second Protected writer on work/2026-08-09-agent-operations-001 (Opus 5 implements, Fable reviews). Release authority remains empty."
+  current_assignments: "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 continues. PS-AGENT-OPERATIONS-001 closed 2026-08-09 (merged, proof deploy verified, lane worktree and branch removed). Release authority remains empty."
 
 governing_documents:
   bible:
@@ -61,9 +61,6 @@ active_packages:
   - id: PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001
     status: active_delivery
     scope: "Bounded documentation/export only: assemble a complete, provenance-labeled ChatGPT visual-research handoff with selected mockups, product direction, critical functional truth, conversation context, and independent-research instructions; no runtime or new visual authority."
-  - id: PS-AGENT-OPERATIONS-001
-    status: active_delivery
-    scope: "Split the production stage so routine web deploys need no approval; schema/destructive approval stays human-only and untouched; no product, schema, or environment change."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -76,11 +73,12 @@ scoped_findings:
   - id: schema_environment_approver_identity
     blocks: "Only a future claim that schema approval is independent separation of duties. The peerslate-database-schema environment's only approver is peerslate19@gmail.com, and the agent credential authenticates as that same identity, with requesterCannotBeApprover unset. Under Pete's explicit no-per-step-click delegation, the writer approved exact governed run 565 after verifying its SHA, migration ID, gate digest, verifier, rollback rehearsal, and expected ledger transition. Destructive or rollback actions still require Pete's break-glass decision; a distinct agent identity plus requesterCannotBeApprover is required before calling this an enforced independent approval."
   - id: pipeline_schema_checkpoint_order
-    blocks: "Only unattended release claims under the current combined production stage. Automatic run 563 had schemaAction=none but still entered the database-schema approval because Azure evaluates the deployment environment before the schema job condition; it was canceled without production mutation. Run 565 also required approval before its read-only production preflight could print the plan. PS-AGENT-OPERATIONS-001 must split ordinary web and schema stages, put read-only schema preflight before any mutating checkpoint, and retain break-glass approval only for destructive operations."
+    blocks: "Nothing since 2026-08-09: resolved by PS-AGENT-OPERATIONS-001. The production stage is split (web deploy without approval, read-only schema preflight before any checkpoint, schema apply behind the untouched approval check id 11 with cross-run serialization preserved). Proof: merge run 720 (schemaAction=none) completed with zero Checkpoint.Approval records, web stage succeeded, both schema stages skipped; run 722 repeated the behavior. Kept for provenance; the schema approval path itself is exercised by the next real schema operation."
   - id: community_reenablement
     blocks: "Nothing since 2026-08-07: resolved by the singular Community recovery lane, request-path maintenance removal, bounded waits, additive schema proof/apply, exact-source deployment, staged maintenance and pilot enablement, and live public-demo verification. Kept for provenance; broader member authoring still requires its own package."
 
 completed_packages:
+  - PS-AGENT-OPERATIONS-001
   - PS-ASK-PETE-DIRECT-001
   - PS-DELIVERY-PREFLIGHT-001
   - PS-DELIVERY-RESET-001

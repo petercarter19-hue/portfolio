@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-09T18:05:00Z",
+  "updated_at": "2026-08-09T21:30:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,8 +12,7 @@
     "authorized_at": "2026-08-08",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
-      "PS-AGENT-OPERATIONS-001"
+      "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -29,7 +28,8 @@
       "PS-ASK-PETE-DIRECT-001",
       "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
       "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001",
-      "PS-COMMUNITY-AUTH-WALL-001"
+      "PS-COMMUNITY-AUTH-WALL-001",
+      "PS-AGENT-OPERATIONS-001"
     ],
     "cleanup_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -45,7 +45,8 @@
       "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
       "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001",
       "PS-ASK-PETE-DIRECT-001",
-      "PS-COMMUNITY-AUTH-WALL-001"
+      "PS-COMMUNITY-AUTH-WALL-001",
+      "PS-AGENT-OPERATIONS-001"
     ],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -904,48 +905,10 @@
       ],
       "cleanup_contract": "Task-local only: remove this lane's clean merged worktree /Users/petercarter/portfolio-community-auth-wall-001 and its branch behind an archive tag after the closeout merges and recoverability is verified; preserve everything else.",
       "sequence": "Merge the activation-only PR; create the implementation worktree from the resulting origin/main; pass write preflight; implement the code-only containment package with tests; self-review; independent adversarial review; record the merge grant through the control plane when the ledger surface is available; stop before deployment pending a recorded release sequence and Pete's retention reapproval."
-    }
-  ],
-  "active_lanes": [
-    {
-      "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
-      "outcome": "Create one self-contained external ChatGPT visual-research handoff that explains current live PeerSlate, approved and in-progress direction, planned upgrades, selected current mockups and visual authorities, critical product and behind-the-scenes trust behavior, the owner review conversation, and an exact independent-research assignment. Label live, approved direction, in progress, proposed, historical, and superseded material distinctly so the external reviewer can assess what PeerSlate is becoming without confusing aspiration with production truth.",
-      "branch": "work/2026-08-08-external-visual-review-handoff-001",
-      "writer": "Root Codex session in a dedicated clean worktree; read-only specialist agents may inventory product truth, assets, and handoff structure, but Root Codex is the sole writer and final assembler.",
-      "delivery_path": "Bounded",
-      "production_capable": false,
-      "source_checkpoint": "Authoritative Azure origin/main 72ea183eaed45e7d09b50950e112167da3eafa77. Production remains fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6 via run 688, live release 090ed9967daf7a00c798898e; later source or live facts must be refreshed and labeled at export time.",
-      "writable_surfaces": [
-        "docs/initiatives/PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001/",
-        "artifacts/2026-08-08-chatgpt-visual-research-handoff/",
-        "output/PeerSlate_ChatGPT_Complete_Visual_Research_Handoff_2026-08-08.zip"
-      ],
-      "exclusions": [
-        "No application, route, template, stylesheet, script, test, schema, configuration, provider, pipeline, deployment, or production change.",
-        "No new visual authority or owner lock; mockups and directions retain their existing approved, candidate, in-progress, proposed, historical, or superseded status.",
-        "No change to Community or any surface owned by PS-COMMUNITY-AUTH-WALL-001.",
-        "No secrets, credentials, private member data, production database extracts, private media, or unpublished personal information.",
-        "No overwrite, deletion, or reinterpretation of source mockups, handoffs, branches, worktrees, artifacts, or release evidence.",
-        "No external research conclusion is treated as a product decision, implementation authorization, merge, deployment, or live proof."
-      ],
-      "completion_evidence": [
-        "Master START_HERE and research prompt explain the reviewer task, truth labels, current/future product model, critical workflows, open questions, and required report structure.",
-        "Selected mockups, live screenshots, source extracts, conversation record, and evidence catalogs are complete, provenance-labeled, and referenced by a SHA-256 manifest.",
-        "Archive opens successfully, internal required files resolve, duplicate or missing asset references are reported, and the final ZIP hash and size are recorded.",
-        "Complete-diff self-review confirms the package contains no runtime or active-lane surface change and states honest limitations."
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-08",
-          "decision": "Pete requested a huge, complete handoff package for ChatGPT to perform a comprehensive visual and independent-research review. It must include new mockups, current direction, completed work, critical behind-the-scenes functions, this review conversation, and enough context to understand what the website is becoming rather than only how it looks today."
-        }
-      ],
-      "cleanup_contract": "Preserve every source artifact. After a verified merge, remove only this task's clean activation and implementation worktrees/branches when recoverability and the delivered ZIP are confirmed.",
-      "sequence": "Merge the activation-only PR; create the implementation worktree from the resulting origin/main; pass write preflight; inventory and assemble the documentation/export package; validate content, provenance, hashes, links, and archive integrity; self-review; merge documentation through an Azure PR if retained source files are changed; deliver the ZIP without deployment."
     },
     {
       "package": "PS-AGENT-OPERATIONS-001",
-      "outcome": "Stop routine application deploys from requiring a human approval, without weakening any gate that should exist. One defect causes tonight's pain: azure-pipelines.yml puts the web deployment and the schema operation in a single stage, and Azure evaluates every environment a stage references before the stage starts, so a schemaAction=none web deploy is dragged through the peerslate-database-schema approval. Split it into three stages - web deploy (environment peerslate-pete, which carries only an ExclusiveLock and no approval), a read-only schema preflight that references no environment at all, and the schema apply (environment peerslate-database-schema, approval retained untouched) - and restore cross-run serialization in pure YAML. Resolves the recorded scoped finding pipeline_schema_checkpoint_order.",
+      "outcome": "COMPLETE AND LIVE 2026-08-09. Merged as main eeefaa0 (PR 364, squash). Proof run 720 (schemaAction=none) deployed automatically with zero Checkpoint.Approval records: web stage succeeded, both schema stages skipped, so the pipeline never entered the schema environment; run 722 repeated the behavior. Approval check id 11 re-verified untouched. Lane worktree and branches removed. Same day, Pete disabled the path-scoped Required Reviewers policy (id 4) and set the ship-to-live delivery default (owner reviews after release; see DECISIONS.md 2026-08-09), superseding the reviewer-policy decision recorded below. Original scope: Stop routine application deploys from requiring a human approval, without weakening any gate that should exist. One defect causes tonight's pain: azure-pipelines.yml puts the web deployment and the schema operation in a single stage, and Azure evaluates every environment a stage references before the stage starts, so a schemaAction=none web deploy is dragged through the peerslate-database-schema approval. Split it into three stages - web deploy (environment peerslate-pete, which carries only an ExclusiveLock and no approval), a read-only schema preflight that references no environment at all, and the schema apply (environment peerslate-database-schema, approval retained untouched) - and restore cross-run serialization in pure YAML. Resolves the recorded scoped finding pipeline_schema_checkpoint_order.",
       "branch": "work/2026-08-09-agent-operations-001",
       "writer": "Claude Fable 5 orchestrating; Claude Opus 5 at extra-high effort as the sole delegated implementation writer in the dedicated portfolio-agent-operations-001 worktree; Fable reviews the exact candidate as the non-writer",
       "delivery_path": "Protected",
@@ -1008,6 +971,44 @@
       "sequence": "Merge the activation-only PR; create the path-scoped required-reviewer policy; create the implementation worktree from resulting origin/main; pass the package write preflight; implement the three-stage split with the pure-YAML serialization restore; correct the four affected test files; self-review and non-writer review; open the Azure PR as the new policy's first exercise; merge; verify a real merge deploys with no human interaction; record smoke, rollback, and the unchanged schema gate; truthful closeout."
     }
   ],
+  "active_lanes": [
+    {
+      "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
+      "outcome": "Create one self-contained external ChatGPT visual-research handoff that explains current live PeerSlate, approved and in-progress direction, planned upgrades, selected current mockups and visual authorities, critical product and behind-the-scenes trust behavior, the owner review conversation, and an exact independent-research assignment. Label live, approved direction, in progress, proposed, historical, and superseded material distinctly so the external reviewer can assess what PeerSlate is becoming without confusing aspiration with production truth.",
+      "branch": "work/2026-08-08-external-visual-review-handoff-001",
+      "writer": "Root Codex session in a dedicated clean worktree; read-only specialist agents may inventory product truth, assets, and handoff structure, but Root Codex is the sole writer and final assembler.",
+      "delivery_path": "Bounded",
+      "production_capable": false,
+      "source_checkpoint": "Authoritative Azure origin/main 72ea183eaed45e7d09b50950e112167da3eafa77. Production remains fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6 via run 688, live release 090ed9967daf7a00c798898e; later source or live facts must be refreshed and labeled at export time.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001/",
+        "artifacts/2026-08-08-chatgpt-visual-research-handoff/",
+        "output/PeerSlate_ChatGPT_Complete_Visual_Research_Handoff_2026-08-08.zip"
+      ],
+      "exclusions": [
+        "No application, route, template, stylesheet, script, test, schema, configuration, provider, pipeline, deployment, or production change.",
+        "No new visual authority or owner lock; mockups and directions retain their existing approved, candidate, in-progress, proposed, historical, or superseded status.",
+        "No change to Community or any surface owned by PS-COMMUNITY-AUTH-WALL-001.",
+        "No secrets, credentials, private member data, production database extracts, private media, or unpublished personal information.",
+        "No overwrite, deletion, or reinterpretation of source mockups, handoffs, branches, worktrees, artifacts, or release evidence.",
+        "No external research conclusion is treated as a product decision, implementation authorization, merge, deployment, or live proof."
+      ],
+      "completion_evidence": [
+        "Master START_HERE and research prompt explain the reviewer task, truth labels, current/future product model, critical workflows, open questions, and required report structure.",
+        "Selected mockups, live screenshots, source extracts, conversation record, and evidence catalogs are complete, provenance-labeled, and referenced by a SHA-256 manifest.",
+        "Archive opens successfully, internal required files resolve, duplicate or missing asset references are reported, and the final ZIP hash and size are recorded.",
+        "Complete-diff self-review confirms the package contains no runtime or active-lane surface change and states honest limitations."
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-08",
+          "decision": "Pete requested a huge, complete handoff package for ChatGPT to perform a comprehensive visual and independent-research review. It must include new mockups, current direction, completed work, critical behind-the-scenes functions, this review conversation, and enough context to understand what the website is becoming rather than only how it looks today."
+        }
+      ],
+      "cleanup_contract": "Preserve every source artifact. After a verified merge, remove only this task's clean activation and implementation worktrees/branches when recoverability and the delivered ZIP are confirmed.",
+      "sequence": "Merge the activation-only PR; create the implementation worktree from the resulting origin/main; pass write preflight; inventory and assemble the documentation/export package; validate content, provenance, hashes, links, and archive integrity; self-review; merge documentation through an Azure PR if retained source files are changed; deliver the ZIP without deployment."
+    }
+  ],
   "paused_lanes": [
     {
       "package": "ALL_OTHER_EXISTING_LANES",
@@ -1064,11 +1065,11 @@
     "preflight_repair_pull_request": 281,
     "preflight_repair_validation_pipeline": 514,
     "preflight_repair_validation_result": "succeeded",
-    "deployed_main_commit": "7a7c99de085a8d25ab12ce386c7cb2509cda2057",
-    "deployed_pipeline": 711,
-    "live_release": "e1a3b800aec6444f1a35c80a",
-    "application_behavior_commit": "7a7c99de085a8d25ab12ce386c7cb2509cda2057",
-    "application_behavior_pipeline": 711,
+    "deployed_main_commit": "aa4a4ec6a12d334805298f81041fee49c6fdc51a",
+    "deployed_pipeline": 722,
+    "live_release": "689d0be742c2c8d02c585827",
+    "application_behavior_commit": "aa4a4ec6a12d334805298f81041fee49c6fdc51a",
+    "application_behavior_pipeline": 722,
     "live_health": "ok",
     "community_public_pilot": "conditional_owner_pilot_live_with_labelled_empty-feed_demo",
     "community_schema": "PS-COMMUNITY-REVIVAL-001_applied_ledger_25",
