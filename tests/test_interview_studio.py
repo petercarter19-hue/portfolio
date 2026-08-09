@@ -711,7 +711,11 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         ):
             with self.subTest(token=token):
                 self.assertIn(f'{token}: {value}', css)
-        self.assertIn('repeating-linear-gradient', css)
+        # The canvas texture is SVG fractal-noise grain plus tonal mottles
+        # (the earlier hairline repeating-gradient stripes averaged away at
+        # screen density and never read as material).
+        self.assertIn("data:image/svg+xml", css)
+        self.assertIn('feTurbulence', css)
         self.assertIn(
             'body:not([data-theme="dark"]) .is__mode[aria-selected="true"]',
             css,
@@ -1596,7 +1600,9 @@ class InterviewStudioAssetTests(unittest.TestCase):
 
     def test_desktop_ipad_and_mobile_layouts_keep_the_task_stage_primary(self):
         css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
-        self.assertIn('grid-template-columns: minmax(0, 1fr) 18.25rem', css)
+        # Owner-directed proportion: wider dominant center, narrower right rail.
+        self.assertIn('grid-template-columns: minmax(0, 1fr) 15.75rem', css)
+        self.assertNotIn('grid-template-columns: minmax(0, 1fr) 18.25rem', css)
         for breakpoint in ('72rem', '48rem'):
             self.assertRegex(
                 css,
@@ -1925,6 +1931,52 @@ class InterviewFunctionalV1CorrectionTests(unittest.TestCase):
         ]
         with self.assertRaisesRegex(ValueError, 'duplicate evidence suggestions'):
             validate_interview_review(raw, 'behavioral', {'modernization'})
+
+    def test_visual_fidelity_depth_system_is_present(self):
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        # Three-tier ink-green elevation with the stage on the deep layer —
+        # asserted on the light-calibration rule that actually wins, not just
+        # the base rule an later section could silently override.
+        self.assertIn('--is-shadow-deep:', css)
+        stage = css.split('.is__task-stage {', 1)[1].split('}', 1)[0]
+        self.assertIn('var(--is-shadow-deep)', stage)
+        self.assertIn('var(--is-edge-light)', stage)
+        winning = css.split('body:not([data-theme="dark"]) .is__task-stage', 1)[1].split('}', 1)[0]
+        self.assertIn('var(--is-edge-light), var(--is-shadow-deep)', winning)
+        # The question title change must live in the WINNING stage rule too.
+        title_winning = css.split('.is__title--stage {\n    max-width: 58rem;', 1)[1].split('}', 1)[0]
+        self.assertIn('clamp(1.9rem, 3.3vw, 2.7rem)', title_winning)
+        # The dark token block keeps its token-only contract for new tokens
+        # (asserted by their unique dark twin values).
+        self.assertIn('--is-shadow-deep: 0 26px 64px rgb(0 0 0 / 34%)', css)
+        self.assertIn('--is-edge-light: inset 0 1px 0 rgb(255 255 255 / 4%)', css)
+        # No surface anywhere still assumes the old right-rail width.
+        self.assertNotIn('width: 18.25rem', css)
+        self.assertNotIn('padding-right: 19.1rem', css)
+        # Canvas texture is visible, not homeopathic: real SVG grain at a
+        # measured on-canvas luminance stddev ~3, plus a genuine vignette.
+        self.assertIn('feTurbulence', css)
+        self.assertIn("opacity='0.38'", css)
+        self.assertIn('rgb(24 54 41 / 26%)', css)
+        # The recessed composer is the intentional sunken surface.
+        self.assertIn('inset 0 2px 6px rgb(24 54 41 / 10%)', css)
+        # No blue-theme shadow leftover on the light primary button.
+        self.assertNotIn('0 8px 20px rgb(9 41 84 / 20%)', css)
+        # Sub-legible sizes were raised.
+        self.assertNotIn('font-size: 0.48rem', css)
+        self.assertNotIn('font-size: 0.584rem', css)
+
+    def test_experience_level_change_is_unblocked_and_announced(self):
+        source = _studio_script()
+        handler = source.split("if (levelSelect) levelSelect.addEventListener('change'", 1)[1].split(
+            "if (stageSelect)", 1
+        )[0]
+        # The question-replacement confirm does not belong on a level change;
+        # the level keeps the question and draft and must announce itself.
+        self.assertNotIn('confirmReplace()', handler)
+        self.assertIn('prepareVideoContextChange', handler)
+        self.assertIn('Experience level set to ', handler)
+        self.assertIn('your current question stays', handler)
 
     def test_every_universal_score_key_is_rejected_at_top_level(self):
         for key, value in (

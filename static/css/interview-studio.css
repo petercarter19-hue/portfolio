@@ -48,8 +48,14 @@ body.interview-studio-page .footer { position: relative; }
     --is-caution-soft: #fff1e5;
     --is-error: #b33b45;
     --is-error-soft: #fdecef;
-    --is-shadow: 0 18px 42px rgb(24 54 41 / 18%), 0 3px 9px rgb(24 54 41 / 10%);
-    --is-shadow-soft: 0 8px 22px rgb(24 54 41 / 13%), 0 2px 6px rgb(24 54 41 / 8%);
+    /* Three-tier elevation, all ink-green tinted so depth reads as one
+       material system: soft = chips and quiet cards, shadow = standard
+       floating surfaces, deep = the dominant stage layer. The locked board
+       shows surfaces visibly lifted off the canvas; these carry that. */
+    --is-shadow: 0 2px 5px rgb(18 46 34 / 16%), 0 16px 32px rgb(18 46 34 / 21%), 0 38px 72px rgb(18 46 34 / 24%);
+    --is-shadow-soft: 0 2px 6px rgb(18 46 34 / 12%), 0 10px 24px rgb(18 46 34 / 15%);
+    --is-shadow-deep: 0 3px 7px rgb(16 42 31 / 18%), 0 26px 48px rgb(16 42 31 / 26%), 0 64px 120px rgb(16 42 31 / 30%);
+    --is-edge-light: inset 0 1px 0 rgb(255 255 255 / 75%);
     --is-overlay: rgb(12 34 27 / 38%);
     --is-radius: 0.85rem;
     --is-radius-lg: 1rem;
@@ -67,10 +73,17 @@ body.interview-studio-page .footer { position: relative; }
     position: fixed;
     z-index: -1;
     inset: 0;
+    /* The locked board's canvas is a visibly textured, tonally varied smoky
+       sage with darker edges — the surfaces float in front of it. Layers,
+       back to front: base tone, corner vignette, tonal mottles, one SVG
+       fractal-noise grain tile, and the light bloom. */
     background:
-        radial-gradient(84rem 42rem at 8% -12%, rgb(255 255 255 / 48%), transparent 62%),
-        radial-gradient(58rem 36rem at 100% 4%, rgb(62 101 78 / 18%), transparent 68%),
-        repeating-linear-gradient(135deg, rgb(36 78 58 / 2%) 0 1px, transparent 1px 10px),
+        radial-gradient(84rem 42rem at 8% -12%, rgb(255 255 255 / 34%), transparent 60%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.14 0 0 0 0 0.30 0 0 0 0 0.23 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23n)' opacity='0.38'/%3E%3C/svg%3E"),
+        radial-gradient(30rem 22rem at 22% 68%, rgb(46 88 66 / 14%), transparent 70%),
+        radial-gradient(36rem 26rem at 78% 82%, rgb(255 255 255 / 16%), transparent 72%),
+        radial-gradient(58rem 36rem at 100% 4%, rgb(62 101 78 / 28%), transparent 68%),
+        radial-gradient(140% 110% at 50% 40%, transparent 44%, rgb(24 54 41 / 26%) 100%),
         var(--is-canvas);
 }
 
@@ -329,7 +342,7 @@ body[data-theme="dark"] .is__history-link[aria-current="page"]::after { backgrou
     background: var(--is-surface);
     border: 1px solid var(--is-line);
     border-radius: var(--is-radius);
-    box-shadow: var(--is-shadow);
+    box-shadow: var(--is-edge-light), var(--is-shadow);
 }
 
 .is__card-pad { padding: clamp(1.1rem, 2.4vw, 1.6rem); }
@@ -355,10 +368,12 @@ body[data-theme="dark"] .is__history-link[aria-current="page"]::after { backgrou
 }
 
 .is__title--hero { font-size: clamp(2rem, 4vw, 2.9rem); }
-.is__title--stage { font-size: clamp(1.55rem, 2.8vw, 2.15rem); text-wrap: balance; }
+/* The locked board sets the practice question very large — it is the page's
+   dominant object and the serif carries the editorial character. */
+.is__title--stage { font-size: clamp(1.9rem, 3.3vw, 2.7rem); text-wrap: balance; }
 .is__title--section { font-size: clamp(1.75rem, 3vw, 2.4rem); }
 
-.is__sub { margin: 0.75rem 0 0; color: var(--is-text); font-size: 0.94rem; line-height: 1.65; }
+.is__sub { margin: 0.8rem 0 0; color: var(--is-text); font-size: 0.97rem; line-height: 1.68; }
 
 .is__divider { height: 1px; margin: 1.1rem 0; background: var(--is-line); }
 
@@ -386,7 +401,8 @@ body[data-theme="dark"] .is__history-link[aria-current="page"]::after { backgrou
     color: var(--is-action-primary-text);
     background: linear-gradient(180deg, var(--is-action-primary), var(--is-action-primary-strong));
     border-color: var(--is-action-primary-strong);
-    box-shadow: 0 8px 20px rgb(9 41 84 / 20%);
+    /* Warm-tinted lift (the old shadow was a blue-theme leftover). */
+    box-shadow: inset 0 1px 0 rgb(255 244 214 / 35%), 0 3px 7px rgb(58 42 6 / 24%), 0 14px 30px rgb(46 38 12 / 28%);
 }
 
 body[data-theme="dark"] .is__button--primary { box-shadow: 0 9px 24px rgb(74 116 218 / 24%); }
@@ -1142,7 +1158,7 @@ body[data-theme="dark"] .is__analysis-unavailable { background: rgb(74 116 218 /
 .is__growth-row i { grid-column: 1 / -1; color: var(--is-text-muted); font-style: normal; font-size: 0.68rem; }
 
 .is__clear-row { margin-top: 0.9rem; padding-top: 0.9rem; border-top: 1px solid var(--is-line); display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-.is__history-disclosure { margin-top: 1rem; text-align: center; color: var(--is-text-muted); font-size: 0.72rem; }
+.is__history-disclosure { margin-top: 1rem; text-align: center; color: var(--is-text); font-size: 0.72rem; }
 
 /* ---------------------------------------------------------------------
    12. Dialogs.
@@ -1320,6 +1336,7 @@ body[data-theme="dark"] .is__history-detail-meta strong { color: var(--is-gold-b
 
 @media (prefers-contrast: more) {
     .is { --is-line: rgb(10 27 54 / 48%); --is-surface: #fff; --is-surface-2: #fff; }
+    .is .is__card, .is .is__mode, .is .is__history-link, .is .is__task-stage, .is .is__composer, .is .is__session-rail { background: var(--is-surface); }
     body[data-theme="dark"] .is { --is-line: rgb(255 255 255 / 55%); }
 }
 
@@ -1360,6 +1377,8 @@ body[data-theme="dark"] .is {
     --is-error-soft: rgb(196 59 74 / 18%);
     --is-shadow: 0 20px 56px rgb(0 0 0 / 30%), inset 0 1px rgb(255 255 255 / 2%);
     --is-shadow-soft: 0 7px 22px rgb(0 0 0 / 28%);
+    --is-shadow-deep: 0 26px 64px rgb(0 0 0 / 34%);
+    --is-edge-light: inset 0 1px 0 rgb(255 255 255 / 4%);
     --is-overlay: rgb(0 0 0 / 55%);
 }
 
@@ -1422,7 +1441,8 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 }
 
 .is__brand-subtitle {
-    color: var(--is-text-muted);
+    /* Sits directly on the textured canvas: mid ink keeps AA over grain. */
+    color: var(--is-text);
     font-size: 0.82rem;
 }
 
@@ -1444,21 +1464,21 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 
 .is__mode,
 .is__history-link {
-    min-height: 3rem;
-    padding: 0.55rem 0.7rem;
+    min-height: 3.4rem;
+    padding: 0.65rem 0.85rem;
     color: var(--is-text);
     background: var(--is-surface);
     border: 1px solid var(--is-line);
     border-radius: 0.75rem;
-    box-shadow: var(--is-shadow-soft);
+    box-shadow: var(--is-edge-light), var(--is-shadow-soft);
     text-decoration: none;
 }
 
 .is__mode svg,
 .is__history-link svg {
-    width: 1.9rem;
-    height: 1.9rem;
-    padding: 0.42rem;
+    width: 2.15rem;
+    height: 2.15rem;
+    padding: 0.46rem;
     color: var(--is-ink);
     background: var(--is-surface-2);
     border-radius: 0.6rem;
@@ -1473,14 +1493,14 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 .is__mode strong,
 .is__history-link strong {
     color: var(--is-ink);
-    font-size: 0.78rem;
+    font-size: 0.86rem;
 }
 
 .is__mode small {
     display: block;
     overflow: hidden;
     color: var(--is-text-muted);
-    font-size: 0.58rem;
+    font-size: 0.66rem;
     font-weight: 500;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1612,7 +1632,8 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 
 .is__title--stage {
     max-width: 58rem;
-    font-size: clamp(1.75rem, 2.6vw, 2.3rem);
+    /* The board sets the question as the page's dominant object. */
+    font-size: clamp(1.9rem, 3.3vw, 2.7rem);
     line-height: 1.08;
 }
 
@@ -1712,8 +1733,8 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 }
 
 .is__content-grid {
-    grid-template-columns: minmax(0, 1fr) 18.25rem;
-    gap: 0.85rem;
+    grid-template-columns: minmax(0, 1fr) 15.75rem;
+    gap: 1.1rem;
     margin: 0;
     padding: 0.75rem 1.2rem 1.2rem;
 }
@@ -1730,13 +1751,15 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 .is__card {
     border-color: var(--is-line);
     border-radius: 0.85rem;
-    box-shadow: var(--is-shadow-soft);
+    box-shadow: var(--is-edge-light), var(--is-shadow-soft);
 }
 
 .is__composer {
+    /* Recessed writing well: the one intentionally sunken surface on the
+       stage, so the floating layers around it read as raised. */
     background: var(--is-surface-2);
     border-radius: 0.8rem;
-    box-shadow: none;
+    box-shadow: inset 0 2px 6px rgb(24 54 41 / 10%), inset 0 -1px 0 rgb(255 255 255 / 65%);
 }
 
 .is__composer > label {
@@ -1807,7 +1830,7 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
 .is__status-card,
 .is__card-pad,
 .is__demo-card {
-    padding: 0.85rem;
+    padding: 1rem;
 }
 
 .is__status-row {
@@ -2444,12 +2467,12 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
     }
 
     .is__question-position {
-        font-size: 0.584rem;
+        font-size: 0.66rem;
     }
 
     .is__state-pill {
-        padding: 0.25rem 0.45rem;
-        font-size: 0.48rem;
+        padding: 0.28rem 0.5rem;
+        font-size: 0.62rem;
     }
 
     .is__question-block {
@@ -2675,19 +2698,21 @@ body[data-theme="dark"] .is__status-row.is-done .is__status-dot {
    ===================================================================== */
 .is__content-grid--practice,
 .is__content-grid--video {
-    grid-template-columns: minmax(0, 1fr) 18.25rem;
+    /* Wider dominant center, narrower contextual rail, more air between. */
+    grid-template-columns: minmax(0, 1fr) 15.75rem;
     align-items: stretch;
-    gap: 0.85rem;
+    gap: 1.1rem;
     margin-top: 0.75rem;
     padding: 0;
 }
 
 .is__task-stage {
     min-width: 0;
+    /* Front layer; the light calibration carries surface + deepest lift. */
     background: var(--is-surface);
     border: 1px solid var(--is-line);
     border-radius: 1rem;
-    box-shadow: var(--is-shadow-soft);
+    box-shadow: var(--is-edge-light), var(--is-shadow-deep);
 }
 
 .is__content-grid--practice > .is__task-stage > [data-is-answer-form] {
@@ -2782,14 +2807,14 @@ body.interview-studio-page #chat-toggle {
             "dictation dictation"
             "interim interim"
             "error error";
-        padding-right: 19.1rem;
+        padding-right: 16.6rem;
     }
 
     .is__panel[data-is-panel="ai"] .is__ai-grounding {
         position: absolute;
         top: 0;
         right: 0;
-        width: 18.25rem;
+        width: 15.75rem;
     }
 
     .is__panel[data-is-panel="ai"] .is__side-column {
@@ -3320,7 +3345,7 @@ body[data-theme="dark"] .is__select select option {
            above the panel at the wide-desktop layout. */
         top: -8rem;
         right: 0;
-        width: 18.25rem;
+        width: 15.75rem;
         margin-top: 0;
     }
 }
@@ -3439,11 +3464,21 @@ body:not([data-theme="dark"]) .is__history-filters label {
     border-color: color-mix(in srgb, var(--is-line-strong) 72%, #fffefa);
 }
 
+body:not([data-theme="dark"]) .is__mode,
+body:not([data-theme="dark"]) .is__history-link {
+    background: linear-gradient(180deg, #fffffc 0%, var(--is-surface) 45%, #f6f6ef 100%);
+}
+
+body:not([data-theme="dark"]) .is__composer {
+    background: linear-gradient(180deg, #eef1ea 0%, var(--is-surface-2) 55%);
+}
+
 body:not([data-theme="dark"]) .is__task-stage,
 body:not([data-theme="dark"]) .is__ai-question-frame {
-    background: linear-gradient(145deg, rgb(255 254 250 / 99%), rgb(245 247 242 / 98%));
+    /* Front layer: brightest surface, deepest lift, light on the top edge. */
+    background: linear-gradient(145deg, rgb(255 255 252 / 99%), rgb(245 247 242 / 98%));
     border-color: color-mix(in srgb, var(--is-line-strong) 78%, #fffefa);
-    box-shadow: var(--is-shadow);
+    box-shadow: var(--is-edge-light), var(--is-shadow-deep);
 }
 
 body:not([data-theme="dark"]) .is__mode[aria-selected="true"],
@@ -3451,7 +3486,7 @@ body:not([data-theme="dark"]) .is__history-link[aria-current="page"] {
     color: var(--is-action-primary-text);
     background: linear-gradient(135deg, var(--is-active) 0%, var(--is-active-strong) 100%);
     border-color: var(--is-active-strong);
-    box-shadow: inset 0 -3px rgb(0 0 0 / 14%), var(--is-shadow-soft);
+    box-shadow: inset 0 -3px rgb(0 0 0 / 14%), var(--is-shadow);
 }
 
 body:not([data-theme="dark"]) .is__mode[aria-selected="true"] strong,
@@ -3538,9 +3573,9 @@ body:not([data-theme="dark"]) .is__button--primary {
    ===================================================================== */
 .is__session-rail {
     display: grid;
-    gap: 0.85rem;
+    gap: 1rem;
     min-width: 0;
-    padding: 1rem;
+    padding: 1.15rem;
     color: var(--is-text);
     background: linear-gradient(155deg, rgb(255 254 250 / 98%), rgb(239 244 239 / 96%));
     border: 1px solid color-mix(in srgb, var(--is-line-strong) 76%, #fffefa);
@@ -3600,9 +3635,9 @@ body:not([data-theme="dark"]) .is__button--primary {
 }
 
 .is__content-grid--complete {
-    grid-template-columns: minmax(0, 1fr) 18.25rem;
+    grid-template-columns: minmax(0, 1fr) 15.75rem;
     align-items: stretch;
-    gap: 0.85rem;
+    gap: 1.1rem;
     margin-top: 0.75rem;
     padding: 0;
 }

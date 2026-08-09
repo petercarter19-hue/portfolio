@@ -1218,7 +1218,12 @@
     if (levelSelect) levelSelect.addEventListener('change', function () {
         stopDictation('interrupted');
         if (session.mode === 'me') persistCurrentAnswerDraft();
-        if (!prepareVideoContextChange('Discard this recording and change experience level?') || (session.mode === 'me' && !confirmReplace())) {
+        /* A level change keeps the current question and draft, so the
+           question-replacement confirm ("Move to another question?") was
+           wrong here — it blocked the picker with an unrelated warning and
+           snapped the value back on cancel. Only an in-flight recording
+           genuinely needs a guard. */
+        if (!prepareVideoContextChange('Discard this recording and change experience level?')) {
             levelSelect.value = session.level;
             return;
         }
@@ -1227,6 +1232,8 @@
         resetAiAnswerForContextChange();
         persistSession();
         renderQuestion();
+        announce('Experience level set to ' + levelSelect.options[levelSelect.selectedIndex].textContent.trim()
+            + '. Coaching and new questions now calibrate to it; your current question stays.');
     });
     if (stageSelect) stageSelect.addEventListener('change', function () {
         session.context.interview_stage = stageSelect.value || 'general';
