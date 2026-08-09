@@ -742,8 +742,7 @@
         "tests/ask_pete_direct/",
         ".env.example",
         "docs/initiatives/PS-ASK-PETE-DIRECT-001/",
-        "docs/governance/CURRENT_LANES.json",
-        "app.py"
+        "docs/governance/CURRENT_LANES.json"
       ],
       "exclusions": [
         "no app.py edit and no blueprint registration: the feature stays dark and unreachable until the later recorded-grant leg after the Interview lane releases app.py",
@@ -783,6 +782,10 @@
           "date": "2026-08-08",
           "decision": "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 closed and relinquished app.py; this lane takes the recorded registration leg under Pete's standing 'published always' authority: the four copy-ready app.py edits in REGISTRATION_LEG_SPEC.md (flag config, blueprint import and registration, limiter wiring), nothing else in app.py.",
           "surface_note": "app.py joins writable_surfaces for exactly the registration-leg edits, via the established recorded-scope pattern, now that no other lane records it."
+        },
+        {
+          "date": "2026-08-08",
+          "decision": "app.py is explicitly relinquished ahead of lane close: the registration leg is complete and merged (PR 352, exact main 21751b8, four recorded hunks, guards flipped to registered-and-off successors), and nothing else in this lane touches app.py. Recorded at the request of the PS-COMMUNITY-AUTH-WALL-001 coordination session per its handoff's sequencing, under Pete's approval of that package and his standing coordination instruction. This lane's remaining work (governed apply approval, enablement, live verification, closeout) needs no app.py write."
         }
       ],
       "model_routing": {
