@@ -128,7 +128,14 @@ class NavigationTests(unittest.TestCase):
 
         records = self.search_records('/interview-studio')
         records_by_title = {record['title']: record for record in records}
-        self.assertEqual(records_by_title['Community Feed']['href'], '/the-slate')
+        # PS-COMMUNITY-AUTH-WALL-001: the search entry is simply "Community"
+        # and is honest about its members-only audience.
+        self.assertEqual(records_by_title['Community']['href'], '/the-slate')
+        self.assertEqual(
+            records_by_title['Community']['sub'],
+            'Visible to signed-in PeerSlate members',
+        )
+        self.assertNotIn('Community Feed', records_by_title)
         self.assertEqual(records_by_title['Interview Studio']['href'], '/interview-studio')
         self.assertNotIn('The Slate', records_by_title)
 
@@ -142,19 +149,43 @@ class NavigationTests(unittest.TestCase):
         self.assertNotIn(b'id="overview-subheader-ai-input"', resume.data)
 
     def test_community_routes_do_not_inherit_petes_profile_subheader(self):
-        for path in (
-            '/the-slate',
-            '/the-slate/my-slate',
-            '/the-slate/daily',
-            '/the-slate/pulse',
-            '/the-slate/break',
-        ):
-            with self.subTest(path=path):
-                response = self.client.get(path, base_url='http://localhost')
-                self.assertEqual(response.status_code, 200)
-                self.assertIn(b'the-slate-page', response.data)
-                self.assertNotIn(b'class="profile-tabs', response.data)
-                self.assertNotIn(b'id="chat-toggle"', response.data)
+        # PS-COMMUNITY-AUTH-WALL-001: the legacy subviews forward to the one
+        # real Community in every flag state, and Community itself is
+        # members-only — flag off is a neutral 404, signed out goes through
+        # sign-in. None of these responses carries Pete's profile subheader.
+        original_flag = app.config.get('PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED')
+        try:
+            for flag in (False, True):
+                app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED'] = flag
+                for path in (
+                    '/the-slate/my-slate',
+                    '/the-slate/daily',
+                    '/the-slate/pulse',
+                    '/the-slate/break',
+                ):
+                    with self.subTest(path=path, flag=flag):
+                        response = self.client.get(path, base_url='http://localhost')
+                        self.assertEqual(response.status_code, 302)
+                        self.assertTrue(
+                            response.headers['Location'].endswith('/the-slate')
+                        )
+                        self.assertNotIn(b'class="profile-tabs', response.data)
+
+            app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED'] = False
+            flag_off = self.client.get('/the-slate', base_url='http://localhost')
+            self.assertEqual(flag_off.status_code, 404)
+            self.assertNotIn(b'class="profile-tabs', flag_off.data)
+            self.assertNotIn(b'id="chat-toggle"', flag_off.data)
+
+            app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED'] = True
+            signed_out = self.client.get('/the-slate', base_url='http://localhost')
+            self.assertEqual(signed_out.status_code, 302)
+            self.assertEqual(
+                signed_out.headers['Location'],
+                '/auth/sign-in?return_to=/the-slate',
+            )
+        finally:
+            app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED'] = original_flag
 
         homepage = self.client.get('/', base_url='http://localhost')
         self.assertNotIn(b'the-slate-page', homepage.data)
@@ -332,11 +363,8 @@ class NavigationTests(unittest.TestCase):
             '/petec/about',
             '/petec/hobbies',
             '/petec/contact',
-            '/the-slate',
-            '/the-slate/my-slate',
-            '/the-slate/daily',
-            '/the-slate/pulse',
-            '/the-slate/break',
+            # PS-COMMUNITY-AUTH-WALL-001: no members-only /the-slate route
+            # belongs in the public sitemap.
             '/career-search',
             '/my-network',
             '/explore-profiles',

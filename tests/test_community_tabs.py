@@ -1,8 +1,10 @@
 """PS-COMMUNITY-TABS-001 — Community's owner-superseded two-view contract.
 
-Feed and The Break are the only first-class Community views. The former Saved
-URL survives as a compatibility redirect only; it cannot render a third panel,
-tab, route claim, keyboard stop, or fixture destination.
+PS-COMMUNITY-AUTH-WALL-001 retired the public two-view shell itself: the
+Break address is a compatibility redirect, the tabbed fixture shell never
+renders again in any flag state, and Community is served only to signed-in
+members. Route/render tests below assert that new truth; the static-file
+contracts on the archived assets, styles, and scripts are unchanged.
 """
 
 import hashlib
@@ -39,13 +41,28 @@ def contrast_ratio(foreground, background):
 
 class CommunityTabRouteTests(unittest.TestCase):
     def setUp(self):
-        app.config["TESTING"] = True
+        self.previous = dict(app.config)
+        app.config.update(
+            TESTING=True,
+            PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
+            PEERSLATE_DEV_USER_KEY=None,
+        )
         self.client = app.test_client()
 
-    def test_two_first_class_routes_are_public(self):
-        for path in ("/the-slate", "/the-slate/break"):
-            with self.subTest(path=path):
-                self.assertEqual(self.client.get(path).status_code, 200)
+    def tearDown(self):
+        app.config.clear()
+        app.config.update(self.previous)
+
+    def test_community_requires_sign_in_and_break_redirects_to_it(self):
+        # PS-COMMUNITY-AUTH-WALL-001: no Community route is public anymore.
+        signed_out = self.client.get("/the-slate")
+        self.assertEqual(signed_out.status_code, 302)
+        self.assertEqual(
+            signed_out.headers["Location"], "/auth/sign-in?return_to=/the-slate"
+        )
+        break_response = self.client.get("/the-slate/break")
+        self.assertEqual(break_response.status_code, 302)
+        self.assertTrue(break_response.headers["Location"].endswith("/the-slate"))
 
     def test_legacy_saved_and_retired_board_addresses_redirect_to_feed(self):
         for path in ("/the-slate/saved", "/the-slate/people-interests"):
@@ -54,61 +71,93 @@ class CommunityTabRouteTests(unittest.TestCase):
                 self.assertEqual(response.status_code, 302)
                 self.assertTrue(response.headers["Location"].endswith("/the-slate"))
 
-    def test_neighboring_legacy_slate_routes_still_work(self):
+    def test_neighboring_legacy_slate_routes_redirect_to_community(self):
+        # Their pages are retired in every flag state; the human addresses
+        # forward to the one real Community.
         for path in ("/the-slate/my-slate", "/the-slate/daily", "/the-slate/pulse"):
             with self.subTest(path=path):
-                self.assertEqual(self.client.get(path).status_code, 200)
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 302)
+                self.assertTrue(response.headers["Location"].endswith("/the-slate"))
 
-    def test_sitemap_indexes_only_first_class_community_views(self):
+    def test_sitemap_indexes_no_community_views_at_all(self):
+        # PS-COMMUNITY-AUTH-WALL-001: the members-only namespace never
+        # belongs in the public sitemap.
         body = self.client.get("/sitemap.xml", base_url="https://peerslate.com").get_data(as_text=True)
-        self.assertIn("https://peerslate.com/the-slate/break", body)
-        self.assertNotIn("https://peerslate.com/the-slate/saved", body)
+        self.assertNotIn("/the-slate", body)
 
 
-class CommunityTabInitialStateTests(unittest.TestCase):
+class CommunityRetiredTabShellTests(unittest.TestCase):
+    """The two-view tabbed fixture shell never renders again."""
+
     def setUp(self):
-        app.config["TESTING"] = True
+        self.previous = dict(app.config)
+        app.config.update(
+            TESTING=True,
+            PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
+            PEERSLATE_DEV_USER_KEY="tabs-member-not-owner",
+            PEERSLATE_OWNER_USER_KEYS="someone-else-entirely",
+            PEERSLATE_OWNER_EMAILS="",
+        )
         self.client = app.test_client()
 
-    def _get(self, path):
-        return self.client.get(path).get_data(as_text=True)
+    def tearDown(self):
+        app.config.clear()
+        app.config.update(self.previous)
 
-    def test_feed_direct_load_selects_feed_and_hides_break(self):
-        html = self._get("/the-slate")
-        self.assertRegex(html, r'id="mainInner"[^>]*data-tab-panel="feed"(?![^>]*hidden)[^>]*>')
-        self.assertRegex(html, r'id="panel-break"[^>]*hidden')
-        feed_tab = re.search(r'<a[^>]*id="tab-feed"[^>]*>', html).group(0)
-        break_tab = re.search(r'<a[^>]*id="tab-break"[^>]*>', html).group(0)
-        self.assertIn('aria-selected="true"', feed_tab)
-        self.assertIn('aria-selected="false"', break_tab)
+    def test_member_feed_is_the_single_community_shell_without_tabs(self):
+        response = self.client.get("/the-slate")
+        html = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("cv1-shell", html)
+        for retired in (
+            'id="tab-feed"',
+            'id="tab-break"',
+            'id="panel-break"',
+            "data-tab-panel",
+            'aria-label="Community views"',
+            "community-tabs.js",
+            "community-tabs.css",
+            "feed-living-stream.js",
+        ):
+            with self.subTest(marker=retired):
+                self.assertNotIn(retired, html)
 
-    def test_break_direct_load_selects_break_and_hides_feed(self):
-        html = self._get("/the-slate/break")
-        self.assertRegex(html, r'id="mainInner"[^>]*data-tab-panel="feed"[^>]*hidden')
-        self.assertRegex(html, r'id="panel-break"[^>]*data-tab-panel="break"(?![^>]*hidden)')
-        feed_tab = re.search(r'<a[^>]*id="tab-feed"[^>]*>', html).group(0)
-        break_tab = re.search(r'<a[^>]*id="tab-break"[^>]*>', html).group(0)
-        self.assertIn('aria-selected="false"', feed_tab)
-        self.assertIn('aria-selected="true"', break_tab)
+    def test_break_direct_load_is_a_redirect_not_a_panel(self):
+        response = self.client.get("/the-slate/break")
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.headers["Location"].endswith("/the-slate"))
+        self.assertNotIn(b'id="panel-break"', response.data)
 
 
 class CommunityTabAccessibilityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        app.config["TESTING"] = True
+        # PS-COMMUNITY-AUTH-WALL-001: the page under test is the signed-in
+        # member render — the only Community render that exists now.
+        cls.previous_config = dict(app.config)
+        app.config.update(
+            TESTING=True,
+            PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
+            PEERSLATE_DEV_USER_KEY="tabs-a11y-member",
+            PEERSLATE_OWNER_USER_KEYS="someone-else-entirely",
+            PEERSLATE_OWNER_EMAILS="",
+        )
         cls.html = app.test_client().get("/the-slate").get_data(as_text=True)
 
-    def test_two_tabs_have_unique_panel_wiring_and_roving_tabindex(self):
-        self.assertIn('role="tablist"', self.html)
-        self.assertIn('aria-label="Community views"', self.html)
-        for tab_id, panel_id in (("tab-feed", "mainInner"), ("tab-break", "panel-break")):
-            self.assertEqual(self.html.count(f'id="{tab_id}"'), 1)
-            tab = re.search(rf'<a[^>]*id="{tab_id}"[^>]*>', self.html).group(0)
-            self.assertIn(f'aria-controls="{panel_id}"', tab)
-            self.assertIn(f'aria-labelledby="{tab_id}"', self.html)
-        self.assertEqual(self.html.count('role="tab"'), 2)
-        self.assertIn('tabindex="0"', self.html)
-        self.assertIn('tabindex="-1"', self.html)
+    @classmethod
+    def tearDownClass(cls):
+        app.config.clear()
+        app.config.update(cls.previous_config)
+
+    def test_the_retired_tablist_never_renders_for_a_member(self):
+        # The roving-tabindex tablist belonged to the retired fixture shell.
+        self.assertIn("cv1-shell", self.html)
+        self.assertNotIn('aria-label="Community views"', self.html)
+        self.assertEqual(self.html.count('role="tab"'), 0)
+        for retired_id in ("tab-feed", "tab-break", "panel-break"):
+            with self.subTest(retired_id=retired_id):
+                self.assertNotIn(f'id="{retired_id}"', self.html)
 
     def test_saved_has_no_rendered_product_surface(self):
         lowered = self.html.lower()
@@ -361,7 +410,12 @@ class CommunityTabAccessibilityTests(unittest.TestCase):
         )
 
     def test_every_dark_break_kicker_and_small_poll_note_meets_contrast(self):
-        html = app.test_client().get("/the-slate/break").get_data(as_text=True)
+        # PS-COMMUNITY-AUTH-WALL-001: the Break page no longer renders
+        # (/the-slate/break is a redirect), so the archived template is the
+        # source of the kicker copy; the CSS contract stays intact for the
+        # authenticated Break's future revival.
+        with open(os.path.join(ROOT, "templates", "the_slate.html"), encoding="utf-8") as handle:
+            html = handle.read()
         with open(os.path.join(ROOT, "static", "css", "community-tabs.css"), encoding="utf-8") as handle:
             css = handle.read()
 
@@ -478,24 +532,43 @@ class CommunityTabAccessibilityTests(unittest.TestCase):
 
 class CommunityTruthAndBreakTests(unittest.TestCase):
     def setUp(self):
-        app.config["TESTING"] = True
+        self.previous = dict(app.config)
+        app.config.update(
+            TESTING=True,
+            PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
+            PEERSLATE_DEV_USER_KEY="tabs-truth-member",
+            PEERSLATE_OWNER_USER_KEYS="someone-else-entirely",
+            PEERSLATE_OWNER_EMAILS="",
+        )
         self.client = app.test_client()
 
-    def test_honesty_note_is_present_on_both_views(self):
-        for path in ("/the-slate", "/the-slate/break"):
-            with self.subTest(path=path):
-                html = self.client.get(path).get_data(as_text=True)
-                self.assertIn("Sample data — nothing on this page is saved or shared.", html)
-                self.assertIn('class="ps-sample-note"', html)
-                self.assertIn("Sample community.", html)
+    def tearDown(self):
+        app.config.clear()
+        app.config.update(self.previous)
+
+    def test_fixture_honesty_notes_retired_with_the_public_shell(self):
+        # PS-COMMUNITY-AUTH-WALL-001: a member reads the real Community, so
+        # the fixture "Sample data" disclaimers must never appear — and the
+        # Break view no longer renders at all.
+        html = self.client.get("/the-slate").get_data(as_text=True)
+        for fixture_claim in (
+            "Sample data — nothing on this page is saved or shared.",
+            'class="ps-sample-note"',
+            "Sample community.",
+        ):
+            with self.subTest(fixture_claim=fixture_claim):
+                self.assertNotIn(fixture_claim, html)
+        self.assertEqual(self.client.get("/the-slate/break").status_code, 302)
 
     def test_legacy_my_slate_links_never_claim_the_flagged_off_journal(self):
-        html = self.client.get("/feed-living-stream").get_data(as_text=True)
-        links = re.findall(r'<a\b[^>]*href="/the-slate/my-slate"[^>]*>.*?</a>', html, re.DOTALL)
-        self.assertGreaterEqual(len(links), 2)
-        for link in links:
-            self.assertIn("My Slate", link)
-            self.assertNotIn(">Journal<", link)
+        # The Living Stream prototype page is retired: its address forwards
+        # to the real Community and renders no legacy links at all. The
+        # archived script keeps its truthful labels.
+        response = self.client.get("/feed-living-stream")
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.headers["Location"].endswith("/the-slate"))
+        html = response.get_data(as_text=True)
+        self.assertNotIn('href="/the-slate/my-slate"', html)
         self.assertNotIn('href="/app/journal"', html)
         with open(os.path.join(ROOT, "static", "js", "feed-living-stream.js"), encoding="utf-8") as handle:
             js = handle.read()
@@ -503,20 +576,22 @@ class CommunityTruthAndBreakTests(unittest.TestCase):
         self.assertNotIn('href="/the-slate/my-slate">Open my Journal', js)
         self.assertNotIn('href="/app/journal"', js)
 
-    def test_break_uses_supplied_photography_and_truthful_controls(self):
-        html = self.client.get("/the-slate/break").get_data(as_text=True)
-        for asset in (
+    def test_break_address_serves_no_photography_or_controls_anymore(self):
+        # The supplied photography stays on disk (CommunityAssetTests); the
+        # retired page no longer delivers it or its controls.
+        response = self.client.get("/the-slate/break")
+        html = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 302)
+        for retired in (
             "images/community/break-chair-plant-640.webp",
             "images/community/break-transformation-640.webp",
             "images/community/break-bookstore-640.webp",
+            "data-comm-create-post",
+            'data-comm-tab="feed"',
+            "Save to Board",
         ):
-            self.assertIn(asset, html)
-        self.assertIn('data-comm-create-post', html)
-        self.assertIn('data-comm-tab="feed"', html)
-        self.assertNotIn('data-break-api=', html)
-        self.assertNotIn('data-db-', html)
-        self.assertNotIn('Save to Board', html)
-        self.assertNotIn('break-database.js', html)
+            with self.subTest(marker=retired):
+                self.assertNotIn(retired, html)
 
     def test_break_has_no_fake_write_or_save_client_path(self):
         with open(os.path.join(ROOT, "static", "js", "community-tabs.js"), encoding="utf-8") as handle:
@@ -564,12 +639,13 @@ class CommunityTruthAndBreakTests(unittest.TestCase):
         self.assertFalse(app.config["PEERSLATE_DATABASE_UI_ENABLED"])
         self.assertFalse(app.config["PEERSLATE_JOURNAL_ENABLED"])
 
-    def test_break_keeps_feed_shell_but_uses_the_authority_integrated_module_flow(self):
-        """The shell retains Feed's 860px primary / 320px rail geometry, but
-        the Break itself cannot strand Mood and the closing modules in a
-        persistent second column. Their source order is the owner authority's
-        single restorative sequence in either theme."""
-        html = self.client.get("/the-slate/break").get_data(as_text=True)
+    def test_archived_break_composition_keeps_the_authority_module_flow(self):
+        """The Break page is retired from rendering (PS-COMMUNITY-AUTH-WALL-001),
+        but the archived template remains the owner authority's single
+        restorative sequence: no persistent second column, modules in the
+        approved order, ready for an authenticated revival."""
+        with open(os.path.join(ROOT, "templates", "the_slate.html"), encoding="utf-8") as handle:
+            html = handle.read()
         self.assertNotIn('class="bk-rail"', html)
         ordered = (
             'class="bk-hero"',
@@ -779,29 +855,37 @@ class CommunityAssetTests(unittest.TestCase):
 class CommunityResponsiveMediaTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        app.config["TESTING"] = True
+        # PS-COMMUNITY-AUTH-WALL-001: the only Community render is the
+        # signed-in member Feed; the Break address answers with a redirect.
+        cls.previous_config = dict(app.config)
+        app.config.update(
+            TESTING=True,
+            PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
+            PEERSLATE_DEV_USER_KEY="tabs-media-member",
+            PEERSLATE_OWNER_USER_KEYS="someone-else-entirely",
+            PEERSLATE_OWNER_EMAILS="",
+        )
         client = app.test_client()
         cls.feed_html = client.get("/the-slate").get_data(as_text=True)
-        cls.break_html = client.get("/the-slate/break").get_data(as_text=True)
+        cls.break_response = client.get("/the-slate/break")
         with open(os.path.join(ROOT, "static", "js", "feed-living-stream.js"), encoding="utf-8") as handle:
             cls.feed_js = handle.read()
         with open(os.path.join(ROOT, "static", "js", "community-tabs.js"), encoding="utf-8") as handle:
             cls.tabs_js = handle.read()
 
-    def test_feed_defers_inactive_break_images_until_the_break_is_opened(self):
+    @classmethod
+    def tearDownClass(cls):
+        app.config.clear()
+        app.config.update(cls.previous_config)
+
+    def test_member_feed_serves_no_retired_break_media(self):
+        # The fixture Break photography and its deferred-hydration hooks
+        # belong to the retired shell; the member Feed never ships them. The
+        # archived hydration contract in community-tabs.js stays intact.
+        self.assertIn("cv1-shell", self.feed_html)
         self.assertIsNone(re.search(r'<img\b[^>]*\ssrc="/static/images/community/', self.feed_html))
-        for image in ("break-chair-plant", "break-transformation", "break-bookstore"):
-            self.assertRegex(
-                self.feed_html,
-                rf'data-deferred-src="/static/images/community/{image}-640\.webp\?v=[0-9a-f]{{12}}"',
-            )
-            self.assertRegex(
-                self.feed_html,
-                rf'data-deferred-srcset="/static/images/community/{image}-640\.webp\?v=[0-9a-f]{{12}} 640w, /static/images/community/{image}-1280\.webp\?v=[0-9a-f]{{12}} 1280w"',
-            )
-        self.assertIn('loading="lazy"', self.feed_html)
-        self.assertIn('decoding="async"', self.feed_html)
-        self.assertIn('fetchpriority="low"', self.feed_html)
+        self.assertNotIn("data-deferred-src", self.feed_html)
+        self.assertNotIn("/static/images/community/", self.feed_html)
         for contract in (
             "function hydrateDeferredMedia",
             "setAttribute('srcset'",
@@ -811,22 +895,14 @@ class CommunityResponsiveMediaTests(unittest.TestCase):
         ):
             self.assertIn(contract, self.tabs_js)
 
-    def test_break_direct_load_has_full_responsive_attribute_contract(self):
-        for image in ("break-chair-plant", "break-transformation", "break-bookstore"):
-            self.assertRegex(
-                self.break_html,
-                rf'src="/static/images/community/{image}-640\.webp\?v=[0-9a-f]{{12}}"',
-            )
-            self.assertRegex(
-                self.break_html,
-                rf'srcset="/static/images/community/{image}-640\.webp\?v=[0-9a-f]{{12}} 640w, /static/images/community/{image}-1280\.webp\?v=[0-9a-f]{{12}} 1280w"',
-            )
-        hero = re.search(r'<img\s+class="bk-hero__image"[^>]*>', self.break_html).group(0)
-        self.assertIn('sizes="(max-width: 700px) 100vw, 860px"', hero)
-        self.assertIn('loading="eager"', hero)
-        self.assertIn('decoding="async"', hero)
-        self.assertIn('fetchpriority="high"', hero)
-        self.assertGreaterEqual(self.break_html.count('fetchpriority="low"'), 2)
+    def test_break_direct_load_redirects_without_serving_media(self):
+        self.assertEqual(self.break_response.status_code, 302)
+        self.assertTrue(
+            self.break_response.headers["Location"].endswith("/the-slate")
+        )
+        body = self.break_response.get_data(as_text=True)
+        self.assertNotIn("/static/images/community/", body)
+        self.assertNotIn("bk-hero__image", body)
 
     def test_feed_renderer_uses_webp_srcset_and_explicit_loading_priorities(self):
         for contract in (

@@ -558,6 +558,10 @@ class CommunityXlsxRuntimeTests(unittest.TestCase):
         app.config.update(
             TESTING=True,
             PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
+            # PS-COMMUNITY-AUTH-WALL-001: attachment delivery is member-only.
+            # The download below runs as a signed-in member; the signed-out
+            # 401 contract is covered in tests/test_community_public_pilot.py.
+            PEERSLATE_DEV_USER_KEY="xlsx-signed-in-member",
         )
         app.register_blueprint(community_api)
         with patch(

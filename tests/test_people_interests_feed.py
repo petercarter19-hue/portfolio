@@ -1,4 +1,12 @@
-"""People & Interests living board (PS-FEAT-002) — route, API, and fixture tests."""
+"""People & Interests living board (PS-FEAT-002) — retirement and service tests.
+
+PS-COMMUNITY-AUTH-WALL-001 retired the board's public HTTP surface: the
+people_interests_api blueprint is never registered (no flag state may
+resurrect a public or fixture Community feed), and the board's page long ago
+left /the-slate. The untouched in-process service
+(services/people_interests_feed.py) keeps direct unit coverage below, and the
+fixture contract tests are unchanged.
+"""
 
 import json
 import os
@@ -10,34 +18,48 @@ from services.people_interests_feed import (
     CONTENT_TYPES,
     POST_BODY_MAX,
     REACTION_KEYS,
+    FeedNotFoundError,
+    FeedValidationError,
     PeopleInterestsFeed,
 )
 
 
-SAME_ORIGIN = {"X-PeerSlate-Request": "same-origin"}
-
-
 class PeopleInterestsPageTests(unittest.TestCase):
-    """The People & Interests board retired as the /the-slate landing on
-    2026-07-21 (PS-COMMUNITY-TABS-001) in favor of the seamless Feed / The
-    Break tab shell. Its own template stays on disk for rollback,
-    matching this repository's existing convention for a retired landing
-    view (the_slate_feed.html). Tab-shell-specific coverage lives in
-    tests/test_community_tabs.py."""
+    """The board retired as the /the-slate landing on 2026-07-21
+    (PS-COMMUNITY-TABS-001); PS-COMMUNITY-AUTH-WALL-001 then retired the
+    whole public shell. The one real Community renders only for a signed-in
+    member and never shows the board."""
 
     def setUp(self):
+        self.previous = dict(app.config)
+        app.config.update(
+            TESTING=True,
+            PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
+            PEERSLATE_DEV_USER_KEY="board-member-not-owner",
+            PEERSLATE_OWNER_USER_KEYS="someone-else-entirely",
+            PEERSLATE_OWNER_EMAILS="",
+        )
         self.client = app.test_client()
 
-    def test_the_slate_landing_is_the_feed_tab(self):
+    def tearDown(self):
+        app.config.clear()
+        app.config.update(self.previous)
+
+    def test_the_slate_landing_is_the_authenticated_community(self):
         response = self.client.get("/the-slate")
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
-        self.assertNotIn("People &amp; Interests", html)
-        self.assertNotIn("pi-board", html)
-        self.assertNotIn("pi-initial-feed", html)
-        self.assertIn('id="feed-app"', html)
-        self.assertIn('id="feedColumn"', html)
-        self.assertIn("What people are building, learning, and living.", html)
+        self.assertIn("cv1-shell", html)
+        for retired in (
+            "People &amp; Interests",
+            "pi-board",
+            "pi-initial-feed",
+            'id="feed-app"',
+            'id="feedColumn"',
+            "What people are building, learning, and living.",
+        ):
+            with self.subTest(marker=retired):
+                self.assertNotIn(retired, html)
 
     def test_old_board_address_forwards_to_the_slate(self):
         response = self.client.get("/the-slate/people-interests")
@@ -45,32 +67,36 @@ class PeopleInterestsPageTests(unittest.TestCase):
         self.assertTrue(response.headers["Location"].endswith("/the-slate"))
 
     def test_slate_board_remains_reachable_from_the_landing(self):
-        # Pete's Slate navigation no longer leaks into Community. Slate Board
-        # remains discoverable through the public destination search.
+        # Pete's Slate navigation still never leaks into Community. Slate
+        # Board remains discoverable through the public destination search.
         html = self.client.get("/the-slate").get_data(as_text=True)
         self.assertIn("Slate Board", html)
         self.assertIn('"href": "/petec/slate-board"', html)
         self.assertNotIn('class="profile-tabs', html)
 
-    def test_page_keeps_existing_headers_and_switcher(self):
+    def test_page_keeps_global_header_without_the_retired_switcher(self):
         html = self.client.get("/the-slate").get_data(as_text=True)
-        # Community keeps the global header and its own Feed / Break switcher.
+        # Community keeps the global header; the old People & Interests /
+        # Feed / The Break switcher strip is retired with the public shell.
         self.assertIn("platform-nav", html)
         self.assertNotIn("profile-tabs", html)
-        # The seamless Feed / The Break switcher (PS-COMMUNITY-TABS-001)
-        # replaces the old People & Interests / Feed / The Break strip.
         self.assertNotIn("People &amp; Interests", html)
-        self.assertIn("The Break", html)
-        self.assertNotIn('data-comm-tab="saved"', html)
+        self.assertNotIn("data-comm-tab", html)
         self.assertNotIn("News Feed", html)
 
-    def test_existing_routes_unaffected(self):
+    def test_legacy_subview_addresses_redirect_to_community(self):
+        # PS-COMMUNITY-AUTH-WALL-001: the neighbours are retired too — every
+        # legacy subview forwards to the one real Community.
         for path in (
             "/the-slate/break", "/the-slate/daily",
             "/the-slate/my-slate", "/the-slate/pulse",
         ):
-            response = self.client.get(path, base_url="http://localhost")
-            self.assertEqual(response.status_code, 200, path)
+            with self.subTest(path=path):
+                response = self.client.get(path, base_url="http://localhost")
+                self.assertEqual(response.status_code, 302)
+                self.assertTrue(
+                    response.headers["Location"].endswith("/the-slate")
+                )
 
     def test_no_category_filter_row_above_the_feed(self):
         # The retired board mockup's All/People/Goals/... filter buttons
@@ -79,208 +105,170 @@ class PeopleInterestsPageTests(unittest.TestCase):
         self.assertNotIn("pi-filters", html)
 
 
-class PeopleInterestsApiTests(unittest.TestCase):
+class PeopleInterestsApiRetirementTests(unittest.TestCase):
+    """PS-COMMUNITY-AUTH-WALL-001: the fixture-backed people_interests_api
+    blueprint is never registered. Every board address is a neutral 404 in
+    both flag states, and no request reaches the feed service."""
+
     def setUp(self):
-        self.original_config = {
-            "TESTING": app.config.get("TESTING"),
-            "PEERSLATE_ALLOW_DEV_IDENTITY": app.config.get("PEERSLATE_ALLOW_DEV_IDENTITY"),
-            "PEERSLATE_DEV_USER_KEY": app.config.get("PEERSLATE_DEV_USER_KEY"),
-        }
+        self.previous = dict(app.config)
         app.config.update(
             TESTING=True,
             PEERSLATE_ALLOW_DEV_IDENTITY=True,
             PEERSLATE_DEV_USER_KEY="test-user-1",
         )
         self.client = app.test_client()
-        # A fresh feed per test so in-process writes never leak between tests.
-        self.feed = PeopleInterestsFeed()
-        self.feed_patch = patch(
-            "people_interests_api.people_interests_feed", self.feed
-        )
-        self.feed_patch.start()
 
     def tearDown(self):
-        self.feed_patch.stop()
-        app.config.update(self.original_config)
+        app.config.clear()
+        app.config.update(self.previous)
 
-    # ---- reads ----
+    @patch("people_interests_api.people_interests_feed.get_page")
+    @patch("people_interests_api.people_interests_feed.get_post_detail")
+    def test_every_board_api_address_is_404_in_both_flag_states(
+        self, get_post_detail, get_page
+    ):
+        headers = {"X-PeerSlate-Request": "same-origin"}
+        requests = (
+            ("GET", "/api/feed/people-interests", {}),
+            ("GET", "/api/feed/people-interests?limit=16", {}),
+            ("GET", "/api/feed/posts/pi-maya-half", {}),
+            (
+                "POST",
+                "/api/feed/posts",
+                {"json": {"body": "Hi", "content_type": "note"}, "headers": headers},
+            ),
+            (
+                "POST",
+                "/api/feed/posts/pi-hannah-10k/comments",
+                {"json": {"body": "Congrats!"}, "headers": headers},
+            ),
+            (
+                "POST",
+                "/api/feed/posts/pi-hannah-10k/reactions",
+                {"json": {"reaction_type": "celebrate"}, "headers": headers},
+            ),
+            (
+                "DELETE",
+                "/api/feed/posts/pi-hannah-10k/reactions/celebrate",
+                {"headers": headers},
+            ),
+            ("POST", "/api/feed/posts/pi-hannah-10k/save", {"headers": headers}),
+        )
+        for flag in (True, False):
+            app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = flag
+            for method, path, kwargs in requests:
+                with self.subTest(flag=flag, method=method, path=path):
+                    response = self.client.open(path, method=method, **kwargs)
+                    self.assertEqual(response.status_code, 404)
+        get_page.assert_not_called()
+        get_post_detail.assert_not_called()
 
-    def test_feed_returns_items_and_cursor(self):
-        response = self.client.get("/api/feed/people-interests?limit=16")
-        self.assertEqual(response.status_code, 200)
-        payload = response.get_json()
-        self.assertTrue(payload["success"])
-        self.assertEqual(len(payload["items"]), 16)
-        self.assertIsNotNone(payload["next_cursor"])
+
+class PeopleInterestsServiceContractTests(unittest.TestCase):
+    """Direct unit coverage of the untouched in-process service.
+
+    The behaviors the retired routes used to exercise still hold at the
+    service seam (services/people_interests_feed.py is unchanged by
+    PS-COMMUNITY-AUTH-WALL-001).
+    """
+
+    def setUp(self):
+        # A fresh feed per test so in-process writes never leak between tests.
+        self.feed = PeopleInterestsFeed()
+
+    def test_page_returns_items_and_cursor(self):
+        page = self.feed.get_page(limit=16)
+        self.assertEqual(len(page["items"]), 16)
+        self.assertIsNotNone(page["next_cursor"])
 
     def test_cursor_pagination_is_stable_and_unduplicated(self):
-        first = self.client.get("/api/feed/people-interests?limit=16").get_json()
-        second = self.client.get(
-            "/api/feed/people-interests?limit=16&cursor=" + first["next_cursor"]
-        ).get_json()
+        first = self.feed.get_page(limit=16)
+        second = self.feed.get_page(limit=16, cursor=first["next_cursor"])
         first_ids = {item["id"] for item in first["items"]}
         second_ids = {item["id"] for item in second["items"]}
         self.assertFalse(first_ids & second_ids)
         # Repeating the same cursor returns the same page.
-        repeat = self.client.get(
-            "/api/feed/people-interests?limit=16&cursor=" + first["next_cursor"]
-        ).get_json()
+        repeat = self.feed.get_page(limit=16, cursor=first["next_cursor"])
         self.assertEqual(
             [item["id"] for item in second["items"]],
             [item["id"] for item in repeat["items"]],
         )
 
     def test_invalid_cursor_rejected(self):
-        response = self.client.get(
-            "/api/feed/people-interests?cursor=<script>alert(1)</script>"
-        )
-        self.assertEqual(response.status_code, 400)
+        with self.assertRaises(FeedValidationError):
+            self.feed.get_page(cursor="<script>alert(1)</script>")
 
     def test_detail_returns_full_text_and_comments(self):
-        response = self.client.get("/api/feed/posts/pi-maya-half")
-        self.assertEqual(response.status_code, 200)
-        post = response.get_json()["post"]
+        post = self.feed.get_post_detail("pi-maya-half")
         self.assertIn("half marathon", post["body"])
         self.assertEqual(len(post["comments"]), 5)
         self.assertEqual(post["comment_count"], 5)
 
-    def test_unknown_post_is_404(self):
-        response = self.client.get("/api/feed/posts/pi-does-not-exist")
-        self.assertEqual(response.status_code, 404)
-
-    # ---- writes: protections ----
-
-    def test_writes_require_same_origin_header(self):
-        response = self.client.post(
-            "/api/feed/posts", json={"body": "Hi", "content_type": "note"}
-        )
-        self.assertEqual(response.status_code, 403)
-
-    def test_writes_require_identity(self):
-        app.config.update(
-            TESTING=False,
-            PEERSLATE_ALLOW_DEV_IDENTITY=False,
-            PEERSLATE_DEV_USER_KEY=None,
-        )
-        response = self.client.post(
-            "/api/feed/posts",
-            headers=SAME_ORIGIN,
-            json={"body": "Hi", "content_type": "note"},
-        )
-        self.assertEqual(response.status_code, 401)
-
-    def test_browser_supplied_user_key_is_ignored(self):
-        response = self.client.post(
-            "/api/feed/posts",
-            headers=SAME_ORIGIN,
-            json={"body": "Hello board", "content_type": "note", "user_key": "someone-else"},
-        )
-        self.assertEqual(response.status_code, 201)
-        post = response.get_json()["post"]
-        self.assertNotIn("someone-else", json.dumps(post))
-
-    # ---- writes: posts ----
-
-    def test_valid_post_appears_in_feed(self):
-        response = self.client.post(
-            "/api/feed/posts",
-            headers=SAME_ORIGIN,
-            json={"body": "Shipped my study plan today.", "content_type": "win"},
-        )
-        self.assertEqual(response.status_code, 201)
-        post = response.get_json()["post"]
-        feed = self.client.get("/api/feed/people-interests?limit=5").get_json()
-        self.assertEqual(feed["items"][0]["id"], post["id"])
-        self.assertEqual(feed["items"][0]["body"], "Shipped my study plan today.")
+    def test_unknown_post_raises_not_found(self):
+        with self.assertRaises(FeedNotFoundError):
+            self.feed.get_post_detail("pi-does-not-exist")
 
     def test_post_over_limit_rejected(self):
-        response = self.client.post(
-            "/api/feed/posts",
-            headers=SAME_ORIGIN,
-            json={"body": "x" * (POST_BODY_MAX + 1), "content_type": "note"},
-        )
-        self.assertEqual(response.status_code, 400)
+        with self.assertRaises(FeedValidationError):
+            self.feed.create_post(
+                "test-user-1", {}, "x" * (POST_BODY_MAX + 1), "note"
+            )
 
     def test_unsupported_content_type_rejected(self):
-        response = self.client.post(
-            "/api/feed/posts",
-            headers=SAME_ORIGIN,
-            json={"body": "Hi", "content_type": "advertisement"},
-        )
-        self.assertEqual(response.status_code, 400)
+        with self.assertRaises(FeedValidationError):
+            self.feed.create_post("test-user-1", {}, "Hi", "advertisement")
 
     def test_new_posts_have_deterministic_layout(self):
-        response = self.client.post(
-            "/api/feed/posts",
-            headers=SAME_ORIGIN,
-            json={"body": "Tiny note", "content_type": "note"},
+        post = self.feed.create_post("test-user-1", {}, "Tiny note", "note")
+        self.assertIn(
+            post["layout"],
+            {"small", "standard", "tall", "photo", "featured", "wide"},
         )
-        post = response.get_json()["post"]
-        self.assertIn(post["layout"], {"small", "standard", "tall", "photo", "featured", "wide"})
-        again = self.client.get("/api/feed/posts/" + post["id"]).get_json()["post"]
+        again = self.feed.get_post_detail(post["id"])
         self.assertEqual(post["rotation"], again["rotation"])
         self.assertEqual(post["paper_color"], again["paper_color"])
 
-    # ---- writes: comments ----
-
-    def test_comment_can_be_submitted(self):
-        response = self.client.post(
-            "/api/feed/posts/pi-hannah-10k/comments",
-            headers=SAME_ORIGIN,
-            json={"body": "Congrats on the PR!"},
+    def test_created_post_never_echoes_a_foreign_user_key(self):
+        post = self.feed.create_post(
+            "test-user-1", {"display_name": "You"}, "Hello board", "note"
         )
-        self.assertEqual(response.status_code, 201)
-        detail = self.client.get("/api/feed/posts/pi-hannah-10k").get_json()["post"]
-        self.assertEqual(detail["comments"][-1]["body"], "Congrats on the PR!")
-
-    def test_comment_over_limit_rejected(self):
-        response = self.client.post(
-            "/api/feed/posts/pi-hannah-10k/comments",
-            headers=SAME_ORIGIN,
-            json={"body": "x" * 301},
-        )
-        self.assertEqual(response.status_code, 400)
-
-    # ---- writes: reactions ----
+        self.assertNotIn("someone-else", json.dumps(post))
 
     def test_reaction_add_and_remove_are_idempotent(self):
-        base = self.feed.get_post_detail("pi-hannah-10k")["reactions"].get("celebrate", 0)
+        base = self.feed.get_post_detail("pi-hannah-10k")["reactions"].get(
+            "celebrate", 0
+        )
         for _ in range(3):
-            response = self.client.post(
-                "/api/feed/posts/pi-hannah-10k/reactions",
-                headers=SAME_ORIGIN,
-                json={"reaction_type": "celebrate"},
+            result = self.feed.add_reaction(
+                "test-user-1", "pi-hannah-10k", "celebrate"
             )
-            self.assertEqual(response.status_code, 200)
-        after_adds = response.get_json()["reactions"]["celebrate"]
-        self.assertEqual(after_adds, base + 1)
-
+        self.assertEqual(result["reactions"]["celebrate"], base + 1)
         for _ in range(2):
-            response = self.client.delete(
-                "/api/feed/posts/pi-hannah-10k/reactions/celebrate",
-                headers=SAME_ORIGIN,
+            result = self.feed.remove_reaction(
+                "test-user-1", "pi-hannah-10k", "celebrate"
             )
-            self.assertEqual(response.status_code, 200)
-        after_removes = response.get_json()["reactions"].get("celebrate", 0)
-        self.assertEqual(after_removes, base)
+        self.assertEqual(result["reactions"].get("celebrate", 0), base)
 
     def test_unsupported_reaction_rejected(self):
-        response = self.client.post(
-            "/api/feed/posts/pi-hannah-10k/reactions",
-            headers=SAME_ORIGIN,
-            json={"reaction_type": "dislike"},
-        )
-        self.assertEqual(response.status_code, 400)
+        with self.assertRaises(FeedValidationError):
+            self.feed.add_reaction("test-user-1", "pi-hannah-10k", "dislike")
 
     def test_save_toggles(self):
-        first = self.client.post(
-            "/api/feed/posts/pi-hannah-10k/save", headers=SAME_ORIGIN
-        ).get_json()
-        second = self.client.post(
-            "/api/feed/posts/pi-hannah-10k/save", headers=SAME_ORIGIN
-        ).get_json()
+        first = self.feed.toggle_save("test-user-1", "pi-hannah-10k")
+        second = self.feed.toggle_save("test-user-1", "pi-hannah-10k")
         self.assertTrue(first["saved"])
         self.assertFalse(second["saved"])
+
+    def test_comment_can_be_submitted_and_over_limit_rejected(self):
+        comment = self.feed.add_comment(
+            "test-user-1", {}, "pi-hannah-10k", "Congrats on the PR!"
+        )
+        detail = self.feed.get_post_detail("pi-hannah-10k")
+        self.assertEqual(detail["comments"][-1]["body"], "Congrats on the PR!")
+        self.assertEqual(comment["comment_count"], detail["comment_count"])
+        with self.assertRaises(FeedValidationError):
+            self.feed.add_comment("test-user-1", {}, "pi-hannah-10k", "x" * 301)
 
 
 class PeopleInterestsFixtureTests(unittest.TestCase):
@@ -332,29 +320,30 @@ class PeopleInterestsFixtureTests(unittest.TestCase):
                 self.assertEqual(post["author"], "petec", post["id"])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class FeedV12RuleTests(unittest.TestCase):
     """PS-FEED-002: rail cleanup, Respond vocabulary, no Ask AI in Community.
 
-    PS-COMMUNITY-TABS-001 (2026-07-21) embeds The Break's own accepted
-    bento panel (which legitimately keeps its Weekend Challenge / Community
-    Poll cards — unredesigned, per that package's boundary) in the same
-    /the-slate response as Feed, hidden until its tab is selected. The
-    filler-module ban below is therefore scoped to the Feed panel's own
-    markup, matching the same scoping technique test_feed_prototype.py
-    already uses for its "no banned filler language" check.
+    PS-COMMUNITY-AUTH-WALL-001: the page under guard is now the signed-in
+    member Community — the only Community render. The Break panel left the
+    response entirely, so the filler-module ban is page-wide again.
     """
 
     @classmethod
     def setUpClass(cls):
-        app.config["TESTING"] = True
+        cls.previous_config = dict(app.config)
+        app.config.update(
+            TESTING=True,
+            PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
+            PEERSLATE_DEV_USER_KEY="feed-rules-member",
+            PEERSLATE_OWNER_USER_KEYS="someone-else-entirely",
+            PEERSLATE_OWNER_EMAILS="",
+        )
         cls.html = app.test_client().get("/the-slate").get_data(as_text=True)
-        start = cls.html.index('data-tab-panel="feed"')
-        end = cls.html.index('data-tab-panel="break"')
-        cls.feed_panel_html = cls.html[start:end]
+
+    @classmethod
+    def tearDownClass(cls):
+        app.config.clear()
+        app.config.update(cls.previous_config)
 
     def test_banned_rail_modules_removed_page_wide(self):
         # The retired People & Interests board's own filler-rail CSS hooks
@@ -363,22 +352,19 @@ class FeedV12RuleTests(unittest.TestCase):
             self.assertNotIn(banned, self.html)
 
     def test_no_filler_modules_beside_the_feed_itself(self):
-        # Scoped to the Feed panel only — The Break's own accepted content
-        # (embedded elsewhere on the same page, hidden until its tab is
-        # selected) is unredesigned and keeps these terms.
+        # Page-wide now: the embedded Break panel (which legitimately kept
+        # these cards) is retired along with the public shell.
         for banned in ("Community poll", "Weekend Challenge"):
-            self.assertNotIn(banned, self.feed_panel_html)
+            self.assertNotIn(banned, self.html)
 
     def test_respond_vocabulary(self):
-        # PS-COMMUNITY-TABS-001: the Feed panel's posts (and their Respond
-        # tray) are entirely client-rendered by feed-living-stream.js — the
-        # vocabulary no longer sits inline in the HTML response (there is no
-        # server-rendered reaction config on this page any more), so the
-        # guard checks the actual source of truth directly, plus that the
-        # page really loads that script.
-        self.assertIn('src="/static/js/feed-living-stream.js', self.html)
+        # The member Community is entirely client-rendered by community-v1.js
+        # — the approved Respond vocabulary lives there, and the retired
+        # feed-living-stream.js never loads on this page.
+        self.assertIn('src="/static/js/community-v1.js', self.html)
+        self.assertNotIn("feed-living-stream.js", self.html)
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        js_path = os.path.join(root, "static", "js", "feed-living-stream.js")
+        js_path = os.path.join(root, "static", "js", "community-v1.js")
         with open(js_path, "r", encoding="utf-8") as f:
             js = f.read()
         for intent in ("celebrate", "support", "i_relate", "ask", "offer_help"):
@@ -390,3 +376,7 @@ class FeedV12RuleTests(unittest.TestCase):
         self.assertNotIn("data-open-chat", self.html)
         self.assertNotIn('id="chat-toggle"', self.html)
         self.assertNotIn("Ask Pete AI", self.html)
+
+
+if __name__ == "__main__":
+    unittest.main()

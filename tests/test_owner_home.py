@@ -76,8 +76,23 @@ FAILED_B = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 # byte, and the older asset-token recaptures continue to chain from there
 # unchanged. No other owner workspace markup, layout, destination, or
 # control semantics changed.
-FLAG_OFF_APP_RENDER_BYTE_LENGTH = 17116
+# PS-COMMUNITY-AUTH-WALL-001 recapture. The shared base shell's owner-branch
+# header search index dropped the retired public-Community destinations (six
+# legacy entries plus the Living Stream preview) and reworded the single
+# Community record for the authenticated audience. That block is the ONLY
+# delta in this render: the recapture step below swaps the new Community
+# record span back to the retired block and reproduces the previous locked
+# baseline (now FLAG_OFF_APP_RENDER_PRE_AUTH_WALL_SHA256) byte for byte,
+# and the older recaptures continue to chain from there unchanged. No owner
+# workspace markup, layout, destination, or control semantics changed.
+FLAG_OFF_APP_RENDER_BYTE_LENGTH = 15777
 FLAG_OFF_APP_RENDER_SHA256 = (
+    "f2aa044f85900ef408f4bef916d7b8f742baa65f4d00c37331e1667e4b42aa8d"
+)
+FLAG_OFF_APP_RENDER_AUTH_WALL_COMMUNITY_SEARCH_SPAN = b'Visible to signed-in PeerSlate members", "href": "/the-slate", "keys": "the slate hub feed people community goals progress proof connect'
+FLAG_OFF_APP_RENDER_PRE_AUTH_WALL_COMMUNITY_SEARCH_SPAN = b'People, interests, goals, and progress", "href": "/the-slate", "keys": "the slate hub feed people community goals progress proof connect"},\n        {"title": "Community \xc2\xb7 My Slate", "sub": "Your goal map", "href": "/the-slate/my-slate", "keys": "my slate goals goal map board whiteboard ideas drafts rooms connections"},\n        {"title": "Community \xc2\xb7 Daily Slate", "sub": "Log what moved forward today", "href": "/the-slate/daily", "keys": "daily slate log progress today streak wins check-in updates"},\n        {"title": "Community \xc2\xb7 My Paths", "sub": "Paths and milestones on My Slate", "href": "/the-slate/my-slate#ts-mypaths", "keys": "paths guided tracks milestones pmp run portfolio join community"},\n        {"title": "Feed \xc2\xb7 People & Interests", "sub": "The living board of goals and moments", "href": "/the-slate", "keys": "feed activity progress updates community posts milestones people interests board corkboard notes"},\n        {"title": "Feed \xc2\xb7 Pulse", "sub": "Community momentum", "href": "/the-slate/pulse", "keys": "pulse trending stats momentum numbers skills goals"},\n        {"title": "Feed \xc2\xb7 Break", "sub": "Step back and recharge", "href": "/the-slate/break", "keys": "break recharge rest quotes shout-outs spark"},\n        {"title": "Feed Preview \xc2\xb7 Living Stream", "sub": "A design preview of PeerSlate\'s next Feed \xe2\x80\x94 sample data only", "href": "/feed-living-stream", "keys": "feed preview living stream design concept voice ai capture publish'
+FLAG_OFF_APP_RENDER_PRE_AUTH_WALL_BYTE_LENGTH = 17116
+FLAG_OFF_APP_RENDER_PRE_AUTH_WALL_SHA256 = (
     "1c1ff4a333b1caf2fe7080ad66655540a19d9df87e3f8b11144330531dd068f0"
 )
 FLAG_OFF_APP_RENDER_OPPSLATE_NAV_LI = (
@@ -469,16 +484,39 @@ class OwnerHomeRouteTests(unittest.TestCase):
             hashlib.sha256(response.data).hexdigest(),
             FLAG_OFF_APP_RENDER_SHA256,
         )
+        # PS-COMMUNITY-AUTH-WALL-001 recapture step: swapping the reworded
+        # Community search record back to the retired public-destination
+        # block must reproduce the previously locked baseline byte for byte
+        # before the older recapture chain below continues.
+        self.assertEqual(
+            response.data.count(
+                FLAG_OFF_APP_RENDER_AUTH_WALL_COMMUNITY_SEARCH_SPAN
+            ),
+            1,
+        )
+        pre_auth_wall_base = response.data.replace(
+            FLAG_OFF_APP_RENDER_AUTH_WALL_COMMUNITY_SEARCH_SPAN,
+            FLAG_OFF_APP_RENDER_PRE_AUTH_WALL_COMMUNITY_SEARCH_SPAN,
+        )
+        self.assertEqual(
+            len(pre_auth_wall_base), FLAG_OFF_APP_RENDER_PRE_AUTH_WALL_BYTE_LENGTH
+        )
+        self.assertEqual(
+            hashlib.sha256(pre_auth_wall_base).hexdigest(),
+            FLAG_OFF_APP_RENDER_PRE_AUTH_WALL_SHA256,
+        )
         # PS-OPPORTUNITY-SLATE-001 leg 7 recapture step: the desktop nav <li>
         # and its nav-search record are the only new bytes this leg adds to
         # the /app render (no mobile menu here to touch). Stripping exactly
         # those two additions must reproduce the previously locked baseline
         # byte for byte before the older asset-token chain below continues.
-        self.assertEqual(response.data.count(FLAG_OFF_APP_RENDER_OPPSLATE_NAV_LI), 1)
         self.assertEqual(
-            response.data.count(FLAG_OFF_APP_RENDER_OPPSLATE_NAV_SEARCH_RECORD), 1
+            pre_auth_wall_base.count(FLAG_OFF_APP_RENDER_OPPSLATE_NAV_LI), 1
         )
-        pre_oppslate_nav_base = response.data.replace(
+        self.assertEqual(
+            pre_auth_wall_base.count(FLAG_OFF_APP_RENDER_OPPSLATE_NAV_SEARCH_RECORD), 1
+        )
+        pre_oppslate_nav_base = pre_auth_wall_base.replace(
             FLAG_OFF_APP_RENDER_OPPSLATE_NAV_LI, b""
         ).replace(FLAG_OFF_APP_RENDER_OPPSLATE_NAV_SEARCH_RECORD, b"")
         self.assertEqual(

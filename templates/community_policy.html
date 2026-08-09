@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Community policy | PeerSlate{% endblock %}
+{% block meta_description %}The plain-language policy for PeerSlate Community.{% endblock %}
+{% block body_class %} community-policy-page{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/community-v1.css') }}">{% endblock %}
+{% block content %}
+<article class="cv1-policy">
+    <a href="{{ url_for('the_slate') }}">← Back to Community</a>
+    <p class="cv1-eyebrow">Effective August 8, 2026</p>
+    <h1>Community policy</h1>
+    <p>PeerSlate Community is visible to signed-in PeerSlate members. Nothing in Community is available to anonymous visitors. During the current stage, only PeerSlate’s configured site owner can post or interact; signed-in members can read.</p>
+    <h2>Your content and its audience</h2>
+    <p>You keep ownership of content you create. Posting makes the post and its ready attachments visible to signed-in PeerSlate members. It is not a public publication and does not appear on your Public Slate. Do not upload confidential, private, regulated, copyrighted-without-permission, malicious, or unlawful material.</p>
+    <h2>Safety, reporting, and removal</h2>
+    <p>PeerSlate may hold or remove material needed to protect people, rights, or the service. To report a concern, request takedown, or ask a privacy question, email <a href="mailto:privacy@peerslate.com?subject=Community%20report">privacy@peerslate.com</a> and include the post link. Do not include sensitive personal information in the report.</p>
+    <h2>Files, retention, and deletion</h2>
+    <p>JPEG, PNG, PDF, and macro-free XLSX files are privately stored and scanned before they can become visible to members. Spreadsheet contents and document properties become visible with the workbook, so review them before posting.</p>
+    <p><strong>Removing a post revokes its availability immediately</strong> — not after a delay. Its text then stays recoverable by you for <strong>30 days</strong> in Recently deleted, and is permanently erased after that. <strong>Attached files are not recoverable:</strong> they are permanently deleted as part of removing the post, normally within seconds, and if one cannot be deleted at that moment PeerSlate keeps retrying until it is gone. They are never held for the 30-day window, so restoring a post brings back its words but not its files. Uploads you never attach expire after 24 hours.</p>
+    <p>Security and audit records contain no post text and are kept for 90 days. Drafts you have not sent stay only on your own device and expire after 30 days without an edit; PeerSlate never receives them. Community searches are not stored.</p>
+    <p>Deleted content may persist briefly in routine encrypted database backups, which are kept for 7 days and are not used except for authorised disaster recovery. PeerSlate cannot recall copies other people already made while a post was visible to them — screenshots, downloads, or copies — and content that was visible during the earlier public stage may already exist in copies PeerSlate does not control. PeerSlate revokes its own delivery immediately and handles supported takedown requests.</p>
+    <h2>Age and confidentiality</h2>
+    <p>Community is not directed to children and is not a confidential workspace. Do not post information about a minor or another person without an appropriate legal basis and permission.</p>
+    <h2>AI truth</h2>
+    <p>Community content is not sent to a generative model, used for AI ranking, or automatically converted into a Slate, Journal entry, message, or other canonical PeerSlate record. If you explicitly choose Voice dictation, the transient private recording is sent to PeerSlate’s Speech transcription provider only to return an editable transcript proposal; it is not an attachment and is not saved, inserted, or posted automatically.</p>
+</article>
+{% endblock %}

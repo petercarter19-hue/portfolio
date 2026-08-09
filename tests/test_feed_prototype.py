@@ -1,11 +1,11 @@
-"""PS-FEED-001 — Living Stream Feed prototype route tests.
+"""PS-FEED-001 — Living Stream Feed prototype retirement tests.
 
-The prototype is a public design preview (fixture data only). These tests
-pin: the public routes and legacy redirect, the visible preview-banner
-copy that keeps visitors from mistaking sample data for real
-functionality, the copy-deck language that defines the alpha Feed, the
-absence of banned filler concepts, the discoverability links added to
-real navigation, and the static assets the page depends on.
+The prototype was a public design preview (fixture data only). Its working
+anonymous demo is retired by PS-COMMUNITY-AUTH-WALL-001: the widely shared
+human address forwards to the real Community (which requires sign-in), the
+preview/state pages are gone in every flag state, and no navigation surface
+publishes the preview. The templates and static assets stay on disk,
+unrouted, as the rollback/history record.
 """
 
 import os
@@ -16,103 +16,83 @@ from app import app
 
 class FeedPrototypeRouteTests(unittest.TestCase):
     def setUp(self):
-        app.config['TESTING'] = True
+        self.previous = dict(app.config)
+        app.config.update(TESTING=True)
         self.client = app.test_client()
 
-    def test_prototype_route_is_public(self):
-        response = self.client.get(
-            '/feed-living-stream', base_url='https://peerslate.com')
-        self.assertEqual(response.status_code, 200)
+    def tearDown(self):
+        app.config.clear()
+        app.config.update(self.previous)
 
-    def test_states_route_is_public(self):
-        response = self.client.get(
-            '/feed-living-stream/states', base_url='https://peerslate.com')
-        self.assertEqual(response.status_code, 200)
+    def test_prototype_address_forwards_to_the_real_community(self):
+        # The shared human address keeps working, but it lands on the one
+        # real Community — in both flag states.
+        for flag in (True, False):
+            with self.subTest(flag=flag):
+                app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = flag
+                response = self.client.get(
+                    "/feed-living-stream", base_url="https://peerslate.com"
+                )
+                self.assertEqual(response.status_code, 302)
+                self.assertTrue(response.location.endswith("/the-slate"))
 
-    def test_legacy_internal_path_redirects(self):
-        response = self.client.get('/_internal/feed-living-stream')
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.location.endswith('/feed-living-stream'))
-
-    def test_legacy_internal_states_path_redirects(self):
-        response = self.client.get('/_internal/feed-living-stream/states')
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.location.endswith('/feed-living-stream/states'))
-
-    def test_states_map_route(self):
-        response = self.client.get('/feed-living-stream/states')
-        self.assertEqual(response.status_code, 200)
-        html = response.get_data(as_text=True)
-        self.assertIn('?state=voice', html)
-        self.assertIn('?state=preview', html)
-        self.assertIn('?state=error', html)
+    def test_states_and_internal_preview_pages_are_gone(self):
+        for flag in (True, False):
+            app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = flag
+            for path in (
+                "/feed-living-stream/states",
+                "/_internal/feed-living-stream",
+                "/_internal/feed-living-stream/states",
+            ):
+                with self.subTest(flag=flag, path=path):
+                    self.assertEqual(self.client.get(path).status_code, 404)
 
 
-class FeedPrototypeContentTests(unittest.TestCase):
+class FeedPrototypeRetirementTests(unittest.TestCase):
+    """The redirect serves none of the old preview experience."""
+
     @classmethod
     def setUpClass(cls):
-        app.config['TESTING'] = True
-        cls.html = app.test_client().get('/feed-living-stream').get_data(as_text=True)
+        cls.previous_config = dict(app.config)
+        app.config.update(TESTING=True)
+        cls.response = app.test_client().get("/feed-living-stream")
+        cls.html = cls.response.get_data(as_text=True)
 
-    def test_community_switcher_tabs(self):
-        # 2026-07-17 (Pete, round 2): the Feed and The Break are one
-        # ecosystem — a prominent two-tab switcher flips between them, and
-        # the shared community sidebar appears on both. People & Interests
-        # left the switcher; For You / Following never returns.
-        self.assertIn('feed-switch', self.html)
-        self.assertIn('The Break', self.html)
-        self.assertIn('aria-label="Community sections"', self.html)
-        self.assertNotIn('People &amp; Interests', self.html)
-        self.assertNotIn('Following', self.html)
-        self.assertNotIn('For You', self.html)
+    @classmethod
+    def tearDownClass(cls):
+        app.config.clear()
+        app.config.update(cls.previous_config)
 
-    def test_copy_deck_language(self):
-        self.assertIn('Feed', self.html)
-        self.assertIn('What people are building, learning, and living.', self.html)
+    def test_no_preview_markup_is_served_from_the_retired_address(self):
+        self.assertEqual(self.response.status_code, 302)
+        for retired in (
+            'id="feed-app"',
+            "feed-switch",
+            'aria-label="Community views"',
+            "Sample data — nothing on this page is saved or shared.",
+            "What people are building, learning, and living.",
+            "feed-living-stream.js",
+        ):
+            with self.subTest(marker=retired):
+                self.assertNotIn(retired, self.html)
 
-    def test_sample_data_note_present(self):
-        # 2026-07-17 (Pete): the loud "Design preview" badge is gone, but the
-        # truthfulness rule stands — one quiet line still says the page is
-        # sample data and saves nothing.
-        self.assertNotIn('Design preview', self.html)
-        self.assertIn('Sample data — nothing on this page is saved or shared.', self.html)
-
-    def test_no_banned_filler_language(self):
-        # Scoped to the Feed experience itself (#feed-app onward). The
-        # global chrome from base.html is shared by every page and contains
-        # a pre-existing search keyword ("trending" on the Pulse entry)
-        # that is not part of this Feed design.
-        feed_app = self.html[self.html.index('id="feed-app"'):]
-        feed_app = feed_app[:feed_app.index('</script>')]
-        lowered = feed_app.lower()
-        for banned in ('trending', 'top creators', 'influencer',
-                       'thought leaders', 'boost your brand'):
-            self.assertNotIn(banned, lowered)
-
-    def test_accessibility_landmarks(self):
-        # The old For You / Following tablist is now a labeled nav of links.
-        self.assertIn('aria-label="Community views"', self.html)
-        self.assertIn('aria-live="polite"', self.html)
-        self.assertIn('Skip to main content', self.html)
-
-    def test_real_global_header_is_present(self):
-        """Pete's chrome rule (2026-07-16): the site's top navigation bar is
-        identical on every page — the preview must render the real global
-        header, not its own imitation of one."""
-        self.assertIn('class="global-header"', self.html)
-        self.assertIn('platform-nav', self.html)
-        self.assertIn("Pete's Slate", self.html)
-        self.assertIn('Interview Studio', self.html)
-        # v1.2: About left the header; Why PeerSlate lives in the footer.
-        self.assertNotIn('>About PeerSlate</a>', self.html)
-        self.assertIn('Why PeerSlate', self.html)
+    def test_archived_templates_remain_on_disk_unrouted(self):
+        # The rollback/history record stays; nothing renders it. (app.py's
+        # retired-route handlers redirect or 404 without touching these.)
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        for rel in (
+            "templates/feed_living_stream.html",
+            "templates/feed_living_stream_states.html",
+        ):
+            self.assertTrue(os.path.isfile(os.path.join(root, rel)), rel)
 
 
 class FeedPrototypeDiscoverabilityTests(unittest.TestCase):
-    """The retained comparison route is no longer a public navigation item.
+    """No navigation surface publishes the retired preview.
 
-    PS-PUBLIC-NAV-001 removes preview and fixture destinations from the
-    authoritative public shell while leaving the direct rollback route intact.
+    PS-PUBLIC-NAV-001 removed preview and fixture destinations from the
+    authoritative public shell; PS-COMMUNITY-AUTH-WALL-001 retired the
+    preview routes themselves.
     """
 
     def setUp(self):
@@ -126,12 +106,13 @@ class FeedPrototypeDiscoverabilityTests(unittest.TestCase):
         self.assertNotIn('/feed-living-stream', search_data)
         self.assertNotIn('Feed Preview', search_data)
 
-    def test_community_feed_does_not_publish_the_preview(self):
-        community_html = self.client.get('/the-slate').get_data(as_text=True)
-        search_data = community_html.split(
-            '<script id="nav-search-data"', 1)[1].split('</script>', 1)[0]
-        self.assertNotIn('/feed-living-stream', search_data)
-        self.assertNotIn('Feed Preview', search_data)
+    def test_community_response_does_not_publish_the_preview(self):
+        # Whatever /the-slate answers (sign-in redirect, neutral 404, or a
+        # member render), the shared chrome never advertises the preview.
+        response = self.client.get('/the-slate')
+        html = response.get_data(as_text=True)
+        self.assertNotIn('/feed-living-stream', html)
+        self.assertNotIn('Feed Preview', html)
 
 
 class FeedPrototypeAssetTests(unittest.TestCase):

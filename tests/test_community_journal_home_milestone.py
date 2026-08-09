@@ -17,12 +17,6 @@ from app import app
 from services.owner_home_service import OwnerHomeContractError
 from PIL import Image, ImageChops
 
-from tests.test_owner_home import (
-    FLAG_OFF_APP_RENDER_BYTE_LENGTH,
-    FLAG_OFF_APP_RENDER_SHA256,
-)
-
-
 DEV_USER_KEY = "milestone-journal-owner"
 EVIDENCE_ROOT = Path("artifacts/ps-community-journal-home-milestone-001")
 PACKAGE_CAPTURE_DIRECTORIES = {
@@ -72,6 +66,9 @@ class MilestoneSharedShellTests(unittest.TestCase):
                 "PEERSLATE_OWNER_HOME_ENABLED",
                 "PEERSLATE_ALLOW_DEV_IDENTITY",
                 "PEERSLATE_DEV_USER_KEY",
+                "PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED",
+                "PEERSLATE_OWNER_USER_KEYS",
+                "PEERSLATE_OWNER_EMAILS",
             )
         }
 
@@ -93,6 +90,16 @@ class MilestoneSharedShellTests(unittest.TestCase):
         self.assertIs(app.config["PEERSLATE_OWNER_HOME_ENABLED"], False)
 
     def test_community_uses_the_global_shell_without_profile_navigation(self):
+        # PS-COMMUNITY-AUTH-WALL-001: Community renders only for a signed-in
+        # member, so the shared-shell seam is asserted on the member render.
+        app.config.update(
+            PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
+            PEERSLATE_ALLOW_DEV_IDENTITY=True,
+            PEERSLATE_DEV_USER_KEY=DEV_USER_KEY,
+            PEERSLATE_OWNER_USER_KEYS="someone-else-entirely",
+            PEERSLATE_OWNER_EMAILS="",
+        )
+
         response = self.client.get("/the-slate")
         body = response.get_data(as_text=True)
 
@@ -102,7 +109,7 @@ class MilestoneSharedShellTests(unittest.TestCase):
         self.assertIn('class="footer"', body)
         self.assertNotIn('class="owner-home-shell"', body)
 
-    def test_flag_off_app_preserves_the_released_workspace_bytes(self):
+    def test_flag_off_app_preserves_the_released_workspace_shell(self):
         app.config.update(
             PEERSLATE_OWNER_HOME_ENABLED=False,
             PEERSLATE_ALLOW_DEV_IDENTITY=True,
@@ -112,14 +119,16 @@ class MilestoneSharedShellTests(unittest.TestCase):
         response = self.client.get("/app")
 
         self.assertEqual(response.status_code, 200)
-        # Private workspace renders are no-store; the bytes asserted below
-        # pin the intentional shared-shell light-only baseline.
+        # Private workspace renders are no-store. The byte/sha pin that used
+        # to sit here belongs to tests/test_owner_home.py; the shared base
+        # shell legitimately changed under PS-COMMUNITY-AUTH-WALL-001 (nav
+        # and search-index entries), so this seam test asserts the milestone
+        # contract that matters — the flag-off /app is still the released
+        # workspace, never the Owner Home shell — without duplicating a
+        # byte baseline owned by another suite.
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
-        self.assertEqual(len(response.data), FLAG_OFF_APP_RENDER_BYTE_LENGTH)
-        self.assertEqual(
-            hashlib.sha256(response.data).hexdigest(), FLAG_OFF_APP_RENDER_SHA256
-        )
         self.assertIn(b"My PeerSlate", response.data)
+        self.assertIn(b"Private owner workspace", response.data)
         self.assertNotIn(b"owner-home-shell", response.data)
 
     @patch("owner_routes.journal_service")

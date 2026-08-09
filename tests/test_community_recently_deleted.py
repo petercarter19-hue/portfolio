@@ -130,8 +130,13 @@ class RecentlyDeletedIsReachableTests(unittest.TestCase):
 
 class RecentlyDeletedRouteTests(unittest.TestCase):
     def setUp(self):
-        app.config["TESTING"] = True
+        self.previous = dict(app.config)
+        app.config.update(TESTING=True, PEERSLATE_DEV_USER_KEY=None)
         self.client = app.test_client()
+
+    def tearDown(self):
+        app.config.clear()
+        app.config.update(self.previous)
 
     def test_the_page_is_absent_while_the_flag_is_off(self):
         app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = False
@@ -142,32 +147,44 @@ class RecentlyDeletedRouteTests(unittest.TestCase):
             self.client.post("/the-slate/recently-deleted/restore").status_code, 404
         )
 
-    def test_a_non_owner_gets_a_neutral_404_not_a_403(self):
+    def test_a_signed_out_request_goes_through_sign_in_never_the_page(self):
+        # PS-COMMUNITY-AUTH-WALL-001: Community is members-only; a signed-out
+        # GET returns to this exact page after sign-in, and an expired-session
+        # POST lands on the page, not the action, so it can't be replayed.
+        app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = True
+        for request in (
+            lambda: self.client.get("/the-slate/recently-deleted"),
+            lambda: self.client.post(
+                "/the-slate/recently-deleted/restore",
+                data={"record_kind": "post", "record_key": "x"},
+            ),
+        ):
+            response = request()
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(
+                response.headers["Location"],
+                "/auth/sign-in?return_to=/the-slate/recently-deleted",
+            )
+
+    def test_a_signed_in_non_owner_gets_a_neutral_404_not_a_403(self):
         # A 403 would confirm the page exists and that someone has removed
         # content worth looking at. 404 reveals nothing.
-        app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = True
-        try:
-            with mock.patch(
-                "community_routes.viewer_context",
-                return_value={
-                    "community_owner": False,
-                    "community_signed_in": True,
-                    "community_display_name": None,
-                    "community_draft_namespace": None,
-                },
-            ):
-                self.assertEqual(
-                    self.client.get("/the-slate/recently-deleted").status_code, 404
-                )
-                self.assertEqual(
-                    self.client.post(
-                        "/the-slate/recently-deleted/restore",
-                        data={"record_kind": "post", "record_key": "x"},
-                    ).status_code,
-                    404,
-                )
-        finally:
-            app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = False
+        app.config.update(
+            PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
+            PEERSLATE_DEV_USER_KEY="member-not-the-owner",
+            PEERSLATE_OWNER_USER_KEYS="someone-else-entirely",
+            PEERSLATE_OWNER_EMAILS="",
+        )
+        self.assertEqual(
+            self.client.get("/the-slate/recently-deleted").status_code, 404
+        )
+        self.assertEqual(
+            self.client.post(
+                "/the-slate/recently-deleted/restore",
+                data={"record_kind": "post", "record_key": "x"},
+            ).status_code,
+            404,
+        )
 
 
 class RecentlyDeletedPresentationTests(unittest.TestCase):

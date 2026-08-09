@@ -471,14 +471,7 @@
         {"title": "Opportunity Slate", "sub": "See how your evidence lines up with a role", "href": "{{ opportunity_slate_url }}", "keys": "opportunity slate role job posting alignment requirements evidence match analysis"},
         {"title": "Contact", "sub": "Email, LinkedIn, resume", "href": "{{ portfolio_contact_url }}", "keys": "contact email message linkedin reach hire connect"},
         {"title": "Download Resume (PDF)", "sub": "One-page PDF", "href": "{{ url_for('static', filename='files/pete-carter-resume.pdf') }}", "keys": "download resume pdf file print ats"},
-        {"title": "Community", "sub": "People, interests, goals, and progress", "href": "{{ url_for('the_slate') }}", "keys": "the slate hub feed people community goals progress proof connect"},{% if not community_public_pilot_enabled %}
-        {"title": "Community · My Slate", "sub": "Your goal map", "href": "{{ url_for('the_slate_my') }}", "keys": "my slate goals goal map board whiteboard ideas drafts rooms connections"},
-        {"title": "Community · Daily Slate", "sub": "Log what moved forward today", "href": "{{ url_for('the_slate_daily') }}", "keys": "daily slate log progress today streak wins check-in updates"},
-        {"title": "Community · My Paths", "sub": "Paths and milestones on My Slate", "href": "{{ url_for('the_slate_my') }}#ts-mypaths", "keys": "paths guided tracks milestones pmp run portfolio join community"},
-        {"title": "Feed · People & Interests", "sub": "The living board of goals and moments", "href": "{{ url_for('the_slate') }}", "keys": "feed activity progress updates community posts milestones people interests board corkboard notes"},
-        {"title": "Feed · Pulse", "sub": "Community momentum", "href": "{{ url_for('slate_feed_pulse') }}", "keys": "pulse trending stats momentum numbers skills goals"},
-        {"title": "Feed · Break", "sub": "Step back and recharge", "href": "{{ url_for('slate_feed_break') }}", "keys": "break recharge rest quotes shout-outs spark"},{% endif %}
-        {"title": "Feed Preview · Living Stream", "sub": "A design preview of PeerSlate's next Feed — sample data only", "href": "{{ url_for('feed_living_stream') }}", "keys": "feed preview living stream design concept voice ai capture publish"},
+        {"title": "Community", "sub": "Visible to signed-in PeerSlate members", "href": "{{ url_for('the_slate') }}", "keys": "the slate hub feed people community goals progress proof connect"},
         {"title": "Why PeerSlate", "sub": "Why the platform exists", "href": "{{ peerslate_home_url }}", "keys": "why peerslate about mission journal private first how it works"}
         {% else %}
         {"title": "Pete's Slate", "sub": "Pete Carter's public Overview", "href": "{{ portfolio_home_url }}#overview", "keys": "pete slate profile overview public"},
@@ -490,8 +483,7 @@
         {"title": "Opportunity Slate", "sub": "See how your evidence lines up with a role", "href": "{{ opportunity_slate_url }}", "keys": "opportunity slate role job posting alignment requirements evidence match analysis"},
         {"title": "Contact", "sub": "Email and LinkedIn", "href": "{{ portfolio_contact_url }}", "keys": "contact email message linkedin reach hire connect"},
         {"title": "Download résumé", "sub": "One-page PDF", "href": "{{ url_for('static', filename='files/pete-carter-resume.pdf') }}", "keys": "download resume résumé pdf file print ats"},
-        {"title": "Community Feed", "sub": "People, progress, and interests", "href": "{{ url_for('the_slate') }}", "keys": "community feed people progress interests posts milestones"},{% if not community_public_pilot_enabled %}
-        {"title": "The Break", "sub": "Step back and recharge", "href": "{{ url_for('slate_feed_break') }}", "keys": "community break recharge rest quotes shout-outs spark"},{% endif %}
+        {"title": "Community", "sub": "Visible to signed-in PeerSlate members", "href": "{{ url_for('the_slate') }}", "keys": "community feed people progress interests posts milestones"},
         {"title": "Why PeerSlate", "sub": "Why the platform exists", "href": "{{ peerslate_home_url }}", "keys": "why peerslate about mission journal private first how it works"}
         {% endif %}
     ]

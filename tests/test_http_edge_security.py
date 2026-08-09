@@ -475,14 +475,14 @@ class PrivateResponseCacheTests(unittest.TestCase):
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
 
     @patch("people_interests_api.people_interests_feed.get_page")
-    def test_personalized_public_feed_response_is_private_no_store(self, get_page):
-        get_page.return_value = {"items": [], "next_cursor": None}
-
+    def test_legacy_people_interests_feed_endpoint_is_retired(self, get_page):
+        # Blueprint retired by PS-COMMUNITY-AUTH-WALL-001: people_interests_api
+        # is never registered, so this address is a 404 and no feed page is
+        # ever computed for it.
         response = self.client.get("/api/feed/people-interests")
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
-        self.assertEqual(get_page.call_args.kwargs["user_key"], "edge-owner")
+        self.assertEqual(response.status_code, 404)
+        get_page.assert_not_called()
 
     def test_identity_personalized_app_page_is_private_no_store(self):
         app.config["PEERSLATE_DATABASE_UI_ENABLED"] = True

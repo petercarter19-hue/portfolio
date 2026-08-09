@@ -142,7 +142,13 @@ class PeerSlateApiTests(unittest.TestCase):
 
         self.assertIn(b'data-board-api="true"', database_board.data)
         self.assertIn(b'Saved privately', database_board.data)
-        self.assertIn(b'data-database-ui="true"', daily_slate.data)
+        # PS-COMMUNITY-AUTH-WALL-001: the Daily Slate and Break pages are
+        # retired — their addresses forward to the one real Community and
+        # serve no database-UI or break-API markup in any flag state.
+        self.assertEqual(daily_slate.status_code, 302)
+        self.assertTrue(daily_slate.headers["Location"].endswith("/the-slate"))
+        self.assertNotIn(b'data-database-ui=', daily_slate.data)
+        self.assertEqual(break_feed.status_code, 302)
         self.assertNotIn(b'data-break-api=', break_feed.data)
 
     def test_living_resume_database_routes_are_feature_flagged_off(self):

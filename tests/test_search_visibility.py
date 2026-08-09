@@ -85,9 +85,37 @@ class SearchVisibilityQuietPreviewTests(unittest.TestCase):
             "Disallow: /app",
             "Disallow: /api/",
             "Disallow: /owner",
+            # PS-COMMUNITY-AUTH-WALL-001: the members-only Community
+            # namespace stays out of crawl budget in every flag state.
+            "Disallow: /the-slate",
         ):
             with self.subTest(protected_path=protected_path):
                 self.assertIn(protected_path, body)
+
+    def test_sitemap_never_advertises_the_members_only_community(self):
+        # PS-COMMUNITY-AUTH-WALL-001: no protected Community route belongs in
+        # the public sitemap, whichever way the flag points.
+        original_flag = app.config.get("PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED")
+        try:
+            for flag in (True, False):
+                app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = flag
+                response = self.client.get(
+                    "/sitemap.xml",
+                    base_url="https://peerslate.com",
+                )
+                self.assertEqual(response.status_code, 200)
+                root = ET.fromstring(response.get_data(as_text=True))
+                namespace = {
+                    "sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"
+                }
+                locations = root.findall("sitemap:url/sitemap:loc", namespace)
+                self.assertTrue(locations)
+                for location in locations:
+                    path = urlsplit(location.text).path
+                    with self.subTest(flag=flag, path=path):
+                        self.assertFalse(path.startswith("/the-slate"))
+        finally:
+            app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = original_flag
 
 
 if __name__ == "__main__":

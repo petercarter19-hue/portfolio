@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Community | PeerSlate{% endblock %}
-{% block meta_description %}Read public PeerSlate Community posts from the owner-led public pilot.{% endblock %}
+{% block meta_description %}PeerSlate Community — visible to signed-in PeerSlate members.{% endblock %}
 {% block body_class %} community-public-pilot{% endblock %}
 
 {% block extra_head %}
@@ -26,10 +26,6 @@
         <p><strong>Local fixture preview</strong> · Pete-only sample content · Sample content is not persisted or published.</p>
     </aside>
     {% endif %}
-    <aside class="cv1-preview-note cv1-demo-note" aria-label="Public Community demo" data-community-demo-note hidden>
-        <span aria-hidden="true">ⓘ</span>
-        <p><strong>Public demo</strong> · Illustrative Pete-only content from the owner-approved Community mockups · Try the controls; nothing in the demo is sent, published, or stored as member activity.</p>
-    </aside>
     <section class="cv1-mobile-tools" aria-label="Community tools">
         <button class="cv1-mobile-tool-control cv1-mobile-catchup" type="button" data-open-catchup data-mobile-catchup>
             <span aria-hidden="true">✓</span><span>Catch up</span><small>Return context, Spark, and activity</small><span aria-hidden="true">›</span>
@@ -39,14 +35,9 @@
         </button>
     </section>
 
-    {% if not community_signed_in %}
-    <aside class="cv1-public-note" aria-label="Public pilot access">
-        <p>Anyone can read public posts. Sign in to access your account.</p>
-        <a href="{{ url_for('auth.sign_in', return_to='/the-slate') }}">Sign in</a>
-    </aside>
-    {% elif not community_owner %}
-    <aside class="cv1-public-note" aria-label="Public pilot access">
-        <p>This owner-led pilot is read-only for now.</p>
+    {% if not community_owner %}
+    <aside class="cv1-public-note" aria-label="Community access">
+        <p>Community is read-only for members right now.</p>
     </aside>
     {% endif %}
 
@@ -60,7 +51,7 @@
             </div>
             <div class="cv1-publication-banner" role="status" aria-live="polite" data-publication-banner hidden>
                 <span class="cv1-publication-banner__icon" aria-hidden="true">✓</span>
-                <p><strong>Published publicly</strong><span data-publication-banner-copy>Your post is now visible in Community.</span></p>
+                <p><strong>Posted to Community</strong><span data-publication-banner-copy>Your post is now visible to signed-in PeerSlate members.</span></p>
                 <button type="button" data-dismiss-publication-banner aria-label="Dismiss publication confirmation">×</button>
             </div>
             <div class="cv1-toolbar">
@@ -80,14 +71,6 @@
                 <button class="cv1-quick-compose-action cv1-quick-compose-action--voice" type="button" data-top-voice aria-label="Start a Voice post" aria-pressed="false" title="Start a private Voice post draft"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v4M8.5 21h7"></path></svg></button>
             </section>
             {% endif %}
-
-            <section class="cv1-quick-compose cv1-demo-quick-compose" aria-label="Try the Community post composer" data-demo-quick-compose hidden>
-                <span class="cv1-avatar cv1-demo-avatar" aria-hidden="true">D</span>
-                <button class="cv1-prompt" type="button" data-open-demo-composer>Try a Community post with text or Voice</button>
-                <button class="cv1-quick-compose-action cv1-quick-compose-action--media" type="button" data-open-demo-composer aria-label="Try a local photo or file in the demo composer"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m5 17 4.5-4.5 3.2 3.2 2.3-2.3 4 3.6"></path></svg></button>
-                <button class="cv1-quick-compose-action cv1-quick-compose-action--voice" type="button" data-demo-top-voice aria-label="Try Voice in the demo composer" aria-pressed="false" title="Try a Voice post without publishing"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v4M8.5 21h7"></path></svg></button>
-                {% if community_owner %}<button class="cv1-demo-real-post" type="button" data-open-composer>Create a real post</button>{% endif %}
-            </section>
 
             <section class="cv1-feed" aria-live="polite" aria-busy="true" data-feed-list>
                 {% for _ in range(3) %}
@@ -112,8 +95,8 @@
                 <p class="cv1-eyebrow">Since you were here</p>
                 <div class="cv1-quiet-state">
                     <span class="cv1-quiet-icon" aria-hidden="true">◷</span>
-                    <strong>Owner pilot</strong>
-                    <span>New public conversations will appear here.</span>
+                    <strong>PeerSlate Community</strong>
+                    <span>New Community conversations will appear here.</span>
                 </div>
             </section>
             <section>
@@ -128,7 +111,7 @@
             </section>
             <section class="cv1-caught-rail">
                 <span aria-hidden="true">✓</span>
-                <p><strong>You’re caught up</strong><br><button type="button" data-open-activity>See pilot activity</button></p>
+                <p><strong>You’re caught up</strong><br><button type="button" data-open-activity>See Community activity</button></p>
             </section>
         </aside>
 
@@ -136,7 +119,7 @@
             <section>
                 <p class="cv1-eyebrow">Community pulse</p>
                 <ul class="cv1-pulse-list">
-                    <li><span class="cv1-blue" aria-hidden="true">◯</span><p><strong>Questions looking for input</strong><small>Owner pilot</small></p></li>
+                    <li><span class="cv1-blue" aria-hidden="true">◯</span><p><strong>Questions looking for input</strong><small>PeerSlate Community</small></p></li>
                     <li><span class="cv1-green" aria-hidden="true">♧</span><p><strong>Ways to offer help</strong><small>Read the latest posts</small></p></li>
                     <li><span class="cv1-gold" aria-hidden="true">✦</span><p><strong>Wins shared recently</strong><small>Growing with the Feed</small></p></li>
                 </ul>
@@ -149,7 +132,7 @@
         </aside>
     </div>
 
-    <p class="cv1-policy-line">Public owner pilot · <a href="{{ url_for('community_routes.community_pilot_policy') }}">Policy, reporting, and takedown contact</a>{% if community_owner %} · <a href="{{ url_for('community_routes.community_recently_deleted') }}">Recently deleted</a>{% endif %} · Published content is not sent to a generative model or used for AI ranking. Optional Voice dictation sends a transient private recording to Speech only after sign-in and only for an editable proposal; signed-out demo Voice stays in the browser.</p>
+    <p class="cv1-policy-line">PeerSlate Community · visible to signed-in members · <a href="{{ url_for('community_routes.community_policy') }}">Policy, reporting, and takedown contact</a>{% if community_owner %} · <a href="{{ url_for('community_routes.community_recently_deleted') }}">Recently deleted</a>{% endif %} · Community content is not sent to a generative model or used for AI ranking. Optional Voice dictation sends a transient private recording to Speech only for an editable proposal.</p>
 
     {% if community_owner %}
     <dialog class="cv1-dialog cv1-composer" data-composer aria-labelledby="cv1-composer-title">
@@ -172,7 +155,10 @@
                 <label class="cv1-audience-field">Audience
                     <select name="audience" required>
                         <option value="">Choose audience</option>
-                        <option value="public">Public — anyone can view this post</option>
+                        {# PS-COMMUNITY-AUTH-WALL-001: the stored token stays
+                           "public" (transitional schema debt); the audience a
+                           member is shown is the truthful one. #}
+                        <option value="public">PeerSlate Community — visible to signed-in members</option>
                     </select>
                 </label>
                 <label class="cv1-response-posture-field">Response posture
@@ -197,13 +183,13 @@
                     <label class="cv1-composer-tool" title="Attach a PDF or macro-free XLSX file" data-composer-attachment-control>⌇<span>File</span><input type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" data-attachment-input></label>
                     <label class="cv1-composer-tool" title="Attach a JPEG or PNG photo" data-composer-attachment-control>▧<span>Photo</span><input type="file" accept="image/jpeg,image/png" data-photo-attachment-input></label>
                     <button class="cv1-composer-tool" type="button" data-composer-voice aria-label="Start a Voice post" aria-pressed="false" title="Record a private Voice post draft">♩<span>Voice</span></button>
-                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-video-unavailable aria-label="Video — unavailable in this pilot" aria-disabled="true" title="Video is unavailable in this pilot">▻<span>Video</span></button>
-                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-public-audio-unavailable aria-label="Public audio — unavailable in this pilot" aria-disabled="true" title="Public audio is unavailable in this pilot">⌁<span>Public audio</span></button>
+                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-video-unavailable aria-label="Video — not yet available" aria-disabled="true" title="Video is not yet available">▻<span>Video</span></button>
+                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-public-audio-unavailable aria-label="Shared audio — not yet available" aria-disabled="true" title="Shared audio is not yet available">⌁<span>Public audio</span></button>
                 </div>
                 <span class="cv1-draft-safe" data-edit-attachment-note hidden>Published attachments stay unchanged while editing.</span>
                 <span class="cv1-draft-safe" role="status" aria-live="polite" data-draft-status hidden>Your draft is saved on this device.</span>
                 <button class="cv1-secondary" type="button" data-close-composer>Cancel</button>
-                <button class="cv1-primary" type="submit" value="default" data-publish>Review public post</button>
+                <button class="cv1-primary" type="submit" value="default" data-publish>Review Community post</button>
             </footer>
         </form>
     </dialog>
@@ -212,55 +198,22 @@
         <form method="dialog" class="cv1-dialog-frame">
             <header class="cv1-dialog-head">
                 <div>
-                    <h2 id="cv1-public-confirmation-title">Publish this post publicly?</h2>
-                    <p>Public is selected. Anyone can view this post once you confirm.</p>
+                    <h2 id="cv1-public-confirmation-title">Post this to Community?</h2>
+                    <p>PeerSlate Community is selected. Signed-in PeerSlate members can view this post once you confirm.</p>
                 </div>
                 <button class="cv1-icon-button" value="cancel" data-cancel-publication aria-label="Return to post draft">×</button>
             </header>
             <div class="cv1-public-confirmation__copy">
                 <span aria-hidden="true">◎</span>
-                <p>Your draft stays private until you choose <strong>Publish publicly</strong> below.</p>
+                <p>Only you can see this draft until you choose <strong>Post to Community</strong> below.</p>
             </div>
             <footer class="cv1-dialog-actions">
                 <button class="cv1-secondary" type="button" data-cancel-publication>Keep editing</button>
-                <button class="cv1-primary" type="button" data-confirm-publication>Publish publicly</button>
+                <button class="cv1-primary" type="button" data-confirm-publication>Post to Community</button>
             </footer>
         </form>
     </dialog>
     {% endif %}
-
-    <dialog class="cv1-dialog cv1-composer cv1-demo-composer" data-demo-composer aria-labelledby="cv1-demo-composer-title">
-        <form class="cv1-dialog-frame" data-demo-composer-form>
-            <header class="cv1-dialog-head">
-                <div>
-                    <h2 id="cv1-demo-composer-title">Try the Community composer</h2>
-                    <p><span aria-hidden="true">◇</span> Public demo · nothing is saved, sent, or published</p>
-                </div>
-                <button class="cv1-icon-button" type="button" data-close-demo-composer aria-label="Close demo composer">×</button>
-            </header>
-            <div class="cv1-demo-composer-notice" role="note">
-                <strong>Hands-on sandbox</strong>
-                <span>Type, add local examples, and try Voice. This draft disappears when this page closes.</span>
-            </div>
-            <label><span>What’s on your mind?</span>
-                <textarea name="body" maxlength="4000" rows="7" placeholder="Try writing a Community post…"></textarea>
-                <span class="cv1-character-count" data-demo-character-count>0 / 4,000</span>
-            </label>
-            <div data-demo-composer-voice-panel-host></div>
-            <div class="cv1-attachment-list cv1-demo-attachment-list" data-demo-attachment-list aria-live="polite"></div>
-            <footer class="cv1-dialog-actions">
-                <div class="cv1-composer-tool-strip" aria-label="Demo post tools">
-                    <label class="cv1-composer-tool" title="Try a local PDF or macro-free XLSX file">⌇<span>File</span><input type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" data-demo-attachment-input></label>
-                    <label class="cv1-composer-tool" title="Try a local JPEG or PNG photo">▧<span>Photo</span><input type="file" accept="image/jpeg,image/png" data-demo-photo-input></label>
-                    <button class="cv1-composer-tool" type="button" data-demo-composer-voice aria-label="Start a Voice demo post" aria-pressed="false" title="Try Voice without publishing">♩<span>Voice</span></button>
-                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-video-unavailable aria-label="Video — unavailable in this pilot" aria-disabled="true">▻<span>Video</span></button>
-                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-public-audio-unavailable aria-label="Public audio — unavailable in this pilot" aria-disabled="true">⌁<span>Public audio</span></button>
-                </div>
-                <span class="cv1-draft-safe cv1-demo-draft-safe" role="status">Demo only · there is deliberately no Publish button.</span>
-                <button class="cv1-secondary" type="button" data-close-demo-composer>Close</button>
-            </footer>
-        </form>
-    </dialog>
 
     <dialog class="cv1-dialog cv1-conversation" data-conversation aria-labelledby="cv1-conversation-title">
         <div class="cv1-dialog-frame">
@@ -281,8 +234,8 @@
                     <label class="cv1-composer-tool" title="Attach a PDF or macro-free XLSX file">⌇<span>File</span><input type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" data-reply-attachment-input></label>
                     <label class="cv1-composer-tool" title="Attach a JPEG or PNG photo">▧<span>Photo</span><input type="file" accept="image/jpeg,image/png" data-reply-photo-input></label>
                     <button class="cv1-composer-tool" type="button" data-reply-voice aria-label="Start a Voice reply" aria-pressed="false" title="Record a private Voice reply draft">♩<span>Voice</span></button>
-                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-video-unavailable aria-label="Video — unavailable in this pilot" aria-disabled="true" title="Video is unavailable in this pilot">▻<span>Video</span></button>
-                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-public-audio-unavailable aria-label="Public audio — unavailable in this pilot" aria-disabled="true" title="Public audio is unavailable in this pilot">⌁<span>Public audio</span></button>
+                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-video-unavailable aria-label="Video — not yet available" aria-disabled="true" title="Video is not yet available">▻<span>Video</span></button>
+                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-public-audio-unavailable aria-label="Shared audio — not yet available" aria-disabled="true" title="Shared audio is not yet available">⌁<span>Public audio</span></button>
                     <button class="cv1-reply-send" type="submit" data-reply-send disabled aria-label="Publish reply" title="Publish reply"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 11.5 15-7-5.9 15-2.1-6-7-2Z"></path><path d="m11 13.5 4.2-4.2"></path></svg></button>
                 </div>
                 <span class="cv1-draft-safe cv1-reply-draft-safe" role="status" aria-live="polite" data-reply-draft-status hidden>Your reply draft is saved on this device.</span>
@@ -295,10 +248,10 @@
         <div class="cv1-dialog-frame">
             <header class="cv1-dialog-head"><div><h2 id="cv1-catchup-title">Catch up</h2><p>Your Community return point</p></div><button class="cv1-icon-button" type="button" data-close-catchup aria-label="Close Catch up">×</button></header>
             <div class="cv1-catchup-copy">
-                <section aria-labelledby="cv1-catchup-return"><h3 id="cv1-catchup-return">Since you were here</h3><p><strong>Owner pilot</strong><br>New public conversations appear in the Feed.</p></section>
+                <section aria-labelledby="cv1-catchup-return"><h3 id="cv1-catchup-return">Since you were here</h3><p><strong>PeerSlate Community</strong><br>New Community conversations appear in the Feed.</p></section>
                 <section aria-labelledby="cv1-catchup-continue"><h3 id="cv1-catchup-continue">Continue the conversation</h3><p>Open any post to return to its replies and author updates.</p></section>
                 {% if community_owner %}<section class="cv1-activity-spark" aria-labelledby="cv1-catchup-spark"><span aria-hidden="true">✦</span><h3 id="cv1-catchup-spark">A Spark for you</h3><p><strong>What did you make easier for someone else this week?</strong></p><button class="cv1-link-button" type="button" data-open-composer data-intent="small_win" data-spark-prompt="What did you make easier for someone else this week?">Use this Spark <span aria-hidden="true">→</span></button></section>{% endif %}
-                <section class="cv1-catchup-complete" aria-labelledby="cv1-catchup-complete"><h3 id="cv1-catchup-complete">You’re caught up</h3><p>This return snapshot has no more pilot activity.</p></section>
+                <section class="cv1-catchup-complete" aria-labelledby="cv1-catchup-complete"><h3 id="cv1-catchup-complete">You’re caught up</h3><p>This return snapshot has no more Community activity.</p></section>
                 <button class="cv1-secondary" type="button" data-open-activity>See all activity</button>
                 <button class="cv1-primary" type="button" data-catchup-to-feed>Open in Feed <span aria-hidden="true">→</span></button>
             </div>
@@ -309,8 +262,8 @@
         <div class="cv1-dialog-frame">
             <header class="cv1-dialog-head"><div><h2 id="cv1-activity-title">Community activity</h2><p>What’s moving right now</p></div><button class="cv1-icon-button" type="button" data-close-activity aria-label="Close Community activity">×</button></header>
             <div class="cv1-activity-copy">
-                <section aria-labelledby="cv1-activity-pulse"><h3 id="cv1-activity-pulse">Community pulse</h3><ul class="cv1-pulse-list"><li><span class="cv1-blue" aria-hidden="true">◯</span><p><strong>Questions looking for input</strong><small>Published questions appear in the Feed</small></p></li><li><span class="cv1-green" aria-hidden="true">♧</span><p><strong>Ways to offer help</strong><small>Available as the owner pilot grows</small></p></li><li><span class="cv1-gold" aria-hidden="true">✦</span><p><strong>Wins shared recently</strong><small>Published small wins appear in the Feed</small></p></li></ul></section>
-                <section aria-labelledby="cv1-activity-questions"><h3 id="cv1-activity-questions">Active questions</h3><p>Questions appear here after the owner publishes them. Open the Feed to search current public posts.</p></section>
+                <section aria-labelledby="cv1-activity-pulse"><h3 id="cv1-activity-pulse">Community pulse</h3><ul class="cv1-pulse-list"><li><span class="cv1-blue" aria-hidden="true">◯</span><p><strong>Questions looking for input</strong><small>Posted questions appear in the Feed</small></p></li><li><span class="cv1-green" aria-hidden="true">♧</span><p><strong>Ways to offer help</strong><small>Available as Community grows</small></p></li><li><span class="cv1-gold" aria-hidden="true">✦</span><p><strong>Wins shared recently</strong><small>Posted small wins appear in the Feed</small></p></li></ul></section>
+                <section aria-labelledby="cv1-activity-questions"><h3 id="cv1-activity-questions">Active questions</h3><p>Questions appear here after the owner posts them. Open the Feed to search current Community posts.</p></section>
                 <button class="cv1-primary" type="button" data-activity-to-feed>Open in Feed <span aria-hidden="true">→</span></button>
             </div>
         </div>

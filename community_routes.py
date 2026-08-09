@@ -1,4 +1,9 @@
-"""Flagged public HTML routes for the owner-authored Community pilot."""
+"""Authenticated HTML routes for PeerSlate Community.
+
+PS-COMMUNITY-AUTH-WALL-001: Community is served only to signed-in PeerSlate
+members. Signed-out GETs go through sign-in and return to the exact page.
+An identity failure is a private recovery state, never an anonymous render.
+"""
 
 import hashlib
 import hmac
@@ -13,7 +18,7 @@ from flask import (
     url_for,
 )
 
-from identity import get_current_identity, get_optional_identity
+from identity import AuthenticationRequired, get_current_identity
 from owner_authorization import is_owner
 from services.community_contracts import (
     CommunityNotFoundError,
@@ -33,11 +38,44 @@ def enabled():
     return current_app.config.get("PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED", False)
 
 
-def viewer_context():
+def _sign_in_redirect():
+    """Send a signed-out GET through sign-in, back to this exact page."""
+    return_to = request.full_path if request.query_string else request.path
+    if return_to.endswith("?"):
+        return_to = return_to[:-1]
+    return redirect(url_for("auth.sign_in", return_to=return_to))
+
+
+def require_community_member():
+    """Availability, then trusted authentication, before anything else.
+
+    Returns (identity, None) for a signed-in member, or (None, response)
+    when the request must stop. An identity database failure is answered
+    here as a private 503; AuthenticationPrincipalInvalid and
+    IdentityMappingError deliberately propagate to the application's
+    private recovery handlers. An identity failure must never be presented
+    as signed out, anonymous, or demo Community.
+    """
+    if not enabled():
+        abort(404)
     try:
-        identity = get_optional_identity()
+        return get_current_identity(), None
+    except AuthenticationRequired:
+        if request.method == "GET":
+            return None, _sign_in_redirect()
+        # An expired-session POST must not be replayed through a redirect:
+        # send the member to sign in and land on the page, not the action.
+        return None, redirect(
+            url_for("auth.sign_in", return_to="/the-slate/recently-deleted")
+        )
     except DatabaseServiceError:
-        identity = None
+        # Identity storage failing is a service problem, not a sign-in
+        # problem: a private 503, never an anonymous or demo render.
+        current_app.logger.error("Community identity resolution failed.")
+        abort(503)
+
+
+def viewer_context(identity):
     owner = bool(identity and is_owner(identity))
     draft_namespace = None
     if owner:
@@ -61,8 +99,9 @@ def viewer_context():
 
 @community_routes.get("/the-slate/posts/<string:post_key>")
 def community_post_page(post_key):
-    if not enabled():
-        abort(404)
+    identity, denied = require_community_member()
+    if denied:
+        return denied
     try:
         post_key = opaque_key(post_key, field="post key")
     except CommunityValidationError:
@@ -71,7 +110,7 @@ def community_post_page(post_key):
         "community_feed.html",
         community_post_key=post_key,
         community_contribution_key=None,
-        **viewer_context(),
+        **viewer_context(identity),
     )
 
 
@@ -79,8 +118,9 @@ def community_post_page(post_key):
     "/the-slate/posts/<string:post_key>/contributions/<string:contribution_key>"
 )
 def community_contribution_page(post_key, contribution_key):
-    if not enabled():
-        abort(404)
+    identity, denied = require_community_member()
+    if denied:
+        return denied
     try:
         post_key = opaque_key(post_key, field="post key")
         contribution_key = opaque_key(
@@ -92,21 +132,21 @@ def community_contribution_page(post_key, contribution_key):
         "community_feed.html",
         community_post_key=post_key,
         community_contribution_key=contribution_key,
-        **viewer_context(),
+        **viewer_context(identity),
     )
 
 
 @community_routes.get("/the-slate/recently-deleted")
 def community_recently_deleted():
     """The author's own recovery window. Never public, never another member's."""
-    if not enabled():
-        abort(404)
-    context = viewer_context()
+    identity, denied = require_community_member()
+    if denied:
+        return denied
+    context = viewer_context(identity)
     if not context["community_owner"]:
         # Neutral 404 rather than 403: the existence of someone's removed
         # content is not something a visitor should be able to probe for.
         abort(404)
-    identity = get_current_identity()
     try:
         items = community_restore_service.list_restorable(identity.user_key)
         unavailable = False
@@ -125,11 +165,11 @@ def community_recently_deleted():
 
 @community_routes.post("/the-slate/recently-deleted/restore")
 def community_restore():
-    if not enabled():
+    identity, denied = require_community_member()
+    if denied:
+        return denied
+    if not viewer_context(identity)["community_owner"]:
         abort(404)
-    if not viewer_context()["community_owner"]:
-        abort(404)
-    identity = get_current_identity()
     kind = request.form.get("record_kind")
     key = request.form.get("record_key")
     try:
@@ -152,15 +192,16 @@ def community_restore():
     )
 
 
-@community_routes.get("/the-slate/public-pilot")
-def community_pilot_policy():
-    if not enabled():
-        abort(404)
-    return render_template("community_pilot_policy.html")
+@community_routes.get("/the-slate/policy")
+def community_policy():
+    identity, denied = require_community_member()
+    if denied:
+        return denied
+    return render_template("community_policy.html", **viewer_context(identity))
 
 
 @community_routes.after_request
-def keep_pilot_out_of_indexes(response):
+def keep_community_private(response):
     response.headers["X-Robots-Tag"] = "noindex, nofollow"
     response.headers["Cache-Control"] = "private, no-store"
     return response

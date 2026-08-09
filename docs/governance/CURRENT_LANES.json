@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-09T03:20:00Z",
+  "updated_at": "2026-08-09T03:55:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -28,7 +28,8 @@
       "PS-WORKSHOP-ACCESS-001",
       "PS-ASK-PETE-DIRECT-001",
       "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
-      "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001"
+      "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001",
+      "PS-COMMUNITY-AUTH-WALL-001"
     ],
     "cleanup_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -45,7 +46,9 @@
       "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001",
       "PS-ASK-PETE-DIRECT-001"
     ],
-    "release_allowed_for": [],
+    "release_allowed_for": [
+      "PS-COMMUNITY-AUTH-WALL-001"
+    ],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
       "new feature or product write outside the exact surfaces recorded for its activated lane",
@@ -875,7 +878,8 @@
         "tests/test_community_secondary_states.py",
         "tests/test_auth.py",
         "tests/test_search_visibility.py",
-        "docs/initiatives/PS-COMMUNITY-AUTH-WALL-001/"
+        "docs/initiatives/PS-COMMUNITY-AUTH-WALL-001/",
+        "docs/governance/CURRENT_LANES.json"
       ],
       "exclusions": [
         "No Feed V2, composer, inline-comment, or Break redesign; no member authoring, invites, reactions, following, messaging, notifications, or cross-product sharing.",
@@ -894,6 +898,11 @@
         {
           "date": "2026-08-08",
           "decision": "Pete: 'Let's just position this firmly behind the sign in wall. That will make life easier for all of us. We can make a demo down the road. Not a working demo, but maybe a video or something else when it is time to get this out to the audience.' Recorded in PEERSLATE-COMMUNITY-AUTH-WALL-CLAUDE-HANDOFF-2026-08-08.md; Pete directed cross-session coordination and execution on 2026-08-08 and confirmed activation with an explicit Go."
+        },
+        {
+          "date": "2026-08-08",
+          "decision": "Pete (direct chat, in answer to whether to execute the pipeline actions and continue): 'You can execut everything tonight to live deployment', reaffirmed with 'Okay. Let's get going.' Same evening Pete approved the retention decision as drafted (v1.0, recorded in this package). This grant covers merge, release, deployment, and live verification for this lane tonight; real safety, privacy, or evidence failures still fail closed.",
+          "surface_note": "docs/governance/CURRENT_LANES.json added to writable_surfaces for the grant and closeout commits only, per the established recorded-scope pattern; released at lane close."
         }
       ],
       "cleanup_contract": "Task-local only: remove the activation worktree after the activation PR merges; dispose of the implementation worktree and branch per BRANCH_DISPOSITION_RECORD only after a verified squash merge.",

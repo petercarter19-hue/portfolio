@@ -1,8 +1,10 @@
-{# Scene 1 — voice-first hero. "Say what happened." The mic stage links to
-   the real, labeled Feed design preview (a working simulated voice-capture
-   flow); the five destination cards link to the real experiences they name.
-   The mockup's "Trusted by <big-company logos>" row is deliberately absent —
-   PeerSlate is pre-launch and implies nothing it can't back up. #}
+{# Scene 1 — voice-first hero. "Say what happened." PS-COMMUNITY-AUTH-WALL-001:
+   the working Living Stream demo is retired, so capture actions lead through
+   sign-in to the real private capture experience, and the learn-more link
+   goes to the Why PeerSlate page. The destination cards link to the real
+   experiences they name. The mockup's "Trusted by <big-company logos>" row
+   is deliberately absent — PeerSlate is pre-launch and implies nothing it
+   can't back up. #}
 <section class="hv-hero" aria-labelledby="hv-hero-title">
     <div class="site-container hv-hero__inner">
 
@@ -17,11 +19,11 @@
                 your Work&mdash;all connected.
             </p>
             <div class="hv-actions">
-                <a class="hv-btn hv-btn--primary" href="{{ url_for('feed_living_stream') }}?state=voice">
+                <a class="hv-btn hv-btn--primary" href="{{ url_for('auth.sign_in') }}">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg>
                     Talk about what happened
                 </a>
-                <a class="hv-btn hv-btn--ghost" href="{{ url_for('feed_living_stream') }}">Try a sample</a>
+                <a class="hv-btn hv-btn--ghost" href="{{ peerslate_home_url }}">See how it works</a>
             </div>
             <p class="hv-trust">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
@@ -35,8 +37,8 @@
         </div>
 
         <div class="hv-hero__stage">
-            <a class="hv-mic" href="{{ url_for('feed_living_stream') }}?state=voice"
-               aria-label="Try the voice capture preview — what happened today that you may want to remember?">
+            <a class="hv-mic" href="{{ url_for('auth.sign_in') }}"
+               aria-label="Sign in to capture what happened today that you may want to remember">
                 <span class="hv-mic__ring" aria-hidden="true"></span>
                 <span class="hv-mic__inner">
                     <svg class="hv-mic__wave" viewBox="0 0 220 48" aria-hidden="true" preserveAspectRatio="none">
@@ -67,7 +69,7 @@
         </div>
 
         <nav class="hv-destinations" aria-label="Where a captured moment can go">
-            <a class="hv-dest" href="{{ url_for('the_slate_my') }}">
+            <a class="hv-dest" href="{{ url_for('auth.sign_in') }}">
                 <span class="hv-dest__icon hv-dest__icon--indigo" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18M12 8h4M12 12h4"/></svg></span>
                 <span class="hv-dest__copy"><strong>Private Journal</strong><span>A reflection just for you</span></span>
                 <span class="hv-dest__arrow" aria-hidden="true">&rsaquo;</span>
@@ -98,7 +100,7 @@
             <div class="hv-week__copy">
                 <h2 class="hv-week__title">Your week,<br>made visible</h2>
                 <p>See how captured moments become meaningful progress.</p>
-                <a class="hv-inline-link" href="{{ url_for('the_slate_daily') }}">See a sample week <span aria-hidden="true">&rarr;</span></a>
+                <a class="hv-inline-link" href="{{ url_for('auth.sign_in') }}">Sign in to see your week <span aria-hidden="true">&rarr;</span></a>
             </div>
             <div class="hv-week__timeline" aria-hidden="true">
                 {% for day in [

@@ -1,10 +1,17 @@
-"""Focused contracts for the real owner-authored Community public pilot."""
+"""Focused contracts for the authenticated, owner-authored Community.
+
+PS-COMMUNITY-AUTH-WALL-001: Community is served only to signed-in PeerSlate
+members. The anonymous public demo is retired — there is no demo projection,
+no fixture substitution, and no signed-out render in any flag state.
+"""
 
 from __future__ import annotations
 
 from io import BytesIO
 from pathlib import Path
 from datetime import datetime
+import base64
+import json
 import os
 import re
 import unittest
@@ -29,14 +36,6 @@ from services.community_contracts import (
     revision_number,
     safe_display_name,
     utf16_length,
-)
-from services.community_demo_feed import (
-    DEMO_POST_KEY,
-    demo_feed_page,
-    demo_post,
-    demo_post_detail,
-    demo_search,
-    demo_selected_contribution,
 )
 from services.community_cursor import (
     decode_contribution_token,
@@ -538,53 +537,37 @@ class CommunityProjectionServiceTests(unittest.TestCase):
         self.assertIsNone(detail["ancestors"][0]["author"]["display_name"])
 
 
-class CommunityPublicDemoProjectionTests(unittest.TestCase):
-    def test_demo_is_stable_labelled_read_only_and_detached_from_persistence(self):
-        first = demo_feed_page()
-        second = demo_feed_page()
+class CommunityDemoRetirementTests(unittest.TestCase):
+    """PS-COMMUNITY-AUTH-WALL-001: the anonymous demo projection is gone.
 
-        self.assertTrue(first["demo_mode"])
-        self.assertEqual(first["next_cursor"], None)
-        self.assertEqual(len(first["items"]), 1)
-        post = first["items"][0]
-        self.assertTrue(post["demo"])
-        self.assertEqual(post["demo_label"], "Illustrative demo")
-        self.assertEqual(post["audience"], "Public demo")
-        self.assertEqual(post["contribution_count"], 12)
-        self.assertEqual(len(post["preview_contributions"]), 12)
-        self.assertTrue(all(item["demo"] for item in post["preview_contributions"]))
+    Import-boundary proof in the style of
+    tests/test_community_maintenance_off_request_path.py — the demo module no
+    longer exists, and the request modules carry no path back to one.
+    """
 
-        post["body"] = "mutated request copy"
-        self.assertNotEqual(second["items"][0]["body"], post["body"])
+    def test_demo_projection_module_no_longer_exists(self):
+        self.assertFalse((ROOT / "services" / "community_demo_feed.py").exists())
 
-    def test_demo_detail_and_motion_card_deep_link_return_the_locked_conversation(self):
-        detail = demo_post_detail(DEMO_POST_KEY)
-        selected_key = detail["contributions"][5]["key"]
-        selected = demo_selected_contribution(DEMO_POST_KEY, selected_key)
+    def test_community_api_source_has_no_demo_import_or_fallback(self):
+        source = (ROOT / "community_api.py").read_text(encoding="utf-8")
+        self.assertNotIn("community_demo_feed", source)
+        self.assertNotIn("demo_", source)
 
-        self.assertEqual(len(detail["contributions"]), 12)
-        self.assertEqual(selected["contribution"]["key"], selected_key)
-        self.assertEqual(selected["ancestors"], [])
-        self.assertTrue(selected["demo_mode"])
-        with self.assertRaises(CommunityNotFoundError):
-            demo_post_detail(str(uuid4()))
-
-    def test_demo_search_is_bounded_and_never_claims_unrelated_matches(self):
-        self.assertEqual(demo_search("decision guide")[0]["key"], DEMO_POST_KEY)
-        self.assertEqual(demo_search("unrelated phrase"), [])
-        with self.assertRaises(CommunityValidationError):
-            demo_search("x")
-
-    def test_demo_documents_are_visual_ribbons_not_fake_downloads(self):
-        attachments = [
-            attachment
-            for item in demo_post()["preview_contributions"]
-            for attachment in item["attachments"]
-            if not attachment["preview_url"]
-        ]
-        self.assertGreaterEqual(len(attachments), 3)
-        self.assertTrue(all(item["demo"] for item in attachments))
-        self.assertTrue(all(item["download_url"] is None for item in attachments))
+    def test_old_community_shells_are_unrouted_in_every_flag_state(self):
+        # The pre-pilot shells and fixture panels must never render again;
+        # app.py no longer references their templates at all.
+        app_source = (ROOT / "app.py").read_text(encoding="utf-8")
+        for shell in (
+            "the_slate.html",
+            "the_slate_feed.html",
+            "the_slate_my.html",
+            "the_slate_daily.html",
+            "the_slate_people_interests.html",
+            "slate_pulse.html",
+            "slate_break.html",
+        ):
+            with self.subTest(shell=shell):
+                self.assertNotIn(shell, app_source)
 
 
 class CommunityUploadValidationTests(unittest.TestCase):
@@ -1285,20 +1268,73 @@ class CommunityRouteAndApiTests(unittest.TestCase):
         app.config.clear()
         app.config.update(self.previous)
 
-    def test_signed_out_page_is_public_read_only_and_noindex(self):
+    def test_signed_out_page_redirects_to_sign_in(self):
         response = self.client.get("/the-slate")
-        body = response.get_data(as_text=True)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.headers["Location"], "/auth/sign-in?return_to=/the-slate"
+        )
         self.assertEqual(response.headers["X-Robots-Tag"], "noindex, nofollow")
-        self.assertIn("Anyone can read public posts", body)
-        self.assertNotIn("data-publish", body)
-        self.assertIn("data-conversation", body)
-        self.assertNotIn("data-reply-form", body)
-        self.assertNotIn("Sample data", body)
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
 
-    def test_real_feed_flag_retires_legacy_fixture_json_endpoint(self):
-        response = self.client.get("/api/slate-feed")
-        self.assertEqual(response.status_code, 404)
+    def test_signed_out_deep_links_return_to_the_exact_page(self):
+        contribution_key = str(uuid4())
+        for path in (
+            f"/the-slate/posts/{POST_KEY}",
+            f"/the-slate/posts/{POST_KEY}/contributions/{contribution_key}",
+            "/the-slate/policy",
+            "/the-slate/recently-deleted",
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(
+                    response.headers["Location"],
+                    f"/auth/sign-in?return_to={path}",
+                )
+                self.assertEqual(
+                    response.headers["X-Robots-Tag"], "noindex, nofollow"
+                )
+                self.assertEqual(
+                    response.headers["Cache-Control"], "private, no-store"
+                )
+
+    def test_legacy_fixture_json_endpoint_is_retired_in_every_flag_state(self):
+        for flag in (True, False):
+            with self.subTest(flag=flag):
+                app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = flag
+                self.assertEqual(
+                    self.client.get("/api/slate-feed").status_code, 404
+                )
+
+    def test_legacy_people_interests_feed_api_is_never_registered(self):
+        # PS-COMMUNITY-AUTH-WALL-001: the fixture-backed people_interests_api
+        # blueprint is never registered, in any flag state.
+        for flag in (True, False):
+            with self.subTest(flag=flag):
+                app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = flag
+                self.assertEqual(
+                    self.client.get("/api/feed/people-interests").status_code, 404
+                )
+                self.assertEqual(
+                    self.client.get("/api/feed/posts").status_code, 404
+                )
+
+    def test_living_stream_prototype_is_retired_in_every_flag_state(self):
+        for flag in (True, False):
+            with self.subTest(flag=flag):
+                app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = flag
+                forwarded = self.client.get("/feed-living-stream")
+                self.assertEqual(forwarded.status_code, 302)
+                self.assertTrue(
+                    forwarded.headers["Location"].endswith("/the-slate")
+                )
+                for path in (
+                    "/feed-living-stream/states",
+                    "/_internal/feed-living-stream",
+                    "/_internal/feed-living-stream/states",
+                ):
+                    self.assertEqual(self.client.get(path).status_code, 404)
 
     def test_owner_page_has_real_composer_and_local_draft_truth(self):
         app.config["PEERSLATE_DEV_USER_KEY"] = OWNER_KEY
@@ -1307,8 +1343,31 @@ class CommunityRouteAndApiTests(unittest.TestCase):
         self.assertIn("data-reply-attachment-input", body)
         self.assertIn("Draft · only you can see this", body)
         self.assertIn("Choose audience", body)
-        self.assertIn("Published content is not sent to a generative model", body)
+        self.assertIn("Community content is not sent to a generative model", body)
         self.assertIn("Optional Voice dictation sends a transient private recording to Speech", body)
+        # The real composer is the only composer: no demo composer, demo
+        # quick-compose, or demo note anywhere in the rendered page.
+        self.assertNotIn("data-demo", body)
+        self.assertNotIn("Public demo", body)
+
+    def test_signed_in_member_page_is_the_real_community_without_demo_content(self):
+        app.config["PEERSLATE_DEV_USER_KEY"] = OTHER_KEY
+        response = self.client.get("/the-slate")
+        body = response.get_data(as_text=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["X-Robots-Tag"], "noindex, nofollow")
+        self.assertIn("cv1-shell", body)
+        for retired in (
+            "Public demo",
+            "Illustrative demo",
+            "data-demo",
+            "Try a Community post",
+            "Anyone can read",
+        ):
+            with self.subTest(marker=retired):
+                self.assertNotIn(retired, body)
+        # Members read; the composer stays owner-only.
+        self.assertNotIn("data-composer-form", body)
 
     def test_boolean_revision_precondition_is_rejected_before_database_access(self):
         app.config["PEERSLATE_DEV_USER_KEY"] = OWNER_KEY
@@ -1356,68 +1415,110 @@ class CommunityRouteAndApiTests(unittest.TestCase):
         finally:
             app.config["TESTING"] = True
 
+    @patch("community_api.community_feed_service.search")
+    @patch("community_api.community_feed_service.selected_contribution")
+    @patch("community_api.community_feed_service.shelf_page")
+    @patch("community_api.community_feed_service.post_detail")
     @patch("community_api.community_feed_service.feed_page")
-    def test_signed_out_empty_real_feed_returns_truthful_public_demo(self, feed_page):
-        feed_page.return_value = {"items": [], "next_cursor": None, "caught_up": True}
-        response = self.client.get("/api/v1/community/feed?limit=1")
-        self.assertEqual(response.status_code, 200)
+    def test_every_signed_out_community_api_read_is_a_private_401(
+        self, feed_page, post_detail, shelf_page, selected, search
+    ):
+        contribution_key = str(uuid4())
+        headers = {"X-PeerSlate-Request": "same-origin"}
+        requests = (
+            ("GET", "/api/v1/community/feed", {}),
+            ("GET", f"/api/v1/community/posts/{POST_KEY}", {}),
+            ("GET", f"/api/v1/community/posts/{POST_KEY}/shelf", {}),
+            (
+                "GET",
+                f"/api/v1/community/posts/{POST_KEY}"
+                f"/contributions/{contribution_key}",
+                {},
+            ),
+            (
+                "POST",
+                "/api/v1/community/search",
+                {"json": {"query": "decision guide"}, "headers": headers},
+            ),
+        )
+        for method, path, kwargs in requests:
+            with self.subTest(method=method, path=path):
+                response = self.client.open(path, method=method, **kwargs)
+                self.assertEqual(response.status_code, 401)
+                self.assertEqual(
+                    response.get_json(),
+                    {"success": False, "message": "Sign in is required."},
+                )
+                self.assertEqual(
+                    response.headers["Cache-Control"], "private, no-store"
+                )
+        for service in (feed_page, post_detail, shelf_page, selected, search):
+            service.assert_not_called()
+
+    @patch("community_api.community_media_service.public_file")
+    def test_signed_out_attachment_delivery_is_denied_before_storage(self, public_file):
+        for kind in ("preview", "download"):
+            with self.subTest(kind=kind):
+                response = self.client.get(
+                    f"/api/v1/community/attachments/{uuid4()}/{kind}"
+                )
+                self.assertEqual(response.status_code, 401)
+                self.assertEqual(
+                    response.get_json(),
+                    {"success": False, "message": "Sign in is required."},
+                )
+        public_file.assert_not_called()
+
+    def test_voice_transcription_signed_out_is_a_private_401(self):
+        response = self.client.post(
+            "/api/v1/community/voice/transcriptions",
+            headers={"X-PeerSlate-Request": "same-origin"},
+        )
         payload = response.get_json()
+        self.assertEqual(response.status_code, 401)
+        self.assertFalse(payload["success"])
+        self.assertEqual(payload["code"], "authentication_required")
+
+    @patch("community_api.community_feed_service.feed_page")
+    def test_member_empty_feed_is_truthfully_empty_with_no_demo_content(self, feed_page):
+        feed_page.return_value = {"items": [], "next_cursor": None, "caught_up": True}
+        app.config["PEERSLATE_DEV_USER_KEY"] = OTHER_KEY
+        response = self.client.get("/api/v1/community/feed")
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload["success"])
         self.assertTrue(payload["caught_up"])
-        self.assertTrue(payload["demo_mode"])
-        self.assertTrue(payload["items"][0]["demo"])
+        self.assertEqual(payload["items"], [])
+        self.assertNotIn("demo_mode", payload)
+        self.assertNotIn("demo", response.get_data(as_text=True).lower())
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
         feed_page.assert_called_once_with(
             None, page_size=12, viewer_user_key=None
         )
 
-    @patch("community_api.demo_feed_page")
     @patch("community_api.community_feed_service.feed_page")
-    def test_real_public_posts_take_precedence_over_the_demo(self, feed_page, demo_page):
-        feed_page.return_value = {
-            "items": [{"key": POST_KEY, "demo": False}],
-            "next_cursor": None,
-            "caught_up": True,
-        }
-
-        response = self.client.get("/api/v1/community/feed")
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json()["items"][0]["key"], POST_KEY)
-        demo_page.assert_not_called()
-
-    @patch("community_api.demo_feed_page")
-    @patch("community_api.community_feed_service.feed_page")
-    def test_feed_dependency_failure_is_not_masked_by_the_demo(self, feed_page, demo_page):
+    def test_feed_dependency_failure_is_a_truthful_503(self, feed_page):
         feed_page.side_effect = CommunityUnavailableError("Community is unavailable.")
+        app.config["PEERSLATE_DEV_USER_KEY"] = OTHER_KEY
 
         response = self.client.get("/api/v1/community/feed")
 
         self.assertEqual(response.status_code, 503)
-        demo_page.assert_not_called()
-
-    @patch("community_api.community_feed_service.post_detail")
-    def test_demo_post_deep_link_falls_back_only_after_a_real_not_found(self, post_detail):
-        post_detail.side_effect = CommunityNotFoundError("Post not found.")
-
-        response = self.client.get(f"/api/v1/community/posts/{DEMO_POST_KEY}")
-
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.get_json()["post"]["demo"])
 
     @patch("community_api.community_feed_service.post_detail")
     def test_unknown_valid_post_remains_neutral_not_found(self, post_detail):
+        # No fixture substitution: a missing post is a 404 for every member.
         post_detail.side_effect = CommunityNotFoundError("Post not found.")
+        app.config["PEERSLATE_DEV_USER_KEY"] = OTHER_KEY
 
         response = self.client.get(f"/api/v1/community/posts/{uuid4()}")
 
         self.assertEqual(response.status_code, 404)
 
-    @patch("community_api.demo_search")
-    @patch("community_api.community_feed_service.feed_page")
     @patch("community_api.community_feed_service.search")
-    def test_real_feed_prevents_demo_search_results(self, search, feed_page, demo_search):
+    def test_member_search_returns_only_real_results(self, search):
         search.return_value = []
-        feed_page.return_value = {"items": [{"key": POST_KEY}], "next_cursor": None}
+        app.config["PEERSLATE_DEV_USER_KEY"] = OTHER_KEY
 
         response = self.client.post(
             "/api/v1/community/search",
@@ -1425,50 +1526,20 @@ class CommunityRouteAndApiTests(unittest.TestCase):
             headers={"X-PeerSlate-Request": "same-origin"},
         )
 
+        payload = response.get_json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json()["items"], [])
-        self.assertFalse(response.get_json()["demo_mode"])
-        demo_search.assert_not_called()
-
-    @patch("community_api.community_feed_service.feed_page")
-    @patch("community_api.community_feed_service.search")
-    def test_empty_real_feed_can_return_bounded_demo_search_results(self, search, feed_page):
-        search.return_value = []
-        feed_page.return_value = {"items": [], "next_cursor": None}
-
-        response = self.client.post(
-            "/api/v1/community/search",
-            json={"query": "decision guide"},
-            headers={"X-PeerSlate-Request": "same-origin"},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.get_json()["demo_mode"])
-        self.assertEqual(response.get_json()["items"][0]["key"], DEMO_POST_KEY)
-
-    @patch("community_api.community_feed_service.feed_page")
-    @patch("community_api.community_feed_service.search")
-    def test_unmatched_demo_search_keeps_the_truthful_demo_shell(self, search, feed_page):
-        search.return_value = []
-        feed_page.return_value = {"items": [], "next_cursor": None}
-
-        response = self.client.post(
-            "/api/v1/community/search",
-            json={"query": "unrelated phrase"},
-            headers={"X-PeerSlate-Request": "same-origin"},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.get_json()["demo_mode"])
-        self.assertEqual(response.get_json()["items"], [])
+        self.assertEqual(payload["items"], [])
+        self.assertNotIn("demo_mode", payload)
+        search.assert_called_once_with("decision guide", viewer_user_key=None)
 
     @patch("community_api.community_feed_service.shelf_page")
-    def test_signed_out_shelf_page_is_public_and_post_bound(self, shelf_page):
+    def test_member_shelf_page_is_post_bound(self, shelf_page):
         shelf_page.return_value = {
             "items": [],
             "next_cursor": None,
             "caught_up": True,
         }
+        app.config["PEERSLATE_DEV_USER_KEY"] = OTHER_KEY
         response = self.client.get(
             f"/api/v1/community/posts/{POST_KEY}/shelf?cursor=signed-cursor"
         )
@@ -1494,16 +1565,95 @@ class CommunityRouteAndApiTests(unittest.TestCase):
             POST_KEY, contribution_key, viewer_user_key=OWNER_KEY
         )
 
-    @patch("community_api.community_command_service.publish_post")
-    def test_signed_out_and_non_owner_writes_are_denied(self, publish):
-        payload = {"body": "hello"}
+    def _mutation_requests(self):
+        contribution_key = str(uuid4())
         headers = {"X-PeerSlate-Request": "same-origin"}
-        response = self.client.post("/api/v1/community/posts", json=payload, headers=headers)
-        self.assertEqual(response.status_code, 401)
+        json_kwargs = {"json": {}, "headers": headers}
+        return (
+            ("POST", "/api/v1/community/posts", json_kwargs),
+            ("PATCH", f"/api/v1/community/posts/{POST_KEY}", json_kwargs),
+            ("DELETE", f"/api/v1/community/posts/{POST_KEY}", json_kwargs),
+            (
+                "POST",
+                f"/api/v1/community/posts/{POST_KEY}/contributions",
+                json_kwargs,
+            ),
+            (
+                "PATCH",
+                f"/api/v1/community/contributions/{contribution_key}",
+                json_kwargs,
+            ),
+            (
+                "DELETE",
+                f"/api/v1/community/contributions/{contribution_key}",
+                json_kwargs,
+            ),
+            ("PUT", f"/api/v1/community/posts/{POST_KEY}/response", json_kwargs),
+            ("DELETE", f"/api/v1/community/posts/{POST_KEY}/response", json_kwargs),
+            ("PUT", f"/api/v1/community/posts/{POST_KEY}/save", json_kwargs),
+            ("DELETE", f"/api/v1/community/posts/{POST_KEY}/save", json_kwargs),
+            (
+                "PUT",
+                f"/api/v1/community/contributions/{contribution_key}/save",
+                json_kwargs,
+            ),
+            (
+                "DELETE",
+                f"/api/v1/community/contributions/{contribution_key}/save",
+                json_kwargs,
+            ),
+            (
+                "POST",
+                "/api/v1/community/attachments",
+                {
+                    "data": {"file": (BytesIO(b"x"), "x.pdf")},
+                    "headers": headers,
+                    "content_type": "multipart/form-data",
+                },
+            ),
+            (
+                "POST",
+                f"/api/v1/community/attachments/{POST_KEY}/status",
+                json_kwargs,
+            ),
+            ("DELETE", f"/api/v1/community/attachments/{POST_KEY}", json_kwargs),
+            (
+                "POST",
+                "/api/v1/community/voice/transcriptions",
+                {"headers": headers},
+            ),
+        )
+
+    @patch("community_api.community_voice_service")
+    @patch("community_api.community_media_service")
+    @patch("community_api.community_command_service")
+    def test_every_signed_out_mutation_is_denied_before_any_service(
+        self, commands, media, voice
+    ):
+        for method, path, kwargs in self._mutation_requests():
+            with self.subTest(method=method, path=path):
+                response = self.client.open(path, method=method, **kwargs)
+                self.assertEqual(response.status_code, 401)
+                self.assertFalse(response.get_json()["success"])
+        self.assertEqual(commands.mock_calls, [])
+        self.assertEqual(media.mock_calls, [])
+        self.assertEqual(voice.mock_calls, [])
+
+    @patch("community_api.community_voice_service")
+    @patch("community_api.community_media_service")
+    @patch("community_api.community_command_service")
+    def test_every_signed_in_non_owner_mutation_is_denied_before_any_service(
+        self, commands, media, voice
+    ):
         app.config["PEERSLATE_DEV_USER_KEY"] = OTHER_KEY
-        response = self.client.post("/api/v1/community/posts", json=payload, headers=headers)
-        self.assertEqual(response.status_code, 403)
-        publish.assert_not_called()
+        for method, path, kwargs in self._mutation_requests():
+            with self.subTest(method=method, path=path):
+                response = self.client.open(path, method=method, **kwargs)
+                self.assertEqual(response.status_code, 403)
+                self.assertFalse(response.get_json()["success"])
+        self.assertEqual(commands.mock_calls, [])
+        self.assertEqual(media.mock_calls, [])
+        self.assertEqual(voice.mock_calls, [])
 
     @patch("community_api.community_command_service.publish_post")
     def test_owner_write_uses_server_identity_and_same_origin_header(self, publish):
@@ -1636,18 +1786,46 @@ class CommunityRouteAndApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 202)
         upload.assert_called_once()
 
-    def test_flag_off_neutralizes_new_routes(self):
+    def test_flag_off_is_a_neutral_404_for_every_community_surface(self):
         app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = False
-        self.assertEqual(self.client.get("/api/v1/community/feed").status_code, 404)
-        self.assertEqual(self.client.get(f"/the-slate/posts/{POST_KEY}").status_code, 404)
-        self.assertEqual(
-            self.client.get(
-                f"/the-slate/posts/{POST_KEY}/contributions/{uuid4()}"
-            ).status_code,
-            404,
+        # Even a signed-in owner sees nothing while Community is unavailable.
+        app.config["PEERSLATE_DEV_USER_KEY"] = OWNER_KEY
+        for path in (
+            "/the-slate",
+            f"/the-slate/posts/{POST_KEY}",
+            f"/the-slate/posts/{POST_KEY}/contributions/{uuid4()}",
+            "/the-slate/recently-deleted",
+            "/the-slate/policy",
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 404)
+                self.assertEqual(
+                    response.headers["X-Robots-Tag"], "noindex, nofollow"
+                )
+                self.assertEqual(
+                    response.headers["Cache-Control"], "private, no-store"
+                )
+                self.assertNotIn("cv1-shell", response.get_data(as_text=True))
+        for path in (
+            "/api/v1/community/feed",
+            f"/api/v1/community/posts/{POST_KEY}",
+            f"/api/v1/community/posts/{POST_KEY}/shelf",
+            f"/api/v1/community/attachments/{uuid4()}/preview",
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 404)
+                self.assertFalse(response.get_json()["success"])
+        voice = self.client.post(
+            "/api/v1/community/voice/transcriptions",
+            headers={"X-PeerSlate-Request": "same-origin"},
         )
+        self.assertEqual(voice.status_code, 404)
+        self.assertEqual(voice.get_json()["code"], "not_found")
 
     def test_contribution_deep_link_is_validated_and_bootstraps_selected_reply(self):
+        app.config["PEERSLATE_DEV_USER_KEY"] = OTHER_KEY
         contribution_key = str(uuid4())
         response = self.client.get(
             f"/the-slate/posts/{POST_KEY}/contributions/{contribution_key}"
@@ -1664,11 +1842,13 @@ class CommunityRouteAndApiTests(unittest.TestCase):
             with self.subTest(route=route):
                 self.assertEqual(self.client.get(route).status_code, 404)
 
-    def test_pilot_html_routes_are_private_no_store(self):
+    def test_member_html_routes_are_private_no_store(self):
+        app.config["PEERSLATE_DEV_USER_KEY"] = OTHER_KEY
         for route in (
+            "/the-slate",
             f"/the-slate/posts/{POST_KEY}",
             f"/the-slate/posts/{POST_KEY}/contributions/{uuid4()}",
-            "/the-slate/public-pilot",
+            "/the-slate/policy",
         ):
             with self.subTest(route=route):
                 response = self.client.get(route)
@@ -1683,6 +1863,7 @@ class CommunityRouteAndApiTests(unittest.TestCase):
             "display_name": "preview.png",
             "inline": True,
         }
+        app.config["PEERSLATE_DEV_USER_KEY"] = OTHER_KEY
         remote = {"REMOTE_ADDR": "198.51.100.96"}
         statuses = [
             self.client.get(
@@ -1708,6 +1889,7 @@ class CommunityRouteAndApiTests(unittest.TestCase):
             "display_name": "設計 résumé.pdf",
             "inline": False,
         }
+        app.config["PEERSLATE_DEV_USER_KEY"] = OTHER_KEY
         response = self.client.get(
             f"/api/v1/community/attachments/{media_key}/download"
         )
@@ -1718,13 +1900,125 @@ class CommunityRouteAndApiTests(unittest.TestCase):
         self.assertIn("%E8%A8%AD%E8%A8%88%20r%C3%A9sum%C3%A9.pdf", disposition)
 
 
+def _easy_auth_header(subject, display_name="Example Member"):
+    """The same trusted-boundary principal shape tests/test_auth.py uses."""
+    principal = {
+        "auth_typ": "aad",
+        "claims": [
+            {"typ": "iss", "val": "https://example.ciamlogin.com/example/v2.0/"},
+            {"typ": "oid", "val": subject},
+            {"typ": "name", "val": display_name},
+            {"typ": "email", "val": f"{subject}@example.com"},
+        ],
+    }
+    encoded = base64.b64encode(json.dumps(principal).encode("utf-8")).decode("ascii")
+    return {"X-MS-CLIENT-PRINCIPAL": encoded}
+
+
+class CommunityIdentityFailureTests(unittest.TestCase):
+    """An identity failure is a private failure — never an anonymous render.
+
+    A member whose identity cannot be resolved must not be bounced to sign-in
+    (they ARE signed in) and must never be handed a signed-out or fixture
+    Community instead of their own.
+    """
+
+    def setUp(self):
+        self.previous = dict(app.config)
+        app.config.update(
+            TESTING=True,
+            PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
+            PEERSLATE_DEV_USER_KEY=None,
+            PEERSLATE_ALLOW_DEV_IDENTITY=False,
+            PEERSLATE_TRUST_EASYAUTH_HEADERS=True,
+            PEERSLATE_OWNER_USER_KEYS=OWNER_KEY,
+            PEERSLATE_OWNER_EMAILS="",
+            PEERSLATE_COMMUNITY_SIGNING_KEY="community-test-signing-key",
+        )
+        self.client = app.test_client()
+
+    def tearDown(self):
+        app.config.clear()
+        app.config.update(self.previous)
+
+    @patch("identity.database_service.first_row")
+    def test_api_identity_database_failure_is_a_private_503(self, first_row):
+        first_row.side_effect = DatabaseServiceError("identity storage unavailable")
+
+        response = self.client.get(
+            "/api/v1/community/feed", headers=_easy_auth_header("member-1")
+        )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.get_json(),
+            {"success": False, "message": "Community unavailable."},
+        )
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+
+    @patch("identity.database_service.first_row")
+    def test_html_identity_database_failure_is_a_private_503_never_signed_out(
+        self, first_row
+    ):
+        # Identity storage failing is a service problem, not a sign-in
+        # problem: community_routes.require_community_member answers 503 —
+        # never a sign-in redirect, never an anonymous or fixture render.
+        first_row.side_effect = DatabaseServiceError("identity storage unavailable")
+
+        response = self.client.get(
+            "/the-slate", headers=_easy_auth_header("member-1")
+        )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertIsNone(response.headers.get("Location"))
+        body = response.get_data(as_text=True)
+        self.assertNotIn("cv1-shell", body)
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+        self.assertEqual(response.headers["X-Robots-Tag"], "noindex, nofollow")
+
+    @patch("identity.database_service.first_row")
+    def test_html_identity_mapping_failure_is_the_private_503_recovery(
+        self, first_row
+    ):
+        # A structurally valid principal with no usable account mapping uses
+        # the application's private recovery page — never a signed-out page.
+        first_row.return_value = None
+
+        response = self.client.get(
+            "/the-slate", headers=_easy_auth_header("member-1")
+        )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertIsNone(response.headers.get("Location"))
+        self.assertNotIn("cv1-shell", response.get_data(as_text=True))
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+
+    @patch("identity.database_service.first_row")
+    def test_api_identity_mapping_failure_never_becomes_an_anonymous_reader(
+        self, first_row
+    ):
+        first_row.return_value = None
+
+        response = self.client.get(
+            "/api/v1/community/feed", headers=_easy_auth_header("member-1")
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.get_json(),
+            {"success": False, "message": "Sign in is required."},
+        )
+
+
 class CommunityFrontendContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.template = (ROOT / "templates" / "community_feed.html").read_text(encoding="utf-8")
         cls.script = (ROOT / "static" / "js" / "community-v1.js").read_text(encoding="utf-8")
         cls.styles = (ROOT / "static" / "css" / "community-v1.css").read_text(encoding="utf-8")
-        cls.policy = (ROOT / "templates" / "community_pilot_policy.html").read_text(encoding="utf-8")
+        # PS-COMMUNITY-AUTH-WALL-001: the routed policy page is the
+        # member-audience community_policy.html (community_routes.community_policy).
+        cls.policy = (ROOT / "templates" / "community_policy.html").read_text(encoding="utf-8")
         cls.app_source = (ROOT / "app.py").read_text(encoding="utf-8")
         cls.preview = (ROOT / "scripts" / "preview_community_primary_feed.py").read_text(encoding="utf-8")
 
@@ -1922,7 +2216,7 @@ class CommunityFrontendContractTests(unittest.TestCase):
         self.assertIn("function primaryCommentComposer(post)", self.script)
         self.assertIn("input.rows = 1", self.script)
         self.assertIn("input.maxLength = 2000", self.script)
-        self.assertIn("input.placeholder = demo ? 'Try writing a comment…' : 'Write a comment…'", self.script)
+        self.assertIn("input.placeholder = 'Write a comment…';", self.script)
         self.assertIn("Math.min(input.scrollHeight, 112)", self.script)
         self.assertIn("primaryCommentStorageKey(post.key, 'draft')", self.script)
         self.assertIn("parent_key: null, attachment_keys: []", self.script)
@@ -1962,27 +2256,21 @@ class CommunityFrontendContractTests(unittest.TestCase):
         self.assertNotIn("DatabaseService", self.preview)
         self.assertNotIn("from services.", self.preview)
 
-    def test_public_demo_is_labelled_and_exposes_only_local_no_submit_interactions(self):
-        self.assertIn("Public demo", self.template)
-        self.assertIn("nothing in the demo is sent, published, or stored as member activity", self.template)
-        self.assertIn("data-community-demo-note", self.template)
-        self.assertIn("data-demo-quick-compose", self.template)
-        self.assertIn("data-demo-composer", self.template)
-        self.assertIn("there is deliberately no Publish button", self.template)
-        demo_start = self.template.index('data-demo-composer aria-labelledby=')
-        demo_end = self.template.index('data-conversation aria-labelledby=', demo_start)
-        demo_markup = self.template[demo_start:demo_end]
-        self.assertNotIn('data-publish', demo_markup)
-        self.assertNotIn('type="submit"', demo_markup)
-        self.assertIn("if (post.demo) {", self.script)
-        self.assertIn("Demo response selected only in this tab", self.script)
-        self.assertIn("localOnly: demo && !owner", self.script)
-        self.assertIn("localOnly: !owner", self.script)
-        self.assertIn("Recording captured locally. It was not uploaded or transcribed", self.script)
-        self.assertIn("if (self.localOnly)", self.script)
-        self.assertIn("Local example added. It was not uploaded.", self.script)
-        self.assertIn("if (replyForm) replyForm.hidden = true", self.script)
-        self.assertIn("item.demo ? fileKind + ' · illustrative file'", self.script)
+    def test_demo_hooks_are_fully_retired_from_the_shipped_frontend(self):
+        # PS-COMMUNITY-AUTH-WALL-001: the signed-out demo surface is gone.
+        for hook in (
+            "data-demo-composer",
+            "data-demo-quick-compose",
+            "data-community-demo-note",
+            "data-open-demo-composer",
+            "Public demo",
+            "Illustrative demo",
+            "Anyone can read",
+            "Try a Community post",
+        ):
+            with self.subTest(hook=hook):
+                self.assertNotIn(hook, self.template)
+        self.assertNotIn("demo", self.script.lower())
 
     def test_motion_cards_have_locked_density_attachment_cues_and_owner_approved_color(self):
         self.assertIn("grid-auto-columns: 145px", self.styles)
@@ -1999,11 +2287,14 @@ class CommunityFrontendContractTests(unittest.TestCase):
         self.assertIn("font-size: .82rem", self.styles)
         self.assertIn("[data-conversation-shelf-card] > strong", self.styles)
 
-    def test_xlsx_is_selectable_in_post_reply_and_local_demo_but_described_as_a_public_download(self):
-        self.assertEqual(self.template.count(XLSX_CONTENT_TYPE), 3)
-        self.assertEqual(self.template.count(".xlsx"), 3)
+    def test_xlsx_is_selectable_in_post_and_reply_and_described_as_member_visible(self):
+        # Composer and reply only — the local demo leg is retired, and the
+        # policy speaks about the member audience, not a public download.
+        self.assertEqual(self.template.count(XLSX_CONTENT_TYPE), 2)
+        self.assertEqual(self.template.count(".xlsx"), 2)
         self.assertIn("macro-free XLSX", self.policy)
-        self.assertIn("document properties become public", self.policy)
+        self.assertIn("document properties become visible with the workbook", self.policy)
+        self.assertNotIn("document properties become public", self.policy)
 
     def test_shelf_view_all_is_compact_but_keeps_explicit_accessible_name(self):
         self.assertIn("document.createTextNode('View all')", self.script)

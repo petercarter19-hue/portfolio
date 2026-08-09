@@ -1,4 +1,10 @@
-"""Public reads and site-owner commands for the Community public pilot."""
+"""Authenticated member reads and site-owner commands for PeerSlate Community.
+
+PS-COMMUNITY-AUTH-WALL-001: every endpoint on this blueprint requires a
+trusted authenticated PeerSlate account before any SQL, Blob, Speech, or
+body processing. There is no anonymous read, no demo fallback, and no
+fixture substitution; an identity failure is never treated as signed out.
+"""
 
 from __future__ import annotations
 
@@ -11,7 +17,12 @@ from flask_limiter.errors import RateLimitExceeded
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.http import dump_options_header
 
-from identity import AuthenticationRequired, get_current_identity, get_optional_identity
+from identity import (
+    AuthenticationPrincipalInvalid,
+    AuthenticationRequired,
+    IdentityMappingError,
+    get_current_identity,
+)
 from owner_authorization import is_owner
 from services.community_command_service import community_command_service
 from services.community_contracts import (
@@ -21,13 +32,6 @@ from services.community_contracts import (
     CommunityValidationError,
 )
 from services.community_feed_service import community_feed_service
-from services.community_demo_feed import (
-    demo_feed_page,
-    demo_post_detail,
-    demo_search,
-    demo_selected_contribution,
-    demo_shelf_page,
-)
 from services.community_media_service import community_media_service
 from services.community_voice_service import (
     CommunityVoiceError,
@@ -87,12 +91,43 @@ def _idempotency_header():
     return request.headers.get("Idempotency-Key")
 
 
+def _signed_out_response():
+    if request.endpoint == VOICE_TRANSCRIPTION_ENDPOINT:
+        return _voice_failure(
+            401, "authentication_required", "Sign in is required.", retryable=False
+        )
+    return jsonify(success=False, message="Sign in is required."), 401
+
+
+def _require_authenticated_member():
+    """Resolve the trusted identity before any Community work happens.
+
+    Signed out is a private JSON 401. An invalid or unmappable principal is
+    also 401 — it must never quietly become an anonymous reader. An identity
+    database failure propagates to the blueprint's 503 handler; it is not a
+    sign-in problem and must not look like one.
+    """
+    try:
+        get_current_identity()
+    except AuthenticationRequired:
+        return _signed_out_response()
+    except (AuthenticationPrincipalInvalid, IdentityMappingError):
+        current_app.logger.warning(
+            "Community request presented an unusable trusted principal."
+        )
+        return _signed_out_response()
+    return None
+
+
 @community_api.before_request
-def protect_public_pilot():
+def protect_community():
     if not current_app.config.get("PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED", False):
         if request.endpoint == VOICE_TRANSCRIPTION_ENDPOINT:
             return _voice_failure(404, "not_found", "Not found.", retryable=False)
         return jsonify(success=False, message="Not found."), 404
+    denied = _require_authenticated_member()
+    if denied:
+        return denied
     if request.endpoint == VOICE_TRANSCRIPTION_ENDPOINT:
         request.max_content_length = VOICE_MULTIPART_LIMIT
     if request.endpoint == "community_api.upload_attachment":
@@ -198,48 +233,39 @@ def community_rate_limited(error):
 
 @community_api.get("/feed")
 def feed():
-    identity = get_optional_identity()
+    identity = get_current_identity()
     cursor = request.args.get("cursor")
     page = community_feed_service.feed_page(
         cursor,
         page_size=12,
         viewer_user_key=(
-            identity.user_key if identity and is_owner(identity) else None
+            identity.user_key if is_owner(identity) else None
         ),
     )
-    if not cursor and not page.get("items"):
-        page = demo_feed_page()
     return jsonify(success=True, **page)
 
 
 @community_api.get("/posts/<string:post_key>")
 def post_detail(post_key):
-    identity = get_optional_identity()
-    try:
-        detail = community_feed_service.post_detail(
-            post_key,
-            viewer_user_key=identity.user_key if identity and is_owner(identity) else None,
-            contribution_cursor=request.args.get("cursor"),
-        )
-    except CommunityNotFoundError:
-        detail = demo_post_detail(post_key)
+    identity = get_current_identity()
+    detail = community_feed_service.post_detail(
+        post_key,
+        viewer_user_key=identity.user_key if is_owner(identity) else None,
+        contribution_cursor=request.args.get("cursor"),
+    )
     return jsonify(success=True, post=detail)
 
 
 @community_api.get("/posts/<string:post_key>/shelf")
 def contribution_shelf(post_key):
-    identity = get_optional_identity()
-    cursor = request.args.get("cursor")
-    try:
-        page = community_feed_service.shelf_page(
-            post_key,
-            cursor,
-            viewer_user_key=(
-                identity.user_key if identity and is_owner(identity) else None
-            ),
-        )
-    except CommunityNotFoundError:
-        page = demo_shelf_page(post_key, cursor)
+    identity = get_current_identity()
+    page = community_feed_service.shelf_page(
+        post_key,
+        request.args.get("cursor"),
+        viewer_user_key=(
+            identity.user_key if is_owner(identity) else None
+        ),
+    )
     return jsonify(success=True, **page)
 
 
@@ -247,44 +273,28 @@ def contribution_shelf(post_key):
     "/posts/<string:post_key>/contributions/<string:contribution_key>"
 )
 def selected_contribution(post_key, contribution_key):
-    identity = get_optional_identity()
-    try:
-        detail = community_feed_service.selected_contribution(
-            post_key,
-            contribution_key,
-            viewer_user_key=(
-                identity.user_key if identity and is_owner(identity) else None
-            ),
-        )
-    except CommunityNotFoundError:
-        detail = demo_selected_contribution(post_key, contribution_key)
+    identity = get_current_identity()
+    detail = community_feed_service.selected_contribution(
+        post_key,
+        contribution_key,
+        viewer_user_key=(
+            identity.user_key if is_owner(identity) else None
+        ),
+    )
     return jsonify(success=True, **detail)
 
 
 @community_api.post("/search")
 def search():
-    identity = get_optional_identity()
+    identity = get_current_identity()
     query = _json_body().get("query")
-    viewer_user_key = (
-        identity.user_key if identity and is_owner(identity) else None
-    )
     items = community_feed_service.search(
         query,
-        viewer_user_key=viewer_user_key,
+        viewer_user_key=(
+            identity.user_key if is_owner(identity) else None
+        ),
     )
-    demo_mode = False
-    if not items:
-        first_page = community_feed_service.feed_page(
-            None, page_size=1, viewer_user_key=viewer_user_key
-        )
-        if not first_page.get("items"):
-            demo_mode = True
-            items = demo_search(query)
-    return jsonify(
-        success=True,
-        items=items,
-        demo_mode=demo_mode,
-    )
+    return jsonify(success=True, items=items)
 
 
 @community_api.post("/voice/transcriptions")

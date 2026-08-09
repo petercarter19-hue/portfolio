@@ -433,6 +433,17 @@ class AuthenticationFlowTests(unittest.TestCase):
             "/petec/resume",
             "/app\x00outside",
             "/app" + ("x" * 2049),
+            # PS-COMMUNITY-AUTH-WALL-001: the Community prefix is bounded the
+            # same way the private-app prefix is — hostile shapes stay out.
+            "https://attacker.example/the-slate",
+            "//attacker.example/the-slate",
+            "/the-slate#fragment",
+            "/the-slate\\outside",
+            "/the-slate//outside",
+            "/the-slatex",
+            "/the-slate-x",
+            "/the-slate\x00posts",
+            "/the-slate" + ("x" * 2049),
         )
         default_location = (
             "/.auth/login/aad?post_login_redirect_uri="
@@ -446,14 +457,29 @@ class AuthenticationFlowTests(unittest.TestCase):
                 )
                 self.assertEqual(response.headers["Location"], default_location)
 
-        accepted = self.client.get(
-            "/auth/sign-in", query_string={"return_to": "/app/settings?tab=account"}
-        )
-        self.assertEqual(
-            accepted.headers["Location"],
-            "/.auth/login/aad?post_login_redirect_uri="
-            "%2Fauth%2Fcomplete%3Freturn_to%3D%2Fapp%2Fsettings%3Ftab%253Daccount",
-        )
+        accepted_values = {
+            "/app/settings?tab=account": (
+                "/.auth/login/aad?post_login_redirect_uri="
+                "%2Fauth%2Fcomplete%3Freturn_to%3D%2Fapp%2Fsettings%3Ftab%253Daccount"
+            ),
+            # PS-COMMUNITY-AUTH-WALL-001: authenticated Community destinations
+            # return the member to the exact Feed, post, or contribution.
+            "/the-slate": (
+                "/.auth/login/aad?post_login_redirect_uri="
+                "%2Fauth%2Fcomplete%3Freturn_to%3D%2Fthe-slate"
+            ),
+            "/the-slate/posts/0f5b2c1a2e3d4c5b6a798877665544332211aabb": (
+                "/.auth/login/aad?post_login_redirect_uri="
+                "%2Fauth%2Fcomplete%3Freturn_to%3D%2Fthe-slate%2Fposts"
+                "%2F0f5b2c1a2e3d4c5b6a798877665544332211aabb"
+            ),
+        }
+        for return_to, expected_location in accepted_values.items():
+            with self.subTest(return_to=return_to):
+                accepted = self.client.get(
+                    "/auth/sign-in", query_string={"return_to": return_to}
+                )
+                self.assertEqual(accepted.headers["Location"], expected_location)
 
     @patch("identity.database_service.first_row", return_value=None)
     def test_mapping_failure_uses_generic_private_recovery(self, first_row):

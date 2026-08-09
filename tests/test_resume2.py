@@ -540,7 +540,6 @@ class Resume2Tests(unittest.TestCase):
 
         for path in (
             '/',
-            '/the-slate',
             '/interview-studio',
             '/peerslate',
             '/experience',
@@ -549,6 +548,13 @@ class Resume2Tests(unittest.TestCase):
                 response = self.client.get(path, base_url='http://localhost')
                 self.assertEqual(response.status_code, 200)
                 self.assertNotIn(b'class="profile-tabs', response.data)
+
+        # PS-COMMUNITY-AUTH-WALL-001: Community is members-only now — the
+        # address answers with sign-in or a neutral 404 depending on the
+        # flag, and no state of it carries Pete's profile tabs.
+        community = self.client.get('/the-slate', base_url='http://localhost')
+        self.assertIn(community.status_code, (302, 404))
+        self.assertNotIn(b'class="profile-tabs', community.data)
 
     def test_opening_states_ask_ai_and_positioning_without_duplication(self):
         # PS-OVERVIEW-PUBLIC-INTEGRATION-001: the published Overview absorbs

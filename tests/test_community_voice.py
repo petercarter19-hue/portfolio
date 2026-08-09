@@ -371,7 +371,10 @@ class CommunityVoiceFrontendContracts(unittest.TestCase):
         self.assertIn("Speech transcription provider", self.policy)
 
     def test_voice_propagation_keeps_existing_send_boundaries_and_scoped_lifetimes(self):
-        self.assertEqual(self.script.count("new CommunityVoiceController({"), 4)
+        # PS-COMMUNITY-AUTH-WALL-001: the signed-out demo Voice instance is
+        # retired, leaving the three real owner controllers (primary comment,
+        # composer, reply).
+        self.assertEqual(self.script.count("new CommunityVoiceController({"), 3)
         self.assertIn("context: 'post'", self.script)
         self.assertIn("context: 'contribution'", self.script)
         self.assertIn("maxLength: 4000", self.script)
@@ -384,8 +387,11 @@ class CommunityVoiceFrontendContracts(unittest.TestCase):
         self.assertIn("saveReplyDraft();\n      replyVoiceController.discard(false);", self.script)
         self.assertIn("if (replyVoiceController) replyVoiceController.discard(false);", self.script)
         self.assertIn("if (composerVoiceController) composerVoiceController.discard(false);", self.script)
-        self.assertIn("localOnly: !owner", self.script)
-        self.assertIn("there is deliberately no Publish button", self.template)
+        # No shipped controller opts into the local-only demo mode anymore;
+        # localOnly survives only as a capability of the controller itself.
+        self.assertNotIn("localOnly: !owner", self.script)
+        self.assertNotIn("localOnly: demo", self.script)
+        self.assertNotIn("there is deliberately no Publish button", self.template)
         controller = self.script[
             self.script.index("function CommunityVoiceController"):
             self.script.index("function resizePrimaryComment")

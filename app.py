@@ -34,7 +34,6 @@ from auth_routes import auth
 from owner_routes import owner
 from control_room_routes import control_room
 from peerslate_api import peerslate_api
-from people_interests_api import people_interests_api
 from workshop_routes import workshop
 from opportunity_slate_routes import opportunity_slate
 # PS-ASK-PETE-DIRECT-001. PLANNED_RATE_LIMITS is the blueprint's own
@@ -725,8 +724,9 @@ app.register_blueprint(opportunity_slate)
 # flipped without a redeploy, and so the flag-off refusal is identical for a
 # cross-site and a same-origin caller.
 app.register_blueprint(ask_pete_direct)
-if not app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED']:
-    app.register_blueprint(people_interests_api)
+# PS-COMMUNITY-AUTH-WALL-001: the legacy fixture-backed people_interests_api
+# is never registered. No feature-flag state may resurrect a public or
+# fixture Community surface — flag off means unavailable, not "older feed".
 
 
 # Community maintenance has no before_request hook. The August 4 outage proved
@@ -923,18 +923,18 @@ def prevent_stale_html(response):
     visitor's browser cache. Static assets are versioned automatically by
     content hash (see _stamp_static_asset_version above) and current
     versions are cached for a year — only text/html is marked no-cache."""
-    if (
-        app.config.get('PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED', False)
-        and request.path.startswith('/the-slate')
-    ):
+    # PS-COMMUNITY-AUTH-WALL-001: the Community namespace is private in every
+    # flag state, so its responses — including redirects and errors — always
+    # carry noindex and never enter a shared cache.
+    if request.path.startswith('/the-slate'):
         response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+        response.headers['Cache-Control'] = 'private, no-store'
     if (
         getattr(g, 'peerslate_identity', None) is not None
         or getattr(g, 'peerslate_principal', None) is not None
         or request.blueprint in {
         'owner',
         'peerslate_api',
-        'people_interests_api',
         'community_api',
         'community_routes',
         'control_room',
@@ -1524,37 +1524,29 @@ def design_system_preview():
     return render_template('design_system_preview.html')
 
 
-# PS-FEED-001 (2026-07-16): the Living Stream Feed prototype from the
-# approved Feed Vision Handoff v1. Publicly reachable and linked from real
-# navigation (2026-07-16, Pete) — the "Feed Preview" tab on the Community
-# board and the header search index both point here. It is still a
-# fixture/demo-data design preview, not a production data path: no
-# database, no publication, no real auth, no changes to the existing
-# Feed/Community board behavior. The page carries a visible preview
-# banner so visitors never mistake sample data for real functionality.
+# PS-COMMUNITY-AUTH-WALL-001: the Living Stream prototype (PS-FEED-001) was a
+# public fixture/demo preview. The working anonymous Community demo is
+# retired, so its widely shared human address forwards to the real Community
+# (which requires sign-in) and the preview/state pages are gone. Endpoints
+# stay registered so historical url_for() references cannot break a render.
 @app.route('/feed-living-stream')
 def feed_living_stream():
-    """The connected Living Stream Feed design preview (mockups 01–16)."""
-    return render_template('feed_living_stream.html')
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/feed-living-stream/states')
 def feed_living_stream_states():
-    """The page/state map: every mockup state with a deep link into the
-    prototype, for review against mockups/production/01–18."""
-    return render_template('feed_living_stream_states.html')
+    abort(404)
 
 
 @app.route('/_internal/feed-living-stream')
 def feed_living_stream_legacy_redirect():
-    """The prototype's brief internal-preview address; kept as a redirect
-    so any bookmark from its first hour still lands correctly."""
-    return redirect(url_for('feed_living_stream'), code=302)
+    abort(404)
 
 
 @app.route('/_internal/feed-living-stream/states')
 def feed_living_stream_states_legacy_redirect():
-    return redirect(url_for('feed_living_stream_states'), code=302)
+    abort(404)
 
 
 @app.route('/about')
@@ -1930,71 +1922,36 @@ def skills():
 # -------------------------------------------------------
 
 
-def _render_community_tabs(initial_tab):
-    # PS-COMMUNITY-TABS-001 (2026-07-21, owner supersession): Feed and The
-    # Break are the only first-class Community views. Both panels render
-    # server-side and JavaScript swaps visibility without a normal-click
-    # reload; `initial_tab` selects the bookmarkable Feed or Break route.
+@app.route('/the-slate')
+def the_slate():
+    # PS-COMMUNITY-AUTH-WALL-001: Community is served only through sign-in.
+    # Availability then authentication happen inside require_community_member
+    # — flag off is a neutral 404, signed out goes through sign-in and back
+    # to this exact page, and an identity failure is a private recovery
+    # state, never an anonymous or fixture render.
+    from community_routes import require_community_member, viewer_context
+    identity, denied = require_community_member()
+    if denied:
+        return denied
     return render_template(
-        'the_slate.html',
-        initial_tab=initial_tab,
+        'community_feed.html',
+        community_post_key=None,
+        community_contribution_key=None,
+        **viewer_context(identity),
     )
 
 
-@app.route('/the-slate')
-def the_slate():
-    # THE SLATE LANDING = Feed (owner decision, 2026-07-21): the People &
-    # Interests corkboard that lived here since 2026-07-14 is retired — it
-    # overlapped Feed almost completely. Its own template
-    # (the_slate_people_interests.html) stays on disk for rollback, matching
-    # the site's existing convention for a retired landing view.
-    if app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED']:
-        from community_routes import viewer_context
-        return render_template(
-            'community_feed.html',
-            community_post_key=None,
-            community_contribution_key=None,
-            **viewer_context(),
-        )
-    return _render_community_tabs('feed')
-
-
-def _retired_by_community_pilot():
-    """True once the new Community feed is the live Community.
-
-    Owner decision, 2026-08-03 (Pete): "this is the new community feed. It
-    replaces the old one. Anyplace there is a community link, it goes to the
-    new page. The old one should be archived."
-
-    The archiving is deliberately flag-aware. While the pilot flag is off the
-    pre-pilot Community is still the live experience, so retiring these routes
-    unconditionally would break the current site. Templates stay on disk for
-    rollback, matching the convention already used for the retired People &
-    Interests landing view.
-    """
-    return app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED']
-
-
+# PS-COMMUNITY-AUTH-WALL-001: the pre-pilot Community subviews are retired in
+# every flag state. Their historical human addresses forward to the one real
+# Community; no state renders the old shells or fixture panels again.
 @app.route('/the-slate/my-slate')
 def the_slate_my():
-    # Tab 2 — My Slate: the user's personal goal map. Static preview
-    # content in the template (same convention as the Slate Board MVP).
-    if _retired_by_community_pilot():
-        return redirect(url_for('the_slate'), code=302)
-    return render_template('the_slate_my.html')
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/the-slate/daily')
 def the_slate_daily():
-    # Tab 3 — Daily Slate: the daily return hook ("What did you move
-    # forward today?"). The composer posts a real card (the-slate.js,
-    # stored per-browser) so the page demonstrates the loop end-to-end.
-    if _retired_by_community_pilot():
-        return redirect(url_for('the_slate'), code=302)
-    return render_template(
-        'the_slate_daily.html',
-        database_ui_enabled=app.config['PEERSLATE_DATABASE_UI_ENABLED'],
-    )
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/the-slate/paths')
@@ -2005,66 +1962,9 @@ def the_slate_paths():
     # working.
     return redirect(url_for('the_slate_my'), code=302)
 
-def relative_time_label(iso_timestamp, now):
-    # Turns a stored timestamp like "2026-07-02T09:15:00" into the live
-    # feed label a visitor expects ("2h ago", "5d ago"), computed fresh
-    # on every request — this is what keeps the feed feeling alive.
-    event_time = datetime.fromisoformat(iso_timestamp)
-    seconds = max(0, (now - event_time).total_seconds())
-
-    minutes = int(seconds // 60)
-    if minutes < 60:
-        return f"{max(1, minutes)}m ago"
-
-    hours = minutes // 60
-    if hours < 24:
-        return f"{hours}h ago"
-
-    days = hours // 24
-    if days < 7:
-        return f"{days}d ago"
-
-    weeks = days // 7
-    if weeks < 5:
-        return f"{weeks}w ago"
-
-    # Older than about a month: show the calendar date instead.
-    # (event_time.day avoids strftime's %-d, which breaks on Windows.)
-    return f"{event_time.strftime('%b')} {event_time.day}"
-
-
-def load_slate_feed():
-    feed_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'slate_feed.json')
-
-    with open(feed_path, 'r', encoding='utf-8') as f:
-        feed = json.load(f)
-
-    now = datetime.now()
-
-    # Newest events first, like any real activity feed.
-    feed['items'] = sorted(feed['items'], key=lambda item: item['timestamp'], reverse=True)
-
-    for item in feed['items']:
-        item['time_label'] = relative_time_label(item['timestamp'], now)
-        # Swap the author key ("petec") for the full author object so the
-        # template can read item.author.name / item.author.avatar directly.
-        item['author'] = feed['authors'][item['author']]
-
-    # Weekly Review: percent + the current Monday-to-Sunday range are
-    # computed here, not stored, so the card is always this week's.
-    review = feed['weekly_review']
-    review['percent'] = round(100 * review['actions_done'] / review['actions_planned'])
-    week_start = (now - timedelta(days=now.weekday())).date()
-    week_end = week_start + timedelta(days=6)
-    review['range_label'] = (
-        f"{week_start.strftime('%b')} {week_start.day} – "
-        f"{week_end.strftime('%b')} {week_end.day}"
-    )
-
-    keep_building = feed['keep_building']
-    keep_building['percent'] = round(100 * keep_building['done'] / keep_building['total'])
-
-    return feed
+# PS-COMMUNITY-AUTH-WALL-001: load_slate_feed(), relative_time_label(), and
+# the fixture JSON feed are retired with the anonymous Community. The fixture
+# file stays on disk as a historical asset; nothing serves it.
 
 
 @app.route('/the-slate/progress')
@@ -2077,34 +1977,21 @@ def slate_feed():
 
 @app.route('/api/slate-feed')
 def slate_feed_api():
-    # The same feed as JSON — this is the seam where the page's data layer
-    # already works like a real multi-profile feed service.
-    if app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED']:
-        abort(404)
-    return jsonify(load_slate_feed())
+    # PS-COMMUNITY-AUTH-WALL-001: the public fixture feed API is permanently
+    # unavailable in every flag state.
+    abort(404)
 
 
 @app.route('/the-slate/pulse')
 def slate_feed_pulse():
-    # The Pulse view — the community's momentum at a glance: this-week
-    # stats, trending skills, rising goals, and what's moving right now.
-    # Static preview content for the MVP (no live cross-member data yet).
-    if _retired_by_community_pilot():
-        return redirect(url_for('the_slate'), code=302)
-    return render_template('slate_pulse.html')
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/the-slate/break')
 def slate_feed_break():
-    # The Break is the second first-class view in the same seamless,
-    # two-view Community shell as Feed.
-    # Retired with the rest of the pre-pilot Community (Pete, 2026-08-03).
-    # It rendered inside the old two-view shell, which the new Community feed
-    # replaces, so leaving it reachable would strand a released feature in a
-    # shell that no longer exists elsewhere on the site.
-    if _retired_by_community_pilot():
-        return redirect(url_for('the_slate'), code=302)
-    return _render_community_tabs('break')
+    # The Break's future lives inside the authenticated Community vision;
+    # the old public Break page does not come back (PS-COMMUNITY-AUTH-WALL-001).
+    return redirect(url_for('the_slate'), code=302)
 
 
 @app.route('/the-slate/saved')
@@ -4338,6 +4225,7 @@ def robots_txt():
         'Disallow: /app',
         'Disallow: /api/',
         'Disallow: /owner',
+        'Disallow: /the-slate',
         f'Sitemap: {request.url_root.rstrip("/")}/sitemap.xml',
     ]
     return app.response_class('\n'.join(lines) + '\n', mimetype='text/plain')
@@ -4347,13 +4235,13 @@ def robots_txt():
 def sitemap_xml():
     # The canonical public pages worth indexing (redirect-only and
     # API routes are deliberately left out).
+    # PS-COMMUNITY-AUTH-WALL-001: no protected Community route belongs in the
+    # public sitemap.
     public_paths = [
         '/', '/experience',
         '/petec/my-story', '/petec/skills', '/petec/resume',
         '/petec/slate-board', '/interview-studio', '/peerslate', '/petec/about',
         '/petec/hobbies', '/petec/contact',
-        '/the-slate', '/the-slate/my-slate', '/the-slate/daily',
-        '/the-slate/pulse', '/the-slate/break',
         '/career-search', '/my-network', '/explore-profiles', '/for-recruiters',
     ]
     base = request.url_root.rstrip('/')

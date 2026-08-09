@@ -97,14 +97,29 @@ class HomepageSceneTests(unittest.TestCase):
     # ---- links ----
 
     def test_ctas_resolve_to_real_routes(self):
+        # PS-COMMUNITY-AUTH-WALL-001: the working Living Stream demo is
+        # retired, so the hero's capture actions lead through sign-in to the
+        # real private capture experience. No homepage CTA points at the
+        # retired demo or legacy Slate subviews any more.
+        for retired in ('/feed-living-stream', '/the-slate/my-slate',
+                        '/the-slate/daily'):
+            self.assertNotIn(retired, self.html)
+        # Primary CTA, mic, Private Journal card, and the week link all go
+        # through sign-in.
+        self.assertGreaterEqual(self.html.count('href="/auth/sign-in"'), 4)
+        # The ghost button explains the product instead of opening a demo.
+        self.assertIn('href="/peerslate">See how it works</a>', self.html)
         for href in ('/petec/my-story', '/petec/skills', '/petec/resume',
-                     '/petec/slate-board', '/feed-living-stream',
-                     '/the-slate/my-slate', '/the-slate/daily',
-                     '/petec/projects', '/interview-studio'):
+                     '/petec/slate-board', '/petec/projects',
+                     '/interview-studio'):
             self.assertIn('href="%s' % href, self.html)
             target = href.split('#')[0].split('?')[0]
             status = self.client.get(target).status_code
             self.assertIn(status, (200, 302), target)
+        # The sign-in gate answers: 302 to the provider when Easy Auth is
+        # configured, or the honest "not configured yet" 503 explainer in
+        # this test environment. Either way it is a real route, not a 404.
+        self.assertIn(self.client.get('/auth/sign-in').status_code, (302, 503))
 
     def test_read_the_chapters_anchor_exists_on_story_page(self):
         self.assertIn('href="/petec/my-story#act-becoming"', self.html)

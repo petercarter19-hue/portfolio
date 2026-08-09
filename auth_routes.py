@@ -77,7 +77,14 @@ def _safe_return_path(candidate, default="/app"):
         return default
     if parsed.path == "/.auth" or parsed.path.startswith("/.auth/"):
         return default
-    if parsed.path != "/app" and not parsed.path.startswith("/app/"):
+    # PS-COMMUNITY-AUTH-WALL-001: Community lives behind sign-in, so its
+    # namespace joins the private-app namespace as the only permitted
+    # post-auth destinations. Every other path stays rejected.
+    allowed = ("/app", "/the-slate")
+    if not any(
+        parsed.path == prefix or parsed.path.startswith(prefix + "/")
+        for prefix in allowed
+    ):
         return default
     return candidate
 

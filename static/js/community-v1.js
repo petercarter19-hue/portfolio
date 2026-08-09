@@ -14,15 +14,11 @@
 
   var owner = app.dataset.owner === 'true';
   var feedList = app.querySelector('[data-feed-list]');
-  var demoNote = app.querySelector('[data-community-demo-note]');
   var feedEnd = app.querySelector('[data-feed-end]');
   var loadMore = app.querySelector('[data-load-more]');
   var searchInput = app.querySelector('[data-community-search]');
   var clearSearch = app.querySelector('[data-clear-search]');
   var quickCompose = app.querySelector('.cv1-quick-compose');
-  var demoQuickCompose = app.querySelector('[data-demo-quick-compose]');
-  var demoComposer = app.querySelector('[data-demo-composer]');
-  var demoComposerForm = app.querySelector('[data-demo-composer-form]');
   var composer = app.querySelector('[data-composer]');
   var composerForm = app.querySelector('[data-composer-form]');
   var publicConfirmation = app.querySelector('[data-public-confirmation]');
@@ -64,8 +60,7 @@
     activityReturnFocus: null,
     catchupReturnFocus: null,
     sheetHistory: null,
-    sheetHistoryClosing: false,
-    demoAttachments: []
+    sheetHistoryClosing: false
   };
   var legacyDraftKey = 'peerslate-community-owner-draft-v1';
   var draftKey = owner && app.dataset.draftNamespace
@@ -245,7 +240,6 @@
   var communityVoiceRegistry = {active: null, controllers: [], nextControllerId: 0};
   var composerVoiceController = null;
   var replyVoiceController = null;
-  var demoComposerVoiceController = null;
 
   function utf16Length(value) {
     return String(value || '').length;
@@ -728,41 +722,34 @@
     var input = el('textarea', 'cv1-primary-comment-input');
     var label = el('label', 'cv1-visually-hidden', 'Write a comment');
     var voice = button('', 'voice-comment', 'cv1-primary-comment-voice');
-    var demo = Boolean(post.demo);
-    var submit = demo ? null : el('button', 'cv1-primary-comment-send');
+    var submit = el('button', 'cv1-primary-comment-send');
     var inputId = 'cv1-primary-comment-' + post.key;
-    var draftStorageKey = demo ? null : primaryCommentStorageKey(post.key, 'draft');
 
     form.dataset.primaryComment = '';
     form.dataset.postKey = post.key;
-    if (demo) form.classList.add('cv1-primary-comment--demo');
     label.htmlFor = inputId;
     input.id = inputId;
     input.name = 'body';
     input.rows = 1;
     input.maxLength = 2000;
     input.required = true;
-    input.placeholder = demo ? 'Try writing a comment…' : 'Write a comment…';
-    input.setAttribute('aria-label', demo ? 'Try writing a demo comment' : 'Write a comment');
-    if (draftStorageKey) {
-      input.value = readPrimaryCommentDraft(post.key);
-    }
+    input.placeholder = 'Write a comment…';
+    input.setAttribute('aria-label', 'Write a comment');
+    input.value = readPrimaryCommentDraft(post.key);
 
     voice.setAttribute('aria-label', 'Start Voice comment recording');
     voice.setAttribute('aria-pressed', 'false');
     voice.setAttribute('title', 'Record a private Voice comment');
     voice.appendChild(primaryCommentIcon('voice'));
-    if (submit) {
-      submit.type = 'submit';
-      submit.disabled = true;
-      submit.setAttribute('aria-label', 'Publish comment');
-      submit.setAttribute('title', 'Publish comment');
-      submit.appendChild(primaryCommentIcon('send'));
-    }
+    submit.type = 'submit';
+    submit.disabled = true;
+    submit.setAttribute('aria-label', 'Post comment');
+    submit.setAttribute('title', 'Post comment');
+    submit.appendChild(primaryCommentIcon('send'));
 
     field.appendChild(input);
     field.appendChild(voice);
-    if (submit) field.appendChild(submit);
+    field.appendChild(submit);
     form.appendChild(label);
     form.appendChild(field);
     var voiceController = new CommunityVoiceController({
@@ -773,24 +760,21 @@
       maxLength: 2000,
       noun: 'comment',
       resize: function () { resizePrimaryComment(form); },
-      lifetime: 'feed',
-      localOnly: demo && !owner
+      lifetime: 'feed'
     });
-    if (demo) form.appendChild(el('span', 'cv1-demo-comment-note', 'Demo only · nothing will be sent.'));
     input.addEventListener('input', function () {
       resizePrimaryComment(form);
-      if (!demo) savePrimaryCommentDraft(form, post.key);
+      savePrimaryCommentDraft(form, post.key);
     });
     input.addEventListener('keydown', function (event) {
-      if (!demo && (event.metaKey || event.ctrlKey) && event.key === 'Enter' && input.value.trim()) {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && input.value.trim()) {
         event.preventDefault();
         form.requestSubmit();
       }
     });
     voice.addEventListener('click', function () { voiceController.start(); });
     form.addEventListener('submit', function (event) {
-      if (demo) event.preventDefault();
-      else sendPrimaryComment(event, post);
+      sendPrimaryComment(event, post);
     });
     window.requestAnimationFrame(function () { resizePrimaryComment(form); });
     return form;
@@ -886,7 +870,7 @@
   function attachmentNode(item, activation) {
     var opensConversation = Boolean(activation && item.preview_url);
     var href = opensConversation ? activation.permalink : (item.preview_url || item.download_url);
-    var link = href ? el('a', 'cv1-attachment') : el('span', 'cv1-attachment cv1-attachment--demo');
+    var link = href ? el('a', 'cv1-attachment') : el('span', 'cv1-attachment');
     if (href) {
       link.href = href;
       link.target = item.preview_url && !opensConversation ? '_blank' : '';
@@ -914,7 +898,7 @@
         : (item.content_type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
           ? 'Excel spreadsheet'
           : 'File');
-      copy.appendChild(el('small', '', item.demo ? fileKind + ' · illustrative file' : fileKind + ' · ' + Math.max(1, Math.round(item.byte_length / 1024)) + ' KB'));
+      copy.appendChild(el('small', '', fileKind + ' · ' + Math.max(1, Math.round(item.byte_length / 1024)) + ' KB'));
       link.appendChild(copy);
     }
     return link;
@@ -1155,26 +1139,24 @@
     commentSummary.appendChild(cardActionIcon('comment'));
     commentSummary.appendChild(el('span', 'cv1-action-count', post.contribution_count));
     actions.appendChild(commentSummary);
-    if (owner || post.demo) actions.appendChild(primaryRespondControl(post, 'conversation'));
+    if (owner) actions.appendChild(primaryRespondControl(post, 'conversation'));
     return actions;
   }
 
   function cardNode(post, compact) {
     var card = el('article', 'cv1-card');
-    if (post.demo) card.classList.add('cv1-card--demo');
     card.dataset.postKey = post.key;
     card._communityPost = post;
     var head = el('header', 'cv1-card-head');
     head.appendChild(avatar(post.author));
     var who = el('div');
     var authorLine = el('p', 'cv1-card-author', post.author.display_name);
-    if (post.demo) authorLine.appendChild(el('span', 'cv1-demo-badge', 'Demo'));
     who.appendChild(authorLine);
-    var meta = el('span', 'cv1-card-meta', relativeTime(post.published_at_utc) + ' · ' + (post.demo ? 'Illustrative demo' : (compact ? post.audience : 'Community')));
+    var meta = el('span', 'cv1-card-meta', relativeTime(post.published_at_utc) + ' · Community');
     if (post.edited_at_utc) meta.appendChild(el('span', 'cv1-card-tag', 'Edited'));
     who.appendChild(meta);
     head.appendChild(who);
-    if (owner && !post.demo) head.appendChild(postOwnerControls(post, compact ? 'conversation' : 'feed'));
+    if (owner) head.appendChild(postOwnerControls(post, compact ? 'conversation' : 'feed'));
     card.appendChild(head);
 
     if (!compact) {
@@ -1207,9 +1189,9 @@
       comment.appendChild(cardActionIcon('comment'));
       comment.appendChild(el('span', 'cv1-action-count', post.contribution_count));
       primaryActions.appendChild(comment);
-      if (owner || post.demo) primaryActions.appendChild(primaryRespondControl(post));
+      if (owner) primaryActions.appendChild(primaryRespondControl(post));
       card.appendChild(primaryActions);
-      if (owner || post.demo) card.appendChild(primaryCommentComposer(post));
+      if (owner) card.appendChild(primaryCommentComposer(post));
       var primaryShelf = renderConversationShelf(post);
       if (primaryShelf) card.appendChild(primaryShelf);
       return card;
@@ -1335,16 +1317,10 @@
     var url = '/api/v1/community/feed';
     if (append && state.cursor) url += '?cursor=' + encodeURIComponent(state.cursor);
     api(url).then(function (payload) {
-      if (demoNote && !append) demoNote.hidden = !payload.demo_mode;
-      if (!append) {
-        app.dataset.demoMode = payload.demo_mode ? 'true' : 'false';
-        if (demoQuickCompose) demoQuickCompose.hidden = !payload.demo_mode;
-        if (owner && quickCompose) quickCompose.hidden = Boolean(payload.demo_mode);
-      }
       var partial = feedList.querySelector('[data-feed-partial-error]');
       if (partial) partial.remove();
       if (!append && !payload.items.length) {
-        feedTerminal('empty', owner ? 'Your community starts here' : 'No public posts yet', owner ? 'Share a question, small win, or update when you’re ready.' : 'Check back after the first public post is published.', false);
+        feedTerminal('empty', owner ? 'Your community starts here' : 'No Community posts yet', owner ? 'Share a question, small win, or update when you’re ready.' : 'Check back after the first Community post appears.', false);
       } else {
         renderFeed(payload.items, append);
       }
@@ -1390,10 +1366,6 @@
     api('/api/v1/community/search', jsonOptions('POST', {query: clean})).then(function (payload) {
       if (requestNumber !== state.searchRequest) return;
       app.classList.remove('cv1-search-error');
-      if (demoNote) demoNote.hidden = !payload.demo_mode;
-      app.dataset.demoMode = payload.demo_mode ? 'true' : 'false';
-      if (demoQuickCompose) demoQuickCompose.hidden = !payload.demo_mode;
-      if (owner && quickCompose) quickCompose.hidden = Boolean(payload.demo_mode);
       state.cursor = null;
       loadMore.hidden = true;
       feedEnd.hidden = true;
@@ -1536,8 +1508,7 @@
   function closeComposer() {
     if (composerVoiceController) composerVoiceController.discard(false);
     if (composer && composer.open) composer.close();
-    if (quickCompose) quickCompose.hidden = app.dataset.demoMode === 'true';
-    if (demoQuickCompose) demoQuickCompose.hidden = app.dataset.demoMode !== 'true';
+    if (quickCompose) quickCompose.hidden = false;
     restoreComposerHome();
   }
 
@@ -1926,14 +1897,13 @@
     copy.appendChild(el('p', 'cv1-card-author', item.author.display_name));
     copy.appendChild(el('span', 'cv1-card-meta', relativeTime(item.created_at_utc) + (item.kind === 'author_update' ? ' · Author update' : '') + (item.edited_at_utc ? ' · Edited' : '')));
     head.appendChild(copy);
-    var demoConversation = Boolean(state.currentPost && state.currentPost.demo);
-    if (owner && !demoConversation && !item.demo && standardActions === 'overflow-only') head.appendChild(contributionOwnerOverflow(item));
+    if (owner && standardActions === 'overflow-only') head.appendChild(contributionOwnerOverflow(item));
     node.appendChild(head);
     node.appendChild(el('p', 'cv1-contribution-body', item.body));
     if (item.attachments && item.attachments.length) {
       node.appendChild(attachmentsNode(item.attachments));
     }
-    if (owner && !demoConversation && !item.demo && standardActions !== false && standardActions !== 'overflow-only') {
+    if (owner && standardActions !== false && standardActions !== 'overflow-only') {
       var actions = el('div', 'cv1-owner-menu');
       appendReplyAction(actions, item, 'Reply');
       actions.appendChild(contributionOwnerOverflow(item));
@@ -2022,12 +1992,7 @@
       earlier.dataset.loadEarlier = '';
       conversationBody.appendChild(earlier);
     }
-    if (post.demo) {
-      if (replyVoiceController) replyVoiceController.discard(false);
-      if (replyForm) replyForm.hidden = true;
-    } else {
-      prepareReplyComposer();
-    }
+    prepareReplyComposer();
     if (selected) {
       window.requestAnimationFrame(function () {
         var focusNode = conversationBody.querySelector('[data-contribution-key="' + CSS.escape(selected.key) + '"]');
@@ -2081,7 +2046,7 @@
     state.selectedAncestors = [];
     var requestNumber = ++state.conversationRequest;
     if (!conversation.open) conversation.showModal();
-    if (replyForm) replyForm.hidden = Boolean(knownPost && knownPost.demo);
+    if (replyForm) replyForm.hidden = false;
     if (knownPost) {
       app.querySelector('#cv1-conversation-title').textContent = knownPost.conversation_label;
       app.querySelector('[data-conversation-meta]').textContent = focusKey
@@ -2239,127 +2204,6 @@
     trigger.addEventListener('click', function () { composerVoiceController.start(); });
   }
 
-  function renderDemoAttachments() {
-    if (!demoComposerForm) return;
-    var list = demoComposerForm.querySelector('[data-demo-attachment-list]');
-    if (!list) return;
-    list.replaceChildren();
-    state.demoAttachments.forEach(function (item, index) {
-      var row = el('div', 'cv1-demo-upload-row');
-      if (item.previewUrl) {
-        var preview = el('img', 'cv1-demo-upload-preview');
-        preview.src = item.previewUrl;
-        preview.alt = '';
-        row.appendChild(preview);
-      } else {
-        row.appendChild(el('span', 'cv1-demo-upload-icon', item.kind === 'file' ? '⌇' : '▧'));
-      }
-      var copy = el('span', 'cv1-demo-upload-copy');
-      copy.appendChild(el('strong', '', item.file.name));
-      copy.appendChild(el('small', '', 'Local demo only · ' + Math.max(1, Math.round(item.file.size / 1024)) + ' KB'));
-      row.appendChild(copy);
-      var remove = button('Remove', '', 'cv1-demo-upload-remove');
-      remove.dataset.demoRemoveAttachment = String(index);
-      row.appendChild(remove);
-      list.appendChild(row);
-    });
-  }
-
-  function addDemoAttachment(file, kind) {
-    if (!file) return;
-    var allowed = kind === 'photo'
-      ? ['image/jpeg', 'image/png']
-      : ['application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
-    var xlsxByName = kind === 'file' && /\.xlsx$/i.test(file.name || '');
-    if (allowed.indexOf(file.type) < 0 && !xlsxByName) {
-      showToast('Choose a JPEG, PNG, PDF, or macro-free XLSX file for this demo.', true);
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      showToast('Choose a demo file smaller than 10 MB.', true);
-      return;
-    }
-    if (state.demoAttachments.length >= 4) {
-      showToast('This demo accepts up to four local examples.', true);
-      return;
-    }
-    state.demoAttachments.push({
-      file: file,
-      kind: kind,
-      previewUrl: kind === 'photo' ? URL.createObjectURL(file) : null
-    });
-    renderDemoAttachments();
-    showToast('Local example added. It was not uploaded.');
-  }
-
-  function clearDemoAttachments() {
-    state.demoAttachments.forEach(function (item) {
-      if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
-    });
-    state.demoAttachments = [];
-    renderDemoAttachments();
-  }
-
-  function openDemoComposer(startVoice) {
-    if (!demoComposer || !demoComposerForm) return;
-    if (!demoComposer.open) demoComposer.showModal();
-    var body = formField(demoComposerForm, 'body');
-    if (startVoice && demoComposerVoiceController) demoComposerVoiceController.start();
-    else if (body) body.focus();
-  }
-
-  function closeDemoComposer() {
-    if (demoComposerVoiceController) demoComposerVoiceController.discard(false);
-    if (demoComposer && demoComposer.open) demoComposer.close();
-  }
-
-  function setupDemoComposer() {
-    if (!demoComposerForm) return;
-    var input = formField(demoComposerForm, 'body');
-    var trigger = demoComposerForm.querySelector('[data-demo-composer-voice]');
-    var topTrigger = app.querySelector('[data-demo-top-voice]');
-    var panelHost = demoComposerForm.querySelector('[data-demo-composer-voice-panel-host]');
-    var count = demoComposerForm.querySelector('[data-demo-character-count]');
-    if (!input || !trigger || !panelHost) return;
-    demoComposerVoiceController = new CommunityVoiceController({
-      form: demoComposerForm,
-      input: input,
-      trigger: trigger,
-      mirrors: topTrigger ? [topTrigger] : [],
-      context: 'post',
-      maxLength: 4000,
-      noun: 'demo post',
-      resize: function () {
-        if (count) count.textContent = input.value.length.toLocaleString() + ' / 4,000';
-      },
-      panelHost: panelHost,
-      lifetime: 'page',
-      localOnly: !owner
-    });
-    input.addEventListener('input', function () {
-      if (count) count.textContent = input.value.length.toLocaleString() + ' / 4,000';
-    });
-    trigger.addEventListener('click', function () { demoComposerVoiceController.start(); });
-    demoComposerForm.addEventListener('submit', function (event) { event.preventDefault(); });
-    demoComposerForm.querySelector('[data-demo-attachment-input]').addEventListener('change', function (event) {
-      addDemoAttachment(event.target.files[0], 'file');
-      event.target.value = '';
-    });
-    demoComposerForm.querySelector('[data-demo-photo-input]').addEventListener('change', function (event) {
-      addDemoAttachment(event.target.files[0], 'photo');
-      event.target.value = '';
-    });
-    demoComposerForm.querySelector('[data-demo-attachment-list]').addEventListener('click', function (event) {
-      var remove = event.target.closest('[data-demo-remove-attachment]');
-      if (!remove) return;
-      var index = Number(remove.dataset.demoRemoveAttachment);
-      var item = state.demoAttachments[index];
-      if (item && item.previewUrl) URL.revokeObjectURL(item.previewUrl);
-      state.demoAttachments.splice(index, 1);
-      renderDemoAttachments();
-    });
-  }
-
   function setupReplyVoiceController() {
     if (!replyForm) return;
     var input = formField(replyForm, 'body');
@@ -2436,10 +2280,6 @@
 
   function prepareReplyComposer() {
     if (!replyForm || !state.currentPost) return;
-    if (state.currentPost.demo) {
-      replyForm.hidden = true;
-      return;
-    }
     var target = state.replyParentKey ? findContribution(state.replyParentKey) : null;
     if (state.replyParentKey && (!target || Number(target.depth || 0) >= maximumReplyDepth)) {
       if (replyVoiceController) replyVoiceController.discard(false);
@@ -2531,12 +2371,6 @@
     if (!post) return;
     var removing = Boolean(post.viewer && post.viewer.response === intention);
     var choices = Array.from(wrapper.querySelectorAll('[data-action="primary-response"]'));
-    if (post.demo) {
-      updatePrimaryResponseControls(post, removing ? null : intention);
-      closePrimaryResponsePicker(wrapper, true);
-      showToast(removing ? 'Demo response removed from this tab.' : 'Demo response selected only in this tab.');
-      return;
-    }
     choices.forEach(function (choice) { choice.disabled = true; });
     api(
       '/api/v1/community/posts/' + encodeURIComponent(post.key) + '/response',
@@ -2553,9 +2387,9 @@
   }
 
   function deletePost(postKey, revision) {
-    if (!window.confirm('Remove this public post? Its public link and attachments will stop working immediately.')) return;
+    if (!window.confirm('Remove this Community post? Its link and attachments will stop working immediately.')) return;
     api('/api/v1/community/posts/' + encodeURIComponent(postKey), jsonOptions('DELETE', {expected_revision: revision}))
-      .then(function () { showToast('Post removed from public view.'); state.cursor = null; loadFeed(false); if (conversation.open) conversation.close(); })
+      .then(function () { showToast('Post removed from Community.'); state.cursor = null; loadFeed(false); if (conversation.open) conversation.close(); })
       .catch(function (error) { showToast(error.message, true); });
   }
 
@@ -2577,8 +2411,8 @@
         if (copied) resolve(); else reject(new Error('copy unavailable'));
       });
     }
-    operation.then(function () { showToast('Public link copied.'); })
-      .catch(function () { showToast('The public link could not be copied.', true); });
+    operation.then(function () { showToast('Community link copied. It opens after sign-in.'); })
+      .catch(function () { showToast('The link could not be copied.', true); });
   }
 
   function pushSheetHistory(sheet) {
@@ -2775,19 +2609,6 @@
     }
     var appBackToFeed = event.target.closest('[data-action="back-to-feed"]');
     if (appBackToFeed && !feedList.contains(appBackToFeed)) backToFeed();
-    var demoTopVoice = event.target.closest('[data-demo-top-voice]');
-    if (demoTopVoice) {
-      openDemoComposer(true);
-      return;
-    }
-    if (event.target.closest('[data-open-demo-composer]')) {
-      openDemoComposer(false);
-      return;
-    }
-    if (event.target.closest('[data-close-demo-composer]')) {
-      closeDemoComposer();
-      return;
-    }
     var topVoice = event.target.closest('[data-top-voice]');
     if (topVoice) {
       openComposer('post', null, false);
@@ -2932,7 +2753,7 @@
       if (editOverflow) editOverflow.open = false;
       beginContributionEdit(action);
     }
-    if (action.dataset.action === 'delete-contribution' && window.confirm('Remove this reply from public view?')) {
+    if (action.dataset.action === 'delete-contribution' && window.confirm('Remove this reply from Community?')) {
       var deleteOverflow = action.closest('details');
       if (deleteOverflow) deleteOverflow.open = false;
       api('/api/v1/community/contributions/' + action.dataset.key, jsonOptions('DELETE', {expected_revision: action.dataset.revision}))
@@ -2940,8 +2761,6 @@
         .catch(function (error) { showToast(error.message, true); });
     }
   });
-
-  setupDemoComposer();
 
   if (owner) {
     setupComposerVoiceController();
@@ -2981,9 +2800,6 @@
   if (composer) composer.addEventListener('close', function () {
     if (composerVoiceController) composerVoiceController.discard(false);
     restoreComposerHome();
-  });
-  if (demoComposer) demoComposer.addEventListener('close', function () {
-    if (demoComposerVoiceController) demoComposerVoiceController.discard(false);
   });
   catchupDialog.addEventListener('close', function () {
     var catchupFocus = state.catchupReturnFocus;
@@ -3063,7 +2879,6 @@
     if (deepLink) openConversation(decodeURIComponent(deepLink[1]), false, deepLink[2] ? decodeURIComponent(deepLink[2]) : null);
   });
   window.addEventListener('pagehide', function () {
-    clearDemoAttachments();
     disposeCommunityVoiceControllers();
   });
 
