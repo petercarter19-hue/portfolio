@@ -20,34 +20,40 @@ discovery, activated under Pete's standing full approval and recorded in
 |---|---|
 | **See it, and click through it** | `venv/bin/python tests/ask_pete_direct/run_direct_preview.py` — the local preview. Fixture data, no provider, no database. Prints two URLs on 127.0.0.1. |
 | Prove the preview still boots | `…/run_direct_preview.py --check` |
-| Turn the routes on in `app.py` | [`REGISTRATION_LEG_SPEC.md`](REGISTRATION_LEG_SPEC.md) — four copy-ready edits and their verification checklist |
-| Move the schema | [`SCHEMA_GATE_RUNBOOK.md`](SCHEMA_GATE_RUNBOOK.md) — the gate sitting and the governed apply |
+| See what was changed in `app.py`, and re-check it | [`REGISTRATION_LEG_SPEC.md`](REGISTRATION_LEG_SPEC.md) — the four applied edits and the verification checklist (**done 2026-08-08**) |
+| Move the schema | [`SCHEMA_GATE_RUNBOOK.md`](SCHEMA_GATE_RUNBOOK.md) — the gate (**done**) and the governed production apply (**not done**) |
 | Know exactly what is and is not done | [`COMPLETION_RECORD.md`](COMPLETION_RECORD.md) |
 
-The remaining legs run in this order, each separate and recorded: **gate →
-production apply → registration + deploy → owner key configured → Pete reviews
-the copy in the preview → flag on.**
+Legs, in order — ~~gate~~ **done** → ~~registration~~ **done** → **production
+apply** → deploy → owner key configured → Pete reviews the copy in the preview
+→ **flag on**. Each is separate and recorded. The feature is registered and
+off; nothing a visitor can reach has changed.
 
 ## What "dark" means here, precisely
 
-Three independent things must all change before a visitor can reach any of
-this. None of them happened in this package:
+Three independent things had to change before a visitor could reach any of
+this. **Two have now happened. The one that actually protects people has not.**
 
-1. **Registration.** `ask_pete_direct_routes.py` is imported by nothing.
-   `app.py` belongs to PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001, so the two-line
-   blueprint registration is a later recorded leg. Until then the routes do not
-   exist at run time. `tests/ask_pete_direct/test_darkness.py` asserts this and
-   is designed to FAIL the day someone registers it — that failure is the
-   tripwire that forces the registration to be a deliberate, reviewed act.
-2. **Schema.** The migration passed its disposable-database gate on
-   2026-08-08 (`ps-ask-pete-direct-gate-202608082309`, verifier returned
-   `verified = 1`) and the proof is recorded, so the governed applier will
-   now accept it — but **no production database carries these tables**,
+1. ~~**Registration.**~~ **Done, 2026-08-08.** The Interview lane closed and
+   released `app.py`, and the recorded registration leg applied the four edits
+   in `REGISTRATION_LEG_SPEC.md`. The two darkness tests that asserted the
+   blueprint was unregistered were designed to fail at exactly this moment —
+   they did, and they were replaced by their successors rather than deleted, so
+   the transition could not happen quietly. Registration was never the safety
+   control; it was scaffolding.
+2. ~~**Schema.**~~ **Half done.** The migration passed its disposable-database
+   gate on 2026-08-08 (`ps-ask-pete-direct-gate-202608082309`, verifier
+   returned `verified = 1`) and the proof is recorded, so the governed applier
+   will now accept it — but **no production database carries these tables**,
    because the Part 4 apply has not been run. See `SCHEMA_GATE_RUNBOOK.md`.
-3. **The flag.** `PEERSLATE_ASK_PETE_DIRECT_ENABLED` defaults false and is
-   read with `is True`, so a `"false"` string cannot enable it. With it off,
-   every route answers a neutral 404 and the companion partial renders
-   byte-for-byte what it rendered before this package existed.
+3. **The flag — this is now the whole control.**
+   `PEERSLATE_ASK_PETE_DIRECT_ENABLED` defaults false and is read with
+   `is True`, so no string, integer, or truthy object can open it. With it off,
+   all three routes answer a neutral 404 — the *same* 404 to a cross-site
+   caller as to a same-origin one — and `/petec/resume` renders byte-for-byte
+   what it rendered before the blueprint was registered (measured at the leg,
+   both modes). The blueprint is registered *unconditionally* precisely so that
+   "off" means a 404 from a route that exists, flippable without a redeploy.
 
 ## What was built
 

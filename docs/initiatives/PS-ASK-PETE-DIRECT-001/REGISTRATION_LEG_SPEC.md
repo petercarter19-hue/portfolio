@@ -1,7 +1,20 @@
 # PS-ASK-PETE-DIRECT-001 — registration leg specification
 
-**Status: not done. This is the exact change to make when
-PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 releases `app.py`.**
+**Status: DONE, 2026-08-08.** PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 closed and
+released `app.py`, the lane recorded the surface, and all four edits below were
+applied exactly as written. The checklist ran green — including the byte-identity
+item: `/petec/resume` with the flag off renders **identically** to the
+pre-registration bytes in both the legacy (172,930 B, sha256 `3ef02bd6…`) and
+companion (176,373 B, sha256 `0f228364…`) modes.
+
+**The feature is registered and OFF.** Enablement remains a separate owner
+decision and still needs the production schema apply
+([`SCHEMA_GATE_RUNBOOK.md`](SCHEMA_GATE_RUNBOOK.md) Part 4) and
+`PEERSLATE_OWNER_USER_KEYS` naming exactly one key.
+
+The edits are kept below as written rather than rewritten in the past tense:
+they are the record of what was applied, and the checklist stays the right
+thing to re-run after any future change to `app.py`.
 
 Four edits to one file, all additive, none touching an existing line. Nothing
 else in the repository changes: the blueprint, the service, the templates, the

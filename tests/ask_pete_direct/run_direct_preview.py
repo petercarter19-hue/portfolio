@@ -29,21 +29,20 @@ WHAT IT RENDERS
   up here on refresh, and Mark read / Archive / Restore all work against the
   in-memory store with the same version fencing the real procedures use.
 
-THIS IS ALSO THE REGISTRATION LEG'S REHEARSAL
----------------------------------------------
+IT WAS THE REGISTRATION LEG'S REHEARSAL, AND IT STILL GUARDS IT
+--------------------------------------------------------------
 
-``configure_preview_app()`` below registers the blueprint on the REAL
-application object **in exactly the way ``app.py`` will**::
+This harness existed before the registration leg and registered the blueprint
+on the REAL application object with exactly the line ``app.py`` now carries::
 
     app.register_blueprint(ask_pete_direct)
 
-That single line, plus the config flag and the limiter wrapper, is the whole
-of the registration leg — see
-``docs/initiatives/PS-ASK-PETE-DIRECT-001/REGISTRATION_LEG_SPEC.md`` for the
-copy-ready diff. If this harness boots and both pages answer 200, the
-registration itself is proven to compose with the rest of the application:
-nothing here monkey-patches routing, and the blueprint carries its own gate,
-hardening, and error handlers.
+That was the cheap proof the registration would compose. Since the leg ran
+(2026-08-08) ``app.py`` does it, so ``configure_preview_app()`` finds the
+blueprint already registered and skips its own call — see the guard there. The
+harness's job is unchanged: it is still the only way to see and click these
+two surfaces, because production keeps the flag off and this turns it on
+in-process.
 
 WHAT IS FIXTURE, AND HOW YOU CAN TELL
 --------------------------------------
@@ -367,12 +366,19 @@ def _preview_answer(**kwargs):
 
 
 def configure_preview_app(owner_user_key: str = PREVIEW_OWNER_USER_KEY):
-    """Return ``(app, store)`` with the blueprint registered as app.py will."""
+    """Return ``(app, store)`` with the blueprint registered and the flag on."""
     app = app_module.app
 
-    # --- THE REGISTRATION LEG, EXACTLY ---------------------------------
-    # One line, and the same config flag app.py will read from the
-    # environment. Nothing else about routing is touched.
+    # --- THE REGISTRATION, AND THE FLAG --------------------------------
+    # Since the registration leg (2026-08-08) app.py already does the first
+    # line, so this is now a no-op in practice - and the guard is what lets
+    # this harness go on working either way rather than raising on a second
+    # registration of the same blueprint name. It is kept rather than deleted
+    # so the harness still stands alone if it is ever pointed at an
+    # application that has not registered the blueprint.
+    #
+    # The flag is the part that matters here now: production leaves it off,
+    # and this preview turns it on in-process only.
     if "ask_pete_direct" not in app.blueprints:
         app.register_blueprint(ask_pete_direct_routes.ask_pete_direct)
     app.config["PEERSLATE_ASK_PETE_DIRECT_ENABLED"] = True

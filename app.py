@@ -37,6 +37,11 @@ from peerslate_api import peerslate_api
 from people_interests_api import people_interests_api
 from workshop_routes import workshop
 from opportunity_slate_routes import opportunity_slate
+# PS-ASK-PETE-DIRECT-001. PLANNED_RATE_LIMITS is the blueprint's own
+# declaration of the budgets it cannot apply itself (this module owns the
+# Limiter); it is read by the post-registration wrapper further down rather
+# than restated there, so the declaration and the application cannot drift.
+from ask_pete_direct_routes import PLANNED_RATE_LIMITS, ask_pete_direct
 # PS-WORKSHOP-001 W2a: registers additional view functions onto the SAME
 # `workshop` Blueprint instance above (import-time side effect only, no
 # name from this module is otherwise used here) — see
@@ -316,6 +321,24 @@ app.config.update(
     # separate release decision after the material visual contract is approved.
     PEERSLATE_ASK_PETE_GROUNDED_ENABLED=(
         os.environ.get('PEERSLATE_ASK_PETE_GROUNDED_ENABLED', 'false').lower() == 'true'
+    ),
+    # PS-ASK-PETE-DIRECT-001: the private recruiter-question path — the
+    # consent-first form inside Ask Pete's handoff card, POST
+    # /api/ask-pete/direct-question, and the owner-only inbox at
+    # /owner/ask-pete-inbox. Off by default. The blueprint reads this with
+    # `is True`, so only a real boolean opens it; when it is false every
+    # route in that blueprint answers a neutral 404 and the companion partial
+    # renders byte-for-byte what it renders today.
+    #
+    # Enablement additionally requires PEERSLATE_OWNER_USER_KEYS to name
+    # EXACTLY ONE key — that key is both the member questions are addressed
+    # to and the identity that opens the inbox — and the
+    # PS-ASK-PETE-DIRECT-001 migration to be applied. Zero keys, more than
+    # one, or an email-only owner allowlist leaves the path honestly
+    # unavailable (every send answers 503) rather than guessing a recipient.
+    # Enablement is Pete's decision, not a config change.
+    PEERSLATE_ASK_PETE_DIRECT_ENABLED=(
+        os.environ.get('PEERSLATE_ASK_PETE_DIRECT_ENABLED', 'false').lower() == 'true'
     ),
     PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY=PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY,
     # Spend guard for handoff section 18 safeguard 3. LIVE AS OF SLICE OS-2:
@@ -695,6 +718,13 @@ app.register_blueprint(workshop)
 app.register_blueprint(community_api)
 app.register_blueprint(community_routes)
 app.register_blueprint(opportunity_slate)
+# PS-ASK-PETE-DIRECT-001. Registered unconditionally, like every blueprint
+# above it: the gate belongs in the blueprint's own before_request, not here.
+# That is what makes "flag off" mean a 404 from a route that EXISTS, rather
+# than a route that does not — so PEERSLATE_ASK_PETE_DIRECT_ENABLED can be
+# flipped without a redeploy, and so the flag-off refusal is identical for a
+# cross-site and a same-origin caller.
+app.register_blueprint(ask_pete_direct)
 if not app.config['PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED']:
     app.register_blueprint(people_interests_api)
 
@@ -791,6 +821,25 @@ for _community_endpoint, _community_limit in {
 }.items():
     app.view_functions[_community_endpoint] = limiter.limit(_community_limit)(
         app.view_functions[_community_endpoint]
+    )
+
+# PS-ASK-PETE-DIRECT-001: the same post-registration wrapper idiom for the
+# private recruiter-question path. The blueprint declares these budgets in
+# PLANNED_RATE_LIMITS precisely because it cannot apply them itself, and they
+# are read from there rather than restated here so the declaration and the
+# application cannot drift. A test in tests/ask_pete_direct/ asserts that
+# mapping covers every state-changing endpoint in the blueprint, so a route
+# added later without a budget fails the suite instead of shipping unbounded.
+#
+# 30/hour on the public write is the house floor for a state-changing endpoint
+# (community_api.publish_post and its neighbours). It is the only anti-abuse
+# ceiling this path has — there is deliberately no CAPTCHA — so it is the
+# number to tighten if abuse ever appears, not one to relax. 60/hour on the
+# owner's own read/archive action is roomier because a member working through
+# a backlog legitimately presses it many times in a row.
+for _direct_endpoint, _direct_limit in PLANNED_RATE_LIMITS.items():
+    app.view_functions[_direct_endpoint] = limiter.limit(_direct_limit)(
+        app.view_functions[_direct_endpoint]
     )
 
 # PS-OPPSLATE-001: the same post-registration wrapper idiom for Opportunity

@@ -450,11 +450,17 @@ class RateLimitPlanTests(unittest.TestCase):
     def test_the_planned_write_budget_is_the_house_floor(self):
         self.assertEqual(PLANNED_RATE_LIMITS[DIRECT_QUESTION_ENDPOINT], "30 per hour")
 
-    def test_the_module_documents_that_it_cannot_wire_the_limit_itself(self):
+    def test_the_module_documents_where_the_limit_is_actually_applied(self):
+        """Before the registration leg this asserted the docstring said the
+        limit "cannot be wired from here". It still says so, in different
+        words — but the durable fact worth pinning is the one a reader needs:
+        the budgets live here and ``app.py`` applies them after registration,
+        which is why neither side may restate the other."""
         docstring = ask_pete_direct_routes.__doc__
         self.assertIn("PLANNED_RATE_LIMITS", docstring)
-        self.assertIn("Rate limiting cannot be wired from here", docstring)
-        self.assertIn("after", docstring.lower())
+        self.assertIn("cannot be wired from this file", docstring)
+        self.assertIn("AFTER blueprint registration", docstring)
+        self.assertIn("Limiter", docstring)
 
     def test_no_parallel_limiter_was_invented_in_this_module(self):
         source = (

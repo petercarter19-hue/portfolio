@@ -741,7 +741,8 @@
         "tests/ask_pete_direct/",
         ".env.example",
         "docs/initiatives/PS-ASK-PETE-DIRECT-001/",
-        "docs/governance/CURRENT_LANES.json"
+        "docs/governance/CURRENT_LANES.json",
+        "app.py"
       ],
       "exclusions": [
         "no app.py edit and no blueprint registration: the feature stays dark and unreachable until the later recorded-grant leg after the Interview lane releases app.py",
@@ -776,6 +777,11 @@
         {
           "date": "2026-08-08",
           "decision": "Pete's relayed directive for the red validation: inspect findings, narrowest fix, keep dark, merge when green. Both findings were UUID-shaped deterministic test fixtures (verified non-secret; nothing rotated). The repo's own guard tests forbid both commit-pinned allowlists (they die on squash merge) and entries for lines that no longer exist, so no allowlist is the correct resolution. Instead the branch history is squashed by the owner's own hand to the reviewed final tree (fixture constants renamed throughout), which removes the transient flagged lines from every scanned history. .gitleaks.toml stays untouched."
+        },
+        {
+          "date": "2026-08-08",
+          "decision": "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 closed and relinquished app.py; this lane takes the recorded registration leg under Pete's standing 'published always' authority: the four copy-ready app.py edits in REGISTRATION_LEG_SPEC.md (flag config, blueprint import and registration, limiter wiring), nothing else in app.py.",
+          "surface_note": "app.py joins writable_surfaces for exactly the registration-leg edits, via the established recorded-scope pattern, now that no other lane records it."
         }
       ],
       "model_routing": {

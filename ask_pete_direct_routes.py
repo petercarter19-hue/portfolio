@@ -2,37 +2,37 @@
 
 PS-ASK-PETE-DIRECT-001.
 
-READ THIS FIRST: THIS BLUEPRINT IS NOT REGISTERED ANYWHERE.
----------------------------------------------------------
-``app.py`` is owned by another lane (PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001),
-so nothing in this repository imports or registers ``ask_pete_direct``. That is
-deliberate, not an oversight: the feature is dark by construction, and the
-two-line registration is a separate recorded leg taken after that lane releases
-``app.py``. Until then these routes do not exist at run time, and
-``tests/ask_pete_direct/`` is the only thing that ever mounts them - on its own
-throwaway Flask application, never on the production one.
+READ THIS FIRST: REGISTERED, AND OFF.
+------------------------------------
+``app.py`` registers this blueprint (registration leg, 2026-08-08, after
+PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 closed and released that file). It is
+registered UNCONDITIONALLY, on purpose: the gate belongs in ``before_request``
+below, not in the registration. That is what makes "off" mean a neutral 404
+from a route that exists — indistinguishable from any other 404, flippable
+without a redeploy, and identical for a cross-site caller and a same-origin
+one.
 
-Two independent gates therefore stand between this code and a visitor:
+The only thing standing between this code and a visitor is now the flag:
 
-1. Registration. Not done. Nothing routes here.
-2. ``PEERSLATE_ASK_PETE_DIRECT_ENABLED``. Default off, and checked with
-   ``is True`` rather than truthiness so a stray ``"false"`` string from an
-   environment file can never enable it. When off, every route in this
-   blueprint answers a neutral 404 - the surface does not confirm its own
-   existence.
+``PEERSLATE_ASK_PETE_DIRECT_ENABLED`` defaults false and is read with
+``is True`` rather than truthiness, so a stray ``"false"`` string, a ``1``, or
+any other truthy object cannot open it. Turning it on additionally requires
+``PEERSLATE_OWNER_USER_KEYS`` to name exactly one key and the migration to be
+applied; short of that the path answers an honest 503 rather than guessing a
+recipient. Enablement is the owner's decision.
 
-What the registration leg must also do
---------------------------------------
-Rate limiting cannot be wired from here. ``app.py`` owns the ``Limiter``
-instance, and the house idiom is to wrap the view function AFTER blueprint
-registration (see the ``community_api`` and Opportunity Slate loops in
-``app.py``) precisely so a reusable blueprint never imports that module back.
-``PLANNED_RATE_LIMITS`` below states the exact budgets the registration leg
-must apply; ``tests/ask_pete_direct/test_endpoint.py`` asserts that mapping
-covers every state-changing endpoint here, so the plan cannot silently lose an
-endpoint. No parallel limiter is invented in this file: a second, unrelated
-counter would be a different control with different behaviour that nobody
-operates, which is worse than one honestly-declared dependency.
+Rate limiting, and why it is declared here but applied there
+------------------------------------------------------------
+It cannot be wired from this file. ``app.py`` owns the ``Limiter`` instance,
+and the house idiom is to wrap the view function AFTER blueprint registration
+(see the ``community_api`` and Opportunity Slate loops there) precisely so a
+reusable blueprint never imports that module back. ``PLANNED_RATE_LIMITS``
+below states the budgets, and ``app.py`` iterates that mapping rather than
+restating it, so the declaration and the application cannot drift. A test
+asserts the mapping covers every state-changing endpoint here, so a route
+added later without a budget fails the suite instead of shipping unbounded.
+No parallel limiter is invented in this file: a second, unrelated counter
+would be a different control with different behaviour that nobody operates.
 
 Trust boundaries this file keeps
 --------------------------------

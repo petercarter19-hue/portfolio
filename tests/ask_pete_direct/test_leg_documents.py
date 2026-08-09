@@ -185,12 +185,16 @@ class PreviewHarnessTests(unittest.TestCase):
         cls.source = HARNESS.read_text(encoding="utf-8")
         cls.tree = ast.parse(cls.source)
 
-    def test_the_harness_registers_the_blueprint_the_way_app_py_will(self):
+    def test_the_harness_registers_the_blueprint_the_way_app_py_does(self):
+        """It rehearsed the registration before the leg ran, and now finds it
+        already done. The guard is what lets it work either way rather than
+        raising on a second registration of the same blueprint name."""
         self.assertIn(
             "app.register_blueprint(ask_pete_direct_routes.ask_pete_direct)",
             self.source,
         )
-        self.assertIn("THE REGISTRATION LEG, EXACTLY", self.source)
+        self.assertIn('if "ask_pete_direct" not in app.blueprints:', self.source)
+        self.assertIn("THE REGISTRATION, AND THE FLAG", self.source)
 
     def test_the_harness_documents_its_usage_and_its_fixture_nature(self):
         docstring = ast.get_docstring(self.tree) or ""
