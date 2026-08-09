@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-ASK-PETE-DIRECT-001 continues on work/2026-08-08-ask-pete-direct-001. PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001 is complete and live; its surfaces are relinquished and one lane slot is free. Release authority remains empty."
+  current_assignments: "PS-ASK-PETE-DIRECT-001 continues on work/2026-08-08-ask-pete-direct-001. PS-COMMUNITY-AUTH-WALL-001 activates on work/2026-08-08-community-auth-wall-001 to authenticate every Community surface and retire the public demo. Release authority remains empty."
 
 governing_documents:
   bible:
@@ -61,6 +61,9 @@ active_packages:
   - id: PS-ASK-PETE-DIRECT-001
     status: active_delivery
     scope: "Dark private recruiter-question path: consent-first companion form, unregistered blueprint, gated additive migration, owner-only pull inbox; no app.py, sending, schema apply, deployment, or enablement."
+  - id: PS-COMMUNITY-AUTH-WALL-001
+    status: active_delivery
+    scope: "Protected containment: authenticate every Community HTML, API, search, Voice, and media path; retire demo and legacy public routes; fail closed; no Feed redesign, schema change, or deployment."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -147,7 +150,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-ASK-PETE-DIRECT-001 continues as the sole active lane (schema apply and enablement wait for their recorded legs). One lane slot is free for the next owner-selected activation."
+next_gate: "PS-ASK-PETE-DIRECT-001 continues (schema apply and enablement wait for their recorded legs). PS-COMMUNITY-AUTH-WALL-001 implements the Community sign-in wall; both lane slots are occupied."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

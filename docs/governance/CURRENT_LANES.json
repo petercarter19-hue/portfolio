@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-09T02:20:00Z",
+  "updated_at": "2026-08-09T02:45:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-08",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-ASK-PETE-DIRECT-001"
+      "PS-ASK-PETE-DIRECT-001",
+      "PS-COMMUNITY-AUTH-WALL-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -831,6 +832,70 @@
       },
       "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged worktree and branches behind archive tags; preserve everything else.",
       "sequence": "Merge the activation-only PR; create the implementation worktree; pass write preflight; implement the four dark slices with tests; self-review; Fable exact-SHA review; open and merge the Azure PR under recorded authority; hold registration, schema apply, deployment, and enablement for their own recorded legs."
+    },
+    {
+      "package": "PS-COMMUNITY-AUTH-WALL-001",
+      "outcome": "Retire anonymous Community and every working public/demo fallback. Require trusted PeerSlate authentication before any Community HTML, JSON, search, Voice, attachment, or media retrieval. Preserve current owner-only authoring, existing data, private Blob storage, and independent retention maintenance. Do not redesign the Feed or launch general member participation. Deferred legs: Pete's retention reapproval before release; deployment and enablement only under a separately recorded release sequence; the database audience migration remains a later Protected package.",
+      "branch": "work/2026-08-08-community-auth-wall-001",
+      "writer": "Claude Fable 5 (the session carrying Pete's Community auth-wall conversation) architects and implements in the dedicated portfolio-community-auth-wall-001 worktree; a fresh-context adversarial agent independently reviews the exact candidate diff before merge per the Protected path.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "source_checkpoint": "Authoritative Azure origin/main eb5f5ddd8ea0a99c639833dbde3d571938b23645 after the Interview Studio visual-fidelity closeout. Production is fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6 via run 688, live release 090ed9967daf7a00c798898e.",
+      "writable_surfaces": [
+        "app.py",
+        "community_api.py",
+        "community_routes.py",
+        "auth_routes.py",
+        "services/community_media_service.py",
+        "services/community_demo_feed.py",
+        "templates/community_feed.html",
+        "templates/community_pilot_policy.html",
+        "templates/community_policy.html",
+        "templates/the_slate.html",
+        "templates/the_slate_my.html",
+        "templates/the_slate_daily.html",
+        "templates/the_slate_feed.html",
+        "templates/the_slate_people_interests.html",
+        "templates/slate_pulse.html",
+        "templates/slate_break.html",
+        "templates/feed_living_stream.html",
+        "templates/partials/sample_community_note.html",
+        "templates/partials/homepage/_voice_hero.html",
+        "templates/base.html",
+        "static/js/community-v1.js",
+        "scripts/preview_community_public_demo.py",
+        "scripts/preview_community_primary_feed.py",
+        "scripts/preview_community_secondary_states.py",
+        "scripts/verify_community_public_demo_browser.py",
+        "tests/test_community_public_pilot.py",
+        "tests/test_community_replaces_old_slate.py",
+        "tests/test_community_recently_deleted.py",
+        "tests/test_community_secondary_states.py",
+        "tests/test_auth.py",
+        "tests/test_search_visibility.py",
+        "docs/initiatives/PS-COMMUNITY-AUTH-WALL-001/"
+      ],
+      "exclusions": [
+        "No Feed V2, composer, inline-comment, or Break redesign; no member authoring, invites, reactions, following, messaging, notifications, or cross-product sharing.",
+        "No Community SQL schema, migration, procedure, or row changes; the stored audience token remains transitional debt; no edits to applied migrations.",
+        "No access-boundary change to Workshop, Opportunity Slate, Interview Studio, the public resume, Public Slate, or Story/profile pages.",
+        "No deployment, production configuration change, or live flag flip; release requires a separately recorded Protected sequence with reapproved retention.",
+        "No surfaces owned by PS-ASK-PETE-DIRECT-001, including services/database_service.py, SQL FIles paths, .env.example, and docs/governance/CURRENT_LANES.json.",
+        "No material visual composition change; homepage CTA retargeting is href and copy only, otherwise it returns to the ChatGPT visual-creation lane."
+      ],
+      "completion_evidence": [
+        "Focused auth-wall, demo-retirement, legacy-route, and discovery test matrix plus the full repository suite results.",
+        "Complete-diff self-review and independent adversarial review findings with resolutions.",
+        "Completion report with base and final SHA, changed paths, verification, release state (expected merged-not-deployed), and honest limitations including the transitional audience token and pending retention reapproval."
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-08",
+          "decision": "Pete: 'Let's just position this firmly behind the sign in wall. That will make life easier for all of us. We can make a demo down the road. Not a working demo, but maybe a video or something else when it is time to get this out to the audience.' Recorded in PEERSLATE-COMMUNITY-AUTH-WALL-CLAUDE-HANDOFF-2026-08-08.md; Pete directed cross-session coordination and execution on 2026-08-08 and confirmed activation with an explicit Go."
+        }
+      ],
+      "cleanup_contract": "Task-local only: remove the activation worktree after the activation PR merges; dispose of the implementation worktree and branch per BRANCH_DISPOSITION_RECORD only after a verified squash merge.",
+      "sequence": "Merge the activation-only PR; create the implementation worktree from the resulting origin/main; pass write preflight; implement the code-only containment package with tests; self-review; independent adversarial review; record the merge grant through the control plane when the ledger surface is available; stop before deployment pending a recorded release sequence and Pete's retention reapproval."
     }
   ],
   "paused_lanes": [
