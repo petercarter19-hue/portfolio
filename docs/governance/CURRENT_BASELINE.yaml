@@ -4,19 +4,19 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-07"
+updated_at: "2026-08-08"
 
 authority:
   remote: origin
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "1806d20c23736140fea787ea7cd8fb105c99e7f9"
-  deployed_pipeline: 610
-  live_release: "a00f609a6f82870292a3a0d5"
-  application_behavior_commit: "1806d20c23736140fea787ea7cd8fb105c99e7f9"
-  application_behavior_pipeline: 610
-  note: "Pipeline 610 passed Build and Deploy for exact main 1806d20c23736140fea787ea7cd8fb105c99e7f9. The protected Community recovery, exact additive PS-COMMUNITY-REVIVAL-001 migration, independently scheduled maintenance, owner-pilot flag, and clearly labelled Pete-only public demo are live. /healthz release a00f609a6f82870292a3a0d5 is healthy; /api/v1/community/feed returns demo_mode=true with one item because no canonical public post exists. The public sandbox has no publish/send action and stores no Community activity. Scheduled maintenance runs 609, 611, and 612 succeeded. Broader member authoring remains unavailable. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
+  deployed_main_commit: "0dbed0d6b69a91e8ce851f9c9d127cadd83f31b5"
+  deployed_pipeline: 674
+  live_release: "224806c2175d4d4f4b1e2aa9"
+  application_behavior_commit: "0dbed0d6b69a91e8ce851f9c9d127cadd83f31b5"
+  application_behavior_pipeline: 674
+  note: "Governed manual-override run 674 (schemaAction=none; the automatic main trigger did not fire for the merge) deployed exact main 0dbed0d6b69a91e8ce851f9c9d127cadd83f31b5: the public browser-local Interview Studio Functional V1 via PR 349. /healthz release 224806c2175d4d4f4b1e2aa9 exactly matches the identity derived from (0dbed0d, 674), and the live /interview-studio route serves the corrected candidate's markers. The Ask Pete grounded companion (enabled 2026-08-08 via runs 642/652; this block is corrected here) remains live in this build. Repository main has since advanced to de0d587 (Ask Pete Direct dark source; a merge is not a deployment). This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 owns its recorded Interview surfaces including app.py. PS-ASK-PETE-DIRECT-001 is the second disjoint Protected writer on work/2026-08-08-ask-pete-direct-001 (Opus 5 implements, Fable reviews). Release authority remains empty."
+  current_assignments: "PS-ASK-PETE-DIRECT-001 is the sole active Protected writer on work/2026-08-08-ask-pete-direct-001 (Opus 5 implements, Fable reviews). PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 is complete and live; its Interview surfaces including app.py are relinquished, which unblocks the Ask Pete Direct registration leg's recorded-grant path. Release authority remains empty."
 
 governing_documents:
   bible:
@@ -58,9 +58,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001
-    status: active_delivery
-    scope: "Public/browser-local Interview Studio Functional V1 within the five existing runtime/test surfaces: open-ended tailored practice, persistent Interview Me/Interview AI/Video Practice modes, question-aware score-free coaching, local voice/video truth, and meaningful browser-local history/progress; no private-member, schema, Opportunity Slate write, global shell, deployment, or production change."
   - id: PS-ASK-PETE-DIRECT-001
     status: active_delivery
     scope: "Dark private recruiter-question path: consent-first companion form, unregistered blueprint, gated additive migration, owner-only pull inbox; no app.py, sending, schema apply, deployment, or enablement."
@@ -134,6 +131,7 @@ completed_packages:
   - PS-ASK-PETE-AI-RELEASE-001
   - PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001
   - PS-INTERVIEW-STUDIO-INTEGRATION-001
+  - PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001
 
 retired_packages:
   - id: PS-WORKSHOP-ACCESS-001
@@ -148,7 +146,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 continues its recorded sequence. PS-ASK-PETE-DIRECT-001 begins after this record merges, its worktree starts from resulting origin/main on work/2026-08-08-ask-pete-direct-001, and write preflight passes; registration, schema apply, and enablement wait for their own recorded legs."
+next_gate: "PS-ASK-PETE-DIRECT-001 continues as the sole active lane. With Interview Studio Functional V1 complete, live, and its app.py surface relinquished, the Ask Pete Direct two-line registration leg may proceed via the recorded-grant pattern when its own sequence reaches it; schema apply and enablement still wait for their own recorded legs."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
