@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-09T17:30:00Z",
+  "updated_at": "2026-08-09T17:05:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-08",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001"
+      "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
+      "PS-AGENT-OPERATIONS-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-001",
@@ -59,7 +60,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-COMMUNITY-AUTH-WALL-001 closed complete and live on 2026-08-09. Under Pete's recorded authority ('You can execut everything tonight to live deployment') the wall candidate was merged as main 7a7c99de085a8d25ab12ce386c7cb2509cda2057 (Azure PR 361, squash), deployed by automatic governed run 711 (batchedCI, schemaAction=none, owner-approved at the production checkpoint), and verified live: /healthz release e1a3b800aec6444f1a35c80a matches the identity derived from (7a7c99d, 711). Anonymous verification on peerslate.com confirmed Community HTML redirects to sign-in with exact return paths, every Community API and both attachment endpoints return 401 before any storage call, retired public surfaces return 404 or redirect, robots.txt excludes /the-slate, the sitemap advertises no Community path, and no fabricated demo content appears on any checked path. Retention decision v1.0 was approved by Pete on 2026-08-08 and is recorded in the package. Remaining lane authority is merge and cleanup only."
+    "exit_authority": "PS-COMMUNITY-AUTH-WALL-001 closed complete and live on 2026-08-09. Under Pete's recorded authority ('You can execut everything tonight to live deployment') the wall candidate was merged as main 7a7c99de085a8d25ab12ce386c7cb2509cda2057 (Azure PR 361, squash), deployed by automatic governed run 711 (batchedCI, schemaAction=none, owner-approved at the production checkpoint), and verified live: /healthz release e1a3b800aec6444f1a35c80a matches the identity derived from (7a7c99d, 711). Anonymous verification on peerslate.com confirmed Community HTML redirects to sign-in with exact return paths, every Community API and both attachment endpoints return 401 before any storage call, retired public surfaces return 404 or redirect, robots.txt excludes /the-slate, the sitemap advertises no Community path, and no fabricated demo content appears on any checked path. Retention decision v1.0 was approved by Pete on 2026-08-08 and is recorded in the package. Remaining lane authority is merge and cleanup only. Pete then activated PS-AGENT-OPERATIONS-001 to remove the approval requirement from routine application deploys by splitting the combined production stage, while keeping the schema and destructive approval human-only and untouched."
   },
   "activation_policy": {
     "enabled": true,
@@ -941,6 +942,65 @@
       ],
       "cleanup_contract": "Preserve every source artifact. After a verified merge, remove only this task's clean activation and implementation worktrees/branches when recoverability and the delivered ZIP are confirmed.",
       "sequence": "Merge the activation-only PR; create the implementation worktree from the resulting origin/main; pass write preflight; inventory and assemble the documentation/export package; validate content, provenance, hashes, links, and archive integrity; self-review; merge documentation through an Azure PR if retained source files are changed; deliver the ZIP without deployment."
+    },
+    {
+      "package": "PS-AGENT-OPERATIONS-001",
+      "outcome": "Stop routine application deploys from requiring a human approval, without weakening any gate that should exist. One defect causes tonight's pain: azure-pipelines.yml puts the web deployment and the schema operation in a single stage, and Azure evaluates every environment a stage references before the stage starts, so a schemaAction=none web deploy is dragged through the peerslate-database-schema approval. Split it into three stages - web deploy (environment peerslate-pete, which carries only an ExclusiveLock and no approval), a read-only schema preflight that references no environment at all, and the schema apply (environment peerslate-database-schema, approval retained untouched) - and restore cross-run serialization in pure YAML. Resolves the recorded scoped finding pipeline_schema_checkpoint_order.",
+      "branch": "work/2026-08-09-agent-operations-001",
+      "writer": "Claude Fable 5 orchestrating; Claude Opus 5 at extra-high effort as the sole delegated implementation writer in the dedicated portfolio-agent-operations-001 worktree; Fable reviews the exact candidate as the non-writer",
+      "delivery_path": "Protected",
+      "production_capable": true,
+      "source_checkpoint": "Current authoritative origin/main f1d7535 after the Community auth-wall closeout; release truth (7a7c99de085a8d25ab12ce386c7cb2509cda2057, pipeline 711, release e1a3b800aec6444f1a35c80a). Live evidence for the defect: run 711 was batchedCI with schemaAction=none and forceProductionDeploy=false and still parked at the schema approval. Design brief with the verified environment/check configuration is recorded in the package folder at activation.",
+      "writable_surfaces": [
+        "azure-pipelines.yml",
+        "scripts/production_operation_preflight.py",
+        "tests/test_operational_readiness.py",
+        "tests/test_schema_migration_path.py",
+        "tests/test_community_revival.py",
+        "docs/initiatives/PS-AGENT-OPERATIONS-001/",
+        "docs/governance/GOVERNED_SCHEMA_MIGRATION_PATH.md",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml"
+      ],
+      "exclusions": [
+        "no change to any Azure environment or check configuration; check id=11 (the peerslate-database-schema Approval) is never touched, weakened, or removed, and the schema/destructive gate remains human-only by intent",
+        "no removal of the exact-source smoke, the overlap and duplicate-run preflight refusals, the Candidate stages, or the scheduled-maintenance isolation; this is a restructuring, not a relaxation",
+        "no product code, template, static asset, schema, migration, or feature-flag change",
+        "no weakening of a failing test to make it pass; in particular the exact-literal environment-name assertion in tests/test_operational_readiness.py is preserved, because a typo would make Azure auto-create a check-free environment and silently evaporate the schema approval",
+        "no write to PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 surfaces or any other lane, branch, worktree, or artifact",
+        "no claim that a machine-wide permission bypass is required by, or authorized by, this package"
+      ],
+      "completion_evidence": [
+        "activation record merges and the implementation worktree passes the package write preflight from resulting origin/main",
+        "three stages exist: web deploy referencing only the application environment, a read-only schema preflight referencing no environment, and the schema apply referencing peerslate-database-schema with its approval intact",
+        "a schemaAction=none run never enters the schema environment, proven on a real run",
+        "a schema run still requests the approval, and its read-only plan prints before the approval is requested",
+        "cross-run serialization is preserved in pure YAML by a no-op deployment job in the schema apply stage that re-borrows the application environment's ExclusiveLock, and GOVERNED_SCHEMA_MIGRATION_PATH.md is updated so the written property matches shipped reality",
+        "the four affected test files are corrected rather than weakened, and the release-truth pin is moved in the same commit as the closeout",
+        "the post-deploy smoke is shown to fail loudly rather than degrade silently, and a one-command rollback to the previous known-good release is rehearsed and recorded",
+        "a real merge to main deploys end to end with no human interaction, which is the proof that matters",
+        "check id=11 is re-verified present and unchanged at closeout and recorded as a closing fact"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-09",
+          "decision": "Pete ordered the permanent fix ('make this a permanent fix for all future packages') and, asked what should replace the approval tap as a safety net, chose: 'Yes, but only for risky areas' - a reviewer required only for changes touching sensitive paths, with ordinary content and styling flowing straight through. The path-scoped required-reviewer branch policy on main implements that choice and is created before this package's implementation PR merges, so that PR is its first exercise. Requester-can-approve stays enabled, because with one human any stricter setting deadlocks every PR he authors."
+        },
+        {
+          "date": "2026-08-09",
+          "decision": "Recorded honestly: because pull requests are created under Pete's account while the code is machine-authored, the reviewer requirement is a deliberate speed bump on risky paths - a human reading what a machine wrote before it reaches the public - and must never be described as independent review or separation of duties. This pairs with the existing scoped finding schema_environment_approver_identity."
+        }
+      ],
+      "model_routing": {
+        "decided_by": "Pete",
+        "date": "2026-08-09",
+        "architecture": "Claude Fable 5 from the verified live configuration and the cross-checked design; does not hand-write implementation",
+        "implementation": "Claude Opus 5 at extra-high effort, sole delegated writer in the dedicated clean worktree",
+        "independent_reviewer": "Claude Fable 5 reviews each slice and the exact final candidate; it did not write the code",
+        "sequence": "activation merge -> path-scoped branch policy created -> clean implementation worktree -> write preflight -> three-stage split and serialization restore -> tests corrected -> review -> Azure PR (first exercise of the new policy) -> merge -> automatic deploy verified with no human interaction -> smoke and rollback evidence -> truthful closeout"
+      },
+      "cleanup_contract": "Task-local only: after this lane's PRs merge and recoverability is verified, remove only this lane's clean merged worktree and branches behind an archive tag; preserve everything else.",
+      "sequence": "Merge the activation-only PR; create the path-scoped required-reviewer policy; create the implementation worktree from resulting origin/main; pass the package write preflight; implement the three-stage split with the pure-YAML serialization restore; correct the four affected test files; self-review and non-writer review; open the Azure PR as the new policy's first exercise; merge; verify a real merge deploys with no human interaction; record smoke, rollback, and the unchanged schema gate; truthful closeout."
     }
   ],
   "paused_lanes": [

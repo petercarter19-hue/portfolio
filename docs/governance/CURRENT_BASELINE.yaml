@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 continues on work/2026-08-08-external-visual-review-handoff-001. PS-COMMUNITY-AUTH-WALL-001 is complete and live; its surfaces are relinquished and one lane slot is free. Release authority remains empty."
+  current_assignments: "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 continues. PS-AGENT-OPERATIONS-001 is the second Protected writer on work/2026-08-09-agent-operations-001 (Opus 5 implements, Fable reviews). Release authority remains empty."
 
 governing_documents:
   bible:
@@ -61,6 +61,9 @@ active_packages:
   - id: PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001
     status: active_delivery
     scope: "Bounded documentation/export only: assemble a complete, provenance-labeled ChatGPT visual-research handoff with selected mockups, product direction, critical functional truth, conversation context, and independent-research instructions; no runtime or new visual authority."
+  - id: PS-AGENT-OPERATIONS-001
+    status: active_delivery
+    scope: "Split the production stage so routine web deploys need no approval; schema/destructive approval stays human-only and untouched; no product, schema, or environment change."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -149,7 +152,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 continues as the sole active lane. One slot is free for PS-AGENT-OPERATIONS-001, which splits routine web deploys from gated schema operations."
+next_gate: "PS-AGENT-OPERATIONS-001 begins after this merges: create the path-scoped reviewer policy, then split production into web deploy, environment-free schema preflight, and schema apply; prove a merge deploys with no human interaction."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
