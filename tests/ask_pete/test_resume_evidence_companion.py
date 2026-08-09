@@ -176,7 +176,11 @@ class RecruiterEvidenceCompanionTemplateTests(TestCase):
         )
 
         self.assertIn('aria-controls="ask-pete-evidence-companion"', html)
-        self.assertIn("data-ask-pete-citation-toggle", controller)
+        # The 2026-08-09 redesign replaced the per-citation toggles with the
+        # claim-card and evidence-fold disclosures; both stay keyboard
+        # buttons that carry aria-expanded/aria-controls.
+        self.assertIn("data-ask-pete-claim-toggle", controller)
+        self.assertIn("data-ask-pete-fold-toggle", controller)
         self.assertIn("elements.answer.setAttribute('aria-labelledby', heading.id)", controller)
         self.assertIn("event.defaultPrevented", controller)
         self.assertIn("closeCompanion({ restoreFocus: false })", controller)

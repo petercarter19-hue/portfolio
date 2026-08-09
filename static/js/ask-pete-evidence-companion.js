@@ -23,7 +23,10 @@
     const MAX_DIRECT_CONTACT_LENGTH = 300;
     const DIRECT_HONEYPOT_FIELD = 'company_website';
     const DIRECT_COPY = {
-        summary: 'Send this question to Pete privately',
+        /* Owner direction (Pete, 2026-08-09): one compact entry point. This
+           summary line is now the handoff card's whole collapsed face, so it
+           carries the card's old name rather than a second, longer variant. */
+        summary: 'Ask Pete directly',
         intro: 'Ask Pete answers only from information Pete approved for the public. If your question needs Pete himself, send it to him here.',
         questionLabel: 'Your question for Pete',
         contactLabel: 'How Pete can reach you (optional)',
@@ -219,7 +222,7 @@
                growing history - see restorePreviousAnswer below. */
             answer: null, previousAnswer: null,
             lastInvoker: null, requestSequence: 0, abortController: null,
-            slowTimer: null, timeoutTimer: null, timeoutSequence: null,
+            slowTimer: null, timeoutTimer: null, timeoutSequence: null, revealOnReturn: false,
             highlightedTargets: new Set(), highlightTimers: new Map(), selectedSourceTarget: null,
         };
 
@@ -459,7 +462,7 @@
                     state.answer = payload;
                     setPhase('answered');
                     setRequestControls(false);
-                    setStatus('Answer ready. Every claim below identifies its support state and available evidence.');
+                    setStatus('Answer ready. The claims and evidence behind it expand below the summary.');
                     renderAnswer(payload);
                 })
                 .catch((error) => {
@@ -509,74 +512,111 @@
             return button;
         }
 
+        /* Owner direction (Pete, 2026-08-09), redesigning the accepted cards:
+           one claim sentence per card; no badge where support is established
+           ("it's clear that there's evidence") and nuanced wording ONLY where
+           something is not; excerpt only on expand; one source line with ONE
+           action per source, replacing the old Show evidence/Open pairs that
+           named each source twice. */
         function renderClaim(claim, answerSequence, claimIndex) {
             const claimCard = makeElement('article', `ask-pete-evidence-claim ask-pete-evidence-claim--${claim.kind} ask-pete-evidence-claim--${String(claim.state).replaceAll('_', '-')}`);
-            const top = makeElement('div', 'ask-pete-evidence-claim__top');
-            appendText(top, 'span', 'ask-pete-evidence-claim__kind', claim.kind);
-            top.appendChild(makeSupportBadge(claim.state, claim.support_label));
-            claimCard.appendChild(top);
-            appendText(claimCard, 'p', 'ask-pete-evidence-claim__text', claim.text);
+            const detailId = `ask-pete-claim-${answerSequence}-${claimIndex}`;
+            const hasDetail = Boolean(claim.limitation || claim.citations.length);
 
+            const face = makeElement(hasDetail ? 'button' : 'div', 'ask-pete-evidence-claim__face');
+            if (hasDetail) {
+                face.type = 'button';
+                face.dataset.askPeteClaimToggle = '';
+                face.setAttribute('aria-expanded', 'false');
+                face.setAttribute('aria-controls', detailId);
+            }
+            appendText(face, 'span', 'ask-pete-evidence-claim__text', claim.text);
+            if (claim.state !== 'supported') {
+                face.appendChild(makeSupportBadge(claim.state, claim.support_label));
+            } else if (claim.kind === 'interpretation') {
+                /* An interpretation is the one supported kind that still is
+                   not a directly established fact, so its quiet label stays. */
+                appendText(face, 'span', 'ask-pete-evidence-claim__kind', 'Interpretation');
+            }
+            claimCard.appendChild(face);
+
+            if (!hasDetail) return claimCard;
+            const detail = makeElement('div', 'ask-pete-evidence-claim__detail');
+            detail.id = detailId;
+            detail.hidden = true;
             if (claim.limitation) {
-                appendText(claimCard, 'p', 'ask-pete-evidence-claim__limitation', claim.limitation);
+                appendText(detail, 'p', 'ask-pete-evidence-claim__limitation', claim.limitation);
             }
-
-            if (claim.citations.length) {
-                const citations = makeElement('div', 'ask-pete-evidence-citations');
-                claim.citations.forEach((citation, citationIndex) => {
-                    const row = makeElement('article', 'ask-pete-evidence-citation');
-                    const detailId = `ask-pete-citation-${answerSequence}-${claimIndex}-${citationIndex}`;
-                    const toggle = makeElement('button', 'ask-pete-evidence-citation__toggle');
-                    toggle.type = 'button';
-                    toggle.dataset.askPeteCitationToggle = '';
-                    toggle.setAttribute('aria-expanded', 'false');
-                    toggle.setAttribute('aria-controls', detailId);
-                    toggle.setAttribute('aria-label', `Show exact evidence from ${safeText(citation.source_title, 'this approved source')}`);
-                    appendText(toggle, 'span', 'ask-pete-evidence-citation__title', citation.source_title);
-                    appendText(toggle, 'span', 'ask-pete-evidence-citation__indicator', 'Show evidence');
-                    row.appendChild(toggle);
-
-                    const detail = makeElement('div', 'ask-pete-evidence-citation__detail');
-                    detail.id = detailId;
-                    detail.hidden = true;
-                    appendText(detail, 'p', 'ask-pete-evidence-citation__excerpt', citation.excerpt);
-                    const button = makeSourceButton(citation);
-                    if (button) detail.appendChild(button);
-                    row.appendChild(detail);
-                    citations.appendChild(row);
-                });
-                claimCard.appendChild(citations);
-            }
+            claim.citations.forEach((citation) => {
+                const row = makeElement('div', 'ask-pete-evidence-citation');
+                appendText(row, 'p', 'ask-pete-evidence-citation__excerpt', `“${safeText(citation.excerpt)}”`);
+                const button = makeSourceButton(citation);
+                if (button) {
+                    row.appendChild(button);
+                } else {
+                    appendText(row, 'span', 'ask-pete-evidence-citation__title', citation.source_title);
+                }
+                detail.appendChild(row);
+            });
+            claimCard.appendChild(detail);
             return claimCard;
         }
 
-        function renderSourceSummary(payload) {
-            const sourceSummary = makeElement('div', 'ask-pete-evidence-source-summary');
-            appendText(sourceSummary, 'span', null, payload.source_summary.label);
+        function toggleClaim(face) {
+            const detailId = safeText(face.getAttribute('aria-controls'));
+            const detail = detailId ? document.getElementById(detailId) : null;
+            if (!detail || !elements.answer.contains(detail)) return;
+            const shouldExpand = face.getAttribute('aria-expanded') !== 'true';
+            face.setAttribute('aria-expanded', String(shouldExpand));
+            face.closest('.ask-pete-evidence-claim')?.classList.toggle('is-expanded', shouldExpand);
+            detail.hidden = !shouldExpand;
+        }
+
+        /* Owner direction (Pete, 2026-08-09): the whole evidence body folds
+           behind one line \u2014 "N claims \u00b7 <source summary> \u00b7 See the evidence" \u2014
+           and the cards expand on tap. The claims still arrive, still render,
+           and are still individually inspectable; only the default altitude
+           changed. (The suggested-questions block is dropped outright by the
+           same direction \u2014 the payload still carries the questions, the
+           companion just no longer renders them.) */
+        function renderEvidenceFold(payload, claims) {
+            const section = makeElement('section', 'ask-pete-evidence-fold');
+            const bar = makeElement('div', 'ask-pete-evidence-fold__bar');
+            const label = `${claims.length} claim${claims.length === 1 ? '' : 's'} \u00b7 ${safeText(payload.source_summary.label)}`;
+            appendText(bar, 'span', 'ask-pete-evidence-fold__label', label);
+            const bodyId = `ask-pete-evidence-fold-${state.requestSequence}`;
+            const toggle = makeElement('button', 'ask-pete-evidence-fold__toggle', 'See the evidence');
+            toggle.type = 'button';
+            toggle.dataset.askPeteFoldToggle = '';
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.setAttribute('aria-controls', bodyId);
+            bar.appendChild(toggle);
+            section.appendChild(bar);
+
+            const body = makeElement('div', 'ask-pete-evidence-fold__body');
+            body.id = bodyId;
+            body.hidden = true;
+            claims.forEach((claim, claimIndex) => {
+                body.appendChild(renderClaim(claim, state.requestSequence, claimIndex));
+            });
             if (payload.source_summary.show_all_on_resume && payload.sources_used.length) {
                 const showAll = makeElement('button', 'ask-pete-evidence-show-all', 'Show all on resume \u2192');
                 showAll.type = 'button';
                 showAll.dataset.askPeteShowAll = '';
-                sourceSummary.appendChild(showAll);
+                body.appendChild(showAll);
             }
-            return sourceSummary;
+            section.appendChild(body);
+            return section;
         }
 
-        function renderFollowUps(payload) {
-            if (!payload.follow_up_questions.length) return null;
-            const section = makeElement('section', 'ask-pete-evidence-followups');
-            appendText(section, 'h3', 'ask-pete-evidence-answer__section-heading', 'Useful follow-up questions');
-            const list = makeElement('ol');
-            for (const question of payload.follow_up_questions) {
-                const item = makeElement('li');
-                const button = makeElement('button', 'ask-pete-followup', question);
-                button.type = 'button';
-                button.dataset.askPeteFollowup = question;
-                item.appendChild(button);
-                list.appendChild(item);
-            }
-            section.appendChild(list);
-            return section;
+        function toggleEvidenceFold(toggle) {
+            const bodyId = safeText(toggle.getAttribute('aria-controls'));
+            const body = bodyId ? document.getElementById(bodyId) : null;
+            if (!body || !elements.answer.contains(body)) return;
+            const shouldExpand = toggle.getAttribute('aria-expanded') !== 'true';
+            toggle.setAttribute('aria-expanded', String(shouldExpand));
+            toggle.textContent = shouldExpand ? 'Hide the evidence' : 'See the evidence';
+            body.hidden = !shouldExpand;
         }
 
         function isSafeSameOriginPath(value) {
@@ -786,22 +826,26 @@
             return details;
         }
 
+        /* Owner direction (Pete, 2026-08-09): the old card offered "Ask Pete
+           directly" AND "Contact Pete directly" AND "Send this question to
+           Pete privately" — three names for one idea. Now there is exactly ONE
+           compact entry point: the private-question disclosure when that path
+           exists, otherwise a single contact link. The honesty line about
+           nothing being sent automatically lives inside the form, next to the
+           only control that could send anything. */
         function renderHandoff(payload) {
             if (!payload.handoff || payload.handoff.available !== true) return null;
             const section = makeElement('section', 'ask-pete-evidence-handoff');
-            appendText(section, 'h3', 'ask-pete-evidence-answer__section-heading', 'Ask Pete directly');
-            if (typeof payload.handoff.question === 'string' && payload.handoff.question.trim()) {
-                appendText(section, 'p', null, 'Need something Pete-approved public information cannot answer? Pete can respond through his current contact options.');
+            const directForm = renderDirectQuestionForm(payload, state.requestSequence);
+            if (directForm) {
+                section.appendChild(directForm);
+                return section;
             }
             const contactUrl = companion.dataset.askPeteContactUrl;
-            if (isSafeSameOriginPath(contactUrl)) {
-                const link = makeElement('a', null, safeText(payload.handoff.label, 'Contact Pete directly'));
-                link.href = contactUrl;
-                section.appendChild(link);
-            }
-            appendText(section, 'p', null, 'Nothing is sent automatically. On-platform private messaging is not live.');
-            const directForm = renderDirectQuestionForm(payload, state.requestSequence);
-            if (directForm) section.appendChild(directForm);
+            if (!isSafeSameOriginPath(contactUrl)) return null;
+            const link = makeElement('a', null, safeText(payload.handoff.label, 'Contact Pete directly'));
+            link.href = contactUrl;
+            section.appendChild(link);
             return section;
         }
 
@@ -838,8 +882,15 @@
                 - scroller.getBoundingClientRect().top;
             if (Math.abs(offset) < 2) return;
             const top = Math.max(0, scroller.scrollTop + offset);
+            /* Proven live 2026-08-09: browsers suppress smooth scrolling in a
+               hidden tab, so an answer that lands while the visitor is on
+               another tab gets the instant jump a reduced-motion visitor
+               gets - and the reveal re-runs once when the tab returns, in
+               case the browser swallowed even that. */
+            const instant = hasReducedMotion() || document.visibilityState === 'hidden';
+            if (document.visibilityState === 'hidden') state.revealOnReturn = true;
             if (typeof scroller.scrollTo === 'function') {
-                scroller.scrollTo({ top, behavior: hasReducedMotion() ? 'auto' : 'smooth' });
+                scroller.scrollTo({ top, behavior: instant ? 'auto' : 'smooth' });
                 return;
             }
             scroller.scrollTop = top;
@@ -859,22 +910,33 @@
             elements.answer.setAttribute('aria-labelledby', heading.id);
             fragment.appendChild(heading);
             const meta = makeElement('div', 'ask-pete-evidence-answer__meta');
+            /* Owner direction (Pete, 2026-08-09): one trust line at the top of
+               the answer at most — this badge is it. The old machinery caption
+               beside it is gone with the per-card badges it described. */
             meta.appendChild(makeSupportBadge(payload.state, payload.support_label));
-            appendText(meta, 'span', null, 'Claim-level evidence and limitations');
-            /* Prepended, never appended: the accepted compact rail hides
-               `.ask-pete-evidence-answer__meta > span:last-child`, so adding a
-               trailing child would silently stop that rule matching and
-               un-compact the flagship view. */
             if (state.previousAnswer) meta.insertBefore(makeBackButton(), meta.firstChild);
             fragment.appendChild(meta);
             appendText(fragment, 'p', 'ask-pete-evidence-answer__summary', payload.summary);
 
-            payload.claims.forEach((claim, claimIndex) => {
-                fragment.appendChild(renderClaim(claim, state.requestSequence, claimIndex));
-            });
-            fragment.appendChild(renderSourceSummary(payload));
-            const followUps = renderFollowUps(payload);
-            if (followUps) fragment.appendChild(followUps);
+            /* Owner direction (Pete, 2026-08-09): no boundary CARD. The server
+               quality contract still requires the boundary claim, and honesty
+               still requires saying it — as one quiet sentence under the
+               summary rather than a boxed block. Folded visually, not
+               deleted. */
+            const boundaryClaims = payload.claims.filter((claim) => claim.kind === 'boundary');
+            if (boundaryClaims.length) {
+                appendText(
+                    fragment,
+                    'p',
+                    'ask-pete-evidence-answer__boundary',
+                    boundaryClaims.map((claim) => safeText(claim.text).trim()).filter(Boolean).join(' ')
+                );
+            }
+
+            const evidenceClaims = payload.claims.filter((claim) => claim.kind !== 'boundary');
+            if (evidenceClaims.length) {
+                fragment.appendChild(renderEvidenceFold(payload, evidenceClaims));
+            }
             const handoff = renderHandoff(payload);
             if (handoff) fragment.appendChild(handoff);
             elements.answer.replaceChildren(fragment);
@@ -1088,20 +1150,6 @@
             return validContextKey(value);
         }
 
-        function toggleCitation(toggle) {
-            const detailId = safeText(toggle.getAttribute('aria-controls'));
-            const detail = detailId ? document.getElementById(detailId) : null;
-            if (!detail || !elements.answer.contains(detail)) return;
-            const shouldExpand = toggle.getAttribute('aria-expanded') !== 'true';
-            elements.answer.querySelectorAll('[data-ask-pete-citation-toggle]').forEach((candidate) => {
-                const candidateDetail = document.getElementById(safeText(candidate.getAttribute('aria-controls')));
-                const expanded = candidate === toggle && shouldExpand;
-                candidate.setAttribute('aria-expanded', String(expanded));
-                candidate.closest('.ask-pete-evidence-citation')?.classList.toggle('is-expanded', expanded);
-                if (candidateDetail) candidateDetail.hidden = !expanded;
-            });
-        }
-
         function prepareContext(button) {
             cancelActiveRequest({ announce: false });
             const contextKey = safeContextKey(button.dataset.askPeteContextKey);
@@ -1144,9 +1192,14 @@
                 restorePreviousAnswer();
                 return;
             }
-            const citationToggle = event.target.closest('[data-ask-pete-citation-toggle]');
-            if (citationToggle && companion.contains(citationToggle)) {
-                toggleCitation(citationToggle);
+            const claimToggle = event.target.closest('[data-ask-pete-claim-toggle]');
+            if (claimToggle && companion.contains(claimToggle)) {
+                toggleClaim(claimToggle);
+                return;
+            }
+            const foldToggle = event.target.closest('[data-ask-pete-fold-toggle]');
+            if (foldToggle && companion.contains(foldToggle)) {
+                toggleEvidenceFold(foldToggle);
                 return;
             }
             const source = event.target.closest('[data-ask-pete-source]');
@@ -1157,14 +1210,6 @@
             const showAll = event.target.closest('[data-ask-pete-show-all]');
             if (showAll && companion.contains(showAll)) {
                 showAllOnResume();
-                return;
-            }
-            const followUp = event.target.closest('[data-ask-pete-followup]');
-            if (followUp && companion.contains(followUp)) {
-                elements.input.value = safeText(followUp.dataset.askPeteFollowup);
-                state.requestedAction = 'interview_preparation';
-                openCompanion(followUp);
-                setStatus('Follow-up question ready. Review or edit it, then select Ask.');
                 return;
             }
             const starter = event.target.closest('[data-ask-pete-starter]');
@@ -1200,6 +1245,11 @@
             if (!state.explicitContext) renderContext();
         });
 
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible' || !state.revealOnReturn) return;
+            state.revealOnReturn = false;
+            revealAnswerTop();
+        });
         document.addEventListener('keydown', (event) => {
             if (event.defaultPrevented) return;
             if (event.key === 'Escape' && !isWide() && !companion.hidden) {

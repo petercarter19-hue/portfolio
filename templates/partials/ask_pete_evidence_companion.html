@@ -64,9 +64,12 @@
             </div>
 
             {% if ask_pete_evidence_preview %}
+            {#
+                Owner direction (Pete, 2026-08-09): no repeated "supported"
+                badges — "it's clear that there's evidence."
+            #}
             <article class="ask-pete-evidence-preview" aria-label="Citation preview">
                 <header>
-                    <span class="ask-pete-support-badge ask-pete-support-badge--supported">Supported</span>
                     <span>Evidence preview</span>
                 </header>
                 <p>&ldquo;{{ ask_pete_evidence_preview.excerpt }}&rdquo;</p>
@@ -139,6 +142,15 @@
             </div>
         </section>
 
+    </div>
+
+    {#
+        Owner direction (Pete, 2026-08-09): the ask box is pinned always
+        visible at the panel's bottom, chat-style, instead of scrolling away
+        beneath a tall answer. The dock sits outside the scroll container so
+        the composer and the live status line stay on screen in every layout.
+    #}
+    <div class="ask-pete-evidence-companion__dock">
         <p
             class="ask-pete-evidence-companion__status"
             data-ask-pete-status

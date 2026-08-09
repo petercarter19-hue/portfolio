@@ -90,12 +90,16 @@ body.ask-pete-evidence-enabled .profile-tabs {
 .ask-pete-evidence-enabled .r2-exp-card__impacts strong,
 .ask-pete-evidence-enabled .r2-exp-key-impact strong { color: var(--ape-gold); }
 
-/* One component, three responsive containers. */
+/* One component, three responsive containers. The panel is a column: the
+   scroll region takes what is left after the docked composer, which is how
+   the ask box stays on screen under an answer of any height (owner direction,
+   Pete, 2026-08-09). */
 .ask-pete-evidence-companion {
     position: sticky;
     z-index: 34;
     top: 8.4rem;
-    display: block;
+    display: flex;
+    flex-direction: column;
     max-height: calc(100vh - 9.65rem);
     grid-column: 3;
     grid-row: 1;
@@ -109,18 +113,32 @@ body.ask-pete-evidence-enabled .profile-tabs {
 }
 .ask-pete-evidence-companion__scroll {
     display: grid;
-    max-height: inherit;
+    flex: 1 1 auto;
+    min-height: 0;
+    align-content: start;
     gap: 1rem;
     overflow: auto;
     overscroll-behavior: contain;
     padding: 1.1rem;
     scrollbar-color: rgb(19 77 56 / 40%) transparent;
 }
+.ask-pete-evidence-companion__dock {
+    display: grid;
+    flex: none;
+    gap: 0.38rem;
+    border-top: 1px solid var(--ape-line);
+    background: linear-gradient(180deg, rgb(255 255 252 / 97%), rgb(249 247 241 / 98%));
+    box-shadow: 0 -0.45rem 1.1rem rgb(25 52 42 / 8%);
+    padding: 0.6rem 1.1rem 0.95rem;
+}
+.ask-pete-evidence-companion__dock .ask-pete-evidence-composer {
+    border-top: 0;
+    padding-top: 0;
+}
 .ask-pete-evidence-companion__header,
 .ask-pete-evidence-preview header,
 .ask-pete-evidence-preview footer,
-.ask-pete-evidence-answer__section-heading,
-.ask-pete-evidence-source-summary {
+.ask-pete-evidence-fold__bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -227,7 +245,7 @@ body.ask-pete-evidence-enabled .profile-tabs {
 .ask-pete-evidence-source,
 .ask-pete-evidence-show-all,
 .ask-pete-evidence-handoff a,
-.ask-pete-followup {
+.ask-pete-evidence-fold__toggle {
     display: inline-flex;
     min-width: 2.75rem;
     min-height: 2.75rem;
@@ -248,7 +266,7 @@ body.ask-pete-evidence-enabled .profile-tabs {
 .ask-pete-evidence-source:hover,
 .ask-pete-evidence-show-all:hover,
 .ask-pete-evidence-handoff a:hover,
-.ask-pete-followup:hover { color: var(--ape-gold); text-decoration: underline; text-underline-offset: 0.18em; }
+.ask-pete-evidence-fold__toggle:hover { color: var(--ape-gold); text-decoration: underline; text-underline-offset: 0.18em; }
 .ask-pete-support-badge {
     display: inline-flex;
     min-height: 1.35rem;
@@ -330,52 +348,47 @@ body.ask-pete-evidence-enabled .profile-tabs {
 }
 .ask-pete-evidence-back:hover { color: var(--ape-gold); text-decoration: underline; text-underline-offset: 0.18em; }
 .ask-pete-evidence-answer__summary { margin: 0; color: #243f34; font-size: 0.87rem; line-height: 1.52; }
-.ask-pete-evidence-claim { display: grid; gap: 0.55rem; border: 1px solid var(--ape-line); border-radius: 0.72rem; background: rgb(255 255 252 / 68%); padding: 0.78rem; }
-.ask-pete-evidence-claim--boundary,
+/* Owner direction (Pete, 2026-08-09): boundary content is one quiet sentence
+   under the summary, not a boxed card. */
+.ask-pete-evidence-answer__boundary { margin: 0; color: var(--ape-muted); font-size: 0.76rem; line-height: 1.48; }
+/* The evidence fold: everything below the summary sits behind one line. */
+.ask-pete-evidence-fold { display: grid; gap: 0.5rem; border-top: 1px solid var(--ape-line); padding-top: 0.7rem; }
+.ask-pete-evidence-fold__bar { flex-wrap: wrap; }
+.ask-pete-evidence-fold__label { color: var(--ape-ink-soft); font-size: 0.74rem; font-weight: 800; line-height: 1.35; }
+.ask-pete-evidence-fold__toggle { flex: 0 0 auto; }
+.ask-pete-evidence-fold__body { display: grid; gap: 0.45rem; }
+.ask-pete-evidence-claim { border: 1px solid var(--ape-line); border-radius: 0.72rem; background: rgb(255 255 252 / 68%); }
 .ask-pete-evidence-claim--not-established,
 .ask-pete-evidence-claim--ambiguous { background: #f4f7f5; }
-.ask-pete-evidence-claim__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.45rem; }
-.ask-pete-evidence-claim__kind { color: var(--ape-muted); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
-.ask-pete-evidence-claim__text,
-.ask-pete-evidence-claim__limitation { margin: 0; color: #203c30; font-size: 0.8rem; line-height: 1.45; }
-.ask-pete-evidence-claim__limitation { border-left: 2px solid var(--ape-gold); color: #695c38; padding-left: 0.6rem; }
-.ask-pete-evidence-citations { display: grid; gap: 0.4rem; }
-.ask-pete-evidence-citation { display: grid; border-top: 1px solid rgb(18 67 48 / 12%); padding-top: 0.28rem; }
-.ask-pete-evidence-citation__toggle {
+.ask-pete-evidence-claim__face {
     display: flex;
     width: 100%;
-    min-height: 2.75rem;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 0.55rem;
+    gap: 0.5rem;
     border: 0;
-    border-radius: 0.5rem;
+    border-radius: 0.72rem;
     background: transparent;
-    color: var(--ape-ink-soft);
+    color: inherit;
     font: inherit;
-    padding: 0.38rem 0.32rem;
+    padding: 0.62rem 0.7rem;
     text-align: left;
-    cursor: pointer;
 }
-.ask-pete-evidence-citation__toggle:hover,
-.ask-pete-evidence-citation.is-expanded .ask-pete-evidence-citation__toggle {
-    background: #f3f7f3;
-    color: var(--ape-forest);
-}
-.ask-pete-evidence-citation__title { color: inherit; font-size: 0.7rem; font-weight: 790; }
-.ask-pete-evidence-citation__indicator { color: var(--ape-forest); font-size: 0.63rem; font-weight: 820; white-space: nowrap; }
-.ask-pete-evidence-citation.is-expanded .ask-pete-evidence-citation__indicator { color: var(--ape-gold); }
-.ask-pete-evidence-citation__detail { display: grid; gap: 0.25rem; padding: 0.18rem 0.32rem 0.45rem; }
+button.ask-pete-evidence-claim__face { min-height: 2.75rem; cursor: pointer; }
+button.ask-pete-evidence-claim__face:hover { background: #f3f7f3; }
+.ask-pete-evidence-claim.is-expanded .ask-pete-evidence-claim__face { border-radius: 0.72rem 0.72rem 0 0; }
+.ask-pete-evidence-claim__face .ask-pete-support-badge { flex: 0 0 auto; }
+.ask-pete-evidence-claim__kind { flex: 0 0 auto; color: var(--ape-muted); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
+.ask-pete-evidence-claim__text { margin: 0; color: #203c30; font-size: 0.8rem; line-height: 1.45; }
+.ask-pete-evidence-claim__limitation { margin: 0; border-left: 2px solid var(--ape-gold); color: #695c38; font-size: 0.78rem; line-height: 1.45; padding-left: 0.6rem; }
+.ask-pete-evidence-claim__detail { display: grid; gap: 0.45rem; border-top: 1px solid rgb(18 67 48 / 12%); padding: 0.55rem 0.7rem 0.65rem; }
+.ask-pete-evidence-citation { display: grid; gap: 0.15rem; }
 .ask-pete-evidence-citation__excerpt { margin: 0; color: #4c6158; font-family: "Newsreader", Georgia, serif; font-size: 0.82rem; font-style: italic; line-height: 1.38; }
-.ask-pete-evidence-source-summary { flex-wrap: wrap; border-top: 1px solid var(--ape-line); padding-top: 0.75rem; }
-.ask-pete-evidence-source-summary > span { color: var(--ape-ink-soft); font-size: 0.74rem; font-weight: 800; }
-.ask-pete-evidence-followups,
-.ask-pete-evidence-handoff { display: grid; gap: 0.48rem; border-top: 1px solid var(--ape-line); padding-top: 0.78rem; }
-.ask-pete-evidence-answer__section-heading { justify-content: flex-start; color: var(--ape-ink); font-size: 0.8rem; font-weight: 830; }
-.ask-pete-evidence-followups ol { display: grid; gap: 0.48rem; margin: 0; padding-left: 1.3rem; }
-.ask-pete-evidence-followups li { color: var(--ape-ink-soft); font-size: 0.78rem; line-height: 1.38; padding-left: 0.15rem; }
-.ask-pete-evidence-handoff { border-left: 3px solid var(--ape-gold); background: #fff9ed; padding: 0.72rem; }
-.ask-pete-evidence-handoff p { margin: 0; color: #544a2f; font-size: 0.75rem; line-height: 1.45; }
+.ask-pete-evidence-citation__title { color: var(--ape-ink-soft); font-size: 0.7rem; font-weight: 790; }
+/* Owner direction (Pete, 2026-08-09): one compact entry point to reach Pete —
+   the disclosure (or, without the private path, one contact link). No boxed
+   card, no heading, no repeated names. */
+.ask-pete-evidence-handoff { display: grid; gap: 0.3rem; border-top: 1px solid var(--ape-line); padding-top: 0.6rem; }
 .ask-pete-evidence-recovery {
     display: grid;
     gap: 0.6rem;
@@ -418,6 +431,17 @@ body.ask-pete-evidence-enabled .profile-tabs {
     padding: 0.65rem;
 }
 .ask-pete-evidence-composer textarea::placeholder { color: #718077; }
+/* Owner direction (Pete, 2026-08-09): bring back the "little color thing" the
+   old chatbot input had on focus (its gold border) — restored here as a gold
+   border with a soft gold halo and a faint warm fill. */
+.ask-pete-evidence-composer textarea {
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+.ask-pete-evidence-composer textarea:focus {
+    border-color: var(--ape-gold);
+    background: #fffdf4;
+    box-shadow: 0 0 0 0.22rem rgb(189 120 8 / 17%);
+}
 .ask-pete-evidence-composer [data-ask-pete-submit] {
     min-width: 3.25rem;
     min-height: 3.1rem;
@@ -439,6 +463,10 @@ body.ask-pete-evidence-enabled .profile-tabs {
 
 .ask-pete-evidence-enabled :is(.ask-pete-evidence-companion, .r2-content, .r2-overview-context-rail) :is(a, button, textarea):focus-visible,
 .ask-pete-evidence-enabled [data-ask-pete-open]:focus-visible { outline: 3px solid #145fc1; outline-offset: 3px; }
+/* The composer's keyboard ring goes gold with the rest of its focus
+   treatment. Same 3px ring, same offset, and the gold meets the 3:1 non-text
+   contrast requirement on the ivory field. */
+.ask-pete-evidence-enabled .ask-pete-evidence-composer textarea:focus-visible { outline-color: var(--ape-gold); }
 .ask-pete-evidence-highlight {
     outline: 3px solid var(--ape-gold) !important;
     outline-offset: 4px;
@@ -556,85 +584,52 @@ body.ask-pete-evidence-enabled .profile-tabs {
         font-size: 0.75rem;
         line-height: 1.36;
     }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-claim {
-        gap: 0.28rem;
-        padding: 0.46rem 0.52rem;
+    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-claim__face {
+        gap: 0.35rem;
+        padding: 0.4rem 0.48rem;
     }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-claim__text,
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-claim__limitation {
-        font-size: 0.71rem;
-        line-height: 1.3;
-    }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-citations { gap: 0.18rem; }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-citation { padding-top: 0.14rem; }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-source-summary {
-        padding-top: 0.42rem;
-    }
-    .ask-pete-evidence-companion.is-answer-first :is(.ask-pete-evidence-followups, .ask-pete-evidence-handoff) {
+    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-claim__detail {
         gap: 0.25rem;
-        padding-top: 0.45rem;
-    }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-followups ol { gap: 0.2rem; }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-followups li { font-size: 0.7rem; line-height: 1.25; }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-handoff { padding: 0.48rem 0.55rem; }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-handoff p { font-size: 0.69rem; line-height: 1.3; }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-composer { gap: 0.24rem; padding-top: 0.5rem; }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-composer textarea,
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-composer [data-ask-pete-submit] { min-height: 2.75rem; }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-companion__header h2 {
-        font-size: 1.12rem;
-    }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-answer__meta > span:last-child {
-        display: none;
-    }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-claim {
-        gap: 0.12rem;
-        padding: 0.34rem 0.42rem;
+        padding: 0.35rem 0.48rem 0.45rem;
     }
     .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-claim__kind {
         font-size: 0.55rem;
     }
     .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-claim__text,
     .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-claim__limitation {
-        font-size: 0.67rem;
-        line-height: 1.2;
+        font-size: 0.71rem;
+        line-height: 1.3;
     }
     .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-claim__limitation {
         padding-left: 0.4rem;
     }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-source-summary {
-        flex-wrap: nowrap;
-        gap: 0.2rem;
+    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-fold {
+        gap: 0.3rem;
+        padding-top: 0.42rem;
     }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-source-summary > span {
-        font-size: 0.64rem;
-        line-height: 1.2;
-        white-space: nowrap;
+    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-fold__label {
+        font-size: 0.66rem;
+        line-height: 1.25;
     }
+    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-fold__body { gap: 0.3rem; }
     .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-show-all {
         flex: 0 0 auto;
         font-size: 0.64rem;
         padding-inline: 0.08rem;
     }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-followups ol {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.18rem;
-        list-style: none;
-        padding-left: 0;
+    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-handoff {
+        gap: 0.2rem;
+        padding-top: 0.4rem;
     }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-followups li {
-        padding-left: 0;
+    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-companion__dock {
+        gap: 0.24rem;
+        padding: 0.45rem 0.82rem 0.6rem;
     }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-followup {
-        align-items: flex-start;
-        font-size: 0.65rem;
-        line-height: 1.2;
-    }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-handoff p {
-        display: none;
-    }
-    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-composer {
-        padding-top: 0.25rem;
+    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-composer { gap: 0.24rem; }
+    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-composer textarea,
+    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-composer [data-ask-pete-submit] { min-height: 2.75rem; }
+    .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-companion__header h2 {
+        font-size: 1.12rem;
     }
     .ask-pete-evidence-companion.is-answer-first .ask-pete-evidence-composer__meta {
         font-size: 0.58rem;
@@ -673,7 +668,8 @@ body.ask-pete-evidence-enabled .profile-tabs {
         padding-bottom: env(safe-area-inset-bottom);
     }
     .ask-pete-evidence-companion.is-open { transform: translateY(0); }
-    .ask-pete-evidence-companion__scroll { padding: 1rem max(1rem, env(safe-area-inset-right)) calc(1rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); }
+    .ask-pete-evidence-companion__scroll { padding: 1rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left)); }
+    .ask-pete-evidence-companion__dock { padding: 0.6rem max(1.1rem, env(safe-area-inset-right)) 0.95rem max(1.1rem, env(safe-area-inset-left)); }
 }
 @media (max-width: 60rem) {
     .ask-pete-evidence-enabled .r2-overview-mobile-nav {
@@ -723,6 +719,7 @@ body.ask-pete-evidence-enabled .profile-tabs {
 }
 @media (forced-colors: active) {
     .ask-pete-evidence-companion,
+    .ask-pete-evidence-companion__dock,
     .ask-pete-evidence-preview,
     .ask-pete-evidence-claim,
     .ask-pete-evidence-composer textarea,

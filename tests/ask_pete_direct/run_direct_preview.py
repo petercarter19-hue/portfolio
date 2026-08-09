@@ -266,29 +266,74 @@ def _locator(section, anchor, record_kind, record_id):
 
 
 def preview_answer_payload(question: str) -> dict:
+    """The fixture answer is deliberately shaped like the live recruiter
+    brief that motivated the 2026-08-09 redesign - several claims, multiple
+    citations, one partially-supported nuance, one boundary - so the folded
+    layout is reviewed against a realistic answer, not a two-claim stub."""
     role = _locator("experience", "r2-exp-card-northrop", "career_role", "northrop")
+
+    def _evidence(text, excerpt, source_title):
+        return {
+            "kind": "evidence",
+            "state": "supported",
+            "support_label": "Supported",
+            "text": text,
+            "limitation": None,
+            "citations": [
+                {"excerpt": excerpt, "source_title": source_title, "locator": role}
+            ],
+        }
+
     return {
         "schema_version": "ask-pete-public-answer.v1",
         "answer_id": "preview-fixture-answer",
-        "purpose": "evidence_finder",
+        "purpose": "recruiter_brief",
         "state": "partially_supported",
         "support_label": "Partially supported",
         # The question is echoed into the summary so two answers in a row are
         # visibly different - which is what makes "Back to previous answer"
         # reviewable by eye, and checkable by the browser assertions below.
         "summary": (
-            "LOCAL PREVIEW FIXTURE, not a real answer, so the handoff card, "
+            "LOCAL PREVIEW FIXTURE, not a real answer, so the folded answer, "
             "the private question form, and the answer ordering can be "
             f"reviewed without calling a provider. You asked: {question}"
         ),
         "claims": [
+            _evidence(
+                "Pete led cross-functional systems work across product, "
+                "hardware, and software teams.",
+                "Brought product, hardware, and software teams together to "
+                "define a system architecture.",
+                "Systems engineering experience",
+            ),
+            _evidence(
+                "Pete has run supplier and integration programmes at "
+                "organisational scale.",
+                "Coordinated supplier deliverables and integration "
+                "milestones across the programme.",
+                "Systems engineering experience",
+            ),
+            _evidence(
+                "Pete has owned requirements and verification through full "
+                "delivery cycles.",
+                "Owned requirements decomposition and verification closure "
+                "for the delivered system.",
+                "Systems engineering experience",
+            ),
+            _evidence(
+                "Pete has led reviews and design decisions with senior "
+                "stakeholders.",
+                "Presented design decisions and trade studies at "
+                "programme-level reviews.",
+                "Systems engineering experience",
+            ),
             {
-                "kind": "evidence",
+                "kind": "interpretation",
                 "state": "supported",
                 "support_label": "Supported",
                 "text": (
-                    "Pete led cross-functional systems work across product, "
-                    "hardware, and software teams."
+                    "Taken together, the records read as a systems leader "
+                    "comfortable owning ambiguity across team boundaries."
                 ),
                 "limitation": None,
                 "citations": [
@@ -303,6 +348,29 @@ def preview_answer_payload(question: str) -> dict:
                 ],
             },
             {
+                "kind": "evidence",
+                "state": "partially_supported",
+                "support_label": "Partially supported",
+                "text": (
+                    "Pete's records show programme-level financial exposure, "
+                    "though not direct budget ownership."
+                ),
+                "limitation": (
+                    "The approved records name contract figures Pete worked "
+                    "within; they do not establish direct P&L ownership."
+                ),
+                "citations": [
+                    {
+                        "excerpt": (
+                            "Coordinated supplier deliverables and "
+                            "integration milestones across the programme."
+                        ),
+                        "source_title": "Systems engineering experience",
+                        "locator": role,
+                    }
+                ],
+            },
+            {
                 "kind": "boundary",
                 "state": "not_established",
                 "support_label": "Not established publicly",
@@ -310,7 +378,7 @@ def preview_answer_payload(question: str) -> dict:
                     "Pete's approved public information does not answer this "
                     "part of the question."
                 ),
-                "limitation": "Ask Pete himself - the card below is how.",
+                "limitation": None,
                 "citations": [],
             },
         ],
@@ -623,14 +691,19 @@ ANSWER_TOP_TOLERANCE_PX = 6
 
 RAIL_GEOMETRY_SCRIPT = """() => {
     const scroller = document.querySelector('.ask-pete-evidence-companion__scroll');
+    const companion = document.querySelector('[data-ask-pete-companion]');
     const answer = document.querySelector('[data-ask-pete-answer]');
     const summary = document.querySelector('.ask-pete-evidence-answer__summary');
-    const followUps = document.querySelector('.ask-pete-evidence-followups');
+    const fold = document.querySelector('.ask-pete-evidence-fold');
+    const foldBody = document.querySelector('.ask-pete-evidence-fold__body');
     const handoff = document.querySelector('.ask-pete-evidence-handoff');
+    const input = document.querySelector('[data-ask-pete-input]');
     const box = (element) => (element ? element.getBoundingClientRect() : null);
     const scrollerBox = box(scroller);
     const answerBox = box(answer);
     const summaryBox = box(summary);
+    const companionBox = box(companion);
+    const inputBox = box(input);
     return {
         scrollTop: scroller ? scroller.scrollTop : null,
         scrollable: Boolean(scroller && scroller.scrollHeight > scroller.clientHeight + 1),
@@ -641,14 +714,23 @@ RAIL_GEOMETRY_SCRIPT = """() => {
             && summaryBox.top >= scrollerBox.top - 1
             && summaryBox.top < scrollerBox.bottom
         ),
-        summaryBeforeFollowUps: Boolean(
-            summaryBox && box(followUps) && summaryBox.top < box(followUps).top
+        summaryBeforeFold: Boolean(
+            summaryBox && box(fold) && summaryBox.top < box(fold).top
         ),
         summaryBeforeHandoff: Boolean(
             summaryBox && box(handoff) && summaryBox.top < box(handoff).top
         ),
         summaryText: summary ? summary.textContent : '',
         backCount: document.querySelectorAll('[data-ask-pete-back]').length,
+        foldCollapsed: Boolean(foldBody && foldBody.hidden),
+        metaBadgeCount: document.querySelectorAll('.ask-pete-evidence-answer__meta .ask-pete-support-badge').length,
+        supportedCardBadgeCount: document.querySelectorAll('.ask-pete-evidence-claim--supported .ask-pete-support-badge').length,
+        boundaryCardCount: document.querySelectorAll('.ask-pete-evidence-claim--boundary').length,
+        composerDocked: Boolean(
+            companionBox && inputBox
+            && inputBox.top >= companionBox.top
+            && inputBox.bottom <= companionBox.bottom + 1
+        ),
     };
 }"""
 
@@ -704,8 +786,20 @@ def run_browser_checks(base_url: str):
                 )
                 check("the summary is in view", first["summaryVisible"])
                 check(
-                    "the summary precedes the follow-ups and the handoff card",
-                    first["summaryBeforeFollowUps"] and first["summaryBeforeHandoff"],
+                    "the summary precedes the folded evidence and the contact entry",
+                    first["summaryBeforeFold"] and first["summaryBeforeHandoff"],
+                )
+                # Pete's 2026-08-09 redesign, verified in a real browser.
+                check("the evidence is folded until asked for", first["foldCollapsed"])
+                check(
+                    "one trust line; no badge on an established claim",
+                    first["metaBadgeCount"] == 1
+                    and first["supportedCardBadgeCount"] == 0,
+                )
+                check("no boundary card is rendered", first["boundaryCardCount"] == 0)
+                check(
+                    "the ask box stays on screen below the answer",
+                    first["composerDocked"],
                 )
                 check(
                     "no back control before there is anything to go back to",
