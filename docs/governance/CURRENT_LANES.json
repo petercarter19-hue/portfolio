@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-09T02:45:00Z",
+  "updated_at": "2026-08-09T03:20:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,6 @@
     "authorized_at": "2026-08-08",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-ASK-PETE-DIRECT-001",
       "PS-COMMUNITY-AUTH-WALL-001"
     ],
     "merge_allowed_for": [
@@ -42,7 +41,8 @@
       "PS-ASK-PETE-AI-RELEASE-001",
       "PS-WORKSHOP-ACCESS-001",
       "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
-      "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001"
+      "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001",
+      "PS-ASK-PETE-DIRECT-001"
     ],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -57,7 +57,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001 closed complete and live on 2026-08-09. Under Pete's recorded end-to-end authority the fidelity candidate 7d604dc (implementation plus a fresh-context adversarial review whose findings — dead edits behind later same-specificity sections, an AI-mode rail overlap, a textured-canvas AA regression, and a dark token-contract breach — were all corrected) merged via PR 354 as exact main fb55cd5 with verified tree equivalence, deployed by governed manual-override run 688 (schemaAction=none; spurious checkpoint verified and released), and live-verified: /healthz release 090ed9967daf7a00c798898e matches the derived identity and the live assets serve the depth system, SVG grain, proportions, and the experience-picker fix. One lane slot is free; PS-ASK-PETE-DIRECT-001 continues as the sole active writer. Release authority remains empty."
+    "exit_authority": "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001 closed complete and live on 2026-08-09. Under Pete's recorded end-to-end authority the fidelity candidate 7d604dc (implementation plus a fresh-context adversarial review whose findings — dead edits behind later same-specificity sections, an AI-mode rail overlap, a textured-canvas AA regression, and a dark token-contract breach — were all corrected) merged via PR 354 as exact main fb55cd5 with verified tree equivalence, deployed by governed manual-override run 688 (schemaAction=none; spurious checkpoint verified and released), and live-verified: /healthz release 090ed9967daf7a00c798898e matches the derived identity and the live assets serve the depth system, SVG grain, proportions, and the experience-picker fix. One lane slot is free; PS-ASK-PETE-DIRECT-001 continues as the sole active writer. Release authority remains empty. PS-ASK-PETE-DIRECT-001 closed LIVE 2026-08-09: schema applied via run 684, flag enabled under Pete's go-live grant, live submit->inbox round trip proven. Slot freed; PS-COMMUNITY-AUTH-WALL-001 remains active and untouched."
   },
   "activation_policy": {
     "enabled": true,
@@ -751,12 +751,10 @@
       ],
       "cleanup_contract": "After this closeout merges, archive-tag and remove only this lane's merged branch and worktrees; preserve everything else.",
       "sequence": "activation -> implementation -> fresh-context adversarial review -> corrections re-verified live -> PR 354 -> governed deploy 688 -> live verification -> this closeout"
-    }
-  ],
-  "active_lanes": [
+    },
     {
       "package": "PS-ASK-PETE-DIRECT-001",
-      "outcome": "Build the private recruiter-question path dark-by-construction: a consent-first bounded question form in the accepted companion's handoff card, one rate-limited idempotent POST endpoint in a new unregistered blueprint, an additive gated migration and allowlisted owner-scoped procedures for private storage, and an owner-only pull-based inbox page with read/archive — no outbound sending, no AI knowledge change, no public display, nothing registered in app.py yet. The two-line app.py blueprint registration is a later leg taken via the recorded-grant pattern only after PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001 releases app.py; until then the feature has zero runtime effect. Replying never teaches Ask Pete; nothing becomes public without a separate explicit decision; the flag defaults off.",
+      "outcome": "Complete and LIVE. The private recruiter-question path shipped end to end: dark build merged, gate-proven additive migration applied to production via governed run 684 (ledger + recruiter_questions/recruiter_question_save_requests tables + three owner-scoped procedures verified), app-seam registration merged, PEERSLATE_OWNER_USER_KEYS set to the single owner key, and PEERSLATE_ASK_PETE_DIRECT_ENABLED enabled under Pete's explicit go-live grant on 2026-08-09. Live round trip proven: a consent-bearing POST to /api/ask-pete/direct-question returned 201 and persisted one row (status new, consent recorded) readable in the owner inbox. Enablement is reversible (flag off returns the neutral 404). The answer-first scroll defect fix and back-affordance for the grounded companion shipped in the same lane.",
       "branch": "work/2026-08-08-ask-pete-direct-001",
       "writer": "Claude Opus 5 at extra-high effort as the sole delegated implementation writer in the dedicated portfolio-ask-pete-direct-001 worktree, orchestrated by Claude Fable 5, which architects and reviews but does not hand-write the implementation",
       "delivery_path": "Protected",
@@ -831,8 +829,11 @@
         "sequence": "activation merge -> clean worktree -> write preflight -> migration/service slice -> endpoint slice -> companion form slice -> inbox slice -> full validation -> exact-SHA review -> Azure PR under recorded authority; registration, schema apply, deployment, and enablement are later recorded legs"
       },
       "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged worktree and branches behind archive tags; preserve everything else.",
-      "sequence": "Merge the activation-only PR; create the implementation worktree; pass write preflight; implement the four dark slices with tests; self-review; Fable exact-SHA review; open and merge the Azure PR under recorded authority; hold registration, schema apply, deployment, and enablement for their own recorded legs."
-    },
+      "sequence": "Merge the activation-only PR; create the implementation worktree; pass write preflight; implement the four dark slices with tests; self-review; Fable exact-SHA review; open and merge the Azure PR under recorded authority; hold registration, schema apply, deployment, and enablement for their own recorded legs.",
+      "branch_note": "Closed live. Cleanup follows recovery references after this closeout merges; do not touch the concurrently active PS-COMMUNITY-AUTH-WALL-001 lane."
+    }
+  ],
+  "active_lanes": [
     {
       "package": "PS-COMMUNITY-AUTH-WALL-001",
       "outcome": "Retire anonymous Community and every working public/demo fallback. Require trusted PeerSlate authentication before any Community HTML, JSON, search, Voice, attachment, or media retrieval. Preserve current owner-only authoring, existing data, private Blob storage, and independent retention maintenance. Do not redesign the Feed or launch general member participation. Deferred legs: Pete's retention reapproval before release; deployment and enablement only under a separately recorded release sequence; the database audience migration remains a later Protected package.",

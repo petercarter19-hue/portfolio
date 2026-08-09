@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-ASK-PETE-DIRECT-001 continues on work/2026-08-08-ask-pete-direct-001. PS-COMMUNITY-AUTH-WALL-001 activates on work/2026-08-08-community-auth-wall-001 to authenticate every Community surface and retire the public demo. Release authority remains empty."
+  current_assignments: "PS-COMMUNITY-AUTH-WALL-001 is the sole active writer on work/2026-08-08-community-auth-wall-001. Ask Pete direct-question path is LIVE (2026-08-09) and closing. Release authority remains empty."
 
 governing_documents:
   bible:
@@ -58,9 +58,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-ASK-PETE-DIRECT-001
-    status: active_delivery
-    scope: "Dark private recruiter-question path: consent-first companion form, unregistered blueprint, gated additive migration, owner-only pull inbox; no app.py, sending, schema apply, deployment, or enablement."
   - id: PS-COMMUNITY-AUTH-WALL-001
     status: active_delivery
     scope: "Protected containment: authenticate every Community HTML, API, search, Voice, and media path; retire demo and legacy public routes; fail closed; no Feed redesign, schema change, or deployment."
@@ -81,6 +78,7 @@ scoped_findings:
     blocks: "Nothing since 2026-08-07: resolved by the singular Community recovery lane, request-path maintenance removal, bounded waits, additive schema proof/apply, exact-source deployment, staged maintenance and pilot enablement, and live public-demo verification. Kept for provenance; broader member authoring still requires its own package."
 
 completed_packages:
+  - PS-ASK-PETE-DIRECT-001
   - PS-DELIVERY-PREFLIGHT-001
   - PS-DELIVERY-RESET-001
   - PS-AZURE-RELEASE-RELIABILITY-001
@@ -150,7 +148,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-ASK-PETE-DIRECT-001 continues (schema apply and enablement wait for their recorded legs). PS-COMMUNITY-AUTH-WALL-001 implements the Community sign-in wall; both lane slots are occupied."
+next_gate: "PS-COMMUNITY-AUTH-WALL-001 continues the Community sign-in wall. One lane slot is free. Ask Pete direct-question inbox is live and its lane is closing; PS-AGENT-OPERATIONS-001 (gate-free deploys) and PS-ASK-PETE-ROLE-LENS-001 are queued briefs."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
