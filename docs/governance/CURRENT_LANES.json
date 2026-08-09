@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-09T03:55:00Z",
+  "updated_at": "2026-08-09T17:30:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,6 @@
     "authorized_at": "2026-08-08",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-COMMUNITY-AUTH-WALL-001",
       "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001"
     ],
     "merge_allowed_for": [
@@ -44,11 +43,10 @@
       "PS-WORKSHOP-ACCESS-001",
       "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
       "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001",
-      "PS-ASK-PETE-DIRECT-001"
-    ],
-    "release_allowed_for": [
+      "PS-ASK-PETE-DIRECT-001",
       "PS-COMMUNITY-AUTH-WALL-001"
     ],
+    "release_allowed_for": [],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
       "new feature or product write outside the exact surfaces recorded for its activated lane",
@@ -61,7 +59,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001 closed complete and live on 2026-08-09. Under Pete's recorded end-to-end authority the fidelity candidate 7d604dc (implementation plus a fresh-context adversarial review whose findings — dead edits behind later same-specificity sections, an AI-mode rail overlap, a textured-canvas AA regression, and a dark token-contract breach — were all corrected) merged via PR 354 as exact main fb55cd5 with verified tree equivalence, deployed by governed manual-override run 688 (schemaAction=none; spurious checkpoint verified and released), and live-verified: /healthz release 090ed9967daf7a00c798898e matches the derived identity and the live assets serve the depth system, SVG grain, proportions, and the experience-picker fix. One lane slot is free; PS-ASK-PETE-DIRECT-001 continues as the sole active writer. Release authority remains empty. PS-ASK-PETE-DIRECT-001 closed LIVE 2026-08-09: schema applied via run 684, flag enabled under Pete's go-live grant, live submit->inbox round trip proven. Slot freed; PS-COMMUNITY-AUTH-WALL-001 remains active and untouched."
+    "exit_authority": "PS-COMMUNITY-AUTH-WALL-001 closed complete and live on 2026-08-09. Under Pete's recorded authority ('You can execut everything tonight to live deployment') the wall candidate was merged as main 7a7c99de085a8d25ab12ce386c7cb2509cda2057 (Azure PR 361, squash), deployed by automatic governed run 711 (batchedCI, schemaAction=none, owner-approved at the production checkpoint), and verified live: /healthz release e1a3b800aec6444f1a35c80a matches the identity derived from (7a7c99d, 711). Anonymous verification on peerslate.com confirmed Community HTML redirects to sign-in with exact return paths, every Community API and both attachment endpoints return 401 before any storage call, retired public surfaces return 404 or redirect, robots.txt excludes /the-slate, the sitemap advertises no Community path, and no fabricated demo content appears on any checked path. Retention decision v1.0 was approved by Pete on 2026-08-08 and is recorded in the package. Remaining lane authority is merge and cleanup only."
   },
   "activation_policy": {
     "enabled": true,
@@ -835,12 +833,10 @@
       "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged worktree and branches behind archive tags; preserve everything else.",
       "sequence": "Merge the activation-only PR; create the implementation worktree; pass write preflight; implement the four dark slices with tests; self-review; Fable exact-SHA review; open and merge the Azure PR under recorded authority; hold registration, schema apply, deployment, and enablement for their own recorded legs.",
       "branch_note": "Closed live. Cleanup follows recovery references after this closeout merges; do not touch the concurrently active PS-COMMUNITY-AUTH-WALL-001 lane."
-    }
-  ],
-  "active_lanes": [
+    },
     {
       "package": "PS-COMMUNITY-AUTH-WALL-001",
-      "outcome": "Retire anonymous Community and every working public/demo fallback. Require trusted PeerSlate authentication before any Community HTML, JSON, search, Voice, attachment, or media retrieval. Preserve current owner-only authoring, existing data, private Blob storage, and independent retention maintenance. Do not redesign the Feed or launch general member participation. Deferred legs: Pete's retention reapproval before release; deployment and enablement only under a separately recorded release sequence; the database audience migration remains a later Protected package.",
+      "outcome": "COMPLETE AND LIVE 2026-08-09. Community requires trusted PeerSlate authentication on every HTML, JSON, search, Voice, attachment, and media path; the anonymous public experience and every demo/fixture fallback are retired in all flag states. Merged as main 7a7c99de085a8d25ab12ce386c7cb2509cda2057 (PR 361), deployed by run 711, live release e1a3b800aec6444f1a35c80a, verified by anonymous production sweep. Full suite 3274 passed; two independent adversarial reviews returned no blockers. Retention v1.0 approved by Pete 2026-08-08. Deferred by design: the stored audience token remains transitional 'public' (schema migration is a later Protected package), and the HTML-vs-API status code for an unmappable principal (503 vs 401) is pre-existing app-wide behavior left outside this package's blast radius.",
       "branch": "work/2026-08-08-community-auth-wall-001",
       "writer": "Claude Fable 5 (the session carrying Pete's Community auth-wall conversation) architects and implements in the dedicated portfolio-community-auth-wall-001 worktree; a fresh-context adversarial agent independently reviews the exact candidate diff before merge per the Protected path.",
       "delivery_path": "Protected",
@@ -905,9 +901,11 @@
           "surface_note": "docs/governance/CURRENT_LANES.json added to writable_surfaces for the grant and closeout commits only, per the established recorded-scope pattern; released at lane close."
         }
       ],
-      "cleanup_contract": "Task-local only: remove the activation worktree after the activation PR merges; dispose of the implementation worktree and branch per BRANCH_DISPOSITION_RECORD only after a verified squash merge.",
+      "cleanup_contract": "Task-local only: remove this lane's clean merged worktree /Users/petercarter/portfolio-community-auth-wall-001 and its branch behind an archive tag after the closeout merges and recoverability is verified; preserve everything else.",
       "sequence": "Merge the activation-only PR; create the implementation worktree from the resulting origin/main; pass write preflight; implement the code-only containment package with tests; self-review; independent adversarial review; record the merge grant through the control plane when the ledger surface is available; stop before deployment pending a recorded release sequence and Pete's retention reapproval."
-    },
+    }
+  ],
+  "active_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
       "outcome": "Create one self-contained external ChatGPT visual-research handoff that explains current live PeerSlate, approved and in-progress direction, planned upgrades, selected current mockups and visual authorities, critical product and behind-the-scenes trust behavior, the owner review conversation, and an exact independent-research assignment. Label live, approved direction, in progress, proposed, historical, and superseded material distinctly so the external reviewer can assess what PeerSlate is becoming without confusing aspiration with production truth.",
@@ -1001,11 +999,11 @@
     "preflight_repair_pull_request": 281,
     "preflight_repair_validation_pipeline": 514,
     "preflight_repair_validation_result": "succeeded",
-    "deployed_main_commit": "fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6",
-    "deployed_pipeline": 688,
-    "live_release": "090ed9967daf7a00c798898e",
-    "application_behavior_commit": "fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6",
-    "application_behavior_pipeline": 688,
+    "deployed_main_commit": "7a7c99de085a8d25ab12ce386c7cb2509cda2057",
+    "deployed_pipeline": 711,
+    "live_release": "e1a3b800aec6444f1a35c80a",
+    "application_behavior_commit": "7a7c99de085a8d25ab12ce386c7cb2509cda2057",
+    "application_behavior_pipeline": 711,
     "live_health": "ok",
     "community_public_pilot": "conditional_owner_pilot_live_with_labelled_empty-feed_demo",
     "community_schema": "PS-COMMUNITY-REVIVAL-001_applied_ledger_25",

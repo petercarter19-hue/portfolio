@@ -4,19 +4,19 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-08"
+updated_at: "2026-08-09"
 
 authority:
   remote: origin
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6"
-  deployed_pipeline: 688
-  live_release: "090ed9967daf7a00c798898e"
-  application_behavior_commit: "fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6"
-  application_behavior_pipeline: 688
-  note: "Governed manual-override run 688 (schemaAction=none; automatic trigger again did not fire) deployed exact main fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6: the owner-directed Interview Studio visual-fidelity pass over the locked Smoked Eucalyptus board plus the experience-picker fix. /healthz release 090ed9967daf7a00c798898e exactly matches the identity derived from (fb55cd5, 688); live assets verified. Ask Pete grounded remains live. Repository main has advanced with docs-only Ask Pete Direct records; a merge is not a deployment. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
+  deployed_main_commit: "7a7c99de085a8d25ab12ce386c7cb2509cda2057"
+  deployed_pipeline: 711
+  live_release: "e1a3b800aec6444f1a35c80a"
+  application_behavior_commit: "7a7c99de085a8d25ab12ce386c7cb2509cda2057"
+  application_behavior_pipeline: 711
+  note: "Automatic governed run 711 (batchedCI, schemaAction=none), approved by Pete at the production checkpoint, deployed exact main 7a7c99de085a8d25ab12ce386c7cb2509cda2057: PS-COMMUNITY-AUTH-WALL-001, which places Community behind PeerSlate sign-in and retires the anonymous public and demo experience. /healthz release e1a3b800aec6444f1a35c80a exactly matches the identity derived from (7a7c99d, 711). Anonymous production sweep verified: Community HTML redirects to sign-in with exact return paths, Community APIs and both attachment endpoints return 401 before any storage call, retired surfaces 404 or redirect, robots.txt excludes /the-slate, the sitemap advertises no Community path, and no fabricated demo content is served. Both Ask Pete halves remain live. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
 
 manager:
   role: "package_designated_session_manager"
@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-COMMUNITY-AUTH-WALL-001 owns the Community sign-in-wall surfaces on work/2026-08-08-community-auth-wall-001. PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 owns only its documentation, artifact-export, and final ZIP surfaces on work/2026-08-08-external-visual-review-handoff-001. Ask Pete direct-question path is LIVE (2026-08-09) and closing. Release authority remains empty."
+  current_assignments: "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 continues on work/2026-08-08-external-visual-review-handoff-001. PS-COMMUNITY-AUTH-WALL-001 is complete and live; its surfaces are relinquished and one lane slot is free. Release authority remains empty."
 
 governing_documents:
   bible:
@@ -58,9 +58,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-COMMUNITY-AUTH-WALL-001
-    status: active_delivery
-    scope: "Protected containment: authenticate every Community HTML, API, search, Voice, and media path; retire demo and legacy public routes; fail closed; no Feed redesign, schema change, or deployment."
   - id: PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001
     status: active_delivery
     scope: "Bounded documentation/export only: assemble a complete, provenance-labeled ChatGPT visual-research handoff with selected mockups, product direction, critical functional truth, conversation context, and independent-research instructions; no runtime or new visual authority."
@@ -137,6 +134,7 @@ completed_packages:
   - PS-INTERVIEW-STUDIO-INTEGRATION-001
   - PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001
   - PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001
+  - PS-COMMUNITY-AUTH-WALL-001
 
 retired_packages:
   - id: PS-WORKSHOP-ACCESS-001
@@ -151,7 +149,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-COMMUNITY-AUTH-WALL-001 continues the Community sign-in wall. PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 assembles the complete external ChatGPT visual-research package without runtime or visual-authority change. Both lane slots are occupied; release authority remains empty."
+next_gate: "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 continues as the sole active lane. One slot is free for PS-AGENT-OPERATIONS-001, which splits routine web deploys from gated schema operations."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
