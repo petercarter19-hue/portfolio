@@ -15,8 +15,15 @@
 > --fetch --require-clean`. A failed preflight is a stop, not permission to
 > create another branch or worktree. The package/branch/surface-bounded
 > `--intent activate` flow in `START_HERE.md` may reserve a lane from
-> `controlled_idle` or add lane two during `active_delivery` while capacity
-> remains; it always requires Pete to select the exact next outcome first.
+> `controlled_idle` or add a writer during `active_delivery` while the
+> three-lane class, path, and exclusive-domain limits have capacity; it always
+> requires Pete to select the exact next outcome first. Only actively writing
+> packages consume capacity. A preserved pause uses the exact `--intent pause`
+> control transition and resumes only through fresh activation. The third
+> direction/authority lane is documentation/evidence-only, and only one active
+> lane may be production-capable. A pause is published from a separate
+> control-only branch and records the pushed work branch's exact commit; never
+> merge the unfinished work merely to free capacity.
 
 ## Authority
 

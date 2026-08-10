@@ -11,8 +11,15 @@
 > `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write
 > --fetch --require-clean`. Use the bounded `START_HERE.md` activation flow
 > only after Pete selects the exact outcome. It may reserve a lane from
-> `controlled_idle` or add lane two during `active_delivery` while the recorded
-> two-lane limit has capacity; a full limit remains a stop.
+> `controlled_idle` or add a writer during `active_delivery` while the recorded
+> three-lane model has class, path, and exclusive-domain capacity. At most two
+> implementation/shared-foundation lanes and one direction/authority lane may
+> be active; the direction lane is limited to initiative documentation and
+> evidence, and only one active lane may be production-capable. Read-only work
+> and paused work consume no writer lane; a full or conflicting model remains a
+> stop. Pause only through a separate control-only branch after the working
+> branch is committed and pushed; record its exact fetched commit so freeing a
+> slot never merges or loses unfinished work.
 
 # Claude / Claude Code instructions
 

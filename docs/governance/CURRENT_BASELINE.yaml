@@ -4,7 +4,7 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-09"
+updated_at: "2026-08-10"
 
 authority:
   remote: origin
@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 continues. PS-WORKSHOP-EXPERIENCE-001 owns only its direction/visual package on work/2026-08-09-workshop-experience-001; no runtime, merge, or release authority."
+  current_assignments: "No active writer lanes. Program Review and visual concept work may continue read-only; activate an exact implementation or direction/authority outcome before repository writes."
 
 governing_documents:
   bible:
@@ -58,12 +58,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001
-    status: active_delivery
-    scope: "Bounded documentation/export only: assemble a complete, provenance-labeled ChatGPT visual-research handoff with selected mockups, product direction, critical functional truth, conversation context, and independent-research instructions; no runtime or new visual authority."
-  - id: PS-WORKSHOP-EXPERIENCE-001
-    status: active_delivery
-    scope: "Protected direction/visual-authority only: reconcile live Workshop; lock continuous desktop/mobile composition, separate Information/Goals truth, access transition, and supersession; no runtime or schema."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -153,7 +147,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-WORKSHOP-EXPERIENCE-001 creates Workshop desktop/mobile authority while PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 continues. Both writer slots are occupied; neither may release."
+next_gate: "Use the three-lane control: at most two non-overlapping implementation lanes plus one non-overlapping direction/authority lane. Paused packages remain preserved and consume no writer capacity."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

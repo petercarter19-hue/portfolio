@@ -1,54 +1,19 @@
 {
-  "schema_version": 1,
-  "updated_at": "2026-08-09T21:30:00Z",
+  "schema_version": 2,
+  "updated_at": "2026-08-10T17:43:05Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
-    "authorized_at": "2026-08-08",
+    "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
-      "PS-WORKSHOP-EXPERIENCE-001"
-    ],
-    "merge_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-001",
-      "PS-DATA-FOUNDATION-001",
-      "PS-ASK-PETE-AI-001",
-      "PS-DELIVERY-CONTROL-001",
-      "PS-COMMUNITY-PUBLIC-PILOT-001",
-      "PS-INTERVIEW-STUDIO-INTEGRATION-001",
-      "PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001",
-      "PS-ASK-PETE-AI-READINESS-002",
-      "PS-ASK-PETE-AI-RELEASE-001",
-      "PS-WORKSHOP-ACCESS-001",
-      "PS-ASK-PETE-DIRECT-001",
-      "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
-      "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001",
-      "PS-COMMUNITY-AUTH-WALL-001",
-      "PS-AGENT-OPERATIONS-001"
-    ],
-    "cleanup_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-001",
-      "PS-DATA-FOUNDATION-001",
-      "PS-ASK-PETE-AI-001",
-      "PS-DELIVERY-CONTROL-001",
-      "PS-COMMUNITY-PUBLIC-PILOT-001",
-      "PS-INTERVIEW-STUDIO-INTEGRATION-001",
-      "PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001",
-      "PS-ASK-PETE-AI-READINESS-002",
-      "PS-ASK-PETE-AI-RELEASE-001",
-      "PS-WORKSHOP-ACCESS-001",
-      "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
-      "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001",
-      "PS-ASK-PETE-DIRECT-001",
-      "PS-COMMUNITY-AUTH-WALL-001",
-      "PS-AGENT-OPERATIONS-001"
-    ],
+    "writes_allowed_for": [],
+    "merge_allowed_for": [],
+    "cleanup_allowed_for": [],
     "release_allowed_for": [],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
@@ -62,7 +27,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 continues on its existing documentation/export surfaces. PS-WORKSHOP-EXPERIENCE-001 closes after the current live truth, owner-locked purpose, separate Information/Goals model, continuous dominant-plane composition, desktop/mobile state authority, access-transition recommendation, and supersession map are recorded and owner-accepted. The Workshop lane is direction and visual authority only: it has no runtime, schema, merge, deployment, or release authority."
+    "exit_authority": "No package currently owns a mutable surface. PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 is preserved after PR 360 was abandoned; PS-WORKSHOP-EXPERIENCE-001 is paused and preserved. Either may resume only through a fresh activation that passes current branch, path, class, and exclusive-domain checks."
   },
   "activation_policy": {
     "enabled": true,
@@ -70,7 +35,16 @@
     "branch_pattern": "work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-activation-[a-z0-9-]+",
     "intent": "activate",
     "requires_explicit_owner_outcome": true,
-    "max_active_lanes": 2,
+    "max_active_lanes": 3,
+    "max_implementation_lanes": 2,
+    "max_direction_authority_lanes": 1,
+    "max_shared_foundation_lanes": 1,
+    "max_production_capable_lanes": 1,
+    "allowed_lane_classes": [
+      "implementation",
+      "shared_foundation",
+      "direction_authority"
+    ],
     "allowed_operating_states": [
       "controlled_idle",
       "active_delivery"
@@ -79,21 +53,43 @@
       "docs/governance/CURRENT_LANES.json",
       "docs/governance/CURRENT_BASELINE.yaml"
     ],
-    "instruction": "Create a clean activation branch from current origin/main, run delivery_preflight.py with --intent activate, record exactly one selected outcome and its new implementation branch, merge the activation record, then create that implementation worktree from the new main. Activation is valid from controlled_idle or from active_delivery only while fewer than two lanes are active. Do not implement product work on the activation branch or displace an existing lane."
+    "instruction": "Create a clean activation branch from current origin/main, run delivery_preflight.py with --intent activate, and append exactly one selected outcome with a new implementation branch, lane_class, production_capable flag, exclusive_domains, writable surfaces, exclusions, and completion evidence. At most two implementation/shared-foundation lanes, one direction/authority lane, and one production-capable lane may be active, with three writers total. Direction/authority surfaces are restricted to docs/initiatives and artifacts. A logical domain or path collision is a stop. Read-only research consumes no lane. Paused work consumes no lane and may resume only through a fresh activation."
   },
   "bootstrap_control_repair": {
     "status": "one_time_owner_authorized_repair",
     "package": "PS-DELIVERY-CONTROL-001",
-    "branch": "work/2026-08-06-delivery-activation-capacity-preflight-repair",
-    "origin_main": "798aef80d6235c336f48638b6a7a39b65ccf8481",
+    "branch": "work/2026-08-10-delivery-activation-three-lane-control-repair",
+    "origin_main": "b79bc72a581971a3108a5d8d27732d3dfd596eeb",
     "allowed_surfaces": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      "START_HERE.md",
+      "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+      "docs/governance/CURRENT_BASELINE.yaml",
       "docs/governance/CURRENT_LANES.json",
+      "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
       "scripts/delivery_preflight.py",
-      "tests/test_delivery_preflight.py"
+      "tests/test_delivery_preflight.py",
+      "tests/test_governance_pointers.py"
     ],
-    "reason": "Pete explicitly authorized this one-time PS-DELIVERY-CONTROL-001 activation-capacity repair on 2026-08-06 after the exact Interview Studio activation preflight proved that the validator counted the proposed second lane as pre-existing occupancy. The validator, not this candidate record, hard-codes the fixed package, branch, origin/main base, and three permitted surfaces. This repair changes no product code, schema, pipeline, release, deployment, production configuration, active-lane membership, or other lane-owned surface.",
+    "reason": "Pete explicitly authorized this one-time PS-DELIVERY-CONTROL-001 three-lane lifecycle repair on 2026-08-10. He approved a third lane while requiring the most efficient process and preservation of each lane's integrity. The repair makes active mean actively writing, moves the abandoned external handoff and preserved Workshop package out of writer capacity, and permits at most two implementation lanes plus one direction/authority lane with path and logical-domain collision checks. The validator, not this candidate record, hard-codes the fixed package, branch, origin/main base, and ten permitted surfaces. It changes no product code, schema, pipeline, deployment, production configuration, or live behavior.",
     "verification_contract": "This is audit evidence, not self-granted authority. The preflight recognizes it only when this entire record equals the validator's hard-coded owner-authorized record and command facts prove the exact branch and exact origin/main base above. A later branch, base, or altered record cannot use this exception."
   },
+  "bootstrap_control_repair_history": [
+    {
+      "status": "one_time_owner_authorized_repair",
+      "package": "PS-DELIVERY-CONTROL-001",
+      "branch": "work/2026-08-06-delivery-activation-capacity-preflight-repair",
+      "origin_main": "798aef80d6235c336f48638b6a7a39b65ccf8481",
+      "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py"
+      ],
+      "reason": "Pete explicitly authorized this one-time PS-DELIVERY-CONTROL-001 activation-capacity repair on 2026-08-06 after the exact Interview Studio activation preflight proved that the validator counted the proposed second lane as pre-existing occupancy. The validator, not this candidate record, hard-codes the fixed package, branch, origin/main base, and three permitted surfaces. This repair changes no product code, schema, pipeline, release, deployment, production configuration, active-lane membership, or other lane-owned surface.",
+      "verification_contract": "This is audit evidence, not self-granted authority. The preflight recognizes it only when this entire record equals the validator's hard-coded owner-authorized record and command facts prove the exact branch and exact origin/main base above. A later branch, base, or altered record cannot use this exception."
+    }
+  ],
   "closing_lanes": [
     {
       "package": "PS-DELIVERY-CONTROL-001",
@@ -972,7 +968,8 @@
       "sequence": "Merge the activation-only PR; create the path-scoped required-reviewer policy; create the implementation worktree from resulting origin/main; pass the package write preflight; implement the three-stage split with the pure-YAML serialization restore; correct the four affected test files; self-review and non-writer review; open the Azure PR as the new policy's first exercise; merge; verify a real merge deploys with no human interaction; record smoke, rollback, and the unchanged schema gate; truthful closeout."
     }
   ],
-  "active_lanes": [
+  "active_lanes": [],
+  "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
       "outcome": "Create one self-contained external ChatGPT visual-research handoff that explains current live PeerSlate, approved and in-progress direction, planned upgrades, selected current mockups and visual authorities, critical product and behind-the-scenes trust behavior, the owner review conversation, and an exact independent-research assignment. Label live, approved direction, in progress, proposed, historical, and superseded material distinctly so the external reviewer can assess what PeerSlate is becoming without confusing aspiration with production truth.",
@@ -1007,7 +1004,11 @@
         }
       ],
       "cleanup_contract": "Preserve every source artifact. After a verified merge, remove only this task's clean activation and implementation worktrees/branches when recoverability and the delivered ZIP are confirmed.",
-      "sequence": "Merge the activation-only PR; create the implementation worktree from the resulting origin/main; pass write preflight; inventory and assemble the documentation/export package; validate content, provenance, hashes, links, and archive integrity; self-review; merge documentation through an Azure PR if retained source files are changed; deliver the ZIP without deployment."
+      "sequence": "Merge the activation-only PR; create the implementation worktree from the resulting origin/main; pass write preflight; inventory and assemble the documentation/export package; validate content, provenance, hashes, links, and archive integrity; self-review; merge documentation through an Azure PR if retained source files are changed; deliver the ZIP without deployment.",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-10T17:33:16Z",
+      "pause_reason": "Azure PR 360 was abandoned at Pete's direction because the handoff work was already delivered and no writer was actively continuing it. The branch, worktree, and untracked output remain preserved.",
+      "resume_contract": "Resume only through a fresh activation from current origin/main with a new branch, exact writable surfaces, direction_authority lane_class, and non-overlapping exclusive domains. Do not adopt or delete the preserved worktree or output."
     },
     {
       "package": "PS-WORKSHOP-EXPERIENCE-001",
@@ -1048,10 +1049,12 @@
         }
       ],
       "cleanup_contract": "Preserve every historical source and user artifact. After a verified merge, remove only this package's clean merged worktree and branches behind a recovery tag; any runtime retirement or repository-artifact cleanup is a separate exact-target package.",
-      "sequence": "Merge the activation-only record; create the clean Workshop package worktree from the resulting origin/main; pass the package write preflight; reconcile current truth and supersession; create the state architecture and ChatGPT visual direction; review desktop/mobile/accessibility/trust continuity; obtain owner visual acceptance; complete the package record; request separate merge authority if repository retention is desired. Runtime composition, Goals data, access transition, and legacy cleanup remain later packages."
-    }
-  ],
-  "paused_lanes": [
+      "sequence": "Merge the activation-only record; create the clean Workshop package worktree from the resulting origin/main; pass the package write preflight; reconcile current truth and supersession; create the state architecture and ChatGPT visual direction; review desktop/mobile/accessibility/trust continuity; obtain owner visual acceptance; complete the package record; request separate merge authority if repository retention is desired. Runtime composition, Goals data, access transition, and legacy cleanup remain later packages.",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-10T17:43:05Z",
+      "pause_reason": "The Workshop concept and package work are preserved, but no writer is actively changing its repository surfaces while Program Review moves page by page.",
+      "resume_contract": "Resume only through a fresh activation from current origin/main with a new branch, exact package-only surfaces, direction_authority lane_class, and an exclusive product:workshop domain. Port preserved work deliberately; do not overwrite or delete the existing branch."
+    },
     {
       "package": "ALL_OTHER_EXISTING_LANES",
       "reason": "owner-directed reset requires exact safe-stop and disposition before restart",

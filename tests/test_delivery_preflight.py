@@ -8,9 +8,12 @@ from unittest.mock import patch
 from scripts.delivery_preflight import (
     BOOTSTRAP_CONTROL_REPAIR,
     _baseline_scalar,
+    _expected_pause_manager_assignment,
+    _expected_pause_next_gate,
     collect_facts,
     evaluate_policy,
     load_baseline_bytes,
+    load_baseline_bytes_at_ref,
     load_ledger,
     load_ledger_at_ref,
     main,
@@ -343,6 +346,9 @@ class DeliveryPreflightTests(unittest.TestCase):
             "branch": f"work/{package.lower()}",
             "writer": "Test writer",
             "delivery_path": "Bounded",
+            "lane_class": "implementation",
+            "production_capable": False,
+            "exclusive_domains": [f"product:{package.lower()}"],
             "writable_surfaces": [f"docs/initiatives/{package}/"],
             "exclusions": ["no outside writes"],
             "completion_evidence": ["Focused package verification passes"],
@@ -357,6 +363,79 @@ class DeliveryPreflightTests(unittest.TestCase):
         ]
         return candidate
 
+    def _pause_candidate(self, origin: dict, package: str) -> dict:
+        candidate = copy.deepcopy(origin)
+        target = next(
+            lane for lane in origin["active_lanes"] if lane["package"] == package
+        )
+        candidate["updated_at"] = "2026-08-10T18:00:00Z"
+        candidate["active_lanes"] = [
+            lane for lane in origin["active_lanes"] if lane["package"] != package
+        ]
+        candidate["operating_mode"]["state"] = (
+            "active_delivery" if candidate["active_lanes"] else "controlled_idle"
+        )
+        candidate["operating_mode"]["writes_allowed_for"] = [
+            lane["package"] for lane in candidate["active_lanes"]
+        ]
+        for field in ("merge_allowed_for", "cleanup_allowed_for", "release_allowed_for"):
+            candidate["operating_mode"][field] = [
+                value
+                for value in candidate["operating_mode"].get(field, [])
+                if value != package
+            ]
+        candidate["operating_mode"]["exit_authority"] = (
+            f"{package} is paused and preserved; resume requires fresh activation."
+        )
+        candidate["paused_lanes"].append(
+            {
+                **copy.deepcopy(target),
+                "disposition": "paused_preserved",
+                "paused_at": "2026-08-10T18:00:00Z",
+                "pause_reason": "The writer is waiting and relinquished capacity.",
+                "resume_contract": "Resume through a fresh activation and collision check.",
+                "preserved_head_sha": "a" * 40,
+            }
+        )
+        return candidate
+
+    def _pause_baselines(self, origin: dict, package: str) -> tuple[bytes, bytes]:
+        origin_baseline = self._baseline_for_origin(origin)
+        source = origin_baseline.decode("utf-8")
+        remaining = [
+            lane for lane in origin["active_lanes"] if lane["package"] != package
+        ]
+        assignment = _expected_pause_manager_assignment(package, remaining)
+        next_gate = _expected_pause_next_gate(package, remaining)
+        candidate = re.sub(
+            r'^  current_assignments: .+$',
+            f'  current_assignments: {json.dumps(assignment)}',
+            source,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        candidate = re.sub(
+            rf"(?ms)^  - id: {re.escape(package)}\n.*?(?=^  - id: |^scoped_findings:\n)",
+            "",
+            candidate,
+            count=1,
+        )
+        candidate = re.sub(
+            r'^next_gate: .+$',
+            f'next_gate: {json.dumps(next_gate)}',
+            candidate,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        candidate = re.sub(
+            r'^updated_at: .+$',
+            'updated_at: "2026-08-10"',
+            candidate,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        return origin_baseline, candidate.encode("utf-8")
+
     @staticmethod
     def _interview_lane() -> dict:
         """The actual approved 1->2 Interview Studio activation record shape."""
@@ -369,7 +448,9 @@ class DeliveryPreflightTests(unittest.TestCase):
             "branch": "work/2026-08-06-interview-studio-calibration-001",
             "writer": "Terra in the dedicated clean worktree",
             "delivery_path": "Protected",
+            "lane_class": "implementation",
             "production_capable": False,
+            "exclusive_domains": ["product:interview-studio"],
             "source_checkpoint": "Locked owner visual authority.",
             "writable_surfaces": [
                 "templates/interview_studio.html",
@@ -404,7 +485,7 @@ class DeliveryPreflightTests(unittest.TestCase):
 
     def test_lane_ledger_has_a_valid_operating_state(self):
         parsed = json.loads(self.path.read_text(encoding="utf-8"))
-        self.assertEqual(1, parsed["schema_version"])
+        self.assertEqual(2, parsed["schema_version"])
         mode = parsed["operating_mode"]
         active = parsed["active_lanes"]
         closing = parsed["closing_lanes"]
@@ -413,7 +494,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             lane["package"] for lane in closing
         }
         self.assertIn(mode["state"], {"controlled_idle", "active_delivery"})
-        self.assertLessEqual(len(active), 2)
+        self.assertLessEqual(len(active), 3)
         self.assertEqual(set(mode["writes_allowed_for"]), active_packages)
         self.assertLessEqual(set(mode["merge_allowed_for"]), closable_packages)
         self.assertLessEqual(set(mode["cleanup_allowed_for"]), closable_packages)
@@ -431,9 +512,21 @@ class DeliveryPreflightTests(unittest.TestCase):
             {"controlled_idle", "active_delivery"},
             set(parsed["activation_policy"]["allowed_operating_states"]),
         )
+        self.assertEqual(3, parsed["activation_policy"]["max_active_lanes"])
+        self.assertEqual(
+            2, parsed["activation_policy"]["max_implementation_lanes"]
+        )
+        self.assertEqual(
+            1, parsed["activation_policy"]["max_direction_authority_lanes"]
+        )
+        self.assertEqual(
+            1, parsed["activation_policy"]["max_production_capable_lanes"]
+        )
+        self.assertEqual([], mode["merge_allowed_for"])
+        self.assertEqual([], mode["cleanup_allowed_for"])
         self.assertTrue(parsed["workspace_snapshot"]["cleanup_authorized"])
 
-    def test_closing_lanes_are_merge_and_cleanup_only(self):
+    def test_closing_lanes_are_historical_and_retain_no_mutation_authority(self):
         for lane in self.ledger["closing_lanes"]:
             lane_facts = facts(branch=lane["branch"])
             write_errors, _ = evaluate_policy(
@@ -449,11 +542,15 @@ class DeliveryPreflightTests(unittest.TestCase):
                 "merge",
                 require_clean=True,
             )
-            self.assertEqual([], merge_errors)
+            self.assertTrue(
+                any("merge is blocked" in error for error in merge_errors)
+            )
             cleanup_errors, _ = evaluate_policy(
                 self.ledger, lane_facts, lane["package"], "cleanup"
             )
-            self.assertEqual([], cleanup_errors)
+            self.assertTrue(
+                any("cleanup is blocked" in error for error in cleanup_errors)
+            )
 
     def test_baseline_for_origin_synthesizes_one_package_from_idle(self):
         source = self.baseline.decode("utf-8")
@@ -528,33 +625,39 @@ class DeliveryPreflightTests(unittest.TestCase):
         )
         self.assertEqual([], active_errors)
 
-        busy = self._activation_candidate(
+        third_lane = self._activation_candidate(
             active_delivery,
             "PS-THIRD-001",
         )
-        busy_errors, _ = evaluate_policy(
-            busy,
+        third_lane["active_lanes"][-1]["lane_class"] = "direction_authority"
+        third_lane["active_lanes"][-1]["exclusive_domains"] = [
+            "direction:third-package"
+        ]
+        third_errors, _ = self._evaluate_activation(
+            third_lane,
             activation_facts,
-            "PS-DELIVERY-CONTROL-001",
-            "activate",
-            origin_ledger=active_delivery,
+            require_clean=True,
+            origin=active_delivery,
         )
-        self.assertIn(
-            "activation refused because the lane limit is full",
-            busy_errors,
+        self.assertEqual([], third_errors)
+
+        fourth_lane = self._activation_candidate(third_lane, "PS-FOURTH-001")
+        fourth_errors, _ = self._evaluate_activation(
+            fourth_lane,
+            activation_facts,
+            require_clean=True,
+            origin=third_lane,
         )
+        self.assertIn("activation refused because the lane limit is full", fourth_errors)
 
         full_unchanged_errors, _ = evaluate_policy(
-            copy.deepcopy(active_delivery),
+            copy.deepcopy(third_lane),
             activation_facts,
             "PS-DELIVERY-CONTROL-001",
             "activate",
-            origin_ledger=active_delivery,
+            origin_ledger=third_lane,
         )
-        self.assertIn(
-            "activation refused because the lane limit is full",
-            full_unchanged_errors,
-        )
+        self.assertIn("activation refused because the lane limit is full", full_unchanged_errors)
 
         inconsistent_idle = copy.deepcopy(activation_ledger)
         inconsistent_idle["operating_mode"]["state"] = "controlled_idle"
@@ -645,10 +748,6 @@ class DeliveryPreflightTests(unittest.TestCase):
             origin_ledger=origin_one,
         )
         self.assertIn(
-            "activation candidate exceeds the two-lane limit",
-            two_addition_errors,
-        )
-        self.assertIn(
             "activation must add exactly one active lane",
             two_addition_errors,
         )
@@ -686,7 +785,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             origin_one,
             "PS-SECOND-001",
         )
-        policy_mutation["activation_policy"]["max_active_lanes"] = 3
+        policy_mutation["activation_policy"]["max_active_lanes"] = 4
         policy_errors, _ = evaluate_policy(
             policy_mutation,
             activation_facts,
@@ -696,8 +795,262 @@ class DeliveryPreflightTests(unittest.TestCase):
         )
         self.assertIn("activation may not change activation_policy", policy_errors)
         self.assertIn(
-            "activation policy must retain the two-lane limit",
+            "activation policy must retain the 3-lane limit",
             policy_errors,
+        )
+
+    def test_three_lane_model_enforces_class_and_domain_integrity(self):
+        activation_facts = facts(
+            branch="work/2026-08-10-delivery-activation-three-lane-test"
+        )
+        idle = self._idle_ledger()
+        first = self._activation_candidate(idle, "PS-FIRST-001")
+        second = self._activation_candidate(first, "PS-SECOND-001")
+
+        third_implementation = self._activation_candidate(second, "PS-THIRD-001")
+        implementation_errors, _ = self._evaluate_activation(
+            third_implementation,
+            activation_facts,
+            require_clean=True,
+            origin=second,
+        )
+        self.assertTrue(
+            any("2-implementation-lane limit" in error for error in implementation_errors)
+        )
+
+        direction_origin = self._activation_candidate(idle, "PS-DIRECTION-ONE-001")
+        direction_origin["active_lanes"][-1]["lane_class"] = "direction_authority"
+        direction_origin["active_lanes"][-1]["exclusive_domains"] = [
+            "direction:first"
+        ]
+        second_direction = self._activation_candidate(
+            direction_origin, "PS-DIRECTION-TWO-001"
+        )
+        second_direction["active_lanes"][-1]["lane_class"] = "direction_authority"
+        second_direction["active_lanes"][-1]["exclusive_domains"] = [
+            "direction:second"
+        ]
+        direction_errors, _ = self._evaluate_activation(
+            second_direction,
+            activation_facts,
+            require_clean=True,
+            origin=direction_origin,
+        )
+        self.assertTrue(
+            any(
+                "1-direction-authority-lane limit" in error
+                for error in direction_errors
+            )
+        )
+
+        collision = self._activation_candidate(first, "PS-SECOND-001")
+        collision["active_lanes"][-1]["exclusive_domains"] = [
+            first["active_lanes"][0]["exclusive_domains"][0]
+        ]
+        collision_errors, _ = self._evaluate_activation(
+            collision,
+            activation_facts,
+            require_clean=True,
+            origin=first,
+        )
+        self.assertTrue(
+            any("exclusive-domain collision" in error for error in collision_errors)
+        )
+
+        hierarchical_collision = self._activation_candidate(first, "PS-SECOND-001")
+        hierarchical_collision["active_lanes"][-1]["exclusive_domains"] = [
+            first["active_lanes"][0]["exclusive_domains"][0] + ":public"
+        ]
+        hierarchical_errors, _ = self._evaluate_activation(
+            hierarchical_collision,
+            activation_facts,
+            require_clean=True,
+            origin=first,
+        )
+        self.assertTrue(
+            any("exclusive-domain collision" in error for error in hierarchical_errors)
+        )
+
+        disguised_runtime = self._activation_candidate(idle, "PS-DIRECTION-001")
+        disguised_runtime["active_lanes"][-1]["lane_class"] = "direction_authority"
+        disguised_runtime["active_lanes"][-1]["exclusive_domains"] = [
+            "product:profile"
+        ]
+        disguised_runtime["active_lanes"][-1]["writable_surfaces"] = [
+            "templates/profile.html"
+        ]
+        disguised_errors, _ = self._evaluate_activation(
+            disguised_runtime,
+            activation_facts,
+            require_clean=True,
+            origin=idle,
+        )
+        self.assertTrue(
+            any(
+                "direction_authority surface must remain under docs/initiatives or artifacts"
+                in error
+                for error in disguised_errors
+            )
+        )
+
+        production_first = self._activation_candidate(idle, "PS-PROD-FIRST-001")
+        production_first["active_lanes"][-1]["production_capable"] = True
+        production_second = self._activation_candidate(
+            production_first, "PS-PROD-SECOND-001"
+        )
+        production_second["active_lanes"][-1]["production_capable"] = True
+        production_errors, _ = self._evaluate_activation(
+            production_second,
+            activation_facts,
+            require_clean=True,
+            origin=production_first,
+        )
+        self.assertTrue(
+            any(
+                "1-production-capable-lane limit" in error
+                for error in production_errors
+            )
+        )
+
+    def test_branch_diff_must_stay_inside_declared_lane_surfaces(self):
+        package = "PS-SCOPED-001"
+        ledger = self._activation_candidate(self._idle_ledger(), package)
+        lane = ledger["active_lanes"][0]
+        inside, _ = evaluate_policy(
+            ledger,
+            facts(
+                branch=lane["branch"],
+                changed_paths=[f"docs/initiatives/{package}/README.md"],
+            ),
+            package,
+            "write",
+            require_clean=True,
+        )
+        self.assertEqual([], inside)
+
+        outside, _ = evaluate_policy(
+            ledger,
+            facts(branch=lane["branch"], changed_paths=["templates/base.html"]),
+            package,
+            "write",
+            require_clean=True,
+        )
+        self.assertIn(
+            "write branch contains path outside active lane surfaces: templates/base.html",
+            outside,
+        )
+
+    def test_pause_relinquishes_capacity_without_rewriting_the_lane(self):
+        package = "PS-PAUSE-001"
+        origin = self._activation_candidate(self._idle_ledger(), package)
+        candidate = self._pause_candidate(origin, package)
+        origin_baseline, candidate_baseline = self._pause_baselines(origin, package)
+        lane = origin["active_lanes"][0]
+        pause_facts = facts(
+            branch="work/2026-08-10-delivery-pause-ps-pause-001",
+            pause_target_remote_sha="a" * 40,
+            changed_paths=sorted(
+                {
+                    "docs/governance/CURRENT_BASELINE.yaml",
+                    "docs/governance/CURRENT_LANES.json",
+                }
+            ),
+        )
+        errors, _ = evaluate_policy(
+            candidate,
+            pause_facts,
+            package,
+            "pause",
+            require_clean=True,
+            origin_ledger=origin,
+            candidate_baseline=candidate_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertEqual([], errors)
+
+        mutated = copy.deepcopy(candidate)
+        mutated["paused_lanes"][-1]["branch"] = "work/replaced"
+        mutation_errors, _ = evaluate_policy(
+            mutated,
+            pause_facts,
+            package,
+            "pause",
+            require_clean=True,
+            origin_ledger=origin,
+            candidate_baseline=candidate_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertIn("pause must preserve the exact active-lane record", mutation_errors)
+
+        out_of_scope_facts = copy.deepcopy(pause_facts)
+        out_of_scope_facts["changed_paths"].append(
+            f"docs/initiatives/{package}/README.md"
+        )
+        out_of_scope_errors, _ = evaluate_policy(
+            candidate,
+            out_of_scope_facts,
+            package,
+            "pause",
+            require_clean=True,
+            origin_ledger=origin,
+            candidate_baseline=candidate_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertIn(
+            "pause control branch must change exactly: docs/governance/CURRENT_BASELINE.yaml, docs/governance/CURRENT_LANES.json",
+            out_of_scope_errors,
+        )
+
+        not_pushed_facts = copy.deepcopy(pause_facts)
+        not_pushed_facts["pause_target_remote_sha"] = None
+        not_pushed_errors, _ = evaluate_policy(
+            candidate,
+            not_pushed_facts,
+            package,
+            "pause",
+            require_clean=True,
+            origin_ledger=origin,
+            candidate_baseline=candidate_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertIn(
+            "pause requires the active lane branch to be pushed to origin",
+            not_pushed_errors,
+        )
+
+        wrong_checkpoint = copy.deepcopy(candidate)
+        wrong_checkpoint["paused_lanes"][-1]["preserved_head_sha"] = "b" * 40
+        wrong_checkpoint_errors, _ = evaluate_policy(
+            wrong_checkpoint,
+            pause_facts,
+            package,
+            "pause",
+            require_clean=True,
+            origin_ledger=origin,
+            candidate_baseline=candidate_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertIn(
+            "pause record preserved_head_sha must equal the fetched origin branch tip",
+            wrong_checkpoint_errors,
+        )
+
+        smuggled_baseline = candidate_baseline.replace(
+            _expected_pause_next_gate(package, []).encode("utf-8"),
+            b"PS-UNRELATED-999 should start immediately.",
+        )
+        baseline_errors, _ = evaluate_policy(
+            candidate,
+            pause_facts,
+            package,
+            "pause",
+            require_clean=True,
+            origin_ledger=origin,
+            candidate_baseline=smuggled_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertTrue(
+            any("pause baseline next_gate must equal" in error for error in baseline_errors)
         )
 
     def test_actual_interview_one_to_two_activation_delta_is_permitted(self):
@@ -1842,6 +2195,27 @@ class DeliveryPreflightTests(unittest.TestCase):
             errors,
         )
 
+    def test_activation_refuses_any_closing_lane_with_retained_authority(self):
+        origin = self._idle_ledger()
+        closing_package = origin["closing_lanes"][0]["package"]
+        origin["operating_mode"]["merge_allowed_for"] = [closing_package]
+        candidate = self._activation_candidate(origin, "PS-UNRELATED-NEW-001")
+        activation_facts = facts(
+            branch="work/2026-08-10-delivery-activation-closing-authority"
+        )
+
+        errors, _ = self._evaluate_activation(
+            candidate,
+            activation_facts,
+            require_clean=True,
+            origin=origin,
+        )
+        self.assertIn(
+            "origin/main closing lanes retain mutation authority in merge_allowed_for: "
+            + closing_package,
+            errors,
+        )
+
     def test_activation_preserves_non_lane_authority_and_paused_lanes(self):
         origin = self._one_lane_origin()
         candidate = self._interview_activation_candidate(origin)
@@ -2248,12 +2622,10 @@ class DeliveryPreflightTests(unittest.TestCase):
 
     def test_bootstrap_control_repair_is_exact_and_one_time(self):
         repair_ledger = copy.deepcopy(self.ledger)
-        origin_ledger = copy.deepcopy(repair_ledger)
-        origin_ledger["bootstrap_control_repair"] = {
-            "status": "previous_control_record"
-        }
         bootstrap = repair_ledger["bootstrap_control_repair"]
         self.assertEqual(BOOTSTRAP_CONTROL_REPAIR, bootstrap)
+        origin_ledger = load_ledger_at_ref(bootstrap["origin_main"])
+        origin_baseline = load_baseline_bytes_at_ref(bootstrap["origin_main"])
         standing = set(repair_ledger["activation_policy"]["allowed_surfaces"])
         # A surface the exception widens to, so losing the exception is visible.
         widened = sorted(set(bootstrap["allowed_surfaces"]) - standing)
@@ -2268,6 +2640,8 @@ class DeliveryPreflightTests(unittest.TestCase):
             exact,
             require_clean=True,
             origin=origin_ledger,
+            candidate_baseline=self.baseline,
+            origin_baseline=origin_baseline,
         )
         self.assertEqual([], exact_errors)
         self.assertTrue(any("one-time" in warning for warning in exact_warnings))
@@ -2280,11 +2654,10 @@ class DeliveryPreflightTests(unittest.TestCase):
             require_clean=True,
             origin_ledger=origin_ledger,
             candidate_baseline=self.baseline + b"# forged activation baseline\n",
-            origin_baseline=self.baseline,
+            origin_baseline=origin_baseline,
         )
-        self.assertIn(
-            "bootstrap control repair must keep CURRENT_BASELINE.yaml byte-identical to exact origin/main",
-            altered_baseline_errors,
+        self.assertTrue(
+            any("candidate baseline line" in error for error in altered_baseline_errors)
         )
 
         outside_errors, _ = evaluate_policy(
@@ -2308,9 +2681,11 @@ class DeliveryPreflightTests(unittest.TestCase):
             "activate",
             require_clean=True,
             origin_ledger=origin_ledger,
+            candidate_baseline=self.baseline,
+            origin_baseline=origin_baseline,
         )
         self.assertIn(
-            "bootstrap control repair may not change active lanes",
+            "bootstrap control repair must leave no active writer lanes",
             lane_errors,
         )
 
@@ -2323,14 +2698,16 @@ class DeliveryPreflightTests(unittest.TestCase):
             "activate",
             require_clean=True,
             origin_ledger=origin_ledger,
+            candidate_baseline=self.baseline,
+            origin_baseline=origin_baseline,
         )
         self.assertIn(
-            "bootstrap control repair may not change operating_mode",
+            "bootstrap control repair exit_authority is not exact",
             mode_errors,
         )
 
         changed_policy = copy.deepcopy(repair_ledger)
-        changed_policy["activation_policy"]["max_active_lanes"] = 3
+        changed_policy["activation_policy"]["max_active_lanes"] = 4
         policy_errors, _ = evaluate_policy(
             changed_policy,
             exact,
@@ -2338,9 +2715,11 @@ class DeliveryPreflightTests(unittest.TestCase):
             "activate",
             require_clean=True,
             origin_ledger=origin_ledger,
+            candidate_baseline=self.baseline,
+            origin_baseline=origin_baseline,
         )
         self.assertIn(
-            "activation may not change activation_policy",
+            "bootstrap control repair activation_policy must match the exact code-controlled policy",
             policy_errors,
         )
 
@@ -2351,6 +2730,8 @@ class DeliveryPreflightTests(unittest.TestCase):
             "activate",
             require_clean=True,
             origin_ledger=origin_ledger,
+            candidate_baseline=self.baseline,
+            origin_baseline=origin_baseline,
         )
         self.assertTrue(
             any("non-control paths" in error for error in stale_errors)
@@ -2365,6 +2746,8 @@ class DeliveryPreflightTests(unittest.TestCase):
             "activate",
             require_clean=True,
             origin_ledger=origin_ledger,
+            candidate_baseline=self.baseline,
+            origin_baseline=origin_baseline,
         )
         self.assertIn(
             "bootstrap control repair record does not match the "

@@ -60,22 +60,32 @@ BASELINE_SAFE_PLAIN_SCALAR = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 BOOTSTRAP_CONTROL_REPAIR = {
     "status": "one_time_owner_authorized_repair",
     "package": "PS-DELIVERY-CONTROL-001",
-    "branch": "work/2026-08-06-delivery-activation-capacity-preflight-repair",
-    "origin_main": "798aef80d6235c336f48638b6a7a39b65ccf8481",
+    "branch": "work/2026-08-10-delivery-activation-three-lane-control-repair",
+    "origin_main": "b79bc72a581971a3108a5d8d27732d3dfd596eeb",
     "allowed_surfaces": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "START_HERE.md",
+        "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+        "docs/governance/CURRENT_BASELINE.yaml",
         "docs/governance/CURRENT_LANES.json",
+        "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
         "scripts/delivery_preflight.py",
         "tests/test_delivery_preflight.py",
+        "tests/test_governance_pointers.py",
     ],
     "reason": (
         "Pete explicitly authorized this one-time PS-DELIVERY-CONTROL-001 "
-        "activation-capacity repair on 2026-08-06 after the exact Interview "
-        "Studio activation preflight proved that the validator counted the "
-        "proposed second lane as pre-existing occupancy. The validator, not "
-        "this candidate record, hard-codes the fixed package, branch, "
-        "origin/main base, and three permitted surfaces. This repair changes "
-        "no product code, schema, pipeline, release, deployment, production "
-        "configuration, active-lane membership, or other lane-owned surface."
+        "three-lane lifecycle repair on 2026-08-10. He approved a third lane "
+        "while requiring the most efficient process and preservation of each "
+        "lane's integrity. The repair makes active mean actively writing, "
+        "moves the abandoned external handoff and preserved Workshop package "
+        "out of writer capacity, and permits at most two implementation lanes "
+        "plus one direction/authority lane with path and logical-domain "
+        "collision checks. The validator, not this candidate record, hard-"
+        "codes the fixed package, branch, origin/main base, and ten permitted "
+        "surfaces. It changes no product code, schema, pipeline, deployment, "
+        "production configuration, or live behavior."
     ),
     "verification_contract": (
         "This is audit evidence, not self-granted authority. The preflight "
@@ -85,6 +95,71 @@ BOOTSTRAP_CONTROL_REPAIR = {
         "altered record cannot use this exception."
     ),
 }
+
+MAX_ACTIVE_LANES = 3
+MAX_IMPLEMENTATION_LANES = 2
+MAX_DIRECTION_AUTHORITY_LANES = 1
+MAX_SHARED_FOUNDATION_LANES = 1
+MAX_PRODUCTION_CAPABLE_LANES = 1
+VALID_LANE_CLASSES = frozenset(
+    {"implementation", "shared_foundation", "direction_authority"}
+)
+IMPLEMENTATION_LANE_CLASSES = frozenset(
+    {"implementation", "shared_foundation"}
+)
+DIRECTION_AUTHORITY_ALLOWED_ROOTS = (
+    "docs/initiatives",
+    "artifacts",
+)
+EXCLUSIVE_DOMAIN = re.compile(
+    r"[a-z][a-z0-9-]*(?::[a-z0-9][a-z0-9-]*)+"
+)
+BOOTSTRAP_BASELINE_UPDATED_AT = "2026-08-10"
+BOOTSTRAP_BASELINE_MANAGER_ASSIGNMENTS = "No active writer lanes. Program Review and visual concept work may continue read-only; activate an exact implementation or direction/authority outcome before repository writes."
+BOOTSTRAP_BASELINE_NEXT_GATE = "Use the three-lane control: at most two non-overlapping implementation lanes plus one non-overlapping direction/authority lane. Paused packages remain preserved and consume no writer capacity."
+BOOTSTRAP_EXIT_AUTHORITY = "No package currently owns a mutable surface. PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 is preserved after PR 360 was abandoned; PS-WORKSHOP-EXPERIENCE-001 is paused and preserved. Either may resume only through a fresh activation that passes current branch, path, class, and exclusive-domain checks."
+BOOTSTRAP_ORIGIN_ACTIVE_PACKAGES = frozenset(
+    {
+        "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
+        "PS-WORKSHOP-EXPERIENCE-001",
+    }
+)
+ACTIVATION_POLICY_INSTRUCTION = "Create a clean activation branch from current origin/main, run delivery_preflight.py with --intent activate, and append exactly one selected outcome with a new implementation branch, lane_class, production_capable flag, exclusive_domains, writable surfaces, exclusions, and completion evidence. At most two implementation/shared-foundation lanes, one direction/authority lane, and one production-capable lane may be active, with three writers total. Direction/authority surfaces are restricted to docs/initiatives and artifacts. A logical domain or path collision is a stop. Read-only research consumes no lane. Paused work consumes no lane and may resume only through a fresh activation."
+EXPECTED_ACTIVATION_POLICY = {
+    "enabled": True,
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch_pattern": (
+        r"work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-activation-[a-z0-9-]+"
+    ),
+    "intent": "activate",
+    "requires_explicit_owner_outcome": True,
+    "max_active_lanes": MAX_ACTIVE_LANES,
+    "max_implementation_lanes": MAX_IMPLEMENTATION_LANES,
+    "max_direction_authority_lanes": MAX_DIRECTION_AUTHORITY_LANES,
+    "max_shared_foundation_lanes": MAX_SHARED_FOUNDATION_LANES,
+    "max_production_capable_lanes": MAX_PRODUCTION_CAPABLE_LANES,
+    "allowed_lane_classes": [
+        "implementation",
+        "shared_foundation",
+        "direction_authority",
+    ],
+    "allowed_operating_states": ["controlled_idle", "active_delivery"],
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml",
+    ],
+    "instruction": ACTIVATION_POLICY_INSTRUCTION,
+}
+PAUSE_ALLOWED_SURFACES = frozenset(
+    {
+        "docs/governance/CURRENT_BASELINE.yaml",
+        "docs/governance/CURRENT_LANES.json",
+    }
+)
+PAUSE_BRANCH_PATTERN = re.compile(
+    r"work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-pause-[a-z0-9-]+"
+)
+FULL_GIT_SHA = re.compile(r"[0-9a-f]{40}")
 
 VALID_DELIVERY_PATHS = frozenset({"Routine", "Bounded", "Protected"})
 CANONICAL_PACKAGE_ID = re.compile(r"PS-[A-Z0-9]+(?:-[A-Z0-9]+)*")
@@ -119,6 +194,7 @@ def _git(*args: str, check: bool = True) -> str:
         ["git", "-C", str(ROOT), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",
         check=False,
     )
     if check and result.returncode:
@@ -472,14 +548,62 @@ def _validate_baseline_activation_delta(
     if candidate_baseline is None or origin_baseline is None:
         return
     if bootstrap_matches:
-        if not isinstance(candidate_baseline, (bytes, bytearray)) or not isinstance(
-            origin_baseline, (bytes, bytearray)
-        ):
-            errors.append("bootstrap control repair baseline must be byte-comparable")
-        elif bytes(candidate_baseline) != bytes(origin_baseline):
+        candidate = _project_baseline(candidate_baseline, "candidate", errors)
+        origin = _project_baseline(origin_baseline, "origin/main", errors)
+        if candidate is None or origin is None:
+            return
+        candidate_blocks = candidate["blocks"]
+        origin_blocks = origin["blocks"]
+        assert isinstance(candidate_blocks, dict)
+        assert isinstance(origin_blocks, dict)
+        if candidate["preamble"] != origin["preamble"]:
+            errors.append("bootstrap control repair may not change the baseline preamble")
+        if candidate["order"] != origin["order"]:
+            errors.append("bootstrap control repair may not reorder baseline sections")
+        allowed_blocks = {"updated_at", "manager", "active_packages", "next_gate"}
+        for key in BASELINE_TOP_LEVEL_SECTIONS:
+            if key not in allowed_blocks and candidate_blocks[key] != origin_blocks[key]:
+                errors.append(
+                    f"bootstrap control repair may not change baseline section {key}"
+                )
+
+        updated_at = _single_scalar_block(
+            candidate_blocks["updated_at"], "updated_at", "candidate", errors
+        )
+        if updated_at is not None and updated_at[0] != BOOTSTRAP_BASELINE_UPDATED_AT:
             errors.append(
-                "bootstrap control repair must keep CURRENT_BASELINE.yaml byte-identical to exact origin/main"
+                "bootstrap control repair baseline updated_at is not the exact owner-authorized date"
             )
+
+        origin_manager = _parse_manager_block(
+            origin_blocks["manager"], "origin/main", errors
+        )
+        candidate_manager = _parse_manager_block(
+            candidate_blocks["manager"], "candidate", errors
+        )
+        if origin_manager is not None and candidate_manager is not None:
+            if origin_manager[0] != candidate_manager[0]:
+                errors.append(
+                    "bootstrap control repair may only change baseline manager.current_assignments"
+                )
+            if candidate_manager[1] != BOOTSTRAP_BASELINE_MANAGER_ASSIGNMENTS:
+                errors.append(
+                    "bootstrap control repair baseline manager assignment is not exact"
+                )
+
+        candidate_packages = _parse_active_packages_block(
+            candidate_blocks["active_packages"], "candidate", errors
+        )
+        if candidate_packages is not None and candidate_packages:
+            errors.append(
+                "bootstrap control repair baseline active_packages must be empty"
+            )
+
+        candidate_gate = _single_scalar_block(
+            candidate_blocks["next_gate"], "next_gate", "candidate", errors
+        )
+        if candidate_gate is not None and candidate_gate[0] != BOOTSTRAP_BASELINE_NEXT_GATE:
+            errors.append("bootstrap control repair baseline next_gate is not exact")
         return
 
     candidate = _project_baseline(candidate_baseline, "candidate", errors)
@@ -555,6 +679,114 @@ def _validate_baseline_activation_delta(
             errors.append(
                 "activation baseline next_gate must mention the newly activated package"
             )
+
+
+def _remaining_package_ids(remaining_lanes: list[dict]) -> list[str]:
+    return [
+        package.strip()
+        for lane in remaining_lanes
+        if isinstance((package := lane.get("package")), str) and package.strip()
+    ]
+
+
+def _expected_pause_manager_assignment(
+    paused_package: str,
+    remaining_lanes: list[dict],
+) -> str:
+    remaining = _remaining_package_ids(remaining_lanes)
+    if remaining:
+        return (
+            "Active writer lanes: "
+            + ", ".join(remaining)
+            + f". {paused_package} is paused and preserved; it may resume only "
+            "through fresh activation."
+        )
+    return (
+        f"No active writer lanes. {paused_package} is paused and preserved; "
+        "activate an exact implementation or direction/authority outcome before "
+        "repository writes."
+    )
+
+
+def _expected_pause_next_gate(
+    paused_package: str,
+    remaining_lanes: list[dict],
+) -> str:
+    remaining = _remaining_package_ids(remaining_lanes)
+    if remaining:
+        return (
+            "Continue only the active writer packages: "
+            + ", ".join(remaining)
+            + f". {paused_package} remains paused; use fresh activation to resume it."
+        )
+    return (
+        "No active writer lanes. Select and activate the next exact outcome under "
+        "the three-lane class, path, and exclusive-domain rules."
+    )
+
+
+def _validate_baseline_pause_delta(
+    candidate_baseline: object,
+    origin_baseline: object,
+    *,
+    paused_package: str,
+    remaining_lanes: list[dict],
+    errors: list[str],
+) -> None:
+    """Fail closed unless baseline removes exactly the relinquished package."""
+    candidate = _project_baseline(candidate_baseline, "candidate", errors)
+    origin = _project_baseline(origin_baseline, "origin/main", errors)
+    if candidate is None or origin is None:
+        return
+    candidate_blocks = candidate["blocks"]
+    origin_blocks = origin["blocks"]
+    assert isinstance(candidate_blocks, dict)
+    assert isinstance(origin_blocks, dict)
+    if candidate["preamble"] != origin["preamble"]:
+        errors.append("pause may not change the baseline preamble")
+    if candidate["order"] != origin["order"]:
+        errors.append("pause may not reorder baseline sections")
+    allowed_blocks = {"updated_at", "manager", "active_packages", "next_gate"}
+    for key in BASELINE_TOP_LEVEL_SECTIONS:
+        if key not in allowed_blocks and candidate_blocks[key] != origin_blocks[key]:
+            errors.append(f"pause may not change baseline section {key}")
+
+    origin_manager = _parse_manager_block(origin_blocks["manager"], "origin/main", errors)
+    candidate_manager = _parse_manager_block(candidate_blocks["manager"], "candidate", errors)
+    if origin_manager is not None and candidate_manager is not None:
+        if origin_manager[0] != candidate_manager[0]:
+            errors.append("pause may only change baseline manager.current_assignments")
+        expected_assignment = _expected_pause_manager_assignment(
+            paused_package, remaining_lanes
+        )
+        if candidate_manager[1] != expected_assignment:
+            errors.append(
+                "pause baseline manager assignment must equal: "
+                + expected_assignment
+            )
+
+    origin_packages = _parse_active_packages_block(
+        origin_blocks["active_packages"], "origin/main", errors
+    )
+    candidate_packages = _parse_active_packages_block(
+        candidate_blocks["active_packages"], "candidate", errors
+    )
+    if origin_packages is not None and candidate_packages is not None:
+        expected = [
+            package for package in origin_packages if package["id"] != paused_package
+        ]
+        if candidate_packages != expected:
+            errors.append(
+                "pause baseline active_packages must remove exactly the paused package"
+            )
+
+    candidate_gate = _single_scalar_block(
+        candidate_blocks["next_gate"], "next_gate", "candidate", errors
+    )
+    if candidate_gate is not None:
+        expected_gate = _expected_pause_next_gate(paused_package, remaining_lanes)
+        if candidate_gate[0] != expected_gate:
+            errors.append("pause baseline next_gate must equal: " + expected_gate)
 
 
 def _activation_snapshot(
@@ -772,6 +1004,94 @@ def _surfaces_overlap(left: str, right: str) -> bool:
     )
 
 
+def _path_is_within_surface(path: str, surface: str) -> bool:
+    """Return whether a normalized path belongs to a normalized surface."""
+    path_folded = path.casefold()
+    surface_folded = surface.casefold()
+    return path_folded == surface_folded or path_folded.startswith(
+        surface_folded + "/"
+    )
+
+
+def _validate_direction_authority_surfaces(
+    lane: dict,
+    label: str,
+    errors: list[str],
+) -> None:
+    """Keep the third lane documentation/evidence-only by construction."""
+    if lane.get("lane_class") != "direction_authority":
+        return
+    raw_surfaces = lane.get("writable_surfaces")
+    if not isinstance(raw_surfaces, list):
+        return
+    for index, surface in enumerate(raw_surfaces):
+        normalized = _normalize_repo_surface(
+            surface,
+            f"{label} writable_surfaces[{index}]",
+            errors,
+        )
+        if normalized is None:
+            continue
+        if not any(
+            _path_is_within_surface(normalized, root)
+            for root in DIRECTION_AUTHORITY_ALLOWED_ROOTS
+        ):
+            errors.append(
+                f"{label} direction_authority surface must remain under "
+                "docs/initiatives or artifacts; runtime, shared-governance, "
+                f"script, and test paths are forbidden: {normalized}"
+            )
+
+
+def _validate_changed_paths_within_lane(
+    lane: dict,
+    facts: dict,
+    intent: str,
+    errors: list[str],
+) -> None:
+    """Reject branch changes outside the lane's declared mutable surfaces."""
+    raw_changed_paths = facts.get("changed_paths")
+    if not isinstance(raw_changed_paths, list) or not all(
+        isinstance(path, str) and path for path in raw_changed_paths
+    ):
+        errors.append(f"{intent} changed_paths must be a list of non-empty strings")
+        return
+    if not raw_changed_paths:
+        return
+
+    raw_surfaces = lane.get("writable_surfaces")
+    if not isinstance(raw_surfaces, list) or not raw_surfaces:
+        errors.append(f"{intent} active lane writable_surfaces must be a non-empty list")
+        return
+    normalized_surfaces = [
+        normalized
+        for index, surface in enumerate(raw_surfaces)
+        if (
+            normalized := _normalize_repo_surface(
+                surface,
+                f"{intent} active lane writable_surfaces[{index}]",
+                errors,
+            )
+        )
+        is not None
+    ]
+    for index, path in enumerate(raw_changed_paths):
+        normalized = _normalize_repo_surface(
+            path,
+            f"{intent} changed_paths[{index}]",
+            errors,
+        )
+        if normalized is None:
+            continue
+        if not any(
+            _path_is_within_surface(normalized, surface)
+            for surface in normalized_surfaces
+        ):
+            errors.append(
+                f"{intent} branch contains path outside active lane surfaces: {normalized}"
+            )
+
+
 def _validate_added_branch_uniqueness(
     branch: str | None,
     origin_lanes: list[dict],
@@ -826,6 +1146,126 @@ def _validate_added_branch_uniqueness(
                 )
 
 
+def _validate_lane_coordination(
+    lane: dict,
+    label: str,
+    errors: list[str],
+) -> tuple[str | None, list[str]]:
+    """Validate the lane class and its logical ownership locks."""
+    lane_class = _nonempty_string(lane.get("lane_class"), f"{label} lane_class", errors)
+    if lane_class is not None and lane_class not in VALID_LANE_CLASSES:
+        errors.append(
+            f"{label} lane_class must be one of: "
+            + ", ".join(sorted(VALID_LANE_CLASSES))
+        )
+
+    production_capable = lane.get("production_capable")
+    if not isinstance(production_capable, bool):
+        errors.append(f"{label} production_capable must be a boolean")
+    if lane_class == "direction_authority" and production_capable is not False:
+        errors.append(
+            f"{label} direction_authority must use production_capable false"
+        )
+
+    raw_domains = lane.get("exclusive_domains")
+    domains: list[str] = []
+    if not isinstance(raw_domains, list) or not raw_domains:
+        errors.append(f"{label} exclusive_domains must be a non-empty list")
+    else:
+        for index, raw_domain in enumerate(raw_domains):
+            domain = _nonempty_string(
+                raw_domain,
+                f"{label} exclusive_domains[{index}]",
+                errors,
+            )
+            if domain is None:
+                continue
+            if raw_domain != domain or not EXCLUSIVE_DOMAIN.fullmatch(domain):
+                errors.append(
+                    f"{label} exclusive_domains[{index}] must use a canonical "
+                    "lowercase namespace such as product:profile or shared:auth"
+                )
+                continue
+            domains.append(domain)
+        if len({domain.casefold() for domain in domains}) != len(domains):
+            errors.append(f"{label} exclusive_domains must not repeat a domain")
+    _validate_direction_authority_surfaces(lane, label, errors)
+    return lane_class, domains
+
+
+def _domains_overlap(left: str, right: str) -> bool:
+    """Treat a domain and any more-specific child namespace as one lock."""
+    left_folded = left.casefold()
+    right_folded = right.casefold()
+    return (
+        left_folded == right_folded
+        or left_folded.startswith(right_folded + ":")
+        or right_folded.startswith(left_folded + ":")
+    )
+
+
+def _validate_lane_mix(lanes: list[dict], label: str, errors: list[str]) -> None:
+    """Enforce two implementation lanes plus one direction/authority lane."""
+    classes: list[str] = []
+    domain_owners: list[tuple[str, str]] = []
+    production_capable_count = 0
+    for index, lane in enumerate(lanes):
+        package = lane.get("package")
+        package_label = (
+            package.strip()
+            if isinstance(package, str) and package.strip()
+            else f"index {index}"
+        )
+        lane_class, domains = _validate_lane_coordination(
+            lane,
+            f"{label} active lane {package_label}",
+            errors,
+        )
+        if lane_class is not None:
+            classes.append(lane_class)
+        if lane.get("production_capable") is True:
+            production_capable_count += 1
+        for domain in domains:
+            collision = next(
+                (
+                    (owned_domain, owner)
+                    for owned_domain, owner in domain_owners
+                    if _domains_overlap(domain, owned_domain)
+                ),
+                None,
+            )
+            if collision is not None:
+                owned_domain, owner = collision
+                errors.append(
+                    f"{label} active lanes have an exclusive-domain collision "
+                    f"for {domain} and {owned_domain}: {owner} <> {package_label}"
+                )
+            else:
+                domain_owners.append((domain, package_label))
+
+    implementation_count = sum(
+        lane_class in IMPLEMENTATION_LANE_CLASSES for lane_class in classes
+    )
+    direction_count = classes.count("direction_authority")
+    shared_count = classes.count("shared_foundation")
+    if implementation_count > MAX_IMPLEMENTATION_LANES:
+        errors.append(
+            f"{label} exceeds the {MAX_IMPLEMENTATION_LANES}-implementation-lane limit"
+        )
+    if direction_count > MAX_DIRECTION_AUTHORITY_LANES:
+        errors.append(
+            f"{label} exceeds the {MAX_DIRECTION_AUTHORITY_LANES}-direction-authority-lane limit"
+        )
+    if shared_count > MAX_SHARED_FOUNDATION_LANES:
+        errors.append(
+            f"{label} exceeds the {MAX_SHARED_FOUNDATION_LANES}-shared-foundation-lane limit"
+        )
+    if production_capable_count > MAX_PRODUCTION_CAPABLE_LANES:
+        errors.append(
+            f"{label} exceeds the {MAX_PRODUCTION_CAPABLE_LANES}-production-capable-lane limit"
+        )
+
+
 def _validate_added_lane(
     lane: dict,
     origin_lanes: list[dict],
@@ -837,6 +1277,11 @@ def _validate_added_lane(
     package = _canonical_package_id(
         lane.get("package"),
         "new active lane package",
+        errors,
+    )
+    _, normalized_domains = _validate_lane_coordination(
+        lane,
+        "new active lane",
         errors,
     )
     _nonempty_string(lane.get("outcome"), "new active lane outcome", errors)
@@ -945,6 +1390,20 @@ def _validate_added_lane(
                         f"active lane {origin_package or '(unknown)'}: "
                         f"{candidate_surface} <> {origin_surface}"
                     )
+        _, origin_domains = _validate_lane_coordination(
+            origin_lane,
+            f"origin/main active lane {origin_package or '(unknown)'}",
+            errors,
+        )
+        for domain in normalized_domains:
+            if any(
+                _domains_overlap(domain, origin_domain)
+                for origin_domain in origin_domains
+            ):
+                errors.append(
+                    "new active lane exclusive domain overlaps origin/main "
+                    f"active lane {origin_package or '(unknown)'}: {domain}"
+                )
     _validate_added_branch_uniqueness(
         branch,
         origin_lanes,
@@ -1035,6 +1494,45 @@ def _validate_added_package_not_closing(
             errors.append(
                 "activation may not reopen origin/main closing lane "
                 f"{added_package}; use its authorized merge or cleanup path"
+            )
+
+
+def _validate_closing_lanes_retain_no_authority(
+    origin: dict,
+    origin_mode: dict,
+    errors: list[str],
+) -> None:
+    """Closing records are history; any retained mutation grant blocks activation."""
+    closing_lanes = origin.get("closing_lanes")
+    if not isinstance(closing_lanes, list):
+        errors.append("origin/main closing_lanes must be a list")
+        return
+    closing_packages = {
+        package.casefold()
+        for lane in closing_lanes
+        if isinstance(lane, dict)
+        and isinstance((package := lane.get("package")), str)
+        and package.strip()
+    }
+    for field in (
+        "writes_allowed_for",
+        "merge_allowed_for",
+        "cleanup_allowed_for",
+        "release_allowed_for",
+    ):
+        values = origin_mode.get(field)
+        if not isinstance(values, list):
+            errors.append(f"origin/main operating_mode.{field} must be a list")
+            continue
+        retained = sorted(
+            value
+            for value in values
+            if isinstance(value, str) and value.casefold() in closing_packages
+        )
+        if retained:
+            errors.append(
+                "origin/main closing lanes retain mutation authority in "
+                f"{field}: " + ", ".join(retained)
             )
 
 
@@ -1186,6 +1684,166 @@ def evaluate_policy(
             errors.append("the current operating mode disallows read-only work")
         return errors, warnings
 
+    if intent == "pause":
+        if not facts.get("fetched"):
+            errors.append("pause requires --fetch")
+        if not require_clean:
+            errors.append("pause requires --require-clean")
+        if origin_ledger is None or not isinstance(origin_ledger, dict):
+            errors.append("pause requires the fetched origin/main lane ledger")
+            return errors, warnings
+
+        candidate_mode, candidate_policy, candidate_lanes, _ = _activation_snapshot(
+            ledger, "candidate", errors
+        )
+        origin_mode, origin_policy, origin_lanes, origin_by_package = _activation_snapshot(
+            origin_ledger, "origin/main", errors
+        )
+        target = origin_by_package.get(package_id.casefold())
+        if target is None:
+            errors.append(f"pause requires {package_id} to be active on origin/main")
+            return errors, warnings
+        pause_branch = facts.get("branch")
+        if not isinstance(pause_branch, str) or not PAUSE_BRANCH_PATTERN.fullmatch(
+            pause_branch
+        ):
+            errors.append(
+                "pause must run from a dedicated control-only branch matching "
+                f"{PAUSE_BRANCH_PATTERN.pattern!r}"
+            )
+        if pause_branch == target.get("branch"):
+            errors.append("pause control branch must differ from the active lane branch")
+        if candidate_policy != origin_policy:
+            errors.append("pause may not change activation_policy")
+
+        remaining_lanes = [
+            lane for lane in origin_lanes if lane.get("package") != package_id
+        ]
+        if candidate_lanes != remaining_lanes:
+            errors.append("pause must remove exactly its own active lane")
+        _validate_lane_mix(remaining_lanes, "pause candidate", errors)
+
+        expected_state = "active_delivery" if remaining_lanes else "controlled_idle"
+        if candidate_mode.get("state") != expected_state:
+            errors.append(f"pause candidate must use {expected_state}")
+        if candidate_mode.get("writes_allowed_for") != [
+            lane.get("package") for lane in remaining_lanes
+        ]:
+            errors.append("pause writes_allowed_for must equal the remaining active lanes")
+        for field in ("merge_allowed_for", "cleanup_allowed_for", "release_allowed_for"):
+            origin_values = origin_mode.get(field)
+            expected_values = (
+                [value for value in origin_values if value != package_id]
+                if isinstance(origin_values, list)
+                else origin_values
+            )
+            if candidate_mode.get(field) != expected_values:
+                errors.append(f"pause operating_mode.{field} may only drop {package_id}")
+        allowed_mode_changes = {
+            "state",
+            "writes_allowed_for",
+            "merge_allowed_for",
+            "cleanup_allowed_for",
+            "release_allowed_for",
+            "exit_authority",
+        }
+        marker = object()
+        unexpected_mode_changes = {
+            key
+            for key in set(candidate_mode) | set(origin_mode)
+            if candidate_mode.get(key, marker) != origin_mode.get(key, marker)
+        } - allowed_mode_changes
+        if unexpected_mode_changes:
+            errors.append(
+                "pause may not change operating_mode fields: "
+                + ", ".join(sorted(unexpected_mode_changes))
+            )
+        exit_authority = candidate_mode.get("exit_authority")
+        if not isinstance(exit_authority, str) or (
+            package_id not in exit_authority or "paused" not in exit_authority.lower()
+        ):
+            errors.append("pause exit_authority must identify the paused package")
+
+        origin_paused = origin_ledger.get("paused_lanes")
+        candidate_paused = ledger.get("paused_lanes")
+        if not isinstance(origin_paused, list) or not isinstance(candidate_paused, list):
+            errors.append("pause paused_lanes must remain lists")
+        elif len(candidate_paused) != len(origin_paused) + 1 or candidate_paused[:-1] != origin_paused:
+            errors.append("pause must append exactly one preserved paused-lane record")
+        else:
+            paused_record = candidate_paused[-1]
+            if not isinstance(paused_record, dict):
+                errors.append("pause appended record must be an object")
+            else:
+                expected_keys = set(target) | {
+                    "disposition",
+                    "paused_at",
+                    "pause_reason",
+                    "resume_contract",
+                    "preserved_head_sha",
+                }
+                if set(paused_record) != expected_keys or any(
+                    paused_record.get(key) != value for key, value in target.items()
+                ):
+                    errors.append("pause must preserve the exact active-lane record")
+                if paused_record.get("disposition") != "paused_preserved":
+                    errors.append("pause disposition must be paused_preserved")
+                for field in ("paused_at", "pause_reason", "resume_contract"):
+                    _nonempty_string(
+                        paused_record.get(field), f"pause record {field}", errors
+                    )
+                preserved_head_sha = paused_record.get("preserved_head_sha")
+                remote_head_sha = facts.get("pause_target_remote_sha")
+                if (
+                    not isinstance(preserved_head_sha, str)
+                    or not FULL_GIT_SHA.fullmatch(preserved_head_sha)
+                ):
+                    errors.append("pause record preserved_head_sha must be a full Git SHA")
+                if (
+                    not isinstance(remote_head_sha, str)
+                    or not FULL_GIT_SHA.fullmatch(remote_head_sha)
+                ):
+                    errors.append(
+                        "pause requires the active lane branch to be pushed to origin"
+                    )
+                elif preserved_head_sha != remote_head_sha:
+                    errors.append(
+                        "pause record preserved_head_sha must equal the fetched "
+                        "origin branch tip"
+                    )
+
+        expected_root_changes = {
+            "updated_at",
+            "operating_mode",
+            "active_lanes",
+            "paused_lanes",
+        }
+        if _root_changes(ledger, origin_ledger) != expected_root_changes:
+            errors.append(
+                "pause must change exactly updated_at, operating_mode, active_lanes, and paused_lanes"
+            )
+
+        _validate_baseline_pause_delta(
+            candidate_baseline,
+            origin_baseline,
+            paused_package=package_id,
+            remaining_lanes=remaining_lanes,
+            errors=errors,
+        )
+        raw_changed_paths = facts.get("changed_paths")
+        if not isinstance(raw_changed_paths, list) or not all(
+            isinstance(path, str) and path for path in raw_changed_paths
+        ):
+            errors.append("pause changed_paths must be a list of non-empty strings")
+        else:
+            changed_paths = set(raw_changed_paths)
+            if changed_paths != set(PAUSE_ALLOWED_SURFACES):
+                errors.append(
+                    "pause control branch must change exactly: "
+                    + ", ".join(sorted(PAUSE_ALLOWED_SURFACES))
+                )
+        return errors, warnings
+
     if intent == "activate":
         added_package: str | None = None
         added_branch: str | None = None
@@ -1257,8 +1915,34 @@ def evaluate_policy(
                     )
 
         lane_limit = policy.get("max_active_lanes")
-        if lane_limit != 2:
-            errors.append("activation policy must retain the two-lane limit")
+        if lane_limit != MAX_ACTIVE_LANES:
+            errors.append(
+                f"activation policy must retain the {MAX_ACTIVE_LANES}-lane limit"
+            )
+        if policy.get("max_implementation_lanes") != MAX_IMPLEMENTATION_LANES:
+            errors.append(
+                "activation policy must retain the two-implementation-lane limit"
+            )
+        if (
+            policy.get("max_direction_authority_lanes")
+            != MAX_DIRECTION_AUTHORITY_LANES
+        ):
+            errors.append(
+                "activation policy must retain the one-direction-authority-lane limit"
+            )
+        if policy.get("max_shared_foundation_lanes") != MAX_SHARED_FOUNDATION_LANES:
+            errors.append(
+                "activation policy must retain the one-shared-foundation-lane limit"
+            )
+        if (
+            policy.get("max_production_capable_lanes")
+            != MAX_PRODUCTION_CAPABLE_LANES
+        ):
+            errors.append(
+                "activation policy must retain the one-production-capable-lane limit"
+            )
+        if set(policy.get("allowed_lane_classes") or []) != set(VALID_LANE_CLASSES):
+            errors.append("activation policy allowed_lane_classes is not canonical")
         raw_allowed_surfaces = policy.get("allowed_surfaces")
         if not isinstance(raw_allowed_surfaces, list) or not all(
             isinstance(surface, str) and surface for surface in raw_allowed_surfaces
@@ -1298,42 +1982,136 @@ def evaluate_policy(
                     "controlled_idle or active_delivery"
                 )
 
-            if origin_policy != policy:
+            if not bootstrap_matches and origin_policy != policy:
                 errors.append(
                     "activation may not change activation_policy"
                 )
 
-            if lane_limit == 2 and len(active_lanes) > lane_limit:
+            if lane_limit == MAX_ACTIVE_LANES and len(active_lanes) > lane_limit:
                 errors.append(
-                    "activation candidate exceeds the two-lane limit"
+                    f"activation candidate exceeds the {MAX_ACTIVE_LANES}-lane limit"
                 )
 
             if bootstrap_matches:
+                if policy != EXPECTED_ACTIVATION_POLICY:
+                    errors.append(
+                        "bootstrap control repair activation_policy must match the exact code-controlled policy"
+                    )
                 root_changes = _root_changes(ledger, origin_ledger)
-                unexpected_root_changes = sorted(
-                    root_changes - {"updated_at", "bootstrap_control_repair"}
-                )
-                if unexpected_root_changes:
+                expected_root_changes = {
+                    "schema_version",
+                    "updated_at",
+                    "operating_mode",
+                    "activation_policy",
+                    "bootstrap_control_repair",
+                    "bootstrap_control_repair_history",
+                    "active_lanes",
+                    "paused_lanes",
+                }
+                if root_changes != expected_root_changes:
                     errors.append(
-                        "bootstrap control repair may not change ledger sections: "
-                        + ", ".join(unexpected_root_changes)
+                        "bootstrap control repair must change exactly the owner-authorized "
+                        "ledger sections: "
+                        + ", ".join(sorted(expected_root_changes))
                     )
-                if ledger.get("active_lanes") != origin_ledger.get("active_lanes"):
+                if ledger.get("schema_version") != 2:
+                    errors.append("bootstrap control repair must set schema_version 2")
+                if active_lanes:
                     errors.append(
-                        "bootstrap control repair may not change active lanes"
+                        "bootstrap control repair must leave no active writer lanes"
                     )
-                if ledger.get("operating_mode") != origin_ledger.get(
-                    "operating_mode"
+                if mode.get("state") != "controlled_idle":
+                    errors.append(
+                        "bootstrap control repair must enter controlled_idle"
+                    )
+                if mode.get("writes_allowed_for") != []:
+                    errors.append(
+                        "bootstrap control repair must clear writes_allowed_for"
+                    )
+                if mode.get("authorized_by") != "Pete" or mode.get(
+                    "authorized_at"
+                ) != "2026-08-10":
+                    errors.append(
+                        "bootstrap control repair must retain the exact owner authorization"
+                    )
+                if mode.get("exit_authority") != BOOTSTRAP_EXIT_AUTHORITY:
+                    errors.append(
+                        "bootstrap control repair exit_authority is not exact"
+                    )
+                for field in (
+                    "read_only_work_allowed",
+                    "release_allowed_for",
+                    "blocked_actions",
                 ):
+                    if mode.get(field) != origin_mode.get(field):
+                        errors.append(
+                            f"bootstrap control repair may not change operating_mode.{field}"
+                        )
+                for field in ("merge_allowed_for", "cleanup_allowed_for"):
+                    if mode.get(field) != []:
+                        errors.append(
+                            f"bootstrap control repair must clear stale operating_mode.{field}"
+                        )
+                history = ledger.get("bootstrap_control_repair_history")
+                if history != [origin_ledger.get("bootstrap_control_repair")]:
                     errors.append(
-                        "bootstrap control repair may not change operating_mode"
+                        "bootstrap control repair history must preserve the exact prior record"
                     )
-                if ledger.get("activation_policy") != origin_ledger.get(
-                    "activation_policy"
+                if ledger.get("closing_lanes") != origin_ledger.get("closing_lanes"):
+                    errors.append("bootstrap control repair may not change closing_lanes")
+                origin_paused = origin_ledger.get("paused_lanes")
+                candidate_paused = ledger.get("paused_lanes")
+                if not isinstance(origin_paused, list) or not isinstance(
+                    candidate_paused, list
                 ):
-                    errors.append(
-                        "bootstrap control repair may not change activation_policy"
-                    )
+                    errors.append("bootstrap control repair paused_lanes must be lists")
+                else:
+                    if {
+                        lane.get("package") for lane in origin_lanes
+                    } != set(BOOTSTRAP_ORIGIN_ACTIVE_PACKAGES):
+                        errors.append(
+                            "bootstrap control repair origin/main active package set is not exact"
+                        )
+                    for paused in origin_paused:
+                        if paused not in candidate_paused:
+                            errors.append(
+                                "bootstrap control repair must preserve every prior paused lane"
+                            )
+                    for origin_lane in origin_lanes:
+                        matches = [
+                            paused
+                            for paused in candidate_paused
+                            if isinstance(paused, dict)
+                            and paused.get("package") == origin_lane.get("package")
+                        ]
+                        if len(matches) != 1 or any(
+                            matches[0].get(key) != value
+                            for key, value in origin_lane.items()
+                        ):
+                            errors.append(
+                                "bootstrap control repair must preserve origin/main active lane "
+                                f"{origin_lane.get('package', '(unknown)')} exactly when pausing it"
+                            )
+                        elif (
+                            matches[0].get("disposition") != "paused_preserved"
+                            or not all(
+                                isinstance(matches[0].get(field), str)
+                                and matches[0][field].strip()
+                                for field in (
+                                    "paused_at",
+                                    "pause_reason",
+                                    "resume_contract",
+                                )
+                            )
+                        ):
+                            errors.append(
+                                "bootstrap control repair must record a complete preserved pause for "
+                                f"{origin_lane.get('package', '(unknown)')}"
+                            )
+                    if len(candidate_paused) != len(origin_paused) + len(origin_lanes):
+                        errors.append(
+                            "bootstrap control repair may not add unrelated paused lanes"
+                        )
             else:
                 if (
                     ledger.get("bootstrap_control_repair")
@@ -1343,7 +2121,17 @@ def evaluate_policy(
                         "bootstrap control repair record does not match the "
                         "exact owner-authorized record"
                     )
-                if lane_limit == 2 and len(origin_lanes) >= lane_limit:
+                _validate_lane_mix(origin_lanes, "origin/main", errors)
+                _validate_lane_mix(active_lanes, "candidate", errors)
+                _validate_closing_lanes_retain_no_authority(
+                    origin_ledger,
+                    origin_mode,
+                    errors,
+                )
+                if (
+                    lane_limit == MAX_ACTIVE_LANES
+                    and len(origin_lanes) >= lane_limit
+                ):
                     errors.append(
                         "activation refused because the lane limit is full"
                     )
@@ -1505,6 +2293,8 @@ def evaluate_policy(
             f"branch {facts.get('branch')} does not match active lane branch "
             f"{active_lane.get('branch')}"
         )
+    elif intent in {"write", "merge", "release"}:
+        _validate_changed_paths_within_lane(active_lane, facts, intent, errors)
 
     if facts.get("ahead", 0):
         warnings.append(
@@ -1522,6 +2312,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=(
             "read",
             "activate",
+            "pause",
             "write",
             "merge",
             "cleanup",
@@ -1550,6 +2341,10 @@ def main(argv: list[str] | None = None) -> int:
         activation_argument_errors.append("activation requires --fetch")
     if args.intent == "activate" and not args.require_clean:
         activation_argument_errors.append("activation requires --require-clean")
+    if args.intent == "pause" and not args.fetch:
+        activation_argument_errors.append("pause requires --fetch")
+    if args.intent == "pause" and not args.require_clean:
+        activation_argument_errors.append("pause requires --require-clean")
     if activation_argument_errors:
         print(
             json.dumps(
@@ -1567,15 +2362,45 @@ def main(argv: list[str] | None = None) -> int:
         ledger = load_ledger()
         facts = collect_facts(
             fetch=args.fetch,
-            include_changed_paths=args.intent == "activate",
+            include_changed_paths=args.intent in {
+                "activate",
+                "pause",
+                "write",
+                "merge",
+                "release",
+            },
         )
-        if args.intent == "activate":
+        if args.intent in {"activate", "pause"}:
             # The exact SHA captured with the Git facts is the authority for
             # both records, preventing a later remote movement from changing
             # what the candidate was compared against mid-preflight.
             origin_ledger = load_ledger_at_ref(facts["origin_main"])
             candidate_baseline = load_baseline_bytes()
             origin_baseline = load_baseline_bytes_at_ref(facts["origin_main"])
+            if args.intent == "pause":
+                origin_lanes = origin_ledger.get("active_lanes")
+                target = next(
+                    (
+                        lane
+                        for lane in origin_lanes
+                        if isinstance(lane, dict)
+                        and lane.get("package") == args.package
+                    ),
+                    None,
+                ) if isinstance(origin_lanes, list) else None
+                target_branch = target.get("branch") if isinstance(target, dict) else None
+                if isinstance(target_branch, str) and target_branch:
+                    remote_sha = _git(
+                        "rev-parse",
+                        "--verify",
+                        f"refs/remotes/origin/{target_branch}",
+                        check=False,
+                    )
+                    facts["pause_target_remote_sha"] = (
+                        remote_sha if FULL_GIT_SHA.fullmatch(remote_sha) else None
+                    )
+                else:
+                    facts["pause_target_remote_sha"] = None
         else:
             origin_ledger = None
             candidate_baseline = None

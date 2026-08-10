@@ -40,22 +40,32 @@ Use `--intent read` for a read-only audit. If the ledger reports an
 owner-directed reset, only its `writes_allowed_for` package may write. Do not
 create a branch or worktree to work around a failed preflight.
 
-When the ledger reports `controlled_idle`, ordinary writes are intentionally
-blocked. After Pete names one exact next outcome, create only the small
-delivery-activation branch described by `activation_policy`. The same bounded
-activation path may reserve lane two during `active_delivery` only while the
-recorded two-lane limit has capacity and the proposed mutable surfaces do not
-conflict with an existing writer. Run:
+From `controlled_idle`, Pete must name one exact outcome before the small
+ledger/baseline activation branch is created. During `active_delivery`, the
+same path may add a writer only within the two-implementation-plus-one-direction
+limit and with disjoint paths and exclusive domains. The direction slot may
+write only initiative documentation/evidence, and only one active lane may be
+production-capable. Run:
 
 ```bash
 python scripts/delivery_preflight.py --package PS-DELIVERY-CONTROL-001 --intent activate --fetch --require-clean
 ```
 
-That branch may update only the ledger/baseline to reserve the selected
-implementation branch, writer, surfaces, exclusions, and delivery path. Merge
-the activation record before creating the implementation worktree. Do not put
-product code in the activation PR. A full lane limit remains a stop; do not
-pause, rewrite, or displace another lane to make room.
+Record the branch, writer, class, domains, surfaces, exclusions, and path. Merge
+that control record before creating the implementation worktree. Product code,
+a full class limit, or a path/domain collision is a stop.
+
+Only writers consume capacity. To pause safely, commit and push the work
+checkpoint, then create a dedicated
+`work/YYYY-MM-DD-delivery-pause-<slug>` branch from current `origin/main`,
+change only the ledger/baseline, record the fetched work SHA, and run:
+
+```bash
+python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent pause --fetch --require-clean
+```
+
+Merge only the control record. Paused work consumes no slot and resumes only
+through fresh activation.
 
 | Path | Use for | Read next |
 |---|---|---|

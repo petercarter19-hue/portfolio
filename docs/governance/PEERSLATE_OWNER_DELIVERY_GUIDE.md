@@ -161,12 +161,48 @@ reservation. After release, the agent must close the branch/worktree and update
 the live ledger so finished work does not remain operationally active.
 
 The activation record is the one deliberate setup step from
-`controlled_idle`, and it is also how lane two is added during
+`controlled_idle`, and it is also how another writer is added during
 `active_delivery` when capacity remains. Its purpose is to make the selected
-lane, branch, worktree, and non-overlapping surfaces visible to every other
-session before implementation begins. It is not an architecture round,
-feature review, or second implementation package. A full two-lane limit is a
-real stop.
+lane, branch, worktree, class, exclusive domains, and non-overlapping surfaces
+visible to every other session before writing begins. It is not itself an
+architecture round, feature review, or implementation package.
+
+PeerSlate permits three active writers, but they are not interchangeable:
+
+- At most two lanes may be `implementation` or `shared_foundation`.
+- At most one lane may be `direction_authority`.
+- At most one shared-foundation lane may be active.
+- At most one active lane may be production-capable.
+- A direction/authority lane may write only beneath `docs/initiatives/` or
+  `artifacts/`; it cannot carry templates, styles, scripts, services, tests, or
+  other runtime implementation.
+- A path overlap or an exclusive-domain overlap is a stop even when a slot is
+  numerically free. Typical domains include `product:profile`,
+  `shared:global-shell`, `shared:auth`, `shared:data-schema`, and
+  `shared:visual-foundation`.
+- Both implementation lanes may prepare work, but production-boundary actions
+  remain serialized through the existing merge/release authority.
+
+An empty third slot is intentional when the proposed work depends on an active
+lane or needs one of its domains. Read-only researchers and reviewers are not
+writers and consume no lane.
+
+Only an actually writing package belongs in `active_lanes`. A package waiting
+for owner input, a visual-generation round, a dependency, or later resumption
+must relinquish ownership with the controlled `--intent pause` transition.
+The writer first commits and pushes the exact checkpoint. A separate
+`work/YYYY-MM-DD-delivery-pause-<slug>` branch is then created from current
+`origin/main`; it changes only `CURRENT_LANES.json` and
+`CURRENT_BASELINE.yaml`, records the fetched work-branch commit, and is the only
+branch merged for the pause. This prevents both failure modes: unfinished work
+is neither merged merely to free capacity nor left only in an inaccessible
+local checkout. A resume always requires fresh activation from current
+`origin/main`, a new branch, and new path/domain collision checks.
+
+Before merge or release, preflight compares the branch's actual changed paths
+with its declared writable surfaces. A declared lane is therefore not
+permission to let unrelated edits travel with the branch. A full class limit,
+path collision, domain collision, or out-of-scope branch diff is a real stop.
 
 The process is successful when Pete can keep having fun with the product while
 the delivery system permits only a small, visible amount of work to become
