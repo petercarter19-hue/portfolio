@@ -1,17 +1,19 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-10T17:43:05Z",
+  "updated_at": "2026-08-11T16:55:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "controlled_idle",
+    "state": "active_delivery",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [],
+    "writes_allowed_for": [
+      "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001"
+    ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -27,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "No package currently owns a mutable surface. PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001 is preserved after PR 360 was abandoned; PS-WORKSHOP-EXPERIENCE-001 is paused and preserved. Either may resume only through a fresh activation that passes current branch, path, class, and exclusive-domain checks."
+    "exit_authority": "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 alone may write its recorded surfaces on work/2026-08-11-interview-studio-authenticated-experience-001. Pete's 2026-08-11 grant ('Go all the way up to right before it goes live') covers the governed sequence through dark merge, automatic flag-off deployment, and live dark verification; the merge/release entries are recorded through the established recorded-scope pattern at their own step. Enablement of PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED is expressly excluded and requires Pete's separate recorded go. Paused work may resume only through a separate fresh activation."
   },
   "activation_policy": {
     "enabled": true,
@@ -968,7 +970,83 @@
       "sequence": "Merge the activation-only PR; create the path-scoped required-reviewer policy; create the implementation worktree from resulting origin/main; pass the package write preflight; implement the three-stage split with the pure-YAML serialization restore; correct the four affected test files; self-review and non-writer review; open the Azure PR as the new policy's first exercise; merge; verify a real merge deploys with no human interaction; record smoke, rollback, and the unchanged schema gate; truthful closeout."
     }
   ],
-  "active_lanes": [],
+  "active_lanes": [
+    {
+      "package": "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
+      "outcome": "Put the real Interview Studio behind sign-in and recompose it to the 19 hash-locked warm-material visual states from the accepted 2026-08-11 Claude architecture: one flag (PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED, default off) gates the two HTML routes and all four interview APIs as a unit; identity is server-derived with browser-supplied profile identity removed from API contracts; each account gets an opaque member-scoped browser-storage namespace (v3) with no silent adoption of anonymous legacy records; Interview Me becomes the append-only answer -> coaching -> improvement -> revised-coaching consequence stack with structurally immutable submitted snapshots and the bracket-confirmation contract; Interview AI grounds only the owner account on approved public resume data and fails closed to the locked insufficiency state for every other account; follow-up stays visibly unavailable while interview_followup_mode_provenance is open. Everything merges and deploys dark; enablement is Pete's separate recorded go.",
+      "branch": "work/2026-08-11-interview-studio-authenticated-experience-001",
+      "writer": "Claude Sonnet at maximum effort as the sole delegated implementation writer in the dedicated portfolio-interview-studio-auth-20260811 worktree, orchestrated by Claude Fable 5 (the architecture author, which briefs and reviews slices but does not hand-write implementation); a fresh Claude Fable extra-high context performs the independent Protected review of the exact candidate SHA",
+      "delivery_path": "Protected",
+      "production_capable": true,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "product:interview-studio",
+        "platform:auth-return-path"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main ace996cd32612cfa62ae51b4b4f28158e41c6b23. Application behavior is aa4a4ec6a12d334805298f81041fee49c6fdc51a via pipeline 722; live /healthz release c5501f2e3f981a6b1999c5c0 is the governance-only deploy of ace996cd (PR 368 squash lost its [skip ci] marker; recorded, not a defect to fix here). Authority: the hash-verified Interview Studio Claude Architecture Handoff 2026-08-11 (44/44 files verified) and the accepted Interview Studio Claude Architecture Deliverable 2026-08-11 with OWNER_ACCEPTANCE_2026-08-11.md, both in Pete's iCloud PeerSlate Architect Handoffs folder.",
+      "writable_surfaces": [
+        "app.py",
+        "auth_routes.py",
+        "templates/interview_studio.html",
+        "templates/partials/interview_question_bank.html",
+        "static/css/interview-studio.css",
+        "static/js/interview-studio.js",
+        "tests/test_interview_studio.py",
+        "tests/test_auth.py",
+        "tests/test_search_visibility.py",
+        "docs/initiatives/PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001/",
+        "artifacts/2026-08-11-interview-studio-authenticated/",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml"
+      ],
+      "exclusions": [
+        "no templates/base.html edit: the global shell is reused untouched; the Studio's duplicate local header is retired inside interview_studio.html only",
+        "no static/js/dictation.js edit: the shared dictation module is already contract-compliant",
+        "no schema, SQL, migration, database, provider/model, dependency, secret, or azure-pipelines.yml change",
+        "no enablement: PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED stays default-off in every environment; flag-off anonymous behavior must remain byte-comparable; enablement is Pete's separate recorded decision",
+        "no adoption, migration, or deletion of anonymous legacy browser records (v1/v2 namespaces stay inert)",
+        "no write to PS-PROFILE-EXPERIENCE-001 or PS-WORKSHOP-EXPERIENCE-001 surfaces, any paused/preserved branch or worktree, or any other writer's checkpoint",
+        "no cleanup or deletion of unrelated branches, worktrees, stashes, or artifacts",
+        "no weakening of a failing test to make it pass and no bypass of preflight, policy, review, or evidence; superseded public-contract test pins are rewritten deliberately and itemized in the completion record",
+        "a merge is not enablement and is not called live behavior; every release claim carries its own /healthz-verified evidence"
+      ],
+      "completion_evidence": [
+        "activation record merged and the implementation worktree passes the package write preflight from resulting origin/main",
+        "slice 1: flag config, identity gates on both HTML routes and all four interview APIs, safe-return allowlist extension with the full hostile-shape matrix, JSON-401 contract, X-Robots-Tag/no-store namespace rule, robots/sitemap removal, member-keyed rate limits, fail-closed same-origin for authenticated requests, flag-off byte-comparability test",
+        "slice 2: server-injected opaque member storage scope, v3 storage namespace, two-account isolation tests, anonymous-legacy non-adoption tests, storage-failure truth states",
+        "slice 3: flag-selected authenticated shell (local header/demo chrome/right rails retired; left rail consolidated; mobile control row; warm token layer; locked truth copy)",
+        "slice 4: append-only consequence stack with structurally immutable snapshots, pending/failure rows, completed-action states, bracket-confirmation contract enforced client and server, request binding widened to session/context/question/attempt/epoch",
+        "slice 5: Interview AI owner-grounding and fail-closed insufficiency, visibly parked follow-up, Video recovery composition and playback-URL revocation on every teardown, Session Complete, History four truth states and exact comparison-gate string",
+        "slice 6: 320/390/1366/wide/200 percent reflow, keyboard/focus/live-region/reduced-motion evidence, side-by-side comparison against all 19 locked visual files with archived screenshots",
+        "full studio, auth, and search-visibility suites pass via the project venv; complete-diff self-review; independent fresh-context Fable review of the exact candidate SHA with findings closed",
+        "Azure PR merges dark; /healthz release identity verified for the exact merged SHA; anonymous live smoke proves unchanged public behavior; proportional completion record written; lane stops before enablement"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-11",
+          "decision": "Pete accepted the Phase A architecture and resolved all three owner questions: 'I agree with all three.' Q-A: /interview-studio stays canonical behind sign-in and the 2026-07-18 reserved /app/interview-studio note is retired. Q-B: every account starts with empty History, including Pete's own; no silent adoption of anonymous legacy records. Q-C: Pete's signed-in account grounds Interview AI on his approved public resume data; all other accounts fail closed until a member-evidence package exists."
+        },
+        {
+          "date": "2026-08-11",
+          "decision": "Model routing, verbatim: 'Use Fable Extra to build the architecture. Use Sonnet Max to implement it, and then use Fable Extra for review it.' The architecture was authored by the Fable session holding this conversation; Sonnet max is the sole delegated implementation writer; a fresh Fable extra-high context is the independent reviewer."
+        },
+        {
+          "date": "2026-08-11",
+          "decision": "Execution boundary, verbatim: 'Go all the way up to right before it goes live.' This authorizes activation, dark implementation, review, Azure PR merge, the automatic deployment of flag-off code, and live dark verification without per-step approval. Setting PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED=true is excluded and remains Pete's separate recorded go."
+        }
+      ],
+      "model_routing": {
+        "decided_by": "Pete",
+        "date": "2026-08-11",
+        "architecture": "Claude Fable 5 (this session): authored the accepted architecture deliverable; briefs and reviews slices; does not hand-write implementation",
+        "implementation": "Claude Sonnet at maximum effort, sole delegated implementation writer in the dedicated clean worktree",
+        "independent_reviewer": "Fresh Claude Fable extra-high context reviews the exact final candidate SHA; it did not write the code",
+        "sequence": "activation merge -> clean worktree -> write preflight -> Sonnet implements slices 1-6 with Fable slice review -> full validation -> Fable extra-high exact-SHA review -> findings closed -> Azure PR -> dark merge and deploy -> live dark verification -> stop before enablement"
+      },
+      "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged activation and implementation worktrees and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
+      "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree from resulting origin/main; pass the package write preflight; implement slices 1-6 dark with per-slice Fable review; run the full matrix; complete-diff self-review; independent Fable extra-high review of the exact candidate; close findings; Azure PR; dark merge; verify the automatic deploy's /healthz identity and anonymous smoke; write the completion record; stop for Pete's enablement decision."
+    }
+  ],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
