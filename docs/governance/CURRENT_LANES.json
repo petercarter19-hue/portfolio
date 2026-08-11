@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-11T16:55:00Z",
+  "updated_at": "2026-08-11T17:52:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001"
+      "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
+      "PS-OPPORTUNITY-SLATE-002"
     ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
@@ -29,7 +30,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 alone may write its recorded surfaces on work/2026-08-11-interview-studio-authenticated-experience-001. Pete's 2026-08-11 grant ('Go all the way up to right before it goes live') covers the governed sequence through dark merge, automatic flag-off deployment, and live dark verification; the merge/release entries are recorded through the established recorded-scope pattern at their own step. Enablement of PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED is expressly excluded and requires Pete's separate recorded go. Paused work may resume only through a separate fresh activation."
+    "exit_authority": "Two lanes may write, each only its own recorded surfaces: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 on work/2026-08-11-interview-studio-authenticated-experience-001, and PS-OPPORTUNITY-SLATE-002 on work/2026-08-11-opportunity-slate-v2-r1. Interview Studio: Pete's 2026-08-11 grant ('Go all the way up to right before it goes live') covers the governed sequence through dark merge, automatic flag-off deployment, and live dark verification; the merge/release entries are recorded through the established recorded-scope pattern at their own step; enablement of PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED is expressly excluded and requires Pete's separate recorded go. Opportunity Slate v2: Pete's 2026-08-11 boundary ('I want you all the way until almost live deployment. At that point, stop and let me review it before it goes live.') ends the lane at a CI-validated Azure PR; merge, deployment, schema apply, and any flag change wait for Pete's pre-live review. Paused work may resume only through a separate fresh activation."
   },
   "activation_policy": {
     "enabled": true,
@@ -1045,6 +1046,72 @@
       },
       "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged activation and implementation worktrees and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
       "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree from resulting origin/main; pass the package write preflight; implement slices 1-6 dark with per-slice Fable review; run the full matrix; complete-diff self-review; independent Fable extra-high review of the exact candidate; close findings; Azure PR; dark merge; verify the automatic deploy's /healthz identity and anonymous smoke; write the completion record; stop for Pete's enablement decision."
+    },
+    {
+      "package": "PS-OPPORTUNITY-SLATE-002",
+      "outcome": "Replace the Opportunity Slate experience per the 2026-08-11 Claude architecture (artifacts/2026-08-11-opportunity-slate-architecture/OPPORTUNITY_SLATE_ARCHITECTURE.md), built to the eleven owner-locked visual files (two locked references plus the nine candidates Pete locked on 2026-08-11, hash-pinned in the visual package's ASSET_SHA256SUMS.txt) and the controlling 2026-08-09 independent review PDF. This lane delivers R1 dark: the v2 workroom blueprint and service, stage-1 intake (paste/type/dictate, upload and public-link import reusing the hardened intake service unchanged), stage-2 captured-source review, and the additive PS-OPPSLATE-004 migration with its full gate proof, all behind PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED (default false) with the legacy experience untouched and live. The lane ends at a CI-validated Azure PR held for Pete's pre-live review; R2+ (AI interpretation and alignment, save/history, cutover, legacy retirement) are separate later recorded steps.",
+      "branch": "work/2026-08-11-opportunity-slate-v2-r1",
+      "writer": "Claude Sonnet at maximum effort as the sole delegated implementation writer in the dedicated portfolio-opportunity-slate-v2-20260811 worktree, orchestrated by Claude Fable 5 (the architecture author, which briefs and reviews but does not hand-write implementation); a fresh Claude Fable extra-high context performs the independent Protected review of the exact candidate SHA",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "product:opportunity-slate"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 24f0acb16ac78a38b56e0bac1b519bfaee2e39e4 at activation authoring; application behavior aa4a4ec6a12d334805298f81041fee49c6fdc51a via pipeline 722. Authority: Pete's 2026-08-11 chat decisions; the hash-verified visual decision set in iCloud PeerSlate-Opportunity-Slate-Visuals-2026-08-11 (12/12 files verified against ASSET_SHA256SUMS.txt on 2026-08-11); the controlling 2026-08-09 independent review PDF (SHA-256 B43AB2FEBE611D3C251788777EC73FCCE5BF3371F938D8D60B7267CC2CFF5412); the 2026-08-10 architect handoff zip; and the critic-revised architecture document in artifacts/2026-08-11-opportunity-slate-architecture/.",
+      "writable_surfaces": [
+        "opportunity_slate_v2_routes.py",
+        "services/opportunity_slate_v2_service.py",
+        "templates/opportunity_slate_v2/",
+        "static/css/opportunity-slate-v2.css",
+        "static/js/opportunity-slate-v2.js",
+        "SQL FIles/Migrations/proposed/PS-OPPSLATE-004_opportunity_slate_replacement.sql",
+        "SQL FIles/Migrations/proposed/PS-OPPSLATE-004_opportunity_slate_replacement_rollback.sql",
+        "SQL FIles/Migrations/registry.json",
+        "SQL FIles/Verification/PS-OPPSLATE-004_owner_isolation_verify.sql",
+        "tests/test_opportunity_slate_v2.py",
+        "tests/test_opportunity_slate_v2_migration.py",
+        "docs/initiatives/PS-OPPORTUNITY-SLATE-002/",
+        "artifacts/2026-08-11-opportunity-slate-v2/"
+      ],
+      "exclusions": [
+        "no app.py write: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 owns app.py while it is active; the v2 blueprint flag wiring is deferred and lands only through a fresh recorded ledger update after that lane closes (or is handed to Pete as an explicit open step); until then the v2 blueprint is exercised through a test app factory only",
+        "no merge, deployment, production schema apply, App Service configuration change, or flag change: the lane ends at a CI-validated Azure PR; Pete reviews before anything goes live",
+        "no change to legacy Opportunity Slate routes, services, templates, JS, CSS, tests, or data; the legacy experience stays untouched and live; PS-OPPSLATE-001..003 tables, procedures, and rows are preserved and PS-OPPSLATE-004 is additive only with fingerprint-re-stamped procedure takeovers",
+        "no AI call in R1, no new dependency, no secret, no azure-pipelines.yml or shared-infrastructure change, no templates/base.html or static/js/dictation.js edit",
+        "no write to PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 surfaces, any paused or preserved branch or worktree, or any other writer's checkpoint",
+        "no cleanup or deletion of unrelated branches, worktrees, stashes, or artifacts",
+        "no weakening of a failing test to make it pass and no bypass of preflight, policy, review, or evidence"
+      ],
+      "completion_evidence": [
+        "activation record merged and the implementation worktree passes the package write preflight from resulting origin/main",
+        "R1 scope delivered dark: v2 blueprint and service with sign-in gate, private/no-store and noindex headers, same-origin guards, and member-keyed rate limits; stage-1 intake with disabled-until-nonempty Review source and in-flight/failure states; stage-2 captured-source review with identity fields, editable captured wording preserving write-once originals, explicit Confirm source, and bounded replace/delete confirmation",
+        "additive migration PS-OPPSLATE-004 with registry entry and full gate proof: prerequisites, forward, idempotent reapply, owner-isolation verifier, rollback, forward-after-rollback on a disposable database, and fingerprint-guard proof that 004's takeovers re-stamp and nothing redefines the 001..003 procedures",
+        "new suites plus the existing full suite pass via the project venv under CI's unittest discover semantics",
+        "complete-diff self-review by the writer; independent fresh-context Fable extra-high review of the exact candidate SHA with findings closed",
+        "local flag-on visual verification against locked mockups 04 and 05 with archived side-by-side screenshots, 320px and 390px reflow, keyboard and reduced-motion checks for the shipped states",
+        "Azure PR opened with required CI green and held unmerged; proportional completion record and a morning report with the PR link, screenshots, owner decisions D-1..D-13, the app.py wiring dependency, and the PR 250/251 disposition recommendation"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-11",
+          "decision": "Replacement direction and visual lock, verbatim: 'We are replacing the existing opportunity slate. Um, we can use those nine candidates, and I want you to build the architecture with Fable Extra, have Sonnet Max implemented, and then Fable Extra review it.' The nine final-mockups files are owner-locked as exact hash-pinned files alongside the two earlier locked references."
+        },
+        {
+          "date": "2026-08-11",
+          "decision": "Execution boundary, verbatim: 'Go right up until it goes live. I'll review it before that.' then 'Yeah. I want you all the way until almost live deployment. At that point, stop and let me review it before it goes live.' This lane therefore stops at a CI-validated, unmerged Azure PR; merge, deployment, schema apply, and release are Pete's decisions after his review."
+        }
+      ],
+      "model_routing": {
+        "decided_by": "Pete",
+        "date": "2026-08-11",
+        "architecture": "Claude Fable 5 at extra-high effort (workflow wf_722c9c2c-d11): authored and critic-revised the architecture document; orchestrates and briefs; does not hand-write implementation",
+        "implementation": "Claude Sonnet at maximum effort, sole delegated implementation writer in the dedicated clean worktree",
+        "independent_reviewer": "Fresh Claude Fable extra-high context reviews the exact final candidate SHA; it did not write the code",
+        "sequence": "activation merge -> clean worktree -> write preflight -> Sonnet max implements R1 -> full validation -> Fable extra-high exact-SHA review -> findings closed -> Azure PR at CI green -> STOP for Pete's pre-live review"
+      },
+      "cleanup_contract": "Task-local only: after this lane's work merges under Pete's recorded decision and recoverability is verified, remove only this lane's clean merged activation and implementation worktrees and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
+      "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree from resulting origin/main; pass the package write preflight; Sonnet max implements R1 (blueprint, service, intake, source review, migration, tests; no app.py); run the full suites via the project venv; complete-diff self-review; independent Fable extra-high review of the exact candidate; close findings; local flag-on visual verification against the locked mockups; open the Azure PR and hold at CI green for Pete's pre-live review. The app.py flag wiring lands only after PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 closes, through a fresh recorded ledger update."
     }
   ],
   "paused_lanes": [
