@@ -22,6 +22,14 @@ from scripts.delivery_preflight import (
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Exact main merge that carried the one-time three-lane control repair. The
+# bootstrap replay test pins its candidate state to this commit so the
+# historical exception stays verifiable after later activations move the live
+# control-plane files (the state-coupling class already fixed by
+# PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001 and the Workshop closeout
+# fixture correction).
+BOOTSTRAP_MERGED_MAIN = "ace996cd32612cfa62ae51b4b4f28158e41c6b23"
+
 
 def facts(**overrides):
     value = {
@@ -2621,7 +2629,12 @@ class DeliveryPreflightTests(unittest.TestCase):
         loader.assert_not_called()
 
     def test_bootstrap_control_repair_is_exact_and_one_time(self):
-        repair_ledger = copy.deepcopy(self.ledger)
+        # Replay the historical one-time exception against the exact merged
+        # repair state, not the live checked-in ledger/baseline: a later
+        # activation changes the live files and must not retroactively fail
+        # this replay. Owner-approved fixture repair, 2026-08-11.
+        repair_ledger = load_ledger_at_ref(BOOTSTRAP_MERGED_MAIN)
+        repair_baseline = load_baseline_bytes_at_ref(BOOTSTRAP_MERGED_MAIN)
         bootstrap = repair_ledger["bootstrap_control_repair"]
         self.assertEqual(BOOTSTRAP_CONTROL_REPAIR, bootstrap)
         origin_ledger = load_ledger_at_ref(bootstrap["origin_main"])
@@ -2640,7 +2653,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             exact,
             require_clean=True,
             origin=origin_ledger,
-            candidate_baseline=self.baseline,
+            candidate_baseline=repair_baseline,
             origin_baseline=origin_baseline,
         )
         self.assertEqual([], exact_errors)
@@ -2653,7 +2666,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             "activate",
             require_clean=True,
             origin_ledger=origin_ledger,
-            candidate_baseline=self.baseline + b"# forged activation baseline\n",
+            candidate_baseline=repair_baseline + b"# forged activation baseline\n",
             origin_baseline=origin_baseline,
         )
         self.assertTrue(
@@ -2681,7 +2694,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             "activate",
             require_clean=True,
             origin_ledger=origin_ledger,
-            candidate_baseline=self.baseline,
+            candidate_baseline=repair_baseline,
             origin_baseline=origin_baseline,
         )
         self.assertIn(
@@ -2698,7 +2711,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             "activate",
             require_clean=True,
             origin_ledger=origin_ledger,
-            candidate_baseline=self.baseline,
+            candidate_baseline=repair_baseline,
             origin_baseline=origin_baseline,
         )
         self.assertIn(
@@ -2715,7 +2728,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             "activate",
             require_clean=True,
             origin_ledger=origin_ledger,
-            candidate_baseline=self.baseline,
+            candidate_baseline=repair_baseline,
             origin_baseline=origin_baseline,
         )
         self.assertIn(
@@ -2730,7 +2743,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             "activate",
             require_clean=True,
             origin_ledger=origin_ledger,
-            candidate_baseline=self.baseline,
+            candidate_baseline=repair_baseline,
             origin_baseline=origin_baseline,
         )
         self.assertTrue(
@@ -2746,7 +2759,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             "activate",
             require_clean=True,
             origin_ledger=origin_ledger,
-            candidate_baseline=self.baseline,
+            candidate_baseline=repair_baseline,
             origin_baseline=origin_baseline,
         )
         self.assertIn(
