@@ -14,15 +14,19 @@ from unittest.mock import patch
 from scripts.delivery_preflight import (
     BOOTSTRAP_CONTROL_REPAIR,
     DIRECTION_MERGE_CONTROL_PATHS,
+    DIRECTION_MERGE_FOLLOWUP_PATHS,
     WRITER_TRANSFER_PREFLIGHT_REPAIR,
     GRANT_CLOSE_PREFLIGHT_REPAIR,
+    GRANT_CLOSE_FIXTURE_FOLLOWUP,
     PROFILE_DIRECTION_OWNER_DECISION_SHA256,
     PROFILE_DIRECTION_REVIEW_ATTESTATION,
     _affirmative_merge_decision,
     _authoritative_azure_origin,
     _canonical_sha256,
     _direction_control_path_sequence_valid,
+    _direction_merge_grant,
     _exact_direction_grant_delta,
+    _exact_grant_close_fixture_followup_delta,
     _fetch_exact_origin_refs,
     _git_environment,
     _baseline_scalar,
@@ -544,10 +548,14 @@ class DeliveryPreflightTests(unittest.TestCase):
         origin["active_lanes"] = [lane]
         origin["operating_mode"]["merge_allowed_for"] = [lane["package"]]
         merge_facts = facts(
-            branch=lane["branch"], head=reviewed, behind=2,
+            branch=lane["branch"], head=reviewed, behind=3,
             merge_target_remote_sha=reviewed,
             changed_paths=[lane["writable_surfaces"][0].rstrip("/") + "/README.md"],
-            merge_main_changed_paths=sorted(DIRECTION_MERGE_CONTROL_PATHS),
+            merge_main_changed_paths=sorted(
+                DIRECTION_MERGE_CONTROL_PATHS
+                | DIRECTION_MERGE_FOLLOWUP_PATHS
+                | {"docs/governance/CURRENT_LANES.json"}
+            ),
             merge_main_control_commits_valid=True,
         )
         errors, warnings = evaluate_policy(
@@ -573,7 +581,7 @@ class DeliveryPreflightTests(unittest.TestCase):
         )
         self.assertTrue(any("exact reviewed control paths" in error for error in app_movement))
 
-        for invalid_behind in (0, 1, 3):
+        for invalid_behind in (0, 1, 2, 4):
             with self.subTest(invalid_behind=invalid_behind):
                 count_errors, _ = evaluate_policy(
                     origin, {**merge_facts, "behind": invalid_behind},
@@ -581,7 +589,7 @@ class DeliveryPreflightTests(unittest.TestCase):
                     origin_ledger=origin,
                 )
                 self.assertTrue(
-                    any("exactly 2 verified main control" in error for error in count_errors)
+                    any("exactly 3 verified main control" in error for error in count_errors)
                 )
 
     def test_frozen_direction_candidate_is_verified_by_trusted_current_main_cli(self):
@@ -671,31 +679,10 @@ with patch.object(
             run("git", "clone", "--shared", str(ROOT), str(seed))
             git(seed, "config", "user.name", "PeerSlate Test")
             git(seed, "config", "user.email", "peerslate-test@example.invalid")
-            git(seed, "checkout", "-B", "repair-fixture", repair_base)
-            base_ledger = json.loads(
-                (seed / "docs" / "governance" / "CURRENT_LANES.json").read_text(
-                    encoding="utf-8"
-                )
-            )
-            self.assertNotIn("grant_close_preflight_repair", base_ledger)
-
-            for relative in GRANT_CLOSE_PREFLIGHT_REPAIR["allowed_surfaces"]:
-                source = ROOT / relative
-                destination = seed / relative
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(source, destination)
-            git(seed, "add", "--", *GRANT_CLOSE_PREFLIGHT_REPAIR["allowed_surfaces"])
-            repaired_paths = {
-                line
-                for line in git(seed, "diff", "--cached", "--name-only").stdout.splitlines()
-                if line
-            }
-            self.assertEqual(
-                set(GRANT_CLOSE_PREFLIGHT_REPAIR["allowed_surfaces"]),
-                repaired_paths,
-            )
-            git(seed, "commit", "-m", "Install direction lifecycle controls")
+            repair_result = GRANT_CLOSE_FIXTURE_FOLLOWUP["origin_main"]
+            git(seed, "checkout", "-B", "repair-fixture", repair_result)
             repair_sha = git(seed, "rev-parse", "HEAD").stdout.strip()
+            self.assertEqual(repair_result, repair_sha)
             self.assertEqual(
                 repair_base,
                 git(seed, "rev-parse", f"{repair_sha}^").stdout.strip(),
@@ -710,7 +697,47 @@ with patch.object(
                 repaired_ledger["grant_close_preflight_repair"],
             )
 
-            # The grant is a distinct, ledger-only commit after the repair.
+            ledger_path = seed / "docs" / "governance" / "CURRENT_LANES.json"
+            # Recreate the exact inert follow-up from immutable repair state.
+            # Only the validated script/test implementation bytes come from
+            # this running revision; the mutable checked-in ledger never does.
+            for relative in (
+                "scripts/delivery_preflight.py",
+                "tests/test_delivery_preflight.py",
+            ):
+                source = ROOT / relative
+                destination = seed / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, destination)
+            followup_ledger = copy.deepcopy(repaired_ledger)
+            followup_ledger["updated_at"] = "2026-08-12T07:55:42Z"
+            followup_ledger["grant_close_fixture_followup"] = copy.deepcopy(
+                GRANT_CLOSE_FIXTURE_FOLLOWUP
+            )
+            self.assertTrue(
+                _exact_grant_close_fixture_followup_delta(
+                    repaired_ledger, followup_ledger
+                )
+            )
+            ledger_path.write_text(
+                json.dumps(followup_ledger, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+            git(seed, "add", "--", *GRANT_CLOSE_FIXTURE_FOLLOWUP["allowed_surfaces"])
+            followup_paths = {
+                line for line in git(
+                    seed, "diff", "--cached", "--name-only"
+                ).stdout.splitlines() if line
+            }
+            self.assertEqual(
+                set(GRANT_CLOSE_FIXTURE_FOLLOWUP["allowed_surfaces"]),
+                followup_paths,
+            )
+            git(seed, "commit", "-m", "Stabilize grant-close validation fixtures")
+            followup_sha = git(seed, "rev-parse", "HEAD").stdout.strip()
+            self.assertEqual(repair_sha, git(seed, "rev-parse", f"{followup_sha}^").stdout.strip())
+
+            # The grant is a distinct, ledger-only commit after the follow-up.
             ledger_path = seed / "docs" / "governance" / "CURRENT_LANES.json"
             ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
             lane = next(
@@ -718,12 +745,12 @@ with patch.object(
                 if item.get("package") == package
             )
             lane["merge_grant"] = self._grant_record(lane, candidate_sha)
-            lane["merge_grant"]["granted_at"] = "2026-08-12T06:00:00Z"
+            lane["merge_grant"]["granted_at"] = "2026-08-12T08:00:00Z"
             ledger["operating_mode"]["merge_allowed_for"] = [
                 *ledger["operating_mode"].get("merge_allowed_for", []),
                 package,
             ]
-            ledger["updated_at"] = "2026-08-12T06:00:00Z"
+            ledger["updated_at"] = "2026-08-12T08:00:00Z"
             ledger_path.write_text(
                 json.dumps(ledger, indent=2, ensure_ascii=False) + "\n",
                 encoding="utf-8",
@@ -732,7 +759,7 @@ with patch.object(
             git(seed, "commit", "-m", "Grant exact Profile direction merge")
             grant_sha = git(seed, "rev-parse", "HEAD").stdout.strip()
             self.assertEqual(
-                repair_sha,
+                followup_sha,
                 git(seed, "rev-parse", f"{grant_sha}^").stdout.strip(),
             )
 
@@ -782,7 +809,7 @@ with patch.object(
             self.assertEqual("pass", payload["result"])
             self.assertTrue(payload["facts"]["direction_candidate_verified_from_main"])
             self.assertEqual(candidate_sha, payload["facts"]["candidate_head"])
-            self.assertEqual(2, payload["facts"]["behind"])
+            self.assertEqual(3, payload["facts"]["behind"])
             self.assertEqual(
                 candidate_sha,
                 git(candidate, "rev-parse", "HEAD").stdout.strip(),
@@ -1277,6 +1304,13 @@ with patch.object(
         self.assertTrue(
             _direction_control_path_sequence_valid([
                 set(GRANT_CLOSE_PREFLIGHT_REPAIR["allowed_surfaces"]),
+                set(GRANT_CLOSE_FIXTURE_FOLLOWUP["allowed_surfaces"]),
+                {"docs/governance/CURRENT_LANES.json"},
+            ])
+        )
+        self.assertTrue(
+            _direction_control_path_sequence_valid([
+                set(GRANT_CLOSE_FIXTURE_FOLLOWUP["allowed_surfaces"]),
                 {"docs/governance/CURRENT_LANES.json"},
             ])
         )
@@ -1289,9 +1323,67 @@ with patch.object(
             _direction_control_path_sequence_valid([
                 set(GRANT_CLOSE_PREFLIGHT_REPAIR["allowed_surfaces"])
                 - {"START_HERE.md"},
+                set(GRANT_CLOSE_FIXTURE_FOLLOWUP["allowed_surfaces"]),
                 {"docs/governance/CURRENT_LANES.json"},
             ])
         )
+        self.assertFalse(
+            _direction_control_path_sequence_valid([
+                set(GRANT_CLOSE_PREFLIGHT_REPAIR["allowed_surfaces"]),
+                set(GRANT_CLOSE_FIXTURE_FOLLOWUP["allowed_surfaces"])
+                - {"tests/test_delivery_preflight.py"},
+                {"docs/governance/CURRENT_LANES.json"},
+            ])
+        )
+        self.assertFalse(
+            _direction_control_path_sequence_valid([
+                set(GRANT_CLOSE_FIXTURE_FOLLOWUP["allowed_surfaces"]),
+                set(GRANT_CLOSE_PREFLIGHT_REPAIR["allowed_surfaces"]),
+                {"docs/governance/CURRENT_LANES.json"},
+            ])
+        )
+
+    def test_grant_close_fixture_followup_is_exact_and_inert(self):
+        origin = load_ledger_at_ref(GRANT_CLOSE_FIXTURE_FOLLOWUP["origin_main"])
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-12T07:55:42Z"
+        candidate["grant_close_fixture_followup"] = copy.deepcopy(
+            GRANT_CLOSE_FIXTURE_FOLLOWUP
+        )
+        self.assertTrue(
+            _exact_grant_close_fixture_followup_delta(origin, candidate)
+        )
+        immutable_baseline = load_baseline_bytes_at_ref(
+            GRANT_CLOSE_FIXTURE_FOLLOWUP["origin_main"]
+        )
+        exact_facts = facts(
+            branch=GRANT_CLOSE_FIXTURE_FOLLOWUP["branch"],
+            origin_main=GRANT_CLOSE_FIXTURE_FOLLOWUP["origin_main"],
+            ahead=1,
+            changed_paths=GRANT_CLOSE_FIXTURE_FOLLOWUP["allowed_surfaces"],
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate, exact_facts, require_clean=True, origin=origin,
+            candidate_baseline=immutable_baseline,
+            origin_baseline=immutable_baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("fixture-followup" in item for item in warnings))
+        forged_authority = copy.deepcopy(candidate)
+        forged_authority["operating_mode"]["merge_allowed_for"] = [
+            "PS-PROFILE-EXPERIENCE-001"
+        ]
+        self.assertFalse(
+            _exact_grant_close_fixture_followup_delta(origin, forged_authority)
+        )
+        forged_record = copy.deepcopy(candidate)
+        forged_record["grant_close_fixture_followup"]["branch"] = "work/forged"
+        self.assertFalse(
+            _exact_grant_close_fixture_followup_delta(origin, forged_record)
+        )
+        stale = copy.deepcopy(candidate)
+        stale["updated_at"] = origin["updated_at"]
+        self.assertFalse(_exact_grant_close_fixture_followup_delta(origin, stale))
 
     def test_grant_rejects_negation_weak_or_forged_review_and_bad_commit_count(self):
         origin, lane = self._direction_origin()
@@ -1648,7 +1740,26 @@ with patch.object(
         self.assertEqual(
             1, parsed["activation_policy"]["max_production_capable_lanes"]
         )
-        self.assertEqual([], mode["merge_allowed_for"])
+        active_by_package = {lane["package"]: lane for lane in active}
+        self.assertEqual(
+            len(mode["merge_allowed_for"]),
+            len(set(mode["merge_allowed_for"])),
+        )
+        for package in mode["merge_allowed_for"]:
+            lane = active_by_package.get(package)
+            self.assertIsNotNone(lane)
+            self.assertEqual("direction_authority", lane.get("lane_class"))
+            self.assertFalse(lane.get("production_capable"))
+            grant = lane.get("merge_grant")
+            self.assertIsInstance(grant, dict)
+            grant_errors: list[str] = []
+            self.assertIsNotNone(
+                _direction_merge_grant(
+                    lane, "checked-in temporary merge authority", grant_errors
+                )
+            )
+            self.assertEqual([], grant_errors)
+            self.assertEqual(parsed["updated_at"], grant.get("granted_at"))
         self.assertEqual([], mode["cleanup_allowed_for"])
         self.assertTrue(parsed["workspace_snapshot"]["cleanup_authorized"])
 

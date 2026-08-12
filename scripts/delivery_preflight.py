@@ -9,6 +9,7 @@ Read-only work remains available during a delivery reset.
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import os
@@ -182,6 +183,49 @@ GRANT_CLOSE_PREFLIGHT_REPAIR = {
     ),
 }
 
+# Required PR validation of the exact Profile merge-grant candidate exposed a
+# fixture-only follow-up to the grant/close repair: the integration replay
+# copied a later mutable lane ledger into the historical repair commit, and a
+# checked-in invariant assumed the valid temporary merge-authority list was
+# always empty.  This one-time, code-controlled follow-up pins the replay to
+# the exact merged repair and validates the review-bound grant dynamically. It
+# changes no lane or authority list and expires as soon as origin/main moves.
+GRANT_CLOSE_FIXTURE_FOLLOWUP = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": (
+        "work/2026-08-12-delivery-activation-grant-close-fixture-followup"
+    ),
+    "origin_main": "25f8ba8ac11699353c32416104b970a3a9b24882",
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "reason": (
+        "Pete's end-to-end Profile direction assignment requires the reviewed "
+        "package to pass the normal no-bypass Azure PR validation path. That "
+        "validation exposed two fixture-only assumptions: the historical "
+        "repair replay borrowed the current mutable lane ledger, and a ledger "
+        "invariant treated every temporary merge authorization as invalid. "
+        "This follow-up pins the replay to the exact merged grant-close repair, "
+        "validates temporary merge authority from the exact review-bound lane "
+        "grant, and permits only the exact repair, follow-up, then grant control "
+        "sequence. It changes no active lane, authority list, baseline, product "
+        "code, schema, pipeline, deployment, configuration, or live behavior."
+    ),
+    "verification_contract": (
+        "This is audit evidence, not self-granted package authority. The "
+        "preflight recognizes it only when this entire record equals the "
+        "validator's hard-coded record and Git proves the exact branch, exact "
+        "origin/main base, and exact three changed paths. Direction merge "
+        "admission additionally proves the exact repair, follow-up, then grant "
+        "commit order and each semantic ledger delta. A later branch, base, "
+        "altered record, forged sequence, or product-authority change cannot "
+        "reuse it."
+    ),
+}
+
 MAX_ACTIVE_LANES = 3
 MAX_IMPLEMENTATION_LANES = 2
 MAX_DIRECTION_AUTHORITY_LANES = 1
@@ -278,6 +322,9 @@ BASELINE_DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 # intervene, and grant/merge additionally prove the exact commit counts and
 # pinned endpoints.
 DIRECTION_MERGE_CONTROL_PATHS = frozenset(GRANT_CLOSE_PREFLIGHT_REPAIR["allowed_surfaces"])
+DIRECTION_MERGE_FOLLOWUP_PATHS = frozenset(
+    GRANT_CLOSE_FIXTURE_FOLLOWUP["allowed_surfaces"]
+)
 
 PROFILE_DIRECTION_OWNER_DECISION_SHA256 = (
     "b4fe6dc59e5eef85b6beb9c6c08e22736876ab78aa134eb4512ae1260c3c36c8"
@@ -2021,6 +2068,23 @@ def _exact_grant_close_preflight_repair_matches(
     )
 
 
+def _exact_grant_close_fixture_followup_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("grant_close_fixture_followup")
+        == GRANT_CLOSE_FIXTURE_FOLLOWUP
+        and package_id == GRANT_CLOSE_FIXTURE_FOLLOWUP["package"]
+        and facts.get("branch") == GRANT_CLOSE_FIXTURE_FOLLOWUP["branch"]
+        and facts.get("origin_main")
+        == GRANT_CLOSE_FIXTURE_FOLLOWUP["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+    )
+
+
 def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
     """Accept pinned Profile authority or an exact machine-readable decision."""
     if package_id == "PS-PROFILE-EXPERIENCE-001":
@@ -2284,10 +2348,35 @@ def _exact_direction_grant_delta(
     return not errors
 
 
+def _exact_grant_close_fixture_followup_delta(
+    parent_ledger: object,
+    followup_ledger: object,
+) -> bool:
+    """Prove the fixture follow-up changes no lane or authority state."""
+    if not isinstance(parent_ledger, dict) or not isinstance(followup_ledger, dict):
+        return False
+    if (
+        parent_ledger.get("grant_close_preflight_repair")
+        != GRANT_CLOSE_PREFLIGHT_REPAIR
+        or parent_ledger.get("grant_close_fixture_followup") is not None
+        or followup_ledger.get("grant_close_fixture_followup")
+        != GRANT_CLOSE_FIXTURE_FOLLOWUP
+    ):
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = followup_ledger.get("updated_at")
+    expected["grant_close_fixture_followup"] = GRANT_CLOSE_FIXTURE_FOLLOWUP
+    if followup_ledger != expected:
+        return False
+    return _utc_timestamp_strictly_advances(
+        followup_ledger.get("updated_at"), parent_ledger.get("updated_at")
+    )
+
+
 def _direction_control_path_sequence_valid(
     commit_paths: object,
 ) -> bool:
-    """Accept only repair+grant or post-repair grant, with exact file sets."""
+    """Accept only exact repair/follow-up/grant control-path sequences."""
     if not isinstance(commit_paths, list) or not all(
         isinstance(paths, set) and all(isinstance(path, str) for path in paths)
         for paths in commit_paths
@@ -2297,8 +2386,17 @@ def _direction_control_path_sequence_valid(
         return commit_paths[0] == set(GRANT_ALLOWED_SURFACES)
     if len(commit_paths) == 2:
         return (
-            commit_paths[0] == set(DIRECTION_MERGE_CONTROL_PATHS)
+            (
+                commit_paths[0] == set(DIRECTION_MERGE_CONTROL_PATHS)
+                or commit_paths[0] == set(DIRECTION_MERGE_FOLLOWUP_PATHS)
+            )
             and commit_paths[1] == set(GRANT_ALLOWED_SURFACES)
+        )
+    if len(commit_paths) == 3:
+        return (
+            commit_paths[0] == set(DIRECTION_MERGE_CONTROL_PATHS)
+            and commit_paths[1] == set(DIRECTION_MERGE_FOLLOWUP_PATHS)
+            and commit_paths[2] == set(GRANT_ALLOWED_SURFACES)
         )
     return False
 
@@ -2546,16 +2644,47 @@ def _direction_main_sequence_facts(
                 == GRANT_CLOSE_PREFLIGHT_REPAIR
                 and grant_delta_valid
             )
-        else:
+        elif len(main_commits) == 2:
             repair_sha = main_commits[0]
             repair_parent = _git("rev-parse", f"{repair_sha}^")
             repair_ledger = load_ledger_at_ref(repair_sha)
+            if commit_paths[0] == set(DIRECTION_MERGE_CONTROL_PATHS):
+                semantic_sequence_valid = (
+                    base == GRANT_CLOSE_PREFLIGHT_REPAIR["origin_main"]
+                    and repair_parent == base
+                    and grant_parent_sha == repair_sha
+                    and repair_ledger.get("grant_close_preflight_repair")
+                    == GRANT_CLOSE_PREFLIGHT_REPAIR
+                    and grant_delta_valid
+                )
+            else:
+                repair_parent_ledger = load_ledger_at_ref(repair_parent)
+                semantic_sequence_valid = (
+                    repair_parent
+                    == GRANT_CLOSE_FIXTURE_FOLLOWUP["origin_main"]
+                    and grant_parent_sha == repair_sha
+                    and _exact_grant_close_fixture_followup_delta(
+                        repair_parent_ledger, repair_ledger
+                    )
+                    and grant_delta_valid
+                )
+        elif len(main_commits) == 3:
+            repair_sha, followup_sha = main_commits[:2]
+            repair_parent = _git("rev-parse", f"{repair_sha}^")
+            followup_parent = _git("rev-parse", f"{followup_sha}^")
+            repair_ledger = load_ledger_at_ref(repair_sha)
+            followup_ledger = load_ledger_at_ref(followup_sha)
             semantic_sequence_valid = (
                 base == GRANT_CLOSE_PREFLIGHT_REPAIR["origin_main"]
                 and repair_parent == base
-                and grant_parent_sha == repair_sha
+                and followup_parent == repair_sha
+                and repair_sha == GRANT_CLOSE_FIXTURE_FOLLOWUP["origin_main"]
+                and grant_parent_sha == followup_sha
                 and repair_ledger.get("grant_close_preflight_repair")
                 == GRANT_CLOSE_PREFLIGHT_REPAIR
+                and _exact_grant_close_fixture_followup_delta(
+                    repair_ledger, followup_ledger
+                )
                 and grant_delta_valid
             )
         semantic_sequence_valid = bool(
@@ -2810,11 +2939,16 @@ def evaluate_policy(
             _validate_changed_paths_within_lane(target, facts, "merge", errors)
             main_paths = facts.get("merge_main_changed_paths")
             expected_behind = (
-                2 if package_id == "PS-PROFILE-EXPERIENCE-001" else 1
+                3 if package_id == "PS-PROFILE-EXPERIENCE-001" else 1
             )
             expected_main_paths = (
-                DIRECTION_MERGE_CONTROL_PATHS
-                if expected_behind == 2 else set(GRANT_ALLOWED_SURFACES)
+                (
+                    DIRECTION_MERGE_CONTROL_PATHS
+                    | DIRECTION_MERGE_FOLLOWUP_PATHS
+                    | GRANT_ALLOWED_SURFACES
+                )
+                if package_id == "PS-PROFILE-EXPERIENCE-001"
+                else set(GRANT_ALLOWED_SURFACES)
             )
             if facts.get("behind") != expected_behind:
                 errors.append(
@@ -3614,6 +3748,11 @@ def evaluate_policy(
         grant_close_repair_matches = _exact_grant_close_preflight_repair_matches(
             ledger, facts, package_id
         )
+        grant_close_fixture_followup_matches = (
+            _exact_grant_close_fixture_followup_matches(
+                ledger, facts, package_id
+            )
+        )
         if bootstrap_matches:
             allowed_surfaces = set(BOOTSTRAP_CONTROL_REPAIR["allowed_surfaces"])
             warnings.append(
@@ -3632,6 +3771,13 @@ def evaluate_policy(
             )
             warnings.append(
                 "using the exact one-time grant-close preflight-repair boundary"
+            )
+        elif grant_close_fixture_followup_matches:
+            allowed_surfaces = set(
+                GRANT_CLOSE_FIXTURE_FOLLOWUP["allowed_surfaces"]
+            )
+            warnings.append(
+                "using the exact one-time grant-close fixture-followup boundary"
             )
 
         if origin_ledger is None:
@@ -3658,6 +3804,7 @@ def evaluate_policy(
                 not bootstrap_matches
                 and not writer_transfer_repair_matches
                 and not grant_close_repair_matches
+                and not grant_close_fixture_followup_matches
                 and origin_policy != policy
             ):
                 errors.append(
@@ -3669,7 +3816,38 @@ def evaluate_policy(
                     f"activation candidate exceeds the {MAX_ACTIVE_LANES}-lane limit"
                 )
 
-            if grant_close_repair_matches:
+            if grant_close_fixture_followup_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "grant-close fixture follow-up updated_at must be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "grant-close fixture follow-up updated_at must strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "grant-close fixture follow-up may not change activation_policy"
+                    )
+                if not _exact_grant_close_fixture_followup_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "grant-close fixture follow-up must be the exact inert ledger delta"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline, origin_baseline,
+                    label="grant-close fixture follow-up", errors=errors,
+                )
+            elif grant_close_repair_matches:
                 candidate_updated_at = ledger.get("updated_at")
                 origin_updated_at = origin_ledger.get("updated_at")
                 if not _valid_utc_timestamp(candidate_updated_at):
@@ -3976,7 +4154,11 @@ def evaluate_policy(
                         "activation may not change unrelated ledger sections: "
                         + ", ".join(unexpected_root_changes)
                     )
-        if not writer_transfer_repair_matches and not grant_close_repair_matches:
+        if (
+            not writer_transfer_repair_matches
+            and not grant_close_repair_matches
+            and not grant_close_fixture_followup_matches
+        ):
             _validate_baseline_activation_delta(
                 candidate_baseline,
                 origin_baseline,
@@ -4010,6 +4192,15 @@ def evaluate_policy(
             if grant_close_repair_matches and changed_paths != allowed_surfaces:
                 errors.append(
                     "grant-close preflight repair must change exactly the "
+                    "owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                grant_close_fixture_followup_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "grant-close fixture follow-up must change exactly the "
                     "owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
