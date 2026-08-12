@@ -1,26 +1,20 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T22:33:05Z",
+  "updated_at": "2026-08-12T22:45:20Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001"
-    ],
-    "merge_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001"
-    ],
+    "writes_allowed_for": [],
+    "merge_allowed_for": [],
     "cleanup_allowed_for": [],
-    "release_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001"
-    ],
+    "release_allowed_for": [],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
       "new feature or product write outside the exact surfaces recorded for its activated lane",
@@ -33,7 +27,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001 remains the sole active writer and production-capable lane. PS-PROFILE-CORE-FOUNDATION-001 is paused and preserved at independently accepted candidate aa1fc7e889fa63e31a432074da5c5040698f4aea; it retains no write, merge, cleanup, release, schema, deployment, or enablement authority. Profile production integration requires a fresh activation after shared capacity is released."
+    "exit_authority": "No active writer lane remains. PS-OPPORTUNITY-SLATE-R1-LAUNCH-001 is delivered live behind sign-in and paused; PS-PROFILE-CORE-FOUNDATION-001 is independently accepted and paused. Both retain no write, merge, cleanup, release, schema, deployment, or enablement authority. New work requires Pete to select an exact outcome and a fresh activation."
   },
   "activation_policy": {
     "enabled": true,
@@ -1278,66 +1272,7 @@
       ]
     }
   ],
-  "active_lanes": [
-    {
-      "package": "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001",
-      "outcome": "Launch the already-reviewed Opportunity Slate R1 replacement at canonical /opportunity-slate for signed-in members only. Register exactly one legacy-or-R1 blueprint through PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED, add the required database-procedure allowlist entries and production-grade rate limits, preserve the legacy signed-in experience as the flag-off rollback target, and verify anonymous redirect, authenticated Stage 1-2 behavior, owner isolation, exact deployment identity, and rollback. This launch adds no anonymous mode, R2-R5 behavior, or schema change.",
-      "branch": "work/2026-08-12-opportunity-slate-r1-signed-in-launch-r2",
-      "writer": "Root Codex session /root is the sole writer and reviewer for the bounded launch wiring; the previously merged R1 implementation and schema evidence remain the accepted source candidate.",
-      "delivery_path": "Protected",
-      "lane_class": "implementation",
-      "production_capable": true,
-      "exclusive_domains": [
-        "product:opportunity-slate"
-      ],
-      "source_checkpoint": "Azure origin/main aad03d8069a3a05f5ce00d5996660ccc0092abf0 after the controlled scope-correction pause. The independently approved R1 and PS-OPPSLATE-004 ledger 27 remain intact; preserved checkpoint 57333b23ee9662db0a9971af5bd337e3fbd004df contains only the four originally authorized launch-wiring files and will be replayed onto the new branch.",
-      "writable_surfaces": [
-        ".env.example",
-        "app.py",
-        "opportunity_slate_v2_routes.py",
-        "services/database_service.py",
-        "tests/test_database_service.py",
-        "tests/test_opportunity_slate.py",
-        "tests/test_opportunity_slate_v2.py",
-        "tests/test_navigation.py",
-        "tests/test_auth.py",
-        "tests/test_search_visibility.py",
-        "scripts/verify_deployment_smoke.py",
-        "docs/initiatives/PS-OPPORTUNITY-SLATE-R1-LAUNCH-001/",
-        "artifacts/2026-08-12-opportunity-slate-r1-launch/"
-      ],
-      "exclusions": [
-        "no anonymous or public Opportunity Slate access; signed-out callers must redirect safely to sign-in",
-        "no R2-R5 implementation, AI interpretation, qualification, save/history expansion, or new materially revised visual direction",
-        "no schema, migration, destructive data, production-data repair, or provider/dependency change",
-        "no edit to the legacy Opportunity Slate implementation; it remains the flag-off rollback target",
-        "no pipeline, secret, unrelated feature, lane, worktree, branch, stash, or artifact change"
-      ],
-      "completion_evidence": [
-        "activation PR merges with [skip ci] and the package write preflight passes from the resulting current origin/main",
-        "app startup registers exactly one legacy-or-R1 blueprint, defaults safely to legacy when the new flag is false, and exposes a working Opportunity Slate navigation URL in either state",
-        "every R1 mutation endpoint has an applied rate limit and every invoked stored procedure is in the explicit database allowlist",
-        "focused route, auth, navigation, visibility, service, governance, and deployment-smoke tests plus the full unittest suite pass or reconcile only exact inherited baselines",
-        "local Playwright proves signed-out redirect, signed-in Stage 1 and Stage 2, competing-action/cancellation behavior, mobile keyboard order, accessibility basics, and flag-off rollback",
-        "complete-diff self-review records exact base and candidate SHAs, changed paths, limitations, rollback, and the fact that R1 contains only Stages 1-2",
-        "Azure PR policies pass; an exact reviewed merge/release grant is recorded before merge or production configuration; the automatic deployment reaches the exact merged SHA",
-        "production enables PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED only in the recorded release sequence and live smoke proves signed-out redirect plus Pete's authenticated R1 route without exposing member data",
-        "rollback proof shows flag false reselects the legacy blueprint and live release/cost evidence is recorded honestly"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-12",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "package": "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001",
-          "action": "merge and release after exact candidate verification",
-          "decision": "Pete's merge authority for PS-OPPORTUNITY-SLATE-R1-LAUNCH-001 is recorded from his standing instruction that after his approval Codex may send the package through every remaining step, followed by 'You're approved' and, after confirming the live signed-in route still showed the old experience, 'Oh yeah, I know. I don't know why we in dark. That needs to go live. Behind the sign-in wall.' This authorizes the signed-in R1 launch outcome, Azure PR merge, required production configuration, deployment, and live verification after Codex completes exact candidate verification, while excluding anonymous access. The machine merge and release lists remain empty until that exact verified candidate is recorded."
-        }
-      ],
-      "cleanup_contract": "Task-local only: after exact live verification and recoverability checks, remove only this lane's clean merged activation and implementation worktrees and branches behind recovery refs; preserve all unrelated, dirty, unverified, or user-owned material.",
-      "sequence": "activation-only PR -> implementation worktree from resulting origin/main -> write preflight -> launch wiring and tests -> local Playwright and full suite -> complete-diff self-review -> exact merge/release grant -> Azure PR and required policy -> squash merge -> production flag configuration -> automatic exact-SHA deployment -> anonymous and authenticated live verification -> completion record and controlled lane close"
-    }
-  ],
+  "active_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
@@ -1579,6 +1514,69 @@
       "pause_reason": "The non-production Profile Core foundation is complete and independently accepted at exact one-commit candidate aa1fc7e889fa63e31a432074da5c5040698f4aea. Focused Profile tests pass 39 of 39, the complete branch diff passes syntax and whitespace checks, and Gitleaks 8.30.1 reports no leaks across all refs after deterministic fixture names were corrected and history was safely rewritten. The foundation remains deliberately unregistered, unmerged, undeployed, and not live; capacity is relinquished so production integration can start later from current main without merging a partial product.",
       "resume_contract": "Do not resume this foundation branch as an active writer. After Opportunity Slate relinquishes shared app, database, migration, and production capacity, activate a fresh production-capable Profile integration package from then-current origin/main. That package may replay only the exact accepted tree at aa1fc7e889fa63e31a432074da5c5040698f4aea, reconcile it against current main, rerun independent review and CI, and then continue the accepted D0-D5 release train through dark deployment, Pete review, signed-in enablement, and live verification.",
       "preserved_head_sha": "aa1fc7e889fa63e31a432074da5c5040698f4aea"
+    },
+    {
+      "package": "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001",
+      "outcome": "Launch the already-reviewed Opportunity Slate R1 replacement at canonical /opportunity-slate for signed-in members only. Register exactly one legacy-or-R1 blueprint through PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED, add the required database-procedure allowlist entries and production-grade rate limits, preserve the legacy signed-in experience as the flag-off rollback target, and verify anonymous redirect, authenticated Stage 1-2 behavior, owner isolation, exact deployment identity, and rollback. This launch adds no anonymous mode, R2-R5 behavior, or schema change.",
+      "branch": "work/2026-08-12-opportunity-slate-r1-signed-in-launch-r2",
+      "writer": "Root Codex session /root is the sole writer and reviewer for the bounded launch wiring; the previously merged R1 implementation and schema evidence remain the accepted source candidate.",
+      "delivery_path": "Protected",
+      "lane_class": "implementation",
+      "production_capable": true,
+      "exclusive_domains": [
+        "product:opportunity-slate"
+      ],
+      "source_checkpoint": "Azure origin/main aad03d8069a3a05f5ce00d5996660ccc0092abf0 after the controlled scope-correction pause. The independently approved R1 and PS-OPPSLATE-004 ledger 27 remain intact; preserved checkpoint 57333b23ee9662db0a9971af5bd337e3fbd004df contains only the four originally authorized launch-wiring files and will be replayed onto the new branch.",
+      "writable_surfaces": [
+        ".env.example",
+        "app.py",
+        "opportunity_slate_v2_routes.py",
+        "services/database_service.py",
+        "tests/test_database_service.py",
+        "tests/test_opportunity_slate.py",
+        "tests/test_opportunity_slate_v2.py",
+        "tests/test_navigation.py",
+        "tests/test_auth.py",
+        "tests/test_search_visibility.py",
+        "scripts/verify_deployment_smoke.py",
+        "docs/initiatives/PS-OPPORTUNITY-SLATE-R1-LAUNCH-001/",
+        "artifacts/2026-08-12-opportunity-slate-r1-launch/"
+      ],
+      "exclusions": [
+        "no anonymous or public Opportunity Slate access; signed-out callers must redirect safely to sign-in",
+        "no R2-R5 implementation, AI interpretation, qualification, save/history expansion, or new materially revised visual direction",
+        "no schema, migration, destructive data, production-data repair, or provider/dependency change",
+        "no edit to the legacy Opportunity Slate implementation; it remains the flag-off rollback target",
+        "no pipeline, secret, unrelated feature, lane, worktree, branch, stash, or artifact change"
+      ],
+      "completion_evidence": [
+        "activation PR merges with [skip ci] and the package write preflight passes from the resulting current origin/main",
+        "app startup registers exactly one legacy-or-R1 blueprint, defaults safely to legacy when the new flag is false, and exposes a working Opportunity Slate navigation URL in either state",
+        "every R1 mutation endpoint has an applied rate limit and every invoked stored procedure is in the explicit database allowlist",
+        "focused route, auth, navigation, visibility, service, governance, and deployment-smoke tests plus the full unittest suite pass or reconcile only exact inherited baselines",
+        "local Playwright proves signed-out redirect, signed-in Stage 1 and Stage 2, competing-action/cancellation behavior, mobile keyboard order, accessibility basics, and flag-off rollback",
+        "complete-diff self-review records exact base and candidate SHAs, changed paths, limitations, rollback, and the fact that R1 contains only Stages 1-2",
+        "Azure PR policies pass; an exact reviewed merge/release grant is recorded before merge or production configuration; the automatic deployment reaches the exact merged SHA",
+        "production enables PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED only in the recorded release sequence and live smoke proves signed-out redirect plus Pete's authenticated R1 route without exposing member data",
+        "rollback proof shows flag false reselects the legacy blueprint and live release/cost evidence is recorded honestly"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-12",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "package": "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001",
+          "action": "merge and release after exact candidate verification",
+          "decision": "Pete's merge authority for PS-OPPORTUNITY-SLATE-R1-LAUNCH-001 is recorded from his standing instruction that after his approval Codex may send the package through every remaining step, followed by 'You're approved' and, after confirming the live signed-in route still showed the old experience, 'Oh yeah, I know. I don't know why we in dark. That needs to go live. Behind the sign-in wall.' This authorizes the signed-in R1 launch outcome, Azure PR merge, required production configuration, deployment, and live verification after Codex completes exact candidate verification, while excluding anonymous access. The machine merge and release lists remain empty until that exact verified candidate is recorded."
+        }
+      ],
+      "cleanup_contract": "Task-local only: after exact live verification and recoverability checks, remove only this lane's clean merged activation and implementation worktrees and branches behind recovery refs; preserve all unrelated, dirty, unverified, or user-owned material.",
+      "sequence": "activation-only PR -> implementation worktree from resulting origin/main -> write preflight -> launch wiring and tests -> local Playwright and full suite -> complete-diff self-review -> exact merge/release grant -> Azure PR and required policy -> squash merge -> production flag configuration -> automatic exact-SHA deployment -> anonymous and authenticated live verification -> completion record and controlled lane close",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-12T20:35:00Z",
+      "pause_reason": "Delivered live behind sign-in. Frozen candidate 38cc19126bcf85e2b38c8a0ded0aed9304ef8845 squash-merged through Azure PR 416 as exact main 1769eb6d858dfb29e6053162c21fafb4945737bf after policy run 887 passed. Automatic production run 888 succeeded; /healthz reported release ce2b71473f5228b018378fa1; PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED=true; signed-out /opportunity-slate returned a private/no-store/noindex 302 to sign-in; the authenticated live browser showed both R1 Stage 1 and Stage 2, loaded Pete's owner-scoped source, and logged zero page errors. R1 remains honestly limited to Stages 1-2.",
+      "resume_contract": "No product resume is expected. Claude's generic implementation-lane merge-authority handoff is complete: the class rule merged at 45ec3902cc8b2ffe50176221f96122e27a08357a and its lifecycle-stable positive fixture merged through Azure PR 418 after policy run 895 as main d07ff54c84fc4eb57d9fa399bb65c281003f7f22. Any R2-R5 expansion or product change requires fresh activation.",
+      "preserved_head_sha": "38cc19126bcf85e2b38c8a0ded0aed9304ef8845"
     }
   ],
   "workspace_snapshot": {
