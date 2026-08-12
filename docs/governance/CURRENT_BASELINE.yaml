@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001 is the sole active writer lane on work/2026-08-12-opportunity-slate-r1-signed-in-launch-r2 for the scope-corrected Protected signed-in R1 cutover; merge and production release remain fail-closed until exact candidate verification."
+  current_assignments: "Two disjoint implementation lanes: Opportunity Slate R1 Launch owns production cutover wiring; Terra Max owns non-production PS-PROFILE-CORE-FOUNDATION-001 on work/2026-08-12-profile-core-foundation-001. Profile integration and release remain excluded."
 
 governing_documents:
   bible:
@@ -61,6 +61,9 @@ active_packages:
   - id: PS-OPPORTUNITY-SLATE-R1-LAUNCH-001
     status: active_delivery
     scope: "Scope-corrected Protected signed-in launch of the reviewed R1 replacement at canonical /opportunity-slate; includes the exact database allowlist test and adds no anonymous access, R2-R5, or schema change."
+  - id: PS-PROFILE-CORE-FOUNDATION-001
+    status: active_delivery
+    scope: "Protected, non-production Profile-local D0 foundation: unregistered routes/API, services/adapters, Home/Posts/About templates and assets, focused tests, and package evidence; no app, database, schema, deployment, or enablement surface."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -152,7 +155,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Complete only PS-OPPORTUNITY-SLATE-R1-LAUNCH-001 from preserved checkpoint 57333b2: verify the allowlist, activate the signed-in R1 replacement at /opportunity-slate, retain legacy flag-off rollback, and prove the exact live release."
+next_gate: "Run only the two disjoint packages: finish Opportunity's signed-in R1 launch; implement PS-PROFILE-CORE-FOUNDATION-001 with Terra Max without app/database/schema/release writes. Profile production integration waits for released shared capacity."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
