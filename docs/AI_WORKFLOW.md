@@ -57,7 +57,7 @@ Read the following only when relevant:
 | Capture, Moment, Journal, audience, or projection truth | `PS-JOURNAL-001` and its linked contract. |
 | Projects | `PS-PROJECTS-001`. |
 | Protected release, migration, identity/security, deletion/publication, shared infrastructure | The relevant package and `PS-OPS-001`; Candidate/Launch/Operate/Retire only when their stated trigger applies. |
-| Actual writer or manager transfer | `MANAGER_SESSION_HANDOFF.md`, with pushed SHA and explicit relinquishment. |
+| Actual writer or manager transfer | `MANAGER_SESSION_HANDOFF.md`, with pushed SHA and explicit relinquishment; record an in-place active-lane writer change through the control-only `--intent transfer` preflight before the receiver writes. |
 
 An existing approved mockup remains binding visual authority. Non-material
 accessibility, truth, focus, or reflow adaptations are allowed when documented;

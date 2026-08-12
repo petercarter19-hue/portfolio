@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-11T17:52:00Z",
+  "updated_at": "2026-08-12T01:36:38Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -93,6 +93,24 @@
       "verification_contract": "This is audit evidence, not self-granted authority. The preflight recognizes it only when this entire record equals the validator's hard-coded owner-authorized record and command facts prove the exact branch and exact origin/main base above. A later branch, base, or altered record cannot use this exception."
     }
   ],
+  "writer_transfer_preflight_repair": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-11-delivery-activation-writer-transfer-preflight-repair",
+    "origin_main": "65651b417d4e824211b00639aabd4e9d29838b73",
+    "allowed_surfaces": [
+      "AGENTS.md",
+      "START_HERE.md",
+      "docs/AI_WORKFLOW.md",
+      "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+      "docs/governance/CURRENT_LANES.json",
+      "docs/governance/MANAGER_SESSION_HANDOFF.md",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "reason": "Pete explicitly authorized Codex on 2026-08-11 to make the one-time writer-transfer preflight repair after the mandated Opportunity Slate governance transfer branch failed closed because the validator only recognized the implementation branch. The repair adds a dedicated, fail-closed transfer intent without changing active-lane capacity, product code, schema, pipeline, deployment, production configuration, or live behavior.",
+    "verification_contract": "This is audit evidence, not self-granted authority. The preflight recognizes this repair only when the entire record equals the validator's hard-coded owner-authorized record and command facts prove the exact branch and origin/main base above. A later branch, base, or altered record cannot reuse the exception."
+  },
   "closing_lanes": [
     {
       "package": "PS-DELIVERY-CONTROL-001",

@@ -18,8 +18,8 @@ git fetch origin --prune
 git status --short --branch
 ```
 
-- Confirm what `origin` means in this checkout. Azure DevOps `origin/main` is
-  authoritative where it is reachable; GitHub is a backup mirror.
+- Confirm what `origin` means. Azure DevOps `origin/main` is authoritative;
+  GitHub is a backup mirror.
 - Do not switch, reset, clean, or edit a dirty checkout that belongs to another
   task. Use a clean worktree when needed.
 - Start a task branch from current `origin/main`. Do not push directly to
@@ -39,6 +39,9 @@ python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --fet
 Use `--intent read` for a read-only audit. If the ledger reports an
 owner-directed reset, only its `writes_allowed_for` package may write. Do not
 create a branch or worktree to work around a failed preflight.
+
+In-place writer changes use the control-only `--intent transfer` flow in
+`MANAGER_SESSION_HANDOFF.md`.
 
 From `controlled_idle`, Pete must name one exact outcome before the small
 ledger/baseline activation branch is created. During `active_delivery`, the

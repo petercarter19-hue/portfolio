@@ -96,6 +96,44 @@ BOOTSTRAP_CONTROL_REPAIR = {
     ),
 }
 
+# Pete explicitly authorized this one-time validator repair on 2026-08-11
+# after the Opportunity Slate writer-transfer branch proved that the standing
+# preflight had no safe representation for an in-place writer handoff.  Like
+# the earlier bootstrap repair, this exception is code-controlled and expires
+# as soon as origin/main moves away from the pinned source SHA.
+WRITER_TRANSFER_PREFLIGHT_REPAIR = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-11-delivery-activation-writer-transfer-preflight-repair",
+    "origin_main": "65651b417d4e824211b00639aabd4e9d29838b73",
+    "allowed_surfaces": [
+        "AGENTS.md",
+        "START_HERE.md",
+        "docs/AI_WORKFLOW.md",
+        "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/MANAGER_SESSION_HANDOFF.md",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "reason": (
+        "Pete explicitly authorized Codex on 2026-08-11 to make the one-time "
+        "writer-transfer preflight repair after the mandated Opportunity Slate "
+        "governance transfer branch failed closed because the validator only "
+        "recognized the implementation branch. The repair adds a dedicated, "
+        "fail-closed transfer intent without changing active-lane capacity, "
+        "product code, schema, pipeline, deployment, production configuration, "
+        "or live behavior."
+    ),
+    "verification_contract": (
+        "This is audit evidence, not self-granted authority. The preflight "
+        "recognizes this repair only when the entire record equals the "
+        "validator's hard-coded owner-authorized record and command facts prove "
+        "the exact branch and origin/main base above. A later branch, base, or "
+        "altered record cannot reuse the exception."
+    ),
+}
+
 MAX_ACTIVE_LANES = 3
 MAX_IMPLEMENTATION_LANES = 2
 MAX_DIRECTION_AUTHORITY_LANES = 1
@@ -158,6 +196,12 @@ PAUSE_ALLOWED_SURFACES = frozenset(
 )
 PAUSE_BRANCH_PATTERN = re.compile(
     r"work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-pause-[a-z0-9-]+"
+)
+TRANSFER_ALLOWED_SURFACES = frozenset(
+    {"docs/governance/CURRENT_LANES.json"}
+)
+TRANSFER_BRANCH_PATTERN = re.compile(
+    r"work/[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+-transfer"
 )
 FULL_GIT_SHA = re.compile(r"[0-9a-f]{40}")
 
@@ -679,6 +723,26 @@ def _validate_baseline_activation_delta(
             errors.append(
                 "activation baseline next_gate must mention the newly activated package"
             )
+
+
+def _validate_baseline_unchanged(
+    candidate_baseline: object,
+    origin_baseline: object,
+    *,
+    label: str,
+    errors: list[str],
+) -> None:
+    """Fail closed unless a control-only operation leaves the baseline exact."""
+    if not isinstance(candidate_baseline, (bytes, bytearray)):
+        errors.append(f"{label} requires candidate CURRENT_BASELINE.yaml bytes")
+        return
+    if not isinstance(origin_baseline, (bytes, bytearray)):
+        errors.append(
+            f"{label} requires fetched origin/main CURRENT_BASELINE.yaml bytes"
+        )
+        return
+    if bytes(candidate_baseline) != bytes(origin_baseline):
+        errors.append(f"{label} may not change CURRENT_BASELINE.yaml")
 
 
 def _remaining_package_ids(remaining_lanes: list[dict]) -> list[str]:
@@ -1598,6 +1662,21 @@ def _exact_bootstrap_matches(
     )
 
 
+def _exact_writer_transfer_preflight_repair_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("writer_transfer_preflight_repair")
+        == WRITER_TRANSFER_PREFLIGHT_REPAIR
+        and package_id == WRITER_TRANSFER_PREFLIGHT_REPAIR["package"]
+        and facts.get("branch") == WRITER_TRANSFER_PREFLIGHT_REPAIR["branch"]
+        and facts.get("origin_main")
+        == WRITER_TRANSFER_PREFLIGHT_REPAIR["origin_main"]
+    )
+
+
 def collect_facts(
     fetch: bool = False,
     include_changed_paths: bool = False,
@@ -1682,6 +1761,222 @@ def evaluate_policy(
     if intent == "read":
         if not mode.get("read_only_work_allowed", False):
             errors.append("the current operating mode disallows read-only work")
+        return errors, warnings
+
+    if intent == "transfer":
+        if not facts.get("fetched"):
+            errors.append("writer transfer requires --fetch")
+        if not require_clean:
+            errors.append("writer transfer requires --require-clean")
+        if origin_ledger is None or not isinstance(origin_ledger, dict):
+            errors.append(
+                "writer transfer requires the fetched origin/main lane ledger"
+            )
+            return errors, warnings
+
+        (
+            candidate_mode,
+            candidate_policy,
+            candidate_lanes,
+            candidate_by_package,
+        ) = _activation_snapshot(ledger, "candidate", errors)
+        (
+            origin_mode,
+            origin_policy,
+            origin_lanes,
+            origin_by_package,
+        ) = _activation_snapshot(origin_ledger, "origin/main", errors)
+
+        package_key = package_id.casefold()
+        origin_lane = origin_by_package.get(package_key)
+        candidate_lane = candidate_by_package.get(package_key)
+        if origin_lane is None:
+            errors.append(
+                f"writer transfer requires {package_id} to be active on origin/main"
+            )
+        if candidate_lane is None:
+            errors.append(
+                f"writer transfer candidate must retain active lane {package_id}"
+            )
+
+        branch = facts.get("branch")
+        if not isinstance(branch, str) or not TRANSFER_BRANCH_PATTERN.fullmatch(
+            branch
+        ):
+            errors.append(
+                "writer transfer must run from a dedicated control-only branch "
+                f"matching {TRANSFER_BRANCH_PATTERN.pattern!r}"
+            )
+        if isinstance(origin_lane, dict) and branch == origin_lane.get("branch"):
+            errors.append(
+                "writer transfer control branch must differ from the active lane branch"
+            )
+
+        if candidate_mode != origin_mode:
+            errors.append("writer transfer may not change operating_mode")
+        elif package_id not in candidate_mode.get("writes_allowed_for", []):
+            errors.append(
+                "writer transfer package must remain authorized in writes_allowed_for"
+            )
+        if candidate_policy != origin_policy:
+            errors.append("writer transfer may not change activation_policy")
+
+        if list(candidate_by_package) != list(origin_by_package):
+            errors.append(
+                "writer transfer must preserve the active package set and order"
+            )
+        if len(candidate_lanes) != len(origin_lanes):
+            errors.append("writer transfer may not change active-lane capacity")
+        else:
+            for origin_item, candidate_item in zip(
+                origin_lanes, candidate_lanes, strict=True
+            ):
+                if origin_item.get("package") != package_id:
+                    if candidate_item != origin_item:
+                        errors.append(
+                            "writer transfer may not change another active lane: "
+                            f"{origin_item.get('package', '(unknown)')}"
+                        )
+                elif candidate_item.get("package") != package_id:
+                    errors.append(
+                        "writer transfer must preserve the target lane position"
+                    )
+
+        if isinstance(origin_lane, dict) and isinstance(candidate_lane, dict):
+            allowed_lane_changes = {
+                "writer",
+                "owner_decisions",
+                "completion_evidence",
+                "model_routing",
+                "sequence",
+            }
+            lane_changes = {
+                key
+                for key in set(origin_lane) | set(candidate_lane)
+                if origin_lane.get(key) != candidate_lane.get(key)
+            }
+            required_lane_changes = {"writer", "owner_decisions"}
+            if not required_lane_changes.issubset(lane_changes):
+                errors.append(
+                    "writer transfer must change writer and append one owner decision"
+                )
+            unexpected_lane_changes = sorted(lane_changes - allowed_lane_changes)
+            if unexpected_lane_changes:
+                errors.append(
+                    "writer transfer may not change lane fields: "
+                    + ", ".join(unexpected_lane_changes)
+                )
+
+            origin_writer = origin_lane.get("writer")
+            candidate_writer = candidate_lane.get("writer")
+            if (
+                not isinstance(candidate_writer, str)
+                or not candidate_writer.strip()
+                or candidate_writer == origin_writer
+            ):
+                errors.append(
+                    "writer transfer requires a non-empty replacement writer"
+                )
+
+            origin_decisions = origin_lane.get("owner_decisions")
+            candidate_decisions = candidate_lane.get("owner_decisions")
+            appended_decision: dict | None = None
+            if (
+                not isinstance(origin_decisions, list)
+                or not isinstance(candidate_decisions, list)
+                or candidate_decisions[:-1] != origin_decisions
+                or len(candidate_decisions) != len(origin_decisions) + 1
+            ):
+                errors.append(
+                    "writer transfer must preserve owner decisions and append exactly one"
+                )
+            elif isinstance(candidate_decisions[-1], dict):
+                appended_decision = candidate_decisions[-1]
+                if set(appended_decision) != {"date", "decision"} or not all(
+                    isinstance(appended_decision.get(field), str)
+                    and appended_decision[field].strip()
+                    for field in ("date", "decision")
+                ):
+                    errors.append(
+                        "writer transfer owner decision must contain non-empty date and decision"
+                    )
+            else:
+                errors.append("writer transfer appended owner decision must be an object")
+
+            remote_sha = facts.get("transfer_target_remote_sha")
+            if not isinstance(remote_sha, str) or not FULL_GIT_SHA.fullmatch(
+                remote_sha
+            ):
+                errors.append(
+                    "writer transfer requires the active lane branch to be pushed to origin"
+                )
+            elif (
+                appended_decision is not None
+                and remote_sha not in appended_decision.get("decision", "")
+            ):
+                errors.append(
+                    "writer transfer owner decision must name the exact pushed handoff SHA"
+                )
+
+            if "completion_evidence" in lane_changes:
+                origin_evidence = origin_lane.get("completion_evidence")
+                candidate_evidence = candidate_lane.get("completion_evidence")
+                if (
+                    not isinstance(origin_evidence, list)
+                    or not isinstance(candidate_evidence, list)
+                    or len(candidate_evidence) != len(origin_evidence)
+                    or not all(
+                        isinstance(item, str) and item.strip()
+                        for item in candidate_evidence
+                    )
+                ):
+                    errors.append(
+                        "writer transfer completion_evidence must preserve its string-list shape"
+                    )
+
+            if "model_routing" in lane_changes:
+                origin_routing = origin_lane.get("model_routing")
+                candidate_routing = candidate_lane.get("model_routing")
+                if (
+                    not isinstance(origin_routing, dict)
+                    or not isinstance(candidate_routing, dict)
+                    or candidate_routing.get("decided_by")
+                    != origin_routing.get("decided_by")
+                    or candidate_routing.get("date") != origin_routing.get("date")
+                    or not all(
+                        isinstance(value, str) and value.strip()
+                        for value in candidate_routing.values()
+                    )
+                ):
+                    errors.append(
+                        "writer transfer model_routing must preserve owner/date and non-empty values"
+                    )
+
+            if "sequence" in lane_changes and (
+                not isinstance(candidate_lane.get("sequence"), str)
+                or not candidate_lane["sequence"].strip()
+            ):
+                errors.append("writer transfer sequence must remain non-empty")
+
+        if _root_changes(ledger, origin_ledger) != {"updated_at", "active_lanes"}:
+            errors.append(
+                "writer transfer must change exactly updated_at and active_lanes"
+            )
+        _validate_baseline_unchanged(
+            candidate_baseline,
+            origin_baseline,
+            label="writer transfer",
+            errors=errors,
+        )
+
+        raw_changed_paths = facts.get("changed_paths")
+        if not isinstance(raw_changed_paths, list) or set(raw_changed_paths) != set(
+            TRANSFER_ALLOWED_SURFACES
+        ):
+            errors.append(
+                "writer transfer control branch must change exactly: "
+                + ", ".join(sorted(TRANSFER_ALLOWED_SURFACES))
+            )
         return errors, warnings
 
     if intent == "pause":
@@ -1956,10 +2251,22 @@ def evaluate_policy(
             allowed_surfaces = set(raw_allowed_surfaces)
 
         bootstrap_matches = _exact_bootstrap_matches(ledger, facts, package_id)
+        writer_transfer_repair_matches = (
+            _exact_writer_transfer_preflight_repair_matches(
+                ledger, facts, package_id
+            )
+        )
         if bootstrap_matches:
             allowed_surfaces = set(BOOTSTRAP_CONTROL_REPAIR["allowed_surfaces"])
             warnings.append(
                 "using the exact one-time bootstrap control-repair boundary"
+            )
+        elif writer_transfer_repair_matches:
+            allowed_surfaces = set(
+                WRITER_TRANSFER_PREFLIGHT_REPAIR["allowed_surfaces"]
+            )
+            warnings.append(
+                "using the exact one-time writer-transfer preflight-repair boundary"
             )
 
         if origin_ledger is None:
@@ -1982,7 +2289,11 @@ def evaluate_policy(
                     "controlled_idle or active_delivery"
                 )
 
-            if not bootstrap_matches and origin_policy != policy:
+            if (
+                not bootstrap_matches
+                and not writer_transfer_repair_matches
+                and origin_policy != policy
+            ):
                 errors.append(
                     "activation may not change activation_policy"
                 )
@@ -1992,7 +2303,39 @@ def evaluate_policy(
                     f"activation candidate exceeds the {MAX_ACTIVE_LANES}-lane limit"
                 )
 
-            if bootstrap_matches:
+            if writer_transfer_repair_matches:
+                if origin_policy != policy:
+                    errors.append(
+                        "writer-transfer preflight repair may not change activation_policy"
+                    )
+                root_changes = _root_changes(ledger, origin_ledger)
+                expected_root_changes = {
+                    "updated_at",
+                    "writer_transfer_preflight_repair",
+                }
+                if root_changes != expected_root_changes:
+                    errors.append(
+                        "writer-transfer preflight repair must change exactly "
+                        "updated_at and writer_transfer_preflight_repair"
+                    )
+                if origin_ledger.get("writer_transfer_preflight_repair") is not None:
+                    errors.append(
+                        "writer-transfer preflight repair is one-time and already recorded"
+                    )
+                if (
+                    ledger.get("writer_transfer_preflight_repair")
+                    != WRITER_TRANSFER_PREFLIGHT_REPAIR
+                ):
+                    errors.append(
+                        "writer-transfer preflight repair record is not exact"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="writer-transfer preflight repair",
+                    errors=errors,
+                )
+            elif bootstrap_matches:
                 if policy != EXPECTED_ACTIVATION_POLICY:
                     errors.append(
                         "bootstrap control repair activation_policy must match the exact code-controlled policy"
@@ -2229,14 +2572,15 @@ def evaluate_policy(
                         "activation may not change unrelated ledger sections: "
                         + ", ".join(unexpected_root_changes)
                     )
-        _validate_baseline_activation_delta(
-            candidate_baseline,
-            origin_baseline,
-            bootstrap_matches=bootstrap_matches,
-            added_package=added_package,
-            added_branch=added_branch,
-            errors=errors,
-        )
+        if not writer_transfer_repair_matches:
+            _validate_baseline_activation_delta(
+                candidate_baseline,
+                origin_baseline,
+                bootstrap_matches=bootstrap_matches,
+                added_package=added_package,
+                added_branch=added_branch,
+                errors=errors,
+            )
         raw_changed_paths = facts.get("changed_paths")
         if not isinstance(raw_changed_paths, list) or not all(
             isinstance(path, str) and path for path in raw_changed_paths
@@ -2247,6 +2591,15 @@ def evaluate_policy(
             if bootstrap_matches and changed_paths != allowed_surfaces:
                 errors.append(
                     "bootstrap control repair must change exactly the "
+                    "owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                writer_transfer_repair_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "writer-transfer preflight repair must change exactly the "
                     "owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
@@ -2313,6 +2666,7 @@ def build_parser() -> argparse.ArgumentParser:
             "read",
             "activate",
             "pause",
+            "transfer",
             "write",
             "merge",
             "cleanup",
@@ -2337,14 +2691,17 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     activation_argument_errors: list[str] = []
-    if args.intent == "activate" and not args.fetch:
-        activation_argument_errors.append("activation requires --fetch")
-    if args.intent == "activate" and not args.require_clean:
-        activation_argument_errors.append("activation requires --require-clean")
-    if args.intent == "pause" and not args.fetch:
-        activation_argument_errors.append("pause requires --fetch")
-    if args.intent == "pause" and not args.require_clean:
-        activation_argument_errors.append("pause requires --require-clean")
+    control_label = {
+        "activate": "activation",
+        "pause": "pause",
+        "transfer": "writer transfer",
+    }.get(args.intent)
+    if control_label is not None and not args.fetch:
+        activation_argument_errors.append(f"{control_label} requires --fetch")
+    if control_label is not None and not args.require_clean:
+        activation_argument_errors.append(
+            f"{control_label} requires --require-clean"
+        )
     if activation_argument_errors:
         print(
             json.dumps(
@@ -2365,19 +2722,20 @@ def main(argv: list[str] | None = None) -> int:
             include_changed_paths=args.intent in {
                 "activate",
                 "pause",
+                "transfer",
                 "write",
                 "merge",
                 "release",
             },
         )
-        if args.intent in {"activate", "pause"}:
+        if args.intent in {"activate", "pause", "transfer"}:
             # The exact SHA captured with the Git facts is the authority for
             # both records, preventing a later remote movement from changing
             # what the candidate was compared against mid-preflight.
             origin_ledger = load_ledger_at_ref(facts["origin_main"])
             candidate_baseline = load_baseline_bytes()
             origin_baseline = load_baseline_bytes_at_ref(facts["origin_main"])
-            if args.intent == "pause":
+            if args.intent in {"pause", "transfer"}:
                 origin_lanes = origin_ledger.get("active_lanes")
                 target = next(
                     (
@@ -2396,11 +2754,15 @@ def main(argv: list[str] | None = None) -> int:
                         f"refs/remotes/origin/{target_branch}",
                         check=False,
                     )
-                    facts["pause_target_remote_sha"] = (
+                    remote_fact = (
                         remote_sha if FULL_GIT_SHA.fullmatch(remote_sha) else None
                     )
                 else:
-                    facts["pause_target_remote_sha"] = None
+                    remote_fact = None
+                if args.intent == "pause":
+                    facts["pause_target_remote_sha"] = remote_fact
+                else:
+                    facts["transfer_target_remote_sha"] = remote_fact
         else:
             origin_ledger = None
             candidate_baseline = None

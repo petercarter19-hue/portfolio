@@ -26,6 +26,10 @@ Use this for a change, not for a read-only discussion.
   requires them.
 - [ ] Confirmed the writer and editable files/domain; a manager handoff is
   required only when work actually changes hands or crosses an owned lane.
+- [ ] For an in-place writer change, confirmed the prior writer pushed and
+  relinquished the exact SHA, used a dedicated control-only transfer branch,
+  changed only the permitted lane transfer fields, and passed `--intent
+  transfer --fetch --require-clean` before the receiver wrote.
 - [ ] For Protected work, named the specific privacy, security, data, release,
   or material-visual evidence required before release.
 - [ ] Chosen focused verification and the proportional completion record.

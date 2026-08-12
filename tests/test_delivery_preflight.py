@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from scripts.delivery_preflight import (
     BOOTSTRAP_CONTROL_REPAIR,
+    WRITER_TRANSFER_PREFLIGHT_REPAIR,
     _baseline_scalar,
     _expected_pause_manager_assignment,
     _expected_pause_next_gate,
@@ -2627,6 +2628,161 @@ class DeliveryPreflightTests(unittest.TestCase):
             )
         self.assertEqual(2, missing_clean)
         loader.assert_not_called()
+
+    def test_transfer_main_requires_fetch_and_clean_arguments(self):
+        with patch("scripts.delivery_preflight.load_ledger") as loader, patch(
+            "builtins.print"
+        ):
+            missing_both = main(
+                [
+                    "--package",
+                    "PS-OPPORTUNITY-SLATE-002",
+                    "--intent",
+                    "transfer",
+                ]
+            )
+        self.assertEqual(2, missing_both)
+        loader.assert_not_called()
+
+        with patch("scripts.delivery_preflight.load_ledger") as loader, patch(
+            "builtins.print"
+        ):
+            missing_clean = main(
+                [
+                    "--package",
+                    "PS-OPPORTUNITY-SLATE-002",
+                    "--intent",
+                    "transfer",
+                    "--fetch",
+                ]
+            )
+        self.assertEqual(2, missing_clean)
+        loader.assert_not_called()
+
+    def test_writer_transfer_is_exact_and_fail_closed(self):
+        origin = copy.deepcopy(self.ledger)
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-12T01:45:00Z"
+        handoff_sha = "3fb657456fef757c70292cf20217f567c477f733"
+        target = next(
+            lane
+            for lane in candidate["active_lanes"]
+            if lane["package"] == "PS-OPPORTUNITY-SLATE-002"
+        )
+        target["writer"] = "Root Codex session /root is the replacement writer"
+        target["owner_decisions"].append(
+            {
+                "date": "2026-08-11",
+                "decision": (
+                    "Pete transferred the lane after the prior writer pushed and "
+                    f"relinquished exact SHA {handoff_sha}."
+                ),
+            }
+        )
+        transfer_facts = facts(
+            branch="work/2026-08-11-opportunity-slate-v2-codex-transfer",
+            changed_paths=["docs/governance/CURRENT_LANES.json"],
+            transfer_target_remote_sha=handoff_sha,
+        )
+        errors, warnings = evaluate_policy(
+            candidate,
+            transfer_facts,
+            "PS-OPPORTUNITY-SLATE-002",
+            "transfer",
+            require_clean=True,
+            origin_ledger=origin,
+            candidate_baseline=self.baseline,
+            origin_baseline=self.baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertEqual([], warnings)
+
+        wrong_path = copy.deepcopy(transfer_facts)
+        wrong_path["changed_paths"] = [
+            "docs/governance/CURRENT_LANES.json",
+            "scripts/delivery_preflight.py",
+        ]
+        path_errors, _ = evaluate_policy(
+            candidate,
+            wrong_path,
+            "PS-OPPORTUNITY-SLATE-002",
+            "transfer",
+            require_clean=True,
+            origin_ledger=origin,
+            candidate_baseline=self.baseline,
+            origin_baseline=self.baseline,
+        )
+        self.assertTrue(any("change exactly" in error for error in path_errors))
+
+        altered_lane = copy.deepcopy(candidate)
+        target = next(
+            lane
+            for lane in altered_lane["active_lanes"]
+            if lane["package"] == "PS-OPPORTUNITY-SLATE-002"
+        )
+        target["writable_surfaces"].append("app.py")
+        lane_errors, _ = evaluate_policy(
+            altered_lane,
+            transfer_facts,
+            "PS-OPPORTUNITY-SLATE-002",
+            "transfer",
+            require_clean=True,
+            origin_ledger=origin,
+            candidate_baseline=self.baseline,
+            origin_baseline=self.baseline,
+        )
+        self.assertTrue(any("lane fields" in error for error in lane_errors))
+
+        baseline_errors, _ = evaluate_policy(
+            candidate,
+            transfer_facts,
+            "PS-OPPORTUNITY-SLATE-002",
+            "transfer",
+            require_clean=True,
+            origin_ledger=origin,
+            candidate_baseline=self.baseline + b"\n# changed\n",
+            origin_baseline=self.baseline,
+        )
+        self.assertTrue(
+            any("may not change CURRENT_BASELINE" in error for error in baseline_errors)
+        )
+
+    def test_writer_transfer_preflight_repair_is_exact_and_one_time(self):
+        repair = WRITER_TRANSFER_PREFLIGHT_REPAIR
+        origin_ledger = load_ledger_at_ref(repair["origin_main"])
+        origin_baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        candidate = copy.deepcopy(origin_ledger)
+        candidate["updated_at"] = "2026-08-12T01:36:38Z"
+        candidate["writer_transfer_preflight_repair"] = copy.deepcopy(repair)
+        exact = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            changed_paths=repair["allowed_surfaces"],
+        )
+        exact_errors, exact_warnings = self._evaluate_activation(
+            candidate,
+            exact,
+            require_clean=True,
+            origin=origin_ledger,
+            candidate_baseline=origin_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertEqual([], exact_errors)
+        self.assertTrue(
+            any("writer-transfer" in warning for warning in exact_warnings)
+        )
+
+        altered = copy.deepcopy(exact)
+        altered["branch"] = "work/2026-08-11-delivery-activation-other"
+        altered_errors, _ = self._evaluate_activation(
+            candidate,
+            altered,
+            require_clean=True,
+            origin=origin_ledger,
+            candidate_baseline=origin_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertTrue(altered_errors)
 
     def test_bootstrap_control_repair_is_exact_and_one_time(self):
         # Replay the historical one-time exception against the exact merged

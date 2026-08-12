@@ -24,6 +24,10 @@
 > lane may be production-capable. A pause is published from a separate
 > control-only branch and records the pushed work branch's exact commit; never
 > merge the unfinished work merely to free capacity.
+> An in-place writer change uses a separate control-only branch and `--intent
+> transfer`; it may update only the existing lane's transfer fields in
+> `CURRENT_LANES.json` after the prior writer has pushed and relinquished an
+> exact SHA.
 
 ## Authority
 
