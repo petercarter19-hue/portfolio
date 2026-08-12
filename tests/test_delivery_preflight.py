@@ -20,6 +20,7 @@ from scripts.delivery_preflight import (
     GRANT_CLOSE_PREFLIGHT_REPAIR,
     GRANT_CLOSE_FIXTURE_FOLLOWUP,
     PROFILE_CLOSE_FIXTURE_FOLLOWUP,
+    PROFILE_CLOSE_BASELINE_FIXTURE_FOLLOWUP,
     PROFILE_DIRECTION_OWNER_DECISION_SHA256,
     PROFILE_DIRECTION_REVIEW_ATTESTATION,
     _affirmative_merge_decision,
@@ -30,6 +31,7 @@ from scripts.delivery_preflight import (
     _exact_direction_grant_delta,
     _exact_grant_close_fixture_followup_delta,
     _exact_profile_close_fixture_followup_delta,
+    _exact_profile_close_baseline_fixture_followup_delta,
     _fetch_exact_origin_refs,
     _git_environment,
     _baseline_scalar,
@@ -83,7 +85,11 @@ class DeliveryPreflightTests(unittest.TestCase):
         cls.ledger = load_ledger(cls.path)
         cls.baseline = load_baseline_bytes()
 
-    def _baseline_for_origin(self, origin: dict) -> bytes:
+    def _baseline_for_origin(
+        self,
+        origin: dict,
+        source_baseline: bytes | None = None,
+    ) -> bytes:
         """Return a baseline whose active packages match a real origin fixture.
 
         A checked-in activation candidate can contain the lane that a 1->2
@@ -98,13 +104,14 @@ class DeliveryPreflightTests(unittest.TestCase):
             for lane in origin.get("active_lanes", [])
             if isinstance(lane, dict) and isinstance(lane.get("package"), str)
         }
-        source = self.baseline.decode("utf-8")
+        baseline = self.baseline if source_baseline is None else source_baseline
+        source = baseline.decode("utf-8")
         section = re.search(
             r"(?ms)^active_packages:\n(?P<body>.*?)(?=^scoped_findings:\n)",
             source,
         )
         if section is None:
-            return self.baseline
+            return baseline
         blocks = list(
             re.finditer(
                 r"(?ms)^  - id: (?P<id>[^\n]+)\n.*?(?=^  - id: |\Z)",
@@ -113,7 +120,7 @@ class DeliveryPreflightTests(unittest.TestCase):
         )
         recorded = {block.group("id") for block in blocks}
         if not packages:
-            return self.baseline
+            return baseline
         if packages.issubset(recorded):
             retained = "".join(
                 block.group(0)
@@ -137,7 +144,7 @@ class DeliveryPreflightTests(unittest.TestCase):
                 flags=re.MULTILINE,
             )
         else:
-            return self.baseline
+            return baseline
         candidate = (
             source[: section.start()]
             + "active_packages:\n"
@@ -1102,7 +1109,10 @@ with patch.object(
             "close_evidence_paths": [evidence_path],
         })
         candidate["closing_lanes"] = [*origin.get("closing_lanes", []), closing]
-        origin_baseline = self._baseline_for_origin(origin)
+        origin_baseline = self._baseline_for_origin(
+            origin,
+            load_baseline_bytes_at_ref(PROFILE_DIRECTION_PRE_CLOSE_MAIN),
+        )
         source = origin_baseline.decode("utf-8")
         candidate_baseline = re.sub(
             r'^  current_assignments: .+$',
@@ -1479,6 +1489,118 @@ with patch.object(
         )
         assert_inert_rejected(
             lambda value: value["active_lanes"].pop()
+        )
+
+        baseline_errors, _ = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline + b"\n# forged baseline\n",
+            origin_baseline=baseline,
+        )
+        self.assertTrue(
+            any("may not change CURRENT_BASELINE" in error for error in baseline_errors)
+        )
+
+    def test_profile_close_baseline_fixture_followup_is_exact_and_inert(self):
+        repair = PROFILE_CLOSE_BASELINE_FIXTURE_FOLLOWUP
+        origin = load_ledger_at_ref(repair["origin_main"])
+        baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-12T10:06:05Z"
+        candidate["profile_close_baseline_fixture_followup"] = copy.deepcopy(
+            repair
+        )
+        exact_facts = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=repair["allowed_surfaces"],
+        )
+
+        self.assertEqual(PROFILE_CLOSE_FIXTURE_FOLLOWUP, origin.get(
+            "profile_close_fixture_followup"
+        ))
+        self.assertTrue(
+            _exact_profile_close_baseline_fixture_followup_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("baseline-fixture" in item for item in warnings))
+
+        for fact_mutation in (
+            {"branch": "work/forged"},
+            {"origin_main": "f" * 40},
+            {"ahead": 0},
+            {"ahead": 2},
+            {"behind": 1},
+            {"changed_paths": repair["allowed_surfaces"][:-1]},
+            {"changed_paths": [*repair["allowed_surfaces"], "app.py"]},
+        ):
+            with self.subTest(facts=fact_mutation):
+                altered_errors, _ = self._evaluate_activation(
+                    candidate,
+                    {**exact_facts, **fact_mutation},
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(altered_errors)
+
+        def assert_inert_rejected(mutator):
+            altered = copy.deepcopy(candidate)
+            mutator(altered)
+            self.assertFalse(
+                _exact_profile_close_baseline_fixture_followup_delta(
+                    origin, altered
+                )
+            )
+            altered_errors, _ = self._evaluate_activation(
+                altered,
+                exact_facts,
+                require_clean=True,
+                origin=origin,
+                candidate_baseline=baseline,
+                origin_baseline=baseline,
+            )
+            self.assertTrue(altered_errors)
+
+        assert_inert_rejected(
+            lambda value: value[
+                "profile_close_baseline_fixture_followup"
+            ].__setitem__("branch", "work/forged")
+        )
+        assert_inert_rejected(
+            lambda value: value.__setitem__("updated_at", origin["updated_at"])
+        )
+        assert_inert_rejected(
+            lambda value: value.__setitem__(
+                "updated_at", "2026-02-30T10:06:05Z"
+            )
+        )
+        assert_inert_rejected(
+            lambda value: value["operating_mode"]["merge_allowed_for"].append(
+                "PS-DELIVERY-CONTROL-001"
+            )
+        )
+        assert_inert_rejected(lambda value: value["active_lanes"].pop())
+
+        missing_prior = copy.deepcopy(origin)
+        missing_prior.pop("profile_close_fixture_followup")
+        self.assertFalse(
+            _exact_profile_close_baseline_fixture_followup_delta(
+                missing_prior, candidate
+            )
         )
 
         baseline_errors, _ = self._evaluate_activation(
@@ -1923,6 +2045,36 @@ with patch.object(
             "    status: active_delivery\n"
             '    scope: "Synthetic active-package fixture."\n',
             actual,
+        )
+
+    def test_baseline_for_origin_uses_supplied_immutable_source(self):
+        origin, lane = self._direction_origin()
+        immutable = load_baseline_bytes_at_ref(PROFILE_DIRECTION_PRE_CLOSE_MAIN)
+        mutable_closed = re.sub(
+            rf"(?ms)^  - id: {re.escape(lane['package'])}\n.*?(?=^  - id: |^scoped_findings:\n)",
+            "",
+            immutable.decode("utf-8"),
+            count=1,
+        ).encode("utf-8")
+
+        with patch.object(self, "baseline", mutable_closed):
+            actual = self._baseline_for_origin(
+                origin,
+                source_baseline=immutable,
+            )
+
+        self.assertIn(
+            f"  - id: {lane['package']}\n",
+            actual.decode("utf-8"),
+        )
+        completed = re.search(
+            r"(?ms)^completed_packages:\n(?P<body>.*?)(?=^retired_packages:\n)",
+            actual.decode("utf-8"),
+        )
+        self.assertIsNotNone(completed)
+        self.assertNotIn(
+            f"  - {lane['package']}\n",
+            completed.group("body"),
         )
 
     def test_activation_requires_exact_package_branch_and_capacity(self):

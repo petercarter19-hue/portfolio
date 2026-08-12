@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T09:10:06Z",
+  "updated_at": "2026-08-12T10:06:05Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -160,6 +160,19 @@
     ],
     "reason": "Required Azure PR validation of the exact Profile direction close candidate exposed two fixture-only assumptions: the direction helper borrowed the current mutable lane ledger, and the baseline pointer test froze updated_at to a historical date. This follow-up pins the direction fixture to exact pre-close main and validates the baseline date semantically. It changes no active lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, or live behavior.",
     "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact four changed paths. The ledger may change only updated_at plus this record, and the baseline must remain byte-identical. A later branch, base, altered record, timestamp, authority, lane, path, or baseline cannot reuse it."
+  },
+  "profile_close_baseline_fixture_followup": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-12-delivery-activation-profile-close-baseline-fixture-followup",
+    "origin_main": "1730633d1fb4adf4f603b3650fb103102ec6ebcd",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "reason": "Required Azure PR validation of the refreshed Profile direction close candidate exposed one final fixture-only assumption: the immutable pre-close direction ledger was paired with the current mutable baseline, which no longer carries Profile after a real close. This follow-up lets the fixture helper consume the exact pre-close baseline alongside the exact pre-close ledger. It changes no active lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, or live behavior.",
+    "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. The parent must retain the exact prior Profile close fixture repair; the ledger may change only updated_at plus this record, and the baseline must remain byte-identical. A later branch, base, altered record, timestamp, authority, lane, path, or baseline cannot reuse it."
   },
   "closing_lanes": [
     {
