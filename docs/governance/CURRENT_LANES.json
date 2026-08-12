@@ -15,9 +15,13 @@
       "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001",
       "PS-PROFILE-CORE-FOUNDATION-001"
     ],
-    "merge_allowed_for": [],
+    "merge_allowed_for": [
+      "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001"
+    ],
     "cleanup_allowed_for": [],
-    "release_allowed_for": [],
+    "release_allowed_for": [
+      "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001"
+    ],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
       "new feature or product write outside the exact surfaces recorded for its activated lane",
@@ -30,7 +34,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Two disjoint implementation lanes are active. PS-OPPORTUNITY-SLATE-R1-LAUNCH-001 alone is production-capable and owns its signed-in launch wiring. PS-PROFILE-CORE-FOUNDATION-001 is non-production and owns only Profile-local foundation modules, templates, assets, tests, and package evidence. Neither may enter the other's surfaces; Profile integration, schema, app registration, deployment, and enablement remain excluded."
+    "exit_authority": "Two disjoint implementation lanes are active. PS-OPPORTUNITY-SLATE-R1-LAUNCH-001 alone is production-capable and may merge and release only frozen candidate 38cc19126bcf85e2b38c8a0ded0aed9304ef8845 after required Azure PR policy; release is limited to the signed-in R1 selector and PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED=true, with no schema, anonymous access, or R2-R5 work. PS-PROFILE-CORE-FOUNDATION-001 is non-production and owns only Profile-local foundation modules, templates, assets, tests, and package evidence. Neither may enter the other's surfaces; Profile integration, schema, app registration, deployment, and enablement remain excluded."
   },
   "activation_policy": {
     "enabled": true,
