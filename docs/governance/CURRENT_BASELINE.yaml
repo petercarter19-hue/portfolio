@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Two Protected lanes: the Interview Studio lane, and PS-OPPORTUNITY-SLATE-002 on work/2026-08-11-opportunity-slate-v2-r1. See docs/governance/CURRENT_LANES.json."
+  current_assignments: "Interview Studio, PS-OPPORTUNITY-SLATE-002, and direction-only PS-PROFILE-EXPERIENCE-001 on work/2026-08-11-profile-experience-direction-001. See CURRENT_LANES.json."
 
 governing_documents:
   bible:
@@ -64,6 +64,9 @@ active_packages:
   - id: PS-OPPORTUNITY-SLATE-002
     status: active_delivery
     scope: "Dark R1 of the Opportunity Slate replacement: v2 intake, captured-source review, additive PS-OPPSLATE-004 gate proof; legacy untouched; stops at an unmerged Azure PR."
+  - id: PS-PROFILE-EXPERIENCE-001
+    status: active_delivery
+    scope: "Profile direction, architecture, and visual authority only; no runtime."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -153,7 +156,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Finish both active lanes per CURRENT_LANES.json; PS-OPPORTUNITY-SLATE-002 R1 stops at an unmerged CI-green Azure PR for Pete's pre-live review."
+next_gate: "Complete PS-PROFILE-EXPERIENCE-001 direction; runtime requires separate activation after Interview closure."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
