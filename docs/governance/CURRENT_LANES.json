@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T21:40:00Z",
+  "updated_at": "2026-08-12T23:45:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001"
+      "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
+      "PS-PROFILE-CORE-INTEGRATION-001"
     ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
@@ -29,7 +30,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active writer lanes: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001."
+    "exit_authority": "Active writer lanes: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 and PS-PROFILE-CORE-INTEGRATION-001. Interview retains the sole production-capable and shared app/auth surfaces; Profile is non-production and restricted to disjoint Profile, schema, service, UI, test, and package surfaces."
   },
   "activation_policy": {
     "enabled": true,
@@ -1364,6 +1365,92 @@
       },
       "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged activation and implementation worktrees and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
       "sequence": "Merge the activation-only PR with a verified [skip ci] squash; recreate the implementation worktree on the preserved branch from the resulting origin/main; pass the package write preflight; survey the real mobile experience and record a measured before-state; implement the six corrections; run the full verification matrix at all three widths; complete-diff self-review; Azure PR; merge; verify the deploy and the live affected route; write the completion record."
+    },
+    {
+      "package": "PS-PROFILE-CORE-INTEGRATION-001",
+      "outcome": "Build the complete disjoint Profile implementation foundation in parallel with Interview Studio: replay the exact independently accepted Profile Core tree at aa1fc7e889fa63e31a432074da5c5040698f4aea; add durable reusable multi-user Profile identity, source, projection, placement, revision, owner draft, exact Public preview, explicit publish and withdrawal, Home, Posts, About, and the Profile-local portions of Media, Voice, Projects, Connections, search, moderation, accessibility, mobile, and complete visual states that do not require shared app/auth registration. This lane is non-production and may not register or expose routes. It prepares the D0-D4 implementation candidate while Interview retains app.py, auth_routes.py, shared navigation/auth tests, and the sole production-capable slot. A later short integration activation or explicit file handoff must wire and deploy the complete dark Profile, followed by Pete's review and separate enablement.",
+      "branch": "work/2026-08-12-profile-experience-build-001",
+      "writer": "A dedicated gpt-5.6-terra implementation agent using Max reasoning (Solterra Max/Terra Max), coordinated by Root Codex, is the sole Profile writer. A separate non-writer reviewer must accept the exact candidate before any integration or merge authority.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "product:profile:experience",
+        "schema:ps-profile-002"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main ae280075b50bbadc694381412965818293b64083 with Interview Studio active in implementation slot one and holding the sole production-capable slot plus app.py, auth_routes.py, shared navigation/auth tests, and its own surfaces. The accepted Profile foundation is preserved at exact remote head aa1fc7e889fa63e31a432074da5c5040698f4aea and must be replayed onto the fresh Profile branch rather than merged as stale history. PS-PROFILE-002 remains unregistered on this checkpoint.",
+      "writable_surfaces": [
+        "profile_routes.py",
+        "profile_api.py",
+        "services/profile_core_service.py",
+        "services/profile_posts_adapter.py",
+        "services/profile_core_repository.py",
+        "services/profile_identity_service.py",
+        "services/profile_community_post_reader.py",
+        "services/profile_media_projection_service.py",
+        "services/profile_voice_projection_service.py",
+        "services/profile_project_projection_service.py",
+        "services/profile_relationship_service.py",
+        "templates/profile/",
+        "static/css/profile-experience.css",
+        "static/js/profile-experience.js",
+        "tests/test_profile_core_routes.py",
+        "tests/test_profile_core_api.py",
+        "tests/test_profile_core_service.py",
+        "tests/test_profile_core_security.py",
+        "tests/test_profile_core_accessibility.py",
+        "tests/test_profile_core_visual.py",
+        "tests/test_profile_core_repository.py",
+        "tests/test_profile_core_identity.py",
+        "tests/test_profile_core_integration.py",
+        "tests/test_profile_core_migration.py",
+        "tests/test_profile_media_projection.py",
+        "tests/test_profile_voice_projection.py",
+        "tests/test_profile_project_projection.py",
+        "tests/test_profile_relationships.py",
+        "tests/test_profile_complete_visual.py",
+        "SQL FIles/Migrations/proposed/PS-PROFILE-002_profile_publication.sql",
+        "SQL FIles/Migrations/proposed/PS-PROFILE-002_profile_publication_rollback.sql",
+        "SQL FIles/Verification/PS-PROFILE-002_owner_isolation_verify.sql",
+        "SQL FIles/Migrations/registry.json",
+        "docs/initiatives/PS-PROFILE-CORE-FOUNDATION-001/",
+        "docs/initiatives/PS-PROFILE-CORE-INTEGRATION-001/",
+        "artifacts/2026-08-12-profile-core-integration-001/"
+      ],
+      "exclusions": [
+        "No edit to app.py, auth_routes.py, .env.example, services/database_service.py, templates/base.html, tests/test_auth.py, tests/test_navigation.py, tests/test_search_visibility.py, tests/test_delivery_preflight.py, scripts/verify_deployment_smoke.py, production configuration, pipeline, or any Interview Studio surface.",
+        "No registered or reachable Profile route, /app cutover, navigation link, public root, sitemap, metadata, canonical, indexing, search discovery, production flag, schema apply, deployment, or claim that Profile is live or dark-deployed.",
+        "No global shell redesign or Capture/Slate prominence decision; reuse current shell at the later shared integration boundary unless Pete separately locks a change.",
+        "No copied Community, Resume, My Story, Ask Pete, Project, Capture, Voice, Workshop, or private-source truth; adapters reference only exact authorized canonical revisions and fail closed when dependencies are unavailable.",
+        "No Pete-only product logic, silent import, automatic save, canonicalization, publication, audience widening, withdrawal, deletion, AI authorization, or source-update propagation.",
+        "No merge, production integration, release, cleanup, schema apply, dark deployment, or enablement authority follows from activation alone."
+      ],
+      "completion_evidence": [
+        "The exact accepted aa1fc7e foundation tree is replayed path-for-path onto current main with provenance and tree-equivalence evidence, and all focused foundation tests remain green before integration descendants.",
+        "PS-PROFILE-002 is freshly reserved and provides additive forward, rollback, verifier, registry, disposable apply/reapply, concurrency, idempotency, owner-isolation, rollback-rehearsal, and forward-after-rollback evidence without production apply or inferred backfill.",
+        "Profile-local durable repository, canonical adapters, and server-derived identity boundaries prove authorization-before-retrieval, two-owner isolation, immutable publication, stale/revoked source behavior, exact retry semantics, prior-publication preservation, and fail-closed missing dependencies.",
+        "Home, Posts, Projects, Media, Voice, and About plus Public, Connections, and Owner state models are implemented on Profile-local surfaces with no dead or publicly reachable route and no shared shell or app registration change.",
+        "The D0-D4 relevant desktop, tablet, 390px, 320px, 200 percent zoom, keyboard, focus, reduced-motion, forced-color, long-text, zero/one/typical/many/loading/failure/stale/revoked/conflict/destructive states are compared against the exact hash-bound Profile boards and every material finding is closed.",
+        "Focused Profile, repository, migration, security, accessibility, mobile, visual, adapter, and secret-scan suites pass; a fresh independent non-writer accepts the exact candidate SHA and explicitly lists the remaining short shared integration boundary.",
+        "Completion record states implemented but unregistered, unmerged, undeployed, and not live; it identifies exact shared files still required for integration and preserves an exact rollback/recovery reference."
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-12",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete clarified that two implementation slots should be used concurrently: Interview keeps one, while Profile uses the other. Profile must not reserve app.py or the production-capable slot before its final wiring slice. Pete selected Solterra Max for implementation, instructed Codex to continue until Profile is live, requires review before enablement, and requested task-local cleanup afterward."
+        }
+      ],
+      "model_routing": {
+        "decided_by": "Pete",
+        "date": "2026-08-12",
+        "implementation": "gpt-5.6-terra at Max reasoning (Pete's requested Solterra Max)",
+        "independent_review": "A separate non-writer reviewer at high or stronger effort reviews the exact candidate after implementation.",
+        "sequence": "activation -> exact foundation replay -> Profile-local D0-D4 services/schema/UI/tests -> full validation -> independent exact-SHA review -> formal pause or handoff -> later short shared integration activation -> dark deployment -> Pete review -> separate enablement -> live verification"
+      },
+      "cleanup_contract": "After verified integration, live verification, formal lane close, and preserved recovery evidence, remove only this task's clean activation, implementation, and review worktrees and merged branches. Preserve accepted foundation aa1fc7e until the integrated tree is independently verified and recoverable, and preserve every unrelated, dirty, unverified, historical, or user-owned branch, worktree, stash, artifact, mockup, and handoff.",
+      "sequence": "activation-only PR -> clean current-main implementation worktree -> write preflight -> replay exact aa1fc7e tree -> implement Profile-local D0-D4 contracts and UI -> focused/full/security/accessibility/mobile/visual validation -> exact-SHA independent review and findings closure -> preserve candidate and release implementation slot if shared integration is not yet available -> short later shared integration and production-capable activation -> app/auth/flag wiring and schema apply -> exact dark deployment -> Pete review -> separate enablement -> live smoke -> formal close and task-local cleanup"
     }
   ],
   "paused_lanes": [
