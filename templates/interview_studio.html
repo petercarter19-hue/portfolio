@@ -517,10 +517,24 @@
                                         <span><span data-is-word-count>0</span> words</span>
                                     </div>
                                     {%- if interview_authenticated %}
+                                    {# Owner directive 2026-08-12: dictation, the
+                                       live transcript, and the send control all
+                                       live INSIDE the answer box on every width,
+                                       so any typed or spoken answer always has a
+                                       visible way to submit. This is also the
+                                       structural fix for the submit control
+                                       disappearing after the first review: the
+                                       control now shares the composer's own
+                                       lifetime instead of a separate band's. #}
+                                    <p class="is-auth__composer-live" data-is-dictation-interim="answer" hidden><span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span></p>
                                     <div class="is-auth__composer-foot">
-                                        <button class="is__button is__mic-labeled" type="button" data-is-mic="answer" aria-pressed="false" aria-label="Dictate your answer" aria-describedby="is-dictation-note">
+                                        <button class="is__button is__mic-labeled is-auth__composer-mic" type="button" data-is-mic="answer" aria-pressed="false" aria-label="Dictate your answer" aria-describedby="is-dictation-note">
                                             <span class="is__mic is__mic--inline" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg></span>
                                             <span data-is-mic-label>Dictate</span>
+                                        </button>
+                                        <button class="is-auth__send" type="submit" data-is-review data-is-composer-send disabled aria-label="Review my answer">
+                                            <span class="is-auth__send-label">Review My Answer</span>
+                                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12 20 5l-7 16-2.2-6.4z"/></svg>
                                         </button>
                                     </div>
                                     {% endif %}
@@ -553,10 +567,6 @@
 
                                 {%- if interview_authenticated %}
                                 <div class="is-auth__band">
-                                    <button class="is__button is__button--primary is-auth__review-btn" type="submit" data-is-review disabled>
-                                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-4.8"/></svg>
-                                        <span>Review My Answer</span>
-                                    </button>
                                     <div class="is-auth__group">
                                         <p class="is-auth__group-label">Question</p>
                                         <button class="is-auth__group-btn" type="button" data-is-different-question>

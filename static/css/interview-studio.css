@@ -5693,3 +5693,115 @@ body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="
 body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="dark"]) .nav-sign-out__btn {
     border-color: #d9cfc2;
 }
+
+/* =====================================================================
+   Owner directive 2026-08-12: the answer box owns dictation, the live
+   transcript, and the send control on every width. Submitting is always
+   one glance from the words being written, and the control can no longer
+   be orphaned by another element's visibility.
+   ===================================================================== */
+.is[data-authenticated="true"] .is-auth__composer-foot {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+}
+.is[data-authenticated="true"] .is-auth__composer-mic { flex: none; }
+.is-auth__composer-live {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.55rem;
+    align-items: baseline;
+    margin: 0.55rem 0 0;
+    padding: 0.6rem 0.8rem;
+    border-radius: 0.6rem;
+    background: #f3f6f2;
+    border: 1px dashed #c3d3c4;
+    color: var(--is-text);
+    font-size: 0.97rem;
+    line-height: 1.5;
+}
+.is-auth__composer-live[hidden] { display: none; }
+.is-auth__composer-live .is__dictation-interim-label {
+    font: 700 0.62rem/1 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--is-active);
+    flex: none;
+}
+.is-auth__send {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.8rem 1.35rem;
+    border: 1px solid var(--is-action-primary);
+    border-radius: 0.7rem;
+    background: var(--is-action-primary);
+    color: var(--is-action-primary-text);
+    font: inherit;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgb(13 63 36 / 20%);
+}
+.is-auth__send svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: currentColor;
+    stroke: none;
+    flex: none;
+}
+.is-auth__send:hover:not([disabled]) {
+    background: var(--is-action-primary-strong);
+    border-color: var(--is-action-primary-strong);
+}
+.is-auth__send[disabled] {
+    background: #eceada;
+    border-color: #e0dccb;
+    color: #8a8f9c;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+.is-auth__send:focus-visible {
+    outline: 3px solid var(--is-focus);
+    outline-offset: 2px;
+}
+
+/* Narrow widths: keep the send control obvious and thumb-sized, and let
+   the mic shrink to its icon so both always fit on one row. */
+@media (max-width: 30rem) {
+    .is[data-authenticated="true"] .is-auth__composer-foot { gap: 0.5rem; }
+    .is[data-authenticated="true"] .is-auth__composer-mic { padding: 0.6rem 0.75rem; }
+    .is[data-authenticated="true"] .is-auth__composer-mic [data-is-mic-label] {
+        position: absolute;
+        width: 1px; height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+    .is-auth__send { padding: 0.75rem 1.1rem; min-height: 2.9rem; }
+    .is-auth__send-label { font-size: 0.95rem; }
+}
+
+/* Sweep finding 2026-08-12: at phone width the three overlay status chips
+   ran past the right edge of the video frame and pushed the page wider than
+   the viewport. They now wrap and tighten instead of overflowing. */
+@media (max-width: 34rem) {
+    .is[data-authenticated="true"] .is-video-chips {
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        top: 0.6rem;
+        left: 0.6rem;
+        right: 0.6rem;
+    }
+    .is[data-authenticated="true"] .is-video-chip {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.7rem;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .is[data-authenticated="true"] .is-video-chip--right { margin-left: 0; }
+}

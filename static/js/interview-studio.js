@@ -677,6 +677,17 @@
         setHidden(one('[data-is-review-rail]'), !reviewRailActive);
         text(one('[data-is-review-attempt]'), session.attemptNumber);
         text(one('[data-is-stage-label]'), stageNames[stage] || 'Drafting');
+        /* The action band's question/coaching groups belong to the drafting and
+           processing stages. Deriving that from the stage machine (rather than
+           toggling it at each individual call site) is what keeps it from being
+           left hidden when a member moves to the next question -- the defect
+           that stranded the page with no visible way to submit after the first
+           review. The send control itself now lives inside the composer, so it
+           can never be orphaned by this again. */
+        if (authenticated) {
+            var stageBand = one('.is-auth__band');
+            if (stageBand) setHidden(stageBand, stage >= 3);
+        }
         syncQuestionChangeControls();
         stageRailItems.forEach(function (item) {
             var n = Number(item.getAttribute('data-is-workflow-step'));
@@ -2053,8 +2064,8 @@
            form hide. The submit button keeps its form association by id. */
         var submittedCard = one('[data-is-submitted]');
         if (band && submittedCard) submittedCard.insertAdjacentElement('afterend', band);
-        var reviewSubmit = one('[data-is-review]');
-        if (reviewSubmit) reviewSubmit.setAttribute('form', 'is-answer-form');
+        /* The send control now lives inside the composer, so it is inside the
+           form already and needs no form association. */
         if (band && errActions) band.insertBefore(errActions, band.firstChild);
         if (band && alertBox) band.insertAdjacentElement('afterend', alertBox);
         if (retryBtn) retryBtn.textContent = 'Try review again';
@@ -2798,7 +2809,6 @@
             }
             if (authenticated) {
                 appendAuthenticatedAttempt(responseText, payload.review, attemptAtSubmit);
-                setHidden(one('.is-auth__band'), true);
             } else {
                 setHidden(feedbackBlock, false);
                 setHidden(feedbackEmpty, true);
@@ -2905,10 +2915,7 @@
         if (authenticated) {
             resetDraftBadge();
             var recoveredBand = one('.is-auth__band');
-            if (recoveredBand) {
-                recoveredBand.classList.remove('is-auth__band--failed');
-                setHidden(recoveredBand, false);
-            }
+            if (recoveredBand) recoveredBand.classList.remove('is-auth__band--failed');
         }
         setStage(1);
         answer.focus();
