@@ -2608,6 +2608,19 @@ with patch.object(
     def test_merge_authority_accepts_recorded_implementation_owner_grant(self):
         parsed = json.loads(self.path.read_text(encoding="utf-8"))
         implementation = copy.deepcopy(self._lane_fixture(parsed))
+        implementation["lane_class"] = "implementation"
+        implementation["production_capable"] = True
+        implementation["owner_decisions"] = [
+            {
+                "authorized_by": "Pete",
+                "status": "authorized",
+                "package": implementation["package"],
+                "action": "merge the verified implementation candidate",
+                "decision": (
+                    "Merge authority is recorded for this implementation lane."
+                ),
+            }
+        ]
         parsed["active_lanes"] = [implementation]
         parsed["operating_mode"]["merge_allowed_for"] = [
             implementation["package"]
