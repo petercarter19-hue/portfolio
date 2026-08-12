@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T16:05:00Z",
+  "updated_at": "2026-08-12T16:20:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -1524,5 +1524,18 @@
     "opportunity_slate_os4_schema": "applied_run_551",
     "workshop_save_semantics": "member_authored_saves_confirm_run_560",
     "workshop_backlog_schema": "PS-WORKSHOP-002_applied_run_565_ledger_23_to_24"
+  },
+  "opportunity_lifecycle_fixture_repair": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-12-delivery-activation-oppslate-lifecycle-fixture-repair",
+    "origin_main": "8ac43958e983c2cc828e2620455917d98147db62",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "reason": "Pete authorized the Opportunity Slate preflight repair and the full dark release sequence. Governed production schema run 836 then failed transactionally, requiring the package's normal pause and fresh-activation lifecycle. Required validation exposed two fixture-only assumptions that read the mutable active_lanes list as permanent. This repair makes the historical Opportunity grant and writer-transfer fixtures lifecycle-independent so the real fail-closed pause can pass normal Azure policy. It changes no active lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, production data, or live behavior.",
+    "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. The ledger may change only updated_at plus this record, and the baseline must remain byte-identical. A later branch, base, altered record, timestamp, authority, lane, path, or baseline cannot reuse it."
   }
 }

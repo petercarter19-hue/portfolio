@@ -22,6 +22,7 @@ from scripts.delivery_preflight import (
     OPPORTUNITY_SLATE_RELEASE_SCOPE,
     OPPORTUNITY_SLATE_REVIEWED_SHA,
     OPPORTUNITY_SLATE_REVIEW_ATTESTATION,
+    OPPORTUNITY_LIFECYCLE_FIXTURE_REPAIR,
     WRITER_TRANSFER_PREFLIGHT_REPAIR,
     GRANT_CLOSE_PREFLIGHT_REPAIR,
     GRANT_CLOSE_FIXTURE_FOLLOWUP,
@@ -37,6 +38,7 @@ from scripts.delivery_preflight import (
     _exact_direction_grant_delta,
     _exact_grant_close_fixture_followup_delta,
     _exact_implementation_release_preflight_repair_matches,
+    _exact_opportunity_lifecycle_fixture_repair_delta,
     _exact_profile_close_fixture_followup_delta,
     _exact_profile_close_baseline_fixture_followup_delta,
     _fetch_exact_origin_refs,
@@ -384,13 +386,54 @@ class DeliveryPreflightTests(unittest.TestCase):
 
     def _opportunity_origin(self) -> tuple[dict, dict]:
         origin = copy.deepcopy(self.ledger)
-        lane = next(
-            item for item in origin["active_lanes"]
+        candidates = [
+            item
+            for collection in (
+                origin.get("active_lanes", []),
+                reversed(origin.get("paused_lanes", [])),
+                reversed(origin.get("closing_lanes", [])),
+            )
+            for item in collection
             if item.get("package") == OPPORTUNITY_SLATE_PACKAGE
-        )
+        ]
+        self.assertTrue(candidates)
+        lifecycle_fields = {
+            "disposition",
+            "paused_at",
+            "pause_reason",
+            "resume_contract",
+            "preserved_head_sha",
+            "closed_at",
+            "reviewed_remote_sha",
+            "merged_main_sha",
+            "package_merge_sha",
+            "close_evidence_paths",
+        }
+        lane = {
+            key: value
+            for key, value in copy.deepcopy(candidates[0]).items()
+            if key not in lifecycle_fields
+        }
         lane.pop("merge_grant", None)
+        origin["active_lanes"] = [lane]
+        origin["paused_lanes"] = [
+            item for item in origin.get("paused_lanes", [])
+            if item.get("package") != OPPORTUNITY_SLATE_PACKAGE
+        ]
+        origin["closing_lanes"] = [
+            item for item in origin.get("closing_lanes", [])
+            if item.get("package") != OPPORTUNITY_SLATE_PACKAGE
+        ]
+        origin["operating_mode"]["state"] = "active_delivery"
+        origin["operating_mode"]["writes_allowed_for"] = [
+            OPPORTUNITY_SLATE_PACKAGE
+        ]
         origin["operating_mode"]["merge_allowed_for"] = []
+        origin["operating_mode"]["cleanup_allowed_for"] = []
         origin["operating_mode"]["release_allowed_for"] = []
+        origin["operating_mode"]["exit_authority"] = (
+            "Active writer lanes: PS-OPPORTUNITY-SLATE-002."
+        )
         origin["updated_at"] = "2026-08-12T11:35:08Z"
         return origin, lane
 
@@ -1770,6 +1813,93 @@ with patch.object(
                 missing_prior, candidate
             )
         )
+
+        baseline_errors, _ = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline + b"\n# forged baseline\n",
+            origin_baseline=baseline,
+        )
+        self.assertTrue(
+            any("may not change CURRENT_BASELINE" in error for error in baseline_errors)
+        )
+
+    def test_opportunity_lifecycle_fixture_repair_is_exact_and_inert(self):
+        repair = OPPORTUNITY_LIFECYCLE_FIXTURE_REPAIR
+        origin = load_ledger_at_ref(repair["origin_main"])
+        baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-12T16:20:00Z"
+        candidate["opportunity_lifecycle_fixture_repair"] = copy.deepcopy(
+            repair
+        )
+        exact_facts = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=repair["allowed_surfaces"],
+        )
+
+        self.assertTrue(
+            _exact_opportunity_lifecycle_fixture_repair_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("Opportunity lifecycle" in item for item in warnings))
+
+        for fact_mutation in (
+            {"branch": "work/forged"},
+            {"origin_main": "f" * 40},
+            {"ahead": 0},
+            {"ahead": 2},
+            {"behind": 1},
+            {"changed_paths": repair["allowed_surfaces"][:-1]},
+            {"changed_paths": [*repair["allowed_surfaces"], "app.py"]},
+        ):
+            with self.subTest(facts=fact_mutation):
+                altered_errors, _ = self._evaluate_activation(
+                    candidate,
+                    {**exact_facts, **fact_mutation},
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(altered_errors)
+
+        for mutator in (
+            lambda value: value[
+                "opportunity_lifecycle_fixture_repair"
+            ].__setitem__("branch", "work/forged"),
+            lambda value: value.__setitem__("updated_at", origin["updated_at"]),
+            lambda value: value["operating_mode"]["merge_allowed_for"].append(
+                "PS-DELIVERY-CONTROL-001"
+            ),
+        ):
+            altered = copy.deepcopy(candidate)
+            mutator(altered)
+            self.assertFalse(
+                _exact_opportunity_lifecycle_fixture_repair_delta(origin, altered)
+            )
+            altered_errors, _ = self._evaluate_activation(
+                altered,
+                exact_facts,
+                require_clean=True,
+                origin=origin,
+                candidate_baseline=baseline,
+                origin_baseline=baseline,
+            )
+            self.assertTrue(altered_errors)
 
         baseline_errors, _ = self._evaluate_activation(
             candidate,
@@ -4452,7 +4582,7 @@ with patch.object(
         loader.assert_not_called()
 
     def test_writer_transfer_is_exact_and_fail_closed(self):
-        origin = copy.deepcopy(self.ledger)
+        origin, _ = self._opportunity_origin()
         candidate = copy.deepcopy(origin)
         candidate["updated_at"] = "2026-08-12T01:45:00Z"
         handoff_sha = "3fb657456fef757c70292cf20217f567c477f733"
