@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T16:50:00Z",
+  "updated_at": "2026-08-12T17:00:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001"
+      "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
+      "PS-OPPORTUNITY-SLATE-002"
     ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
@@ -29,7 +30,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active writer lanes: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001. PS-OPPORTUNITY-SLATE-002 is paused and preserved; it may resume only through fresh activation."
+    "exit_authority": "Active writer lanes: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 and PS-OPPORTUNITY-SLATE-002. Opportunity Slate is bounded to the additive PS-OPPSLATE-004 production-permission repair on work/2026-08-12-opportunity-slate-r1-schema-permission-repair."
   },
   "activation_policy": {
     "enabled": true,
@@ -1232,6 +1233,53 @@
       },
       "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged activation and implementation worktrees and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
       "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree from resulting origin/main; pass the package write preflight; implement slices 1-6 dark with per-slice Fable review; run the full matrix; complete-diff self-review; independent Fable extra-high review of the exact candidate; close findings; Azure PR; dark merge; verify the automatic deploy's /healthz identity and anonymous smoke; write the completion record; stop for Pete's enablement decision."
+    },
+    {
+      "package": "PS-OPPORTUNITY-SLATE-002",
+      "outcome": "Repair only the production-permission compatibility of the already-approved, already-dark R1 additive migration PS-OPPSLATE-004 after governed run 836 proved that the production schema principal can alter the existing Opportunity tables but cannot SELECT their protected rows to validate three WITH CHECK constraints. Preserve the approved application and visuals unchanged; reproduce the least-privilege failure on disposable Azure SQL, implement the narrowest additive constraint form that enforces future writes without scanning old rows, rerun the complete migration/verifier/rollback gate, obtain fresh exact-SHA independent review, then merge and apply only PS-OPPSLATE-004 dark under Pete's recorded approval.",
+      "branch": "work/2026-08-12-opportunity-slate-r1-schema-permission-repair",
+      "writer": "Root Codex session /root is the sole repair writer; the existing /root/oppslate_independent_review Sol extra-high reviewer remains read-only and reviews the exact repaired candidate after all proof is frozen.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "product:opportunity-slate"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main c36d38b4ce6e25385581598e70d2c9fa3708ba90. R1 application candidate 550c7ca87561a8279d571738c5832f3a70fe9bec was independently approved 0/0/0, merged through PR 375 as b7bb92d, and deployed dark. Governed schema run 836 then failed transactionally on missing SELECT permission while validating an existing-table CHECK; the ledger stayed at 26 and PS-OPPSLATE-004 remained absent.",
+      "writable_surfaces": [
+        "SQL FIles/Migrations/proposed/PS-OPPSLATE-004_opportunity_slate_replacement.sql",
+        "SQL FIles/Migrations/proposed/PS-OPPSLATE-004_opportunity_slate_replacement_rollback.sql",
+        "SQL FIles/Migrations/registry.json",
+        "SQL FIles/Verification/PS-OPPSLATE-004_owner_isolation_verify.sql",
+        "tests/test_opportunity_slate_v2_migration.py",
+        "docs/initiatives/PS-OPPORTUNITY-SLATE-002/",
+        "artifacts/2026-08-11-opportunity-slate-v2/"
+      ],
+      "exclusions": [
+        "no app.py, route, service, template, JavaScript, CSS, visual, copy, or product-behavior change; the independently approved R1 application remains frozen",
+        "no public enablement, blueprint registration, feature-flag change, App Service configuration change, provider/model/dependency/secret change, or azure-pipelines.yml change",
+        "schema remains additive only: no destructive production action, no rollback in production, no mutation or removal of existing PS-OPPSLATE-001..003 rows or ledger entries, and no unrelated migration",
+        "no broad or permanent database permission grant; prove a least-privilege SQL shape instead",
+        "no R2 through R5 work and no change to the legacy Opportunity Slate experience",
+        "no write to Interview Studio surfaces, another writer's branch, or unrelated worktrees, stashes, files, or artifacts"
+      ],
+      "completion_evidence": [
+        "activation-only control PR merges from current main and the new implementation worktree passes the exact package write preflight",
+        "a disposable Azure SQL engine proof reproduces the original SELECT-denied WITH CHECK failure under a restricted principal and proves the repaired constraint still rejects invalid future writes without requiring access to old rows",
+        "fresh PS-OPPSLATE-004 forward digest, registry record, verifier, idempotent reapply, exact object inventory, rollback, restored-definition comparison, and forward-after-rollback gate all pass on disposable Azure SQL; every temporary database is deleted",
+        "focused migration tests and the repository's required full suite pass, with any unrelated baseline result reconciled honestly",
+        "complete-diff self-review and a fresh read-only Sol extra-high forensic and professional-eye review approve the exact repaired candidate SHA with findings closed",
+        "Azure PR and CI pass; the approved repair merges dark; the governed production preflight plans exactly PS-OPPSLATE-004; the apply advances the ledger 26 to 27 with verifier success and no unrelated migration",
+        "post-release verification proves /healthz healthy, the legacy /opportunity-slate remains available, /opportunity-slate/v2 remains dark/unregistered, app.py is untouched, and the completion record distinguishes implemented, merged, schema-applied, dark, and public states"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-12",
+          "decision": "Pete approved the reviewed R1 dark release and additive schema sequence with 'You're approved.' After the first production apply failed safely, he authorized the pre-flight repair and instructed Codex to take the package through live deployment while keeping public activation for a separate later decision. This activation implements that same bounded authority; it is not a new product or visual decision."
+        }
+      ],
+      "cleanup_contract": "After verified merge and schema completion, remove only this task's clean merged activation and repair worktrees/branches behind recovery references. Preserve the original frozen 550c7ca evidence and every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
+      "sequence": "Merge activation-only [skip ci] control PR; create the exact new repair worktree from resulting origin/main; pass write preflight; reproduce and repair the least-privilege constraint path; run disposable SQL proof, full gate, focused and full suites; freeze and independently review the exact SHA; record a fresh merge and release grant; Azure PR/CI/merge; governed apply of only PS-OPPSLATE-004; verify ledger and dark live truth; close the lane."
     }
   ],
   "paused_lanes": [
@@ -1324,140 +1372,6 @@
       "package": "ALL_OTHER_EXISTING_LANES",
       "reason": "owner-directed reset requires exact safe-stop and disposition before restart",
       "disposition": "paused_read_only"
-    },
-    {
-      "package": "PS-OPPORTUNITY-SLATE-002",
-      "outcome": "Replace the Opportunity Slate experience per the 2026-08-11 Claude architecture (artifacts/2026-08-11-opportunity-slate-architecture/OPPORTUNITY_SLATE_ARCHITECTURE.md), built to the eleven owner-locked visual files (two locked references plus the nine candidates Pete locked on 2026-08-11, hash-pinned in the visual package's ASSET_SHA256SUMS.txt) and the controlling 2026-08-09 independent review PDF. This lane delivers R1 dark: the v2 workroom blueprint and service, stage-1 intake (paste/type/dictate, upload and public-link import reusing the hardened intake service unchanged), stage-2 captured-source review, and the additive PS-OPPSLATE-004 migration with its full gate proof, all behind PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED (default false) with the legacy experience untouched and live. The lane ends at a CI-validated Azure PR held for Pete's pre-live review; R2+ (AI interpretation and alignment, save/history, cutover, legacy retirement) are separate later recorded steps.",
-      "branch": "work/2026-08-11-opportunity-slate-v2-r1",
-      "writer": "Root Codex session /root is the sole completion writer in the dedicated portfolio-opportunity-slate-v2-20260811 worktree after Claude relinquished the clean pushed checkpoint at 3fb657456fef757c70292cf20217f567c477f733; a fresh GPT-5.6 Sol extra-high reviewer context that does not write the code performs the independent Protected review of the exact candidate SHA",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "implementation",
-      "exclusive_domains": [
-        "product:opportunity-slate"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main 24f0acb16ac78a38b56e0bac1b519bfaee2e39e4 at activation authoring; application behavior aa4a4ec6a12d334805298f81041fee49c6fdc51a via pipeline 722. Authority: Pete's 2026-08-11 chat decisions; the hash-verified visual decision set in iCloud PeerSlate-Opportunity-Slate-Visuals-2026-08-11 (12/12 files verified against ASSET_SHA256SUMS.txt on 2026-08-11); the controlling 2026-08-09 independent review PDF (SHA-256 B43AB2FEBE611D3C251788777EC73FCCE5BF3371F938D8D60B7267CC2CFF5412); the 2026-08-10 architect handoff zip; and the critic-revised architecture document in artifacts/2026-08-11-opportunity-slate-architecture/.",
-      "writable_surfaces": [
-        "opportunity_slate_v2_routes.py",
-        "services/opportunity_slate_v2_service.py",
-        "templates/opportunity_slate_v2/",
-        "static/css/opportunity-slate-v2.css",
-        "static/js/opportunity-slate-v2.js",
-        "SQL FIles/Migrations/proposed/PS-OPPSLATE-004_opportunity_slate_replacement.sql",
-        "SQL FIles/Migrations/proposed/PS-OPPSLATE-004_opportunity_slate_replacement_rollback.sql",
-        "SQL FIles/Migrations/registry.json",
-        "SQL FIles/Verification/PS-OPPSLATE-004_owner_isolation_verify.sql",
-        "tests/test_opportunity_slate_v2.py",
-        "tests/test_opportunity_slate_v2_migration.py",
-        "docs/initiatives/PS-OPPORTUNITY-SLATE-002/",
-        "artifacts/2026-08-11-opportunity-slate-v2/"
-      ],
-      "exclusions": [
-        "no app.py write: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 owns app.py while it is active; the v2 blueprint flag wiring is deferred and lands only through a fresh recorded ledger update after that lane closes (or is handed to Pete as an explicit open step); until then the v2 blueprint is exercised through a test app factory only",
-        "no merge, deployment, production schema apply, App Service configuration change, or flag change: the lane ends at a CI-validated Azure PR; Pete reviews before anything goes live",
-        "no change to legacy Opportunity Slate routes, services, templates, JS, CSS, tests, or data; the legacy experience stays untouched and live; PS-OPPSLATE-001..003 tables, procedures, and rows are preserved and PS-OPPSLATE-004 is additive only with fingerprint-re-stamped procedure takeovers",
-        "no AI call in R1, no new dependency, no secret, no azure-pipelines.yml or shared-infrastructure change, no templates/base.html or static/js/dictation.js edit",
-        "no write to PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 surfaces, any paused or preserved branch or worktree, or any other writer's checkpoint",
-        "no cleanup or deletion of unrelated branches, worktrees, stashes, or artifacts",
-        "no weakening of a failing test to make it pass and no bypass of preflight, policy, review, or evidence"
-      ],
-      "completion_evidence": [
-        "activation record merged and the implementation worktree passes the package write preflight from resulting origin/main",
-        "R1 scope delivered dark: v2 blueprint and service with sign-in gate, private/no-store and noindex headers, same-origin guards, and member-keyed rate limits; stage-1 intake with disabled-until-nonempty Review source and in-flight/failure states; stage-2 captured-source review with identity fields, editable captured wording preserving write-once originals, explicit Confirm source, and bounded replace/delete confirmation",
-        "additive migration PS-OPPSLATE-004 with registry entry and full gate proof: prerequisites, forward, idempotent reapply, owner-isolation verifier, rollback, forward-after-rollback on a disposable database, and fingerprint-guard proof that 004's takeovers re-stamp and nothing redefines the 001..003 procedures",
-        "new suites plus the existing full suite pass via the project venv under CI's unittest discover semantics",
-        "complete-diff self-review by the Codex writer; independent fresh-context GPT-5.6 Sol extra-high review of the exact candidate SHA with findings closed",
-        "local flag-on visual verification against locked mockups 04 and 05 with archived side-by-side screenshots, 320px and 390px reflow, keyboard and reduced-motion checks for the shipped states",
-        "Azure PR opened with required CI green and held unmerged; proportional completion record and a morning report with the PR link, screenshots, owner decisions D-1..D-13, the app.py wiring dependency, and the PR 250/251 disposition recommendation"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-11",
-          "decision": "Replacement direction and visual lock, verbatim: 'We are replacing the existing opportunity slate. Um, we can use those nine candidates, and I want you to build the architecture with Fable Extra, have Sonnet Max implemented, and then Fable Extra review it.' The nine final-mockups files are owner-locked as exact hash-pinned files alongside the two earlier locked references."
-        },
-        {
-          "date": "2026-08-11",
-          "decision": "Execution boundary, verbatim: 'Go right up until it goes live. I'll review it before that.' then 'Yeah. I want you all the way until almost live deployment. At that point, stop and let me review it before it goes live.' This lane therefore stops at a CI-validated, unmerged Azure PR; merge, deployment, schema apply, and release are Pete's decisions after his review."
-        },
-        {
-          "date": "2026-08-11",
-          "decision": "Writer transfer, verbatim: 'I want it to finish this package completely.' Pete assigned Root Codex as writer and reviewer for PS-OPPORTUNITY-SLATE-002 as a complete break from Claude. Claude relinquished the lane at clean pushed branch head 3fb657456fef757c70292cf20217f567c477f733. Root Codex completes the package and uses a fresh GPT-5.6 Sol extra-high context that did not write the code for the independent forensic and professional-eye review. PR 375 remains unmerged for Pete's pre-live review."
-        },
-        {
-          "date": "2026-08-12",
-          "decision": "dark_implementation_merge_and_release_authority",
-          "authorized_by": "Pete",
-          "action": "merge_deploy_apply_additive_schema",
-          "status": "authorized",
-          "scope": "dark_R1_and_PS-OPPSLATE-004_only",
-          "package": "PS-OPPORTUNITY-SLATE-002",
-          "reviewed_remote_sha": "550c7ca87561a8279d571738c5832f3a70fe9bec",
-          "pull_request": 375,
-          "ci_build": 807,
-          "public_enablement": "excluded",
-          "verbatim_approval": "You're approved."
-        }
-      ],
-      "merge_grant": {
-        "authorized_by": "Pete",
-        "authority_decision_index": 3,
-        "authority_decision_sha256": "9d35018c69c200c248ce0af10a64eb70d5c1be3dfa65ac21800b4abac3e55591",
-        "independent_review": {
-          "reviewer_task": "/root/oppslate_independent_review",
-          "reviewer_mode": "independent_read_only_non_writer",
-          "reviewed_sha": "550c7ca87561a8279d571738c5832f3a70fe9bec",
-          "reviewed_branch": "work/2026-08-11-opportunity-slate-v2-r1",
-          "verdict": "APPROVED",
-          "verdict_text": "APPROVED exact 550c7ca87561a8279d571738c5832f3a70fe9bec; 0 Blocking / 0 Important / 0 Minor.",
-          "verdict_sha256": "07c5ba3bfe768352b0c5ecee8176821cb28cb0cf9e2f66de7362bba0cfb4ac26",
-          "basis": [
-            "full_tree_at_550c7ca87561a8279d571738c5832f3a70fe9bec",
-            "complete_diff_f745b39b72d2c8e5a3595f88d7f9524d8d8e41cf_to_550c7ca87561a8279d571738c5832f3a70fe9bec",
-            "focused_169_of_169_and_full_3466_reconciled",
-            "sql_engine_gate_and_exact_42_object_rollback_proof_reconciled"
-          ],
-          "scope": "protected_dark_merge_deploy_and_additive_schema_release",
-          "exclusions": "public_enablement_app_registration_r2_plus",
-          "evidence_path": "docs/initiatives/PS-OPPORTUNITY-SLATE-002/COMPLETION_RECORD_R1.md",
-          "evidence_git_blob_sha": "047189621713585822f3507335014be44cc2c347",
-          "evidence_bytes_sha256": "bf3318c5a2645feb1e89dcec79aaa3f0aa2ff9dc4899e2ff3ce1ea1e7aca98d4",
-          "received_by": "Root Codex program manager",
-          "received_date": "2026-08-12",
-          "attestation_sha256": "6e5e7482afb116c03dbfa20bc2b282cb27eb3f529b956ba3b8a741de668de25d"
-        },
-        "reviewed_remote_sha": "550c7ca87561a8279d571738c5832f3a70fe9bec",
-        "granted_at": "2026-08-12T11:46:43Z",
-        "review_result": "pass",
-        "review_evidence_paths": [
-          "docs/initiatives/PS-OPPORTUNITY-SLATE-002/COMPLETION_RECORD_R1.md"
-        ],
-        "release_scope": {
-          "pull_request": 375,
-          "ci_build": 807,
-          "application_action": "merge_and_dark_deploy",
-          "schema_action": "apply",
-          "schema_migration": "PS-OPPSLATE-004",
-          "public_enablement": false,
-          "app_py_change": false,
-          "production_configuration_change": false,
-          "excluded_later_work": "R2_through_R5"
-        }
-      },
-      "model_routing": {
-        "decided_by": "Pete",
-        "date": "2026-08-11",
-        "architecture": "Historical authorship retained for provenance: Claude Fable 5 at extra-high effort (workflow wf_722c9c2c-d11) authored and critic-revised the architecture document before the owner-directed transfer",
-        "implementation": "Claude Sonnet produced the clean pushed implementation checkpoint through 3fb657456fef757c70292cf20217f567c477f733; after explicit relinquishment, Root Codex is the sole completion writer",
-        "independent_reviewer": "Fresh GPT-5.6 Sol at extra-high effort reviews the exact final candidate SHA under both the forensic and professional-eye lenses; the reviewer context does not write the code",
-        "sequence": "Claude checkpoint 3fb6574 -> governance-only Codex writer transfer -> Root Codex re-measures and completes R1 -> full validation and self-review -> fresh Sol extra-high exact-SHA independent review -> Root Codex closes findings -> PR 375 at CI green -> STOP for Pete's pre-live review"
-      },
-      "cleanup_contract": "Task-local only: after this lane's work merges under Pete's recorded decision and recoverability is verified, remove only this lane's clean merged activation and implementation worktrees and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
-      "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree from resulting origin/main; pass the package write preflight; after Claude relinquishes the clean pushed checkpoint at 3fb6574, merge the governance-only Codex writer-transfer PR with a verified [skip ci] squash; Root Codex re-measures both shipped states from scratch, completes R1 without app.py, runs the functional gauntlet and full suites, and self-reviews; a fresh GPT-5.6 Sol extra-high context independently reviews the exact candidate under the forensic and professional-eye lenses; close findings; hold PR 375 at CI green for Pete's pre-live review. The app.py flag wiring lands only after PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 closes, through a fresh recorded ledger update.",
-      "disposition": "paused_preserved",
-      "paused_at": "2026-08-12T16:15:00Z",
-      "pause_reason": "R1 application candidate 550c7ca was independently approved, merged as b7bb92d, and deployed dark. Governed schema run 836 failed on the production schema principal's missing SELECT permission while validating new CHECK constraints; the migration transaction rolled back and PS-OPPSLATE-004 remains unapplied. The original branch is frozen and behind current main, so repair continues only through fresh activation.",
-      "resume_contract": "Freshly activate PS-OPPORTUNITY-SLATE-002 from current origin/main on a new repair branch bounded to PS-OPPSLATE-004 forward, rollback, verifier, registry, migration tests, gate evidence, and package completion truth. Prove the production-equivalent least-privilege constraint path on disposable Azure SQL, rerun the full gate, obtain fresh independent exact-SHA review, merge through Azure PR, reapply only PS-OPPSLATE-004, verify the ledger and dark live state, then close.",
-      "preserved_head_sha": "550c7ca87561a8279d571738c5832f3a70fe9bec"
     }
   ],
   "workspace_snapshot": {
