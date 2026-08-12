@@ -607,6 +607,9 @@ CLOSE_ALLOWED_SURFACES = frozenset(
 CLOSE_BRANCH_PATTERN = re.compile(
     r"work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-close-[a-z0-9-]+"
 )
+CLEANUP_BRANCH_PATTERN = re.compile(
+    r"work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-cleanup-[a-z0-9-]+"
+)
 FULL_GIT_SHA = re.compile(r"[0-9a-f]{40}")
 UTC_TIMESTAMP = re.compile(
     r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z"
@@ -723,7 +726,7 @@ REVIEW_ATTESTATION_FIELDS = frozenset(
 
 VALID_DELIVERY_PATHS = frozenset({"Routine", "Bounded", "Protected"})
 EXACT_CONTROL_FETCH_INTENTS = frozenset(
-    {"activate", "pause", "transfer", "grant", "close"}
+    {"activate", "pause", "transfer", "grant", "close", "cleanup"}
 )
 CANONICAL_PACKAGE_ID = re.compile(r"PS-[A-Z0-9]+(?:-[A-Z0-9]+)*")
 GIT_REF_FORBIDDEN_CHARACTERS = frozenset(
@@ -5526,10 +5529,86 @@ def evaluate_policy(
                 )
         return errors, warnings
 
+    if intent == "cleanup":
+        if not facts.get("fetched"):
+            errors.append("cleanup requires --fetch")
+        if not require_clean:
+            errors.append("cleanup requires --require-clean")
+        if origin_ledger is None or not isinstance(origin_ledger, dict):
+            errors.append("cleanup requires the fetched origin/main lane ledger")
+            return errors, warnings
+        if facts.get("ahead") != 0 or facts.get("behind") != 0:
+            errors.append("cleanup verifier must be exactly at fetched origin/main")
+        if facts.get("head") != facts.get("origin_main"):
+            errors.append("cleanup verifier HEAD must equal fetched origin/main")
+        branch = facts.get("branch")
+        if not isinstance(branch, str) or not CLEANUP_BRANCH_PATTERN.fullmatch(branch):
+            errors.append(
+                "cleanup must run from a dedicated verifier branch matching "
+                f"{CLEANUP_BRANCH_PATTERN.pattern!r}"
+            )
+        if ledger != origin_ledger:
+            errors.append("cleanup verifier ledger must equal fetched origin/main")
+
+        active = origin_ledger.get("active_lanes")
+        active = active if isinstance(active, list) else []
+        if any(
+            isinstance(lane, dict) and lane.get("package") == package_id
+            for lane in active
+        ):
+            errors.append(
+                f"cleanup requires {package_id} to be paused or closed, not active"
+            )
+
+        lifecycle_matches: list[tuple[str, dict]] = []
+        for lifecycle_name in ("paused_lanes", "closing_lanes"):
+            records = origin_ledger.get(lifecycle_name)
+            if not isinstance(records, list):
+                errors.append(f"origin/main {lifecycle_name} must be a list")
+                continue
+            lifecycle_matches.extend(
+                (lifecycle_name, record)
+                for record in records
+                if isinstance(record, dict) and record.get("package") == package_id
+            )
+        if len(lifecycle_matches) != 1:
+            errors.append(
+                f"cleanup requires exactly one paused or closed record for {package_id}"
+            )
+        else:
+            lifecycle_name, lifecycle_record = lifecycle_matches[0]
+            cleanup_contract = lifecycle_record.get("cleanup_contract")
+            if not isinstance(cleanup_contract, str) or not cleanup_contract.strip():
+                errors.append(
+                    f"{lifecycle_name} cleanup requires a non-empty cleanup_contract"
+                )
+
+        workspace = origin_ledger.get("workspace_snapshot")
+        if not isinstance(workspace, dict) or workspace.get("cleanup_authorized") is not True:
+            errors.append("cleanup requires recorded owner cleanup authority")
+
+        origin_mode = origin_ledger.get("operating_mode")
+        origin_mode = origin_mode if isinstance(origin_mode, dict) else {}
+        retained_authority = [
+            field
+            for field in (
+                "writes_allowed_for",
+                "merge_allowed_for",
+                "cleanup_allowed_for",
+                "release_allowed_for",
+            )
+            if package_id in (origin_mode.get(field) or [])
+        ]
+        if retained_authority:
+            errors.append(
+                "paused or closed cleanup target retains mutation authority in: "
+                + ", ".join(retained_authority)
+            )
+        return errors, warnings
+
     allowed_key = {
         "write": "writes_allowed_for",
         "merge": "merge_allowed_for",
-        "cleanup": "cleanup_allowed_for",
         "release": "release_allowed_for",
     }[intent]
     allowed = mode.get(allowed_key) or []
@@ -5627,6 +5706,7 @@ def main(argv: list[str] | None = None) -> int:
         "transfer": "writer transfer",
         "grant": "merge grant",
         "close": "close",
+        "cleanup": "cleanup",
     }.get(args.intent)
     if control_label is not None and not args.fetch:
         activation_argument_errors.append(f"{control_label} requires --fetch")
@@ -5686,7 +5766,9 @@ def main(argv: list[str] | None = None) -> int:
                     raise RuntimeError(
                         "captured origin/main does not equal advertised main"
                     )
-        if args.intent in {"activate", "pause", "transfer", "grant", "close", "merge"}:
+        if args.intent in {
+            "activate", "pause", "transfer", "grant", "close", "cleanup", "merge"
+        }:
             # The exact SHA captured with the Git facts is the authority for
             # both records, preventing a later remote movement from changing
             # what the candidate was compared against mid-preflight.

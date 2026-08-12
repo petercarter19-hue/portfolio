@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 from scripts.delivery_preflight import (
     BOOTSTRAP_CONTROL_REPAIR,
+    CLEANUP_BRANCH_PATTERN,
     DIRECTION_MERGE_CONTROL_PATHS,
     DIRECTION_MERGE_FOLLOWUP_PATHS,
     IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR,
@@ -2679,7 +2680,7 @@ with patch.object(
         with self.assertRaises(AssertionError):
             self._assert_valid_merge_authorities(parsed)
 
-    def test_closing_lanes_are_historical_and_retain_no_mutation_authority(self):
+    def test_closing_lanes_are_historical_and_retain_no_product_authority(self):
         for lane in self.ledger["closing_lanes"]:
             lane_facts = facts(branch=lane["branch"])
             write_errors, _ = evaluate_policy(
@@ -2698,12 +2699,137 @@ with patch.object(
             self.assertTrue(
                 any("merge is blocked" in error for error in merge_errors)
             )
-            cleanup_errors, _ = evaluate_policy(
-                self.ledger, lane_facts, lane["package"], "cleanup"
+
+    def test_paused_package_cleanup_uses_its_recorded_contract_without_a_lane(self):
+        package = "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001"
+        origin_main = "a" * 40
+        cleanup_facts = facts(
+            branch="work/2026-08-12-delivery-cleanup-opportunity-slate-r1",
+            head=origin_main,
+            origin_main=origin_main,
+            fetched=True,
+        )
+        errors, warnings = evaluate_policy(
+            self.ledger,
+            cleanup_facts,
+            package,
+            "cleanup",
+            require_clean=True,
+            origin_ledger=self.ledger,
+        )
+        self.assertEqual([], errors)
+        self.assertEqual([], warnings)
+
+    def test_closed_package_cleanup_uses_its_recorded_contract_without_a_lane(self):
+        lane = next(
+            item
+            for item in self.ledger["closing_lanes"]
+            if isinstance(item.get("cleanup_contract"), str)
+            and item["cleanup_contract"].strip()
+        )
+        origin_main = "b" * 40
+        cleanup_facts = facts(
+            branch="work/2026-08-12-delivery-cleanup-closed-package",
+            head=origin_main,
+            origin_main=origin_main,
+            fetched=True,
+        )
+        errors, _ = evaluate_policy(
+            self.ledger,
+            cleanup_facts,
+            lane["package"],
+            "cleanup",
+            require_clean=True,
+            origin_ledger=self.ledger,
+        )
+        self.assertEqual([], errors)
+
+    def test_paused_cleanup_fails_closed_without_contract_or_exact_verifier(self):
+        package = "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001"
+        origin = copy.deepcopy(self.ledger)
+        target = next(
+            item for item in origin["paused_lanes"] if item.get("package") == package
+        )
+        target.pop("cleanup_contract")
+        origin_main = "c" * 40
+        invalid_facts = facts(
+            branch="work/not-a-cleanup-verifier",
+            head="d" * 40,
+            origin_main=origin_main,
+            ahead=1,
+            tracked_changes=1,
+            fetched=False,
+        )
+        errors, _ = evaluate_policy(
+            origin,
+            invalid_facts,
+            package,
+            "cleanup",
+            require_clean=False,
+            origin_ledger=origin,
+        )
+        self.assertIn("cleanup requires --fetch", errors)
+        self.assertIn("cleanup requires --require-clean", errors)
+        self.assertIn("cleanup verifier must be exactly at fetched origin/main", errors)
+        self.assertIn("cleanup verifier HEAD must equal fetched origin/main", errors)
+        self.assertTrue(any("dedicated verifier branch" in error for error in errors))
+        self.assertIn(
+            "paused_lanes cleanup requires a non-empty cleanup_contract", errors
+        )
+
+    def test_cleanup_rejects_active_missing_and_stale_authority_targets(self):
+        origin_main = "e" * 40
+        cleanup_facts = facts(
+            branch="work/2026-08-12-delivery-cleanup-lifecycle-tests",
+            head=origin_main,
+            origin_main=origin_main,
+            fetched=True,
+        )
+        active_package = self.ledger["active_lanes"][0]["package"]
+        active_errors, _ = evaluate_policy(
+            self.ledger,
+            cleanup_facts,
+            active_package,
+            "cleanup",
+            require_clean=True,
+            origin_ledger=self.ledger,
+        )
+        self.assertTrue(any("not active" in error for error in active_errors))
+
+        missing_errors, _ = evaluate_policy(
+            self.ledger,
+            cleanup_facts,
+            "PS-MISSING-CLEANUP-001",
+            "cleanup",
+            require_clean=True,
+            origin_ledger=self.ledger,
+        )
+        self.assertTrue(
+            any("exactly one paused or closed record" in error for error in missing_errors)
+        )
+
+        stale = copy.deepcopy(self.ledger)
+        package = "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001"
+        stale["operating_mode"]["cleanup_allowed_for"] = [package]
+        stale_errors, _ = evaluate_policy(
+            stale,
+            cleanup_facts,
+            package,
+            "cleanup",
+            require_clean=True,
+            origin_ledger=stale,
+        )
+        self.assertTrue(
+            any("retains mutation authority" in error for error in stale_errors)
+        )
+
+    def test_cleanup_branch_pattern_is_narrow(self):
+        self.assertIsNotNone(
+            CLEANUP_BRANCH_PATTERN.fullmatch(
+                "work/2026-08-12-delivery-cleanup-opportunity-slate-r1"
             )
-            self.assertTrue(
-                any("cleanup is blocked" in error for error in cleanup_errors)
-            )
+        )
+        self.assertIsNone(CLEANUP_BRANCH_PATTERN.fullmatch("work/cleanup-anything"))
 
     def test_baseline_for_origin_synthesizes_one_package_from_idle(self):
         source = self.baseline.decode("utf-8")
