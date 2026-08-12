@@ -184,6 +184,45 @@ IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR = {
     ),
 }
 
+# The original Opportunity release bootstrap was intentionally pinned to the
+# PR-375 application candidate.  Governed production run 836 then failed
+# closed and Pete authorized the narrow schema-permission repair.  This
+# refresh does not weaken or generalize the release control: it only moves the
+# exact candidate/PR/build/review pins to the independently approved repair
+# branch, and it expires as soon as origin/main advances through this record.
+OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": (
+        "work/2026-08-12-delivery-activation-"
+        "oppslate-schema-repair-release-refresh"
+    ),
+    "origin_main": "abbbfa04b9268092e020ee06ac9eb19d37c12da7",
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "reason": (
+        "Pete authorized the Opportunity Slate pre-flight repair and dark "
+        "release. The first governed production apply failed transactionally "
+        "and left no durable 004 change. Fresh Sol extra-high review approved "
+        "the exact permission-repair candidate with zero findings. The prior "
+        "one-time release control is correctly pinned to the already-merged "
+        "PR-375 application candidate, so this refresh binds the same dark, "
+        "additive-only authority to the new exact repair SHA, PR, CI build, "
+        "and review evidence without granting merge or release itself."
+    ),
+    "verification_contract": (
+        "This is audit evidence, not self-granted package authority. The "
+        "preflight recognizes it only when the entire record equals the "
+        "validator's hard-coded record and Git proves the exact branch, exact "
+        "origin/main base, exactly one commit, and exact three changed paths. "
+        "It may update no active lane, authority list, baseline, product code, "
+        "schema, pipeline, deployment, configuration, data, or live behavior."
+    ),
+}
+
 # Pete's 2026-08-11 end-to-end Profile direction assignment exposed a narrow
 # lifecycle gap: a completed, independently reviewed direction-authority lane
 # had no fail-closed way to receive merge authority or to close after its exact
@@ -574,20 +613,22 @@ PROFILE_DIRECTION_REVIEW_ATTESTATION["attestation_sha256"] = (
 )
 
 OPPORTUNITY_SLATE_PACKAGE = "PS-OPPORTUNITY-SLATE-002"
-OPPORTUNITY_SLATE_BRANCH = "work/2026-08-11-opportunity-slate-v2-r1"
+OPPORTUNITY_SLATE_BRANCH = (
+    "work/2026-08-12-opportunity-slate-r1-schema-permission-repair"
+)
 OPPORTUNITY_SLATE_REVIEWED_SHA = (
-    "550c7ca87561a8279d571738c5832f3a70fe9bec"
+    "1d8e30aeb79e3bf7af2e2ffa0afabbd87100c46e"
 )
 OPPORTUNITY_SLATE_CANDIDATE_BASE = (
-    "f745b39b72d2c8e5a3595f88d7f9524d8d8e41cf"
+    "e9d4ce573aa57b4dc89a82072a9d892bb31011aa"
 )
 OPPORTUNITY_SLATE_RELEASE_CONTROL_BASE = (
-    IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR["origin_main"]
+    OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH["origin_main"]
 )
 OPPORTUNITY_SLATE_RELEASE_SCOPE = {
-    "pull_request": 375,
-    "ci_build": 807,
-    "application_action": "merge_and_dark_deploy",
+    "pull_request": 397,
+    "ci_build": 847,
+    "application_action": "merge_schema_permission_repair_dark",
     "schema_action": "apply",
     "schema_migration": "PS-OPPSLATE-004",
     "public_enablement": False,
@@ -602,35 +643,35 @@ OPPORTUNITY_SLATE_REVIEW_ATTESTATION = {
     "reviewed_branch": OPPORTUNITY_SLATE_BRANCH,
     "verdict": "APPROVED",
     "verdict_text": (
-        "APPROVED exact 550c7ca87561a8279d571738c5832f3a70fe9bec; "
+        "APPROVED exact 1d8e30aeb79e3bf7af2e2ffa0afabbd87100c46e; "
         "0 Blocking / 0 Important / 0 Minor."
     ),
     "verdict_sha256": (
-        "07c5ba3bfe768352b0c5ecee8176821cb28cb0cf9e2f66de7362bba0cfb4ac26"
+        "9d83b03a377d712d7bd4dd1ca004d40b280ced1df96db79e9344de27976720f2"
     ),
     "basis": [
-        "full_tree_at_550c7ca87561a8279d571738c5832f3a70fe9bec",
+        "full_tree_at_1d8e30aeb79e3bf7af2e2ffa0afabbd87100c46e",
         (
-            "complete_diff_f745b39b72d2c8e5a3595f88d7f9524d8d8e41cf_to_"
-            "550c7ca87561a8279d571738c5832f3a70fe9bec"
+            "complete_diff_e9d4ce573aa57b4dc89a82072a9d892bb31011aa_to_"
+            "1d8e30aeb79e3bf7af2e2ffa0afabbd87100c46e"
         ),
-        "focused_169_of_169_and_full_3466_reconciled",
-        "sql_engine_gate_and_exact_42_object_rollback_proof_reconciled",
+        "focused_171_of_171_and_full_3576_reconciled",
+        "restricted_principal_gate_and_exact_42_object_rollback_reconciled",
     ],
     "scope": "protected_dark_merge_deploy_and_additive_schema_release",
     "exclusions": "public_enablement_app_registration_r2_plus",
     "evidence_path": (
         "docs/initiatives/PS-OPPORTUNITY-SLATE-002/COMPLETION_RECORD_R1.md"
     ),
-    "evidence_git_blob_sha": "047189621713585822f3507335014be44cc2c347",
+    "evidence_git_blob_sha": "e9199a0bc5c25541151d0c6f68a46af35dd7b873",
     "evidence_bytes_sha256": (
-        "bf3318c5a2645feb1e89dcec79aaa3f0aa2ff9dc4899e2ff3ce1ea1e7aca98d4"
+        "72151911118e11b0284434cc0dc3a959b816994246324932e70cf182f1a3f31b"
     ),
     "received_by": "Root Codex program manager",
     "received_date": "2026-08-12",
 }
 OPPORTUNITY_SLATE_REVIEW_ATTESTATION["attestation_sha256"] = (
-    "6e5e7482afb116c03dbfa20bc2b282cb27eb3f529b956ba3b8a741de668de25d"
+    "7ac34e8690f7e6bf4ca3c7f15fe19d0b0ea53ede36f9a2236fe935f53cab6115"
 )
 
 REVIEW_ATTESTATION_FIELDS = frozenset(
@@ -2344,6 +2385,25 @@ def _exact_implementation_release_preflight_repair_matches(
     )
 
 
+def _exact_opportunity_schema_repair_release_refresh_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("opportunity_schema_repair_release_refresh")
+        == OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH
+        and package_id
+        == OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH["package"]
+        and facts.get("branch")
+        == OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH["branch"]
+        and facts.get("origin_main")
+        == OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+    )
+
+
 def _exact_grant_close_preflight_repair_matches(
     ledger: dict,
     facts: dict,
@@ -2477,8 +2537,10 @@ def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
             and decision.get("package") == OPPORTUNITY_SLATE_PACKAGE
             and decision.get("reviewed_remote_sha")
             == OPPORTUNITY_SLATE_REVIEWED_SHA
-            and decision.get("pull_request") == 375
-            and decision.get("ci_build") == 807
+            and decision.get("pull_request")
+            == OPPORTUNITY_SLATE_RELEASE_SCOPE["pull_request"]
+            and decision.get("ci_build")
+            == OPPORTUNITY_SLATE_RELEASE_SCOPE["ci_build"]
             and decision.get("public_enablement") == "excluded"
             and decision.get("verbatim_approval") == "You're approved."
         )
@@ -3210,14 +3272,14 @@ def _opportunity_main_sequence_facts(
     )
     expected_repair = copy.deepcopy(base_ledger)
     expected_repair["updated_at"] = repair_ledger.get("updated_at")
-    expected_repair["implementation_release_preflight_repair"] = (
-        IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR
+    expected_repair["opportunity_schema_repair_release_refresh"] = (
+        OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH
     )
     valid = bool(
         repair_parent == control_base
         and grant_parent == repair_sha
         and repair_paths
-        == set(IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR["allowed_surfaces"])
+        == set(OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH["allowed_surfaces"])
         and grant_paths == set(GRANT_ALLOWED_SURFACES)
         and repair_ledger == expected_repair
         and _exact_direction_grant_delta(
@@ -3600,7 +3662,7 @@ def evaluate_policy(
             if package_id == OPPORTUNITY_SLATE_PACKAGE:
                 expected_control_commits = 2
                 expected_main_paths = (
-                    set(IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR["allowed_surfaces"])
+                    set(OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH["allowed_surfaces"])
                     | set(GRANT_ALLOWED_SURFACES)
                 )
                 if facts.get("merge_main_control_commit_count") != expected_control_commits:
@@ -4461,6 +4523,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        opportunity_schema_release_refresh_matches = (
+            _exact_opportunity_schema_repair_release_refresh_matches(
+                ledger, facts, package_id
+            )
+        )
         grant_close_repair_matches = _exact_grant_close_preflight_repair_matches(
             ledger, facts, package_id
         )
@@ -4508,6 +4575,14 @@ def evaluate_policy(
             warnings.append(
                 "using the exact one-time implementation-release "
                 "preflight-repair boundary"
+            )
+        elif opportunity_schema_release_refresh_matches:
+            allowed_surfaces = set(
+                OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH["allowed_surfaces"]
+            )
+            warnings.append(
+                "using the exact one-time Opportunity schema-repair release "
+                "refresh boundary"
             )
         elif grant_close_repair_matches:
             allowed_surfaces = set(
@@ -4579,6 +4654,7 @@ def evaluate_policy(
                 not bootstrap_matches
                 and not writer_transfer_repair_matches
                 and not implementation_release_repair_matches
+                and not opportunity_schema_release_refresh_matches
                 and not grant_close_repair_matches
                 and not grant_close_fixture_followup_matches
                 and not profile_close_fixture_followup_matches
@@ -4596,7 +4672,59 @@ def evaluate_policy(
                     f"activation candidate exceeds the {MAX_ACTIVE_LANES}-lane limit"
                 )
 
-            if opportunity_resume_fixture_repair_matches:
+            if opportunity_schema_release_refresh_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "Opportunity schema-repair release refresh updated_at "
+                        "must be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "Opportunity schema-repair release refresh updated_at "
+                        "must strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "Opportunity schema-repair release refresh may not "
+                        "change activation_policy"
+                    )
+                if _root_changes(ledger, origin_ledger) != {
+                    "updated_at",
+                    "opportunity_schema_repair_release_refresh",
+                }:
+                    errors.append(
+                        "Opportunity schema-repair release refresh must change "
+                        "exactly updated_at and its repair record"
+                    )
+                if origin_ledger.get(
+                    "opportunity_schema_repair_release_refresh"
+                ) is not None:
+                    errors.append(
+                        "Opportunity schema-repair release refresh is one-time "
+                        "and already recorded"
+                    )
+                if ledger.get("opportunity_schema_repair_release_refresh") != (
+                    OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH
+                ):
+                    errors.append(
+                        "Opportunity schema-repair release refresh record is "
+                        "not exact"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="Opportunity schema-repair release refresh",
+                    errors=errors,
+                )
+            elif opportunity_resume_fixture_repair_matches:
                 candidate_updated_at = ledger.get("updated_at")
                 origin_updated_at = origin_ledger.get("updated_at")
                 if not _valid_utc_timestamp(candidate_updated_at):
@@ -5122,6 +5250,7 @@ def evaluate_policy(
         if (
             not writer_transfer_repair_matches
             and not implementation_release_repair_matches
+            and not opportunity_schema_release_refresh_matches
             and not grant_close_repair_matches
             and not grant_close_fixture_followup_matches
             and not profile_close_fixture_followup_matches
@@ -5166,6 +5295,15 @@ def evaluate_policy(
                 errors.append(
                     "implementation-release preflight repair must change exactly "
                     "the owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                opportunity_schema_release_refresh_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "Opportunity schema-repair release refresh must change "
+                    "exactly the owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
             if grant_close_repair_matches and changed_paths != allowed_surfaces:

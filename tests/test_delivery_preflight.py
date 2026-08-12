@@ -17,6 +17,7 @@ from scripts.delivery_preflight import (
     DIRECTION_MERGE_CONTROL_PATHS,
     DIRECTION_MERGE_FOLLOWUP_PATHS,
     IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR,
+    OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH,
     OPPORTUNITY_SLATE_BRANCH,
     OPPORTUNITY_SLATE_PACKAGE,
     OPPORTUNITY_SLATE_RELEASE_SCOPE,
@@ -39,6 +40,7 @@ from scripts.delivery_preflight import (
     _exact_direction_grant_delta,
     _exact_grant_close_fixture_followup_delta,
     _exact_implementation_release_preflight_repair_matches,
+    _exact_opportunity_schema_repair_release_refresh_matches,
     _exact_opportunity_lifecycle_fixture_repair_delta,
     _exact_opportunity_resume_fixture_repair_delta,
     _exact_profile_close_fixture_followup_delta,
@@ -453,8 +455,8 @@ class DeliveryPreflightTests(unittest.TestCase):
             "scope": "dark_R1_and_PS-OPPSLATE-004_only",
             "package": OPPORTUNITY_SLATE_PACKAGE,
             "reviewed_remote_sha": OPPORTUNITY_SLATE_REVIEWED_SHA,
-            "pull_request": 375,
-            "ci_build": 807,
+            "pull_request": OPPORTUNITY_SLATE_RELEASE_SCOPE["pull_request"],
+            "ci_build": OPPORTUNITY_SLATE_RELEASE_SCOPE["ci_build"],
             "public_enablement": "excluded",
             "verbatim_approval": "You're approved.",
         }
@@ -1502,6 +1504,56 @@ with patch.object(
         forged_errors, _ = self._evaluate_activation(
             forged, exact_facts, require_clean=True, origin=origin,
             candidate_baseline=baseline, origin_baseline=baseline,
+        )
+        self.assertTrue(forged_errors)
+
+    def test_opportunity_schema_repair_release_refresh_is_exact_and_grants_nothing(self):
+        repair = OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH
+        origin = load_ledger_at_ref(repair["origin_main"])
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-12T18:00:00Z"
+        candidate["opportunity_schema_repair_release_refresh"] = copy.deepcopy(
+            repair
+        )
+        baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        exact_facts = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=repair["allowed_surfaces"],
+        )
+        self.assertTrue(
+            _exact_opportunity_schema_repair_release_refresh_matches(
+                candidate, exact_facts, repair["package"]
+            )
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(
+            any("schema-repair release" in warning for warning in warnings)
+        )
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+
+        forged = copy.deepcopy(candidate)
+        forged["opportunity_schema_repair_release_refresh"][
+            "origin_main"
+        ] = "0" * 40
+        forged_errors, _ = self._evaluate_activation(
+            forged,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
         )
         self.assertTrue(forged_errors)
 

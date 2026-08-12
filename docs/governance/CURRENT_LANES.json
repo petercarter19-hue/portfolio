@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T17:00:00Z",
+  "updated_at": "2026-08-12T18:00:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -126,6 +126,19 @@
     ],
     "reason": "Pete explicitly authorized the Opportunity Slate preflight repair, reviewed the local R1 experience, and on 2026-08-12 said 'You're approved.' The exact independently approved implementation remains dark and app.py remains untouched, but its additive PS-OPPSLATE-004 production apply requires a review-bound, serialized release grant that the direction-only control cannot represent. This repair adds that fail-closed exact-candidate path without changing any active lane, authority list, product code, schema, pipeline, deployment, configuration, production data, or live behavior.",
     "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when the entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact six changed paths. A later branch, base, altered record, product-authority change, or public-enablement request cannot reuse it."
+  },
+  "opportunity_schema_repair_release_refresh": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-12-delivery-activation-oppslate-schema-repair-release-refresh",
+    "origin_main": "abbbfa04b9268092e020ee06ac9eb19d37c12da7",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "reason": "Pete authorized the Opportunity Slate pre-flight repair and dark release. The first governed production apply failed transactionally and left no durable 004 change. Fresh Sol extra-high review approved the exact permission-repair candidate with zero findings. The prior one-time release control is correctly pinned to the already-merged PR-375 application candidate, so this refresh binds the same dark, additive-only authority to the new exact repair SHA, PR, CI build, and review evidence without granting merge or release itself.",
+    "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when the entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. It may update no active lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, data, or live behavior."
   },
   "grant_close_preflight_repair": {
     "status": "one_time_owner_authorized_repair",
