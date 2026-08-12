@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T01:46:28Z",
+  "updated_at": "2026-08-12T15:20:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -994,7 +994,7 @@
       "package": "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
       "outcome": "Put the real Interview Studio behind sign-in and recompose it to the 19 hash-locked warm-material visual states from the accepted 2026-08-11 Claude architecture: one flag (PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED, default off) gates the two HTML routes and all four interview APIs as a unit; identity is server-derived with browser-supplied profile identity removed from API contracts; each account gets an opaque member-scoped browser-storage namespace (v3) with no silent adoption of anonymous legacy records; Interview Me becomes the append-only answer -> coaching -> improvement -> revised-coaching consequence stack with structurally immutable submitted snapshots and the bracket-confirmation contract; Interview AI grounds only the owner account on approved public resume data and fails closed to the locked insufficiency state for every other account; follow-up stays visibly unavailable while interview_followup_mode_provenance is open. Everything merges and deploys dark; enablement is Pete's separate recorded go.",
       "branch": "work/2026-08-11-interview-studio-authenticated-experience-001",
-      "writer": "Claude Sonnet at maximum effort as the sole delegated implementation writer in the dedicated portfolio-interview-studio-auth-20260811 worktree, orchestrated by Claude Fable 5 (the architecture author, which briefs and reviews slices but does not hand-write implementation); a fresh Claude Fable extra-high context performs the independent Protected review of the exact candidate SHA",
+      "writer": "OPEN FOR THE INCOMING WRITER. The Claude sessions relinquish this lane in full at pushed handoff SHA 92741795c26c89b4d64425b07dfabaad8b6bae7f; no Claude session holds any mutable surface, worktree, or branch for this package. The incoming writer (Codex, per Pete's 2026-08-12 direction) assumes sole ownership and works from the recorded handoff docs/initiatives/PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001/CODEX_COMPLETION_HANDOFF_2026-08-12.md, which carries the remaining sequence, the verification tooling, and the unchanged stop line.",
       "delivery_path": "Protected",
       "production_capable": true,
       "lane_class": "implementation",
@@ -1052,6 +1052,10 @@
         {
           "date": "2026-08-11",
           "decision": "Execution boundary, verbatim: 'Go all the way up to right before it goes live.' This authorizes activation, dark implementation, review, Azure PR merge, the automatic deployment of flag-off code, and live dark verification without per-step approval. Setting PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED=true is excluded and remains Pete's separate recorded go."
+        },
+        {
+          "date": "2026-08-12",
+          "decision": "Pete directed the writer transfer so another session can continue: 'Go ahead and close your lane right now so another rider can get on it', following 'I can have codex finish everything' when Claude usage limits appeared. The Claude architect relinquishes the lane at exact pushed handoff SHA 92741795c26c89b4d64425b07dfabaad8b6bae7f on work/2026-08-11-interview-studio-authenticated-experience-001. State at handoff: all six slices delivered; all 19 locked visual states passing the architect's measured review; the Opus independent review's REJECT findings (P1 clear-history crash, P1 lock 08/09/11/12 divergences, P2 marker-gate scope and confirmations divergence, P2 no-inference line, P3 legacy-redirect headers) all closed and live-verified; 391 focused tests green with flag-off byte-comparability intact; branch never merged, never deployed, flag off everywhere. Remaining for the incoming writer: recaptures and comparison sheet, the final independent review (pass K closure verification first), the recorded merge grant, PR, dark merge, governed deploy, and live dark verification. The stop line is unchanged and absolute: enabling PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED remains Pete's own separately recorded act."
         }
       ],
       "model_routing": {
