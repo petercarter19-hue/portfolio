@@ -1,0 +1,176 @@
+{% from "opportunity_slate_v2/_icons.html" import os2_icon %}
+{#
+  Image 05 — Desktop review captured source. Rail = earned source/review
+  context (README's "not a privacy/status rail"); main = the dominant
+  editable document. The rail's label toggles Captured -> Confirmed
+  (working.is_confirmed) — a truth state, not decoration
+  (VISUAL_AUDIT item 05 / architecture section 4.2).
+#}
+{% set working = room.working %}
+{% set identity = room.identity %}
+{#
+  DOM order (independent-review finding, R1): the main heading and
+  dominant plane precede the rail even though the rail sits visually
+  left on desktop (architecture section 8's binding [OBSERVED] rule).
+  The CSS grid places both explicitly by grid-column, so this order
+  drives keyboard/screen-reader traversal without moving the rail
+  off the left edge: .os2-main first in markup, .os2-rail second, and
+  the grid alone decides which column each renders in (also collapsing
+  cleanly to a single visual column below 900px without re-ordering
+  anything the DOM already got right).
+#}
+<div class="os2-review" data-os2-stage="source_review">
+  <div class="os2-main">
+    <p class="os2-eyebrow">Current review</p>
+    <h1>Review captured source</h1>
+    <p class="os2-main__subtitle">Check the employer, role title, and captured wording before PeerSlate organizes any requirements.</p>
+
+    {% include "opportunity_slate_v2/_failure.html" %}
+
+    {# A single review form owns every editable value. Each action keeps its
+       documented endpoint through formaction, but every POST carries the
+       whole visible draft. That lets the server preserve the other section
+       and refuse confirmation when visible text is not the stored text. #}
+    <form id="os2-review-form" method="post" action="{{ url_for('opportunity_slate_v2.save_identity') }}" data-os2-review-form data-os2-delete-form>
+      <input type="hidden" name="source_key" value="{{ working.source_key }}">
+      <input type="hidden" name="version_token" value="{{ working.source_version_token }}">
+      <input type="hidden" name="session_key" value="{{ working.working_session_key }}">
+      <input type="hidden" name="session_version_token" value="{{ working.session_version_token }}">
+
+    <section class="os2-section" aria-labelledby="os2-identity-heading">
+      <h2 id="os2-identity-heading">A. Source identity</h2>
+        <div class="os2-identity-grid">
+          <div class="os2-field">
+            <label class="os2-field__label" for="os2-employer-name">Employer</label>
+            <input class="os2-input" type="text" id="os2-employer-name" name="employer_name"
+                   maxlength="{{ room.max_identity_units }}"
+                   value="{{ room.identity_draft.employer_name if room.identity_draft is not none else (identity.employer_name if identity else '') }}"
+                   data-os2-stored-value="{{ identity.employer_name if identity and identity.employer_name else '' }}"
+                   autocomplete="off">
+          </div>
+          <div class="os2-field">
+            <label class="os2-field__label" for="os2-role-title">Role title</label>
+            <input class="os2-input" type="text" id="os2-role-title" name="role_title"
+                   maxlength="{{ room.max_identity_units }}"
+                   value="{{ room.identity_draft.role_title if room.identity_draft is not none else (identity.role_title if identity else '') }}"
+                   data-os2-stored-value="{{ identity.role_title if identity and identity.role_title else '' }}"
+                   autocomplete="off">
+          </div>
+        </div>
+        {# Undrawn control (F12/E6): mockup 05 draws no save button. The
+           explicit-save invariant keeps it, but JS hides it until the
+           member actually edits a field, so the drawn input->meta-rule
+           band stays at the mockup's 22px. With JS off it is always
+           visible — function never depends on script. #}
+        <p class="os2-inline-action" data-os2-save-action>
+          <button type="submit" class="os2-button os2-button--secondary"
+                  formaction="{{ url_for('opportunity_slate_v2.save_identity') }}"
+                  data-os2-save-kind="identity">Save employer and role title</button>
+        </p>
+
+      {# R4/F1: no <strong> on the values — mockup 05 draws the whole meta
+         row in one flat tone with no weight or tone emphasis at 3x zoom. #}
+      <div class="os2-meta-row">
+        <span>Source type &mdash; Job posting</span>
+        <span>Version &mdash; Version {{ working.version_number }}</span>
+        <span>Captured &mdash; {{ working.captured_at.strftime('%b') }} {{ working.captured_at.day }}, {{ working.captured_at.strftime('%Y') }}</span>
+      </div>
+    </section>
+
+    <section class="os2-section" aria-labelledby="os2-wording-heading">
+      <h2 id="os2-wording-heading">B. Captured wording</h2>
+      <p class="os2-helper os2-source-doc-helper" id="os2-wording-helper">
+        Correct only the captured details or wording. Keep the employer&rsquo;s
+        wording intact wherever possible.
+      </p>
+        <label class="os2-visually-hidden" for="os2-corrected-text">Captured wording</label>
+        <textarea
+          id="os2-corrected-text"
+          name="corrected_text"
+          class="os2-textarea os2-source-doc"
+          rows="16"
+          maxlength="{{ room.max_source_units }}"
+          aria-describedby="os2-wording-helper"
+          data-os2-stored-value="{{ working.display_text }}"
+        >{{ room.wording_draft if room.wording_draft is not none else working.display_text }}</textarea>
+        {# Same undrawn-control treatment as the identity save (F12/E6). #}
+        <p class="os2-inline-action" data-os2-save-action>
+          <button type="submit" class="os2-button os2-button--secondary"
+                  formaction="{{ url_for('opportunity_slate_v2.correct_source') }}"
+                  data-os2-save-kind="wording">Save correction</button>
+        </p>
+    </section>
+
+    <div class="os2-review__footer">
+      {# Mockup 05 footer: plain underlined "Back", no arrow glyph. #}
+      <a class="os2-review__footer-back" href="{{ url_for('opportunity_slate_v2.room', step='replace') }}">Back</a>
+      <div class="os2-review__footer-actions">
+        <p class="os2-truth">PeerSlate will organize requirements from this exact source only after you confirm it.</p>
+        <div>
+          <p class="os2-helper" data-os2-confirm-helper hidden>Save your visible edits before confirming this exact source.</p>
+          <button type="submit" class="os2-button os2-button--primary"
+                  formaction="{{ url_for('opportunity_slate_v2.confirm_source') }}"
+                  data-os2-confirm-source>Confirm source</button>
+        </div>
+      </div>
+    </div>
+    </form>
+
+    {# Undrawn control (F12/E6), round-2 placement: below the drawn footer
+       band, so nothing sits between the captured document and the footer
+       the mockup draws. Deletion stays an explicit, twice-confirmed act. #}
+    <div class="os2-disclosure os2-disclosure--danger">
+      <details>
+        <summary class="os2-disclosure__summary">
+          Delete this working opportunity
+        </summary>
+        <div class="os2-disclosure__body">
+          <p class="os2-disclosure__warning">
+            This removes the captured role wording and this whole working
+            opportunity. It cannot be undone. A privately saved result, if
+            you have one, is a separate copy and is not affected.
+          </p>
+            <div class="os2-disclosure__actions">
+              <button type="submit" form="os2-review-form"
+                      formaction="{{ url_for('opportunity_slate_v2.delete_source') }}"
+                      class="os2-button os2-button--danger">Delete this working opportunity</button>
+              <span class="os2-helper">Nothing is removed until you press this button.</span>
+            </div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <aside class="os2-rail" aria-label="Current opportunity">
+    <div>
+      <h2>Current opportunity</h2>
+      <p class="os2-rail__employer">{{ identity.employer_name if identity and identity.employer_name else 'Employer not entered yet' }}</p>
+      <p class="os2-rail__role">{{ identity.role_title if identity and identity.role_title else 'Role title not entered yet' }}</p>
+    </div>
+
+    <hr class="os2-rail__divider">
+
+    <div>
+      <p class="os2-rail__meta">
+        {{ 'Confirmed' if working.is_confirmed else 'Captured' }} role source
+        &middot; Version {{ working.version_number }}
+      </p>
+      <p class="os2-rail__meta-sub">Captured {{ working.captured_at.strftime('%b') }} {{ working.captured_at.day }}, {{ working.captured_at.strftime('%Y') }}</p>
+    </div>
+
+    <hr class="os2-rail__divider">
+
+    <div>
+      <p class="os2-rail__section-title">Current review</p>
+      <p class="os2-rail__current">Source wording</p>
+      <p class="os2-rail__note">Requirements not organized</p>
+    </div>
+
+    {# Round 3 (F11): the rail's fourth divider + "Replace source" link
+       were the one in-crop addition mockup 05 does not draw. Removed —
+       the footer "Back" link reaches the same replace step, so no
+       function is lost. The delete disclosure below the footer stays:
+       explicit deletion has no other surface (product invariant), and it
+       sits at/below the mockup's 1146px crop line (accepted as E11). #}
+  </aside>
+</div>

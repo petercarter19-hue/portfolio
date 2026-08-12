@@ -1,0 +1,413 @@
+{
+  "instrument": "functional_gauntlet_v2.py",
+  "generated_at_utc": "2026-08-12T03:48:14.133004+00:00",
+  "checks": [
+    {
+      "name": "stage 1 opens",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "stage 1 initial CLS",
+      "passed": true,
+      "detail": 0.002717182256472862
+    },
+    {
+      "name": "empty review action disabled",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "typing enables review",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "keyboard reaches Dictate",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "visible keyboard focus",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "upload cancel is visible in flight",
+      "passed": true,
+      "detail": {
+        "message": "Uploading role.txt\u2026",
+        "page_errors": [],
+        "console_errors": []
+      }
+    },
+    {
+      "name": "in-flight upload disables paste capture",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "in-flight upload disables competing import",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "in-flight transfer blocks a competing form submit",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "upload cancellation is explicit",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "upload cancel preserves typed draft",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "upload cancel releases capture actions",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "unknown enhanced upload keeps the typed draft",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "unknown enhanced upload requires reload before retry",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "enhanced upload sends the selected document",
+      "passed": true,
+      "detail": [
+        "role.txt"
+      ]
+    },
+    {
+      "name": "enhanced upload reaches captured-source review",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "enhanced upload records the right capture method",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "import cancellation is explicit",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "import cancel preserves typed draft",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "import cancel preserves URL draft",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "enhanced import sends the public URL",
+      "passed": true,
+      "detail": [
+        "https://example.com/enhanced-role",
+        "https://example.com/no-script-role"
+      ]
+    },
+    {
+      "name": "enhanced import omits a selected large document",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "enhanced import records the right capture method",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "plain-HTML import omits a selected large document",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "plain-HTML import sends its URL",
+      "passed": true,
+      "detail": [
+        "https://example.com/enhanced-role",
+        "https://example.com/no-script-role"
+      ]
+    },
+    {
+      "name": "390x844 first fold includes primary action",
+      "passed": true,
+      "detail": {
+        "x": 20,
+        "y": 790.046875,
+        "width": 350,
+        "height": 52
+      }
+    },
+    {
+      "name": "mobile alternatives follow primary action",
+      "passed": true,
+      "detail": {
+        "primary": {
+          "x": 20,
+          "y": 790.046875,
+          "width": 350,
+          "height": 52
+        },
+        "alternatives": {
+          "x": 20,
+          "y": 842.046875,
+          "width": 350,
+          "height": 278.921875
+        }
+      }
+    },
+    {
+      "name": "mobile focus reaches primary before alternatives",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "mobile focus reaches upload after primary",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "unsupported dictation disables its control",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "unsupported dictation has visible text alternative",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "failed paste returns 503",
+      "passed": true,
+      "detail": 503
+    },
+    {
+      "name": "failed paste preserves typed draft",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "failed paste reports unknown outcome",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "unknown paste outcome requires reload before retry",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "paste ignores a selected large document and reaches review",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "captured wording preserved",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "identity save reveals only after edit",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "dirty review disables confirmation",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "identity survives save",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "identity save preserves unsaved wording",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "confirmation stays disabled for preserved draft",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "failed correction returns 503",
+      "passed": true,
+      "detail": 503
+    },
+    {
+      "name": "failed correction reports unknown outcome",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "failed correction preserves attempted wording",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "correction survives save",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "confirmation becomes visible truth",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "320px reflow has no horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "narrow rail follows dominant document",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "200 percent equivalent reflows without horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "Back opens bounded replacement intake",
+      "passed": true,
+      "detail": 1
+    },
+    {
+      "name": "browser Back restores review",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "browser Forward restores replace intake",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "double submit requests both complete",
+      "passed": true,
+      "detail": [
+        200,
+        200
+      ]
+    },
+    {
+      "name": "double submit creates one replacement",
+      "passed": true,
+      "detail": {
+        "source_version": 2,
+        "save_count": 5
+      }
+    },
+    {
+      "name": "replacement wording is current",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "replacement increments once",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "delete warning names irreversibility",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "failed delete returns 503",
+      "passed": true,
+      "detail": 503
+    },
+    {
+      "name": "failed delete reports unknown outcome",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "failed delete leaves review intact",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "confirmed delete returns to empty intake",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no unexpected browser HTTP failures",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "no console errors",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "no page errors",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "make_app(error=...) returns 503",
+      "passed": true,
+      "detail": 503
+    },
+    {
+      "name": "make_app(error=...) renders honest unavailable state",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "make_app(error=...) exposes Retry-After",
+      "passed": true,
+      "detail": "5"
+    }
+  ],
+  "summary": {
+    "passed": 69,
+    "failed": 0,
+    "console_errors": [],
+    "page_errors": [],
+    "deliberate_http_failures": [
+      {
+        "path": "/opportunity-slate/source/upload",
+        "status": 503
+      },
+      {
+        "path": "/opportunity-slate/source",
+        "status": 503
+      },
+      {
+        "path": "/opportunity-slate/source/corrections",
+        "status": 503
+      },
+      {
+        "path": "/opportunity-slate/source/delete",
+        "status": 503
+      }
+    ],
+    "database_save_count": 5,
+    "database_call_count": 101
+  }
+}

@@ -1,0 +1,28 @@
+{#
+  PS-OPPORTUNITY-SLATE-002 icon macros. Local to this replacement room by
+  design, mirroring templates/partials/opportunity_slate/_icons.html's own
+  stated reason: a package's icon set is that package's file, never
+  extended from another one.
+
+  Every icon is decorative — each one sits beside a real text label — so
+  all of them carry aria-hidden and focusable="false".
+#}
+{% macro os2_icon(name, classes='os2-icon') -%}
+<svg class="{{ classes }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+  {%- if name == 'arrow-left' -%}
+    <path d="M19.5 12h-14"></path><path d="M10.5 7l-5 5 5 5"></path>
+  {%- elif name == 'mic' -%}
+    <rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"></path><path d="M12 18v3"></path>
+  {%- elif name == 'doc' -%}
+    <path d="M6.5 3.5h7l4.5 4.5v12a1 1 0 0 1-1 1h-10.5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"></path><path d="M13.2 3.6v4.6h4.6"></path>
+  {%- elif name == 'link' -%}
+    <path d="M10.2 13.8a3.6 3.6 0 0 0 5.1 0l2.6-2.6a3.6 3.6 0 0 0-5.1-5.1l-1.2 1.2"></path><path d="M13.8 10.2a3.6 3.6 0 0 0-5.1 0l-2.6 2.6a3.6 3.6 0 0 0 5.1 5.1l1.2-1.2"></path>
+  {%- elif name == 'chevron-right' -%}
+    <path d="M9 5l7 7-7 7"></path>
+  {%- elif name == 'warning' -%}
+    <path d="M12 4.4 21 19.2H3z"></path><path d="M12 10v4"></path><path d="M12 16.6v.6"></path>
+  {%- elif name == 'close' -%}
+    <path d="M5 5l14 14"></path><path d="M19 5 5 19"></path>
+  {%- endif -%}
+</svg>
+{%- endmacro %}

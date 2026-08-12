@@ -1,0 +1,8 @@
+{
+  "shell_bottom": {"axis": "row", "search": [55, 75], "span": [1, 1370], "target": "#E6DDD5", "tolerance": 12},
+  "top_rule": {"axis": "row", "search": [345, 370], "span": [55, 1310], "target": "#E6DDD5", "tolerance": 6},
+  "textarea_top": {"axis": "row", "search": [435, 455], "span": [55, 845], "target": "#B1AEAB", "tolerance": 4},
+  "textarea_left": {"axis": "col", "search": [50, 60], "span": [444, 868], "target": "#B1AEAB", "tolerance": 4},
+  "column_divider": {"axis": "col", "search": [875, 895], "span": [402, 913], "target": "#E6DDD5", "tolerance": 4},
+  "closing_rule": {"axis": "row", "search": [950, 970], "span": [55, 1310], "target": "#E6DDD5", "tolerance": 4}
+}

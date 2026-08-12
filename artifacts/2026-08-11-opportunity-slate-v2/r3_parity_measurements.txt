@@ -1,0 +1,61 @@
+Opportunity Slate v2 — forensic parity round 3 (2026-08-11)
+Writer: Claude Fable 5. Instruments: ink_stats p5 estimator (pixel at the
+5th luminance percentile of a like-for-like region, applied identically to
+mockup image and build capture), sample_colors points/regions, measure_v2
+computed styles. Captures: parity/stage1-r3-*.png, parity/stage2-r3-*.png.
+
+Closed pairs (mockup -> build, worst channel delta, tolerance 6 unless noted)
+
+F1  stage1 paste helper       p5 #48474D -> #4B4A4F  (d3)   authored #3B3A40
+F2  alt subtitle row1         p5 #363C40 -> #3A3E43  (d4)   authored #23282D
+    alt subtitle row2         p5 #393D41 -> #3B3F44  (d3)
+F3  alt title ink x           982-983   -> 986       (d3-4, bar 8)
+    icon ink -> title gap     28        -> ~27       (gap 0.75rem + icon -6px)
+F4  dictate border            #DFD3CC/#DED2C7 -> #E0D4CC (d5)
+F5  mic ink height            27px      -> 27px  (36px box, stroke-width 2)
+    mic ink                   ~#020202  -> p5 #050505 (d3); button 50 -> 50px
+F6  dictate bottom inset      22px      -> 22px  (textarea display:block, bottom:22px)
+F7  disabled label            p5 #757572 -> #706F6C (d6)  authored #4C4E4B w400
+F8  employer label            p5 #474D51 -> #4C4F54 (d5)  authored #2F3338
+    role label                p5 #4D4E56 -> #4A4E52 (d4)
+    meta labels               p5 #3E4142 -> #3E3E40 (d3)
+F9  wording helper            p5 #363A3D -> #373B3E (d1)  authored #1E2226
+    (input value ink pair     p5 #2C302F -> #2B2B2C (d5) — relationship kept)
+F10 footer truth              p5 #585D60 -> #5A5E63 (d3)  authored #31383E
+F11 in-crop additions: rail 4th divider + "Replace source" link REMOVED
+    (footer Back reaches the same replace step; no function lost). Delete
+    disclosure kept at y1167 > the 1146 crop (E11 acceptance). Rail now
+    ends at "Requirements not organized", divider2 y320 vs mockup 321.
+E1  = F5.  E2 = F3 (text block start 986 vs mockup 982; was +19px off).
+E3  nav underline             p5 #253C00 -> flat #2A3E04 (d5); was #43551B
+E8  doc box min-height 548px (mockup 527 + one 20.6px Inter line);
+    fixture scrollHeight 535 < 548: no scrollbar, ~23px bottom air (mockup ~22).
+    Doc border -> footer rule 28px -> 28px.
+
+Judgment calls under the AI-artifact boundary (recorded, not silently decided)
+- Rendered-ink method: tokens are now authored darker than the mockup's
+  sampled p5 by the measured antialias rendering gap (~8/channel at 18px
+  up to ~28 at 14px, local slope ~0.45-0.7), because the mockup is itself
+  a rendered image. Every pair above is a rendered-vs-rendered comparison.
+- E3: the drawn bar is a 4-5px gradient (crown #273D00 .. #4A5F20); the
+  flat 3px build bar carries the crown tone (p5-matched), so region
+  averages will read the build slightly darker than the mockup's average.
+- E8: literal 527px box height traded for the drawn intent (whole document
+  + bottom air) because Inter wraps one line longer (E5 face judgment).
+- F11: delete disclosure deliberately kept (explicit-deletion invariant
+  has no other surface); it sits below the mockup crop. Owner may still
+  rule on reinstating a rail "Replace source" action; removal loses no
+  function today.
+- Stage-1 truth line left at ink: round 2 passed it; my estimator reads
+  the pair darker (mockup p5 #32322F vs build #232325) but re-tuning a
+  passed pair on a different instrument would churn, not converge.
+
+Unreachable in lane
+- E4 (straight vs curly apostrophes in failure-card headings): copy lives
+  in opportunity_slate_v2_routes.py lines ~110-866, outside the editable
+  set for this room.
+- E7 (header search focus indicator): sitewide shell behavior in
+  base.html/site CSS, out of lane; flagged for the shell owner.
+
+Verification: 89/89 tests green (r3_test_run.txt); 320px captures clean
+(no overlap/scroll/oversize) for both stages.

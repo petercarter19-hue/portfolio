@@ -1,0 +1,1307 @@
+/* Opportunity Slate REPLACEMENT room — PS-OPPORTUNITY-SLATE-002, slice R1,
+   forensic parity round 3 (2026-08-11).
+
+   Round-3 rendered-ink correction: rounds 1-2 authored tokens at the
+   mockup's measured CORE ink, but antialiased small text renders its
+   p5/q25 estimators 8-22/channel LIGHTER than the authored value (the
+   gap shrinks as glyphs grow: ~8 at 18px, ~18 at 16px, ~21 at 14px).
+   The mockup is an image — its numbers ARE rendered numbers — so every
+   text tone below is now authored darker than the target by that
+   measured rendering gap, then verified by re-measuring the build
+   capture with the same estimators until each pair is inside 6/channel.
+
+   Visual authority: the two locked mockups —
+   04-DESKTOP-First-Arrival-Bring-A-Role.png (stage 1) and
+   05-DESKTOP-Review-Captured-Source.png (stage 2), both 1372px wide.
+   Every color and size below is sampled/measured from those images, not
+   invented. Measured values are recorded inline as "mockup:" comments so a
+   later pass can re-verify each pair.
+
+   Light theme only (owner direction, 2026-08-03): nothing here reacts to
+   [data-theme="dark"] or prefers-color-scheme, and no dark rule is
+   authored. The page-scoped shell overrides at the end of this file warm
+   the shared header/footer on THIS route only — base.html is untouched.
+
+   Typography (round-2 correction of a round-1 misreading): the mockups
+   reserve the warm editorial serif for exactly two things — the display
+   H1s ("Bring in a role.", "Review captured source") and the primary
+   action-button labels ("Review source", "Confirm source"). Every other
+   string — nav, kickers, intro/body, subtitles, section headings, field
+   labels, helpers, meta row, rail text, dictate label, and the captured
+   document itself — is a quiet humanist sans. Inter is the loaded UI face
+   (site-wide --ps-font-ui; no new font fetch) and the prior locked
+   authority's own choice for UI/body/controls, so it carries the sans
+   system here. Sans sizes below are cap-height conversions from the
+   mockup pixels (Inter cap ratio ~0.7275em). */
+
+.os2 {
+    /* Canvas. mockup04 canvas ~#FDFBFA; mockup05 canvas #FBFAF8 — one
+       token within the 6/channel tolerance of both. */
+    --os2-bg: #fdfbfa;
+    /* Field/document fills: mockup05 inputs + captured doc #FBFAF8 (same
+       plane as the canvas); mockup04 big textarea #FEFDFC. The two locked
+       mockups disagree; #FCFBF9 sits within 6/channel of both. */
+    --os2-surface: #fcfbf9;
+    --os2-rail-bg: #faf9f7;        /* mockup05 rail avg #F9F8F6 */
+    --os2-ink: #1b1b1d;            /* body text; mockup strokes reach #000 */
+    --os2-ink-strong: #0a0a0a;     /* display headline */
+    /* Quiet-text system (round 2): the mockup's muted text is cool slate,
+       not warm brown — meta labels mean #505357, rail sub q25 #424752,
+       stage-2 helper core #22262C. Three cool tiers replace the round-1
+       warm #55524E/#7E7A75 pair. */
+    --os2-muted: #4b4e53;          /* card truth, warnings, upload helpers */
+    /* Round-3 rendered-tier tokens (F1/F2/F8/F10): authored darker than
+       the mockup's sampled p5 by the size-dependent rendering gap. */
+    --os2-helper-quiet: #3b3a40;   /* stage-1 paste helper; mockup p5 #48474D at 18px */
+    --os2-subtitle-ink: #23282d;   /* alt-row subtitles; mockup p5 #363C40/#393D41 at 16px */
+    --os2-label-ink: #2f3338;      /* stage-2 labels; mockup p5 #474D51 at 14px */
+    /* R4/F1: the whole meta row is one flat tone, w400, no emphasis.
+       Mockup 05 run p5s (26px-tall text-run crops) span #47484B..#545456
+       (13/ch internal noise, wider than the 6/ch pair tolerance), so the
+       tone is authored to render at the six-run centroid #4D5054; measured
+       w400 edge alpha at this size/crop is ~0.74, hence the dark author. */
+    --os2-meta-ink: #12161c;
+    --os2-truth-quiet: #31383e;    /* stage-2 footer truth; mockup p5 #585D60 at 14px */
+    --os2-rail-quiet: #454952;     /* rail sub/note; mockup05 q25 #424752 */
+    --os2-helper-ink: #1e2226;     /* stage-2 wording helper: ink with the mockup's cool cast */
+    --os2-faint: #6c6f74;          /* placeholder, rail sub/notes; >=4.5:1 on surface */
+    --os2-line: #e6ddd5;           /* hairlines: mockup #E6DDD5 / #E5DCD5 */
+    --os2-line-meta: #dcd5d1;      /* mockup05 meta band bottom rule y=393 */
+    --os2-line-footer: #e5dfd9;    /* mockup05 footer rule y=1045 #E6E1DC */
+    --os2-line-strong: #dfd3ca;    /* mockup05 rail right border #DFD3CA */
+    --os2-border-textarea: #b1aeab;/* mockup04 big textarea border #B4B1AF/#ACA8A5 */
+    --os2-border-input: #d1cdc9;   /* mockup05 field borders #D2CECB/#D0CBC8 */
+    --os2-border-doc: #cdc8c3;     /* mockup05 captured-wording box border */
+    /* Kicker rust: mockup core strokes #841603..#7A1F0D (q25 across four
+       samples); round-1's #A04D2C rendered 13-55/channel too light. */
+    --os2-accent: #841a08;
+    --os2-olive: #43551b;          /* nav underline #4A5F21/#415316 */
+    --os2-olive-icon: #3a4a16;     /* rail icons, darkest stroke #203200 */
+    --os2-primary: #43511f;       /* mockup05 Confirm fill, 3 regions #43511F */
+    --os2-primary-hover: #333f12;
+    --os2-primary-disabled-bg: #eae3dd;    /* mockup04 Review source fill */
+    --os2-primary-disabled-border: #e0d9d3;
+    /* F7: the mockup's disabled label is whisper-pale (sampled p5 #757572
+       on the fill); round-2's #55524E w500 rendered 33-45/channel too
+       dense, and w400 Newsreader at 21px renders its p5 only ~0.45x as
+       dark as the authored delta — #4C4E4B lands the rendered pair. */
+    --os2-primary-disabled-ink: #4c4e4b;
+    /* F4: the mockup draws the Dictate border warmer and lighter than the
+       field-border token (sampled #DFD3CC top / #DED2C7 left). */
+    --os2-dictate-border: #e0d4cc;
+    --os2-on-primary: #ffffff;
+    --os2-danger: #a83a2c;
+    --os2-danger-tint: #f9efeb;
+    --os2-focus: #1b1b1d;
+    --os2-radius: 8px;
+    --os2-radius-sm: 6px;
+    --os2-rail-width: 292px;       /* mockup05 rail 0..292 incl 1px border */
+    --os2-pad-x: clamp(1.25rem, 4vw, 56px); /* mockup content margin 55-62px */
+    --os2-sans: var(--ps-font-ui, "Inter", "Segoe UI", Arial, sans-serif);
+    --os2-serif: var(--ps-font-display, "Newsreader", Georgia, serif);
+
+    display: block;
+    background: var(--os2-bg);
+    color: var(--os2-ink);
+    font-family: var(--os2-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    font-weight: 400;
+    -webkit-font-smoothing: auto;
+}
+
+.os2 *,
+.os2 *::before,
+.os2 *::after {
+    box-sizing: border-box;
+}
+
+/* Serif is reserved for display H1s; H2/H3 headings are part of the sans
+   UI system (mockups: "Paste or type the job posting", "A. Source
+   identity", rail "Current opportunity" are all sans). */
+.os2 h1 {
+    font-family: var(--os2-serif);
+    font-weight: 500;
+    color: var(--os2-ink-strong);
+    letter-spacing: 0;
+    margin: 0;
+}
+
+.os2 h2,
+.os2 h3 {
+    font-family: var(--os2-sans);
+    font-weight: 500;
+    color: var(--os2-ink-strong);
+    letter-spacing: 0;
+    margin: 0;
+}
+
+/* :where() keeps this reset at zero added specificity so every
+   single-class rule below (eyebrow, intro, helpers, rail text) can
+   restore its own margins without a specificity fight. */
+.os2 :where(p) {
+    margin: 0;
+}
+
+.os2 a {
+    color: inherit;
+}
+
+.os2 :focus-visible {
+    outline: 2px solid var(--os2-focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Default icon size for every os2_icon() call that does not pass its own
+   classes argument. Without an explicit size the inline <svg> falls back
+   to the replaced-element default (300x150 CSS px) and prints as a giant
+   glyph at narrow widths. */
+.os2-icon {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+}
+
+/* ---------------------------------------------------------
+   Shared: eyebrow, truth line, failure card, buttons, inputs.
+   --------------------------------------------------------- */
+/* Double-class form so this wins against the .os2 h2 heading rule when
+   the eyebrow sits on an <h2> (the alt-column heading), which would
+   otherwise repaint the mockup's rust caps in headline black. */
+.os2 .os2-eyebrow {
+    display: block;
+    font-family: var(--os2-sans);
+    font-size: 16px;              /* mockup04 caps ink 12px -> 16px Inter */
+    /* w700 rendered measurably heavier than the mockup strokes (region
+       means 7-10 darker on both stages); w600 matches. */
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    text-transform: uppercase;
+    color: var(--os2-accent);
+    margin: 0 0 27px;             /* mockup04 eyebrow -> H1 ink gap 34px */
+}
+
+.os2-truth {
+    color: var(--os2-ink);
+    font-size: 17px;
+    max-width: 38rem;
+}
+
+.os2-hr {
+    border: 0;
+    border-top: 1px solid var(--os2-line);
+    /* mockup04: intro ink 322 -> rule 369 (47); rule -> heading ink 419
+       (50). Margins subtract the line-box leading on each side. */
+    margin: clamp(1.5rem, 3vw, 42px) 0 clamp(1.5rem, 3.1vw, 43px);
+}
+
+.os2-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.55rem 1.5rem;
+    border-radius: var(--os2-radius-sm);
+    border: 1px solid transparent;
+    font-family: var(--os2-sans);  /* undrawn secondary controls follow the UI sans */
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.2;             /* inherited 1.6 inflated buttons past the mockup */
+    color: var(--os2-ink);
+    cursor: pointer;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+/* Primary action labels are the one button tier the mockups set in serif
+   (mockup04 "Review source", mockup05 "Confirm source"). */
+.os2-button--primary {
+    background: var(--os2-primary);
+    color: var(--os2-on-primary);
+    font-family: var(--os2-serif);
+    font-size: 19px;              /* mockup05 label ink 112x14 -> 19px tier */
+    min-height: 47px;             /* mockup05 Confirm source 181x47 */
+    padding: 0.55rem 1.9rem;
+}
+
+/* Round-2 fix (experience finding E2): the hover rule must never fire on
+   the aria-disabled stage-1 button — the dark fill under the muted label
+   read ~1.5:1 and advertised interactivity on an inert control. */
+.os2-button--primary:hover:not(:disabled):not([aria-disabled="true"]) {
+    background: var(--os2-primary-hover);
+}
+
+.os2-button--primary:disabled,
+.os2-button--primary[aria-disabled="true"] {
+    background: var(--os2-primary-disabled-bg);
+    border-color: var(--os2-primary-disabled-border);
+    color: var(--os2-primary-disabled-ink);
+    /* F7: w500 rendered the ghost label a full tier denser than the
+       mockup's; the drawn label reads regular-weight serif. */
+    font-weight: 400;
+    cursor: not-allowed;
+}
+
+.os2-button--secondary {
+    background: var(--os2-surface);
+    border-color: var(--os2-border-input);
+    color: var(--os2-ink);
+}
+
+.os2-button--secondary:hover {
+    background: #f4f1ec;
+    border-color: #a9a49e;
+}
+
+.os2-button--danger {
+    background: transparent;
+    border-color: var(--os2-danger);
+    color: var(--os2-danger);
+}
+
+.os2-button--danger:hover {
+    background: var(--os2-danger-tint);
+}
+
+.os2-field {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;                    /* mockup05 label ink -> input border 12px */
+}
+
+.os2-field__label {
+    font-size: 14px;              /* mockup05 "Employer" cap ~10px */
+    font-weight: 400;
+    line-height: 1.4;
+    /* F8: the mockup renders these labels near-ink, only a step lighter
+       than the input values (sampled p5 #474D51); --os2-muted at 14px
+       rendered pale and flipped the label/value relationship. */
+    color: var(--os2-label-ink);
+}
+
+.os2-input,
+.os2-textarea {
+    width: 100%;
+    border: 1px solid var(--os2-border-input);
+    border-radius: var(--os2-radius-sm);
+    background: var(--os2-surface); /* mockup: fills match the canvas plane */
+    color: var(--os2-ink);
+    font-family: var(--os2-sans);
+    font-size: 16px;              /* mockup05 field value cap 12px */
+    line-height: 1.375;
+    padding: 10px 0.9rem;         /* mockup05 input height 44px */
+}
+
+.os2-input::placeholder,
+.os2-textarea::placeholder {
+    color: var(--os2-faint);
+    opacity: 1;
+}
+
+.os2-input:focus-visible,
+.os2-textarea:focus-visible {
+    outline: 2px solid var(--os2-focus);
+    outline-offset: 1px;
+}
+
+.os2-textarea {
+    resize: vertical;
+}
+
+.os2-helper {
+    font-size: 15px;
+    color: var(--os2-muted);
+}
+
+.os2-helper:empty {
+    display: none;
+}
+
+/* Failure / notice cards (architecture's failure anatomy: heading +
+   message + truth line, named object, no invented recovery). */
+.os2-card {
+    border: 1px solid var(--os2-border-input);
+    border-radius: var(--os2-radius);
+    background: var(--os2-surface);
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+}
+
+.os2-card--error {
+    border-color: var(--os2-danger);
+    background: var(--os2-danger-tint);
+}
+
+.os2-card--notice {
+    border-color: var(--os2-border-input);
+    background: var(--os2-surface);
+}
+
+.os2-card__heading {
+    margin: 0 0 0.35rem;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.os2-card--error .os2-card__heading {
+    color: var(--os2-danger);
+}
+
+.os2-card__message {
+    margin: 0 0 0.35rem;
+    font-size: 16px;
+    color: var(--os2-ink);
+}
+
+.os2-card__truth {
+    margin: 0;
+    font-size: 15px;
+    color: var(--os2-muted);
+}
+
+.os2-unavailable {
+    text-align: center;
+    padding: clamp(2rem, 6vw, 4rem) 1rem;
+}
+
+/* ---------------------------------------------------------
+   Stage 1 — Bring in a role (mockup 04).
+   Measured at 1372: header rule 72 -> eyebrow ink 132 (60); eyebrow ink
+   132..143; H1 caps 178..224; intro ink 272..322 (31px pitch); hr 369;
+   heading ink 419..443; textarea border 456..880 (424 tall); helper ink
+   905..921; closing rule 972; button 983..1310 x 1009..1071 (327x62).
+   --------------------------------------------------------- */
+.os2-intake {
+    padding: clamp(2rem, 4.1vw, 56px) var(--os2-pad-x) clamp(3rem, 6vw, 88px);
+}
+
+.os2-intake h1 {
+    /* mockup cap height 47px -> 64px Newsreader tier */
+    font-size: clamp(2.125rem, 1rem + 3.5vw, 4rem);
+    line-height: 1.1;
+    letter-spacing: -0.005em;
+}
+
+.os2-intake__intro {
+    /* mockup line 1 ink 56..657 (601px); Inter runs wider than the
+       mockup face at this tier, so the cap keeps the mockup's two-line
+       break ("...You'll review" / "the captured source...") rather than
+       its exact ink width — recorded face-metrics judgment. */
+    max-width: 672px;
+    color: var(--os2-ink);
+    font-size: 19px;              /* mockup cap 14px -> 19px Inter */
+    line-height: 31px;            /* mockup baseline pitch 31px */
+    margin-top: 1.1rem;           /* mockup H1 ink -> intro ink 47px */
+}
+
+.os2-intake__body {
+    display: grid;
+    /* mockup columns: 791px main / 1px divider / 396px rail = 2 : 1,
+       31px + 36px breathing around the divider. */
+    grid-template-columns: minmax(0, 2fr) 1px minmax(0, 1fr);
+    column-gap: clamp(1.25rem, 2.5vw, 34px);
+    row-gap: 0;
+    align-items: start;
+}
+
+.os2-intake__paste {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.os2-intake__divider {
+    grid-column: 2;
+    grid-row: 1;
+    background: var(--os2-line);
+    align-self: stretch;
+}
+
+.os2-intake__alt {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.os2-intake__paste h2 {
+    font-size: 26px;              /* mockup cap 19px -> 26px Inter */
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--os2-ink-strong);
+    margin-bottom: 10px;          /* mockup heading ink -> textarea border 12px */
+}
+
+.os2-source-input {
+    position: relative;
+}
+
+.os2-source-input .os2-textarea {
+    /* F6: block, not inline — the inline line-box descent stretched the
+       positioning container ~8px below the textarea's own border, so the
+       Dictate button measured 7px off the drawn 22px inset (the same bug
+       class the stage-2 doc box hit in round 2). */
+    display: block;
+    height: 424px;                /* mockup textarea 456..880 = 424 tall */
+    min-height: 240px;            /* user resize floor */
+    border-color: var(--os2-border-textarea);
+    padding: 0.9rem 1.1rem 3.6rem;
+    font-size: 18px;              /* mockup placeholder cap 13px -> 18px */
+    line-height: 1.6;
+}
+
+.os2-dictate {
+    position: absolute;
+    right: 1rem;
+    bottom: 22px;                 /* mockup button bottom 858 -> textarea 880 */
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    min-width: 44px;
+    /* F5: 6px vertical padding + the 36px mic box = the mockup's 50px
+       button; 8px left inset puts the mic ink 16-17px off the border. */
+    padding: 6px 1rem 6px 0.5rem;
+    border: 1px solid var(--os2-dictate-border); /* F4: warm light border */
+    border-radius: var(--os2-radius-sm); /* mockup: soft rectangle, not pill */
+    background: var(--os2-surface);
+    color: var(--os2-ink);
+    font-family: var(--os2-sans);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.os2-dictate:hover:not(:disabled) {
+    background: #f4f1ec;
+    border-color: #a9a49e;
+}
+
+.os2-dictate[aria-pressed="true"] {
+    background: var(--os2-accent);
+    border-color: var(--os2-accent);
+    color: var(--os2-on-primary);
+}
+
+/* The near-black mic override must yield while dictation is live, or the
+   dark glyph would sit on the rust fill at ~1.4:1. */
+.os2-dictate[aria-pressed="true"] .os2-dictate__icon {
+    color: var(--os2-on-primary);
+}
+
+.os2-dictate:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.os2-dictate__icon {
+    /* F5/E1: the mockup's mic is the button's visual anchor — ink 16x27px,
+       heavy strokes, near-black. A 36px box lands the 18-of-24-unit mic
+       path at 27px drawn height; stroke-width 2 renders ~3px strokes. */
+    width: 2.25rem;
+    height: 2.25rem;
+    stroke-width: 2;
+    color: #050505;               /* mockup mic ink ~#020202 */
+}
+
+.os2-intake__paste .os2-helper {
+    /* 17px, not 9: the F6 display:block fix removed the ~8px of line-box
+       descent that used to pad the container's bottom, so the margin now
+       carries the whole mockup border->ink gap (24px) itself. */
+    margin-top: 17px;
+    /* F1: the mockup draws this helper a visible tier quieter than the
+       truth line (p5 #48474D vs the truth line's #32322F); round 2's full
+       ink flattened that distinction. */
+    color: var(--os2-helper-quiet);
+    font-size: 18px;              /* mockup helper cap 13px -> 18px */
+    line-height: 1.5;
+}
+
+/* Needs .os2-qualified specificity to beat `.os2 .os2-eyebrow`'s own
+   margin (0,2,0) — the bare `.os2-intake__alt h2` form silently lost. */
+.os2 .os2-intake__alt h2 {
+    font-size: 16px;              /* same kicker tier as START AN OPPORTUNITY */
+    /* mockup baseline-aligns this kicker with the left column's
+       "Paste or type" heading (baselines 438 vs 443): +11px drops the
+       ink from hr+47 to the mockup's hr+58. */
+    margin-top: 11px;
+    /* mockup kicker ink 438 -> row-1 icon ink 483 (45): the 45px ink gap
+       minus line-box descent (~5px) and the icon's in-box inset (8px). */
+    margin-bottom: 32px;
+}
+
+/* Upload/import: native <details>/<summary> disclosure rows. */
+.os2-alt-entry-wrap {
+    border-top: 1px solid var(--os2-line);
+}
+
+.os2-alt-entry-wrap:first-of-type {
+    border-top: 0;
+}
+
+/* Row 1 has no divider above it — its distance from the kicker is the
+   kicker's own margin (mockup 45px), not a row padding. */
+.os2-alt-entry-wrap:first-of-type > .os2-alt-entry {
+    padding-top: 0;
+}
+
+.os2-alt-entry-wrap[open] > .os2-alt-entry {
+    padding-bottom: 0.5rem;
+}
+
+.os2-alt-entry {
+    display: flex;
+    align-items: center;
+    /* F3/E2: round 2's 1.6rem gap measured the title 43px off the icon
+       ink (mockup 28) and the whole text block 19px right of the drawn
+       position. 12px of gap plus the icon's own -6px outdent lands the
+       ink->title gap at ~27px and the block start within the 8px bar. */
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 44px;
+    /* mockup row rhythm: divider -> row-2 icon 43; subtitle ink ->
+       divider 41 (icon ink is inset ~6px inside its box). */
+    padding: 37px 0.25rem 34px 0;
+    list-style: none;
+    background: transparent;
+    color: var(--os2-ink);
+    cursor: pointer;
+}
+
+.os2-alt-entry::-webkit-details-marker {
+    display: none;
+}
+
+.os2-alt-entry:hover .os2-alt-entry__title,
+.os2-alt-entry:hover .os2-alt-entry__chevron {
+    color: var(--os2-olive);
+}
+
+.os2-alt-entry-wrap[open] > .os2-alt-entry .os2-alt-entry__chevron {
+    transform: rotate(90deg);
+}
+
+.os2-alt-entry__icon {
+    flex: none;
+    /* mockup doc-icon ink 35x48; the 24-unit path inks ~13x18.5 units, so
+       a 61px box lands the glyph at ~33x47. Round-1's 2.1rem box drew it
+       at barely half the mockup's weight. */
+    width: 61px;
+    height: 61px;
+    /* F3/E2: the box centers the glyph, leaving ~11px of dead inset the
+       mockup doesn't draw (its icon ink starts ~5px inside the column). */
+    margin-left: -6px;
+    color: var(--os2-olive-icon);  /* mockup icons: dark olive strokes */
+    stroke-width: 1.15;
+}
+
+.os2-alt-entry__text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.os2-alt-entry__title {
+    display: block;
+    font-size: 20px;              /* mockup "Upload a document" cap 15px */
+    font-weight: 500;
+    line-height: 1.35;
+}
+
+.os2-alt-entry__subtitle {
+    display: block;
+    font-size: 16px;              /* mockup subtitle caps ~11-12px */
+    /* F2: the mockup sets these subtitles in near-ink slate, tight under
+       their titles (sampled p5 #363C40 / #393D41); --os2-muted rendered a
+       full tier lighter and flipped the title/subtitle relationship. */
+    color: var(--os2-subtitle-ink);
+    line-height: 1.45;
+    margin-top: 2px;
+}
+
+.os2-alt-entry__chevron {
+    flex: none;
+    width: 1.7rem;                /* mockup chevron ink 8x16 */
+    height: 1.7rem;
+    color: var(--os2-ink);
+}
+
+.os2-intake__footer {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+/* The Review source action. mockup04: 327x62, warm greige disabled fill
+   with a quiet border and a muted serif label at ~21px. */
+.os2-intake__footer .os2-button--primary {
+    min-height: 62px;             /* mockup 327x62 */
+    min-width: 327px;
+    padding: 1rem 3.2rem;
+    font-size: 21px;              /* mockup label ink 125px wide, cap ~14.5 */
+}
+
+.os2-intake__closing-rule {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: 48px;             /* mockup helper ink 921 -> rule 972 */
+    margin-bottom: 36px;          /* mockup rule 972 -> button top 1009 */
+}
+
+/* In-flight upload/import surfaces: a small bounded panel that replaces
+   the alternate-entry row it grew from, never the whole page. */
+.os2-inflight {
+    border: 1px solid var(--os2-border-input);
+    border-radius: var(--os2-radius);
+    background: var(--os2-surface);
+    padding: 1rem 1.1rem;
+    margin: 0.25rem 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.os2-inflight__row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+}
+
+.os2-inflight__field {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.os2-inflight .os2-helper {
+    font-size: 15px;
+}
+
+.os2-transfer-state {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--os2-line);
+    color: var(--os2-muted);
+    font-size: 15px;
+}
+
+.os2-transfer-state[hidden] {
+    display: none;
+}
+
+[data-os2-transfer-error] .os2-card {
+    margin-bottom: 0;
+}
+
+/* The native file control (experience finding E4): dress the browser
+   button as a quiet secondary control and give the caption room, instead
+   of the raw Chromium widget truncating inside the editorial panel. */
+.os2-input[type="file"] {
+    padding: 8px 0.6rem;
+    font-size: 14px;
+    color: var(--os2-muted);
+}
+
+.os2-input[type="file"]::file-selector-button {
+    font-family: var(--os2-sans);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--os2-ink);
+    background: var(--os2-bg);
+    border: 1px solid var(--os2-border-input);
+    border-radius: 5px;
+    padding: 6px 12px;
+    margin-right: 0.75rem;
+    cursor: pointer;
+}
+
+.os2-input[type="file"]::file-selector-button:hover {
+    background: #f4f1ec;
+    border-color: #a9a49e;
+}
+
+/* ---------------------------------------------------------
+   Stage 2 — Review captured source (mockup 05).
+   Measured at 1372: full-height rail 0..292, 1px #DFD3CA right border,
+   text inset 30px; main column 330..~1304; eyebrow ink 101..109; H1 ink
+   127..155; subtitle 170..184; secA 224..239; labels 259..271; inputs
+   283..327 (44 tall, 451px + 500px on a 24px gutter); meta band rules
+   349/393, text 366..379 on a 367/366/242 column rhythm; secB 436..453;
+   helper 465..478; doc box 490..1017 border #CDC8C3; footer rule 1045;
+   footer ink 1081..1094; Confirm 181x47 #43511F.
+   --------------------------------------------------------- */
+.os2-review {
+    display: grid;
+    grid-template-columns: var(--os2-rail-width) minmax(0, 1fr);
+    gap: 0;
+    align-items: stretch;         /* rail paints full column height */
+    min-height: calc(100vh - 65px);
+}
+
+/* DOM order is .os2-main first, .os2-rail second (architecture section 8:
+   main precedes the rail in keyboard/screen-reader order even though the
+   rail sits visually left), so both are pinned to explicit grid cells. */
+.os2-main {
+    grid-column: 2;
+    grid-row: 1;
+    /* mockup: eyebrow ink 41px under the header rule; right content edge
+       ~1303 (fields 1305, doc 1302, meta rules 1304 — the Confirm
+       button's 1315 is the AI outlier, aligned here to the column edge). */
+    padding: clamp(1.5rem, 2.7vw, 37px) clamp(1.5rem, 5vw, 68px) clamp(3rem, 5vw, 72px) clamp(1.5rem, 2.8vw, 38px);
+    min-width: 0;
+}
+
+.os2-rail {
+    grid-column: 1;
+    grid-row: 1;
+    background: var(--os2-rail-bg);
+    border-right: 1px solid var(--os2-line-strong);
+    padding: clamp(1.4rem, 1.9vw, 26px) 30px 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.os2-rail h2 {
+    font-size: 17px;              /* mockup "Current opportunity" cap ~12.5px */
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--os2-ink);
+}
+
+.os2-rail__employer {
+    margin-top: 21px;             /* mockup title ink 109 -> employer ink 137 */
+    font-size: 16px;              /* mockup cap 12px */
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.os2-rail__role {
+    color: var(--os2-ink);
+    font-size: 13px;              /* mockup single-line role ink 217x14 */
+    line-height: 1.5;
+    margin-top: 6px;              /* mockup employer ink 153 -> role ink 167 */
+}
+
+.os2-rail__meta {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--os2-ink);
+}
+
+.os2-rail__meta-sub {
+    font-size: 13px;
+    /* --os2-faint rendered 12/channel lighter than the mockup's rail sub
+       (like-for-like region means); the measured q25 slate lands within
+       6 on both the mean and core estimators. */
+    color: var(--os2-rail-quiet);
+    line-height: 1.5;
+    margin-top: 10px;             /* mockup meta ink 257 -> sub ink 275 */
+}
+
+.os2-rail__section-title {
+    font-size: 13px;              /* mockup rail CURRENT REVIEW caps 10px */
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    text-transform: uppercase;
+    color: var(--os2-accent);
+}
+
+.os2-rail__current {
+    font-weight: 500;
+    font-size: 15px;
+    line-height: 1.4;
+    margin-top: 16px;             /* mockup kicker ink 363 -> current ink 387 */
+}
+
+.os2-rail__note {
+    color: var(--os2-rail-quiet); /* same rail quiet tier as the meta sub */
+    font-size: 14px;
+    line-height: 1.45;
+    margin-top: 7px;              /* mockup current ink 401 -> note ink 415 */
+}
+
+.os2-rail__divider {
+    border: 0;
+    border-top: 1px solid var(--os2-line-strong);
+    /* mockup rail ink-to-divider gaps 31/33/34/32 around the two drawn
+       hairlines (y211, y321); 29px margins land all four within
+       tolerance once line-box leading is added. */
+    margin: 29px 0;
+    width: 100%;
+}
+
+/* (Round 3, F11: the .os2-rail__actions rules left with the removed
+   in-crop "Replace source" rail link — see _stage_source_review.html.) */
+
+/* Mockup 05 sets its eyebrow tier smaller (caps ink 9px -> 13px) and the
+   eyebrow-to-title pitch tighter (18px ink gap) than the stage-1 hero. */
+.os2-main .os2-eyebrow {
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.os2-main h1 {
+    font-size: 28px;              /* mockup cap 20px -> 28px Newsreader */
+    line-height: 1.25;
+    margin-top: 0;
+}
+
+.os2-main__subtitle {
+    color: var(--os2-ink);
+    font-size: 15px;              /* mockup subtitle cap 11px */
+    line-height: 1.5;
+    margin-top: 8px;              /* mockup H1 ink 155 -> subtitle ink 170 */
+    max-width: 44rem;
+}
+
+.os2-section {
+    margin-top: 32px;             /* mockup subtitle ink 184 -> secA ink 224 (40) */
+}
+
+.os2-section + .os2-section {
+    margin-top: 38px;             /* mockup meta rule 393 -> secB ink 436 (43) */
+}
+
+.os2-section h2 {
+    font-size: 17px;              /* mockup "A. Source identity" cap ~12px */
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 14px;          /* mockup heading ink 239 -> label ink 259 (20) */
+}
+
+.os2-identity-grid {
+    display: grid;
+    /* mockup asymmetric fields: Employer 451px, Role title 500px on a
+       24px gutter (x330..781, x805..1305) — not two equal columns. */
+    grid-template-columns: minmax(0, 451fr) minmax(0, 500fr);
+    gap: 24px;
+}
+
+.os2-inline-action {
+    margin-top: 0.9rem;
+}
+
+.os2-meta-row {
+    display: grid;
+    /* mockup: three left-aligned items starting x330/697/1063 — a
+       367/366/242 proportional rhythm, not space-between. */
+    grid-template-columns: minmax(0, 367fr) minmax(0, 366fr) minmax(0, 242fr);
+    gap: 0.5rem 1rem;
+    margin-top: 22px;             /* mockup input border 327 -> rule 349 */
+    padding-top: 12px;            /* mockup rule 349 -> meta ink 366 (17) */
+    padding-bottom: 12px;         /* mockup meta ink 379 -> rule 393 (14) */
+    border-top: 1px solid var(--os2-line);
+    border-bottom: 1px solid var(--os2-line-meta); /* drawn rule y=393 */
+    font-size: 14px;              /* mockup meta cap ~10px */
+    line-height: 1.4;
+    color: var(--os2-meta-ink);   /* R4/F1: one flat tone, labels = values */
+    font-weight: 400;
+}
+
+/* The wording heading sits tighter over its helper (mockup ink gap 12)
+   than secA does over its labels (20) — override the shared 14px. */
+.os2 #os2-wording-heading {
+    margin-bottom: 4px;
+}
+
+.os2-source-doc-helper {
+    margin-top: 0;                /* gap carried by the heading's 4px margin */
+    margin-bottom: 9px;           /* mockup helper ink 478 -> doc border 490 (12) */
+    /* mockup renders this helper as ONE full-width line; the 44rem cap
+       wrapped it to two. */
+    max-width: none;
+    /* F9: the mockup draws this helper AT the input-value tone (sampled
+       p5 #363A3D vs the value ink's #2C302F) — full ink with the drawn
+       line's slight cool cast, not a lighter helper tier. */
+    color: var(--os2-helper-ink);
+}
+
+.os2-source-doc {
+    /* block, not inline: the inline line-box descent added ~8px of
+       undrawn space between the doc box and the footer rule. */
+    display: block;
+    /* Final from-scratch geometry pass: the locked raster's structural
+       edges put this box at 524px. A 20px baseline keeps the complete
+       Meridian fixture visible at that exact height (clientHeight and
+       scrollHeight both 522px after borders), so parity no longer needs
+       the earlier extra-line height exception. */
+    min-height: 524px;
+    border-color: var(--os2-border-doc);
+    background: var(--os2-surface);
+    font-size: 14px;              /* mockup doc text ~14px sans */
+    line-height: 20px;            /* mockup baseline pitch 20-21px */
+    padding: 10px 16px;
+    white-space: pre-wrap;
+}
+
+.os2-review__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 28px;             /* mockup doc border 1017 -> rule 1045 */
+    /* mockup rule 1045 -> Confirm button top 1064 (19): the 47px items
+       center the footer ink at the mockup's 1081..1094 band. */
+    padding-top: 18px;
+    border-top: 1px solid var(--os2-line-footer);
+}
+
+.os2-review__footer-back {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 17px;              /* mockup "Back" cap 13px */
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 4px;   /* mockup: plain underlined "Back", no arrow */
+}
+
+.os2-review__footer-back:hover {
+    color: var(--os2-olive);
+    text-decoration-thickness: 2px;
+}
+
+.os2-review__footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.os2-review__footer-actions .os2-truth {
+    /* F10: unlike stage 1's near-ink truth line, mockup 05 draws this
+       center caption a tier quieter (sampled p5 #585D60). */
+    color: var(--os2-truth-quiet);
+    font-size: 14px;              /* mockup truth ink band h14 incl descenders */
+}
+
+/* Bounded delete confirmation: a <details> disclosure, not a JS overlay,
+   so it works identically with JavaScript on or off and sidesteps the
+   main-content isolation:isolate stacking trap a fixed modal would hit.
+   Round 2: lives BELOW the drawn footer band, so it no longer inserts an
+   undrawn band between the captured document and the footer (F12). */
+.os2-disclosure {
+    margin-top: 28px;
+    border: 1px solid var(--os2-border-input);
+    border-radius: var(--os2-radius-sm);
+    background: var(--os2-surface);
+}
+
+.os2-disclosure__summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.6rem 1rem;
+    list-style: none;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 15px;
+}
+
+.os2-disclosure__summary::-webkit-details-marker {
+    display: none;
+}
+
+.os2-disclosure--danger .os2-disclosure__summary {
+    color: var(--os2-danger);
+}
+
+.os2-disclosure--danger .os2-disclosure__summary:hover {
+    background: var(--os2-danger-tint);
+    border-radius: var(--os2-radius-sm);
+}
+
+.os2-disclosure__body {
+    padding: 0 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.os2-disclosure__warning {
+    font-size: 15px;
+    color: var(--os2-muted);
+    margin: 0;
+}
+
+.os2-disclosure__actions {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+/* ---------------------------------------------------------
+   Page-scoped shell warming (this route only; base.html untouched).
+   The locked mockups draw the shared chrome as a warm minimal shell:
+   near-white band, warm hairline, near-black HUMANIST-SANS nav (cap ink
+   13px -> 17px Inter), a dark-olive underline on the active tab, and no
+   blue sky/lavender footer band. Nav content, account chip, and search
+   internals stay out-of-lane; only band colors and type are warmed here.
+   --------------------------------------------------------- */
+body.opportunity-slate-v2-page {
+    background: #fdfbfa;
+}
+
+body.opportunity-slate-v2-page .site-sky {
+    display: none;                /* mockup shows no blue-white backdrop */
+}
+
+body.opportunity-slate-v2-page .global-header {
+    background: #fdfbfa;          /* mockup header #FDFBFA-#FDFDFC */
+    border-bottom: 1px solid #e5dcd5; /* mockup #E7DED7 / #E2DAD3 */
+    box-shadow: none;
+}
+
+body.opportunity-slate-v2-page .global-header .platform-nav__links a {
+    font-family: var(--ps-font-ui, "Inter", "Segoe UI", Arial, sans-serif);
+    font-size: 17px;              /* mockup nav cap ink 13px */
+    font-weight: 500;
+    color: #1b1b1d;               /* mockup nav ink near-black */
+}
+
+body.opportunity-slate-v2-page .global-header .platform-nav__links a:hover,
+body.opportunity-slate-v2-page .global-header .platform-nav__links a:focus-visible {
+    color: #43551b;
+}
+
+body.opportunity-slate-v2-page .global-header .platform-nav__links a[aria-current="page"] {
+    color: #1b1b1d;
+    font-weight: 600;
+}
+
+body.opportunity-slate-v2-page .global-header .platform-nav__links a[aria-current="page"]::after {
+    height: 3px;                  /* mockup: 4px dark-olive bar at band base */
+    border-radius: 0;
+    bottom: -18px;
+    /* E3: the drawn bar's dark crown row samples #273D00 (p5 #253C00);
+       the flat 3px build bar must carry that near-black olive itself —
+       #43551B measured 25-29/channel light. */
+    background: #2a3e04;
+}
+
+body.opportunity-slate-v2-page .global-header .nav-search {
+    background: #ffffff;
+    border-color: #ddd4cc;
+}
+
+body.opportunity-slate-v2-page .main-content {
+    background: #fdfbfa;
+}
+
+body.opportunity-slate-v2-page .footer {
+    background: #fdfbfa;          /* warm quiet band, not the navy/lavender */
+    border-top: 1px solid #e7ded7;
+    color: #4b4e53;
+}
+
+body.opportunity-slate-v2-page .footer p {
+    color: #4b4e53;
+}
+
+body.opportunity-slate-v2-page .footer p > span {
+    color: #c9beb2;
+}
+
+body.opportunity-slate-v2-page .footer .footer-privacy {
+    color: #4b4e53;
+}
+
+body.opportunity-slate-v2-page .footer .footer-why-link {
+    color: #8a2a12;
+}
+
+body.opportunity-slate-v2-page .footer .footer-brand {
+    color: #1b1b1d;
+}
+
+body.opportunity-slate-v2-page .footer .footer-brand img {
+    border-color: #e6ddd5;
+}
+
+/* ---------------------------------------------------------
+   Visually-hidden utility for screen-reader-only labels/status text.
+   --------------------------------------------------------- */
+.os2-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ---------------------------------------------------------
+   Reflow. Two-column relationships become labeled vertical sequences:
+   no horizontal scroll, no hidden function, at 320 CSS px.
+   --------------------------------------------------------- */
+@media (max-width: 900px) {
+    .os2-intake h1 {
+        font-size: clamp(1.9rem, 1rem + 4.5vw, 2.6rem);
+    }
+
+    .os2-intake__body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .os2-intake__paste,
+    .os2-intake__closing-rule,
+    .os2-intake__footer,
+    .os2-intake__alt {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .os2-intake__divider {
+        display: none;
+    }
+
+    .os2-intake__alt {
+        border-top: 1px solid var(--os2-line);
+        padding-top: 1.25rem;
+    }
+
+    .os2-source-input .os2-textarea {
+        min-height: 320px;
+    }
+
+    .os2-alt-entry {
+        padding-top: 1.4rem;
+        padding-bottom: 1.4rem;
+        gap: 1.1rem;
+    }
+
+    .os2-alt-entry__icon {
+        width: 2.6rem;
+        height: 2.6rem;
+    }
+
+    .os2-intake__footer .os2-button--primary {
+        min-height: 52px;
+        min-width: 0;
+        padding: 0.8rem 2rem;
+        font-size: 18px;
+    }
+
+    .os2-review {
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 0;
+    }
+
+    /* One column now: both explicit desktop placements collapse onto it,
+       so the DOM order set in _stage_source_review.html (main, then rail)
+       is what renders top-to-bottom. grid-row must reset too: the desktop
+       rule pins both children to grid-row: 1, and resetting only
+       grid-column would leave them sharing one cell and overlapping. */
+    .os2-main,
+    .os2-rail {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .os2-main {
+        padding-left: var(--os2-pad-x);
+        padding-right: var(--os2-pad-x);
+    }
+
+    .os2-rail {
+        border-right: 0;
+        border-bottom: 1px solid var(--os2-line-strong);
+        padding: 1.5rem var(--os2-pad-x);
+    }
+
+    .os2-rail__divider {
+        margin: 1.1rem 0;
+    }
+
+    .os2-source-doc {
+        min-height: 360px;
+    }
+}
+
+@media (max-width: 640px) {
+    /* DOM, visual, focus, and screen-reader order are now the same:
+       paste -> primary action -> alternate methods. */
+    .os2-intake {
+        padding-top: 24px;
+    }
+
+    .os2-source-input .os2-textarea {
+        height: 180px;
+        min-height: 160px;
+    }
+
+    .os2-intake__closing-rule {
+        margin-top: 18px;
+        margin-bottom: 4px;
+    }
+
+    .os2-identity-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .os2-intake__footer,
+    .os2-review__footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .os2-review__footer-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.85rem;
+    }
+
+    .os2-meta-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.35rem;
+    }
+
+    .os2-inflight__row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* ---------------------------------------------------------
+   Reduced motion.
+   --------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .os2 *,
+    .os2 *::before,
+    .os2 *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+}
+
+/* ---------------------------------------------------------
+   Forced colors (Windows High Contrast): keep borders and focus rings
+   as real borders rather than color-only cues.
+   --------------------------------------------------------- */
+@media (forced-colors: active) {
+    .os2-button,
+    .os2-input,
+    .os2-textarea,
+    .os2-card,
+    .os2-inflight {
+        border: 1px solid CanvasText;
+    }
+
+    .os2 :focus-visible {
+        outline: 2px solid Highlight;
+    }
+}

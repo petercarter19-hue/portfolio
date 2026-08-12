@@ -1,0 +1,35 @@
+{# Storage could not be read before a Stage 2 mutation. Preserve every
+   posted member draft without fabricating stored metadata or offering a
+   retry against unverified concurrency tokens. #}
+<div class="os2-intake os2-review-recovery" data-os2-stage="source_review_recovery">
+  <p class="os2-eyebrow">CURRENT REVIEW</p>
+  <h1>Review draft preserved</h1>
+  <p class="os2-intake__intro">The stored role source could not be verified. Your submitted values remain below so you can copy them before reloading the workroom.</p>
+
+  {% include "opportunity_slate_v2/_failure.html" %}
+
+  <hr class="os2-hr">
+  <section class="os2-section" aria-labelledby="os2-recovery-identity-heading">
+    <h2 id="os2-recovery-identity-heading">A. Source identity draft</h2>
+    <div class="os2-identity-grid">
+      <div class="os2-field">
+        <label class="os2-field__label" for="os2-employer-name">Employer</label>
+        <input class="os2-input" type="text" id="os2-employer-name"
+               value="{{ room.identity_draft.employer_name }}" autocomplete="off">
+      </div>
+      <div class="os2-field">
+        <label class="os2-field__label" for="os2-role-title">Role title</label>
+        <input class="os2-input" type="text" id="os2-role-title"
+               value="{{ room.identity_draft.role_title }}" autocomplete="off">
+      </div>
+    </div>
+  </section>
+
+  <section class="os2-section" aria-labelledby="os2-recovery-wording-heading">
+    <h2 id="os2-recovery-wording-heading">B. Captured wording draft</h2>
+    <label class="os2-visually-hidden" for="os2-corrected-text">Captured wording draft</label>
+    <textarea id="os2-corrected-text" class="os2-textarea os2-source-doc"
+              rows="16">{{ room.wording_draft }}</textarea>
+    <p class="os2-helper">No save, confirmation, or deletion was attempted because the stored source could not be verified.</p>
+  </section>
+</div>

@@ -1,0 +1,99 @@
+{
+  "action": "gate",
+  "database": "ps-oppslate-004-gate-202608112343",
+  "migration_id": "PS-OPPSLATE-004",
+  "proof": {
+    "executable_sha256": "346c29008d4bbdabcf4f81224f8d708788ac12c27a9909dbfbcac37a756ba739",
+    "gate_database": "ps-oppslate-004-gate-202608112343",
+    "gate_server": "peerslate",
+    "gated_at_utc": "2026-08-12T04:42:32Z",
+    "notes": "Fresh post-review gate: dynamic explicit-delete cross-owner survivor and stale-token proof.",
+    "objects": [
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_analyses_confirmed_ordinal",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_analyses_evidence_snapshot_hash",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_member_takes_authored",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_member_takes_response_length",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_member_takes_reviewed_pair",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_member_takes_take",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_requirement_review_events_class",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_requirement_review_events_decision",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_requirement_review_events_ordinal",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_requirement_review_events_payload",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_requirement_review_events_text_length",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_requirement_sets_member_confirmed_ordinal",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_source_identities_employer_length",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_source_identities_role_length",
+      "CHECK_CONSTRAINT:dbo.CK_opportunity_source_identities_type",
+      "DEFAULT_CONSTRAINT:dbo.DF_opportunity_member_takes_authored",
+      "DEFAULT_CONSTRAINT:dbo.DF_opportunity_member_takes_created",
+      "DEFAULT_CONSTRAINT:dbo.DF_opportunity_member_takes_updated",
+      "DEFAULT_CONSTRAINT:dbo.DF_opportunity_requirement_review_events_decided",
+      "DEFAULT_CONSTRAINT:dbo.DF_opportunity_source_identities_created",
+      "DEFAULT_CONSTRAINT:dbo.DF_opportunity_source_identities_type",
+      "DEFAULT_CONSTRAINT:dbo.DF_opportunity_source_identities_updated",
+      "FOREIGN_KEY_CONSTRAINT:dbo.FK_opportunity_member_takes_author",
+      "FOREIGN_KEY_CONSTRAINT:dbo.FK_opportunity_member_takes_statement",
+      "FOREIGN_KEY_CONSTRAINT:dbo.FK_opportunity_requirement_review_events_decider",
+      "FOREIGN_KEY_CONSTRAINT:dbo.FK_opportunity_requirement_review_events_statement",
+      "FOREIGN_KEY_CONSTRAINT:dbo.FK_opportunity_source_identities_enterer",
+      "FOREIGN_KEY_CONSTRAINT:dbo.FK_opportunity_source_identities_version",
+      "PRIMARY_KEY_CONSTRAINT:dbo.PK_opportunity_member_takes",
+      "PRIMARY_KEY_CONSTRAINT:dbo.PK_opportunity_requirement_review_events",
+      "PRIMARY_KEY_CONSTRAINT:dbo.PK_opportunity_source_identities",
+      "SQL_STORED_PROCEDURE:dbo.usp_GetOpportunitySourceIdentityForOwner",
+      "SQL_STORED_PROCEDURE:dbo.usp_SaveOpportunitySourceIdentityForOwner",
+      "UNIQUE_CONSTRAINT:dbo.UQ_opportunity_member_takes_id_owner",
+      "UNIQUE_CONSTRAINT:dbo.UQ_opportunity_member_takes_statement",
+      "UNIQUE_CONSTRAINT:dbo.UQ_opportunity_requirement_review_events_id_owner",
+      "UNIQUE_CONSTRAINT:dbo.UQ_opportunity_requirement_review_events_ordinal",
+      "UNIQUE_CONSTRAINT:dbo.UQ_opportunity_source_identities_id_owner",
+      "UNIQUE_CONSTRAINT:dbo.UQ_opportunity_source_identities_version",
+      "USER_TABLE:dbo.opportunity_member_takes",
+      "USER_TABLE:dbo.opportunity_requirement_review_events",
+      "USER_TABLE:dbo.opportunity_source_identities"
+    ],
+    "operator": "Pete",
+    "prerequisites": [
+      "PS-PLAT-000",
+      "PS-PLAT-001",
+      "PS-PLAT-002",
+      "PS-PLAT-003",
+      "PS-PLAT-004",
+      "PS-PLAT-005",
+      "PS-PLAT-006",
+      "PS-PLAT-007",
+      "PS-AUTH-001",
+      "PS-WORKSHOP-001",
+      "PS-OPPSLATE-001",
+      "PS-OPPSLATE-002",
+      "PS-OPPSLATE-003"
+    ],
+    "verification": "PS-OPPSLATE-004_owner_isolation_verify.sql returned verified = 1"
+  },
+  "steps": [
+    {
+      "detail": "PS-PLAT-000, PS-PLAT-001, PS-PLAT-002, PS-PLAT-003, PS-PLAT-004, PS-PLAT-005, PS-PLAT-006, PS-PLAT-007, PS-AUTH-001, PS-WORKSHOP-001, PS-OPPSLATE-001, PS-OPPSLATE-002, PS-OPPSLATE-003",
+      "step": "prerequisites"
+    },
+    {
+      "detail": "42 object(s) created",
+      "step": "forward apply"
+    },
+    {
+      "detail": "objects and ledger unchanged",
+      "step": "re-apply is a no-op"
+    },
+    {
+      "detail": "PS-OPPSLATE-004_owner_isolation_verify.sql returned verified = 1",
+      "step": "verification"
+    },
+    {
+      "detail": "42 object(s) reversed",
+      "step": "rollback rehearsal"
+    },
+    {
+      "detail": "ledger row restored",
+      "step": "forward apply after rollback"
+    }
+  ]
+}

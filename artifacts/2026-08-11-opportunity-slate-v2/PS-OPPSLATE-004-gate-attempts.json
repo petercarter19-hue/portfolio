@@ -1,0 +1,68 @@
+{
+  "recorded_at_utc": "2026-08-12T04:45:09Z",
+  "resource_group": "peerslate",
+  "server": "peerslate",
+  "operator_context": "Root Codex under Pete's explicit package and Azure authorization; existing Azure CLI/Entra session; no password requested, copied, or stored",
+  "production_database_opened_or_mutated": false,
+  "attempts": [
+    {
+      "database": "ps-oppslate-004-gate-202608112305",
+      "result": "failed_closed",
+      "failure": "SQL Server rejected inline CONCAT function expressions in EXEC arguments",
+      "proof_recorded": false,
+      "deleted_and_confirmed_absent": true
+    },
+    {
+      "database": "ps-oppslate-004-gate-202608112307",
+      "result": "failed_closed",
+      "failure": "verifier confirmation used the pre-identity-save source rowversion",
+      "proof_recorded": false,
+      "deleted_and_confirmed_absent": true
+    },
+    {
+      "database": "ps-oppslate-004-gate-202608112309",
+      "result": "failed_closed",
+      "failure": "synthetic expiry setup violated CK_opportunity_working_sessions_expiry",
+      "proof_recorded": false,
+      "deleted_and_confirmed_absent": true
+    },
+    {
+      "database": "ps-oppslate-004-gate-202608112311",
+      "result": "failed_closed",
+      "failure": "purge assertion expected an Owner B identity row that setup had not created",
+      "proof_recorded": false,
+      "deleted_and_confirmed_absent": true
+    },
+    {
+      "database": "ps-oppslate-004-gate-202608112314",
+      "result": "passed_then_superseded_by_stronger_post_review_gate",
+      "proof_recorded": true,
+      "proof_status": "superseded",
+      "evidence": "superseded by PS-OPPSLATE-004-gate-202608112343",
+      "deleted_and_confirmed_absent": true
+    },
+    {
+      "database": "ps-oppslate-004-gate-202608112343",
+      "result": "passed_post_review_strengthened_gate_and_exact_rollback_inventory",
+      "proof_recorded": true,
+      "verifier_sha256": "f0d768340721cb93133b0335130a2a8203695c4bd6d15f83479884b09cd04710",
+      "rollback_sha256": "f4ac53dfa0c53454afe67dd9836830cbe433391241cbfb48ac47cb16f946a9b7",
+      "evidence": [
+        "PS-OPPSLATE-004-gate.json",
+        "PS-OPPSLATE-004-rollback-proof.json",
+        "PS-OPPSLATE-004-post-rollback-state.json"
+      ],
+      "deleted_and_confirmed_absent": true
+    }
+  ],
+  "cleanup_verification": {
+    "azure_query": "az sql db list --resource-group peerslate --server peerslate --query [starts_with name ps-oppslate-004-gate-20260811]",
+    "remaining_databases": []
+  },
+  "cost_context": {
+    "sku": "Basic",
+    "central_us_retail_usd_per_day": 0.161,
+    "upper_bound_usd_if_each_attempt_were_rounded_to_one_full_hour": 0.041,
+    "note": "Actual metered cost should be lower; Azure billing finalization may lag. No recurring gate resource remains."
+  }
+}

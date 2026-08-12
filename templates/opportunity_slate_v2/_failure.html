@@ -1,0 +1,27 @@
+{#
+  One failure/notice card shape shared by both stages (the controlling PDF's
+  anatomy: named object, what failed, what is safe, one recovery). Reads
+  room.error / room.notice directly (rather than a bare error/notice local)
+  because this partial is reached only via {% include %} from
+  _stage_intake.html / _stage_source_review.html, which pass the
+  surrounding context through unchanged — room is the one variable
+  guaranteed present there. room.error is a dict with kind
+  ("field" | "unavailable"), heading, message, and truth; room.notice is a
+  plain success-with-caveat string (e.g. an upload truncation) rendered in
+  the calmer, non-error card.
+#}
+{% if room.error %}
+<div class="os2-card os2-card--error" role="alert">
+  <p class="os2-card__heading">{{ room.error.heading }}</p>
+  <p class="os2-card__message">{{ room.error.message }}</p>
+  {% if room.error.truth %}<p class="os2-card__truth">{{ room.error.truth }}</p>{% endif %}
+  {% if room.error.recovery_url %}
+    <p class="os2-card__recovery"><a href="{{ room.error.recovery_url }}">{{ room.error.recovery_label or 'Reload the stored version' }}</a></p>
+  {% endif %}
+</div>
+{% endif %}
+{% if room.notice %}
+<div class="os2-card os2-card--notice" role="status">
+  <p class="os2-card__message">{{ room.notice }}</p>
+</div>
+{% endif %}

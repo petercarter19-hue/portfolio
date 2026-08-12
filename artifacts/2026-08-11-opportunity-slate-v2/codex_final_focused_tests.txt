@@ -1,0 +1,10 @@
+PS-OPPORTUNITY-SLATE-002 final focused verification refresh
+Run completed: 2026-08-12T04:53Z
+Command: python -m unittest tests.test_opportunity_slate_v2 tests.test_opportunity_slate_v2_migration
+Result: PASS
+Tests run: 169
+Breakdown: 95 route/service/template tests; 74 migration/rollback/verifier/evidence-integrity tests
+Failures: 0
+Errors: 0
+
+Expected failure-path logging appeared for deliberately injected working-store outages. The evidence-integrity test recomputed the verifier/rollback hashes and matched all 42 gate objects to all 42 actually removed objects. No unexpected Opportunity Slate failure occurred.

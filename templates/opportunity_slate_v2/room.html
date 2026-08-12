@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "opportunity_slate_v2/_icons.html" import os2_icon %}
+
+{% block title %}Opportunity Slate | PeerSlate{% endblock %}
+
+{% block meta_description %}Bring in one role, review its captured source, and keep it private to your own working opportunity.{% endblock %}
+
+{% block body_class %} opportunity-slate-v2-page{% endblock %}
+
+{% block extra_head %}
+{#
+  PS-OPPORTUNITY-SLATE-002, slice R1. Architecture section 3: noindex as
+  BOTH a meta tag here and the X-Robots-Tag header
+  opportunity_slate_v2_routes._apply_room_headers sets on every response —
+  private workroom content must never be indexable. This room is
+  unregistered in R1 (no app.py wiring yet), so there is no live crawl
+  surface either way; the header/meta pair is authored now so R5's
+  cutover changes no route body.
+#}
+<meta name="robots" content="noindex, nofollow, noarchive">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/opportunity-slate-v2.css') }}">
+{% endblock %}
+
+{% block content %}
+{#
+  Visual authority: artifacts/2026-08-11-opportunity-slate-architecture/
+  OPPORTUNITY_SLATE_ARCHITECTURE.md section 4.1-4.2 — image 04 (Bring in a
+  role) and image 05 (Review captured source) are the two screens this
+  slice implements. Forensic parity round 1 (2026-08-11): the earlier
+  Back/title subheader strip is gone — neither locked mockup draws any
+  breadcrumb band between the site header and the page's own eyebrow;
+  stage 2 keeps its own footer Back link, exactly as image 05 does.
+#}
+<div class="os2" data-os2-room data-os2-stage="{{ room.stage }}">
+  {% if room.stage == 'intake' %}
+    {% include "opportunity_slate_v2/_stage_intake.html" %}
+  {% elif room.stage == 'source_review' %}
+    {% include "opportunity_slate_v2/_stage_source_review.html" %}
+  {% elif room.stage == 'source_review_recovery' %}
+    {% include "opportunity_slate_v2/_stage_source_review_recovery.html" %}
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{# dictation.js must load first: opportunity-slate-v2.js binds its mic
+   control to window.PeerSlateDictation, exactly as opportunity-slate.js
+   and interview-studio.js already do. Both are deferred, so they run in
+   document order. Shared, untouched module (architecture section 9);
+   regression-tested against Interview Studio on any touch, of which this
+   slice makes none. #}
+<script src="{{ url_for('static', filename='js/dictation.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/opportunity-slate-v2.js') }}" defer></script>
+{% endblock %}

@@ -1,0 +1,35 @@
+{
+  "action": "post-rollback-state-verification",
+  "database": "ps-oppslate-004-gate-202608112343",
+  "server": "peerslate",
+  "verified_at_utc": "2026-08-12T04:45:09Z",
+  "migration_id": "PS-OPPSLATE-004",
+  "verifier_sha256_at_gate": "f0d768340721cb93133b0335130a2a8203695c4bd6d15f83479884b09cd04710",
+  "rollback_sha256_at_supplemental_proof": "f4ac53dfa0c53454afe67dd9836830cbe433391241cbfb48ac47cb16f946a9b7",
+  "gate_object_count": 42,
+  "rollback_removed_count": 42,
+  "removed_exactly_matches_gate_objects": true,
+  "ledger_absent": true,
+  "additive_columns_absent": true,
+  "new_procedures_absent": true,
+  "ps_oppslate_004_definition_stamps_absent": true,
+  "restored_ps_oppslate_002_definition_hashes_match": true,
+  "restored_procedures": [
+    {
+      "name": "dbo.usp_DeleteOpportunityWorkingSessionForOwner",
+      "ps_oppslate_002_definition_hash": "FD8BB0E1478D7528A249807ECF8B5BBC6407AD2A5A4AAA4F3827E5EAEEF322C1",
+      "actual_definition_hash": "FD8BB0E1478D7528A249807ECF8B5BBC6407AD2A5A4AAA4F3827E5EAEEF322C1"
+    },
+    {
+      "name": "dbo.usp_PurgeExpiredOpportunityWorkingData",
+      "ps_oppslate_002_definition_hash": "25D4EABCC3501F9EE85A5763AA62CAECA12127F016A8222A3E234855B271A81B",
+      "actual_definition_hash": "25D4EABCC3501F9EE85A5763AA62CAECA12127F016A8222A3E234855B271A81B"
+    }
+  ],
+  "evidence_sources": [
+    "PS-OPPSLATE-004-gate.json proof.objects",
+    "PS-OPPSLATE-004-rollback-proof.json objects_removed",
+    "read-only post-rollback sys catalog and extended-property query"
+  ],
+  "note": "The first diagnostic attempted binary conversion of an nvarchar hash property and returned a false mismatch. The recorded comparison uses the property's actual uppercase hexadecimal text representation; both restored PS-OPPSLATE-002 hashes exactly match HASHBYTES(SHA2_256, OBJECT_DEFINITION(...))."
+}

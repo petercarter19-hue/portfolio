@@ -1,0 +1,167 @@
+{
+  "action": "rollback",
+  "database": "ps-oppslate-004-gate-202608112343",
+  "finished_at_utc": "2026-08-12T04:44:41Z",
+  "ledger_after": [
+    {
+      "applied_at_utc": "2026-08-12T04:42:46.1797424",
+      "migration_id": "PS-AUTH-001"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:52.1678153",
+      "migration_id": "PS-OPPSLATE-001"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:55.5917327",
+      "migration_id": "PS-OPPSLATE-002"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:57.9047227",
+      "migration_id": "PS-OPPSLATE-003"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:34.7506128",
+      "migration_id": "PS-PLAT-000"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:34.8231513",
+      "migration_id": "PS-PLAT-001"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:35.9583756",
+      "migration_id": "PS-PLAT-002"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:37.3061634",
+      "migration_id": "PS-PLAT-003"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:38.7581856",
+      "migration_id": "PS-PLAT-004"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:42.1364323",
+      "migration_id": "PS-PLAT-005"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:44.2866311",
+      "migration_id": "PS-PLAT-006"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:44.7865012",
+      "migration_id": "PS-PLAT-007"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:47.8808253",
+      "migration_id": "PS-WORKSHOP-001"
+    }
+  ],
+  "ledger_before": [
+    {
+      "applied_at_utc": "2026-08-12T04:42:46.1797424",
+      "migration_id": "PS-AUTH-001"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:52.1678153",
+      "migration_id": "PS-OPPSLATE-001"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:55.5917327",
+      "migration_id": "PS-OPPSLATE-002"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:57.9047227",
+      "migration_id": "PS-OPPSLATE-003"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:43:38.5191520",
+      "migration_id": "PS-OPPSLATE-004"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:34.7506128",
+      "migration_id": "PS-PLAT-000"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:34.8231513",
+      "migration_id": "PS-PLAT-001"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:35.9583756",
+      "migration_id": "PS-PLAT-002"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:37.3061634",
+      "migration_id": "PS-PLAT-003"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:38.7581856",
+      "migration_id": "PS-PLAT-004"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:42.1364323",
+      "migration_id": "PS-PLAT-005"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:44.2866311",
+      "migration_id": "PS-PLAT-006"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:44.7865012",
+      "migration_id": "PS-PLAT-007"
+    },
+    {
+      "applied_at_utc": "2026-08-12T04:42:47.8808253",
+      "migration_id": "PS-WORKSHOP-001"
+    }
+  ],
+  "migration_id": "PS-OPPSLATE-004",
+  "objects_removed": [
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_analyses_confirmed_ordinal",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_analyses_evidence_snapshot_hash",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_member_takes_authored",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_member_takes_response_length",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_member_takes_reviewed_pair",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_member_takes_take",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_requirement_review_events_class",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_requirement_review_events_decision",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_requirement_review_events_ordinal",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_requirement_review_events_payload",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_requirement_review_events_text_length",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_requirement_sets_member_confirmed_ordinal",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_source_identities_employer_length",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_source_identities_role_length",
+    "CHECK_CONSTRAINT:dbo.CK_opportunity_source_identities_type",
+    "DEFAULT_CONSTRAINT:dbo.DF_opportunity_member_takes_authored",
+    "DEFAULT_CONSTRAINT:dbo.DF_opportunity_member_takes_created",
+    "DEFAULT_CONSTRAINT:dbo.DF_opportunity_member_takes_updated",
+    "DEFAULT_CONSTRAINT:dbo.DF_opportunity_requirement_review_events_decided",
+    "DEFAULT_CONSTRAINT:dbo.DF_opportunity_source_identities_created",
+    "DEFAULT_CONSTRAINT:dbo.DF_opportunity_source_identities_type",
+    "DEFAULT_CONSTRAINT:dbo.DF_opportunity_source_identities_updated",
+    "FOREIGN_KEY_CONSTRAINT:dbo.FK_opportunity_member_takes_author",
+    "FOREIGN_KEY_CONSTRAINT:dbo.FK_opportunity_member_takes_statement",
+    "FOREIGN_KEY_CONSTRAINT:dbo.FK_opportunity_requirement_review_events_decider",
+    "FOREIGN_KEY_CONSTRAINT:dbo.FK_opportunity_requirement_review_events_statement",
+    "FOREIGN_KEY_CONSTRAINT:dbo.FK_opportunity_source_identities_enterer",
+    "FOREIGN_KEY_CONSTRAINT:dbo.FK_opportunity_source_identities_version",
+    "PRIMARY_KEY_CONSTRAINT:dbo.PK_opportunity_member_takes",
+    "PRIMARY_KEY_CONSTRAINT:dbo.PK_opportunity_requirement_review_events",
+    "PRIMARY_KEY_CONSTRAINT:dbo.PK_opportunity_source_identities",
+    "SQL_STORED_PROCEDURE:dbo.usp_GetOpportunitySourceIdentityForOwner",
+    "SQL_STORED_PROCEDURE:dbo.usp_SaveOpportunitySourceIdentityForOwner",
+    "UNIQUE_CONSTRAINT:dbo.UQ_opportunity_member_takes_id_owner",
+    "UNIQUE_CONSTRAINT:dbo.UQ_opportunity_member_takes_statement",
+    "UNIQUE_CONSTRAINT:dbo.UQ_opportunity_requirement_review_events_id_owner",
+    "UNIQUE_CONSTRAINT:dbo.UQ_opportunity_requirement_review_events_ordinal",
+    "UNIQUE_CONSTRAINT:dbo.UQ_opportunity_source_identities_id_owner",
+    "UNIQUE_CONSTRAINT:dbo.UQ_opportunity_source_identities_version",
+    "USER_TABLE:dbo.opportunity_member_takes",
+    "USER_TABLE:dbo.opportunity_requirement_review_events",
+    "USER_TABLE:dbo.opportunity_source_identities"
+  ],
+  "result": "rolled-back",
+  "rollback_file": "SQL FIles/Migrations/proposed/PS-OPPSLATE-004_opportunity_slate_replacement_rollback.sql",
+  "started_at_utc": "2026-08-12T04:44:36Z",
+  "state_record": "different database",
+  "state_record_stale": false
+}

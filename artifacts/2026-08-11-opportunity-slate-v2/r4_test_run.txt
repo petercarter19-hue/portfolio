@@ -1,0 +1,9 @@
+.........[2026-08-11 18:54:04,017] ERROR in opportunity_slate_v2_routes: PeerSlate Opportunity Slate (replacement) working store is unavailable.
+.........[2026-08-11 18:54:04,163] ERROR in opportunity_slate_v2_routes: PeerSlate Opportunity Slate (replacement) working store is unavailable.
+......................................[2026-08-11 18:54:05,189] ERROR in opportunity_slate_v2_routes: PeerSlate Opportunity Slate (replacement) working store is unavailable.
+............[2026-08-11 18:54:05,534] ERROR in opportunity_slate_v2_routes: PeerSlate Opportunity Slate (replacement) working store is unavailable.
+.....................
+----------------------------------------------------------------------
+Ran 89 tests in 1.764s
+
+OK

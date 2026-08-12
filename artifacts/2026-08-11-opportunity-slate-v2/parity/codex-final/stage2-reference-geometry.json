@@ -1,0 +1,58 @@
+﻿{
+  "shell_bottom": {
+    "axis": "row",
+    "coordinate": 61,
+    "matches": 1352,
+    "span_pixels": 1370,
+    "target": "#DFD3CA",
+    "tolerance": 12
+  },
+  "rail_edge": {
+    "axis": "col",
+    "coordinate": 293,
+    "matches": 1036,
+    "span_pixels": 1036,
+    "target": "#DFD3CA",
+    "tolerance": 10
+  },
+  "identity_input_top": {
+    "axis": "row",
+    "coordinate": 283,
+    "matches": 939,
+    "span_pixels": 971,
+    "target": "#D1CDC9",
+    "tolerance": 10
+  },
+  "meta_top": {
+    "axis": "row",
+    "coordinate": 350,
+    "matches": 971,
+    "span_pixels": 971,
+    "target": "#E6DDD5",
+    "tolerance": 12
+  },
+  "document_top": {
+    "axis": "row",
+    "coordinate": 493,
+    "matches": 4,
+    "span_pixels": 971,
+    "target": "#CDC8C3",
+    "tolerance": 10
+  },
+  "document_bottom": {
+    "axis": "row",
+    "coordinate": 1017,
+    "matches": 957,
+    "span_pixels": 971,
+    "target": "#CDC8C3",
+    "tolerance": 10
+  },
+  "footer_rule": {
+    "axis": "row",
+    "coordinate": 1046,
+    "matches": 971,
+    "span_pixels": 971,
+    "target": "#E5DFD9",
+    "tolerance": 10
+  }
+}

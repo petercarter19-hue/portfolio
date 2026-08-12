@@ -1,0 +1,55 @@
+Opportunity Slate v2 — forensic parity round 4 (2026-08-11)
+Writer: Claude Fable 5. Scope: F1 was the only failing pair from the round-3
+review (stage-2 source-identity meta row rendered two-tone: labels w400
+#2F3338, values <strong> w500 ink). Instruments: ink_stats (p5 = pixel at the
+5th luminance percentile of a 26px-tall text-run crop; darkavg = mean of the
+darkest 10%), applied identically to mockup 05 and the build capture;
+measure_v2 computed styles. Captures: parity/stage2-r4-*.png.
+
+Change
+- templates/opportunity_slate_v2/_stage_source_review.html: removed the
+  three <strong> wrappers from the meta-row values.
+- static/css/opportunity-slate-v2.css: .os2-meta-row now one flat tone,
+  font-weight 400, new token --os2-meta-ink #12161C (replaces label-ink +
+  strong ink pair); .os2-meta-row strong rule deleted.
+
+F1 before (r3 capture, my crops) -> after (r4 capture, same crops)
+  labels p5 avg   #646668 (~100,102,106) -> #494B50   values p5 avg #363638 (~54,54,56) -> #464852
+  internal label-vs-value darkavg contrast: build was ~30/ch consistent
+  (values darker); now item1 4/ch value LIGHTER, item2 1/ch, item3 6/ch
+  value darker — directionless, matching the mockup's own noise (9/6/10
+  per item, direction flips).
+
+Final measured pairs, mockup -> build (p5 / darkavg per run)
+  Source type   #4F5356/#4D4F54 -> #45474B/#46494E
+  Job posting   #47484B/#44474C -> #4C4E53/#4A4C51
+  Version       #4B4D54/#4D5054 -> #54555A/#4E5155
+  Version 1     #51565A/#545659 -> #45474B/#4D5054
+  Captured      #545456/#515357 -> #4C4E53/#4D4F54
+  Apr 30, 2025  #494C50/#46494D -> #43454A/#474A4F
+  Six-run centroids: p5 M(77,80,84) -> B(74,75,80), worst channel d4.4;
+  darkavg M(76,79,83) -> B(74,77,82), worst channel d1.7. Both inside 6.
+
+Judgment call under the AI-artifact boundary (recorded, not silent)
+- The mockup's six runs internally span 13/ch at p5 and 16/ch at darkavg —
+  wider than the 6/ch pair tolerance — so no single flat tone can sit
+  within 6 of every individual run. Authored the tone at the six-run
+  centroid (w400 edge alpha ~0.74 at this size/crop, hence #12161C
+  authoring for a ~#4D5054 rendered read). Individual-run deltas up to
+  7-8/ch (p5 worst: Version 1, a 57px crop) remain, with sign flipping
+  run to run in both images: string-composition noise, not a tone system.
+- Rendered-tier method carried from round 3: authored darker than the
+  mockup's sampled statistic by the measured antialias gap.
+
+Verification
+- Diff r3 -> r4 captures: desktop change confined to (331,372)-(1241,386),
+  narrow to (20,501)-(201,566) — the meta text only; page heights and all
+  other geometry byte-identical. measure_v2: all three spans w400
+  rgb(18,22,28), row rect x330 w974 unchanged.
+- 320px capture: stacked single-column meta rows clean, no overlap or
+  horizontal scroll (narrow_r4 crop reviewed at 3x).
+- Tests: 89/89 green (r4_test_run.txt). No test asserts meta-row markup;
+  none needed changing.
+- E1-E8 judgment calls from round 3 stand unchanged; E8's over-broad
+  failure heading lives in opportunity_slate_v2_routes.py, outside this
+  room's editable set, and stays flagged for a future slice.

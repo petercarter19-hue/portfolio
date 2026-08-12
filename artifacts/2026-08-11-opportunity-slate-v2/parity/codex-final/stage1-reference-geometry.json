@@ -1,0 +1,50 @@
+﻿{
+  "shell_bottom": {
+    "axis": "row",
+    "coordinate": 72,
+    "matches": 1217,
+    "span_pixels": 1370,
+    "target": "#E6DDD5",
+    "tolerance": 12
+  },
+  "top_rule": {
+    "axis": "row",
+    "coordinate": 369,
+    "matches": 1254,
+    "span_pixels": 1256,
+    "target": "#E6DDD5",
+    "tolerance": 12
+  },
+  "textarea_top": {
+    "axis": "row",
+    "coordinate": 456,
+    "matches": 51,
+    "span_pixels": 791,
+    "target": "#B1AEAB",
+    "tolerance": 8
+  },
+  "textarea_left": {
+    "axis": "col",
+    "coordinate": 55,
+    "matches": 408,
+    "span_pixels": 416,
+    "target": "#B1AEAB",
+    "tolerance": 8
+  },
+  "column_divider": {
+    "axis": "col",
+    "coordinate": 878,
+    "matches": 520,
+    "span_pixels": 526,
+    "target": "#E6DDD5",
+    "tolerance": 12
+  },
+  "closing_rule": {
+    "axis": "row",
+    "coordinate": 973,
+    "matches": 1254,
+    "span_pixels": 1256,
+    "target": "#E6DDD5",
+    "tolerance": 12
+  }
+}

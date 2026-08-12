@@ -1,0 +1,19 @@
+C:/Users/peter/Documents/portfolio/venv/Scripts/python.exe : .........[2026-08-11 18:21:37,469] ERROR in
+opportunity_slate_v2_routes: PeerSlate Opportunity Slate (replacement) working store is unavailable.
+At line:6 char:1
++ C:/Users/peter/Documents/portfolio/venv/Scripts/python.exe -m unittes ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (.........[2026-...is unavailable.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+.........[2026-08-11 18:21:37,623] ERROR in opportunity_slate_v2_routes: PeerSlate Opportunity Slate (replacement)
+working store is unavailable.
+......................................[2026-08-11 18:21:38,702] ERROR in opportunity_slate_v2_routes: PeerSlate
+Opportunity Slate (replacement) working store is unavailable.
+............[2026-08-11 18:21:39,058] ERROR in opportunity_slate_v2_routes: PeerSlate Opportunity Slate (replacement)
+working store is unavailable.
+.....................
+----------------------------------------------------------------------
+Ran 89 tests in 1.847s
+
+OK

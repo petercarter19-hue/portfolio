@@ -1,0 +1,9 @@
+{
+  "shell_bottom": {"axis": "row", "search": [55, 75], "span": [1, 1370], "target": "#DFD3CA", "tolerance": 12},
+  "rail_edge": {"axis": "col", "search": [285, 300], "span": [65, 1100], "target": "#DFD3CA", "tolerance": 4},
+  "identity_input_top": {"axis": "row", "search": [275, 305], "span": [330, 1300], "target": "#D1CDC9", "tolerance": 4},
+  "meta_top": {"axis": "row", "search": [340, 370], "span": [330, 1300], "target": "#E6DDD5", "tolerance": 4},
+  "document_top": {"axis": "row", "search": [480, 510], "span": [330, 1300], "target": "#CDC8C3", "tolerance": 4},
+  "document_bottom": {"axis": "row", "search": [1005, 1030], "span": [330, 1300], "target": "#CDC8C3", "tolerance": 4},
+  "footer_rule": {"axis": "row", "search": [1035, 1060], "span": [330, 1300], "target": "#E5DFD9", "tolerance": 4}
+}

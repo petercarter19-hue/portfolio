@@ -1,0 +1,152 @@
+{% from "opportunity_slate_v2/_icons.html" import os2_icon %}
+{#
+  Image 04 — Desktop first arrival ("Bring in a role."). No left/right rail
+  exists at this stage (VISUAL_AUDIT item 04): one dominant purpose, paste
+  dominant, upload/import attached alternatives.
+#}
+<div class="os2-intake" data-os2-stage="intake">
+  <p class="os2-eyebrow">{% if room.replace %}REPLACE THE SOURCE{% else %}START AN OPPORTUNITY{% endif %}</p>
+  <h1>Bring in a role.</h1>
+  <p class="os2-intake__intro">
+    Add the job posting or role description you want to explore. You&rsquo;ll
+    review the captured source before PeerSlate organizes any requirements.
+  </p>
+
+  {% include "opportunity_slate_v2/_failure.html" %}
+
+  <hr class="os2-hr">
+
+  <div class="os2-intake__body">
+    <div class="os2-intake__paste">
+      <h2 id="os2-paste-heading">Paste or type the job posting</h2>
+      {# One intake form owns all three capture methods. That keeps a typed
+         draft and an attempted public URL in the same POST when upload or
+         import fails, including with JavaScript disabled. The clicked
+         submit button supplies the method-specific idempotency key and
+         endpoint through name/value + formaction. #}
+      <form id="os2-source-form" method="post" action="{{ url_for('opportunity_slate_v2.set_source') }}"
+            data-os2-source-form
+            data-os2-room-url="{{ url_for('opportunity_slate_v2.room') }}">
+        {% if room.replace %}<input type="hidden" name="replace" value="1">{% endif %}
+        <div class="os2-source-input">
+          <label class="os2-visually-hidden" for="os2-source-text">Paste or type the job posting</label>
+          <textarea
+            id="os2-source-text"
+            name="source_text"
+            class="os2-textarea"
+            rows="14"
+            maxlength="{{ room.max_source_units }}"
+            placeholder="Paste the complete job posting or role description here…"
+            aria-describedby="os2-paste-helper"
+            data-os2-source-text
+          >{{ room.editor_text or '' }}</textarea>
+          <button
+            type="button"
+            class="os2-dictate"
+            data-os2-dictate-button
+            data-os2-dictate-target="os2-source-text"
+            aria-pressed="false"
+          >
+            {{ os2_icon('mic', 'os2-dictate__icon') }}<span data-os2-dictate-label>Dictate</span>
+          </button>
+        </div>
+        <p class="os2-helper" id="os2-paste-helper">Keep the employer&rsquo;s original wording whenever possible.</p>
+        <p class="os2-helper" role="status" aria-live="polite" data-os2-dictate-status></p>
+        <p class="os2-helper" role="alert" data-os2-dictate-error hidden></p>
+      </form>
+    </div>
+
+    {# Primary action precedes alternate methods in DOM/focus order. The
+       desktop grid still places alternate methods beside the paste plane
+       and this closing band across the row below both columns. #}
+    <hr class="os2-hr os2-intake__closing-rule">
+
+    <div class="os2-intake__footer">
+      <p class="os2-truth">Nothing is interpreted until you review the captured source.</p>
+      <button
+        type="submit"
+        form="os2-source-form"
+        name="idempotency_key"
+        value="{{ room.idempotency_key }}"
+        class="os2-button os2-button--primary"
+        data-os2-review-source
+        {% if room.recovery_only %}disabled{% endif %}
+        aria-disabled="{{ 'true' if not room.editor_text else 'false' }}"
+      >Review source</button>
+    </div>
+
+    <div class="os2-intake__divider" aria-hidden="true"></div>
+
+    <div class="os2-intake__alt">
+      <h2 class="os2-eyebrow">Bring the source another way</h2>
+
+      <details class="os2-alt-entry-wrap"{% if room.open_method == 'upload' %} open{% endif %}>
+        <summary class="os2-alt-entry">
+          {{ os2_icon('doc', 'os2-alt-entry__icon') }}
+          <span class="os2-alt-entry__text">
+            <span class="os2-alt-entry__title">Upload a document</span>
+            <span class="os2-alt-entry__subtitle">PDF, DOCX, or TXT</span>
+          </span>
+          {{ os2_icon('chevron-right', 'os2-alt-entry__chevron') }}
+        </summary>
+        <div class="os2-inflight">
+          <div data-os2-upload-panel>
+            <div class="os2-inflight__row">
+              <div class="os2-inflight__field">
+                <label class="os2-field__label" for="os2-upload-document">Choose a file</label>
+                <input class="os2-input" type="file" id="os2-upload-document" name="document" form="os2-source-form" accept=".pdf,.docx,.txt,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+              </div>
+              <button type="submit" class="os2-button os2-button--secondary"
+                      form="os2-source-form"
+                      formaction="{{ url_for('opportunity_slate_v2.upload_source') }}"
+                      formenctype="multipart/form-data"
+                      {% if room.recovery_only %}disabled{% endif %}
+                      name="idempotency_key" value="{{ room.upload_idempotency_key }}"
+                      data-os2-transfer-submit data-os2-transfer-kind="upload">Upload</button>
+            </div>
+            <p class="os2-helper">PDF, DOCX, or TXT only. Nothing is saved unless the upload succeeds.</p>
+            <div class="os2-transfer-state" role="status" aria-live="polite" data-os2-transfer-state hidden>
+              <span data-os2-transfer-message></span>
+              <button type="button" class="os2-button os2-button--secondary" data-os2-transfer-cancel>Cancel</button>
+            </div>
+            <div data-os2-transfer-error></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="os2-alt-entry-wrap"{% if room.open_method == 'import' %} open{% endif %}>
+        <summary class="os2-alt-entry">
+          {{ os2_icon('link', 'os2-alt-entry__icon') }}
+          <span class="os2-alt-entry__text">
+            <span class="os2-alt-entry__title">Import a public link</span>
+            <span class="os2-alt-entry__subtitle">Use a publicly accessible job-posting page</span>
+          </span>
+          {{ os2_icon('chevron-right', 'os2-alt-entry__chevron') }}
+        </summary>
+        <div class="os2-inflight">
+          <div data-os2-import-panel>
+            <div class="os2-inflight__row">
+              <div class="os2-inflight__field">
+                <label class="os2-field__label" for="os2-import-url">Job posting URL</label>
+                <input class="os2-input" type="url" id="os2-import-url" name="source_url" form="os2-source-form" placeholder="https://…" inputmode="url" value="{{ room.import_url or '' }}">
+              </div>
+              <button type="submit" class="os2-button os2-button--secondary"
+                      form="os2-source-form"
+                      formaction="{{ url_for('opportunity_slate_v2.import_source') }}"
+                      {% if room.recovery_only %}disabled{% endif %}
+                      name="idempotency_key" value="{{ room.import_idempotency_key }}"
+                      data-os2-transfer-submit data-os2-transfer-kind="import">Import</button>
+            </div>
+            <p class="os2-helper">The page must be publicly reachable over https.</p>
+            <div class="os2-transfer-state" role="status" aria-live="polite" data-os2-transfer-state hidden>
+              <span data-os2-transfer-message></span>
+              <button type="button" class="os2-button os2-button--secondary" data-os2-transfer-cancel>Cancel</button>
+            </div>
+            <div data-os2-transfer-error></div>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,15 @@
+PS-OPPORTUNITY-SLATE-002 final repository-wide verification refresh
+Run completed: 2026-08-12T04:54:54Z
+Command: python -m unittest discover
+Tests run: 3466
+Result: FAILED (2 failures, 2 errors, 12 skipped)
+Opportunity Slate failures/errors: 0
+
+The four non-Opportunity-Slate results match the recorded untouched-origin/main Community environment baseline by test and class:
+
+ERROR tests.test_community_maintenance_off_request_path.ScheduledRunnerTests.test_failure_is_content_free_and_returns_failed_status
+ERROR tests.test_community_maintenance_off_request_path.ScheduledRunnerTests.test_hard_deadline_interrupts_a_running_sweep
+FAIL tests.test_community_disposable_sql_proof.CommunityDisposableSqlProofTests.test_private_environment_file_has_owner_only_permissions
+FAIL tests.test_community_maintenance_off_request_path.ScheduledRunnerTests.test_success_runs_each_bounded_sweep_once
+
+The repository-wide result is recorded honestly as not fully green. The Opportunity Slate package suites are independently green at 169/169.
