@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T20:34:00Z",
+  "updated_at": "2026-08-12T22:33:05Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,8 +12,7 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001",
-      "PS-PROFILE-CORE-FOUNDATION-001"
+      "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001"
     ],
     "merge_allowed_for": [
       "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001"
@@ -34,7 +33,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Two disjoint implementation lanes are active. PS-OPPORTUNITY-SLATE-R1-LAUNCH-001 alone is production-capable and may merge and release only frozen candidate 38cc19126bcf85e2b38c8a0ded0aed9304ef8845 after required Azure PR policy; release is limited to the signed-in R1 selector and PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED=true, with no schema, anonymous access, or R2-R5 work. PS-PROFILE-CORE-FOUNDATION-001 is non-production and owns only Profile-local foundation modules, templates, assets, tests, and package evidence. Neither may enter the other's surfaces; Profile integration, schema, app registration, deployment, and enablement remain excluded."
+    "exit_authority": "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001 remains the sole active writer and production-capable lane. PS-PROFILE-CORE-FOUNDATION-001 is paused and preserved at independently accepted candidate aa1fc7e889fa63e31a432074da5c5040698f4aea; it retains no write, merge, cleanup, release, schema, deployment, or enablement authority. Profile production integration requires a fresh activation after shared capacity is released."
   },
   "activation_policy": {
     "enabled": true,
@@ -1337,61 +1336,6 @@
       ],
       "cleanup_contract": "Task-local only: after exact live verification and recoverability checks, remove only this lane's clean merged activation and implementation worktrees and branches behind recovery refs; preserve all unrelated, dirty, unverified, or user-owned material.",
       "sequence": "activation-only PR -> implementation worktree from resulting origin/main -> write preflight -> launch wiring and tests -> local Playwright and full suite -> complete-diff self-review -> exact merge/release grant -> Azure PR and required policy -> squash merge -> production flag configuration -> automatic exact-SHA deployment -> anonymous and authenticated live verification -> completion record and controlled lane close"
-    },
-    {
-      "package": "PS-PROFILE-CORE-FOUNDATION-001",
-      "outcome": "Implement the disjoint non-production D0 Profile Core foundation from the accepted PS-PROFILE-EXPERIENCE-001 architecture and 33-board visual authority: reusable Profile identity and current-chapter models; Profile-local Home, Posts, and About route blueprints and serializers; owner draft, exact Public preview, explicit publish, revision, withdrawal, conflict, and stale-source service contracts; a Community post-reference adapter that never copies Community truth; Profile-local templates, CSS, JavaScript, accessibility behavior, and focused tests; and complete package traceability. Keep the foundation unregistered and unreachable from app startup while Opportunity Slate owns app.py and production capacity. This lane produces a tested integration-ready candidate only; schema, database registration, shared services, deployment, signed-in landing cutover, and public exposure occur later under a separate production-capable Profile integration package.",
-      "branch": "work/2026-08-12-profile-core-foundation-001",
-      "writer": "A dedicated gpt-5.6-terra implementation agent using Max reasoning (Terra Max), coordinated by Root Codex, is the sole writer. Read-only reviewers may inspect security, data, accessibility, mobile behavior, and visual fidelity but may not write these surfaces.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "implementation",
-      "exclusive_domains": [
-        "product:profile:core-foundation"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main d126295ea9268a1cd5adade016477c33ed13880a. Opportunity Slate R1 Launch is the sole other active implementation lane and owns app.py, services/database_service.py, its route/tests, and production capacity. PS-PROFILE-EXPERIENCE-001 is accepted, merged, and closed; it controls D0-D5 and the exact Profile visual authority. Current /petec compatibility remains live and no Profile runtime route is registered.",
-      "writable_surfaces": [
-        "profile_routes.py",
-        "profile_api.py",
-        "services/profile_core_service.py",
-        "services/profile_posts_adapter.py",
-        "templates/profile/",
-        "static/css/profile-experience.css",
-        "static/js/profile-experience.js",
-        "tests/test_profile_core_routes.py",
-        "tests/test_profile_core_api.py",
-        "tests/test_profile_core_service.py",
-        "tests/test_profile_core_security.py",
-        "tests/test_profile_core_accessibility.py",
-        "tests/test_profile_core_visual.py",
-        "docs/initiatives/PS-PROFILE-CORE-FOUNDATION-001/",
-        "artifacts/2026-08-12-profile-core-foundation-001/"
-      ],
-      "exclusions": [
-        "No edit to app.py, auth_routes.py, services/database_service.py, .env.example, SQL Files, migration registry, templates/base.html, shared navigation, global shell, sitemap, metadata, pipeline, deployment configuration, production configuration, or any Opportunity Slate surface.",
-        "No registered or reachable Profile route, navigation link, canonical, index, app default, signed-in landing, feature-flag configuration, schema apply, deployment, or live behavior change.",
-        "No Connections lifecycle or audience, Projects canonical truth, Media or Voice source processing, messaging, public AI, or D1-D4 integration.",
-        "No copied Community, Resume, My Story, Ask Pete, Project, Capture, Voice, Workshop, or private-source truth; adapters may reference only exact authorized source revisions.",
-        "No automatic save, canonicalization, placement, audience widening, publication, withdrawal, deletion, AI authorization, or source-update propagation.",
-        "No merge, production integration, release, cleanup, signed-in cutover, or anonymous/public exposure follows from activation. A later exact production-capable Profile package must integrate, deploy dark, stop for Pete, and enable only the accepted complete Profile."
-      ],
-      "completion_evidence": [
-        "Exact D0 traceability maps every foundation path, controlled visual region, source adapter, and deferred integration dependency.",
-        "Profile-local blueprints remain unregistered and unreachable while all current routes, navigation, auth, sitemap, metadata, Interview, Opportunity, Community, Workshop, Resume, My Story, and Ask Pete behavior remain byte/behavior compatible.",
-        "Service and serializer tests prove authorization-before-retrieval, owner isolation, immutable publication revisions, explicit preview/publish/withdrawal, conflict handling, stale-source truth, and prior-publication preservation without a production database.",
-        "The Posts adapter accepts only exact eligible Community post references and revisions; it never copies or broadens canonical post, reply, question, or conversation truth.",
-        "Home, Posts, and About foundation templates match the exact D0-controlled visual regions across desktop, tablet, 390px, 320px, 200 percent zoom, keyboard, focus, reduced motion, long text, zero, one, typical, many, loading, empty, failure, and unavailable states.",
-        "Focused Profile tests, full relevant regression, static accessibility checks, and exact visual comparison pass; a fresh independent reviewer accepts the exact candidate SHA and every material finding is closed.",
-        "Completion record states integration-ready and non-production only, lists every deferred schema/app/flag/release dependency, and provides the exact next production-capable package boundary."
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-12",
-          "decision": "Pete instructed Codex to keep going until the complete Profile is live and selected Terra Max for implementation. This foundation lane starts disjoint work immediately while Opportunity Slate owns the production slot. After D0-D4 and exact production verification, Pete reviews the candidate; after acceptance, Profile becomes the signed-in landing experience. Anonymous/public visitor exposure remains a separate audience decision."
-        }
-      ],
-      "cleanup_contract": "After verified integration into a later Profile package and formal lane close, remove only this task's clean merged worktree and branches behind recovery references. Preserve every unrelated, paused, dirty, unverified, historical, or user-owned branch, worktree, stash, mockup, handoff, and artifact.",
-      "sequence": "Merge this activation-only control PR; create work/2026-08-12-profile-core-foundation-001 from resulting main; pass write preflight; implement once with Terra Max only inside Profile-local surfaces; validate and independently review the exact candidate; merge only under a later review-bound grant; close this foundation lane; after Opportunity releases production/app/database capacity, activate a separate Profile integration package for schema, app registration, dark deployment, complete D1-D4 integration, Pete review, signed-in enablement, and live verification."
     }
   ],
   "paused_lanes": [
@@ -1575,6 +1519,66 @@
       "pause_reason": "Delivery is complete and merged. The lane is released as paused rather than closed because --intent close cannot represent it: close requires a direction_authority lane with production_capable false, a merge_grant, an unmoved reviewed branch tip, and a single merge commit that introduced every writable surface. This is a production_capable implementation lane that merged its implementation, an owner-reported production fix, a repository-wide deployment-smoke repair, and its completion record. No assertion was weakened and no merge_grant was fabricated to force a close.",
       "resume_contract": "No resume is expected; the outcome is delivered and live. Convert this record to a closing_lanes entry once --intent close can express a multi-merge production_capable implementation lane (see the 2026-08-12 control-plane handoff). To reopen instead, re-activate the package under the ordinary START_HERE activation flow; branch work/2026-08-11-interview-studio-authenticated-experience-001 and tag archive/2026-08-12-interview-studio-authenticated-pre-squash preserve every commit.",
       "preserved_head_sha": "80d9239ef2ec2bcf391a0f4b6f15e3925d7cf1af"
+    },
+    {
+      "package": "PS-PROFILE-CORE-FOUNDATION-001",
+      "outcome": "Implement the disjoint non-production D0 Profile Core foundation from the accepted PS-PROFILE-EXPERIENCE-001 architecture and 33-board visual authority: reusable Profile identity and current-chapter models; Profile-local Home, Posts, and About route blueprints and serializers; owner draft, exact Public preview, explicit publish, revision, withdrawal, conflict, and stale-source service contracts; a Community post-reference adapter that never copies Community truth; Profile-local templates, CSS, JavaScript, accessibility behavior, and focused tests; and complete package traceability. Keep the foundation unregistered and unreachable from app startup while Opportunity Slate owns app.py and production capacity. This lane produces a tested integration-ready candidate only; schema, database registration, shared services, deployment, signed-in landing cutover, and public exposure occur later under a separate production-capable Profile integration package.",
+      "branch": "work/2026-08-12-profile-core-foundation-001",
+      "writer": "A dedicated gpt-5.6-terra implementation agent using Max reasoning (Terra Max), coordinated by Root Codex, is the sole writer. Read-only reviewers may inspect security, data, accessibility, mobile behavior, and visual fidelity but may not write these surfaces.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "product:profile:core-foundation"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main d126295ea9268a1cd5adade016477c33ed13880a. Opportunity Slate R1 Launch is the sole other active implementation lane and owns app.py, services/database_service.py, its route/tests, and production capacity. PS-PROFILE-EXPERIENCE-001 is accepted, merged, and closed; it controls D0-D5 and the exact Profile visual authority. Current /petec compatibility remains live and no Profile runtime route is registered.",
+      "writable_surfaces": [
+        "profile_routes.py",
+        "profile_api.py",
+        "services/profile_core_service.py",
+        "services/profile_posts_adapter.py",
+        "templates/profile/",
+        "static/css/profile-experience.css",
+        "static/js/profile-experience.js",
+        "tests/test_profile_core_routes.py",
+        "tests/test_profile_core_api.py",
+        "tests/test_profile_core_service.py",
+        "tests/test_profile_core_security.py",
+        "tests/test_profile_core_accessibility.py",
+        "tests/test_profile_core_visual.py",
+        "docs/initiatives/PS-PROFILE-CORE-FOUNDATION-001/",
+        "artifacts/2026-08-12-profile-core-foundation-001/"
+      ],
+      "exclusions": [
+        "No edit to app.py, auth_routes.py, services/database_service.py, .env.example, SQL Files, migration registry, templates/base.html, shared navigation, global shell, sitemap, metadata, pipeline, deployment configuration, production configuration, or any Opportunity Slate surface.",
+        "No registered or reachable Profile route, navigation link, canonical, index, app default, signed-in landing, feature-flag configuration, schema apply, deployment, or live behavior change.",
+        "No Connections lifecycle or audience, Projects canonical truth, Media or Voice source processing, messaging, public AI, or D1-D4 integration.",
+        "No copied Community, Resume, My Story, Ask Pete, Project, Capture, Voice, Workshop, or private-source truth; adapters may reference only exact authorized source revisions.",
+        "No automatic save, canonicalization, placement, audience widening, publication, withdrawal, deletion, AI authorization, or source-update propagation.",
+        "No merge, production integration, release, cleanup, signed-in cutover, or anonymous/public exposure follows from activation. A later exact production-capable Profile package must integrate, deploy dark, stop for Pete, and enable only the accepted complete Profile."
+      ],
+      "completion_evidence": [
+        "Exact D0 traceability maps every foundation path, controlled visual region, source adapter, and deferred integration dependency.",
+        "Profile-local blueprints remain unregistered and unreachable while all current routes, navigation, auth, sitemap, metadata, Interview, Opportunity, Community, Workshop, Resume, My Story, and Ask Pete behavior remain byte/behavior compatible.",
+        "Service and serializer tests prove authorization-before-retrieval, owner isolation, immutable publication revisions, explicit preview/publish/withdrawal, conflict handling, stale-source truth, and prior-publication preservation without a production database.",
+        "The Posts adapter accepts only exact eligible Community post references and revisions; it never copies or broadens canonical post, reply, question, or conversation truth.",
+        "Home, Posts, and About foundation templates match the exact D0-controlled visual regions across desktop, tablet, 390px, 320px, 200 percent zoom, keyboard, focus, reduced motion, long text, zero, one, typical, many, loading, empty, failure, and unavailable states.",
+        "Focused Profile tests, full relevant regression, static accessibility checks, and exact visual comparison pass; a fresh independent reviewer accepts the exact candidate SHA and every material finding is closed.",
+        "Completion record states integration-ready and non-production only, lists every deferred schema/app/flag/release dependency, and provides the exact next production-capable package boundary."
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-12",
+          "decision": "Pete instructed Codex to keep going until the complete Profile is live and selected Terra Max for implementation. This foundation lane starts disjoint work immediately while Opportunity Slate owns the production slot. After D0-D4 and exact production verification, Pete reviews the candidate; after acceptance, Profile becomes the signed-in landing experience. Anonymous/public visitor exposure remains a separate audience decision."
+        }
+      ],
+      "cleanup_contract": "After verified integration into a later Profile package and formal lane close, remove only this task's clean merged worktree and branches behind recovery references. Preserve every unrelated, paused, dirty, unverified, historical, or user-owned branch, worktree, stash, mockup, handoff, and artifact.",
+      "sequence": "Merge this activation-only control PR; create work/2026-08-12-profile-core-foundation-001 from resulting main; pass write preflight; implement once with Terra Max only inside Profile-local surfaces; validate and independently review the exact candidate; merge only under a later review-bound grant; close this foundation lane; after Opportunity releases production/app/database capacity, activate a separate Profile integration package for schema, app registration, dark deployment, complete D1-D4 integration, Pete review, signed-in enablement, and live verification.",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-12T22:33:05Z",
+      "pause_reason": "The non-production Profile Core foundation is complete and independently accepted at exact one-commit candidate aa1fc7e889fa63e31a432074da5c5040698f4aea. Focused Profile tests pass 39 of 39, the complete branch diff passes syntax and whitespace checks, and Gitleaks 8.30.1 reports no leaks across all refs after deterministic fixture names were corrected and history was safely rewritten. The foundation remains deliberately unregistered, unmerged, undeployed, and not live; capacity is relinquished so production integration can start later from current main without merging a partial product.",
+      "resume_contract": "Do not resume this foundation branch as an active writer. After Opportunity Slate relinquishes shared app, database, migration, and production capacity, activate a fresh production-capable Profile integration package from then-current origin/main. That package may replay only the exact accepted tree at aa1fc7e889fa63e31a432074da5c5040698f4aea, reconcile it against current main, rerun independent review and CI, and then continue the accepted D0-D5 release train through dark deployment, Pete review, signed-in enablement, and live verification.",
+      "preserved_head_sha": "aa1fc7e889fa63e31a432074da5c5040698f4aea"
     }
   ],
   "workspace_snapshot": {
