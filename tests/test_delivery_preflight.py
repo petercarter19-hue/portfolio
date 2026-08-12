@@ -2453,6 +2453,89 @@ with patch.object(
         )
         return candidate
 
+    @staticmethod
+    def _has_affirmative_owner_merge_decision(lane: dict, package: str) -> bool:
+        decisions = lane.get("owner_decisions")
+        if not isinstance(decisions, list):
+            return False
+        for decision in decisions:
+            if not isinstance(decision, dict):
+                continue
+            text = decision.get("decision")
+            if not isinstance(text, str):
+                continue
+            normalized = " ".join(text.casefold().split())
+            normalized_words = " ".join(
+                part for part in re.split(r"[^a-z0-9]+", text.casefold()) if part
+            )
+            negated = any(
+                phrase in normalized_words
+                for phrase in (
+                    "does not authorize",
+                    "not authorized",
+                    "not grant",
+                    "no merge",
+                    "merge denied",
+                    "merge rejected",
+                    "merge withdrawn",
+                )
+            )
+            structured_grant = bool(
+                not negated
+                and decision.get("authorized_by") == "Pete"
+                and decision.get("status") == "authorized"
+                and decision.get("package") == package
+                and isinstance(decision.get("action"), str)
+                and decision["action"].casefold().startswith("merge")
+                and "merge" in normalized_words
+                and "authority" in normalized_words
+            )
+            recorded_grant = bool(
+                normalized.startswith("merge grant")
+                and "authorizes adding the package to merge_allowed_for"
+                in normalized
+            )
+            if structured_grant or recorded_grant:
+                return True
+        return False
+
+    def _assert_valid_merge_authorities(self, parsed: dict) -> None:
+        mode = parsed["operating_mode"]
+        active_by_package = {
+            lane["package"]: lane for lane in parsed["active_lanes"]
+        }
+        self.assertEqual(
+            len(mode["merge_allowed_for"]),
+            len(set(mode["merge_allowed_for"])),
+        )
+        for package in mode["merge_allowed_for"]:
+            lane = active_by_package.get(package)
+            self.assertIsNotNone(lane)
+            lane_class = lane.get("lane_class")
+            if lane_class == "direction_authority":
+                self.assertFalse(lane.get("production_capable"))
+                grant = lane.get("merge_grant")
+                self.assertIsInstance(grant, dict)
+                grant_errors: list[str] = []
+                self.assertIsNotNone(
+                    _direction_merge_grant(
+                        lane, "checked-in temporary merge authority", grant_errors
+                    )
+                )
+                self.assertEqual([], grant_errors)
+                ledger_updated = datetime.strptime(
+                    parsed["updated_at"], "%Y-%m-%dT%H:%M:%SZ"
+                )
+                grant_created = datetime.strptime(
+                    grant["granted_at"], "%Y-%m-%dT%H:%M:%SZ"
+                )
+                self.assertLessEqual(grant_created, ledger_updated)
+            else:
+                self.assertIn(lane_class, {"implementation", "shared_foundation"})
+                self.assertTrue(
+                    self._has_affirmative_owner_merge_decision(lane, package)
+                )
+
     def test_lane_ledger_has_a_valid_operating_state(self):
         parsed = json.loads(self.path.read_text(encoding="utf-8"))
         self.assertEqual(2, parsed["schema_version"])
@@ -2492,41 +2575,71 @@ with patch.object(
         self.assertEqual(
             1, parsed["activation_policy"]["max_production_capable_lanes"]
         )
-        active_by_package = {lane["package"]: lane for lane in active}
-        self.assertEqual(
-            len(mode["merge_allowed_for"]),
-            len(set(mode["merge_allowed_for"])),
-        )
-        for package in mode["merge_allowed_for"]:
-            lane = active_by_package.get(package)
-            self.assertIsNotNone(lane)
-            if package == OPPORTUNITY_SLATE_PACKAGE:
-                self.assertEqual("implementation", lane.get("lane_class"))
-                self.assertEqual(
-                    [OPPORTUNITY_SLATE_PACKAGE],
-                    mode["release_allowed_for"],
-                )
-            else:
-                self.assertEqual("direction_authority", lane.get("lane_class"))
-            self.assertFalse(lane.get("production_capable"))
-            grant = lane.get("merge_grant")
-            self.assertIsInstance(grant, dict)
-            grant_errors: list[str] = []
-            self.assertIsNotNone(
-                _direction_merge_grant(
-                    lane, "checked-in temporary merge authority", grant_errors
-                )
-            )
-            self.assertEqual([], grant_errors)
-            ledger_updated = datetime.strptime(
-                parsed["updated_at"], "%Y-%m-%dT%H:%M:%SZ"
-            )
-            grant_created = datetime.strptime(
-                grant["granted_at"], "%Y-%m-%dT%H:%M:%SZ"
-            )
-            self.assertLessEqual(grant_created, ledger_updated)
+        self._assert_valid_merge_authorities(parsed)
         self.assertEqual([], mode["cleanup_allowed_for"])
         self.assertTrue(parsed["workspace_snapshot"]["cleanup_authorized"])
+
+    def test_merge_authority_accepts_recorded_implementation_owner_grant(self):
+        parsed = json.loads(self.path.read_text(encoding="utf-8"))
+        implementation = next(
+            lane
+            for lane in parsed["active_lanes"]
+            if lane.get("lane_class") == "implementation"
+        )
+        parsed["operating_mode"]["merge_allowed_for"] = [
+            implementation["package"]
+        ]
+        self._assert_valid_merge_authorities(parsed)
+
+    def test_merge_authority_accepts_opportunity_under_general_class_rule(self):
+        parsed = json.loads(self.path.read_text(encoding="utf-8"))
+        opportunity = copy.deepcopy(
+            next(
+                lane
+                for lane in parsed["closing_lanes"]
+                if lane.get("package") == OPPORTUNITY_SLATE_PACKAGE
+            )
+        )
+        parsed["active_lanes"] = [opportunity]
+        parsed["operating_mode"]["merge_allowed_for"] = [
+            OPPORTUNITY_SLATE_PACKAGE
+        ]
+        self._assert_valid_merge_authorities(parsed)
+
+    def test_merge_authority_rejects_implementation_without_owner_grant(self):
+        parsed = json.loads(self.path.read_text(encoding="utf-8"))
+        implementation = copy.deepcopy(parsed["active_lanes"][0])
+        implementation["owner_decisions"] = [
+            {"date": "2026-08-12", "decision": "Review is complete."}
+        ]
+        parsed["active_lanes"] = [implementation]
+        parsed["operating_mode"]["merge_allowed_for"] = [
+            implementation["package"]
+        ]
+        with self.assertRaises(AssertionError):
+            self._assert_valid_merge_authorities(parsed)
+
+    def test_merge_authority_keeps_direction_grant_contract_strict(self):
+        parsed = json.loads(self.path.read_text(encoding="utf-8"))
+        direction = copy.deepcopy(parsed["active_lanes"][0])
+        direction["lane_class"] = "direction_authority"
+        direction["production_capable"] = False
+        parsed["active_lanes"] = [direction]
+        parsed["operating_mode"]["merge_allowed_for"] = [direction["package"]]
+
+        direction.pop("merge_grant", None)
+        with self.assertRaises(AssertionError):
+            self._assert_valid_merge_authorities(parsed)
+
+        direction["merge_grant"] = {}
+        with self.assertRaises(AssertionError):
+            self._assert_valid_merge_authorities(parsed)
+
+    def test_merge_authority_rejects_package_without_matching_lane(self):
+        parsed = json.loads(self.path.read_text(encoding="utf-8"))
+        parsed["operating_mode"]["merge_allowed_for"] = ["PS-MISSING-LANE-001"]
+        with self.assertRaises(AssertionError):
+            self._assert_valid_merge_authorities(parsed)
 
     def test_closing_lanes_are_historical_and_retain_no_mutation_authority(self):
         for lane in self.ledger["closing_lanes"]:
