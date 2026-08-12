@@ -39,6 +39,10 @@ from control_room_routes import control_room
 from peerslate_api import peerslate_api
 from workshop_routes import workshop
 from opportunity_slate_routes import opportunity_slate
+from opportunity_slate_v2_routes import (
+    PLANNED_RATE_LIMITS as OPPORTUNITY_SLATE_V2_RATE_LIMITS,
+    opportunity_slate_v2,
+)
 # PS-ASK-PETE-DIRECT-001. PLANNED_RATE_LIMITS is the blueprint's own
 # declaration of the budgets it cannot apply itself (this module owns the
 # Limiter); it is read by the post-registration wrapper further down rather
@@ -316,6 +320,15 @@ app.config.update(
     # Launch gate (handoff section 18), not a casual config change.
     PEERSLATE_OPPORTUNITY_SLATE_ENABLED=(
         os.environ.get('PEERSLATE_OPPORTUNITY_SLATE_ENABLED', 'false').lower() == 'true'
+    ),
+    # PS-OPPORTUNITY-SLATE-R1-LAUNCH-001: signed-in-only replacement at the
+    # canonical route. Startup registers exactly one Opportunity Slate
+    # blueprint. False therefore remains an immediate, configuration-only
+    # rollback to the legacy experience; an App Service setting change causes
+    # the required process restart.
+    PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED=(
+        os.environ.get('PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED', 'false').lower()
+        == 'true'
     ),
     # PS-ASK-PETE-AI-001 backend slice: the structured, source-grounded
     # response path is dormant by default. False preserves the established
@@ -790,7 +803,10 @@ app.register_blueprint(peerslate_api)
 app.register_blueprint(workshop)
 app.register_blueprint(community_api)
 app.register_blueprint(community_routes)
-app.register_blueprint(opportunity_slate)
+if app.config['PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED']:
+    app.register_blueprint(opportunity_slate_v2)
+else:
+    app.register_blueprint(opportunity_slate)
 # PS-ASK-PETE-DIRECT-001. Registered unconditionally, like every blueprint
 # above it: the gate belongs in the blueprint's own before_request, not here.
 # That is what makes "flag off" mean a 404 from a route that EXISTS, rather
@@ -927,7 +943,7 @@ for _direct_endpoint, _direct_limit in PLANNED_RATE_LIMITS.items():
 # anonymous AI actions onto their own `public_propose` endpoint: one shared
 # endpoint would have had to choose between throttling a visitor's typing and
 # leaving the model calls unbounded.
-for _oppslate_rate_limited_endpoint, _oppslate_rate_limit in (
+_legacy_oppslate_rate_limits = (
     ('opportunity_slate.set_source', '30 per minute'),
     ('opportunity_slate.correct_source', '30 per minute'),
     ('opportunity_slate.confirm_source', '30 per minute'),
@@ -966,6 +982,14 @@ for _oppslate_rate_limited_endpoint, _oppslate_rate_limit in (
     # routes above on the tighter tier.
     ('opportunity_slate.upload_source', '6 per minute'),
     ('opportunity_slate.import_source', '6 per minute'),
+)
+_active_oppslate_rate_limits = (
+    OPPORTUNITY_SLATE_V2_RATE_LIMITS.items()
+    if app.config['PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED']
+    else _legacy_oppslate_rate_limits
+)
+for _oppslate_rate_limited_endpoint, _oppslate_rate_limit in (
+    _active_oppslate_rate_limits
 ):
     app.view_functions[_oppslate_rate_limited_endpoint] = limiter.limit(
         _oppslate_rate_limit
@@ -1035,6 +1059,7 @@ def prevent_stale_html(response):
         # own after_request, so the guarantee does not depend on this set
         # staying correct.
         'opportunity_slate',
+        'opportunity_slate_v2',
         }
     ):
         # These blueprints and identity-resolved app routes return private or

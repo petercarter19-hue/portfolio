@@ -2,19 +2,22 @@
 Opportunity Slate REPLACEMENT room (shell + stage-1 intake + stage-2
 captured-source review).
 
-The production application never registers ``opportunity_slate_v2`` in R1
-(``app.py`` belongs to another lane, and the flag stays off everywhere), so
-route tests build their own throwaway Flask app that registers the
-blueprint directly — mirroring ``tests/ask_pete_direct/support.py``, the
-established pattern for a blueprint app.py does not register. The database
-is always a recording fake at the ``database_service`` seam; no test here
-opens a connection, and none needs one. This keeps the suite fast and free
-of any live-database requirement, matching how
+The production application registers exactly one Opportunity Slate blueprint:
+the signed-in replacement when ``PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED`` is
+true, otherwise the legacy rollback. Focused route tests still build their own
+throwaway Flask app so the database is always a recording fake at the
+``database_service`` seam; no test here opens a connection, and none needs
+one. This keeps the suite fast and free of any live-database requirement,
+matching how
 ``tests/test_opportunity_slate.py`` unit-tests
 ``services/opportunity_slate_service.py`` with a ``MagicMock`` database.
 """
 
+import json
+import os
 import re
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -804,6 +807,70 @@ class RateLimitPlanTests(unittest.TestCase):
         for endpoint, budget in routes.PLANNED_RATE_LIMITS.items():
             with self.subTest(endpoint=endpoint):
                 self.assertEqual("30 per minute", budget)
+
+
+class ProductionRegistrationTests(unittest.TestCase):
+    """Exercise the real app startup selector in a fresh interpreter."""
+
+    def test_flag_true_registers_only_v2_with_navigation_and_all_rate_limits(self):
+        script = """
+import json
+from app import app
+context = {}
+with app.test_request_context('/'):
+    app.update_template_context(context)
+anonymous = app.test_client().get('/opportunity-slate')
+result = {
+    'blueprints': sorted(app.blueprints),
+    'opportunity_endpoints': sorted(
+        name for name in app.view_functions if name.startswith('opportunity_slate')
+    ),
+    'navigation_url': context.get('opportunity_slate_url'),
+    'anonymous_status': anonymous.status_code,
+    'anonymous_location': anonymous.headers.get('Location'),
+    'anonymous_cache': anonymous.headers.get('Cache-Control'),
+    'anonymous_robots': anonymous.headers.get('X-Robots-Tag'),
+}
+print('OPPSLATE_SELECTOR=' + json.dumps(result, sort_keys=True))
+"""
+        env = os.environ.copy()
+        env.update(
+            {
+                "ANTHROPIC_API_KEY": "test-placeholder-key",
+                "PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED": "true",
+            }
+        )
+        completed = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=True,
+        )
+        line = next(
+            value
+            for value in completed.stdout.splitlines()
+            if value.startswith("OPPSLATE_SELECTOR=")
+        )
+        result = json.loads(line.removeprefix("OPPSLATE_SELECTOR="))
+        self.assertIn("opportunity_slate_v2", result["blueprints"])
+        self.assertNotIn("opportunity_slate", result["blueprints"])
+        self.assertEqual("/opportunity-slate", result["navigation_url"])
+        self.assertEqual(302, result["anonymous_status"])
+        self.assertIn(
+            "/auth/sign-in?return_to=/opportunity-slate",
+            result["anonymous_location"],
+        )
+        self.assertEqual("private, no-store", result["anonymous_cache"])
+        self.assertEqual(
+            "noindex, nofollow, noarchive", result["anonymous_robots"]
+        )
+        self.assertEqual(
+            set(routes.PLANNED_RATE_LIMITS),
+            set(result["opportunity_endpoints"]) - {"opportunity_slate_v2.room"},
+        )
 
     def test_no_parallel_limiter_was_invented_in_this_module(self):
         """No new dependency, no second unrelated counter — app.py owns

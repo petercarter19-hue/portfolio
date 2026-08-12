@@ -190,6 +190,12 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_GetOpportunitySavedSlateForOwner",
             "usp_SaveOpportunitySlateForOwner",
         }
+        # PS-OPPORTUNITY-SLATE-002 R1: member-reviewed identity for the
+        # signed-in replacement's existing owner-scoped working session.
+        oppslate_r1 = {
+            "usp_GetOpportunitySourceIdentityForOwner",
+            "usp_SaveOpportunitySourceIdentityForOwner",
+        }
         # Capture, Moment, Placement, Voice, Photo, Journal, Board, Slate
         # Space, Challenges, and account bootstrap — everything else the
         # non-Community, non-Opportunity-Slate product surface calls.
@@ -325,6 +331,7 @@ class DatabaseServiceTests(unittest.TestCase):
             | oppslate_os2
             | oppslate_os3
             | oppslate_os4
+            | oppslate_r1
             | general
             | ask_pete_direct
             | community
@@ -338,12 +345,13 @@ class DatabaseServiceTests(unittest.TestCase):
             oppslate_os2,
             oppslate_os3,
             oppslate_os4,
+            oppslate_r1,
             general,
             ask_pete_direct,
             community,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 134)
+        self.assertEqual(len(expected), 136)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_photo_procedures_are_explicitly_allowlisted(self):

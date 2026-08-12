@@ -8,16 +8,12 @@ navigation, access), 4.1-4.2 (visual lock -> contract map), 6.1 (source
 capture), 6.6 (working-opportunity lifetime), 6.10 (authorization
 boundaries), 6.11 (cancellation), 9 (route contract).
 
-**This blueprint is never registered by app.py in R1.** Section 9's
-target design has app.py register exactly one of (legacy blueprint, v2
-blueprint) at ``/opportunity-slate`` based on
-``PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED``; wiring that in is explicitly out
-of this slice's lane (another active lane owns app.py). Every route below
-still re-checks the flag internally, so the module is correct and testable
-standalone today and requires no route-body change when a later slice wires
-the registration. Tests build their own throwaway Flask app that registers
-this blueprint directly (mirrors ``tests/ask_pete_direct/support.py``, the
-established pattern for a blueprint app.py does not register).
+**app.py registers exactly one Opportunity Slate blueprint.** When
+``PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED`` is true this blueprint owns the
+canonical ``/opportunity-slate`` route; false registers the legacy blueprint
+as the configuration-only rollback. Every route below also re-checks the
+flag, so a misconfigured request fails closed. Focused tests continue to use
+a throwaway Flask app for precise route-state assertions.
 
 **Sign-in only, no anonymous mode.** Owner decision 2026-08-11: the
 replacement drops the legacy room's dual-mode (anonymous + member) design
@@ -50,17 +46,17 @@ It cannot be wired from this file. ``app.py`` owns the ``Limiter`` instance,
 and the house idiom is to wrap each view function AFTER blueprint registration
 (``app.py``'s ``community_api`` / ``ask_pete_direct`` / legacy Opportunity
 Slate loops). ``PLANNED_RATE_LIMITS`` below states the budget for
-every mutation on this blueprint, and the future registration leg iterates
-that mapping rather than restating it, so the declaration and the
+every mutation on this blueprint, and app.py's mutually exclusive registration
+leg iterates that mapping rather than restating it, so the declaration and the
 application cannot drift. A test asserts the mapping covers every
 state-changing endpoint here (mirrors
 ``tests.ask_pete_direct.test_endpoint.RateLimitPlanTests``), so a route added
-later without a budget fails the suite instead of shipping unbounded the
-moment a later slice wires registration. No parallel limiter is invented in
+later without a budget fails the suite instead of shipping unbounded. No
+parallel limiter is invented in
 this file — a second, unrelated counter would be a different control with
-different behaviour that nobody operates. Today the blueprint is both
-unregistered and flag-default-false, so there is no live exposure either way
-(independent review finding).
+different behaviour that nobody operates. The flag defaults false so the
+legacy blueprint remains the fail-safe startup selection until a governed
+production setting enables this signed-in replacement.
 """
 
 from types import MappingProxyType
@@ -97,8 +93,8 @@ from services.opportunity_source_intake_service import (
 opportunity_slate_v2 = Blueprint("opportunity_slate_v2", __name__)
 
 # Section 3: "Route stays /opportunity-slate." This blueprint is not
-# registered anywhere in R1, so no path collision with the live legacy
-# blueprint is possible today; the name is forward-looking for R5.
+# registered mutually exclusively with the legacy blueprint, so the canonical
+# path never has two owners in one process.
 ROOM_PATH = "/opportunity-slate"
 
 STEP_REPLACE = "replace"
@@ -168,7 +164,7 @@ _NOTICE_COPY = {
     ),
 }
 
-# The budgets the future app.py registration leg must apply with the same
+# The budgets app.py's registration leg applies with the same
 # post-registration limiter-wrapper idiom app.py already uses for
 # community_api / ask_pete_direct / the legacy Opportunity Slate blueprint.
 # R1 has no AI-calling route (architecture section 7 is entirely R2+), so
@@ -187,6 +183,13 @@ PLANNED_RATE_LIMITS = MappingProxyType(
         "opportunity_slate_v2.delete_source": "30 per minute",
     }
 )
+
+
+@opportunity_slate_v2.app_context_processor
+def opportunity_slate_navigation_state():
+    """Keep base.html's canonical Opportunity Slate link available globally."""
+
+    return {"opportunity_slate_url": url_for("opportunity_slate_v2.room")}
 
 
 def _field_error(heading, code, *, truth=None, messages=None):
