@@ -85,6 +85,15 @@ tree reached current main, removes every authority entry, and preserves an
 inert historical record. Runtime, deployment, release, schema, and production
 rights remain outside this path.
 
+A dark implementation may cross the same gates only through a code-controlled
+exact-candidate release profile. The profile binds Pete's post-review approval,
+the pushed SHA, independent review, PR and CI result, and one explicit release
+scope. `release_allowed_for` remains the single active release mutex even when
+another lane retains the production-capable build reservation. For the approved
+Opportunity Slate R1 profile, that scope is dark application deployment plus
+the additive PS-OPPSLATE-004 apply; public registration/enablement, `app.py`,
+configuration, rollback, destructive data work, and R2-R5 are excluded.
+
 If the reviewed package has older control code, it stays frozen. A separate
 clean verifier at current Azure `main` runs the merge check against the
 candidate's absolute registered worktree path. The two worktrees must belong

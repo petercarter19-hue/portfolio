@@ -110,7 +110,13 @@ binds the exact pushed/reviewed SHA plus review evidence; it may not append
 authority. Merge tolerates only non-overlapping control changes that entered
 main after review. Close proves the exact package tree is on current main,
 removes every authority-list entry, and archives the immutable lane record.
-This lifecycle is unavailable to implementation or production-capable lanes.
+
+An implementation candidate may use that lifecycle only when validator code
+registers its exact package, branch, SHA, review, PR/CI, and release scope. Its
+grant records Pete's approval and may add merge plus the sole serialized
+`release_allowed_for` entry. Scope is dark deployment and the named additive
+migration only—never public enablement, app registration, configuration, later
+slices, rollback, destructive schema work, or another candidate.
 When the candidate predates the control repair, keep its reviewed SHA and
 worktree unchanged. Run the current `origin/main` script from a distinct clean
 verifier with `--intent merge --fetch --require-clean --candidate-worktree

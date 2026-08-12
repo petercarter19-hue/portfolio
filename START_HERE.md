@@ -69,7 +69,7 @@ python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent pause --fet
 Merge only the control record. Paused work consumes no slot and resumes only
 through fresh activation.
 
-A completed non-production direction lane uses a clean grant branch:
+A reviewed candidate uses a clean grant branch:
 
 ```bash
 python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent grant --fetch --require-clean
@@ -82,10 +82,12 @@ clean current-main verifier:
 python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent merge --fetch --require-clean --candidate-worktree <ABSOLUTE-FROZEN-WORKTREE>
 ```
 
-The candidate must be a clean sibling sharing the Git directory and Azure
-origin. Never alter it or use its old validator. Preserve its remote branch
-through close; clean it up afterward. Close removes authority. This grants no
-runtime or production rights.
+The clean candidate must share the Git directory and Azure origin. Never alter
+it or use its old validator; preserve its remote branch through close. A
+direction grant is merge-only. A code-controlled implementation profile binds
+the approval, SHA, review, PR/CI, dark boundary, and additive migration through
+`release_allowed_for`. It excludes public enablement, `app.py`, configuration,
+later work, and destructive schema. Close removes authority.
 
 | Path | Use for | Read next |
 |---|---|---|

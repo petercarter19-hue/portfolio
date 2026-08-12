@@ -16,6 +16,12 @@ from scripts.delivery_preflight import (
     BOOTSTRAP_CONTROL_REPAIR,
     DIRECTION_MERGE_CONTROL_PATHS,
     DIRECTION_MERGE_FOLLOWUP_PATHS,
+    IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR,
+    OPPORTUNITY_SLATE_BRANCH,
+    OPPORTUNITY_SLATE_PACKAGE,
+    OPPORTUNITY_SLATE_RELEASE_SCOPE,
+    OPPORTUNITY_SLATE_REVIEWED_SHA,
+    OPPORTUNITY_SLATE_REVIEW_ATTESTATION,
     WRITER_TRANSFER_PREFLIGHT_REPAIR,
     GRANT_CLOSE_PREFLIGHT_REPAIR,
     GRANT_CLOSE_FIXTURE_FOLLOWUP,
@@ -30,6 +36,7 @@ from scripts.delivery_preflight import (
     _direction_merge_grant,
     _exact_direction_grant_delta,
     _exact_grant_close_fixture_followup_delta,
+    _exact_implementation_release_preflight_repair_matches,
     _exact_profile_close_fixture_followup_delta,
     _exact_profile_close_baseline_fixture_followup_delta,
     _fetch_exact_origin_refs,
@@ -375,6 +382,54 @@ class DeliveryPreflightTests(unittest.TestCase):
             "review_evidence_paths": [path],
         }
 
+    def _opportunity_origin(self) -> tuple[dict, dict]:
+        origin = copy.deepcopy(self.ledger)
+        lane = next(
+            item for item in origin["active_lanes"]
+            if item.get("package") == OPPORTUNITY_SLATE_PACKAGE
+        )
+        lane.pop("merge_grant", None)
+        origin["operating_mode"]["merge_allowed_for"] = []
+        origin["operating_mode"]["release_allowed_for"] = []
+        origin["updated_at"] = "2026-08-12T11:35:08Z"
+        return origin, lane
+
+    def _opportunity_decision(self) -> dict:
+        return {
+            "date": "2026-08-12",
+            "decision": "dark_implementation_merge_and_release_authority",
+            "authorized_by": "Pete",
+            "action": "merge_deploy_apply_additive_schema",
+            "status": "authorized",
+            "scope": "dark_R1_and_PS-OPPSLATE-004_only",
+            "package": OPPORTUNITY_SLATE_PACKAGE,
+            "reviewed_remote_sha": OPPORTUNITY_SLATE_REVIEWED_SHA,
+            "pull_request": 375,
+            "ci_build": 807,
+            "public_enablement": "excluded",
+            "verbatim_approval": "You're approved.",
+        }
+
+    def _opportunity_grant_record(
+        self, lane: dict, decision_index: int, granted_at: str
+    ) -> dict:
+        decision = lane["owner_decisions"][decision_index]
+        return {
+            "authorized_by": "Pete",
+            "authority_decision_index": decision_index,
+            "authority_decision_sha256": _canonical_sha256(decision),
+            "independent_review": copy.deepcopy(
+                OPPORTUNITY_SLATE_REVIEW_ATTESTATION
+            ),
+            "reviewed_remote_sha": OPPORTUNITY_SLATE_REVIEWED_SHA,
+            "granted_at": granted_at,
+            "review_result": "pass",
+            "review_evidence_paths": [
+                OPPORTUNITY_SLATE_REVIEW_ATTESTATION["evidence_path"]
+            ],
+            "release_scope": copy.deepcopy(OPPORTUNITY_SLATE_RELEASE_SCOPE),
+        }
+
     def _review_evidence_facts(self, grant: dict) -> dict:
         independent = grant["independent_review"]["reviewed_sha"]
         path = grant["review_evidence_paths"][0]
@@ -556,6 +611,75 @@ class DeliveryPreflightTests(unittest.TestCase):
             candidate_baseline=self.baseline, origin_baseline=self.baseline,
         )
         self.assertTrue(any("evidence path" in error for error in missing_errors))
+
+    def test_opportunity_grant_binds_owner_review_ci_and_dark_release(self):
+        origin, lane = self._opportunity_origin()
+        candidate = copy.deepcopy(origin)
+        candidate_lane = next(
+            item for item in candidate["active_lanes"]
+            if item.get("package") == OPPORTUNITY_SLATE_PACKAGE
+        )
+        candidate_lane["owner_decisions"].append(self._opportunity_decision())
+        decision_index = len(candidate_lane["owner_decisions"]) - 1
+        granted_at = "2026-08-12T12:00:00Z"
+        candidate_lane["merge_grant"] = self._opportunity_grant_record(
+            candidate_lane, decision_index, granted_at
+        )
+        candidate["operating_mode"]["merge_allowed_for"] = [
+            OPPORTUNITY_SLATE_PACKAGE
+        ]
+        candidate["operating_mode"]["release_allowed_for"] = [
+            OPPORTUNITY_SLATE_PACKAGE
+        ]
+        candidate["updated_at"] = granted_at
+        grant_facts = facts(
+            branch="work/2026-08-12-delivery-grant-oppslate-r1",
+            ahead=1,
+            changed_paths=["docs/governance/CURRENT_LANES.json"],
+            grant_target_remote_sha=OPPORTUNITY_SLATE_REVIEWED_SHA,
+            **self._review_evidence_facts(candidate_lane["merge_grant"]),
+        )
+        errors, _ = evaluate_policy(
+            candidate, grant_facts, OPPORTUNITY_SLATE_PACKAGE, "grant",
+            require_clean=True, origin_ledger=origin,
+            candidate_baseline=self.baseline, origin_baseline=self.baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(
+            _exact_direction_grant_delta(
+                origin, candidate, OPPORTUNITY_SLATE_PACKAGE
+            )
+        )
+
+        widened = copy.deepcopy(candidate)
+        widened_lane = next(
+            item for item in widened["active_lanes"]
+            if item.get("package") == OPPORTUNITY_SLATE_PACKAGE
+        )
+        widened_lane["merge_grant"]["release_scope"][
+            "public_enablement"
+        ] = True
+        widened_errors, _ = evaluate_policy(
+            widened, grant_facts, OPPORTUNITY_SLATE_PACKAGE, "grant",
+            require_clean=True, origin_ledger=origin,
+            candidate_baseline=self.baseline, origin_baseline=self.baseline,
+        )
+        self.assertTrue(
+            any("release_scope" in error for error in widened_errors)
+        )
+
+        occupied = copy.deepcopy(origin)
+        occupied["operating_mode"]["release_allowed_for"] = [
+            "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001"
+        ]
+        occupied_errors, _ = evaluate_policy(
+            candidate, grant_facts, OPPORTUNITY_SLATE_PACKAGE, "grant",
+            require_clean=True, origin_ledger=occupied,
+            candidate_baseline=self.baseline, origin_baseline=self.baseline,
+        )
+        self.assertTrue(
+            any("serialized release slot" in error for error in occupied_errors)
+        )
 
     def test_merge_requires_origin_grant_exact_head_remote_and_nonoverlap(self):
         origin, lane = self._direction_origin()
@@ -1288,6 +1412,50 @@ with patch.object(
                     any("updated_at" in error for error in stale_errors)
                 )
 
+    def test_implementation_release_repair_is_exact_and_grants_nothing(self):
+        repair = IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR
+        origin = load_ledger_at_ref(repair["origin_main"])
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-12T11:35:08Z"
+        candidate["implementation_release_preflight_repair"] = copy.deepcopy(
+            repair
+        )
+        baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        exact_facts = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=repair["allowed_surfaces"],
+        )
+        self.assertTrue(
+            _exact_implementation_release_preflight_repair_matches(
+                candidate, exact_facts, repair["package"]
+            )
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate, exact_facts, require_clean=True, origin=origin,
+            candidate_baseline=baseline, origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(
+            any("implementation-release" in warning for warning in warnings)
+        )
+        self.assertEqual(
+            origin["operating_mode"], candidate["operating_mode"]
+        )
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+
+        forged = copy.deepcopy(candidate)
+        forged["implementation_release_preflight_repair"][
+            "origin_main"
+        ] = "0" * 40
+        forged_errors, _ = self._evaluate_activation(
+            forged, exact_facts, require_clean=True, origin=origin,
+            candidate_baseline=baseline, origin_baseline=baseline,
+        )
+        self.assertTrue(forged_errors)
+
     def test_future_direction_requires_registered_independent_review(self):
         origin, lane, reviewed = self._future_direction_origin()
         candidate = copy.deepcopy(origin)
@@ -1978,7 +2146,14 @@ with patch.object(
         for package in mode["merge_allowed_for"]:
             lane = active_by_package.get(package)
             self.assertIsNotNone(lane)
-            self.assertEqual("direction_authority", lane.get("lane_class"))
+            if package == OPPORTUNITY_SLATE_PACKAGE:
+                self.assertEqual("implementation", lane.get("lane_class"))
+                self.assertEqual(
+                    [OPPORTUNITY_SLATE_PACKAGE],
+                    mode["release_allowed_for"],
+                )
+            else:
+                self.assertEqual("direction_authority", lane.get("lane_class"))
             self.assertFalse(lane.get("production_capable"))
             grant = lane.get("merge_grant")
             self.assertIsInstance(grant, dict)

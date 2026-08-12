@@ -140,6 +140,50 @@ WRITER_TRANSFER_PREFLIGHT_REPAIR = {
     ),
 }
 
+# Pete's 2026-08-12 approval of the exact Opportunity Slate R1 candidate
+# exposed the implementation counterpart of the direction-only lifecycle gap:
+# the standing grant path could not bind an independently reviewed dark
+# implementation to both merge and a separately serialized additive schema
+# release.  This one-time bootstrap installs that fail-closed path.  It does
+# not itself grant Opportunity Slate (or any other package) merge, release,
+# schema, deployment, configuration, or public-enablement authority.
+IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": (
+        "work/2026-08-12-delivery-activation-"
+        "oppslate-release-preflight-repair"
+    ),
+    "origin_main": "5378be89caa793037d4cadecb06fd26dae2db13d",
+    "allowed_surfaces": [
+        "START_HERE.md",
+        "docs/AI_WORKFLOW.md",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "reason": (
+        "Pete explicitly authorized the Opportunity Slate preflight repair, "
+        "reviewed the local R1 experience, and on 2026-08-12 said 'You're "
+        "approved.' The exact independently approved implementation remains "
+        "dark and app.py remains untouched, but its additive PS-OPPSLATE-004 "
+        "production apply requires a review-bound, serialized release grant "
+        "that the direction-only control cannot represent. This repair adds "
+        "that fail-closed exact-candidate path without changing any active "
+        "lane, authority list, product code, schema, pipeline, deployment, "
+        "configuration, production data, or live behavior."
+    ),
+    "verification_contract": (
+        "This is audit evidence, not self-granted package authority. The "
+        "preflight recognizes it only when the entire record equals the "
+        "validator's hard-coded record and Git proves the exact branch, exact "
+        "origin/main base, exactly one commit, and exact six changed paths. A "
+        "later branch, base, altered record, product-authority change, or "
+        "public-enablement request cannot reuse it."
+    ),
+}
+
 # Pete's 2026-08-11 end-to-end Profile direction assignment exposed a narrow
 # lifecycle gap: a completed, independently reviewed direction-authority lane
 # had no fail-closed way to receive merge authority or to close after its exact
@@ -443,7 +487,67 @@ PROFILE_DIRECTION_REVIEW_ATTESTATION["attestation_sha256"] = (
     "573a2827e4d4a639f40f5d7e70d81165f5ec35c08b8d74fd24728e2bfb5f5ead"
 )
 
-DIRECTION_REVIEW_ATTESTATION_FIELDS = frozenset(
+OPPORTUNITY_SLATE_PACKAGE = "PS-OPPORTUNITY-SLATE-002"
+OPPORTUNITY_SLATE_BRANCH = "work/2026-08-11-opportunity-slate-v2-r1"
+OPPORTUNITY_SLATE_REVIEWED_SHA = (
+    "550c7ca87561a8279d571738c5832f3a70fe9bec"
+)
+OPPORTUNITY_SLATE_CANDIDATE_BASE = (
+    "f745b39b72d2c8e5a3595f88d7f9524d8d8e41cf"
+)
+OPPORTUNITY_SLATE_RELEASE_CONTROL_BASE = (
+    IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR["origin_main"]
+)
+OPPORTUNITY_SLATE_RELEASE_SCOPE = {
+    "pull_request": 375,
+    "ci_build": 807,
+    "application_action": "merge_and_dark_deploy",
+    "schema_action": "apply",
+    "schema_migration": "PS-OPPSLATE-004",
+    "public_enablement": False,
+    "app_py_change": False,
+    "production_configuration_change": False,
+    "excluded_later_work": "R2_through_R5",
+}
+OPPORTUNITY_SLATE_REVIEW_ATTESTATION = {
+    "reviewer_task": "/root/oppslate_independent_review",
+    "reviewer_mode": "independent_read_only_non_writer",
+    "reviewed_sha": OPPORTUNITY_SLATE_REVIEWED_SHA,
+    "reviewed_branch": OPPORTUNITY_SLATE_BRANCH,
+    "verdict": "APPROVED",
+    "verdict_text": (
+        "APPROVED exact 550c7ca87561a8279d571738c5832f3a70fe9bec; "
+        "0 Blocking / 0 Important / 0 Minor."
+    ),
+    "verdict_sha256": (
+        "07c5ba3bfe768352b0c5ecee8176821cb28cb0cf9e2f66de7362bba0cfb4ac26"
+    ),
+    "basis": [
+        "full_tree_at_550c7ca87561a8279d571738c5832f3a70fe9bec",
+        (
+            "complete_diff_f745b39b72d2c8e5a3595f88d7f9524d8d8e41cf_to_"
+            "550c7ca87561a8279d571738c5832f3a70fe9bec"
+        ),
+        "focused_169_of_169_and_full_3466_reconciled",
+        "sql_engine_gate_and_exact_42_object_rollback_proof_reconciled",
+    ],
+    "scope": "protected_dark_merge_deploy_and_additive_schema_release",
+    "exclusions": "public_enablement_app_registration_r2_plus",
+    "evidence_path": (
+        "docs/initiatives/PS-OPPORTUNITY-SLATE-002/COMPLETION_RECORD_R1.md"
+    ),
+    "evidence_git_blob_sha": "047189621713585822f3507335014be44cc2c347",
+    "evidence_bytes_sha256": (
+        "bf3318c5a2645feb1e89dcec79aaa3f0aa2ff9dc4899e2ff3ce1ea1e7aca98d4"
+    ),
+    "received_by": "Root Codex program manager",
+    "received_date": "2026-08-12",
+}
+OPPORTUNITY_SLATE_REVIEW_ATTESTATION["attestation_sha256"] = (
+    "6e5e7482afb116c03dbfa20bc2b282cb27eb3f529b956ba3b8a741de668de25d"
+)
+
+REVIEW_ATTESTATION_FIELDS = frozenset(
     PROFILE_DIRECTION_REVIEW_ATTESTATION
 )
 
@@ -2136,6 +2240,24 @@ def _exact_writer_transfer_preflight_repair_matches(
     )
 
 
+def _exact_implementation_release_preflight_repair_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("implementation_release_preflight_repair")
+        == IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR
+        and package_id == IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR["package"]
+        and facts.get("branch")
+        == IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR["branch"]
+        and facts.get("origin_main")
+        == IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+    )
+
+
 def _exact_grant_close_preflight_repair_matches(
     ledger: dict,
     facts: dict,
@@ -2214,6 +2336,30 @@ def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
             and _canonical_sha256(decision)
             == PROFILE_DIRECTION_OWNER_DECISION_SHA256
         )
+    if package_id == OPPORTUNITY_SLATE_PACKAGE:
+        expected_fields = {
+            "date", "decision", "authorized_by", "action", "status",
+            "scope", "package", "reviewed_remote_sha", "pull_request",
+            "ci_build", "public_enablement", "verbatim_approval",
+        }
+        return bool(
+            isinstance(decision, dict)
+            and set(decision) == expected_fields
+            and decision.get("date") == "2026-08-12"
+            and decision.get("decision")
+            == "dark_implementation_merge_and_release_authority"
+            and decision.get("authorized_by") == "Pete"
+            and decision.get("action") == "merge_deploy_apply_additive_schema"
+            and decision.get("status") == "authorized"
+            and decision.get("scope") == "dark_R1_and_PS-OPPSLATE-004_only"
+            and decision.get("package") == OPPORTUNITY_SLATE_PACKAGE
+            and decision.get("reviewed_remote_sha")
+            == OPPORTUNITY_SLATE_REVIEWED_SHA
+            and decision.get("pull_request") == 375
+            and decision.get("ci_build") == 807
+            and decision.get("public_enablement") == "excluded"
+            and decision.get("verbatim_approval") == "You're approved."
+        )
     expected_fields = {
         "date",
         "decision",
@@ -2241,12 +2387,21 @@ def _direction_merge_grant(
     label: str,
     errors: list[str],
 ) -> dict | None:
-    """Validate an exact-review-bound merge grant on a direction lane."""
+    """Validate a code-attested exact-review-bound candidate grant."""
     if not isinstance(lane, dict):
         errors.append(f"{label} must be an object")
         return None
-    if lane.get("lane_class") != "direction_authority":
-        errors.append(f"{label} is available only to direction_authority lanes")
+    is_direction = lane.get("lane_class") == "direction_authority"
+    is_opportunity_release = bool(
+        lane.get("package") == OPPORTUNITY_SLATE_PACKAGE
+        and lane.get("lane_class") == "implementation"
+        and lane.get("branch") == OPPORTUNITY_SLATE_BRANCH
+    )
+    if not is_direction and not is_opportunity_release:
+        errors.append(
+            f"{label} is available only to direction_authority lanes or the "
+            "code-controlled Opportunity Slate dark-release lane"
+        )
     if lane.get("production_capable") is not False:
         errors.append(f"{label} requires production_capable false")
     grant = lane.get("merge_grant")
@@ -2263,6 +2418,8 @@ def _direction_merge_grant(
         "review_result",
         "review_evidence_paths",
     }
+    if is_opportunity_release:
+        expected_fields.add("release_scope")
     if set(grant) != expected_fields:
         errors.append(
             f"{label} merge_grant must contain exactly: "
@@ -2298,15 +2455,14 @@ def _direction_merge_grant(
     if not isinstance(review, dict):
         errors.append(f"{label} independent_review must be an object")
     else:
-        if set(review) != DIRECTION_REVIEW_ATTESTATION_FIELDS:
+        if set(review) != REVIEW_ATTESTATION_FIELDS:
             errors.append(
                 f"{label} independent_review must contain exactly the controlled attestation fields"
             )
-        expected_review = (
-            PROFILE_DIRECTION_REVIEW_ATTESTATION
-            if lane.get("package") == "PS-PROFILE-EXPERIENCE-001"
-            else None
-        )
+        expected_review = {
+            "PS-PROFILE-EXPERIENCE-001": PROFILE_DIRECTION_REVIEW_ATTESTATION,
+            OPPORTUNITY_SLATE_PACKAGE: OPPORTUNITY_SLATE_REVIEW_ATTESTATION,
+        }.get(lane.get("package"))
         if expected_review is None:
             errors.append(
                 f"{label} no code-controlled independent review attestation "
@@ -2327,14 +2483,28 @@ def _direction_merge_grant(
             errors.append(
                 f"{label} independent_review reviewed_sha must equal reviewed_remote_sha"
             )
-        if review.get("verdict") != "PASS" or review.get("scope") != "direction_package_acceptance_and_merge_only":
+        expected_review_verdict = "APPROVED" if is_opportunity_release else "PASS"
+        expected_review_scope = (
+            "protected_dark_merge_deploy_and_additive_schema_release"
+            if is_opportunity_release
+            else "direction_package_acceptance_and_merge_only"
+        )
+        if (
+            review.get("verdict") != expected_review_verdict
+            or review.get("scope") != expected_review_scope
+        ):
             errors.append(f"{label} independent_review scope or verdict is invalid")
         reviewer_task = review.get("reviewer_task")
         if not isinstance(reviewer_task, str) or not re.fullmatch(
             r"/root(?:/[a-z0-9_]+)+", reviewer_task
         ):
             errors.append(f"{label} independent_review reviewer_task is invalid")
-        if review.get("exclusions") != "runtime_schema_deployment_enablement":
+        expected_review_exclusions = (
+            "public_enablement_app_registration_r2_plus"
+            if is_opportunity_release
+            else "runtime_schema_deployment_enablement"
+        )
+        if review.get("exclusions") != expected_review_exclusions:
             errors.append(f"{label} independent_review exclusions are invalid")
         if review.get("received_by") != "Root Codex program manager":
             errors.append(f"{label} independent_review received_by is invalid")
@@ -2373,7 +2543,11 @@ def _direction_merge_grant(
         )
         if (
             not isinstance(verdict_text, str)
-            or verdict_text != expected_verdict
+            or verdict_text != (
+                OPPORTUNITY_SLATE_REVIEW_ATTESTATION["verdict_text"]
+                if is_opportunity_release
+                else expected_verdict
+            )
         ):
             errors.append(
                 f"{label} independent_review verdict_text must equal the exact SHA/branch PASS statement"
@@ -2396,6 +2570,15 @@ def _direction_merge_grant(
         errors.append(
             f"{label} authority_decision_sha256 must equal the pinned Profile owner decision digest"
         )
+    if is_opportunity_release:
+        if grant.get("release_scope") != OPPORTUNITY_SLATE_RELEASE_SCOPE:
+            errors.append(
+                f"{label} release_scope must equal the code-controlled dark R1 scope"
+            )
+        if reviewed_sha != OPPORTUNITY_SLATE_REVIEWED_SHA:
+            errors.append(
+                f"{label} reviewed_remote_sha must equal the approved Opportunity Slate SHA"
+            )
     granted_at = grant.get("granted_at")
     if not _valid_utc_timestamp(granted_at):
         errors.append(f"{label} merge_grant granted_at must be a UTC timestamp")
@@ -2441,6 +2624,20 @@ def _exact_direction_grant_delta(
     for before, after in zip(parent_lanes, granted_lanes, strict=True):
         if before.get("package") == package_id:
             expected = dict(before)
+            if package_id == OPPORTUNITY_SLATE_PACKAGE:
+                before_decisions = before.get("owner_decisions")
+                after_decisions = after.get("owner_decisions")
+                if (
+                    not isinstance(before_decisions, list)
+                    or not isinstance(after_decisions, list)
+                    or len(after_decisions) != len(before_decisions) + 1
+                    or after_decisions[:-1] != before_decisions
+                    or not _affirmative_merge_decision(
+                        after_decisions[-1], package_id
+                    )
+                ):
+                    return False
+                expected["owner_decisions"] = after_decisions
             expected["merge_grant"] = after.get("merge_grant")
             if after != expected or "merge_grant" in before:
                 return False
@@ -2452,6 +2649,15 @@ def _exact_direction_grant_delta(
         return False
     expected_mode = dict(parent_mode)
     expected_mode["merge_allowed_for"] = [*parent_allowed, package_id]
+    if package_id == OPPORTUNITY_SLATE_PACKAGE:
+        parent_release = parent_mode.get("release_allowed_for")
+        if (
+            not isinstance(parent_release, list)
+            or parent_release
+            or package_id in parent_release
+        ):
+            return False
+        expected_mode["release_allowed_for"] = [package_id]
     if granted_mode != expected_mode:
         return False
     if _root_changes(granted_ledger, parent_ledger) != {
@@ -2768,12 +2974,101 @@ def _registered_worktrees(repository: Path) -> list[Path]:
     ]
 
 
+def _opportunity_main_sequence_facts(
+    origin_ledger: dict,
+    package_id: str,
+    candidate_sha: str,
+    origin_main: str,
+) -> tuple[list[str], bool, int]:
+    """Prove the exact inert repair then exact Opportunity release grant."""
+    if (
+        package_id != OPPORTUNITY_SLATE_PACKAGE
+        or candidate_sha != OPPORTUNITY_SLATE_REVIEWED_SHA
+    ):
+        return [], False, 0
+    control_base = OPPORTUNITY_SLATE_RELEASE_CONTROL_BASE
+    main_commits = [
+        sha for sha in _git(
+            "rev-list", "--reverse", f"{control_base}..{origin_main}"
+        ).splitlines() if sha
+    ]
+    main_paths = sorted(
+        _git_nul("diff", "--name-only", "-z", f"{control_base}..{origin_main}")
+    )
+    if len(main_commits) != 2:
+        return main_paths, False, len(main_commits)
+    repair_sha, grant_sha = main_commits
+    repair_paths = set(
+        _git_nul(
+            "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+            repair_sha,
+        )
+    )
+    grant_paths = set(
+        _git_nul(
+            "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+            grant_sha,
+        )
+    )
+    repair_parent = _git("rev-parse", f"{repair_sha}^")
+    grant_parent = _git("rev-parse", f"{grant_sha}^")
+    base_ledger = load_ledger_at_ref(control_base)
+    repair_ledger = load_ledger_at_ref(repair_sha)
+    candidate_merge_base = _git("merge-base", candidate_sha, origin_main)
+    candidate_paths = set(
+        _git_nul(
+            "diff", "--name-only", "-z",
+            f"{OPPORTUNITY_SLATE_CANDIDATE_BASE}..{candidate_sha}",
+        )
+    )
+    prior_main_paths = set(
+        _git_nul(
+            "diff", "--name-only", "-z",
+            f"{OPPORTUNITY_SLATE_CANDIDATE_BASE}..{control_base}",
+        )
+    )
+    final_target = next(
+        (
+            item for item in origin_ledger.get("active_lanes", [])
+            if isinstance(item, dict) and item.get("package") == package_id
+        ),
+        None,
+    )
+    expected_repair = copy.deepcopy(base_ledger)
+    expected_repair["updated_at"] = repair_ledger.get("updated_at")
+    expected_repair["implementation_release_preflight_repair"] = (
+        IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR
+    )
+    valid = bool(
+        repair_parent == control_base
+        and grant_parent == repair_sha
+        and repair_paths
+        == set(IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR["allowed_surfaces"])
+        and grant_paths == set(GRANT_ALLOWED_SURFACES)
+        and repair_ledger == expected_repair
+        and _exact_direction_grant_delta(
+            repair_ledger, origin_ledger, package_id
+        )
+        and candidate_merge_base == OPPORTUNITY_SLATE_CANDIDATE_BASE
+        and not (candidate_paths & prior_main_paths)
+        and isinstance(final_target, dict)
+        and isinstance(final_target.get("merge_grant"), dict)
+        and final_target["merge_grant"].get("reviewed_remote_sha")
+        == candidate_sha
+    )
+    return main_paths, valid, len(main_commits)
+
+
 def _direction_main_sequence_facts(
     origin_ledger: dict,
     package_id: str,
     candidate_sha: str,
     origin_main: str,
 ) -> tuple[list[str], bool, int]:
+    if package_id == OPPORTUNITY_SLATE_PACKAGE:
+        return _opportunity_main_sequence_facts(
+            origin_ledger, package_id, candidate_sha, origin_main
+        )
     base = _git("merge-base", candidate_sha, origin_main)
     main_paths = sorted(
         _git_nul("diff", "--name-only", "-z", f"{base}..{origin_main}")
@@ -2930,12 +3225,23 @@ def _collect_direction_candidate_merge(
         None,
     ) if isinstance(lanes, list) else None
     if not isinstance(target, dict):
-        raise RuntimeError("direction candidate package is not active on origin/main")
-    if target.get("lane_class") != "direction_authority" or target.get("production_capable") is not False:
-        raise RuntimeError("--candidate-worktree is only for non-production direction lanes")
+        raise RuntimeError("reviewed candidate package is not active on origin/main")
+    is_direction = target.get("lane_class") == "direction_authority"
+    is_opportunity_release = bool(
+        target.get("package") == OPPORTUNITY_SLATE_PACKAGE
+        and target.get("lane_class") == "implementation"
+        and target.get("branch") == OPPORTUNITY_SLATE_BRANCH
+    )
+    if (
+        (not is_direction and not is_opportunity_release)
+        or target.get("production_capable") is not False
+    ):
+        raise RuntimeError(
+            "--candidate-worktree is only for a code-controlled non-production reviewed lane"
+        )
     target_branch = target.get("branch")
     if not isinstance(target_branch, str) or not _is_valid_implementation_branch(target_branch):
-        raise RuntimeError("direction lane has no safe candidate branch")
+        raise RuntimeError("reviewed lane has no safe candidate branch")
     _, fetched_refs = _authoritative_ref_snapshot(
         ROOT, ["main", target_branch], expected_origin=verifier_origin
     )
@@ -2944,7 +3250,7 @@ def _collect_direction_candidate_merge(
     grant_errors: list[str] = []
     grant = _direction_merge_grant(target, "merge target", grant_errors)
     if grant_errors or grant is None:
-        raise RuntimeError("direction lane has no valid merge grant: " + "; ".join(grant_errors))
+        raise RuntimeError("reviewed lane has no valid merge grant: " + "; ".join(grant_errors))
     remote_ref = f"refs/remotes/origin/{target_branch}"
     remote_sha = fetched_refs[target_branch]
     if not FULL_GIT_SHA.fullmatch(remote_sha):
@@ -2965,9 +3271,10 @@ def _collect_direction_candidate_merge(
     if _clean_status_entries(candidate):
         raise RuntimeError("candidate worktree must be clean")
 
-    main_paths, sequence_valid, behind = _direction_main_sequence_facts(
+    main_paths, sequence_valid, control_commit_count = _direction_main_sequence_facts(
         origin_ledger, package_id, candidate_head, origin_main
     )
+    behind = int(_git("rev-list", "--count", f"{candidate_head}..{origin_main}"))
     facts = {
         **verifier,
         "branch": target_branch,
@@ -2984,6 +3291,7 @@ def _collect_direction_candidate_merge(
         "merge_target_remote_sha": remote_sha,
         "merge_main_changed_paths": main_paths,
         "merge_main_control_commits_valid": sequence_valid,
+        "merge_main_control_commit_count": control_commit_count,
         "direction_candidate_verified_from_main": True,
         "verifier_repository": str(ROOT.resolve()),
         "verifier_branch": verifier["branch"],
@@ -3079,18 +3387,25 @@ def evaluate_policy(
                 origin_ledger, "origin/main", errors
             )
             target = origin_by_package.get(package_id.casefold())
-            is_direction_target = bool(
+            is_reviewed_target = bool(
                 isinstance(target, dict)
-                and target.get("lane_class") == "direction_authority"
+                and (
+                    target.get("lane_class") == "direction_authority"
+                    or (
+                        target.get("package") == OPPORTUNITY_SLATE_PACKAGE
+                        and target.get("lane_class") == "implementation"
+                        and target.get("branch") == OPPORTUNITY_SLATE_BRANCH
+                    )
+                )
                 and target.get("production_capable") is False
             )
-            if not is_direction_target:
+            if not is_reviewed_target:
                 target = None
             else:
                 if not facts.get("fetched"):
-                    errors.append("direction merge requires --fetch")
+                    errors.append("reviewed candidate merge requires --fetch")
                 if not require_clean:
-                    errors.append("direction merge requires --require-clean")
+                    errors.append("reviewed candidate merge requires --require-clean")
         if origin_ledger is None or not isinstance(origin_ledger, dict) or target is None:
             # Fall through to the legacy generic merge evaluation below.
             pass
@@ -3108,23 +3423,35 @@ def evaluate_policy(
                 errors.append("merge target remote tip must equal the reviewed_remote_sha")
             _validate_changed_paths_within_lane(target, facts, "merge", errors)
             main_paths = facts.get("merge_main_changed_paths")
-            expected_behind = (
-                3 if package_id == "PS-PROFILE-EXPERIENCE-001" else 1
-            )
-            expected_main_paths = (
-                (
-                    DIRECTION_MERGE_CONTROL_PATHS
-                    | DIRECTION_MERGE_FOLLOWUP_PATHS
-                    | GRANT_ALLOWED_SURFACES
+            if package_id == OPPORTUNITY_SLATE_PACKAGE:
+                expected_control_commits = 2
+                expected_main_paths = (
+                    set(IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR["allowed_surfaces"])
+                    | set(GRANT_ALLOWED_SURFACES)
                 )
-                if package_id == "PS-PROFILE-EXPERIENCE-001"
-                else set(GRANT_ALLOWED_SURFACES)
-            )
-            if facts.get("behind") != expected_behind:
-                errors.append(
-                    "direction merge requires exactly "
-                    f"{expected_behind} verified main control commit(s)"
+                if facts.get("merge_main_control_commit_count") != expected_control_commits:
+                    errors.append(
+                        "Opportunity Slate merge requires exactly two verified "
+                        "main control commits"
+                    )
+            else:
+                expected_behind = (
+                    3 if package_id == "PS-PROFILE-EXPERIENCE-001" else 1
                 )
+                expected_main_paths = (
+                    (
+                        DIRECTION_MERGE_CONTROL_PATHS
+                        | DIRECTION_MERGE_FOLLOWUP_PATHS
+                        | GRANT_ALLOWED_SURFACES
+                    )
+                    if package_id == "PS-PROFILE-EXPERIENCE-001"
+                    else set(GRANT_ALLOWED_SURFACES)
+                )
+                if facts.get("behind") != expected_behind:
+                    errors.append(
+                        "direction merge requires exactly "
+                        f"{expected_behind} verified main control commit(s)"
+                    )
             if not isinstance(main_paths, list) or not all(
                 isinstance(path, str) and path for path in main_paths
             ):
@@ -3145,7 +3472,13 @@ def evaluate_policy(
                     errors.append(
                         "direction merge requires the exact repair-plus-target-grant main commit sequence"
                     )
-            if facts.get("behind") == expected_behind:
+            if package_id == OPPORTUNITY_SLATE_PACKAGE:
+                if facts.get("merge_main_control_commit_count") == 2:
+                    warnings.append(
+                        "Opportunity Slate candidate predates main; only the exact "
+                        "inert repair and exact release grant are tolerated"
+                    )
+            elif facts.get("behind") == expected_behind:
                 warnings.append(
                     f"merge candidate is {facts['behind']} commit(s) behind origin/main; "
                     "only the exact verified control sequence is tolerated"
@@ -3204,13 +3537,37 @@ def evaluate_policy(
                     )
                 continue
             expected_lane = dict(origin_lane)
+            if package_id == OPPORTUNITY_SLATE_PACKAGE:
+                origin_decisions = origin_lane.get("owner_decisions")
+                candidate_decisions = candidate_lane.get("owner_decisions")
+                if (
+                    not isinstance(origin_decisions, list)
+                    or not isinstance(candidate_decisions, list)
+                    or len(candidate_decisions) != len(origin_decisions) + 1
+                    or candidate_decisions[:-1] != origin_decisions
+                    or not _affirmative_merge_decision(
+                        candidate_decisions[-1], package_id
+                    )
+                ):
+                    errors.append(
+                        "Opportunity Slate grant must append exactly the "
+                        "code-controlled owner release decision"
+                    )
+                else:
+                    expected_lane["owner_decisions"] = candidate_decisions
             expected_lane["merge_grant"] = candidate_lane.get("merge_grant")
             if candidate_lane != expected_lane:
-                errors.append("grant may only add merge_grant to the target lane")
+                errors.append(
+                    "grant may only add its exact decision and merge_grant to the target lane"
+                )
             grant = _direction_merge_grant(candidate_lane, "grant target", errors)
             if "merge_grant" in origin_lane:
                 errors.append("grant target already has a merge_grant")
-            if candidate_lane.get("owner_decisions") != origin_lane.get("owner_decisions"):
+            if (
+                package_id != OPPORTUNITY_SLATE_PACKAGE
+                and candidate_lane.get("owner_decisions")
+                != origin_lane.get("owner_decisions")
+            ):
                 errors.append("grant may not append or change owner_decisions")
             if grant is not None:
                 if grant.get("granted_at") != ledger.get("updated_at"):
@@ -3265,9 +3622,19 @@ def evaluate_policy(
         else:
             expected_mode = dict(origin_mode)
             expected_mode["merge_allowed_for"] = [*origin_merge, package_id]
+            if package_id == OPPORTUNITY_SLATE_PACKAGE:
+                origin_release = origin_mode.get("release_allowed_for")
+                if not isinstance(origin_release, list):
+                    errors.append("origin/main release_allowed_for must be a list")
+                elif origin_release:
+                    errors.append(
+                        "Opportunity Slate grant requires the serialized release slot to be empty"
+                    )
+                else:
+                    expected_mode["release_allowed_for"] = [package_id]
             if candidate_mode != expected_mode:
                 errors.append(
-                    "grant operating_mode may only append target to merge_allowed_for"
+                    "grant operating_mode may only append its exact merge/release authority"
                 )
         if _root_changes(ledger, origin_ledger) != {
             "updated_at", "operating_mode", "active_lanes"
@@ -3915,6 +4282,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        implementation_release_repair_matches = (
+            _exact_implementation_release_preflight_repair_matches(
+                ledger, facts, package_id
+            )
+        )
         grant_close_repair_matches = _exact_grant_close_preflight_repair_matches(
             ledger, facts, package_id
         )
@@ -3944,6 +4316,14 @@ def evaluate_policy(
             )
             warnings.append(
                 "using the exact one-time writer-transfer preflight-repair boundary"
+            )
+        elif implementation_release_repair_matches:
+            allowed_surfaces = set(
+                IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR["allowed_surfaces"]
+            )
+            warnings.append(
+                "using the exact one-time implementation-release "
+                "preflight-repair boundary"
             )
         elif grant_close_repair_matches:
             allowed_surfaces = set(
@@ -3998,6 +4378,7 @@ def evaluate_policy(
             if (
                 not bootstrap_matches
                 and not writer_transfer_repair_matches
+                and not implementation_release_repair_matches
                 and not grant_close_repair_matches
                 and not grant_close_fixture_followup_matches
                 and not profile_close_fixture_followup_matches
@@ -4105,6 +4486,55 @@ def evaluate_policy(
                 _validate_baseline_unchanged(
                     candidate_baseline, origin_baseline,
                     label="grant-close fixture follow-up", errors=errors,
+                )
+            elif implementation_release_repair_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "implementation-release preflight repair updated_at "
+                        "must be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "implementation-release preflight repair updated_at "
+                        "must strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "implementation-release preflight repair may not change "
+                        "activation_policy"
+                    )
+                if _root_changes(ledger, origin_ledger) != {
+                    "updated_at", "implementation_release_preflight_repair"
+                }:
+                    errors.append(
+                        "implementation-release preflight repair must change "
+                        "exactly updated_at and its repair record"
+                    )
+                if origin_ledger.get(
+                    "implementation_release_preflight_repair"
+                ) is not None:
+                    errors.append(
+                        "implementation-release preflight repair is one-time "
+                        "and already recorded"
+                    )
+                if ledger.get("implementation_release_preflight_repair") != (
+                    IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR
+                ):
+                    errors.append(
+                        "implementation-release preflight repair record is not exact"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline, origin_baseline,
+                    label="implementation-release preflight repair",
+                    errors=errors,
                 )
             elif grant_close_repair_matches:
                 candidate_updated_at = ledger.get("updated_at")
@@ -4415,6 +4845,7 @@ def evaluate_policy(
                     )
         if (
             not writer_transfer_repair_matches
+            and not implementation_release_repair_matches
             and not grant_close_repair_matches
             and not grant_close_fixture_followup_matches
             and not profile_close_fixture_followup_matches
@@ -4448,6 +4879,15 @@ def evaluate_policy(
                 errors.append(
                     "writer-transfer preflight repair must change exactly the "
                     "owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                implementation_release_repair_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "implementation-release preflight repair must change exactly "
+                    "the owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
             if grant_close_repair_matches and changed_paths != allowed_surfaces:
@@ -4570,7 +5010,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--candidate-worktree",
         help=(
-            "absolute frozen direction-candidate worktree path; valid only for "
+            "absolute frozen reviewed-candidate worktree path; valid only for "
             "merge with --fetch --require-clean from trusted origin/main"
         ),
     )
@@ -4677,11 +5117,19 @@ def main(argv: list[str] | None = None) -> int:
                     args.intent == "merge"
                     and not args.candidate_worktree
                     and isinstance(target, dict)
-                    and target.get("lane_class") == "direction_authority"
+                    and (
+                        target.get("lane_class") == "direction_authority"
+                        or target.get("package") == OPPORTUNITY_SLATE_PACKAGE
+                    )
                 ):
-                    raise RuntimeError(
+                    missing_candidate_message = (
                         "direction-authority merge requires --candidate-worktree "
-                        "from a trusted current-main verifier"
+                        if target.get("lane_class") == "direction_authority"
+                        else "review-bound merge requires --candidate-worktree "
+                    )
+                    raise RuntimeError(
+                        missing_candidate_message
+                        + "from a trusted current-main verifier"
                     )
                 if (
                     isinstance(target_branch, str)
