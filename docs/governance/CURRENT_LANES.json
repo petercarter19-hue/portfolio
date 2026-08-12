@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T16:20:00Z",
+  "updated_at": "2026-08-12T16:25:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,16 +12,11 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
-      "PS-OPPORTUNITY-SLATE-002"
+      "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001"
     ],
-    "merge_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-002"
-    ],
+    "merge_allowed_for": [],
     "cleanup_allowed_for": [],
-    "release_allowed_for": [
-      "PS-OPPORTUNITY-SLATE-002"
-    ],
+    "release_allowed_for": [],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
       "new feature or product write outside the exact surfaces recorded for its activated lane",
@@ -34,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active writer lanes: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001, PS-OPPORTUNITY-SLATE-002. PS-PROFILE-EXPERIENCE-001 is merged_closed and retains no authority."
+    "exit_authority": "Active writer lanes: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001. PS-OPPORTUNITY-SLATE-002 is paused and preserved; it may resume only through fresh activation."
   },
   "activation_policy": {
     "enabled": true,
@@ -1237,6 +1232,98 @@
       },
       "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged activation and implementation worktrees and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
       "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree from resulting origin/main; pass the package write preflight; implement slices 1-6 dark with per-slice Fable review; run the full matrix; complete-diff self-review; independent Fable extra-high review of the exact candidate; close findings; Azure PR; dark merge; verify the automatic deploy's /healthz identity and anonymous smoke; write the completion record; stop for Pete's enablement decision."
+    }
+  ],
+  "paused_lanes": [
+    {
+      "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
+      "outcome": "Create one self-contained external ChatGPT visual-research handoff that explains current live PeerSlate, approved and in-progress direction, planned upgrades, selected current mockups and visual authorities, critical product and behind-the-scenes trust behavior, the owner review conversation, and an exact independent-research assignment. Label live, approved direction, in progress, proposed, historical, and superseded material distinctly so the external reviewer can assess what PeerSlate is becoming without confusing aspiration with production truth.",
+      "branch": "work/2026-08-08-external-visual-review-handoff-001",
+      "writer": "Root Codex session in a dedicated clean worktree; read-only specialist agents may inventory product truth, assets, and handoff structure, but Root Codex is the sole writer and final assembler.",
+      "delivery_path": "Bounded",
+      "production_capable": false,
+      "source_checkpoint": "Authoritative Azure origin/main 72ea183eaed45e7d09b50950e112167da3eafa77. Production remains fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6 via run 688, live release 090ed9967daf7a00c798898e; later source or live facts must be refreshed and labeled at export time.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001/",
+        "artifacts/2026-08-08-chatgpt-visual-research-handoff/",
+        "output/PeerSlate_ChatGPT_Complete_Visual_Research_Handoff_2026-08-08.zip"
+      ],
+      "exclusions": [
+        "No application, route, template, stylesheet, script, test, schema, configuration, provider, pipeline, deployment, or production change.",
+        "No new visual authority or owner lock; mockups and directions retain their existing approved, candidate, in-progress, proposed, historical, or superseded status.",
+        "No change to Community or any surface owned by PS-COMMUNITY-AUTH-WALL-001.",
+        "No secrets, credentials, private member data, production database extracts, private media, or unpublished personal information.",
+        "No overwrite, deletion, or reinterpretation of source mockups, handoffs, branches, worktrees, artifacts, or release evidence.",
+        "No external research conclusion is treated as a product decision, implementation authorization, merge, deployment, or live proof."
+      ],
+      "completion_evidence": [
+        "Master START_HERE and research prompt explain the reviewer task, truth labels, current/future product model, critical workflows, open questions, and required report structure.",
+        "Selected mockups, live screenshots, source extracts, conversation record, and evidence catalogs are complete, provenance-labeled, and referenced by a SHA-256 manifest.",
+        "Archive opens successfully, internal required files resolve, duplicate or missing asset references are reported, and the final ZIP hash and size are recorded.",
+        "Complete-diff self-review confirms the package contains no runtime or active-lane surface change and states honest limitations."
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-08",
+          "decision": "Pete requested a huge, complete handoff package for ChatGPT to perform a comprehensive visual and independent-research review. It must include new mockups, current direction, completed work, critical behind-the-scenes functions, this review conversation, and enough context to understand what the website is becoming rather than only how it looks today."
+        }
+      ],
+      "cleanup_contract": "Preserve every source artifact. After a verified merge, remove only this task's clean activation and implementation worktrees/branches when recoverability and the delivered ZIP are confirmed.",
+      "sequence": "Merge the activation-only PR; create the implementation worktree from the resulting origin/main; pass write preflight; inventory and assemble the documentation/export package; validate content, provenance, hashes, links, and archive integrity; self-review; merge documentation through an Azure PR if retained source files are changed; deliver the ZIP without deployment.",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-10T17:33:16Z",
+      "pause_reason": "Azure PR 360 was abandoned at Pete's direction because the handoff work was already delivered and no writer was actively continuing it. The branch, worktree, and untracked output remain preserved.",
+      "resume_contract": "Resume only through a fresh activation from current origin/main with a new branch, exact writable surfaces, direction_authority lane_class, and non-overlapping exclusive domains. Do not adopt or delete the preserved worktree or output."
+    },
+    {
+      "package": "PS-WORKSHOP-EXPERIENCE-001",
+      "outcome": "Create the reconciled Workshop experience and visual-authority package from the owner-locked program-review decisions. Preserve the live product's private source, AI-proposal, confirmed-information, provenance, voice, review, and explicit-save boundaries while replacing the card-and-rail composition with one continuous dominant work plane. Define Work on Something as the primary activity; Information and Goals as separate truth types in the same room; restrained goal lifecycle and cross-room proposal boundaries; the future member-private access transition; and complete desktop/mobile authority for the consequential states. Clearly supersede obsolete Workshop visual direction without rewriting history.",
+      "branch": "work/2026-08-09-workshop-experience-001",
+      "writer": "Root Codex session in a dedicated clean worktree; read-only specialist agents may audit product truth, composition, benchmarks, accessibility, and mobile behavior, but Root Codex is the sole package and visual-direction writer.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "source_checkpoint": "Authoritative Azure origin/main c4ce6efec4daffa942575206594eb9e9d85c5515. Current application behavior remains aa4a4ec6a12d334805298f81041fee49c6fdc51a via pipeline 722 and live release 689d0be742c2c8d02c585827; package work must refresh and label any later source or live facts before closeout.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-WORKSHOP-EXPERIENCE-001/"
+      ],
+      "exclusions": [
+        "No application, route, template, stylesheet, script, test, schema, migration, provider, pipeline, deployment, production configuration, or live-behavior change.",
+        "No implementation of Goals, no conversion of goals into confirmed information or evidence, and no automatic creation, completion, publication, or downstream reuse of a goal.",
+        "No immediate Workshop sign-in wall or public-demo removal; the package may lock a future access transition, but runtime access work requires a separately authorized implementation path.",
+        "No Build Your Future, Goal Board, Slate Board, Owner Home, Profile, Opportunity Slate, Interview Studio, Community, Capture, Journal, or global-shell runtime cleanup or redesign.",
+        "No overwrite or deletion of PS-SLATE-STUDIO-IA-001, PS-WORKSHOP-ACCESS-001, applied Workshop schema history, prior visual authorities, evidence, branches, worktrees, or artifacts; use explicit current, superseded, retired, and historical labels.",
+        "No generic stock imagery or mandatory personal-photo slot; authentic member imagery remains optional and member-controlled.",
+        "No merge, deployment, or release claim without separately recorded authority and evidence."
+      ],
+      "completion_evidence": [
+        "A current-truth and supersession matrix reconciles the live Workshop, applied schema and trust behavior, canceled access package, historical Studio material, and owner-retired Build Your Future and Goal Board direction.",
+        "The package records the owner-locked purpose, dominant object for every major state, Information-versus-Goals truth boundary, restrained goal lifecycle, and explicit proposal handoffs from Opportunity Slate and Interview Studio.",
+        "ChatGPT-created desktop and mobile visual authority covers opening, returning work, focused session, AI review, final review/save, library list, selected information, selected goal, empty/no-match, demo, AI-unavailable, voice-unavailable, changed/conflict, and consequential confirmation states.",
+        "Visual review demonstrates continuity, center-plane ownership, contextual reversible support surfaces, card-test compliance, authentic-imagery optionality, and priority-preserving 320/390/large-text mobile reflow.",
+        "The access decision preserves the truthful temporary demo during transition, defines the future real Workshop as member-private, and requires exact safe deep-link return without implementing the wall in this package.",
+        "Complete-diff self-review confirms all changes remain inside the package directory and honestly distinguishes owner-locked direction, proposed copy, visual authority, implementation work, merge, deployment, and live truth."
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-09",
+          "decision": "Pete agreed to lock the Workshop review: Workshop is one continuous private room; Work on Something is dominant; Information and Goals remain separate records; AI proposes and the member decides; goals avoid task-manager and gamification patterns; the existing trust architecture is protected while the card-and-rail composition is superseded; mobile authority is included now; and the real Workshop moves behind sign-in through the later approved implementation path while the truthful temporary demo is preserved during transition."
+        },
+        {
+          "date": "2026-08-09",
+          "decision": "Pete directed rolling program delivery rather than waiting for the complete review: lock the major page decisions, activate bounded work as capacity allows, and continue the page-by-page review in parallel."
+        }
+      ],
+      "cleanup_contract": "Preserve every historical source and user artifact. After a verified merge, remove only this package's clean merged worktree and branches behind a recovery tag; any runtime retirement or repository-artifact cleanup is a separate exact-target package.",
+      "sequence": "Merge the activation-only record; create the clean Workshop package worktree from the resulting origin/main; pass the package write preflight; reconcile current truth and supersession; create the state architecture and ChatGPT visual direction; review desktop/mobile/accessibility/trust continuity; obtain owner visual acceptance; complete the package record; request separate merge authority if repository retention is desired. Runtime composition, Goals data, access transition, and legacy cleanup remain later packages.",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-10T17:43:05Z",
+      "pause_reason": "The Workshop concept and package work are preserved, but no writer is actively changing its repository surfaces while Program Review moves page by page.",
+      "resume_contract": "Resume only through a fresh activation from current origin/main with a new branch, exact package-only surfaces, direction_authority lane_class, and an exclusive product:workshop domain. Port preserved work deliberately; do not overwrite or delete the existing branch."
+    },
+    {
+      "package": "ALL_OTHER_EXISTING_LANES",
+      "reason": "owner-directed reset requires exact safe-stop and disposition before restart",
+      "disposition": "paused_read_only"
     },
     {
       "package": "PS-OPPORTUNITY-SLATE-002",
@@ -1365,99 +1452,12 @@
         "sequence": "Claude checkpoint 3fb6574 -> governance-only Codex writer transfer -> Root Codex re-measures and completes R1 -> full validation and self-review -> fresh Sol extra-high exact-SHA independent review -> Root Codex closes findings -> PR 375 at CI green -> STOP for Pete's pre-live review"
       },
       "cleanup_contract": "Task-local only: after this lane's work merges under Pete's recorded decision and recoverability is verified, remove only this lane's clean merged activation and implementation worktrees and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
-      "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree from resulting origin/main; pass the package write preflight; after Claude relinquishes the clean pushed checkpoint at 3fb6574, merge the governance-only Codex writer-transfer PR with a verified [skip ci] squash; Root Codex re-measures both shipped states from scratch, completes R1 without app.py, runs the functional gauntlet and full suites, and self-reviews; a fresh GPT-5.6 Sol extra-high context independently reviews the exact candidate under the forensic and professional-eye lenses; close findings; hold PR 375 at CI green for Pete's pre-live review. The app.py flag wiring lands only after PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 closes, through a fresh recorded ledger update."
-    }
-  ],
-  "paused_lanes": [
-    {
-      "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
-      "outcome": "Create one self-contained external ChatGPT visual-research handoff that explains current live PeerSlate, approved and in-progress direction, planned upgrades, selected current mockups and visual authorities, critical product and behind-the-scenes trust behavior, the owner review conversation, and an exact independent-research assignment. Label live, approved direction, in progress, proposed, historical, and superseded material distinctly so the external reviewer can assess what PeerSlate is becoming without confusing aspiration with production truth.",
-      "branch": "work/2026-08-08-external-visual-review-handoff-001",
-      "writer": "Root Codex session in a dedicated clean worktree; read-only specialist agents may inventory product truth, assets, and handoff structure, but Root Codex is the sole writer and final assembler.",
-      "delivery_path": "Bounded",
-      "production_capable": false,
-      "source_checkpoint": "Authoritative Azure origin/main 72ea183eaed45e7d09b50950e112167da3eafa77. Production remains fb55cd5ec6cd658938dfbf8fc722a005c9ab04b6 via run 688, live release 090ed9967daf7a00c798898e; later source or live facts must be refreshed and labeled at export time.",
-      "writable_surfaces": [
-        "docs/initiatives/PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001/",
-        "artifacts/2026-08-08-chatgpt-visual-research-handoff/",
-        "output/PeerSlate_ChatGPT_Complete_Visual_Research_Handoff_2026-08-08.zip"
-      ],
-      "exclusions": [
-        "No application, route, template, stylesheet, script, test, schema, configuration, provider, pipeline, deployment, or production change.",
-        "No new visual authority or owner lock; mockups and directions retain their existing approved, candidate, in-progress, proposed, historical, or superseded status.",
-        "No change to Community or any surface owned by PS-COMMUNITY-AUTH-WALL-001.",
-        "No secrets, credentials, private member data, production database extracts, private media, or unpublished personal information.",
-        "No overwrite, deletion, or reinterpretation of source mockups, handoffs, branches, worktrees, artifacts, or release evidence.",
-        "No external research conclusion is treated as a product decision, implementation authorization, merge, deployment, or live proof."
-      ],
-      "completion_evidence": [
-        "Master START_HERE and research prompt explain the reviewer task, truth labels, current/future product model, critical workflows, open questions, and required report structure.",
-        "Selected mockups, live screenshots, source extracts, conversation record, and evidence catalogs are complete, provenance-labeled, and referenced by a SHA-256 manifest.",
-        "Archive opens successfully, internal required files resolve, duplicate or missing asset references are reported, and the final ZIP hash and size are recorded.",
-        "Complete-diff self-review confirms the package contains no runtime or active-lane surface change and states honest limitations."
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-08",
-          "decision": "Pete requested a huge, complete handoff package for ChatGPT to perform a comprehensive visual and independent-research review. It must include new mockups, current direction, completed work, critical behind-the-scenes functions, this review conversation, and enough context to understand what the website is becoming rather than only how it looks today."
-        }
-      ],
-      "cleanup_contract": "Preserve every source artifact. After a verified merge, remove only this task's clean activation and implementation worktrees/branches when recoverability and the delivered ZIP are confirmed.",
-      "sequence": "Merge the activation-only PR; create the implementation worktree from the resulting origin/main; pass write preflight; inventory and assemble the documentation/export package; validate content, provenance, hashes, links, and archive integrity; self-review; merge documentation through an Azure PR if retained source files are changed; deliver the ZIP without deployment.",
+      "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree from resulting origin/main; pass the package write preflight; after Claude relinquishes the clean pushed checkpoint at 3fb6574, merge the governance-only Codex writer-transfer PR with a verified [skip ci] squash; Root Codex re-measures both shipped states from scratch, completes R1 without app.py, runs the functional gauntlet and full suites, and self-reviews; a fresh GPT-5.6 Sol extra-high context independently reviews the exact candidate under the forensic and professional-eye lenses; close findings; hold PR 375 at CI green for Pete's pre-live review. The app.py flag wiring lands only after PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 closes, through a fresh recorded ledger update.",
       "disposition": "paused_preserved",
-      "paused_at": "2026-08-10T17:33:16Z",
-      "pause_reason": "Azure PR 360 was abandoned at Pete's direction because the handoff work was already delivered and no writer was actively continuing it. The branch, worktree, and untracked output remain preserved.",
-      "resume_contract": "Resume only through a fresh activation from current origin/main with a new branch, exact writable surfaces, direction_authority lane_class, and non-overlapping exclusive domains. Do not adopt or delete the preserved worktree or output."
-    },
-    {
-      "package": "PS-WORKSHOP-EXPERIENCE-001",
-      "outcome": "Create the reconciled Workshop experience and visual-authority package from the owner-locked program-review decisions. Preserve the live product's private source, AI-proposal, confirmed-information, provenance, voice, review, and explicit-save boundaries while replacing the card-and-rail composition with one continuous dominant work plane. Define Work on Something as the primary activity; Information and Goals as separate truth types in the same room; restrained goal lifecycle and cross-room proposal boundaries; the future member-private access transition; and complete desktop/mobile authority for the consequential states. Clearly supersede obsolete Workshop visual direction without rewriting history.",
-      "branch": "work/2026-08-09-workshop-experience-001",
-      "writer": "Root Codex session in a dedicated clean worktree; read-only specialist agents may audit product truth, composition, benchmarks, accessibility, and mobile behavior, but Root Codex is the sole package and visual-direction writer.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "source_checkpoint": "Authoritative Azure origin/main c4ce6efec4daffa942575206594eb9e9d85c5515. Current application behavior remains aa4a4ec6a12d334805298f81041fee49c6fdc51a via pipeline 722 and live release 689d0be742c2c8d02c585827; package work must refresh and label any later source or live facts before closeout.",
-      "writable_surfaces": [
-        "docs/initiatives/PS-WORKSHOP-EXPERIENCE-001/"
-      ],
-      "exclusions": [
-        "No application, route, template, stylesheet, script, test, schema, migration, provider, pipeline, deployment, production configuration, or live-behavior change.",
-        "No implementation of Goals, no conversion of goals into confirmed information or evidence, and no automatic creation, completion, publication, or downstream reuse of a goal.",
-        "No immediate Workshop sign-in wall or public-demo removal; the package may lock a future access transition, but runtime access work requires a separately authorized implementation path.",
-        "No Build Your Future, Goal Board, Slate Board, Owner Home, Profile, Opportunity Slate, Interview Studio, Community, Capture, Journal, or global-shell runtime cleanup or redesign.",
-        "No overwrite or deletion of PS-SLATE-STUDIO-IA-001, PS-WORKSHOP-ACCESS-001, applied Workshop schema history, prior visual authorities, evidence, branches, worktrees, or artifacts; use explicit current, superseded, retired, and historical labels.",
-        "No generic stock imagery or mandatory personal-photo slot; authentic member imagery remains optional and member-controlled.",
-        "No merge, deployment, or release claim without separately recorded authority and evidence."
-      ],
-      "completion_evidence": [
-        "A current-truth and supersession matrix reconciles the live Workshop, applied schema and trust behavior, canceled access package, historical Studio material, and owner-retired Build Your Future and Goal Board direction.",
-        "The package records the owner-locked purpose, dominant object for every major state, Information-versus-Goals truth boundary, restrained goal lifecycle, and explicit proposal handoffs from Opportunity Slate and Interview Studio.",
-        "ChatGPT-created desktop and mobile visual authority covers opening, returning work, focused session, AI review, final review/save, library list, selected information, selected goal, empty/no-match, demo, AI-unavailable, voice-unavailable, changed/conflict, and consequential confirmation states.",
-        "Visual review demonstrates continuity, center-plane ownership, contextual reversible support surfaces, card-test compliance, authentic-imagery optionality, and priority-preserving 320/390/large-text mobile reflow.",
-        "The access decision preserves the truthful temporary demo during transition, defines the future real Workshop as member-private, and requires exact safe deep-link return without implementing the wall in this package.",
-        "Complete-diff self-review confirms all changes remain inside the package directory and honestly distinguishes owner-locked direction, proposed copy, visual authority, implementation work, merge, deployment, and live truth."
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-09",
-          "decision": "Pete agreed to lock the Workshop review: Workshop is one continuous private room; Work on Something is dominant; Information and Goals remain separate records; AI proposes and the member decides; goals avoid task-manager and gamification patterns; the existing trust architecture is protected while the card-and-rail composition is superseded; mobile authority is included now; and the real Workshop moves behind sign-in through the later approved implementation path while the truthful temporary demo is preserved during transition."
-        },
-        {
-          "date": "2026-08-09",
-          "decision": "Pete directed rolling program delivery rather than waiting for the complete review: lock the major page decisions, activate bounded work as capacity allows, and continue the page-by-page review in parallel."
-        }
-      ],
-      "cleanup_contract": "Preserve every historical source and user artifact. After a verified merge, remove only this package's clean merged worktree and branches behind a recovery tag; any runtime retirement or repository-artifact cleanup is a separate exact-target package.",
-      "sequence": "Merge the activation-only record; create the clean Workshop package worktree from the resulting origin/main; pass the package write preflight; reconcile current truth and supersession; create the state architecture and ChatGPT visual direction; review desktop/mobile/accessibility/trust continuity; obtain owner visual acceptance; complete the package record; request separate merge authority if repository retention is desired. Runtime composition, Goals data, access transition, and legacy cleanup remain later packages.",
-      "disposition": "paused_preserved",
-      "paused_at": "2026-08-10T17:43:05Z",
-      "pause_reason": "The Workshop concept and package work are preserved, but no writer is actively changing its repository surfaces while Program Review moves page by page.",
-      "resume_contract": "Resume only through a fresh activation from current origin/main with a new branch, exact package-only surfaces, direction_authority lane_class, and an exclusive product:workshop domain. Port preserved work deliberately; do not overwrite or delete the existing branch."
-    },
-    {
-      "package": "ALL_OTHER_EXISTING_LANES",
-      "reason": "owner-directed reset requires exact safe-stop and disposition before restart",
-      "disposition": "paused_read_only"
+      "paused_at": "2026-08-12T16:15:00Z",
+      "pause_reason": "R1 application candidate 550c7ca was independently approved, merged as b7bb92d, and deployed dark. Governed schema run 836 failed on the production schema principal's missing SELECT permission while validating new CHECK constraints; the migration transaction rolled back and PS-OPPSLATE-004 remains unapplied. The original branch is frozen and behind current main, so repair continues only through fresh activation.",
+      "resume_contract": "Freshly activate PS-OPPORTUNITY-SLATE-002 from current origin/main on a new repair branch bounded to PS-OPPSLATE-004 forward, rollback, verifier, registry, migration tests, gate evidence, and package completion truth. Prove the production-equivalent least-privilege constraint path on disposable Azure SQL, rerun the full gate, obtain fresh independent exact-SHA review, merge through Azure PR, reapply only PS-OPPSLATE-004, verify the ledger and dark live state, then close.",
+      "preserved_head_sha": "550c7ca87561a8279d571738c5832f3a70fe9bec"
     }
   ],
   "workspace_snapshot": {
