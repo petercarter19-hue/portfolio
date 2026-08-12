@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T11:35:08Z",
+  "updated_at": "2026-08-12T11:46:43Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -15,9 +15,13 @@
       "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
       "PS-OPPORTUNITY-SLATE-002"
     ],
-    "merge_allowed_for": [],
+    "merge_allowed_for": [
+      "PS-OPPORTUNITY-SLATE-002"
+    ],
     "cleanup_allowed_for": [],
-    "release_allowed_for": [],
+    "release_allowed_for": [
+      "PS-OPPORTUNITY-SLATE-002"
+    ],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
       "new feature or product write outside the exact surfaces recorded for its activated lane",
@@ -1285,8 +1289,67 @@
         {
           "date": "2026-08-11",
           "decision": "Writer transfer, verbatim: 'I want it to finish this package completely.' Pete assigned Root Codex as writer and reviewer for PS-OPPORTUNITY-SLATE-002 as a complete break from Claude. Claude relinquished the lane at clean pushed branch head 3fb657456fef757c70292cf20217f567c477f733. Root Codex completes the package and uses a fresh GPT-5.6 Sol extra-high context that did not write the code for the independent forensic and professional-eye review. PR 375 remains unmerged for Pete's pre-live review."
+        },
+        {
+          "date": "2026-08-12",
+          "decision": "dark_implementation_merge_and_release_authority",
+          "authorized_by": "Pete",
+          "action": "merge_deploy_apply_additive_schema",
+          "status": "authorized",
+          "scope": "dark_R1_and_PS-OPPSLATE-004_only",
+          "package": "PS-OPPORTUNITY-SLATE-002",
+          "reviewed_remote_sha": "550c7ca87561a8279d571738c5832f3a70fe9bec",
+          "pull_request": 375,
+          "ci_build": 807,
+          "public_enablement": "excluded",
+          "verbatim_approval": "You're approved."
         }
       ],
+      "merge_grant": {
+        "authorized_by": "Pete",
+        "authority_decision_index": 3,
+        "authority_decision_sha256": "9d35018c69c200c248ce0af10a64eb70d5c1be3dfa65ac21800b4abac3e55591",
+        "independent_review": {
+          "reviewer_task": "/root/oppslate_independent_review",
+          "reviewer_mode": "independent_read_only_non_writer",
+          "reviewed_sha": "550c7ca87561a8279d571738c5832f3a70fe9bec",
+          "reviewed_branch": "work/2026-08-11-opportunity-slate-v2-r1",
+          "verdict": "APPROVED",
+          "verdict_text": "APPROVED exact 550c7ca87561a8279d571738c5832f3a70fe9bec; 0 Blocking / 0 Important / 0 Minor.",
+          "verdict_sha256": "07c5ba3bfe768352b0c5ecee8176821cb28cb0cf9e2f66de7362bba0cfb4ac26",
+          "basis": [
+            "full_tree_at_550c7ca87561a8279d571738c5832f3a70fe9bec",
+            "complete_diff_f745b39b72d2c8e5a3595f88d7f9524d8d8e41cf_to_550c7ca87561a8279d571738c5832f3a70fe9bec",
+            "focused_169_of_169_and_full_3466_reconciled",
+            "sql_engine_gate_and_exact_42_object_rollback_proof_reconciled"
+          ],
+          "scope": "protected_dark_merge_deploy_and_additive_schema_release",
+          "exclusions": "public_enablement_app_registration_r2_plus",
+          "evidence_path": "docs/initiatives/PS-OPPORTUNITY-SLATE-002/COMPLETION_RECORD_R1.md",
+          "evidence_git_blob_sha": "047189621713585822f3507335014be44cc2c347",
+          "evidence_bytes_sha256": "bf3318c5a2645feb1e89dcec79aaa3f0aa2ff9dc4899e2ff3ce1ea1e7aca98d4",
+          "received_by": "Root Codex program manager",
+          "received_date": "2026-08-12",
+          "attestation_sha256": "6e5e7482afb116c03dbfa20bc2b282cb27eb3f529b956ba3b8a741de668de25d"
+        },
+        "reviewed_remote_sha": "550c7ca87561a8279d571738c5832f3a70fe9bec",
+        "granted_at": "2026-08-12T11:46:43Z",
+        "review_result": "pass",
+        "review_evidence_paths": [
+          "docs/initiatives/PS-OPPORTUNITY-SLATE-002/COMPLETION_RECORD_R1.md"
+        ],
+        "release_scope": {
+          "pull_request": 375,
+          "ci_build": 807,
+          "application_action": "merge_and_dark_deploy",
+          "schema_action": "apply",
+          "schema_migration": "PS-OPPSLATE-004",
+          "public_enablement": false,
+          "app_py_change": false,
+          "production_configuration_change": false,
+          "excluded_later_work": "R2_through_R5"
+        }
+      },
       "model_routing": {
         "decided_by": "Pete",
         "date": "2026-08-11",
