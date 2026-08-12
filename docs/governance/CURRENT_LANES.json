@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T18:00:00Z",
+  "updated_at": "2026-08-12T19:00:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -15,9 +15,13 @@
       "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
       "PS-OPPORTUNITY-SLATE-002"
     ],
-    "merge_allowed_for": [],
+    "merge_allowed_for": [
+      "PS-OPPORTUNITY-SLATE-002"
+    ],
     "cleanup_allowed_for": [],
-    "release_allowed_for": [],
+    "release_allowed_for": [
+      "PS-OPPORTUNITY-SLATE-002"
+    ],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
       "new feature or product write outside the exact surfaces recorded for its activated lane",
@@ -1289,8 +1293,67 @@
         {
           "date": "2026-08-12",
           "decision": "Pete approved the reviewed R1 dark release and additive schema sequence with 'You're approved.' After the first production apply failed safely, he authorized the pre-flight repair and instructed Codex to take the package through live deployment while keeping public activation for a separate later decision. This activation implements that same bounded authority; it is not a new product or visual decision."
+        },
+        {
+          "date": "2026-08-12",
+          "decision": "dark_implementation_merge_and_release_authority",
+          "authorized_by": "Pete",
+          "action": "merge_deploy_apply_additive_schema",
+          "status": "authorized",
+          "scope": "dark_R1_and_PS-OPPSLATE-004_only",
+          "package": "PS-OPPORTUNITY-SLATE-002",
+          "reviewed_remote_sha": "1d8e30aeb79e3bf7af2e2ffa0afabbd87100c46e",
+          "pull_request": 397,
+          "ci_build": 847,
+          "public_enablement": "excluded",
+          "verbatim_approval": "You're approved."
         }
       ],
+      "merge_grant": {
+        "authorized_by": "Pete",
+        "authority_decision_index": 1,
+        "authority_decision_sha256": "4e9a34996eaade4d0c4ea186663e7a996a3bf6f221443976032930e558faff7c",
+        "independent_review": {
+          "reviewer_task": "/root/oppslate_independent_review",
+          "reviewer_mode": "independent_read_only_non_writer",
+          "reviewed_sha": "1d8e30aeb79e3bf7af2e2ffa0afabbd87100c46e",
+          "reviewed_branch": "work/2026-08-12-opportunity-slate-r1-schema-permission-repair",
+          "verdict": "APPROVED",
+          "verdict_text": "APPROVED exact 1d8e30aeb79e3bf7af2e2ffa0afabbd87100c46e; 0 Blocking / 0 Important / 0 Minor.",
+          "verdict_sha256": "9d83b03a377d712d7bd4dd1ca004d40b280ced1df96db79e9344de27976720f2",
+          "basis": [
+            "full_tree_at_1d8e30aeb79e3bf7af2e2ffa0afabbd87100c46e",
+            "complete_diff_e9d4ce573aa57b4dc89a82072a9d892bb31011aa_to_1d8e30aeb79e3bf7af2e2ffa0afabbd87100c46e",
+            "focused_171_of_171_and_full_3576_reconciled",
+            "restricted_principal_gate_and_exact_42_object_rollback_reconciled"
+          ],
+          "scope": "protected_dark_merge_deploy_and_additive_schema_release",
+          "exclusions": "public_enablement_app_registration_r2_plus",
+          "evidence_path": "docs/initiatives/PS-OPPORTUNITY-SLATE-002/COMPLETION_RECORD_R1.md",
+          "evidence_git_blob_sha": "e9199a0bc5c25541151d0c6f68a46af35dd7b873",
+          "evidence_bytes_sha256": "72151911118e11b0284434cc0dc3a959b816994246324932e70cf182f1a3f31b",
+          "received_by": "Root Codex program manager",
+          "received_date": "2026-08-12",
+          "attestation_sha256": "7ac34e8690f7e6bf4ca3c7f15fe19d0b0ea53ede36f9a2236fe935f53cab6115"
+        },
+        "reviewed_remote_sha": "1d8e30aeb79e3bf7af2e2ffa0afabbd87100c46e",
+        "granted_at": "2026-08-12T19:00:00Z",
+        "review_result": "pass",
+        "review_evidence_paths": [
+          "docs/initiatives/PS-OPPORTUNITY-SLATE-002/COMPLETION_RECORD_R1.md"
+        ],
+        "release_scope": {
+          "pull_request": 397,
+          "ci_build": 847,
+          "application_action": "merge_schema_permission_repair_dark",
+          "schema_action": "apply",
+          "schema_migration": "PS-OPPSLATE-004",
+          "public_enablement": false,
+          "app_py_change": false,
+          "production_configuration_change": false,
+          "excluded_later_work": "R2_through_R5"
+        }
+      },
       "cleanup_contract": "After verified merge and schema completion, remove only this task's clean merged activation and repair worktrees/branches behind recovery references. Preserve the original frozen 550c7ca evidence and every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
       "sequence": "Merge activation-only [skip ci] control PR; create the exact new repair worktree from resulting origin/main; pass write preflight; reproduce and repair the least-privilege constraint path; run disposable SQL proof, full gate, focused and full suites; freeze and independently review the exact SHA; record a fresh merge and release grant; Azure PR/CI/merge; governed apply of only PS-OPPSLATE-004; verify ledger and dark live truth; close the lane."
     }
