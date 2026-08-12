@@ -1237,14 +1237,21 @@ with patch.object(
         for state in ("active", "closing"):
             with self.subTest(state=state):
                 ledger = copy.deepcopy(self.ledger)
-                source = ledger["active_lanes"] if state == "active" else ledger["closing_lanes"]
-                lane = next(item for item in source if item.get("branch"))
+                if state == "active":
+                    lane = self._lane_fixture(ledger)
+                else:
+                    lane = next(
+                        item
+                        for item in ledger["closing_lanes"]
+                        if item.get("branch")
+                    )
                 lane["lane_class"] = "implementation"
                 lane["production_capable"] = True
                 package = lane["package"]
                 ledger["operating_mode"]["merge_allowed_for"] = [package]
                 if state == "active":
                     ledger["active_lanes"] = [lane]
+                    ledger["operating_mode"]["state"] = "active_delivery"
                 else:
                     ledger["active_lanes"] = []
                     ledger["closing_lanes"] = [lane]
@@ -2499,6 +2506,25 @@ with patch.object(
                 return True
         return False
 
+    def _lane_fixture(self, parsed: dict, lane_class: str = "implementation") -> dict:
+        """Return a real recorded lane to use as a fixture template.
+
+        These tests need a lane shaped like a production one and then replace
+        ``active_lanes`` with their own mutated copy. ``controlled_idle`` is a
+        supported operating state with no active lanes, so search the
+        preserved and closed records too instead of depending on a lane being
+        active at the moment the suite runs.
+        """
+        for key in ("active_lanes", "paused_lanes", "closing_lanes"):
+            for lane in parsed.get(key) or []:
+                if not isinstance(lane, dict):
+                    continue
+                if lane.get("lane_class") != lane_class:
+                    continue
+                if lane.get("branch") and lane.get("writable_surfaces"):
+                    return lane
+        raise AssertionError(f"the ledger records no {lane_class} lane fixture")
+
     def _assert_valid_merge_authorities(self, parsed: dict) -> None:
         mode = parsed["operating_mode"]
         active_by_package = {
@@ -2581,11 +2607,8 @@ with patch.object(
 
     def test_merge_authority_accepts_recorded_implementation_owner_grant(self):
         parsed = json.loads(self.path.read_text(encoding="utf-8"))
-        implementation = next(
-            lane
-            for lane in parsed["active_lanes"]
-            if lane.get("lane_class") == "implementation"
-        )
+        implementation = copy.deepcopy(self._lane_fixture(parsed))
+        parsed["active_lanes"] = [implementation]
         parsed["operating_mode"]["merge_allowed_for"] = [
             implementation["package"]
         ]
@@ -2608,7 +2631,9 @@ with patch.object(
 
     def test_merge_authority_rejects_implementation_without_owner_grant(self):
         parsed = json.loads(self.path.read_text(encoding="utf-8"))
-        implementation = copy.deepcopy(parsed["active_lanes"][0])
+        implementation = copy.deepcopy(self._lane_fixture(parsed))
+        implementation["lane_class"] = "implementation"
+        implementation["production_capable"] = True
         implementation["owner_decisions"] = [
             {"date": "2026-08-12", "decision": "Review is complete."}
         ]
@@ -2621,7 +2646,7 @@ with patch.object(
 
     def test_merge_authority_keeps_direction_grant_contract_strict(self):
         parsed = json.loads(self.path.read_text(encoding="utf-8"))
-        direction = copy.deepcopy(parsed["active_lanes"][0])
+        direction = copy.deepcopy(self._lane_fixture(parsed))
         direction["lane_class"] = "direction_authority"
         direction["production_capable"] = False
         parsed["active_lanes"] = [direction]

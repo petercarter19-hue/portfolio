@@ -1299,12 +1299,13 @@
         "tests/test_auth.py",
         "tests/test_search_visibility.py",
         "tests/test_navigation.py",
+        "tests/test_delivery_preflight.py",
         "docs/initiatives/PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001/",
         "artifacts/2026-08-11-interview-studio-authenticated/",
         "docs/governance/CURRENT_LANES.json",
         "docs/governance/CURRENT_BASELINE.yaml"
       ],
-      "surface_note": "tests/test_navigation.py added 2026-08-11 via the recorded-scope pattern, narrowly for its sitemap/robots pin superseded by the unconditional /interview-studio de-listing; this exact case was anticipated by the prior collision map ('narrowly affected navigation/homepage-link tests only when the exact route transition requires them'). No other assertion in that file may change under this lane.",
+      "surface_note": "tests/test_navigation.py added 2026-08-11 via the recorded-scope pattern, narrowly for its sitemap/robots pin superseded by the unconditional /interview-studio de-listing; this exact case was anticipated by the prior collision map ('narrowly affected navigation/homepage-link tests only when the exact route transition requires them'). No other assertion in that file may change under this lane. tests/test_delivery_preflight.py added 2026-08-12 via the same recorded-scope pattern, narrowly for four fixture lookups that read active_lanes[0] and so raise IndexError/StopIteration the moment this lane's own governed pause returns the control plane to controlled_idle. controlled_idle is a supported operating state, so this is a test-fixture defect, not a boundary: the four tests build a lane template and immediately replace active_lanes, and each now sources that template from the preserved and closed records too. No assertion, threshold, or authority rule in that file may change under this lane.",
       "exclusions": [
         "no templates/base.html edit: the global shell is reused untouched; the Studio's duplicate local header is retired inside interview_studio.html only",
         "no static/js/dictation.js edit: the shared dictation module is already contract-compliant",

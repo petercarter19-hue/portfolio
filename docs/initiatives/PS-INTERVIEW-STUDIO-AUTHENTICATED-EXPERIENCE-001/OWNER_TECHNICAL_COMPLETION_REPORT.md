@@ -154,3 +154,37 @@ failing before the fix and passing after.
 3. A route that gains a sign-in wall must have its deployment smoke updated in
    the same change, or every later deployment fails on a false signal.
 
+## Final disposition (2026-08-12)
+
+Pete approved the closeout. The lane was released so the control plane returns
+to `controlled_idle` and the next writer can activate.
+
+It is recorded in `CURRENT_LANES.json` as **`paused_preserved`**, not
+`merged_closed`. `--intent close` was run and refused for reasons that are
+structural rather than procedural: it requires a `direction_authority` lane
+with `production_capable` false, a formal `merge_grant`, a branch tip unmoved
+since review, and a **single** merge commit that introduced every writable
+surface. This is a production-capable implementation lane that merged its
+implementation, an owner-reported production fix, a repository-wide
+deployment-smoke repair, and its own completion record, so no such commit
+exists and none could be manufactured honestly. The pause record carries the
+reason and the resume contract, and the 2026-08-12 control-plane handoff now
+carries the captured error output plus this second finding. Nothing was
+forced: no assertion was weakened and no `merge_grant` was fabricated.
+
+Releasing the lane exposed a related defect worth naming, because it would
+have turned main red for every lane the moment the control plane went idle:
+four tests in the delivery-preflight suite built their fixtures from
+`active_lanes[0]`, so they crashed when no lane was active — even though
+`controlled_idle` is a supported state the preflight itself produces. They now
+source that fixture from the active, paused, and closed records, and the two
+that had been inheriting a lane class or operating state from whatever
+happened to be live set it explicitly. The suite was verified both ways: 72
+tests pass with a lane active and 72 pass against an empty control plane.
+
+**Preserved for recovery.** Branch
+`work/2026-08-11-interview-studio-authenticated-experience-001` plus tags
+`archive/2026-08-12-interview-studio-authenticated-pre-squash` and
+`archive/2026-08-12-interview-studio-authenticated-lane-tip` hold every commit,
+including the pre-squash history.
+
