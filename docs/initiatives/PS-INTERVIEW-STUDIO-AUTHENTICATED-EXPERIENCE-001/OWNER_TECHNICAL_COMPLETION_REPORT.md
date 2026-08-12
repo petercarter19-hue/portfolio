@@ -1,7 +1,7 @@
 # Owner Technical Completion Report — PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001
 
-**Date:** 2026-08-12 · **Delivery path:** Protected · **Release state:** merged
-and deployed **DARK** (flag off). **Not enabled.**
+**Date:** 2026-08-12 · **Delivery path:** Protected · **Release state:** merged and
+deployed **DARK** (flag off, verified live). **Not enabled.**
 
 ## Outcome
 
@@ -23,8 +23,24 @@ stays page-local; History carries four distinct truth states.
 
 ## Evidence
 
-- **Base / final:** base main `24f0acb`, rebased onto `5378be8`; final
-  candidate `e236dd7` (PR 391). Merge and deployment recorded separately below.
+- **Base / final:** base main `24f0acb`; final candidate `e7437af` (PR 391),
+  squash-merged as main **`8ac4395`**. The merged tree is byte-identical to
+  the reviewed candidate tree (`c978663…`), verified by direct tree compare.
+- **Deployment:** automatic run **839** (batchedCI, exact SHA `8ac4395`)
+  succeeded at 12:40 UTC. It arrived after a ~7.5-minute watch window had
+  closed, so a governed manual fallback (run 840) was queued; the pipeline's
+  own duplicate-work guard correctly refused it — "automatic exact-SHA run
+  already succeeded (839); verify live identity instead of redeploying". No
+  duplicate deployment occurred and the guard behaved exactly as designed.
+- **Live verification (post-deploy, release `de17671b7786493aca57f026`):**
+  public `/interview-studio` still 200 at 111,659 bytes and byte-identical to
+  the pre-deploy capture apart from the two asset content-hash tokens;
+  public markers present, zero authenticated markup; anonymous
+  `POST /api/interview/review` still returns the ordinary 400 validation
+  error (not 401), proving the wall is dark; `/interview-studio/history` still
+  200; legacy `/interview-me` still 302s to the canonical route. The
+  unconditional discovery changes are live as designed: robots.txt now
+  disallows `/interview-studio` and the sitemap no longer lists it.
 - **Changed paths:** `app.py`, `auth_routes.py`,
   `templates/interview_studio.html`, `static/css/interview-studio.css`,
   `static/js/interview-studio.js`, `tests/test_interview_studio.py`,
