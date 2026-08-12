@@ -25,6 +25,7 @@ from scripts.delivery_preflight import (
     OPPORTUNITY_SLATE_REVIEW_ATTESTATION,
     OPPORTUNITY_LIFECYCLE_FIXTURE_REPAIR,
     OPPORTUNITY_RESUME_FIXTURE_REPAIR,
+    OPPORTUNITY_CLOSE_INTRODUCTION_REPAIR,
     WRITER_TRANSFER_PREFLIGHT_REPAIR,
     GRANT_CLOSE_PREFLIGHT_REPAIR,
     GRANT_CLOSE_FIXTURE_FOLLOWUP,
@@ -35,6 +36,7 @@ from scripts.delivery_preflight import (
     _affirmative_merge_decision,
     _authoritative_azure_origin,
     _canonical_sha256,
+    _candidate_surface_introduction_proven,
     _direction_control_path_sequence_valid,
     _direction_merge_grant,
     _exact_direction_grant_delta,
@@ -43,6 +45,7 @@ from scripts.delivery_preflight import (
     _exact_opportunity_schema_repair_release_refresh_matches,
     _exact_opportunity_lifecycle_fixture_repair_delta,
     _exact_opportunity_resume_fixture_repair_delta,
+    _exact_opportunity_close_introduction_repair_delta,
     _exact_profile_close_fixture_followup_delta,
     _exact_profile_close_baseline_fixture_followup_delta,
     _fetch_exact_origin_refs,
@@ -2048,6 +2051,91 @@ with patch.object(
         self.assertTrue(
             any("may not change CURRENT_BASELINE" in error for error in baseline_errors)
         )
+
+    def test_opportunity_close_introduction_repair_is_exact_and_inert(self):
+        repair = OPPORTUNITY_CLOSE_INTRODUCTION_REPAIR
+        origin = load_ledger_at_ref(repair["origin_main"])
+        baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-12T19:02:00Z"
+        candidate["opportunity_close_introduction_repair"] = copy.deepcopy(repair)
+        exact_facts = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=repair["allowed_surfaces"],
+        )
+
+        self.assertTrue(
+            _exact_opportunity_close_introduction_repair_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("close-introduction" in item for item in warnings))
+
+        for fact_mutation in (
+            {"branch": "work/forged"},
+            {"origin_main": "f" * 40},
+            {"ahead": 0},
+            {"ahead": 2},
+            {"behind": 1},
+            {"changed_paths": repair["allowed_surfaces"][:-1]},
+            {"changed_paths": [*repair["allowed_surfaces"], "app.py"]},
+        ):
+            with self.subTest(facts=fact_mutation):
+                altered_errors, _ = self._evaluate_activation(
+                    candidate,
+                    {**exact_facts, **fact_mutation},
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(altered_errors)
+
+        altered = copy.deepcopy(candidate)
+        altered["operating_mode"]["merge_allowed_for"].append(
+            "PS-DELIVERY-CONTROL-001"
+        )
+        self.assertFalse(
+            _exact_opportunity_close_introduction_repair_delta(origin, altered)
+        )
+        altered_errors, _ = self._evaluate_activation(
+            altered,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(altered_errors)
+
+        baseline_errors, _ = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline + b"\n# forged baseline\n",
+            origin_baseline=baseline,
+        )
+        self.assertTrue(
+            any("may not change CURRENT_BASELINE" in error for error in baseline_errors)
+        )
+
+    def test_close_introduction_requires_at_least_one_changed_surface(self):
+        self.assertTrue(_candidate_surface_introduction_proven([False, True]))
+        self.assertTrue(_candidate_surface_introduction_proven([True, True]))
+        self.assertFalse(_candidate_surface_introduction_proven([False, False]))
+        self.assertFalse(_candidate_surface_introduction_proven([]))
+        self.assertFalse(_candidate_surface_introduction_proven([True, 1]))
 
     def test_grant_rejects_negation_weak_or_forged_review_and_bad_commit_count(self):
         origin, lane = self._direction_origin()

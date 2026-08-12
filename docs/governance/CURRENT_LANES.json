@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T19:00:00Z",
+  "updated_at": "2026-08-12T19:02:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -1540,5 +1540,18 @@
     ],
     "reason": "Pete authorized the Opportunity Slate preflight repair and completion sequence. Fresh activation validation exposed one remaining test-only lifecycle assumption: the historical PR-375 grant fixture preferred any current Opportunity active lane, so a legitimate resumed repair lane was misread as the original reviewed branch. This follow-up pins that historical fixture to its code-controlled original branch. It changes no active lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, production data, or live behavior.",
     "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. The parent must retain the exact prior Opportunity lifecycle fixture repair; the ledger may change only updated_at plus this record, and the baseline must remain byte-identical. A later branch, base, altered record, timestamp, authority, lane, path, or baseline cannot reuse it."
+  },
+  "opportunity_close_introduction_repair": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-12-delivery-activation-oppslate-close-introduction-repair",
+    "origin_main": "7f2a3e6b474a9a9422ca46c15c0bd8c6965580a4",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "reason": "Pete authorized the Opportunity Slate preflight repair and complete dark release sequence. After the exact reviewed repair merged and PS-OPPSLATE-004 applied successfully, close validation proved that the collector required the package merge to change every permitted writable surface, including files the repair intentionally preserved unchanged. This repair keeps full reviewed/merge/main tree equality for every surface and requires the verified merge to introduce at least one candidate surface. It changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, production data, or live behavior.",
+    "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this exact record, branch, origin/main base, one-commit shape, and three changed paths all match code. The parent must retain the prior Opportunity lifecycle repairs; the ledger may change only updated_at plus this record, and the baseline must remain byte-identical. A later branch, base, altered record, timestamp, authority, lane, path, or baseline cannot reuse it."
   }
 }
