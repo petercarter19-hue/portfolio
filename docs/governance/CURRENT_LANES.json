@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T08:14:30Z",
+  "updated_at": "2026-08-12T09:10:06Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -146,6 +146,20 @@
     ],
     "reason": "Pete's end-to-end Profile direction assignment requires the reviewed package to pass the normal no-bypass Azure PR validation path. That validation exposed two fixture-only assumptions: the historical repair replay borrowed the current mutable lane ledger, and a ledger invariant treated every temporary merge authorization as invalid. This follow-up pins the replay to the exact merged grant-close repair, validates temporary merge authority from the exact review-bound lane grant, and permits only the exact repair, follow-up, then grant control sequence. It changes no active lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, or live behavior.",
     "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, and exact three changed paths. Direction merge admission additionally proves the exact repair, follow-up, then grant commit order and each semantic ledger delta. A later branch, base, altered record, forged sequence, or product-authority change cannot reuse it."
+  },
+  "profile_close_fixture_followup": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-12-delivery-activation-profile-close-fixture-followup",
+    "origin_main": "476c641f32b88caac448f6351b731eb36dff6e53",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py",
+      "tests/test_governance_pointers.py"
+    ],
+    "reason": "Required Azure PR validation of the exact Profile direction close candidate exposed two fixture-only assumptions: the direction helper borrowed the current mutable lane ledger, and the baseline pointer test froze updated_at to a historical date. This follow-up pins the direction fixture to exact pre-close main and validates the baseline date semantically. It changes no active lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, or live behavior.",
+    "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact four changed paths. The ledger may change only updated_at plus this record, and the baseline must remain byte-identical. A later branch, base, altered record, timestamp, authority, lane, path, or baseline cannot reuse it."
   },
   "closing_lanes": [
     {

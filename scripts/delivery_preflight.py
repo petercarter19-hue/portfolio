@@ -226,6 +226,48 @@ GRANT_CLOSE_FIXTURE_FOLLOWUP = {
     ),
 }
 
+# Required PR validation of the exact Profile direction close candidate exposed
+# two remaining state-coupled test assumptions: the direction test fixture read
+# the mutable checked-in ledger after Profile had closed, and the baseline
+# pointer test treated one historical date as permanent.  This one-time,
+# code-controlled follow-up pins the fixture to the exact pre-close main and
+# validates dates semantically.  It changes no lane, authority list, baseline,
+# product code, schema, pipeline, deployment, configuration, or live behavior,
+# and it expires as soon as origin/main moves away from the pinned source SHA.
+PROFILE_CLOSE_FIXTURE_FOLLOWUP = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": (
+        "work/2026-08-12-delivery-activation-profile-close-fixture-followup"
+    ),
+    "origin_main": "476c641f32b88caac448f6351b731eb36dff6e53",
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+        "tests/test_governance_pointers.py",
+    ],
+    "reason": (
+        "Required Azure PR validation of the exact Profile direction close "
+        "candidate exposed two fixture-only assumptions: the direction helper "
+        "borrowed the current mutable lane ledger, and the baseline pointer "
+        "test froze updated_at to a historical date. This follow-up pins the "
+        "direction fixture to exact pre-close main and validates the baseline "
+        "date semantically. It changes no active lane, authority list, "
+        "baseline, product code, schema, pipeline, deployment, configuration, "
+        "or live behavior."
+    ),
+    "verification_contract": (
+        "This is audit evidence, not self-granted package authority. The "
+        "preflight recognizes it only when this entire record equals the "
+        "validator's hard-coded record and Git proves the exact branch, exact "
+        "origin/main base, exactly one commit, and exact four changed paths. "
+        "The ledger may change only updated_at plus this record, and the "
+        "baseline must remain byte-identical. A later branch, base, altered "
+        "record, timestamp, authority, lane, path, or baseline cannot reuse it."
+    ),
+}
+
 MAX_ACTIVE_LANES = 3
 MAX_IMPLEMENTATION_LANES = 2
 MAX_DIRECTION_AUTHORITY_LANES = 1
@@ -2085,6 +2127,23 @@ def _exact_grant_close_fixture_followup_matches(
     )
 
 
+def _exact_profile_close_fixture_followup_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("profile_close_fixture_followup")
+        == PROFILE_CLOSE_FIXTURE_FOLLOWUP
+        and package_id == PROFILE_CLOSE_FIXTURE_FOLLOWUP["package"]
+        and facts.get("branch") == PROFILE_CLOSE_FIXTURE_FOLLOWUP["branch"]
+        and facts.get("origin_main")
+        == PROFILE_CLOSE_FIXTURE_FOLLOWUP["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+    )
+
+
 def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
     """Accept pinned Profile authority or an exact machine-readable decision."""
     if package_id == "PS-PROFILE-EXPERIENCE-001":
@@ -2366,6 +2425,29 @@ def _exact_grant_close_fixture_followup_delta(
     expected = copy.deepcopy(parent_ledger)
     expected["updated_at"] = followup_ledger.get("updated_at")
     expected["grant_close_fixture_followup"] = GRANT_CLOSE_FIXTURE_FOLLOWUP
+    if followup_ledger != expected:
+        return False
+    return _utc_timestamp_strictly_advances(
+        followup_ledger.get("updated_at"), parent_ledger.get("updated_at")
+    )
+
+
+def _exact_profile_close_fixture_followup_delta(
+    parent_ledger: object,
+    followup_ledger: object,
+) -> bool:
+    """Prove the Profile close fixture follow-up is authority-neutral."""
+    if not isinstance(parent_ledger, dict) or not isinstance(followup_ledger, dict):
+        return False
+    if (
+        parent_ledger.get("profile_close_fixture_followup") is not None
+        or followup_ledger.get("profile_close_fixture_followup")
+        != PROFILE_CLOSE_FIXTURE_FOLLOWUP
+    ):
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = followup_ledger.get("updated_at")
+    expected["profile_close_fixture_followup"] = PROFILE_CLOSE_FIXTURE_FOLLOWUP
     if followup_ledger != expected:
         return False
     return _utc_timestamp_strictly_advances(
@@ -3753,6 +3835,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        profile_close_fixture_followup_matches = (
+            _exact_profile_close_fixture_followup_matches(
+                ledger, facts, package_id
+            )
+        )
         if bootstrap_matches:
             allowed_surfaces = set(BOOTSTRAP_CONTROL_REPAIR["allowed_surfaces"])
             warnings.append(
@@ -3778,6 +3865,13 @@ def evaluate_policy(
             )
             warnings.append(
                 "using the exact one-time grant-close fixture-followup boundary"
+            )
+        elif profile_close_fixture_followup_matches:
+            allowed_surfaces = set(
+                PROFILE_CLOSE_FIXTURE_FOLLOWUP["allowed_surfaces"]
+            )
+            warnings.append(
+                "using the exact one-time Profile close fixture-followup boundary"
             )
 
         if origin_ledger is None:
@@ -3805,6 +3899,7 @@ def evaluate_policy(
                 and not writer_transfer_repair_matches
                 and not grant_close_repair_matches
                 and not grant_close_fixture_followup_matches
+                and not profile_close_fixture_followup_matches
                 and origin_policy != policy
             ):
                 errors.append(
@@ -3816,7 +3911,38 @@ def evaluate_policy(
                     f"activation candidate exceeds the {MAX_ACTIVE_LANES}-lane limit"
                 )
 
-            if grant_close_fixture_followup_matches:
+            if profile_close_fixture_followup_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "Profile close fixture follow-up updated_at must be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "Profile close fixture follow-up updated_at must strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "Profile close fixture follow-up may not change activation_policy"
+                    )
+                if not _exact_profile_close_fixture_followup_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "Profile close fixture follow-up must be the exact inert ledger delta"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline, origin_baseline,
+                    label="Profile close fixture follow-up", errors=errors,
+                )
+            elif grant_close_fixture_followup_matches:
                 candidate_updated_at = ledger.get("updated_at")
                 origin_updated_at = origin_ledger.get("updated_at")
                 if not _valid_utc_timestamp(candidate_updated_at):
@@ -4158,6 +4284,7 @@ def evaluate_policy(
             not writer_transfer_repair_matches
             and not grant_close_repair_matches
             and not grant_close_fixture_followup_matches
+            and not profile_close_fixture_followup_matches
         ):
             _validate_baseline_activation_delta(
                 candidate_baseline,
@@ -4201,6 +4328,15 @@ def evaluate_policy(
             ):
                 errors.append(
                     "grant-close fixture follow-up must change exactly the "
+                    "owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                profile_close_fixture_followup_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "Profile close fixture follow-up must change exactly the "
                     "owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )

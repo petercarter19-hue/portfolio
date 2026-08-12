@@ -8,6 +8,7 @@ import json
 import os
 import re
 import unittest
+from datetime import date
 
 from control_room_projection import parse_yaml_subset
 
@@ -66,7 +67,9 @@ class ControlPlaneTests(unittest.TestCase):
 
     def test_control_plane_is_current_and_concise(self):
         self.assertEqual("5", self.data.get("schema_version"))
-        self.assertEqual("2026-08-10", self.data.get("updated_at"))
+        updated_at = self.data.get("updated_at")
+        self.assertRegex(updated_at, r"^\d{4}-\d{2}-\d{2}$")
+        self.assertEqual(updated_at, date.fromisoformat(updated_at).isoformat())
         self.assertLess(len(self.body.split()), 900)
         self.assertNotIn("planned_packages:", self.body)
         self.assertNotIn("holds:", self.body)

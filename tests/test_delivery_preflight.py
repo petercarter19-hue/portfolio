@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -18,6 +19,7 @@ from scripts.delivery_preflight import (
     WRITER_TRANSFER_PREFLIGHT_REPAIR,
     GRANT_CLOSE_PREFLIGHT_REPAIR,
     GRANT_CLOSE_FIXTURE_FOLLOWUP,
+    PROFILE_CLOSE_FIXTURE_FOLLOWUP,
     PROFILE_DIRECTION_OWNER_DECISION_SHA256,
     PROFILE_DIRECTION_REVIEW_ATTESTATION,
     _affirmative_merge_decision,
@@ -27,6 +29,7 @@ from scripts.delivery_preflight import (
     _direction_merge_grant,
     _exact_direction_grant_delta,
     _exact_grant_close_fixture_followup_delta,
+    _exact_profile_close_fixture_followup_delta,
     _fetch_exact_origin_refs,
     _git_environment,
     _baseline_scalar,
@@ -51,6 +54,9 @@ ROOT = Path(__file__).resolve().parents[1]
 # PS-DELIVERY-PREFLIGHT-CLOSEOUT-FIXTURE-001 and the Workshop closeout
 # fixture correction).
 BOOTSTRAP_MERGED_MAIN = "ace996cd32612cfa62ae51b4b4f28158e41c6b23"
+PROFILE_DIRECTION_PRE_CLOSE_MAIN = (
+    "476c641f32b88caac448f6351b731eb36dff6e53"
+)
 
 
 def facts(**overrides):
@@ -304,7 +310,10 @@ class DeliveryPreflightTests(unittest.TestCase):
         return idle
 
     def _direction_origin(self) -> tuple[dict, dict]:
-        origin = copy.deepcopy(self.ledger)
+        # Direction grant/close tests exercise the immutable pre-close state.
+        # The checked-in ledger is intentionally mutable and no longer retains
+        # Profile in active_lanes after a successful close.
+        origin = load_ledger_at_ref(PROFILE_DIRECTION_PRE_CLOSE_MAIN)
         lane = next(
             copy.deepcopy(item)
             for item in origin["active_lanes"]
@@ -1385,6 +1394,105 @@ with patch.object(
         stale["updated_at"] = origin["updated_at"]
         self.assertFalse(_exact_grant_close_fixture_followup_delta(origin, stale))
 
+    def test_profile_close_fixture_followup_is_exact_inert_and_fail_closed(self):
+        repair = PROFILE_CLOSE_FIXTURE_FOLLOWUP
+        origin = load_ledger_at_ref(repair["origin_main"])
+        baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-12T09:10:06Z"
+        candidate["profile_close_fixture_followup"] = copy.deepcopy(repair)
+        exact_facts = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=repair["allowed_surfaces"],
+        )
+
+        self.assertTrue(
+            _exact_profile_close_fixture_followup_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("Profile close" in item for item in warnings))
+
+        mutations = (
+            {"branch": "work/2026-08-12-delivery-activation-wrong"},
+            {"origin_main": "f" * 40},
+            {"ahead": 0},
+            {"ahead": 2},
+            {"behind": 1},
+            {"changed_paths": repair["allowed_surfaces"][:-1]},
+            {"changed_paths": [*repair["allowed_surfaces"], "app.py"]},
+        )
+        for fact_mutation in mutations:
+            with self.subTest(facts=fact_mutation):
+                altered = copy.deepcopy(candidate)
+                altered_errors, _ = self._evaluate_activation(
+                    altered,
+                    {**exact_facts, **fact_mutation},
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(altered_errors)
+
+        def assert_inert_rejected(mutator):
+            altered = copy.deepcopy(candidate)
+            mutator(altered)
+            self.assertFalse(
+                _exact_profile_close_fixture_followup_delta(origin, altered)
+            )
+            altered_errors, _ = self._evaluate_activation(
+                altered,
+                exact_facts,
+                require_clean=True,
+                origin=origin,
+                candidate_baseline=baseline,
+                origin_baseline=baseline,
+            )
+            self.assertTrue(altered_errors)
+
+        assert_inert_rejected(
+            lambda value: value["profile_close_fixture_followup"].__setitem__(
+                "branch", "work/forged"
+            )
+        )
+        assert_inert_rejected(
+            lambda value: value.__setitem__("updated_at", origin["updated_at"])
+        )
+        assert_inert_rejected(
+            lambda value: value.__setitem__("updated_at", "2026-02-30T09:10:06Z")
+        )
+        assert_inert_rejected(
+            lambda value: value["operating_mode"]["merge_allowed_for"].append(
+                "PS-DELIVERY-CONTROL-001"
+            )
+        )
+        assert_inert_rejected(
+            lambda value: value["active_lanes"].pop()
+        )
+
+        baseline_errors, _ = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline + b"\n# forged baseline\n",
+            origin_baseline=baseline,
+        )
+        self.assertTrue(
+            any("may not change CURRENT_BASELINE" in error for error in baseline_errors)
+        )
+
     def test_grant_rejects_negation_weak_or_forged_review_and_bad_commit_count(self):
         origin, lane = self._direction_origin()
         reviewed = PROFILE_DIRECTION_REVIEW_ATTESTATION["reviewed_sha"]
@@ -1759,7 +1867,13 @@ with patch.object(
                 )
             )
             self.assertEqual([], grant_errors)
-            self.assertEqual(parsed["updated_at"], grant.get("granted_at"))
+            ledger_updated = datetime.strptime(
+                parsed["updated_at"], "%Y-%m-%dT%H:%M:%SZ"
+            )
+            grant_created = datetime.strptime(
+                grant["granted_at"], "%Y-%m-%dT%H:%M:%SZ"
+            )
+            self.assertLessEqual(grant_created, ledger_updated)
         self.assertEqual([], mode["cleanup_allowed_for"])
         self.assertTrue(parsed["workspace_snapshot"]["cleanup_authorized"])
 
