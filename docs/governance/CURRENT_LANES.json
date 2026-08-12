@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T01:36:38Z",
+  "updated_at": "2026-08-12T01:46:28Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -1069,7 +1069,7 @@
       "package": "PS-OPPORTUNITY-SLATE-002",
       "outcome": "Replace the Opportunity Slate experience per the 2026-08-11 Claude architecture (artifacts/2026-08-11-opportunity-slate-architecture/OPPORTUNITY_SLATE_ARCHITECTURE.md), built to the eleven owner-locked visual files (two locked references plus the nine candidates Pete locked on 2026-08-11, hash-pinned in the visual package's ASSET_SHA256SUMS.txt) and the controlling 2026-08-09 independent review PDF. This lane delivers R1 dark: the v2 workroom blueprint and service, stage-1 intake (paste/type/dictate, upload and public-link import reusing the hardened intake service unchanged), stage-2 captured-source review, and the additive PS-OPPSLATE-004 migration with its full gate proof, all behind PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED (default false) with the legacy experience untouched and live. The lane ends at a CI-validated Azure PR held for Pete's pre-live review; R2+ (AI interpretation and alignment, save/history, cutover, legacy retirement) are separate later recorded steps.",
       "branch": "work/2026-08-11-opportunity-slate-v2-r1",
-      "writer": "Claude Sonnet at maximum effort as the sole delegated implementation writer in the dedicated portfolio-opportunity-slate-v2-20260811 worktree, orchestrated by Claude Fable 5 (the architecture author, which briefs and reviews but does not hand-write implementation); a fresh Claude Fable extra-high context performs the independent Protected review of the exact candidate SHA",
+      "writer": "Root Codex session /root is the sole completion writer in the dedicated portfolio-opportunity-slate-v2-20260811 worktree after Claude relinquished the clean pushed checkpoint at 3fb657456fef757c70292cf20217f567c477f733; a fresh GPT-5.6 Sol extra-high reviewer context that does not write the code performs the independent Protected review of the exact candidate SHA",
       "delivery_path": "Protected",
       "production_capable": false,
       "lane_class": "implementation",
@@ -1106,7 +1106,7 @@
         "R1 scope delivered dark: v2 blueprint and service with sign-in gate, private/no-store and noindex headers, same-origin guards, and member-keyed rate limits; stage-1 intake with disabled-until-nonempty Review source and in-flight/failure states; stage-2 captured-source review with identity fields, editable captured wording preserving write-once originals, explicit Confirm source, and bounded replace/delete confirmation",
         "additive migration PS-OPPSLATE-004 with registry entry and full gate proof: prerequisites, forward, idempotent reapply, owner-isolation verifier, rollback, forward-after-rollback on a disposable database, and fingerprint-guard proof that 004's takeovers re-stamp and nothing redefines the 001..003 procedures",
         "new suites plus the existing full suite pass via the project venv under CI's unittest discover semantics",
-        "complete-diff self-review by the writer; independent fresh-context Fable extra-high review of the exact candidate SHA with findings closed",
+        "complete-diff self-review by the Codex writer; independent fresh-context GPT-5.6 Sol extra-high review of the exact candidate SHA with findings closed",
         "local flag-on visual verification against locked mockups 04 and 05 with archived side-by-side screenshots, 320px and 390px reflow, keyboard and reduced-motion checks for the shipped states",
         "Azure PR opened with required CI green and held unmerged; proportional completion record and a morning report with the PR link, screenshots, owner decisions D-1..D-13, the app.py wiring dependency, and the PR 250/251 disposition recommendation"
       ],
@@ -1118,18 +1118,22 @@
         {
           "date": "2026-08-11",
           "decision": "Execution boundary, verbatim: 'Go right up until it goes live. I'll review it before that.' then 'Yeah. I want you all the way until almost live deployment. At that point, stop and let me review it before it goes live.' This lane therefore stops at a CI-validated, unmerged Azure PR; merge, deployment, schema apply, and release are Pete's decisions after his review."
+        },
+        {
+          "date": "2026-08-11",
+          "decision": "Writer transfer, verbatim: 'I want it to finish this package completely.' Pete assigned Root Codex as writer and reviewer for PS-OPPORTUNITY-SLATE-002 as a complete break from Claude. Claude relinquished the lane at clean pushed branch head 3fb657456fef757c70292cf20217f567c477f733. Root Codex completes the package and uses a fresh GPT-5.6 Sol extra-high context that did not write the code for the independent forensic and professional-eye review. PR 375 remains unmerged for Pete's pre-live review."
         }
       ],
       "model_routing": {
         "decided_by": "Pete",
         "date": "2026-08-11",
-        "architecture": "Claude Fable 5 at extra-high effort (workflow wf_722c9c2c-d11): authored and critic-revised the architecture document; orchestrates and briefs; does not hand-write implementation",
-        "implementation": "Claude Sonnet at maximum effort, sole delegated implementation writer in the dedicated clean worktree",
-        "independent_reviewer": "Fresh Claude Fable extra-high context reviews the exact final candidate SHA; it did not write the code",
-        "sequence": "activation merge -> clean worktree -> write preflight -> Sonnet max implements R1 -> full validation -> Fable extra-high exact-SHA review -> findings closed -> Azure PR at CI green -> STOP for Pete's pre-live review"
+        "architecture": "Historical authorship retained for provenance: Claude Fable 5 at extra-high effort (workflow wf_722c9c2c-d11) authored and critic-revised the architecture document before the owner-directed transfer",
+        "implementation": "Claude Sonnet produced the clean pushed implementation checkpoint through 3fb657456fef757c70292cf20217f567c477f733; after explicit relinquishment, Root Codex is the sole completion writer",
+        "independent_reviewer": "Fresh GPT-5.6 Sol at extra-high effort reviews the exact final candidate SHA under both the forensic and professional-eye lenses; the reviewer context does not write the code",
+        "sequence": "Claude checkpoint 3fb6574 -> governance-only Codex writer transfer -> Root Codex re-measures and completes R1 -> full validation and self-review -> fresh Sol extra-high exact-SHA independent review -> Root Codex closes findings -> PR 375 at CI green -> STOP for Pete's pre-live review"
       },
       "cleanup_contract": "Task-local only: after this lane's work merges under Pete's recorded decision and recoverability is verified, remove only this lane's clean merged activation and implementation worktrees and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
-      "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree from resulting origin/main; pass the package write preflight; Sonnet max implements R1 (blueprint, service, intake, source review, migration, tests; no app.py); run the full suites via the project venv; complete-diff self-review; independent Fable extra-high review of the exact candidate; close findings; local flag-on visual verification against the locked mockups; open the Azure PR and hold at CI green for Pete's pre-live review. The app.py flag wiring lands only after PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 closes, through a fresh recorded ledger update."
+      "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree from resulting origin/main; pass the package write preflight; after Claude relinquishes the clean pushed checkpoint at 3fb6574, merge the governance-only Codex writer-transfer PR with a verified [skip ci] squash; Root Codex re-measures both shipped states from scratch, completes R1 without app.py, runs the functional gauntlet and full suites, and self-reviews; a fresh GPT-5.6 Sol extra-high context independently reviews the exact candidate under the forensic and professional-eye lenses; close findings; hold PR 375 at CI green for Pete's pre-live review. The app.py flag wiring lands only after PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 closes, through a fresh recorded ledger update."
     }
   ],
   "paused_lanes": [
