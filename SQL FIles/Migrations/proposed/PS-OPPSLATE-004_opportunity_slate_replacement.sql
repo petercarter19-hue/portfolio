@@ -37,7 +37,14 @@
    (evidence_snapshot_sha256, confirmed_requirements_ordinal) and one on
    dbo.opportunity_requirement_sets (member_confirmed_ordinal). All three
    are NULL on every existing row and change nothing about how a 001-003
-   procedure reads or writes those tables.
+   procedure reads or writes those tables. Their CHECK constraints are
+   intentionally added WITH NOCHECK: the production migration identity has
+   ALTER but no SELECT on protected member tables, and WITH CHECK would scan
+   historical rows and fail that least-privilege boundary. Because the three
+   columns are created nullable in this same transaction, every historical
+   value is already NULL. SQL Server still enforces each enabled constraint
+   on later INSERT/UPDATE operations; the catalog records them as untrusted
+   only because old rows were deliberately not scanned.
 
    DEFERRED PROCEDURES, DELIBERATELY. Section 5.2 of the architecture also
    sketches usp_SaveOpportunityRequirementReviewForOwner,
@@ -417,14 +424,21 @@ BEGIN TRY
     IF COL_LENGTH(N'dbo.opportunity_analyses', N'confirmed_requirements_ordinal') IS NULL
         EXEC(N'ALTER TABLE dbo.opportunity_analyses ADD confirmed_requirements_ordinal int NULL;');
 
+    /* Do not change these three existing-table constraints to WITH CHECK.
+       peerslate-ado-schema intentionally cannot SELECT protected member rows,
+       so validating historical rows would reproduce governed production run
+       836's permission failure. The nullable columns above are new in this
+       transaction and therefore NULL on every old row. WITH NOCHECK skips only
+       that historical scan; each enabled constraint still rejects invalid
+       future INSERT/UPDATE values. The verifier pins enabled + untrusted. */
     IF NOT EXISTS (SELECT 1 FROM sys.check_constraints
                    WHERE name = N'CK_opportunity_analyses_evidence_snapshot_hash')
-        EXEC(N'ALTER TABLE dbo.opportunity_analyses WITH CHECK ADD
+        EXEC(N'ALTER TABLE dbo.opportunity_analyses WITH NOCHECK ADD
                   CONSTRAINT CK_opportunity_analyses_evidence_snapshot_hash CHECK
                   (evidence_snapshot_sha256 IS NULL OR evidence_snapshot_sha256 NOT LIKE N''%[^0-9a-f]%'');');
     IF NOT EXISTS (SELECT 1 FROM sys.check_constraints
                    WHERE name = N'CK_opportunity_analyses_confirmed_ordinal')
-        EXEC(N'ALTER TABLE dbo.opportunity_analyses WITH CHECK ADD
+        EXEC(N'ALTER TABLE dbo.opportunity_analyses WITH NOCHECK ADD
                   CONSTRAINT CK_opportunity_analyses_confirmed_ordinal CHECK
                   (confirmed_requirements_ordinal IS NULL OR confirmed_requirements_ordinal > 0);');
 
@@ -440,7 +454,7 @@ BEGIN TRY
 
     IF NOT EXISTS (SELECT 1 FROM sys.check_constraints
                    WHERE name = N'CK_opportunity_requirement_sets_member_confirmed_ordinal')
-        EXEC(N'ALTER TABLE dbo.opportunity_requirement_sets WITH CHECK ADD
+        EXEC(N'ALTER TABLE dbo.opportunity_requirement_sets WITH NOCHECK ADD
                   CONSTRAINT CK_opportunity_requirement_sets_member_confirmed_ordinal CHECK
                   (member_confirmed_ordinal IS NULL OR member_confirmed_ordinal > 0);');
 

@@ -1,0 +1,71 @@
+{
+  "recorded_at_utc": "2026-08-12T13:30:00Z",
+  "resource_group": "peerslate",
+  "server": "peerslate",
+  "database": "ps-oppslate-004-perm-202608121325",
+  "database_sku": "Basic",
+  "database_deleted_and_confirmed_absent": true,
+  "operator_context": "Root Codex under Pete's explicit pre-flight and release authorization; existing Azure CLI/Entra session; no password requested, copied, or stored",
+  "production_run_836": {
+    "result": "failed_closed_and_transactionally_rolled_back",
+    "failure": "The SELECT permission was denied on dbo.opportunity_analyses while WITH CHECK attempted to validate protected historical rows.",
+    "migration_ledger_after": "PS-OPPSLATE-004 absent; 26 rows unchanged"
+  },
+  "isolated_engine_probe": {
+    "restricted_permission_shape": "ALTER granted and SELECT denied on a populated table",
+    "with_check_failed_select_denied": true,
+    "with_nocheck_succeeded_without_select": true,
+    "constraint_is_disabled": 0,
+    "constraint_is_not_trusted": 1,
+    "future_invalid_write_rejected": true,
+    "future_valid_write_accepted": true
+  },
+  "exact_migration_probe": {
+    "executable_sha256": "f4752c0e9cf176d26bd4239a5cf13bbc99e7614fa1da7fae6087705d79acb73a",
+    "principal": "oppslate-ado-schema-probe",
+    "principal_shape": [
+      "db_ddladmin",
+      "VIEW DEFINITION",
+      "SELECT/INSERT/UPDATE/DELETE on dbo.schema_migrations only",
+      "EXECUTE on dbo.usp_AppendAuditEvent",
+      "zero SELECT on dbo.opportunity_analyses",
+      "zero SELECT on dbo.opportunity_requirement_sets"
+    ],
+    "forward_applied_as_restricted_principal": true,
+    "constraints": [
+      {
+        "name": "CK_opportunity_analyses_confirmed_ordinal",
+        "is_disabled": 0,
+        "is_not_trusted": 1
+      },
+      {
+        "name": "CK_opportunity_analyses_evidence_snapshot_hash",
+        "is_disabled": 0,
+        "is_not_trusted": 1
+      },
+      {
+        "name": "CK_opportunity_requirement_sets_member_confirmed_ordinal",
+        "is_disabled": 0,
+        "is_not_trusted": 1
+      }
+    ],
+    "owner_isolation_verifier": "verified=1",
+    "rollback_removed_004_ledger": true
+  },
+  "official_gate": {
+    "passed": true,
+    "steps": 6,
+    "objects_created": 42,
+    "objects_removed_in_rehearsal": 42,
+    "idempotent_reapply": true,
+    "forward_after_rollback": true,
+    "supplemental_removed_set_matches_gate": true,
+    "restored_ps_oppslate_002_procedure_hashes_match": true
+  },
+  "cost_context": {
+    "incremental_resource": "one Basic Azure SQL database for about nine minutes",
+    "conservative_upper_bound_if_rounded_to_one_hour_usd": 0.007,
+    "credits": "expected to be absorbed by Pete's existing Azure credits",
+    "recurring_resource": false
+  }
+}

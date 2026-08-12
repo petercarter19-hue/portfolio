@@ -1315,9 +1315,9 @@
       ],
       "summary": "Opportunity Slate replacement R1 additive delta: member-entered source identity (employer/role title), the shape of two R2 tables (requirement review events, member takes) and three R2 currency columns, and a hash-stamped takeover of the purge/delete procedures to learn all three new child tables. Gate-proven on a disposable database; production apply still requires the governed pipeline and recorded release authority.",
       "gate": {
-        "executable_sha256": "346c29008d4bbdabcf4f81224f8d708788ac12c27a9909dbfbcac37a756ba739",
-        "gated_at_utc": "2026-08-12T04:42:32Z",
-        "gate_database": "ps-oppslate-004-gate-202608112343",
+        "executable_sha256": "f4752c0e9cf176d26bd4239a5cf13bbc99e7614fa1da7fae6087705d79acb73a",
+        "gated_at_utc": "2026-08-12T13:27:59Z",
+        "gate_database": "ps-oppslate-004-perm-202608121325",
         "gate_server": "peerslate",
         "prerequisites": [
           "PS-PLAT-000",
@@ -1379,8 +1379,8 @@
           "USER_TABLE:dbo.opportunity_source_identities"
         ],
         "verification": "PS-OPPSLATE-004_owner_isolation_verify.sql returned verified = 1",
-        "operator": "Pete",
-        "notes": "Fresh post-review gate: dynamic explicit-delete cross-owner survivor and stale-token proof."
+        "operator": "Root Codex under Pete approval",
+        "notes": "Exact repaired forward separately passed under a db_ddladmin principal with zero SELECT on opportunity_analyses and opportunity_requirement_sets before this full gate."
       }
     }
   ]

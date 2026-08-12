@@ -1,9 +1,16 @@
 {
-  "recorded_at_utc": "2026-08-12T04:45:09Z",
+  "recorded_at_utc": "2026-08-12T13:30:00Z",
   "resource_group": "peerslate",
   "server": "peerslate",
   "operator_context": "Root Codex under Pete's explicit package and Azure authorization; existing Azure CLI/Entra session; no password requested, copied, or stored",
-  "production_database_opened_or_mutated": false,
+  "production_database_opened_or_mutated_by_disposable_gate_attempts": false,
+  "production_run_836": {
+    "production_database_opened": true,
+    "transactional_schema_mutation_attempted": true,
+    "transaction_rolled_back": true,
+    "durable_schema_or_data_change": false,
+    "ledger_after": "26 rows; PS-OPPSLATE-004 absent"
+  },
   "attempts": [
     {
       "database": "ps-oppslate-004-gate-202608112305",
@@ -53,16 +60,31 @@
         "PS-OPPSLATE-004-post-rollback-state.json"
       ],
       "deleted_and_confirmed_absent": true
+    },
+    {
+      "database": "ps-oppslate-004-perm-202608121325",
+      "result": "passed_restricted_principal_exact_forward_full_gate_and_exact_rollback_inventory",
+      "proof_recorded": true,
+      "executable_sha256": "f4752c0e9cf176d26bd4239a5cf13bbc99e7614fa1da7fae6087705d79acb73a",
+      "verifier_sha256": "7bb5a62009c1038779c0f21772e0ef37318525d7051c9998504e9fa20521fe97",
+      "rollback_sha256": "f4ac53dfa0c53454afe67dd9836830cbe433391241cbfb48ac47cb16f946a9b7",
+      "evidence": [
+        "PS-OPPSLATE-004-permission-proof.json",
+        "PS-OPPSLATE-004-gate.json",
+        "PS-OPPSLATE-004-rollback-proof.json",
+        "PS-OPPSLATE-004-post-rollback-state.json"
+      ],
+      "deleted_and_confirmed_absent": true
     }
   ],
   "cleanup_verification": {
-    "azure_query": "az sql db list --resource-group peerslate --server peerslate --query [starts_with name ps-oppslate-004-gate-20260811]",
+    "azure_query": "az sql db list --resource-group peerslate --server peerslate --query exact task database name",
     "remaining_databases": []
   },
   "cost_context": {
-    "sku": "Basic",
-    "central_us_retail_usd_per_day": 0.161,
-    "upper_bound_usd_if_each_attempt_were_rounded_to_one_full_hour": 0.041,
-    "note": "Actual metered cost should be lower; Azure billing finalization may lag. No recurring gate resource remains."
+    "repair_sku": "Basic",
+    "repair_duration_approx_minutes": 9,
+    "repair_upper_bound_usd_if_rounded_to_one_full_hour": 0.007,
+    "note": "The repair run's actual metered cost should be below one cent and absorbed by existing credits; Azure billing finalization may lag. No recurring task resource remains. The earlier six-gate historical cost context remains preserved in Git history."
   }
 }

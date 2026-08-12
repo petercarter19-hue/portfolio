@@ -176,9 +176,9 @@ class OpportunitySlateV2MigrationTests(unittest.TestCase):
         proof = self.registry_entry["gate"]
         self.assertEqual(
             proof["executable_sha256"],
-            "346c29008d4bbdabcf4f81224f8d708788ac12c27a9909dbfbcac37a756ba739",
+            "f4752c0e9cf176d26bd4239a5cf13bbc99e7614fa1da7fae6087705d79acb73a",
         )
-        self.assertEqual(proof["gate_database"], "ps-oppslate-004-gate-202608112343")
+        self.assertEqual(proof["gate_database"], "ps-oppslate-004-perm-202608121325")
         self.assertEqual(proof["gate_server"], "peerslate")
         self.assertEqual(
             proof["verification"],
@@ -496,6 +496,55 @@ class OpportunitySlateV2MigrationTests(unittest.TestCase):
             "                  (member_confirmed_ordinal IS NULL OR member_confirmed_ordinal > 0)",
             self.forward,
         )
+
+    def test_existing_table_checks_skip_only_the_historical_row_scan(self):
+        """Production's schema identity may alter these protected tables but
+        may not read their member rows. WITH NOCHECK avoids that historical
+        scan; SQL Server leaves the new constraints enabled for future DML."""
+        expected = (
+            (
+                "opportunity_analyses",
+                "CK_opportunity_analyses_evidence_snapshot_hash",
+            ),
+            (
+                "opportunity_analyses",
+                "CK_opportunity_analyses_confirmed_ordinal",
+            ),
+            (
+                "opportunity_requirement_sets",
+                "CK_opportunity_requirement_sets_member_confirmed_ordinal",
+            ),
+        )
+        for table, constraint in expected:
+            with self.subTest(constraint=constraint):
+                self.assertIn(
+                    f"ALTER TABLE dbo.{table} WITH NOCHECK ADD\n"
+                    f"                  CONSTRAINT {constraint} CHECK",
+                    self.forward,
+                )
+                self.assertNotIn(
+                    f"ALTER TABLE dbo.{table} WITH CHECK ADD\n"
+                    f"                  CONSTRAINT {constraint} CHECK",
+                    self.forward,
+                )
+        self.assertEqual(3, self.forward.count(" WITH NOCHECK ADD\n"))
+        self.assertIn(
+            "columns are created nullable in this same transaction",
+            self.forward.lower(),
+        )
+        self.assertIn("every historical\n   value is already null", self.forward.lower())
+
+    def test_verifier_pins_enabled_intentionally_untrusted_constraints(self):
+        for constraint in (
+            "CK_opportunity_analyses_evidence_snapshot_hash",
+            "CK_opportunity_analyses_confirmed_ordinal",
+            "CK_opportunity_requirement_sets_member_confirmed_ordinal",
+        ):
+            with self.subTest(constraint=constraint):
+                self.assertIn(constraint, self.verify)
+        self.assertIn("actual_check.is_disabled <> 0", self.verify)
+        self.assertIn("actual_check.is_not_trusted <> 1", self.verify)
+        self.assertIn("THROW 53944", self.verify)
 
     # ------------------------------------------------------------
     # New procedures: exactly four CREATE OR ALTER, nothing else touched

@@ -6,40 +6,45 @@ Writer: Root Codex after the governance transfer recorded through PRs 377 and 37
 
 ## Candidate outcome
 
-The R1 implementation is a dark, additive candidate for Opportunity Slate replacement stages 1 and 2. It includes the private blueprint/service, resilient intake, coordinated captured-source review, progressive upload/import cancellation, optimistic-concurrency fencing, the additive PS-OPPSLATE-004 migration/rollback/verifier, tests, and visual/functional evidence. The lane-mandated disposable-database gate and supplemental exact rollback inventory are complete. Package completion remains pending final exact-SHA review, PR CI, and recorded merge/release authority.
+The R1 application for Opportunity Slate replacement stages 1 and 2 is implemented, independently approved, merged, and deployed dark. It includes the private blueprint/service, resilient intake, coordinated captured-source review, progressive upload/import cancellation, optimistic-concurrency fencing, tests, and visual/functional evidence. The blueprint remains unregistered and `app.py` untouched, so the replacement is not public.
+
+The additive PS-OPPSLATE-004 production apply is the remaining release leg. Governed run 836 failed safely and transactionally because the least-privilege schema principal could not `SELECT` protected historical rows for three `WITH CHECK` validations. The ledger remained at 26 and no 004 surface remained. The repaired migration now uses enabled `WITH NOCHECK` constraints only for the three same-transaction nullable columns; exact restricted-principal proof, a fresh full gate, and an exact 42-object supplemental rollback all pass. Completion remains pending fresh exact-SHA review, repair PR CI/merge, production apply, and live dark verification.
 
 Pete reviewed the local experience and gave product approval on 2026-08-11. The pre-gate exact SHA was technically approved with zero findings. Exact review rejected later SHA `e54fcca20f05401fad8520d3eb7812582c81b2dd` with zero blocking, three important, and one minor evidence-integrity findings; those findings are repaired in the next immutable candidate and require a new exact-SHA verdict. Product approval is not represented as merge, deployment, production schema approval, or a public cutover.
 
 ## Branch and authority
 
-- Branch: `work/2026-08-11-opportunity-slate-v2-r1`
-- Worktree: `portfolio-opportunity-slate-v2-20260811`
-- Final base after rebase: `f745b39b72d2c8e5a3595f88d7f9524d8d8e41cf`
-- Repair implementation/evidence commit: `01d85aea2dcfb11c6d6823e5ebb68f8ba32560df`
-- Exact final candidate: the next immutable commit containing this record; it will be reported to the reviewer and pushed to PR 375 only after local verification
+- Original implementation branch/SHA: `work/2026-08-11-opportunity-slate-v2-r1` at independently approved `550c7ca87561a8279d571738c5832f3a70fe9bec`
+- Original merge/deploy: PR 375, main `b7bb92ddd00ba115fddb11c96e2fd52c274833a1`, successful pipeline 834, dark/unregistered
+- Repair branch/worktree: `work/2026-08-12-opportunity-slate-r1-schema-permission-repair` / `portfolio-oppslate-schema-permission-repair-20260812`
+- Repair base: `e9d4ce573aa57b4dc89a82072a9d892bb31011aa`
+- Exact repaired candidate: this immutable repair commit; its SHA is recorded in the independent verdict and Azure PR rather than self-referentially inside the commit
 - Writer-transfer governance: PR 377 added fail-closed transfer preflight; PR 376 recorded Root Codex as writer and fresh Sol extra-high as reviewer
 
 ## Scope integrity
 
-All changes are within the lane's recorded surfaces. `app.py` has zero diff. The legacy Opportunity Slate implementation and PS-OPPSLATE-001/002/003 have zero diff. The schema change is additive only. No production schema was applied and no production data was mutated. Only disposable gate databases received the migration; all were deleted and confirmed absent.
+All repair changes are within the lane's recorded migration, verifier, test, package-record, and evidence surfaces. `app.py` and every application/visual file have zero repair diff. The legacy Opportunity Slate implementation and PS-OPPSLATE-001/002/003 have zero diff. The schema remains additive only. Run 836's transaction rolled back, so no production schema or data change remained. The repair's one Basic disposable database was deleted and confirmed absent.
 
 ## Verification
 
-- Focused suites: 169/169 green (95 route/service/template tests; 74 migration/rollback/verifier/evidence-integrity tests).
+- Focused suites: 171/171 green (95 route/service/template tests; 76 migration/rollback/verifier/evidence-integrity tests).
 - Browser gauntlet: 69/69 green; zero unexpected console errors and zero page errors. Real enhanced upload/import success, no-script fallback, selected-large-file boundaries, competing-submit blocking, mobile focus order, paste/enhanced-transfer outage draft recovery, and unknown-outcome retry lockout are directly exercised.
 - Fresh parity: stages 1 and 2 remeasured from the locked source at desktop and narrow widths; all recorded geometry pairs fall within tolerance.
-- Full suite: 3,466 tests run; four unrelated Community maintenance/environment failures/errors, identical in class to the untouched-main baseline; zero Opportunity Slate failures. The count is two higher than the pre-remediation run because of the new delete-survivor and evidence-integrity regression tests.
+- Full suite at the permission-repair candidate: 3,576 tests run; the same four unrelated Community maintenance/environment failures/errors by exact test identity as the established untouched-main baseline; zero Opportunity Slate failures. The higher total reflects intervening mainline test additions plus this repair's two new migration assertions.
 - Static hygiene: `git diff --check` clean; changed Python modules compile.
-- SQL-engine gate: PASS on `ps-oppslate-004-gate-202608112343` at 2026-08-12T04:42:32Z; executable SHA-256 `346c29008d4bbdabcf4f81224f8d708788ac12c27a9909dbfbcac37a756ba739`; verifier SHA-256 `f0d768340721cb93133b0335130a2a8203695c4bd6d15f83479884b09cd04710`; 42 objects created, no-op reapply, strengthened two-owner verifier returned `verified = 1`, rollback completed, and forward-after-rollback restored the ledger row. A separate governed rollback at file SHA-256 `f4ac53dfa0c53454afe67dd9836830cbe433391241cbfb48ac47cb16f946a9b7` then measured exactly 42 removed catalog objects matching the gate's created-object inventory and verified the additive columns/new procedures absent and both takeover procedures restored to their exact PS-OPPSLATE-002 fingerprints.
+- Restricted-principal engine proof: the original `WITH CHECK` form reproduced the production `SELECT permission was denied` failure. The replacement `WITH NOCHECK` form succeeded with `ALTER` and denied `SELECT`, remained enabled/untrusted, rejected invalid future DML, and accepted valid DML. The exact repaired migration then succeeded as a production-shaped `db_ddladmin` user with zero `SELECT` on both protected tables; the owner-isolation verifier returned `verified = 1`, and exact rollback removed 004.
+- Fresh SQL-engine gate: PASS on `ps-oppslate-004-perm-202608121325` at 2026-08-12T13:27:59Z; executable SHA-256 `f4752c0e9cf176d26bd4239a5cf13bbc99e7614fa1da7fae6087705d79acb73a`; verifier SHA-256 `7bb5a62009c1038779c0f21772e0ef37318525d7051c9998504e9fa20521fe97`; 42 objects created, no-op reapply, verifier `verified = 1`, 42-object rollback rehearsal, and forward-after-rollback. A separate governed rollback removed exactly the gate's 42-object inventory and restored both takeover definitions to their PS-OPPSLATE-002 fingerprints. The database was deleted and confirmed absent.
 
 Evidence:
 
 - `artifacts/2026-08-11-opportunity-slate-v2/codex_final_focused_tests.txt`
 - `artifacts/2026-08-11-opportunity-slate-v2/codex_final_full_tests.txt`
 - `artifacts/2026-08-11-opportunity-slate-v2/codex_final_origin_main_baseline_failures.txt`
+- `artifacts/2026-08-11-opportunity-slate-v2/schema_permission_repair_tests.txt`
 - `artifacts/2026-08-11-opportunity-slate-v2/functional_gauntlet_codex_final.json`
 - `artifacts/2026-08-11-opportunity-slate-v2/parity/codex-final/PARITY_RECORD.md`
 - `artifacts/2026-08-11-opportunity-slate-v2/PS-OPPSLATE-004-gate.json`
+- `artifacts/2026-08-11-opportunity-slate-v2/PS-OPPSLATE-004-permission-proof.json`
 - `artifacts/2026-08-11-opportunity-slate-v2/PS-OPPSLATE-004-gate-attempts.json`
 - `artifacts/2026-08-11-opportunity-slate-v2/PS-OPPSLATE-004-rollback-proof.json`
 - `artifacts/2026-08-11-opportunity-slate-v2/PS-OPPSLATE-004-post-rollback-state.json`
@@ -52,13 +57,13 @@ The same reviewer context approved pre-gate SHA `fcb885ad21d1ebc2cf9f5ae3da7ee70
 
 ## Release state
 
-PR 375 is active and unmerged. The candidate is not deployed. The v2 blueprint is unregistered and its flag is unwired/default false. PS-OPPSLATE-004 is gate-proven but has not been applied to production. R1 cannot make the replacement interface live by itself.
+PR 375 is merged and its application code deployed dark. The v2 blueprint remains unregistered and its flag unwired/default false. PS-OPPSLATE-004 is freshly gate-proven but not applied to production after run 836's safe rollback. The repair is not yet reviewed, merged, or production-applied. R1 cannot make the replacement interface public by itself.
 
 ## Honest limitations and next actions
 
-1. Obtain new exact-final-SHA independent technical approval and green PR 375 CI.
-2. Record merge/release authority in governance before merging or applying production schema; the current lane does not yet grant either authority.
-3. Merge/deploy only after those records exist, then run the separately governed production apply and post-apply verification for PS-OPPSLATE-004.
+1. Obtain fresh exact-repair-SHA independent technical approval and green repair-PR CI.
+2. Record a new exact-SHA merge/release grant before merging or applying production schema.
+3. Merge the repair, apply exactly PS-OPPSLATE-004 through the governed production stage, and verify ledger 26 to 27 plus the enabled/untrusted checks.
 4. Add the two new procedures to `services/database_service.py`'s allowlist and register/limit the blueprint only through a separately authorized writable surface.
 5. Treat any R1 merge/deploy as dark additive infrastructure, not a public Opportunity Slate launch.
 6. R5 cutover still depends on R2–R4, the two-mode audit, `app.py` ownership, open architecture decisions, and explicit release authority.

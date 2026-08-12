@@ -1,13 +1,13 @@
 {
   "action": "gate",
-  "database": "ps-oppslate-004-gate-202608112343",
+  "database": "ps-oppslate-004-perm-202608121325",
   "migration_id": "PS-OPPSLATE-004",
   "proof": {
-    "executable_sha256": "346c29008d4bbdabcf4f81224f8d708788ac12c27a9909dbfbcac37a756ba739",
-    "gate_database": "ps-oppslate-004-gate-202608112343",
+    "executable_sha256": "f4752c0e9cf176d26bd4239a5cf13bbc99e7614fa1da7fae6087705d79acb73a",
+    "gate_database": "ps-oppslate-004-perm-202608121325",
     "gate_server": "peerslate",
-    "gated_at_utc": "2026-08-12T04:42:32Z",
-    "notes": "Fresh post-review gate: dynamic explicit-delete cross-owner survivor and stale-token proof.",
+    "gated_at_utc": "2026-08-12T13:27:59Z",
+    "notes": "Exact repaired forward separately passed under a db_ddladmin principal with zero SELECT on opportunity_analyses and opportunity_requirement_sets before this full gate.",
     "objects": [
       "CHECK_CONSTRAINT:dbo.CK_opportunity_analyses_confirmed_ordinal",
       "CHECK_CONSTRAINT:dbo.CK_opportunity_analyses_evidence_snapshot_hash",
@@ -52,7 +52,7 @@
       "USER_TABLE:dbo.opportunity_requirement_review_events",
       "USER_TABLE:dbo.opportunity_source_identities"
     ],
-    "operator": "Pete",
+    "operator": "Root Codex under Pete approval",
     "prerequisites": [
       "PS-PLAT-000",
       "PS-PLAT-001",

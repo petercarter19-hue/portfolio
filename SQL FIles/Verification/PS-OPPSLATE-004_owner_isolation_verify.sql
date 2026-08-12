@@ -12,6 +12,10 @@
        migration cannot narrow it by omission;
      - no table this migration touches carries a forbidden aggregate
        verdict column;
+     - the three constraints added to existing protected tables are enabled
+       and intentionally untrusted: historical rows were not scanned under
+       the least-privilege schema identity, while SQL Server still checks all
+       later INSERT/UPDATE operations;
      - usp_SaveOpportunitySourceIdentityForOwner is fenced by the SAME
        opportunity_sources.row_version token usp_CorrectOpportunitySourceFor-
        Owner already uses, is idempotent-safe (a second save updates the
@@ -157,6 +161,38 @@ BEGIN TRY
         )
     )
         THROW 53888, 'An Opportunity Slate table carries a forbidden aggregate verdict column.', 1;
+
+    /* ------------------------------------------------------------
+       0c. The production schema identity has ALTER but deliberately lacks
+           SELECT on protected member tables. These three nullable columns
+           are new in the same forward transaction, so every old value is
+           NULL. Their enabled constraints are intentionally untrusted rather
+           than forcing a historical row scan; enabled NOCHECK constraints
+           continue to validate every later INSERT/UPDATE.
+       ------------------------------------------------------------ */
+    DECLARE @ExpectedUntrustedChecks TABLE
+    (
+        constraint_name sysname NOT NULL PRIMARY KEY,
+        table_name sysname NOT NULL
+    );
+    INSERT @ExpectedUntrustedChecks (constraint_name, table_name)
+    VALUES
+        (N'CK_opportunity_analyses_evidence_snapshot_hash', N'opportunity_analyses'),
+        (N'CK_opportunity_analyses_confirmed_ordinal', N'opportunity_analyses'),
+        (N'CK_opportunity_requirement_sets_member_confirmed_ordinal', N'opportunity_requirement_sets');
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM @ExpectedUntrustedChecks AS expected_check
+        LEFT JOIN sys.check_constraints AS actual_check
+          ON actual_check.name = expected_check.constraint_name
+         AND actual_check.parent_object_id = OBJECT_ID(N'dbo.' + expected_check.table_name, N'U')
+        WHERE actual_check.object_id IS NULL
+           OR actual_check.is_disabled <> 0
+           OR actual_check.is_not_trusted <> 1
+    )
+        THROW 53944, 'An existing-table currency constraint is missing, disabled, or unexpectedly trusted.', 1;
 
     /* ------------------------------------------------------------
        1. Two synthetic owners via a throwaway auth provider.
@@ -657,7 +693,7 @@ BEGIN TRY
 
     SELECT
         CAST(1 AS bit) AS verified,
-        N'PS-OPPSLATE-004: full accumulated procedure-shape grep across all twenty-two Opportunity Slate procedures; no forbidden aggregate verdict column on any new or altered table; identity save fenced by the existing opportunity_sources.row_version token with forged-key and cross-owner canaries and a stale-token refusal; a repeated save upserts one row per source version rather than duplicating; identity save never touches write-once employer wording or the confirmation triple; identity read is owner-scoped with a forged-key canary and an honest empty result for an owner with nothing saved; the takeover of the purge and explicit-delete procedures textually contains and functionally reaches all three new v2 child tables, removing only the acting owner''s rows while a second owner''s equivalent rows dynamically survive each operation; forged-key and stale-token explicit deletes are refused without changing the target owner''s rows; no employer, response, or identity wording in audit metadata; full synthetic rollback verified.' AS detail;
+        N'PS-OPPSLATE-004: full accumulated procedure-shape grep across all twenty-two Opportunity Slate procedures; no forbidden aggregate verdict column on any new or altered table; all three existing-table currency constraints are enabled and intentionally untrusted so historical protected rows are not scanned while future writes remain checked; identity save fenced by the existing opportunity_sources.row_version token with forged-key and cross-owner canaries and a stale-token refusal; a repeated save upserts one row per source version rather than duplicating; identity save never touches write-once employer wording or the confirmation triple; identity read is owner-scoped with a forged-key canary and an honest empty result for an owner with nothing saved; the takeover of the purge and explicit-delete procedures textually contains and functionally reaches all three new v2 child tables, removing only the acting owner''s rows while a second owner''s equivalent rows dynamically survive each operation; forged-key and stale-token explicit deletes are refused without changing the target owner''s rows; no employer, response, or identity wording in audit metadata; full synthetic rollback verified.' AS detail;
 END TRY
 BEGIN CATCH
     IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;

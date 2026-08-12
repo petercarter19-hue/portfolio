@@ -1,116 +1,116 @@
 {
   "action": "rollback",
-  "database": "ps-oppslate-004-gate-202608112343",
-  "finished_at_utc": "2026-08-12T04:44:41Z",
+  "database": "ps-oppslate-004-perm-202608121325",
+  "finished_at_utc": "2026-08-12T13:28:47Z",
   "ledger_after": [
     {
-      "applied_at_utc": "2026-08-12T04:42:46.1797424",
+      "applied_at_utc": "2026-08-12T13:27:15.7342082",
       "migration_id": "PS-AUTH-001"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:52.1678153",
+      "applied_at_utc": "2026-08-12T13:27:19.7278734",
       "migration_id": "PS-OPPSLATE-001"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:55.5917327",
+      "applied_at_utc": "2026-08-12T13:27:21.8623957",
       "migration_id": "PS-OPPSLATE-002"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:57.9047227",
+      "applied_at_utc": "2026-08-12T13:27:23.2327963",
       "migration_id": "PS-OPPSLATE-003"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:34.7506128",
+      "applied_at_utc": "2026-08-12T13:27:09.0204417",
       "migration_id": "PS-PLAT-000"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:34.8231513",
+      "applied_at_utc": "2026-08-12T13:27:09.1075420",
       "migration_id": "PS-PLAT-001"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:35.9583756",
+      "applied_at_utc": "2026-08-12T13:27:09.5806436",
       "migration_id": "PS-PLAT-002"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:37.3061634",
+      "applied_at_utc": "2026-08-12T13:27:10.3193419",
       "migration_id": "PS-PLAT-003"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:38.7581856",
+      "applied_at_utc": "2026-08-12T13:27:11.0286482",
       "migration_id": "PS-PLAT-004"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:42.1364323",
+      "applied_at_utc": "2026-08-12T13:27:12.8607863",
       "migration_id": "PS-PLAT-005"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:44.2866311",
+      "applied_at_utc": "2026-08-12T13:27:14.2131293",
       "migration_id": "PS-PLAT-006"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:44.7865012",
+      "applied_at_utc": "2026-08-12T13:27:14.6086402",
       "migration_id": "PS-PLAT-007"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:47.8808253",
+      "applied_at_utc": "2026-08-12T13:27:17.0555365",
       "migration_id": "PS-WORKSHOP-001"
     }
   ],
   "ledger_before": [
     {
-      "applied_at_utc": "2026-08-12T04:42:46.1797424",
+      "applied_at_utc": "2026-08-12T13:27:15.7342082",
       "migration_id": "PS-AUTH-001"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:52.1678153",
+      "applied_at_utc": "2026-08-12T13:27:19.7278734",
       "migration_id": "PS-OPPSLATE-001"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:55.5917327",
+      "applied_at_utc": "2026-08-12T13:27:21.8623957",
       "migration_id": "PS-OPPSLATE-002"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:57.9047227",
+      "applied_at_utc": "2026-08-12T13:27:23.2327963",
       "migration_id": "PS-OPPSLATE-003"
     },
     {
-      "applied_at_utc": "2026-08-12T04:43:38.5191520",
+      "applied_at_utc": "2026-08-12T13:28:17.7760615",
       "migration_id": "PS-OPPSLATE-004"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:34.7506128",
+      "applied_at_utc": "2026-08-12T13:27:09.0204417",
       "migration_id": "PS-PLAT-000"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:34.8231513",
+      "applied_at_utc": "2026-08-12T13:27:09.1075420",
       "migration_id": "PS-PLAT-001"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:35.9583756",
+      "applied_at_utc": "2026-08-12T13:27:09.5806436",
       "migration_id": "PS-PLAT-002"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:37.3061634",
+      "applied_at_utc": "2026-08-12T13:27:10.3193419",
       "migration_id": "PS-PLAT-003"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:38.7581856",
+      "applied_at_utc": "2026-08-12T13:27:11.0286482",
       "migration_id": "PS-PLAT-004"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:42.1364323",
+      "applied_at_utc": "2026-08-12T13:27:12.8607863",
       "migration_id": "PS-PLAT-005"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:44.2866311",
+      "applied_at_utc": "2026-08-12T13:27:14.2131293",
       "migration_id": "PS-PLAT-006"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:44.7865012",
+      "applied_at_utc": "2026-08-12T13:27:14.6086402",
       "migration_id": "PS-PLAT-007"
     },
     {
-      "applied_at_utc": "2026-08-12T04:42:47.8808253",
+      "applied_at_utc": "2026-08-12T13:27:17.0555365",
       "migration_id": "PS-WORKSHOP-001"
     }
   ],
@@ -161,7 +161,7 @@
   ],
   "result": "rolled-back",
   "rollback_file": "SQL FIles/Migrations/proposed/PS-OPPSLATE-004_opportunity_slate_replacement_rollback.sql",
-  "started_at_utc": "2026-08-12T04:44:36Z",
+  "started_at_utc": "2026-08-12T13:28:44Z",
   "state_record": "different database",
   "state_record_stale": false
 }

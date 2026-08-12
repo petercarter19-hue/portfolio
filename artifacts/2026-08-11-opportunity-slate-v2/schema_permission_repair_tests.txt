@@ -1,0 +1,33 @@
+PS-OPPORTUNITY-SLATE-002 permission-repair verification
+Run completed: 2026-08-12T13:43:26Z
+
+Focused command:
+  python -m unittest tests.test_opportunity_slate_v2 tests.test_opportunity_slate_v2_migration
+Result:
+  Ran 171 tests in 1.977s
+  OK
+Breakdown:
+  95 route/service/template checks
+  76 migration/rollback/verifier/evidence-integrity checks
+
+Governed registry command:
+  python scripts/govern_sql_migrations.py check
+Result:
+  PASS; PS-OPPSLATE-004 is gated and the registry proof matches the exact
+  executable digest f4752c0e9cf176d26bd4239a5cf13bbc99e7614fa1da7fae6087705d79acb73a.
+
+Repository-wide command under the repository's pinned requirements:
+  python -m unittest discover -q
+Result:
+  Ran 3576 tests in 95.393s
+  FAILED (failures=2, errors=2, skipped=31)
+
+The four non-green tests are the exact established Community
+maintenance/environment baseline identities:
+  ERROR tests.test_community_maintenance_off_request_path.ScheduledRunnerTests.test_failure_is_content_free_and_returns_failed_status
+  ERROR tests.test_community_maintenance_off_request_path.ScheduledRunnerTests.test_hard_deadline_interrupts_a_running_sweep
+  FAIL  tests.test_community_disposable_sql_proof.CommunityDisposableSqlProofTests.test_private_environment_file_has_owner_only_permissions
+  FAIL  tests.test_community_maintenance_off_request_path.ScheduledRunnerTests.test_success_runs_each_bounded_sweep_once
+
+There are zero Opportunity Slate failures. This file supplements rather than
+rewrites the earlier exact-application-candidate evidence files.

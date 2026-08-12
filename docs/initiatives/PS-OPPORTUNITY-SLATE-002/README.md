@@ -6,15 +6,19 @@ Architecture authority: `artifacts/2026-08-11-opportunity-slate-architecture/OPP
 
 ## Current status
 
-R1 is a dark, additive foundation for stages 1 and 2. It is not merged, deployed, schema-applied, registered in `app.py`, feature-enabled, or public. Pete reviewed the local experience and gave product approval on 2026-08-11. The pre-gate exact candidate `fcb885ad21d1ebc2cf9f5ae3da7ee70bb9f86e43` received independent technical approval with zero findings. The first mandatory disposable-database sequence found and closed four verifier-only defects. Exact review of the first post-gate candidate then found four evidence-integrity issues; a sixth fresh database passed the strengthened dynamic delete-survivor verifier, and a supplemental governed rollback directly proved exact catalog reversal. Final technical approval and CI apply only to the next immutable candidate.
+R1 stages 1 and 2 are implemented, independently approved, merged through PR 375 as `b7bb92ddd00ba115fddb11c96e2fd52c274833a1`, and deployed dark by successful main run 834. The blueprint remains unregistered, `app.py` is untouched, the flag is unwired/default false, the legacy experience remains live, and nothing is public.
+
+The first governed production schema apply, run 836, failed safely and transactionally when the least-privilege schema principal tried to validate three new `WITH CHECK` constraints by reading protected historical rows. PS-OPPSLATE-004 remained absent and the production ledger stayed at 26. This repair changes only those three existing-table constraint additions to `WITH NOCHECK`: the columns are created nullable in the same transaction, so all old values are already `NULL`; the constraints remain enabled and reject invalid future writes, while their untrusted catalog state honestly records that old rows were not scanned.
+
+The repaired exact forward passed on disposable Azure SQL as a production-shaped `db_ddladmin` principal with zero `SELECT` on both protected tables, then passed the full six-step gate and exact 42-object supplemental rollback. Fresh exact-SHA independent review, repair PR CI/merge, and the governed production re-apply remain pending.
 
 Implementation began under Claude. Writer authority transferred to Root Codex through governance PRs 377 and 376 before Codex changed the package. The transfer is recorded in `CURRENT_LANES.json`; the original authorship history remains intact.
 
 A fresh GPT-5.6 Sol extra-high reviewer audited pre-fix candidate `8a15721926087bde98feeabdace1510119af3418`, then rejected remediation candidate `f2fdbe09293b7d73f21a06328537b03483205b32` after finding transfer-payload, competing-submit, storage-outage recovery, mobile focus-order, multipart-boundary, and completion-truth gaps. Root Codex remediated both review rounds and refreshed the evidence. The reviewer approved `fcb885ad21d1ebc2cf9f5ae3da7ee70bb9f86e43` with zero findings, then rejected post-gate SHA `e54fcca20f05401fad8520d3eb7812582c81b2dd` with zero blocking, three important, and one minor evidence-integrity findings. Those findings are repaired; one final exact-SHA review remains mandatory.
 
-Branch: `work/2026-08-11-opportunity-slate-v2-r1`.
+Branch: `work/2026-08-12-opportunity-slate-r1-schema-permission-repair`.
 
-Current authoritative base for the final rebase: `origin/main` at `f745b39b72d2c8e5a3595f88d7f9524d8d8e41cf`.
+Current authoritative repair base: `origin/main` at `e9d4ce573aa57b4dc89a82072a9d892bb31011aa`.
 
 ## R1 outcome
 
@@ -62,13 +66,13 @@ artifacts/2026-08-11-opportunity-slate-v2/
 
 ## Verification
 
-- Focused package suites after the strengthened verifier: 169/169 green (`test_opportunity_slate_v2.py` 95; `test_opportunity_slate_v2_migration.py` 74).
+- Focused package suites after the permission repair: 171/171 green (`test_opportunity_slate_v2.py` 95; `test_opportunity_slate_v2_migration.py` 76).
 - Real-browser functional gauntlet: 69/69 green, with zero unexpected console or page errors. It includes real enhanced upload/import success, plain-HTML method-specific fallback, selected-large-file boundaries, competing-submit blocking, cancellation, draft preservation, paste/enhanced-transfer storage failure injection, unknown-outcome retry lockout, mobile visual/focus order, dirty-form confirmation refusal, double-submit idempotency, history navigation, 320px/390px behavior, and 200%-equivalent reflow.
-- Full repository suite: 3,466 tests run; four failures/errors in the same unrelated Community maintenance/environment checks reproduced on untouched `origin/main`; zero Opportunity Slate failures. The repository-wide result is therefore not described as fully green.
+- Full repository suite at the permission-repair candidate: 3,576 tests run; four failures/errors with the exact same unrelated Community maintenance/environment test identities as the established untouched-main baseline; zero Opportunity Slate failures. The repository-wide result is therefore not described as fully green.
 - `git diff --check` clean and changed Python modules compile.
 - Fresh parity screenshots and measurement records are under `artifacts/2026-08-11-opportunity-slate-v2/parity/codex-final/`.
 
-The authoritative disposable-database gate passed on `ps-oppslate-004-gate-202608112343` at 2026-08-12T04:42:32Z against executable SHA-256 `346c29008d4bbdabcf4f81224f8d708788ac12c27a9909dbfbcac37a756ba739`. It proved the complete prerequisite chain, first apply, idempotent reapply, dynamic purge/delete cross-owner survival, stale-delete refusal, rollback, and forward-after-rollback. A supplemental governed rollback directly measured the exact 42-object catalog reversal and verified the additive columns/new procedures absent plus both takeover procedure definitions restored to their PS-OPPSLATE-002 fingerprints. `SQL FIles/Migrations/registry.json` carries the emitted gate proof; the gate, attempt, rollback, and post-rollback-state artifacts preserve the full record. Every disposable database was deleted and confirmed absent. Production remains untouched.
+The authoritative repaired gate passed on `ps-oppslate-004-perm-202608121325` at 2026-08-12T13:27:59Z against executable SHA-256 `f4752c0e9cf176d26bd4239a5cf13bbc99e7614fa1da7fae6087705d79acb73a`. Before the full gate, the exact forward succeeded as a production-shaped `db_ddladmin` principal with zero `SELECT` on `opportunity_analyses` and `opportunity_requirement_sets`; all three checks were enabled/untrusted and the owner-isolation verifier returned `verified = 1`. The six-step gate proved 42 objects, idempotent reapply, verifier success, rollback, and forward-after-rollback. A supplemental governed rollback removed exactly those same 42 catalog objects and restored both takeover procedures to their PS-OPPSLATE-002 fingerprints. The Basic database existed for about nine minutes, was deleted and confirmed absent, and has a conservative under-$0.01 incremental cost expected to be absorbed by existing credits. Production run 836 remains the only production attempt and left no 004 schema behind.
 
 ## Review finding disposition
 
@@ -100,7 +104,7 @@ The same fresh reviewer context that found these issues must review the exact fi
 
 - No AI interpretation, requirement review, qualification analysis, save/history, cutover, or legacy retirement.
 - No `app.py` registration, limiter attachment, or feature-flag environment change.
-- No production schema apply, production data mutation, or removal of legacy schema. The disposable gate is complete; production apply remains a separately governed operation.
+- No durably committed production schema or data change and no removal of legacy schema. Run 836 opened production and attempted the 004 transaction, then failed closed and rolled back; the repaired production apply remains a separately governed operation.
 - No public or member-visible replacement. R5 remains the cutover package after R1–R4 and its two-mode audit.
 - The replacement's shared shell still follows the production `base.html`, not the mockup shell. Shared-shell direction is outside this lane.
 - `services/database_service.py` still needs the two R1 procedures added to its allowlist before real-database use; that file is outside this lane.
@@ -108,8 +112,8 @@ The same fresh reviewer context that found these issues must review the exact fi
 
 ## Next governed actions
 
-1. Freeze the post-gate SHA and obtain the same fresh Sol extra-high exact-SHA review.
-2. Push the branch and obtain green PR 375 CI for that exact source SHA.
-3. Record merge/release authority in governance before merging or applying production schema.
-4. Merge/deploy R1 only as a dark additive foundation and run the separately governed PS-OPPSLATE-004 production apply/post-apply verification. Do not call it live Opportunity Slate.
+1. Freeze the repaired post-gate SHA and obtain the same fresh Sol extra-high exact-SHA review.
+2. Push the repair branch, obtain green Azure PR CI, and record a fresh exact-SHA merge/release grant.
+3. Merge the repair dark and rerun the governed production apply for exactly PS-OPPSLATE-004; verify ledger 26 to 27 and the enabled/untrusted constraint state.
+4. Verify `/healthz`, the unchanged legacy route, and the still-unregistered v2 route. Do not call it a public Opportunity Slate launch.
 5. Activate the later packages and resolve the `app.py`/allowlist ownership dependencies before R5 cutover.

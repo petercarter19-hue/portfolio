@@ -1,10 +1,10 @@
 {
   "action": "post-rollback-state-verification",
-  "database": "ps-oppslate-004-gate-202608112343",
+  "database": "ps-oppslate-004-perm-202608121325",
   "server": "peerslate",
-  "verified_at_utc": "2026-08-12T04:45:09Z",
+  "verified_at_utc": "2026-08-12T13:29:13Z",
   "migration_id": "PS-OPPSLATE-004",
-  "verifier_sha256_at_gate": "f0d768340721cb93133b0335130a2a8203695c4bd6d15f83479884b09cd04710",
+  "verifier_sha256_at_gate": "7bb5a62009c1038779c0f21772e0ef37318525d7051c9998504e9fa20521fe97",
   "rollback_sha256_at_supplemental_proof": "f4ac53dfa0c53454afe67dd9836830cbe433391241cbfb48ac47cb16f946a9b7",
   "gate_object_count": 42,
   "rollback_removed_count": 42,
@@ -31,5 +31,5 @@
     "PS-OPPSLATE-004-rollback-proof.json objects_removed",
     "read-only post-rollback sys catalog and extended-property query"
   ],
-  "note": "The first diagnostic attempted binary conversion of an nvarchar hash property and returned a false mismatch. The recorded comparison uses the property's actual uppercase hexadecimal text representation; both restored PS-OPPSLATE-002 hashes exactly match HASHBYTES(SHA2_256, OBJECT_DEFINITION(...))."
+  "note": "The fresh permission-repair gate and supplemental rollback measured the same 42-object set. The post-rollback catalog query found the three additive columns, two new procedures, 004 ledger row, and 004 procedure fingerprints absent; both takeover definitions exactly matched their preserved PS-OPPSLATE-002 fingerprints."
 }

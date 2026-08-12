@@ -1,12 +1,15 @@
 # PS-OPPSLATE-004 — schema gate runbook
 
-**Status: DISPOSABLE-DATABASE GATE PASSED. `registry.json` carries the proof
-emitted at 2026-08-12T04:42:32Z from
-`ps-oppslate-004-gate-202608112343`. The exact executable SHA-256 is
-`346c29008d4bbdabcf4f81224f8d708788ac12c27a9909dbfbcac37a756ba739`.
-Parts 1-3 are complete. Parts 4-5 (governed production apply and
-transactional post-apply verification) have not run and still require
-recorded release authority.**
+**Status: PERMISSION-REPAIR GATE PASSED. `registry.json` carries the proof
+emitted at 2026-08-12T13:27:59Z from
+`ps-oppslate-004-perm-202608121325`. The exact executable SHA-256 is
+`f4752c0e9cf176d26bd4239a5cf13bbc99e7614fa1da7fae6087705d79acb73a`.
+The exact forward also passed as a production-shaped `db_ddladmin` principal
+with zero `SELECT` on both protected existing tables. Governed production run
+836 attempted Part 4 from the prior bytes, failed on that missing `SELECT`, and
+rolled back transactionally; the ledger stayed at 26 and 004 remained absent.
+The repaired Part 4 re-apply and Part 5 verification remain pending fresh
+exact-SHA review, PR/CI, and recorded release authority.**
 
 Mirrors `docs/initiatives/PS-ASK-PETE-DIRECT-001/SCHEMA_GATE_RUNBOOK.md`
 exactly — the same tool, the same five-part shape, and the same credential
@@ -95,7 +98,7 @@ venv/bin/python scripts/govern_sql_migrations.py check
 
 **Expect:** exit 0. Before the recorded gate, `PS-OPPSLATE-004` read as
 `draft  PS-OPPSLATE-004  (no gate proof)`. It now reads as `gated` with the
-`346c29008d4b` digest prefix and the successful disposable database name.
+`f4752c0e9cf1` digest prefix and the successful disposable database name.
 
 Confirm the digest that is about to be gated:
 
@@ -207,7 +210,7 @@ transaction rolls back.
 
 **If step 4 fails**, stop. Do not record a proof, do not re-run with the
 rollback rehearsal skipped, and do not apply anything. The verifier uses
-`53880`–`53899`, `53902`–`53919`, and `53930`–`53943`; the forward migration
+`53880`–`53899`, `53902`–`53919`, and `53930`–`53944`; the forward migration
 uses `53800`–`53807`; the rollback uses `53820`–`53826`. Each maps to one
 named claim in its file — read the number, find the `THROW`, and read the
 comment above it.
