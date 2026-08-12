@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "No active writer lanes. PS-OPPORTUNITY-SLATE-R1-LAUNCH-001 is paused and preserved; activate an exact implementation or direction/authority outcome before repository writes."
+  current_assignments: "Active writer lanes: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 on work/2026-08-12-interview-studio-mobile-correction."
 
 governing_documents:
   bible:
@@ -58,6 +58,9 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
+  - id: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001
+    status: active_delivery
+    scope: "Protected post-enable mobile correction of the live authenticated Interview Studio: post-review scroll and focus, responsive coaching grids, in-composer phone controls with integrated dictation, intentional mobile Mode/Session/History composition, and a post-review optional model answer that never auto-applies. No logo, global shell, route, provider, cloud History, or owner-specific logic change."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -149,7 +152,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "No active writer lanes. Select and activate the next exact outcome under the three-lane class, path, and exclusive-domain rules."
+next_gate: "Continue only the active writer packages: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
