@@ -39,6 +39,12 @@ class SmokeCheck:
     required_json: dict[str, str] | None = None
     required_headers: Mapping[str, str] = field(default_factory=dict)
     expected_xml_root: str | None = None
+    # A route that may legitimately be gated behind sign-in declares the exact
+    # redirect it is allowed to answer with instead. Only that precise
+    # destination passes: any other 3xx, a 404, a 500, or a transport failure
+    # is still a failed deployment. Without this, enabling a route's sign-in
+    # wall silently turns every subsequent deployment red for every lane.
+    allowed_signed_out_redirect: str | None = None
 
 
 @dataclass(frozen=True)
@@ -78,12 +84,18 @@ def build_checks(
             ),
         ),
         SmokeCheck(
+            # Public while the authenticated transition is off; once
+            # PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED is enabled the same
+            # route answers signed-out visitors with the sign-in redirect that
+            # carries the exact return destination. Both are healthy; anything
+            # else is a failed deployment.
             '/interview-studio',
             expected_content_type='text/html',
             required_texts=(
                 '<title>Interview Studio | PeerSlate</title>',
                 'data-interview-studio',
             ),
+            allowed_signed_out_redirect='/auth/sign-in?return_to=/interview-studio',
         ),
         SmokeCheck(
             '/robots.txt',
@@ -212,6 +224,22 @@ def verify_checks(
             raise SmokeFailure(
                 f'{check.path} transport failed: {error}'
             ) from error
+        if (
+            check.allowed_signed_out_redirect is not None
+            and result.status in (301, 302, 303, 307, 308)
+        ):
+            location = {
+                key.lower(): value for key, value in result.headers.items()
+            }.get('location')
+            if location != check.allowed_signed_out_redirect:
+                raise SmokeFailure(
+                    f'{check.path} redirected to {location!r}; the only '
+                    f'permitted signed-out destination is '
+                    f'{check.allowed_signed_out_redirect!r}'
+                )
+            passed.append(f'{check.path} (gated: signed-out redirect verified)')
+            continue
+
         if result.status != check.expected_status:
             raise SmokeFailure(
                 f'{check.path} returned {result.status}; '
