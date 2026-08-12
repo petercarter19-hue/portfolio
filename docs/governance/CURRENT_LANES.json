@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T07:55:42Z",
+  "updated_at": "2026-08-12T08:14:30Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -16,7 +16,9 @@
       "PS-OPPORTUNITY-SLATE-002",
       "PS-PROFILE-EXPERIENCE-001"
     ],
-    "merge_allowed_for": [],
+    "merge_allowed_for": [
+      "PS-PROFILE-EXPERIENCE-001"
+    ],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -1213,6 +1215,38 @@
           "decision": "Pete withdrew the earlier Claude Profile assignment and assigned Codex end-to-end ownership through architecture, implementation, validation, review, merge, default-off deployment, and dark live verification. Pete will review the exact deployed candidate immediately before it goes live; public enablement remains a separate explicit decision."
         }
       ],
+      "merge_grant": {
+        "authorized_by": "Pete",
+        "authority_decision_index": 0,
+        "authority_decision_sha256": "b4fe6dc59e5eef85b6beb9c6c08e22736876ab78aa134eb4512ae1260c3c36c8",
+        "independent_review": {
+          "reviewer_task": "/root/profile_exact_package_review",
+          "reviewer_mode": "independent_read_only_non_writer",
+          "reviewed_sha": "7790e2684ad5a65a0371338f8b94f878276f36c7",
+          "reviewed_branch": "work/2026-08-11-profile-experience-direction-001",
+          "verdict": "PASS",
+          "verdict_text": "PASS — exact-SHA final Protected review passed for 7790e2684ad5a65a0371338f8b94f878276f36c7, branch-equal to origin/work/2026-08-11-profile-experience-direction-001 and clean.",
+          "verdict_sha256": "c7bc10cdd23dfe6af42b69f193d0931ebd0410ff5f2421f953d85ed46013e145",
+          "basis": [
+            "full_tree_at_35cab0d6167b7cf2006d7a8652105bce9cf683cd",
+            "complete_diff_35cab0d6167b7cf2006d7a8652105bce9cf683cd_to_7790e2684ad5a65a0371338f8b94f878276f36c7"
+          ],
+          "scope": "direction_package_acceptance_and_merge_only",
+          "exclusions": "runtime_schema_deployment_enablement",
+          "evidence_path": "docs/initiatives/PS-PROFILE-EXPERIENCE-001/16_VERIFICATION_AND_COMPLETION_RECORD.md",
+          "evidence_git_blob_sha": "8de83fb9e28b2e38f736a361fb4dd9bfc26198da",
+          "evidence_bytes_sha256": "ac1ff17fc49dbe6594b2c15014efde3283258e6f3259cf8be0ed78b78b17dbc3",
+          "received_by": "Root Codex program manager",
+          "received_date": "2026-08-11",
+          "attestation_sha256": "573a2827e4d4a639f40f5d7e70d81165f5ec35c08b8d74fd24728e2bfb5f5ead"
+        },
+        "reviewed_remote_sha": "7790e2684ad5a65a0371338f8b94f878276f36c7",
+        "granted_at": "2026-08-12T08:14:30Z",
+        "review_result": "pass",
+        "review_evidence_paths": [
+          "docs/initiatives/PS-PROFILE-EXPERIENCE-001/16_VERIFICATION_AND_COMPLETION_RECORD.md"
+        ]
+      },
       "cleanup_contract": "After a verified direction-package merge, remove only this task's clean merged worktree and branches behind recovery references. Preserve every unrelated, dirty, unverified, historical, or user-owned branch, worktree, stash, mockup, handoff, and artifact.",
       "sequence": "Merge the activation-only control PR; create the clean Profile direction worktree from resulting origin/main; pass package write preflight; hash-preserve and reconcile the complete Profile visual set; record exact production visual authority under Pete's delegation; complete the route, audience, relationship, truth, data, Voice, Media, search, moderation, mobile, recovery, and implementation architecture; self-review and merge the package-only authority; then wait for Interview Studio's authoritative closure before a fresh Profile runtime activation. Implement and deploy default-off under that later lane, verify dark live behavior, and stop for Pete immediately before enablement."
     }
