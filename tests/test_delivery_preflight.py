@@ -23,6 +23,7 @@ from scripts.delivery_preflight import (
     OPPORTUNITY_SLATE_REVIEWED_SHA,
     OPPORTUNITY_SLATE_REVIEW_ATTESTATION,
     OPPORTUNITY_LIFECYCLE_FIXTURE_REPAIR,
+    OPPORTUNITY_RESUME_FIXTURE_REPAIR,
     WRITER_TRANSFER_PREFLIGHT_REPAIR,
     GRANT_CLOSE_PREFLIGHT_REPAIR,
     GRANT_CLOSE_FIXTURE_FOLLOWUP,
@@ -39,6 +40,7 @@ from scripts.delivery_preflight import (
     _exact_grant_close_fixture_followup_delta,
     _exact_implementation_release_preflight_repair_matches,
     _exact_opportunity_lifecycle_fixture_repair_delta,
+    _exact_opportunity_resume_fixture_repair_delta,
     _exact_profile_close_fixture_followup_delta,
     _exact_profile_close_baseline_fixture_followup_delta,
     _fetch_exact_origin_refs,
@@ -414,6 +416,10 @@ class DeliveryPreflightTests(unittest.TestCase):
             for key, value in copy.deepcopy(candidates[0]).items()
             if key not in lifecycle_fields
         }
+        # The mutable ledger may now contain a legitimate resumed repair lane.
+        # This helper exercises the immutable PR-375 release controls, so keep
+        # its synthetic historical lane bound to that exact reviewed branch.
+        lane["branch"] = OPPORTUNITY_SLATE_BRANCH
         lane.pop("merge_grant", None)
         origin["active_lanes"] = [lane]
         origin["paused_lanes"] = [
@@ -1900,6 +1906,84 @@ with patch.object(
                 origin_baseline=baseline,
             )
             self.assertTrue(altered_errors)
+
+        baseline_errors, _ = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline + b"\n# forged baseline\n",
+            origin_baseline=baseline,
+        )
+        self.assertTrue(
+            any("may not change CURRENT_BASELINE" in error for error in baseline_errors)
+        )
+
+    def test_opportunity_resume_fixture_repair_is_exact_and_inert(self):
+        repair = OPPORTUNITY_RESUME_FIXTURE_REPAIR
+        origin = load_ledger_at_ref(repair["origin_main"])
+        baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-12T16:50:00Z"
+        candidate["opportunity_resume_fixture_repair"] = copy.deepcopy(repair)
+        exact_facts = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=repair["allowed_surfaces"],
+        )
+
+        self.assertTrue(
+            _exact_opportunity_resume_fixture_repair_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("Opportunity resume" in item for item in warnings))
+
+        for fact_mutation in (
+            {"branch": "work/forged"},
+            {"origin_main": "f" * 40},
+            {"ahead": 0},
+            {"ahead": 2},
+            {"behind": 1},
+            {"changed_paths": repair["allowed_surfaces"][:-1]},
+            {"changed_paths": [*repair["allowed_surfaces"], "app.py"]},
+        ):
+            with self.subTest(facts=fact_mutation):
+                altered_errors, _ = self._evaluate_activation(
+                    candidate,
+                    {**exact_facts, **fact_mutation},
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(altered_errors)
+
+        altered = copy.deepcopy(candidate)
+        altered["operating_mode"]["merge_allowed_for"].append(
+            "PS-DELIVERY-CONTROL-001"
+        )
+        self.assertFalse(
+            _exact_opportunity_resume_fixture_repair_delta(origin, altered)
+        )
+        altered_errors, _ = self._evaluate_activation(
+            altered,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(altered_errors)
 
         baseline_errors, _ = self._evaluate_activation(
             candidate,
