@@ -4,7 +4,7 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-10"
+updated_at: "2026-08-12"
 
 authority:
   remote: origin
@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Interview Studio, PS-OPPORTUNITY-SLATE-002, and direction-only PS-PROFILE-EXPERIENCE-001 on work/2026-08-11-profile-experience-direction-001. See CURRENT_LANES.json."
+  current_assignments: "Active writer lanes: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001, PS-OPPORTUNITY-SLATE-002. PS-PROFILE-EXPERIENCE-001 is closed and archived."
 
 governing_documents:
   bible:
@@ -64,9 +64,6 @@ active_packages:
   - id: PS-OPPORTUNITY-SLATE-002
     status: active_delivery
     scope: "Dark R1 of the Opportunity Slate replacement: v2 intake, captured-source review, additive PS-OPPSLATE-004 gate proof; legacy untouched; stops at an unmerged Azure PR."
-  - id: PS-PROFILE-EXPERIENCE-001
-    status: active_delivery
-    scope: "Profile direction, architecture, and visual authority only; no runtime."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -142,6 +139,7 @@ completed_packages:
   - PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001
   - PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001
   - PS-COMMUNITY-AUTH-WALL-001
+  - PS-PROFILE-EXPERIENCE-001
 
 retired_packages:
   - id: PS-WORKSHOP-ACCESS-001
@@ -156,7 +154,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Complete PS-PROFILE-EXPERIENCE-001 direction; runtime requires separate activation after Interview closure."
+next_gate: "Continue only the active writer packages: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001, PS-OPPORTUNITY-SLATE-002. PS-PROFILE-EXPERIENCE-001 is closed and archived."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

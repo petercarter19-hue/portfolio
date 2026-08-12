@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T10:06:05Z",
+  "updated_at": "2026-08-12T10:31:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -13,12 +13,9 @@
     "read_only_work_allowed": true,
     "writes_allowed_for": [
       "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
-      "PS-OPPORTUNITY-SLATE-002",
-      "PS-PROFILE-EXPERIENCE-001"
+      "PS-OPPORTUNITY-SLATE-002"
     ],
-    "merge_allowed_for": [
-      "PS-PROFILE-EXPERIENCE-001"
-    ],
+    "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -33,7 +30,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Two lanes may write, each only its own recorded surfaces: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 on work/2026-08-11-interview-studio-authenticated-experience-001, and PS-OPPORTUNITY-SLATE-002 on work/2026-08-11-opportunity-slate-v2-r1. Interview Studio: Pete's 2026-08-11 grant ('Go all the way up to right before it goes live') covers the governed sequence through dark merge, automatic flag-off deployment, and live dark verification; the merge/release entries are recorded through the established recorded-scope pattern at their own step; enablement of PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED is expressly excluded and requires Pete's separate recorded go. Opportunity Slate v2: Pete's 2026-08-11 boundary ('I want you all the way until almost live deployment. At that point, stop and let me review it before it goes live.') ends the lane at a CI-validated Azure PR; merge, deployment, schema apply, and any flag change wait for Pete's pre-live review. Paused work may resume only through a separate fresh activation."
+    "exit_authority": "Active writer lanes: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001, PS-OPPORTUNITY-SLATE-002. PS-PROFILE-EXPERIENCE-001 is merged_closed and retains no authority."
   },
   "activation_policy": {
     "enabled": true,
@@ -1050,6 +1047,89 @@
       },
       "cleanup_contract": "Task-local only: after this lane's PRs merge and recoverability is verified, remove only this lane's clean merged worktree and branches behind an archive tag; preserve everything else.",
       "sequence": "Merge the activation-only PR; create the path-scoped required-reviewer policy; create the implementation worktree from resulting origin/main; pass the package write preflight; implement the three-stage split with the pure-YAML serialization restore; correct the four affected test files; self-review and non-writer review; open the Azure PR as the new policy's first exercise; merge; verify a real merge deploys with no human interaction; record smoke, rollback, and the unchanged schema gate; truthful closeout."
+    },
+    {
+      "package": "PS-PROFILE-EXPERIENCE-001",
+      "outcome": "Complete the Codex-owned Profile direction, product architecture, and production visual-authority package for one reusable living whole-person Profile. Define connected Home, Posts, Projects, Media, Voice, and About destinations; same-body Public, Connections, and Owner views; restrained contextual owner controls; authorization-before-retrieval; explicit source, proposal, projection, audience, placement, version, where-used, and public-AI boundaries; desktop, mobile, scale, failure, and accessibility states; the Profile interface to the separately governed shared shell; and an implementation decomposition that can proceed dark under a later activation. Reconcile the complete 33-board ChatGPT-created candidate under Pete's end-to-end delegation, preserve all prior evidence, and record the exact production authority before runtime implementation.",
+      "branch": "work/2026-08-11-profile-experience-direction-001",
+      "writer": "Root Codex in a dedicated clean Profile direction worktree is the sole package writer and program manager. Read-only specialist agents may audit product truth, data, authorization, security, accessibility, mobile behavior, and visual fidelity but may not write package surfaces. Claude has no Profile writer role after Pete's 2026-08-11 reassignment.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "direction_authority",
+      "exclusive_domains": [
+        "product:profile"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 11b3a46abaa82280012d8cb62feb08a2e27bbcfd. Current Profile product is not live: /petec resolves to /petec/resume, while Resume and My Story remain the live public destinations. The iCloud 33-board Profile package is a complete independently reviewed visual candidate whose archive SHA-256 is AAE5192D28F32B9D97CC1B2541CDFB671E916CAB3C377FD4C4C180481C10C3C9; its 114/114 manifest entries were independently reverified. Historical Profile branches remain evidence only.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-PROFILE-EXPERIENCE-001/",
+        "artifacts/2026-08-11-profile-experience-001/"
+      ],
+      "exclusions": [
+        "No application, route, template, stylesheet, script, test, schema, migration, provider, pipeline, production configuration, deployment, or live-behavior change.",
+        "No edit to app.py, auth_routes.py, templates/base.html, shared-shell runtime, Interview Studio, Opportunity Slate, Community, Workshop, Capture, Journal, Projects runtime, Resume, My Story, or Ask Pete runtime.",
+        "No runtime implementation until this package is complete and a separate Profile implementation lane is activated after implementation and production-capable capacity are authoritatively free.",
+        "No private source may enter a broader Public or Connections payload and be filtered afterward; authorize before retrieval.",
+        "No automatic save, canonicalization, audience change, placement, publication, public-AI authorization, unpublication, deletion, or cross-room reuse. AI may propose; the member decides.",
+        "No adoption, merge, deletion, or overwrite of stale Profile branches, mockups, handoffs, or user-owned artifacts; preserve and label provenance.",
+        "No final global-shell redesign in this package. Define Profile's shell interface and the unresolved Capture and Slate dependency without changing shared runtime chrome.",
+        "No public enablement or replacement of the current /<slug> compatibility behavior. Pete reviews the exact deployed dark candidate immediately before any enablement or cutover."
+      ],
+      "completion_evidence": [
+        "A current-truth and supersession matrix reconciles live Resume, My Story, Ask Pete, Community, Capture, Voice, and authentication behavior; planned Projects and Profile behavior; and preserved historical Profile architecture without presenting future concepts as live.",
+        "An exact hash manifest records the production visual authority selected from the complete ChatGPT-created Profile state set under Pete's 2026-08-11 delegation, with every controlled region and permitted adaptation explicit.",
+        "The package locks Profile purpose, route and compatibility plan, local and shared-shell boundary, Public, Connections, and Owner journeys, audience authorization, relationship behavior, canonical-source and projection ownership, placement and version semantics, Voice and Media contracts, search, moderation, privacy, publication recovery, and complete state architecture.",
+        "Desktop, tablet, 390px, 320px, large-text, keyboard, focus-return, reduced-motion, zero, one, typical, many, loading, failure, revoked, stale-source, conflict, and destructive-confirmation expectations preserve the dominant plane and truthful state behavior.",
+        "An implementation decomposition names exact non-overlapping runtime surfaces, flags, additive migration and rollback needs if any, test and owner-isolation proof, visual comparison evidence, dark deployment sequence, compatibility behavior, and the mandatory pre-enable stop.",
+        "Complete-diff self-review proves every change remains inside the two direction surfaces and honestly distinguishes research, candidate, production authority, architecture, implementation, merge, dark deployment, and public enablement."
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-11",
+          "decision": "Pete withdrew the earlier Claude Profile assignment and assigned Codex end-to-end ownership through architecture, implementation, validation, review, merge, default-off deployment, and dark live verification. Pete will review the exact deployed candidate immediately before it goes live; public enablement remains a separate explicit decision."
+        }
+      ],
+      "merge_grant": {
+        "authorized_by": "Pete",
+        "authority_decision_index": 0,
+        "authority_decision_sha256": "b4fe6dc59e5eef85b6beb9c6c08e22736876ab78aa134eb4512ae1260c3c36c8",
+        "independent_review": {
+          "reviewer_task": "/root/profile_exact_package_review",
+          "reviewer_mode": "independent_read_only_non_writer",
+          "reviewed_sha": "7790e2684ad5a65a0371338f8b94f878276f36c7",
+          "reviewed_branch": "work/2026-08-11-profile-experience-direction-001",
+          "verdict": "PASS",
+          "verdict_text": "PASS — exact-SHA final Protected review passed for 7790e2684ad5a65a0371338f8b94f878276f36c7, branch-equal to origin/work/2026-08-11-profile-experience-direction-001 and clean.",
+          "verdict_sha256": "c7bc10cdd23dfe6af42b69f193d0931ebd0410ff5f2421f953d85ed46013e145",
+          "basis": [
+            "full_tree_at_35cab0d6167b7cf2006d7a8652105bce9cf683cd",
+            "complete_diff_35cab0d6167b7cf2006d7a8652105bce9cf683cd_to_7790e2684ad5a65a0371338f8b94f878276f36c7"
+          ],
+          "scope": "direction_package_acceptance_and_merge_only",
+          "exclusions": "runtime_schema_deployment_enablement",
+          "evidence_path": "docs/initiatives/PS-PROFILE-EXPERIENCE-001/16_VERIFICATION_AND_COMPLETION_RECORD.md",
+          "evidence_git_blob_sha": "8de83fb9e28b2e38f736a361fb4dd9bfc26198da",
+          "evidence_bytes_sha256": "ac1ff17fc49dbe6594b2c15014efde3283258e6f3259cf8be0ed78b78b17dbc3",
+          "received_by": "Root Codex program manager",
+          "received_date": "2026-08-11",
+          "attestation_sha256": "573a2827e4d4a639f40f5d7e70d81165f5ec35c08b8d74fd24728e2bfb5f5ead"
+        },
+        "reviewed_remote_sha": "7790e2684ad5a65a0371338f8b94f878276f36c7",
+        "granted_at": "2026-08-12T08:14:30Z",
+        "review_result": "pass",
+        "review_evidence_paths": [
+          "docs/initiatives/PS-PROFILE-EXPERIENCE-001/16_VERIFICATION_AND_COMPLETION_RECORD.md"
+        ]
+      },
+      "cleanup_contract": "After a verified direction-package merge, remove only this task's clean merged worktree and branches behind recovery references. Preserve every unrelated, dirty, unverified, historical, or user-owned branch, worktree, stash, mockup, handoff, and artifact.",
+      "sequence": "Merge the activation-only control PR; create the clean Profile direction worktree from resulting origin/main; pass package write preflight; hash-preserve and reconcile the complete Profile visual set; record exact production visual authority under Pete's delegation; complete the route, audience, relationship, truth, data, Voice, Media, search, moderation, mobile, recovery, and implementation architecture; self-review and merge the package-only authority; then wait for Interview Studio's authoritative closure before a fresh Profile runtime activation. Implement and deploy default-off under that later lane, verify dark live behavior, and stop for Pete immediately before enablement.",
+      "disposition": "merged_closed",
+      "closed_at": "2026-08-12T10:31:00Z",
+      "reviewed_remote_sha": "7790e2684ad5a65a0371338f8b94f878276f36c7",
+      "merged_main_sha": "ad8d463e82ee9c329780902891eb5a7ea6a141b7",
+      "package_merge_sha": "476c641f32b88caac448f6351b731eb36dff6e53",
+      "close_evidence_paths": [
+        "docs/initiatives/PS-PROFILE-EXPERIENCE-001/16_VERIFICATION_AND_COMPLETION_RECORD.md"
+      ]
     }
   ],
   "active_lanes": [
@@ -1201,81 +1281,6 @@
       },
       "cleanup_contract": "Task-local only: after this lane's work merges under Pete's recorded decision and recoverability is verified, remove only this lane's clean merged activation and implementation worktrees and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
       "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree from resulting origin/main; pass the package write preflight; after Claude relinquishes the clean pushed checkpoint at 3fb6574, merge the governance-only Codex writer-transfer PR with a verified [skip ci] squash; Root Codex re-measures both shipped states from scratch, completes R1 without app.py, runs the functional gauntlet and full suites, and self-reviews; a fresh GPT-5.6 Sol extra-high context independently reviews the exact candidate under the forensic and professional-eye lenses; close findings; hold PR 375 at CI green for Pete's pre-live review. The app.py flag wiring lands only after PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 closes, through a fresh recorded ledger update."
-    },
-    {
-      "package": "PS-PROFILE-EXPERIENCE-001",
-      "outcome": "Complete the Codex-owned Profile direction, product architecture, and production visual-authority package for one reusable living whole-person Profile. Define connected Home, Posts, Projects, Media, Voice, and About destinations; same-body Public, Connections, and Owner views; restrained contextual owner controls; authorization-before-retrieval; explicit source, proposal, projection, audience, placement, version, where-used, and public-AI boundaries; desktop, mobile, scale, failure, and accessibility states; the Profile interface to the separately governed shared shell; and an implementation decomposition that can proceed dark under a later activation. Reconcile the complete 33-board ChatGPT-created candidate under Pete's end-to-end delegation, preserve all prior evidence, and record the exact production authority before runtime implementation.",
-      "branch": "work/2026-08-11-profile-experience-direction-001",
-      "writer": "Root Codex in a dedicated clean Profile direction worktree is the sole package writer and program manager. Read-only specialist agents may audit product truth, data, authorization, security, accessibility, mobile behavior, and visual fidelity but may not write package surfaces. Claude has no Profile writer role after Pete's 2026-08-11 reassignment.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "direction_authority",
-      "exclusive_domains": [
-        "product:profile"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main 11b3a46abaa82280012d8cb62feb08a2e27bbcfd. Current Profile product is not live: /petec resolves to /petec/resume, while Resume and My Story remain the live public destinations. The iCloud 33-board Profile package is a complete independently reviewed visual candidate whose archive SHA-256 is AAE5192D28F32B9D97CC1B2541CDFB671E916CAB3C377FD4C4C180481C10C3C9; its 114/114 manifest entries were independently reverified. Historical Profile branches remain evidence only.",
-      "writable_surfaces": [
-        "docs/initiatives/PS-PROFILE-EXPERIENCE-001/",
-        "artifacts/2026-08-11-profile-experience-001/"
-      ],
-      "exclusions": [
-        "No application, route, template, stylesheet, script, test, schema, migration, provider, pipeline, production configuration, deployment, or live-behavior change.",
-        "No edit to app.py, auth_routes.py, templates/base.html, shared-shell runtime, Interview Studio, Opportunity Slate, Community, Workshop, Capture, Journal, Projects runtime, Resume, My Story, or Ask Pete runtime.",
-        "No runtime implementation until this package is complete and a separate Profile implementation lane is activated after implementation and production-capable capacity are authoritatively free.",
-        "No private source may enter a broader Public or Connections payload and be filtered afterward; authorize before retrieval.",
-        "No automatic save, canonicalization, audience change, placement, publication, public-AI authorization, unpublication, deletion, or cross-room reuse. AI may propose; the member decides.",
-        "No adoption, merge, deletion, or overwrite of stale Profile branches, mockups, handoffs, or user-owned artifacts; preserve and label provenance.",
-        "No final global-shell redesign in this package. Define Profile's shell interface and the unresolved Capture and Slate dependency without changing shared runtime chrome.",
-        "No public enablement or replacement of the current /<slug> compatibility behavior. Pete reviews the exact deployed dark candidate immediately before any enablement or cutover."
-      ],
-      "completion_evidence": [
-        "A current-truth and supersession matrix reconciles live Resume, My Story, Ask Pete, Community, Capture, Voice, and authentication behavior; planned Projects and Profile behavior; and preserved historical Profile architecture without presenting future concepts as live.",
-        "An exact hash manifest records the production visual authority selected from the complete ChatGPT-created Profile state set under Pete's 2026-08-11 delegation, with every controlled region and permitted adaptation explicit.",
-        "The package locks Profile purpose, route and compatibility plan, local and shared-shell boundary, Public, Connections, and Owner journeys, audience authorization, relationship behavior, canonical-source and projection ownership, placement and version semantics, Voice and Media contracts, search, moderation, privacy, publication recovery, and complete state architecture.",
-        "Desktop, tablet, 390px, 320px, large-text, keyboard, focus-return, reduced-motion, zero, one, typical, many, loading, failure, revoked, stale-source, conflict, and destructive-confirmation expectations preserve the dominant plane and truthful state behavior.",
-        "An implementation decomposition names exact non-overlapping runtime surfaces, flags, additive migration and rollback needs if any, test and owner-isolation proof, visual comparison evidence, dark deployment sequence, compatibility behavior, and the mandatory pre-enable stop.",
-        "Complete-diff self-review proves every change remains inside the two direction surfaces and honestly distinguishes research, candidate, production authority, architecture, implementation, merge, dark deployment, and public enablement."
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-11",
-          "decision": "Pete withdrew the earlier Claude Profile assignment and assigned Codex end-to-end ownership through architecture, implementation, validation, review, merge, default-off deployment, and dark live verification. Pete will review the exact deployed candidate immediately before it goes live; public enablement remains a separate explicit decision."
-        }
-      ],
-      "merge_grant": {
-        "authorized_by": "Pete",
-        "authority_decision_index": 0,
-        "authority_decision_sha256": "b4fe6dc59e5eef85b6beb9c6c08e22736876ab78aa134eb4512ae1260c3c36c8",
-        "independent_review": {
-          "reviewer_task": "/root/profile_exact_package_review",
-          "reviewer_mode": "independent_read_only_non_writer",
-          "reviewed_sha": "7790e2684ad5a65a0371338f8b94f878276f36c7",
-          "reviewed_branch": "work/2026-08-11-profile-experience-direction-001",
-          "verdict": "PASS",
-          "verdict_text": "PASS — exact-SHA final Protected review passed for 7790e2684ad5a65a0371338f8b94f878276f36c7, branch-equal to origin/work/2026-08-11-profile-experience-direction-001 and clean.",
-          "verdict_sha256": "c7bc10cdd23dfe6af42b69f193d0931ebd0410ff5f2421f953d85ed46013e145",
-          "basis": [
-            "full_tree_at_35cab0d6167b7cf2006d7a8652105bce9cf683cd",
-            "complete_diff_35cab0d6167b7cf2006d7a8652105bce9cf683cd_to_7790e2684ad5a65a0371338f8b94f878276f36c7"
-          ],
-          "scope": "direction_package_acceptance_and_merge_only",
-          "exclusions": "runtime_schema_deployment_enablement",
-          "evidence_path": "docs/initiatives/PS-PROFILE-EXPERIENCE-001/16_VERIFICATION_AND_COMPLETION_RECORD.md",
-          "evidence_git_blob_sha": "8de83fb9e28b2e38f736a361fb4dd9bfc26198da",
-          "evidence_bytes_sha256": "ac1ff17fc49dbe6594b2c15014efde3283258e6f3259cf8be0ed78b78b17dbc3",
-          "received_by": "Root Codex program manager",
-          "received_date": "2026-08-11",
-          "attestation_sha256": "573a2827e4d4a639f40f5d7e70d81165f5ec35c08b8d74fd24728e2bfb5f5ead"
-        },
-        "reviewed_remote_sha": "7790e2684ad5a65a0371338f8b94f878276f36c7",
-        "granted_at": "2026-08-12T08:14:30Z",
-        "review_result": "pass",
-        "review_evidence_paths": [
-          "docs/initiatives/PS-PROFILE-EXPERIENCE-001/16_VERIFICATION_AND_COMPLETION_RECORD.md"
-        ]
-      },
-      "cleanup_contract": "After a verified direction-package merge, remove only this task's clean merged worktree and branches behind recovery references. Preserve every unrelated, dirty, unverified, historical, or user-owned branch, worktree, stash, mockup, handoff, and artifact.",
-      "sequence": "Merge the activation-only control PR; create the clean Profile direction worktree from resulting origin/main; pass package write preflight; hash-preserve and reconcile the complete Profile visual set; record exact production visual authority under Pete's delegation; complete the route, audience, relationship, truth, data, Voice, Media, search, moderation, mobile, recovery, and implementation architecture; self-review and merge the package-only authority; then wait for Interview Studio's authoritative closure before a fresh Profile runtime activation. Implement and deploy default-off under that later lane, verify dark live behavior, and stop for Pete immediately before enablement."
     }
   ],
   "paused_lanes": [
