@@ -88,6 +88,9 @@ class SearchVisibilityQuietPreviewTests(unittest.TestCase):
             # PS-COMMUNITY-AUTH-WALL-001: the members-only Community
             # namespace stays out of crawl budget in every flag state.
             "Disallow: /the-slate",
+            # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: unconditional
+            # in both flag states (architecture 04 section 1).
+            "Disallow: /interview-studio",
         ):
             with self.subTest(protected_path=protected_path):
                 self.assertIn(protected_path, body)
@@ -116,6 +119,32 @@ class SearchVisibilityQuietPreviewTests(unittest.TestCase):
                         self.assertFalse(path.startswith("/the-slate"))
         finally:
             app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = original_flag
+
+    def test_sitemap_never_advertises_interview_studio_in_either_flag_state(self):
+        # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: removed from the
+        # public sitemap unconditionally (architecture 04 section 1) — this
+        # is correct while the page is still public and once it is gated.
+        original_flag = app.config.get("PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED")
+        try:
+            for flag in (True, False):
+                app.config["PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED"] = flag
+                response = self.client.get(
+                    "/sitemap.xml",
+                    base_url="https://peerslate.com",
+                )
+                self.assertEqual(response.status_code, 200)
+                root = ET.fromstring(response.get_data(as_text=True))
+                namespace = {
+                    "sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"
+                }
+                locations = root.findall("sitemap:url/sitemap:loc", namespace)
+                self.assertTrue(locations)
+                for location in locations:
+                    path = urlsplit(location.text).path
+                    with self.subTest(flag=flag, path=path):
+                        self.assertFalse(path.startswith("/interview-studio"))
+        finally:
+            app.config["PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED"] = original_flag
 
 
 if __name__ == "__main__":

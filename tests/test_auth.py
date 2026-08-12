@@ -444,6 +444,18 @@ class AuthenticationFlowTests(unittest.TestCase):
             "/the-slate-x",
             "/the-slate\x00posts",
             "/the-slate" + ("x" * 2049),
+            # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: the same
+            # hostile-shape matrix, replicated for the Interview Studio
+            # prefix (architecture 02 section 3).
+            "https://attacker.example/interview-studio",
+            "//attacker.example/interview-studio",
+            "/interview-studio#fragment",
+            "/interview-studio\\outside",
+            "/interview-studio//outside",
+            "/interview-studiox",
+            "/interview-studio-x",
+            "/interview-studio\x00outside",
+            "/interview-studio" + ("x" * 2049),
         )
         default_location = (
             "/.auth/login/aad?post_login_redirect_uri="
@@ -472,6 +484,23 @@ class AuthenticationFlowTests(unittest.TestCase):
                 "/.auth/login/aad?post_login_redirect_uri="
                 "%2Fauth%2Fcomplete%3Freturn_to%3D%2Fthe-slate%2Fposts"
                 "%2F0f5b2c1a2e3d4c5b6a798877665544332211aabb"
+            ),
+            # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: the canonical
+            # route, its history destination, and a mode query string all
+            # round-trip through sign-in exactly (architecture 02 section 3).
+            # This is unconditional (not flag-gated).
+            "/interview-studio": (
+                "/.auth/login/aad?post_login_redirect_uri="
+                "%2Fauth%2Fcomplete%3Freturn_to%3D%2Finterview-studio"
+            ),
+            "/interview-studio/history": (
+                "/.auth/login/aad?post_login_redirect_uri="
+                "%2Fauth%2Fcomplete%3Freturn_to%3D%2Finterview-studio%2Fhistory"
+            ),
+            "/interview-studio?mode=video": (
+                "/.auth/login/aad?post_login_redirect_uri="
+                "%2Fauth%2Fcomplete%3Freturn_to%3D%2Finterview-studio"
+                "%3Fmode%253Dvideo"
             ),
         }
         for return_to, expected_location in accepted_values.items():

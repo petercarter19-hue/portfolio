@@ -1,5 +1,6 @@
 import ast
 import base64
+import hashlib
 import json
 import os
 import re
@@ -7,7 +8,10 @@ import shutil
 import subprocess
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
+
+from flask import g
 
 from app import (
     app,
@@ -15,6 +19,7 @@ from app import (
     INTERVIEW_FAMILY_DIMENSIONS,
     INTERVIEW_FAILURE_REASONS,
     INTERVIEW_UNCLASSIFIED_REASON,
+    _client_rate_limit_key,
     _interview_failure_reason,
     _bounded_opportunity_context,
     _load_interview_model_context,
@@ -27,6 +32,7 @@ from app import (
     validate_interview_review,
     _extract_json_object,
 )
+from services.database_service import DatabaseServiceError
 
 
 DIMENSIONS = INTERVIEW_FAMILY_DIMENSIONS['behavioral']
@@ -469,7 +475,12 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
             follow_up_submit.index("stopDictation('interrupted')"),
             follow_up_submit.index('followUpInput.value.trim()'),
         )
-        ai_mode_change = source.split("modeGroup.addEventListener('change'", 1)[1].split(
+        # Slice 5-6 review item 1: the mode-change body was extracted into a
+        # named applyAiModeChange() function (shared by the public dropdown's
+        # own change listener and the authenticated SOURCE radio cards), so
+        # the source region to inspect now starts at its definition rather
+        # than at modeGroup.addEventListener('change' itself.
+        ai_mode_change = source.split('var applyAiModeChange = function (value)', 1)[1].split(
             'var followUpForm', 1
         )[0]
         self.assertIn("stopDictation('interrupted')", ai_mode_change)
@@ -809,7 +820,9 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertIn('its source label here for you to verify', html)
 
         source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
-        basis_block = source.split("modeGroup.addEventListener('change'", 1)[1].split(
+        # See test_pending_and_interim_dictation_are_cleared_before_context_or_submit
+        # above for why this now starts at applyAiModeChange's definition.
+        basis_block = source.split('var applyAiModeChange = function (value)', 1)[1].split(
             'var followUpForm', 1
         )[0]
         self.assertIn('basisLabel.textContent', basis_block)
@@ -1332,6 +1345,54 @@ class ReviewSchemaTests(unittest.TestCase):
         )
         self.assertEqual(improvement['evidenceUsed'][0]['id'], 'selected')
 
+    def test_improvement_extracts_bracketed_confirmation_markers_only(self):
+        """Slice 4 marker contract (architecture 03 section 2): the server
+        extracts the coach's bracketed confirmation prompts from the draft
+        as `confirmations`, order-preserving and de-duplicated, matching
+        only the narrow imperative-sentence shape the improve prompt is
+        instructed to emit — never an incidental bracket use."""
+        draft = (
+            'When priorities conflict, I start by clarifying the goal. '
+            'In one situation, [Describe the moment and what priorities were in conflict.] '
+            'I decided to [Describe the decision you personally made and why.] '
+            'I aligned with the right people [sic] and focused on M[1-9] priorities. '
+            'As a result, [Describe the outcome that followed.]'
+        )
+        improvement = validate_interview_improvement(
+            {'draft': draft, 'changes': ['Added confirmation prompts'], 'evidenceIds': []},
+            {},
+        )
+        self.assertEqual(
+            improvement['confirmations'],
+            [
+                '[Describe the moment and what priorities were in conflict.]',
+                '[Describe the decision you personally made and why.]',
+                '[Describe the outcome that followed.]',
+            ],
+        )
+
+    def test_improvement_confirmations_empty_when_no_markers(self):
+        improvement = validate_interview_improvement(
+            {'draft': 'A complete answer with no markers.', 'changes': ['Tightened the wording'], 'evidenceIds': []},
+            {},
+        )
+        self.assertEqual(improvement['confirmations'], [])
+
+    def test_improvement_confirmations_deduplicated_preserving_order(self):
+        draft = (
+            '[Describe the outcome that followed.] Some context. '
+            '[Describe the outcome that followed.] More context. '
+            '[Add the name of the stakeholder.]'
+        )
+        improvement = validate_interview_improvement(
+            {'draft': draft, 'changes': ['x'], 'evidenceIds': []},
+            {},
+        )
+        self.assertEqual(
+            improvement['confirmations'],
+            ['[Describe the outcome that followed.]', '[Add the name of the stakeholder.]'],
+        )
+
     def test_nudge_requires_two_or_three_real_hints(self):
         self.assertEqual(
             validate_interview_nudge({'hints': ['Frame the tradeoff.', 'Name the decision rule.']}),
@@ -1639,7 +1700,10 @@ class InterviewStudioAssetTests(unittest.TestCase):
         self.assertIn('questionTrail = [nextLocalQuestion', setup)
         self.assertIn('function explicitContextForAi()', source)
         self.assertIn("slice(0, 4000)", source)
-        self.assertEqual(source.count('opportunity_context: explicitContextForAi()'), 4)
+        # review, requestImprovement, nudge, model-answer, and (slice 4) the
+        # authenticated startAuthenticatedImprove() all send the same
+        # explicit/bounded/untrusted context -- never a client free-text field.
+        self.assertEqual(source.count('opportunity_context: explicitContextForAi()'), 5)
 
     def test_history_only_compares_like_family_dimension_and_session_context(self):
         source = _studio_script()
@@ -2340,8 +2404,11 @@ class InterviewEmptyReviewListRenderingTests(unittest.TestCase):
         self.assertIn('is__bullets-empty', js)
         self.assertIn('EMPTY_STRENGTHS_MESSAGE', js)
         self.assertIn('EMPTY_IMPROVEMENTS_MESSAGE', js)
-        # Both the live review and the history detail use it.
-        self.assertEqual(js.count('EMPTY_STRENGTHS_MESSAGE'), 3)
+        # The declaration, the flag-off renderReview() consumer, and (slice 4)
+        # the authenticated append-only CoachingSection builder's two
+        # branches (first-attempt "What's working" and the revised
+        # "What changed" fallback) all reference the same constant.
+        self.assertEqual(js.count('EMPTY_STRENGTHS_MESSAGE'), 5)
 
     def test_the_empty_strengths_wording_lives_in_exactly_one_place(self):
         """Pete is still choosing the wording, so it must stay a one-line edit.
@@ -3076,3 +3143,1756 @@ class InterviewStudioDictationTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+# ---------------------------------------------------------------------------
+# PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 slices 1-2: access
+# boundary + storage isolation, all dark behind
+# PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED (default off).
+# ---------------------------------------------------------------------------
+
+
+def _interview_principal_header(subject, display_name='Example Member'):
+    principal = {
+        'auth_typ': 'aad',
+        'claims': [
+            {'typ': 'iss', 'val': 'https://example.ciamlogin.com/example/v2.0/'},
+            {'typ': 'oid', 'val': subject},
+            {'typ': 'name', 'val': display_name},
+            {'typ': 'email', 'val': f'{subject}@example.com'},
+        ],
+    }
+    encoded = base64.b64encode(json.dumps(principal).encode('utf-8')).decode('ascii')
+    return {'X-MS-CLIENT-PRINCIPAL': encoded}
+
+
+def _interview_mapped_user(subject, display_name=None):
+    return {
+        'account_key': f'account-{subject}',
+        'user_key': f'user-{subject}',
+        'display_name': display_name or f'Member {subject}',
+        'email': f'{subject}@example.com',
+    }
+
+
+def _interview_user_for_subject(_procedure_name, parameters):
+    subject = dict(parameters)['@AuthSubject']
+    return _interview_mapped_user(subject)
+
+
+# static/js/interview-studio.js legitimately changed for slice 2 (storage
+# isolation applies to the same file the public page also loads), and
+# static/css/interview-studio.css legitimately changed for slice 3 (the new
+# scoped authenticated token layer/rail/consequence-stack rules live in the
+# same stylesheet the public page also loads), so each file's automatic
+# content-hash ?v= token moves even though the flag-off HTML markup itself
+# does not. This is the same documented exception tests/test_owner_home.py's
+# byte-identical baseline uses for an asset that changed underneath an
+# otherwise-unchanged render.
+_INTERVIEW_JS_VERSION_TOKEN = re.compile(
+    r'(/static/(?:js/interview-studio\.js|css/interview-studio\.css)\?v=)[0-9a-f]+'
+)
+
+# Captured from this package's own slice-3/4 base (via the exact GET request
+# the test below issues, run against a `git stash`-clean pre-change working
+# tree, then re-captured after this package's changes with the JS and CSS
+# version tokens normalized away). Confirmed byte-for-byte identical to the
+# pre-change render of the same route in the same working tree once both
+# tokens are normalized.
+FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH = 111406
+FLAG_OFF_INTERVIEW_STUDIO_SHA256 = (
+    '0003a96c55411e6a86da9b00030c31f306444bb53b705bfafdfd4162753cdba0'
+)
+FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH = 111183
+FLAG_OFF_INTERVIEW_STUDIO_HISTORY_SHA256 = (
+    'cf9e582387f02cad75a410043dd8375123668676b6e3ea1baf701823422106b2'
+)
+
+
+class _InterviewStudioAuthenticatedTestCase(unittest.TestCase):
+    """Shared setup: Easy Auth trusted, the transition flag on, no owner
+    configured by default (a test opts a subject in explicitly)."""
+
+    def setUp(self):
+        self.original_config = {
+            key: app.config.get(key)
+            for key in (
+                'TESTING',
+                'PEERSLATE_ALLOW_DEV_IDENTITY',
+                'PEERSLATE_DEV_USER_KEY',
+                'PEERSLATE_TRUST_EASYAUTH_HEADERS',
+                'PEERSLATE_AUTH_ISSUER',
+                'PEERSLATE_AUTH_PROVIDER_NAME',
+                'PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED',
+                'PEERSLATE_OWNER_USER_KEYS',
+                'PEERSLATE_OWNER_EMAILS',
+            )
+        }
+        app.config.update(
+            TESTING=True,
+            PEERSLATE_ALLOW_DEV_IDENTITY=False,
+            PEERSLATE_DEV_USER_KEY=None,
+            PEERSLATE_TRUST_EASYAUTH_HEADERS=True,
+            PEERSLATE_AUTH_ISSUER=None,
+            PEERSLATE_AUTH_PROVIDER_NAME='aad',
+            PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED=True,
+            PEERSLATE_OWNER_USER_KEYS='',
+            PEERSLATE_OWNER_EMAILS='',
+        )
+        self.client = app.test_client()
+        # The limiter's counter is process-wide and would otherwise carry
+        # across test methods (established pattern; see
+        # InterviewCoachingFailurePathTests/InterviewGroundingModeGenerationTests
+        # above and test_opportunity_slate.py). These tests are about the
+        # access boundary and storage isolation, not the rate limiter itself
+        # (that has its own direct-function test).
+        self._limiter_was_enabled = limiter.enabled
+        limiter.enabled = False
+
+    def tearDown(self):
+        limiter.enabled = self._limiter_was_enabled
+        app.config.update(self.original_config)
+
+
+class InterviewStudioFlagOffByteComparabilityTests(unittest.TestCase):
+    """Slice 1 item 9: flag off is byte-comparable to the pre-change public
+    page. Deliberately does not touch PEERSLATE_TRUST_EASYAUTH_HEADERS or any
+    other global auth config — those change the shared base.html header's
+    rendered auth-state markup and would make an unrelated site-wide setting
+    look like an Interview Studio regression. The golden values below were
+    captured from this exact unmodified default configuration."""
+
+    def setUp(self):
+        self.original_flag = app.config.get('PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED')
+        app.config['PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED'] = False
+        self.client = app.test_client()
+
+    def tearDown(self):
+        app.config['PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED'] = self.original_flag
+
+    def test_flag_off_anonymous_html_is_byte_comparable_to_the_pre_change_baseline(self):
+        response = self.client.get('/interview-studio', base_url='http://localhost')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('X-Robots-Tag', response.headers)
+        self.assertEqual(response.headers['Cache-Control'], 'no-cache, must-revalidate')
+        body = response.get_data(as_text=True)
+        for marker in (
+            'data-interview-studio',
+            'data-profile-slug="petec"',
+            'You are not signed in as Pete.',
+            'Tell me about a time you disagreed with a supervisor.',
+        ):
+            self.assertIn(marker, body)
+        self.assertNotIn('data-storage-scope', body)
+        normalized = _INTERVIEW_JS_VERSION_TOKEN.sub(r'\1TOKEN', body)
+        self.assertEqual(len(response.data), FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH)
+        self.assertEqual(
+            hashlib.sha256(normalized.encode('utf-8')).hexdigest(),
+            FLAG_OFF_INTERVIEW_STUDIO_SHA256,
+        )
+
+        history_response = self.client.get('/interview-studio/history', base_url='http://localhost')
+        history_body = history_response.get_data(as_text=True)
+        history_normalized = _INTERVIEW_JS_VERSION_TOKEN.sub(r'\1TOKEN', history_body)
+        self.assertEqual(len(history_response.data), FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH)
+        self.assertEqual(
+            hashlib.sha256(history_normalized.encode('utf-8')).hexdigest(),
+            FLAG_OFF_INTERVIEW_STUDIO_HISTORY_SHA256,
+        )
+
+        # Config-toggling determinism (mirrors test_journal_frontend.py's
+        # flag-off/unauthenticated parity technique): flipping the flag on
+        # and back off within this same test run must not perturb the
+        # anonymous render — the new conditional branch has zero side effect
+        # when it is not taken.
+        app.config['PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED'] = True
+        app.config['PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED'] = False
+        after_toggle = self.client.get('/interview-studio', base_url='http://localhost')
+        self.assertEqual(after_toggle.data, response.data)
+
+
+class InterviewStudioAccessBoundaryTests(_InterviewStudioAuthenticatedTestCase):
+    """Slice 1: the two HTML routes and all four live interview APIs gate on
+    identity together, as one unit, exactly the /app idiom."""
+
+    def test_signed_out_get_redirects_with_exact_return_and_round_trips(self):
+        for path, expected_location in (
+            ('/interview-studio', '/auth/sign-in?return_to=/interview-studio'),
+            (
+                '/interview-studio/history',
+                '/auth/sign-in?return_to=/interview-studio/history',
+            ),
+            (
+                '/interview-studio?mode=video',
+                '/auth/sign-in?return_to=/interview-studio?mode%3Dvideo',
+            ),
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path, base_url='http://localhost')
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.headers['Location'], expected_location)
+
+        # Round trip: /auth/complete with a valid principal lands on the
+        # exact original destination (path, sub-route, and query preserved).
+        for return_to in (
+            '/interview-studio',
+            '/interview-studio/history',
+            '/interview-studio?mode=video',
+        ):
+            with self.subTest(round_trip=return_to):
+                completion = self.client.get(
+                    '/auth/complete',
+                    query_string={'return_to': return_to},
+                    headers=_interview_principal_header('round-trip-member'),
+                    base_url='http://localhost',
+                )
+                self.assertEqual(completion.status_code, 302)
+                self.assertEqual(completion.headers['Location'], return_to)
+
+    def test_signed_out_post_returns_401_json_with_no_provider_call(self):
+        payloads = {
+            '/api/interview/review': {'question': 'Q?', 'answer': 'A complete answer.'},
+            '/api/interview/improve': {
+                'question': 'Q?', 'answer': 'A complete answer.', 'improvements': [],
+            },
+            '/api/interview/nudge': {'question': 'Q?'},
+            '/api/interview/model-answer': {'question': 'Q?'},
+        }
+        with patch('app.client.messages.create') as provider_call:
+            for path, payload in payloads.items():
+                with self.subTest(path=path):
+                    response = self.client.post(path, json=payload, base_url='http://localhost')
+                    self.assertEqual(response.status_code, 401)
+                    self.assertEqual(response.get_json(), {'error': 'sign_in_required'})
+                    self.assertEqual(response.headers['Cache-Control'], 'private, no-store')
+            provider_call.assert_not_called()
+
+    def test_malformed_principal_uses_the_existing_401_recovery_contract(self):
+        bad_header = {'X-MS-CLIENT-PRINCIPAL': 'not-base64!'}
+
+        html_response = self.client.get(
+            '/interview-studio', headers=bad_header, base_url='http://localhost',
+        )
+        self.assertEqual(html_response.status_code, 401)
+        self.assertEqual(html_response.headers['Cache-Control'], 'private, no-store')
+        self.assertIn(b'We need to check your account session', html_response.data)
+
+        with patch('app.client.messages.create') as provider_call:
+            api_response = self.client.post(
+                '/api/interview/review',
+                json={'question': 'Q?', 'answer': 'A complete answer.'},
+                headers=bad_header,
+                base_url='http://localhost',
+            )
+        self.assertEqual(api_response.status_code, 401)
+        self.assertEqual(api_response.get_json(), {'error': 'invalid_session'})
+        provider_call.assert_not_called()
+
+    @patch('identity.database_service.first_row')
+    def test_database_service_error_returns_the_honest_waking_surfaces(self, first_row):
+        first_row.side_effect = DatabaseServiceError('identity storage unavailable')
+        header = _interview_principal_header('waking-member')
+
+        html_response = self.client.get(
+            '/interview-studio', headers=header, base_url='http://localhost',
+        )
+        self.assertEqual(html_response.status_code, 503)
+        self.assertEqual(html_response.headers['Retry-After'], '5')
+        self.assertEqual(html_response.headers['Cache-Control'], 'private, no-store')
+        self.assertIn(b'Your private workspace is waking up', html_response.data)
+
+        with patch('app.client.messages.create') as provider_call:
+            api_response = self.client.post(
+                '/api/interview/review',
+                json={'question': 'Q?', 'answer': 'A complete answer.'},
+                headers=header,
+                base_url='http://localhost',
+            )
+        self.assertEqual(api_response.status_code, 503)
+        self.assertEqual(api_response.get_json(), {'error': 'workspace_waking'})
+        self.assertEqual(api_response.headers['Retry-After'], '5')
+        self.assertEqual(api_response.headers['Cache-Control'], 'private, no-store')
+        provider_call.assert_not_called()
+
+    def test_headers_present_across_200_302_401(self):
+        with patch(
+            'identity.database_service.first_row',
+            return_value=_interview_mapped_user('header-member'),
+        ):
+            ok = self.client.get(
+                '/interview-studio',
+                headers=_interview_principal_header('header-member'),
+                base_url='http://localhost',
+            )
+        self.assertEqual(ok.status_code, 200)
+        self.assertEqual(ok.headers['X-Robots-Tag'], 'noindex, nofollow')
+        self.assertEqual(ok.headers['Cache-Control'], 'private, no-store')
+
+        redirected = self.client.get('/interview-studio', base_url='http://localhost')
+        self.assertEqual(redirected.status_code, 302)
+        self.assertEqual(redirected.headers['X-Robots-Tag'], 'noindex, nofollow')
+        self.assertEqual(redirected.headers['Cache-Control'], 'private, no-store')
+
+        unauthorized = self.client.post(
+            '/api/interview/review',
+            json={'question': 'Q?', 'answer': 'A complete answer.'},
+            base_url='http://localhost',
+        )
+        self.assertEqual(unauthorized.status_code, 401)
+        self.assertEqual(unauthorized.headers['Cache-Control'], 'private, no-store')
+
+    def test_legacy_redirect_paths_carry_the_same_noindex_no_store_headers(self):
+        """Review finding P3: the namespace check
+        (request.path.startswith('/interview-studio')) missed the three
+        legacy redirect paths that 302 into the now identity-gated
+        destination -- their responses need the same noindex/no-store
+        treatment, not just the canonical path itself. Checked signed out
+        (302) and signed in (still 302, since these routes always
+        redirect) to cover both principal states the shared after_request
+        hook branches on."""
+        for path in ('/interview-me', '/petec/interview-me', '/petec/interview-studio'):
+            with self.subTest(path=path, signed_in=False):
+                response = self.client.get(path, base_url='http://localhost')
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.headers['X-Robots-Tag'], 'noindex, nofollow')
+                self.assertEqual(response.headers['Cache-Control'], 'private, no-store')
+            with self.subTest(path=path, signed_in=True):
+                with patch(
+                    'identity.database_service.first_row',
+                    return_value=_interview_mapped_user('legacy-path-member'),
+                ):
+                    response = self.client.get(
+                        path,
+                        headers=_interview_principal_header('legacy-path-member'),
+                        base_url='http://localhost',
+                    )
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.headers['X-Robots-Tag'], 'noindex, nofollow')
+                self.assertEqual(response.headers['Cache-Control'], 'private, no-store')
+
+    def test_client_rate_limit_key_prefers_a_resolved_member_identity(self):
+        """Reads only the request-scoped g.peerslate_identity a caller's own
+        identity gate already populated — never resolves identity itself."""
+        with app.test_request_context('/api/interview/review'):
+            g.peerslate_identity = SimpleNamespace(user_key='member-abc-123')
+            self.assertEqual(_client_rate_limit_key(), 'member:member-abc-123')
+
+        with app.test_request_context(
+            '/api/interview/review', headers={'X-Forwarded-For': '203.0.113.5:4444'},
+        ):
+            self.assertEqual(_client_rate_limit_key(), '203.0.113.5')
+
+    def test_client_rate_limit_key_falls_back_to_a_header_only_principal_for_interview_apis(self):
+        """No g.peerslate_identity has been resolved yet -- the normal case,
+        since Flask-Limiter's before_request hook always runs before the view
+        body that would populate it (see the docstring and SLICE_NOTES.md
+        "Rate-limit key ordering"). The interview API surface still gets
+        member-keyed by parsing the trusted Easy Auth header directly, via
+        identity.get_optional_principal, without ever touching identity
+        storage -- confirmed here by asserting the database mock is never
+        called across every branch."""
+        header = _interview_principal_header('fallback-subject')
+        with patch('identity.database_service.first_row') as first_row:
+            with app.test_request_context(
+                '/api/interview/review',
+                headers=header,
+                environ_base={'REMOTE_ADDR': '198.51.100.20'},
+            ):
+                self.assertEqual(_client_rate_limit_key(), 'member:fallback-subject')
+
+            # Same trusted header, flag off: the fallback must not engage --
+            # falls straight through to the ordinary IP-based key.
+            app.config['PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED'] = False
+            with app.test_request_context(
+                '/api/interview/review',
+                headers=header,
+                environ_base={'REMOTE_ADDR': '198.51.100.21'},
+            ):
+                self.assertEqual(_client_rate_limit_key(), '198.51.100.21')
+            app.config['PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED'] = True
+
+            # Same trusted header, flag on, but outside the interview API
+            # path prefix: the fallback is scoped to /api/interview/ only.
+            with app.test_request_context(
+                '/interview-studio',
+                headers=header,
+                environ_base={'REMOTE_ADDR': '198.51.100.22'},
+            ):
+                self.assertEqual(_client_rate_limit_key(), '198.51.100.22')
+
+            # A malformed header must never raise into the rate limiter --
+            # it degrades to the IP-based key exactly like an absent header.
+            with app.test_request_context(
+                '/api/interview/review',
+                headers={'X-MS-CLIENT-PRINCIPAL': 'not-base64!'},
+                environ_base={'REMOTE_ADDR': '198.51.100.23'},
+            ):
+                self.assertEqual(_client_rate_limit_key(), '198.51.100.23')
+
+            first_row.assert_not_called()
+
+    def test_revised_answer_with_surviving_marker_is_rejected(self):
+        """Slice 4 marker contract server-side re-validation (architecture 03
+        section 2), narrowed by review finding P2-1: the gate only applies
+        to a revision submission (attempt >= 2) -- defense in depth against
+        a client bypass of the disabled Review Revised Answer state."""
+        header = dict(_interview_principal_header('marker-member'), **{'Sec-Fetch-Site': 'same-origin'})
+        with patch('identity.database_service.first_row', return_value=_interview_mapped_user('marker-member')):
+            with patch('app.client.messages.create') as provider_call:
+                response = self.client.post(
+                    '/api/interview/review',
+                    json={
+                        'question': 'Q?',
+                        'answer': 'I decided to [Describe the decision you personally made and why.]',
+                        'attempt': 2,
+                    },
+                    headers=header,
+                    base_url='http://localhost',
+                )
+            provider_call.assert_not_called()
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.get_json(),
+            {'error': 'Replace or remove every bracketed prompt before review.'},
+        )
+
+    def test_answer_with_incidental_brackets_is_accepted(self):
+        """A candidate's own incidental bracket use ("[sic]", "M[1-9]") must
+        never be mistaken for a surviving coach confirmation marker, on any
+        attempt number."""
+        header = dict(_interview_principal_header('bracket-ok-member'), **{'Sec-Fetch-Site': 'same-origin'})
+        with patch('identity.database_service.first_row', return_value=_interview_mapped_user('bracket-ok-member')):
+            with patch('app.client.messages.create') as provider_call:
+                provider_call.return_value = _FakeProviderResponse(json.dumps(review_payload()))
+                response = self.client.post(
+                    '/api/interview/review',
+                    json={
+                        'question': 'Q?',
+                        'answer': 'I quoted the memo [sic] and focused on M[1-9] priorities in the plan.',
+                        'attempt': 2,
+                    },
+                    headers=header,
+                    base_url='http://localhost',
+                )
+            provider_call.assert_called_once()
+        self.assertEqual(response.status_code, 200)
+
+    def test_first_attempt_with_member_authored_brackets_is_accepted(self):
+        """Review finding P2-1/P2-2 (Opus repro): the marker gate must apply
+        ONLY to a revision submission (attempt >= 2). A first-attempt
+        answer containing the member's own bracketed aside -- text that
+        happens to match _IMPROVEMENT_MARKER_PATTERN's shape but was never
+        produced by the improve flow -- must pass through unchanged,
+        whether attempt is explicitly 1 or omitted entirely (the documented
+        default)."""
+        header = dict(_interview_principal_header('first-attempt-brackets-member'), **{'Sec-Fetch-Site': 'same-origin'})
+        answer = 'I built the pipeline. [I can share the architecture diagram if useful.]'
+        for payload in (
+            {'question': 'Q?', 'answer': answer, 'attempt': 1},
+            {'question': 'Q?', 'answer': answer},
+        ):
+            with self.subTest(payload=payload):
+                with patch('identity.database_service.first_row', return_value=_interview_mapped_user('first-attempt-brackets-member')):
+                    with patch('app.client.messages.create') as provider_call:
+                        provider_call.return_value = _FakeProviderResponse(json.dumps(review_payload()))
+                        response = self.client.post(
+                            '/api/interview/review',
+                            json=payload,
+                            headers=header,
+                            base_url='http://localhost',
+                        )
+                    provider_call.assert_called_once()
+                self.assertEqual(response.status_code, 200)
+
+    def test_attempt_field_is_a_bounded_int_not_a_security_boundary(self):
+        """Review finding P2-1: attempt is advisory UX truth, not the
+        security boundary (the improve contract is) -- a malformed,
+        negative, or absurdly large value must never crash the request and
+        must default to treating the submission as a first attempt (the
+        strictly more permissive direction for the marker gate)."""
+        header = dict(_interview_principal_header('attempt-bounds-member'), **{'Sec-Fetch-Site': 'same-origin'})
+        marker_answer = 'I decided to [Describe the decision you personally made and why.]'
+        for bad_attempt in ('not-a-number', -5, 0, 100000, None, 2.9, [2]):
+            with self.subTest(bad_attempt=bad_attempt):
+                with patch('identity.database_service.first_row', return_value=_interview_mapped_user('attempt-bounds-member')):
+                    with patch('app.client.messages.create') as provider_call:
+                        provider_call.return_value = _FakeProviderResponse(json.dumps(review_payload()))
+                        response = self.client.post(
+                            '/api/interview/review',
+                            json={'question': 'Q?', 'answer': marker_answer, 'attempt': bad_attempt},
+                            headers=header,
+                            base_url='http://localhost',
+                        )
+                self.assertEqual(response.status_code, 200)
+
+    @patch('identity.database_service.first_row')
+    def test_authenticated_post_without_origin_headers_fails_closed(self, first_row):
+        first_row.return_value = _interview_mapped_user('fail-closed-member')
+        header = _interview_principal_header('fail-closed-member')
+
+        with patch('app.client.messages.create') as provider_call:
+            response = self.client.post(
+                '/api/interview/review',
+                json={'question': 'Q?', 'answer': 'A complete answer.'},
+                headers=header,
+                base_url='http://localhost',
+            )
+        self.assertEqual(response.status_code, 403)
+        provider_call.assert_not_called()
+
+    @patch('identity.database_service.first_row')
+    def test_authenticated_post_with_same_origin_header_is_not_blocked(self, first_row):
+        first_row.return_value = _interview_mapped_user('same-origin-member')
+        header = dict(_interview_principal_header('same-origin-member'))
+        header['Sec-Fetch-Site'] = 'same-origin'
+
+        with patch('app.client.messages.create') as provider_call:
+            provider_call.return_value = _FakeProviderResponse(json.dumps(review_payload()))
+            response = self.client.post(
+                '/api/interview/review',
+                json={'question': 'Q?', 'answer': 'A complete answer.'},
+                headers=header,
+                base_url='http://localhost',
+            )
+        self.assertEqual(response.status_code, 200)
+
+    def test_anonymous_same_origin_gap_stays_permissive_when_flag_off(self):
+        app.config['PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED'] = False
+        with patch('app.client.messages.create') as provider_call:
+            provider_call.return_value = _FakeProviderResponse(json.dumps(review_payload()))
+            response = self.client.post(
+                '/api/interview/review',
+                json={
+                    'question': 'Q?', 'answer': 'A complete answer.', 'profile_slug': 'petec',
+                },
+                base_url='http://localhost',
+            )
+        self.assertEqual(response.status_code, 200)
+
+
+class InterviewStudioStorageIsolationTests(_InterviewStudioAuthenticatedTestCase):
+    """Slice 2: opaque, per-member browser storage scope; server-derived
+    evidence resolution; a forged profile_slug changes nothing."""
+
+    @patch('identity.database_service.first_row', side_effect=_interview_user_for_subject)
+    def test_two_accounts_get_distinct_opaque_storage_scopes(self, first_row):
+        first = self.client.get(
+            '/interview-studio', headers=_interview_principal_header('member-a'),
+            base_url='http://localhost',
+        )
+        second = self.client.get(
+            '/interview-studio', headers=_interview_principal_header('member-b'),
+            base_url='http://localhost',
+        )
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        first_scope = re.search(r'data-storage-scope="([^"]+)"', first.get_data(as_text=True)).group(1)
+        second_scope = re.search(r'data-storage-scope="([^"]+)"', second.get_data(as_text=True)).group(1)
+        self.assertNotEqual(first_scope, second_scope)
+        for scope in (first_scope, second_scope):
+            with self.subTest(scope=scope):
+                self.assertRegex(scope, r'^member-[0-9a-f]{20}$')
+        # No cross-render: each page carries only its own scope value.
+        self.assertNotIn(second_scope, first.get_data(as_text=True))
+        self.assertNotIn(first_scope, second.get_data(as_text=True))
+
+    @patch('identity.database_service.first_row')
+    def test_page_render_uses_identity_scoped_evidence_for_a_non_owner(self, first_row):
+        """Slice 3/4 review addendum: the initial GET render must resolve
+        evidence/profile from the same identity-scoped path the four APIs
+        already use (_interview_identity_evidence_context), not the
+        unconditional petec fixture -- so a non-owner member's page carries
+        THEIR name and an EMPTY #is-evidence-data island. Pete's fixture
+        identity must never render for a non-owner."""
+        first_row.return_value = _interview_mapped_user('page-non-owner', display_name='Jordan Rivera')
+        app.config['PEERSLATE_OWNER_USER_KEYS'] = 'user-someone-else-entirely'
+        response = self.client.get(
+            '/interview-studio',
+            headers=_interview_principal_header('page-non-owner'),
+            base_url='http://localhost',
+        )
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn('data-profile-slug=""', html)
+        evidence_json = html.split('<script id="is-evidence-data" type="application/json">', 1)[1].split('</script>', 1)[0]
+        self.assertEqual(json.loads(evidence_json), [])
+
+    @patch('identity.database_service.first_row')
+    def test_page_render_still_uses_the_petec_fixture_for_the_owner(self, first_row):
+        """Owner decision Q-C: the owner's own account keeps the petec
+        fixture on the initial GET render, matching the four APIs."""
+        first_row.return_value = _interview_mapped_user('page-owner-account', display_name='Pete Owner')
+        app.config['PEERSLATE_OWNER_USER_KEYS'] = 'user-page-owner-account'
+        response = self.client.get(
+            '/interview-studio',
+            headers=_interview_principal_header('page-owner-account'),
+            base_url='http://localhost',
+        )
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn('data-profile-slug="petec"', html)
+        evidence_json = html.split('<script id="is-evidence-data" type="application/json">', 1)[1].split('</script>', 1)[0]
+        self.assertGreater(len(json.loads(evidence_json)), 0)
+
+    def test_scope_attribute_absent_when_flag_off(self):
+        app.config['PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED'] = False
+        response = self.client.get('/interview-studio', base_url='http://localhost')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(b'data-storage-scope', response.data)
+
+    @patch('app.client.messages.create')
+    @patch('identity.database_service.first_row')
+    def test_forged_profile_slug_produces_an_identical_response(self, first_row, provider_call):
+        first_row.return_value = _interview_mapped_user('forge-owner')
+        app.config['PEERSLATE_OWNER_USER_KEYS'] = 'user-forge-owner'
+        provider_call.return_value = _FakeProviderResponse(json.dumps(review_payload()))
+        header = dict(_interview_principal_header('forge-owner'), **{'Sec-Fetch-Site': 'same-origin'})
+
+        genuine = self.client.post(
+            '/api/interview/review',
+            json={'question': 'Q?', 'answer': 'A complete answer.'},
+            headers=header,
+            base_url='http://localhost',
+        )
+        forged = self.client.post(
+            '/api/interview/review',
+            json={
+                'question': 'Q?', 'answer': 'A complete answer.',
+                'profile_slug': 'someone-elses-profile',
+            },
+            headers=header,
+            base_url='http://localhost',
+        )
+        self.assertEqual(genuine.status_code, 200)
+        self.assertEqual(forged.status_code, 200)
+        self.assertEqual(genuine.get_json(), forged.get_json())
+
+    @patch('app.client.messages.create')
+    @patch('identity.database_service.first_row')
+    def test_non_owner_identity_never_receives_fixture_evidence(self, first_row, provider_call):
+        first_row.return_value = _interview_mapped_user('non-owner')
+        app.config['PEERSLATE_OWNER_USER_KEYS'] = 'user-someone-else-entirely'
+        header = dict(_interview_principal_header('non-owner'), **{'Sec-Fetch-Site': 'same-origin'})
+
+        provider_call.return_value = _FakeProviderResponse(json.dumps({
+            'status': 'insufficient', 'answer': '', 'whyItWorks': [], 'evidenceIds': [],
+        }))
+        model_answer_response = self.client.post(
+            '/api/interview/model-answer',
+            json={'question': 'Q?', 'profile_slug': 'petec'},
+            headers=header,
+            base_url='http://localhost',
+        )
+        self.assertEqual(model_answer_response.status_code, 200)
+        self.assertEqual(
+            model_answer_response.get_json()['modelAnswer']['status'], 'insufficient',
+        )
+        self.assertEqual(
+            model_answer_response.get_json()['profile']['firstName'], 'Member',
+        )
+
+        # A real fixture evidence id is rejected outright: the non-owner's
+        # authorized evidence set is empty, so nothing can be selected.
+        improve_response = self.client.post(
+            '/api/interview/improve',
+            json={
+                'question': 'Q?',
+                'answer': 'A complete answer.',
+                'improvements': [],
+                'evidence_ids': ['modernization'],
+                'profile_slug': 'petec',
+            },
+            headers=header,
+            base_url='http://localhost',
+        )
+        self.assertEqual(improve_response.status_code, 403)
+        # The model-answer call above legitimately reached the provider
+        # (with an empty evidence set); the improve rejection happens at the
+        # evidence-authorization check, strictly before any provider call —
+        # so the call count must not have grown past that first request.
+        self.assertEqual(provider_call.call_count, 1)
+
+    @patch('identity.database_service.first_row')
+    def test_owner_account_still_reaches_the_petec_fixture(self, first_row):
+        first_row.return_value = _interview_mapped_user('owner-account', display_name='Pete Owner')
+        app.config['PEERSLATE_OWNER_USER_KEYS'] = 'user-owner-account'
+        header = dict(_interview_principal_header('owner-account'), **{'Sec-Fetch-Site': 'same-origin'})
+
+        with patch('app.client.messages.create') as provider_call:
+            provider_call.return_value = _FakeProviderResponse(json.dumps({
+                'status': 'answered',
+                'answer': 'A grounded answer citing approved evidence.',
+                'whyItWorks': ['Uses an approved metric.'],
+                'evidenceIds': ['modernization'],
+            }))
+            response = self.client.post(
+                '/api/interview/model-answer',
+                json={'question': 'Q?'},
+                headers=header,
+                base_url='http://localhost',
+            )
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload['modelAnswer']['status'], 'answered')
+        self.assertEqual(payload['modelAnswer']['evidenceUsed'][0]['id'], 'modernization')
+
+    @patch('app.client.messages.create')
+    @patch('identity.database_service.first_row')
+    def test_user_key_never_appears_in_interview_log_lines(self, first_row, provider_call):
+        first_row.return_value = _interview_mapped_user('log-safety-member')
+        header = dict(_interview_principal_header('log-safety-member'), **{'Sec-Fetch-Site': 'same-origin'})
+        provider_call.return_value = _FakeProviderResponse('not valid json at all')
+
+        with patch.object(app.logger, 'warning') as warning_log, \
+                patch.object(app.logger, 'error') as error_log:
+            response = self.client.post(
+                '/api/interview/review',
+                json={'question': 'Q?', 'answer': 'A complete answer.'},
+                headers=header,
+                base_url='http://localhost',
+            )
+        self.assertEqual(response.status_code, 502)
+        for mock_log in (warning_log, error_log):
+            for call in mock_log.call_args_list:
+                rendered = ' '.join(str(arg) for arg in call.args) + ' '.join(
+                    f'{key}={value}' for key, value in call.kwargs.items()
+                )
+                self.assertNotIn('user-log-safety-member', rendered)
+
+    def test_js_storage_prefix_is_scope_gated(self):
+        script = _studio_script()
+        self.assertIn(
+            "var storageScope = root.getAttribute('data-storage-scope') || '';", script,
+        )
+        self.assertIn("'peerslate:interview-studio:' + storageScope + ':v3'", script)
+        self.assertIn('if (storageScope) return;', script)
+
+    def test_js_never_reads_or_writes_legacy_keys_when_scoped(self):
+        script = _studio_script()
+        self.assertIn(
+            ': (storageScope ? null : migrateLegacySession(readJSON(legacySessionKey, null)));',
+            script,
+        )
+        self.assertIn(
+            '(!storageScope && key.indexOf(legacyStoragePrefix) === 0)', script,
+        )
+        self.assertIn('if (!storageScope) {\n        storagePrefix', script)
+
+    def test_js_payloads_no_longer_send_profile_slug(self):
+        script = _studio_script()
+        self.assertNotIn('profile_slug', script)
+
+    def test_js_storage_failures_surface_truthful_copy_not_a_false_claim(self):
+        script = _studio_script()
+        self.assertIn(
+            "if (!saved) announce('Your session progress could not be saved in this browser right now.');",
+            script,
+        )
+        self.assertIn(
+            "return writeJSON(historyKey, records.slice(0, 100));", script,
+        )
+        self.assertIn('if (!found) return false;', script)
+        self.assertIn(
+            "removed\n            ? 'Session record deleted from this browser.'", script,
+        )
+
+
+# ---------------------------------------------------------------------------
+# PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 slices 3-4: authenticated
+# shell (left rail / mobile control row / warm token layer / retired public
+# chrome) and the Interview Me append-only consequence stack (structural
+# immutability, completed-action states, bracket-confirmation contract,
+# widened request binding). All dark behind
+# PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED (default off); flag-off byte
+# comparability is covered separately by InterviewStudioFlagOffByteComparabilityTests.
+# ---------------------------------------------------------------------------
+
+
+class InterviewStudioAuthenticatedShellTests(_InterviewStudioAuthenticatedTestCase):
+    """Slice 3: the authenticated GET render retires the public shell/chrome
+    and replaces it with the locked left rail, carrying the exact truth
+    copy (architecture 03 section 6-7, visuals 01-17)."""
+
+    @patch('identity.database_service.first_row')
+    def test_public_chrome_is_retired_in_the_authenticated_render(self, first_row):
+        first_row.return_value = _interview_mapped_user('shell-member')
+        response = self.client.get(
+            '/interview-studio',
+            headers=_interview_principal_header('shell-member'),
+            base_url='http://localhost',
+        )
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        for retired in (
+            'Public practice · browser-local',
+            'Public demo profile',
+            'You are not signed in as',
+            'is__session-rail"',
+            'is__truth-strip',
+            'data-is-truth-strip',
+            'Public Interview Studio · browser-local practice',
+        ):
+            self.assertNotIn(retired, html)
+
+    @patch('identity.database_service.first_row')
+    def test_authenticated_rail_carries_the_locked_structure_and_exact_truth_copy(self, first_row):
+        first_row.return_value = _interview_mapped_user('rail-member')
+        response = self.client.get(
+            '/interview-studio',
+            headers=_interview_principal_header('rail-member'),
+            base_url='http://localhost',
+        )
+        html = response.get_data(as_text=True)
+        for marker in (
+            'data-is-auth-rail',
+            # Eyebrow text content; CSS renders it uppercase (text-transform),
+            # so the HTML itself carries title case.
+            'is-auth__rail-eyebrow">Interview Studio<',
+            'is-auth__rail-eyebrow">Current session<',
+            'is-auth__rail-eyebrow">Session tools<',
+            'data-is-rail-summary-context',
+            'data-is-rail-summary-stage',
+            'data-is-rail-summary-level',
+            'data-is-rail-summary-family',
+            'data-is-finish-session-label',
+            'data-is-finish-session-truth',
+        ):
+            self.assertIn(marker, html)
+        # Exact locked copy (architecture 03 section 6, brief item 2).
+        self.assertIn(
+            'Drafts and History stay in this browser for this account. '
+            'They do not sync across devices.',
+            html,
+        )
+        # Exact locked copy (brief item 5, transmission truth).
+        self.assertIn('Your answer is sent only when you click Review My Answer.', html)
+        # Exact locked copy (brief item 5, media truth -- Video Practice).
+        self.assertIn(
+            'This recording exists only on this page. PeerSlate does not upload, save, or analyze it.',
+            html,
+        )
+        # Exact locked copy (brief item 5, clearing consequence -- History).
+        self.assertIn('Clearing browser data may remove these practice records.', html)
+        # Session-finished truth line starts hidden until the session ends.
+        self.assertIn('data-is-finish-session-truth hidden', html)
+
+    @patch('identity.database_service.first_row')
+    def test_setup_disclosure_starts_hidden_unlike_the_public_page(self, first_row):
+        """Slice 3: the setup form is a focused attached surface (architecture
+        03 section 6), not a permanently-visible bar like the public page."""
+        first_row.return_value = _interview_mapped_user('setup-hidden-member')
+        response = self.client.get(
+            '/interview-studio',
+            headers=_interview_principal_header('setup-hidden-member'),
+            base_url='http://localhost',
+        )
+        html = response.get_data(as_text=True)
+        self.assertIn('data-is-session-setup hidden', html)
+
+    @patch('identity.database_service.first_row')
+    def test_demo_cards_are_retired_on_every_panel(self, first_row):
+        first_row.return_value = _interview_mapped_user('demo-card-member')
+        response = self.client.get(
+            '/interview-studio',
+            headers=_interview_principal_header('demo-card-member'),
+            base_url='http://localhost',
+        )
+        html = response.get_data(as_text=True)
+        self.assertNotIn('data-is-demo-card', html)
+        self.assertNotIn('is__demo-note', html)
+
+
+class InterviewStudioConsequenceStackContractTests(unittest.TestCase):
+    """Slice 4: JS source-string contract for the append-only consequence
+    stack, structural immutability, completed-action states, the
+    bracket-confirmation marker gate, and the widened request binding.
+    Matches this file's established pattern (test_js_* above) for
+    asserting client behavior without a Node/browser DOM harness."""
+
+    def test_authenticated_flag_is_read_and_scopes_every_new_behavior(self):
+        script = _studio_script()
+        self.assertIn("var authenticated = root.hasAttribute('data-authenticated');", script)
+        # Every new slice 3-4 code path is additive and gated -- never an
+        # unconditional replacement of the flag-off renderer.
+        self.assertGreaterEqual(script.count('if (authenticated)'), 5)
+
+    def test_stack_functions_exist_and_are_append_only(self):
+        script = _studio_script()
+        for fn in (
+            'function stackAnchor()',
+            'function appendStackNode(node)',
+            'function resetConsequenceStack()',
+            'function appendAnswerSnapshot(label, answerText)',
+            'function buildCoachingSection(review, revised)',
+            'function appendAuthenticatedAttempt(answerText, review, attemptNumber)',
+            # Slice 5-6 review item 2 (R2): appendAuthenticatedImprovement now
+            # also receives the originating review (needed for the "Add
+            # context or evidence" sub-flow's resubmission), and
+            # startAuthenticatedImprove gained optional selectedIds/
+            # additionalContext/onSuccess/onError params so the same request
+            # path can either append the first draft or update an
+            # already-appended one in place.
+            'function appendAuthenticatedImprovement(payload, review, question, priorAnswer)',
+            'function startAuthenticatedImprove(review, selectedIds, additionalContext, onSuccess, onError)',
+        ):
+            self.assertIn(fn, script)
+        # Append, never replace: the stack anchor inserts new nodes before
+        # the single live composer group -- it never calls replaceChildren
+        # or otherwise clears prior appended content.
+        self.assertIn('stackAnchor().insertBefore(node, answeringBlock);', script)
+        self.assertNotIn('stackAnchor().replaceChildren', script)
+
+    def test_structural_immutability_freezes_the_editor_not_a_readonly_flag(self):
+        """Architecture 03 section 2 item 2: on a validated attempt, the
+        editor is removed from that attempt (hidden, never re-shown by the
+        success path), not merely toggled readOnly. Failure re-attaches it
+        with the preserved value -- the one exception, and it is scoped to
+        the catch handler only."""
+        script = _studio_script()
+        submit_review = script.split('function submitReview() {', 1)[1].split("answerForm.addEventListener('submit'", 1)[0]
+        success_handler = submit_review.split('.then(function (payload) {', 1)[1].split('}).catch(function (error) {', 1)[0]
+        self.assertIn('if (authenticated) {', success_handler)
+        self.assertIn('appendAuthenticatedAttempt(responseText, payload.review, attemptAtSubmit);', success_handler)
+        # The success path never re-shows the composer -- immutability holds
+        # even though answer.readOnly is reset (harmless: the element stays
+        # hidden throughout the success branch).
+        self.assertNotIn('setHidden(answeringBlock, false)', success_handler)
+        # appendAuthenticatedAttempt seals the live submitted card into a
+        # permanent node and hides the reusable live display.
+        stack_fn = script.split('function appendAuthenticatedAttempt(answerText, review, attemptNumber) {', 1)[1].split('\n    }\n', 1)[0]
+        self.assertIn('setHidden(submittedBlock, true);', stack_fn)
+        self.assertIn('appendAnswerSnapshot(', stack_fn)
+
+    def test_completed_action_states_replace_active_triggers(self):
+        """QA-ledger rejection rule (architecture 03 section 1 item 3): an
+        action never remains active after its consequence exists."""
+        script = _studio_script()
+        self.assertIn('function makeCompletedChip(label)', script)
+        self.assertIn("improveButton.replaceWith(makeCompletedChip('Improvement draft created'));", script)
+        self.assertIn("makeCompletedChip('Revision reviewed')", script)
+        self.assertIn("completed ? 'Session finished' : 'Finish session'", script)
+        self.assertIn('function setFinishSessionCompleted(completed)', script)
+        self.assertIn("text(one('[data-is-finish-session-label]', button), completed ? 'Session finished' : 'Finish session');", script)
+
+    def test_marker_gate_pattern_matches_the_server_exactly(self):
+        """The client marker regex must match app.py's
+        _IMPROVEMENT_MARKER_PATTERN exactly (same narrow imperative-sentence
+        shape), or the disabled-button gate and the server re-validation
+        could disagree about what counts as an unresolved marker."""
+        script = _studio_script()
+        self.assertIn(
+            r"var IMPROVEMENT_MARKER_PATTERN = /\[[A-Z][a-zA-Z]*\s[^[\]]*\.\]/g;",
+            script,
+        )
+        app_source = Path('app.py').read_text(encoding='utf-8')
+        self.assertIn(
+            r"_IMPROVEMENT_MARKER_PATTERN = re.compile(r'\[[A-Z][a-zA-Z]*\s[^\[\]]*\.\]')",
+            app_source,
+        )
+        self.assertIn('function unresolvedMarkerCount(draftText)', script)
+        self.assertIn('reviewRevisedButton.disabled = count > 0;', script)
+        self.assertIn(
+            "markerChip.textContent = count ? 'Needs your confirmation (' + count + ' remaining)' : '';",
+            script,
+        )
+        self.assertIn('Replace or remove every bracketed prompt before review.', script)
+
+    def test_marker_gate_prefers_server_confirmations_over_the_client_regex(self):
+        """Review finding P2-2: confirmations[] (app.py
+        validate_interview_improvement's own extraction, the same list the
+        server re-validates a revision against) is the canonical marker
+        list -- counted by literal string containment against the current
+        draft -- and the client regex is only a fallback for the case
+        confirmations is absent. A [TBD]-style bare placeholder would never
+        match IMPROVEMENT_MARKER_PATTERN's imperative-sentence shape, so
+        this is the concrete case where trusting confirmations (not the
+        regex) is the only way the gate can ever catch it."""
+        script = _studio_script()
+        improve_fn = script.split('function appendAuthenticatedImprovement(payload, review, question, priorAnswer) {', 1)[1].split(
+            "\n    function startAuthenticatedImprove(", 1
+        )[0]
+        self.assertIn(
+            'var confirmations = Array.isArray(payload.confirmations) ? payload.confirmations : null;',
+            improve_fn,
+        )
+        self.assertIn(
+            'confirmations = Array.isArray(updatedPayload.confirmations) ? updatedPayload.confirmations : null;',
+            improve_fn,
+        )
+        sync_markers = improve_fn.split('function syncMarkers() {', 1)[1].split('\n        }', 1)[0]
+        self.assertIn(
+            "confirmations.filter(function (marker) { return draft.value.indexOf(marker) !== -1; }).length",
+            sync_markers,
+        )
+        self.assertIn(': unresolvedMarkerCount(draft.value);', sync_markers)
+
+    def test_review_revised_answer_sends_the_attempt_number(self):
+        """Review finding P2-2: the authenticated client reports which
+        attempt this is (session.attemptNumber, already incremented before
+        submitReview() is called) so the server's marker gate (P2-1) can
+        distinguish a revision from a first attempt. Public/flag-off never
+        sends it -- there is no marker-gate concept on that surface."""
+        script = _studio_script()
+        submit_review = script.split('function submitReview() {', 1)[1].split(
+            '\n    function postReviewWithOneRetry', 1
+        )[0]
+        self.assertIn('var attemptAtSubmit = session.attemptNumber;', submit_review)
+        self.assertIn('if (authenticated) reviewRequestBody.attempt = attemptAtSubmit;', submit_review)
+        self.assertIn('postReviewWithOneRetry(reviewRequestBody, controller.signal)', submit_review)
+
+    def test_request_binding_is_widened_beyond_the_bare_epoch_counter(self):
+        """Slice 4 item 6: (sessionId, contextId, questionId, attemptNumber,
+        epoch) -- a late response with ANY element changed is dropped."""
+        script = _studio_script()
+        self.assertIn('function currentRequestBinding()', script)
+        self.assertIn('function bindingStillCurrent(binding)', script)
+        for field in ('sessionId:', 'contextId:', 'questionId:', 'attemptNumber:'):
+            self.assertIn(field, script.split('function currentRequestBinding()', 1)[1].split('function bindingStillCurrent', 1)[0])
+        # Every guard site now checks both the epoch counter and the binding.
+        self.assertEqual(
+            script.count("!== reviewRequestId || !bindingStillCurrent(binding)"), 2,
+        )
+        self.assertEqual(
+            script.count("!== improveRequestId || !bindingStillCurrent(binding)"), 2,
+        )
+
+    def test_member_authority_and_revised_transmission_truth_are_exact(self):
+        script = _studio_script()
+        self.assertIn('Coaching is guidance. Your answer remains yours.', script)
+        self.assertIn(
+            'Your revised answer is sent only when you click Review Revised Answer.',
+            script,
+        )
+
+    def test_authenticated_failure_copy_is_exact_and_scoped(self):
+        script = _studio_script()
+        self.assertIn("We couldn't review this answer right now.", script)
+        self.assertIn(
+            "text(reviewErrorText, 'Your answer is still here. You can try again or continue editing.');",
+            script,
+        )
+        self.assertIn("text(retryCoachingButton, 'Try review again');", script)
+        self.assertIn("text(keepEditingButton, 'Continue editing');", script)
+
+    def test_rail_summary_and_session_setup_visibility_are_wired(self):
+        script = _studio_script()
+        self.assertIn('data-is-rail-summary-context', script)
+        self.assertIn('function labelExperienceLevel(value)', script)
+        self.assertIn('if (authenticated && sessionSetupSection) {', script)
+        self.assertIn('if (!authenticated) setHidden(controls, false);', script)
+
+
+class InterviewStudioSlice56RecompositionTests(_InterviewStudioAuthenticatedTestCase):
+    """Slice 5-6: the architect rulings (R1-R4) and the Interview AI/Video
+    Practice/Session Complete/History recompositions. Matches this file's
+    established source-string pattern for JS behavior no Node/browser
+    harness runs in CI, plus HTML-render assertions via the shared
+    _InterviewStudioAuthenticatedTestCase fixture used by
+    InterviewStudioAuthenticatedShellTests above."""
+
+    def _authenticated_html(self, subject, path='/interview-studio', query=''):
+        # A context-manager patch (not a @patch-decorated helper): decorating
+        # a shared helper method makes mock.patch inject the mock as the
+        # argument immediately after the caller's own positional args are
+        # bound, not in the position the helper's signature implies --
+        # confirmed the hard way (AttributeError: 'str' object has no
+        # attribute 'return_value') before switching to this form.
+        with patch('identity.database_service.first_row') as first_row_mock:
+            first_row_mock.return_value = _interview_mapped_user(subject)
+            response = self.client.get(
+                path + query,
+                headers=_interview_principal_header(subject),
+                base_url='http://localhost',
+            )
+        self.assertEqual(response.status_code, 200)
+        return response.get_data(as_text=True)
+
+    def test_ai_insufficiency_relabel_targets_the_visible_action_row_button(self):
+        """Final-review Finding 1: lock 08's "Change question" must reach the
+        button a member can actually see.
+
+        Both the CSS-hidden chip row and the visible action row carry
+        data-is-different-question, and the chip row renders first, so a plain
+        selector relabelled the invisible control (and text() would have
+        stripped that button's icon). The visible control owns its own hook.
+        """
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        self.assertIn("one('#is-panel-ai [data-is-ai-action-question]')", source)
+        self.assertNotIn("one('#is-panel-ai [data-is-different-question]')", source)
+
+        html = self._authenticated_html('lock08-member', query='?mode=ai')
+        self.assertEqual(html.count('data-is-ai-action-question'), 1)
+        start = html.index('data-is-ai-action-question')
+        self.assertIn('New question', html[start:html.index('</button>', start)])
+
+    # -- R1: mobile mode picker --------------------------------------------
+    def test_r1_mobile_mode_picker_wraps_the_same_tablist_no_duplicate_controls(self):
+        html = self._authenticated_html('r1-member')
+        for marker in (
+            'data-is-mode-picker',
+            'data-is-mode-toggle',
+            'data-is-mode-toggle-label',
+            'id="is-auth-modes-list"',
+        ):
+            self.assertIn(marker, html)
+        # Exactly one tablist and three mode links -- the toggle wraps the
+        # existing controls rather than duplicating them (R1's own text:
+        # "wraps the same tablist markup").
+        self.assertEqual(html.count('data-is-mode="me"'), 1)
+        self.assertEqual(html.count('data-is-mode="ai"'), 1)
+        self.assertEqual(html.count('data-is-mode="video"'), 1)
+        script = _studio_script()
+        self.assertIn('function syncModeToggle(mode)', script)
+        self.assertIn('function closeModePicker(returnFocus)', script)
+        self.assertIn("modePicker.setAttribute('data-is-open', 'true');", script)
+
+    # -- R2: Add context or evidence sub-flow --------------------------------
+    def test_r2_add_context_or_evidence_reuses_the_1200_char_field_and_evidence_contract(self):
+        script = _studio_script()
+        self.assertIn('function buildImproveContextForm(review, onSubmit)', script)
+        self.assertIn("toggle = makeActionButton('secondary', 'Add context or evidence'", script)
+        self.assertIn('textarea.maxLength = 1200;', script)
+        self.assertIn('No authorized evidence suggestion is available for this answer.', script)
+        self.assertIn('data-is-stack-evidence-choice', script)
+        # Feeds the existing improve API contract (brief R2: "additional_context
+        # + evidence_ids"), not a new endpoint or payload shape.
+        context_form = script.split('function buildImproveContextForm(review, onSubmit)', 1)[1].split(
+            '\n    function appendAuthenticatedImprovement', 1
+        )[0]
+        self.assertIn('onSubmit(selectedIds, contextText, function () {', context_form)
+        self.assertIn('startAuthenticatedImprove(review, selectedIds, contextText,', script)
+
+    # -- R3: experience level folded into the setup form ---------------------
+    def test_r3_experience_level_is_editable_in_the_authenticated_setup_form(self):
+        html = self._authenticated_html('r3-member')
+        setup_form = html.split('data-is-new-session-form', 1)[1].split('</form>', 1)[0]
+        self.assertIn('data-is-level', setup_form)
+        self.assertIn('Entry level', setup_form)
+        self.assertIn('Leadership', setup_form)
+        # Question mix (family) already lived in this form unconditionally
+        # (both branches) -- confirm it is still there, not dropped.
+        self.assertIn('data-is-session-mix', setup_form)
+
+    def test_r3_experience_level_is_absent_from_the_authenticated_retired_side_column(self):
+        """The public-only Interview Me session-settings card (which holds
+        its own experience/family/stage selects) must not also render for
+        authenticated -- R3 folds experience into the setup form instead of
+        duplicating the control, so data-is-level appears exactly once."""
+        html = self._authenticated_html('r3-no-duplicate-member')
+        self.assertNotIn('is__session-card', html)
+        self.assertEqual(html.count('data-is-level'), 1)
+
+    # -- R4: Question trail rail item -----------------------------------------
+    def test_r4_question_trail_rail_item_opens_the_existing_trail_dialog(self):
+        html = self._authenticated_html('r4-member')
+        rail = html.split('data-is-auth-rail', 1)[1].split('</aside>', 1)[0]
+        self.assertIn('data-is-queue-open', rail)
+        self.assertIn('Question trail', rail)
+        self.assertIn('is-auth__rail-action--quiet', rail)
+
+    # -- Interview AI (visuals 07/08) ------------------------------------------
+    def test_interview_ai_source_is_three_radio_cards_synced_to_the_existing_select(self):
+        html = self._authenticated_html('ai-source-member', query='?mode=ai')
+        ai_panel = html.split('id="is-panel-ai"', 1)[1].split('id="is-panel-video"', 1)[0]
+        self.assertIn('data-is-ai-source-group', ai_panel)
+        for value, label in (
+            ('best_practice', 'Best practice'),
+            ('member_history', 'My public profile'),
+            ('compare', 'Compare'),
+        ):
+            self.assertIn('value="%s" data-is-ai-source-radio' % value, ai_panel)
+            self.assertIn(label, ai_panel)
+        self.assertIn(
+            'If approved public evidence is unavailable, PeerSlate keeps the result insufficient instead of inventing it.',
+            ai_panel,
+        )
+        self.assertIn('Explore a strong answer.', ai_panel)
+        self.assertIn('See how a strong answer could be framed.', ai_panel)
+        self.assertIn('Not enough approved public evidence', ai_panel)
+        self.assertIn('Nothing was invented or borrowed from another person.', ai_panel)
+        self.assertIn('This is an illustrative example. It is not presented as your experience.', ai_panel)
+        self.assertIn('Follow-up isn&rsquo;t available yet', ai_panel)
+        script = _studio_script()
+        self.assertIn('var aiSourceRadios = all(\'[data-is-ai-source-radio]\');', script)
+        self.assertIn('var applyAiModeChange = function (value)', script)
+        self.assertIn('modeSelect.value = radio.value;', script)
+
+    def test_source_label_renders_above_the_three_cards_not_beside_them(self):
+        """Review finding P1-2b (lock 07/08): SOURCE is its own eyebrow row
+        above the three radio cards. The prior "auto repeat(3, ...)" column
+        put the label in a fourth column, vertically centered beside the
+        cards instead of stacked above them."""
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        source_rule = css.split('.is[data-authenticated="true"] .is-ai-source {', 1)[1].split('}', 1)[0]
+        self.assertIn('grid-template-columns: repeat(3, minmax(0, 1fr));', source_rule)
+        self.assertNotIn('auto repeat(3', source_rule)
+        label_rule = css.split('.is[data-authenticated="true"] .is-ai-source .is__section-label {', 1)[1].split('}', 1)[0]
+        self.assertIn('grid-column: 1 / -1;', label_rule)
+
+    def test_insufficient_state_renders_in_a_locked_card_container(self):
+        """Review finding P1-2b (lock 08): the insufficiency message and its
+        action row render inside one bordered/shadowed card keyed off the
+        data-is-ai-state="insufficient" root attribute (the same attribute
+        the "ready" state's own nested card already keys off, just above
+        this rule in the stylesheet) -- not bare on the canvas."""
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn(
+            '.is[data-authenticated="true"][data-is-ai-state="insufficient"] '
+            '#is-panel-ai [data-is-ai-answer-content] {',
+            css,
+        )
+        card_rule = css.split(
+            '.is[data-authenticated="true"][data-is-ai-state="insufficient"] '
+            '#is-panel-ai [data-is-ai-answer-content] {', 1
+        )[1].split('}', 1)[0]
+        self.assertIn('background: #fdf9f6;', card_rule)
+        self.assertIn('border: 1px solid var(--is-line);', card_rule)
+
+    def test_use_best_practice_replaces_practice_this_answer_when_insufficient(self):
+        """Review finding P1-2b (lock 08): the dominant action is an enabled
+        forest-green "Use best practice" primary that selects the
+        best_practice source and re-requests generation; "Practice This
+        Answer" stays visible (never hidden) but is the same relabeled
+        control rather than a fourth button the lock does not show."""
+        script = _studio_script()
+        render_fn = script.split('function renderModelAnswer(payload) {', 1)[1].split(
+            '\n    function requestModelAnswer(', 1
+        )[0]
+        self.assertIn("text(practiceAnswerButton, insufficient ? 'Use best practice' : 'Practice This Answer');", render_fn)
+        self.assertIn('practiceAnswerButton.disabled = false;', render_fn)
+        click_handler = script.split("one('[data-is-practice-answer]').addEventListener('click', function () {", 1)[1].split(
+            "\n    /* Video rehearsal */", 1
+        )[0]
+        self.assertIn("root.getAttribute('data-is-ai-state') === 'insufficient'", click_handler)
+        self.assertIn("radioEl.value === 'best_practice'", click_handler)
+        self.assertIn('bestPracticeRadio.checked = true;', click_handler)
+        self.assertIn("applyAiModeChange('best_practice')", click_handler)
+        self.assertIn("requestModelAnswer('');", click_handler)
+
+    def test_interview_ai_follow_up_stays_forced_disabled_for_authenticated(self):
+        """Architecture 03 section 3 item 2: the follow-up affordance renders
+        disabled for authenticated regardless of token availability, until
+        the scoped finding interview_followup_mode_provenance closes."""
+        script = _studio_script()
+        self.assertIn(
+            'var followUpAvailable = !authenticated && !insufficient && Boolean(currentModelContextToken);',
+            script,
+        )
+        self.assertIn(
+            "var followUpAvailable = !authenticated && currentModelAnswer.status !== 'insufficient' && Boolean(currentModelContextToken);",
+            script,
+        )
+        html = self._authenticated_html('ai-followup-member', query='?mode=ai')
+        # The regression this guards: data-is-follow-up-open must still
+        # exist for authenticated (as a permanently disabled placeholder),
+        # or the unconditional followUpOpen.addEventListener(...) call at
+        # script-init time throws and silently aborts the rest of
+        # interview-studio.js's setup on every authenticated page load.
+        self.assertIn('data-is-follow-up-open disabled', html)
+
+    # -- Video Practice (visuals 09/10/15) -------------------------------------
+    def test_content_coaching_card_trims_the_intro_and_keeps_the_truth_line(self):
+        """Task 2: heading unchanged, one short lead line, then the two
+        required truth sentences relocated below the composer as a smaller
+        muted line -- never deleted."""
+        html = self._authenticated_html('coaching-trim-member', query='?mode=video')
+        card = html.split('is__video-content-review', 1)[1].split('</form>', 1)[0]
+        self.assertIn('Get content coaching from a transcript', card)
+        self.assertIn('Type or dictate a transcript if you want feedback on what you said.', card)
+        # The old long intro sentence is gone from the lead position.
+        self.assertNotIn(
+            'Type, paste, or dictate what you said to use the same content review as Interview Me',
+            card,
+        )
+        # Both required truth sentences survive, now below the composer.
+        self.assertIn('Automatic transcription is not enabled.', card)
+        self.assertIn('Submitting the transcript removes the local recording.', card)
+        truth_index = card.index('is__video-content-review-truth')
+        composer_index = card.index('is__transcript-composer')
+        self.assertLess(composer_index, truth_index)
+
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn('.is[data-authenticated="true"] .is__video-content-review > p:first-of-type {', css)
+        self.assertIn('.is[data-authenticated="true"] .is__video-content-review-truth {', css)
+
+    def test_no_inference_line_is_persistent_under_content_coaching(self):
+        """Review finding P2-3 (lock 09): the no-inference line renders
+        persistently under CONTENT COACHING (above the transcript
+        composer), not only inside a result the member has to open."""
+        html = self._authenticated_html('no-inference-member', query='?mode=video')
+        card = html.split('is__video-content-review', 1)[1].split('</form>', 1)[0]
+        no_inference_index = card.index('is__video-content-review-no-inference')
+        composer_index = card.index('is__transcript-composer')
+        self.assertLess(no_inference_index, composer_index)
+        self.assertIn(
+            'Video Practice does not analyze eye contact, appearance, confidence, emotion, personality, pace, or delivery.',
+            card,
+        )
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn('.is__video-content-review .is__video-content-review-no-inference {', css)
+
+    def test_delivery_analysis_sentence_drops_public_for_authenticated_only(self):
+        """Review finding P2-3 (lock 09): the result block's delivery-
+        analysis sentence keeps "public" for the flag-off page and drops
+        it for authenticated (this is the member's own private session,
+        not the public demo). Byte-comparability
+        (InterviewStudioFlagOffByteComparabilityTests) proves the public
+        branch is untouched at the byte level; this asserts the visible
+        text difference on each branch directly."""
+        auth_html = self._authenticated_html('delivery-analysis-member', query='?mode=video')
+        self.assertIn(
+            'Delivery analysis is not part of this practice session.',
+            auth_html,
+        )
+        self.assertNotIn(
+            'Delivery analysis is not part of this public practice session.',
+            auth_html,
+        )
+        template_source = Path('templates/interview_studio.html').read_text(encoding='utf-8')
+        self.assertIn(
+            'Delivery analysis is not part of this{% if not interview_authenticated %} public{% endif %} practice session.',
+            template_source,
+        )
+
+    def test_video_recovery_lock_exact_copy_and_actions(self):
+        html = self._authenticated_html('video-recovery-member', query='?mode=video')
+        video_panel = html.split('id="is-panel-video"', 1)[1].split('id="is-panel-ai"', 1)[0] if 'id="is-panel-ai"' in html else html
+        self.assertIn('data-is-video-recovery', html)
+        self.assertIn('Camera access is unavailable.', html)
+        self.assertIn(
+            'PeerSlate will not request permission again until you choose Try camera again.',
+            html,
+        )
+        self.assertIn('data-is-video-use-transcript', html)
+        self.assertIn('data-is-camera-retry', html)
+        self.assertIn('data-is-camera-help', html)
+        self.assertIn('data-is-camera-off', html)
+        script = _studio_script()
+        self.assertIn('function syncVideoRecoveryState(state)', script)
+        self.assertIn("var inRecovery = state === 'denied' || state === 'unavailable';", script)
+        self.assertIn('if (authenticated) syncVideoRecoveryState(state);', script)
+
+    def test_video_frame_order_is_frame_then_truth_line_then_controls(self):
+        """Review finding P1-2c (lock 09): locked order is frame -> media
+        truth line -> controls row. The controls markup used to live
+        inside .is__camera (rendering before the truth line, which
+        rendered after .is__camera closed); a single copy of
+        .is__camera-controls now renders as a sibling after the truth
+        line for authenticated instead -- verify DOM order via substring
+        position and that there is exactly one live copy of each control
+        (no second DOM copy from the if/else restructure)."""
+        html = self._authenticated_html('video-order-member', query='?mode=video')
+        video_panel = html.split('id="is-panel-video"', 1)[1].split('id="is-panel-ai"', 1)[0]
+        camera_close = video_panel.index('data-is-camera>') if 'data-is-camera>' in video_panel else None
+        truth_pos = video_panel.index('is-video-truth')
+        controls_pos = video_panel.index('is__camera-controls')
+        self.assertLess(truth_pos, controls_pos, 'truth line must render before the controls row')
+        # Exactly one live copy of each control hook -- the if/else branches
+        # are mutually exclusive, so only the authenticated set renders.
+        # data-is-device-settings is the one documented exception (Task 3):
+        # a second, CSS-hidden copy remains in the retained device-status
+        # side card -- checked separately below, not counted as a bug here.
+        for hook in (
+            'data-is-record-start', 'data-is-record-stop', 'data-is-record-retake',
+            'data-is-record-discard', 'data-is-play-recording', 'data-is-camera-off',
+            'data-is-video-use-transcript', 'data-is-camera-retry', 'data-is-camera-help',
+        ):
+            with self.subTest(hook=hook):
+                self.assertEqual(video_panel.count(hook), 1, '%s must appear exactly once' % hook)
+        self.assertEqual(video_panel.count('data-is-device-settings'), 2)
+
+    def test_video_chips_have_leading_icons_and_status_dot_markup(self):
+        """Review finding P1-2c (lock 09): each chip gets a leading icon;
+        the two live-status chips also get a status dot. setDeviceStatus()
+        replaces the *children* of one('[data-is-camera-status]') /
+        [data-is-mic-status], so those hooks move to an inner
+        .is-video-chip__label span -- the leading svg icon is a preceding
+        sibling, untouched by that replaceChildren() call."""
+        html = self._authenticated_html('video-chip-icon-member', query='?mode=video')
+        video_panel = html.split('id="is-panel-video"', 1)[1].split('id="is-panel-ai"', 1)[0]
+        self.assertEqual(video_panel.count('is-video-chip__icon'), 3)
+        self.assertIn('<span class="is-video-chip__label" data-is-camera-status>', video_panel)
+        self.assertIn('<span class="is-video-chip__label" data-is-mic-status>', video_panel)
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn('.is-video-chip__label > i {', css)
+        self.assertIn('.is-video-chip__label.is-ready > i { background: #3fbd7a; }', css)
+        self.assertIn('.is-video-chip__label.is-error > i { background: #f03d54; }', css)
+
+    def test_camera_preview_caption_present_for_authenticated_only(self):
+        """Review finding P1-2c (lock 09): the frame carries a persistent
+        'Local camera preview' caption. Public branch is untouched (pure
+        insertion, byte-comparability covered separately)."""
+        auth_html = self._authenticated_html('video-caption-member', query='?mode=video')
+        self.assertIn('<p class="is__camera-caption" data-is-camera-caption>Local camera preview</p>', auth_html)
+
+    def test_device_status_side_row_hidden_for_authenticated(self):
+        """Found while implementing P1-2c: [data-is-camera-status] and
+        [data-is-mic-status] each exist twice for authenticated (the new
+        frame chips, and this retained side card's own spans); one() binds
+        setDeviceStatus() to the frame copy only, so the side-card spans
+        were never updated -- confirmed live (a real enableCamera()
+        failure left the side-card span reading "Camera not requested"
+        forever while the frame chip correctly read "Camera unavailable").
+        The whole now-redundant-and-partly-stale row is hidden; the card's
+        own data-is-video-state-copy paragraph already states the same
+        information truthfully in one sentence."""
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn(
+            '.is[data-authenticated="true"] #is-panel-video .is__video-device-card .is__device-status {\n'
+            '    display: none;\n'
+            '}',
+            css,
+        )
+
+    def test_release_media_revokes_playback_url_on_discard(self):
+        """Architecture 03 section 4 item 2: releaseMedia() itself
+        guarantees the revocation rather than relying on every caller to
+        also call resetVideoUi() afterward."""
+        script = _studio_script()
+        release_media = script.split('function releaseMedia(discardRecording, preservePermissionRequest) {', 1)[1].split(
+            '\n    function setMode', 1
+        )[0]
+        self.assertIn('if (discardRecording && media.playbackUrl) {', release_media)
+        self.assertIn('URL.revokeObjectURL(media.playbackUrl);', release_media)
+        self.assertIn('media.playbackUrl = null;', release_media)
+
+    def test_device_settings_binding_targets_the_lock_09_control_not_the_dead_duplicate(self):
+        """Task 3 finding: the authenticated composition renders two
+        elements matching [data-is-device-settings] -- the camera-controls
+        copy (lock 09's control, inside data-is-camera-controls, shown only
+        in the 'preview' state) and the retained device-status side card's
+        own quiet copy. one() (querySelector) binds both
+        syncVideoRecoveryState's show/hide and the click handler's
+        guard->release->reset->enableCamera sequence to whichever element is
+        first in DOM order. Confirms that is still the camera-controls copy
+        (so the binding genuinely fires on the visible, lock-matching
+        button) and that the side card's copy is hidden via CSS so it never
+        sits on screen as an unbound, dead duplicate."""
+        html = self._authenticated_html('device-settings-member', query='?mode=video')
+        self.assertEqual(html.count('data-is-device-settings'), 2)
+        camera_controls_index = html.index('data-is-device-settings')
+        side_card_index = html.index('data-is-device-settings', camera_controls_index + 1)
+        self.assertLess(
+            camera_controls_index, side_card_index,
+            'the camera-controls copy must stay first in DOM order for '
+            "one('[data-is-device-settings]') to keep binding to it",
+        )
+        self.assertLess(camera_controls_index, html.index('is__video-device-card'))
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn(
+            '.is[data-authenticated="true"] #is-panel-video .is__video-device-card [data-is-device-settings] {\n'
+            '    display: none;\n'
+            '}',
+            css,
+        )
+        script = _studio_script()
+        device_settings = script.split(
+            "one('[data-is-device-settings]').addEventListener('click'", 1,
+        )[1].split('startRecord.addEventListener', 1)[0]
+        self.assertLess(device_settings.index('prepareVideoContextChange'), device_settings.index('releaseMedia(true)'))
+        self.assertLess(device_settings.index('releaseMedia(true)'), device_settings.index('resetVideoUi()'))
+        self.assertLess(device_settings.index('resetVideoUi()'), device_settings.index('enableCamera()'))
+
+    # -- Session Complete (visual 11) ------------------------------------------
+    def test_session_complete_authenticated_composition_and_summary_counts(self):
+        script = _studio_script()
+        self.assertIn(
+            "text(one('[data-is-complete-title]'), 'You finished this practice session.');",
+            script,
+        )
+        # Practiced and reviewed counts stay explicitly distinct in one
+        # sentence (architecture 03 section 5), never a single blended count.
+        summary_block = script.split("text(one('[data-is-complete-title]'), 'You finished", 1)[1].split(
+            'var latestForClearer', 1
+        )[0]
+        self.assertIn('questions were', summary_block)
+        self.assertIn('reviewed in this browser.', summary_block)
+
+    def test_session_complete_html_carries_the_three_cards_and_browser_truth(self):
+        html = self._authenticated_html('complete-member')
+        self.assertIn('is-complete__cards', html)
+        self.assertIn('data-is-complete-clearer', html)
+        self.assertIn('This session is stored only in this browser for this account.', html)
+        self.assertIn('Practice the next focus', html)
+        self.assertIn('Open History', html)
+
+    def test_session_complete_gold_rule_and_action_arrows(self):
+        """Review finding P1-2d (lock 11): a thin gold rule sits under the
+        summary line, spanning the card row's width; all three actions get
+        the trailing arrow icon lock 11 shows (verified live: the rule's
+        computed border-top color is #c5a264)."""
+        html = self._authenticated_html('complete-arrows-member')
+        complete_block = html.split('is-complete-title', 1)[1].split('is-auth__rail-completed', 1)[0]
+        self.assertIn('<hr class="is-complete__rule">', complete_block)
+        for hook in ('data-is-complete-practice-next', 'data-is-complete-new-session', 'data-is-complete-history'):
+            with self.subTest(hook=hook):
+                nearby = complete_block.split(hook, 1)[1][:400]
+                self.assertIn('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/>', nearby)
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn('.is-complete__rule {', css)
+        self.assertIn('border-top: 1px solid var(--is-gold);', css)
+
+    def test_completed_questions_rail_group_wiring(self):
+        """Review finding P1-2d (lock 11): the rail's "Completed questions"
+        group (checkmark + truncated title) is built by
+        renderSessionComplete() from the same reviewed-answer records the
+        main "Questions reviewed" card uses, and cleared by
+        resetConsequenceStack() -- the hook clearReviewState() (called by
+        renderQuestion()/startNewSession() on every new question or
+        session) already fires. Verified live end to end: seeding a v2
+        history record for the current session and clicking "Finish
+        session" populated the rail group with the icon + full question
+        text (CSS-truncated, not JS-truncated -- the established pattern
+        this file already uses for History rows); clicking "Practice the
+        next focus" (which calls renderQuestion() -> clearReviewState())
+        hid it and emptied the list again."""
+        html = self._authenticated_html('rail-completed-member')
+        self.assertIn('<div class="is-auth__rail-completed" data-is-rail-completed hidden>', html)
+        self.assertIn('<p class="is-auth__rail-eyebrow">Completed questions</p>', html)
+        self.assertIn('<ol class="is-auth__rail-completed-list" data-is-rail-completed-list></ol>', html)
+        script = _studio_script()
+        render_fn = script.split('function renderSessionComplete() {', 1)[1].split(
+            '\n    function setFinishSessionCompleted', 1
+        )[0]
+        self.assertIn("var railCompleted = one('[data-is-rail-completed]');", render_fn)
+        self.assertIn("var railCompletedList = one('[data-is-rail-completed-list]');", render_fn)
+        self.assertIn('setHidden(railCompleted, records.length === 0);', render_fn)
+        self.assertIn('label.textContent = record.question;', render_fn)
+        reset_fn = script.split('function resetConsequenceStack() {', 1)[1].split(
+            '\n    function appendAnswerSnapshot', 1
+        )[0]
+        self.assertIn("var railCompleted = one('[data-is-rail-completed]');", reset_fn)
+        self.assertIn('setHidden(railCompleted, true);', reset_fn)
+        self.assertIn('railCompletedList.replaceChildren();', reset_fn)
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn('.is-auth__rail-completed-list li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }', css)
+
+    # -- History (visuals 12/16/17) --------------------------------------------
+    def test_history_four_states_and_exact_gate_copy(self):
+        script = _studio_script()
+        self.assertIn('function renderAuthenticatedHistory()', script)
+        for marker in (
+            "text(statusEl, 'Not enough comparable practice yet.');",
+            "text(detailEl, 'More like-for-like reviewed answers are needed before PeerSlate shows a pattern.');",
+        ):
+            self.assertIn(marker, script)
+        # Four distinct branches: unavailable, genuinely empty, filtered
+        # empty, populated -- each an early return so exactly one state ever
+        # renders.
+        render_fn = script.split('function renderAuthenticatedHistory() {', 1)[1].split(
+            "\n    function renderHistory() {", 1
+        )[0]
+        self.assertGreaterEqual(render_fn.count('return;'), 3)
+        self.assertIn('if (!hasStorage) {', render_fn)
+        self.assertIn('if (!allRecords.length) {', render_fn)
+        self.assertIn('if (!records.length) {', render_fn)
+
+    def test_history_html_carries_the_four_state_containers_and_exact_unavailable_copy(self):
+        html = self._authenticated_html('history-member', path='/interview-studio/history')
+        for marker in (
+            'data-is-history-rows',
+            'data-is-history-empty-state',
+            'data-is-history-filtered-empty',
+            'data-is-history-unavailable-state',
+            'data-is-history-family',
+            'data-is-history-sort',
+        ):
+            self.assertIn(marker, html)
+        self.assertIn('Practice records cannot be read or saved here right now.', html)
+        self.assertIn('PeerSlate cannot read or write Drafts or History in this browser.', html)
+        self.assertIn('Nothing was cleared or deleted.', html)
+        self.assertIn('No reviewed answers yet.', html)
+        # Empty state renders no Clear action (brief item 4: "Empty states
+        # never render a false Clear action").
+        empty_block = html.split('data-is-history-empty-state', 1)[1].split('data-is-history-filtered-empty', 1)[0]
+        self.assertNotIn('data-is-history-clear-local', empty_block)
+
+    def test_history_filter_change_listener_is_null_safe_across_both_branches(self):
+        """Regression guard: historyCompetency/historyTime only exist for
+        the public branch and historyFamily/historySort only exist for the
+        authenticated branch (never all five at once); the shared change
+        handler must never assume all five are present."""
+        script = _studio_script()
+        listener = script.split(
+            '[historyMode, historyCompetency, historyTime, historyFamily, historySort].forEach(function (select) {',
+            1,
+        )[1].split('function restoreHistoryFilters()', 1)[0]
+        self.assertIn('if (historyCompetency && historyCompetency.value', listener)
+        self.assertIn('if (historyTime && historyTime.value', listener)
+        self.assertIn('if (historyFamily && historyFamily.value', listener)
+        self.assertIn('if (historySort && historySort.value', listener)
+
+    def test_history_row_layout_matches_lock_12_title_meta_column_actions(self):
+        """Task 1: title left, a distinct mode·family-over-date meta
+        column, then the Reviewed chip/View review/overflow cluster --
+        not the mode·family line stacked under the title (the pre-fix
+        composition). Grid columns on the row, not flex."""
+        script = _studio_script()
+        row_fn = script.split('function renderAuthenticatedHistory() {', 1)[1].split(
+            "\n    function renderHistory() {", 1
+        )[0]
+        # The title node (`body`) gets only the question text -- the old
+        # mode·family span is no longer appended to it.
+        self.assertIn("body.append(question);", row_fn)
+        self.assertNotIn('body.append(question, meta)', row_fn)
+        # mode·family and the date live together in one meta column.
+        self.assertIn("meta.className = 'is-history__row-meta';", row_fn)
+        self.assertIn('meta.append(metaLine, date);', row_fn)
+        # Chip/View review/overflow cluster into one actions cell.
+        self.assertIn("actions.className = 'is-history__row-actions';", row_fn)
+        self.assertIn('actions.append(chip, view, deleteButton);', row_fn)
+        self.assertIn('item.append(icon, body, meta, actions);', row_fn)
+
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        row_css = css.split('.is-history__row {', 1)[1].split('}', 1)[0]
+        self.assertIn('display: grid;', row_css)
+        self.assertIn('grid-template-columns:', row_css)
+
+    def test_history_filter_selects_are_styled_pill_dropdowns(self):
+        """Review finding P1-2e (lock 12): the three filters render as
+        pill-radius, warm-bordered, chevron-drawn selects, not the
+        browser's native dropdown control. .is-history__filters is the
+        authenticated-only class (the public history page's own filters
+        use the separate is__history-filters class), so no
+        [data-authenticated="true"] scope is needed. Verified live:
+        computed appearance: none, border-radius: 999px, border color
+        #d9cfc2 (--is-line-strong), and the chevron background-image."""
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        select_rule = css.split('.is-history__filters select {', 1)[1].split('}', 1)[0]
+        self.assertIn('appearance: none;', select_rule)
+        self.assertIn('border-radius: 999px;', select_rule)
+        self.assertIn('border: 1px solid var(--is-line-strong);', select_rule)
+        self.assertIn("background: var(--is-surface) url(", select_rule)
+        self.assertIn("stroke='%23222f5c'", select_rule)
+        html = self._authenticated_html('history-pill-member', path='/interview-studio/history')
+        self.assertIn('is-history__filters', html)
+        self.assertIn('data-is-history-mode', html)
+        self.assertIn('data-is-history-family', html)
+        self.assertIn('data-is-history-sort', html)
+
+    def test_history_recommendation_button_handler_is_null_guarded(self):
+        """Regression guard for the second script-init crash this package's
+        History recomposition introduced: data-is-practice-recommendation
+        only exists in the public History & Progress card."""
+        script = _studio_script()
+        self.assertIn('var practiceRecommendationButton = one(\'[data-is-practice-recommendation]\');', script)
+        self.assertIn('if (practiceRecommendationButton) {', script)
+
+    def test_clear_local_data_null_guards_level_and_family_selects(self):
+        """Review finding P1-1: clearLocalData() assigned
+        levelSelect.value/familySelect.value unguarded. familySelect
+        (data-is-family) only exists in the public is__side-column aside
+        (retired for authenticated -- see
+        test_history_recommendation_button_handler_is_null_guarded above
+        for the sibling crash this same recomposition introduced), so every
+        authenticated "Clear local data"/"Clear local History" click threw
+        a TypeError and never reached the storage wipe, history reset, or
+        the 'Interview Studio browser data cleared.' announcement --
+        matching this file's established null-guard pattern (levelSelect/
+        familySelect are guarded at every other call site, e.g. lines
+        ~1376-1377 and ~4598-4599)."""
+        script = _studio_script()
+        clear_local = script.split('function clearLocalData()', 1)[1].split(
+            "all('[data-is-clear-local]", 1
+        )[0]
+        self.assertIn('if (levelSelect) levelSelect.value = session.level;', clear_local)
+        self.assertIn('if (familySelect) familySelect.value = session.family;', clear_local)
+        self.assertNotIn('\n        levelSelect.value = session.level;', clear_local)
+        self.assertNotIn('\n        familySelect.value = session.family;', clear_local)
+
+    # -- Negative regression (brief item 4) ------------------------------------
+    def test_authenticated_copy_never_implies_cloud_persistence(self):
+        """'for this account' is allowed (browser-local truth); 'saved to
+        your account' and other cloud/cross-device implications remain
+        forbidden -- extends the existing public-route guard
+        (test_the_public_route_claims_no_server_capture_or_account_history)
+        to the full authenticated render this package added."""
+        html = self._authenticated_html('negative-regression-member')
+        for forbidden in (
+            'saved to your account',
+            'securely recorded',
+            'synced across devices',
+            'your private history',
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, html)
+        self.assertIn('for this account', html)
+
+    def test_authenticated_cards_override_the_public_pages_cool_gradient(self):
+        """Review finding P1-2a (systemic): section 20's Smoked Eucalyptus
+        ".is__card" gradient (cool/green stops -- the PUBLIC page's own
+        light calibration) was never scoped away from the authenticated
+        composition, so it bled into every authenticated .is__card surface
+        (Session Complete's three cards, History's three info cards,
+        included). Override with the same flat warm surface/hairline/soft
+        shadow the composer card already uses."""
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        card_rule = css.split('.is[data-authenticated="true"] .is__card {', 1)[1].split('}', 1)[0]
+        self.assertIn('background: #fdf9f6;', card_rule)
+        self.assertIn('border-color: var(--is-line);', card_rule)
+        self.assertNotIn('linear-gradient', card_rule)
+        # The override must live after (win source order against, at equal
+        # specificity) section 20's gradient rule, and must not itself
+        # override the AI answer card's own transparent authenticated
+        # treatment (higher specificity there is irrelevant to source
+        # order, but keeping this after both is the established pattern).
+        self.assertLess(
+            css.index('20. Smoked Eucalyptus light calibration'),
+            css.index('.is[data-authenticated="true"] .is__card {'),
+        )
+
+
+class InterviewStudioAuthenticatedHeaderColorTests(unittest.TestCase):
+    """Task 5 (architect-measured, owner-reported): the shared global
+    header/nav/search/brand-mark chrome renders cool (blue-leaning) by
+    default; every one of the 19 locked visuals shows it warm ivory. Fixed
+    page-scoped in static/css/interview-studio.css only, following the
+    established body.interview-studio-page precedent -- no shared
+    stylesheet or base.html edit, and no shared-page regression."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+
+    def test_header_chrome_is_recolored_warm_scoped_to_the_authenticated_studio_only(self):
+        scope = 'body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="dark"])'
+        for selector, declaration in (
+            ('.global-header', 'background: #fdf9f6;'),
+            ('.global-header', 'border-bottom-color: #eae2d8;'),
+            ('.platform-nav__links a', 'color: #10263c;'),
+            ('.platform-nav__links a[aria-current="page"]', 'color: #114a2b;'),
+            ('.platform-nav__links a[aria-current="page"]::after', 'background: #114a2b;'),
+            ('.nav-search__input', 'border-color: #d9cfc2;'),
+            ('.platform-brand__logo', 'background: transparent;'),
+            ('.nav-sign-out__btn', 'border-color: #d9cfc2;'),
+        ):
+            with self.subTest(selector=selector, declaration=declaration):
+                rule = self.css.split(scope + ' ' + selector + ' {', 1)
+                self.assertEqual(
+                    len(rule), 2,
+                    'missing scoped rule for %s' % selector,
+                )
+                self.assertIn(declaration, rule[1].split('}', 1)[0])
+
+    def test_header_fix_never_touches_a_shared_stylesheet_or_base_html(self):
+        # The fix is required to live only in this page-scoped file --
+        # confirms no sibling edit crept into the shared chrome.
+        shared_css = Path('static/css/style.css').read_text(encoding='utf-8')
+        shared_nav_css = Path('static/css/public-navigation.css').read_text(encoding='utf-8')
+        for shared_source in (shared_css, shared_nav_css):
+            self.assertNotIn('#fdf9f6', shared_source)
+            self.assertNotIn('#eae2d8', shared_source)
+        base_html = Path('templates/base.html').read_text(encoding='utf-8')
+        self.assertNotIn('#fdf9f6', base_html)
+
+    def test_header_fix_is_excluded_from_dark_theme_so_the_existing_dark_rules_still_win(self):
+        # The scope explicitly excludes [data-theme="dark"]; the page's own
+        # pre-existing dark-mode header overrides (e.g.
+        # body[data-theme="dark"].interview-studio-page .sign-in-btn) stay
+        # untouched and remain reachable -- dark theme is paused, author no
+        # new dark rules, do not break the existing ones.
+        self.assertIn(':not([data-theme="dark"])', self.css)
+        self.assertIn(
+            'body[data-theme="dark"].interview-studio-page .sign-in-btn',
+            self.css,
+        )

@@ -3785,4 +3785,1911 @@ body:not([data-theme="dark"]) .is__button--primary {
     }
 
     .is__setup-body > .is__button { width: 100%; }
+
+    /* No fixed bottom composer dock in the authenticated composition
+       (slice 3 item 3): actions flow in-document, and the keyboard/caret
+       is never covered by a docked bar. */
+    .is[data-authenticated="true"] .is__composer-actions {
+        position: static;
+        background: none;
+        border-top: 0;
+        box-shadow: none;
+        backdrop-filter: none;
+        padding: 0;
+        margin-top: 0.75rem;
+        grid-template-columns: none;
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .is[data-authenticated="true"] .is__panel[data-is-panel="me"] { padding-bottom: 0; }
+}
+
+/* =====================================================================
+   PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 slices 3-4.
+
+   A scoped token layer + layout for the flag-selected authenticated
+   composition (architecture 03 section 6-7), locked to the 19 hash-locked
+   warm-material visuals. Everything below is scoped under
+   [data-authenticated="true"] -- an attribute the public flag-off page
+   never carries -- so it is purely additive: the Smoked Eucalyptus
+   material and every rule above stay reachable and untouched for the
+   public page. No new body[data-theme="dark"] rule is authored here (dark
+   theme stays paused per standing owner direction) and no existing dark
+   rule is edited.
+   ===================================================================== */
+
+.is[data-authenticated="true"] {
+    /* Fable rebuild: every value below is MEASURED from the 19 locked
+       visuals (region-mode fills, dark-cluster inks), not inherited or
+       estimated. The locked system: one warm white-ivory field (#fdf9f6)
+       for canvas, header, and cards alike -- cards separate by hairline
+       and shadow, never by fill contrast; the rail sits one step warmer;
+       actions are deep forest (#114a2b cluster), gold is for labels and
+       rules only, ink is deep navy for display and a softer navy for
+       body. */
+    --is-canvas: #fdf9f6;
+    --is-canvas-2: #fdf9f6;
+    --is-surface: #fdf9f6;
+    --is-surface-2: #faf5f0;
+    --is-line: #eae2d8;
+    --is-line-strong: #d9cfc2;
+    --is-gold-soft: #f7efe2;
+    --is-ink: #061e47;
+    --is-text: #222f5c;
+    --is-text-muted: #5d6577;
+    --is-active: #114a2b;
+    --is-active-strong: #0d3f24;
+    --is-active-soft: #e7efe8;
+    --is-action-primary: #114a2b;
+    --is-action-primary-strong: #0d3f24;
+    --is-action-primary-text: #fdfdf9;
+    --is-gold-text: #a5762f;
+    --is-gold: #c5a264;
+    --is-success: #205b32;
+    --is-auth-rail-bg: #fcf7f3;
+    --is-auth-video-frame: #152640;
+    /* Focus stays visible but leaves the cobalt family (owner decision:
+       no cobalt treatment): a deep forest ring on warm ivory. */
+    --is-focus: #1c5c38;
+    min-height: 0;
+    padding-bottom: clamp(2rem, 5vw, 3.5rem);
+}
+
+.is[data-authenticated="true"] .is__backdrop {
+    /* Flat warm field, exactly as the locks render it: no bloom, no
+       gradient. The earlier top-left white bloom stacked a third
+       near-white layer under the global header's silver logo and washed
+       it out; the locks have a single flat tone. */
+    background: var(--is-canvas);
+}
+
+/* Review finding P1-2a (systemic): section 20's Smoked Eucalyptus
+   ".is__card" gradient (cool/green stops, "1. Public..." material) is the
+   PUBLIC page's own light calibration and was never scoped away from the
+   authenticated composition, so it bled into every authenticated surface
+   still using the shared .is__card class -- Session Complete's three
+   cards (.is-complete__card) and History's three info cards
+   (.is-history__card) are exactly such surfaces. Override with the same
+   flat warm surface + hairline + soft shadow already used for the
+   authenticated composer card (.is__composer, below) so every
+   authenticated .is__card reads as one consistent warm-ivory material. */
+.is[data-authenticated="true"] .is__card {
+    background: #fdf9f6;
+    border-color: var(--is-line);
+    box-shadow: 0 1px 2px rgb(6 30 71 / 5%), 0 10px 26px rgb(6 30 71 / 6%);
+}
+
+/* One document scroll (slice 3 item 6): the public page forces a
+   full-viewport stage; the authenticated composition lets the document
+   grow with the append-only consequence stack instead. */
+.is[data-authenticated="true"].is { min-height: 0; }
+
+/* ---------------------------------------------------------------------
+   Shell layout: one persistent left rail (desktop) / compact control row
+   (mobile), replacing the retired Studio-local header bar. The rail is a
+   real sibling of the setup disclosure / workspace section inside
+   .is__shell, spanning every row via CSS grid so it stays alongside every
+   mode, not only Interview Me.
+   --------------------------------------------------------------------- */
+.is[data-authenticated="true"] .is__shell {
+    display: grid;
+    grid-template-columns: 16.5rem minmax(0, 1fr);
+    align-items: start;
+    gap: 0 1.75rem;
+}
+.is[data-authenticated="true"] .is__shell > [data-is-auth-rail] {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    position: sticky;
+    top: 1.1rem;
+}
+.is[data-authenticated="true"] .is__shell > *:not([data-is-auth-rail]) {
+    grid-column: 2;
+    min-width: 0;
+}
+
+.is-auth__rail {
+    /* Locks 01-17: the rail is a FLAT column on a one-step-warmer field,
+       separated from the canvas by a single right hairline -- never a
+       floating card (no radius, no shadow, no full border). */
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    background: var(--is-auth-rail-bg);
+    border: 0;
+    border-right: 1px solid var(--is-line);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 1.4rem 1.1rem 1.4rem 0.2rem;
+    max-height: calc(100vh - 2.2rem);
+    overflow-y: auto;
+}
+
+.is-auth__rail-eyebrow {
+    font: 700 0.68rem/1.2 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--is-gold-text);
+    margin: 1rem 0 0.5rem;
+}
+.is-auth__rail-eyebrow:first-child { margin-top: 0; }
+
+.is-auth__mode-picker { position: relative; }
+.is-auth__mode-toggle { display: none; }
+.is-auth__modes { display: flex; flex-direction: column; gap: 0.3rem; list-style: none; margin: 0; padding: 0; }
+.is-auth__mode {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--is-control-radius);
+    color: var(--is-text);
+    font-weight: 600;
+    font-size: 0.92rem;
+    text-decoration: none;
+}
+.is-auth__mode svg { width: 1.15rem; height: 1.15rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.is-auth__mode[aria-selected="true"] { background: var(--is-active); color: var(--is-action-primary-text); }
+.is-auth__mode:not([aria-selected="true"]):hover { background: var(--is-surface-2); }
+.is-auth__mode[aria-disabled="true"] { opacity: 0.45; pointer-events: none; }
+
+.is-auth__summary { list-style: none; margin: 0 0 0.65rem; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+.is-auth__summary li { display: flex; align-items: center; gap: 0.55rem; font-size: 0.85rem; color: var(--is-text); }
+.is-auth__summary svg { width: 1.05rem; height: 1.05rem; flex: none; fill: none; stroke: var(--is-text-muted); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Review finding P1-2d (lock 11): "Completed questions" rail group,
+   shown only while the Session Complete panel is active. Hairlines above
+   and below (rather than editing the pre-existing, undecorated
+   .is-auth__rail-eyebrow rule every other group already uses) scope the
+   new divider to this group alone. */
+.is-auth__rail-completed { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--is-line); }
+.is-auth__rail-completed-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 1rem;
+    border-bottom: 1px solid var(--is-line);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.is-auth__rail-completed-list li { display: flex; align-items: center; gap: 0.55rem; min-width: 0; font-size: 0.85rem; color: var(--is-text); }
+.is-auth__rail-completed-list li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.is-auth__rail-completed-list svg { width: 1.05rem; height: 1.05rem; flex: none; fill: none; stroke: var(--is-active); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+.is-auth__rail-action {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.5rem 0.35rem;
+    background: none;
+    border: 0;
+    color: var(--is-text);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    border-radius: var(--is-control-radius);
+    width: 100%;
+}
+.is-auth__rail-action:hover { background: var(--is-surface-2); }
+.is-auth__rail-action svg { width: 1.05rem; height: 1.05rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.is-auth__rail-action[aria-disabled="true"] { opacity: 0.45; pointer-events: none; }
+/* R4: "Question trail" is a preserved capability, not part of the locked
+   rail composition -- kept visually quiet (muted color, no weight bump on
+   hover) so it reads as a minor utility consistent with the rail's list
+   idiom rather than a new promoted action. */
+.is-auth__rail-action--quiet { color: var(--is-text-muted); font-weight: 500; }
+.is-auth__rail-action--quiet:hover { color: var(--is-text); }
+.is-auth__rail-finish { color: var(--is-error); }
+.is-auth__rail-finish[disabled] { color: var(--is-text-muted); opacity: 0.8; cursor: default; }
+.is-auth__rail-finish-truth { font-size: 0.74rem; color: var(--is-text-muted); margin: 0.15rem 0 0.7rem; }
+
+.is-auth__rail-truth {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    margin-top: 0.9rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--is-line);
+    font-size: 0.76rem;
+    color: var(--is-text-muted);
+    line-height: 1.5;
+}
+.is-auth__rail-truth svg { width: 1.05rem; height: 1.05rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; margin-top: 0.1rem; }
+/* History storage-unavailable rail warning variant (brief item 4). */
+.is-auth__rail-truth--warning { color: var(--is-error); border-top-color: color-mix(in srgb, var(--is-error) 35%, var(--is-line)); }
+
+.is-auth__rail-mobile-only { display: none; }
+
+@media (max-width: 72rem) {
+    .is[data-authenticated="true"] .is__shell { display: block; }
+    .is-auth__rail {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        position: static;
+        max-height: none;
+        overflow: visible;
+        margin-bottom: 1rem;
+    }
+    .is-auth__rail-eyebrow,
+    .is-auth__rail-detail { display: none; }
+    /* R1: below the rail breakpoint the mode nav collapses into the single
+       "Interview Me ▾" dropdown control locked visual 13 shows, not three
+       reflowed pills. Session/History stay as separate controls. */
+    .is-auth__mode-picker { flex: 2 1 auto; min-width: 0; }
+    .is-auth__mode-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        min-height: 2.75rem;
+        justify-content: center;
+        padding: 0.55rem 0.6rem;
+        border: 0;
+        border-radius: var(--is-control-radius);
+        background: var(--is-active);
+        color: var(--is-action-primary-text);
+        font: inherit;
+        font-weight: 700;
+        font-size: 0.82rem;
+        cursor: pointer;
+    }
+    .is-auth__mode-toggle svg { width: 1.05rem; height: 1.05rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .is-auth__mode-toggle-caret { width: 0.85rem !important; height: 0.85rem !important; transition: transform 0.15s ease; }
+    .is-auth__mode-picker[data-is-open="true"] .is-auth__mode-toggle-caret { transform: rotate(180deg); }
+    .is-auth__modes {
+        display: none;
+        position: absolute;
+        top: calc(100% + 0.4rem);
+        left: 0;
+        right: 0;
+        z-index: 20;
+        flex-direction: column;
+        gap: 0.2rem;
+        background: var(--is-surface);
+        border: 1px solid var(--is-line);
+        border-radius: var(--is-radius);
+        box-shadow: var(--is-shadow-soft);
+        padding: 0.4rem;
+    }
+    .is-auth__mode-picker[data-is-open="true"] .is-auth__modes { display: flex; }
+    .is-auth__mode { min-height: 2.75rem; }
+    .is-auth__rail-history { flex: 1 1 8rem; justify-content: center; min-height: 2.75rem; }
+    .is-auth__rail-mobile-only { display: flex; flex: 1 1 8rem; justify-content: center; min-height: 2.75rem; }
+}
+
+/* ---------------------------------------------------------------------
+   Interview Me: ready-state badge, composer action groups, and the
+   append-only consequence stack (architecture 03 section 1-2).
+   --------------------------------------------------------------------- */
+.is[data-authenticated="true"] .is__composer { position: relative; }
+.is-auth__badge {
+    position: absolute;
+    top: 0.9rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--is-text-muted);
+}
+.is-auth__badge::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--is-text-muted); }
+
+.is[data-authenticated="true"] .is__answer-card { position: relative; }
+.is[data-authenticated="true"] [data-is-submitted-label] {
+    position: absolute;
+    top: 0.9rem;
+    right: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--is-success);
+}
+.is[data-authenticated="true"] [data-is-submitted-label]::before { content: "\2713"; }
+
+/* Failure re-shows the composer (data-is-draft-badge), not this submitted
+   card, so its badge text is swapped in JS instead ("Review unavailable" --
+   see the submitReview() catch handler). */
+.is-auth__badge--warning { color: var(--is-error); }
+.is-auth__badge--warning::before { content: "\26A0"; background: var(--is-error); }
+
+.is-auth__composer-groups { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: 1rem; }
+.is-auth__group { flex: 1 1 12rem; min-width: 0; }
+.is-auth__group-label {
+    font: 700 0.66rem/1.2 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--is-text-muted);
+    margin: 0 0 0.45rem;
+}
+.is-auth__group-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    margin: 0 0.4rem 0.4rem 0;
+    border: 1px solid var(--is-line);
+    border-radius: var(--is-control-radius);
+    background: var(--is-surface);
+    color: var(--is-text);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+.is-auth__group-btn svg { width: 1rem; height: 1rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.is-auth__group-btn:disabled { opacity: 0.5; cursor: default; }
+
+.is-auth__transmit-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-top: 1.1rem;
+    font-size: 0.78rem;
+    color: var(--is-text-muted);
+}
+.is-auth__transmit-line svg { width: 1rem; height: 1rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; margin-top: 0.1rem; }
+
+/* Consequence stack (JS-built: static/js/interview-studio.js). Each block
+   is appended, never replaced -- see architecture 03 section 1. */
+.is-stack__answer-snapshot {
+    display: flex;
+    flex-direction: column;
+    background: var(--is-surface);
+    border: 1px solid var(--is-line);
+    border-radius: var(--is-radius);
+    box-shadow: var(--is-shadow-soft);
+    padding: 1.1rem 1.25rem;
+    margin-top: 1.1rem;
+    line-height: 1.65;
+    color: var(--is-text);
+}
+.is-stack__answer-snapshot > p:last-child { white-space: pre-wrap; margin: 0; }
+.is-stack__answer-label {
+    /* Lock 04a/06/14a: reviewed-snapshot labels sit top-LEFT above the
+       answer text (the pending Submitted chip in lock 02 stays right). */
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0 0 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--is-success);
+}
+.is-stack__answer-label::before { content: "\2713"; }
+.is-stack__answer-meta { margin-top: 0.6rem; font-size: 0.78rem; color: var(--is-text-muted); }
+
+.is-stack__coaching {
+    background: var(--is-surface);
+    border: 1px solid var(--is-line);
+    border-radius: var(--is-radius);
+    box-shadow: var(--is-shadow-soft);
+    padding: 1.25rem 1.4rem;
+    margin-top: 1.1rem;
+}
+.is-stack__eyebrow {
+    font: 700 0.7rem/1.2 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--is-gold-text);
+    margin: 0 0 0.4rem;
+}
+.is-stack__heading {
+    font-family: var(--ps-font-display, Newsreader, Georgia, serif);
+    color: var(--is-ink);
+    font-weight: 600;
+    font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+    margin: 0 0 1rem;
+}
+.is-stack__summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.1rem; margin-bottom: 1.1rem; }
+.is-stack__summary-col h5 { display: flex; align-items: center; gap: 0.4rem; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--is-text); margin: 0 0 0.45rem; }
+.is-stack__summary-col ul { margin: 0; padding-left: 1.1rem; font-size: 0.85rem; color: var(--is-text); line-height: 1.5; }
+.is-stack__approach { font-size: 0.9rem; color: var(--is-text); margin: 0 0 1.1rem; line-height: 1.55; }
+.is-stack__table { width: 100%; border-collapse: collapse; margin-bottom: 1.1rem; }
+.is-stack__table th, .is-stack__table td { text-align: left; padding: 0.55rem 0.6rem; border-top: 1px solid var(--is-line); font-size: 0.85rem; vertical-align: top; }
+.is-stack__status {
+    font-weight: 700;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.is-stack__status::before {
+    font-weight: 700;
+    line-height: 1;
+}
+.is-stack__status[data-status="clear"],
+.is-stack__status[data-status="strong"] { color: var(--is-success); }
+.is-stack__status[data-status="clear"]::before,
+.is-stack__status[data-status="strong"]::before { content: "\2713"; }
+.is-stack__status[data-status="developing"],
+.is-stack__status[data-status="needs_evidence"] { color: var(--is-gold-text); }
+.is-stack__status[data-status="developing"]::before,
+.is-stack__status[data-status="needs_evidence"]::before { content: "\25CB"; }
+.is-stack__status[data-status="missing"] { color: var(--is-error); }
+.is-stack__status[data-status="missing"]::before { content: "!"; }
+.is-stack__eyebrow--sub { margin-top: 1.1rem; }
+
+/* Lock 05/14b draft box */
+.is-stack__draft-box {
+    background: var(--is-surface);
+    border: 1px solid var(--is-line-strong);
+    border-radius: 0.8rem;
+    padding: 0.9rem 1.1rem 1rem;
+    margin: 0.8rem 0 0.5rem;
+}
+.is-stack__draft-head {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+.is-stack__marker-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--is-caution, #8a4c19);
+}
+.is-stack__marker-chip::before {
+    content: "!";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.1rem;
+    height: 1.1rem;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+.is-stack__draft-label { margin: 0; font-size: 0.88rem; color: var(--is-text-muted); }
+.is-stack__draft-tools {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.is-stack__draft-mic { padding: 0.4rem 0.85rem; font-size: 0.88rem; }
+.is-stack__draft-count { font-size: 0.85rem; color: var(--is-text-muted); white-space: nowrap; }
+.is-stack__improve-draft {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    resize: none;
+    overflow: hidden;
+    font: inherit;
+    font-size: 1.02rem;
+    line-height: 1.6;
+    color: var(--is-text);
+    min-height: 7.5rem;
+}
+.is-stack__improve-draft:focus { outline: none; }
+.is-stack__draft-box:focus-within {
+    box-shadow: 0 0 0 3px rgb(17 74 43 / 12%);
+}
+.is-stack__marker-help { font-size: 0.88rem; color: var(--is-text-muted); margin: 0.35rem 0 0.9rem; }
+.is-stack__evidence { font-size: 0.9rem; color: var(--is-text-muted); margin: 0 0 0.4rem; }
+.is-stack__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 1rem; }
+.is-stack__action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.65rem 1.1rem;
+    border-radius: var(--is-control-radius);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-family: inherit;
+}
+.is-stack__action-btn--primary { background: var(--is-active); color: var(--is-action-primary-text); }
+.is-stack__action-btn--primary:disabled { opacity: 0.5; cursor: default; }
+.is-stack__action-btn--secondary { background: var(--is-surface); border-color: var(--is-line); color: var(--is-text); }
+.is-stack__action-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.65rem 1.1rem;
+    border-radius: var(--is-control-radius);
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--is-text-muted);
+    background: var(--is-surface-2);
+    border: 1px solid var(--is-line);
+}
+.is-stack__authority { font-size: 0.78rem; color: var(--is-text-muted); display: flex; gap: 0.4rem; align-items: flex-start; margin-top: 1rem; }
+
+.is-stack__improve-draft {
+    width: 100%;
+    min-height: 6.5rem;
+    resize: vertical;
+    border: 1px solid var(--is-line);
+    border-radius: var(--is-control-radius);
+    padding: 0.85rem 1rem;
+    font: inherit;
+    line-height: 1.65;
+    color: var(--is-text);
+    background: var(--is-surface);
+}
+.is-stack__marker-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--is-gold-text);
+    font-weight: 700;
+    font-size: 0.82rem;
+    margin: 0.6rem 0 0.3rem;
+}
+.is-stack__marker-help { font-size: 0.78rem; color: var(--is-text-muted); margin: 0.3rem 0 0.9rem; }
+
+/* R2: "Add context or evidence" sub-flow inside the appended Improve
+   section -- same 1,200-char confirmed-context field and evidence-suggestion
+   checkboxes the public Make-it-yours flow uses, restyled for the stack. */
+.is-stack__context-toggle {
+    background: var(--is-surface);
+    border-color: var(--is-line);
+    color: var(--is-text);
+    margin-bottom: 0.9rem;
+}
+.is-stack__context-form {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0 0 1rem;
+    padding: 0.9rem 1rem;
+    background: var(--is-surface-2);
+    border: 1px solid var(--is-line);
+    border-radius: var(--is-radius);
+}
+.is-stack__context-form-label { margin: 0; font-size: 0.78rem; font-weight: 700; color: var(--is-ink); }
+.is-stack__context-form label { color: var(--is-ink); font-size: 0.74rem; font-weight: 750; }
+.is-stack__context-form textarea {
+    width: 100%;
+    padding: 0.7rem 0.8rem;
+    color: var(--is-ink);
+    background: var(--is-surface);
+    border: 1px solid var(--is-line);
+    border-radius: var(--is-control-radius);
+    font: inherit;
+    line-height: 1.5;
+    resize: vertical;
+}
+.is-stack__context-evidence-options { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.is-stack__context-evidence-option { position: relative; }
+.is-stack__context-evidence-option input { position: absolute; opacity: 0; pointer-events: none; }
+.is-stack__context-evidence-option span {
+    display: inline-flex;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--is-line);
+    border-radius: 999px;
+    font-size: 0.78rem;
+    color: var(--is-text);
+    background: var(--is-surface);
+    cursor: pointer;
+}
+.is-stack__context-evidence-option input:checked + span { color: var(--is-action-primary-text); background: var(--is-active); border-color: var(--is-active); }
+.is-stack__context-evidence-option input:focus-visible + span { outline: 3px solid var(--is-focus); outline-offset: 3px; }
+.is-stack__context-form .is-stack__actions { margin-top: 0; }
+
+.is-stack__failure {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    background: var(--is-error-soft);
+    border: 1px solid color-mix(in srgb, var(--is-error) 35%, var(--is-line));
+    border-radius: var(--is-radius);
+    padding: 0.9rem 1.1rem;
+    margin-top: 1.1rem;
+    color: var(--is-text);
+}
+.is-stack__failure svg { width: 1.2rem; height: 1.2rem; flex: none; margin-top: 0.15rem; fill: none; stroke: var(--is-error); stroke-width: 1.8; }
+
+/* ---------------------------------------------------------------------
+   No permanent right rail (owner decision): the per-panel right column
+   collapses to a full-width section below the main column instead of a
+   second persistent side column, for every mode.
+   --------------------------------------------------------------------- */
+.is[data-authenticated="true"] .is__content-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    /* The Interview AI panel defines a bespoke 2-column grid-template-areas
+       ("form side" / "main side"); grid-template-areas implicitly forces a
+       matching column-track count regardless of grid-template-columns, so
+       the areas must be reset to their existing single-column stack (the
+       same one this stylesheet already uses at its narrow breakpoint) or
+       the override above is silently defeated. */
+    grid-template-areas: "form" "main" "side" !important;
+}
+.is[data-authenticated="true"] .is__side-column {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--is-line);
+}
+.is[data-authenticated="true"] .is__side-column > * { flex: 1 1 16rem; }
+
+/* Interview AI uses a bespoke absolutely-positioned side panel above its
+   72rem breakpoint (reserving a fixed right margin on the form) rather than
+   the standard side-column grid; neutralize it too so the source-boundaries
+   card actually collapses in-flow instead of floating at a fixed offset. */
+.is[data-authenticated="true"] .is__panel[data-is-panel="ai"] .is__ai-grounding {
+    position: static !important;
+    width: auto !important;
+    top: auto !important;
+    right: auto !important;
+}
+.is[data-authenticated="true"] .is__panel[data-is-panel="ai"] .is__ai-form {
+    padding-right: 0 !important;
+}
+.is[data-authenticated="true"] .is__panel[data-is-panel="ai"] .is__side-column {
+    margin-top: 1.25rem !important;
+}
+
+/* Retire the duplicate "Different question / Create question" pair near the
+   question header in the authenticated Interview Me composition: the
+   consolidated QUESTION/COACHING row below the composer (added in the
+   authenticated template branch) is the single locked location for it. */
+.is[data-authenticated="true"] #is-panel-me .is__question-controls-row .is__question-actions {
+    display: none;
+}
+
+/* ---------------------------------------------------------------------
+   Interview AI (slice 5-6 review item 1, visuals 07/08): SOURCE radio
+   cards, the highlighted result card, a 3-up "why this works" grid, and
+   the insufficiency lock. Authenticated only -- flag-off/public keeps its
+   existing dropdown-driven composition untouched.
+   --------------------------------------------------------------------- */
+.is[data-authenticated="true"] #is-panel-ai .is__question-controls-row--ai {
+    display: none;
+}
+
+/* ---------------------------------------------------------------------
+   Video Practice (slice 5-6 review item 2, visuals 09/10/15): the question
+   chips/Different-Create-question row is not shown inline in any locked
+   visual (the capability stays reachable via Interview Me/the rail's
+   Question trail, same rationale as the AI panel above). The device-status
+   side card (Camera ready/Microphone ready) is kept -- the locked visuals'
+   frame-overlay chip placement was not implemented this pass; see
+   SLICE_NOTES.md.
+   --------------------------------------------------------------------- */
+.is[data-authenticated="true"] #is-panel-video .is__question-controls-row {
+    display: none;
+}
+/* Task 3 finding: the authenticated composition renders TWO elements
+   matching [data-is-device-settings] -- the camera-controls copy (shown
+   only in the 'preview' state, matching lock 09) and this retained
+   device-status side card's own quiet copy. one() (querySelector) binds
+   syncVideoRecoveryState's show/hide *and* the click handler to whichever
+   is first in DOM order, which is the camera-controls copy -- so that
+   button genuinely works. The side-card copy is never hidden by that
+   logic and was never wired, so it sat on screen as a dead duplicate
+   control whenever the camera-controls copy was hidden (every state
+   except 'preview'). Hiding it here removes the dead control without
+   touching the one binding that already fires correctly. */
+.is[data-authenticated="true"] #is-panel-video .is__video-device-card [data-is-device-settings] {
+    display: none;
+}
+/* Found while implementing review finding P1-2c (lock 09 status chips):
+   the same dead-duplicate class Task 3 found and fixed for
+   [data-is-device-settings] above also applies to [data-is-camera-status]
+   and [data-is-mic-status] -- both exist twice (the new frame chips in
+   .is-video-chips, and this retained side card's own spans), one() binds
+   setDeviceStatus() to the frame copy only (first in DOM order), and the
+   side-card spans were never hidden or updated -- confirmed live: after a
+   real enableCamera() failure the frame chip correctly read "Camera
+   unavailable" while this side-card span still read "Camera not
+   requested" forever. The card's own data-is-video-state-copy paragraph
+   already gives the same information truthfully in one sentence, so the
+   now-redundant (and, for these two spans, actively stale) status row is
+   hidden entirely rather than duplicated a second time onto the frame. */
+.is[data-authenticated="true"] #is-panel-video .is__video-device-card .is__device-status {
+    display: none;
+}
+.is[data-authenticated="true"] #is-panel-ai > .is__content-grid > .is__side-column {
+    display: none;
+}
+.is-ai-source {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0 0.6rem;
+}
+.is-ai-source__card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--is-line);
+    border-radius: var(--is-radius);
+    background: var(--is-surface);
+    cursor: pointer;
+}
+.is-ai-source__card input { margin-top: 0.2rem; accent-color: var(--is-active); flex: none; }
+.is-ai-source__card span { display: flex; flex-direction: column; gap: 0.15rem; }
+.is-ai-source__card strong { font-size: 0.88rem; color: var(--is-ink); }
+.is-ai-source__card small { font-size: 0.74rem; color: var(--is-text-muted); }
+.is-ai-source__card:has(input:checked) { border-color: var(--is-active); box-shadow: inset 0 0 0 1px var(--is-active); }
+.is-ai-source__card:has(input:focus-visible) { outline: 3px solid var(--is-focus); outline-offset: 2px; }
+.is-ai-source__info {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    font-size: 0.78rem;
+    color: var(--is-text-muted);
+    margin: 0 0 1rem;
+}
+.is-ai-source__info svg { width: 1.05rem; height: 1.05rem; flex: none; margin-top: 0.1rem; fill: none; stroke: currentColor; stroke-width: 1.6; }
+
+.is[data-authenticated="true"][data-is-ai-state="ready"] #is-panel-ai [data-is-ai-answer-content] [data-is-ai-answer-ready] {
+    border: 1px solid var(--is-active);
+    border-radius: var(--is-radius);
+    padding: 1.1rem 1.25rem;
+    background: color-mix(in srgb, var(--is-active) 6%, var(--is-surface));
+}
+
+/* Review finding P1-2b: lock 08's insufficiency message and its action row
+   render inside one bordered card, not bare on canvas. data-is-ai-state is
+   already set to "insufficient" on the root for this exact state (see
+   setAiState in interview-studio.js), so the whole answer-content wrapper
+   (the insufficiency message plus the shared actions row that already
+   follows it in the DOM -- no markup change needed) gets the same flat
+   warm card treatment fix P1-2a gives every other authenticated .is__card,
+   without disturbing the "ready" state's own bare-canvas + nested-card
+   composition (lock 07) above. */
+.is[data-authenticated="true"][data-is-ai-state="insufficient"] #is-panel-ai [data-is-ai-answer-content] {
+    background: #fdf9f6;
+    border: 1px solid var(--is-line);
+    border-radius: 0.9rem;
+    box-shadow: 0 1px 2px rgb(6 30 71 / 5%), 0 10px 26px rgb(6 30 71 / 6%);
+}
+.is[data-authenticated="true"][data-is-ai-state="insufficient"] #is-panel-ai [data-is-ai-answer-content] .is__actions--three {
+    margin: 0 1.5rem 1.75rem;
+}
+.is[data-authenticated="true"] #is-panel-ai [data-is-ai-answer-heading] {
+    font: 700 0.72rem/1.2 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--is-gold-text);
+    margin: 0 0 0.6rem;
+}
+.is-ai-generic-truth {
+    display: flex;
+    gap: 0.4rem;
+    align-items: flex-start;
+    margin-top: 0.9rem;
+    font-size: 0.78rem;
+    color: var(--is-text-muted);
+}
+.is[data-authenticated="true"] #is-panel-ai .is__why ul {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    list-style: none;
+    margin: 0.6rem 0 0;
+    padding: 0;
+}
+.is[data-authenticated="true"] #is-panel-ai .is__why li {
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--is-line);
+    font-size: 0.84rem;
+    color: var(--is-text);
+    line-height: 1.5;
+}
+
+.is-ai-insufficient {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.5rem;
+    padding: 2.2rem 1.5rem;
+}
+.is-ai-insufficient__icon {
+    width: 3.4rem;
+    height: 3.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--is-active) 14%, var(--is-surface));
+    margin-bottom: 0.4rem;
+}
+.is-ai-insufficient__icon svg { width: 1.7rem; height: 1.7rem; fill: none; stroke: var(--is-active); stroke-width: 1.6; }
+.is-ai-insufficient__eyebrow {
+    font: 700 0.76rem/1.2 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--is-gold-text);
+    margin: 0;
+}
+.is-ai-insufficient p { max-width: 34rem; margin: 0; color: var(--is-text); font-size: 0.92rem; line-height: 1.6; }
+
+/* ---------------------------------------------------------------------
+   Session Complete (slice 5-6 review item 3, visual 11): centered
+   scoreless closure. Authenticated only -- flag-off keeps its existing
+   two-column composition untouched.
+   --------------------------------------------------------------------- */
+.is-complete {
+    max-width: 52rem;
+    margin: 1.5rem auto 0;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.is-complete__check {
+    width: 3.2rem;
+    height: 3.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid var(--is-success);
+    margin-bottom: 0.6rem;
+}
+.is-complete__check svg { width: 1.6rem; height: 1.6rem; fill: none; stroke: var(--is-success); stroke-width: 2.2; }
+.is-complete__eyebrow {
+    font: 700 0.78rem/1.2 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--is-success);
+    margin: 0 0 0.5rem;
+}
+.is-complete .is__sub { max-width: 34rem; }
+/* Review finding P1-2d (lock 11): a thin gold rule sits under the summary
+   line, spanning the same width as the three-card row below it. */
+.is-complete__rule {
+    width: 100%;
+    height: 0;
+    margin: 1.4rem 0 0;
+    border: 0;
+    border-top: 1px solid var(--is-gold);
+}
+.is-complete__cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    width: 100%;
+    margin: 1.4rem 0;
+    text-align: left;
+}
+.is-complete__card { display: flex; flex-direction: column; gap: 0.4rem; }
+.is-complete__card-icon {
+    width: 2.4rem;
+    height: 2.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--is-surface-2);
+    margin-bottom: 0.2rem;
+}
+.is-complete__card-icon svg { width: 1.2rem; height: 1.2rem; fill: none; stroke: var(--is-active); stroke-width: 1.6; }
+.is-complete__card-eyebrow {
+    font: 700 0.7rem/1.2 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--is-gold-text);
+    margin: 0;
+}
+.is-complete__card-heading { margin: 0; color: var(--is-ink); font-size: 0.95rem; line-height: 1.5; }
+.is-complete__list { list-style: decimal; margin: 0; padding-left: 1.1rem; font-size: 0.88rem; color: var(--is-text); line-height: 1.5; }
+.is-complete__list li + li { margin-top: 0.4rem; }
+.is-complete__truth {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    max-width: 34rem;
+    margin: 0 0 1.2rem;
+    padding: 0.8rem 1rem;
+    background: var(--is-surface-2);
+    border: 1px solid var(--is-line);
+    border-radius: var(--is-radius);
+    font-size: 0.82rem;
+    color: var(--is-text-muted);
+    text-align: left;
+}
+.is-complete__truth svg { width: 1.05rem; height: 1.05rem; flex: none; margin-top: 0.1rem; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.is-complete__actions { justify-content: center; }
+
+/* ---------------------------------------------------------------------
+   History (slice 5-6 review item 4, visuals 12/16/17): populated rows,
+   three status cards, and the three distinct non-populated truth states.
+   Authenticated only -- flag-off keeps its existing composition untouched.
+   --------------------------------------------------------------------- */
+.is-history__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--is-line);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+.is-history__filters { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.2rem; }
+/* Review finding P1-2e (lock 12): the three filters render as styled pill
+   dropdowns (appearance: none + a drawn chevron), not the browser's native
+   select control -- .is-history__filters is authenticated-only (the public
+   history page's own filters use the separate is__history-filters class),
+   so no [data-authenticated="true"] scope is needed here. */
+.is-history__filters select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0.6rem 2.3rem 0.6rem 1.1rem;
+    border: 1px solid var(--is-line-strong);
+    border-radius: 999px;
+    background: var(--is-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23222f5c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 0.9rem center;
+    background-size: 0.8rem;
+    color: var(--is-ink);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.is-history__filters select:disabled { opacity: 0.5; cursor: not-allowed; }
+.is-history__filters select:focus-visible { outline: 3px solid var(--is-focus); outline-offset: 2px; }
+
+.is-history__rows { list-style: none; margin: 0 0 1.4rem; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+/* Lock 12: [icon][title] | meta column (mode·family over the date) |
+   [Reviewed chip][View review][overflow], as explicit grid columns so
+   every row's chip/button/overflow line up down the list instead of
+   drifting with each row's own title/meta text length. The trailing three
+   controls share one grid cell (.is-history__row-actions, a flex cluster)
+   so the row template only needs four columns and the controls wrap as a
+   unit -- never overlapping each other -- on narrow viewports. */
+.is-history__row {
+    display: grid;
+    grid-template-columns: 2.2rem minmax(0, 1fr) 12rem auto;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--is-line);
+    border-radius: var(--is-radius);
+    background: var(--is-surface);
+}
+.is-history__row-icon {
+    width: 2.2rem;
+    height: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.6rem;
+    background: var(--is-surface-2);
+}
+.is-history__row-icon svg { width: 1.15rem; height: 1.15rem; fill: none; stroke: var(--is-active); stroke-width: 1.6; }
+.is-history__row-body { min-width: 0; }
+.is-history__row-body strong { display: block; color: var(--is-ink); font-size: 0.92rem; font-weight: 600; line-height: 1.35; }
+.is-history__row-meta { min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.is-history__row-meta span { color: var(--is-text-muted); font-size: 0.78rem; }
+.is-history__row-date { color: var(--is-text-muted); font-size: 0.78rem; }
+.is-history__row-actions { display: flex; align-items: center; gap: 0.6rem; }
+.is-history__row-chip {
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    background: var(--is-surface-2);
+    color: var(--is-text-muted);
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.is-history__row-view { white-space: nowrap; }
+.is-history__row-delete {
+    flex: none;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    border: 1px solid var(--is-line);
+    border-radius: var(--is-control-radius);
+    background: var(--is-surface);
+    color: var(--is-text-muted);
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+.is-history__row-delete:hover { color: var(--is-error); border-color: color-mix(in srgb, var(--is-error) 35%, var(--is-line)); }
+@media (max-width: 36rem) {
+    .is-history__row {
+        grid-template-columns: 2.2rem minmax(0, 1fr);
+        row-gap: 0.4rem;
+    }
+    /* Icon spans the three stacked rows (title / meta / actions) in the
+       narrow single-column layout so it stays a left rail instead of
+       repeating per row -- default grid auto-placement then flows body,
+       meta, and actions into column 2 in DOM order with no named areas
+       and no risk of two controls landing in the same cell. */
+    .is-history__row-icon { grid-row: span 3; align-self: start; }
+    .is-history__row-actions { flex-wrap: wrap; }
+}
+
+.is-history__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.5rem;
+    padding: 2.4rem 1.5rem;
+    margin-bottom: 1.4rem;
+    border: 1px solid var(--is-line);
+    border-radius: var(--is-radius);
+    background: var(--is-surface);
+}
+.is-history__empty-icon {
+    width: 3.4rem;
+    height: 3.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--is-surface-2);
+    margin-bottom: 0.4rem;
+}
+.is-history__empty-icon svg { width: 1.7rem; height: 1.7rem; fill: none; stroke: var(--is-gold-text); stroke-width: 1.6; }
+.is-history__empty-icon--warn svg { stroke: var(--is-error); }
+.is-history__status {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin: 0;
+}
+.is-history__status svg { width: 1.05rem; height: 1.05rem; fill: none; stroke-width: 1.8; }
+.is-history__status--ok { color: var(--is-success); }
+.is-history__status--ok svg { stroke: var(--is-success); }
+.is-history__status--warn { color: var(--is-error); }
+.is-history__status--warn svg { stroke: var(--is-error); }
+.is-history__heading { margin: 0; color: var(--is-ink); font-family: var(--ps-font-display, Newsreader, Georgia, serif); font-size: 1.5rem; font-weight: 600; }
+.is-history__empty p { max-width: 30rem; margin: 0; color: var(--is-text); }
+.is-history__note { color: var(--is-text-muted) !important; font-size: 0.82rem; }
+
+.is-history__cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.4rem; }
+.is-history__card { display: flex; flex-direction: column; gap: 0.4rem; }
+.is-history__card-icon {
+    width: 2.4rem;
+    height: 2.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--is-surface-2);
+}
+.is-history__card-icon svg { width: 1.2rem; height: 1.2rem; fill: none; stroke: var(--is-active); stroke-width: 1.6; }
+.is-history__card-eyebrow {
+    font: 700 0.7rem/1.2 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--is-gold-text);
+    margin: 0;
+}
+.is-history__card-heading { margin: 0; color: var(--is-ink); font-size: 0.95rem; font-weight: 700; }
+.is-history__card-note { font-size: 0.78rem; color: var(--is-text-muted); margin: 0; }
+
+/* ---------------------------------------------------------------------
+   Video Practice recovery lock (slice 5-6 review item 2, visual 15).
+   Authenticated only; replaces the normal camera-off placeholder inside
+   the same .is__camera frame.
+   --------------------------------------------------------------------- */
+.is-video-recovery {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.5rem;
+    padding: 2rem;
+    color: #fff;
+}
+.is-video-recovery__icon {
+    width: 3.2rem;
+    height: 3.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 12%);
+    margin-bottom: 0.4rem;
+}
+.is-video-recovery__icon svg { width: 1.7rem; height: 1.7rem; fill: none; stroke: #fff; stroke-width: 1.6; }
+.is-video-recovery__heading { margin: 0; font-family: var(--ps-font-display, Newsreader, Georgia, serif); font-size: 1.35rem; font-weight: 600; }
+.is-video-recovery p { max-width: 28rem; margin: 0; opacity: 0.92; font-size: 0.9rem; line-height: 1.55; }
+.is-video-recovery__note { font-size: 0.78rem !important; opacity: 0.75 !important; }
+
+/* =====================================================================
+   Fable rebuild pass (owner-directed takeover, 2026-08-11).
+   Every value here is measured from the locked visuals; see the package
+   SLICE_NOTES for the measurement record. Scoped to the authenticated
+   composition only.
+   ===================================================================== */
+
+/* Lock 01: the public workspace grid reserves a phantom first column for
+   the retired public session rail; the authenticated shell already owns
+   the rail column, so the workspace is a plain block. */
+@media (min-width: 72.01rem) {
+    .is[data-authenticated="true"] .is__workspace { display: block; }
+}
+
+/* Locks 01-06: the question, guidance, and consequence stack sit DIRECTLY
+   on the warm canvas -- there is no wrapping white panel. Cards are the
+   answer composer, the appended consequence sections, and the action
+   band, each earning its own hairline + soft shadow. */
+.is[data-authenticated="true"] .is__task-stage {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+body:not([data-theme="dark"]) .is[data-authenticated="true"] .is__task-stage {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+.is[data-authenticated="true"] .is__content-grid--practice > .is__task-stage > [data-is-answer-form] {
+    padding: 0;
+}
+
+/* Elements the locks do not show in the ready composition. Hooks stay in
+   the DOM for the state machine; they are simply not part of the locked
+   visual language. */
+.is[data-authenticated="true"] .is__progress-head,
+.is[data-authenticated="true"] #is-panel-me .is__question-block,
+.is[data-authenticated="true"] #is-panel-video .is__question-block,
+.is[data-authenticated="true"] .is__compose-note { display: none; }
+
+/* Lock 01 head: gold small-caps eyebrow, ink-navy serif question, muted
+   listening-for line closed by a hairline gold rule. */
+.is-auth__q-eyebrow {
+    font: 700 0.72rem/1.2 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--is-gold-text);
+    margin: 0 0 0.55rem;
+}
+.is[data-authenticated="true"] .is__title--stage {
+    color: var(--is-ink);
+    font-size: clamp(2.1rem, 3.4vw, 2.95rem);
+    line-height: 1.16;
+    letter-spacing: -0.01em;
+    max-width: 46ch;
+}
+.is[data-authenticated="true"] .is__stage--compact-head { margin-bottom: 0.4rem; }
+.is[data-authenticated="true"] .is__intent {
+    display: block;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0 0 0.9rem;
+    margin: 0.35rem 0 1.15rem;
+    border-bottom: 2px solid #c9a566;
+    color: var(--is-text-muted);
+    font-size: 0.94rem;
+}
+.is[data-authenticated="true"] .is__intent > svg { display: none; }
+.is[data-authenticated="true"] .is__intent strong { color: var(--is-text-muted); font-weight: 600; }
+
+/* Lock 01 answer card: one clean card -- same warm white as the canvas,
+   separated by hairline and a soft double shadow, single border, quiet
+   Draft chip, word count low-left, Dictate inside the card foot. */
+.is[data-authenticated="true"] .is__composer {
+    background: var(--is-surface);
+    border: 1px solid var(--is-line-strong);
+    border-radius: 0.9rem;
+    box-shadow: 0 1px 2px rgb(6 30 71 / 5%), 0 10px 26px rgb(6 30 71 / 6%);
+    padding: 1.35rem 1.5rem 1.05rem;
+}
+.is[data-authenticated="true"] .is__composer:focus-within {
+    border-color: var(--is-line-strong);
+    box-shadow: 0 1px 2px rgb(6 30 71 / 5%), 0 10px 26px rgb(6 30 71 / 6%), 0 0 0 3px rgb(17 74 43 / 12%);
+}
+.is[data-authenticated="true"] .is__composer > label {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap; border: 0;
+}
+.is[data-authenticated="true"] .is__composer-input textarea {
+    background: transparent;
+    font-size: 1.04rem;
+    line-height: 1.62;
+    color: var(--is-text);
+    min-height: 10.5rem;
+}
+.is[data-authenticated="true"] .is__composer-meta {
+    justify-content: flex-start;
+    gap: 0.9rem;
+    color: var(--is-text-muted);
+    font-size: 0.85rem;
+    padding: 0.35rem 0 0;
+}
+.is-auth__composer-foot { padding-top: 0.75rem; }
+.is-auth__composer-foot .is__mic-labeled {
+    background: var(--is-surface);
+    border: 1px solid var(--is-line-strong);
+    border-radius: 0.65rem;
+    color: var(--is-text);
+    font-weight: 600;
+    padding: 0.55rem 1.05rem;
+}
+.is[data-authenticated="true"] .is-auth__badge {
+    position: absolute;
+    top: 1.05rem;
+    right: 1.25rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font: 600 0.8rem/1 var(--ps-font-ui, Inter, Arial, sans-serif);
+    color: var(--is-text-muted);
+    background: transparent;
+    border: 0;
+    padding: 0;
+    letter-spacing: 0.01em;
+    text-transform: none;
+}
+.is[data-authenticated="true"] .is-auth__badge::before {
+    content: "";
+    width: 0.55rem; height: 0.55rem;
+    border-radius: 50%;
+    background: #b9bdc7;
+}
+
+/* Lock 01 action band: one white strip -- deep-forest primary with check
+   icon on the left, then the QUESTION and COACHING groups separated by
+   hairlines, gold group labels above each pair. */
+.is-auth__band {
+    display: flex;
+    align-items: stretch;
+    gap: 1.1rem;
+    background: var(--is-surface);
+    border: 1px solid var(--is-line);
+    border-radius: 0.9rem;
+    box-shadow: 0 1px 2px rgb(6 30 71 / 4%), 0 6px 18px rgb(6 30 71 / 5%);
+    padding: 0.85rem 1.1rem;
+    margin-top: 1.05rem;
+}
+.is-auth__review-btn {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 1.12rem;
+    font-weight: 700;
+    padding: 1.15rem 2.1rem;
+    border-radius: 0.75rem;
+    white-space: nowrap;
+}
+.is-auth__review-btn svg { width: 1.25rem; height: 1.25rem; }
+.is[data-authenticated="true"] .is-auth__band .is-auth__group {
+    border-left: 1px solid var(--is-line);
+    padding-left: 1.1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    gap: 0.5rem;
+}
+.is[data-authenticated="true"] .is-auth__group-label {
+    width: 100%;
+    text-align: center;
+    font: 700 0.62rem/1 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--is-gold-text);
+    margin: 0 0 0.15rem;
+}
+.is[data-authenticated="true"] .is-auth__group-btn {
+    background: var(--is-surface);
+    border: 1px solid var(--is-line-strong);
+    border-radius: 0.65rem;
+    color: var(--is-text);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.6rem 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+.is[data-authenticated="true"] .is-auth__group-btn svg { width: 1rem; height: 1rem; }
+
+/* Deep-forest primary: replace the public brown-gold gradient + warm
+   shadow wherever the primary class renders in the authenticated
+   composition. */
+.is[data-authenticated="true"] .is__button--primary {
+    background: var(--is-action-primary);
+    border-color: var(--is-action-primary);
+    color: var(--is-action-primary-text);
+    box-shadow: 0 8px 18px rgb(13 63 36 / 22%), 0 2px 5px rgb(13 63 36 / 14%);
+}
+.is[data-authenticated="true"] .is__button--primary:hover:not([disabled]) {
+    background: var(--is-action-primary-strong);
+    border-color: var(--is-action-primary-strong);
+}
+.is[data-authenticated="true"] .is__button--primary[disabled] {
+    background: #eceada;
+    border-color: #e0dccb;
+    color: #8a8f9c;
+    box-shadow: none;
+}
+.is[data-authenticated="true"] .is__button--quiet { color: var(--is-text); }
+
+/* Truth lines: quiet, lock-anchored, no banner box. */
+.is-auth__transmit-line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--is-text);
+    font-size: 0.92rem;
+    margin: 0.95rem 0 0;
+}
+.is-auth__transmit-line svg { width: 1rem; height: 1rem; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.is[data-authenticated="true"] .is__dictation-note {
+    color: var(--is-text-muted);
+    font-size: 0.78rem;
+    max-width: 62ch;
+    margin-top: 0.5rem;
+}
+
+/* Lock 01 steady-state card meta shows only the word count; the autosave
+   line surfaces while saving and on failure (truth stays visible when it
+   matters; the browser-truth line in the rail carries the steady claim). */
+.is[data-authenticated="true"] [data-is-autosave][data-autosave-state="ready"],
+.is[data-authenticated="true"] [data-is-autosave][data-autosave-state="saved"],
+.is[data-authenticated="true"] [data-is-autosave][data-autosave-state="restored"] {
+    display: none;
+}
+.is[data-authenticated="true"] [data-is-autosave][data-autosave-state="failed"] {
+    color: var(--is-error);
+    font-weight: 600;
+}
+
+/* Lock 13 mobile: control row orders [Interview Me ▾][Session][History];
+   the action band stacks with a full-width primary above the groups. */
+@media (max-width: 72rem) {
+    .is[data-authenticated="true"] .is-auth__mode-picker { order: 1; }
+    .is[data-authenticated="true"] .is-auth__rail-mobile-only { order: 2; }
+    .is[data-authenticated="true"] .is-auth__rail > .is-auth__rail-history { order: 3; }
+    .is[data-authenticated="true"] .is-auth__band {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .is[data-authenticated="true"] .is-auth__review-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    .is[data-authenticated="true"] .is-auth__band .is-auth__group {
+        border-left: 0;
+        border-top: 1px solid var(--is-line);
+        padding-left: 0;
+        padding-top: 0.6rem;
+        align-content: flex-start;
+        gap: 0.5rem;
+    }
+    .is[data-authenticated="true"] .is-auth__group-label { margin: 0 0 0.1rem; }
+    .is[data-authenticated="true"] .is-auth__band { gap: 0.7rem; padding: 0.85rem 1rem; min-height: 0; }
+    .is[data-authenticated="true"] .is-auth__band .is-auth__group { flex: 0 0 auto; min-height: 0; }
+}
+
+/* Lock 11: card body tier under the serif heading; numbered review rows
+   keep their title and status on separate lines. */
+.is-complete__card-body { color: var(--is-text); font-size: 0.95rem; margin: 0.15rem 0 0; }
+.is-complete__list li { margin: 0 0 0.55rem; }
+.is-complete__list li strong { display: block; color: var(--is-ink); font-weight: 600; }
+.is-complete__list li span { display: block; color: var(--is-text-muted); font-size: 0.85rem; margin-top: 0.1rem; }
+
+/* Lock 10: Play recording leads the playback control row. */
+.is[data-authenticated="true"] [data-is-play-recording] { order: -1; }
+.is[data-authenticated="true"] .is__camera-controls { align-items: center; }
+
+/* Rail summary values arrive lowercase from session state; the locks
+   render sentence case. First-letter uppercasing is presentation only. */
+.is-auth__summary li span { display: inline-block; }
+.is-auth__summary li span::first-letter { text-transform: uppercase; }
+
+/* Lock 02 pending state: the shared processing banner yields to the
+   band's Reviewing cell; submitted chip sits cleanly inside the card. */
+.is[data-authenticated="true"] .is__processing-banner { display: none; }
+.is-auth__pending-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+.is-auth__pending-cell[hidden] { display: none; }
+.is-auth__pending-copy { display: flex; flex-direction: column; gap: 0.15rem; }
+.is-auth__pending-copy strong { color: var(--is-ink); font-size: 1rem; }
+.is-auth__pending-copy small { color: var(--is-text-muted); font-size: 0.85rem; }
+.is-auth__pending-cell [data-is-cancel-review] {
+    margin-left: 0.6rem;
+    background: var(--is-surface);
+    border: 1px solid var(--is-line-strong);
+    color: var(--is-text);
+    font-weight: 600;
+    padding: 0.7rem 1.1rem;
+    border-radius: 0.65rem;
+}
+.is-auth__band--pending .is-auth__review-btn { display: none; }
+.is-auth__band--pending .is-auth__group-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.is[data-authenticated="true"] .is__answer-card {
+    position: relative;
+    background: var(--is-surface);
+    border: 1px solid var(--is-line-strong);
+    border-radius: 0.9rem;
+    box-shadow: 0 1px 2px rgb(6 30 71 / 5%), 0 10px 26px rgb(6 30 71 / 6%);
+    padding: 1.35rem 1.5rem 1.2rem;
+    margin-top: 0.9rem;
+}
+.is[data-authenticated="true"] .is__answer-card .is__section-label {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    float: right;
+    margin: 0 0 0.5rem 1rem;
+    font: 600 0.8rem/1 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: var(--is-success);
+}
+.is[data-authenticated="true"] .is__answer-card .is__section-label::before { content: "\2713"; }
+.is[data-authenticated="true"] .is__answer-card .is__answer-copy { clear: none; }
+
+/* Lock 03 failure state: warning chip, retry pair inside the band, red
+   banner directly beneath. */
+.is[data-authenticated="true"] .is-auth__badge--warning { color: #a63d38; }
+.is[data-authenticated="true"] .is-auth__badge--warning::before { background: #c4423b; }
+.is[data-authenticated="true"] .is-auth__band [data-is-error-actions] {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+}
+.is[data-authenticated="true"] .is-auth__band [data-is-error-actions][hidden] { display: none; }
+.is[data-authenticated="true"] .is-auth__band--failed .is-auth__review-btn { display: none; }
+.is[data-authenticated="true"] .is-auth__band [data-is-retry-coaching] {
+    order: -1;
+    background: var(--is-action-primary);
+    border-color: var(--is-action-primary);
+    color: var(--is-action-primary-text);
+    font-weight: 700;
+    font-size: 1.02rem;
+    padding: 0.95rem 1.5rem;
+    border-radius: 0.7rem;
+    box-shadow: 0 8px 18px rgb(13 63 36 / 22%), 0 2px 5px rgb(13 63 36 / 14%);
+}
+.is[data-authenticated="true"] .is-auth__band [data-is-keep-editing] {
+    background: var(--is-surface);
+    border: 1px solid var(--is-line-strong);
+    color: var(--is-text);
+    font-weight: 600;
+    padding: 0.9rem 1.2rem;
+    border-radius: 0.7rem;
+}
+.is[data-authenticated="true"] .is-auth__band + .is__alert {
+    margin-top: 0.9rem;
+    border-left: 3px solid var(--is-error);
+    background: #fbeeee;
+    border-radius: 0.6rem;
+}
+
+/* Locks 01-12: History lives under SESSION TOOLS on desktop; the
+   top-level control serves the sub-72rem control row only. */
+@media (min-width: 72.01rem) {
+    .is[data-authenticated="true"] .is-auth__rail > .is-auth__rail-history { display: none; }
+}
+
+/* Consequence-stack revise gate (lock 05): a blocked primary reads
+   locked, never active. */
+.is[data-authenticated="true"] .is-stack__action-btn--primary[disabled] {
+    background: #eceada;
+    border-color: #e0dccb;
+    color: #8a8f9c;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------
+   Lock 07/08: Interview AI composition. Heading visible, question plain
+   on the canvas, three equal SOURCE cards, quiet info line, explicit
+   generate action, result panel with the gold-edged example treatment.
+   --------------------------------------------------------------------- */
+.is[data-authenticated="true"] #is-panel-ai .is__title--section,
+.is[data-authenticated="true"] #is-panel-ai .is__sub {
+    display: block;
+}
+.is[data-authenticated="true"] #is-panel-ai .is__title--section {
+    color: var(--is-ink);
+    font-size: clamp(1.9rem, 2.8vw, 2.5rem);
+    line-height: 1.15;
+    margin: 0.1rem 0 0.2rem;
+}
+.is[data-authenticated="true"] #is-panel-ai .is__sub { color: var(--is-text-muted); margin: 0 0 1.1rem; }
+.is[data-authenticated="true"] .is__ai-question-frame {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    margin: 0 0 0.9rem;
+}
+body:not([data-theme="dark"]) .is[data-authenticated="true"] .is__ai-question-frame {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+.is[data-authenticated="true"] .is__ai-question-frame .is__title--stage {
+    font-size: clamp(1.5rem, 2vw, 1.85rem);
+    max-width: none;
+}
+/* Review finding P1-2b: lock 07/08 render SOURCE as its own eyebrow row
+   above the three cards -- the previous "auto repeat(3, ...)" template put
+   the label in a fourth column beside the cards, vertically centered on
+   the row instead. Three equal columns + the label spanning all of them
+   on its own row restores the lock's stacked composition. */
+.is[data-authenticated="true"] .is-ai-source {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 0.8rem;
+    margin: 0.4rem 0 0.5rem;
+}
+.is[data-authenticated="true"] .is-ai-source .is__section-label {
+    grid-column: 1 / -1;
+    align-self: start;
+    margin: 0 0 0.3rem;
+    color: var(--is-gold-text);
+    font-size: 0.68rem;
+    letter-spacing: 0.13em;
+}
+.is-ai-source__card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    background: var(--is-surface);
+    border: 1px solid var(--is-line-strong);
+    border-radius: 0.75rem;
+    padding: 0.8rem 0.95rem;
+    cursor: pointer;
+}
+.is-ai-source__card:has(input:checked) {
+    border: 2px solid var(--is-active);
+    background: #f4f8f4;
+    padding: calc(0.8rem - 1px) calc(0.95rem - 1px);
+}
+.is-ai-source__card input { margin-top: 0.2rem; accent-color: var(--is-active); }
+.is-ai-source__card strong { display: block; color: var(--is-ink); font-size: 0.98rem; }
+.is-ai-source__card small { color: var(--is-text-muted); font-size: 0.82rem; }
+.is-ai-source__info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--is-text-muted);
+    font-size: 0.88rem;
+    margin: 0.4rem 0 0.9rem;
+}
+.is-ai-source__info svg { width: 1rem; height: 1rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.is-ai-generate { align-self: flex-start; }
+.is[data-authenticated="true"] .is__ai-answer {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+}
+body:not([data-theme="dark"]) .is[data-authenticated="true"] .is__ai-answer {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+.is[data-authenticated="true"] [data-is-ai-answer-ready] {
+    background: #faf9f5;
+    border: 1px solid var(--is-line);
+    border-left: 3px solid var(--is-gold);
+    border-radius: 0.6rem;
+    padding: 1.15rem 1.35rem;
+}
+.is[data-authenticated="true"] .is-ai-generic-truth {
+    color: var(--is-gold-text);
+    font-size: 0.9rem;
+    margin: 0 0 0.6rem;
+}
+.is[data-authenticated="true"] #is-panel-ai [data-is-ai-answer-heading] + p,
+.is[data-authenticated="true"] [data-is-ai-answer-text] {
+    color: var(--is-text);
+    font-size: 1.02rem;
+    line-height: 1.65;
+}
+.is[data-authenticated="true"] #is-panel-ai .is__ai-why {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 0.9rem;
+}
+.is[data-authenticated="true"] #is-panel-ai .is__ai-why li {
+    list-style: none;
+    border: 0;
+    padding: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: var(--is-text);
+    font-size: 0.92rem;
+}
+.is[data-authenticated="true"] #is-panel-ai .is__ai-why li::before {
+    content: "";
+    flex: none;
+    width: 0.55rem;
+    height: 0.55rem;
+    margin-top: 0.35rem;
+    border-radius: 50%;
+    background: var(--is-active);
+}
+.is[data-authenticated="true"] #is-panel-ai .is__ai-why li { border-top: 0; }
+.is[data-authenticated="true"] .is-ai-generate { order: 5; justify-self: start; }
+.is[data-authenticated="true"] [data-is-ai-form] { display: flex; flex-direction: column; align-items: stretch; }
+.is[data-authenticated="true"] [data-is-ai-form] .is-ai-generate { align-self: flex-start; }
+
+/* ---------------------------------------------------------------------
+   Locks 09/10/15: Video Practice. Question header above a bounded navy
+   frame with overlay status chips; media truth directly beneath; the
+   controls sit in a row under the frame; content coaching is a labeled
+   card with the transcript actions.
+   --------------------------------------------------------------------- */
+.is-video-question { margin: 0.5rem 0 0.9rem; }
+.is[data-authenticated="true"] .is__camera {
+    position: relative;
+    background: transparent;
+    border-radius: 0;
+    aspect-ratio: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+}
+.is[data-authenticated="true"] .is__camera video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 8.4;
+    max-height: 30rem;
+    object-fit: cover;
+    background: var(--is-auth-video-frame);
+    border-radius: 0.8rem;
+}
+.is[data-authenticated="true"] .is__camera-empty,
+.is[data-authenticated="true"] .is-video-recovery {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    aspect-ratio: 16 / 8.4;
+    max-height: 30rem;
+    border-radius: 0.8rem;
+    background: var(--is-auth-video-frame);
+}
+.is-video-chips {
+    position: absolute;
+    top: 0.9rem;
+    left: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    z-index: 3;
+    pointer-events: none;
+}
+.is-video-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 28%);
+    background: rgb(10 24 44 / 55%);
+    color: #e8edf5;
+    font: 600 0.8rem/1 var(--ps-font-ui, Inter, Arial, sans-serif);
+    white-space: nowrap;
+}
+.is-video-chip--right { margin-left: auto; }
+/* Review finding P1-2c (lock 09): leading icon per chip + a status dot on
+   the two live-status chips. setDeviceStatus() (interview-studio.js)
+   creates the dot (a plain <i aria-hidden="true">) as the first child of
+   whatever one('[data-is-camera-status]')/[data-is-mic-status] resolves to
+   -- now .is-video-chip__label, see the template comment -- and toggles
+   is-ready/is-error on that same element; colors are hardcoded for this
+   permanently-dark frame rather than reusing the light-surface
+   --is-success/--is-error tokens (unreadable at low contrast here),
+   matching this file's existing convention for this exact component
+   (.is__recording-badge i below is already a hardcoded dark-surface red). */
+.is-video-chip__icon { width: 0.95rem; height: 0.95rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.is-video-chip__label { display: inline-flex; align-items: center; gap: 0.35rem; }
+.is-video-chip__label > i { width: 0.5rem; height: 0.5rem; flex: none; background: rgb(232 237 245 / 45%); border-radius: 50%; }
+.is-video-chip__label.is-ready > i { background: #3fbd7a; }
+.is-video-chip__label.is-error > i { background: #f03d54; }
+.is__camera-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 1.1rem;
+    z-index: 2;
+    margin: 0;
+    text-align: center;
+    color: rgb(255 255 255 / 82%);
+    font-size: 0.85rem;
+    font-weight: 600;
+    pointer-events: none;
+    text-shadow: 0 1px 3px rgb(0 0 0 / 45%);
+}
+.is[data-authenticated="true"] .is__camera-controls {
+    position: static;
+    display: flex;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    padding: 0.9rem 0 0;
+    background: transparent;
+}
+.is[data-authenticated="true"] .is__camera-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #dfe6f0;
+}
+/* The public compact video stage hides its title/sub (2831-2834); the
+   locked authenticated composition shows both plus the serif question. */
+.is[data-authenticated="true"] .is__video-task-stage > .is__title,
+.is[data-authenticated="true"] .is__video-task-stage > .is__sub {
+    display: block;
+}
+.is[data-authenticated="true"] #is-panel-video .is__privacy-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--is-text);
+    font-size: 0.92rem;
+    margin: 0.7rem 0 0.4rem;
+}
+.is[data-authenticated="true"] #is-panel-video .is__privacy-note svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+}
+/* The lock places the media truth directly under the frame; the shared
+   bottom-of-panel note yields to it in the authenticated composition. */
+.is[data-authenticated="true"] #is-panel-video .is__privacy-note:not(.is-video-truth) { display: none; }
+.is[data-authenticated="true"] .is__video-content-review {
+    background: var(--is-surface);
+    border: 1px solid var(--is-line);
+    border-radius: 0.9rem;
+    box-shadow: 0 1px 2px rgb(6 30 71 / 4%), 0 6px 18px rgb(6 30 71 / 5%);
+    padding: 1.1rem 1.3rem;
+    margin-top: 1rem;
+}
+.is[data-authenticated="true"] .is__video-content-review h3 {
+    font: 700 0.72rem/1.2 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--is-gold-text);
+    margin: 0 0 0.45rem;
+}
+.is[data-authenticated="true"] .is__video-content-review > p:first-of-type {
+    color: var(--is-text-muted);
+    font-size: 0.9rem;
+    max-width: 70ch;
+}
+/* Task 2 polish: the required truth sentences ("Automatic transcription is
+   not enabled." / "Submitting the transcript removes the local recording.")
+   render below the composer, not swept into the enlarged lead-line rule
+   above -- they keep the base .is__video-content-review p fine-print size
+   (0.76rem) the public branch's own paragraph already uses. */
+.is[data-authenticated="true"] .is__video-content-review-truth {
+    margin-top: 0.9rem;
+}
+/* Review finding P2-3 (lock 09): the no-inference line, persistent under
+   CONTENT COACHING, styled like this file's other leading-icon info lines
+   (e.g. .is-ai-source__info). Scoped under .is__video-content-review (not
+   just the bare class) to match the base ".is__video-content-review p"
+   rule's specificity so this rule's own margin wins by source order,
+   the same approach Task 2 used above rather than !important. */
+.is__video-content-review .is__video-content-review-no-inference {
+    display: flex;
+    gap: 0.4rem;
+    align-items: flex-start;
+    margin: 0.6rem 0 0;
+    color: var(--is-text-muted);
+    font-size: 0.76rem;
+    line-height: 1.5;
+}
+.is__video-content-review-no-inference svg { width: 1rem; height: 1rem; flex: none; margin-top: 0.1rem; fill: none; stroke: currentColor; stroke-width: 1.6; }
+
+/* ---------------------------------------------------------------------
+   Task 5 (architect-measured, owner-reported): the shared global header
+   renders as a cool band (avg #e9ebef, red-minus-blue warmth -6; source
+   values in static/css/style.css's unscoped .global-header/.platform-nav__
+   links/.nav-search__input/.platform-brand__logo rules) on every page,
+   including the authenticated Studio, while every one of the 19 locked
+   visuals shows a warm ivory header (#f2f0ed band avg, warmth +5). Fixed
+   page-scoped, in this file only -- following the body.interview-studio-
+   page precedent already established above (line 9) and in the dark-theme
+   overrides below (e.g. "body[data-theme='dark'].interview-studio-page
+   .platform-nav__links a[aria-current='page']") -- no shared stylesheet or
+   base.html edit. Scoped to :has(.is[data-authenticated="true"]) so the
+   flag-off public page (and every other page on the site) keeps the
+   standard cool header untouched. Excludes [data-theme="dark"] explicitly:
+   dark theme is paused (author no new dark rules; do not touch the
+   existing ones), and this exact page already carries its own dedicated
+   dark-mode header overrides a few hundred lines above -- without this
+   guard the new, more specific selectors here would out-specificity those
+   and silently break dark mode on this one page.
+   Colors reuse this file's own already-locked authenticated tokens
+   (line ~3830): --is-canvas/--is-surface #fdf9f6, --is-line #eae2d8,
+   --is-line-strong #d9cfc2, --is-active #114a2b -- hardcoded here because
+   the header lives outside the .is[data-authenticated="true"] subtree the
+   custom properties are scoped to.
+   --------------------------------------------------------------------- */
+body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="dark"]) .global-header {
+    background: #fdf9f6;
+    border-bottom-color: #eae2d8;
+}
+body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="dark"]) .platform-nav__links a {
+    color: #10263c;
+}
+body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="dark"]) .platform-nav__links a[aria-current="page"] {
+    color: #114a2b;
+}
+body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="dark"]) .platform-nav__links a[aria-current="page"]::after {
+    background: #114a2b;
+}
+body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="dark"]) .nav-search__input {
+    background: #fdf9f6;
+    border-color: #d9cfc2;
+    color: #10263c;
+}
+body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="dark"]) .nav-search__input::placeholder {
+    color: #8a7f6f;
+}
+body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="dark"]) .nav-search__input:focus {
+    border-color: #114a2b;
+    background: #fdf9f6;
+}
+/* The mark sits directly on the warm field per the locks -- transparent
+   rather than a matched hex so it tracks the header's own background
+   automatically instead of needing to be kept in sync with it. */
+body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="dark"]) .platform-brand__logo {
+    background: transparent;
+}
+body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="dark"]) .sign-in-btn,
+body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="dark"]) .nav-sign-out__btn {
+    border-color: #d9cfc2;
 }

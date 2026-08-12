@@ -16,7 +16,7 @@
 <div
     class="is"
     data-interview-studio
-    data-profile-slug="{{ interview_profile.slug }}"
+    data-profile-slug="{{ interview_profile.slug or '' }}"{% if interview_storage_scope %} data-storage-scope="{{ interview_storage_scope }}"{% endif %}{% if interview_authenticated %} data-authenticated="true"{% endif %}
     data-initial-view="{{ interview_initial_view }}"
     data-initial-mode="{{ interview_initial_mode }}"
     data-history-url="{{ url_for('interview_studio_history') }}"
@@ -40,6 +40,7 @@
             </div>
         </noscript>
 
+        {% if not interview_authenticated -%}
         <header class="is__bar">
             <div class="is__brand">
                 <div>
@@ -113,8 +114,165 @@
                 </div>
             </div>
         </header>
+        {%- else %}
+        {# Slice 3 authenticated shell (architecture 03 section 6): one left
+           rail under the reused global header, replacing the Studio-local
+           header bar, its "Public practice"/"Public demo profile" chrome,
+           and the card-style mode tabs. On mobile the same rail elements
+           reflow into a compact control row (CSS order/display only — no
+           duplicate data-is-* elements, so every existing binding below
+           keeps working unchanged in both layouts). #}
+        <aside class="is-auth__rail" data-is-auth-rail aria-label="Interview Studio">
+            <p class="is-auth__rail-eyebrow">Interview Studio</p>
 
-        <section class="is__disclosure is__session-setup" data-is-controls data-is-session-setup {% if interview_initial_view == 'history' %}hidden{% endif %} aria-label="New Session">
+            {# Architect ruling R1 (slice 5-6 review): locked visual 13 shows a
+               collapsed "Interview Me ▾" dropdown control in the mobile
+               control row, not three reflowed pills. is-auth__mode-picker
+               wraps the same tablist markup (zero duplicate data-is-mode
+               elements, so every existing tab click/keydown binding keeps
+               working unchanged); the toggle button is CSS-only-visible
+               below the rail breakpoint and JS shows/hides the tablist as a
+               popover beneath it there, while the desktop rail keeps
+               rendering the tablist directly (toggle hidden). #}
+            <div class="is-auth__mode-picker" data-is-mode-picker>
+                <button
+                    class="is-auth__mode-toggle"
+                    type="button"
+                    data-is-mode-toggle
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    aria-controls="is-auth-modes-list"
+                >
+                    <svg data-is-mode-toggle-icon viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>
+                    <span data-is-mode-toggle-label>Interview Me</span>
+                    <svg class="is-auth__mode-toggle-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+            <nav class="is-auth__modes" id="is-auth-modes-list" role="tablist" aria-label="Interview practice mode">
+                <a
+                    class="is-auth__mode"
+                    href="{{ url_for('interview_studio', mode='me') }}"
+                    aria-disabled="{{ 'false' if interview_entitlements.written_practice else 'true' }}"
+                    role="tab" aria-controls="is-panel-me" aria-selected="{{ 'true' if interview_initial_mode == 'me' else 'false' }}" tabindex="{{ '0' if interview_initial_mode == 'me' else '-1' }}"
+                    id="is-tab-me"
+                    data-is-mode="me"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>
+                    <span>Interview Me</span>
+                </a>
+                <a
+                    class="is-auth__mode"
+                    href="{{ url_for('interview_studio', mode='ai') }}"
+                    aria-disabled="{{ 'false' if interview_entitlements.model_answers else 'true' }}"
+                    role="tab" aria-controls="is-panel-ai" aria-selected="{{ 'true' if interview_initial_mode == 'ai' else 'false' }}" tabindex="{{ '0' if interview_initial_mode == 'ai' else '-1' }}"
+                    id="is-tab-ai"
+                    data-is-mode="ai"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2 19 19M19 5l-2.8 2.8M7.8 16.2 5 19"/><circle cx="12" cy="12" r="3.5"/></svg>
+                    <span>Interview AI</span>
+                </a>
+                <a
+                    class="is-auth__mode"
+                    href="{{ url_for('interview_studio', mode='video') }}"
+                    aria-disabled="{{ 'false' if interview_entitlements.video_studio != 'disabled' else 'true' }}"
+                    role="tab" aria-controls="is-panel-video" aria-selected="{{ 'true' if interview_initial_mode == 'video' else 'false' }}" tabindex="{{ '0' if interview_initial_mode == 'video' else '-1' }}"
+                    id="is-tab-video"
+                    data-is-mode="video"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
+                    <span>Video Practice</span>
+                </a>
+            </nav>
+            </div>
+
+            <a
+                class="is-auth__rail-action is-auth__rail-history"
+                href="{{ url_for('interview_studio_history') }}"
+                aria-label="History"
+                aria-current="{{ 'page' if interview_initial_view == 'history' else 'false' }}"
+                aria-disabled="{{ 'false' if interview_entitlements.progress_history != 'disabled' else 'true' }}"
+                {% if interview_entitlements.progress_history == 'disabled' %}tabindex="-1"{% endif %}
+                data-is-history-link
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M5.6 5.6 3 6"/></svg>
+                <span>History</span>
+            </a>
+
+            <button class="is-auth__rail-action is-auth__rail-mobile-only" type="button" data-is-new-session-focus>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                <span>Session</span>
+            </button>
+
+            <div class="is-auth__rail-detail">
+                <p class="is-auth__rail-eyebrow">Current session</p>
+                <ul class="is-auth__summary">
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg><span data-is-rail-summary-context>General practice</span></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span data-is-rail-summary-stage>General stage</span></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M2 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M10 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/></svg><span data-is-rail-summary-level>Experienced</span></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9l6 6M15 9l-6 6"/></svg><span data-is-rail-summary-family>Behavioral</span></li>
+                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M8.2 14.5a7 7 0 1 1 7.6 0c-.8.6-1.3 1.3-1.5 2.2h-4.6c-.2-.9-.7-1.6-1.5-2.2Z"/></svg><span>Open-ended session</span></li>
+                </ul>
+                <button class="is-auth__rail-action" type="button" data-is-new-session-focus>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                    <span>Change setup</span>
+                </button>
+
+                {# Review finding P1-2d (lock 11): the rail's "Completed
+                   questions" group is missing -- built here, populated by
+                   renderSessionComplete() from the same reviewed-answer
+                   records the main "Questions reviewed" card already uses,
+                   and cleared/hidden by resetConsequenceStack() (which
+                   clearReviewState()/startNewSession() already call on
+                   every new question or session, per the append-only
+                   stack's own established reset hook). #}
+                <div class="is-auth__rail-completed" data-is-rail-completed hidden>
+                    <p class="is-auth__rail-eyebrow">Completed questions</p>
+                    <ol class="is-auth__rail-completed-list" data-is-rail-completed-list></ol>
+                </div>
+
+                <p class="is-auth__rail-eyebrow">Session tools</p>
+                {# Locks 01-12 place History under SESSION TOOLS. The top-level
+                   history control above stays for the sub-72rem control row
+                   (its parent detail block is hidden there); this desktop twin
+                   is a plain canonical link with no JS hook, so the single
+                   data-is-history-link binding stays unambiguous. #}
+                <a class="is-auth__rail-action is-auth__rail-history-desktop"
+                   href="{{ url_for('interview_studio_history') }}"
+                   {% if interview_initial_view == 'history' %}aria-current="page"{% endif %}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                    <span>History</span>
+                </a>
+                {# Architect ruling R4 (slice 5-6 review): "Question trail" is a
+                   preserved capability -- the locked rail does not show it, so
+                   it is added quietly here, styled consistent with the rail's
+                   own list idiom rather than as new visual direction. It opens
+                   the same trail dialog the mobile composer's queue button and
+                   the public page's Interview Me/Video Practice side columns
+                   already open (data-is-queue-open); no new JS binding surface
+                   is required. Recorded as a non-material capability-
+                   preservation adaptation in SLICE_NOTES.md. #}
+                <button class="is-auth__rail-action is-auth__rail-action--quiet" type="button" data-is-queue-open aria-haspopup="dialog">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>
+                    <span>Question trail</span>
+                </button>
+                <button class="is-auth__rail-action" type="button" data-is-new-session-focus>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                    <span>New session</span>
+                </button>
+                <button class="is-auth__rail-action is-auth__rail-finish" type="button" data-is-finish-session>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 4h13l-3 4 3 4H5"/></svg>
+                    <span data-is-finish-session-label>Finish session</span>
+                </button>
+                <p class="is-auth__rail-finish-truth" data-is-finish-session-truth hidden>This session is stored only in this browser for this account.</p>
+
+                <p class="is-auth__rail-truth">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                    <span>Drafts and History stay in this browser for this account. They do not sync across devices.</span>
+                </p>
+            </div>
+        </aside>
+        {% endif %}
+
+        <section class="is__disclosure is__session-setup" data-is-controls data-is-session-setup {% if interview_initial_view == 'history' or interview_authenticated %}hidden{% endif %} aria-label="New Session">
             <div class="is__setup-summary">
                 <div><p class="is__eyebrow">New Session</p><strong data-is-setup-summary-text>General practice / Experienced / Behavioral / open session</strong></div>
                 <button class="is__button is__button--quiet" type="button" data-is-new-session-focus>Change setup</button>
@@ -146,6 +304,29 @@
                         <option value="not_sure">Not sure yet</option>
                     </select>
                 </label>
+                {%- if interview_authenticated %}
+                {# Architect ruling R3 (slice 5-6 review): experience level is a
+                   preserved setup capability. It is folded into the
+                   authenticated "Change setup" surface here (reusing the
+                   public page's own data-is-level hook -- the two selects
+                   never coexist in one render, since this branch is
+                   authenticated-only and the retired is__side-column copy at
+                   is__session-card is public-only) so the existing JS wiring
+                   (levelSelect change handler, updateSetupSummary rail label)
+                   works unchanged. New content only: the flag-off render is
+                   untouched (left-trim-only, matches the established
+                   byte-comparability pattern). #}
+                <label class="is__select">
+                    <span>Experience</span>
+                    <select data-is-level>
+                        <option value="entry">Entry level</option>
+                        <option value="experienced" selected>Experienced</option>
+                        <option value="management">Management</option>
+                        <option value="leadership">Leadership</option>
+                        <option value="mixed">Mixed</option>
+                    </select>
+                </label>
+                {% endif %}
                 <label class="is__select">
                     <span>Question mix <small>Optional</small></span>
                     <select data-is-session-mix>
@@ -175,6 +356,7 @@
         {# base.html already provides the page's one main landmark; nesting a
            second one is non-conforming, so the workspace is a labelled section. #}
         <section class="is__workspace" aria-label="Interview Studio workspace">
+            {% if not interview_authenticated -%}
             <aside class="is__session-rail" aria-label="Current Interview Studio session" data-is-session-rail>
                 <div class="is__session-rail-head">
                     <p class="is__eyebrow">Interview Studio</p>
@@ -200,6 +382,7 @@
                 </button>
                 <p class="is__session-rail-privacy">Public practice stays in this browser. It is not added to a private member record.</p>
             </aside>
+            {%- endif %}
             <section
                 class="is__panel"
                 data-is-panel="orientation"
@@ -258,7 +441,11 @@
                         <div class="is__main-column is__task-stage">
                     <div class="is__stage--compact-head">
                         <div>
+                            {% if interview_authenticated -%}
+                            <p class="is-auth__q-eyebrow">Current question</p>
+                            {%- else -%}
                             <p class="is__section-label">Interview Me Practice</p>
+                            {%- endif %}
                             <h2 class="is__title is__title--stage" data-is-question>Tell me about a time you disagreed with a supervisor.</h2>
                         </div>
                     </div>
@@ -308,8 +495,9 @@
                         <span>Your answer is saved in this browser.</span>
                     </p>
 
-                            <form data-is-answering data-is-answer-form>
+                            <form{% if interview_authenticated %} id="is-answer-form"{% endif %} data-is-answering data-is-answer-form>
                                 <div class="is__composer">
+                                    {% if interview_authenticated %}<span class="is-auth__badge is-auth__badge--draft" data-is-draft-badge aria-hidden="true">Draft</span>{% endif -%}
                                     <label for="is-answer">Your answer</label>
                                     <div class="is__composer-input">
                                         <textarea
@@ -328,13 +516,24 @@
                                         <span data-is-autosave>Draft ready</span>
                                         <span><span data-is-word-count>0</span> words</span>
                                     </div>
+                                    {%- if interview_authenticated %}
+                                    <div class="is-auth__composer-foot">
+                                        <button class="is__button is__mic-labeled" type="button" data-is-mic="answer" aria-pressed="false" aria-label="Dictate your answer" aria-describedby="is-dictation-note">
+                                            <span class="is__mic is__mic--inline" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg></span>
+                                            <span data-is-mic-label>Dictate</span>
+                                        </button>
+                                    </div>
+                                    {% endif %}
                                 </div>
 
+                                {% if not interview_authenticated -%}
                                 <p class="is__transmit-line">
                                     <span class="is__truth-icon" aria-hidden="true">⇧</span>
                                     <span>This question and your answer are sent to PeerSlate only when you click Review My Answer.</span>
                                 </p>
+                                {%- endif %}
 
+                                {% if not interview_authenticated -%}
                                 <div class="is__actions is__composer-actions">
                                     <button class="is__button is__mic-labeled" type="button" data-is-mic="answer" aria-pressed="false" aria-label="Dictate your answer" aria-describedby="is-dictation-note">
                                         <span class="is__mic is__mic--inline" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg></span>
@@ -350,16 +549,63 @@
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
                                     </button>
                                 </div>
+                                {%- endif %}
+
+                                {%- if interview_authenticated %}
+                                <div class="is-auth__band">
+                                    <button class="is__button is__button--primary is-auth__review-btn" type="submit" data-is-review disabled>
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.2 2.4 2.4 4.6-4.8"/></svg>
+                                        <span>Review My Answer</span>
+                                    </button>
+                                    <div class="is-auth__group">
+                                        <p class="is-auth__group-label">Question</p>
+                                        <button class="is-auth__group-btn" type="button" data-is-different-question>
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+                                            Different question
+                                        </button>
+                                        <button class="is-auth__group-btn" type="button" data-is-create-question>
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                                            Create question
+                                        </button>
+                                    </div>
+                                    <div class="is-auth__group is__context-actions">
+                                        <p class="is-auth__group-label">Coaching</p>
+                                        <button class="is-auth__group-btn" type="button" data-is-nudge-open aria-expanded="false">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M8.2 14.5a7 7 0 1 1 7.6 0c-.8.6-1.3 1.3-1.5 2.2h-4.6c-.2-.9-.7-1.6-1.5-2.2Z"/></svg>
+                                            Need a nudge?
+                                        </button>
+                                        <div class="is__nudge-panel" data-is-nudge-panel hidden>
+                                            <p data-is-nudge-status>Hints will stay focused on this question.</p>
+                                            <ol data-is-nudge-list></ol>
+                                            <button class="is__button is__button--quiet" type="button" data-is-nudge-retry hidden>Try hints again</button>
+                                        </div>
+                                        <a class="is-auth__group-btn" href="{{ url_for('interview_studio', mode='ai') }}" data-is-example-link>
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6M4 12h13"/></svg>
+                                            Need an example?
+                                        </a>
+                                        <details class="is__reference is__reference--rail" data-is-ai-reference hidden>
+                                            <summary>Optional reference transferred from Interview AI</summary>
+                                            <p data-is-ai-reference-text></p>
+                                        </details>
+                                    </div>
+                                </div>
+                                <p class="is-auth__transmit-line">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                                    <span data-is-transmit-line-text>Your answer is sent only when you click Review My Answer.</span>
+                                </p>
+                                {% endif %}
 
                                 <p class="is__dictation-note" id="is-dictation-note">Dictation is optional and typing works exactly the same. Your browser does the transcribing and keeps listening until you stop it or you go quiet for 10 seconds. PeerSlate does not receive or keep the audio.</p>
                                 <p class="is__dictation-live" data-is-dictation-status="answer" hidden></p>
                                 <p class="is__dictation-interim" data-is-dictation-interim="answer" hidden><span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span></p>
                                 <p class="is__error" data-is-mic-error="answer" hidden></p>
 
+                                {% if not interview_authenticated -%}
                                 <p class="is__tip">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M8.2 14.5a7 7 0 1 1 7.6 0c-.8.6-1.3 1.3-1.5 2.2h-4.6c-.2-.9-.7-1.6-1.5-2.2Z"/></svg>
                                     <span data-is-tip>For conflict questions, explain the disagreement, how you handled it professionally, and the outcome.</span>
                                 </p>
+                                {%- endif %}
 
                             </form>
 
@@ -514,6 +760,7 @@
 
                         </div>
 
+                        {% if not interview_authenticated -%}
                         <aside class="is__side-column" aria-label="Interview Me context">
                             <div class="is__rail-state" data-is-ready-rail>
                                 <section class="is__card is__context-card is__session-card" aria-label="Session settings">
@@ -613,6 +860,7 @@
                                 <ol data-is-queue-list></ol>
                             </dialog>
                         </aside>
+                        {%- endif %}
                     </div>
                 </article>
             </section>
@@ -625,14 +873,20 @@
                 data-is-panel="ai"
                 {% if interview_initial_view == 'history' or interview_initial_mode != 'ai' or is_orientation %}hidden{% endif %}
             >
+                {% if interview_authenticated -%}
+                <p class="is__eyebrow">Interview AI</p>
+                <h2 class="is__title is__title--section">Explore a strong answer.</h2>
+                <p class="is__sub">See how a strong answer could be framed.</p>
+                {%- else -%}
                 <p class="is__eyebrow">Interview AI</p>
                 <h2 class="is__title is__title--section">See the source. Compare the approach.</h2>
                 <p class="is__sub">Best-practice guidance, {{ interview_profile.first_name }}&rsquo;s approved public-profile example, and side-by-side comparison remain clearly labeled.</p>
+                {%- endif %}
 
                 <div class="is__content-grid">
                     <form class="is__ai-form" data-is-ai-form>
                         <div class="is__ai-question-frame">
-                            <p class="is__section-label">Current question</p>
+                            <p class="is__section-label">{% if interview_authenticated %}Question{% else %}Current question{% endif %}</p>
                             <h2 class="is__title is__title--stage" data-is-ai-question-display>Tell me about a time you disagreed with a supervisor.</h2>
                             <input id="is-ai-question" type="hidden" value="Tell me about a time you disagreed with a supervisor." data-is-ai-question>
                             <div class="is__question-controls-row is__question-controls-row--ai">
@@ -654,22 +908,65 @@
                                 </div>
                             </div>
                         </div>
+                        {%- if interview_authenticated %}
+                        {# Slice 5-6 review item 1 (visuals 07/08): the SOURCE
+                           selector renders as three inline radio cards in the
+                           authenticated composition rather than the public
+                           page's setup-form dropdown (data-is-ai-mode, kept
+                           unconditionally in the New Session form for both
+                           branches). These radios are a second control over
+                           the SAME underlying value -- JS keeps them in sync
+                           with data-is-ai-mode so selectedAiMode() and every
+                           other reader of that select's value need no
+                           changes. New content only; flag-off is untouched. #}
+                        <div class="is-ai-source" data-is-ai-source-group role="radiogroup" aria-label="Answer source">
+                            <p class="is__section-label">Source</p>
+                            <label class="is-ai-source__card">
+                                <input type="radio" name="is-ai-source" value="best_practice" data-is-ai-source-radio>
+                                <span><strong>Best practice</strong><small>Generic best-practice example</small></span>
+                            </label>
+                            <label class="is-ai-source__card">
+                                <input type="radio" name="is-ai-source" value="member_history" data-is-ai-source-radio checked>
+                                <span><strong>My public profile</strong><small>From approved public evidence</small></span>
+                            </label>
+                            <label class="is-ai-source__card">
+                                <input type="radio" name="is-ai-source" value="compare" data-is-ai-source-radio>
+                                <span><strong>Compare</strong><small>Best practice vs. my profile</small></span>
+                            </label>
+                        </div>
+                        <p class="is-ai-source__info">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M12 11v5"/></svg>
+                            <span>If approved public evidence is unavailable, PeerSlate keeps the result insufficient instead of inventing it.</span>
+                        </p>
+                        {# Generation stays an explicit member action (transmission
+                           truth); the lock's composition carries no generate
+                           control, so it sits quietly after the source choice. #}
+                        <button class="is__button is__button--primary is__ai-get-answer is-ai-generate" type="submit"{% if not interview_entitlements.model_answers %} disabled{% endif %}>
+                            Get example
+                        </button>
+                        {%- endif %}
+                        {% if not interview_authenticated -%}
                         <button class="is__button is__button--primary is__ai-get-answer" type="submit"{% if not interview_entitlements.model_answers %} disabled{% endif %}>
                             Get example
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
                         </button>
+                        {%- endif %}
                     </form>
 
                     <div class="is__main-column">
 
-                        <p class="is__grounding-note">
+                        <p class="is__grounding-note"{% if interview_authenticated %} hidden{% endif %}>
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8.6 7 10 4.2-1.4 7-5.4 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
                             <span>Draft basis: <strong data-is-ai-basis-label>{{ interview_profile.name }}&rsquo;s approved public history</strong>. <span data-is-ai-basis-guidance>Verify the generated wording before using it.</span></span>
                         </p>
 
                         <section class="is__card is__ai-answer" data-is-ai-answer aria-labelledby="is-ai-answer-title">
+                            {% if not interview_authenticated -%}
                             <p class="is__eyebrow">AI synthesis</p>
                             <h2 id="is-ai-answer-title" class="is__title" tabindex="-1" style="font-size:clamp(1.4rem,2.6vw,1.9rem)">Answer workspace</h2>
+                            {%- else -%}
+                            <h2 id="is-ai-answer-title" class="is__sr-only" tabindex="-1">Answer workspace</h2>
+                            {%- endif %}
 
                             <div class="is__processing-banner" data-is-ai-loading hidden aria-live="polite">
                                 <span class="is__spinner" aria-hidden="true"></span> <div><strong>Building your draft…</strong></div>
@@ -682,20 +979,43 @@
                             </div>
 
                             <div data-is-ai-answer-content hidden>
+                                {%- if interview_authenticated %}
+                                {# Slice 5-6 review item 1: the insufficiency lock (visual 08) is a
+                                   distinct composition, not the generic/grounded answer card --
+                                   toggled by JS alongside data-is-ai-generic via the same
+                                   payload.modelAnswer.status === 'insufficient' check. #}
+                                <div class="is-ai-insufficient" data-is-ai-insufficient hidden>
+                                    <span class="is-ai-insufficient__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 4h9l3 3v13H6z"/><path d="M15 4v3h3"/><circle cx="12.5" cy="14" r="3.2"/><path d="m14.6 16.1 1.9 1.9"/></svg></span>
+                                    <p class="is-ai-insufficient__eyebrow">Not enough approved public evidence</p>
+                                    <p data-is-ai-insufficient-text>PeerSlate could not support a profile-grounded answer to this question from the approved public evidence available for your account.</p>
+                                    <p>Nothing was invented or borrowed from another person.</p>
+                                </div>
+                                <div data-is-ai-answer-ready>
+                                {% endif %}
                                 <p class="is__generic-flag" data-is-ai-generic hidden>
                                     Illustrative best-practice example — this is <strong>not</strong> {{ interview_profile.first_name }}&rsquo;s real history.
                                 </p>
                                 <h2 data-is-ai-answer-heading><span data-is-ai-name>{{ interview_profile.first_name }}</span>’s answer</h2>
                                 <p class="is__ai-answer-text" data-is-ai-answer-text></p>
+                                {%- if interview_authenticated %}
+                                <p class="is-ai-generic-truth" data-is-ai-generic-truth hidden>This is an illustrative example. It is not presented as your experience.</p>
+                                {% endif %}
 
                                 <div class="is__why">
-                                    <h3>Why this answer works</h3>
+                                    <h3>{% if interview_authenticated %}Why this works{% else %}Why this answer works{% endif %}</h3>
                                     <ul data-is-ai-why></ul>
                                 </div>
+                                {% if not interview_authenticated -%}
                                 <div class="is__evidence-used">
                                     <h3>Relevant history used</h3>
                                     <div data-is-ai-evidence></div>
                                 </div>
+                                {%- else -%}
+                                <div class="is__evidence-used" hidden>
+                                    <h3>Relevant history used</h3>
+                                    <div data-is-ai-evidence></div>
+                                </div>
+                                {%- endif %}
 
                                 <div class="is__compare" data-is-ai-compare hidden>
                                     <section>
@@ -708,12 +1028,31 @@
                                         <ul class="is__why-list" data-is-ai-compare-why></ul>
                                     </section>
                                 </div>
+                                {%- if interview_authenticated %}</div>{% endif %}
 
+                                {% if not interview_authenticated -%}
                                 <div class="is__actions is__actions--three" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
                                     <button class="is__button" type="button" data-is-follow-up-open>Go to Follow-up</button>
                                     <button class="is__button is__button--primary" type="button" data-is-practice-answer>Practice This Answer</button>
                                     <button class="is__button" type="button" data-is-create-question>Create Question</button>
                                 </div>
+                                {%- else -%}
+                                {# Slice 5-6 review item 1: authenticated action order/labels per
+                                   visuals 07/08. "New question" reuses the same
+                                   data-is-different-question handler Interview Me/Video already
+                                   bind (pulls another question from the bank) rather than
+                                   inventing a new AI-specific "advance" concept. Follow-up stays
+                                   visibly disabled (architecture 03 section 3, item 2): the
+                                   scoped finding interview_followup_mode_provenance is still
+                                   open, so this button intentionally carries no click handler --
+                                   the existing data-is-follow-up-open control/token plumbing
+                                   remains reachable only through the public branch. #}
+                                <div class="is__actions is__actions--three" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+                                    <button class="is__button is__button--primary" type="button" data-is-practice-answer>Practice This Answer</button>
+                                    <button class="is__button" type="button" data-is-different-question data-is-ai-action-question>New question</button>
+                                    <button class="is__button" type="button" data-is-follow-up-open disabled title="Follow-up is not available yet.">Follow-up isn&rsquo;t available yet</button>
+                                </div>
+                                {%- endif %}
                             </div>
 
                             <form class="is__follow-up" data-is-follow-up-form>
@@ -744,6 +1083,7 @@
                                 <li>Compare shows differences without claiming an employer outcome.</li>
                             </ul>
                         </section>
+                        {% if not interview_authenticated -%}
                         <section class="is__card is__demo-card" data-is-demo-card>
                             <p class="is__eyebrow">Public demo profile</p>
                             <div class="is__demo-head">
@@ -755,6 +1095,7 @@
                             </div>
                             <p class="is__demo-note">◈ <span>Grounded only in his approved public résumé.<br><strong>You are not signed in as {{ interview_profile.first_name }}.</strong></span></p>
                         </section>
+                        {%- endif %}
                     </aside>
                 </div>
             </section>
@@ -770,9 +1111,15 @@
                 <article data-is-video-stage>
                     <div class="is__content-grid is__content-grid--video">
                         <div class="is__main-column is__task-stage is__video-task-stage">
+                    {% if interview_authenticated -%}
+                    <p class="is__eyebrow">Video Practice</p>
+                    <p class="is__sub" style="margin-top:-0.3rem">Rehearse locally on camera.</p>
+                    <h2 class="is__title is__title--stage is-video-question" data-is-video-question>Tell me about a time you disagreed with a supervisor.</h2>
+                    {%- else -%}
                     <p class="is__eyebrow">Video Practice · local only</p>
                     <h2 class="is__title is__title--section">Rehearse on camera. Keep the recording here.</h2>
                     <p class="is__sub">Review your delivery locally. PeerSlate does not upload or analyze the recording.</p>
+                    {%- endif %}
 
                     <div class="is__progress-head" style="margin-top:1rem">
                         <span class="is__question-position"><span data-is-video-question-position>Open session</span> · Local rehearsal</span>
@@ -802,6 +1149,33 @@
                     </div>
 
                             <div class="is__camera" data-is-camera>
+                                {%- if interview_authenticated %}
+                                <div class="is-video-chips" aria-hidden="false">
+                                    {# Review finding P1-2c (lock 09): each chip gets a leading
+                                       icon and, for the two live-status chips, a status dot.
+                                       setDeviceStatus() (interview-studio.js) replaces the
+                                       *children* of whatever one('[data-is-camera-status]') /
+                                       one('[data-is-mic-status]') resolves to with a fresh dot
+                                       marker + text node, so the data-is-* hook moves to an
+                                       inner label span here -- the leading icon svg is a
+                                       preceding sibling of that label, untouched by
+                                       replaceChildren(). one() still finds this element first
+                                       in DOM order (unchanged from before), so no JS changes. #}
+                                    <span class="is-video-chip">
+                                        <svg class="is-video-chip__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                                        Local preview
+                                    </span>
+                                    <span class="is-video-chip is-video-chip--right">
+                                        <svg class="is-video-chip__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
+                                        <span class="is-video-chip__label" data-is-camera-status>Camera not requested</span>
+                                    </span>
+                                    <span class="is-video-chip">
+                                        <svg class="is-video-chip__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
+                                        <span class="is-video-chip__label" data-is-mic-status>Microphone not requested</span>
+                                    </span>
+                                </div>
+                                <p class="is__camera-caption" data-is-camera-caption>Local camera preview</p>
+                                {% endif %}
                                 <video data-is-camera-preview playsinline muted></video>
                                 <div class="is__camera-empty" data-is-camera-empty>
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
@@ -809,7 +1183,24 @@
                                     <span>Enable your camera when you are ready. Nothing is uploaded.</span>
                                     <button class="is__button is__button--primary" type="button" data-is-camera-enable{% if interview_entitlements.video_studio == 'disabled' %} disabled{% endif %}>Enable Camera</button>
                                 </div>
+                                {%- if interview_authenticated %}
+                                {# Slice 5-6 review item 2 (visual 15): the
+                                   recovery lock renders in place of the
+                                   normal camera-off placeholder whenever
+                                   permission was denied or the device is
+                                   unavailable; JS toggles it against the
+                                   existing data-is-video-state values
+                                   ('denied'/'unavailable') already set by
+                                   enableCamera()'s error paths. #}
+                                <div class="is-video-recovery" data-is-video-recovery hidden>
+                                    <span class="is-video-recovery__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/><path d="M3 3l18 18"/></svg></span>
+                                    <p class="is-video-recovery__heading">Camera access is unavailable.</p>
+                                    <p>Check your browser and device settings. You can still practice with a typed or dictated transcript.</p>
+                                    <p class="is-video-recovery__note">PeerSlate will not request permission again until you choose Try camera again.</p>
+                                </div>
+                                {%- endif %}
                                 <div class="is__recording-badge" data-is-recording-badge hidden><i aria-hidden="true"></i><span data-is-recording-time>00:00</span></div>
+                                {% if not interview_authenticated -%}
                                 <div class="is__camera-controls" aria-label="Local recording controls">
                                     <button class="is__button is__button--primary" type="button" data-is-record-start disabled>
                                         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
@@ -820,10 +1211,60 @@
                                     <button class="is__button is__button--danger" type="button" data-is-record-discard hidden>Delete local recording</button>
                                 </div>
                             </div>
+                            {%- else %}
+                            {# Review finding P1-2c (lock 09): the locked order is frame ->
+                               media truth line -> controls row. The controls previously
+                               rendered inside .is__camera (before the truth line, which
+                               rendered after .is__camera closed); moving the same single
+                               copy of .is__camera-controls to a sibling position after the
+                               truth line achieves the locked order without a second live
+                               DOM copy of any button (mutually exclusive if/else branch,
+                               same established pattern as this file's other structural
+                               forks). Public branch above is byte-for-byte unchanged. #}
+                            </div>
+                            <p class="is__privacy-note is-video-truth">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-2.9 8.4-7 10-4.1-1.6-7-5.5-7-10V6z"/><path d="m9.2 12 2 2 3.6-3.8"/></svg>
+                                <span>This recording exists only on this page. PeerSlate does not upload, save, or analyze it.</span>
+                            </p>
+                            <div class="is__camera-controls" aria-label="Local recording controls">
+                                <button class="is__button is__button--primary" type="button" data-is-record-start disabled>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
+                                    Start Answer
+                                </button>
+                                <button class="is__button is__button--primary" type="button" data-is-record-stop hidden>Stop Recording</button>
+                                <button class="is__button" type="button" data-is-record-retake hidden>Record another take</button>
+                                <button class="is__button is__button--danger" type="button" data-is-record-discard hidden>Delete local recording</button>
+                                <button class="is__button is__button--primary" type="button" data-is-play-recording hidden>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/></svg>
+                                    Play recording
+                                </button>
+                                <button class="is__button" type="button" data-is-camera-off hidden>Turn camera off</button>
+                                <button class="is__button" type="button" data-is-device-settings hidden>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a7.9 7.9 0 0 0 .1-6l-2.1-.4a6 6 0 0 0-1.2-2l.7-2L14.8 3l-1.5 1.5a6.2 6.2 0 0 0-2.6 0L9.2 3 7.1 4.6l.7 2a6 6 0 0 0-1.2 2l-2.1.4a7.9 7.9 0 0 0 .1 6l2-.4a6 6 0 0 0 1.2 2.1l-.7 2 2.1 1.5 1.5-1.4a6.2 6.2 0 0 0 2.6 0l1.5 1.4 2.1-1.5-.7-2a6 6 0 0 0 1.2-2.1z"/></svg>
+                                    Device settings
+                                </button>
+                                <a class="is__button is__button--primary" href="#is-video-transcript" data-is-video-use-transcript hidden>Use transcript instead</a>
+                                <button class="is__button" type="button" data-is-camera-retry hidden>Try camera again</button>
+                                <a class="is__button" href="{{ url_for('interview_studio') }}#is-video-device-title" data-is-camera-help hidden>Camera help</a>
+                            </div>
+                            {%- endif %}
 
                             <form class="is__card is__video-content-review" data-is-video-transcript-form>
                                 <h3>Get content coaching from a transcript</h3>
+                                {% if interview_authenticated -%}
+                                <p>Type or dictate a transcript if you want feedback on what you said.</p>
+                                {%- else -%}
                                 <p>Automatic transcription is not enabled. Type, paste, or dictate what you said to use the same content review as Interview Me, grounded in the approved history. You can use this before or after recording. Submitting the transcript removes the local recording.</p>
+                                {%- endif %}
+                                {%- if interview_authenticated %}
+                                {# Review finding P2-3 (lock 09): the no-inference line renders
+                                   persistently under CONTENT COACHING (not only in the result
+                                   block), so a member never has to open a result to see it. #}
+                                <p class="is__video-content-review-no-inference">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M12 11v5"/></svg>
+                                    <span>Video Practice does not analyze eye contact, appearance, confidence, emotion, personality, pace, or delivery.</span>
+                                </p>
+                                {% endif %}
                                 <label for="is-video-transcript">Answer transcript</label>
                                 <div class="is__transcript-composer">
                                     <textarea id="is-video-transcript" rows="3" maxlength="5000" placeholder="Type or paste the answer you recorded…" required data-is-video-transcript data-is-autogrow></textarea>
@@ -837,6 +1278,9 @@
                                 <p class="is__dictation-live" data-is-dictation-status="video" hidden></p>
                                 <p class="is__dictation-interim" data-is-dictation-interim="video" hidden><span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span></p>
                                 <p class="is__error" data-is-mic-error="video" hidden></p>
+                                {%- if interview_authenticated %}
+                                <p class="is__video-content-review-truth">Automatic transcription is not enabled. Submitting the transcript removes the local recording.</p>
+                                {% endif %}
                             </form>
                         </div>
 
@@ -876,8 +1320,12 @@
                                 </div>
                                 <div data-is-video-result-content hidden>
                                     <p><strong data-is-video-duration>—</strong> recorded. Playback is available above until you leave or discard it.</p>
+                                    {#- Review finding P2-3 (lock 09): the authenticated copy drops
+                                       "public" -- this is the member's own private practice session,
+                                       not the public demo. Public branch renders the exact original
+                                       bytes ("this" + " public" + " practice"). #}
                                     <div class="is__analysis-unavailable">
-                                        <strong>Delivery analysis is not part of this public practice session.</strong>
+                                        <strong>Delivery analysis is not part of this{% if not interview_authenticated %} public{% endif %} practice session.</strong>
                                         <span>PeerSlate does not score pace, pauses, filler words, appearance, confidence, or any personal trait here.</span>
                                     </div>
                                     <div class="is__local-list">
@@ -888,6 +1336,7 @@
                                     </div>
                                 </div>
                             </section>
+                            {% if not interview_authenticated -%}
                             <section class="is__card is__demo-card" data-is-demo-card>
                                 <p class="is__eyebrow">Public demo profile</p>
                                 <div class="is__demo-head">
@@ -899,14 +1348,67 @@
                                 </div>
                                 <p class="is__demo-note">◈ <span>Grounded only in his approved public résumé.<br><strong>You are not signed in as {{ interview_profile.first_name }}.</strong></span></p>
                             </section>
+                            {%- endif %}
                         </aside>
                     </div>
 
+                    {% if interview_authenticated %}
+                    <p class="is__privacy-note">This recording exists only on this page. PeerSlate does not upload, save, or analyze it.</p>
+                    {% else -%}
                     <p class="is__privacy-note">This preview uses your browser’s local media APIs. The recording is not uploaded, analyzed, or retained by PeerSlate.</p>
+                    {%- endif %}
                 </article>
             </section>
 
-            <section class="is__panel is__complete-panel" data-is-panel="complete" hidden aria-labelledby="is-complete-title">
+            <section class="is__panel is__complete-panel{% if interview_authenticated %} is-complete-auth{% endif %}" data-is-panel="complete" hidden aria-labelledby="is-complete-title">
+                {%- if interview_authenticated %}
+                {# Slice 5-6 review item 3 (visual 11): centered scoreless
+                   completion composition -- reuses the same
+                   data-is-complete-* hooks the public column layout below
+                   already populates (renderSessionComplete() only gained new
+                   authenticated-only element targets, no rewritten
+                   behavior), so both branches share one render function. #}
+                <div class="is-complete">
+                    <span class="is-complete__check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg></span>
+                    <p class="is-complete__eyebrow">Session complete</p>
+                    <h2 id="is-complete-title" class="is__title is__title--section" data-is-complete-title>You finished this practice session.</h2>
+                    <p class="is__sub" data-is-complete-summary>Questions were practiced and reviewed in this browser.</p>
+                    <hr class="is-complete__rule">
+                    <div class="is-complete__cards">
+                        <section class="is__card is-complete__card">
+                            <span class="is-complete__card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M8.2 14.5a7 7 0 1 1 7.6 0c-.8.6-1.3 1.3-1.5 2.2h-4.6c-.2-.9-.7-1.6-1.5-2.2Z"/></svg></span>
+                            <p class="is-complete__card-eyebrow">From this session</p>
+                            <p class="is-complete__card-heading">What became clearer</p>
+                            <p class="is-complete__card-body" data-is-complete-clearer>Complete a reviewed answer to see what became clearer.</p>
+                        </section>
+                        <section class="is__card is-complete__card">
+                            <span class="is-complete__card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></span>
+                            <p class="is-complete__card-eyebrow">Next focus from this session</p>
+                            <p class="is-complete__card-body" data-is-complete-next-focus>Complete a reviewed answer to see one focused next practice suggestion.</p>
+                        </section>
+                        <section class="is__card is-complete__card" aria-labelledby="is-complete-outcomes-title">
+                            <span class="is-complete__card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></span>
+                            <p class="is-complete__card-eyebrow" id="is-complete-outcomes-title">Questions reviewed</p>
+                            <p class="is__empty" data-is-complete-empty>No reviewed answers were added in this session. Your local draft remains available when you return to practice.</p>
+                            <ol class="is-complete__list" data-is-complete-list hidden></ol>
+                        </section>
+                    </div>
+                    <p class="is-complete__truth">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M12 11v5"/></svg>
+                        <span>This session is stored only in this browser for this account.</span>
+                    </p>
+                    <div class="is__actions is__complete-actions is-complete__actions">
+                        <button class="is__button is__button--primary" type="button" data-is-complete-practice-next>Practice the next focus <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg></button>
+                        <button class="is__button" type="button" data-is-complete-new-session>Start a new session <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg></button>
+                        <a class="is__button" href="{{ url_for('interview_studio_history') }}" data-is-complete-history>Open History <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg></a>
+                    </div>
+                    <div class="is__complete-facts is__sr-only" aria-hidden="true">
+                        <div><strong data-is-complete-reviewed>0</strong><span>reviewed answers</span></div>
+                        <div><strong data-is-complete-questions>0</strong><span>questions practiced</span></div>
+                        <div><strong data-is-complete-context>General practice</strong><span>practice context</span></div>
+                    </div>
+                </div>
+                {%- else %}
                 <div class="is__content-grid is__content-grid--complete">
                     <div class="is__main-column is__task-stage">
                         <p class="is__eyebrow">Session complete</p>
@@ -939,9 +1441,103 @@
                         </section>
                     </aside>
                 </div>
+                {%- endif %}
             </section>
 
             <section class="is__panel" data-is-panel="history" {% if interview_initial_view != 'history' %}hidden{% endif %} aria-labelledby="is-history-title">
+                {%- if interview_authenticated %}
+                {# Slice 5-6 review item 4 (visuals 12/16/17): the four
+                   History truth states (populated / genuinely empty with
+                   storage available / filtered-empty / storage unavailable)
+                   become explicit and visually distinct, with real
+                   Mode/Question-family filters and a Most-recent sort
+                   (replacing the public page's Mode/Competency/Time-window
+                   filters). renderAuthenticatedHistory() (new, JS) reuses
+                   the same v2ReviewedRecords/comparableDimensionGroups/
+                   storageAvailable helpers renderV2History() already
+                   computes with -- no duplicate comparison-gate logic. #}
+                <div class="is-history">
+                    <div class="is-history__head">
+                        <div>
+                            <p class="is__eyebrow">History</p>
+                            <h2 id="is-history-title" class="is__title is__title--section">Your practice in this browser.</h2>
+                            <p class="is__sub" data-is-history-subtitle>Reviewed answers stay in this browser for this account. They do not sync across devices.</p>
+                        </div>
+                        <a class="is__button is__button--primary" href="{{ url_for('interview_studio', mode='me') }}" data-is-history-start>Start Interview Me</a>
+                    </div>
+                    <span id="is-history-summary-label" class="is__sr-only" data-is-history-summary-label>History summary: no reviewed answers yet.</span>
+
+                    <div class="is-history__filters" data-is-history-filter-row>
+                        <label><span class="is__sr-only">Mode</span><select data-is-history-mode><option value="all">All modes</option><option value="me">Interview Me</option><option value="video">Video Practice</option></select></label>
+                        <label><span class="is__sr-only">Question family</span><select data-is-history-family>
+                            <option value="all">All question families</option>
+                            <option value="professional_intro">Professional introduction</option>
+                            <option value="behavioral">Behavioral</option>
+                            <option value="motivation_fit">Motivation and fit</option>
+                            <option value="situational">Situational</option>
+                            <option value="role_specific">Role-specific</option>
+                            <option value="technical_case">Technical or case</option>
+                        </select></label>
+                        <label><span class="is__sr-only">Sort</span><select data-is-history-sort><option value="recent">Most recent</option><option value="oldest">Oldest first</option></select></label>
+                    </div>
+
+                    <ul class="is-history__rows" data-is-history-rows hidden></ul>
+
+                    <div class="is-history__empty" data-is-history-empty-state hidden>
+                        <span class="is-history__empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8.6 7 10 4.2-1.4 7-5.4 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+                        <p class="is-history__status is-history__status--ok"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg> Browser storage is available</p>
+                        <p class="is-history__heading">No reviewed answers yet.</p>
+                        <p>When you ask PeerSlate to review an answer, the reviewed text attempt will appear here.</p>
+                        <p class="is-history__note">You can still practice, type, dictate, and review an answer now.</p>
+                        <div class="is__actions" style="justify-content:center">
+                            <a class="is__button is__button--primary" href="{{ url_for('interview_studio', mode='me') }}">Start Interview Me</a>
+                            <button class="is__button" type="button" data-is-new-session-focus>Change setup</button>
+                        </div>
+                    </div>
+
+                    <div class="is-history__empty" data-is-history-filtered-empty hidden>
+                        <p class="is-history__heading">No practice matches these filters.</p>
+                        <p>Records exist in this browser, but none match the current mode or question-family selection.</p>
+                        <button class="is__button" type="button" data-is-history-reset-filters>Show all practice</button>
+                    </div>
+
+                    <div class="is-history__empty" data-is-history-unavailable-state hidden>
+                        <span class="is-history__empty-icon is-history__empty-icon--warn" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 11h14v9H5z"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><circle cx="18" cy="8" r="3"/><path d="M16.9 6.9l2.2 2.2M19.1 6.9l-2.2 2.2"/></svg></span>
+                        <p class="is-history__status is-history__status--warn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 9v5M12 17v.01"/></svg> Browser storage is unavailable</p>
+                        <p class="is-history__heading">Practice records cannot be read or saved here right now.</p>
+                        <p>PeerSlate cannot read or write Drafts or History in this browser.</p>
+                        <p>You can continue practicing, but this session and reviewed answers may be lost when you leave.</p>
+                        <div class="is__actions" style="justify-content:center">
+                            <a class="is__button is__button--primary" href="{{ url_for('interview_studio', mode='me') }}">Continue without History</a>
+                            <button class="is__button" type="button" data-is-history-retry>Try History again</button>
+                            <button class="is__button" type="button" data-is-history-storage-help>Storage help</button>
+                        </div>
+                        <p class="is-history__note">Nothing was cleared or deleted.</p>
+                    </div>
+
+                    <div class="is-history__cards" data-is-history-cards>
+                        <section class="is__card is-history__card">
+                            <span class="is-history__card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 18v-4M9 18V9M14 18v-8M19 18V6"/></svg></span>
+                            <p class="is-history__card-eyebrow">Comparison status</p>
+                            <p class="is-history__card-heading" data-is-history-comparison-status>Not enough comparable practice yet.</p>
+                            <p data-is-history-comparison-detail>More like-for-like reviewed answers are needed before PeerSlate shows a pattern.</p>
+                        </section>
+                        <section class="is__card is-history__card">
+                            <span class="is-history__card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></span>
+                            <p class="is-history__card-eyebrow" data-is-history-single-review-label>From your recent review</p>
+                            <p class="is-history__card-heading" data-is-history-single-review-headline>Complete a reviewed answer to see a suggestion here.</p>
+                            <p>This comes from one recent coaching review, not a cross-session trend.</p>
+                        </section>
+                        <section class="is__card is-history__card">
+                            <span class="is-history__card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+                            <p class="is-history__card-eyebrow">Browser storage</p>
+                            <p>Drafts and History stay in this browser for this account. They do not sync across devices.</p>
+                            <p class="is-history__card-note">Clearing browser data may remove these practice records.</p>
+                            <button class="is__button is__button--danger" type="button" data-is-history-clear-local>Clear local History</button>
+                        </section>
+                    </div>
+                </div>
+                {%- else %}
                 <p class="is__eyebrow">History · this browser only</p>
                 <div class="is__history-head">
                     <div><h2 id="is-history-title" class="is__title is__title--section">Your practice history on this device.</h2><p class="is__sub">Reviewed answers, retries, question coverage, and coaching carry-through are stored only in this browser.</p></div>
@@ -958,8 +1554,13 @@
                     Practice still works, but drafts and history cannot be saved on this device.
                 </div>
                 <div class="is__band" data-is-storage-ok>
+                    {% if interview_authenticated %}
+                    <strong>This browser, this account.</strong>
+                    Clearing browser data may remove these practice records.
+                    {% else -%}
                     <strong>No account or cloud history.</strong>
                     Clearing browser data, using another browser, or changing devices may remove or hide these records.
+                    {%- endif %}
                 </div>
 
                 <div class="is__content-grid">
@@ -1012,6 +1613,7 @@
                             <h3 class="is__title" style="font-size:1.2rem">Your history does not follow you.</h3>
                             <p style="margin-top:0.6rem;color:var(--is-text-muted);font-size:0.78rem;line-height:1.55">There is no account-backed history or cross-device synchronization in the current public Studio.</p>
                         </section>
+                        {% if not interview_authenticated -%}
                         <section class="is__card is__demo-card" data-is-demo-card>
                             <p class="is__eyebrow">Public demo profile</p>
                             <div class="is__demo-head">
@@ -1023,12 +1625,15 @@
                             </div>
                             <p class="is__demo-note">◈ <span>Grounded only in his approved public résumé.<br><strong>You are not signed in as {{ interview_profile.first_name }}.</strong></span></p>
                         </section>
+                        {%- endif %}
                     </aside>
                 </div>
                 <p class="is__history-disclosure">History in this preview is stored only in this browser for {{ interview_profile.name }}’s public profile. It is not synced to a PeerSlate account.</p>
+                {%- endif %}
             </section>
         </section>
 
+        {% if not interview_authenticated -%}
         <ul class="is__truth" data-is-truth-strip aria-label="Studio truth and privacy summary">
             <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">⇧</span><p>Question text is sent only when you request coaching, a nudge, or an example. Answer text is sent only for coaching.</p></li>
             <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">▤</span><p>Drafts, reviewed attempts, and History are saved only in this browser.</p></li>
@@ -1036,7 +1641,28 @@
             <li class="is__truth-item"><span class="is__truth-icon" aria-hidden="true">◇</span><p>Coaching is question-aware practice, not a prediction about you.</p></li>
         </ul>
         <p style="margin-top:0.65rem;color:var(--is-text-muted);font-size:0.7rem;text-align:center">Public Interview Studio · browser-local practice</p>
+        {%- endif %}
     </div>
+
+    {%- if interview_authenticated %}
+    {# Slice 3: the authenticated shell does not surface a dedicated
+       "Question trail" trigger (not part of the locked rail composition),
+       but `one('[data-is-queue]')` must still resolve -- the flag-off
+       branch keeps its original dialog nested inside its own retired side
+       column (unconditional/untouched, for byte-comparability), so the
+       authenticated branch gets its own copy here. The mobile "Question
+       trail" composer button remains reachable in both branches, inside
+       the shared Interview Me answer form. #}
+    <dialog class="is__dialog is__queue" data-is-queue aria-labelledby="is-queue-title">
+        <div class="is__dialog-head">
+            <div><p class="is__section-label">Current session</p><h2 id="is-queue-title">Up next</h2></div>
+            <div class="is__dialog-actions">
+                <button type="button" class="is__icon-button" aria-label="Close question queue" data-is-queue-close>&times;</button>
+            </div>
+        </div>
+        <ol data-is-queue-list></ol>
+    </dialog>
+    {% endif %}
 
     <dialog class="is__dialog is__custom-question-dialog" data-is-custom-question-dialog aria-labelledby="is-custom-question-title">
         <div class="is__dialog-head">

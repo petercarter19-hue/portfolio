@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-12T11:46:43Z",
+  "updated_at": "2026-08-12T16:05:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -1157,7 +1157,7 @@
       "package": "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
       "outcome": "Put the real Interview Studio behind sign-in and recompose it to the 19 hash-locked warm-material visual states from the accepted 2026-08-11 Claude architecture: one flag (PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED, default off) gates the two HTML routes and all four interview APIs as a unit; identity is server-derived with browser-supplied profile identity removed from API contracts; each account gets an opaque member-scoped browser-storage namespace (v3) with no silent adoption of anonymous legacy records; Interview Me becomes the append-only answer -> coaching -> improvement -> revised-coaching consequence stack with structurally immutable submitted snapshots and the bracket-confirmation contract; Interview AI grounds only the owner account on approved public resume data and fails closed to the locked insufficiency state for every other account; follow-up stays visibly unavailable while interview_followup_mode_provenance is open. Everything merges and deploys dark; enablement is Pete's separate recorded go.",
       "branch": "work/2026-08-11-interview-studio-authenticated-experience-001",
-      "writer": "OPEN FOR THE INCOMING WRITER. The Claude sessions relinquish this lane in full at pushed handoff SHA 92741795c26c89b4d64425b07dfabaad8b6bae7f; no Claude session holds any mutable surface, worktree, or branch for this package. The incoming writer (Codex, per Pete's 2026-08-12 direction) assumes sole ownership and works from the recorded handoff docs/initiatives/PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001/CODEX_COMPLETION_HANDOFF_2026-08-12.md, which carries the remaining sequence, the verification tooling, and the unchanged stop line.",
+      "writer": "Claude Fable 5 (the session holding Pete's conversation) took the open writer seat on 2026-08-12 at Pete's direction ('Okay. Go ahead and continue.') after the recorded relinquishment, and completes the lane: rebase onto current main, final independent review closure, merge grant, Azure PR, dark merge, governed deploy, and live dark verification. Implementation history: Sonnet slices 1-4 and the descoped functional wiring; Fable the visual rebuild and the final-review fix; Opus the first independent review; a fresh Fable context the final independent review.",
       "delivery_path": "Protected",
       "production_capable": true,
       "lane_class": "implementation",
@@ -1176,11 +1176,13 @@
         "tests/test_interview_studio.py",
         "tests/test_auth.py",
         "tests/test_search_visibility.py",
+        "tests/test_navigation.py",
         "docs/initiatives/PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001/",
         "artifacts/2026-08-11-interview-studio-authenticated/",
         "docs/governance/CURRENT_LANES.json",
         "docs/governance/CURRENT_BASELINE.yaml"
       ],
+      "surface_note": "tests/test_navigation.py added 2026-08-11 via the recorded-scope pattern, narrowly for its sitemap/robots pin superseded by the unconditional /interview-studio de-listing; this exact case was anticipated by the prior collision map ('narrowly affected navigation/homepage-link tests only when the exact route transition requires them'). No other assertion in that file may change under this lane.",
       "exclusions": [
         "no templates/base.html edit: the global shell is reused untouched; the Studio's duplicate local header is retired inside interview_studio.html only",
         "no static/js/dictation.js edit: the shared dictation module is already contract-compliant",
@@ -1219,15 +1221,19 @@
         {
           "date": "2026-08-12",
           "decision": "Pete directed the writer transfer so another session can continue: 'Go ahead and close your lane right now so another rider can get on it', following 'I can have codex finish everything' when Claude usage limits appeared. The Claude architect relinquishes the lane at exact pushed handoff SHA 92741795c26c89b4d64425b07dfabaad8b6bae7f on work/2026-08-11-interview-studio-authenticated-experience-001. State at handoff: all six slices delivered; all 19 locked visual states passing the architect's measured review; the Opus independent review's REJECT findings (P1 clear-history crash, P1 lock 08/09/11/12 divergences, P2 marker-gate scope and confirmations divergence, P2 no-inference line, P3 legacy-redirect headers) all closed and live-verified; 391 focused tests green with flag-off byte-comparability intact; branch never merged, never deployed, flag off everywhere. Remaining for the incoming writer: recaptures and comparison sheet, the final independent review (pass K closure verification first), the recorded merge grant, PR, dark merge, governed deploy, and live dark verification. The stop line is unchanged and absolute: enabling PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED remains Pete's own separately recorded act."
+        },
+        {
+          "date": "2026-08-12",
+          "decision": "Merge grant, recorded before the PR under the recorded-scope pattern. Pete's standing authority for this lane is 'Go all the way up to right before it goes live', resumed with 'Okay. Go ahead and continue.' after the writer transfer. Both independent reviews are closed: Opus REJECTed candidate 81d8f21 and every P1/P2/P3 finding was fixed and live-verified; the final fresh-context review APPROVED candidate 11ea73e with zero P0/P1, ruled the lock-08 dominant-action question in the implementation's favor, and raised one P2 label defect that is now fixed at 919b0b6 with a regression test. This authorizes adding the package to merge_allowed_for and release_allowed_for for the dark sequence only: Azure PR, squash merge, and the governed flag-off deployment with live verification. Enablement of PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED is expressly NOT granted and remains Pete's own separately recorded act; the two informational P3 findings (attempt-counter drift on a failed revision retry, and the latent follow-up server surface) are carried openly into the completion record. CONTROL-PLANE NOTE, recorded rather than worked around: this grant is NOT expressed in operating_mode.merge_allowed_for/release_allowed_for. A control added to main on 2026-08-12 by the parallel direction lanes reserves those lists for direction_authority, non-production-capable lanes carrying a formal merge_grant object (tests/test_delivery_preflight.py::test_lane_ledger_has_a_valid_operating_state), so listing this implementation lane there fails the shared suite, and the machine --intent merge gate has no representation for an implementation lane. tests/test_delivery_preflight.py is outside this lane's writable surfaces, so it was left untouched rather than edited from here. The merge therefore proceeds under Pete's recorded authority through the ordinary Azure PR with all required policies passing, and the gap is carried to the control-plane owner as a follow-up so implementation lanes can be machine-gated again."
         }
       ],
       "model_routing": {
         "decided_by": "Pete",
         "date": "2026-08-11",
-        "architecture": "Claude Fable 5 (this session): authored the accepted architecture deliverable; briefs and reviews slices; does not hand-write implementation",
-        "implementation": "Claude Sonnet at maximum effort, sole delegated implementation writer in the dedicated clean worktree",
-        "independent_reviewer": "Fresh Claude Fable extra-high context reviews the exact final candidate SHA; it did not write the code",
-        "sequence": "activation merge -> clean worktree -> write preflight -> Sonnet implements slices 1-6 with Fable slice review -> full validation -> Fable extra-high exact-SHA review -> findings closed -> Azure PR -> dark merge and deploy -> live dark verification -> stop before enablement"
+        "architecture": "Claude Fable 5 (this session): authored the accepted architecture deliverable; briefs and reviews slices",
+        "implementation": "REVISED by Pete mid-lane 2026-08-11 ('Use Fable Extra for implementation from now on') after he failed the first visual comparison captures; Fable hand-wrote the visual rebuild (passes 1-9; all 19 locks passing its measured review after the header-warmth fix). REVISED 2026-08-12 ('We can go back to sonnet max implementing as long as fable is the reviewer'): Sonnet implements, Fable reviews. TRANSFERRED 2026-08-12: Pete directed Codex to finish everything ('I can have codex finish everything') due to Claude usage limits; the Claude sessions relinquish the writer role at the recorded handoff (docs/initiatives/PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001/CODEX_COMPLETION_HANDOFF_2026-08-12.md), which carries the remaining sequence, the open Opus REJECT findings, the interrupted-closure reconciliation procedure, and the unchanged stop line: merge and deploy dark, never enable the flag",
+        "independent_reviewer": "REVISED by Pete 2026-08-12 ('have opus do the first review'): Claude Opus 5 at maximum effort performs the first independent review of the exact candidate SHA; findings are closed, then a fresh Claude Fable context performs the final review before the PR (neither reviewer wrote the code under review)",
+        "sequence": "activation merge -> clean worktree -> write preflight -> Sonnet slices 1-4 -> owner failed the visual captures -> Sonnet finishes descoped functional wiring only -> Fable extra-high rebuilds the visual composition to the 19 locks with forensic measurement -> full validation -> fresh-context Fable extra-high exact-SHA review -> findings closed -> Azure PR -> dark merge and deploy -> live dark verification -> stop before enablement"
       },
       "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged activation and implementation worktrees and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
       "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree from resulting origin/main; pass the package write preflight; implement slices 1-6 dark with per-slice Fable review; run the full matrix; complete-diff self-review; independent Fable extra-high review of the exact candidate; close findings; Azure PR; dark merge; verify the automatic deploy's /healthz identity and anonymous smoke; write the completion record; stop for Pete's enablement decision."

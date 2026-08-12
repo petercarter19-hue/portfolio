@@ -358,13 +358,17 @@ class NavigationTests(unittest.TestCase):
             '/petec/skills',
             '/petec/resume',
             '/petec/slate-board',
-            '/interview-studio',
             '/peerslate',
             '/petec/about',
             '/petec/hobbies',
             '/petec/contact',
             # PS-COMMUNITY-AUTH-WALL-001: no members-only /the-slate route
             # belongs in the public sitemap.
+            # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: sign-in is
+            # required for Interview Studio (architecture 04 section 1), so
+            # /interview-studio is unconditionally removed from the public
+            # sitemap -- see tests/test_search_visibility.py for the
+            # matching robots.txt Disallow coverage.
             '/career-search',
             '/my-network',
             '/explore-profiles',

@@ -80,7 +80,11 @@ def _safe_return_path(candidate, default="/app"):
     # PS-COMMUNITY-AUTH-WALL-001: Community lives behind sign-in, so its
     # namespace joins the private-app namespace as the only permitted
     # post-auth destinations. Every other path stays rejected.
-    allowed = ("/app", "/the-slate")
+    # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: Interview Studio's
+    # canonical namespace joins the same allowlist. This is unconditional
+    # (not flag-gated) — a return_to=/interview-studio round-trip is correct
+    # even while the page is still public (architecture 04 section 1).
+    allowed = ("/app", "/the-slate", "/interview-studio")
     if not any(
         parsed.path == prefix or parsed.path.startswith(prefix + "/")
         for prefix in allowed

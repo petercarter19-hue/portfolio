@@ -34,10 +34,24 @@
     });
 
     var profileSlug = root.getAttribute('data-profile-slug') || 'profile';
+    /* PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 slice 2: an opaque,
+       per-member browser storage namespace the server renders only once an
+       identity is resolved (data-storage-scope absent on the public page).
+       This value is trusted for namespacing only — a cache scope, never an
+       authorization input. */
+    var storageScope = root.getAttribute('data-storage-scope') || '';
+    /* PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 slices 3-4: selects
+       the append-only consequence-stack rendering path and the authenticated
+       shell's copy/behavior deltas. Absent (false) on the public flag-off
+       page -- every branch below is additive and leaves that page's
+       behavior byte-for-byte unchanged. */
+    var authenticated = root.hasAttribute('data-authenticated');
     var studioUrl = root.getAttribute('data-studio-url') || '/interview-studio';
     var live = one('[data-is-live]');
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var storagePrefix = 'peerslate:interview-studio:' + profileSlug + ':v1';
+    var storagePrefix = storageScope
+        ? 'peerslate:interview-studio:' + storageScope + ':v3'
+        : 'peerslate:interview-studio:' + profileSlug + ':v1';
     var historyKey = storagePrefix + ':history';
     var sessionKey = storagePrefix + ':session';
     var writtenPracticeEnabled = root.getAttribute('data-written-practice') === 'enabled';
@@ -330,14 +344,26 @@
     var legacyStoragePrefix = 'peerslate:interview-studio:' + profileSlug + ':v1';
     var legacySessionKey = legacyStoragePrefix + ':session';
     var legacyHistoryKey = legacyStoragePrefix + ':history';
-    storagePrefix = 'peerslate:interview-studio:' + profileSlug + ':v2';
-    historyKey = storagePrefix + ':history';
-    sessionKey = storagePrefix + ':session';
+    /* PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 slice 2: a scoped
+       (signed-in) render keeps the v3 member namespace computed above — it
+       is never re-derived from the anonymous v1/v2 profileSlug prefix here.
+       The public (unscoped) page keeps advancing to its own v2 namespace,
+       unchanged. */
+    if (!storageScope) {
+        storagePrefix = 'peerslate:interview-studio:' + profileSlug + ':v2';
+        historyKey = storagePrefix + ':history';
+        sessionKey = storagePrefix + ':session';
+    }
 
     function migrateLegacyBrowserState() {
         /* V2 uses its own keys so a failed migration never destroys V1 local
            work. Copy browser-only drafts and history once, leaving the V1 copy
-           intact until the visitor clears local Studio data. */
+           intact until the visitor clears local Studio data.
+
+           A scoped (member) namespace never adopts, reads, or deletes the
+           anonymous v1/v2 records (owner decision Q-B) — this returns before
+           touching a single legacy key when a scope is present. */
+        if (storageScope) return;
         try {
             var local = window.localStorage;
             if (local.getItem(historyKey) === null) {
@@ -437,6 +463,20 @@
         }[value] || 'General';
     }
 
+    /* Slice 3: the authenticated rail's CURRENT SESSION summary rows need a
+       readable experience-level label even though that composition drops
+       the standalone [data-is-level] select (not part of the locked rail;
+       see SLICE_NOTES.md). Mirrors the retired select's own option text. */
+    function labelExperienceLevel(value) {
+        return {
+            entry: 'Entry level',
+            experienced: 'Experienced',
+            management: 'Management',
+            leadership: 'Leadership',
+            mixed: 'Mixed'
+        }[value] || 'Experienced';
+    }
+
     // Setup stays wholly local. This bounded, plain-text context is assembled
     // only at an explicit coaching/example request, never while a visitor is
     // configuring or simply practicing a session.
@@ -496,9 +536,11 @@
     }
 
     var persistedSession = readJSON(sessionKey, null);
+    // A scoped (member) namespace never reads the anonymous v1 session key —
+    // no adoption of legacy browser records into a signed-in account.
     var restoredSession = persistedSession && Array.isArray(persistedSession.questionTrail) && persistedSession.questionTrail.length
         ? persistedSession
-        : migrateLegacySession(readJSON(legacySessionKey, null));
+        : (storageScope ? null : migrateLegacySession(readJSON(legacySessionKey, null)));
     var shouldPersistRecoveredSession = Boolean(restoredSession) || persistedSession !== null;
     var session = {
         version: 2,
@@ -548,7 +590,12 @@
     session.currentQuestionIndex = Math.max(0, Math.min(session.currentQuestionIndex, session.questionTrail.length - 1));
 
     function persistSession() {
-        writeJSON(sessionKey, {
+        // PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 slice 2: reuse the
+        // draft-save failure pattern (capture the write result, do not drop
+        // it) rather than silently continuing as if the session had saved.
+        // Full visual states for this come in slice 5; this is the minimal
+        // truthful surface for now.
+        var saved = writeJSON(sessionKey, {
             version: 2,
             sessionId: session.sessionId,
             level: session.level,
@@ -559,13 +606,15 @@
             reviewedQuestionIds: session.reviewedQuestionIds,
             replacementSeen: session.replacementSeen
         });
+        if (!saved) announce('Your session progress could not be saved in this browser right now.');
         updateSetupSummary();
+        return saved;
     }
     if (shouldPersistRecoveredSession) persistSession();
     function updateSetupSummary() {
         var summary = one('[data-is-setup-summary-text]');
         var levelOption = levelSelect && levelSelect.options[levelSelect.selectedIndex];
-        var levelLabel = levelOption ? levelOption.text : session.level;
+        var levelLabel = levelOption ? levelOption.text : labelExperienceLevel(session.level);
         if (summary) {
             summary.textContent = contextLabel(session.context) + ' / ' + labelInterviewStage(session.context.interview_stage) + ' / ' + levelLabel + ' / ' + labelFamily(session.family) + ' / open session';
         }
@@ -574,6 +623,13 @@
         text(one('[data-is-rail-context]'), contextLabel(session.context));
         text(one('[data-is-rail-stage]'), 'Stage: ' + labelInterviewStage(session.context.interview_stage));
         text(one('[data-is-rail-mix]'), 'Mix: ' + labelFamily(session.family));
+        /* Slice 3 authenticated rail: five discrete CURRENT SESSION rows
+           (visuals 01-12, 15-17) instead of the public page's one
+           slash-joined summary line. */
+        text(one('[data-is-rail-summary-context]'), contextLabel(session.context));
+        text(one('[data-is-rail-summary-stage]'), labelInterviewStage(session.context.interview_stage) + ' stage');
+        text(one('[data-is-rail-summary-level]'), levelLabel);
+        text(one('[data-is-rail-summary-family]'), labelFamily(session.family));
     }
 
     function currentQuestion() {
@@ -581,7 +637,13 @@
     }
 
     var modeTabs = all('[data-is-mode]');
-    var modeNavigation = one('.is__modes');
+    /* The public header uses .is__modes; the authenticated rail's tablist is
+       .is-auth__modes (never both in the same render). Falling back keeps
+       the existing role="tablist" bookkeeping (below, and in
+       showHistoryView()/showOrientationView()) and roving-tabindex arrow-key
+       navigation working for the authenticated branch too -- slice 3 left
+       this null for authenticated, which silently dropped both. */
+    var modeNavigation = one('.is__modes') || one('.is-auth__modes');
     var historyLink = one('[data-is-history-link]');
     var panels = all('[data-is-panel]');
     var orientationPanel = one('[data-is-panel="orientation"]');
@@ -649,9 +711,20 @@
     var cancelReviewButton = one('[data-is-cancel-review]');
     var reviewError = one('[data-is-review-error]');
     var reviewErrorText = one('[data-is-review-error-text]');
+    /* Slice 4 (visual 03): "We couldn't review this answer right now." vs
+       the flag-off "Coaching could not be completed." No new data-is-*
+       attribute is added to this shared, unconditional element (it would
+       change the byte-comparable public render) -- the heading is found
+       structurally instead, exactly like the JS already does for the
+       error text next to it. */
+    var reviewErrorHeading = reviewError ? one('strong', reviewError) : null;
     var errorActions = one('[data-is-error-actions]');
     var retryCoachingButton = one('[data-is-retry-coaching]');
     var keepEditingButton = one('[data-is-keep-editing]');
+    if (authenticated) {
+        text(retryCoachingButton, 'Try review again');
+        text(keepEditingButton, 'Continue editing');
+    }
     var submittedLabel = one('[data-is-submitted-label]');
     var improveError = one('[data-is-improve-error]');
     var reviewController = null;
@@ -691,6 +764,19 @@
         if (media.stream) {
             media.stream.getTracks().forEach(function (track) { track.stop(); });
             media.stream = null;
+        }
+        /* Architecture 03 section 4, item 2: releaseMedia() itself must
+           guarantee playbackUrl revocation on every discard/teardown path
+           rather than relying on every caller to separately remember to call
+           resetVideoUi() afterward (every current call site already does,
+           but that is caller discipline, not a structural guarantee -- a
+           future call site that discards media without resetting the UI
+           would otherwise leak the object URL until pagehide). Revoking here
+           too is a harmless no-op wherever resetVideoUi() already revoked it
+           (media.playbackUrl is already null by then). */
+        if (discardRecording && media.playbackUrl) {
+            URL.revokeObjectURL(media.playbackUrl);
+            media.playbackUrl = null;
         }
     }
 
@@ -734,9 +820,14 @@
         });
         panels.forEach(function (panel) { panel.hidden = panel.getAttribute('data-is-panel') !== mode; });
         refreshAutogrow(one('[data-is-panel="' + mode + '"]'));
-        setHidden(controls, false);
+        /* Slice 3: the authenticated setup form is a focused attached
+           surface that starts (and stays, across mode switches) hidden
+           until "Change setup"/"New session"/"Session" explicitly opens it
+           -- unlike the public page, where this bar is always shown. */
+        if (!authenticated) setHidden(controls, false);
         if (historyLink) historyLink.removeAttribute('aria-current');
         syncModeControls(mode);
+        syncModeToggle(mode);
         syncQuestionChangeControls();
         if (updateUrl) window.history.pushState({ interviewMode: mode }, '', studioUrl + '?mode=' + encodeURIComponent(mode));
         announce(mode === 'ai' ? 'Interview AI selected.' : mode === 'video' ? 'Video Practice selected.' : 'Interview Me selected.');
@@ -761,6 +852,60 @@
             if (target && setMode(target.getAttribute('data-is-mode'), true)) target.focus();
         });
     });
+
+    /* R1 (slice 5-6 review): below the rail breakpoint, the mode nav is a
+       collapsed "Interview Me ▾" dropdown (locked visual 13), not three
+       reflowed pills. This wraps the SAME tablist markup (no duplicate
+       data-is-mode elements, so the click/keydown wiring above already
+       covers activation) -- only visible below the CSS breakpoint; on the
+       desktop rail modeToggle stays display:none and modePicker never opens. */
+    var modePicker = one('[data-is-mode-picker]');
+    var modeToggle = one('[data-is-mode-toggle]');
+    var modeToggleLabel = one('[data-is-mode-toggle-label]');
+    var modeToggleIcon = one('[data-is-mode-toggle-icon]');
+
+    function closeModePicker(returnFocus) {
+        if (!modePicker) return;
+        modePicker.setAttribute('data-is-open', 'false');
+        if (modeToggle) modeToggle.setAttribute('aria-expanded', 'false');
+        if (returnFocus && modeToggle) modeToggle.focus();
+    }
+    function modePickerIsOpen() {
+        return Boolean(modePicker && modePicker.getAttribute('data-is-open') === 'true');
+    }
+    function syncModeToggle(mode) {
+        if (!modeToggle) return;
+        var activeTab = modeTabs.filter(function (tab) { return tab.getAttribute('data-is-mode') === mode; })[0];
+        if (!activeTab) return;
+        var label = one('span', activeTab);
+        if (modeToggleLabel && label) modeToggleLabel.textContent = label.textContent.trim();
+        var sourceIcon = one('svg', activeTab);
+        if (modeToggleIcon && sourceIcon) modeToggleIcon.innerHTML = sourceIcon.innerHTML;
+    }
+    if (modeToggle && modePicker) {
+        modeToggle.addEventListener('click', function () {
+            if (modePickerIsOpen()) {
+                closeModePicker(false);
+                return;
+            }
+            modePicker.setAttribute('data-is-open', 'true');
+            modeToggle.setAttribute('aria-expanded', 'true');
+        });
+        document.addEventListener('click', function (event) {
+            if (!modePickerIsOpen() || modePicker.contains(event.target)) return;
+            closeModePicker(false);
+        });
+        modePicker.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && modePickerIsOpen()) {
+                event.preventDefault();
+                closeModePicker(true);
+            }
+        });
+        modeTabs.forEach(function (tab) {
+            tab.addEventListener('click', function () { closeModePicker(false); });
+        });
+        syncModeToggle(session.mode);
+    }
 
     if (historyLink) {
         historyLink.addEventListener('click', function (event) {
@@ -895,6 +1040,7 @@
         answer.readOnly = false;
         answeringBlock.removeAttribute('aria-busy');
         setHidden(reviewingBlock, true);
+        setAuthPendingBand(false);
         setHidden(submittedBlock, true);
         setHidden(feedbackBlock, true);
         setHidden(feedbackEmpty, false);
@@ -915,6 +1061,7 @@
         autoGrowTextarea(answerContext);
         setHidden(one('[data-is-answer-context-form]'), true);
         one('[data-is-add-answer-context]').setAttribute('aria-expanded', 'false');
+        if (authenticated) resetConsequenceStack();
         setStage(1);
         syncAnswerState();
     }
@@ -923,7 +1070,11 @@
         var stored = readJSON(draftKey(currentQuestion().text), null);
         answer.value = stored && typeof stored.text === 'string' ? stored.text : '';
         syncAnswerState();
-        text(autosave, answer.value ? 'Restored from this browser' : 'Draft ready');
+        if (answer.value) {
+            setAutosaveState('restored', 'Restored from this browser');
+        } else {
+            setAutosaveState('ready', 'Draft ready');
+        }
     }
 
     function updateUpNextCount(value) {
@@ -1016,15 +1167,29 @@
         autoGrowTextarea(answer);
     }
 
+    // The locked authenticated card shows only the word count in steady
+    // state; the autosave line surfaces visually only while saving or on a
+    // real failure (state attribute consumed by the authenticated CSS —
+    // public rendering is unchanged because public CSS ignores it).
+    function setAutosaveState(state, message) {
+        if (!autosave) return;
+        autosave.setAttribute('data-autosave-state', state);
+        text(autosave, message);
+    }
+
     function saveDraft(showStatus) {
         window.clearTimeout(autosaveTimer);
         autosaveTimer = null;
-        if (showStatus) text(autosave, 'Saving…');
+        if (showStatus) setAutosaveState('saving', 'Saving…');
         var ok = writeJSON(draftKey(currentQuestion().text), {
             text: answer.value,
             savedAt: new Date().toISOString()
         });
-        text(autosave, ok ? 'Saved in this browser' : 'Save failed — your text is still here');
+        if (ok) {
+            setAutosaveState('saved', 'Saved in this browser');
+        } else {
+            setAutosaveState('failed', 'Save failed — your text is still here');
+        }
         return ok;
     }
 
@@ -1036,13 +1201,13 @@
             saveDraft(false);
         } else {
             removeStored(draftKey(currentQuestion().text));
-            text(autosave, 'Draft ready');
+            setAutosaveState('ready', 'Draft ready');
         }
     }
 
     answer.addEventListener('input', function () {
         syncAnswerState();
-        text(autosave, 'Saving…');
+        setAutosaveState('saving', 'Saving…');
         window.clearTimeout(autosaveTimer);
         autosaveTimer = window.setTimeout(function () { saveDraft(false); }, 700);
     });
@@ -1198,6 +1363,10 @@
         persistSession();
         if (!setMode(nextMode, true)) return;
         renderQuestion();
+        if (authenticated) {
+            if (sessionSetupSection) setHidden(sessionSetupSection, true);
+            setFinishSessionCompleted(false);
+        }
         if (nextMode === 'me') answer.focus();
         else if (nextMode === 'video') cameraEnable.focus();
         else if (aiQuestionInput) aiQuestionInput.focus();
@@ -1209,8 +1378,18 @@
     syncNewSessionInputs();
     if (sessionKindSelect) sessionKindSelect.addEventListener('change', syncNewSessionFields);
     if (newSessionForm) newSessionForm.addEventListener('submit', startNewSession);
+    var sessionSetupSection = one('[data-is-session-setup]');
     all('[data-is-new-session-focus]').forEach(function (newSessionFocus) {
         newSessionFocus.addEventListener('click', function () {
+            /* Slice 3: the authenticated rail's "Change setup"/"New
+               session"/"Session" controls are the only way to reach the
+               setup form -- it starts hidden (architecture 03 section 6,
+               "focused attached surface") instead of sitting permanently
+               above the question like the public page. */
+            if (authenticated && sessionSetupSection) {
+                setHidden(sessionSetupSection, false);
+                sessionSetupSection.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+            }
             if (sessionKindSelect) sessionKindSelect.focus();
         });
     });
@@ -1584,7 +1763,6 @@
         text(one('[data-is-nudge-status]', panel), 'Preparing a few question-specific hints…');
         setHidden(one('[data-is-nudge-retry]', panel), true);
         postJSON('/api/interview/nudge', {
-            profile_slug: profileSlug,
             question: nudgeQuestion,
             level: session.level,
             family: currentQuestion().family,
@@ -1746,10 +1924,15 @@
         return readHistoryStore().map(sanitizeHistoryRecord).filter(Boolean);
     }
 
+    // PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 slice 2: each mutator
+    // now returns the real write outcome (the draft-save failure pattern)
+    // instead of discarding it, so a caller can surface a truthful result
+    // rather than claim a save/delete that did not happen. Full visual
+    // states for this come in slice 5.
     function addHistoryRecord(record) {
         var records = readHistoryStore();
         records.unshift(record);
-        writeJSON(historyKey, records.slice(0, 100));
+        return writeJSON(historyKey, records.slice(0, 100));
     }
 
     function updateHistoryRecord(recordId, updates) {
@@ -1759,16 +1942,16 @@
             found = true;
             return Object.assign({}, record, updates, { createdAt: record.createdAt });
         });
-        if (found) writeJSON(historyKey, records);
-        return found;
+        if (!found) return false;
+        return writeJSON(historyKey, records);
     }
 
     function removeHistoryRecord(recordId) {
-        if (!recordId) return;
+        if (!recordId) return true;
         var records = readHistoryStore().filter(function (record) {
             return !record || typeof record !== 'object' || Array.isArray(record) || record.id !== recordId;
         });
-        writeJSON(historyKey, records);
+        return writeJSON(historyKey, records);
     }
 
     // A review list can legitimately be empty: the coach sets a maximum of four
@@ -1813,6 +1996,674 @@
     function readableDimensionKey(key) {
         return String(key || '').replace(/_/g, ' ').replace(/(^|\s)(\S)/g, function (_match, prefix, letter) {
             return prefix + letter.toUpperCase();
+        });
+    }
+
+    /* =======================================================================
+       Slice 4: the authenticated Interview Me append-only consequence stack
+       (architecture 03 section 1-2). Everything in this block only runs
+       when `authenticated` is true. It is purely additive: renderReview,
+       requestImprovement, and every fixed-slot element above remain exactly
+       as written for the flag-off public page, and this block never edits
+       them -- it builds separate DOM nodes fed by the same validated
+       server payloads and appends them into the stack instead.
+       ======================================================================= */
+
+    /* Request binding (slice 4 item 6): extends the existing epoch counters
+       (reviewRequestId/improveRequestId) with the session/context/question/
+       attempt identity that was active when the request was made. A late
+       response is dropped if ANY element changed, not only the epoch --
+       closing the mode/question-change races a bare integer counter alone
+       cannot see. */
+    function currentRequestBinding() {
+        return {
+            sessionId: session.sessionId,
+            contextId: session.context.context_id,
+            questionId: questionId(currentQuestion()),
+            attemptNumber: session.attemptNumber
+        };
+    }
+    function bindingStillCurrent(binding) {
+        var now = currentRequestBinding();
+        return binding.sessionId === now.sessionId
+            && binding.contextId === now.contextId
+            && binding.questionId === now.questionId
+            && binding.attemptNumber === now.attemptNumber;
+    }
+
+    function resetDraftBadge() {
+        var badge = one('[data-is-draft-badge]');
+        text(badge, 'Draft');
+        if (badge) badge.classList.remove('is-auth__badge--warning');
+    }
+
+    /* Lock 03 failure composition: the retry pair replaces the primary
+       INSIDE the action band ("Try review again" first, then "Continue
+       editing"), and the red banner sits directly below the band. The
+       public layout keeps its own arrangement, so this is a one-time
+       authenticated DOM relocation, not shared-markup churn. */
+    if (authenticated) (function () {
+        var band = one('.is-auth__band');
+        var errActions = one('[data-is-error-actions]');
+        var alertBox = one('[data-is-review-error]');
+        var retryBtn = one('[data-is-retry-coaching]');
+        var keepBtn = one('[data-is-keep-editing]');
+        /* The band is a sibling of the form (lock order: composer/submitted
+           card first, band beneath), so it survives the pending state's
+           form hide. The submit button keeps its form association by id. */
+        var submittedCard = one('[data-is-submitted]');
+        if (band && submittedCard) submittedCard.insertAdjacentElement('afterend', band);
+        var reviewSubmit = one('[data-is-review]');
+        if (reviewSubmit) reviewSubmit.setAttribute('form', 'is-answer-form');
+        if (band && errActions) band.insertBefore(errActions, band.firstChild);
+        if (band && alertBox) band.insertAdjacentElement('afterend', alertBox);
+        if (retryBtn) retryBtn.textContent = 'Try review again';
+        if (keepBtn) keepBtn.textContent = 'Continue editing';
+        /* Lock order: card, band, then the transmission truth and the quiet
+           dictation note beneath the band. */
+        var transmitLine = one('.is-auth__transmit-line');
+        var dictationNote = one('.is__dictation-note');
+        if (band && transmitLine) band.insertAdjacentElement('afterend', transmitLine);
+        if (transmitLine && dictationNote) transmitLine.insertAdjacentElement('afterend', dictationNote);
+
+        /* Lock 02 pending composition: the band stays visible — a
+           Reviewing cell (spinner + the exact lock copy) replaces the
+           primary, Cancel stays live beside it, and the question/coaching
+           groups render disabled. The shared processing banner is the
+           public page's surface; the authenticated one is this cell. */
+        if (band) {
+            var pendingCell = document.createElement('div');
+            pendingCell.className = 'is-auth__pending-cell';
+            pendingCell.hidden = true;
+            pendingCell.innerHTML =
+                '<span class="is__spinner" aria-hidden="true"></span>' +
+                '<span class="is-auth__pending-copy"><strong>Reviewing your answer…</strong>' +
+                '<small>Your answer stays here while coaching is prepared.</small></span>';
+            band.insertBefore(pendingCell, band.firstChild);
+            var cancelBtn = one('[data-is-cancel-review]');
+            if (cancelBtn) pendingCell.appendChild(cancelBtn);
+        }
+    })();
+
+    function setAuthPendingBand(pending) {
+        if (!authenticated) return;
+        var band = one('.is-auth__band');
+        if (!band) return;
+        band.classList.toggle('is-auth__band--pending', pending);
+        var cell = one('.is-auth__pending-cell', band);
+        if (cell) setHidden(cell, !pending);
+        all('.is-auth__group-btn', band).forEach(function (button) {
+            button.disabled = pending;
+        });
+    }
+
+    /* The stack is not a new wrapper element (that would add bytes to the
+       shared, byte-comparable answering-form markup) -- it is simply the
+       existing parent that already holds the live composer/submitted/
+       reviewing/error group. New permanent blocks are inserted directly
+       before that group, in causal (append) order; the group itself is
+       always the last, currently-live thing in the stack. */
+    function stackAnchor() { return answeringBlock.parentNode; }
+    function appendStackNode(node) {
+        stackAnchor().insertBefore(node, answeringBlock);
+        return node;
+    }
+
+    function resetConsequenceStack() {
+        var anchor = stackAnchor();
+        all('[data-is-stack-node]', anchor).forEach(function (node) { node.remove(); });
+        resetDraftBadge();
+        /* Review finding P1-2d (lock 11): the rail's "Completed questions"
+           group only makes sense while the Session Complete panel is
+           showing; clearReviewState() (which calls this) already fires on
+           every path that leaves it (a new question, a new session), so
+           clearing it here removes it exactly when the lock implies. */
+        var railCompleted = one('[data-is-rail-completed]');
+        if (railCompleted) {
+            setHidden(railCompleted, true);
+            var railCompletedList = one('[data-is-rail-completed-list]');
+            if (railCompletedList) railCompletedList.replaceChildren();
+        }
+    }
+
+    function appendAnswerSnapshot(label, answerText) {
+        var card = document.createElement('div');
+        card.className = 'is-stack__answer-snapshot';
+        card.setAttribute('data-is-stack-node', '');
+        var badge = document.createElement('p');
+        badge.className = 'is-stack__answer-label';
+        badge.textContent = label;
+        var body = document.createElement('p');
+        body.textContent = answerText;
+        card.append(badge, body);
+        return appendStackNode(card);
+    }
+
+    function makeActionButton(kind, label, onClick) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'is-stack__action-btn is-stack__action-btn--' + kind;
+        button.textContent = label;
+        if (onClick) button.addEventListener('click', onClick);
+        return button;
+    }
+    function makeCompletedChip(label) {
+        var span = document.createElement('span');
+        span.className = 'is-stack__action-chip';
+        span.textContent = label;
+        return span;
+    }
+
+    function buildCoachingList(container, label, items, emptyMessage) {
+        var col = document.createElement('div');
+        col.className = 'is-stack__summary-col';
+        var h5 = document.createElement('h5');
+        h5.textContent = label;
+        var ul = document.createElement('ul');
+        (items && items.length ? items : [emptyMessage]).forEach(function (item) {
+            var li = document.createElement('li');
+            li.textContent = item;
+            ul.appendChild(li);
+        });
+        col.append(h5, ul);
+        container.appendChild(col);
+    }
+
+    /* Builds one appended CoachingSection (first attempt, visuals 04a/04b)
+       or RevisedCoachingSection (a later attempt, visual 06). Returns the
+       section element and its still-empty FINAL ACTIONS row so the caller
+       (which knows the causal state -- first review vs. a revision) wires
+       the right buttons. */
+    function buildCoachingSection(review, revised) {
+        var section = document.createElement('section');
+        section.className = 'is-stack__coaching';
+        section.setAttribute('data-is-stack-node', '');
+        section.tabIndex = -1;
+
+        var eyebrow = document.createElement('p');
+        eyebrow.className = 'is-stack__eyebrow';
+        eyebrow.textContent = revised ? 'Revised coaching' : 'Coaching review';
+        var heading = document.createElement('h3');
+        heading.className = 'is-stack__heading';
+        heading.textContent = review.verdict || (revised ? 'Your revision is reviewed.' : 'Your answer is reviewed.');
+        section.append(eyebrow, heading);
+
+        var grid = document.createElement('div');
+        grid.className = 'is-stack__summary-grid';
+        if (revised) {
+            buildCoachingList(grid, 'What changed', review.strengths, review.encouragement || EMPTY_STRENGTHS_MESSAGE);
+            buildCoachingList(grid, 'What still needs work', review.improvements, EMPTY_IMPROVEMENTS_MESSAGE);
+            buildCoachingList(grid, 'Next focus', [review.focusedFollowUp || (review.improvements && review.improvements[0]) || 'Keep refining the strongest example you have.']);
+        } else {
+            /* Lock 04a column semantics: WHAT'S WORKING carries what came
+               through plus named strengths; TRY THIS NEXT carries forward
+               guidance (the next actions of not-yet-clear dimensions, falling
+               back to the focused follow-up) -- never the what-came-through
+               list. */
+            var working = [];
+            (review.whatCameThroughClearly || []).concat(review.strengths || []).forEach(function (item) {
+                if (item && working.indexOf(item) === -1 && working.length < 4) working.push(item);
+            });
+            var tryNext = (review.dimensions || [])
+                .filter(function (d) { return d.status !== 'clear' && d.status !== 'strong'; })
+                .map(function (d) { return d.nextAction; })
+                .filter(Boolean)
+                .slice(0, 3);
+            if (!tryNext.length && review.focusedFollowUp) tryNext = [review.focusedFollowUp];
+            buildCoachingList(grid, "What's working", working, EMPTY_STRENGTHS_MESSAGE);
+            buildCoachingList(grid, 'Strengthen it', review.improvements, EMPTY_IMPROVEMENTS_MESSAGE);
+            buildCoachingList(grid, 'Try this next', tryNext, 'Keep refining the strongest example you have.');
+        }
+        section.appendChild(grid);
+
+        if (!revised) {
+            var approach = document.createElement('p');
+            approach.className = 'is-stack__approach';
+            var approachLabel = document.createElement('strong');
+            approachLabel.textContent = 'Stronger approach. ';
+            approach.append(approachLabel, document.createTextNode(review.strongerApproach || ''));
+            section.appendChild(approach);
+
+            var table = document.createElement('table');
+            table.className = 'is-stack__table';
+            var tableBody = document.createElement('tbody');
+            (review.dimensions || []).forEach(function (dimension) {
+                var row = document.createElement('tr');
+                var th = document.createElement('th');
+                th.textContent = readableDimensionKey(dimension.key);
+                var statusCell = document.createElement('td');
+                var statusSpan = document.createElement('span');
+                statusSpan.className = 'is-stack__status';
+                statusSpan.setAttribute('data-status', dimension.status);
+                statusSpan.textContent = readableDimensionKey(dimension.status);
+                statusCell.appendChild(statusSpan);
+                var explainCell = document.createElement('td');
+                /* Lock 04b's third column reads as guidance ("Add a concrete
+                   example…"), which is the dimension's next action; the
+                   rationale backs the status and travels in the tooltip. */
+                explainCell.textContent = dimension.nextAction || dimension.rationale;
+                if (dimension.rationale) explainCell.title = dimension.rationale;
+                row.append(th, statusCell, explainCell);
+                tableBody.appendChild(row);
+            });
+            table.appendChild(tableBody);
+            section.appendChild(table);
+
+            var evidenceEyebrow = document.createElement('p');
+            evidenceEyebrow.className = 'is-stack__eyebrow is-stack__eyebrow--sub';
+            evidenceEyebrow.textContent = 'Relevant evidence';
+            var evidence = document.createElement('p');
+            evidence.className = 'is-stack__evidence';
+            evidence.textContent =
+                (review.evidenceSuggestions && review.evidenceSuggestions.length)
+                    ? 'A relevant evidence suggestion is available in your practice history.'
+                    : 'No authorized evidence suggestion is available for this answer.';
+            section.append(evidenceEyebrow, evidence);
+
+            var actionsEyebrow = document.createElement('p');
+            actionsEyebrow.className = 'is-stack__eyebrow is-stack__eyebrow--sub';
+            actionsEyebrow.textContent = 'Final actions';
+            section.appendChild(actionsEyebrow);
+        }
+
+        var actions = document.createElement('div');
+        actions.className = 'is-stack__actions';
+        section.appendChild(actions);
+
+        var authority = document.createElement('p');
+        authority.className = 'is-stack__authority';
+        authority.textContent = 'Coaching is guidance. Your answer remains yours.';
+        section.appendChild(authority);
+
+        return { section: section, actions: actions, heading: heading };
+    }
+
+    function revealAppendedSection(target) {
+        if (!target) return;
+        target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
+        target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest' });
+    }
+
+    function goToNextQuestion() {
+        var source = session.reviewSource;
+        if (source === 'video') {
+            if (!setMode('video', true)) return;
+            resetVideoUi();
+            advanceQuestion('video');
+            return;
+        }
+        advanceQuestion();
+    }
+
+    /* Appends the frozen AnswerCard snapshot and its CoachingSection for one
+       validated attempt (architecture 03 section 1). `attemptNumber` is the
+       attempt this answer belongs to (1 = the original answer, 2+ = a
+       reviewed revision). */
+    function appendAuthenticatedAttempt(answerText, review, attemptNumber) {
+        var revised = attemptNumber > 1;
+        setHidden(submittedBlock, true);
+
+        if (revised) {
+            var context = document.createElement('p');
+            context.className = 'is-stack__context-note';
+            context.setAttribute('data-is-stack-node', '');
+            context.textContent = 'Original answer and first coaching remain above.';
+            appendStackNode(context);
+        }
+
+        appendAnswerSnapshot(
+            revised ? 'Reviewed revision · Attempt ' + attemptNumber : 'Reviewed answer',
+            answerText
+        );
+
+        var built = buildCoachingSection(review, revised);
+        appendStackNode(built.section);
+
+        if (revised) {
+            built.actions.append(
+                makeActionButton('primary', 'Next question', function () { goToNextQuestion(); }),
+                makeActionButton('secondary', 'Revise again', function () { startAuthenticatedImprove(review); }),
+                makeActionButton('secondary', 'Finish session', function () { finishCurrentSession(); }),
+                makeCompletedChip('Revision reviewed')
+            );
+        } else {
+            var improveButton = makeActionButton('primary', 'Improve My Answer', function () {
+                improveButton.replaceWith(makeCompletedChip('Improvement draft created'));
+                startAuthenticatedImprove(review);
+            });
+            built.actions.append(
+                improveButton,
+                makeActionButton('secondary', 'Next question', function () { goToNextQuestion(); })
+            );
+        }
+
+        revealAppendedSection(built.heading);
+    }
+
+    /* ---------------------------------------------------------------------
+       Slice 4 marker contract (architecture 03 section 2). Matches the same
+       narrow imperative-sentence-in-brackets shape the server extracts into
+       `confirmations` (app.py _IMPROVEMENT_MARKER_PATTERN) so client-side
+       counting and the server-side re-validation agree on what counts as an
+       unresolved marker; a candidate's own incidental bracket use never
+       matches.
+       --------------------------------------------------------------------- */
+    var IMPROVEMENT_MARKER_PATTERN = /\[[A-Z][a-zA-Z]*\s[^[\]]*\.\]/g;
+    function unresolvedMarkerCount(draftText) {
+        var matches = String(draftText || '').match(IMPROVEMENT_MARKER_PATTERN);
+        return matches ? matches.length : 0;
+    }
+
+    /* R2 (slice 5-6 review): "Add context or evidence" is a PRESERVED
+       capability (handoff: "improve/add context" may not disappear; visuals
+       05/14b show it). Builds the same 1,200-char confirmed-context field
+       and evidence-suggestion checkboxes the public "Make it more yours"
+       flow already has (data-is-answer-context / data-is-evidence-choice),
+       as new stack-appended nodes fed by the SAME review.evidenceSuggestions
+       payload buildCoachingSection's "Relevant evidence" line already uses.
+       Owner-only in practice: a non-owner's #is-evidence-data island is
+       empty (slice 2), so evidenceById never resolves a suggestion id and
+       the fallback copy renders instead -- no separate owner check needed
+       here. */
+    function buildImproveContextForm(review, onSubmit) {
+        var toggle = makeActionButton('secondary', 'Add context or evidence', function () {
+            var opening = form.hidden;
+            setHidden(form, !opening);
+            toggle.setAttribute('aria-expanded', opening ? 'true' : 'false');
+            if (opening) textarea.focus();
+        });
+        toggle.classList.add('is-stack__context-toggle');
+        toggle.setAttribute('aria-expanded', 'false');
+
+        var form = document.createElement('form');
+        form.className = 'is-stack__context-form';
+        form.hidden = true;
+
+        var suggestions = (review.evidenceSuggestions || []).filter(function (suggestion) {
+            return Boolean(evidenceById[suggestion.evidenceId]);
+        });
+        if (suggestions.length) {
+            var fieldsetLabel = document.createElement('p');
+            fieldsetLabel.className = 'is-stack__context-form-label';
+            fieldsetLabel.textContent = 'Relevant history you may have missed';
+            form.appendChild(fieldsetLabel);
+            var options = document.createElement('div');
+            options.className = 'is-stack__context-evidence-options';
+            suggestions.forEach(function (suggestion) {
+                var item = evidenceById[suggestion.evidenceId];
+                var label = document.createElement('label');
+                label.className = 'is-stack__context-evidence-option';
+                label.title = suggestion.opportunity;
+                var input = document.createElement('input');
+                input.type = 'checkbox';
+                input.value = item.id;
+                input.setAttribute('data-is-stack-evidence-choice', '');
+                var chip = document.createElement('span');
+                chip.textContent = item.metric + ' — ' + item.label;
+                label.append(input, chip);
+                options.appendChild(label);
+            });
+            form.appendChild(options);
+        } else {
+            var noEvidence = document.createElement('p');
+            noEvidence.className = 'is-stack__evidence';
+            noEvidence.textContent = 'No authorized evidence suggestion is available for this answer.';
+            form.appendChild(noEvidence);
+        }
+
+        var textareaLabel = document.createElement('label');
+        textareaLabel.textContent = 'A real detail to include';
+        var textarea = document.createElement('textarea');
+        textarea.maxLength = 1200;
+        textarea.setAttribute('data-is-stack-answer-context', '');
+        textarea.placeholder = 'Add a responsibility, action, result, or detail that is true for you…';
+        form.append(textareaLabel, textarea);
+
+        var formActions = document.createElement('div');
+        formActions.className = 'is-stack__actions';
+        var updateButton = makeActionButton('primary', 'Update the draft', null);
+        updateButton.type = 'submit';
+        var cancelButton = makeActionButton('secondary', 'Cancel', function () {
+            setHidden(form, true);
+            toggle.setAttribute('aria-expanded', 'false');
+        });
+        formActions.append(updateButton, cancelButton);
+        form.appendChild(formActions);
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            if (updateButton.disabled) return;
+            var selectedIds = all('[data-is-stack-evidence-choice]', form)
+                .filter(function (input) { return input.checked; })
+                .map(function (input) { return input.value; });
+            var contextText = textarea.value.trim();
+            updateButton.disabled = true;
+            onSubmit(selectedIds, contextText, function () {
+                updateButton.disabled = false;
+            });
+        });
+
+        return { toggle: toggle, form: form };
+    }
+
+    function appendAuthenticatedImprovement(payload, review, question, priorAnswer) {
+        var section = document.createElement('section');
+        section.className = 'is-stack__coaching is-stack__improve';
+        section.setAttribute('data-is-stack-node', '');
+        section.tabIndex = -1;
+
+        /* Review finding P2-2: confirmations[] (app.py
+           validate_interview_improvement, the same extraction the server
+           re-validates a revision against) is the canonical marker list --
+           counting by literal string containment against the draft can
+           never disagree with what the server actually found in this
+           exact draft, unlike the client regex re-deriving its own
+           opinion. The regex (IMPROVEMENT_MARKER_PATTERN, still matched to
+           the server's pattern shape) is now only a fallback for the
+           unexpected case confirmations is absent. Re-assigned below
+           whenever a new payload arrives (the R2 "Add context or
+           evidence" resubmission gets its own confirmations list). */
+        var confirmations = Array.isArray(payload.confirmations) ? payload.confirmations : null;
+
+        var eyebrow = document.createElement('p');
+        eyebrow.className = 'is-stack__eyebrow';
+        eyebrow.textContent = 'Improve your answer';
+        var heading = document.createElement('h3');
+        heading.className = 'is-stack__heading';
+        heading.textContent = 'Strengthen your answer with a real detail.';
+        var basis = document.createElement('p');
+        basis.className = 'is-stack__evidence';
+        function setBasis(currentPayload) {
+            basis.textContent = 'Based on: your submitted answer' + (
+                currentPayload.evidenceUsed && currentPayload.evidenceUsed.length ? ' · approved evidence selected' : ' · no approved evidence selected'
+            );
+        }
+        setBasis(payload);
+        section.append(eyebrow, heading, basis);
+
+        var contextParts = buildImproveContextForm(review, function (selectedIds, contextText, done) {
+            startAuthenticatedImprove(review, selectedIds, contextText, function (updatedPayload) {
+                done();
+                draft.value = updatedPayload.draft;
+                confirmations = Array.isArray(updatedPayload.confirmations) ? updatedPayload.confirmations : null;
+                setBasis(updatedPayload);
+                syncMarkers();
+                autoGrowTextarea(draft);
+                setHidden(contextParts.form, true);
+                contextParts.toggle.setAttribute('aria-expanded', 'false');
+                announce('Coach-assisted draft updated with the context you supplied. Verify the wording before using it.');
+            }, function () {
+                done();
+                announce('That update did not complete. Your previous draft is unchanged.');
+            });
+        });
+        section.append(contextParts.toggle, contextParts.form);
+
+        /* Lock 05/14b draft box: a bordered container whose header row holds
+           the confirmation chip (left) and Dictate + live word count (right);
+           the editable draft grows with its content like every other Studio
+           field (data-is-autogrow + the shared delegated listener). */
+        var draftBox = document.createElement('div');
+        draftBox.className = 'is-stack__draft-box';
+        var draftHead = document.createElement('div');
+        draftHead.className = 'is-stack__draft-head';
+        var markerChip = document.createElement('p');
+        markerChip.className = 'is-stack__marker-chip';
+        var draftLabel = document.createElement('p');
+        draftLabel.className = 'is-stack__draft-label';
+        draftLabel.textContent = 'Coach-assisted draft · editable';
+        var draftTools = document.createElement('div');
+        draftTools.className = 'is-stack__draft-tools';
+        var micButton = document.createElement('button');
+        micButton.type = 'button';
+        micButton.className = 'is__button is__mic-labeled is-stack__draft-mic';
+        micButton.setAttribute('data-is-mic', 'improve');
+        micButton.setAttribute('aria-pressed', 'false');
+        micButton.setAttribute('aria-label', 'Dictate into the improved draft');
+        micButton.innerHTML = '<span class="is__mic is__mic--inline" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg></span><span data-is-mic-label>Dictate</span>';
+        var draftCount = document.createElement('span');
+        draftCount.className = 'is-stack__draft-count';
+        draftTools.append(micButton, draftCount);
+        draftHead.append(markerChip, draftLabel, draftTools);
+        draftBox.appendChild(draftHead);
+
+        var draft = document.createElement('textarea');
+        draft.className = 'is-stack__improve-draft';
+        draft.value = payload.draft;
+        draft.setAttribute('aria-label', 'Editable improved draft');
+        draft.setAttribute('data-is-autogrow', '');
+        draftBox.appendChild(draft);
+
+        var dictationStatus = document.createElement('p');
+        dictationStatus.className = 'is__dictation-live';
+        dictationStatus.setAttribute('data-is-dictation-status', 'improve');
+        dictationStatus.hidden = true;
+        var dictationInterim = document.createElement('p');
+        dictationInterim.className = 'is__dictation-interim';
+        dictationInterim.setAttribute('data-is-dictation-interim', 'improve');
+        dictationInterim.hidden = true;
+        dictationInterim.innerHTML = '<span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span>';
+        var dictationError = document.createElement('p');
+        dictationError.className = 'is__error';
+        dictationError.setAttribute('data-is-mic-error', 'improve');
+        dictationError.hidden = true;
+        draftBox.append(dictationStatus, dictationInterim, dictationError);
+        section.appendChild(draftBox);
+
+        if (dictation) {
+            dictation.register('improve', {
+                button: micButton,
+                resolveTarget: function () { return draft; },
+                label: 'Dictate into the improved draft',
+                listeningLabel: 'Stop dictation',
+                noun: 'draft',
+                setStatus: function (message) { setDictationStatus('improve', message); },
+                setInterim: function (value) { setDictationInterim('improve', value); },
+                showError: function (message) { showMicError('improve', message); },
+                hideError: function () { setHidden(dictationError, true); },
+                setButtonLabel: function (value) {
+                    var labelNode = one('[data-is-mic-label]', micButton);
+                    if (labelNode) text(labelNode, value);
+                }
+            });
+            micButton.addEventListener('click', function () { toggleDictation('improve'); });
+        }
+        if (!speechIsSupported()) {
+            micButton.setAttribute('aria-disabled', 'true');
+            micButton.disabled = true;
+            micButton.classList.add('is-unavailable');
+        }
+
+        var markerHelp = document.createElement('p');
+        markerHelp.className = 'is-stack__marker-help';
+        markerHelp.textContent = 'Replace or remove every bracketed prompt before review.';
+        section.appendChild(markerHelp);
+
+        var actions = document.createElement('div');
+        actions.className = 'is-stack__actions';
+        var reviewRevisedButton = makeActionButton('primary', 'Review Revised Answer', function () {
+            if (reviewRevisedButton.disabled) return;
+            session.attemptNumber += 1;
+            answer.value = draft.value.trim();
+            saveDraft(false);
+            syncAnswerState();
+            submitReview();
+        });
+        var keepOriginalButton = makeActionButton('secondary', 'Keep original answer', function () {
+            section.remove();
+        });
+        actions.append(reviewRevisedButton, keepOriginalButton);
+        section.appendChild(actions);
+
+        var transmitLine = document.createElement('p');
+        transmitLine.className = 'is-stack__authority';
+        transmitLine.textContent = 'Your revised answer is sent only when you click Review Revised Answer.';
+        section.appendChild(transmitLine);
+
+        function syncMarkers() {
+            /* Review finding P2-2: confirmations[] is the canonical list
+               when present -- an unresolved marker is one whose exact
+               string still literally appears in the draft. Falls back to
+               the regex only when the server did not return confirmations
+               (e.g. an older cached payload shape). */
+            var count = confirmations
+                ? confirmations.filter(function (marker) { return draft.value.indexOf(marker) !== -1; }).length
+                : unresolvedMarkerCount(draft.value);
+            markerChip.textContent = count ? 'Needs your confirmation (' + count + ' remaining)' : '';
+            setHidden(markerChip, !count);
+            setHidden(draftLabel, Boolean(count));
+            reviewRevisedButton.disabled = count > 0;
+            var words = draft.value.trim() ? draft.value.trim().split(/\s+/).length : 0;
+            draftCount.textContent = words + ' words';
+        }
+        draft.addEventListener('input', syncMarkers);
+        syncMarkers();
+
+        appendStackNode(section);
+        autoGrowTextarea(draft);
+        revealAppendedSection(heading);
+    }
+
+    /* Requests one coach-assisted improvement draft, either appending it
+       (first call, no onSuccess override) or -- via the R2 "Add context or
+       evidence" sub-flow above -- updating an already-appended draft in
+       place (onSuccess/onError supplied). selectedIds/additionalContext
+       default to the plain "Improve My Answer" click's empty payload. */
+    function startAuthenticatedImprove(review, selectedIds, additionalContext, onSuccess, onError) {
+        var question = currentQuestion();
+        var priorAnswer = session.currentAnswer;
+        cancelPendingImprovement();
+        improveController = new AbortController();
+        var controller = improveController;
+        var requestId = improveRequestId;
+        var binding = currentRequestBinding();
+        postJSON('/api/interview/improve', {
+            question: question.text,
+            answer: priorAnswer,
+            family: question.family,
+            improvements: review.improvements,
+            evidence_ids: selectedIds || [],
+            additional_context: additionalContext || '',
+            opportunity_context: explicitContextForAi()
+        }, controller.signal).then(function (payload) {
+            if (requestId !== improveRequestId || !bindingStillCurrent(binding)) return;
+            improveController = null;
+            if (onSuccess) {
+                onSuccess(payload.improvement);
+            } else {
+                appendAuthenticatedImprovement(payload.improvement, review, question, priorAnswer);
+                announce('Coach-assisted draft ready. Review and edit it before requesting a revised review.');
+            }
+        }).catch(function (error) {
+            if (requestId !== improveRequestId || !bindingStillCurrent(binding)) return;
+            improveController = null;
+            if (error.name === 'AbortError') return;
+            if (onError) {
+                onError(error);
+            } else {
+                announce('The improved draft could not be generated. Your original answer is unchanged.');
+            }
         });
     }
 
@@ -1899,7 +2750,10 @@
         setHidden(improveContent, true);
         setHidden(reviewError, true);
         setHidden(errorActions, true);
-        text(submittedLabel, 'Your submitted answer · preserved');
+        text(submittedLabel, authenticated
+            ? (session.attemptNumber > 1 ? 'Submitted revised answer · Attempt ' + session.attemptNumber : 'Submitted answer')
+            : 'Your submitted answer · preserved');
+        setAuthPendingBand(true);
         setStage(2);
         cancelReviewButton.focus();
         cancelPendingReview();
@@ -1908,23 +2762,33 @@
         var requestId = reviewRequestId;
         var reviewSource = session.reviewSource || 'me';
         var reviewRecordId = session.reviewRecordId || '';
+        var binding = currentRequestBinding();
+        var attemptAtSubmit = session.attemptNumber;
 
         var question = currentQuestion();
-        postReviewWithOneRetry({
-            profile_slug: profileSlug,
+        var reviewRequestBody = {
             question: question.text,
             answer: responseText,
             level: session.level,
             family: question.family,
             competency: question.competency,
             opportunity_context: explicitContextForAi()
-        }, controller.signal).then(function (payload) {
-            if (requestId !== reviewRequestId) return;
+        };
+        /* Review finding P2-2: the authenticated client reports which
+           attempt this is so the server's marker gate (P2-1: rejection
+           applies only to attempt >= 2) can tell a revision from a first
+           attempt. Advisory UX truth only -- the improve contract (what
+           actually produces a bracket marker) remains the real boundary,
+           and the server independently validates/bounds this value. */
+        if (authenticated) reviewRequestBody.attempt = attemptAtSubmit;
+        postReviewWithOneRetry(reviewRequestBody, controller.signal).then(function (payload) {
+            if (requestId !== reviewRequestId || !bindingStillCurrent(binding)) return;
             reviewController = null;
             answer.readOnly = false;
             answeringBlock.removeAttribute('aria-busy');
             syncAnswerState();
             setHidden(reviewingBlock, true);
+            setAuthPendingBand(false);
             setStage(3);
             renderReview(payload.review);
             if (session.reviewedQuestionIds.indexOf(questionId(question)) === -1) {
@@ -1932,9 +2796,14 @@
                 persistSession();
                 renderSessionProgress();
             }
-            setHidden(feedbackBlock, false);
-            setHidden(feedbackEmpty, true);
-            setHidden(feedbackContent, false);
+            if (authenticated) {
+                appendAuthenticatedAttempt(responseText, payload.review, attemptAtSubmit);
+                setHidden(one('.is-auth__band'), true);
+            } else {
+                setHidden(feedbackBlock, false);
+                setHidden(feedbackEmpty, true);
+                setHidden(feedbackContent, false);
+            }
             var record = {
                 id: reviewRecordId || 'attempt-' + Date.now() + '-' + session.attemptNumber,
                 createdAt: new Date().toISOString(),
@@ -1968,13 +2837,18 @@
                 durationSeconds: reviewSource === 'video' ? (session.reviewDurationSeconds || 0) : 0,
                 status: reviewSource === 'video' ? 'Content reviewed' : 'Completed'
             };
-            if (!reviewRecordId || !updateHistoryRecord(reviewRecordId, record)) addHistoryRecord(record);
+            var savedToHistory = Boolean(reviewRecordId) && updateHistoryRecord(reviewRecordId, record);
+            if (!savedToHistory) savedToHistory = addHistoryRecord(record);
             removeStored(draftKey(question.text));
-            announce('Coach review ready. Review the clear strengths and one focused next step.');
-            feedbackBlock.focus({ preventScroll: true });
-            feedbackBlock.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest' });
+            announce(savedToHistory
+                ? 'Coach review ready. Review the clear strengths and one focused next step.'
+                : 'Coach review ready, but this attempt could not be saved to History in this browser.');
+            if (!authenticated) {
+                feedbackBlock.focus({ preventScroll: true });
+                feedbackBlock.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest' });
+            }
         }).catch(function (error) {
-            if (requestId !== reviewRequestId) return;
+            if (requestId !== reviewRequestId || !bindingStillCurrent(binding)) return;
             reviewController = null;
             if (error.name === 'AbortError') return;
             answer.readOnly = false;
@@ -1983,12 +2857,23 @@
             setHidden(answeringBlock, false);
             setHidden(submittedBlock, true);
             setHidden(reviewingBlock, true);
+            setAuthPendingBand(false);
             setHidden(feedbackBlock, true);
             setHidden(feedbackEmpty, false);
             setHidden(feedbackContent, true);
             setStage(1);
-            text(submittedLabel, 'Your answer · preserved and editable');
-            text(reviewErrorText, error.message + ' Your answer is still here. Edit it or retry the coaching request without re-entering your work.');
+            if (authenticated) {
+                var draftBadge = one('[data-is-draft-badge]');
+                text(draftBadge, 'Review unavailable');
+                if (draftBadge) draftBadge.classList.add('is-auth__badge--warning');
+                var failedBand = one('.is-auth__band');
+                if (failedBand) failedBand.classList.add('is-auth__band--failed');
+                text(reviewErrorHeading, "We couldn't review this answer right now.");
+                text(reviewErrorText, 'Your answer is still here. You can try again or continue editing.');
+            } else {
+                text(submittedLabel, 'Your answer · preserved and editable');
+                text(reviewErrorText, error.message + ' Your answer is still here. Edit it or retry the coaching request without re-entering your work.');
+            }
             setHidden(reviewError, false);
             setHidden(errorActions, false);
             if (reviewError) reviewError.focus();
@@ -2012,10 +2897,19 @@
         answeringBlock.removeAttribute('aria-busy');
         syncAnswerState();
         setHidden(reviewingBlock, true);
+        setAuthPendingBand(false);
         setHidden(submittedBlock, true);
         setHidden(answeringBlock, false);
         setHidden(feedbackBlock, true);
         setHidden(improveBlock, true);
+        if (authenticated) {
+            resetDraftBadge();
+            var recoveredBand = one('.is-auth__band');
+            if (recoveredBand) {
+                recoveredBand.classList.remove('is-auth__band--failed');
+                setHidden(recoveredBand, false);
+            }
+        }
         setStage(1);
         answer.focus();
         announce('Review cancelled. Your draft is still editable.');
@@ -2076,7 +2970,6 @@
         var controller = improveController;
         var requestId = improveRequestId;
         postJSON('/api/interview/improve', {
-            profile_slug: profileSlug,
             question: currentQuestion().text,
             answer: session.currentAnswer,
             family: currentQuestion().family,
@@ -2357,15 +3250,35 @@
             member_history: 'Verify the generated wording before using it.',
             compare: 'Each answer remains separately labeled and must be verified.'
         };
+        var applyAiModeChange = function (value) {
+            stopDictation('interrupted');
+            if (modeNote) modeNote.textContent = modeNotes[value] || '';
+            if (basisLabel) basisLabel.textContent = modeLabels[value] || '';
+            if (basisGuidance) basisGuidance.textContent = modeGuidance[value] || '';
+            resetAiAnswerForContextChange();
+            announce((modeLabels[value] || 'Answer basis') + ' selected. Generate a new answer for this basis.');
+        };
         modeGroup.addEventListener('change', function (event) {
             if (event.target !== modeSelect) return;
-            stopDictation('interrupted');
-            if (modeNote) modeNote.textContent = modeNotes[event.target.value] || '';
-            if (basisLabel) basisLabel.textContent = modeLabels[event.target.value] || '';
-            if (basisGuidance) basisGuidance.textContent = modeGuidance[event.target.value] || '';
-            resetAiAnswerForContextChange();
-            announce((modeLabels[event.target.value] || 'Answer basis') + ' selected. Generate a new answer for this basis.');
+            applyAiModeChange(event.target.value);
         });
+        /* Slice 5-6 review item 1 (visual 07/08): the authenticated SOURCE
+           radio cards are a second control over the same modeSelect value
+           (architecture 03 section 3 keeps the public dropdown as the
+           setup-form field; the radios are new markup, not a replacement).
+           Keeping modeSelect as the single source of truth means
+           selectedAiMode() and every other reader need no changes. */
+        var aiSourceRadios = all('[data-is-ai-source-radio]');
+        if (aiSourceRadios.length) {
+            aiSourceRadios.forEach(function (radio) {
+                radio.checked = radio.value === modeSelect.value;
+                radio.addEventListener('change', function () {
+                    if (!radio.checked) return;
+                    modeSelect.value = radio.value;
+                    applyAiModeChange(radio.value);
+                });
+            });
+        }
     }
 
     var followUpForm = one('[data-is-follow-up-form]');
@@ -2421,7 +3334,19 @@
         currentModelAnswer = payload.modelAnswer;
         currentModelContextToken = payload.contextToken || '';
         var insufficient = payload.modelAnswer.status === 'insufficient';
-        one('[data-is-practice-answer]').disabled = insufficient;
+        var practiceAnswerButton = one('[data-is-practice-answer]');
+        if (authenticated) {
+            /* Review finding P1-2b (lock 08): the insufficiency composition's
+               dominant action is an enabled "Use best practice" primary,
+               not a disabled "Practice This Answer" -- the same button is
+               relabeled and re-enabled rather than adding a fourth control,
+               mirroring how the sibling "New question"/"Change question"
+               label swap below already reuses one element for both states. */
+            text(practiceAnswerButton, insufficient ? 'Use best practice' : 'Practice This Answer');
+            practiceAnswerButton.disabled = false;
+        } else {
+            practiceAnswerButton.disabled = insufficient;
+        }
         text(one('[data-is-ai-name]'), payload.profile.firstName || 'Candidate');
         text(one('[data-is-ai-answer-text]'), payload.modelAnswer.answer);
         renderList(one('[data-is-ai-why]'), payload.modelAnswer.whyItWorks);
@@ -2430,11 +3355,28 @@
         if (genericFlag) setHidden(genericFlag, !generic);
         var heading = one('[data-is-ai-answer-heading]');
         if (heading) {
-            heading.textContent = insufficient
-                ? 'No grounded answer available'
-                : generic
-                    ? 'Best-practice example'
-                    : (payload.profile.firstName || 'Candidate') + '\u2019s answer';
+            heading.textContent = authenticated
+                ? (generic ? 'Generic best-practice example' : (payload.profile.firstName || 'Candidate') + '\u2019s approved public example')
+                : insufficient
+                    ? 'No grounded answer available'
+                    : generic
+                        ? 'Best-practice example'
+                        : (payload.profile.firstName || 'Candidate') + '\u2019s answer';
+        }
+        if (authenticated) {
+            /* Slice 5-6 review item 1: the insufficiency lock (visual 08) is a
+               separate composition from the generic/grounded ready card
+               (visual 07), toggled on the same insufficient flag. */
+            setHidden(one('[data-is-ai-insufficient]'), !insufficient);
+            setHidden(one('[data-is-ai-answer-ready]'), insufficient);
+            setHidden(one('[data-is-ai-generic-truth]'), !generic);
+            /* Final-review Finding 1: target the visible ACTION-ROW control by
+               its own hook. The plain [data-is-different-question] selector
+               resolved to the CSS-hidden chip-row button first, so the lock 08
+               relabel never reached the button a member can see (and text()
+               would have stripped that chip button's icon). */
+            var newQuestionButton = one('#is-panel-ai [data-is-ai-action-question]');
+            if (newQuestionButton) text(newQuestionButton, insufficient ? 'Change question' : 'New question');
         }
         var compareBlock = one('[data-is-ai-compare]');
         if (compareBlock) {
@@ -2475,7 +3417,13 @@
         setHidden(aiAnswerEmpty, true);
         setHidden(aiAnswerContent, false);
         setAiState(insufficient ? 'insufficient' : 'ready');
-        var followUpAvailable = !insufficient && Boolean(currentModelContextToken);
+        /* Architecture 03 section 3, item 2: follow-up stays visibly
+           unavailable for authenticated regardless of token availability
+           until the scoped finding interview_followup_mode_provenance
+           closes -- the token plumbing keeps computing followUpAvailable
+           (untouched below) so the public branch is unaffected; only the
+           four follow-up controls are forced disabled for authenticated. */
+        var followUpAvailable = !authenticated && !insufficient && Boolean(currentModelContextToken);
         followUpInput.disabled = !followUpAvailable;
         followUpSubmit.disabled = !followUpAvailable;
         if (followUpMic) followUpMic.disabled = !followUpAvailable || !speechIsSupported();
@@ -2507,7 +3455,6 @@
         setHidden(aiLoading, false);
         setAiState('generating');
         postJSON('/api/interview/model-answer', {
-            profile_slug: profileSlug,
             question: currentAiQuestion,
             follow_up: followUp || '',
             context_token: followUp ? currentModelContextToken : '',
@@ -2532,7 +3479,7 @@
             if (currentModelAnswer) {
                 setHidden(aiAnswerEmpty, true);
                 setHidden(aiAnswerContent, false);
-                var followUpAvailable = currentModelAnswer.status !== 'insufficient' && Boolean(currentModelContextToken);
+                var followUpAvailable = !authenticated && currentModelAnswer.status !== 'insufficient' && Boolean(currentModelContextToken);
                 followUpInput.disabled = !followUpAvailable;
                 followUpSubmit.disabled = !followUpAvailable;
                 if (followUpMic) followUpMic.disabled = !followUpAvailable || !speechIsSupported();
@@ -2588,6 +3535,25 @@
         if (typeof followUpForm.requestSubmit === 'function') followUpForm.requestSubmit();
     });
     one('[data-is-practice-answer]').addEventListener('click', function () {
+        if (authenticated && root.getAttribute('data-is-ai-state') === 'insufficient') {
+            /* Review finding P1-2b: the same control, relabeled "Use best
+               practice" for this state (see renderModelAnswer above),
+               selects the best_practice source and re-requests the
+               example -- the same two steps a member could otherwise take
+               by hand (click the Best practice radio, then Get example). */
+            var bestPracticeRadio = all('[data-is-ai-source-radio]').filter(function (radioEl) {
+                return radioEl.value === 'best_practice';
+            })[0];
+            if (bestPracticeRadio) {
+                bestPracticeRadio.checked = true;
+                if (modeSelect) modeSelect.value = 'best_practice';
+            }
+            if (typeof applyAiModeChange === 'function') applyAiModeChange('best_practice');
+            stopDictation('interrupted');
+            resetAiAnswerForContextChange();
+            requestModelAnswer('');
+            return;
+        }
         if (!currentModelAnswer) return;
         var modelAnswer = currentModelAnswer;
         var modelQuestion = currentModelQuestion || currentAiQuestion || aiQuestionInput.value.trim();
@@ -2664,6 +3630,46 @@
         };
         text(one('[data-is-video-state-copy]'), messages[state] || messages['camera-off']);
         syncQuestionChangeControls();
+        if (authenticated) syncVideoRecoveryState(state);
+    }
+
+    /* Slice 5-6 review item 2 (visual 15): the recovery lock replaces the
+       normal camera-off placeholder and normal controls whenever a
+       permission request failed ('denied') or the device/browser cannot
+       support camera rehearsal at all ('unavailable') -- both states
+       enableCamera() already sets; this only changes what's visible. */
+    function syncVideoRecoveryState(state) {
+        var recovery = one('[data-is-video-recovery]');
+        if (!recovery) return;
+        var inRecovery = state === 'denied' || state === 'unavailable';
+        setHidden(recovery, !inRecovery);
+        if (inRecovery) {
+            setHidden(cameraEmpty, true);
+            [startRecord, stopRecord, retakeRecord, discardRecord].forEach(function (button) { button.hidden = true; });
+        } else if (state === 'camera-off') {
+            setHidden(cameraEmpty, false);
+        }
+        var cameraOffButton = one('[data-is-camera-off]');
+        var useTranscriptButton = one('[data-is-video-use-transcript]');
+        var cameraRetryButton = one('[data-is-camera-retry]');
+        var cameraHelpButton = one('[data-is-camera-help]');
+        var deviceSettingsButton = one('[data-is-device-settings]');
+        setHidden(cameraOffButton, inRecovery || state === 'camera-off');
+        setHidden(useTranscriptButton, !inRecovery);
+        setHidden(cameraRetryButton, !inRecovery);
+        setHidden(cameraHelpButton, !inRecovery);
+        /* Lock 09: Device settings is part of the live-preview control row. */
+        setHidden(deviceSettingsButton, state !== 'preview');
+        /* Lock 10: an explicit green Play affordance alongside the native
+           element controls. */
+        var playButton = one('[data-is-play-recording]');
+        if (playButton && !playButton.hasAttribute('data-is-play-wired')) {
+            playButton.setAttribute('data-is-play-wired', '');
+            playButton.addEventListener('click', function () {
+                if (cameraPreview && cameraPreview.play) cameraPreview.play();
+            });
+        }
+        setHidden(playButton, state !== 'playback');
     }
 
     function setDeviceStatus(element, message, status) {
@@ -2862,8 +3868,10 @@
         setHidden(videoResult, false);
         setHidden(videoResultEmpty, true);
         setHidden(videoResultContent, false);
-        setDeviceStatus(cameraStatus, 'Local recording complete', 'is-ready');
-        setDeviceStatus(microphoneStatus, 'Audio captured locally', 'is-ready');
+        /* Lock 10 chip copy. */
+        var playbackClock = Math.floor(durationSeconds / 60) + ':' + ('0' + Math.floor(durationSeconds % 60)).slice(-2);
+        setDeviceStatus(cameraStatus, authenticated ? 'Local recording ready · ' + playbackClock : 'Local recording complete', 'is-ready');
+        setDeviceStatus(microphoneStatus, authenticated ? 'Audio available · Local playback' : 'Audio captured locally', 'is-ready');
         media.durationSeconds = durationSeconds;
         media.recorder = null;
         media.chunks = [];
@@ -2911,6 +3919,47 @@
         resetVideoUi();
         enableCamera();
     });
+    if (authenticated) {
+        /* Slice 5-6 review item 2 (visuals 09/15): copy/actions the
+           authenticated composition needs that the shared public markup
+           does not carry -- runtime-only overrides (never touch the
+           server-rendered flag-off bytes) plus the new recovery-lock
+           controls. */
+        var startIcon = one('svg', startRecord);
+        text(startRecord, 'Start recording');
+        if (startIcon) startRecord.insertBefore(startIcon, startRecord.firstChild);
+        text(discardRecord, 'Discard recording');
+        var cameraOffButton = one('[data-is-camera-off]');
+        if (cameraOffButton) {
+            cameraOffButton.addEventListener('click', function () {
+                releaseMedia(true);
+                resetVideoUi();
+                announce('Camera turned off. No recording was created.');
+            });
+        }
+        var cameraRetryButton = one('[data-is-camera-retry]');
+        if (cameraRetryButton) {
+            cameraRetryButton.addEventListener('click', function () {
+                resetVideoUi();
+                enableCamera();
+            });
+        }
+        var cameraHelpButton = one('[data-is-camera-help]');
+        if (cameraHelpButton) {
+            cameraHelpButton.addEventListener('click', function (event) {
+                event.preventDefault();
+                announce('Check your browser’s site settings for camera and microphone permission, and confirm no other application is using the camera.');
+            });
+        }
+        var useTranscriptButton = one('[data-is-video-use-transcript]');
+        if (useTranscriptButton) {
+            useTranscriptButton.addEventListener('click', function (event) {
+                event.preventDefault();
+                videoTranscript.focus();
+                videoTranscript.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest' });
+            });
+        }
+    }
     startRecord.addEventListener('click', startRecording);
     stopRecord.addEventListener('click', stopRecording);
     retakeRecord.addEventListener('click', function () {
@@ -2987,6 +4036,13 @@
     var historyMode = one('[data-is-history-mode]');
     var historyCompetency = one('[data-is-history-competency]');
     var historyTime = one('[data-is-history-time]');
+    /* Slice 5-6 review item 4 (visuals 12/16/17): the authenticated History
+       filters are Mode/Question family/Most recent, not the public page's
+       Mode/Competency/Time-window trio -- these two are only ever present
+       in the authenticated branch (null-guarded exactly like
+       historyCompetency/historyTime above are for the public branch). */
+    var historyFamily = one('[data-is-history-family]');
+    var historySort = one('[data-is-history-sort]');
     var storageNote = one('[data-is-storage-note]');
     var storageOk = one('[data-is-storage-ok]');
     var historyDetail = one('[data-is-history-detail]');
@@ -3083,13 +4139,19 @@
     function filteredHistory(records) {
         var mode = historyMode ? historyMode.value : 'all';
         var competency = historyCompetency ? historyCompetency.value : 'all';
+        var family = historyFamily ? historyFamily.value : 'all';
         var days = historyTime ? Number(historyTime.value) : 0;
         var cutoff = days ? Date.now() - days * 86400000 : 0;
-        return records.filter(function (record) {
+        var filtered = records.filter(function (record) {
             return (mode === 'all' || record.mode === mode) &&
                 (competency === 'all' || record.competency === competency) &&
+                (family === 'all' || normalizeFamily(record.family) === family) &&
                 (!cutoff || new Date(record.createdAt).getTime() >= cutoff);
         });
+        // addHistoryRecord() unshifts, so records already arrive newest-first;
+        // "Oldest first" is the only sort that needs an explicit reverse.
+        if (historySort && historySort.value === 'oldest') filtered = filtered.slice().reverse();
+        return filtered;
     }
 
     // V2 history deliberately avoids an overall score. It only compares
@@ -3250,8 +4312,210 @@
         }
     }
 
+    /* Slice 5-6 review item 4 (visuals 12/16/17): the authenticated History
+       view's four truth states (populated / genuinely-empty-with-storage /
+       filtered-empty / storage-unavailable). Reuses the same
+       storageAvailable/readHistoryRecords/filteredHistory/
+       v2ReviewedRecords/comparableDimensionGroups/statusRank helpers
+       renderV2History() already uses for the public page -- no duplicated
+       comparison-gate logic, only a different rendered composition. */
+    function renderAuthenticatedHistory() {
+        var hasStorage = storageAvailable();
+        var railTruth = one('.is-auth__rail-truth');
+        if (railTruth) {
+            railTruth.classList.toggle('is-auth__rail-truth--warning', !hasStorage);
+            text(one('span', railTruth), hasStorage
+                ? 'Drafts and History stay in this browser for this account. They do not sync across devices.'
+                : 'Browser storage is unavailable. Drafts and History may not be retained. They do not sync across devices.');
+        }
+
+        var rows = one('[data-is-history-rows]');
+        var emptyState = one('[data-is-history-empty-state]');
+        var filteredEmptyState = one('[data-is-history-filtered-empty]');
+        var unavailableState = one('[data-is-history-unavailable-state]');
+        var cards = one('[data-is-history-cards]');
+        var filterRow = one('[data-is-history-filter-row]');
+
+        /* Lock 12 vs lock 17: the page sub-line states the truthful claim
+           for the storage state it is actually in. */
+        var historySub = one('#is-panel-history .is__sub');
+        if (historySub) {
+            text(historySub, hasStorage
+                ? 'Reviewed answers stay in this browser for this account. They do not sync across devices.'
+                : 'History is unavailable in this browser right now. Practice can continue without it.');
+        }
+
+        if (!hasStorage) {
+            setHidden(rows, true);
+            setHidden(emptyState, true);
+            setHidden(filteredEmptyState, true);
+            setHidden(unavailableState, false);
+            setHidden(cards, true);
+            if (filterRow) all('select', filterRow).forEach(function (select) { select.disabled = true; });
+            text(one('[data-is-history-summary-label]'), 'History summary: browser storage is unavailable.');
+            announce('History is unavailable in this browser right now. Practice can continue without it.');
+            return;
+        }
+        if (filterRow) all('select', filterRow).forEach(function (select) { select.disabled = false; });
+
+        var allRecords = readHistoryRecords();
+        var records = filteredHistory(allRecords);
+        var reviewed = v2ReviewedRecords(records);
+
+        if (!allRecords.length) {
+            setHidden(rows, true);
+            setHidden(emptyState, false);
+            setHidden(filteredEmptyState, true);
+            setHidden(unavailableState, true);
+            setHidden(cards, true);
+            text(one('[data-is-history-summary-label]'), 'History summary: no reviewed answers yet.');
+            return;
+        }
+        if (!records.length) {
+            setHidden(rows, true);
+            setHidden(emptyState, true);
+            setHidden(filteredEmptyState, false);
+            setHidden(unavailableState, true);
+            setHidden(cards, true);
+            text(one('[data-is-history-summary-label]'), 'History summary: no practice matches the current filters.');
+            return;
+        }
+
+        setHidden(rows, false);
+        setHidden(emptyState, true);
+        setHidden(filteredEmptyState, true);
+        setHidden(unavailableState, true);
+        setHidden(cards, false);
+
+        if (rows) {
+            rows.replaceChildren();
+            records.slice(0, 100).forEach(function (record) {
+                var item = document.createElement('li');
+                item.className = 'is-history__row';
+                var icon = document.createElement('span');
+                icon.className = 'is-history__row-icon';
+                icon.setAttribute('aria-hidden', 'true');
+                icon.innerHTML = record.mode === 'video'
+                    ? '<svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>'
+                    : '<svg viewBox="0 0 24 24"><path d="M4 5.5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>';
+                var body = document.createElement('div');
+                body.className = 'is-history__row-body';
+                var question = document.createElement('strong');
+                question.textContent = record.question;
+                body.append(question);
+                /* Lock 12: mode·family sits over the date as one right-side
+                   meta column, not stacked under the title -- a distinct
+                   grid cell from the title so both stay aligned row to row. */
+                var meta = document.createElement('div');
+                meta.className = 'is-history__row-meta';
+                var metaLine = document.createElement('span');
+                metaLine.textContent = (record.mode === 'video' ? 'Video transcript' : 'Interview Me') + ' · ' + labelFamily(record.family);
+                var date = document.createElement('time');
+                date.className = 'is-history__row-date';
+                date.dateTime = record.createdAt;
+                date.textContent = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(record.createdAt));
+                meta.append(metaLine, date);
+                var chip = document.createElement('span');
+                chip.className = 'is-history__row-chip';
+                chip.textContent = record.reviewVersion === 'v2' ? 'Reviewed' : record.reviewVersion === 'local-recording' ? 'Local only' : record.reviewVersion === 'legacy-v1' ? 'Legacy' : 'Unavailable';
+                var view = document.createElement('a');
+                view.className = 'is__button is__button--quiet is-history__row-view';
+                view.href = historyDetailUrl(record.id);
+                view.textContent = 'View review';
+                view.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    openHistoryDetail(record, true);
+                });
+                var deleteButton = document.createElement('button');
+                deleteButton.type = 'button';
+                deleteButton.className = 'is-history__row-delete';
+                deleteButton.setAttribute('aria-label', 'Delete this browser record');
+                deleteButton.textContent = '⋮';
+                deleteButton.addEventListener('click', function () {
+                    if (!window.confirm('Delete this Interview Studio record from this browser?')) return;
+                    var removed = removeHistoryRecord(record.id);
+                    renderHistory();
+                    announce(removed
+                        ? 'Session record deleted from this browser.'
+                        : 'This record could not be deleted in this browser right now. It may still be visible below.');
+                });
+                /* Reviewed chip + View review + overflow cluster together as
+                   one grid cell so the row template only needs four columns
+                   (icon/title/meta/actions) and the three controls wrap as a
+                   unit on narrow viewports instead of each needing its own
+                   named grid area. */
+                var actions = document.createElement('div');
+                actions.className = 'is-history__row-actions';
+                actions.append(chip, view, deleteButton);
+                item.append(icon, body, meta, actions);
+                rows.appendChild(item);
+            });
+        }
+
+        // Comparison gate (architecture 03 section 5, item 2): the exact
+        // locked string unless >=2 comparable reviewed attempts exist for
+        // the same question family and mode -- same threshold/grouping
+        // renderV2History() already uses.
+        var groups = comparableDimensionGroups(reviewed);
+        var groupKeys = Object.keys(groups);
+        var comparableGroup = groupKeys.filter(function (key) { return groups[key].length >= 2; })[0];
+        var statusEl = one('[data-is-history-comparison-status]');
+        var detailEl = one('[data-is-history-comparison-detail]');
+        if (comparableGroup) {
+            var entries = groups[comparableGroup];
+            var latestEntry = entries[entries.length - 1];
+            var changed = statusRank(latestEntry.dimension.status) - statusRank(entries[0].dimension.status);
+            text(statusEl, (changed > 0 ? 'Improving: ' : changed < 0 ? 'Needs attention: ' : 'Holding steady: ') + readableDimensionKey(latestEntry.dimension.key));
+            text(detailEl, labelFamily(latestEntry.record.family) + ' · ' + entries.length + ' comparable reviewed answers.');
+        } else {
+            text(statusEl, 'Not enough comparable practice yet.');
+            text(detailEl, 'More like-for-like reviewed answers are needed before PeerSlate shows a pattern.');
+        }
+
+        var latest = reviewed[0];
+        var labelEl = one('[data-is-history-single-review-label]');
+        var headlineEl = one('[data-is-history-single-review-headline]');
+        if (latest) {
+            text(labelEl, 'From your ' + new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' }).format(new Date(latest.createdAt)) + ' review');
+            text(headlineEl, (latest.improvements && latest.improvements[0]) || (latest.encouragement) || 'Add one observable outcome when you have a real example.');
+        } else {
+            text(labelEl, 'From your recent review');
+            text(headlineEl, 'Complete a reviewed answer to see a suggestion here.');
+        }
+
+        text(one('[data-is-history-summary-label]'), 'History summary: ' + reviewed.length + (reviewed.length === 1 ? ' reviewed answer.' : ' reviewed answers.'));
+    }
+
     function renderHistory() {
         renderV2History();
+        if (authenticated) renderAuthenticatedHistory();
+    }
+
+    var historyRetryButton = one('[data-is-history-retry]');
+    if (historyRetryButton) {
+        historyRetryButton.addEventListener('click', function () {
+            renderHistory();
+            announce(storageAvailable()
+                ? 'Browser storage is available again.'
+                : 'Browser storage is still unavailable in this browser.');
+        });
+    }
+    var historyStorageHelpButton = one('[data-is-history-storage-help]');
+    if (historyStorageHelpButton) {
+        historyStorageHelpButton.addEventListener('click', function () {
+            announce('Check that this browser allows site storage and that you are not in private or incognito browsing, then choose Try History again.');
+        });
+    }
+    var historyResetFiltersButton = one('[data-is-history-reset-filters]');
+    if (historyResetFiltersButton) {
+        historyResetFiltersButton.addEventListener('click', function () {
+            if (historyMode) historyMode.value = 'all';
+            if (historyFamily) historyFamily.value = 'all';
+            if (historySort) historySort.value = 'recent';
+            window.history.replaceState({}, '', root.getAttribute('data-history-url'));
+            renderHistory();
+            announce('Filters cleared. Showing all practice in this browser.');
+        });
     }
 
     function completedSessionRecords() {
@@ -3264,11 +4528,28 @@
     function renderSessionComplete() {
         closeQueue({ restoreFocus: false });
         var records = completedSessionRecords();
-        var completeTitle = contextLabel(session.context) + ' session complete.';
-        text(one('[data-is-complete-title]'), completeTitle);
-        text(one('[data-is-complete-summary]'), records.length
-            ? 'You completed an open-ended practice session with ' + records.length + (records.length === 1 ? ' reviewed answer.' : ' reviewed answers.')
-            : 'You finished an open-ended practice session. No reviewed answer was added, and any typed draft remains in this browser.');
+        if (authenticated) {
+            /* Slice 5-6 review item 3 (visual 11): "You finished this
+               practice session." is a fixed heading (not context-labeled --
+               the rail already names the current session); the summary
+               keeps practiced and reviewed counts explicitly distinct
+               (architecture 03 section 5, "distinct practiced vs. reviewed
+               counts"), matching the exact locked sentence shape. */
+            text(one('[data-is-complete-title]'), 'You finished this practice session.');
+            text(one('[data-is-complete-summary]'),
+                session.questionTrail.length + (session.questionTrail.length === 1 ? ' question was' : ' questions were') + ' practiced. ' +
+                records.length + (records.length === 1 ? ' answer was' : ' answers were') + ' reviewed in this browser.');
+            var latestForClearer = records[0];
+            text(one('[data-is-complete-clearer]'), latestForClearer && latestForClearer.encouragement
+                ? latestForClearer.encouragement
+                : 'Complete a reviewed answer to see what became clearer.');
+        } else {
+            var completeTitle = contextLabel(session.context) + ' session complete.';
+            text(one('[data-is-complete-title]'), completeTitle);
+            text(one('[data-is-complete-summary]'), records.length
+                ? 'You completed an open-ended practice session with ' + records.length + (records.length === 1 ? ' reviewed answer.' : ' reviewed answers.')
+                : 'You finished an open-ended practice session. No reviewed answer was added, and any typed draft remains in this browser.');
+        }
         text(one('[data-is-complete-reviewed]'), records.length);
         text(one('[data-is-complete-questions]'), session.questionTrail.length);
         text(one('[data-is-complete-context]'), contextLabel(session.context));
@@ -3288,6 +4569,31 @@
                 list.appendChild(item);
             });
         }
+        if (authenticated) {
+            /* Review finding P1-2d (lock 11): the rail's "Completed
+               questions" group lists the same reviewed-answer records as
+               the main "Questions reviewed" card above (checkmark +
+               truncated title) -- built on session finish, cleared by
+               resetConsequenceStack() when the completion view is left. */
+            var railCompleted = one('[data-is-rail-completed]');
+            var railCompletedList = one('[data-is-rail-completed-list]');
+            if (railCompleted && railCompletedList) {
+                setHidden(railCompleted, records.length === 0);
+                railCompletedList.replaceChildren();
+                records.forEach(function (record) {
+                    var item = document.createElement('li');
+                    var icon = document.createElement('svg');
+                    icon.setAttribute('viewBox', '0 0 24 24');
+                    icon.setAttribute('aria-hidden', 'true');
+                    icon.innerHTML = '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>';
+                    var label = document.createElement('span');
+                    label.textContent = record.question;
+                    label.title = record.question;
+                    item.append(icon, label);
+                    railCompletedList.appendChild(item);
+                });
+            }
+        }
         var latest = records[0];
         text(one('[data-is-complete-next-focus]'), latest && latest.improvements && latest.improvements[0]
             ? latest.improvements[0]
@@ -3295,12 +4601,25 @@
         panels.forEach(function (panel) { panel.hidden = panel.getAttribute('data-is-panel') !== 'complete'; });
         root.setAttribute('data-is-active-mode', 'complete');
         if (historyLink) historyLink.removeAttribute('aria-current');
+        if (authenticated) setFinishSessionCompleted(true);
         var title = one('[data-is-complete-title]');
         if (title) {
             title.setAttribute('tabindex', '-1');
             title.focus();
         }
         announce('Session complete. Your reviewed answers remain only in this browser.');
+    }
+
+    /* Slice 4 item 7: the rail's "Finish session" becomes a completed,
+       non-interactive "Session finished" chip (visual 11) plus the
+       session-stored truth line, once the session actually finishes; a
+       fresh session restores the active control. */
+    function setFinishSessionCompleted(completed) {
+        all('[data-is-finish-session]').forEach(function (button) {
+            button.disabled = completed;
+            text(one('[data-is-finish-session-label]', button), completed ? 'Session finished' : 'Finish session');
+        });
+        setHidden(one('[data-is-finish-session-truth]'), !completed);
     }
 
     function finishCurrentSession() {
@@ -3341,50 +4660,67 @@
         }
     });
 
-    [historyMode, historyCompetency, historyTime].forEach(function (select) {
+    /* historyCompetency/historyTime only exist for the public branch;
+       historyFamily/historySort only exist for the authenticated branch
+       (never all five at once) -- each reference below is null-guarded so
+       whichever pair is absent for the current branch cannot throw. */
+    [historyMode, historyCompetency, historyTime, historyFamily, historySort].forEach(function (select) {
         if (!select) return;
         select.addEventListener('change', function () {
             var params = new URLSearchParams();
-            if (historyMode.value !== 'all') params.set('mode', historyMode.value);
-            if (historyCompetency.value !== 'all') params.set('competency', historyCompetency.value);
-            if (historyTime.value !== 'all') params.set('days', historyTime.value);
+            if (historyMode && historyMode.value !== 'all') params.set('mode', historyMode.value);
+            if (historyCompetency && historyCompetency.value !== 'all') params.set('competency', historyCompetency.value);
+            if (historyTime && historyTime.value !== 'all') params.set('days', historyTime.value);
+            if (historyFamily && historyFamily.value !== 'all') params.set('family', historyFamily.value);
+            if (historySort && historySort.value !== 'recent') params.set('sort', historySort.value);
             window.history.replaceState({}, '', root.getAttribute('data-history-url') + (params.toString() ? '?' + params.toString() : ''));
             renderHistory();
         });
     });
 
-    one('[data-is-practice-recommendation]').addEventListener('click', function (event) {
-        var recommendation = historyRecommendation || {
-            question: defaultQuestion,
-            family: session.family,
-            level: session.level,
-            context: session.context
-        };
-        if (!setMode('me', true)) return;
-        session.family = normalizeFamily(recommendation.family);
-        session.level = recommendation.level;
-        session.context = makeSessionContext(recommendation.context);
-        if (familySelect) familySelect.value = session.family;
-        if (levelSelect) levelSelect.value = session.level;
-        if (stageSelect) stageSelect.value = session.context.interview_stage;
-        if (sessionStageSelect) sessionStageSelect.value = session.context.interview_stage;
-        if (sessionMixSelect) sessionMixSelect.value = session.family;
-        syncNewSessionInputs();
-        session.questionTrail.push(normalizedQuestion(recommendation.question, session.family));
-        session.currentQuestionIndex = session.questionTrail.length - 1;
-        persistSession();
-        renderQuestion();
-        answer.focus();
-    });
+    var practiceRecommendationButton = one('[data-is-practice-recommendation]');
+    if (practiceRecommendationButton) {
+        /* data-is-practice-recommendation only exists in the public History
+           & Progress card -- the authenticated History composition (slice
+           5-6 review item 4) does not carry a like-for-like "Practice this
+           focus" shortcut, so this whole handler is null-guarded rather
+           than assumed to always exist. */
+        practiceRecommendationButton.addEventListener('click', function (event) {
+            var recommendation = historyRecommendation || {
+                question: defaultQuestion,
+                family: session.family,
+                level: session.level,
+                context: session.context
+            };
+            if (!setMode('me', true)) return;
+            session.family = normalizeFamily(recommendation.family);
+            session.level = recommendation.level;
+            session.context = makeSessionContext(recommendation.context);
+            if (familySelect) familySelect.value = session.family;
+            if (levelSelect) levelSelect.value = session.level;
+            if (stageSelect) stageSelect.value = session.context.interview_stage;
+            if (sessionStageSelect) sessionStageSelect.value = session.context.interview_stage;
+            if (sessionMixSelect) sessionMixSelect.value = session.family;
+            syncNewSessionInputs();
+            session.questionTrail.push(normalizedQuestion(recommendation.question, session.family));
+            session.currentQuestionIndex = session.questionTrail.length - 1;
+            persistSession();
+            renderQuestion();
+            answer.focus();
+        });
+    }
 
     function restoreHistoryFilters() {
         if (initialView !== 'history' && window.location.pathname.indexOf('/history') === -1) return;
         var params = new URLSearchParams(window.location.search);
         if (historyMode && ['all', 'me', 'video'].indexOf(params.get('mode')) !== -1) historyMode.value = params.get('mode');
         if (historyTime && ['all', '7', '30'].indexOf(params.get('days')) !== -1) historyTime.value = params.get('days');
+        if (historySort && ['recent', 'oldest'].indexOf(params.get('sort')) !== -1) historySort.value = params.get('sort');
         renderHistory();
         var competency = params.get('competency');
-        if (competency && all('option', historyCompetency).some(function (option) { return option.value === competency; })) historyCompetency.value = competency;
+        if (historyCompetency && competency && all('option', historyCompetency).some(function (option) { return option.value === competency; })) historyCompetency.value = competency;
+        var family = params.get('family');
+        if (historyFamily && family && all('option', historyFamily).some(function (option) { return option.value === family; })) historyFamily.value = family;
         renderHistory();
         openHistoryDetailFromLocation();
     }
@@ -3394,7 +4730,7 @@
     historyDetail.addEventListener('click', function (event) { if (event.target === historyDetail) closeHistoryDetail(); });
     one('[data-is-history-detail-delete]').addEventListener('click', function () {
         if (!historyDetailRecordId || !window.confirm('Delete this Interview Studio record from this browser?')) return;
-        removeHistoryRecord(historyDetailRecordId);
+        var removed = removeHistoryRecord(historyDetailRecordId);
         historyDetailOpenedWithPush = false;
         if (historyDetail.open) historyDetail.close();
         historyDetailRecordId = '';
@@ -3402,7 +4738,9 @@
         params.delete('session');
         window.history.replaceState({}, '', root.getAttribute('data-history-url') + (params.toString() ? '?' + params.toString() : ''));
         renderHistory();
-        announce('Session record deleted from this browser.');
+        announce(removed
+            ? 'Session record deleted from this browser.'
+            : 'This record could not be deleted in this browser right now. It may still be visible below.');
     });
 
     /* Settings */
@@ -3426,8 +4764,11 @@
         releaseMedia(true);
         resetVideoUi();
         try {
+            // A scoped (member) namespace only ever clears its own v3 keys —
+            // the anonymous v1/v2 records are never touched, let alone
+            // deleted, once a member is signed in (owner decision Q-B).
             Object.keys(window.localStorage).forEach(function (key) {
-                if (key.indexOf(storagePrefix) === 0 || key.indexOf(legacyStoragePrefix) === 0) {
+                if (key.indexOf(storagePrefix) === 0 || (!storageScope && key.indexOf(legacyStoragePrefix) === 0)) {
                     window.localStorage.removeItem(key);
                 }
             });
@@ -3442,8 +4783,8 @@
         session.aiReferenceQuestion = '';
         session.reviewedQuestionIds = [];
         session.replacementSeen = [];
-        levelSelect.value = session.level;
-        familySelect.value = session.family;
+        if (levelSelect) levelSelect.value = session.level;
+        if (familySelect) familySelect.value = session.family;
         resetAiAnswerForContextChange();
         /* The New Session form and rail selects must mirror the reset context,
            or the next start would silently re-apply the cleared choices. */
