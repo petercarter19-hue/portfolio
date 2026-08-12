@@ -101,3 +101,56 @@ stays page-local; History carries four distinct truth states.
 Pete reviews the shipped-dark state and the comparison sheet, then decides on
 enablement. Turning the flag on is a separate, recorded act with its own live
 verification and a proven flag-off rollback.
+
+## Post-enablement defect, fix, and final state (2026-08-12)
+
+Pete used the live signed-in Studio and reported that he could submit the
+first answer but not the second. Reproduced by driving the real page in a
+scripted browser: on desktop the submit control was present for the first
+answer and **absent** for the next question.
+
+**Cause.** On a completed review the authenticated action band was hidden, and
+the only submit control lived inside that band. Nothing restored it when the
+member moved on, so the next question rendered with no way to submit.
+
+**Fix (owner-directed shape).** Dictation, the live "Heard so far" transcript,
+and the send control now live INSIDE the answer box at every width, so a typed
+or spoken answer always has a visible way to submit and the control shares the
+composer's own lifetime. Band visibility is additionally derived from the stage
+machine rather than ad-hoc per-call-site toggles, so the question/coaching
+groups return with the next question. A full interaction sweep across all modes
+at desktop and phone also caught the video status chips overflowing the
+viewport at phone width; they now wrap.
+
+**Deployment truth for this fix.** The automatic run (858) delivered the code
+and then failed its own post-deploy smoke, as did the manual fallback (861).
+Neither failure was the application: the smoke asserted `/interview-studio`
+returns 200, an expectation written when the Studio was public. With the wall
+enabled the route answers signed-out callers with a redirect, so a healthy
+deployment was being marked failed — for every lane, not only this one. The
+smoke now accepts exactly two contracts for that route (public 200 with its
+markers, or the precise signed-out redirect with the exact return destination)
+and still fails on any other redirect target, 404, 500, or transport failure;
+all five cases were exercised directly. Run 864 deployed that repair and passed
+its smoke, which is the proof it works.
+
+**Verified live at release `ff44992bb27589f1a15f1ae8`:** the served CSS and JS
+carry the in-box composer and the stage-derived band fix; `/interview-studio`
+redirects signed-out callers; the interview APIs return 401; the homepage,
+public resume, and Community are unaffected.
+
+**Honest limit.** The final end-to-end walk while signed in as the owner on
+production (type, submit, next question, submit again) is Pete's to perform;
+that exact sequence was proven against the same code in a scripted browser,
+failing before the fix and passing after.
+
+## Lessons recorded for future work here
+
+1. A green pipeline run does not mean code shipped: check the stages actually
+   executed and verify the served assets. A scheduled maintenance run shares
+   the same commit and can be mistaken for a deployment.
+2. This App Service has twice needed an explicit restart before a change took
+   effect; do not trust the automatic restart alone.
+3. A route that gains a sign-in wall must have its deployment smoke updated in
+   the same change, or every later deployment fails on a false signal.
+
