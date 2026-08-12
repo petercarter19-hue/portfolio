@@ -30,6 +30,16 @@ Use this for a change, not for a read-only discussion.
   relinquished the exact SHA, used a dedicated control-only transfer branch,
   changed only the permitted lane transfer fields, and passed `--intent
   transfer --fetch --require-clean` before the receiver wrote.
+- [ ] For a completed non-production direction/authority lane, used the
+  separate grant -> merge -> close controls: exact pushed/reviewed SHA,
+  pre-existing Pete merge decision, review evidence at that SHA,
+  non-overlapping behind-main proof, exact main tree equivalence, and removal
+  of all mutation authority at close.
+- [ ] If that candidate predates current control code, left it untouched and
+  ran merge preflight from a separate clean current-main verifier with its
+  absolute registered `--candidate-worktree` path; did not rebase, overlay,
+  detach, or run the candidate's older validator; retained its remote branch
+  through close with PR source-branch deletion disabled.
 - [ ] For Protected work, named the specific privacy, security, data, release,
   or material-visual evidence required before release.
 - [ ] Chosen focused verification and the proportional completion record.

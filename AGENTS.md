@@ -28,6 +28,15 @@
 > transfer`; it may update only the existing lane's transfer fields in
 > `CURRENT_LANES.json` after the prior writer has pushed and relinquished an
 > exact SHA.
+> A completed non-production `direction_authority` lane advances only through
+> the separate fail-closed `--intent grant`, `--intent merge`, and `--intent
+> close` sequence in `START_HERE.md`. A grant binds the exact pushed/reviewed
+> SHA, pre-existing Pete merge authority, and review evidence; it never grants
+> runtime, release, cleanup, schema, deployment, or production authority.
+> Validate an unchanged reviewed candidate from a separate clean worktree at
+> current `origin/main` with `--intent merge --candidate-worktree <absolute
+> path> --fetch --require-clean`; never rebase, overlay, or run candidate-old
+> control code.
 
 ## Authority
 

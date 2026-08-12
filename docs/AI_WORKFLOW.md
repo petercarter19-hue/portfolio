@@ -104,6 +104,20 @@ Run the normal pipeline when documentation is itself runtime-consumed and must
 become live immediately, or when the change also affects application code,
 configuration, dependencies, packaging, or deployment behavior.
 
+For a non-production `direction_authority` lane, use the executable grant ->
+merge -> close lifecycle. Grant references a pre-existing Pete decision and
+binds the exact pushed/reviewed SHA plus review evidence; it may not append
+authority. Merge tolerates only non-overlapping control changes that entered
+main after review. Close proves the exact package tree is on current main,
+removes every authority-list entry, and archives the immutable lane record.
+This lifecycle is unavailable to implementation or production-capable lanes.
+When the candidate predates the control repair, keep its reviewed SHA and
+worktree unchanged. Run the current `origin/main` script from a distinct clean
+verifier with `--intent merge --fetch --require-clean --candidate-worktree
+<absolute-path>`. Both paths must be registered worktrees in one Git common
+directory with the same Azure origin; the candidate stays clean on its
+recorded branch and tip.
+
 ## Stop conditions
 
 Stop and seek a decision only for an unclear owner, active file collision,

@@ -20,6 +20,12 @@
 > stop. Pause only through a separate control-only branch after the working
 > branch is committed and pushed; record its exact fetched commit so freeing a
 > slot never merges or loses unfinished work.
+> A completed non-production direction/authority package uses the separate
+> grant -> merge -> close flow in `START_HERE.md`; never append owner authority
+> during a grant or infer runtime/release rights from direction-package merge.
+> For a frozen reviewed candidate, run merge preflight only from a separate
+> clean current-`origin/main` verifier using its absolute registered worktree
+> path; do not alter the candidate or run its older validator.
 
 # Claude / Claude Code instructions
 

@@ -9,16 +9,21 @@ Read-only work remains available during a delivery reset.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
+from datetime import date, datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER_PATH = ROOT / "docs" / "governance" / "CURRENT_LANES.json"
 BASELINE_PATH = ROOT / "docs" / "governance" / "CURRENT_BASELINE.yaml"
+SCRIPT_PATH = ROOT / "scripts" / "delivery_preflight.py"
 
 # Activation controls two companion records.  The lane ledger reserves the
 # writer; this narrow projection keeps the baseline's governing authority from
@@ -134,6 +139,49 @@ WRITER_TRANSFER_PREFLIGHT_REPAIR = {
     ),
 }
 
+# Pete's 2026-08-11 end-to-end Profile direction assignment exposed a narrow
+# lifecycle gap: a completed, independently reviewed direction-authority lane
+# had no fail-closed way to receive merge authority or to close after its exact
+# package tree entered main.  This one-time bootstrap installs those controls;
+# it does not itself grant any package merge, release, cleanup, schema, runtime,
+# deployment, or production authority.  Like the earlier repairs, every fact
+# is code-controlled and the exception expires as soon as origin/main moves.
+GRANT_CLOSE_PREFLIGHT_REPAIR = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-11-delivery-activation-grant-close-preflight-repair",
+    "origin_main": "f745b39b72d2c8e5a3595f88d7f9524d8d8e41cf",
+    "allowed_surfaces": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "START_HERE.md",
+        "docs/AI_WORKFLOW.md",
+        "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+        "tests/test_governance_pointers.py",
+    ],
+    "reason": (
+        "Pete assigned Codex end-to-end Profile ownership through merge and "
+        "dark deployment on 2026-08-11, while retaining a separate explicit "
+        "pre-enable decision. The completed non-production direction-authority "
+        "package then proved the standing control plane lacked safe grant and "
+        "close transitions. This repair adds exact-review-bound grant, merge, "
+        "and close preflights only for non-production direction-authority "
+        "lanes. It changes no active lane, authority list, baseline, product "
+        "code, schema, pipeline, deployment, configuration, or live behavior."
+    ),
+    "verification_contract": (
+        "This is audit evidence, not self-granted package authority. The "
+        "preflight recognizes it only when the entire record equals the "
+        "validator's hard-coded record and Git proves the exact branch, exact "
+        "origin/main base, and exact ten changed paths. A later branch, base, "
+        "altered record, or product-authority change cannot reuse it."
+    ),
+}
+
 MAX_ACTIVE_LANES = 3
 MAX_IMPLEMENTATION_LANES = 2
 MAX_DIRECTION_AUTHORITY_LANES = 1
@@ -203,9 +251,74 @@ TRANSFER_ALLOWED_SURFACES = frozenset(
 TRANSFER_BRANCH_PATTERN = re.compile(
     r"work/[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+-transfer"
 )
+GRANT_ALLOWED_SURFACES = frozenset(
+    {"docs/governance/CURRENT_LANES.json"}
+)
+GRANT_BRANCH_PATTERN = re.compile(
+    r"work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-grant-[a-z0-9-]+"
+)
+CLOSE_ALLOWED_SURFACES = frozenset(
+    {
+        "docs/governance/CURRENT_BASELINE.yaml",
+        "docs/governance/CURRENT_LANES.json",
+    }
+)
+CLOSE_BRANCH_PATTERN = re.compile(
+    r"work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-close-[a-z0-9-]+"
+)
 FULL_GIT_SHA = re.compile(r"[0-9a-f]{40}")
+UTC_TIMESTAMP = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z"
+)
+BASELINE_DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+
+# A direction candidate may remain on its independently reviewed SHA while a
+# small control sequence reaches main.  The sequence is intentionally not a
+# generic "non-overlap" allowance: only these code-reviewed control files can
+# intervene, and grant/merge additionally prove the exact commit counts and
+# pinned endpoints.
+DIRECTION_MERGE_CONTROL_PATHS = frozenset(GRANT_CLOSE_PREFLIGHT_REPAIR["allowed_surfaces"])
+
+PROFILE_DIRECTION_OWNER_DECISION_SHA256 = (
+    "b4fe6dc59e5eef85b6beb9c6c08e22736876ab78aa134eb4512ae1260c3c36c8"
+)
+
+PROFILE_DIRECTION_REVIEW_ATTESTATION = {
+    "reviewer_task": "/root/profile_exact_package_review",
+    "reviewer_mode": "independent_read_only_non_writer",
+    "reviewed_sha": "7790e2684ad5a65a0371338f8b94f878276f36c7",
+    "reviewed_branch": "work/2026-08-11-profile-experience-direction-001",
+    "verdict": "PASS",
+    "verdict_text": (
+        "PASS — exact-SHA final Protected review passed for "
+        "7790e2684ad5a65a0371338f8b94f878276f36c7, branch-equal to "
+        "origin/work/2026-08-11-profile-experience-direction-001 and clean."
+    ),
+    "verdict_sha256": "c7bc10cdd23dfe6af42b69f193d0931ebd0410ff5f2421f953d85ed46013e145",
+    "basis": [
+        "full_tree_at_35cab0d6167b7cf2006d7a8652105bce9cf683cd",
+        "complete_diff_35cab0d6167b7cf2006d7a8652105bce9cf683cd_to_7790e2684ad5a65a0371338f8b94f878276f36c7",
+    ],
+    "scope": "direction_package_acceptance_and_merge_only",
+    "exclusions": "runtime_schema_deployment_enablement",
+    "evidence_path": "docs/initiatives/PS-PROFILE-EXPERIENCE-001/16_VERIFICATION_AND_COMPLETION_RECORD.md",
+    "evidence_git_blob_sha": "8de83fb9e28b2e38f736a361fb4dd9bfc26198da",
+    "evidence_bytes_sha256": "ac1ff17fc49dbe6594b2c15014efde3283258e6f3259cf8be0ed78b78b17dbc3",
+    "received_by": "Root Codex program manager",
+    "received_date": "2026-08-11",
+}
+PROFILE_DIRECTION_REVIEW_ATTESTATION["attestation_sha256"] = (
+    "573a2827e4d4a639f40f5d7e70d81165f5ec35c08b8d74fd24728e2bfb5f5ead"
+)
+
+DIRECTION_REVIEW_ATTESTATION_FIELDS = frozenset(
+    PROFILE_DIRECTION_REVIEW_ATTESTATION
+)
 
 VALID_DELIVERY_PATHS = frozenset({"Routine", "Bounded", "Protected"})
+EXACT_CONTROL_FETCH_INTENTS = frozenset(
+    {"activate", "pause", "transfer", "grant", "close"}
+)
 CANONICAL_PACKAGE_ID = re.compile(r"PS-[A-Z0-9]+(?:-[A-Z0-9]+)*")
 GIT_REF_FORBIDDEN_CHARACTERS = frozenset(
     {"~", "^", ":", "?", "*", "[", "\\"}
@@ -234,11 +347,43 @@ WINDOWS_RESERVED_DEVICE_COMPONENTS = frozenset(
 
 
 def _git(*args: str, check: bool = True) -> str:
+    return _git_at(ROOT, *args, check=check)
+
+
+def _git_environment() -> dict[str, str]:
+    """Return a process environment that cannot redirect Git outside -C."""
+    environment = os.environ.copy()
+    for name in (
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_COMMON_DIR",
+        "GIT_INDEX_FILE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_NAMESPACE",
+        "GIT_PREFIX",
+        "GIT_CONFIG_PARAMETERS",
+        "GIT_CONFIG_COUNT",
+        "GIT_SHALLOW_FILE",
+        "GIT_REPLACE_REF_BASE",
+    ):
+        environment.pop(name, None)
+    for name in list(environment):
+        if re.fullmatch(r"GIT_CONFIG_(KEY|VALUE)_\d+", name):
+            environment.pop(name, None)
+    environment["GIT_OPTIONAL_LOCKS"] = "0"
+    environment["GIT_TERMINAL_PROMPT"] = "0"
+    environment["GIT_NO_REPLACE_OBJECTS"] = "1"
+    return environment
+
+
+def _git_at(repository: Path, *args: str, check: bool = True) -> str:
     result = subprocess.run(
-        ["git", "-C", str(ROOT), *args],
+        ["git", "-C", str(repository), *args],
         capture_output=True,
         text=True,
         encoding="utf-8",
+        env=_git_environment(),
         check=False,
     )
     if check and result.returncode:
@@ -246,17 +391,121 @@ def _git(*args: str, check: bool = True) -> str:
     return result.stdout.strip()
 
 
+def _git_returncode_at(repository: Path, *args: str) -> int:
+    """Run a Git predicate with the same redirect-resistant environment."""
+    return subprocess.run(
+        ["git", "-C", str(repository), *args],
+        capture_output=True,
+        env=_git_environment(),
+        check=False,
+    ).returncode
+
+
 def _git_bytes(*args: str) -> bytes:
     """Read an exact Git blob without normalizing its trailing bytes."""
+    return _git_bytes_at(ROOT, *args)
+
+
+def _git_bytes_at(repository: Path, *args: str) -> bytes:
     result = subprocess.run(
-        ["git", "-C", str(ROOT), *args],
+        ["git", "-C", str(repository), *args],
         capture_output=True,
+        env=_git_environment(),
         check=False,
     )
     if result.returncode:
         stderr = result.stderr.decode("utf-8", errors="replace").strip()
         raise RuntimeError(stderr or "git command failed")
     return result.stdout
+
+
+def _git_nul_at(repository: Path, *args: str) -> list[str]:
+    raw = _git_bytes_at(repository, *args)
+    return [
+        value.decode("utf-8", errors="surrogateescape")
+        for value in raw.split(b"\0")
+        if value
+    ]
+
+
+def _git_nul(*args: str) -> list[str]:
+    return _git_nul_at(ROOT, *args)
+
+
+def _clean_status_entries(repository: Path = ROOT) -> list[str]:
+    """Return every change even when local config hides untracked files."""
+    arguments = (
+        "-c",
+        "core.fsmonitor=false",
+        "status",
+        "--porcelain=v1",
+        "-z",
+        "--untracked-files=all",
+    )
+    return (
+        _git_nul(*arguments)
+        if repository.resolve() == ROOT.resolve()
+        else _git_nul_at(repository, *arguments)
+    )
+
+
+def _git_object_exists(ref: str, path: str) -> bool:
+    result = subprocess.run(
+        ["git", "-C", str(ROOT), "cat-file", "-e", f"{ref}:{path}"],
+        capture_output=True,
+        env=_git_environment(),
+        check=False,
+    )
+    return result.returncode == 0
+
+
+def _git_object_type(ref: str, path: str) -> str:
+    return _git("cat-file", "-t", f"{ref}:{path}", check=False)
+
+
+def _git_blob_sha(ref: str, path: str) -> str:
+    return _git("rev-parse", f"{ref}:{path}", check=False)
+
+
+def _git_object_mode(ref: str, path: str) -> str:
+    line = _git("ls-tree", ref, "--", path, check=False)
+    return line.split(maxsplit=1)[0] if line else ""
+
+
+def _canonical_sha256(value: object) -> str:
+    encoded = json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _valid_utc_timestamp(value: object) -> bool:
+    if not isinstance(value, str) or not UTC_TIMESTAMP.fullmatch(value):
+        return False
+    try:
+        datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError:
+        return False
+    return True
+
+
+def _utc_timestamp_strictly_advances(value: object, prior: object) -> bool:
+    """Require two real UTC timestamps and a strictly later candidate value."""
+    if not _valid_utc_timestamp(value) or not _valid_utc_timestamp(prior):
+        return False
+    return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ") > datetime.strptime(
+        prior, "%Y-%m-%dT%H:%M:%SZ"
+    )
+
+
+def _valid_baseline_date(value: object) -> bool:
+    if not isinstance(value, str) or not BASELINE_DATE.fullmatch(value):
+        return False
+    try:
+        date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
 
 
 def load_ledger(path: Path = LEDGER_PATH) -> dict:
@@ -795,9 +1044,11 @@ def _validate_baseline_pause_delta(
     *,
     paused_package: str,
     remaining_lanes: list[dict],
+    action: str = "pause",
     errors: list[str],
 ) -> None:
     """Fail closed unless baseline removes exactly the relinquished package."""
+    label = "close" if action == "close" else "pause"
     candidate = _project_baseline(candidate_baseline, "candidate", errors)
     origin = _project_baseline(origin_baseline, "origin/main", errors)
     if candidate is None or origin is None:
@@ -807,25 +1058,51 @@ def _validate_baseline_pause_delta(
     assert isinstance(candidate_blocks, dict)
     assert isinstance(origin_blocks, dict)
     if candidate["preamble"] != origin["preamble"]:
-        errors.append("pause may not change the baseline preamble")
+        errors.append(f"{label} may not change the baseline preamble")
     if candidate["order"] != origin["order"]:
-        errors.append("pause may not reorder baseline sections")
+        errors.append(f"{label} may not reorder baseline sections")
     allowed_blocks = {"updated_at", "manager", "active_packages", "next_gate"}
+    if action == "close":
+        allowed_blocks.add("completed_packages")
     for key in BASELINE_TOP_LEVEL_SECTIONS:
         if key not in allowed_blocks and candidate_blocks[key] != origin_blocks[key]:
-            errors.append(f"pause may not change baseline section {key}")
+            errors.append(f"{label} may not change baseline section {key}")
+
+    if action == "close":
+        origin_updated = _single_scalar_block(
+            origin_blocks["updated_at"], "updated_at", "origin/main", errors
+        )
+        candidate_updated = _single_scalar_block(
+            candidate_blocks["updated_at"], "updated_at", "candidate", errors
+        )
+        if origin_updated is not None and candidate_updated is not None:
+            if not _valid_baseline_date(candidate_updated[0]):
+                errors.append(
+                    f"{label} baseline updated_at must be a real YYYY-MM-DD date"
+                )
 
     origin_manager = _parse_manager_block(origin_blocks["manager"], "origin/main", errors)
     candidate_manager = _parse_manager_block(candidate_blocks["manager"], "candidate", errors)
     if origin_manager is not None and candidate_manager is not None:
         if origin_manager[0] != candidate_manager[0]:
-            errors.append("pause may only change baseline manager.current_assignments")
-        expected_assignment = _expected_pause_manager_assignment(
-            paused_package, remaining_lanes
-        )
+            errors.append(f"{label} may only change baseline manager.current_assignments")
+        if action == "close":
+            remaining = _remaining_package_ids(remaining_lanes)
+            expected_assignment = (
+                "Active writer lanes: " + ", ".join(remaining) +
+                f". {paused_package} is closed and archived."
+                if remaining else
+                f"No active writer lanes. {paused_package} is closed and archived; "
+                "activate an exact implementation or direction/authority outcome "
+                "before repository writes."
+            )
+        else:
+            expected_assignment = _expected_pause_manager_assignment(
+                paused_package, remaining_lanes
+            )
         if candidate_manager[1] != expected_assignment:
             errors.append(
-                "pause baseline manager assignment must equal: "
+                f"{label} baseline manager assignment must equal: "
                 + expected_assignment
             )
 
@@ -841,16 +1118,66 @@ def _validate_baseline_pause_delta(
         ]
         if candidate_packages != expected:
             errors.append(
-                "pause baseline active_packages must remove exactly the paused package"
+                f"{label} baseline active_packages must remove exactly the target package"
+            )
+
+    if action == "close":
+        def completed_ids(block: str, source_label: str) -> list[str] | None:
+            lines = block.splitlines()
+            if not lines or lines[0] != "completed_packages:":
+                errors.append(
+                    f"{source_label} baseline completed_packages must use the controlled list form"
+                )
+                return None
+            values: list[str] = []
+            for index, line in enumerate(lines[1:], start=2):
+                if not line:
+                    continue
+                match = re.fullmatch(r"  - (PS-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*)", line)
+                if not match:
+                    errors.append(
+                        f"{source_label} baseline completed_packages line {index} is invalid"
+                    )
+                    continue
+                values.append(match.group(1))
+            if len({value.casefold() for value in values}) != len(values):
+                errors.append(
+                    f"{source_label} baseline completed_packages must not contain duplicates"
+                )
+            return values
+
+        origin_completed = completed_ids(
+            origin_blocks["completed_packages"], "origin/main"
+        )
+        candidate_completed = completed_ids(
+            candidate_blocks["completed_packages"], "candidate"
+        )
+        if (
+            origin_completed is not None
+            and candidate_completed is not None
+            and candidate_completed != [*origin_completed, paused_package]
+        ):
+            errors.append(
+                "close baseline completed_packages must append exactly the target package once"
             )
 
     candidate_gate = _single_scalar_block(
         candidate_blocks["next_gate"], "next_gate", "candidate", errors
     )
     if candidate_gate is not None:
-        expected_gate = _expected_pause_next_gate(paused_package, remaining_lanes)
+        expected_gate = (
+            _expected_pause_next_gate(paused_package, remaining_lanes)
+            if action != "close"
+            else (
+                "Continue only the active writer packages: "
+                + ", ".join(_remaining_package_ids(remaining_lanes))
+                + f". {paused_package} is closed and archived."
+                if remaining_lanes
+                else "No active writer lanes. Select and activate the next exact outcome under the three-lane class, path, and exclusive-domain rules."
+            )
+        )
         if candidate_gate[0] != expected_gate:
-            errors.append("pause baseline next_gate must equal: " + expected_gate)
+            errors.append(f"{label} baseline next_gate must equal: " + expected_gate)
 
 
 def _activation_snapshot(
@@ -1677,6 +2004,339 @@ def _exact_writer_transfer_preflight_repair_matches(
     )
 
 
+def _exact_grant_close_preflight_repair_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("grant_close_preflight_repair")
+        == GRANT_CLOSE_PREFLIGHT_REPAIR
+        and package_id == GRANT_CLOSE_PREFLIGHT_REPAIR["package"]
+        and facts.get("branch") == GRANT_CLOSE_PREFLIGHT_REPAIR["branch"]
+        and facts.get("origin_main")
+        == GRANT_CLOSE_PREFLIGHT_REPAIR["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+    )
+
+
+def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
+    """Accept pinned Profile authority or an exact machine-readable decision."""
+    if package_id == "PS-PROFILE-EXPERIENCE-001":
+        return (
+            isinstance(decision, dict)
+            and set(decision) == {"date", "decision"}
+            and _canonical_sha256(decision)
+            == PROFILE_DIRECTION_OWNER_DECISION_SHA256
+        )
+    expected_fields = {
+        "date",
+        "decision",
+        "authorized_by",
+        "action",
+        "status",
+        "scope",
+        "package",
+    }
+    return bool(
+        isinstance(decision, dict)
+        and set(decision) == expected_fields
+        and _valid_baseline_date(decision.get("date"))
+        and decision.get("decision") == "direction_package_merge_authority"
+        and decision.get("authorized_by") == "Pete"
+        and decision.get("action") == "merge"
+        and decision.get("status") == "authorized"
+        and decision.get("scope") == "direction_package_only"
+        and decision.get("package") == package_id
+    )
+
+
+def _direction_merge_grant(
+    lane: object,
+    label: str,
+    errors: list[str],
+) -> dict | None:
+    """Validate an exact-review-bound merge grant on a direction lane."""
+    if not isinstance(lane, dict):
+        errors.append(f"{label} must be an object")
+        return None
+    if lane.get("lane_class") != "direction_authority":
+        errors.append(f"{label} is available only to direction_authority lanes")
+    if lane.get("production_capable") is not False:
+        errors.append(f"{label} requires production_capable false")
+    grant = lane.get("merge_grant")
+    if not isinstance(grant, dict):
+        errors.append(f"{label} merge_grant must be an object")
+        return None
+    expected_fields = {
+        "authorized_by",
+        "authority_decision_index",
+        "authority_decision_sha256",
+        "independent_review",
+        "reviewed_remote_sha",
+        "granted_at",
+        "review_result",
+        "review_evidence_paths",
+    }
+    if set(grant) != expected_fields:
+        errors.append(
+            f"{label} merge_grant must contain exactly: "
+            + ", ".join(sorted(expected_fields))
+        )
+    if grant.get("authorized_by") != "Pete":
+        errors.append(f"{label} merge_grant authorized_by must be Pete")
+    index = grant.get("authority_decision_index")
+    decisions = lane.get("owner_decisions")
+    if not isinstance(index, int) or isinstance(index, bool) or index < 0:
+        errors.append(
+            f"{label} merge_grant authority_decision_index must be a non-negative integer"
+        )
+    elif not isinstance(decisions, list) or index >= len(decisions):
+        errors.append(
+            f"{label} merge_grant authority_decision_index is outside owner_decisions"
+        )
+    else:
+        decision = decisions[index]
+        if not _affirmative_merge_decision(decision, lane.get("package")):
+            errors.append(
+                f"{label} referenced pre-existing owner decision must be an unambiguous affirmative merge assignment"
+            )
+        if grant.get("authority_decision_sha256") != _canonical_sha256(decision):
+            errors.append(
+                f"{label} authority_decision_sha256 must bind the exact referenced owner decision"
+            )
+    reviewed_sha = grant.get("reviewed_remote_sha")
+    if not isinstance(reviewed_sha, str) or not FULL_GIT_SHA.fullmatch(reviewed_sha):
+        errors.append(f"{label} merge_grant reviewed_remote_sha must be a full Git SHA")
+    review = grant.get("independent_review")
+    independent_sha: str | None = None
+    if not isinstance(review, dict):
+        errors.append(f"{label} independent_review must be an object")
+    else:
+        if set(review) != DIRECTION_REVIEW_ATTESTATION_FIELDS:
+            errors.append(
+                f"{label} independent_review must contain exactly the controlled attestation fields"
+            )
+        expected_review = (
+            PROFILE_DIRECTION_REVIEW_ATTESTATION
+            if lane.get("package") == "PS-PROFILE-EXPERIENCE-001"
+            else None
+        )
+        if expected_review is None:
+            errors.append(
+                f"{label} no code-controlled independent review attestation "
+                f"is registered for {lane.get('package')}"
+            )
+        if expected_review is not None and review != expected_review:
+            errors.append(
+                f"{label} independent_review must equal a code-controlled attestation"
+            )
+        independent_sha = review.get("reviewed_sha")
+        if not isinstance(independent_sha, str) or not FULL_GIT_SHA.fullmatch(independent_sha):
+            errors.append(f"{label} independent_review reviewed_sha must be a full Git SHA")
+        if review.get("reviewer_mode") != "independent_read_only_non_writer":
+            errors.append(f"{label} independent_review reviewer_mode is invalid")
+        if review.get("reviewed_branch") != lane.get("branch"):
+            errors.append(f"{label} independent_review reviewed_branch must equal the lane branch")
+        if independent_sha != reviewed_sha:
+            errors.append(
+                f"{label} independent_review reviewed_sha must equal reviewed_remote_sha"
+            )
+        if review.get("verdict") != "PASS" or review.get("scope") != "direction_package_acceptance_and_merge_only":
+            errors.append(f"{label} independent_review scope or verdict is invalid")
+        reviewer_task = review.get("reviewer_task")
+        if not isinstance(reviewer_task, str) or not re.fullmatch(
+            r"/root(?:/[a-z0-9_]+)+", reviewer_task
+        ):
+            errors.append(f"{label} independent_review reviewer_task is invalid")
+        if review.get("exclusions") != "runtime_schema_deployment_enablement":
+            errors.append(f"{label} independent_review exclusions are invalid")
+        if review.get("received_by") != "Root Codex program manager":
+            errors.append(f"{label} independent_review received_by is invalid")
+        if not _valid_baseline_date(review.get("received_date")):
+            errors.append(f"{label} independent_review received_date is invalid")
+        evidence_path = review.get("evidence_path")
+        if not isinstance(evidence_path, str) or not evidence_path.casefold().endswith(".md"):
+            errors.append(f"{label} independent_review evidence_path must be Markdown")
+        if not isinstance(review.get("evidence_git_blob_sha"), str) or not re.fullmatch(
+            r"[0-9a-f]{40}", review.get("evidence_git_blob_sha", "")
+        ):
+            errors.append(f"{label} independent_review evidence_git_blob_sha is invalid")
+        if not isinstance(review.get("evidence_bytes_sha256"), str) or not re.fullmatch(
+            r"[0-9a-f]{64}", review.get("evidence_bytes_sha256", "")
+        ):
+            errors.append(f"{label} independent_review evidence_bytes_sha256 is invalid")
+        basis = review.get("basis")
+        if (
+            not isinstance(basis, list)
+            or len(basis) < 2
+            or not all(isinstance(item, str) and item for item in basis)
+            or len(set(basis)) != len(basis)
+            or not isinstance(independent_sha, str)
+            or not any(independent_sha in item for item in basis)
+            or not any("complete_diff" in item and independent_sha in item for item in basis)
+        ):
+            errors.append(
+                f"{label} independent_review basis must bind full-tree and complete-diff review to the SHA"
+            )
+        if review.get("evidence_path") not in (grant.get("review_evidence_paths") or []):
+            errors.append(f"{label} independent_review evidence_path must be in review_evidence_paths")
+        verdict_text = review.get("verdict_text")
+        expected_verdict = (
+            f"PASS — exact-SHA final Protected review passed for {independent_sha}, "
+            f"branch-equal to origin/{lane.get('branch')} and clean."
+        )
+        if (
+            not isinstance(verdict_text, str)
+            or verdict_text != expected_verdict
+        ):
+            errors.append(
+                f"{label} independent_review verdict_text must equal the exact SHA/branch PASS statement"
+            )
+        elif hashlib.sha256(verdict_text.encode("utf-8")).hexdigest() != review.get(
+            "verdict_sha256"
+        ):
+            errors.append(
+                f"{label} independent_review verdict_sha256 must bind the exact verdict text"
+            )
+        attestation = dict(review)
+        supplied_digest = attestation.pop("attestation_sha256", None)
+        if supplied_digest != _canonical_sha256(attestation):
+            errors.append(f"{label} independent_review attestation_sha256 is invalid")
+    if (
+        lane.get("package") == "PS-PROFILE-EXPERIENCE-001"
+        and grant.get("authority_decision_sha256")
+        != PROFILE_DIRECTION_OWNER_DECISION_SHA256
+    ):
+        errors.append(
+            f"{label} authority_decision_sha256 must equal the pinned Profile owner decision digest"
+        )
+    granted_at = grant.get("granted_at")
+    if not _valid_utc_timestamp(granted_at):
+        errors.append(f"{label} merge_grant granted_at must be a UTC timestamp")
+    if grant.get("review_result") != "pass":
+        errors.append(f"{label} merge_grant review_result must be pass")
+    paths = grant.get("review_evidence_paths")
+    if not isinstance(paths, list) or not paths:
+        errors.append(f"{label} merge_grant review_evidence_paths must be non-empty")
+    elif not all(isinstance(path, str) and path.strip() for path in paths):
+        errors.append(
+            f"{label} merge_grant review_evidence_paths must contain non-empty strings"
+        )
+    elif len({path.casefold() for path in paths}) != len(paths):
+        errors.append(f"{label} merge_grant review_evidence_paths must be unique")
+    return grant
+
+
+def _exact_direction_grant_delta(
+    parent_ledger: object,
+    granted_ledger: object,
+    package_id: str,
+) -> bool:
+    """Prove one main commit is only the target's validated grant transition."""
+    if not isinstance(parent_ledger, dict) or not isinstance(granted_ledger, dict):
+        return False
+    errors: list[str] = []
+    parent_mode, parent_policy, parent_lanes, parent_by_package = (
+        _activation_snapshot(parent_ledger, "grant parent", errors)
+    )
+    granted_mode, granted_policy, granted_lanes, granted_by_package = (
+        _activation_snapshot(granted_ledger, "grant result", errors)
+    )
+    parent_target = parent_by_package.get(package_id.casefold())
+    granted_target = granted_by_package.get(package_id.casefold())
+    if not isinstance(parent_target, dict) or not isinstance(granted_target, dict):
+        return False
+    if parent_policy != granted_policy or len(parent_lanes) != len(granted_lanes):
+        return False
+    if [lane.get("package") for lane in parent_lanes] != [
+        lane.get("package") for lane in granted_lanes
+    ]:
+        return False
+    for before, after in zip(parent_lanes, granted_lanes, strict=True):
+        if before.get("package") == package_id:
+            expected = dict(before)
+            expected["merge_grant"] = after.get("merge_grant")
+            if after != expected or "merge_grant" in before:
+                return False
+            _direction_merge_grant(after, "main grant", errors)
+        elif after != before:
+            return False
+    parent_allowed = parent_mode.get("merge_allowed_for")
+    if not isinstance(parent_allowed, list) or package_id in parent_allowed:
+        return False
+    expected_mode = dict(parent_mode)
+    expected_mode["merge_allowed_for"] = [*parent_allowed, package_id]
+    if granted_mode != expected_mode:
+        return False
+    if _root_changes(granted_ledger, parent_ledger) != {
+        "updated_at", "operating_mode", "active_lanes"
+    }:
+        return False
+    granted_at = granted_ledger.get("updated_at")
+    if not _utc_timestamp_strictly_advances(
+        granted_at, parent_ledger.get("updated_at")
+    ):
+        return False
+    if granted_target.get("merge_grant", {}).get("granted_at") != granted_at:
+        return False
+    return not errors
+
+
+def _direction_control_path_sequence_valid(
+    commit_paths: object,
+) -> bool:
+    """Accept only repair+grant or post-repair grant, with exact file sets."""
+    if not isinstance(commit_paths, list) or not all(
+        isinstance(paths, set) and all(isinstance(path, str) for path in paths)
+        for paths in commit_paths
+    ):
+        return False
+    if len(commit_paths) == 1:
+        return commit_paths[0] == set(GRANT_ALLOWED_SURFACES)
+    if len(commit_paths) == 2:
+        return (
+            commit_paths[0] == set(DIRECTION_MERGE_CONTROL_PATHS)
+            and commit_paths[1] == set(GRANT_ALLOWED_SURFACES)
+        )
+    return False
+
+
+def _paths_within_lane(
+    paths: object,
+    lane: dict,
+    label: str,
+    errors: list[str],
+) -> list[str]:
+    if not isinstance(paths, list):
+        errors.append(f"{label} must be a list")
+        return []
+    raw_surfaces = lane.get("writable_surfaces")
+    if not isinstance(raw_surfaces, list) or not raw_surfaces:
+        errors.append(f"{label} lane writable_surfaces must be non-empty")
+        return []
+    surfaces = [
+        normalized
+        for index, value in enumerate(raw_surfaces)
+        if (
+            normalized := _normalize_repo_surface(
+                value, f"{label} lane writable_surfaces[{index}]", errors
+            )
+        )
+        is not None
+    ]
+    normalized_paths: list[str] = []
+    for index, value in enumerate(paths):
+        path = _normalize_repo_surface(value, f"{label}[{index}]", errors)
+        if path is None:
+            continue
+        normalized_paths.append(path)
+        if not any(_path_is_within_surface(path, surface) for surface in surfaces):
+            errors.append(f"{label} path is outside target writable surfaces: {path}")
+    return normalized_paths
+
+
 def collect_facts(
     fetch: bool = False,
     include_changed_paths: bool = False,
@@ -1689,15 +2349,13 @@ def collect_facts(
     # origin/main name.
     head = _git("rev-parse", "HEAD")
     origin_main = _git("rev-parse", "origin/main")
-    status_lines = [
-        line for line in _git("status", "--porcelain=v1").splitlines() if line
-    ]
+    status_lines = _clean_status_entries(ROOT)
     tracked = [line for line in status_lines if not line.startswith("??")]
     untracked = [line for line in status_lines if line.startswith("??")]
-    origin_url = _git("remote", "get-url", "origin")
+    origin_url = _git("config", "--get", "remote.origin.url")
     facts = {
         "repository": str(ROOT),
-        "branch": _git("branch", "--show-current"),
+        "branch": _git("symbolic-ref", "--quiet", "--short", "HEAD", check=False),
         "head": head,
         "origin_main": origin_main,
         "ahead": int(_git("rev-list", "--count", f"{origin_main}..{head}")),
@@ -1716,16 +2374,363 @@ def collect_facts(
                     # The merge-base range must remain tied to the exact
                     # post-fetch refs captured above, not to a moving remote
                     # name that can change while preflight is running.
-                    ("diff", "--name-only", f"{origin_main}...{head}"),
-                    ("diff", "--name-only"),
-                    ("diff", "--cached", "--name-only"),
-                    ("ls-files", "--others", "--exclude-standard"),
+                    ("diff", "--name-only", "-z", f"{origin_main}...{head}"),
+                    ("diff", "--name-only", "-z"),
+                    ("diff", "--cached", "--name-only", "-z"),
+                    ("ls-files", "--others", "--exclude-standard", "-z"),
                 )
-                for path in _git(*command).splitlines()
+                for path in _git_nul(*command)
                 if path
             }
         )
     return facts
+
+
+def _absolute_git_common_dir(repository: Path) -> Path:
+    raw = Path(_git_at(repository, "rev-parse", "--git-common-dir"))
+    return (raw if raw.is_absolute() else repository / raw).resolve()
+
+
+def _normalized_origin(repository: Path) -> str:
+    raw = _git_at(repository, "remote", "get-url", "origin")
+    return raw.replace("\\", "/").rstrip("/").casefold()
+
+
+def _authoritative_azure_origin(repository: Path) -> str:
+    """Return the exact PeerSlate Azure origin, rejecting URL indirection."""
+    configured = _git_at(repository, "config", "--get", "remote.origin.url")
+    effective = _git_at(repository, "remote", "get-url", "origin")
+    normalized_configured = configured.replace("\\", "/").rstrip("/").casefold()
+    normalized_effective = effective.replace("\\", "/").rstrip("/").casefold()
+    if normalized_configured != normalized_effective:
+        raise RuntimeError("origin URL rewrite or indirection is not allowed")
+    parsed = urlparse(effective)
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise RuntimeError("origin contains an invalid port") from exc
+    expected_path = "/peerslate19/portfolio-site/_git/portfolio-site"
+    if (
+        parsed.scheme.casefold() != "https"
+        or (parsed.hostname or "").casefold() != "dev.azure.com"
+        or parsed.password is not None
+        or (parsed.username or "peerslate19").casefold() != "peerslate19"
+        or port not in (None, 443)
+        or parsed.path.rstrip("/").casefold() != expected_path
+        or parsed.params
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise RuntimeError(
+            "origin must be the exact PeerSlate Azure DevOps repository"
+        )
+    return normalized_effective
+
+
+def _fetch_exact_origin_refs(repository: Path, branches: list[str]) -> dict[str, str]:
+    """Fetch named heads explicitly and bind local refs to advertised remote OIDs."""
+    if not branches or len(set(branches)) != len(branches):
+        raise RuntimeError("exact origin fetch requires unique branch names")
+    for branch in branches:
+        if _git_at(repository, "check-ref-format", "--branch", branch, check=False) != branch:
+            raise RuntimeError("exact origin fetch received an invalid branch name")
+    refspecs = [
+        f"+refs/heads/{branch}:refs/remotes/origin/{branch}"
+        for branch in branches
+    ]
+    _git_at(repository, "fetch", "--prune", "origin", *refspecs)
+    advertised = _git_at(
+        repository,
+        "ls-remote",
+        "--refs",
+        "origin",
+        *(f"refs/heads/{branch}" for branch in branches),
+    )
+    remote_oids: dict[str, str] = {}
+    for line in advertised.splitlines():
+        parts = line.split("\t", 1)
+        if len(parts) != 2 or not FULL_GIT_SHA.fullmatch(parts[0]):
+            raise RuntimeError("origin advertised an invalid branch object")
+        prefix = "refs/heads/"
+        if not parts[1].startswith(prefix):
+            raise RuntimeError("origin advertised an unexpected ref")
+        branch = parts[1][len(prefix):]
+        if branch in remote_oids:
+            raise RuntimeError("origin advertised a duplicate branch ref")
+        remote_oids[branch] = parts[0]
+    if set(remote_oids) != set(branches):
+        raise RuntimeError("origin did not advertise every required branch exactly once")
+    for branch, oid in remote_oids.items():
+        local = _git_at(
+            repository,
+            "rev-parse",
+            "--verify",
+            f"refs/remotes/origin/{branch}",
+            check=False,
+        )
+        if local != oid:
+            raise RuntimeError("fetched origin ref does not equal the advertised branch object")
+    return remote_oids
+
+
+def _authoritative_ref_snapshot(
+    repository: Path,
+    branches: list[str],
+    *,
+    expected_origin: str | None = None,
+) -> tuple[str, dict[str, str]]:
+    """Fetch exact named refs while proving the Azure endpoint stayed fixed."""
+    before = _authoritative_azure_origin(repository)
+    if expected_origin is not None and before != expected_origin:
+        raise RuntimeError("authoritative Azure origin changed during preflight")
+    refs = _fetch_exact_origin_refs(repository, branches)
+    after = _authoritative_azure_origin(repository)
+    if after != before:
+        raise RuntimeError("authoritative Azure origin changed during preflight")
+    return before, refs
+
+
+def _registered_worktrees(repository: Path) -> list[Path]:
+    return [
+        Path(field.removeprefix("worktree ")).resolve()
+        for field in _git_nul_at(
+            repository, "worktree", "list", "--porcelain", "-z"
+        )
+        if field.startswith("worktree ")
+    ]
+
+
+def _direction_main_sequence_facts(
+    origin_ledger: dict,
+    package_id: str,
+    candidate_sha: str,
+    origin_main: str,
+) -> tuple[list[str], bool, int]:
+    base = _git("merge-base", candidate_sha, origin_main)
+    main_paths = sorted(
+        _git_nul("diff", "--name-only", "-z", f"{base}..{origin_main}")
+    )
+    main_commits = [
+        sha for sha in _git(
+            "rev-list", "--reverse", f"{base}..{origin_main}"
+        ).splitlines() if sha
+    ]
+    commit_paths = [
+        set(
+            _git_nul(
+                "diff-tree", "--no-commit-id", "--name-only", "-r", "-z", sha
+            )
+        )
+        for sha in main_commits
+    ]
+    path_sequence_valid = _direction_control_path_sequence_valid(commit_paths)
+    semantic_sequence_valid = False
+    if path_sequence_valid:
+        grant_sha = main_commits[-1]
+        grant_parent_sha = _git("rev-parse", f"{grant_sha}^")
+        grant_parent_ledger = load_ledger_at_ref(grant_parent_sha)
+        final_target = next(
+            (
+                item for item in origin_ledger.get("active_lanes", [])
+                if isinstance(item, dict) and item.get("package") == package_id
+            ),
+            None,
+        )
+        grant_delta_valid = _exact_direction_grant_delta(
+            grant_parent_ledger, origin_ledger, package_id
+        )
+        if len(main_commits) == 1:
+            semantic_sequence_valid = (
+                grant_parent_sha == base
+                and grant_parent_ledger.get("grant_close_preflight_repair")
+                == GRANT_CLOSE_PREFLIGHT_REPAIR
+                and grant_delta_valid
+            )
+        else:
+            repair_sha = main_commits[0]
+            repair_parent = _git("rev-parse", f"{repair_sha}^")
+            repair_ledger = load_ledger_at_ref(repair_sha)
+            semantic_sequence_valid = (
+                base == GRANT_CLOSE_PREFLIGHT_REPAIR["origin_main"]
+                and repair_parent == base
+                and grant_parent_sha == repair_sha
+                and repair_ledger.get("grant_close_preflight_repair")
+                == GRANT_CLOSE_PREFLIGHT_REPAIR
+                and grant_delta_valid
+            )
+        semantic_sequence_valid = bool(
+            semantic_sequence_valid
+            and isinstance(final_target, dict)
+            and isinstance(final_target.get("merge_grant"), dict)
+            and final_target["merge_grant"].get("reviewed_remote_sha")
+            == candidate_sha
+        )
+    return (
+        main_paths,
+        path_sequence_valid and semantic_sequence_valid,
+        len(main_commits),
+    )
+
+
+def _collect_direction_candidate_merge(
+    package_id: str,
+    candidate_worktree: str,
+) -> tuple[dict, dict]:
+    """Verify a frozen candidate with the freshly fetched main control code."""
+    raw_candidate = Path(candidate_worktree)
+    if not raw_candidate.is_absolute():
+        raise ValueError("--candidate-worktree must be an absolute path")
+    candidate = raw_candidate.resolve(strict=True)
+    if str(raw_candidate) != str(candidate):
+        raise ValueError("--candidate-worktree must be the exact worktree top-level path")
+    candidate_top = Path(
+        _git_at(candidate, "rev-parse", "--show-toplevel")
+    ).resolve()
+    if candidate_top != candidate:
+        raise ValueError("--candidate-worktree must name the exact Git worktree top level")
+    if candidate == ROOT.resolve():
+        raise ValueError("candidate worktree must differ from the verifier worktree")
+    registered = _registered_worktrees(ROOT)
+    if registered.count(ROOT.resolve()) != 1 or registered.count(candidate) != 1:
+        raise RuntimeError(
+            "candidate and verifier must be exactly registered Git worktrees"
+        )
+
+    verifier_origin = _authoritative_azure_origin(ROOT)
+    candidate_origin = _authoritative_azure_origin(candidate)
+    if candidate_origin != verifier_origin:
+        raise RuntimeError("candidate and verifier must share the authoritative Azure origin")
+    _, initial_refs = _authoritative_ref_snapshot(
+        ROOT, ["main"], expected_origin=verifier_origin
+    )
+    verifier = collect_facts(fetch=False, include_changed_paths=False)
+    verifier["fetched"] = True
+    verifier["origin_url"] = verifier_origin
+    verifier["origin_is_azure"] = True
+    if verifier["origin_main"] != initial_refs["main"]:
+        raise RuntimeError("captured origin/main does not equal the advertised main branch")
+    if verifier["head"] != verifier["origin_main"]:
+        raise RuntimeError("direction verifier HEAD must equal freshly fetched origin/main")
+    if verifier["tracked_changes"] or verifier["untracked_changes"]:
+        raise RuntimeError("direction verifier worktree must be clean")
+    script_relative = SCRIPT_PATH.relative_to(ROOT).as_posix()
+    if SCRIPT_PATH.read_bytes() != _git_bytes_at(
+        ROOT, "show", f"{verifier['origin_main']}:{script_relative}"
+    ):
+        raise RuntimeError("direction verifier script must equal origin/main")
+    if _absolute_git_common_dir(candidate) != _absolute_git_common_dir(ROOT):
+        raise RuntimeError("candidate must share the verifier Git common directory")
+    origin_main = verifier["origin_main"]
+    origin_ledger = load_ledger_at_ref(origin_main)
+    lanes = origin_ledger.get("active_lanes")
+    target = next(
+        (
+            lane for lane in lanes
+            if isinstance(lane, dict) and lane.get("package") == package_id
+        ),
+        None,
+    ) if isinstance(lanes, list) else None
+    if not isinstance(target, dict):
+        raise RuntimeError("direction candidate package is not active on origin/main")
+    if target.get("lane_class") != "direction_authority" or target.get("production_capable") is not False:
+        raise RuntimeError("--candidate-worktree is only for non-production direction lanes")
+    target_branch = target.get("branch")
+    if not isinstance(target_branch, str) or not _is_valid_implementation_branch(target_branch):
+        raise RuntimeError("direction lane has no safe candidate branch")
+    _, fetched_refs = _authoritative_ref_snapshot(
+        ROOT, ["main", target_branch], expected_origin=verifier_origin
+    )
+    if fetched_refs["main"] != origin_main:
+        raise RuntimeError("origin/main moved while direction authority was being loaded")
+    grant_errors: list[str] = []
+    grant = _direction_merge_grant(target, "merge target", grant_errors)
+    if grant_errors or grant is None:
+        raise RuntimeError("direction lane has no valid merge grant: " + "; ".join(grant_errors))
+    remote_ref = f"refs/remotes/origin/{target_branch}"
+    remote_sha = fetched_refs[target_branch]
+    if not FULL_GIT_SHA.fullmatch(remote_sha):
+        raise RuntimeError("authorized direction candidate remote branch is missing")
+    candidate_branch = _git_at(
+        candidate, "symbolic-ref", "--quiet", "--short", "HEAD", check=False
+    )
+    candidate_head = _git_at(candidate, "rev-parse", "HEAD")
+    if candidate_branch != target_branch:
+        raise RuntimeError("candidate worktree branch must equal the lane branch")
+    if candidate_head != remote_sha or remote_sha != grant.get("reviewed_remote_sha"):
+        raise RuntimeError("candidate HEAD, remote tip, and reviewed SHA must match exactly")
+    if _git_at(
+        candidate, "rev-parse", "--verify", f"refs/heads/{target_branch}",
+        check=False,
+    ) != candidate_head:
+        raise RuntimeError("candidate local branch ref must equal candidate HEAD")
+    if _clean_status_entries(candidate):
+        raise RuntimeError("candidate worktree must be clean")
+
+    main_paths, sequence_valid, behind = _direction_main_sequence_facts(
+        origin_ledger, package_id, candidate_head, origin_main
+    )
+    facts = {
+        **verifier,
+        "branch": target_branch,
+        "head": candidate_head,
+        "ahead": int(_git("rev-list", "--count", f"{origin_main}..{candidate_head}")),
+        "behind": behind,
+        "tracked_changes": 0,
+        "untracked_changes": 0,
+        "changed_paths": sorted(
+            _git_nul(
+                "diff", "--name-only", "-z", f"{origin_main}...{candidate_head}"
+            )
+        ),
+        "merge_target_remote_sha": remote_sha,
+        "merge_main_changed_paths": main_paths,
+        "merge_main_control_commits_valid": sequence_valid,
+        "direction_candidate_verified_from_main": True,
+        "verifier_repository": str(ROOT.resolve()),
+        "verifier_branch": verifier["branch"],
+        "verifier_head": origin_main,
+        "candidate_repository": str(candidate),
+        "candidate_branch": candidate_branch,
+        "candidate_head": candidate_head,
+        "candidate_remote_ref": remote_ref,
+    }
+
+    # Refresh once more and prove no authority or candidate endpoint moved
+    # while the facts were being assembled.
+    _, final_refs = _authoritative_ref_snapshot(
+        ROOT, ["main", target_branch], expected_origin=verifier_origin
+    )
+    if final_refs != fetched_refs:
+        raise RuntimeError("origin authority refs moved during direction validation")
+    if _git("rev-parse", "HEAD") != origin_main or _git("rev-parse", "origin/main") != origin_main:
+        raise RuntimeError("verifier or origin/main moved during direction validation")
+    if _git("rev-parse", "--verify", remote_ref, check=False) != remote_sha:
+        raise RuntimeError("candidate remote branch moved during direction validation")
+    if _git_at(candidate, "rev-parse", "HEAD") != candidate_head:
+        raise RuntimeError("candidate HEAD moved during direction validation")
+    if _git_at(
+        candidate, "symbolic-ref", "--quiet", "--short", "HEAD", check=False
+    ) != target_branch:
+        raise RuntimeError("candidate branch moved during direction validation")
+    if _git_at(
+        candidate, "rev-parse", "--verify", f"refs/heads/{target_branch}",
+        check=False,
+    ) != candidate_head:
+        raise RuntimeError("candidate local branch ref moved during validation")
+    if _clean_status_entries(candidate):
+        raise RuntimeError("candidate worktree changed during direction validation")
+    if (
+        _absolute_git_common_dir(candidate) != _absolute_git_common_dir(ROOT)
+        or _authoritative_azure_origin(candidate) != verifier_origin
+        or _authoritative_azure_origin(ROOT) != verifier_origin
+        or _registered_worktrees(ROOT).count(candidate) != 1
+    ):
+        raise RuntimeError("candidate worktree identity changed during validation")
+    if SCRIPT_PATH.read_bytes() != _git_bytes_at(
+        ROOT, "show", f"{origin_main}:{script_relative}"
+    ):
+        raise RuntimeError("verifier script changed during direction validation")
+    return origin_ledger, facts
 
 
 def evaluate_policy(
@@ -1751,7 +2756,7 @@ def evaluate_policy(
         errors.append("detached HEAD is not an authorized write lane")
     if facts.get("branch") == "main" and intent != "read":
         errors.append("writes and releases may not run directly from main")
-    if facts.get("behind", 0):
+    if facts.get("behind", 0) and intent != "merge":
         errors.append(f"checkout is {facts['behind']} commit(s) behind origin/main")
     if require_clean and (
         facts.get("tracked_changes", 0) or facts.get("untracked_changes", 0)
@@ -1761,6 +2766,356 @@ def evaluate_policy(
     if intent == "read":
         if not mode.get("read_only_work_allowed", False):
             errors.append("the current operating mode disallows read-only work")
+        return errors, warnings
+
+    if intent == "merge":
+        target: dict | None = None
+        origin_mode: dict = {}
+        if origin_ledger is None or not isinstance(origin_ledger, dict):
+            # Preserve the standing generic active/closing-lane merge contract
+            # for all lanes that are not the special reviewed direction flow.
+            pass
+        else:
+            origin_mode, _, _, origin_by_package = _activation_snapshot(
+                origin_ledger, "origin/main", errors
+            )
+            target = origin_by_package.get(package_id.casefold())
+            is_direction_target = bool(
+                isinstance(target, dict)
+                and target.get("lane_class") == "direction_authority"
+                and target.get("production_capable") is False
+            )
+            if not is_direction_target:
+                target = None
+            else:
+                if not facts.get("fetched"):
+                    errors.append("direction merge requires --fetch")
+                if not require_clean:
+                    errors.append("direction merge requires --require-clean")
+        if origin_ledger is None or not isinstance(origin_ledger, dict) or target is None:
+            # Fall through to the legacy generic merge evaluation below.
+            pass
+        else:
+            grant = _direction_merge_grant(target, "merge target", errors)
+            allowed = origin_mode.get("merge_allowed_for")
+            if not isinstance(allowed, list) or package_id not in allowed:
+                errors.append(f"merge is blocked for {package_id} on origin/main")
+            if facts.get("branch") != target.get("branch"):
+                errors.append("merge branch must equal the active target branch")
+            reviewed_sha = grant.get("reviewed_remote_sha") if grant else None
+            if facts.get("head") != reviewed_sha:
+                errors.append("merge HEAD must equal the reviewed_remote_sha")
+            if facts.get("merge_target_remote_sha") != reviewed_sha:
+                errors.append("merge target remote tip must equal the reviewed_remote_sha")
+            _validate_changed_paths_within_lane(target, facts, "merge", errors)
+            main_paths = facts.get("merge_main_changed_paths")
+            expected_behind = (
+                2 if package_id == "PS-PROFILE-EXPERIENCE-001" else 1
+            )
+            expected_main_paths = (
+                DIRECTION_MERGE_CONTROL_PATHS
+                if expected_behind == 2 else set(GRANT_ALLOWED_SURFACES)
+            )
+            if facts.get("behind") != expected_behind:
+                errors.append(
+                    "direction merge requires exactly "
+                    f"{expected_behind} verified main control commit(s)"
+                )
+            if not isinstance(main_paths, list) or not all(
+                isinstance(path, str) and path for path in main_paths
+            ):
+                errors.append("merge requires main-side changed path evidence")
+            else:
+                normalized_main: list[str] = []
+                for index, raw_path in enumerate(main_paths):
+                    path = _normalize_repo_surface(
+                        raw_path, f"merge main_changed_paths[{index}]", errors
+                    )
+                    if path is not None:
+                        normalized_main.append(path)
+                if set(normalized_main) != expected_main_paths:
+                    errors.append(
+                        "direction merge requires the exact reviewed control paths"
+                    )
+                if facts.get("merge_main_control_commits_valid") is not True:
+                    errors.append(
+                        "direction merge requires the exact repair-plus-target-grant main commit sequence"
+                    )
+            if facts.get("behind") == expected_behind:
+                warnings.append(
+                    f"merge candidate is {facts['behind']} commit(s) behind origin/main; "
+                    "only the exact verified control sequence is tolerated"
+                )
+            return errors, warnings
+
+    if intent == "grant":
+        if not facts.get("fetched"):
+            errors.append("grant requires --fetch")
+        if not require_clean:
+            errors.append("grant requires --require-clean")
+        if origin_ledger is None or not isinstance(origin_ledger, dict):
+            errors.append("grant requires the fetched origin/main lane ledger")
+            return errors, warnings
+        if facts.get("ahead") != 1 or facts.get("behind") != 0:
+            errors.append("grant control branch must be exactly one commit ahead of origin/main")
+        if not _valid_utc_timestamp(ledger.get("updated_at")):
+            errors.append("grant ledger updated_at must be a real UTC timestamp")
+        elif not _valid_utc_timestamp(origin_ledger.get("updated_at")):
+            errors.append("origin/main ledger updated_at must be a real UTC timestamp")
+        elif not _utc_timestamp_strictly_advances(
+            ledger.get("updated_at"), origin_ledger.get("updated_at")
+        ):
+            errors.append("grant ledger updated_at must strictly advance origin/main")
+        candidate_mode, candidate_policy, candidate_lanes, candidate_by_package = (
+            _activation_snapshot(ledger, "candidate", errors)
+        )
+        origin_mode, origin_policy, origin_lanes, origin_by_package = (
+            _activation_snapshot(origin_ledger, "origin/main", errors)
+        )
+        target = origin_by_package.get(package_id.casefold())
+        candidate_target = candidate_by_package.get(package_id.casefold())
+        if target is None or candidate_target is None:
+            errors.append(f"grant requires {package_id} to remain active")
+            return errors, warnings
+        branch = facts.get("branch")
+        if not isinstance(branch, str) or not GRANT_BRANCH_PATTERN.fullmatch(branch):
+            errors.append(
+                "grant must run from a dedicated control-only branch matching "
+                f"{GRANT_BRANCH_PATTERN.pattern!r}"
+            )
+        if candidate_policy != origin_policy:
+            errors.append("grant may not change activation_policy")
+        if list(candidate_by_package) != list(origin_by_package):
+            errors.append("grant must preserve active package set and order")
+        if len(candidate_lanes) != len(origin_lanes):
+            errors.append("grant may not change active-lane capacity")
+        for origin_lane, candidate_lane in zip(
+            origin_lanes, candidate_lanes, strict=False
+        ):
+            if origin_lane.get("package") != package_id:
+                if candidate_lane != origin_lane:
+                    errors.append(
+                        "grant may not change another active lane: "
+                        f"{origin_lane.get('package', '(unknown)')}"
+                    )
+                continue
+            expected_lane = dict(origin_lane)
+            expected_lane["merge_grant"] = candidate_lane.get("merge_grant")
+            if candidate_lane != expected_lane:
+                errors.append("grant may only add merge_grant to the target lane")
+            grant = _direction_merge_grant(candidate_lane, "grant target", errors)
+            if "merge_grant" in origin_lane:
+                errors.append("grant target already has a merge_grant")
+            if candidate_lane.get("owner_decisions") != origin_lane.get("owner_decisions"):
+                errors.append("grant may not append or change owner_decisions")
+            if grant is not None:
+                if grant.get("granted_at") != ledger.get("updated_at"):
+                    errors.append(
+                        "grant merge_grant.granted_at must equal ledger updated_at"
+                    )
+                reviewed_sha = grant.get("reviewed_remote_sha")
+                remote_sha = facts.get("grant_target_remote_sha")
+                if reviewed_sha != remote_sha:
+                    errors.append(
+                        "grant reviewed_remote_sha must equal the fetched target branch tip"
+                    )
+                evidence_paths = _paths_within_lane(
+                    grant.get("review_evidence_paths"), candidate_lane,
+                    "grant review_evidence_paths", errors,
+                )
+                existing = facts.get("grant_review_evidence_existing")
+                if existing != evidence_paths:
+                    errors.append(
+                        "grant requires every review evidence path to exist at reviewed_remote_sha"
+                    )
+                evidence = facts.get("grant_review_evidence")
+                if not isinstance(evidence, list) or len(evidence) != len(evidence_paths):
+                    errors.append("grant requires exact review evidence content for every path")
+                else:
+                    review = grant.get("independent_review")
+                    independent_sha = review.get("reviewed_sha") if isinstance(review, dict) else None
+                    for item, path in zip(evidence, evidence_paths, strict=True):
+                        if not isinstance(item, dict) or item.get("path") != path:
+                            errors.append("grant review evidence content/path binding is invalid")
+                            continue
+                        if (
+                            item.get("object_type") != "blob"
+                            or item.get("object_mode") != "100644"
+                            or not path.casefold().endswith(".md")
+                        ):
+                            errors.append("grant review evidence must be regular Markdown blob files")
+                        content = item.get("content")
+                        if not isinstance(content, str) or not content:
+                            errors.append(
+                                "grant review evidence content must be non-empty UTF-8 text"
+                            )
+                            continue
+                        if item.get("git_blob_sha") != review.get("evidence_git_blob_sha"):
+                            errors.append("grant review evidence Git blob SHA is not attested")
+                        if item.get("bytes_sha256") != review.get("evidence_bytes_sha256"):
+                            errors.append("grant review evidence bytes SHA-256 is not attested")
+        expected_mode = dict(origin_mode)
+        origin_merge = origin_mode.get("merge_allowed_for")
+        if not isinstance(origin_merge, list):
+            errors.append("origin/main merge_allowed_for must be a list")
+        else:
+            expected_mode = dict(origin_mode)
+            expected_mode["merge_allowed_for"] = [*origin_merge, package_id]
+            if candidate_mode != expected_mode:
+                errors.append(
+                    "grant operating_mode may only append target to merge_allowed_for"
+                )
+        if _root_changes(ledger, origin_ledger) != {
+            "updated_at", "operating_mode", "active_lanes"
+        }:
+            errors.append(
+                "grant must change exactly updated_at, operating_mode, and active_lanes"
+            )
+        _validate_baseline_unchanged(
+            candidate_baseline, origin_baseline, label="grant", errors=errors
+        )
+        if set(facts.get("changed_paths") or []) != set(GRANT_ALLOWED_SURFACES):
+            errors.append(
+                "grant control branch must change exactly: "
+                + ", ".join(sorted(GRANT_ALLOWED_SURFACES))
+            )
+        return errors, warnings
+
+    if intent == "close":
+        if not facts.get("fetched"):
+            errors.append("close requires --fetch")
+        if not require_clean:
+            errors.append("close requires --require-clean")
+        if origin_ledger is None or not isinstance(origin_ledger, dict):
+            errors.append("close requires the fetched origin/main lane ledger")
+            return errors, warnings
+        if facts.get("ahead") != 1 or facts.get("behind") != 0:
+            errors.append("close control branch must be exactly one commit ahead of origin/main")
+        if not _valid_utc_timestamp(ledger.get("updated_at")):
+            errors.append("close ledger updated_at must be a real UTC timestamp")
+        elif not _valid_utc_timestamp(origin_ledger.get("updated_at")):
+            errors.append("origin/main ledger updated_at must be a real UTC timestamp")
+        elif not _utc_timestamp_strictly_advances(
+            ledger.get("updated_at"), origin_ledger.get("updated_at")
+        ):
+            errors.append("close ledger updated_at must strictly advance origin/main")
+        candidate_mode, candidate_policy, candidate_lanes, _ = _activation_snapshot(
+            ledger, "candidate", errors
+        )
+        origin_mode, origin_policy, origin_lanes, origin_by_package = _activation_snapshot(
+            origin_ledger, "origin/main", errors
+        )
+        target = origin_by_package.get(package_id.casefold())
+        if target is None:
+            errors.append(f"close requires {package_id} to be active on origin/main")
+            return errors, warnings
+        _direction_merge_grant(target, "close target", errors)
+        origin_merge_allowed = origin_mode.get("merge_allowed_for")
+        if not isinstance(origin_merge_allowed, list) or package_id not in origin_merge_allowed:
+            errors.append("close requires target merge permission on origin/main")
+        branch = facts.get("branch")
+        if not isinstance(branch, str) or not CLOSE_BRANCH_PATTERN.fullmatch(branch):
+            errors.append(
+                "close must run from a dedicated control-only branch matching "
+                f"{CLOSE_BRANCH_PATTERN.pattern!r}"
+            )
+        if candidate_policy != origin_policy:
+            errors.append("close may not change activation_policy")
+        remaining = [lane for lane in origin_lanes if lane.get("package") != package_id]
+        if candidate_lanes != remaining:
+            errors.append("close must remove exactly its target active lane")
+        expected_state = "active_delivery" if remaining else "controlled_idle"
+        expected_mode = dict(origin_mode)
+        expected_mode["state"] = expected_state
+        for field in (
+            "writes_allowed_for", "merge_allowed_for", "cleanup_allowed_for",
+            "release_allowed_for",
+        ):
+            values = origin_mode.get(field)
+            if not isinstance(values, list):
+                errors.append(f"origin/main operating_mode.{field} must be a list")
+            else:
+                expected_mode[field] = [value for value in values if value != package_id]
+        remaining_ids = _remaining_package_ids(remaining)
+        expected_exit_authority = (
+            "Active writer lanes: " + ", ".join(remaining_ids)
+            + f". {package_id} is merged_closed and retains no authority."
+            if remaining_ids
+            else f"No active writer lanes. {package_id} is merged_closed and retains no authority."
+        )
+        expected_mode["exit_authority"] = expected_exit_authority
+        if candidate_mode != expected_mode:
+            errors.append("close may only remove the target package's authority")
+        if candidate_mode.get("exit_authority") != expected_exit_authority:
+            errors.append("close exit_authority must equal the deterministic inert value")
+        origin_closing = origin_ledger.get("closing_lanes")
+        candidate_closing = ledger.get("closing_lanes")
+        if not isinstance(origin_closing, list) or not isinstance(candidate_closing, list):
+            errors.append("close closing_lanes must remain lists")
+        elif any(
+            isinstance(item, dict) and item.get("package") == package_id
+            for item in origin_closing
+        ):
+            errors.append("close target already exists in closing_lanes")
+        elif candidate_closing[:-1] != origin_closing or len(candidate_closing) != len(origin_closing) + 1:
+            errors.append("close must append exactly one closing record")
+        else:
+            closing = candidate_closing[-1]
+            expected_keys = set(target) | {
+                "disposition", "closed_at", "reviewed_remote_sha",
+                "merged_main_sha", "package_merge_sha", "close_evidence_paths",
+            }
+            if not isinstance(closing, dict) or set(closing) != expected_keys:
+                errors.append("close record must preserve target and add exact close fields")
+            elif any(closing.get(key) != value for key, value in target.items()):
+                errors.append("close record must preserve the exact active lane")
+            else:
+                if closing.get("disposition") != "merged_closed":
+                    errors.append("close disposition must be merged_closed")
+                if not _valid_utc_timestamp(closing.get("closed_at")):
+                    errors.append("close closed_at must be a UTC timestamp")
+                elif closing.get("closed_at") != ledger.get("updated_at"):
+                    errors.append("close closed_at must equal ledger updated_at")
+                if closing.get("reviewed_remote_sha") != target.get("merge_grant", {}).get("reviewed_remote_sha"):
+                    errors.append("close reviewed_remote_sha must preserve the granted candidate")
+                if closing.get("merged_main_sha") != facts.get("origin_main"):
+                    errors.append("close merged_main_sha must equal fetched origin/main")
+                if closing.get("package_merge_sha") != facts.get("close_package_merge_sha"):
+                    errors.append("close package_merge_sha must equal the verified merge commit")
+                evidence = _paths_within_lane(
+                    closing.get("close_evidence_paths"), target,
+                    "close close_evidence_paths", errors,
+                )
+                if evidence != facts.get("close_evidence_existing"):
+                    errors.append("close requires every bounded evidence path at package merge SHA")
+        if facts.get("close_target_remote_sha") != target.get("merge_grant", {}).get("reviewed_remote_sha"):
+            errors.append("close requires target remote tip to remain the reviewed SHA")
+        if facts.get("close_surface_tree_equal") is not True:
+            errors.append(
+                "close requires reviewed candidate, package merge, and captured main "
+                "writable-surface tree equivalence"
+            )
+        if facts.get("close_package_merge_ancestor") is not True:
+            errors.append("close package_merge_sha must be an ancestor of captured origin/main")
+        if facts.get("close_package_merge_introduced_candidate") is not True:
+            errors.append(
+                "close package_merge_sha must be the commit that introduced the reviewed candidate surfaces"
+            )
+        if _root_changes(ledger, origin_ledger) != {
+            "updated_at", "operating_mode", "active_lanes", "closing_lanes"
+        }:
+            errors.append(
+                "close must change exactly updated_at, operating_mode, active_lanes, and closing_lanes"
+            )
+        _validate_baseline_pause_delta(
+            candidate_baseline, origin_baseline, paused_package=package_id,
+            remaining_lanes=remaining, action="close", errors=errors,
+        )
+        if set(facts.get("changed_paths") or []) != set(CLOSE_ALLOWED_SURFACES):
+            errors.append(
+                "close control branch must change exactly: "
+                + ", ".join(sorted(CLOSE_ALLOWED_SURFACES))
+            )
         return errors, warnings
 
     if intent == "transfer":
@@ -2256,6 +3611,9 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        grant_close_repair_matches = _exact_grant_close_preflight_repair_matches(
+            ledger, facts, package_id
+        )
         if bootstrap_matches:
             allowed_surfaces = set(BOOTSTRAP_CONTROL_REPAIR["allowed_surfaces"])
             warnings.append(
@@ -2267,6 +3625,13 @@ def evaluate_policy(
             )
             warnings.append(
                 "using the exact one-time writer-transfer preflight-repair boundary"
+            )
+        elif grant_close_repair_matches:
+            allowed_surfaces = set(
+                GRANT_CLOSE_PREFLIGHT_REPAIR["allowed_surfaces"]
+            )
+            warnings.append(
+                "using the exact one-time grant-close preflight-repair boundary"
             )
 
         if origin_ledger is None:
@@ -2292,6 +3657,7 @@ def evaluate_policy(
             if (
                 not bootstrap_matches
                 and not writer_transfer_repair_matches
+                and not grant_close_repair_matches
                 and origin_policy != policy
             ):
                 errors.append(
@@ -2303,7 +3669,45 @@ def evaluate_policy(
                     f"activation candidate exceeds the {MAX_ACTIVE_LANES}-lane limit"
                 )
 
-            if writer_transfer_repair_matches:
+            if grant_close_repair_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "grant-close preflight repair updated_at must be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "grant-close preflight repair updated_at must strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "grant-close preflight repair may not change activation_policy"
+                    )
+                if _root_changes(ledger, origin_ledger) != {
+                    "updated_at", "grant_close_preflight_repair"
+                }:
+                    errors.append(
+                        "grant-close preflight repair must change exactly updated_at "
+                        "and grant_close_preflight_repair"
+                    )
+                if origin_ledger.get("grant_close_preflight_repair") is not None:
+                    errors.append(
+                        "grant-close preflight repair is one-time and already recorded"
+                    )
+                if ledger.get("grant_close_preflight_repair") != GRANT_CLOSE_PREFLIGHT_REPAIR:
+                    errors.append("grant-close preflight repair record is not exact")
+                _validate_baseline_unchanged(
+                    candidate_baseline, origin_baseline,
+                    label="grant-close preflight repair", errors=errors,
+                )
+            elif writer_transfer_repair_matches:
                 if origin_policy != policy:
                     errors.append(
                         "writer-transfer preflight repair may not change activation_policy"
@@ -2572,7 +3976,7 @@ def evaluate_policy(
                         "activation may not change unrelated ledger sections: "
                         + ", ".join(unexpected_root_changes)
                     )
-        if not writer_transfer_repair_matches:
+        if not writer_transfer_repair_matches and not grant_close_repair_matches:
             _validate_baseline_activation_delta(
                 candidate_baseline,
                 origin_baseline,
@@ -2600,6 +4004,12 @@ def evaluate_policy(
             ):
                 errors.append(
                     "writer-transfer preflight repair must change exactly the "
+                    "owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if grant_close_repair_matches and changed_paths != allowed_surfaces:
+                errors.append(
+                    "grant-close preflight repair must change exactly the "
                     "owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
@@ -2667,6 +4077,8 @@ def build_parser() -> argparse.ArgumentParser:
             "activate",
             "pause",
             "transfer",
+            "grant",
+            "close",
             "write",
             "merge",
             "cleanup",
@@ -2685,16 +4097,31 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="fail when tracked or untracked changes exist",
     )
+    parser.add_argument(
+        "--candidate-worktree",
+        help=(
+            "absolute frozen direction-candidate worktree path; valid only for "
+            "merge with --fetch --require-clean from trusted origin/main"
+        ),
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     activation_argument_errors: list[str] = []
+    if args.candidate_worktree and (
+        args.intent != "merge" or not args.fetch or not args.require_clean
+    ):
+        activation_argument_errors.append(
+            "--candidate-worktree requires --intent merge --fetch --require-clean"
+        )
     control_label = {
         "activate": "activation",
         "pause": "pause",
         "transfer": "writer transfer",
+        "grant": "merge grant",
+        "close": "close",
     }.get(args.intent)
     if control_label is not None and not args.fetch:
         activation_argument_errors.append(f"{control_label} requires --fetch")
@@ -2716,26 +4143,55 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
     try:
-        ledger = load_ledger()
-        facts = collect_facts(
-            fetch=args.fetch,
-            include_changed_paths=args.intent in {
+        exact_control_origin: str | None = None
+        exact_control_refs: dict[str, str] | None = None
+        exact_control_branches: list[str] = []
+        if args.candidate_worktree:
+            ledger, facts = _collect_direction_candidate_merge(
+                args.package, args.candidate_worktree
+            )
+        else:
+            ledger = load_ledger()
+            if args.fetch and args.intent in EXACT_CONTROL_FETCH_INTENTS:
+                exact_control_branches = ["main"]
+                exact_control_origin, exact_control_refs = (
+                    _authoritative_ref_snapshot(ROOT, exact_control_branches)
+                )
+            facts = collect_facts(
+                fetch=(
+                    args.fetch
+                    and args.intent not in EXACT_CONTROL_FETCH_INTENTS
+                ),
+                include_changed_paths=args.intent in {
                 "activate",
                 "pause",
                 "transfer",
+                "grant",
+                "close",
                 "write",
                 "merge",
                 "release",
-            },
-        )
-        if args.intent in {"activate", "pause", "transfer"}:
+                },
+            )
+            if exact_control_refs is not None:
+                facts["fetched"] = True
+                facts["origin_url"] = exact_control_origin
+                facts["origin_is_azure"] = True
+                if facts["origin_main"] != exact_control_refs["main"]:
+                    raise RuntimeError(
+                        "captured origin/main does not equal advertised main"
+                    )
+        if args.intent in {"activate", "pause", "transfer", "grant", "close", "merge"}:
             # The exact SHA captured with the Git facts is the authority for
             # both records, preventing a later remote movement from changing
             # what the candidate was compared against mid-preflight.
             origin_ledger = load_ledger_at_ref(facts["origin_main"])
-            candidate_baseline = load_baseline_bytes()
+            candidate_baseline = (
+                load_baseline_bytes_at_ref(facts["origin_main"])
+                if args.candidate_worktree else load_baseline_bytes()
+            )
             origin_baseline = load_baseline_bytes_at_ref(facts["origin_main"])
-            if args.intent in {"pause", "transfer"}:
+            if args.intent in {"pause", "transfer", "grant", "close", "merge"}:
                 origin_lanes = origin_ledger.get("active_lanes")
                 target = next(
                     (
@@ -2747,12 +4203,43 @@ def main(argv: list[str] | None = None) -> int:
                     None,
                 ) if isinstance(origin_lanes, list) else None
                 target_branch = target.get("branch") if isinstance(target, dict) else None
-                if isinstance(target_branch, str) and target_branch:
+                if (
+                    args.intent == "merge"
+                    and not args.candidate_worktree
+                    and isinstance(target, dict)
+                    and target.get("lane_class") == "direction_authority"
+                ):
+                    raise RuntimeError(
+                        "direction-authority merge requires --candidate-worktree "
+                        "from a trusted current-main verifier"
+                    )
+                if (
+                    isinstance(target_branch, str)
+                    and target_branch
+                    and args.fetch
+                    and args.intent in EXACT_CONTROL_FETCH_INTENTS
+                ):
+                    if not _is_valid_implementation_branch(target_branch):
+                        raise RuntimeError("active lane has no safe target branch")
+                    exact_control_branches = ["main", target_branch]
+                    _, refreshed_refs = _authoritative_ref_snapshot(
+                        ROOT,
+                        exact_control_branches,
+                        expected_origin=exact_control_origin,
+                    )
+                    if refreshed_refs["main"] != facts["origin_main"]:
+                        raise RuntimeError(
+                            "origin/main moved while control authority was loaded"
+                        )
+                    exact_control_refs = refreshed_refs
+                    remote_sha = refreshed_refs[target_branch]
+                    remote_fact = (
+                        remote_sha if FULL_GIT_SHA.fullmatch(remote_sha) else None
+                    )
+                elif isinstance(target_branch, str) and target_branch:
                     remote_sha = _git(
-                        "rev-parse",
-                        "--verify",
-                        f"refs/remotes/origin/{target_branch}",
-                        check=False,
+                        "rev-parse", "--verify",
+                        f"refs/remotes/origin/{target_branch}", check=False,
                     )
                     remote_fact = (
                         remote_sha if FULL_GIT_SHA.fullmatch(remote_sha) else None
@@ -2761,8 +4248,133 @@ def main(argv: list[str] | None = None) -> int:
                     remote_fact = None
                 if args.intent == "pause":
                     facts["pause_target_remote_sha"] = remote_fact
-                else:
+                elif args.intent == "transfer":
                     facts["transfer_target_remote_sha"] = remote_fact
+                elif args.intent == "grant":
+                    facts["grant_target_remote_sha"] = remote_fact
+                    grant = next(
+                        (
+                            lane.get("merge_grant")
+                            for lane in ledger.get("active_lanes", [])
+                            if isinstance(lane, dict)
+                            and lane.get("package") == args.package
+                        ),
+                        None,
+                    )
+                    evidence = (
+                        grant.get("review_evidence_paths")
+                        if isinstance(grant, dict) else []
+                    )
+                    evidence_items = []
+                    for path in evidence:
+                        if not isinstance(path, str) or not remote_fact:
+                            continue
+                        object_type = _git_object_type(remote_fact, path)
+                        if not object_type:
+                            continue
+                        content: str | None = None
+                        raw_content = b""
+                        if object_type == "blob":
+                            raw_content = _git_bytes("show", f"{remote_fact}:{path}")
+                            try:
+                                content = raw_content.decode("utf-8")
+                            except UnicodeDecodeError:
+                                content = None
+                        evidence_items.append(
+                            {
+                                "path": path,
+                                "object_type": object_type,
+                                "object_mode": _git_object_mode(remote_fact, path),
+                                "content": content,
+                                "git_blob_sha": _git_blob_sha(remote_fact, path),
+                                "bytes_sha256": hashlib.sha256(raw_content).hexdigest()
+                                if object_type == "blob" else None,
+                            }
+                        )
+                    facts["grant_review_evidence_existing"] = [
+                        item["path"] for item in evidence_items
+                    ]
+                    facts["grant_review_evidence"] = evidence_items
+                elif args.intent == "close":
+                    facts["close_target_remote_sha"] = remote_fact
+                    closing = next(
+                        (
+                            item
+                            for item in ledger.get("closing_lanes", [])
+                            if isinstance(item, dict)
+                            and item.get("package") == args.package
+                        ),
+                        None,
+                    )
+                    package_merge_sha = (
+                        closing.get("package_merge_sha")
+                        if isinstance(closing, dict) else None
+                    )
+                    facts["close_package_merge_sha"] = package_merge_sha
+                    ancestor_returncode = _git_returncode_at(
+                        ROOT,
+                        "merge-base", "--is-ancestor",
+                        package_merge_sha or "", facts["origin_main"],
+                    ) if isinstance(package_merge_sha, str) else None
+                    facts["close_package_merge_ancestor"] = bool(
+                        isinstance(package_merge_sha, str)
+                        and FULL_GIT_SHA.fullmatch(package_merge_sha)
+                        and ancestor_returncode == 0
+                    )
+                    close_evidence = (
+                        closing.get("close_evidence_paths")
+                        if isinstance(closing, dict) else []
+                    )
+                    facts["close_evidence_existing"] = [
+                        path for path in close_evidence
+                        if isinstance(path, str) and package_merge_sha
+                        and _git_object_type(package_merge_sha, path) == "blob"
+                    ]
+                    surfaces = target.get("writable_surfaces", []) if isinstance(target, dict) else []
+                    comparisons = []
+                    introduction_checks = []
+                    for surface in surfaces:
+                        if not isinstance(surface, str) or not remote_fact:
+                            comparisons.append(False)
+                            continue
+                        candidate_tree = _git(
+                            "rev-parse", f"{remote_fact}:{surface.rstrip('/')}",
+                            check=False,
+                        )
+                        merge_tree = _git(
+                            "rev-parse", f"{package_merge_sha}:{surface.rstrip('/')}",
+                            check=False,
+                        )
+                        main_tree = _git(
+                            "rev-parse", f"{facts['origin_main']}:{surface.rstrip('/')}",
+                            check=False,
+                        )
+                        comparisons.append(
+                            bool(candidate_tree)
+                            and candidate_tree == merge_tree == main_tree
+                        )
+                        merge_parent_tree = _git(
+                            "rev-parse", f"{package_merge_sha}^:{surface.rstrip('/')}",
+                            check=False,
+                        )
+                        introduction_checks.append(
+                            bool(candidate_tree)
+                            and candidate_tree == merge_tree
+                            and merge_parent_tree != merge_tree
+                        )
+                    facts["close_surface_tree_equal"] = bool(comparisons) and all(comparisons)
+                    facts["close_package_merge_introduced_candidate"] = (
+                        bool(introduction_checks) and all(introduction_checks)
+                    )
+                elif not args.candidate_worktree:
+                    facts["merge_target_remote_sha"] = remote_fact
+                    (
+                        facts["merge_main_changed_paths"],
+                        facts["merge_main_control_commits_valid"],
+                        _,
+                    ) = _direction_main_sequence_facts(
+                        origin_ledger, args.package, facts["head"], facts["origin_main"]
+                    )
         else:
             origin_ledger = None
             candidate_baseline = None
@@ -2777,6 +4389,20 @@ def main(argv: list[str] | None = None) -> int:
             candidate_baseline=candidate_baseline,
             origin_baseline=origin_baseline,
         )
+        if exact_control_refs is not None:
+            _, final_refs = _authoritative_ref_snapshot(
+                ROOT,
+                exact_control_branches,
+                expected_origin=exact_control_origin,
+            )
+            if final_refs != exact_control_refs:
+                raise RuntimeError(
+                    "origin authority refs moved during control preflight"
+                )
+            if facts["origin_main"] != final_refs["main"]:
+                raise RuntimeError(
+                    "captured origin/main changed during control preflight"
+                )
     except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as exc:
         print(json.dumps({"result": "fail", "errors": [str(exc)]}, indent=2))
         return 2

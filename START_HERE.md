@@ -1,8 +1,7 @@
 # PeerSlate - START HERE
 
-This is the required first check for work that may change repository files,
-product behavior, data, or a release. Its job is to prevent unsafe or wasted
-work, not to turn every task into a governance exercise.
+Use this first for work that may change files, behavior, data, or a release.
+It prevents unsafe work without turning every task into governance.
 
 ## 1. Establish a safe starting point
 
@@ -69,6 +68,24 @@ python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent pause --fet
 
 Merge only the control record. Paused work consumes no slot and resumes only
 through fresh activation.
+
+A completed non-production direction lane uses a clean grant branch:
+
+```bash
+python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent grant --fetch --require-clean
+```
+
+After grant reaches `origin/main`, keep the candidate frozen and run from a
+clean current-main verifier:
+
+```bash
+python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent merge --fetch --require-clean --candidate-worktree <ABSOLUTE-FROZEN-WORKTREE>
+```
+
+The candidate must be a clean sibling sharing the Git directory and Azure
+origin. Never alter it or use its old validator. Preserve its remote branch
+through close; clean it up afterward. Close removes authority. This grants no
+runtime or production rights.
 
 | Path | Use for | Read next |
 |---|---|---|

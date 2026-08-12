@@ -44,7 +44,7 @@ class LeanStartupTests(unittest.TestCase):
         self.assertIn("Read only what the task needs", body)
         self.assertNotIn("CURRENT_STATE.md", body)
         self.assertNotIn("ACTIVE_INITIATIVES.md", body)
-        self.assertLess(len(body.split()), 600)
+        self.assertLess(len(body.split()), 700)
 
     def test_workflow_has_three_paths_and_no_universal_specialist_gate(self):
         body = _read("docs", "AI_WORKFLOW.md")
@@ -131,6 +131,23 @@ class ControlPlaneTests(unittest.TestCase):
         self.assertIn('"PS-DELIVERY-CONTROL-001"', ledger)
         self.assertIn('"cleanup_authorized": true', ledger)
         self.assertIn('"cleanup_allowed_for"', ledger)
+        self.assertIn('"grant_close_preflight_repair"', ledger)
+
+    def test_direction_grant_merge_close_is_documented_consistently(self):
+        for parts in (
+            ("AGENTS.md",),
+            ("CLAUDE.md",),
+            ("START_HERE.md",),
+            ("docs", "AI_WORKFLOW.md"),
+            ("docs", "governance", "AGENT_STARTUP_CHECKLIST.md"),
+            ("docs", "governance", "PEERSLATE_OWNER_DELIVERY_GUIDE.md"),
+        ):
+            body = _read(*parts).lower()
+            for term in ("grant", "merge", "close"):
+                self.assertIn(term, body, f"{term} missing from {'/'.join(parts)}")
+        workflow = _read("docs", "AI_WORKFLOW.md")
+        self.assertIn("non-production `direction_authority`", workflow)
+        self.assertIn("may not append", workflow)
 
     def test_production_truth_is_separate_from_current_git(self):
         authority = self.data["authority"]

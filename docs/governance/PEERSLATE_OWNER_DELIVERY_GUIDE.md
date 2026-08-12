@@ -77,6 +77,22 @@ repository has historical Protected packages.
 | Live | “Exact build and affected journey verified.” | Release identity, routes/contracts, alerts, cleanup, and schema state when applicable. |
 | Close | “This lane is finished.” | Completion record, branch/worktree disposition, ownership released. |
 
+For a direction-only package, those gates are executable and separate. The
+grant points back to a Pete decision that already authorizes merge and locks
+the reviewed pushed SHA; it does not manufacture new approval. Merge accepts
+only that SHA and only non-overlapping main movement. Close proves the package
+tree reached current main, removes every authority entry, and preserves an
+inert historical record. Runtime, deployment, release, schema, and production
+rights remain outside this path.
+
+If the reviewed package has older control code, it stays frozen. A separate
+clean verifier at current Azure `main` runs the merge check against the
+candidate's absolute registered worktree path. The two worktrees must belong
+to the same repository and Azure origin; changing, rebasing, overlaying, or
+detaching the candidate is a stop. Complete the direction PR with automatic
+source-branch deletion disabled: exact close revalidates that remote tip.
+Retain it through close, then remove it only under the recorded cleanup path.
+
 ## Copy-paste directions for Pete
 
 ### Explore an idea without opening work
