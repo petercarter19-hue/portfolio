@@ -1700,10 +1700,11 @@ class InterviewStudioAssetTests(unittest.TestCase):
         self.assertIn('questionTrail = [nextLocalQuestion', setup)
         self.assertIn('function explicitContextForAi()', source)
         self.assertIn("slice(0, 4000)", source)
-        # review, requestImprovement, nudge, model-answer, and (slice 4) the
-        # authenticated startAuthenticatedImprove() all send the same
+        # review, requestImprovement, nudge, model-answer, (slice 4) the
+        # authenticated startAuthenticatedImprove(), and (2026-08-13) the
+        # Interview Me inline example all send the same
         # explicit/bounded/untrusted context -- never a client free-text field.
-        self.assertEqual(source.count('opportunity_context: explicitContextForAi()'), 5)
+        self.assertEqual(source.count('opportunity_context: explicitContextForAi()'), 6)
 
     def test_history_only_compares_like_family_dimension_and_session_context(self):
         source = _studio_script()
@@ -4383,42 +4384,191 @@ class InterviewStudioSlice56RecompositionTests(_InterviewStudioAuthenticatedTest
         self.assertIn('var applyAiModeChange = function (value)', script)
         self.assertIn('modeSelect.value = radio.value;', script)
 
-    def test_post_review_model_answer_action_navigates_and_never_writes(self):
-        """Owner directive 2026-08-12: the optional model answer is reachable
-        again straight after a review, and doing so must not touch the
-        member's own answer.
+    def test_post_review_model_answer_action_reveals_in_place(self):
+        """Owner restoration 2026-08-13: the post-review action opens the
+        example IN Interview Me instead of navigating to Interview AI.
 
-        The control is an ANCHOR to the existing Interview AI surface, so it
-        cannot post, save, or overwrite anything: there is no fetch, no
-        storage write, and no assignment to the answer field on this path.
-        It is also entitlement-gated, so an account without model answers is
-        never shown a door that will not open.
+        The 2026-08-12 round deliberately made this an anchor and locked that
+        choice here. Pete's restoration reverses it: the mode switch was the
+        regression. The control is now a button with no destination, so it
+        cannot navigate, and it hands off to the one shared disclosure.
+        Entitlement-gating and question-scoping are unchanged.
         """
         script = _studio_script()
         block = script.split('function appendModelAnswerAction(actions) {', 1)[1]
         block = block.split('\n    }', 1)[0]
 
-        # Entitlement-gated and question-scoped.
+        # Entitlement-gated and question-scoped, as before.
         self.assertIn('if (!actions || !modelAnswersEnabled) return null;', block)
         self.assertIn('var question = currentQuestion();', block)
         self.assertIn("if (!question || !question.text) return null;", block)
 
-        # Navigates to the SAME question on the existing AI surface.
-        self.assertIn("createElement('a')", block)
-        self.assertIn(
-            "link.href = studioUrl + '?mode=ai&question=' + "
-            "encodeURIComponent(question.text);",
-            block,
-        )
+        # A button, and specifically NOT a link to another mode.
+        self.assertIn('makeActionButton(', block)
         self.assertIn('See a strong answer + why it works', block)
+        self.assertNotIn("createElement('a')", block)
+        self.assertNotIn('mode=ai', block)
+        self.assertNotIn('.href', block)
 
-        # Never mutates the member's answer or persists anything.
-        for forbidden in ('fetch(', 'answer.value', 'writeJSON', 'saveDraft',
+        # It defers to the shared disclosure rather than fetching itself.
+        self.assertIn('revealInlineExample(', block)
+
+        # Still never mutates the member's answer or persists anything.
+        for forbidden in ('answer.value', 'writeJSON', 'saveDraft',
                           'localStorage', 'sessionStorage', 'XMLHttpRequest'):
             self.assertNotIn(forbidden, block)
 
         # Wired into the reviewed stack, not some unrelated surface.
         self.assertIn('appendModelAnswerAction(built.actions);', script)
+
+    def test_one_shared_inline_disclosure_serves_both_entry_points(self):
+        """The pre-answer example action and the post-review action are two
+        doors into the same room, so the member never learns two behaviours."""
+        script = _studio_script()
+        # Pre-answer: the existing link is intercepted on the authenticated
+        # page and opens the disclosure beneath the composer.
+        self.assertIn("closest('[data-is-example-link]')", script)
+        self.assertIn('revealInlineExample(answeringBlock);', script)
+        # Both entry points call the one function.
+        self.assertGreaterEqual(script.count('revealInlineExample('), 3)
+        # Scoped to the authenticated page so the public branch keeps the
+        # navigation its byte-comparability contract fixes.
+        guard = script.split("if (authenticated && modelAnswersEnabled) {", 1)
+        self.assertEqual(2, len(guard), 'the interceptor must be gated')
+
+    def test_the_inline_example_never_persists_or_touches_the_answer(self):
+        """The generated example is ephemeral by construction: rendered into
+        the DOM and never assigned to session state, a draft, History or any
+        storage, so it cannot leak into the member's own answer."""
+        script = _studio_script()
+        block = script.split('function revealInlineExample(anchor) {', 1)[1]
+        block = block.split('\n    /* Post-review entry point', 1)[0]
+        for forbidden in ('answer.value =', 'writeJSON', 'saveDraft',
+                          'addHistoryRecord', 'updateHistoryRecord',
+                          'persistSession', 'localStorage', 'sessionStorage',
+                          'session.currentReview', 'session.aiReference'):
+            self.assertNotIn(forbidden, block)
+        render = script.split('function renderInlineExample(host, payload) {', 1)[1]
+        render = render.split('\n    /* Both entry points', 1)[0]
+        for forbidden in ('writeJSON', 'saveDraft', 'localStorage',
+                          'sessionStorage', 'answer.value ='):
+            self.assertNotIn(forbidden, render)
+
+    def test_the_inline_example_reuses_the_existing_endpoint_contract(self):
+        """No new endpoint, provider, prompt or evidence contract: the same
+        call the Interview AI panel already makes, on the current question."""
+        script = _studio_script()
+        block = script.split('function revealInlineExample(anchor) {', 1)[1]
+        block = block.split('\n    /* Post-review entry point', 1)[0]
+        self.assertIn("postJSON('/api/interview/model-answer', {", block)
+        self.assertIn('question: question.text,', block)
+        self.assertIn('mode: selectedAiMode(),', block)
+        self.assertIn('opportunity_context: explicitContextForAi()', block)
+        # A follow-up is never smuggled in from this path.
+        self.assertIn("follow_up: ''", block)
+        self.assertIn("context_token: ''", block)
+
+    def test_the_inline_example_discards_stale_and_duplicate_work(self):
+        """A late answer for a question the member has left must never paint,
+        and a repeat click must not spend another generation."""
+        script = _studio_script()
+        clear = script.split('function clearInlineExample() {', 1)[1]
+        clear = clear.split('\n    }', 1)[0]
+        self.assertIn('inlineExampleSeq += 1;', clear)
+        self.assertIn('inlineExampleController.abort();', clear)
+
+        block = script.split('function revealInlineExample(anchor) {', 1)[1]
+        block = block.split('\n    /* Post-review entry point', 1)[0]
+        # In-flight guard, and a same-question guard after it has rendered.
+        self.assertIn('if (inlineExampleController) return;', block)
+        self.assertIn('inlineExampleQuestion === question.text', block)
+        # Every handler checks the sequence before touching the DOM.
+        self.assertEqual(2, block.count('if (seq !== inlineExampleSeq) return;'))
+
+        # It is cleared when the question or the grounding context changes.
+        reset = script.split('function resetConsequenceStack() {', 1)[1]
+        reset = reset.split('\n    }', 1)[0]
+        self.assertIn('clearInlineExample();', reset)
+        ctx = script.split('function resetAiAnswerForContextChange() {', 1)[1]
+        ctx = ctx.split('\n    }', 1)[0]
+        self.assertIn('clearInlineExample();', ctx)
+
+    def test_the_inline_example_states_and_truth_label(self):
+        """Insufficient evidence is reported, never filled in; the generic
+        and evidence-backed cases are labelled differently; and failure keeps
+        the member's own work visible with a way to try again."""
+        script = _studio_script()
+        render = script.split('function renderInlineExample(host, payload) {', 1)[1]
+        render = render.split('\n    /* Both entry points', 1)[0]
+        self.assertIn("model.status === 'insufficient'", render)
+        self.assertIn('Nothing has been invented', render)
+        self.assertIn('Illustrative example', render)
+        self.assertIn('Strong example', render)
+        self.assertIn('Why this works', render)
+        # Announced, and focus moved only through the guarded helper.
+        self.assertIn('announce(', render)
+        self.assertIn('focusInlineExample(host);', render)
+        self.assertNotIn('host.focus({ preventScroll: true });', render)
+
+        block = script.split('function revealInlineExample(anchor) {', 1)[1]
+        block = block.split('\n    /* Post-review entry point', 1)[0]
+        self.assertIn('Drafting a strong example', block)
+        self.assertIn('Your answer and coaching are untouched.', block)
+        self.assertIn("host.setAttribute('aria-busy', 'true');", block)
+
+    def test_the_arriving_example_never_steals_the_members_caret(self):
+        """Independent review finding P1, 2026-08-13.
+
+        Generation takes seconds. A member who goes back to typing their own
+        answer while they wait would have focus yanked out of the textarea
+        when the example arrived, and every keystroke after that would land
+        on a non-editable node and be silently lost -- on the one surface
+        whose whole purpose is drafting text. The arrival is announced
+        instead; they asked for it, so they are not surprised by it.
+        """
+        script = _studio_script()
+        guard = script.split('function memberIsTyping() {', 1)[1]
+        guard = guard.split('\n    }', 1)[0]
+        self.assertIn("tag === 'TEXTAREA'", guard)
+        self.assertIn("tag === 'INPUT'", guard)
+        self.assertIn('active.isContentEditable', guard)
+
+        mover = script.split('function focusInlineExample(host) {', 1)[1]
+        mover = mover.split('\n    }', 1)[0]
+        self.assertIn('if (!host || memberIsTyping()) return;', mover)
+
+    def test_the_example_card_is_not_itself_a_live_region(self):
+        """Independent review finding P2, 2026-08-13: the card was both a
+        live region AND announced through the page's status region, so a
+        screen reader read the entire generated answer, the truth label and
+        every reason aloud on arrival, again on focus, and again whenever the
+        card moved between anchors. Summary announcements only."""
+        script = _studio_script()
+        section = script.split('function inlineExampleSection(anchor) {', 1)[1]
+        section = section.split('\n    }', 1)[0]
+        self.assertNotIn("setAttribute('role', 'status')", section)
+        self.assertNotIn("setAttribute('aria-live'", section)
+        # Still reachable and still named for assistive technology.
+        self.assertIn("setAttribute('tabindex', '-1')", section)
+        self.assertIn("setAttribute('aria-label', 'Strong example')", section)
+
+    def test_retry_and_modifier_clicks_behave(self):
+        """Two more from the same review: 'Try again' sits inside the card it
+        replaces, so a keyboard user must not be dropped at the top of the
+        document; and the trigger is still a real link, so a modifier click
+        remains the member's to open in a new tab."""
+        script = _studio_script()
+        block = script.split('function revealInlineExample(anchor) {', 1)[1]
+        block = block.split('\n    /* Post-review entry point', 1)[0]
+        self.assertIn('var carriedFocus = Boolean(', block)
+        self.assertIn('if (carriedFocus) host.focus({ preventScroll: true });', block)
+
+        interceptor = script.split("closest('[data-is-example-link]')", 1)[1]
+        interceptor = interceptor.split('});', 1)[0]
+        self.assertIn('event.button !== 0', interceptor)
+        self.assertIn('event.ctrlKey', interceptor)
+        self.assertIn('event.metaKey', interceptor)
+        self.assertIn('event.shiftKey', interceptor)
 
     def test_source_label_renders_above_the_three_cards_not_beside_them(self):
         """Review finding P1-2b (lock 07/08): SOURCE is its own eyebrow row

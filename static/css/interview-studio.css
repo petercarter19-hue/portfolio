@@ -4413,6 +4413,62 @@ a.is-stack__action-btn:hover { background: var(--is-surface-2); }
 }
 .is-stack__authority { font-size: 0.78rem; color: var(--is-text-muted); display: flex; gap: 0.4rem; align-items: flex-start; margin-top: 1rem; }
 
+/* Inline example (owner restoration 2026-08-13). Reuses the established
+   answer-card language rather than introducing a second visual idiom: the
+   same hairline, radius and padding as .is-stack__coaching, one step
+   quieter so the member's own answer and their coaching stay dominant.
+   Deliberately no modal, no rail, no second composer. */
+.is-stack__example {
+    background: var(--is-surface-2);
+    box-shadow: none;
+}
+.is-stack__example:focus-visible {
+    outline: 3px solid var(--is-focus);
+    outline-offset: 2px;
+}
+.is-stack__example-answer {
+    margin: 0.5rem 0 0;
+    /* Long answers stay readable: a measure, not the full card width. */
+    max-width: 62ch;
+    white-space: pre-wrap;
+}
+.is-stack__example-truth {
+    margin: 0.7rem 0 0;
+    font-size: 0.74rem;
+    color: var(--is-text-muted);
+}
+.is-stack__example-status {
+    margin: 0.4rem 0 0;
+    font-size: 0.85rem;
+    color: var(--is-text);
+}
+.is-stack__example-why {
+    margin-top: 0.9rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--is-line);
+}
+.is-stack__example-why h4 {
+    font: 700 0.7rem/1.2 var(--ps-font-ui, Inter, Arial, sans-serif);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--is-gold-text);
+    margin: 0 0 0.5rem;
+}
+/* Match the AUTHENTICATED panel's why-list treatment rather than the
+   smaller green-dot idiom the public .is__why base rule falls back to.
+   The lock asked for the established authenticated answer-card language,
+   and at 0.74rem the reasons read as footnotes rather than takeaways. */
+.is-stack__example-why li {
+    padding-top: 0.6rem;
+    padding-left: 0;
+    border-top: 1px solid var(--is-line);
+    font-size: 0.84rem;
+    line-height: 1.5;
+}
+.is-stack__example-why li::before {
+    content: none;
+}
+
 .is-stack__improve-draft {
     width: 100%;
     min-height: 6.5rem;

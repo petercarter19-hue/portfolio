@@ -1158,6 +1158,11 @@
         renderSessionProgress();
         syncQuestionChangeControls();
         all('[data-is-example-link]').forEach(function (link) {
+            /* The href is kept current on both branches. On the
+               authenticated page the click is intercepted below and the
+               example opens in place, but leaving a real destination here
+               means the control still works without JavaScript, and the
+               public branch keeps its existing navigation untouched. */
             link.href = studioUrl + '?mode=ai&question=' + encodeURIComponent(question.text);
         });
         var reference = one('[data-is-ai-reference]');
@@ -2142,6 +2147,10 @@
     function resetConsequenceStack() {
         var anchor = stackAnchor();
         all('[data-is-stack-node]', anchor).forEach(function (node) { node.remove(); });
+        /* The inline example belongs to the question that was on screen when
+           it was requested, so it leaves with that question rather than
+           lingering over the next one. */
+        clearInlineExample();
         resetDraftBadge();
         /* Review finding P1-2d (lock 11): the rail's "Completed questions"
            group only makes sense while the Session Complete panel is
@@ -2184,23 +2193,257 @@
         return span;
     }
 
-    /* Post-review route to the optional model answer for the SAME question.
-       Deliberately a link, not a fetch: it reuses the Interview AI surface
-       that already carries the "Why this works" explanation and the
-       illustrative-only truth line, so this adds no new AI call, no new
-       claim, and no new place for a generated answer to be mistaken for the
-       member's own. */
+    /* -----------------------------------------------------------------
+       Inline example (owner restoration 2026-08-13)
+
+       Historical commit 6936881 put a sample-answer action beneath the
+       Interview Me answer field: one click produced an answer to the same
+       question in the current canvas, with its why-it-works breakdown
+       directly underneath. The intervening build routed both entry points
+       into Interview AI instead, so the member lost their place and had to
+       act again. That mode switch is the regression this restores.
+
+       One disclosure serves both entry points. It is ephemeral by
+       construction: the payload is rendered straight into the DOM and is
+       never assigned to session state, a draft, History, or any storage, so
+       there is nothing to leak into the member's own answer and nothing to
+       clear beyond removing the node. The request reuses the existing
+       model-answer endpoint exactly -- same provider, prompt, identity,
+       entitlement and evidence contracts -- so this adds no new claim. */
+    var inlineExampleSeq = 0;
+    var inlineExampleController = null;
+    var inlineExampleHost = null;
+    /* The question the visible example belongs to. Held only to recognise a
+       repeat click, never read back as content. */
+    var inlineExampleQuestion = '';
+
+    function clearInlineExample() {
+        /* Bumping the sequence first is what makes an in-flight response
+           stale: the handler compares against it before touching the DOM,
+           so a late answer for a question the member has already left can
+           never paint. */
+        inlineExampleSeq += 1;
+        if (inlineExampleController) inlineExampleController.abort();
+        inlineExampleController = null;
+        if (inlineExampleHost && inlineExampleHost.parentNode) {
+            inlineExampleHost.parentNode.removeChild(inlineExampleHost);
+        }
+        inlineExampleHost = null;
+        inlineExampleQuestion = '';
+    }
+
+    /* The member is drafting on this surface, so their caret outranks ours.
+       Generation takes seconds; if they went back to typing while they
+       waited, moving focus would send their next keystrokes into a
+       non-editable node where they are silently lost. Announce instead --
+       they already know they asked for this. */
+    function memberIsTyping() {
+        var active = document.activeElement;
+        if (!active) return false;
+        var tag = active.tagName;
+        return tag === 'TEXTAREA' || tag === 'INPUT' || active.isContentEditable;
+    }
+
+    function focusInlineExample(host) {
+        if (!host || memberIsTyping()) return;
+        host.focus({ preventScroll: true });
+    }
+
+    function inlineExampleSection(anchor) {
+        var host = document.createElement('section');
+        host.className = 'is-stack__coaching is-stack__example';
+        host.setAttribute('data-is-inline-example', '');
+        /* Deliberately NOT a live region. announce() already sends a short
+           summary to the page's own status region; making this card live as
+           well would read the whole generated answer, the truth label and
+           every why-item aloud on arrival, then repeat it on focus and again
+           whenever the card moves between anchors. Summary announcements
+           only, which is how the Interview AI panel already behaves. */
+        host.setAttribute('tabindex', '-1');
+        host.setAttribute('aria-label', 'Strong example');
+        if (anchor && anchor.parentNode) {
+            anchor.parentNode.insertBefore(host, anchor.nextSibling);
+        } else {
+            appendStackNode(host);
+        }
+        return host;
+    }
+
+    function inlineExampleMessage(host, message, retryHandler) {
+        host.replaceChildren();
+        var eyebrow = document.createElement('p');
+        eyebrow.className = 'is-stack__eyebrow';
+        eyebrow.textContent = 'Strong example';
+        var body = document.createElement('p');
+        body.className = 'is-stack__example-status';
+        body.textContent = message;
+        host.append(eyebrow, body);
+        if (retryHandler) {
+            var actions = document.createElement('div');
+            actions.className = 'is-stack__actions';
+            var retry = makeActionButton('secondary', 'Try again', retryHandler);
+            retry.setAttribute('data-is-inline-example-retry', '');
+            actions.appendChild(retry);
+            host.appendChild(actions);
+        }
+    }
+
+    function renderInlineExample(host, payload) {
+        var model = (payload && payload.modelAnswer) || {};
+        var insufficient = model.status === 'insufficient';
+        var generic = !!model.generic;
+        host.replaceChildren();
+
+        var eyebrow = document.createElement('p');
+        eyebrow.className = 'is-stack__eyebrow';
+        eyebrow.textContent = 'Strong example';
+        host.appendChild(eyebrow);
+
+        if (insufficient) {
+            /* Preserve the existing insufficiency behaviour exactly: say
+               there is no grounded example rather than inventing member
+               history to fill the space. */
+            var none = document.createElement('p');
+            none.className = 'is-stack__example-status';
+            none.textContent = 'There is no strong example in the approved '
+                + 'history for this question yet. Nothing has been invented '
+                + 'to fill the gap.';
+            host.appendChild(none);
+            announce('No grounded example is available for this question.');
+            focusInlineExample(host);
+            return;
+        }
+
+        var answer = document.createElement('p');
+        answer.className = 'is__ai-answer-text is-stack__example-answer';
+        answer.textContent = model.answer || '';
+        host.appendChild(answer);
+
+        /* The truth label is not decoration: it is the difference between
+           an illustration and a claim about this member's history. */
+        var truth = document.createElement('p');
+        truth.className = 'is-stack__example-truth';
+        truth.textContent = generic
+            ? 'Illustrative example — no personal history used.'
+            : 'Built from approved public evidence, not invented.';
+        host.appendChild(truth);
+
+        var why = document.createElement('div');
+        why.className = 'is__why is-stack__example-why';
+        var whyHeading = document.createElement('h4');
+        whyHeading.textContent = 'Why this works';
+        why.appendChild(whyHeading);
+        var list = document.createElement('ul');
+        (model.whyItWorks || []).forEach(function (item) {
+            if (!item) return;
+            var li = document.createElement('li');
+            li.textContent = item;
+            list.appendChild(li);
+        });
+        why.appendChild(list);
+        host.appendChild(why);
+
+        announce('A strong example is shown below your work.');
+        focusInlineExample(host);
+    }
+
+    /* Both entry points land here. `anchor` is the element the disclosure
+       opens beneath, so the pre-answer reveal sits under the composer and
+       the post-review reveal sits under that coaching section. */
+    function revealInlineExample(anchor) {
+        if (!modelAnswersEnabled) return;
+        var question = currentQuestion();
+        if (!question || !question.text) return;
+        /* A second click while a request is in flight is ignored rather
+           than queued, so repeated clicks cannot stack requests. */
+        if (inlineExampleController) return;
+        /* And once an example for THIS question is already on screen, a
+           repeat click returns the member to it instead of spending another
+           generation on the same question. Both entry points share the one
+           disclosure, so clicking either after the other simply moves focus
+           to what is already there. */
+        if (inlineExampleHost && inlineExampleQuestion === question.text) {
+            if (anchor && anchor.parentNode
+                && inlineExampleHost.previousSibling !== anchor) {
+                anchor.parentNode.insertBefore(
+                    inlineExampleHost, anchor.nextSibling);
+            }
+            inlineExampleHost.focus({ preventScroll: true });
+            inlineExampleHost.scrollIntoView({
+                behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest'
+            });
+            return;
+        }
+
+        /* "Try again" lives inside the card it is about to replace, so
+           removing that card would drop the keyboard user at the top of the
+           document mid-reload. Carry their place onto the replacement. */
+        var carriedFocus = Boolean(
+            inlineExampleHost
+            && document.activeElement
+            && inlineExampleHost.contains(document.activeElement)
+        );
+
+        clearInlineExample();
+        var host = inlineExampleSection(anchor);
+        inlineExampleHost = host;
+        inlineExampleMessage(host, 'Drafting a strong example…');
+        host.setAttribute('aria-busy', 'true');
+        if (carriedFocus) host.focus({ preventScroll: true });
+        announce('Drafting a strong example.');
+
+        inlineExampleSeq += 1;
+        var seq = inlineExampleSeq;
+        inlineExampleController = new AbortController();
+        var controller = inlineExampleController;
+
+        postJSON('/api/interview/model-answer', {
+            question: question.text,
+            follow_up: '',
+            context_token: '',
+            level: session.level,
+            family: session.family,
+            mode: selectedAiMode(),
+            opportunity_context: explicitContextForAi()
+        }, controller.signal).then(function (payload) {
+            if (seq !== inlineExampleSeq) return;
+            inlineExampleController = null;
+            host.removeAttribute('aria-busy');
+            inlineExampleQuestion = question.text;
+            renderInlineExample(host, payload);
+        }).catch(function (error) {
+            if (seq !== inlineExampleSeq) return;
+            inlineExampleController = null;
+            if (error.name === 'AbortError') return;
+            host.removeAttribute('aria-busy');
+            inlineExampleMessage(
+                host,
+                error.message + ' Your answer and coaching are untouched.',
+                function () { revealInlineExample(anchor); }
+            );
+            announce('The example could not be generated.');
+        });
+    }
+
+    /* Post-review entry point. A button, not a link: the whole point of
+       this round is that it no longer navigates away. */
     function appendModelAnswerAction(actions) {
         if (!actions || !modelAnswersEnabled) return null;
         var question = currentQuestion();
         if (!question || !question.text) return null;
-        var link = document.createElement('a');
-        link.className = 'is-stack__action-btn is-stack__action-btn--secondary';
-        link.href = studioUrl + '?mode=ai&question=' + encodeURIComponent(question.text);
-        link.textContent = 'See a strong answer + why it works';
-        link.setAttribute('data-is-model-answer-action', '');
-        actions.appendChild(link);
-        return link;
+        var button = makeActionButton(
+            'secondary',
+            'See a strong answer + why it works',
+            function () {
+                var section = button.closest
+                    ? button.closest('.is-stack__coaching')
+                    : null;
+                revealInlineExample(section || actions);
+            }
+        );
+        button.setAttribute('data-is-model-answer-action', '');
+        actions.appendChild(button);
+        return button;
     }
 
     function buildCoachingList(container, label, items, emptyMessage) {
@@ -2955,6 +3198,30 @@
         event.preventDefault();
         submitReview();
     });
+
+    /* Pre-answer entry point. Delegated from the root so it keeps working
+       across the re-renders that rebuild these controls, and scoped to the
+       authenticated page: the public branch keeps its existing navigation,
+       which is what its byte-comparability contract fixes. The href stays
+       real underneath, so this degrades to the old behaviour rather than to
+       a dead control if the script never runs. */
+    if (authenticated && modelAnswersEnabled) {
+        root.addEventListener('click', function (event) {
+            var target = event.target;
+            var trigger = target && target.closest
+                ? target.closest('[data-is-example-link]')
+                : null;
+            if (!trigger) return;
+            /* The trigger is still a real link, so a modifier click means
+               "open the Interview AI page in a new tab" and that intent is
+               the member's to keep. Only a plain left click becomes the
+               inline reveal. */
+            if (event.button !== 0 || event.ctrlKey || event.metaKey
+                || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+            revealInlineExample(answeringBlock);
+        });
+    }
     answer.addEventListener('keydown', function (event) {
         if (event.key !== 'Enter' || (!event.ctrlKey && !event.metaKey)) return;
         event.preventDefault();
@@ -3375,6 +3642,10 @@
 
     function resetAiAnswerForContextChange() {
         cancelPendingAi(true);
+        /* A context or mode change invalidates the inline example for the
+           same reason it invalidates the panel's answer: it was generated
+           for a question and grounding that no longer apply. */
+        clearInlineExample();
         currentModelAnswer = null;
         currentAiQuestion = '';
         currentModelQuestion = '';
