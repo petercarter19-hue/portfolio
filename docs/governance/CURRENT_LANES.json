@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T07:54:08Z",
+  "updated_at": "2026-08-13T08:31:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -220,6 +220,28 @@
     },
     "reason": "Pete authorized one code-controlled, fail-closed PS-CONNECT-002 merge-admission validator repair for the exact independently reviewed non-production relationship-provider candidate. It records the exact candidate, owner-decision, review, and evidence pins for a separately authorized later anchored follow-up. This repair admits no candidate and grants no merge, release, schema apply, deployment, Profile integration, enablement, cleanup, or live authority.",
     "verification_contract": "This repair is audit evidence, not self-granted candidate or merge authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, exact three changed paths, and an unchanged baseline. The ledger may change only updated_at plus this record; active lanes and every authority list must remain byte-for-byte equivalent. A separately authorized follow-up must pin this repair's actual merged SHA before any reviewed candidate merge validation can be registered. A later branch, base, altered record, timestamp, authority, path, or state cannot reuse this repair."
+  },
+  "shell_merge_preflight_repair": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-13-delivery-activation-shell-merge-preflight-repair",
+    "origin_main": "a526a78599a73c55901d318bfde899398fc3276b",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "corrected_lane": {
+      "package": "PS-SHELL-001",
+      "branch": "work/2026-08-12-shell-editorial-top-bar-001",
+      "lane_class": "shared_foundation",
+      "delivery_path": "Protected",
+      "field": "production_capable",
+      "from": true,
+      "to": false
+    },
+    "reason": "PS-SHELL-001 completed its owner-approved Editorial Top Bar candidate under two independent Protected reviews, but the control plane offered it no merge path: the merge grant admitted only direction_authority lanes and the code-pinned Opportunity Slate, Profile Core, and Connect lanes, so a shared_foundation lane could never be granted merge. The lane was also activated with production_capable true, an activation-time architect error rather than a property of the work, because every reviewed lane here merges dark and claims the production slot through a separate later activation. Pete authorized this one-time fail-closed repair on 2026-08-13. It corrects exactly one lane, PS-SHELL-001 on branch work/2026-08-12-shell-editorial-top-bar-001, and exactly one field on it: production_capable from true to false. Nothing else about that lane changes: its surfaces, exclusions, completion evidence, owner decisions, exclusive domains, writer, sequence, and branch stay byte-identical, and no other lane changes at all. This opens the MERGE gate only. It records no merge grant and confers no release authority. Release and deployment remain fail-closed behind a separate, deliberate, separately recorded production-capable activation, and merge_allowed_for and release_allowed_for both stay empty. It changes no product code, schema, migration, pipeline, deployment, configuration, enablement, or live behaviour.",
+    "verification_contract": "This is audit evidence, not self-granted authority. The preflight recognizes it only when the entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exactly the three changed control paths. The ledger delta must be exactly updated_at, this record, and the PS-SHELL-001 production_capable true-to-false correction; every other field of that lane, every other lane, operating_mode, activation_policy, and CURRENT_BASELINE.yaml must be byte-identical. The exception it unlocks still requires the exact package, branch, lane_class shared_foundation, delivery_path Protected, and production_capable false, so it can never admit a production-capable lane. A later branch, base, package, altered record, or altered lane cannot reuse it. A merge grant additionally requires its own separately recorded exact-review contract binding the owner decision, independent-review attestation, reviewed SHA, and evidence hashes, which this repair deliberately does not provide."
   },
   "opportunity_schema_repair_release_refresh": {
     "status": "one_time_owner_authorized_repair",
@@ -1529,7 +1551,7 @@
       "branch": "work/2026-08-12-shell-editorial-top-bar-001",
       "writer": "Claude Opus 5 as architect and lane owner, with an Opus extra-high delegated implementation writer and a fresh Opus max independent reviewer, per Pete's 2026-08-12 routing decision.",
       "delivery_path": "Protected",
-      "production_capable": true,
+      "production_capable": false,
       "lane_class": "shared_foundation",
       "exclusive_domains": [
         "shared:shell"

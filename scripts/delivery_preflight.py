@@ -1176,6 +1176,88 @@ CONNECT_002_MERGE_ADMISSION_REPAIR_PATHS = frozenset(
     CONNECT_002_MERGE_ADMISSION_REPAIR["allowed_surfaces"]
 )
 
+# PS-SHELL-001 finished its owner-approved Editorial Top Bar candidate under two
+# independent Protected reviews and then had nowhere to go: _direction_merge_grant
+# admitted only direction_authority lanes and the code-pinned Opportunity Slate,
+# Profile Core, and Connect lanes, so a shared_foundation lane could never be
+# granted merge at all.  The lane was additionally activated with
+# production_capable true, which was an architect's activation-time error rather
+# than a property of the work; every reviewed lane in this control plane merges
+# dark and claims the production slot through a separate later activation.
+# These pins keep the new exception bound to that exact lane and deliberately
+# retain the production_capable-false requirement, so the exception cannot admit
+# a production-capable lane even by mistake.
+SHELL_PACKAGE = "PS-SHELL-001"
+SHELL_BRANCH = "work/2026-08-12-shell-editorial-top-bar-001"
+SHELL_LANE_CLASS = "shared_foundation"
+SHELL_DELIVERY_PATH = "Protected"
+SHELL_MERGE_PREFLIGHT_REPAIR = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": (
+        "work/2026-08-13-delivery-activation-shell-merge-preflight-repair"
+    ),
+    "origin_main": "a526a78599a73c55901d318bfde899398fc3276b",
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "corrected_lane": {
+        "package": SHELL_PACKAGE,
+        "branch": SHELL_BRANCH,
+        "lane_class": SHELL_LANE_CLASS,
+        "delivery_path": SHELL_DELIVERY_PATH,
+        "field": "production_capable",
+        "from": True,
+        "to": False,
+    },
+    "reason": (
+        "PS-SHELL-001 completed its owner-approved Editorial Top Bar candidate "
+        "under two independent Protected reviews, but the control plane offered "
+        "it no merge path: the merge grant admitted only direction_authority "
+        "lanes and the code-pinned Opportunity Slate, Profile Core, and Connect "
+        "lanes, so a shared_foundation lane could never be granted merge. The "
+        "lane was also activated with production_capable true, an "
+        "activation-time architect error rather than a property of the work, "
+        "because every reviewed lane here merges dark and claims the production "
+        "slot through a separate later activation. Pete authorized this one-time "
+        "fail-closed repair on 2026-08-13. It corrects exactly one lane, "
+        "PS-SHELL-001 on branch work/2026-08-12-shell-editorial-top-bar-001, and "
+        "exactly one field on it: production_capable from true to false. Nothing "
+        "else about that lane changes: its surfaces, exclusions, completion "
+        "evidence, owner decisions, exclusive domains, writer, sequence, and "
+        "branch stay byte-identical, and no other lane changes at all. This "
+        "opens the MERGE gate only. It records no merge grant and confers no "
+        "release authority. Release and deployment remain fail-closed behind a "
+        "separate, deliberate, separately recorded production-capable "
+        "activation, and merge_allowed_for and release_allowed_for both stay "
+        "empty. It changes no product code, schema, migration, pipeline, "
+        "deployment, configuration, enablement, or live behaviour."
+    ),
+    "verification_contract": (
+        "This is audit evidence, not self-granted authority. The preflight "
+        "recognizes it only when the entire record equals the validator's "
+        "hard-coded record and Git proves the exact branch, exact origin/main "
+        "base, exactly one commit, and exactly the three changed control paths. "
+        "The ledger delta must be exactly updated_at, this record, and the "
+        "PS-SHELL-001 production_capable true-to-false correction; every other "
+        "field of that lane, every other lane, operating_mode, activation_policy, "
+        "and CURRENT_BASELINE.yaml must be byte-identical. The exception it "
+        "unlocks still requires the exact package, branch, lane_class "
+        "shared_foundation, delivery_path Protected, and production_capable "
+        "false, so it can never admit a production-capable lane. A later branch, "
+        "base, package, altered record, or altered lane cannot reuse it. A merge "
+        "grant additionally requires its own separately recorded exact-review "
+        "contract binding the owner decision, independent-review attestation, "
+        "reviewed SHA, and evidence hashes, which this repair deliberately does "
+        "not provide."
+    ),
+}
+SHELL_MERGE_CONTROL_PATHS = frozenset(
+    SHELL_MERGE_PREFLIGHT_REPAIR["allowed_surfaces"]
+)
+
 REVIEW_ATTESTATION_FIELDS = frozenset(
     PROFILE_DIRECTION_REVIEW_ATTESTATION
 )
@@ -2927,6 +3009,77 @@ def _exact_profile_core_merge_preflight_repair_matches(
     )
 
 
+def _exact_shell_merge_preflight_repair_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("shell_merge_preflight_repair")
+        == SHELL_MERGE_PREFLIGHT_REPAIR
+        and package_id == SHELL_MERGE_PREFLIGHT_REPAIR["package"]
+        and facts.get("branch") == SHELL_MERGE_PREFLIGHT_REPAIR["branch"]
+        and facts.get("origin_main")
+        == SHELL_MERGE_PREFLIGHT_REPAIR["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(SHELL_MERGE_CONTROL_PATHS)
+    )
+
+
+def _exact_shell_merge_preflight_repair_delta(
+    parent_ledger: object,
+    repair_ledger: object,
+) -> bool:
+    """Prove the Shell repair is its record plus one pinned lane correction.
+
+    The only tolerated lane change anywhere in the ledger is PS-SHELL-001's
+    ``production_capable`` moving from exactly ``True`` to exactly ``False``.
+    Every other field of that lane, every other lane, operating_mode, and
+    activation_policy must be byte-identical, so the repair cannot smuggle a
+    merge, release, surface, capacity, or authority change alongside it.
+    """
+    if not isinstance(parent_ledger, dict) or not isinstance(repair_ledger, dict):
+        return False
+    if (
+        parent_ledger.get("shell_merge_preflight_repair") is not None
+        or repair_ledger.get("shell_merge_preflight_repair")
+        != SHELL_MERGE_PREFLIGHT_REPAIR
+    ):
+        return False
+
+    parent_lanes = parent_ledger.get("active_lanes")
+    if not isinstance(parent_lanes, list):
+        return False
+    matches = [
+        index
+        for index, lane in enumerate(parent_lanes)
+        if isinstance(lane, dict) and lane.get("package") == SHELL_PACKAGE
+    ]
+    if len(matches) != 1:
+        return False
+    target = parent_lanes[matches[0]]
+    # Refuse unless the parent lane is exactly the pinned pre-correction shape.
+    if (
+        target.get("branch") != SHELL_BRANCH
+        or target.get("lane_class") != SHELL_LANE_CLASS
+        or target.get("delivery_path") != SHELL_DELIVERY_PATH
+        or target.get("production_capable") is not True
+    ):
+        return False
+
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = repair_ledger.get("updated_at")
+    expected["shell_merge_preflight_repair"] = SHELL_MERGE_PREFLIGHT_REPAIR
+    expected["active_lanes"][matches[0]]["production_capable"] = False
+    if repair_ledger != expected:
+        return False
+    return _utc_timestamp_strictly_advances(
+        repair_ledger.get("updated_at"), parent_ledger.get("updated_at")
+    )
+
+
 def _exact_profile_core_grant_fixture_followup_matches(
     ledger: dict,
     facts: dict,
@@ -3280,6 +3433,23 @@ def _is_connect_002_reviewed_implementation_lane(lane: object) -> bool:
     )
 
 
+def _is_shell_reviewed_shared_foundation_lane(lane: object) -> bool:
+    """Identify only the code-pinned non-production PS-SHELL-001 lane.
+
+    The production_capable-false pin is deliberate and load-bearing: it keeps
+    this exception a merge-only gate, so the shell can never merge and claim a
+    production release slot in one step.
+    """
+    return bool(
+        isinstance(lane, dict)
+        and lane.get("package") == SHELL_PACKAGE
+        and lane.get("branch") == SHELL_BRANCH
+        and lane.get("lane_class") == SHELL_LANE_CLASS
+        and lane.get("delivery_path") == SHELL_DELIVERY_PATH
+        and lane.get("production_capable") is False
+    )
+
+
 def _direction_merge_grant(
     lane: object,
     label: str,
@@ -3297,16 +3467,18 @@ def _direction_merge_grant(
     )
     is_profile_core = _is_profile_core_reviewed_implementation_lane(lane)
     is_connect_002 = _is_connect_002_reviewed_implementation_lane(lane)
+    is_shell = _is_shell_reviewed_shared_foundation_lane(lane)
     if (
         not is_direction
         and not is_opportunity_release
         and not is_profile_core
         and not is_connect_002
+        and not is_shell
     ):
         errors.append(
             f"{label} is available only to direction_authority lanes or the "
-            "code-controlled Opportunity Slate, Profile Core, or Connect "
-            "reviewed lanes"
+            "code-controlled Opportunity Slate, Profile Core, Connect, or "
+            "Shell reviewed lanes"
         )
     if lane.get("production_capable") is not False:
         errors.append(f"{label} requires production_capable false")
@@ -5955,6 +6127,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        shell_merge_repair_matches = (
+            _exact_shell_merge_preflight_repair_matches(
+                ledger, facts, package_id
+            )
+        )
         if bootstrap_matches:
             allowed_surfaces = set(BOOTSTRAP_CONTROL_REPAIR["allowed_surfaces"])
             warnings.append(
@@ -6006,6 +6183,11 @@ def evaluate_policy(
             warnings.append(
                 "using the exact one-time PS-CONNECT-002 authority-neutral "
                 "merge-admission validator-repair boundary"
+            )
+        elif shell_merge_repair_matches:
+            allowed_surfaces = set(SHELL_MERGE_CONTROL_PATHS)
+            warnings.append(
+                "using the exact one-time Shell merge-preflight-repair boundary"
             )
         elif opportunity_schema_release_refresh_matches:
             allowed_surfaces = set(
@@ -6121,6 +6303,7 @@ def evaluate_policy(
                 and not opportunity_resume_fixture_repair_matches
                 and not opportunity_close_introduction_repair_matches
                 and not connect_002_merge_admission_repair_matches
+                and not shell_merge_repair_matches
                 and origin_policy != policy
             ):
                 errors.append(
@@ -6289,6 +6472,58 @@ def evaluate_policy(
                     candidate_baseline,
                     origin_baseline,
                     label="Profile Core post-grant registry-fixture repair",
+                    errors=errors,
+                )
+            elif shell_merge_repair_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "Shell merge-preflight repair updated_at must be a "
+                        "real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "Shell merge-preflight repair updated_at must strictly "
+                        "advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "Shell merge-preflight repair may not change "
+                        "activation_policy"
+                    )
+                if _root_changes(ledger, origin_ledger) != {
+                    "updated_at",
+                    "shell_merge_preflight_repair",
+                    "active_lanes",
+                }:
+                    errors.append(
+                        "Shell merge-preflight repair must change exactly "
+                        "updated_at, its repair record, and the corrected lane"
+                    )
+                if origin_ledger.get("shell_merge_preflight_repair") is not None:
+                    errors.append(
+                        "Shell merge-preflight repair is one-time and already "
+                        "recorded"
+                    )
+                if not _exact_shell_merge_preflight_repair_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "Shell merge-preflight repair must be exactly its record "
+                        "plus the pinned PS-SHELL-001 production_capable "
+                        "true-to-false correction"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="Shell merge-preflight repair",
                     errors=errors,
                 )
             elif connect_002_merge_admission_repair_matches:
@@ -7006,6 +7241,7 @@ def evaluate_policy(
             not writer_transfer_repair_matches
             and not implementation_release_repair_matches
             and not profile_core_merge_repair_matches
+            and not shell_merge_repair_matches
             and not profile_core_grant_fixture_followup_matches
             and not profile_core_grant_anchor_followup_matches
             and not profile_core_post_grant_registry_fixture_repair_matches
@@ -7085,6 +7321,12 @@ def evaluate_policy(
                 errors.append(
                     "Profile Core grant-anchor follow-up must change exactly "
                     "the owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if shell_merge_repair_matches and changed_paths != allowed_surfaces:
+                errors.append(
+                    "Shell merge-preflight repair must change exactly the "
+                    "owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
             if (

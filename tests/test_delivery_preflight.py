@@ -62,6 +62,12 @@ from scripts.delivery_preflight import (
     CONNECT_002_PACKAGE,
     CONNECT_002_REVIEW_ATTESTATION,
     CONNECT_002_REVIEWED_SHA,
+    SHELL_BRANCH,
+    SHELL_DELIVERY_PATH,
+    SHELL_LANE_CLASS,
+    SHELL_MERGE_CONTROL_PATHS,
+    SHELL_MERGE_PREFLIGHT_REPAIR,
+    SHELL_PACKAGE,
     _affirmative_merge_decision,
     _authoritative_azure_origin,
     _canonical_sha256,
@@ -81,8 +87,12 @@ from scripts.delivery_preflight import (
     _exact_profile_core_post_grant_registry_fixture_repair_delta,
     _exact_profile_core_post_grant_registry_fixture_repair_matches,
     _is_profile_core_reviewed_implementation_lane,
+    _exact_shell_merge_preflight_repair_delta,
+    _exact_shell_merge_preflight_repair_matches,
+    _is_shell_reviewed_shared_foundation_lane,
     _exact_connect_002_merge_admission_repair_delta,
     _exact_connect_002_merge_admission_repair_matches,
+    _is_connect_002_reviewed_implementation_lane,
     _profile_core_main_sequence_facts,
     _exact_opportunity_schema_repair_release_refresh_matches,
     _exact_opportunity_lifecycle_fixture_repair_delta,
@@ -1702,6 +1712,382 @@ with patch.object(
                     origin_baseline=baseline,
                 )
                 self.assertTrue(forged_errors)
+
+    def _shell_repair_fixture(self):
+        """Origin at the pinned base plus the exact validated candidate."""
+        repair = SHELL_MERGE_PREFLIGHT_REPAIR
+        origin = load_ledger_at_ref(repair["origin_main"])
+        self.assertNotIn("shell_merge_preflight_repair", origin)
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-13T08:31:00Z"
+        candidate["shell_merge_preflight_repair"] = copy.deepcopy(repair)
+        shell_lanes = [
+            lane
+            for lane in candidate["active_lanes"]
+            if lane.get("package") == SHELL_PACKAGE
+        ]
+        self.assertEqual(1, len(shell_lanes))
+        self.assertIs(True, shell_lanes[0]["production_capable"])
+        shell_lanes[0]["production_capable"] = False
+        baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        exact_facts = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=repair["allowed_surfaces"],
+        )
+        return repair, origin, candidate, baseline, exact_facts
+
+    def test_shell_merge_repair_is_exact_and_grants_nothing(self):
+        repair, origin, candidate, baseline, exact_facts = (
+            self._shell_repair_fixture()
+        )
+        self.assertTrue(
+            _exact_shell_merge_preflight_repair_matches(
+                candidate, exact_facts, repair["package"]
+            )
+        )
+        self.assertTrue(
+            _exact_shell_merge_preflight_repair_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(
+            any("Shell merge-preflight" in item for item in warnings)
+        )
+        # The repair opens the merge gate only: it hands out no merge, release,
+        # cleanup, or write authority, and it moves no other lane.
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual([], candidate["operating_mode"]["merge_allowed_for"])
+        self.assertEqual([], candidate["operating_mode"]["release_allowed_for"])
+        self.assertEqual(
+            [lane["package"] for lane in origin["active_lanes"]],
+            [lane["package"] for lane in candidate["active_lanes"]],
+        )
+        for before, after in zip(
+            origin["active_lanes"], candidate["active_lanes"], strict=True
+        ):
+            expected = dict(before)
+            if before["package"] == SHELL_PACKAGE:
+                expected["production_capable"] = False
+            self.assertEqual(expected, after)
+        # PR 444's PS-CONNECT-002 merge-admission record is carried untouched.
+        self.assertEqual(
+            origin.get("connect_002_merge_admission_repair"),
+            candidate.get("connect_002_merge_admission_repair"),
+        )
+        # The checked-in ledger carries the validator's exact record.
+        self.assertEqual(
+            SHELL_MERGE_PREFLIGHT_REPAIR,
+            self.ledger.get("shell_merge_preflight_repair"),
+        )
+
+    def test_shell_merge_repair_refuses_wrong_branch_base_or_record(self):
+        repair, origin, candidate, baseline, exact_facts = (
+            self._shell_repair_fixture()
+        )
+        for label, forge, altered_facts in (
+            # A later branch cannot reuse the exception.
+            (
+                "different-branch",
+                lambda ledger: None,
+                {
+                    **exact_facts,
+                    "branch": (
+                        "work/2026-08-14-delivery-activation-shell-merge-"
+                        "preflight-repair-v2"
+                    ),
+                },
+            ),
+            # A different base cannot reuse the exception.
+            (
+                "different-base",
+                lambda ledger: None,
+                {**exact_facts, "origin_main": "0" * 40},
+            ),
+            # The superseded base cannot reuse it either.
+            (
+                "stale-base",
+                lambda ledger: None,
+                {
+                    **exact_facts,
+                    "origin_main": "68d14a44de4007f8643396833a481601d5dbb4a3",
+                },
+            ),
+            # Any edit to the record breaks the hard-coded equality.
+            (
+                "altered-reason",
+                lambda ledger: ledger["shell_merge_preflight_repair"].__setitem__(
+                    "reason", "shortened"
+                ),
+                exact_facts,
+            ),
+            (
+                "altered-corrected-lane",
+                lambda ledger: ledger["shell_merge_preflight_repair"][
+                    "corrected_lane"
+                ].__setitem__("to", True),
+                exact_facts,
+            ),
+            (
+                "altered-allowed-surfaces",
+                lambda ledger: ledger["shell_merge_preflight_repair"].__setitem__(
+                    "allowed_surfaces", ["app.py"]
+                ),
+                exact_facts,
+            ),
+            (
+                "altered-origin-main",
+                lambda ledger: ledger["shell_merge_preflight_repair"].__setitem__(
+                    "origin_main", "68d14a44de4007f8643396833a481601d5dbb4a3"
+                ),
+                exact_facts,
+            ),
+            # The three-path control boundary holds.
+            (
+                "non-control-path",
+                lambda ledger: None,
+                {**exact_facts, "changed_paths": ["app.py"]},
+            ),
+        ):
+            with self.subTest(label=label):
+                forged = copy.deepcopy(candidate)
+                forge(forged)
+                self.assertFalse(
+                    _exact_shell_merge_preflight_repair_matches(
+                        forged, altered_facts, repair["package"]
+                    )
+                )
+                forged_errors, _ = self._evaluate_activation(
+                    forged,
+                    altered_facts,
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(forged_errors)
+
+    def test_shell_merge_repair_refuses_any_wider_ledger_delta(self):
+        """The only tolerated lane edit is the one pinned production_capable."""
+        repair, origin, candidate, baseline, exact_facts = (
+            self._shell_repair_fixture()
+        )
+
+        def shell_lane(ledger):
+            return next(
+                lane
+                for lane in ledger["active_lanes"]
+                if lane.get("package") == SHELL_PACKAGE
+            )
+
+        def other_lane(ledger):
+            return next(
+                lane
+                for lane in ledger["active_lanes"]
+                if lane.get("package") != SHELL_PACKAGE
+            )
+
+        for label, forge in (
+            # Smuggling merge authority alongside the correction.
+            (
+                "grants-merge",
+                lambda ledger: ledger["operating_mode"]["merge_allowed_for"].append(
+                    SHELL_PACKAGE
+                ),
+            ),
+            # Smuggling release authority alongside the correction.
+            (
+                "grants-release",
+                lambda ledger: ledger["operating_mode"][
+                    "release_allowed_for"
+                ].append(SHELL_PACKAGE),
+            ),
+            # A second field on the corrected lane.
+            (
+                "widens-surfaces",
+                lambda ledger: shell_lane(ledger)["writable_surfaces"].append(
+                    "app.py"
+                ),
+            ),
+            (
+                "changes-branch",
+                lambda ledger: shell_lane(ledger).__setitem__(
+                    "branch", "work/2026-08-13-shell-elsewhere"
+                ),
+            ),
+            (
+                "adds-merge-grant",
+                lambda ledger: shell_lane(ledger).__setitem__("merge_grant", {}),
+            ),
+            (
+                "drops-an-exclusion",
+                lambda ledger: shell_lane(ledger)["exclusions"].pop(),
+            ),
+            # Any other lane, including PS-CONNECT-002.
+            (
+                "touches-another-lane",
+                lambda ledger: other_lane(ledger).__setitem__(
+                    "production_capable", True
+                ),
+            ),
+            # PR 444's record must survive untouched.
+            (
+                "drops-connect-002-record",
+                lambda ledger: ledger.pop("connect_002_merge_admission_repair"),
+            ),
+            # Capacity and policy stay frozen.
+            (
+                "raises-capacity",
+                lambda ledger: ledger["activation_policy"].__setitem__(
+                    "max_production_capable_lanes", 2
+                ),
+            ),
+        ):
+            with self.subTest(label=label):
+                forged = copy.deepcopy(candidate)
+                forge(forged)
+                self.assertFalse(
+                    _exact_shell_merge_preflight_repair_delta(origin, forged)
+                )
+                forged_errors, _ = self._evaluate_activation(
+                    forged,
+                    exact_facts,
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(forged_errors)
+
+    def test_shell_merge_repair_is_one_time_only(self):
+        repair, origin, candidate, baseline, exact_facts = (
+            self._shell_repair_fixture()
+        )
+        # Replaying it against an origin that already carries it must refuse:
+        # the parent pre-state no longer matches and the record already exists.
+        replayed_origin = copy.deepcopy(candidate)
+        self.assertFalse(
+            _exact_shell_merge_preflight_repair_delta(replayed_origin, candidate)
+        )
+        replay = copy.deepcopy(candidate)
+        replay["updated_at"] = "2026-08-13T09:00:00Z"
+        errors, _ = self._evaluate_activation(
+            replay,
+            exact_facts,
+            require_clean=True,
+            origin=replayed_origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(
+            any("one-time and already recorded" in item for item in errors)
+        )
+
+    def test_shell_grant_still_refuses_a_production_capable_lane(self):
+        """The load-bearing refusal: merge must not be able to deploy.
+
+        The exception is pinned to production_capable false, so a
+        shared_foundation lane that still holds the production slot is refused a
+        merge grant outright.  Merging the shell therefore cannot also release
+        it; reclaiming a production slot stays a separate, deliberate step.
+        """
+        _, origin, _, _, _ = self._shell_repair_fixture()
+        corrected = copy.deepcopy(
+            next(
+                lane
+                for lane in origin["active_lanes"]
+                if lane.get("package") == SHELL_PACKAGE
+            )
+        )
+        corrected["production_capable"] = False
+        self.assertTrue(_is_shell_reviewed_shared_foundation_lane(corrected))
+
+        production_capable = copy.deepcopy(corrected)
+        production_capable["production_capable"] = True
+        self.assertFalse(
+            _is_shell_reviewed_shared_foundation_lane(production_capable)
+        )
+        errors: list[str] = []
+        _direction_merge_grant(production_capable, "grant target", errors)
+        self.assertTrue(
+            any("requires production_capable false" in item for item in errors)
+        )
+        self.assertTrue(
+            any(
+                "available only to direction_authority lanes" in item
+                for item in errors
+            )
+        )
+
+    def test_shell_lane_predicate_is_pinned_to_one_exact_lane(self):
+        _, origin, _, _, _ = self._shell_repair_fixture()
+        corrected = copy.deepcopy(
+            next(
+                lane
+                for lane in origin["active_lanes"]
+                if lane.get("package") == SHELL_PACKAGE
+            )
+        )
+        corrected["production_capable"] = False
+        self.assertTrue(_is_shell_reviewed_shared_foundation_lane(corrected))
+        self.assertEqual(SHELL_BRANCH, corrected["branch"])
+        self.assertEqual(SHELL_LANE_CLASS, corrected["lane_class"])
+        self.assertEqual(SHELL_DELIVERY_PATH, corrected["delivery_path"])
+
+        for field, value in (
+            ("package", "PS-SHELL-002"),
+            ("branch", "work/2026-08-14-shell-editorial-top-bar-002"),
+            ("lane_class", "implementation"),
+            ("delivery_path", "Bounded"),
+            ("production_capable", True),
+        ):
+            with self.subTest(field=field):
+                impostor = copy.deepcopy(corrected)
+                impostor[field] = value
+                self.assertFalse(
+                    _is_shell_reviewed_shared_foundation_lane(impostor)
+                )
+                grant_errors: list[str] = []
+                _direction_merge_grant(impostor, "grant target", grant_errors)
+                self.assertTrue(grant_errors)
+        for non_lane in (None, "PS-SHELL-001", [], 0):
+            self.assertFalse(_is_shell_reviewed_shared_foundation_lane(non_lane))
+        # The shell predicate must not widen any neighbouring exception.
+        self.assertFalse(
+            _is_profile_core_reviewed_implementation_lane(corrected)
+        )
+        self.assertFalse(_is_connect_002_reviewed_implementation_lane(corrected))
+
+    def test_shell_repair_control_paths_are_the_three_control_surfaces(self):
+        self.assertEqual(
+            {
+                "docs/governance/CURRENT_LANES.json",
+                "scripts/delivery_preflight.py",
+                "tests/test_delivery_preflight.py",
+            },
+            set(SHELL_MERGE_CONTROL_PATHS),
+        )
+        self.assertEqual(
+            "PS-DELIVERY-CONTROL-001", SHELL_MERGE_PREFLIGHT_REPAIR["package"]
+        )
+        self.assertEqual(
+            "one_time_owner_authorized_repair",
+            SHELL_MERGE_PREFLIGHT_REPAIR["status"],
+        )
+        correction = SHELL_MERGE_PREFLIGHT_REPAIR["corrected_lane"]
+        self.assertEqual(SHELL_PACKAGE, correction["package"])
+        self.assertEqual("production_capable", correction["field"])
+        self.assertIs(True, correction["from"])
+        self.assertIs(False, correction["to"])
 
     def test_profile_core_grant_fixture_followup_is_exact_and_inert(self):
         repair = PROFILE_CORE_MERGE_PREFLIGHT_REPAIR
@@ -4316,6 +4702,7 @@ with patch.object(
             if (
                 lane_class == "direction_authority"
                 or _is_profile_core_reviewed_implementation_lane(lane)
+                or _is_shell_reviewed_shared_foundation_lane(lane)
             ):
                 self.assertFalse(lane.get("production_capable"))
                 grant = lane.get("merge_grant")
