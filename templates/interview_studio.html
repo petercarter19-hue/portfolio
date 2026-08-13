@@ -607,7 +607,7 @@
 
                                 <p class="is__dictation-note" id="is-dictation-note">Dictation is optional and typing works exactly the same. Your browser does the transcribing and keeps listening until you stop it or you go quiet for 10 seconds. PeerSlate does not receive or keep the audio.</p>
                                 <p class="is__dictation-live" data-is-dictation-status="answer" hidden></p>
-                                <p class="is__dictation-interim" data-is-dictation-interim="answer" hidden><span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span></p>
+                                <p class="is__dictation-interim" data-is-dictation-interim="{{ '' if interview_authenticated else 'answer' }}" hidden><span class="is__dictation-interim-label">Heard so far</span><span data-is-dictation-interim-text></span></p>
                                 <p class="is__error" data-is-mic-error="answer" hidden></p>
 
                                 {% if not interview_authenticated -%}
@@ -1057,7 +1057,7 @@
                                    open, so this button intentionally carries no click handler --
                                    the existing data-is-follow-up-open control/token plumbing
                                    remains reachable only through the public branch. #}
-                                <div class="is__actions is__actions--three" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+                                <div class="is__actions is__actions--three">
                                     <button class="is__button is__button--primary" type="button" data-is-practice-answer>Practice This Answer</button>
                                     <button class="is__button" type="button" data-is-different-question data-is-ai-action-question>New question</button>
                                     <button class="is__button" type="button" data-is-follow-up-open disabled title="Follow-up is not available yet.">Follow-up isn&rsquo;t available yet</button>

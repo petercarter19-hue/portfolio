@@ -4317,15 +4317,66 @@ class InterviewStudioSlice56RecompositionTests(_InterviewStudioAuthenticatedTest
         self.assertIn('var applyAiModeChange = function (value)', script)
         self.assertIn('modeSelect.value = radio.value;', script)
 
+    def test_post_review_model_answer_action_navigates_and_never_writes(self):
+        """Owner directive 2026-08-12: the optional model answer is reachable
+        again straight after a review, and doing so must not touch the
+        member's own answer.
+
+        The control is an ANCHOR to the existing Interview AI surface, so it
+        cannot post, save, or overwrite anything: there is no fetch, no
+        storage write, and no assignment to the answer field on this path.
+        It is also entitlement-gated, so an account without model answers is
+        never shown a door that will not open.
+        """
+        script = _studio_script()
+        block = script.split('function appendModelAnswerAction(actions) {', 1)[1]
+        block = block.split('\n    }', 1)[0]
+
+        # Entitlement-gated and question-scoped.
+        self.assertIn('if (!actions || !modelAnswersEnabled) return null;', block)
+        self.assertIn('var question = currentQuestion();', block)
+        self.assertIn("if (!question || !question.text) return null;", block)
+
+        # Navigates to the SAME question on the existing AI surface.
+        self.assertIn("createElement('a')", block)
+        self.assertIn(
+            "link.href = studioUrl + '?mode=ai&question=' + "
+            "encodeURIComponent(question.text);",
+            block,
+        )
+        self.assertIn('See a strong answer + why it works', block)
+
+        # Never mutates the member's answer or persists anything.
+        for forbidden in ('fetch(', 'answer.value', 'writeJSON', 'saveDraft',
+                          'localStorage', 'sessionStorage', 'XMLHttpRequest'):
+            self.assertNotIn(forbidden, block)
+
+        # Wired into the reviewed stack, not some unrelated surface.
+        self.assertIn('appendModelAnswerAction(built.actions);', script)
+
     def test_source_label_renders_above_the_three_cards_not_beside_them(self):
         """Review finding P1-2b (lock 07/08): SOURCE is its own eyebrow row
-        above the three radio cards. The prior "auto repeat(3, ...)" column
-        put the label in a fourth column, vertically centered beside the
-        cards instead of stacked above them."""
+        above the radio cards. The prior "auto repeat(3, ...)" column put the
+        label in a fourth column, vertically centered beside the cards
+        instead of stacked above them.
+
+        Mobile correction 2026-08-12: the card track is now responsive, so
+        this asserts the INTENT (label spans the whole row; never a fourth
+        column) plus the locked three-across composition returning at the
+        desktop breakpoint -- not one literal column string, which is what
+        made this test fail a legitimate responsive change.
+        """
         css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
         source_rule = css.split('.is[data-authenticated="true"] .is-ai-source {', 1)[1].split('}', 1)[0]
-        self.assertIn('grid-template-columns: repeat(3, minmax(0, 1fr));', source_rule)
+        # Never a fourth column holding the label beside the cards.
         self.assertNotIn('auto repeat(3', source_rule)
+        # Collapses rather than forcing three fixed tracks at every width.
+        self.assertIn('repeat(auto-fit,', source_rule)
+        # The locked three-across composition still returns on a wide screen.
+        desktop_rule = css.split(
+            '@media (min-width: 64.01rem) {\n    .is[data-authenticated="true"] .is-ai-source {', 1
+        )[1].split('}', 1)[0]
+        self.assertIn('repeat(3, minmax(0, 1fr))', desktop_rule)
         label_rule = css.split('.is[data-authenticated="true"] .is-ai-source .is__section-label {', 1)[1].split('}', 1)[0]
         self.assertIn('grid-column: 1 / -1;', label_rule)
 

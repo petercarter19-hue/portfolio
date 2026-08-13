@@ -2165,6 +2165,25 @@
         return span;
     }
 
+    /* Post-review route to the optional model answer for the SAME question.
+       Deliberately a link, not a fetch: it reuses the Interview AI surface
+       that already carries the "Why this works" explanation and the
+       illustrative-only truth line, so this adds no new AI call, no new
+       claim, and no new place for a generated answer to be mistaken for the
+       member's own. */
+    function appendModelAnswerAction(actions) {
+        if (!actions || !modelAnswersEnabled) return null;
+        var question = currentQuestion();
+        if (!question || !question.text) return null;
+        var link = document.createElement('a');
+        link.className = 'is-stack__action-btn is-stack__action-btn--secondary';
+        link.href = studioUrl + '?mode=ai&question=' + encodeURIComponent(question.text);
+        link.textContent = 'See a strong answer + why it works';
+        link.setAttribute('data-is-model-answer-action', '');
+        actions.appendChild(link);
+        return link;
+    }
+
     function buildCoachingList(container, label, items, emptyMessage) {
         var col = document.createElement('div');
         col.className = 'is-stack__summary-col';
@@ -2348,6 +2367,16 @@
                 makeActionButton('secondary', 'Next question', function () { goToNextQuestion(); })
             );
         }
+
+        /* Owner directive 2026-08-12: the optional model answer lost its
+           discoverability once the rail's "Need an example?" affordance
+           stopped being the obvious next step after a review. Offer it here,
+           at the moment it is actually useful, on the same reviewed question.
+           It only NAVIGATES to the existing Interview AI surface -- it never
+           writes to, replaces, or saves the member's own answer, and it is
+           hidden entirely when the account is not entitled to model answers,
+           so no one is shown a door that will not open. */
+        appendModelAnswerAction(built.actions);
 
         revealAppendedSection(built.heading);
     }

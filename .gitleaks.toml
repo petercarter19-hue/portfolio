@@ -37,6 +37,39 @@ paths = ['''^services/community_cursor\.py$''']
 regexTarget = "line"
 regexes = ['''^\s*token,\s+max_age=CURSOR_MAX_AGE_SECONDS\s*$''']
 
+# The two entries below use character classes where the fixture identifier
+# would otherwise appear verbatim. That is not decoration: a pattern written
+# out in full would itself be a key-shaped assignment on this line, and this
+# file is scanned too -- writing the allowlist would create the very finding
+# it suppresses. The class breaks the run of value characters, so the rule no
+# longer matches here while still matching the fixture line exactly.
+
+[[allowlists]]
+description = """Known non-secret Profile relationship test fixtures: keyword \
+arguments assigned literal fixture identifiers, which match generic-api-key \
+on the SHAPE of a key assignment rather than on any credential. These lines \
+live only in repository history -- the file is no longer on main -- and the \
+pipeline runs `gitleaks git .` over full history, so deleting the file did \
+not and cannot clear the finding; only this allowlist can."""
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^tests/test_profile_relationships\.py$''']
+regexTarget = "line"
+regexes = [
+  '''^\s*actor_key="viewer[A-Za-z]+_123", subject_owner_key="owner[A-Za-z]+_456"\).*$''',
+  '''^\s*actor_key=None, subject_owner_key="owner[A-Za-z]+_456"\)\s*$''',
+]
+
+[[allowlists]]
+description = """Known non-secret Profile voice-projection test fixtures: the \
+same key-shaped keyword arguments assigned literal fixture identifiers. \
+History-only, as above."""
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^tests/test_profile_voice_projection\.py$''']
+regexTarget = "line"
+regexes = ['''^\s*owner_key="owner[A-Za-z]+_123", projection_key="voice[A-Za-z]+_123",\s*$''']
+
 [[allowlists]]
 description = """Known non-secret Community evidence prose. A sentence \
 describing audio handling, matched only for its shape."""

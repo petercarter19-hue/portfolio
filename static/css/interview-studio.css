@@ -433,7 +433,32 @@ body[data-theme="dark"] .is__button--quiet { color: var(--is-gold-bright); }
 }
 
 .is__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem; margin-top: 1.1rem; }
+/* Mobile correction 2026-08-12: these three-action rows used to carry
+   display:grid + repeat(3, ...) as an INLINE style, which no media query can
+   override -- an earlier narrow-width rule had to resort to !important to
+   get one column back. The composition now lives here, so it can collapse to
+   one action per row on a phone and return to three across on a wide screen
+   without any specificity fight. */
+.is__actions--three {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    align-items: stretch;
+}
+@media (min-width: 64.01rem) {
+    .is__actions--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 .is__actions--spread { justify-content: space-between; }
+/* History "how your progress is calculated" stats. The markup carries an
+   inline four-track grid that this lane must not touch -- the flag-off
+   anonymous page is byte-locked -- so the narrow-width collapse has to
+   out-rank an inline style, which only !important can do. That is the same
+   mechanism .is__actions--three already uses a few hundred lines below, for
+   the same reason. Four stats at ~80px each is unreadable on a phone. */
+@media (max-width: 64rem) {
+    .is[data-authenticated="true"] [data-is-history-detail-toggle] dl {
+        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)) !important;
+    }
+}
 .is__actions-group { display: flex; flex-wrap: wrap; gap: 0.65rem; }
 
 .is__empty {
@@ -3897,11 +3922,34 @@ body:not([data-theme="dark"]) .is__button--primary {
     align-items: start;
     gap: 0 1.75rem;
 }
+/* Owner directive 2026-08-12 (mobile correction): the global header is
+   sticky at 0 and 65px tall, so a rail pinned at 1.1rem parked itself
+   BEHIND that header -- on a phone the Interview Me / Session / History row
+   was sliced in half by it. Pin below the header instead, and give scrolled
+   content the same clearance so an appended answer or coaching section can
+   never land underneath it. Both offsets come from one pair of variables so
+   the header and the scroll target can never drift apart again. */
+.is {
+    --is-header-clearance: 5rem;
+    --is-scroll-offset: 5.75rem;
+}
 .is[data-authenticated="true"] .is__shell > [data-is-auth-rail] {
     grid-column: 1;
     grid-row: 1 / -1;
     position: sticky;
-    top: 1.1rem;
+    top: var(--is-header-clearance);
+}
+/* Below the rail breakpoint the rail is a STATIC row in normal flow, so the
+   only thing a scroll target has to clear is the global header itself. */
+.is-stack__coaching,
+.is-stack__answer,
+[data-is-stack-item],
+[data-is-submitted],
+[data-is-feedback],
+[data-is-practice-stage],
+[data-is-video-stage],
+[data-is-session-setup] {
+    scroll-margin-top: var(--is-scroll-offset);
 }
 .is[data-authenticated="true"] .is__shell > *:not([data-is-auth-rail]) {
     grid-column: 2;
@@ -4025,6 +4073,16 @@ body:not([data-theme="dark"]) .is__button--primary {
 
 @media (max-width: 72rem) {
     .is[data-authenticated="true"] .is__shell { display: block; }
+    /* Mobile correction 2026-08-12: this block always intended the rail to be
+       a STATIC control row below the rail breakpoint, but the desktop
+       `.is[data-authenticated="true"] .is__shell > [data-is-auth-rail]` rule
+       outranked the bare `.is-auth__rail` selector, so the row stayed sticky
+       and pinned itself behind the global header. Match that specificity so
+       the intended static row actually wins. */
+    .is[data-authenticated="true"] .is__shell > [data-is-auth-rail] {
+        position: static;
+        top: auto;
+    }
     .is-auth__rail {
         flex-direction: row;
         align-items: center;
@@ -4034,6 +4092,17 @@ body:not([data-theme="dark"]) .is__button--primary {
         max-height: none;
         overflow: visible;
         margin-bottom: 1rem;
+    }
+    /* Recomposed deliberately rather than left to wrap: the mode picker is
+       the dominant control and takes its own full-width row; Session and
+       History sit beneath it as two equal halves. Previously the three
+       controls wrapped 2 + 1, orphaning a centred "History" under a
+       half-empty row. */
+    .is[data-authenticated="true"] .is-auth__mode-picker { flex: 1 0 100%; }
+    .is[data-authenticated="true"] .is-auth__rail-history,
+    .is[data-authenticated="true"] .is-auth__rail-mobile-only {
+        flex: 1 1 0;
+        min-width: 0;
     }
     .is-auth__rail-eyebrow,
     .is-auth__rail-detail { display: none; }
@@ -4211,7 +4280,15 @@ body:not([data-theme="dark"]) .is__button--primary {
     font-size: clamp(1.2rem, 2.2vw, 1.55rem);
     margin: 0 0 1rem;
 }
-.is-stack__summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.1rem; margin-bottom: 1.1rem; }
+/* Owner directive 2026-08-12 (mobile correction): the coaching columns were
+   pinned to three tracks at every width, so a 390px phone rendered three
+   ~97px columns and the guidance became unreadable. auto-fit collapses to
+   one column on a phone, two on a tablet, and keeps the locked three-column
+   composition from the desktop breakpoint upward. */
+.is-stack__summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1.1rem; margin-bottom: 1.1rem; }
+@media (min-width: 64.01rem) {
+    .is-stack__summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 .is-stack__summary-col h5 { display: flex; align-items: center; gap: 0.4rem; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--is-text); margin: 0 0 0.45rem; }
 .is-stack__summary-col ul { margin: 0; padding-left: 1.1rem; font-size: 0.85rem; color: var(--is-text); line-height: 1.5; }
 .is-stack__approach { font-size: 0.9rem; color: var(--is-text); margin: 0 0 1.1rem; line-height: 1.55; }
@@ -4318,6 +4395,10 @@ body:not([data-theme="dark"]) .is__button--primary {
 .is-stack__action-btn--primary { background: var(--is-active); color: var(--is-action-primary-text); }
 .is-stack__action-btn--primary:disabled { opacity: 0.5; cursor: default; }
 .is-stack__action-btn--secondary { background: var(--is-surface); border-color: var(--is-line); color: var(--is-text); }
+/* The post-review model-answer action is an anchor (it navigates rather than
+   acting on the member's answer); keep it reading as the same control. */
+a.is-stack__action-btn { text-decoration: none; }
+a.is-stack__action-btn:hover { background: var(--is-surface-2); }
 .is-stack__action-chip {
     display: inline-flex;
     align-items: center;
@@ -4522,9 +4603,15 @@ body:not([data-theme="dark"]) .is__button--primary {
 }
 .is-ai-source {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* Mobile correction 2026-08-12: three fixed tracks squeezed each source
+       card to ~113px on a phone. Collapse responsively; the three-across
+       reading returns as soon as there is room for it. */
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
     gap: 0.75rem;
     margin: 1rem 0 0.6rem;
+}
+@media (min-width: 64.01rem) {
+    .is-ai-source { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 .is-ai-source__card {
     display: flex;
@@ -4594,11 +4681,20 @@ body:not([data-theme="dark"]) .is__button--primary {
 }
 .is[data-authenticated="true"] #is-panel-ai .is__why ul {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* Mobile correction 2026-08-12: "Why this works" was three fixed tracks,
+       which on a phone gave ~97px per reason and broke the sentences into
+       unreadable slivers. Collapse responsively; three across returns at the
+       desktop breakpoint. */
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
     gap: 1rem;
     list-style: none;
     margin: 0.6rem 0 0;
     padding: 0;
+}
+@media (min-width: 64.01rem) {
+    .is[data-authenticated="true"] #is-panel-ai .is__why ul {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 .is[data-authenticated="true"] #is-panel-ai .is__why li {
     padding-top: 0.6rem;
@@ -5358,10 +5454,20 @@ body:not([data-theme="dark"]) .is[data-authenticated="true"] .is__ai-question-fr
    on its own row restores the lock's stacked composition. */
 .is[data-authenticated="true"] .is-ai-source {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* Mobile correction 2026-08-12: this authenticated rule outranked the
+       base one, so the source cards stayed three-across at 390px (~113px
+       each). Collapse responsively here too; the locked three-column
+       composition returns from the desktop breakpoint up. The section label
+       spans 1 / -1, so it stays full-width at every column count. */
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
     align-items: stretch;
     gap: 0.8rem;
     margin: 0.4rem 0 0.5rem;
+}
+@media (min-width: 64.01rem) {
+    .is[data-authenticated="true"] .is-ai-source {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 .is[data-authenticated="true"] .is-ai-source .is__section-label {
     grid-column: 1 / -1;
@@ -5780,8 +5886,34 @@ body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="
         clip: rect(0 0 0 0);
         white-space: nowrap;
     }
-    .is-auth__send { padding: 0.75rem 1.1rem; min-height: 2.9rem; }
-    .is-auth__send-label { font-size: 0.95rem; }
+    /* Owner directive 2026-08-12: on a phone the send control becomes a
+       circular icon button sitting inside the answer box beside the compact
+       mic. The visible word is dropped for space, never the accessible name
+       -- the button keeps aria-label="Review my answer", so screen-reader
+       and voice-control users still hear and speak the same control. */
+    .is-auth__send {
+        width: 3rem;
+        height: 3rem;
+        min-height: 3rem;
+        padding: 0;
+        gap: 0;
+        border-radius: 50%;
+        justify-content: center;
+    }
+    .is-auth__send-label {
+        position: absolute;
+        width: 1px; height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+    .is-auth__send svg {
+        width: 1.35rem;
+        height: 1.35rem;
+        /* The paper-plane points up-right; nudge it so it sits optically
+           centred in the circle rather than mathematically centred. */
+        margin: 0 0.08rem 0.05rem 0;
+    }
 }
 
 /* Sweep finding 2026-08-12: at phone width the three overlay status chips

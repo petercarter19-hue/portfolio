@@ -42,7 +42,20 @@ class GitleaksConfigurationTests(unittest.TestCase):
 
         # Any additional suppression is a new security decision that must
         # update this regression explicitly.
-        self.assertEqual(3, len(allowlists))
+        #
+        # 2026-08-12 added two: commit 423e64f0 entered repository history
+        # carrying Profile test fixtures whose lines match generic-api-key on
+        # the SHAPE of a keyword argument assigned a literal identifier. No
+        # credential is involved. The patterns below use character classes
+        # where the identifier would otherwise appear verbatim, because this
+        # file is scanned too and a fully written-out pattern would itself
+        # become the finding it describes.
+        # Unmodified main failed the same scan, so every pull request was
+        # blocked; and because the pipeline runs `gitleaks git .` over full
+        # history, deleting the files (they are already gone from main) could
+        # not clear it. Both entries are scoped by path and exact line and are
+        # not commit-pinned, so they survive the required squash merge.
+        self.assertEqual(5, len(allowlists))
         self.assertEqual(
             {
                 'description': (
@@ -86,12 +99,43 @@ class GitleaksConfigurationTests(unittest.TestCase):
         # required strategy, so pinning guaranteed that outcome. They are now
         # scoped by path and exact line instead, which survives the merge and
         # is still narrow enough that any other line in the file fails the scan.
+        # Values are the FULL regex list for that path, so an entry that grows
+        # a second pattern has to say so here rather than slipping through.
         expected = {
-            r'^services/community_cursor\.py$': (
+            r'^services/community_cursor\.py$': [
                 r'^\s*token,\s+max_age='
                 r'CURSOR_MAX_AGE_SECONDS\s*$'
-            ),
-            community_doc_path: community_doc_line,
+            ],
+            community_doc_path: [community_doc_line],
+            r'^tests/test_profile_relationships\.py$': [
+                ''.join(
+                    (
+                        r'^\s*actor_key="viewer',
+                        r'[A-Za-z]+_123", ',
+                        r'subject_owner_key="owner',
+                        r'[A-Za-z]+_456"\).*$',
+                    )
+                ),
+                # The same fixture also appears with a None actor on the
+                # fail-closed path, which the pattern above does not cover.
+                ''.join(
+                    (
+                        r'^\s*actor_key=None, ',
+                        r'subject_owner_key="owner',
+                        r'[A-Za-z]+_456"\)\s*$',
+                    )
+                ),
+            ],
+            r'^tests/test_profile_voice_projection\.py$': [
+                ''.join(
+                    (
+                        r'^\s*owner_key="owner',
+                        r'[A-Za-z]+_123", ',
+                        r'projection_key="voice',
+                        r'[A-Za-z]+_123",\s*$',
+                    )
+                ),
+            ],
         }
 
         scoped = [
@@ -107,7 +151,7 @@ class GitleaksConfigurationTests(unittest.TestCase):
             self.assertEqual('AND', allowlist['condition'])
             self.assertEqual(1, len(allowlist['paths']))
             self.assertEqual('line', allowlist['regexTarget'])
-            self.assertEqual([expected[path]], allowlist['regexes'])
+            self.assertEqual(expected[path], allowlist['regexes'])
             self.assertNotIn(
                 'commits',
                 allowlist,
