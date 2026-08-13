@@ -433,6 +433,50 @@ PROFILE_CLOSE_ABSENT_SURFACE_REPAIR = {
     ),
 }
 
+# The first absent-surface repair proved that three absent objects are equal,
+# but the production collector still used `_git(..., check=False)`: Git writes
+# the unresolved `ref:path` expression to stdout even when that command exits
+# nonzero.  This follow-up turns those failed expressions into the only valid
+# absent representation (the empty string) before comparison.  It does not
+# alter three-way equality or the separate non-empty introduction proof.
+PROFILE_CLOSE_OBJECT_ID_REPAIR = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": (
+        "work/2026-08-13-delivery-activation-profile-close-"
+        "object-id-repair"
+    ),
+    "origin_main": "79ed97140b6b46020df311ea9188403cf1e00ea7",
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "reason": (
+        "The exact Profile Core close v2 proved every declared writable "
+        "surface has the same Git object at the frozen candidate, package "
+        "merge, and captured main when an absent path is represented as empty. "
+        "The production collector instead retained Git's failed rev-parse "
+        "stdout, producing three different unresolved ref:path strings for "
+        "one path absent at all three points. This authority-neutral repair "
+        "uses only verified object IDs and normalizes a nonzero lookup to empty; "
+        "it preserves exact three-way equality and the non-empty introduction "
+        "proof. It changes no lane, authority list, baseline, product code, "
+        "schema, pipeline, deployment, configuration, enablement, or live "
+        "behavior."
+    ),
+    "verification_contract": (
+        "This is audit evidence, not self-granted package authority. The "
+        "preflight recognizes it only when this entire record equals the "
+        "validator's hard-coded record and Git proves the exact branch, exact "
+        "origin/main base, exactly one commit, and exact three changed paths. "
+        "The parent must retain the exact Profile close absent-surface repair; "
+        "the ledger may change only updated_at plus this record, and the "
+        "baseline must remain byte-identical. A later branch, base, altered "
+        "record, timestamp, authority, lane, path, or baseline cannot reuse it."
+    ),
+}
+
 # The first real implementation-package release failure moved Opportunity
 # Slate through the ordinary pause/resume lifecycle. Two governance tests still
 # sourced their historical grant and transfer fixtures directly from the
@@ -1100,6 +1144,27 @@ def _git_at(repository: Path, *args: str, check: bool = True) -> str:
     if check and result.returncode:
         raise RuntimeError(result.stderr.strip() or "git command failed")
     return result.stdout.strip()
+
+
+def _git_object_id_at(ref: object, path: object) -> str:
+    """Return a verified Git object ID for ``ref:path``, or ``""`` if absent."""
+    if not isinstance(ref, str) or not ref or not isinstance(path, str):
+        return ""
+    normalized_path = path.rstrip("/")
+    if not normalized_path:
+        return ""
+    result = subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", "--verify", f"{ref}:{normalized_path}"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+        env=_git_environment(),
+    )
+    if result.returncode != 0:
+        return ""
+    object_id = result.stdout.strip()
+    return object_id if FULL_GIT_SHA.fullmatch(object_id) else ""
 
 
 def _git_returncode_at(repository: Path, *args: str) -> int:
@@ -2920,6 +2985,24 @@ def _exact_profile_close_absent_surface_repair_matches(
     )
 
 
+def _exact_profile_close_object_id_repair_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("profile_close_object_id_repair")
+        == PROFILE_CLOSE_OBJECT_ID_REPAIR
+        and package_id == PROFILE_CLOSE_OBJECT_ID_REPAIR["package"]
+        and facts.get("branch") == PROFILE_CLOSE_OBJECT_ID_REPAIR["branch"]
+        and facts.get("origin_main") == PROFILE_CLOSE_OBJECT_ID_REPAIR["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(PROFILE_CLOSE_OBJECT_ID_REPAIR["allowed_surfaces"])
+    )
+
+
 def _exact_opportunity_lifecycle_fixture_repair_matches(
     ledger: dict,
     facts: dict,
@@ -3545,6 +3628,31 @@ def _exact_profile_close_absent_surface_repair_delta(
     expected["profile_close_absent_surface_repair"] = (
         PROFILE_CLOSE_ABSENT_SURFACE_REPAIR
     )
+    if repair_ledger != expected:
+        return False
+    return _utc_timestamp_strictly_advances(
+        repair_ledger.get("updated_at"), parent_ledger.get("updated_at")
+    )
+
+
+def _exact_profile_close_object_id_repair_delta(
+    parent_ledger: object,
+    repair_ledger: object,
+) -> bool:
+    """Prove the object-ID close collector repair is authority-neutral."""
+    if not isinstance(parent_ledger, dict) or not isinstance(repair_ledger, dict):
+        return False
+    if (
+        parent_ledger.get("profile_close_absent_surface_repair")
+        != PROFILE_CLOSE_ABSENT_SURFACE_REPAIR
+        or parent_ledger.get("profile_close_object_id_repair") is not None
+        or repair_ledger.get("profile_close_object_id_repair")
+        != PROFILE_CLOSE_OBJECT_ID_REPAIR
+    ):
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = repair_ledger.get("updated_at")
+    expected["profile_close_object_id_repair"] = PROFILE_CLOSE_OBJECT_ID_REPAIR
     if repair_ledger != expected:
         return False
     return _utc_timestamp_strictly_advances(
@@ -5581,6 +5689,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        profile_close_object_id_repair_matches = (
+            _exact_profile_close_object_id_repair_matches(
+                ledger, facts, package_id
+            )
+        )
         opportunity_lifecycle_fixture_repair_matches = (
             _exact_opportunity_lifecycle_fixture_repair_matches(
                 ledger, facts, package_id
@@ -5687,6 +5800,11 @@ def evaluate_policy(
                 "using the exact one-time Profile close absent-surface repair "
                 "boundary"
             )
+        elif profile_close_object_id_repair_matches:
+            allowed_surfaces = set(PROFILE_CLOSE_OBJECT_ID_REPAIR["allowed_surfaces"])
+            warnings.append(
+                "using the exact one-time Profile close object-ID repair boundary"
+            )
         elif opportunity_lifecycle_fixture_repair_matches:
             allowed_surfaces = set(
                 OPPORTUNITY_LIFECYCLE_FIXTURE_REPAIR["allowed_surfaces"]
@@ -5746,6 +5864,7 @@ def evaluate_policy(
                 and not profile_close_fixture_followup_matches
                 and not profile_close_baseline_fixture_followup_matches
                 and not profile_close_absent_surface_repair_matches
+                and not profile_close_object_id_repair_matches
                 and not opportunity_lifecycle_fixture_repair_matches
                 and not opportunity_resume_fixture_repair_matches
                 and not opportunity_close_introduction_repair_matches
@@ -6143,6 +6262,37 @@ def evaluate_policy(
                 _validate_baseline_unchanged(
                     candidate_baseline, origin_baseline,
                     label="Profile close absent-surface repair", errors=errors,
+                )
+            elif profile_close_object_id_repair_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "Profile close object-ID repair updated_at must be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "Profile close object-ID repair updated_at must strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "Profile close object-ID repair may not change activation_policy"
+                    )
+                if not _exact_profile_close_object_id_repair_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "Profile close object-ID repair must be the exact inert ledger delta"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline, origin_baseline,
+                    label="Profile close object-ID repair", errors=errors,
                 )
             elif profile_close_fixture_followup_matches:
                 candidate_updated_at = ledger.get("updated_at")
@@ -6575,6 +6725,7 @@ def evaluate_policy(
             and not profile_close_fixture_followup_matches
             and not profile_close_baseline_fixture_followup_matches
             and not profile_close_absent_surface_repair_matches
+            and not profile_close_object_id_repair_matches
             and not opportunity_lifecycle_fixture_repair_matches
             and not opportunity_resume_fixture_repair_matches
             and not opportunity_close_introduction_repair_matches
@@ -7234,26 +7385,16 @@ def main(argv: list[str] | None = None) -> int:
                         if not isinstance(surface, str) or not remote_fact:
                             comparisons.append(False)
                             continue
-                        candidate_tree = _git(
-                            "rev-parse", f"{remote_fact}:{surface.rstrip('/')}",
-                            check=False,
-                        )
-                        merge_tree = _git(
-                            "rev-parse", f"{package_merge_sha}:{surface.rstrip('/')}",
-                            check=False,
-                        )
-                        main_tree = _git(
-                            "rev-parse", f"{facts['origin_main']}:{surface.rstrip('/')}",
-                            check=False,
-                        )
+                        candidate_tree = _git_object_id_at(remote_fact, surface)
+                        merge_tree = _git_object_id_at(package_merge_sha, surface)
+                        main_tree = _git_object_id_at(facts["origin_main"], surface)
                         comparisons.append(
                             _close_surface_tree_equivalent(
                                 candidate_tree, merge_tree, main_tree
                             )
                         )
-                        merge_parent_tree = _git(
-                            "rev-parse", f"{package_merge_sha}^:{surface.rstrip('/')}",
-                            check=False,
+                        merge_parent_tree = _git_object_id_at(
+                            f"{package_merge_sha}^", surface
                         )
                         introduction_checks.append(
                             bool(candidate_tree)

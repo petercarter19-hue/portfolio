@@ -34,6 +34,7 @@ from scripts.delivery_preflight import (
     PROFILE_CLOSE_FIXTURE_FOLLOWUP,
     PROFILE_CLOSE_BASELINE_FIXTURE_FOLLOWUP,
     PROFILE_CLOSE_ABSENT_SURFACE_REPAIR,
+    PROFILE_CLOSE_OBJECT_ID_REPAIR,
     PROFILE_DIRECTION_OWNER_DECISION_SHA256,
     PROFILE_DIRECTION_REVIEW_ATTESTATION,
     PROFILE_CORE_INTEGRATION_BRANCH,
@@ -80,8 +81,11 @@ from scripts.delivery_preflight import (
     _exact_profile_close_baseline_fixture_followup_delta,
     _exact_profile_close_absent_surface_repair_delta,
     _exact_profile_close_absent_surface_repair_matches,
+    _exact_profile_close_object_id_repair_delta,
+    _exact_profile_close_object_id_repair_matches,
     _fetch_exact_origin_refs,
     _git_environment,
+    _git_object_id_at,
     _baseline_scalar,
     _expected_pause_manager_assignment,
     _expected_pause_next_gate,
@@ -3340,6 +3344,171 @@ with patch.object(
             origin_baseline=baseline,
         )
         self.assertTrue(reused_errors)
+
+    def test_profile_close_object_id_repair_is_exact_and_inert(self):
+        repair = PROFILE_CLOSE_OBJECT_ID_REPAIR
+        origin = load_ledger_at_ref(repair["origin_main"])
+        baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        self.assertEqual(
+            PROFILE_CLOSE_ABSENT_SURFACE_REPAIR,
+            origin.get("profile_close_absent_surface_repair"),
+        )
+        self.assertNotIn("profile_close_object_id_repair", origin)
+        self.assertEqual(
+            repair, self.ledger.get("profile_close_object_id_repair")
+        )
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-13T06:07:18Z"
+        candidate["profile_close_object_id_repair"] = copy.deepcopy(repair)
+        exact_facts = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=repair["allowed_surfaces"],
+        )
+        self.assertTrue(
+            _exact_profile_close_object_id_repair_matches(
+                candidate, exact_facts, repair["package"]
+            )
+        )
+        self.assertTrue(
+            _exact_profile_close_object_id_repair_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("object-ID repair" in item for item in warnings))
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+
+        for fact_mutation in (
+            {"branch": "work/forged"},
+            {"origin_main": "f" * 40},
+            {"ahead": 0},
+            {"ahead": 2},
+            {"behind": 1},
+            {"changed_paths": repair["allowed_surfaces"][:-1]},
+            {"changed_paths": [*repair["allowed_surfaces"], "app.py"]},
+        ):
+            with self.subTest(facts=fact_mutation):
+                altered_errors, _ = self._evaluate_activation(
+                    candidate,
+                    {**exact_facts, **fact_mutation},
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(altered_errors)
+
+        for timestamp in (
+            origin["updated_at"],
+            "2026-08-13T05:34:43Z",
+            "not-a-timestamp",
+        ):
+            with self.subTest(timestamp=timestamp):
+                altered = copy.deepcopy(candidate)
+                altered["updated_at"] = timestamp
+                altered_errors, _ = self._evaluate_activation(
+                    altered,
+                    exact_facts,
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(altered_errors)
+
+        altered = copy.deepcopy(candidate)
+        altered["operating_mode"]["release_allowed_for"].append(
+            PROFILE_CORE_INTEGRATION_PACKAGE
+        )
+        altered_errors, _ = self._evaluate_activation(
+            altered,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(altered_errors)
+
+        baseline_errors, _ = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline + b"\n# forged baseline\n",
+            origin_baseline=baseline,
+        )
+        self.assertTrue(baseline_errors)
+
+        replay_parent = copy.deepcopy(candidate)
+        replay_parent["updated_at"] = "2026-08-13T06:08:00Z"
+        replay = copy.deepcopy(replay_parent)
+        replay["updated_at"] = "2026-08-13T06:09:00Z"
+        replay_errors, _ = self._evaluate_activation(
+            replay,
+            exact_facts,
+            require_clean=True,
+            origin=replay_parent,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(replay_errors)
+
+    def test_profile_close_object_ids_normalize_real_absence_before_close_facts(self):
+        reviewed = PROFILE_CORE_INTEGRATION_REVIEWED_SHA
+        package_merge = "f0fe066751a83fc7c0ba32a88d55b1d42a3a46f2"
+        captured_main = PROFILE_CLOSE_OBJECT_ID_REPAIR["origin_main"]
+        lane = next(
+            item
+            for item in load_ledger_at_ref(captured_main)["active_lanes"]
+            if item.get("package") == PROFILE_CORE_INTEGRATION_PACKAGE
+        )
+        missing = "docs/initiatives/PS-PROFILE-CORE-INTEGRATION-001/"
+        self.assertIn(missing, lane["writable_surfaces"])
+        existing_ids = (
+            _git_object_id_at(reviewed, "profile_routes.py"),
+            _git_object_id_at(package_merge, "profile_routes.py"),
+            _git_object_id_at(captured_main, "profile_routes.py"),
+        )
+        self.assertEqual(
+            ("1fb2ded672800866ad63e165024f16a22bab5114",) * 3,
+            existing_ids,
+        )
+        missing_ids = (
+            _git_object_id_at(reviewed, missing),
+            _git_object_id_at(package_merge, missing),
+            _git_object_id_at(captured_main, missing),
+        )
+        self.assertEqual(("", "", ""), missing_ids)
+        self.assertTrue(_close_surface_tree_equivalent(*missing_ids))
+
+        comparisons = []
+        introduction_checks = []
+        for surface in lane["writable_surfaces"]:
+            candidate_id = _git_object_id_at(reviewed, surface)
+            merge_id = _git_object_id_at(package_merge, surface)
+            main_id = _git_object_id_at(captured_main, surface)
+            comparisons.append(
+                _close_surface_tree_equivalent(candidate_id, merge_id, main_id)
+            )
+            parent_id = _git_object_id_at(f"{package_merge}^", surface)
+            introduction_checks.append(
+                bool(candidate_id)
+                and candidate_id == merge_id
+                and parent_id != merge_id
+            )
+        self.assertTrue(all(comparisons))
+        self.assertTrue(_candidate_surface_introduction_proven(introduction_checks))
 
     def test_close_surface_tree_equivalence_accepts_only_exact_three_way_state(self):
         self.assertTrue(_close_surface_tree_equivalent("tree-a", "tree-a", "tree-a"))

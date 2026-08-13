@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T05:34:44Z",
+  "updated_at": "2026-08-13T06:07:18Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -284,6 +284,19 @@
     ],
     "reason": "The exact Profile Core close candidate proved all existing reviewed writable surfaces are byte-identical at the frozen candidate, package merge, and current main, while one stale declared directory is absent at all three. This authority-neutral repair treats three-way absence as exact equivalence only; one- or two-sided absence still fails, and the independent introduction proof still requires at least one real candidate surface introduced by the package merge. It changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, enablement, or live behavior.",
     "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. The ledger may change only updated_at plus this record, and the baseline must remain byte-identical. A later branch, base, altered record, timestamp, authority, lane, path, or baseline cannot reuse it."
+  },
+  "profile_close_object_id_repair": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-13-delivery-activation-profile-close-object-id-repair",
+    "origin_main": "79ed97140b6b46020df311ea9188403cf1e00ea7",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "reason": "The exact Profile Core close v2 proved every declared writable surface has the same Git object at the frozen candidate, package merge, and captured main when an absent path is represented as empty. The production collector instead retained Git's failed rev-parse stdout, producing three different unresolved ref:path strings for one path absent at all three points. This authority-neutral repair uses only verified object IDs and normalizes a nonzero lookup to empty; it preserves exact three-way equality and the non-empty introduction proof. It changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, enablement, or live behavior.",
+    "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. The parent must retain the exact Profile close absent-surface repair; the ledger may change only updated_at plus this record, and the baseline must remain byte-identical. A later branch, base, altered record, timestamp, authority, lane, path, or baseline cannot reuse it."
   },
   "closing_lanes": [
     {
