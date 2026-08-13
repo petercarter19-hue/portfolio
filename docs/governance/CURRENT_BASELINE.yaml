@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-CONNECT-002 is active on work/2026-08-13-connect-002-provider-merge-001 for non-production provider work. PS-SITE-AUDIT-PACKAGE-QUEUE-001 is active on work/2026-08-13-site-audit-package-queue-001 for disjoint planning-only documentation/evidence."
+  current_assignments: "Active: PS-CONNECT-002 on work/2026-08-13-connect-002-provider-merge-001 (provider); PS-SITE-AUDIT-PACKAGE-QUEUE-001 on work/2026-08-13-site-audit-package-queue-001 (documentation only); PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 on work/2026-08-13-interview-me-inline-example (inline example)."
 
 governing_documents:
   bible:
@@ -64,6 +64,9 @@ active_packages:
   - id: PS-SITE-AUDIT-PACKAGE-QUEUE-001
     status: active_delivery
     scope: "Planning-only package queue for the remaining 2026-08-13 Opportunity, Community, dictation, Spark, Interview polish, agent-quality, Ask My Slate, and Resume work. No runtime implementation, package activation, code/Azure learning review, merge, deployment, or live authority."
+  - id: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001
+    status: active_delivery
+    scope: "Same-page AI example inside Interview Me; no mode switch."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -156,7 +159,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Continue PS-CONNECT-002 only on its provider surfaces and PS-SITE-AUDIT-PACKAGE-QUEUE-001 only on documentation/evidence. Future product packages remain inactive."
+next_gate: "Continue each active package only on its own surfaces: PS-CONNECT-002 provider, PS-SITE-AUDIT-PACKAGE-QUEUE-001 documentation/evidence, PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 Interview. Future product packages remain inactive."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
