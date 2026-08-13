@@ -55,11 +55,19 @@ from scripts.delivery_preflight import (
     PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_REPAIR,
     PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_PATHS,
     CONNECT_002_BRANCH,
+    CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP,
+    CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS,
+    CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN,
     CONNECT_002_MERGE_ADMISSION_REPAIR,
     CONNECT_002_MERGE_ADMISSION_REPAIR_PATHS,
     CONNECT_002_MERGE_CANDIDATE_CONTRACT,
     CONNECT_002_OWNER_DECISION_SHA256,
     CONNECT_002_PACKAGE,
+    CONNECT_002_RECONCILED_BRANCH,
+    CONNECT_002_RECONCILED_CANDIDATE_CONTRACT,
+    CONNECT_002_RECONCILED_OWNER_DECISION_SHA256,
+    CONNECT_002_RECONCILED_REVIEW_ATTESTATION,
+    CONNECT_002_RECONCILED_REVIEWED_SHA,
     CONNECT_002_REVIEW_ATTESTATION,
     CONNECT_002_REVIEWED_SHA,
     SHELL_BRANCH,
@@ -92,6 +100,9 @@ from scripts.delivery_preflight import (
     _is_shell_reviewed_shared_foundation_lane,
     _exact_connect_002_merge_admission_repair_delta,
     _exact_connect_002_merge_admission_repair_matches,
+    _exact_connect_002_merge_admission_anchor_followup_delta,
+    _exact_connect_002_merge_admission_anchor_followup_matches,
+    _connect_002_main_sequence_facts,
     _is_connect_002_reviewed_implementation_lane,
     _profile_core_main_sequence_facts,
     _exact_opportunity_schema_repair_release_refresh_matches,
@@ -510,6 +521,59 @@ class DeliveryPreflightTests(unittest.TestCase):
             CONNECT_002_MERGE_ADMISSION_REPAIR
         )
         return candidate
+
+    def _connect_002_anchor_origin(self) -> tuple[dict, dict]:
+        """Return the exact current-main ledger before the anchor follow-up."""
+        origin = load_ledger_at_ref(
+            CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP["origin_main"]
+        )
+        lane = next(
+            item
+            for item in origin["active_lanes"]
+            if item.get("package") == CONNECT_002_PACKAGE
+        )
+        self.assertEqual(CONNECT_002_RECONCILED_BRANCH, lane["branch"])
+        self.assertNotIn("merge_grant", lane)
+        self.assertEqual(
+            CONNECT_002_MERGE_ADMISSION_REPAIR,
+            origin.get("connect_002_merge_admission_repair"),
+        )
+        self.assertNotIn("connect_002_merge_admission_anchor_followup_r2", origin)
+        return origin, lane
+
+    def _connect_002_anchor_candidate(
+        self,
+        origin: dict,
+        *,
+        anchored_at: str = "2026-08-13T18:47:00Z",
+    ) -> dict:
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = anchored_at
+        candidate["connect_002_merge_admission_anchor_followup_r2"] = copy.deepcopy(
+            CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP
+        )
+        return candidate
+
+    def _connect_002_grant_record(self, lane: dict, granted_at: str) -> dict:
+        decision = lane["owner_decisions"][0]
+        self.assertEqual(
+            CONNECT_002_RECONCILED_OWNER_DECISION_SHA256,
+            _canonical_sha256(decision),
+        )
+        return {
+            "authorized_by": "Pete",
+            "authority_decision_index": 0,
+            "authority_decision_sha256": _canonical_sha256(decision),
+            "independent_review": copy.deepcopy(
+                CONNECT_002_RECONCILED_REVIEW_ATTESTATION
+            ),
+            "reviewed_remote_sha": CONNECT_002_RECONCILED_REVIEWED_SHA,
+            "granted_at": granted_at,
+            "review_result": "pass",
+            "review_evidence_paths": [
+                CONNECT_002_RECONCILED_REVIEW_ATTESTATION["evidence_path"]
+            ],
+        }
 
     def _opportunity_origin(self) -> tuple[dict, dict]:
         origin = copy.deepcopy(self.ledger)
@@ -2925,6 +2989,277 @@ with patch.object(
                 {}, CONNECT_002_PACKAGE, CONNECT_002_REVIEWED_SHA, "0" * 40
             ),
         )
+
+    def test_connect_002_merge_admission_anchor_is_exact_and_review_bound(self):
+        """Only the pinned merged repair can unlock the reconciled candidate."""
+        anchor = CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP
+        origin, original_lane = self._connect_002_anchor_origin()
+        candidate = self._connect_002_anchor_candidate(origin)
+        baseline = load_baseline_bytes_at_ref(anchor["origin_main"])
+        exact_facts = facts(
+            branch=anchor["branch"],
+            origin_main=anchor["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=anchor["allowed_surfaces"],
+        )
+        self.assertEqual(
+            CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN,
+            anchor["existing_main_chain"]["merge_admission_repair_main"],
+        )
+        self.assertEqual(
+            CONNECT_002_RECONCILED_CANDIDATE_CONTRACT,
+            anchor["candidate_contract"],
+        )
+        supplied_attestation = dict(CONNECT_002_RECONCILED_REVIEW_ATTESTATION)
+        supplied_digest = supplied_attestation.pop("attestation_sha256")
+        self.assertEqual(supplied_digest, _canonical_sha256(supplied_attestation))
+        self.assertTrue(
+            _exact_connect_002_merge_admission_anchor_followup_matches(
+                candidate, exact_facts, anchor["package"]
+            )
+        )
+        self.assertTrue(
+            _exact_connect_002_merge_admission_anchor_followup_delta(
+                origin, candidate
+            )
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("merged-repair anchor" in item for item in warnings))
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+        self.assertEqual(
+            original_lane,
+            next(
+                lane
+                for lane in candidate["active_lanes"]
+                if lane["package"] == CONNECT_002_PACKAGE
+            ),
+        )
+
+        for label, altered_facts in (
+            ("wrong-branch", {**exact_facts, "branch": "work/2026-08-13-delivery-activation-forged"}),
+            ("wrong-base", {**exact_facts, "origin_main": "0" * 40}),
+            ("wrong-ahead", {**exact_facts, "ahead": 2}),
+            ("wrong-path", {**exact_facts, "changed_paths": ["app.py"]}),
+        ):
+            with self.subTest(label=label):
+                altered_errors, _ = self._evaluate_activation(
+                    copy.deepcopy(candidate),
+                    altered_facts,
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(altered_errors)
+
+        forged = copy.deepcopy(candidate)
+        forged["operating_mode"]["merge_allowed_for"].append(
+            CONNECT_002_PACKAGE
+        )
+        forged_errors, _ = self._evaluate_activation(
+            forged,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(forged_errors)
+
+        anchored = copy.deepcopy(candidate)
+        granted_at = "2026-08-13T18:48:00Z"
+        target = next(
+            lane
+            for lane in anchored["active_lanes"]
+            if lane["package"] == CONNECT_002_PACKAGE
+        )
+        target["merge_grant"] = self._connect_002_grant_record(target, granted_at)
+        anchored["operating_mode"]["merge_allowed_for"] = [
+            *candidate["operating_mode"]["merge_allowed_for"],
+            CONNECT_002_PACKAGE,
+        ]
+        anchored["updated_at"] = granted_at
+        grant_facts = facts(
+            branch="work/2026-08-13-delivery-grant-connect-002-exact",
+            origin_main="1" * 40,
+            ahead=1,
+            behind=0,
+            changed_paths=["docs/governance/CURRENT_LANES.json"],
+            grant_target_remote_sha=CONNECT_002_RECONCILED_REVIEWED_SHA,
+            **self._review_evidence_facts(target["merge_grant"]),
+        )
+        grant_errors, _ = evaluate_policy(
+            anchored,
+            grant_facts,
+            CONNECT_002_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=candidate,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], grant_errors)
+        self.assertTrue(
+            _exact_direction_grant_delta(
+                candidate, anchored, CONNECT_002_PACKAGE
+            )
+        )
+
+        merge_facts = facts(
+            branch=CONNECT_002_RECONCILED_BRANCH,
+            head=CONNECT_002_RECONCILED_REVIEWED_SHA,
+            origin_main="2" * 40,
+            behind=2,
+            merge_target_remote_sha=CONNECT_002_RECONCILED_REVIEWED_SHA,
+            changed_paths=["services/connection_foundation_service.py"],
+            merge_main_changed_paths=sorted(
+                set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
+                | set(GRANT_ALLOWED_SURFACES)
+            ),
+            merge_main_control_commits_valid=True,
+            merge_main_control_commit_count=2,
+        )
+        merge_errors, merge_warnings = evaluate_policy(
+            anchored,
+            merge_facts,
+            CONNECT_002_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=anchored,
+        )
+        self.assertEqual([], merge_errors)
+        self.assertTrue(any("merged-repair anchor" in item for item in merge_warnings))
+
+        wrong_review = copy.deepcopy(anchored)
+        wrong_target = next(
+            lane
+            for lane in wrong_review["active_lanes"]
+            if lane["package"] == CONNECT_002_PACKAGE
+        )
+        wrong_target["merge_grant"]["reviewed_remote_sha"] = "0" * 40
+        wrong_errors, _ = evaluate_policy(
+            wrong_review,
+            grant_facts,
+            CONNECT_002_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=candidate,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(any("reconciled PS-CONNECT-002 SHA" in item for item in wrong_errors))
+
+    def test_connect_002_main_sequence_requires_pinned_repair_anchor_and_grant(self):
+        """The post-anchor candidate path admits no reconstructable shortcut."""
+        control_base = CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP["origin_main"]
+        repair_base, _ = self._connect_002_origin()
+        repair = self._connect_002_repair_candidate(repair_base)
+        base, _ = self._connect_002_anchor_origin()
+        anchor = self._connect_002_anchor_candidate(base)
+        granted = copy.deepcopy(anchor)
+        granted_at = "2026-08-13T18:49:00Z"
+        target = next(
+            lane
+            for lane in granted["active_lanes"]
+            if lane["package"] == CONNECT_002_PACKAGE
+        )
+        target["merge_grant"] = self._connect_002_grant_record(target, granted_at)
+        granted["operating_mode"]["merge_allowed_for"] = [
+            *anchor["operating_mode"]["merge_allowed_for"],
+            CONNECT_002_PACKAGE,
+        ]
+        granted["updated_at"] = granted_at
+        anchor_sha = "a" * 40
+        grant_sha = "b" * 40
+        origin_main = "c" * 40
+
+        def sequence(source_tree: str = "tree") -> tuple[list[str], bool, int]:
+            ledgers = {
+                CONNECT_002_MERGE_ADMISSION_REPAIR["origin_main"]: repair_base,
+                CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN: repair,
+                control_base: base,
+                anchor_sha: anchor,
+            }
+
+            def fake_git(*args: str, **_kwargs: object) -> str:
+                if args[:2] == ("rev-list", "--reverse"):
+                    return f"{anchor_sha}\n{grant_sha}\n"
+                if args[0] == "rev-parse":
+                    values = {
+                        f"{anchor_sha}^": control_base,
+                        f"{grant_sha}^": anchor_sha,
+                        f"{CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN}^": (
+                            CONNECT_002_MERGE_ADMISSION_REPAIR["origin_main"]
+                        ),
+                        f"{CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN}^{{tree}}": "tree",
+                        "edfa9af025cf8b473bd8c59cfb240b786ddb3ef5^{tree}": source_tree,
+                    }
+                    return values[args[-1]]
+                if args[0] == "merge-base":
+                    return control_base
+                raise AssertionError(args)
+
+            def fake_git_nul(*args: str, **_kwargs: object) -> list[str]:
+                if args[0] == "diff-tree":
+                    paths = {
+                        anchor_sha: CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS,
+                        grant_sha: GRANT_ALLOWED_SURFACES,
+                        CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN: (
+                            CONNECT_002_MERGE_ADMISSION_REPAIR_PATHS
+                        ),
+                    }
+                    return sorted(paths[args[-1]])
+                if args[0] == "diff" and args[-1] == f"{control_base}..{origin_main}":
+                    return sorted(
+                        set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
+                        | set(GRANT_ALLOWED_SURFACES)
+                    )
+                if args[0] == "diff" and args[-1] == (
+                    f"{control_base}..{CONNECT_002_RECONCILED_REVIEWED_SHA}"
+                ):
+                    return ["services/connection_foundation_service.py"]
+                raise AssertionError(args)
+
+            with (
+                patch("scripts.delivery_preflight._git", side_effect=fake_git),
+                patch("scripts.delivery_preflight._git_nul", side_effect=fake_git_nul),
+                patch(
+                    "scripts.delivery_preflight.load_ledger_at_ref",
+                    side_effect=lambda ref: copy.deepcopy(ledgers[ref]),
+                ),
+                patch("scripts.delivery_preflight._git_returncode_at", return_value=0),
+            ):
+                return _connect_002_main_sequence_facts(
+                    granted,
+                    CONNECT_002_PACKAGE,
+                    CONNECT_002_RECONCILED_REVIEWED_SHA,
+                    origin_main,
+                )
+
+        paths, valid, count = sequence()
+        self.assertEqual(
+            sorted(
+                set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
+                | set(GRANT_ALLOWED_SURFACES)
+            ),
+            paths,
+        )
+        self.assertTrue(valid)
+        self.assertEqual(2, count)
+
+        _, invalid, count = sequence(source_tree="forged-tree")
+        self.assertFalse(invalid)
+        self.assertEqual(2, count)
 
     def test_profile_core_main_sequence_rejects_bad_repair_timestamps(self):
         """The inert repair must advance a valid timestamp before its grant."""

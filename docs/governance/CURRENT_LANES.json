@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T18:00:00Z",
+  "updated_at": "2026-08-13T18:47:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -219,6 +219,35 @@
     },
     "reason": "Pete authorized one code-controlled, fail-closed PS-CONNECT-002 merge-admission validator repair for the exact independently reviewed non-production relationship-provider candidate. It records the exact candidate, owner-decision, review, and evidence pins for a separately authorized later anchored follow-up. This repair admits no candidate and grants no merge, release, schema apply, deployment, Profile integration, enablement, cleanup, or live authority.",
     "verification_contract": "This repair is audit evidence, not self-granted candidate or merge authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, exact three changed paths, and an unchanged baseline. The ledger may change only updated_at plus this record; active lanes and every authority list must remain byte-for-byte equivalent. A separately authorized follow-up must pin this repair's actual merged SHA before any reviewed candidate merge validation can be registered. A later branch, base, altered record, timestamp, authority, path, or state cannot reuse this repair."
+  },
+  "connect_002_merge_admission_anchor_followup_r2": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-13-delivery-activation-connect-002-merge-admission-anchor-r3",
+    "origin_main": "38cd81ae4fc52d3a18045c081f5d6229fcb32c1c",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "existing_main_chain": {
+      "merge_admission_repair_main": "a526a78599a73c55901d318bfde899398fc3276b",
+      "merge_admission_repair_parent": "68d14a44de4007f8643396833a481601d5dbb4a3",
+      "merge_admission_repair_source": "edfa9af025cf8b473bd8c59cfb240b786ddb3ef5"
+    },
+    "candidate_contract": {
+      "package": "PS-CONNECT-002",
+      "branch": "work/2026-08-13-connect-002-provider-merge-001",
+      "reviewed_remote_sha": "f6b0e0809ef2fd21afc764162e9f0962911b3dcb",
+      "owner_decision_sha256": "0fc2948713d77dc2f3596f8522de783821f16534cc021d10a176bf8c63fcc30d",
+      "reviewer_task": "/root/connect_002_rebase_final_review",
+      "review_attestation_sha256": "b5b6de09beb4663f3e817aa8b1b2927072a0805d4278673e671512a5316562d1",
+      "review_evidence_path": "artifacts/2026-08-13-connect-002/IMPLEMENTATION_CHECKPOINT.md",
+      "review_evidence_git_blob_sha": "aa68ba114cce122e15bc7ecf1545d1431c1eeadb",
+      "review_evidence_bytes_sha256": "4dbc286d9df59afd925266c68b4790eb58c0ee34440af5080675f3d2260ac21b"
+    },
+    "reason": "Pete's complete-Profile authorization permits one narrow, code-controlled follow-up after the PS-CONNECT-002 provider was reconciled and independently reviewed against current Azure main. This record pins the actual merged repair SHA and the exact final reviewed provider candidate. It changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, enablement, or live behavior. A later ordinary merge grant remains separately required.",
+    "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. It verifies that actual main a526 is the direct child of 68d, carries the original exact repair and its three paths, and is an ancestor of this follow-up base. The ledger may change only updated_at plus this record; active lanes, authority lists, and CURRENT_BASELINE.yaml must remain byte-identical. Candidate merge later accepts only this anchor followed by an exact review-bound ledger-only grant. A later branch, base, commit, altered record, timestamp, authority, path, or state cannot reuse it."
   },
   "shell_merge_preflight_repair": {
     "status": "one_time_owner_authorized_repair",

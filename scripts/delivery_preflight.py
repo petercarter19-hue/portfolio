@@ -1176,6 +1176,156 @@ CONNECT_002_MERGE_ADMISSION_REPAIR_PATHS = frozenset(
     CONNECT_002_MERGE_ADMISSION_REPAIR["allowed_surfaces"]
 )
 
+# The authority-neutral repair merged as a526 but intentionally did not admit
+# its paused candidate. The active provider lane was then reconciled onto
+# current main and independently reviewed again. This R2 one-time anchor records
+# both the actual merged repair SHA and the final reviewed candidate. It remains
+# authority-neutral: only a later ordinary grant may add merge authority.
+CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN = (
+    "a526a78599a73c55901d318bfde899398fc3276b"
+)
+CONNECT_002_MERGE_ADMISSION_REPAIR_SOURCE = (
+    "edfa9af025cf8b473bd8c59cfb240b786ddb3ef5"
+)
+CONNECT_002_RECONCILED_BRANCH = (
+    "work/2026-08-13-connect-002-provider-merge-001"
+)
+CONNECT_002_RECONCILED_REVIEWED_SHA = (
+    "f6b0e0809ef2fd21afc764162e9f0962911b3dcb"
+)
+CONNECT_002_RECONCILED_OWNER_DECISION_SHA256 = (
+    "0fc2948713d77dc2f3596f8522de783821f16534cc021d10a176bf8c63fcc30d"
+)
+CONNECT_002_RECONCILED_REVIEW_ATTESTATION = {
+    "reviewer_task": "/root/connect_002_rebase_final_review",
+    "reviewer_mode": "independent_read_only_non_writer",
+    "reviewed_sha": CONNECT_002_RECONCILED_REVIEWED_SHA,
+    "reviewed_branch": CONNECT_002_RECONCILED_BRANCH,
+    "verdict": "PASS",
+    "verdict_text": (
+        "PASS - exact-SHA independent read-only review accepted for "
+        "f6b0e0809ef2fd21afc764162e9f0962911b3dcb, branch-equal to "
+        "origin/work/2026-08-13-connect-002-provider-merge-001 and clean; "
+        "the complete candidate diff, repaired reciprocal lifecycle, exact "
+        "SQL/Python opaque-key contract, final disposable SQL gate, two-owner "
+        "fail-closed privacy, and focused 107-test verification passed. "
+        "Future Profile wiring must retain server-side identity derivation."
+    ),
+    "verdict_sha256": (
+        "f2c5d4128e0d477ddd1e0294be530a79d46e862d750a825b9780228d2ae72fe8"
+    ),
+    "basis": [
+        "full_tree_at_f6b0e0809ef2fd21afc764162e9f0962911b3dcb",
+        "complete_diff_38cd81ae4fc52d3a18045c081f5d6229fcb32c1c_to_"
+        "f6b0e0809ef2fd21afc764162e9f0962911b3dcb",
+        "provider_owned_blobs_5e912efe4b85fe57173fc0129ed39b55fcbbbf0e_"
+        "to_f6b0e0809ef2fd21afc764162e9f0962911b3dcb_equal_checkpoint_"
+        "provenance_only",
+        "checkpoint_blob_aa68ba114cce122e15bc7ecf1545d1431c1eeadb_"
+        "bytes_sha256_4dbc286d9df59afd925266c68b4790eb58c0ee34440af5080675f3d2260ac21b",
+        "py_compile_pass",
+        "focused_unittest_107_of_107_pass",
+        "two_owner_server_identity_privacy_sql_static_contract_pass",
+        "govern_sql_migrations_check_pass_executable_sha256_"
+        "b5a2695916d0b1b658341cd7b103894456dcc58b13db580525ed45600f315606",
+        "git_diff_check_pass",
+        "delivery_preflight_write_fetch_require_clean_pass_origin_main_"
+        "38cd81ae4fc52d3a18045c081f5d6229fcb32c1c",
+    ],
+    "scope": "protected_connect_002_non_production_provider_merge_only",
+    "exclusions": "schema_apply_deployment_profile_integration_enablement",
+    "evidence_path": (
+        "artifacts/2026-08-13-connect-002/IMPLEMENTATION_CHECKPOINT.md"
+    ),
+    "evidence_git_blob_sha": "aa68ba114cce122e15bc7ecf1545d1431c1eeadb",
+    "evidence_bytes_sha256": (
+        "4dbc286d9df59afd925266c68b4790eb58c0ee34440af5080675f3d2260ac21b"
+    ),
+    "received_by": "Root Codex program manager",
+    "received_date": "2026-08-13",
+}
+CONNECT_002_RECONCILED_REVIEW_ATTESTATION["attestation_sha256"] = (
+    "b5b6de09beb4663f3e817aa8b1b2927072a0805d4278673e671512a5316562d1"
+)
+CONNECT_002_RECONCILED_CANDIDATE_CONTRACT = {
+    "package": CONNECT_002_PACKAGE,
+    "branch": CONNECT_002_RECONCILED_BRANCH,
+    "reviewed_remote_sha": CONNECT_002_RECONCILED_REVIEWED_SHA,
+    "owner_decision_sha256": CONNECT_002_RECONCILED_OWNER_DECISION_SHA256,
+    "reviewer_task": CONNECT_002_RECONCILED_REVIEW_ATTESTATION["reviewer_task"],
+    "review_attestation_sha256": (
+        CONNECT_002_RECONCILED_REVIEW_ATTESTATION["attestation_sha256"]
+    ),
+    "review_evidence_path": (
+        CONNECT_002_RECONCILED_REVIEW_ATTESTATION["evidence_path"]
+    ),
+    "review_evidence_git_blob_sha": (
+        CONNECT_002_RECONCILED_REVIEW_ATTESTATION["evidence_git_blob_sha"]
+    ),
+    "review_evidence_bytes_sha256": (
+        CONNECT_002_RECONCILED_REVIEW_ATTESTATION[
+            "evidence_bytes_sha256"
+        ]
+    ),
+}
+CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP_R2 = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": (
+        "work/2026-08-13-delivery-activation-"
+        "connect-002-merge-admission-anchor-r3"
+    ),
+    "origin_main": "38cd81ae4fc52d3a18045c081f5d6229fcb32c1c",
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "existing_main_chain": {
+        "merge_admission_repair_main": CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN,
+        "merge_admission_repair_parent": (
+            CONNECT_002_MERGE_ADMISSION_REPAIR["origin_main"]
+        ),
+        "merge_admission_repair_source": CONNECT_002_MERGE_ADMISSION_REPAIR_SOURCE,
+    },
+    "candidate_contract": CONNECT_002_RECONCILED_CANDIDATE_CONTRACT,
+    "reason": (
+        "Pete's complete-Profile authorization permits one narrow, code-"
+        "controlled follow-up after the PS-CONNECT-002 provider was reconciled "
+        "and independently reviewed against current Azure main. This record "
+        "pins the actual merged repair SHA and the exact final reviewed provider "
+        "candidate. It changes no lane, authority list, baseline, product code, "
+        "schema, pipeline, deployment, configuration, enablement, or live "
+        "behavior. A later ordinary merge grant remains separately required."
+    ),
+    "verification_contract": (
+        "This is audit evidence, not self-granted package authority. The "
+        "preflight recognizes it only when this entire record equals the "
+        "validator's hard-coded record and Git proves the exact branch, exact "
+        "origin/main base, exactly one commit, and exact three changed paths. "
+        "It verifies that actual main a526 is the direct child of 68d, carries "
+        "the original exact repair and its three paths, and is an ancestor of "
+        "this follow-up base. The ledger may change only updated_at plus this "
+        "record; active lanes, authority lists, and CURRENT_BASELINE.yaml must "
+        "remain byte-identical. Candidate merge later accepts only this anchor "
+        "followed by an exact review-bound ledger-only grant. A later branch, "
+        "base, commit, altered record, timestamp, authority, path, or state "
+        "cannot reuse it."
+    ),
+}
+CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS_R2 = frozenset(
+    CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP_R2["allowed_surfaces"]
+)
+
+# Existing validators use these internal aliases. Their only value is the
+# versioned R2 record above, so no prior anchor can be admitted.
+CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP = (
+    CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP_R2
+)
+CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS = (
+    CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS_R2
+)
+
 # PS-SHELL-001 finished its owner-approved Editorial Top Bar candidate under two
 # independent Protected reviews and then had nowhere to go: _direction_merge_grant
 # admitted only direction_authority lanes and the code-pinned Opportunity Slate,
@@ -3339,6 +3489,27 @@ def _exact_connect_002_merge_admission_repair_matches(
     )
 
 
+def _exact_connect_002_merge_admission_anchor_followup_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    """Match only Connect's one-time merged-repair anchor follow-up."""
+    return (
+        ledger.get("connect_002_merge_admission_anchor_followup_r2")
+        == CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP
+        and package_id == CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP["package"]
+        and facts.get("branch")
+        == CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP["branch"]
+        and facts.get("origin_main")
+        == CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
+    )
+
+
 def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
     """Accept a pinned reviewed-lane authority or exact direction decision."""
     if package_id == "PS-PROFILE-EXPERIENCE-001":
@@ -3359,7 +3530,11 @@ def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
         return (
             isinstance(decision, dict)
             and set(decision) == {"date", "authorized_by", "status", "decision"}
-            and _canonical_sha256(decision) == CONNECT_002_OWNER_DECISION_SHA256
+            and _canonical_sha256(decision)
+            in {
+                CONNECT_002_OWNER_DECISION_SHA256,
+                CONNECT_002_RECONCILED_OWNER_DECISION_SHA256,
+            }
         )
     if package_id == OPPORTUNITY_SLATE_PACKAGE:
         expected_fields = {
@@ -3426,7 +3601,7 @@ def _is_connect_002_reviewed_implementation_lane(lane: object) -> bool:
     return bool(
         isinstance(lane, dict)
         and lane.get("package") == CONNECT_002_PACKAGE
-        and lane.get("branch") == CONNECT_002_BRANCH
+        and lane.get("branch") == CONNECT_002_RECONCILED_BRANCH
         and lane.get("lane_class") == "implementation"
         and lane.get("delivery_path") == "Protected"
         and lane.get("production_capable") is False
@@ -3543,7 +3718,7 @@ def _direction_merge_grant(
             PROFILE_CORE_INTEGRATION_PACKAGE: (
                 PROFILE_CORE_INTEGRATION_REVIEW_ATTESTATION
             ),
-            CONNECT_002_PACKAGE: CONNECT_002_REVIEW_ATTESTATION,
+            CONNECT_002_PACKAGE: CONNECT_002_RECONCILED_REVIEW_ATTESTATION,
         }.get(lane.get("package"))
         if expected_review is None:
             errors.append(
@@ -3638,7 +3813,7 @@ def _direction_merge_grant(
                 if is_opportunity_release
                 else PROFILE_CORE_INTEGRATION_REVIEW_ATTESTATION["verdict_text"]
                 if is_profile_core
-                else CONNECT_002_REVIEW_ATTESTATION["verdict_text"]
+                else CONNECT_002_RECONCILED_REVIEW_ATTESTATION["verdict_text"]
                 if is_connect_002
                 else expected_verdict
             )
@@ -3677,15 +3852,18 @@ def _direction_merge_grant(
                 f"{label} reviewed_remote_sha must equal the accepted Profile Core SHA"
             )
     if is_connect_002:
-        if grant.get("authority_decision_sha256") != CONNECT_002_OWNER_DECISION_SHA256:
+        if (
+            grant.get("authority_decision_sha256")
+            != CONNECT_002_RECONCILED_OWNER_DECISION_SHA256
+        ):
             errors.append(
                 f"{label} authority_decision_sha256 must equal the pinned "
-                "PS-CONNECT-002 owner decision digest"
+                "reconciled PS-CONNECT-002 owner decision digest"
             )
-        if reviewed_sha != CONNECT_002_REVIEWED_SHA:
+        if reviewed_sha != CONNECT_002_RECONCILED_REVIEWED_SHA:
             errors.append(
                 f"{label} reviewed_remote_sha must equal the accepted "
-                "PS-CONNECT-002 SHA"
+                "reconciled PS-CONNECT-002 SHA"
             )
     if is_opportunity_release:
         if grant.get("release_scope") != OPPORTUNITY_SLATE_RELEASE_SCOPE:
@@ -3813,6 +3991,34 @@ def _exact_connect_002_merge_admission_repair_delta(
         return False
     return _utc_timestamp_strictly_advances(
         repaired_ledger.get("updated_at"), parent_ledger.get("updated_at")
+    )
+
+
+def _exact_connect_002_merge_admission_anchor_followup_delta(
+    parent_ledger: object,
+    followup_ledger: object,
+) -> bool:
+    """Prove Connect's merged-repair anchor is a strictly inert ledger delta."""
+    if not isinstance(parent_ledger, dict) or not isinstance(followup_ledger, dict):
+        return False
+    if (
+        parent_ledger.get("connect_002_merge_admission_repair")
+        != CONNECT_002_MERGE_ADMISSION_REPAIR
+        or parent_ledger.get("connect_002_merge_admission_anchor_followup_r2")
+        is not None
+        or followup_ledger.get("connect_002_merge_admission_anchor_followup_r2")
+        != CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP
+    ):
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = followup_ledger.get("updated_at")
+    expected["connect_002_merge_admission_anchor_followup_r2"] = (
+        CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP
+    )
+    if followup_ledger != expected:
+        return False
+    return _utc_timestamp_strictly_advances(
+        followup_ledger.get("updated_at"), parent_ledger.get("updated_at")
     )
 
 
@@ -4733,6 +4939,116 @@ def _profile_core_main_sequence_facts(
     return main_paths, valid, len(main_commits)
 
 
+def _connect_002_main_sequence_facts(
+    origin_ledger: dict,
+    package_id: str,
+    candidate_sha: str,
+    origin_main: str,
+) -> tuple[list[str], bool, int]:
+    """Prove Connect's anchored repair followed only by its exact grant."""
+    if (
+        package_id != CONNECT_002_PACKAGE
+        or candidate_sha != CONNECT_002_RECONCILED_REVIEWED_SHA
+    ):
+        return [], False, 0
+    control_base = CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP["origin_main"]
+    main_commits = [
+        sha
+        for sha in _git(
+            "rev-list", "--reverse", f"{control_base}..{origin_main}"
+        ).splitlines()
+        if sha
+    ]
+    main_paths = sorted(
+        _git_nul("diff", "--name-only", "-z", f"{control_base}..{origin_main}")
+    )
+    if len(main_commits) != 2:
+        return main_paths, False, len(main_commits)
+    anchor_sha, grant_sha = main_commits
+    anchor_paths = set(
+        _git_nul(
+            "diff-tree", "--no-commit-id", "--name-only", "-r", "-z", anchor_sha
+        )
+    )
+    grant_paths = set(
+        _git_nul(
+            "diff-tree", "--no-commit-id", "--name-only", "-r", "-z", grant_sha
+        )
+    )
+    anchor_parent = _git("rev-parse", f"{anchor_sha}^")
+    grant_parent = _git("rev-parse", f"{grant_sha}^")
+    repair_sha = CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN
+    repair_parent = _git("rev-parse", f"{repair_sha}^")
+    repair_paths = set(
+        _git_nul(
+            "diff-tree", "--no-commit-id", "--name-only", "-r", "-z", repair_sha
+        )
+    )
+    repair_tree = _git("rev-parse", f"{repair_sha}^{{tree}}")
+    repair_source_tree = _git(
+        "rev-parse", f"{CONNECT_002_MERGE_ADMISSION_REPAIR_SOURCE}^{{tree}}"
+    )
+    repair_base_ledger = load_ledger_at_ref(
+        CONNECT_002_MERGE_ADMISSION_REPAIR["origin_main"]
+    )
+    repair_ledger = load_ledger_at_ref(repair_sha)
+    base_ledger = load_ledger_at_ref(control_base)
+    anchor_ledger = load_ledger_at_ref(anchor_sha)
+    candidate_merge_base = _git("merge-base", candidate_sha, origin_main)
+    candidate_paths = set(
+        _git_nul(
+            "diff", "--name-only", "-z", f"{control_base}..{candidate_sha}"
+        )
+    )
+    final_target = next(
+        (
+            item
+            for item in origin_ledger.get("active_lanes", [])
+            if isinstance(item, dict) and item.get("package") == package_id
+        ),
+        None,
+    )
+    repair_is_ancestor = (
+        _git_returncode_at(
+            ROOT, "merge-base", "--is-ancestor", repair_sha, control_base
+        )
+        == 0
+    )
+    valid = bool(
+        repair_parent == CONNECT_002_MERGE_ADMISSION_REPAIR["origin_main"]
+        and repair_paths == set(CONNECT_002_MERGE_ADMISSION_REPAIR_PATHS)
+        and repair_tree == repair_source_tree
+        and repair_is_ancestor
+        and _exact_connect_002_merge_admission_repair_delta(
+            repair_base_ledger, repair_ledger
+        )
+        and anchor_parent == control_base
+        and grant_parent == anchor_sha
+        and anchor_paths == set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
+        and grant_paths == set(GRANT_ALLOWED_SURFACES)
+        and _exact_connect_002_merge_admission_anchor_followup_delta(
+            base_ledger, anchor_ledger
+        )
+        and _exact_direction_grant_delta(
+            anchor_ledger, origin_ledger, package_id
+        )
+        and candidate_merge_base == control_base
+        and not (
+            candidate_paths
+            & (
+                set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
+                | set(GRANT_ALLOWED_SURFACES)
+            )
+        )
+        and isinstance(final_target, dict)
+        and _is_connect_002_reviewed_implementation_lane(final_target)
+        and isinstance(final_target.get("merge_grant"), dict)
+        and final_target["merge_grant"].get("reviewed_remote_sha")
+        == candidate_sha
+    )
+    return main_paths, valid, len(main_commits)
+
+
 def _direction_main_sequence_facts(
     origin_ledger: dict,
     package_id: str,
@@ -4748,11 +5064,9 @@ def _direction_main_sequence_facts(
             origin_ledger, package_id, candidate_sha, origin_main
         )
     if package_id == CONNECT_002_PACKAGE:
-        # The repair recorded above is deliberately not a merge admission.
-        # Until a later control commit pins its actual merged SHA, reject every
-        # candidate-worktree sequence rather than recognizing a reconstructable
-        # one-commit shape.
-        return [], False, 0
+        return _connect_002_main_sequence_facts(
+            origin_ledger, package_id, candidate_sha, origin_main
+        )
     base = _git("merge-base", candidate_sha, origin_main)
     main_paths = sorted(
         _git_nul("diff", "--name-only", "-z", f"{base}..{origin_main}")
@@ -4918,16 +5232,12 @@ def _collect_direction_candidate_merge(
     )
     is_profile_core = _is_profile_core_reviewed_implementation_lane(target)
     is_connect_002 = _is_connect_002_reviewed_implementation_lane(target)
-    if is_connect_002:
-        raise RuntimeError(
-            "PS-CONNECT-002 candidate merge is blocked pending a separately "
-            "authorized anchored follow-up that pins this repair's merged SHA"
-        )
     if (
         (
             not is_direction
             and not is_opportunity_release
             and not is_profile_core
+            and not is_connect_002
         )
         or target.get("production_capable") is not False
     ):
@@ -5131,12 +5441,19 @@ def evaluate_policy(
                         "code-controlled non-production provider lane"
                     )
                 if is_connect_002_package:
-                    errors.append(
-                        "PS-CONNECT-002 merge remains blocked pending a "
-                        "separately authorized anchored follow-up that pins "
-                        "the validator repair's actual merged SHA"
-                    )
-                    return errors, warnings
+                    if (
+                        origin_ledger.get(
+                            "connect_002_merge_admission_anchor_followup_r2"
+                        )
+                        != CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP
+                    ):
+                        errors.append(
+                            "PS-CONNECT-002 merge remains blocked pending the "
+                            "exact separately authorized anchored follow-up "
+                            "that pins the validator repair's actual merged SHA"
+                        )
+                    if errors:
+                        return errors, warnings
                 if not facts.get("fetched"):
                     errors.append("reviewed candidate merge requires --fetch")
                 if not require_clean:
@@ -5186,6 +5503,22 @@ def evaluate_policy(
                 if facts.get("merge_main_control_commit_count") != expected_behind:
                     errors.append(
                         "Profile Core merge requires exactly five verified "
+                        "main control commits"
+                    )
+            elif package_id == CONNECT_002_PACKAGE:
+                expected_behind = 2
+                expected_main_paths = (
+                    set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
+                    | set(GRANT_ALLOWED_SURFACES)
+                )
+                if facts.get("behind") != expected_behind:
+                    errors.append(
+                        "PS-CONNECT-002 merge requires exactly two verified "
+                        "main control commits"
+                    )
+                if facts.get("merge_main_control_commit_count") != expected_behind:
+                    errors.append(
+                        "PS-CONNECT-002 merge requires exactly two verified "
                         "main control commits"
                     )
             else:
@@ -5239,6 +5572,13 @@ def evaluate_policy(
                         "repair, two inert follow-ups, exact ledger-only grant, and "
                         "post-grant registry-fixture repair are tolerated"
                     )
+            elif package_id == CONNECT_002_PACKAGE:
+                if facts.get("behind") == 2:
+                    warnings.append(
+                        "PS-CONNECT-002 candidate predates main; only the exact "
+                        "merged-repair anchor and exact ledger-only grant are "
+                        "tolerated"
+                    )
             elif facts.get("behind") == expected_behind:
                 warnings.append(
                     f"merge candidate is {facts['behind']} commit(s) behind origin/main; "
@@ -5251,14 +5591,18 @@ def evaluate_policy(
             errors.append("grant requires --fetch")
         if not require_clean:
             errors.append("grant requires --require-clean")
-        if package_id == CONNECT_002_PACKAGE:
-            errors.append(
-                "PS-CONNECT-002 merge authority is blocked pending a "
-                "separately authorized anchored follow-up"
-            )
-            return errors, warnings
         if origin_ledger is None or not isinstance(origin_ledger, dict):
             errors.append("grant requires the fetched origin/main lane ledger")
+            return errors, warnings
+        if (
+            package_id == CONNECT_002_PACKAGE
+            and origin_ledger.get("connect_002_merge_admission_anchor_followup_r2")
+            != CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP
+        ):
+            errors.append(
+                "PS-CONNECT-002 merge authority is blocked pending the exact "
+                "separately authorized anchored follow-up"
+            )
             return errors, warnings
         if facts.get("ahead") != 1 or facts.get("behind") != 0:
             errors.append("grant control branch must be exactly one commit ahead of origin/main")
@@ -6127,6 +6471,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        connect_002_merge_admission_anchor_followup_matches = (
+            _exact_connect_002_merge_admission_anchor_followup_matches(
+                ledger, facts, package_id
+            )
+        )
         shell_merge_repair_matches = (
             _exact_shell_merge_preflight_repair_matches(
                 ledger, facts, package_id
@@ -6183,6 +6532,12 @@ def evaluate_policy(
             warnings.append(
                 "using the exact one-time PS-CONNECT-002 authority-neutral "
                 "merge-admission validator-repair boundary"
+            )
+        elif connect_002_merge_admission_anchor_followup_matches:
+            allowed_surfaces = set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
+            warnings.append(
+                "using the exact one-time PS-CONNECT-002 merged-repair "
+                "anchor-followup boundary"
             )
         elif shell_merge_repair_matches:
             allowed_surfaces = set(SHELL_MERGE_CONTROL_PATHS)
@@ -6303,6 +6658,7 @@ def evaluate_policy(
                 and not opportunity_resume_fixture_repair_matches
                 and not opportunity_close_introduction_repair_matches
                 and not connect_002_merge_admission_repair_matches
+                and not connect_002_merge_admission_anchor_followup_matches
                 and not shell_merge_repair_matches
                 and origin_policy != policy
             ):
@@ -6561,6 +6917,43 @@ def evaluate_policy(
                     candidate_baseline,
                     origin_baseline,
                     label="PS-CONNECT-002 merge-admission repair",
+                    errors=errors,
+                )
+            elif connect_002_merge_admission_anchor_followup_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "PS-CONNECT-002 merged-repair anchor follow-up updated_at "
+                        "must be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "PS-CONNECT-002 merged-repair anchor follow-up updated_at "
+                        "must strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "PS-CONNECT-002 merged-repair anchor follow-up may not "
+                        "change activation_policy"
+                    )
+                if not _exact_connect_002_merge_admission_anchor_followup_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "PS-CONNECT-002 merged-repair anchor follow-up must be "
+                        "the exact authority-neutral ledger delta"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="PS-CONNECT-002 merged-repair anchor follow-up",
                     errors=errors,
                 )
             elif opportunity_schema_release_refresh_matches:
@@ -7256,6 +7649,7 @@ def evaluate_policy(
             and not opportunity_resume_fixture_repair_matches
             and not opportunity_close_introduction_repair_matches
             and not connect_002_merge_admission_repair_matches
+            and not connect_002_merge_admission_anchor_followup_matches
         ):
             _validate_baseline_activation_delta(
                 candidate_baseline,
@@ -7345,6 +7739,15 @@ def evaluate_policy(
                 errors.append(
                     "PS-CONNECT-002 merge-admission repair must change exactly the "
                     "owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                connect_002_merge_admission_anchor_followup_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "PS-CONNECT-002 merged-repair anchor follow-up must change "
+                    "exactly the owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
             if (
@@ -7792,6 +8195,7 @@ def main(argv: list[str] | None = None) -> int:
                         or target.get("package") == OPPORTUNITY_SLATE_PACKAGE
                         or target.get("package") == PROFILE_CORE_INTEGRATION_PACKAGE
                         or _is_profile_core_reviewed_implementation_lane(target)
+                        or _is_connect_002_reviewed_implementation_lane(target)
                     )
                 ):
                     missing_candidate_message = (
