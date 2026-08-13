@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T08:31:00Z",
+  "updated_at": "2026-08-13T12:02:12Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,8 +12,7 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-SHELL-001",
-      "PS-CONNECT-002"
+      "PS-SHELL-001"
     ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
@@ -30,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active writer lanes: PS-SHELL-001 and PS-CONNECT-002. PS-CONNECT-002 is a non-production, disjoint relationship foundation for the complete Profile release; it owns no app, shell, navigation, deployment, or enablement surface."
+    "exit_authority": "Active writer lanes: PS-SHELL-001. PS-CONNECT-002 is paused and preserved; its writer seat and exclusive domains are released."
   },
   "activation_policy": {
     "enabled": true,
@@ -1612,59 +1611,6 @@
         }
       ],
       "sequence": "activation-only PR -> clean current-main implementation worktree -> three owner decisions answered -> shell structure and responsive behaviour -> authentication and account states -> search presentation -> pre-tokenization screenshot baseline -> tokenize by aliasing -> post-tokenization diff -> cross-route verification -> complete-diff self-review -> fresh Opus max independent review -> merge grant -> release grant if separately authorized"
-    },
-    {
-      "package": "PS-CONNECT-002",
-      "outcome": "Build the reusable non-production relationship foundation required by the accepted complete Profile release: owner-derived member identity; request, accept, decline, cancel, expire, disconnect, block, unblock, and reconnect lifecycle; monotonic relationship and block epochs; exact audience snapshots for Profile Connections authorization; deterministic idempotency and concurrency; authorization-before-retrieval; neutral cross-owner failure; and additive PS-CONNECT-002 schema, rollback, verifier, and registry evidence. This package creates canonical relationship truth only. It does not register routes, wire Profile, edit the shared shell, deploy, enable Connections, or make Profile live.",
-      "branch": "work/2026-08-13-connect-002-profile-relationships",
-      "writer": "A dedicated gpt-5.6-terra implementation agent using Max reasoning (Solterra Max/Terra Max), coordinated by Root Codex, is the sole writer. A separate non-writer reviewer must accept the exact candidate before any merge grant.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "implementation",
-      "exclusive_domains": [
-        "product:connections:relationship-lifecycle",
-        "schema:ps-connect-002"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main fda77dff747f8e5e7d503beacce5c28ecd5310f6. Profile D0 foundation is merged and closed; Shell remains the sole production-capable shared-foundation lane. Applied PS-PLAT-004 provides historical connection tables but not the release-train-required relationship epochs and fail-closed Profile audience snapshot contract. PS-CONNECT-002 is absent and freshly reserved here.",
-      "writable_surfaces": [
-        "services/connection_foundation_service.py",
-        "services/connection_foundation_repository.py",
-        "tests/test_connection_foundation_service.py",
-        "tests/test_connection_foundation_repository.py",
-        "tests/test_connect_002_migration.py",
-        "SQL FIles/Migrations/proposed/PS-CONNECT-002_profile_relationships.sql",
-        "SQL FIles/Migrations/proposed/PS-CONNECT-002_profile_relationships_rollback.sql",
-        "SQL FIles/Verification/PS-CONNECT-002_relationship_isolation_verify.sql",
-        "SQL FIles/Migrations/registry.json",
-        "docs/initiatives/PS-CONNECT-002/",
-        "artifacts/2026-08-13-connect-002/"
-      ],
-      "exclusions": [
-        "No edit to app.py, auth_routes.py, services/database_service.py, Profile routes/services/templates/assets/tests, templates/base.html, Shell CSS/JS, navigation/auth/search tests, pipeline, deployment configuration, or production configuration.",
-        "No Profile wiring, Connections route, navigation item, search discovery, public exposure, schema apply, deployment, release, feature enablement, or live claim.",
-        "No copied Profile, Community, Project, Capture, Voice, Interview, Opportunity, Workshop, Resume, My Story, or Ask Pete truth; relationships reference only server-derived user identities.",
-        "No inferred connection, silent audience widening, block bypass, automatic reconnect, data deletion, destructive rollback, or mutation outside explicit member commands.",
-        "No merge, release, cleanup, production-capable authority, or permission to touch another writer's branch, worktree, stash, or artifact follows from activation."
-      ],
-      "completion_evidence": [
-        "Exact lifecycle state machine and typed command/snapshot contracts cover request, accept, decline, cancel, expiry, disconnect, block, unblock, reconnect, invalid transition, retry, and conflict behavior.",
-        "Two-owner and third-party adversarial tests prove server-derived identity, authorization-before-retrieval, neutral failures, pair canonicalization, cross-owner isolation, and immediate block invalidation in both directions.",
-        "Monotonic relationship_version and block_epoch proofs show disconnect or block invalidates prior Profile audience snapshots and unblock never restores prior access.",
-        "Additive PS-CONNECT-002 forward, rollback, verifier, registry, idempotent reapply, one-winner concurrency, rollback rehearsal, and forward-after-rollback evidence pass in a disposable SQL environment before any gate claim.",
-        "Repository and service tests prove exact stored winner return, idempotency-key replay, stale expected-version rejection, immutable history, and preservation of the prior valid state on failure.",
-        "Focused Connections, migration, security, and relevant governance suites pass; a fresh independent non-writer accepts the exact SHA and all material findings are closed.",
-        "Completion record states provider foundation only: unregistered, unapplied, unmerged until separately granted, undeployed, and not Profile enablement."
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-13",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Pete instructed Codex to keep going until the complete Profile is live, selected Solterra Max for implementation, and explicitly approved using the second implementation slot alongside non-overlapping work. The accepted Profile release train requires PS-CONNECT-002 before Connections audience behavior can be integrated or enabled."
-        }
-      ],
-      "cleanup_contract": "After the exact provider candidate is merged, consumed by a verified Profile integration, and formally closed, remove only this task's clean merged activation and implementation worktrees/branches behind recovery references. Preserve every unrelated, dirty, unverified, historical, or user-owned branch, worktree, stash, artifact, and production record.",
-      "sequence": "activation-only PR -> clean current-main implementation worktree -> write preflight -> exact lifecycle/schema/provider implementation -> disposable SQL and adversarial validation -> complete-diff self-review -> independent exact-SHA review -> separate merge grant -> Azure PR/CI/merge -> formal provider close -> later Profile D4 adapter integration; no production apply or enablement in this lane"
     }
   ],
   "paused_lanes": [
@@ -1977,6 +1923,64 @@
       "pause_reason": "Delivery is complete and merged. The lane is released as paused rather than closed because --intent close cannot represent it: close requires a direction_authority lane with production_capable false, a merge_grant, an unmoved reviewed branch tip, and a single merge commit that introduced every writable surface. This is a production_capable implementation lane that merged its implementation, an owner-reported production fix, a repository-wide deployment-smoke repair, and its completion record. No assertion was weakened and no merge_grant was fabricated to force a close.",
       "resume_contract": "No resume is expected; the outcome is delivered and live. Convert this record to a closing_lanes entry once --intent close can express a multi-merge production_capable implementation lane (see the 2026-08-12 control-plane handoff). To reopen instead, re-activate the package under the ordinary START_HERE activation flow; branch work/2026-08-12-interview-studio-mobile-correction and tag archive/2026-08-12-interview-studio-authenticated-pre-squash preserve every commit.",
       "preserved_head_sha": "cc0c9cf1dbb122613ca3518c42b18bc05ef4842f"
+    },
+    {
+      "package": "PS-CONNECT-002",
+      "outcome": "Build the reusable non-production relationship foundation required by the accepted complete Profile release: owner-derived member identity; request, accept, decline, cancel, expire, disconnect, block, unblock, and reconnect lifecycle; monotonic relationship and block epochs; exact audience snapshots for Profile Connections authorization; deterministic idempotency and concurrency; authorization-before-retrieval; neutral cross-owner failure; and additive PS-CONNECT-002 schema, rollback, verifier, and registry evidence. This package creates canonical relationship truth only. It does not register routes, wire Profile, edit the shared shell, deploy, enable Connections, or make Profile live.",
+      "branch": "work/2026-08-13-connect-002-profile-relationships",
+      "writer": "A dedicated gpt-5.6-terra implementation agent using Max reasoning (Solterra Max/Terra Max), coordinated by Root Codex, is the sole writer. A separate non-writer reviewer must accept the exact candidate before any merge grant.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "product:connections:relationship-lifecycle",
+        "schema:ps-connect-002"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main fda77dff747f8e5e7d503beacce5c28ecd5310f6. Profile D0 foundation is merged and closed; Shell remains the sole production-capable shared-foundation lane. Applied PS-PLAT-004 provides historical connection tables but not the release-train-required relationship epochs and fail-closed Profile audience snapshot contract. PS-CONNECT-002 is absent and freshly reserved here.",
+      "writable_surfaces": [
+        "services/connection_foundation_service.py",
+        "services/connection_foundation_repository.py",
+        "tests/test_connection_foundation_service.py",
+        "tests/test_connection_foundation_repository.py",
+        "tests/test_connect_002_migration.py",
+        "SQL FIles/Migrations/proposed/PS-CONNECT-002_profile_relationships.sql",
+        "SQL FIles/Migrations/proposed/PS-CONNECT-002_profile_relationships_rollback.sql",
+        "SQL FIles/Verification/PS-CONNECT-002_relationship_isolation_verify.sql",
+        "SQL FIles/Migrations/registry.json",
+        "docs/initiatives/PS-CONNECT-002/",
+        "artifacts/2026-08-13-connect-002/"
+      ],
+      "exclusions": [
+        "No edit to app.py, auth_routes.py, services/database_service.py, Profile routes/services/templates/assets/tests, templates/base.html, Shell CSS/JS, navigation/auth/search tests, pipeline, deployment configuration, or production configuration.",
+        "No Profile wiring, Connections route, navigation item, search discovery, public exposure, schema apply, deployment, release, feature enablement, or live claim.",
+        "No copied Profile, Community, Project, Capture, Voice, Interview, Opportunity, Workshop, Resume, My Story, or Ask Pete truth; relationships reference only server-derived user identities.",
+        "No inferred connection, silent audience widening, block bypass, automatic reconnect, data deletion, destructive rollback, or mutation outside explicit member commands.",
+        "No merge, release, cleanup, production-capable authority, or permission to touch another writer's branch, worktree, stash, or artifact follows from activation."
+      ],
+      "completion_evidence": [
+        "Exact lifecycle state machine and typed command/snapshot contracts cover request, accept, decline, cancel, expiry, disconnect, block, unblock, reconnect, invalid transition, retry, and conflict behavior.",
+        "Two-owner and third-party adversarial tests prove server-derived identity, authorization-before-retrieval, neutral failures, pair canonicalization, cross-owner isolation, and immediate block invalidation in both directions.",
+        "Monotonic relationship_version and block_epoch proofs show disconnect or block invalidates prior Profile audience snapshots and unblock never restores prior access.",
+        "Additive PS-CONNECT-002 forward, rollback, verifier, registry, idempotent reapply, one-winner concurrency, rollback rehearsal, and forward-after-rollback evidence pass in a disposable SQL environment before any gate claim.",
+        "Repository and service tests prove exact stored winner return, idempotency-key replay, stale expected-version rejection, immutable history, and preservation of the prior valid state on failure.",
+        "Focused Connections, migration, security, and relevant governance suites pass; a fresh independent non-writer accepts the exact SHA and all material findings are closed.",
+        "Completion record states provider foundation only: unregistered, unapplied, unmerged until separately granted, undeployed, and not Profile enablement."
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-13",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete instructed Codex to keep going until the complete Profile is live, selected Solterra Max for implementation, and explicitly approved using the second implementation slot alongside non-overlapping work. The accepted Profile release train requires PS-CONNECT-002 before Connections audience behavior can be integrated or enabled."
+        }
+      ],
+      "cleanup_contract": "After the exact provider candidate is merged, consumed by a verified Profile integration, and formally closed, remove only this task's clean merged activation and implementation worktrees/branches behind recovery references. Preserve every unrelated, dirty, unverified, historical, or user-owned branch, worktree, stash, artifact, and production record.",
+      "sequence": "activation-only PR -> clean current-main implementation worktree -> write preflight -> exact lifecycle/schema/provider implementation -> disposable SQL and adversarial validation -> complete-diff self-review -> independent exact-SHA review -> separate merge grant -> Azure PR/CI/merge -> formal provider close -> later Profile D4 adapter integration; no production apply or enablement in this lane",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-13T12:02:12Z",
+      "pause_reason": "Pete paused PS-CONNECT-002 to free its writer seat for other non-overlapping work. The independently reviewed non-production candidate is preserved; nothing is discarded, merged, applied, deployed, or enabled by this pause.",
+      "resume_contract": "Resume only through fresh activation from then-current origin/main. Frozen work is on branch work/2026-08-13-connect-002-profile-relationships and tag archive/2026-08-13-connect-002-profile-relationships at db20e2285f82c0f61baa73c49cd6f0bee0771620. Read docs/initiatives/PS-CONNECT-002/README.md and artifacts/2026-08-13-connect-002/IMPLEMENTATION_CHECKPOINT.md first. Finished: the service/repository foundation, additive forward/rollback/verifier/registry proposal, concurrency/idempotency and hostile-provider tests, exact-SHA independent review, 105/105 proportional validation, 31/31 mechanical re-review, and Gitleaks 8.30.1 full-history pass. Half-built: the candidate is complete as an unmerged provider foundation but has no disposable-SQL apply proof or shared database registration. Not started: schema apply, app/Profile wiring, routes, deployment, enablement, or live verification. Preserve PS-PLAT-004 as canonical legacy truth; retain the pair-scoped version/epoch extension, server-derived identity, binary-exact idempotency, fail-closed result cardinality, and deliberate gate-null/unapplied state unless new evidence changes those decisions. Exact next action: refresh authority, activate PS-CONNECT-002, rerun write preflight, then create the anchored review-bound grant/merge sequence or continue canonical provider integration as separately authorized.",
+      "preserved_head_sha": "db20e2285f82c0f61baa73c49cd6f0bee0771620"
     }
   ],
   "workspace_snapshot": {
