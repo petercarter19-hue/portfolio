@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T02:13:14Z",
+  "updated_at": "2026-08-13T02:15:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -126,6 +126,30 @@
     ],
     "reason": "Pete explicitly authorized the Opportunity Slate preflight repair, reviewed the local R1 experience, and on 2026-08-12 said 'You're approved.' The exact independently approved implementation remains dark and app.py remains untouched, but its additive PS-OPPSLATE-004 production apply requires a review-bound, serialized release grant that the direction-only control cannot represent. This repair adds that fail-closed exact-candidate path without changing any active lane, authority list, product code, schema, pipeline, deployment, configuration, production data, or live behavior.",
     "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when the entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact six changed paths. A later branch, base, altered record, product-authority change, or public-enablement request cannot reuse it."
+  },
+  "profile_core_merge_preflight_repair": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-12-delivery-activation-profile-core-merge-preflight-repair",
+    "origin_main": "9e91f5832d8b14836330ced85f40a5eac8a4f6c7",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "candidate_contract": {
+      "package": "PS-PROFILE-CORE-INTEGRATION-001",
+      "branch": "work/2026-08-12-profile-experience-build-001",
+      "reviewed_remote_sha": "78b0203fb8fbbbedefa9de499427755d02ac6fa2",
+      "owner_decision_sha256": "81ffce41cfae9518b12e1cf6246667a298520ddf36b33b78850317bd14a98b26",
+      "reviewer_task": "/root/profile_descendant_exact_review",
+      "review_attestation_sha256": "f1e86c208ebaa5a99da2c8a2e29275ed9e5e4b39abb6e03339a0b59e7e5e3c06",
+      "review_evidence_path": "artifacts/2026-08-12-profile-core-integration-001/IMPLEMENTATION_CHECKPOINT.md",
+      "review_evidence_git_blob_sha": "de3aa79a52f3712c72aecdeb40a8c5a00f9e63b5",
+      "review_evidence_bytes_sha256": "b9fbd2163a89268cfdc8fe677503f088e3ed2cae840054b6e042e3df7694670e"
+    },
+    "reason": "Pete authorized a one-time fail-closed delivery-control repair for the exact independently reviewed non-production Profile Core candidate. It can later validate only an exact-review-bound merge grant for that package and records no merge, release, schema, deployment, configuration, enablement, or live authority itself.",
+    "verification_contract": "This is audit evidence, not self-granted authority. The preflight recognizes it only when the entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. The later grant must separately bind the pinned candidate, owner-decision digest, independent-review attestation, and evidence hashes."
   },
   "opportunity_schema_repair_release_refresh": {
     "status": "one_time_owner_authorized_repair",

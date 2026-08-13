@@ -720,6 +720,114 @@ OPPORTUNITY_SLATE_REVIEW_ATTESTATION["attestation_sha256"] = (
     "7ac34e8690f7e6bf4ca3c7f15fe19d0b0ea53ede36f9a2236fe935f53cab6115"
 )
 
+# The accepted Profile Core candidate is a non-production implementation, not
+# a generic implementation-lane precedent.  These immutable pins make the
+# later merge grant available only to the exact independently reviewed tree
+# and its already-recorded owner decision.  They deliberately contain no
+# release, schema, deployment, enablement, PR, or CI authority.
+PROFILE_CORE_INTEGRATION_PACKAGE = "PS-PROFILE-CORE-INTEGRATION-001"
+PROFILE_CORE_INTEGRATION_BRANCH = (
+    "work/2026-08-12-profile-experience-build-001"
+)
+PROFILE_CORE_INTEGRATION_REVIEWED_SHA = (
+    "78b0203fb8fbbbedefa9de499427755d02ac6fa2"
+)
+PROFILE_CORE_INTEGRATION_OWNER_DECISION_SHA256 = (
+    "81ffce41cfae9518b12e1cf6246667a298520ddf36b33b78850317bd14a98b26"
+)
+PROFILE_CORE_INTEGRATION_REVIEW_ATTESTATION = {
+    "reviewer_task": "/root/profile_descendant_exact_review",
+    "reviewer_mode": "independent_read_only_non_writer",
+    "reviewed_sha": PROFILE_CORE_INTEGRATION_REVIEWED_SHA,
+    "reviewed_branch": PROFILE_CORE_INTEGRATION_BRANCH,
+    "verdict": "PASS",
+    "verdict_text": (
+        "PASS — exact-SHA final Protected review passed for "
+        "78b0203fb8fbbbedefa9de499427755d02ac6fa2, branch-equal to "
+        "origin/work/2026-08-12-profile-experience-build-001 and clean."
+    ),
+    "verdict_sha256": (
+        "ca55863d2534caa1be65d41e3dd8f530298f2485940c736f56a46ca969500b10"
+    ),
+    "basis": [
+        "full_tree_at_78b0203fb8fbbbedefa9de499427755d02ac6fa2",
+        "complete_diff_9e91f5832d8b14836330ced85f40a5eac8a4f6c7_to_"
+        "78b0203fb8fbbbedefa9de499427755d02ac6fa2",
+        "profile_suite_85_of_85_schema_governance_151_of_151_pycompile_pass",
+    ],
+    "scope": "protected_profile_core_implementation_merge_only",
+    "exclusions": "release_schema_deployment_enablement",
+    "evidence_path": (
+        "artifacts/2026-08-12-profile-core-integration-001/"
+        "IMPLEMENTATION_CHECKPOINT.md"
+    ),
+    "evidence_git_blob_sha": "de3aa79a52f3712c72aecdeb40a8c5a00f9e63b5",
+    "evidence_bytes_sha256": (
+        "b9fbd2163a89268cfdc8fe677503f088e3ed2cae840054b6e042e3df7694670e"
+    ),
+    "received_by": "Root Codex program manager",
+    "received_date": "2026-08-12",
+}
+PROFILE_CORE_INTEGRATION_REVIEW_ATTESTATION["attestation_sha256"] = (
+    "f1e86c208ebaa5a99da2c8a2e29275ed9e5e4b39abb6e03339a0b59e7e5e3c06"
+)
+PROFILE_CORE_MERGE_CANDIDATE_CONTRACT = {
+    "package": PROFILE_CORE_INTEGRATION_PACKAGE,
+    "branch": PROFILE_CORE_INTEGRATION_BRANCH,
+    "reviewed_remote_sha": PROFILE_CORE_INTEGRATION_REVIEWED_SHA,
+    "owner_decision_sha256": PROFILE_CORE_INTEGRATION_OWNER_DECISION_SHA256,
+    "reviewer_task": "/root/profile_descendant_exact_review",
+    "review_attestation_sha256": (
+        "f1e86c208ebaa5a99da2c8a2e29275ed9e5e4b39abb6e03339a0b59e7e5e3c06"
+    ),
+    "review_evidence_path": (
+        "artifacts/2026-08-12-profile-core-integration-001/"
+        "IMPLEMENTATION_CHECKPOINT.md"
+    ),
+    "review_evidence_git_blob_sha": "de3aa79a52f3712c72aecdeb40a8c5a00f9e63b5",
+    "review_evidence_bytes_sha256": (
+        "b9fbd2163a89268cfdc8fe677503f088e3ed2cae840054b6e042e3df7694670e"
+    ),
+}
+
+# Pete authorized this narrow one-time control repair after exact independent
+# review accepted the frozen Profile Core candidate.  It is intentionally
+# inert: it records no package grant and cannot be reused after this branch,
+# base, one commit, and three-path boundary stop matching.
+PROFILE_CORE_MERGE_PREFLIGHT_REPAIR = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": (
+        "work/2026-08-12-delivery-activation-profile-core-"
+        "merge-preflight-repair"
+    ),
+    "origin_main": "9e91f5832d8b14836330ced85f40a5eac8a4f6c7",
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "candidate_contract": PROFILE_CORE_MERGE_CANDIDATE_CONTRACT,
+    "reason": (
+        "Pete authorized a one-time fail-closed delivery-control repair for "
+        "the exact independently reviewed non-production Profile Core "
+        "candidate. It can later validate only an exact-review-bound merge "
+        "grant for that package and records no merge, release, schema, "
+        "deployment, configuration, enablement, or live authority itself."
+    ),
+    "verification_contract": (
+        "This is audit evidence, not self-granted authority. The preflight "
+        "recognizes it only when the entire record equals the validator's "
+        "hard-coded record and Git proves the exact branch, exact origin/main "
+        "base, exactly one commit, and exact three changed paths. The later "
+        "grant must separately bind the pinned candidate, owner-decision "
+        "digest, independent-review attestation, and evidence hashes."
+    ),
+}
+PROFILE_CORE_MERGE_CONTROL_PATHS = frozenset(
+    PROFILE_CORE_MERGE_PREFLIGHT_REPAIR["allowed_surfaces"]
+)
+
 REVIEW_ATTESTATION_FIELDS = frozenset(
     PROFILE_DIRECTION_REVIEW_ATTESTATION
 )
@@ -2431,6 +2539,25 @@ def _exact_implementation_release_preflight_repair_matches(
     )
 
 
+def _exact_profile_core_merge_preflight_repair_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("profile_core_merge_preflight_repair")
+        == PROFILE_CORE_MERGE_PREFLIGHT_REPAIR
+        and package_id == PROFILE_CORE_MERGE_PREFLIGHT_REPAIR["package"]
+        and facts.get("branch") == PROFILE_CORE_MERGE_PREFLIGHT_REPAIR["branch"]
+        and facts.get("origin_main")
+        == PROFILE_CORE_MERGE_PREFLIGHT_REPAIR["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(PROFILE_CORE_MERGE_CONTROL_PATHS)
+    )
+
+
 def _exact_opportunity_schema_repair_release_refresh_matches(
     ledger: dict,
     facts: dict,
@@ -2582,6 +2709,13 @@ def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
             and _canonical_sha256(decision)
             == PROFILE_DIRECTION_OWNER_DECISION_SHA256
         )
+    if package_id == PROFILE_CORE_INTEGRATION_PACKAGE:
+        return (
+            isinstance(decision, dict)
+            and set(decision) == {"date", "authorized_by", "status", "decision"}
+            and _canonical_sha256(decision)
+            == PROFILE_CORE_INTEGRATION_OWNER_DECISION_SHA256
+        )
     if package_id == OPPORTUNITY_SLATE_PACKAGE:
         expected_fields = {
             "date", "decision", "authorized_by", "action", "status",
@@ -2630,6 +2764,18 @@ def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
     )
 
 
+def _is_profile_core_reviewed_implementation_lane(lane: object) -> bool:
+    """Identify only the code-pinned non-production Profile Core lane."""
+    return bool(
+        isinstance(lane, dict)
+        and lane.get("package") == PROFILE_CORE_INTEGRATION_PACKAGE
+        and lane.get("branch") == PROFILE_CORE_INTEGRATION_BRANCH
+        and lane.get("lane_class") == "implementation"
+        and lane.get("delivery_path") == "Protected"
+        and lane.get("production_capable") is False
+    )
+
+
 def _direction_merge_grant(
     lane: object,
     label: str,
@@ -2645,10 +2791,11 @@ def _direction_merge_grant(
         and lane.get("lane_class") == "implementation"
         and lane.get("branch") == OPPORTUNITY_SLATE_BRANCH
     )
-    if not is_direction and not is_opportunity_release:
+    is_profile_core = _is_profile_core_reviewed_implementation_lane(lane)
+    if not is_direction and not is_opportunity_release and not is_profile_core:
         errors.append(
             f"{label} is available only to direction_authority lanes or the "
-            "code-controlled Opportunity Slate dark-release lane"
+            "code-controlled Opportunity Slate or Profile Core reviewed lanes"
         )
     if lane.get("production_capable") is not False:
         errors.append(f"{label} requires production_capable false")
@@ -2710,6 +2857,9 @@ def _direction_merge_grant(
         expected_review = {
             "PS-PROFILE-EXPERIENCE-001": PROFILE_DIRECTION_REVIEW_ATTESTATION,
             OPPORTUNITY_SLATE_PACKAGE: OPPORTUNITY_SLATE_REVIEW_ATTESTATION,
+            PROFILE_CORE_INTEGRATION_PACKAGE: (
+                PROFILE_CORE_INTEGRATION_REVIEW_ATTESTATION
+            ),
         }.get(lane.get("package"))
         if expected_review is None:
             errors.append(
@@ -2735,6 +2885,8 @@ def _direction_merge_grant(
         expected_review_scope = (
             "protected_dark_merge_deploy_and_additive_schema_release"
             if is_opportunity_release
+            else "protected_profile_core_implementation_merge_only"
+            if is_profile_core
             else "direction_package_acceptance_and_merge_only"
         )
         if (
@@ -2750,6 +2902,8 @@ def _direction_merge_grant(
         expected_review_exclusions = (
             "public_enablement_app_registration_r2_plus"
             if is_opportunity_release
+            else "release_schema_deployment_enablement"
+            if is_profile_core
             else "runtime_schema_deployment_enablement"
         )
         if review.get("exclusions") != expected_review_exclusions:
@@ -2794,6 +2948,8 @@ def _direction_merge_grant(
             or verdict_text != (
                 OPPORTUNITY_SLATE_REVIEW_ATTESTATION["verdict_text"]
                 if is_opportunity_release
+                else PROFILE_CORE_INTEGRATION_REVIEW_ATTESTATION["verdict_text"]
+                if is_profile_core
                 else expected_verdict
             )
         ):
@@ -2818,6 +2974,18 @@ def _direction_merge_grant(
         errors.append(
             f"{label} authority_decision_sha256 must equal the pinned Profile owner decision digest"
         )
+    if is_profile_core:
+        if (
+            grant.get("authority_decision_sha256")
+            != PROFILE_CORE_INTEGRATION_OWNER_DECISION_SHA256
+        ):
+            errors.append(
+                f"{label} authority_decision_sha256 must equal the pinned Profile Core owner decision digest"
+            )
+        if reviewed_sha != PROFILE_CORE_INTEGRATION_REVIEWED_SHA:
+            errors.append(
+                f"{label} reviewed_remote_sha must equal the accepted Profile Core SHA"
+            )
     if is_opportunity_release:
         if grant.get("release_scope") != OPPORTUNITY_SLATE_RELEASE_SCOPE:
             errors.append(
@@ -3543,6 +3711,93 @@ def _opportunity_main_sequence_facts(
     return main_paths, valid, len(main_commits)
 
 
+def _profile_core_main_sequence_facts(
+    origin_ledger: dict,
+    package_id: str,
+    candidate_sha: str,
+    origin_main: str,
+) -> tuple[list[str], bool, int]:
+    """Prove Profile Core's exact inert repair then ledger-only grant."""
+    if (
+        package_id != PROFILE_CORE_INTEGRATION_PACKAGE
+        or candidate_sha != PROFILE_CORE_INTEGRATION_REVIEWED_SHA
+    ):
+        return [], False, 0
+    control_base = PROFILE_CORE_MERGE_PREFLIGHT_REPAIR["origin_main"]
+    main_commits = [
+        sha
+        for sha in _git(
+            "rev-list", "--reverse", f"{control_base}..{origin_main}"
+        ).splitlines()
+        if sha
+    ]
+    main_paths = sorted(
+        _git_nul("diff", "--name-only", "-z", f"{control_base}..{origin_main}")
+    )
+    if len(main_commits) != 2:
+        return main_paths, False, len(main_commits)
+    repair_sha, grant_sha = main_commits
+    repair_paths = set(
+        _git_nul(
+            "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+            repair_sha,
+        )
+    )
+    grant_paths = set(
+        _git_nul(
+            "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+            grant_sha,
+        )
+    )
+    repair_parent = _git("rev-parse", f"{repair_sha}^")
+    grant_parent = _git("rev-parse", f"{grant_sha}^")
+    base_ledger = load_ledger_at_ref(control_base)
+    repair_ledger = load_ledger_at_ref(repair_sha)
+    candidate_merge_base = _git("merge-base", candidate_sha, origin_main)
+    candidate_paths = set(
+        _git_nul(
+            "diff", "--name-only", "-z", f"{control_base}..{candidate_sha}"
+        )
+    )
+    final_target = next(
+        (
+            item
+            for item in origin_ledger.get("active_lanes", [])
+            if isinstance(item, dict) and item.get("package") == package_id
+        ),
+        None,
+    )
+    expected_repair = copy.deepcopy(base_ledger)
+    expected_repair["updated_at"] = repair_ledger.get("updated_at")
+    expected_repair["profile_core_merge_preflight_repair"] = (
+        PROFILE_CORE_MERGE_PREFLIGHT_REPAIR
+    )
+    base_updated_at = base_ledger.get("updated_at")
+    repair_updated_at = repair_ledger.get("updated_at")
+    valid = bool(
+        base_ledger.get("profile_core_merge_preflight_repair") is None
+        and repair_parent == control_base
+        and grant_parent == repair_sha
+        and repair_paths == set(PROFILE_CORE_MERGE_CONTROL_PATHS)
+        and grant_paths == set(GRANT_ALLOWED_SURFACES)
+        and repair_ledger == expected_repair
+        and _valid_utc_timestamp(base_updated_at)
+        and _valid_utc_timestamp(repair_updated_at)
+        and _utc_timestamp_strictly_advances(repair_updated_at, base_updated_at)
+        and _exact_direction_grant_delta(
+            repair_ledger, origin_ledger, package_id
+        )
+        and candidate_merge_base == control_base
+        and not (candidate_paths & set(PROFILE_CORE_MERGE_CONTROL_PATHS))
+        and isinstance(final_target, dict)
+        and _is_profile_core_reviewed_implementation_lane(final_target)
+        and isinstance(final_target.get("merge_grant"), dict)
+        and final_target["merge_grant"].get("reviewed_remote_sha")
+        == candidate_sha
+    )
+    return main_paths, valid, len(main_commits)
+
+
 def _direction_main_sequence_facts(
     origin_ledger: dict,
     package_id: str,
@@ -3551,6 +3806,10 @@ def _direction_main_sequence_facts(
 ) -> tuple[list[str], bool, int]:
     if package_id == OPPORTUNITY_SLATE_PACKAGE:
         return _opportunity_main_sequence_facts(
+            origin_ledger, package_id, candidate_sha, origin_main
+        )
+    if package_id == PROFILE_CORE_INTEGRATION_PACKAGE:
+        return _profile_core_main_sequence_facts(
             origin_ledger, package_id, candidate_sha, origin_main
         )
     base = _git("merge-base", candidate_sha, origin_main)
@@ -3716,8 +3975,9 @@ def _collect_direction_candidate_merge(
         and target.get("lane_class") == "implementation"
         and target.get("branch") == OPPORTUNITY_SLATE_BRANCH
     )
+    is_profile_core = _is_profile_core_reviewed_implementation_lane(target)
     if (
-        (not is_direction and not is_opportunity_release)
+        (not is_direction and not is_opportunity_release and not is_profile_core)
         or target.get("production_capable") is not False
     ):
         raise RuntimeError(
@@ -3872,6 +4132,10 @@ def evaluate_policy(
                 origin_ledger, "origin/main", errors
             )
             target = origin_by_package.get(package_id.casefold())
+            is_profile_core_package = bool(
+                isinstance(target, dict)
+                and target.get("package") == PROFILE_CORE_INTEGRATION_PACKAGE
+            )
             is_reviewed_target = bool(
                 isinstance(target, dict)
                 and (
@@ -3881,12 +4145,25 @@ def evaluate_policy(
                         and target.get("lane_class") == "implementation"
                         and target.get("branch") == OPPORTUNITY_SLATE_BRANCH
                     )
+                    or _is_profile_core_reviewed_implementation_lane(target)
+                    or is_profile_core_package
                 )
-                and target.get("production_capable") is False
+                and (
+                    target.get("production_capable") is False
+                    or is_profile_core_package
+                )
             )
             if not is_reviewed_target:
                 target = None
             else:
+                if (
+                    is_profile_core_package
+                    and not _is_profile_core_reviewed_implementation_lane(target)
+                ):
+                    errors.append(
+                        "Profile Core merge target does not equal the exact "
+                        "code-controlled non-production lane"
+                    )
                 if not facts.get("fetched"):
                     errors.append("reviewed candidate merge requires --fetch")
                 if not require_clean:
@@ -3917,6 +4194,17 @@ def evaluate_policy(
                 if facts.get("merge_main_control_commit_count") != expected_control_commits:
                     errors.append(
                         "Opportunity Slate merge requires exactly two verified "
+                        "main control commits"
+                    )
+            elif package_id == PROFILE_CORE_INTEGRATION_PACKAGE:
+                expected_behind = 2
+                expected_main_paths = (
+                    set(PROFILE_CORE_MERGE_CONTROL_PATHS)
+                    | set(GRANT_ALLOWED_SURFACES)
+                )
+                if facts.get("behind") != expected_behind:
+                    errors.append(
+                        "Profile Core merge requires exactly two verified "
                         "main control commits"
                     )
             else:
@@ -3962,6 +4250,12 @@ def evaluate_policy(
                     warnings.append(
                         "Opportunity Slate candidate predates main; only the exact "
                         "inert repair and exact release grant are tolerated"
+                    )
+            elif package_id == PROFILE_CORE_INTEGRATION_PACKAGE:
+                if facts.get("behind") == 2:
+                    warnings.append(
+                        "Profile Core candidate predates main; only the exact inert "
+                        "repair and exact ledger-only grant are tolerated"
                     )
             elif facts.get("behind") == expected_behind:
                 warnings.append(
@@ -4772,6 +5066,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        profile_core_merge_repair_matches = (
+            _exact_profile_core_merge_preflight_repair_matches(
+                ledger, facts, package_id
+            )
+        )
         opportunity_schema_release_refresh_matches = (
             _exact_opportunity_schema_repair_release_refresh_matches(
                 ledger, facts, package_id
@@ -4829,6 +5128,12 @@ def evaluate_policy(
             warnings.append(
                 "using the exact one-time implementation-release "
                 "preflight-repair boundary"
+            )
+        elif profile_core_merge_repair_matches:
+            allowed_surfaces = set(PROFILE_CORE_MERGE_CONTROL_PATHS)
+            warnings.append(
+                "using the exact one-time Profile Core merge-preflight-repair "
+                "boundary"
             )
         elif opportunity_schema_release_refresh_matches:
             allowed_surfaces = set(
@@ -4916,6 +5221,7 @@ def evaluate_policy(
                 not bootstrap_matches
                 and not writer_transfer_repair_matches
                 and not implementation_release_repair_matches
+                and not profile_core_merge_repair_matches
                 and not opportunity_schema_release_refresh_matches
                 and not grant_close_repair_matches
                 and not grant_close_fixture_followup_matches
@@ -4935,7 +5241,55 @@ def evaluate_policy(
                     f"activation candidate exceeds the {MAX_ACTIVE_LANES}-lane limit"
                 )
 
-            if opportunity_schema_release_refresh_matches:
+            if profile_core_merge_repair_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "Profile Core merge-preflight repair updated_at must be "
+                        "a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "Profile Core merge-preflight repair updated_at must "
+                        "strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "Profile Core merge-preflight repair may not change "
+                        "activation_policy"
+                    )
+                if _root_changes(ledger, origin_ledger) != {
+                    "updated_at", "profile_core_merge_preflight_repair"
+                }:
+                    errors.append(
+                        "Profile Core merge-preflight repair must change exactly "
+                        "updated_at and its repair record"
+                    )
+                if origin_ledger.get("profile_core_merge_preflight_repair") is not None:
+                    errors.append(
+                        "Profile Core merge-preflight repair is one-time and "
+                        "already recorded"
+                    )
+                if ledger.get("profile_core_merge_preflight_repair") != (
+                    PROFILE_CORE_MERGE_PREFLIGHT_REPAIR
+                ):
+                    errors.append(
+                        "Profile Core merge-preflight repair record is not exact"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="Profile Core merge-preflight repair",
+                    errors=errors,
+                )
+            elif opportunity_schema_release_refresh_matches:
                 candidate_updated_at = ledger.get("updated_at")
                 origin_updated_at = origin_ledger.get("updated_at")
                 if not _valid_utc_timestamp(candidate_updated_at):
@@ -5550,6 +5904,7 @@ def evaluate_policy(
         if (
             not writer_transfer_repair_matches
             and not implementation_release_repair_matches
+            and not profile_core_merge_repair_matches
             and not opportunity_schema_release_refresh_matches
             and not grant_close_repair_matches
             and not grant_close_fixture_followup_matches
@@ -5595,6 +5950,15 @@ def evaluate_policy(
             ):
                 errors.append(
                     "implementation-release preflight repair must change exactly "
+                    "the owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                profile_core_merge_repair_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "Profile Core merge-preflight repair must change exactly "
                     "the owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
@@ -6041,6 +6405,8 @@ def main(argv: list[str] | None = None) -> int:
                     and (
                         target.get("lane_class") == "direction_authority"
                         or target.get("package") == OPPORTUNITY_SLATE_PACKAGE
+                        or target.get("package") == PROFILE_CORE_INTEGRATION_PACKAGE
+                        or _is_profile_core_reviewed_implementation_lane(target)
                     )
                 ):
                     missing_candidate_message = (
