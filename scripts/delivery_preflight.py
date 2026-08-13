@@ -922,6 +922,67 @@ PROFILE_CORE_GRANT_ANCHOR_PATHS = frozenset(
     PROFILE_CORE_GRANT_ANCHOR_FOLLOWUP["allowed_surfaces"]
 )
 
+# CI 939 proved the already-granted Profile Core candidate would otherwise be
+# blocked by an unrelated Opportunity Slate registry fixture that mistook
+# "loaded at its registry position" for "last registry entry." This one-time,
+# authority-neutral repair is deliberately the only fifth main commit the
+# frozen candidate may tolerate. The four already-merged control SHAs are
+# immutable pins; the new repair itself is admitted only through its exact
+# record, parentage, one-commit shape, and four-path boundary below.
+PROFILE_CORE_MERGE_REPAIR_MAIN = "f1dbbe03cbba01a48cc8732df468643c73e8fc5b"
+PROFILE_CORE_GRANT_FIXTURE_FOLLOWUP_MAIN = (
+    "1ab460288f149216f41b83a11f809a7514b43841"
+)
+PROFILE_CORE_GRANT_ANCHOR_FOLLOWUP_MAIN = (
+    "380836f954424e061a27e747b8ad3128b2962648"
+)
+PROFILE_CORE_LEDGER_GRANT_MAIN = "4bc40476d30eb43f5c7460d930e4c61b62ec3b9e"
+PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_REPAIR = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": (
+        "work/2026-08-13-delivery-activation-profile-core-"
+        "post-grant-registry-fixture-repair"
+    ),
+    "origin_main": PROFILE_CORE_LEDGER_GRANT_MAIN,
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+        "tests/test_opportunity_slate_v2_migration.py",
+    ],
+    "existing_main_chain": {
+        "merge_preflight_repair": PROFILE_CORE_MERGE_REPAIR_MAIN,
+        "grant_fixture_followup": PROFILE_CORE_GRANT_FIXTURE_FOLLOWUP_MAIN,
+        "grant_anchor_followup": PROFILE_CORE_GRANT_ANCHOR_FOLLOWUP_MAIN,
+        "ledger_only_grant": PROFILE_CORE_LEDGER_GRANT_MAIN,
+    },
+    "reason": (
+        "Azure build 939 found one stale Opportunity Slate registry fixture: "
+        "it required PS-OPPSLATE-004 to be the final registry entry instead "
+        "of validating the migration loader's own recorded position. This "
+        "repair changes that fixture to validate ordered loader placement and "
+        "the same prerequisite boundary. It changes no lane, authority list, "
+        "baseline, product code, schema, pipeline, deployment, configuration, "
+        "enablement, or live behavior."
+    ),
+    "verification_contract": (
+        "This is audit evidence, not self-granted package authority. The "
+        "preflight recognizes it only when this entire record equals the "
+        "validator's hard-coded record and Git proves the exact branch, exact "
+        "origin/main base, exactly one commit, and exact four changed paths. "
+        "The parent must retain the exact f1db repair, 1ab fixture follow-up, "
+        "3808 anchor follow-up, and 4bc ledger-only grant in that order; the "
+        "ledger may change only updated_at plus this record, and the baseline "
+        "must remain byte-identical. Candidate merge admission rejects a sixth "
+        "or alternate main commit. A later branch, base, altered record, "
+        "timestamp, authority, path, or state cannot reuse it."
+    ),
+}
+PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_PATHS = frozenset(
+    PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_REPAIR["allowed_surfaces"]
+)
+
 REVIEW_ATTESTATION_FIELDS = frozenset(
     PROFILE_DIRECTION_REVIEW_ATTESTATION
 )
@@ -2692,6 +2753,27 @@ def _exact_profile_core_grant_anchor_followup_matches(
     )
 
 
+def _exact_profile_core_post_grant_registry_fixture_repair_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("profile_core_post_grant_registry_fixture_repair")
+        == PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_REPAIR
+        and package_id
+        == PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_REPAIR["package"]
+        and facts.get("branch")
+        == PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_REPAIR["branch"]
+        and facts.get("origin_main")
+        == PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_REPAIR["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_PATHS)
+    )
+
+
 def _exact_opportunity_schema_repair_release_refresh_matches(
     ledger: dict,
     facts: dict,
@@ -3305,6 +3387,38 @@ def _exact_profile_core_grant_anchor_followup_delta(
     )
 
 
+def _exact_profile_core_post_grant_registry_fixture_repair_delta(
+    parent_ledger: object,
+    repair_ledger: object,
+) -> bool:
+    """Prove the post-grant registry-fixture repair is authority-neutral."""
+    if not isinstance(parent_ledger, dict) or not isinstance(repair_ledger, dict):
+        return False
+    if (
+        parent_ledger.get("profile_core_merge_preflight_repair")
+        != PROFILE_CORE_MERGE_PREFLIGHT_REPAIR
+        or parent_ledger.get("profile_core_grant_fixture_followup")
+        != PROFILE_CORE_GRANT_FIXTURE_FOLLOWUP
+        or parent_ledger.get("profile_core_grant_anchor_followup")
+        != PROFILE_CORE_GRANT_ANCHOR_FOLLOWUP
+        or parent_ledger.get("profile_core_post_grant_registry_fixture_repair")
+        is not None
+        or repair_ledger.get("profile_core_post_grant_registry_fixture_repair")
+        != PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_REPAIR
+    ):
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = repair_ledger.get("updated_at")
+    expected["profile_core_post_grant_registry_fixture_repair"] = (
+        PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_REPAIR
+    )
+    if repair_ledger != expected:
+        return False
+    return _utc_timestamp_strictly_advances(
+        repair_ledger.get("updated_at"), parent_ledger.get("updated_at")
+    )
+
+
 def _exact_profile_close_fixture_followup_delta(
     parent_ledger: object,
     followup_ledger: object,
@@ -3907,7 +4021,7 @@ def _profile_core_main_sequence_facts(
     candidate_sha: str,
     origin_main: str,
 ) -> tuple[list[str], bool, int]:
-    """Prove Profile Core's exact repair, two inert follow-ups, then grant."""
+    """Prove Profile Core's exact four-commit chain, then one inert repair."""
     if (
         package_id != PROFILE_CORE_INTEGRATION_PACKAGE
         or candidate_sha != PROFILE_CORE_INTEGRATION_REVIEWED_SHA
@@ -3924,9 +4038,15 @@ def _profile_core_main_sequence_facts(
     main_paths = sorted(
         _git_nul("diff", "--name-only", "-z", f"{control_base}..{origin_main}")
     )
-    if len(main_commits) != 4:
+    if len(main_commits) != 5:
         return main_paths, False, len(main_commits)
-    repair_sha, fixture_sha, anchor_sha, grant_sha = main_commits
+    (
+        repair_sha,
+        fixture_sha,
+        anchor_sha,
+        grant_sha,
+        post_grant_repair_sha,
+    ) = main_commits
     repair_paths = set(
         _git_nul(
             "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
@@ -3951,14 +4071,22 @@ def _profile_core_main_sequence_facts(
             anchor_sha,
         )
     )
+    post_grant_repair_paths = set(
+        _git_nul(
+            "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+            post_grant_repair_sha,
+        )
+    )
     repair_parent = _git("rev-parse", f"{repair_sha}^")
     fixture_parent = _git("rev-parse", f"{fixture_sha}^")
     anchor_parent = _git("rev-parse", f"{anchor_sha}^")
     grant_parent = _git("rev-parse", f"{grant_sha}^")
+    post_grant_repair_parent = _git("rev-parse", f"{post_grant_repair_sha}^")
     base_ledger = load_ledger_at_ref(control_base)
     repair_ledger = load_ledger_at_ref(repair_sha)
     fixture_ledger = load_ledger_at_ref(fixture_sha)
     anchor_ledger = load_ledger_at_ref(anchor_sha)
+    grant_ledger = load_ledger_at_ref(grant_sha)
     candidate_merge_base = _git("merge-base", candidate_sha, origin_main)
     candidate_paths = set(
         _git_nul(
@@ -3982,16 +4110,21 @@ def _profile_core_main_sequence_facts(
     repair_updated_at = repair_ledger.get("updated_at")
     valid = bool(
         base_ledger.get("profile_core_merge_preflight_repair") is None
-        and repair_sha == PROFILE_CORE_GRANT_FIXTURE_FOLLOWUP["origin_main"]
+        and repair_sha == PROFILE_CORE_MERGE_REPAIR_MAIN
         and repair_parent == control_base
-        and fixture_sha == PROFILE_CORE_GRANT_ANCHOR_FOLLOWUP["origin_main"]
+        and fixture_sha == PROFILE_CORE_GRANT_FIXTURE_FOLLOWUP_MAIN
         and fixture_parent == repair_sha
+        and anchor_sha == PROFILE_CORE_GRANT_ANCHOR_FOLLOWUP_MAIN
         and anchor_parent == fixture_sha
+        and grant_sha == PROFILE_CORE_LEDGER_GRANT_MAIN
         and grant_parent == anchor_sha
+        and post_grant_repair_parent == grant_sha
         and repair_paths == set(PROFILE_CORE_MERGE_CONTROL_PATHS)
         and fixture_paths == set(PROFILE_CORE_GRANT_FOLLOWUP_PATHS)
         and anchor_paths == set(PROFILE_CORE_GRANT_ANCHOR_PATHS)
         and grant_paths == set(GRANT_ALLOWED_SURFACES)
+        and post_grant_repair_paths
+        == set(PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_PATHS)
         and repair_ledger == expected_repair
         and _valid_utc_timestamp(base_updated_at)
         and _valid_utc_timestamp(repair_updated_at)
@@ -4003,10 +4136,22 @@ def _profile_core_main_sequence_facts(
             fixture_ledger, anchor_ledger
         )
         and _exact_direction_grant_delta(
-            anchor_ledger, origin_ledger, package_id
+            anchor_ledger, grant_ledger, package_id
+        )
+        and _exact_profile_core_post_grant_registry_fixture_repair_delta(
+            grant_ledger, origin_ledger
         )
         and candidate_merge_base == control_base
-        and not (candidate_paths & set(PROFILE_CORE_MERGE_CONTROL_PATHS))
+        and not (
+            candidate_paths
+            & (
+                set(PROFILE_CORE_MERGE_CONTROL_PATHS)
+                | set(PROFILE_CORE_GRANT_FOLLOWUP_PATHS)
+                | set(PROFILE_CORE_GRANT_ANCHOR_PATHS)
+                | set(GRANT_ALLOWED_SURFACES)
+                | set(PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_PATHS)
+            )
+        )
         and isinstance(final_target, dict)
         and _is_profile_core_reviewed_implementation_lane(final_target)
         and isinstance(final_target.get("merge_grant"), dict)
@@ -4415,16 +4560,22 @@ def evaluate_policy(
                         "main control commits"
                     )
             elif package_id == PROFILE_CORE_INTEGRATION_PACKAGE:
-                expected_behind = 4
+                expected_behind = 5
                 expected_main_paths = (
                     set(PROFILE_CORE_MERGE_CONTROL_PATHS)
                     | set(PROFILE_CORE_GRANT_FOLLOWUP_PATHS)
                     | set(PROFILE_CORE_GRANT_ANCHOR_PATHS)
                     | set(GRANT_ALLOWED_SURFACES)
+                    | set(PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_PATHS)
                 )
                 if facts.get("behind") != expected_behind:
                     errors.append(
-                        "Profile Core merge requires exactly four verified "
+                        "Profile Core merge requires exactly five verified "
+                        "main control commits"
+                    )
+                if facts.get("merge_main_control_commit_count") != expected_behind:
+                    errors.append(
+                        "Profile Core merge requires exactly five verified "
                         "main control commits"
                     )
             else:
@@ -4472,11 +4623,11 @@ def evaluate_policy(
                         "inert repair and exact release grant are tolerated"
                     )
             elif package_id == PROFILE_CORE_INTEGRATION_PACKAGE:
-                if facts.get("behind") == 4:
+                if facts.get("behind") == 5:
                     warnings.append(
                         "Profile Core candidate predates main; only the exact inert "
-                        "repair, two inert follow-ups, and exact ledger-only grant "
-                        "are tolerated"
+                        "repair, two inert follow-ups, exact ledger-only grant, and "
+                        "post-grant registry-fixture repair are tolerated"
                     )
             elif facts.get("behind") == expected_behind:
                 warnings.append(
@@ -5302,6 +5453,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        profile_core_post_grant_registry_fixture_repair_matches = (
+            _exact_profile_core_post_grant_registry_fixture_repair_matches(
+                ledger, facts, package_id
+            )
+        )
         opportunity_schema_release_refresh_matches = (
             _exact_opportunity_schema_repair_release_refresh_matches(
                 ledger, facts, package_id
@@ -5377,6 +5533,14 @@ def evaluate_policy(
             warnings.append(
                 "using the exact one-time Profile Core grant-anchor-followup "
                 "boundary"
+            )
+        elif profile_core_post_grant_registry_fixture_repair_matches:
+            allowed_surfaces = set(
+                PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_PATHS
+            )
+            warnings.append(
+                "using the exact one-time Profile Core post-grant "
+                "registry-fixture-repair boundary"
             )
         elif opportunity_schema_release_refresh_matches:
             allowed_surfaces = set(
@@ -5467,6 +5631,7 @@ def evaluate_policy(
                 and not profile_core_merge_repair_matches
                 and not profile_core_grant_fixture_followup_matches
                 and not profile_core_grant_anchor_followup_matches
+                and not profile_core_post_grant_registry_fixture_repair_matches
                 and not opportunity_schema_release_refresh_matches
                 and not grant_close_repair_matches
                 and not grant_close_fixture_followup_matches
@@ -5606,6 +5771,43 @@ def evaluate_policy(
                     candidate_baseline,
                     origin_baseline,
                     label="Profile Core grant-anchor follow-up",
+                    errors=errors,
+                )
+            elif profile_core_post_grant_registry_fixture_repair_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "Profile Core post-grant registry-fixture repair "
+                        "updated_at must be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "Profile Core post-grant registry-fixture repair "
+                        "updated_at must strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "Profile Core post-grant registry-fixture repair may "
+                        "not change activation_policy"
+                    )
+                if not _exact_profile_core_post_grant_registry_fixture_repair_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "Profile Core post-grant registry-fixture repair must "
+                        "be the exact inert ledger delta"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="Profile Core post-grant registry-fixture repair",
                     errors=errors,
                 )
             elif opportunity_schema_release_refresh_matches:
@@ -6226,6 +6428,7 @@ def evaluate_policy(
             and not profile_core_merge_repair_matches
             and not profile_core_grant_fixture_followup_matches
             and not profile_core_grant_anchor_followup_matches
+            and not profile_core_post_grant_registry_fixture_repair_matches
             and not opportunity_schema_release_refresh_matches
             and not grant_close_repair_matches
             and not grant_close_fixture_followup_matches
@@ -6299,6 +6502,15 @@ def evaluate_policy(
                 errors.append(
                     "Profile Core grant-anchor follow-up must change exactly "
                     "the owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                profile_core_post_grant_registry_fixture_repair_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "Profile Core post-grant registry-fixture repair must "
+                    "change exactly the owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
             if (

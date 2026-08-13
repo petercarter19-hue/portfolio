@@ -233,7 +233,15 @@ class OpportunitySlateV2MigrationTests(unittest.TestCase):
         registry = load_registry()
         migration = registry.get("PS-OPPSLATE-004")
         self.assertTrue(migration.is_gated)
-        self.assertEqual(migration.position, len(registry) - 1)
+        self.assertEqual(
+            registry.ids.index(migration.migration_id), migration.position
+        )
+        self.assertEqual(
+            migration.migration_id, registry.ids[migration.position]
+        )
+        self.assertTrue(
+            set(migration.requires).issubset(set(registry.ids[:migration.position]))
+        )
 
     def test_the_migration_is_proposed_and_not_wired_into_the_apply_script(self):
         self.assertIn("proposed", str(FORWARD))

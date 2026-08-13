@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T04:12:02Z",
+  "updated_at": "2026-08-13T04:21:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -178,6 +178,26 @@
     ],
     "reason": "The exact-SHA independent review of the Profile Core grant fixture follow-up found one remaining merge-replay gap after PR 433 entered main: semantic reconstruction of the original repair was accepted without requiring its exact already-merged SHA. This follow-up pins that repair and the merged PR 433 follow-up SHA before the later ledger-only grant. It changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, enablement, or live behavior.",
     "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. The parent must retain both prior exact Profile Core control records; the ledger may change only updated_at plus this record, and the baseline must remain byte-identical. Candidate merge admission additionally pins each already-merged control SHA, exact commit order, path set, and semantic delta. A later branch, base, reconstructed commit, altered record, timestamp, authority, path, or state cannot reuse it."
+  },
+  "profile_core_post_grant_registry_fixture_repair": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-13-delivery-activation-profile-core-post-grant-registry-fixture-repair",
+    "origin_main": "4bc40476d30eb43f5c7460d930e4c61b62ec3b9e",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py",
+      "tests/test_opportunity_slate_v2_migration.py"
+    ],
+    "existing_main_chain": {
+      "merge_preflight_repair": "f1dbbe03cbba01a48cc8732df468643c73e8fc5b",
+      "grant_fixture_followup": "1ab460288f149216f41b83a11f809a7514b43841",
+      "grant_anchor_followup": "380836f954424e061a27e747b8ad3128b2962648",
+      "ledger_only_grant": "4bc40476d30eb43f5c7460d930e4c61b62ec3b9e"
+    },
+    "reason": "Azure build 939 found one stale Opportunity Slate registry fixture: it required PS-OPPSLATE-004 to be the final registry entry instead of validating the migration loader's own recorded position. This repair changes that fixture to validate ordered loader placement and the same prerequisite boundary. It changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, enablement, or live behavior.",
+    "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact four changed paths. The parent must retain the exact f1db repair, 1ab fixture follow-up, 3808 anchor follow-up, and 4bc ledger-only grant in that order; the ledger may change only updated_at plus this record, and the baseline must remain byte-identical. Candidate merge admission rejects a sixth or alternate main commit. A later branch, base, altered record, timestamp, authority, path, or state cannot reuse it."
   },
   "opportunity_schema_repair_release_refresh": {
     "status": "one_time_owner_authorized_repair",
