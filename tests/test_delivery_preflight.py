@@ -5061,14 +5061,29 @@ with patch.object(
             origin_main=origin_main,
             fetched=True,
         )
-        active_package = self.ledger["active_lanes"][0]["package"]
+        # This case asserts that cleanup REFUSES a target that is still active,
+        # so it needs an active lane to point at. Reading one out of the live
+        # ledger coupled the test to whatever happened to be open: the moment the
+        # last writer paused — the ordinary end of a delivered package, and a
+        # legal state — active_lanes went empty and this raised IndexError,
+        # turning main red for everyone.
+        #
+        # Synthesise the active lane instead. A paused record promoted back into
+        # active_lanes is a faithful stand-in, and the assertion now depends only
+        # on the preflight's own rule rather than on live delivery state.
+        active_ledger = copy.deepcopy(self.ledger)
+        if not active_ledger["active_lanes"]:
+            active_ledger["active_lanes"] = [
+                copy.deepcopy(active_ledger["paused_lanes"][-1])
+            ]
+        active_package = active_ledger["active_lanes"][0]["package"]
         active_errors, _ = evaluate_policy(
-            self.ledger,
+            active_ledger,
             cleanup_facts,
             active_package,
             "cleanup",
             require_clean=True,
-            origin_ledger=self.ledger,
+            origin_ledger=active_ledger,
         )
         self.assertTrue(any("not active" in error for error in active_errors))
 

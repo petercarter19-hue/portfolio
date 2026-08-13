@@ -1,19 +1,17 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T09:00:00Z",
+  "updated_at": "2026-08-13T14:44:43Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-SHELL-001"
-    ],
+    "writes_allowed_for": [],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -29,7 +27,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "No active writer lanes. PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 is paused with its delivered work merged and its branch preserved; it retains no write, merge, cleanup, or release authority."
+    "exit_authority": "No active writer lanes. PS-SHELL-001 is delivered live and paused with its work merged as main 0743ba9; it retains no write, merge, cleanup, release, or enablement authority. All capacity is free. New work requires Pete to select an exact outcome and a fresh activation."
   },
   "activation_policy": {
     "enabled": true,
@@ -1543,85 +1541,7 @@
       ]
     }
   ],
-  "active_lanes": [
-    {
-      "package": "PS-SHELL-001",
-      "outcome": "Implement the owner-approved Editorial Top Bar shared global shell across PeerSlate's public, signed-in member, owner, tablet, and mobile states, preserving the production logo exactly and keeping page- and room-specific controls inside their rooms. Centralize a namespaced, light-theme-only shell token family for ground, stage, surface, rail, border, text, muted text, accent, focus, and semantic status roles, defined as aliases of the production variables the shell already resolves, so the later cross-site Colour, Background, and Typography Audit can apply accepted system-level decisions without rebuilding shell layout or behaviour.",
-      "branch": "work/2026-08-12-shell-editorial-top-bar-001",
-      "writer": "Claude Opus 5 as architect and lane owner, with an Opus extra-high delegated implementation writer and a fresh Opus max independent reviewer, per Pete's 2026-08-12 routing decision.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "shared_foundation",
-      "exclusive_domains": [
-        "shared:shell"
-      ],
-      "source_checkpoint": "Azure origin/main 6d92835f8eb3224065e0cdbdc978b735a92d11de, where PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 paused and released the sole production-capable slot plus tests/test_navigation.py, tests/test_auth.py, and tests/test_search_visibility.py. PS-PROFILE-CORE-INTEGRATION-001 remains active, is non-production, and excludes templates/base.html, those three shared tests, and any global shell redesign. Owner direction: Direction 1 Editorial Top Bar approved 2026-08-12; Direction 2 informs medium-width overflow only; Direction 3 rejected; the cross-site colour and typography addendum was recorded the same day.",
-      "writable_surfaces": [
-        "templates/base.html",
-        "static/css/public-navigation.css",
-        "static/css/style.css",
-        "static/js/mobile-nav.js",
-        "static/js/public-mobile-nav.js",
-        "static/js/site-search.js",
-        "static/js/public-site-search.js",
-        "tests/test_navigation.py",
-        "tests/test_auth.py",
-        "tests/test_search_visibility.py",
-        "docs/initiatives/PS-SHELL-001/",
-        "artifacts/2026-08-12-shell-editorial-top-bar/",
-        "docs/governance/CURRENT_LANES.json",
-        "tests/test_interview_studio.py"
-      ],
-      "exclusions": [
-        "no homepage body, copy, imagery, marketing sections, SEO, or walkthrough change; the public-facing homepage is a separate later package and remains explicitly excluded",
-        "no Profile, Interview Studio, Opportunity Slate, Community, Workshop, resume, or My Story content redesign; room controls and room-owned page furniture stay page-owned",
-        "no logo change: static/images/peerslate-logo-header.png is preserved exactly and no concept-board mark is substituted",
-        "no new route or navigation destination unsupported by a real page, and no third persistent navigation tier",
-        "no Add/Capture or notification affordance without a working reusable member contract; owner-only /app/capture does not qualify",
-        "no search authorization expansion, search-index expansion, or introduction of content search",
-        "no owner-specific product logic, and no automatic saving, routing, publication, or audience change",
-        "no schema, migration, production-data, provider, dependency, pipeline, secret, or deployment-configuration change",
-        "no dark-theme revival, no new dark rules, and no removal of the existing dormant dark assets",
-        "no site-wide repaint: page-owned colour and type keep their current values pending the separate cross-site Colour, Background, and Typography Audit",
-        "no write to app.py, page templates, Profile surfaces, or another writer's branch, worktree, stash, or artifact"
-      ],
-      "completion_evidence": [
-        "base and final SHA, exact changed paths, and one complete-diff self-review",
-        "pre-tokenization and post-tokenization screenshot sets proving the token substitution is visually inert, with every deviation identified as a recorded accessibility correction",
-        "verified states: signed-out public desktop, signed-in member desktop, owner desktop, medium width, tablet, signed-out mobile, signed-in mobile, account menu, search open, results, empty, and unavailable, plus session expiry and sign-in recovery",
-        "viewport verification at 1440x900, 1280, 1024, 768, 390x844, 320, and 200% text zoom, reporting the real-tablet forced-viewport path separately from the resized-desktop breakpoint path",
-        "no horizontal overflow, no duplicate navigation, no console errors, and preserved keyboard order, visible focus, labels, touch targets, and screen-reader structure",
-        "exact sign-in and deep-link return verified, plus refresh, second tab, session expiry, and sign-out",
-        "focused navigation, authentication, and search-visibility tests passing, and Profile's focused suites unaffected",
-        "measured before and after contrast values for any accessibility-required focus or contrast correction made inside shell scope",
-        "Azure pull request and required pipeline evidence; deployment and live release identity reported separately and only when release is separately authorized",
-        "fresh Opus max independent review recorded before merge, per the Protected delivery path",
-        "recorded shell colour and type dependencies, observed page conflicts, and everything deferred to the cross-site Colour, Background, and Typography Audit"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-12",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Pete approved Direction 1, the Editorial Top Bar, as the shared shell; rejected Direction 3's permanent global left rail; allowed Direction 2 to inform medium-width overflow and room switching only; and locked the existing production logo. He separately added a cross-site Colour, Background, and Typography Audit to the program, to run after destination pages and shell composition are stable but before the public homepage, and directed that this package centralize reusable shell variables without repainting page-owned content or inventing a competing palette."
-        },
-        {
-          "date": "2026-08-12",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Pete set the model routing for this package: Opus at maximum effort architects, Opus at extra-high effort implements, and a fresh Opus at maximum effort reviews. This supersedes the package README's earlier Fable-constructs, Sonnet-implements, Opus-reviews line. He first sequenced the shell behind Profile, Opportunity Slate, and Interview, then released the Interview lane so the shell writer could activate, and authorized activation through pull request only."
-        },
-        {
-          "date": "2026-08-12",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Pete granted full permission to carry the package through implementation, review, merge, and release. Under that grant this lane's writable_surfaces are amended, narrowly and visibly, to add tests/test_interview_studio.py and this ledger file. Reason: that test locks the byte length and sha256 of the anonymous /interview-studio render, and that page renders the shared shell, so any shell markup change fails it by construction. It is not an Interview Studio regression: an independent reviewer proved the delta is shell markup only by rendering the same route with the base template injected through a Jinja ChoiceLoader and replacing the header and tabsource blocks with placeholders, which made the two documents identical. PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 is paused, so no writer owns that file and none can recapture it. The amendment permits recapturing exactly the four locked constants and nothing else; no Interview Studio behaviour, template, style, script, or other assertion may be changed. delivery_preflight does not machine-check writable_surfaces, so this is recorded as an explicit scope statement rather than relying on the absence of a check.",
-          "scope_limit": "tests/test_interview_studio.py: only FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH, FLAG_OFF_INTERVIEW_STUDIO_SHA256, FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH, and FLAG_OFF_INTERVIEW_STUDIO_HISTORY_SHA256 may be recaptured, with the shell-markup-only proof recorded alongside."
-        }
-      ],
-      "sequence": "activation-only PR -> clean current-main implementation worktree -> three owner decisions answered -> shell structure and responsive behaviour -> authentication and account states -> search presentation -> pre-tokenization screenshot baseline -> tokenize by aliasing -> post-tokenization diff -> cross-route verification -> complete-diff self-review -> fresh Opus max independent review -> merge grant -> release grant if separately authorized"
-    }
-  ],
+  "active_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
@@ -1982,6 +1902,88 @@
       "pause_reason": "Delivery is complete, merged and live. Both carried P3 items are closed: the attempt counter now advances only on a successful review, and the authenticated model-answer endpoint refuses a follow-up and fails closed. The lane is released as paused rather than closed because --intent close cannot represent it: close requires a direction_authority lane with production_capable false, a merge_grant, an unmoved reviewed branch tip, and a single merge commit that introduced every writable surface. This is a production_capable implementation lane that merged three times in this round alone. No assertion was weakened and no merge_grant was fabricated.",
       "resume_contract": "No resume is expected; the package is delivered, live and owner-confirmed, and its recorded carried items are closed. To reopen, re-activate under the ordinary START_HERE activation flow -- activation forbids reusing a branch already recorded on origin/main, so expect a fresh branch cut from current main. Branch work/2026-08-13-interview-studio-carried-items and tag archive/2026-08-13-interview-studio-carried-items preserve this round; the earlier rounds keep their own archive tags.",
       "preserved_head_sha": "4c57d4ee4520eb05097a789e6eefde09167ba8de"
+    },
+    {
+      "package": "PS-SHELL-001",
+      "outcome": "Implement the owner-approved Editorial Top Bar shared global shell across PeerSlate's public, signed-in member, owner, tablet, and mobile states, preserving the production logo exactly and keeping page- and room-specific controls inside their rooms. Centralize a namespaced, light-theme-only shell token family for ground, stage, surface, rail, border, text, muted text, accent, focus, and semantic status roles, defined as aliases of the production variables the shell already resolves, so the later cross-site Colour, Background, and Typography Audit can apply accepted system-level decisions without rebuilding shell layout or behaviour.",
+      "branch": "work/2026-08-12-shell-editorial-top-bar-001",
+      "writer": "Claude Opus 5 as architect and lane owner, with an Opus extra-high delegated implementation writer and a fresh Opus max independent reviewer, per Pete's 2026-08-12 routing decision.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "shared_foundation",
+      "exclusive_domains": [
+        "shared:shell"
+      ],
+      "source_checkpoint": "Azure origin/main 6d92835f8eb3224065e0cdbdc978b735a92d11de, where PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 paused and released the sole production-capable slot plus tests/test_navigation.py, tests/test_auth.py, and tests/test_search_visibility.py. PS-PROFILE-CORE-INTEGRATION-001 remains active, is non-production, and excludes templates/base.html, those three shared tests, and any global shell redesign. Owner direction: Direction 1 Editorial Top Bar approved 2026-08-12; Direction 2 informs medium-width overflow only; Direction 3 rejected; the cross-site colour and typography addendum was recorded the same day.",
+      "writable_surfaces": [
+        "templates/base.html",
+        "static/css/public-navigation.css",
+        "static/css/style.css",
+        "static/js/mobile-nav.js",
+        "static/js/public-mobile-nav.js",
+        "static/js/site-search.js",
+        "static/js/public-site-search.js",
+        "tests/test_navigation.py",
+        "tests/test_auth.py",
+        "tests/test_search_visibility.py",
+        "docs/initiatives/PS-SHELL-001/",
+        "artifacts/2026-08-12-shell-editorial-top-bar/",
+        "docs/governance/CURRENT_LANES.json",
+        "tests/test_interview_studio.py"
+      ],
+      "exclusions": [
+        "no homepage body, copy, imagery, marketing sections, SEO, or walkthrough change; the public-facing homepage is a separate later package and remains explicitly excluded",
+        "no Profile, Interview Studio, Opportunity Slate, Community, Workshop, resume, or My Story content redesign; room controls and room-owned page furniture stay page-owned",
+        "no logo change: static/images/peerslate-logo-header.png is preserved exactly and no concept-board mark is substituted",
+        "no new route or navigation destination unsupported by a real page, and no third persistent navigation tier",
+        "no Add/Capture or notification affordance without a working reusable member contract; owner-only /app/capture does not qualify",
+        "no search authorization expansion, search-index expansion, or introduction of content search",
+        "no owner-specific product logic, and no automatic saving, routing, publication, or audience change",
+        "no schema, migration, production-data, provider, dependency, pipeline, secret, or deployment-configuration change",
+        "no dark-theme revival, no new dark rules, and no removal of the existing dormant dark assets",
+        "no site-wide repaint: page-owned colour and type keep their current values pending the separate cross-site Colour, Background, and Typography Audit",
+        "no write to app.py, page templates, Profile surfaces, or another writer's branch, worktree, stash, or artifact"
+      ],
+      "completion_evidence": [
+        "base and final SHA, exact changed paths, and one complete-diff self-review",
+        "pre-tokenization and post-tokenization screenshot sets proving the token substitution is visually inert, with every deviation identified as a recorded accessibility correction",
+        "verified states: signed-out public desktop, signed-in member desktop, owner desktop, medium width, tablet, signed-out mobile, signed-in mobile, account menu, search open, results, empty, and unavailable, plus session expiry and sign-in recovery",
+        "viewport verification at 1440x900, 1280, 1024, 768, 390x844, 320, and 200% text zoom, reporting the real-tablet forced-viewport path separately from the resized-desktop breakpoint path",
+        "no horizontal overflow, no duplicate navigation, no console errors, and preserved keyboard order, visible focus, labels, touch targets, and screen-reader structure",
+        "exact sign-in and deep-link return verified, plus refresh, second tab, session expiry, and sign-out",
+        "focused navigation, authentication, and search-visibility tests passing, and Profile's focused suites unaffected",
+        "measured before and after contrast values for any accessibility-required focus or contrast correction made inside shell scope",
+        "Azure pull request and required pipeline evidence; deployment and live release identity reported separately and only when release is separately authorized",
+        "fresh Opus max independent review recorded before merge, per the Protected delivery path",
+        "recorded shell colour and type dependencies, observed page conflicts, and everything deferred to the cross-site Colour, Background, and Typography Audit"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-12",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete approved Direction 1, the Editorial Top Bar, as the shared shell; rejected Direction 3's permanent global left rail; allowed Direction 2 to inform medium-width overflow and room switching only; and locked the existing production logo. He separately added a cross-site Colour, Background, and Typography Audit to the program, to run after destination pages and shell composition are stable but before the public homepage, and directed that this package centralize reusable shell variables without repainting page-owned content or inventing a competing palette."
+        },
+        {
+          "date": "2026-08-12",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete set the model routing for this package: Opus at maximum effort architects, Opus at extra-high effort implements, and a fresh Opus at maximum effort reviews. This supersedes the package README's earlier Fable-constructs, Sonnet-implements, Opus-reviews line. He first sequenced the shell behind Profile, Opportunity Slate, and Interview, then released the Interview lane so the shell writer could activate, and authorized activation through pull request only."
+        },
+        {
+          "date": "2026-08-12",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete granted full permission to carry the package through implementation, review, merge, and release. Under that grant this lane's writable_surfaces are amended, narrowly and visibly, to add tests/test_interview_studio.py and this ledger file. Reason: that test locks the byte length and sha256 of the anonymous /interview-studio render, and that page renders the shared shell, so any shell markup change fails it by construction. It is not an Interview Studio regression: an independent reviewer proved the delta is shell markup only by rendering the same route with the base template injected through a Jinja ChoiceLoader and replacing the header and tabsource blocks with placeholders, which made the two documents identical. PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 is paused, so no writer owns that file and none can recapture it. The amendment permits recapturing exactly the four locked constants and nothing else; no Interview Studio behaviour, template, style, script, or other assertion may be changed. delivery_preflight does not machine-check writable_surfaces, so this is recorded as an explicit scope statement rather than relying on the absence of a check.",
+          "scope_limit": "tests/test_interview_studio.py: only FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH, FLAG_OFF_INTERVIEW_STUDIO_SHA256, FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH, and FLAG_OFF_INTERVIEW_STUDIO_HISTORY_SHA256 may be recaptured, with the shell-markup-only proof recorded alongside."
+        }
+      ],
+      "sequence": "activation-only PR -> clean current-main implementation worktree -> three owner decisions answered -> shell structure and responsive behaviour -> authentication and account states -> search presentation -> pre-tokenization screenshot baseline -> tokenize by aliasing -> post-tokenization diff -> cross-route verification -> complete-diff self-review -> fresh Opus max independent review -> merge grant -> release grant if separately authorized",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-13T14:44:43Z",
+      "pause_reason": "Delivered and live. Merged as exact main 0743ba96b78871852a62999902e4d60f12e610a5 via PR 450 and deployed by build 974. Live on peerslate.com: public-navigation.css?v=9b25c57dc7ed serving, the production logo byte-identical at d810c3097de6, no horizontal overflow at 1440/1024/768/390, no console errors, and no global bottom bar for signed-out phones. Production serves five destinations because Workshop is enabled. Paused rather than closed so capacity returns to other writers.",
+      "resume_contract": "Resume only through a fresh activation. Explicitly unverified: Community (/the-slate) on a phone, which is the only route besides /petec/* owning its own bottom bar and therefore the exact interaction the single-bar rule turns on; the signed-in tablet logo this round repaired; Interview Studio's authenticated warm-ivory header; and all real-hardware, screen-reader and non-Chromium states. Four recorded non-blocking findings remain open, plus the 441px header at 200% text with five destinations at 1200-1366. The shell has no feature flag, so rollback is a revert.",
+      "preserved_head_sha": "5816f36d247fa7b8b4663e543edd4557397493da"
     }
   ],
   "workspace_snapshot": {
