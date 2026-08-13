@@ -310,3 +310,125 @@ failed review once automatically. That is existing, intended behaviour
 single click can produce two review requests -- worth knowing before anyone
 reasons about request counts here again.
 
+## Round 5: the same-page AI example restored in Interview Me (2026-08-13)
+
+Pete asked for one thing back: the rhythm Interview Me used to have. Historical
+commit 6936881 put a sample-answer action beneath the answer field, and one
+click produced an answer to the same question in the current canvas with its
+why-it-works breakdown directly underneath. The build in between routed both
+entry points into Interview AI instead, so a member lost their place and had to
+act again. That mode switch was the regression, and it is what this closes.
+
+**One shared disclosure, two doors.** Before answering, the existing example
+link is intercepted on the authenticated page and opens the example beneath the
+composer. After coaching, the post-review control is a button rather than a
+link and opens the same disclosure beneath that coaching. Neither navigates and
+neither reloads. A member who uses one and then the other is returned to what
+is already there rather than being charged a second generation.
+
+**What it renders.** One compact block in the established answer-card language:
+"Strong example", the answer text first, a truth label that distinguishes an
+illustration from a claim about the member's own history, then "Why this works"
+beneath it. It sits on a quieter surface than the coaching above it so the
+member's own work stays dominant. No modal, no rail, no second composer, no
+competing primary action.
+
+**Why it cannot leak.** The payload is rendered straight into the DOM and is
+never assigned to session state, a draft, History, or any storage, so there is
+nothing to clear beyond removing the node and nothing that can reach the
+member's own answer. The answer textarea is never written to. Verified in a
+real browser: after every reveal the textarea still held exactly what the
+member typed, and no storage key was created.
+
+**Why it is not a new claim.** The request reuses the existing model-answer
+endpoint exactly -- same provider, prompt, identity, entitlement and evidence
+contracts, and the same bounded opportunity context every other AI call on this
+page sends. No server change, no new endpoint. Insufficient evidence is
+reported honestly rather than filled in: the member is told there is no strong
+example in the approved history yet, and nothing is invented to fill the gap.
+
+**Freshness and restraint.** Nothing is generated without an explicit click. A
+monotonic sequence number means a late answer for a question the member has
+already left can never paint -- proven by holding a request, changing the
+question mid-flight, then releasing the answer: it was discarded. The
+disclosure is cleared when the question, session, or grounding context changes.
+A click while a request is in flight is ignored, so repeated clicks cannot
+stack requests.
+
+**The public page is untouched.** The interceptor is gated on the authenticated
+page, the link's real destination stays underneath it so the control still
+works without JavaScript, and no template changed at all -- which keeps the
+flag-off anonymous page byte-identical without having to try.
+
+**Verified** in a real browser at 1440x900, 768x1024 and 390x844: both entry
+points, loading, success, insufficient, unavailable and retry, stale rejection
+after a mid-flight question change, repeated clicks, no navigation, no
+horizontal overflow, keyboard reachability, and focus landing on the result
+with a polite announcement. 301 interview tests pass, including replacements
+for the tests that previously locked the cross-mode navigation this round
+deliberately reverses.
+
+**Honest notes.**
+
+- The tests that fixed the old navigation were not deleted quietly. They were
+  rewritten to assert the opposite contract, with their docstrings explaining
+  that the earlier round locked the behaviour Pete has now reversed, so the
+  history of the decision stays legible.
+- The browser-driven Journal tests are flaky under full-suite load: a different
+  one failed on each of two consecutive runs and both passed in isolation, on
+  this branch and on clean main alike. Unrelated to this work, but worth
+  knowing before anyone reads a red full-suite run here as a regression.
+- Four Community tests fail identically on a checkout without these changes.
+
+### Independent review and what it caught
+
+A fresh Fable reviewer took the exact candidate SHA and returned PASS WITH
+FINDINGS. It caught a real P1 that the author's own testing had missed, and it
+is worth recording plainly.
+
+**The arriving example stole the member's caret.** Generation takes seconds. A
+member who went back to typing their own answer while they waited had focus
+pulled out of the textarea the moment the example landed, and every keystroke
+after that hit a non-editable node and vanished -- on the one surface whose
+whole purpose is drafting text. The author's verification had only ever tested
+the idle case, so it passed every check while being wrong for the most natural
+thing a person would do. Focus now moves only when the member is not typing.
+Proven by typing through a held request: the caret stays and every character
+lands.
+
+Two accessibility findings rode along. The card was both a live region and
+announced through the page's status region, so a screen reader read the entire
+generated answer, the truth label and every reason aloud on arrival, again on
+focus, and again whenever the card moved -- it is no longer live, and the short
+announcement stands alone. And "Try again" sits inside the card it replaces, so
+clicking it dropped a keyboard user at the top of the document; focus is now
+carried onto the replacement.
+
+Also fixed: a modifier click on the trigger is the member's to keep, so
+ctrl/cmd/shift-click opens Interview AI in a new tab again rather than being
+converted into an inline reveal; and the why-list used the public page's
+smaller idiom rather than the authenticated panel treatment the lock asked for.
+
+**Two findings were accepted rather than fixed, deliberately.** The inline
+request inherits the Interview AI source selector, so a member who left it on
+"Compare" spends a double generation and half is discarded -- wasteful, not
+untruthful, and the truth label stays honest. And a mid-session expiry would
+render the server's raw token; that exposure is identical on the existing AI
+panel, so it belongs to a follow-up covering both surfaces rather than to this
+round.
+
+### Release
+
+Merged as main `1d7edfa`, deployed by run 996, live at release
+`a9d49c40531a2e39bcdbd402`. Verified against the served assets: the shared
+disclosure, the caret guard, the non-live card, the modifier-click bail, the
+retry focus carry, and the authenticated why-list treatment are all present.
+`/interview-studio` still redirects signed-out visitors, the model-answer API
+still answers 401 signed out, and the homepage and public resume are
+unaffected.
+
+**Honest limit.** The signed-in walk on production is Pete's. Every state was
+proven in a scripted browser against this exact code at three widths, and the
+served files were checked directly, but no one has yet clicked it while signed
+in on the live site.
+
