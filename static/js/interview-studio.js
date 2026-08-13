@@ -552,6 +552,9 @@
         questionTrail: [],
         currentQuestionIndex: 0,
         attemptNumber: 1,
+        /* Page-local and deliberately not persisted: it only has to separate
+           requests made by this page in this browsing session. */
+        requestSeq: 0,
         currentReview: null,
         currentAnswer: '',
         reviewSource: 'me',
@@ -2026,12 +2029,27 @@
        response is dropped if ANY element changed, not only the epoch --
        closing the mode/question-change races a bare integer counter alone
        cannot see. */
+    /* requestSeq is a strictly monotonic counter for THIS page's review
+       requests. It exists so the binding no longer has to lean on
+       attemptNumber to tell two submissions apart.
+
+       That distinction is what made the attempt-counter drift awkward to fix.
+       attemptNumber used to be incremented speculatively before a revision was
+       sent, and a failed review left it incremented, so a retry labelled the
+       snapshot one attempt high. Rolling it back on failure would have made
+       two consecutive submissions produce an identical binding, which would
+       re-open the stale-response acceptance path the binding exists to close.
+       With a counter that only ever goes up, the two concerns are separated:
+       requestSeq keeps late responses out, and attemptNumber is free to mean
+       what it says -- the number of the attempt that has actually been
+       reviewed. */
     function currentRequestBinding() {
         return {
             sessionId: session.sessionId,
             contextId: session.context.context_id,
             questionId: questionId(currentQuestion()),
-            attemptNumber: session.attemptNumber
+            attemptNumber: session.attemptNumber,
+            requestSeq: session.requestSeq
         };
     }
     function bindingStillCurrent(binding) {
@@ -2039,7 +2057,8 @@
         return binding.sessionId === now.sessionId
             && binding.contextId === now.contextId
             && binding.questionId === now.questionId
-            && binding.attemptNumber === now.attemptNumber;
+            && binding.attemptNumber === now.attemptNumber
+            && binding.requestSeq === now.requestSeq;
     }
 
     function resetDraftBadge() {
@@ -2624,11 +2643,13 @@
         actions.className = 'is-stack__actions';
         var reviewRevisedButton = makeActionButton('primary', 'Review Revised Answer', function () {
             if (reviewRevisedButton.disabled) return;
-            session.attemptNumber += 1;
             answer.value = draft.value.trim();
             saveDraft(false);
             syncAnswerState();
-            submitReview();
+            /* The attempt number is no longer bumped here. submitReview works
+               out the attempt being sent and commits it only if the review
+               succeeds, so a failure leaves the counter untouched. */
+            submitReview({ isRevision: true });
         });
         var keepOriginalButton = makeActionButton('secondary', 'Keep original answer', function () {
             section.remove();
@@ -2762,7 +2783,11 @@
         suggestionSection.hidden = !suggestionOptions.children.length;
     }
 
-    function submitReview() {
+    /* options.isRevision marks a re-review of an improved answer. The attempt
+       being submitted is computed here and kept local until the review comes
+       back; session.attemptNumber only advances on success, so a failed
+       revision leaves nothing to roll back and a retry is labelled correctly. */
+    function submitReview(options) {
         if (reviewController) return;
         /* Never leave the microphone listening once the answer has been sent. */
         stopDictation('interrupted');
@@ -2772,6 +2797,9 @@
             answer.focus();
             return;
         }
+        var isRevision = Boolean(options && options.isRevision);
+        var attemptAtSubmit = session.attemptNumber + (isRevision ? 1 : 0);
+        session.requestSeq += 1;
         saveDraft(false);
         session.currentAnswer = responseText;
         text(one('[data-is-submitted-text]'), responseText);
@@ -2791,7 +2819,7 @@
         setHidden(reviewError, true);
         setHidden(errorActions, true);
         text(submittedLabel, authenticated
-            ? (session.attemptNumber > 1 ? 'Submitted revised answer · Attempt ' + session.attemptNumber : 'Submitted answer')
+            ? (attemptAtSubmit > 1 ? 'Submitted revised answer · Attempt ' + attemptAtSubmit : 'Submitted answer')
             : 'Your submitted answer · preserved');
         setAuthPendingBand(true);
         setStage(2);
@@ -2803,7 +2831,6 @@
         var reviewSource = session.reviewSource || 'me';
         var reviewRecordId = session.reviewRecordId || '';
         var binding = currentRequestBinding();
-        var attemptAtSubmit = session.attemptNumber;
 
         var question = currentQuestion();
         var reviewRequestBody = {
@@ -2836,6 +2863,10 @@
                 persistSession();
                 renderSessionProgress();
             }
+            /* The attempt is only real once it has been reviewed. Committing
+               here rather than at submit time is what keeps a retry after a
+               failed revision from being labelled an attempt too high. */
+            session.attemptNumber = attemptAtSubmit;
             if (authenticated) {
                 appendAuthenticatedAttempt(responseText, payload.review, attemptAtSubmit);
             } else {
@@ -2844,7 +2875,7 @@
                 setHidden(feedbackContent, false);
             }
             var record = {
-                id: reviewRecordId || 'attempt-' + Date.now() + '-' + session.attemptNumber,
+                id: reviewRecordId || 'attempt-' + Date.now() + '-' + attemptAtSubmit,
                 createdAt: new Date().toISOString(),
                 mode: reviewSource,
                 question: question.text,
@@ -2872,7 +2903,7 @@
                 sessionContextId: session.context.context_id,
                 sessionId: session.sessionId,
                 experience: session.level,
-                attemptNumber: session.attemptNumber,
+                attemptNumber: attemptAtSubmit,
                 durationSeconds: reviewSource === 'video' ? (session.reviewDurationSeconds || 0) : 0,
                 status: reviewSource === 'video' ? 'Content reviewed' : 'Completed'
             };

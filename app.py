@@ -4237,6 +4237,18 @@ def interview_model_answer():
     except ValueError:
         return jsonify({'error': 'Please keep opportunity context under 4,000 characters.'}), 400
 
+    # The authenticated Studio deliberately ships the follow-up control
+    # disabled while interview_followup_mode_provenance is open: nothing there
+    # can say which grounding mode a follow-up answer came from. The server
+    # still accepted a follow-up carrying a validly signed context token, which
+    # meant the only thing standing between a caller and that path was the
+    # client. Refuse it here so the boundary lives on the server, where it
+    # belongs. The public branch is untouched -- it still owns the working
+    # follow-up affordance -- and re-opening this is a separate decision that
+    # belongs to the follow-up package, not to a caller with a token.
+    if follow_up and authenticated_studio:
+        return jsonify({'error': 'Follow-up questions are not available yet.'}), 400
+
     if follow_up:
         try:
             context = _load_interview_model_context(data.get('context_token'))

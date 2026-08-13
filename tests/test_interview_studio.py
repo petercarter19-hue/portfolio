@@ -428,7 +428,7 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertEqual(retry.count("postJSON('/api/interview/review'"), 2)
         self.assertIn('[500, 502, 503]', retry)
         self.assertIn('Retrying once', retry)
-        submit = source.split('function submitReview()', 1)[1].split(
+        submit = source.split('function submitReview(options)', 1)[1].split(
             "answerForm.addEventListener('submit'", 1
         )[0]
         self.assertIn('postReviewWithOneRetry', submit)
@@ -595,7 +595,7 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         stage = source.split('function setStage(stage)', 1)[1].split('function syncModeControls', 1)[0]
         self.assertIn("setHidden(one('[data-is-ready-rail]'), reviewRailActive)", stage)
         self.assertIn("setHidden(one('[data-is-review-rail]'), !reviewRailActive)", stage)
-        render = source.split('function renderReview(review)', 1)[1].split('function submitReview()', 1)[0]
+        render = source.split('function renderReview(review)', 1)[1].split('function submitReview(options)', 1)[0]
         self.assertIn("text(one('[data-is-review-focus]')", render)
         self.assertIn("text(one('[data-is-priority-improvement]')", render)
         self.assertIn("var dimensions = one('[data-is-dimensions]')", render)
@@ -613,7 +613,7 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
 
     def test_dimension_renderer_emits_qualitative_question_aware_fields(self):
         source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
-        render = source.split('function renderReview(review)', 1)[1].split('function submitReview()', 1)[0]
+        render = source.split('function renderReview(review)', 1)[1].split('function submitReview(options)', 1)[0]
         self.assertIn("var dimensions = one('[data-is-dimensions]')", render)
         self.assertIn("setAttribute('data-status', dimension.status)", render)
         self.assertIn("'is__dimension-status'", render)
@@ -795,7 +795,7 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         clear_block = source.split('function clearReviewState()', 1)[1].split('function restoreDraft', 1)[0]
         self.assertIn('setHidden(feedbackBlock, true)', clear_block)
         self.assertIn('setHidden(improveBlock, true)', clear_block)
-        submit_block = source.split('function submitReview()', 1)[1].split("answerForm.addEventListener", 1)[0]
+        submit_block = source.split('function submitReview(options)', 1)[1].split("answerForm.addEventListener", 1)[0]
         self.assertIn('setHidden(answeringBlock, true)', submit_block)
         self.assertIn('setHidden(feedbackBlock, false)', submit_block)
         failure_block = submit_block.split("}).catch(function (error)", 1)[1]
@@ -1831,7 +1831,7 @@ class InterviewStudioAssetTests(unittest.TestCase):
         transcript = source.split("videoTranscriptForm.addEventListener('submit'", 1)[1].split("retakeRecord.addEventListener", 1)[0]
         self.assertIn("session.reviewSource = 'video'", transcript)
         self.assertIn('session.reviewDurationSeconds = durationSeconds', transcript)
-        review = source.split('function submitReview()', 1)[1].split("answerForm.addEventListener('submit'", 1)[0]
+        review = source.split('function submitReview(options)', 1)[1].split("answerForm.addEventListener('submit'", 1)[0]
         self.assertLess(review.index('postReviewWithOneRetry'), review.index('addHistoryRecord(record)'))
         discard = source.split("discardRecord.addEventListener('click'", 1)[1].split("videoTranscript.addEventListener('input'", 1)[0]
         self.assertIn('releaseMedia(true)', discard)
@@ -4049,7 +4049,7 @@ class InterviewStudioConsequenceStackContractTests(unittest.TestCase):
         with the preserved value -- the one exception, and it is scoped to
         the catch handler only."""
         script = _studio_script()
-        submit_review = script.split('function submitReview() {', 1)[1].split("answerForm.addEventListener('submit'", 1)[0]
+        submit_review = script.split('function submitReview(options) {', 1)[1].split("answerForm.addEventListener('submit'", 1)[0]
         success_handler = submit_review.split('.then(function (payload) {', 1)[1].split('}).catch(function (error) {', 1)[0]
         self.assertIn('if (authenticated) {', success_handler)
         self.assertIn('appendAuthenticatedAttempt(responseText, payload.review, attemptAtSubmit);', success_handler)
@@ -4127,16 +4127,24 @@ class InterviewStudioConsequenceStackContractTests(unittest.TestCase):
         self.assertIn(': unresolvedMarkerCount(draft.value);', sync_markers)
 
     def test_review_revised_answer_sends_the_attempt_number(self):
-        """Review finding P2-2: the authenticated client reports which
-        attempt this is (session.attemptNumber, already incremented before
-        submitReview() is called) so the server's marker gate (P2-1) can
-        distinguish a revision from a first attempt. Public/flag-off never
-        sends it -- there is no marker-gate concept on that surface."""
+        """Review finding P2-2: the authenticated client reports which attempt
+        this is, so the server's marker gate (P2-1) can distinguish a revision
+        from a first attempt. Public/flag-off never sends it -- there is no
+        marker-gate concept on that surface.
+
+        The value used to be read straight off session.attemptNumber, which
+        the caller had already incremented. It is now worked out inside
+        submitReview from the isRevision flag, because that speculative
+        increment was exactly what left the counter one attempt high after a
+        failed revision. What the server receives is unchanged."""
         script = _studio_script()
-        submit_review = script.split('function submitReview() {', 1)[1].split(
+        submit_review = script.split('function submitReview(options) {', 1)[1].split(
             '\n    function postReviewWithOneRetry', 1
         )[0]
-        self.assertIn('var attemptAtSubmit = session.attemptNumber;', submit_review)
+        self.assertIn(
+            'var attemptAtSubmit = session.attemptNumber + (isRevision ? 1 : 0);',
+            submit_review,
+        )
         self.assertIn('if (authenticated) reviewRequestBody.attempt = attemptAtSubmit;', submit_review)
         self.assertIn('postReviewWithOneRetry(reviewRequestBody, controller.signal)', submit_review)
 
@@ -4947,3 +4955,159 @@ class InterviewStudioAuthenticatedHeaderColorTests(unittest.TestCase):
             'body[data-theme="dark"].interview-studio-page .sign-in-btn',
             self.css,
         )
+
+
+class InterviewStudioCarriedItemsTests(_InterviewStudioAuthenticatedTestCase):
+    """The two items the package carried forward, now closed.
+
+    1. A failed revision review used to leave the attempt counter already
+       incremented, so a retry laballed the snapshot one attempt high.
+    2. The model-answer endpoint still accepted a follow-up carrying a validly
+       signed context token even though the authenticated Studio ships that
+       control disabled, so only the client stood in the way.
+    """
+
+    def setUp(self):
+        super().setUp()
+        # Model answers are owner-gated by design (architecture Q-C: every
+        # other account fails closed until a member-evidence package exists),
+        # so the test member has to be the owner for a request to reach the
+        # follow-up boundary at all. Without this the endpoint answers 403
+        # first and the boundary under test is never exercised.
+        app.config['PEERSLATE_OWNER_USER_KEYS'] = 'follow-up-member'
+
+    def test_authenticated_follow_up_is_refused_even_with_a_valid_token(self):
+        """The signature being genuine is exactly the point: this is the case
+        the client-side disable could not cover."""
+        token = _sign_interview_model_context(
+            'petec',
+            'Tell me about a project.',
+            'experienced',
+            'behavioral',
+            'best_practice',
+            {'answer': 'A generic, illustrative answer.', 'evidenceUsed': []},
+        )
+        with patch(
+            'identity.database_service.first_row',
+            return_value=_interview_mapped_user('follow-up-member'),
+        ):
+            response = self.client.post(
+                '/api/interview/model-answer',
+                json={
+                    'follow_up': 'What happened next?',
+                    'context_token': token,
+                    'mode': 'best_practice',
+                },
+                headers={
+                    **_interview_principal_header('follow-up-member'),
+                    # Authenticated interview POSTs are fail-closed same-origin.
+                    'Origin': 'http://localhost',
+                },
+                base_url='http://localhost',
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            'Follow-up questions are not available yet.',
+            response.get_json()['error'],
+        )
+
+    def test_the_refusal_does_not_depend_on_the_token_being_readable(self):
+        """Fails closed: an unreadable token gets the same refusal, so the
+        boundary cannot be probed for whether a token was valid."""
+        with patch(
+            'identity.database_service.first_row',
+            return_value=_interview_mapped_user('follow-up-member'),
+        ):
+            response = self.client.post(
+                '/api/interview/model-answer',
+                json={
+                    'follow_up': 'What happened next?',
+                    'context_token': 'tampered-client-context',
+                },
+                headers={
+                    **_interview_principal_header('follow-up-member'),
+                    # Authenticated interview POSTs are fail-closed same-origin.
+                    'Origin': 'http://localhost',
+                },
+                base_url='http://localhost',
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            'Follow-up questions are not available yet.',
+            response.get_json()['error'],
+        )
+
+    def test_a_normal_authenticated_request_without_follow_up_is_unaffected(self):
+        """The refusal is scoped to follow-up: an ordinary request still gets
+        past this point and fails later for its own reason, not this one."""
+        with patch(
+            'identity.database_service.first_row',
+            return_value=_interview_mapped_user('follow-up-member'),
+        ):
+            response = self.client.post(
+                '/api/interview/model-answer',
+                json={},
+                headers={
+                    **_interview_principal_header('follow-up-member'),
+                    # Authenticated interview POSTs are fail-closed same-origin.
+                    'Origin': 'http://localhost',
+                },
+                base_url='http://localhost',
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertNotEqual(
+            'Follow-up questions are not available yet.',
+            response.get_json()['error'],
+        )
+
+    def test_the_public_follow_up_path_is_untouched(self):
+        """With the transition flag off, the public branch still owns the
+        working affordance and must not inherit this refusal."""
+        app.config['PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED'] = False
+        response = self.client.post(
+            '/api/interview/model-answer',
+            json={
+                'follow_up': 'What happened next?',
+                'context_token': 'tampered-client-context',
+            },
+            base_url='http://localhost',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('invalid or expired', response.get_json()['error'])
+
+    def test_the_attempt_counter_advances_only_on_a_successful_review(self):
+        script = _studio_script()
+        # The revision path no longer bumps the counter before sending.
+        revised = script.split("'Review Revised Answer'", 1)[1]
+        revised = revised.split("'Keep original answer'", 1)[0]
+        self.assertNotIn('session.attemptNumber += 1', revised)
+        self.assertIn('submitReview({ isRevision: true })', revised)
+        # submitReview works the attempt out locally...
+        self.assertIn(
+            'var attemptAtSubmit = session.attemptNumber + (isRevision ? 1 : 0);',
+            script,
+        )
+        # ...and commits it only once a review has actually come back.
+        self.assertIn('session.attemptNumber = attemptAtSubmit;', script)
+        # The stored record and the visible label both use the local value, so
+        # a failure leaves nothing behind to roll back.
+        self.assertIn('attemptNumber: attemptAtSubmit,', script)
+        self.assertIn(
+            "'Submitted revised answer · Attempt ' + attemptAtSubmit",
+            script,
+        )
+
+    def test_the_request_binding_keeps_late_responses_out_on_its_own(self):
+        """Removing the speculative increment is only safe because the binding
+        no longer needs the attempt number to tell two submissions apart."""
+        script = _studio_script()
+        binding = script.split('function currentRequestBinding()', 1)[1]
+        binding = binding.split('function bindingStillCurrent', 1)[0]
+        self.assertIn('requestSeq: session.requestSeq', binding)
+        compare = script.split('function bindingStillCurrent', 1)[1]
+        compare = compare.split('\n    }', 1)[0]
+        self.assertIn('binding.requestSeq === now.requestSeq', compare)
+        # It only ever goes up, and it advances on every submission.
+        self.assertIn('session.requestSeq += 1;', script)
+        self.assertNotIn('session.requestSeq -= 1', script)
+        self.assertNotIn('session.requestSeq = 0;', script)
