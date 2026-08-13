@@ -1,17 +1,19 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T20:22:00Z",
+  "updated_at": "2026-08-13T20:00:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "controlled_idle",
+    "state": "active_delivery",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [],
+    "writes_allowed_for": [
+      "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001"
+    ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -1690,7 +1692,99 @@
       ]
     }
   ],
-  "active_lanes": [],
+  "active_lanes": [
+    {
+      "package": "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
+      "outcome": "Close the two findings the previous round accepted rather than fixed. Pete's direction: nothing glitchy stays. First, the inline example inherits the Interview AI source selector, so a member who left it on Compare spends two generations and the card discards one -- the server produces the grounded answer with the identical call in both modes, so the inline entry point now asks for the single grounded generation and the rendered result is unchanged. Compare itself remains available and unchanged in the Interview AI panel, where both halves are actually shown. Second, a mid-session expiry or a waking workspace surfaced the server's raw machine token to the member; the client now translates the known tokens into plain sentences at the single point where every interview request turns a server error into a message, so the inline card and the Interview AI panel are both covered by one fix rather than one surface being left inconsistent with the other.",
+      "branch": "work/2026-08-13-interview-accepted-findings",
+      "writer": "Claude Fable 5 (the session holding Pete's conversation) is the sole writer, continuing the package it delivered.",
+      "delivery_path": "Protected",
+      "production_capable": true,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "product:interview-studio",
+        "platform:auth-return-path"
+      ],
+      "source_checkpoint": "Follows the same-page inline example restoration, live at release a9d49c40531a2e39bcdbd402 from main 1d7edfa. Both items were raised by the independent Protected-path review of that round and recorded in the package completion report as accepted rather than fixed, with reasons. Pete reversed that judgement on 2026-08-13.",
+      "writable_surfaces": [
+        "static/js/interview-studio.js",
+        "static/css/interview-studio.css",
+        "tests/test_interview_studio.py",
+        "docs/initiatives/PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001/",
+        "artifacts/2026-08-13-interview-accepted-findings/",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml"
+      ],
+      "surface_note": "Round 6 narrows further than round 4: no template is claimed at all, and app.py is again excluded because the error-token translation is a client presentation fix, not a server contract change. The shared test files are not claimed, so this cannot collide with another lane.",
+      "exclusions": [
+        "no app.py, auth_routes.py, new endpoint, route, provider, model, prompt, schema, SQL, configuration, dependency, or pipeline change; the server contract is unchanged and the token translation is client-side",
+        "no change to what Compare does in the Interview AI panel",
+        "no global-shell, logo, Video Practice, dictation, Ask My Slate, Community, Opportunity Slate, Resume, Profile, Workshop or homepage work",
+        "no change to flag-off public rendering where a contract currently fixes it",
+        "no new visual direction"
+      ],
+      "completion_evidence": [
+        "activation record merged and the implementation worktree passes the package write preflight from the resulting origin/main",
+        "the inline entry point requests one grounded generation even when the Interview AI source selector is left on Compare, and the rendered card is identical to before",
+        "the Interview AI panel's Compare behaviour is unchanged",
+        "an expired session and a waking workspace both surface a plain sentence rather than a machine token, on the inline card and on the Interview AI panel",
+        "no unknown error string is swallowed or rewritten",
+        "complete-diff self-review, independent exact-SHA review, Azure PR, required pipeline, deployment and live verification recorded separately"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-11",
+          "decision": "Pete accepted the Phase A architecture and resolved all three owner questions: 'I agree with all three.' Q-A: /interview-studio stays canonical behind sign-in and the 2026-07-18 reserved /app/interview-studio note is retired. Q-B: every account starts with empty History, including Pete's own; no silent adoption of anonymous legacy records. Q-C: Pete's signed-in account grounds Interview AI on his approved public resume data; all other accounts fail closed until a member-evidence package exists."
+        },
+        {
+          "date": "2026-08-11",
+          "decision": "Model routing, verbatim: 'Use Fable Extra to build the architecture. Use Sonnet Max to implement it, and then use Fable Extra for review it.' The architecture was authored by the Fable session holding this conversation; Sonnet max is the sole delegated implementation writer; a fresh Fable extra-high context is the independent reviewer."
+        },
+        {
+          "date": "2026-08-11",
+          "decision": "Execution boundary, verbatim: 'Go all the way up to right before it goes live.' This authorizes activation, dark implementation, review, Azure PR merge, the automatic deployment of flag-off code, and live dark verification without per-step approval. Setting PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED=true is excluded and remains Pete's separate recorded go."
+        },
+        {
+          "date": "2026-08-12",
+          "decision": "Pete directed the writer transfer so another session can continue: 'Go ahead and close your lane right now so another rider can get on it', following 'I can have codex finish everything' when Claude usage limits appeared. The Claude architect relinquishes the lane at exact pushed handoff SHA 92741795c26c89b4d64425b07dfabaad8b6bae7f on work/2026-08-11-interview-studio-authenticated-experience-001. State at handoff: all six slices delivered; all 19 locked visual states passing the architect's measured review; the Opus independent review's REJECT findings (P1 clear-history crash, P1 lock 08/09/11/12 divergences, P2 marker-gate scope and confirmations divergence, P2 no-inference line, P3 legacy-redirect headers) all closed and live-verified; 391 focused tests green with flag-off byte-comparability intact; branch never merged, never deployed, flag off everywhere. Remaining for the incoming writer: recaptures and comparison sheet, the final independent review (pass K closure verification first), the recorded merge grant, PR, dark merge, governed deploy, and live dark verification. The stop line is unchanged and absolute: enabling PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED remains Pete's own separately recorded act."
+        },
+        {
+          "date": "2026-08-12",
+          "decision": "Merge grant, recorded before the PR under the recorded-scope pattern. Pete's standing authority for this lane is 'Go all the way up to right before it goes live', resumed with 'Okay. Go ahead and continue.' after the writer transfer. Both independent reviews are closed: Opus REJECTed candidate 81d8f21 and every P1/P2/P3 finding was fixed and live-verified; the final fresh-context review APPROVED candidate 11ea73e with zero P0/P1, ruled the lock-08 dominant-action question in the implementation's favor, and raised one P2 label defect that is now fixed at 919b0b6 with a regression test. This authorizes adding the package to merge_allowed_for and release_allowed_for for the dark sequence only: Azure PR, squash merge, and the governed flag-off deployment with live verification. Enablement of PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED is expressly NOT granted and remains Pete's own separately recorded act; the two informational P3 findings (attempt-counter drift on a failed revision retry, and the latent follow-up server surface) are carried openly into the completion record. CONTROL-PLANE NOTE, recorded rather than worked around: this grant is NOT expressed in operating_mode.merge_allowed_for/release_allowed_for. A control added to main on 2026-08-12 by the parallel direction lanes reserves those lists for direction_authority, non-production-capable lanes carrying a formal merge_grant object (tests/test_delivery_preflight.py::test_lane_ledger_has_a_valid_operating_state), so listing this implementation lane there fails the shared suite, and the machine --intent merge gate has no representation for an implementation lane. tests/test_delivery_preflight.py is outside this lane's writable surfaces, so it was left untouched rather than edited from here. The merge therefore proceeds under Pete's recorded authority through the ordinary Azure PR with all required policies passing, and the gap is carried to the control-plane owner as a follow-up so implementation lanes can be machine-gated again."
+        },
+        {
+          "date": "2026-08-12",
+          "decision": "Pete reopened the package after confirming the delivered experience works, with a written handoff scoping a post-enable mobile correction round: fix post-review scroll and focus under the sticky header, collapse the coaching and Why-this-works grids responsively, put compact microphone and circular send controls with integrated live dictation inside the phone composer, recompose the mobile Mode/Session/History controls intentionally, and restore the optional model answer through a post-review action that never auto-replaces or saves the member's answer. Explicitly out of scope, verbatim: no logo change, global-shell redesign, provider change, cloud History, or owner-specific product logic. Pete added that the user-approved logo remains untouched. The handoff assumed the lane still listed an active writer; it did not, because Pete had closed it out earlier the same day, so the package resumes through a fresh activation on the same preserved branch rather than a competing branch, which is the resume path recorded in the pause entry. Activation forbids reusing a branch recorded anywhere on origin/main, including a paused lane's own preserved branch, so this round runs on work/2026-08-12-interview-studio-mobile-correction created from current origin/main. That is a continuation, not a competing branch: every commit of the previous round is already merged into main, so the new branch starts from identical content, there is one writer and one line of history, and the preserved branch plus its two archive tags stay frozen as recovery refs."
+        },
+        {
+          "date": "2026-08-13",
+          "decision": "Pete directed this session to finish the remaining Interview Studio work and run it all the way through to live and deployed, resolving any issues encountered using its own judgement and without further questions. He explicitly scoped the session to this package only (\"stay in your lane\"); the Profile relationship candidate has its own reviewers and is not this session's work. The lane is taken only after a building seat frees, which is why the round waited."
+        },
+        {
+          "date": "2026-08-13",
+          "decision": "Pete directed a focused restoration of the same-page AI-answer experience in Interview Me, reopening this package rather than creating a competing Interview architecture. He supplied the outcome, the required experience, the textual visual lock, the boundaries and the verification list in writing, and asked for it completed today and taken live through the normal Protected path. He scoped this session strictly to the Interview outcome; Codex and the Site Audit Review packages own everything else discussed. The visual work is implementation of the already-locked authenticated Interview AI answer-card language in a new location under the owner's written lock, not a new or materially revised visual direction, so it stays in the implementation lane."
+        },
+        {
+          "date": "2026-08-13",
+          "decision": "Pete asked for both accepted findings to be fixed after hearing them described, saying he does not want anything glitchy left in place. That overrides the previous round's recorded judgement that the Compare double-generation was acceptable waste and that the raw error token belonged to a later follow-up covering both surfaces. The follow-up is simply done now, and it still covers both surfaces rather than only the newer one."
+        }
+      ],
+      "model_routing": {
+        "decided_by": "Pete",
+        "date": "2026-08-11",
+        "architecture": "Claude Fable 5 (this session): authored the accepted architecture deliverable; briefs and reviews slices",
+        "implementation": "REVISED by Pete mid-lane 2026-08-11 ('Use Fable Extra for implementation from now on') after he failed the first visual comparison captures; Fable hand-wrote the visual rebuild (passes 1-9; all 19 locks passing its measured review after the header-warmth fix). REVISED 2026-08-12 ('We can go back to sonnet max implementing as long as fable is the reviewer'): Sonnet implements, Fable reviews. TRANSFERRED 2026-08-12: Pete directed Codex to finish everything ('I can have codex finish everything') due to Claude usage limits; the Claude sessions relinquish the writer role at the recorded handoff (docs/initiatives/PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001/CODEX_COMPLETION_HANDOFF_2026-08-12.md), which carries the remaining sequence, the open Opus REJECT findings, the interrupted-closure reconciliation procedure, and the unchanged stop line: merge and deploy dark, never enable the flag",
+        "independent_reviewer": "REVISED by Pete 2026-08-12 ('have opus do the first review'): Claude Opus 5 at maximum effort performs the first independent review of the exact candidate SHA; findings are closed, then a fresh Claude Fable context performs the final review before the PR (neither reviewer wrote the code under review)",
+        "sequence": "activation merge -> clean worktree -> write preflight -> Sonnet slices 1-4 -> owner failed the visual captures -> Sonnet finishes descoped functional wiring only -> Fable extra-high rebuilds the visual composition to the 19 locks with forensic measurement -> full validation -> fresh-context Fable extra-high exact-SHA review -> findings closed -> Azure PR -> dark merge and deploy -> live dark verification -> stop before enablement",
+        "round_2_mobile_correction": "Pete handed the 2026-08-12 mobile correction handoff directly to this Claude Fable 5 session and asked it to use the existing lane. Fable implements and self-reviews under the standing forensic-plus-eyeball review standard.",
+        "round_3_carried_items": "Pete directed the remaining work back to this Claude Fable 5 session on 2026-08-13 with standing approval to run it through to live. Fable implements and self-reviews under the standing forensic-plus-eyeball review standard.",
+        "round_4_inline_example": "Pete assigned the restoration to this Claude Fable 5 session on 2026-08-13, continuing through the existing package. Fable implements and self-reviews under the standing forensic-plus-eyeball review standard, then a fresh independent exact-SHA Protected-path review runs before the pull request.",
+        "round_6_accepted_findings": "Pete directed both accepted findings closed. Fable implements and self-reviews, then an independent exact-SHA review runs before the pull request, as in the previous round."
+      },
+      "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged activation and implementation worktrees and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
+      "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree; pass the package write preflight; make both fixes with their own tests; run the focused and full suites; complete-diff self-review; independent review; Azure PR; merge; verify the deploy and the live route; record the evidence; pause the package."
+    }
+  ],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
@@ -2044,104 +2138,6 @@
       "pause_reason": "The planning deliverable is complete and merged through PR 456 at b7c76919d5f1553988299e5af6ef84496ed8aa87 after CI 984 passed. Process limitation recorded honestly: this newly created direction package has no code-controlled independent-review attestation registered in delivery_preflight, so the executable grant/close lifecycle cannot represent it; the documentation PR merged before that control gap was recognized. No runtime surface changed. The lane is paused to release capacity while preserving the package set and this limitation.",
       "resume_contract": "No resume is expected for the queue itself. Each child package requires its own fresh owner-selected activation. A future delivery-control owner may reconcile formal close only without fabricating a retroactive grant or changing the merged charters.",
       "preserved_head_sha": "1b2b20808e20bd99af07e657622502cc7605bcb9"
-    },
-    {
-      "package": "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
-      "outcome": "Restore the smooth same-page AI-answer experience Interview Me used to have. Historical commit 6936881 put a sample-answer action beneath the answer field: one click produced a sample answer for the same question in the current practice canvas, with its why-it-works breakdown immediately underneath. The current build only half-restored it -- both the pre-answer example action and the post-review strong-answer action navigate into Interview AI and demand another action, and that mode switch is the regression. One shared inline disclosure now serves both entry points inside Interview Me: an explicit click reveals a compact Strong example block with Why this works beneath it, on the exact current question, through the existing model-answer endpoint, provider, prompt, identity, entitlement and evidence contracts. It never generates automatically, never touches the answer field, never persists anything, and disappears when the question or session resets. The interaction rhythm is ported from the historical build only -- not its files and not its retired chat implementation.",
-      "branch": "work/2026-08-13-interview-me-inline-example",
-      "writer": "Claude Fable 5 (the session holding Pete's conversation) is the sole writer. It delivered every prior round of this package and Pete assigned this restoration to it directly, to be taken live today.",
-      "delivery_path": "Protected",
-      "production_capable": true,
-      "lane_class": "implementation",
-      "exclusive_domains": [
-        "product:interview-studio",
-        "platform:auth-return-path"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main 4d5fa6a41f25d2d80b128176d9ac9b0a6cbc2f5c, matching the owner's checkpoint exactly; control state controlled_idle with zero active writer lanes and both building seats free. The package was paused_preserved with a fresh-activation resume path and no outstanding recorded items. Codex made no commit, claimed no lane and left no Interview implementation change. Historical reference commit 6936881 (2026-07-07) is studied for interaction rhythm only.",
-      "writable_surfaces": [
-        "static/js/interview-studio.js",
-        "static/css/interview-studio.css",
-        "templates/interview_studio.html",
-        "tests/test_interview_studio.py",
-        "docs/initiatives/PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001/",
-        "artifacts/2026-08-13-interview-me-inline-example/",
-        "docs/governance/CURRENT_LANES.json",
-        "docs/governance/CURRENT_BASELINE.yaml"
-      ],
-      "surface_note": "Round 4 keeps the surface narrow and deliberately drops app.py and auth_routes.py: the existing model-answer endpoint is reused exactly, so no server change is in scope. templates/interview_studio.html is claimed only in case an existing hook proves insufficient; the intended implementation is script and stylesheet only, which also keeps the flag-off public page byte-identical without having to try. The shared test files tests/test_navigation.py, tests/test_auth.py and tests/test_search_visibility.py are deliberately NOT claimed, so this round cannot collide with the global shell lane.",
-      "exclusions": [
-        "no app.py, auth_routes.py, new endpoint, route, provider, model, prompt, schema, SQL, configuration, dependency, or pipeline change; the existing model-answer contract is reused exactly as it stands",
-        "no global-shell work, no logo change, no centre-width or rail-spacing work",
-        "no Video Practice redesign and no shared dictation change",
-        "no Ask My Slate or private knowledge retrieval, and no API or agent prompt redesign",
-        "no Community, Opportunity Slate, Resume, Profile, Workshop or homepage work; those belong to the Site Audit Review packages",
-        "no change to flag-off public rendering where a contract currently fixes it",
-        "no new visual direction: this reuses the established authenticated Interview AI answer-card language in a new location, to the owner's written textual lock"
-      ],
-      "completion_evidence": [
-        "activation record merged and the implementation worktree passes the package write preflight from the resulting origin/main",
-        "pre-answer reveal and post-review reveal for the same reviewed question, both inline, with no navigation to Interview AI and no page reload",
-        "nothing is requested without an explicit click",
-        "the answer textarea is never written to, and no draft, History, browser, session or cloud record is created by the reveal",
-        "loading, success, insufficient-evidence, unavailable and retry states",
-        "a stale response is discarded after a question, session or mode change, and repeated clicks do not stack requests",
-        "a member without authorized evidence still fails closed",
-        "desktop, 768px and 390px layouts, keyboard reachability, focus placement and an accessible status announcement",
-        "signed-out behaviour unchanged and flag-off public rendering unchanged where a contract currently fixes it",
-        "complete-diff self-review, then a fresh independent exact-SHA Protected-path review, then Azure PR, required pipeline, deployment and signed-in live verification recorded separately"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-11",
-          "decision": "Pete accepted the Phase A architecture and resolved all three owner questions: 'I agree with all three.' Q-A: /interview-studio stays canonical behind sign-in and the 2026-07-18 reserved /app/interview-studio note is retired. Q-B: every account starts with empty History, including Pete's own; no silent adoption of anonymous legacy records. Q-C: Pete's signed-in account grounds Interview AI on his approved public resume data; all other accounts fail closed until a member-evidence package exists."
-        },
-        {
-          "date": "2026-08-11",
-          "decision": "Model routing, verbatim: 'Use Fable Extra to build the architecture. Use Sonnet Max to implement it, and then use Fable Extra for review it.' The architecture was authored by the Fable session holding this conversation; Sonnet max is the sole delegated implementation writer; a fresh Fable extra-high context is the independent reviewer."
-        },
-        {
-          "date": "2026-08-11",
-          "decision": "Execution boundary, verbatim: 'Go all the way up to right before it goes live.' This authorizes activation, dark implementation, review, Azure PR merge, the automatic deployment of flag-off code, and live dark verification without per-step approval. Setting PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED=true is excluded and remains Pete's separate recorded go."
-        },
-        {
-          "date": "2026-08-12",
-          "decision": "Pete directed the writer transfer so another session can continue: 'Go ahead and close your lane right now so another rider can get on it', following 'I can have codex finish everything' when Claude usage limits appeared. The Claude architect relinquishes the lane at exact pushed handoff SHA 92741795c26c89b4d64425b07dfabaad8b6bae7f on work/2026-08-11-interview-studio-authenticated-experience-001. State at handoff: all six slices delivered; all 19 locked visual states passing the architect's measured review; the Opus independent review's REJECT findings (P1 clear-history crash, P1 lock 08/09/11/12 divergences, P2 marker-gate scope and confirmations divergence, P2 no-inference line, P3 legacy-redirect headers) all closed and live-verified; 391 focused tests green with flag-off byte-comparability intact; branch never merged, never deployed, flag off everywhere. Remaining for the incoming writer: recaptures and comparison sheet, the final independent review (pass K closure verification first), the recorded merge grant, PR, dark merge, governed deploy, and live dark verification. The stop line is unchanged and absolute: enabling PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED remains Pete's own separately recorded act."
-        },
-        {
-          "date": "2026-08-12",
-          "decision": "Merge grant, recorded before the PR under the recorded-scope pattern. Pete's standing authority for this lane is 'Go all the way up to right before it goes live', resumed with 'Okay. Go ahead and continue.' after the writer transfer. Both independent reviews are closed: Opus REJECTed candidate 81d8f21 and every P1/P2/P3 finding was fixed and live-verified; the final fresh-context review APPROVED candidate 11ea73e with zero P0/P1, ruled the lock-08 dominant-action question in the implementation's favor, and raised one P2 label defect that is now fixed at 919b0b6 with a regression test. This authorizes adding the package to merge_allowed_for and release_allowed_for for the dark sequence only: Azure PR, squash merge, and the governed flag-off deployment with live verification. Enablement of PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED is expressly NOT granted and remains Pete's own separately recorded act; the two informational P3 findings (attempt-counter drift on a failed revision retry, and the latent follow-up server surface) are carried openly into the completion record. CONTROL-PLANE NOTE, recorded rather than worked around: this grant is NOT expressed in operating_mode.merge_allowed_for/release_allowed_for. A control added to main on 2026-08-12 by the parallel direction lanes reserves those lists for direction_authority, non-production-capable lanes carrying a formal merge_grant object (tests/test_delivery_preflight.py::test_lane_ledger_has_a_valid_operating_state), so listing this implementation lane there fails the shared suite, and the machine --intent merge gate has no representation for an implementation lane. tests/test_delivery_preflight.py is outside this lane's writable surfaces, so it was left untouched rather than edited from here. The merge therefore proceeds under Pete's recorded authority through the ordinary Azure PR with all required policies passing, and the gap is carried to the control-plane owner as a follow-up so implementation lanes can be machine-gated again."
-        },
-        {
-          "date": "2026-08-12",
-          "decision": "Pete reopened the package after confirming the delivered experience works, with a written handoff scoping a post-enable mobile correction round: fix post-review scroll and focus under the sticky header, collapse the coaching and Why-this-works grids responsively, put compact microphone and circular send controls with integrated live dictation inside the phone composer, recompose the mobile Mode/Session/History controls intentionally, and restore the optional model answer through a post-review action that never auto-replaces or saves the member's answer. Explicitly out of scope, verbatim: no logo change, global-shell redesign, provider change, cloud History, or owner-specific product logic. Pete added that the user-approved logo remains untouched. The handoff assumed the lane still listed an active writer; it did not, because Pete had closed it out earlier the same day, so the package resumes through a fresh activation on the same preserved branch rather than a competing branch, which is the resume path recorded in the pause entry. Activation forbids reusing a branch recorded anywhere on origin/main, including a paused lane's own preserved branch, so this round runs on work/2026-08-12-interview-studio-mobile-correction created from current origin/main. That is a continuation, not a competing branch: every commit of the previous round is already merged into main, so the new branch starts from identical content, there is one writer and one line of history, and the preserved branch plus its two archive tags stay frozen as recovery refs."
-        },
-        {
-          "date": "2026-08-13",
-          "decision": "Pete directed this session to finish the remaining Interview Studio work and run it all the way through to live and deployed, resolving any issues encountered using its own judgement and without further questions. He explicitly scoped the session to this package only (\"stay in your lane\"); the Profile relationship candidate has its own reviewers and is not this session's work. The lane is taken only after a building seat frees, which is why the round waited."
-        },
-        {
-          "date": "2026-08-13",
-          "decision": "Pete directed a focused restoration of the same-page AI-answer experience in Interview Me, reopening this package rather than creating a competing Interview architecture. He supplied the outcome, the required experience, the textual visual lock, the boundaries and the verification list in writing, and asked for it completed today and taken live through the normal Protected path. He scoped this session strictly to the Interview outcome; Codex and the Site Audit Review packages own everything else discussed. The visual work is implementation of the already-locked authenticated Interview AI answer-card language in a new location under the owner's written lock, not a new or materially revised visual direction, so it stays in the implementation lane."
-        }
-      ],
-      "model_routing": {
-        "decided_by": "Pete",
-        "date": "2026-08-11",
-        "architecture": "Claude Fable 5 (this session): authored the accepted architecture deliverable; briefs and reviews slices",
-        "implementation": "REVISED by Pete mid-lane 2026-08-11 ('Use Fable Extra for implementation from now on') after he failed the first visual comparison captures; Fable hand-wrote the visual rebuild (passes 1-9; all 19 locks passing its measured review after the header-warmth fix). REVISED 2026-08-12 ('We can go back to sonnet max implementing as long as fable is the reviewer'): Sonnet implements, Fable reviews. TRANSFERRED 2026-08-12: Pete directed Codex to finish everything ('I can have codex finish everything') due to Claude usage limits; the Claude sessions relinquish the writer role at the recorded handoff (docs/initiatives/PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001/CODEX_COMPLETION_HANDOFF_2026-08-12.md), which carries the remaining sequence, the open Opus REJECT findings, the interrupted-closure reconciliation procedure, and the unchanged stop line: merge and deploy dark, never enable the flag",
-        "independent_reviewer": "REVISED by Pete 2026-08-12 ('have opus do the first review'): Claude Opus 5 at maximum effort performs the first independent review of the exact candidate SHA; findings are closed, then a fresh Claude Fable context performs the final review before the PR (neither reviewer wrote the code under review)",
-        "sequence": "activation merge -> clean worktree -> write preflight -> Sonnet slices 1-4 -> owner failed the visual captures -> Sonnet finishes descoped functional wiring only -> Fable extra-high rebuilds the visual composition to the 19 locks with forensic measurement -> full validation -> fresh-context Fable extra-high exact-SHA review -> findings closed -> Azure PR -> dark merge and deploy -> live dark verification -> stop before enablement",
-        "round_2_mobile_correction": "Pete handed the 2026-08-12 mobile correction handoff directly to this Claude Fable 5 session and asked it to use the existing lane. Fable implements and self-reviews under the standing forensic-plus-eyeball review standard.",
-        "round_3_carried_items": "Pete directed the remaining work back to this Claude Fable 5 session on 2026-08-13 with standing approval to run it through to live. Fable implements and self-reviews under the standing forensic-plus-eyeball review standard.",
-        "round_4_inline_example": "Pete assigned the restoration to this Claude Fable 5 session on 2026-08-13, continuing through the existing package. Fable implements and self-reviews under the standing forensic-plus-eyeball review standard, then a fresh independent exact-SHA Protected-path review runs before the pull request."
-      },
-      "cleanup_contract": "Task-local only: after this lane's PRs merge under recorded authority and recoverability is verified, remove only this lane's clean merged activation and implementation worktrees and local/remote branches behind archive tags; preserve every unrelated, dirty, unverified, or user-owned branch, worktree, stash, and artifact.",
-      "sequence": "Merge the activation-only PR with a verified [skip ci] squash; create the implementation worktree from the resulting origin/main; pass the package write preflight; build one shared inline disclosure serving both entry points; replace the tests that currently lock cross-mode navigation with the same-page contract; run the full verification matrix; complete-diff self-review; independent exact-SHA review; Azure PR; merge; verify the deploy and the live signed-in route; record merge, deployment and live evidence separately; pause the package cleanly.",
-      "disposition": "paused_preserved",
-      "paused_at": "2026-08-13T18:00:00Z",
-      "pause_reason": "Delivery is complete, merged and live. The same-page AI example is restored in Interview Me: one shared inline disclosure serves both entry points, nothing navigates, nothing persists, and the independent Protected-path review's P1 and both P2s are closed. Released as paused rather than closed for the documented reason that --intent close cannot represent a production-capable implementation lane that merges more than once. Nothing was forced.",
-      "resume_contract": "No resume is expected; the outcome is delivered and live. Two review findings were accepted rather than fixed and belong to a later round: the inline request inherits the Interview AI source selector, so a member who left it on Compare spends a double generation and half is discarded; and a mid-session expiry renders the server's raw token, an exposure the existing AI panel shares, so it wants one follow-up covering both surfaces. To reopen, re-activate under the ordinary START_HERE flow -- activation forbids reusing a recorded branch, so expect a fresh one. Branch work/2026-08-13-interview-me-inline-example and tag archive/2026-08-13-interview-me-inline-example preserve this round.",
-      "preserved_head_sha": "1b1968a45ebce56e7e56fb130f2d970938a81712"
     }
   ],
   "workspace_snapshot": {
