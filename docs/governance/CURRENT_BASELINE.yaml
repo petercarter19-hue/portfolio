@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active writer lanes: PS-SHELL-001. PS-CONNECT-002 is paused and preserved; it may resume only through fresh activation."
+  current_assignments: "Active writer lanes: PS-SHELL-001, PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 on work/2026-08-13-interview-studio-carried-items. PS-CONNECT-002 is paused and preserved; it may resume only through fresh activation."
 
 governing_documents:
   bible:
@@ -61,6 +61,9 @@ active_packages:
   - id: PS-SHELL-001
     status: active_delivery
     scope: "Editorial Top Bar global shell across public, member, owner, tablet, and mobile states; production logo locked; adds a light-only shell token family aliased to production values."
+  - id: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001
+    status: active_delivery
+    scope: "Close two carried items: the attempt counter advances only on a successful review, and the authenticated model-answer endpoint refuses a follow-up. Behaviour only."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -153,7 +156,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Continue only the active writer packages: PS-SHELL-001. PS-CONNECT-002 remains paused; use fresh activation to resume it."
+next_gate: "Continue only the active writer packages: PS-SHELL-001, PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001. PS-CONNECT-002 remains paused; use fresh activation to resume it."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
