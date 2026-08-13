@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "No active writer lanes. PS-SHELL-001 is paused and preserved; activate an exact implementation or direction/authority outcome before repository writes."
+  current_assignments: "PS-CONNECT-002 is active on work/2026-08-13-connect-002-provider-merge-001 as the non-production relationship-provider prerequisite for the complete Profile release train. It owns only the recorded Connections and PS-CONNECT-002 proposal surfaces."
 
 governing_documents:
   bible:
@@ -58,6 +58,9 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
+  - id: PS-CONNECT-002
+    status: active_delivery
+    scope: "Non-production relationship-provider reconciliation, disposable-SQL proof, review-bound merge preparation, and no Profile wiring, schema apply, deployment, or enablement."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -150,7 +153,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "No active writer lanes. Select and activate the next exact outcome under the three-lane class, path, and exclusive-domain rules."
+next_gate: "PS-CONNECT-002 must complete its current-main reconciliation, disposable-SQL proof, exact-SHA review, and separately anchored merge grant before Profile Connections integration can begin."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
