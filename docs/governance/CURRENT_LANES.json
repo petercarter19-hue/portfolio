@@ -1,22 +1,18 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T19:33:00Z",
+  "updated_at": "2026-08-13T20:22:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-CONNECT-002"
-    ],
-    "merge_allowed_for": [
-      "PS-CONNECT-002"
-    ],
+    "writes_allowed_for": [],
+    "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -31,7 +27,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "No active writer lanes. PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 is paused with its delivered work merged and its branch preserved; it retains no write, merge, cleanup, or release authority."
+    "exit_authority": "No active writer lanes. PS-CONNECT-002 is merged_closed and retains no authority."
   },
   "activation_policy": {
     "enabled": true,
@@ -1590,9 +1586,7 @@
       "close_evidence_paths": [
         "artifacts/2026-08-12-profile-core-integration-001/IMPLEMENTATION_CHECKPOINT.md"
       ]
-    }
-  ],
-  "active_lanes": [
+    },
     {
       "package": "PS-CONNECT-002",
       "outcome": "Resume the independently reviewed, non-production PS-CONNECT-002 relationship-provider candidate as the first lawful complete-Profile dependency. Reconcile its exact frozen candidate at db20e2285f82c0f61baa73c49cd6f0bee0771620 onto current Azure main, preserve PS-PLAT-004 as canonical legacy truth, complete the required disposable-SQL proof and current-main validation, then establish the separately review-bound merge sequence. This lane creates canonical relationship truth only; it does not register Profile, apply production schema, deploy, enable Connections, or make Profile live.",
@@ -1684,9 +1678,19 @@
         ]
       },
       "cleanup_contract": "After the exact provider candidate is merged, consumed by a verified Profile integration, and formally closed, remove only this lane's clean merged activation and implementation worktrees/branches behind recovery references. Preserve every unrelated, dirty, unverified, historical, or user-owned branch, worktree, stash, artifact, and production record.",
-      "sequence": "activation-only PR -> fresh current-main implementation worktree -> write preflight -> reconcile the preserved candidate and complete disposable-SQL/adversarial validation -> one complete-diff self-review -> fresh exact-SHA independent review -> separately anchored merge grant -> Azure PR/CI/merge -> formal provider close -> later Profile D4 adapter integration; no production apply or enablement in this lane"
+      "sequence": "activation-only PR -> fresh current-main implementation worktree -> write preflight -> reconcile the preserved candidate and complete disposable-SQL/adversarial validation -> one complete-diff self-review -> fresh exact-SHA independent review -> separately anchored merge grant -> Azure PR/CI/merge -> formal provider close -> later Profile D4 adapter integration; no production apply or enablement in this lane",
+      "disposition": "merged_closed",
+      "closed_at": "2026-08-13T20:22:00Z",
+      "reviewed_remote_sha": "f6b0e0809ef2fd21afc764162e9f0962911b3dcb",
+      "merged_main_sha": "1381cb0df8a2736896ae64bcf738b29a66dd8ce6",
+      "package_merge_sha": "1381cb0df8a2736896ae64bcf738b29a66dd8ce6",
+      "close_evidence_paths": [
+        "docs/initiatives/PS-CONNECT-002/README.md",
+        "artifacts/2026-08-13-connect-002/IMPLEMENTATION_CHECKPOINT.md"
+      ]
     }
   ],
+  "active_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
