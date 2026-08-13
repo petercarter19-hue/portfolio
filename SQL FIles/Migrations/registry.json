@@ -1382,6 +1382,18 @@
         "operator": "Root Codex under Pete approval",
         "notes": "Exact repaired forward separately passed under a db_ddladmin principal with zero SELECT on opportunity_analyses and opportunity_requirement_sets before this full gate."
       }
+    },
+    {
+      "id": "PS-PROFILE-002",
+      "forward": "SQL FIles/Migrations/proposed/PS-PROFILE-002_profile_publication.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-PROFILE-002_profile_publication_rollback.sql",
+      "requires": [
+        "PS-PLAT-002",
+        "PS-PLAT-005",
+        "PS-AUTH-001"
+      ],
+      "summary": "Dark additive governed Profile publication foundation: normalized Profile-native versions, exact source projection references, private draft placements, immutable audience revision manifests, idempotent command records, and reserved slug history. Connections activation remains gated on the future PS-CONNECT-002 relationship hardening and is not enabled by this candidate.",
+      "gate": null
     }
   ]
 }

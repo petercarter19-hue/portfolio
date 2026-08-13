@@ -1,0 +1,140 @@
+{# Unregistered Profile-local experience. No global shell, auth, or production route is changed. #}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{{ profile.identity.display_name }} | {{ profile_destination|title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile-experience.css') }}">
+  </head>
+  <body class="profile" data-profile-destination="{{ profile_destination }}">
+    <a class="profile__skip" href="#profile-main">Skip to profile content</a>
+    <header class="profile__masthead" aria-label="Profile identity">
+      <div class="profile__identity-plane">
+        <div class="profile__portrait" aria-hidden="true"><span>{{ profile.identity.display_name[:1] }}</span></div>
+        <div class="profile__identity">
+          <p class="profile__eyebrow">Public Profile</p>
+          <h1>{{ profile.identity.display_name }}</h1>
+          <p class="profile__headline">{{ profile.identity.headline }}</p>
+          {% if profile.identity.location %}<p class="profile__location">{{ profile.identity.location }}</p>{% endif %}
+          <p class="profile__summary">{{ profile.identity.summary }}</p>
+        </div>
+        {% if profile.current_chapter %}
+          <aside class="profile__chapter-mark" aria-label="Current chapter">
+            <p class="profile__eyebrow" id="current-chapter-label">Current chapter</p>
+            <p>{{ profile.current_chapter.label }}</p>
+          </aside>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="profile__local-shell">
+      <nav class="profile__nav" aria-label="Profile destinations">
+        {% set routes = {
+          'home': 'profile_routes.profile_home_contract',
+          'posts': 'profile_routes.profile_posts_contract',
+          'projects': 'profile_routes.profile_projects_contract',
+          'media': 'profile_routes.profile_media_contract',
+          'voice': 'profile_routes.profile_voice_contract',
+          'about': 'profile_routes.profile_about_contract'
+        } %}
+        {% for destination in ['home','posts','projects','media','voice','about'] %}
+          {% if destination in profile.available_destinations or destination == profile_destination %}
+            <a href="{{ url_for(routes[destination], profile_slug=profile.profile_slug) }}" {% if profile_destination == destination %}aria-current="page"{% endif %}>{{ destination|title }}</a>
+          {% endif %}
+        {% endfor %}
+      </nav>
+      <form class="profile__search" role="search" aria-label="Search this Profile" hidden>
+        <label for="profile-search">Search this Profile</label>
+        <input id="profile-search" type="search" autocomplete="off">
+      </form>
+    </div>
+
+    <main id="profile-main" class="profile__main" tabindex="-1">
+      {% if profile_destination == 'home' %}
+        <section class="profile__home" aria-labelledby="home-heading">
+          <div class="profile__opening">
+            <p class="profile__eyebrow">A living front room</p>
+            <h2 id="home-heading">Work, thinking, and life in one deliberate record.</h2>
+            {% if profile.current_chapter %}<p>{{ profile.current_chapter.body }}</p>{% endif %}
+          </div>
+          {% if profile.home %}
+            <section class="profile__post-stream" aria-labelledby="home-selections">
+              <h3 id="home-selections">Selected conversations</h3>
+              <ol class="profile__timeline">
+                {% for item in profile.home %}
+                  <li>
+                    <span class="profile__avatar" aria-hidden="true">{{ profile.identity.display_name[:1] }}</span>
+                    <div>
+                      <p class="profile__item-label">Shared by {{ profile.identity.display_name }}</p>
+                      {% if item.canonical_path %}<a href="{{ item.canonical_path }}">Open conversation</a>{% endif %}
+                      {% if item.published_at %}<time datetime="{{ item.published_at }}">Published</time>{% endif %}
+                    </div>
+                  </li>
+                {% endfor %}
+              </ol>
+            </section>
+          {% endif %}
+          {% if profile.about %}
+            <aside class="profile__about-note" aria-labelledby="about-note-heading">
+              <p class="profile__eyebrow">About</p>
+              <h3 id="about-note-heading">{{ profile.about.heading }}</h3>
+              <p>{{ profile.about.body }}</p>
+              <div class="profile__paths">
+                {% if profile.about.resume_path %}<a href="{{ profile.about.resume_path }}">Résumé</a>{% endif %}
+                {% if profile.about.story_path %}<a href="{{ profile.about.story_path }}">My Story</a>{% endif %}
+                {% if profile.about.ask_path %}<a href="{{ profile.about.ask_path }}">Ask</a>{% endif %}
+              </div>
+            </aside>
+          {% endif %}
+        </section>
+
+      {% elif profile_destination == 'posts' %}
+        <section class="profile__destination" aria-labelledby="posts-heading">
+          <p class="profile__eyebrow">Posts</p><h2 id="posts-heading">Selected authored conversations</h2>
+          {% if profile.posts %}
+            <ol class="profile__timeline profile__timeline--wide">
+              {% for item in profile.posts %}<li><span class="profile__avatar" aria-hidden="true">{{ profile.identity.display_name[:1] }}</span><div><p class="profile__item-label">{{ profile.identity.display_name }}</p><a href="{{ item.canonical_path }}">Open conversation</a>{% if item.published_at %}<time datetime="{{ item.published_at }}">Published</time>{% endif %}</div></li>{% endfor %}
+            </ol>
+          {% else %}<div class="profile__empty"><h3>Nothing published here yet.</h3><p>This Profile has no Public Posts selection.</p></div>{% endif %}
+        </section>
+
+      {% elif profile_destination == 'projects' %}
+        <section class="profile__destination" aria-labelledby="projects-heading">
+          <p class="profile__eyebrow">Projects</p><h2 id="projects-heading">Selected work with narrative and proof</h2>
+          {% if profile.projects %}
+            <ol class="profile__ledger">{% for item in profile.projects %}<li><span class="profile__ledger-number">{{ '%02d'|format(loop.index) }}</span><div><h3>Released Project projection</h3><p>Exact member-selected Project record.</p></div>{% if item.canonical_path %}<a href="{{ item.canonical_path }}">Open project</a>{% endif %}</li>{% endfor %}</ol>
+          {% else %}<div class="profile__empty"><h3>No Public Projects selected.</h3><p>Private Project work remains private.</p></div>{% endif %}
+        </section>
+
+      {% elif profile_destination == 'media' %}
+        <section class="profile__destination" aria-labelledby="media-heading">
+          <p class="profile__eyebrow">Media</p><h2 id="media-heading">Photographs, albums, and video chosen to share</h2>
+          {% if profile.media %}
+            <ol class="profile__media-grid">{% for item in profile.media %}<li><div class="profile__media-placeholder" aria-hidden="true"></div><h3>Authorized media projection</h3>{% if item.canonical_path %}<a href="{{ item.canonical_path }}">Open media</a>{% endif %}</li>{% endfor %}</ol>
+          {% else %}<div class="profile__empty"><h3>No Public Media collection.</h3><p>Private originals and hidden album counts are not exposed.</p></div>{% endif %}
+        </section>
+
+      {% elif profile_destination == 'voice' %}
+        <section class="profile__destination profile__voice" aria-labelledby="voice-heading">
+          <p class="profile__eyebrow profile__eyebrow--voice">Voice</p><h2 id="voice-heading">Hear the thinking in their own voice</h2>
+          {% if profile.voice %}
+            <ol class="profile__voice-list">{% for item in profile.voice %}<li><button type="button" class="profile__play" aria-label="Play selected voice recording">▶</button><div><h3>Authorized voice reflection</h3><p>Playback never starts automatically. A member-approved transcript remains available.</p></div></li>{% endfor %}</ol>
+          {% else %}<div class="profile__empty"><h3>No Public Voice reflection.</h3><p>Recordings remain private until explicitly published with an approved transcript.</p></div>{% endif %}
+        </section>
+
+      {% elif profile_destination == 'about' %}
+        <section class="profile__destination profile__about" aria-labelledby="about-heading">
+          <p class="profile__eyebrow">About</p>
+          {% if profile.about %}
+            <h2 id="about-heading">{{ profile.about.heading }}</h2><p class="profile__about-lede">{{ profile.about.body }}</p>
+            <div class="profile__paths">{% if profile.about.resume_path %}<a href="{{ profile.about.resume_path }}">Résumé</a>{% endif %}{% if profile.about.story_path %}<a href="{{ profile.about.story_path }}">My Story</a>{% endif %}{% if profile.about.ask_path %}<a href="{{ profile.about.ask_path }}">Ask</a>{% endif %}</div>
+            {% if profile.about.principles %}<section class="profile__principles" aria-labelledby="profile-principles-title"><h3 id="profile-principles-title">What I stand for</h3><ol>{% for principle in profile.about.principles %}<li><span>{{ '%02d'|format(loop.index) }}</span><div><strong>{{ principle.title }}</strong><p>{{ principle.body }}</p></div></li>{% endfor %}</ol></section>{% endif %}
+          {% else %}<h2 id="about-heading">A little more to come</h2><div class="profile__empty"><p>This Profile has not published an About introduction.</p></div>{% endif %}
+        </section>
+      {% endif %}
+    </main>
+    <script src="{{ url_for('static', filename='js/profile-experience.js') }}" defer></script>
+  </body>
+</html>
