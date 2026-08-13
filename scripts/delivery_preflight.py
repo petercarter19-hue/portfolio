@@ -1326,6 +1326,68 @@ CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS = (
     CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS_R2
 )
 
+# Azure Build 1002 exercised the exact ledger-only Connect grant and found an
+# omission in the checked-in merge-authority fixture: it did not include the
+# code-controlled Connect predicate already used by the production validator.
+# This one-time inert follow-up fixes only that test coverage. It pins the
+# actual anchor merge and admits no authority on its own.
+CONNECT_002_MERGE_ADMISSION_ANCHOR_MAIN = (
+    "8f63e7bf086fc1fcd5ff24e3828c14a0d4e92406"
+)
+CONNECT_002_MERGE_ADMISSION_ANCHOR_SOURCE = (
+    "ea86448eba7c1b2ef979a3c2beb3f3340c02c44d"
+)
+CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3 = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": (
+        "work/2026-08-13-delivery-activation-"
+        "connect-002-grant-fixture-followup-r3"
+    ),
+    "origin_main": CONNECT_002_MERGE_ADMISSION_ANCHOR_MAIN,
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "existing_main_chain": {
+        "merge_admission_anchor_main": CONNECT_002_MERGE_ADMISSION_ANCHOR_MAIN,
+        "merge_admission_anchor_parent": (
+            CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP["origin_main"]
+        ),
+        "merge_admission_anchor_source": CONNECT_002_MERGE_ADMISSION_ANCHOR_SOURCE,
+    },
+    "reason": (
+        "Azure Build 1002 tested the exact ledger-only PS-CONNECT-002 merge "
+        "grant and found one control-plane fixture omission: the checked-in "
+        "merge-authority invariant recognized the already code-controlled "
+        "Profile Core and Shell protected grants but omitted the equally "
+        "code-controlled PS-CONNECT-002 grant. This repair makes the test use "
+        "the production validator's exact Connect predicate, without changing "
+        "the Connect candidate, review receipt, anchor, grant, lane, authority "
+        "lists, baseline, product code, schema, pipeline, deployment, "
+        "configuration, enablement, or live behavior."
+    ),
+    "verification_contract": (
+        "This is audit evidence, not self-granted package authority. The "
+        "preflight recognizes it only when this entire record equals the "
+        "validator's hard-coded record and Git proves the exact branch, exact "
+        "origin/main base, exactly one commit, and exact three changed paths. "
+        "It requires actual main 8f63e7b to be the direct child of 38cd81a, "
+        "tree-identical to source ea86448, and to carry the exact prior anchor "
+        "record. The ledger may change only updated_at plus this record; active "
+        "lanes, authority lists, and CURRENT_BASELINE.yaml must remain byte-"
+        "identical. The later grant is permitted only after this exact fixture "
+        "follow-up, and candidate merge accepts only the exact anchor, this "
+        "exact fixture follow-up, and an exact review-bound ledger-only grant. "
+        "A later branch, base, commit, altered record, timestamp, authority, "
+        "path, or state cannot reuse it."
+    ),
+}
+CONNECT_002_GRANT_FIXTURE_FOLLOWUP_PATHS = frozenset(
+    CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3["allowed_surfaces"]
+)
+
 # PS-SHELL-001 finished its owner-approved Editorial Top Bar candidate under two
 # independent Protected reviews and then had nowhere to go: _direction_merge_grant
 # admitted only direction_authority lanes and the code-pinned Opportunity Slate,
@@ -3510,6 +3572,27 @@ def _exact_connect_002_merge_admission_anchor_followup_matches(
     )
 
 
+def _exact_connect_002_grant_fixture_followup_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    """Match only Connect's one-time grant-fixture coverage follow-up."""
+    return (
+        ledger.get("connect_002_grant_fixture_followup_r3")
+        == CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3
+        and package_id == CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3["package"]
+        and facts.get("branch")
+        == CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3["branch"]
+        and facts.get("origin_main")
+        == CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(CONNECT_002_GRANT_FIXTURE_FOLLOWUP_PATHS)
+    )
+
+
 def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
     """Accept a pinned reviewed-lane authority or exact direction decision."""
     if package_id == "PS-PROFILE-EXPERIENCE-001":
@@ -4014,6 +4097,33 @@ def _exact_connect_002_merge_admission_anchor_followup_delta(
     expected["updated_at"] = followup_ledger.get("updated_at")
     expected["connect_002_merge_admission_anchor_followup_r2"] = (
         CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP
+    )
+    if followup_ledger != expected:
+        return False
+    return _utc_timestamp_strictly_advances(
+        followup_ledger.get("updated_at"), parent_ledger.get("updated_at")
+    )
+
+
+def _exact_connect_002_grant_fixture_followup_delta(
+    parent_ledger: object,
+    followup_ledger: object,
+) -> bool:
+    """Prove Connect's grant-fixture repair is a strictly inert ledger delta."""
+    if not isinstance(parent_ledger, dict) or not isinstance(followup_ledger, dict):
+        return False
+    if (
+        parent_ledger.get("connect_002_merge_admission_anchor_followup_r2")
+        != CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP
+        or parent_ledger.get("connect_002_grant_fixture_followup_r3") is not None
+        or followup_ledger.get("connect_002_grant_fixture_followup_r3")
+        != CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3
+    ):
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = followup_ledger.get("updated_at")
+    expected["connect_002_grant_fixture_followup_r3"] = (
+        CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3
     )
     if followup_ledger != expected:
         return False
@@ -4945,7 +5055,7 @@ def _connect_002_main_sequence_facts(
     candidate_sha: str,
     origin_main: str,
 ) -> tuple[list[str], bool, int]:
-    """Prove Connect's anchored repair followed only by its exact grant."""
+    """Prove Connect's anchor, fixture repair, and exact grant sequence."""
     if (
         package_id != CONNECT_002_PACKAGE
         or candidate_sha != CONNECT_002_RECONCILED_REVIEWED_SHA
@@ -4962,12 +5072,17 @@ def _connect_002_main_sequence_facts(
     main_paths = sorted(
         _git_nul("diff", "--name-only", "-z", f"{control_base}..{origin_main}")
     )
-    if len(main_commits) != 2:
+    if len(main_commits) != 3:
         return main_paths, False, len(main_commits)
-    anchor_sha, grant_sha = main_commits
+    anchor_sha, fixture_sha, grant_sha = main_commits
     anchor_paths = set(
         _git_nul(
             "diff-tree", "--no-commit-id", "--name-only", "-r", "-z", anchor_sha
+        )
+    )
+    fixture_paths = set(
+        _git_nul(
+            "diff-tree", "--no-commit-id", "--name-only", "-r", "-z", fixture_sha
         )
     )
     grant_paths = set(
@@ -4976,6 +5091,7 @@ def _connect_002_main_sequence_facts(
         )
     )
     anchor_parent = _git("rev-parse", f"{anchor_sha}^")
+    fixture_parent = _git("rev-parse", f"{fixture_sha}^")
     grant_parent = _git("rev-parse", f"{grant_sha}^")
     repair_sha = CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN
     repair_parent = _git("rev-parse", f"{repair_sha}^")
@@ -4988,12 +5104,17 @@ def _connect_002_main_sequence_facts(
     repair_source_tree = _git(
         "rev-parse", f"{CONNECT_002_MERGE_ADMISSION_REPAIR_SOURCE}^{{tree}}"
     )
+    anchor_tree = _git("rev-parse", f"{anchor_sha}^{{tree}}")
+    anchor_source_tree = _git(
+        "rev-parse", f"{CONNECT_002_MERGE_ADMISSION_ANCHOR_SOURCE}^{{tree}}"
+    )
     repair_base_ledger = load_ledger_at_ref(
         CONNECT_002_MERGE_ADMISSION_REPAIR["origin_main"]
     )
     repair_ledger = load_ledger_at_ref(repair_sha)
     base_ledger = load_ledger_at_ref(control_base)
     anchor_ledger = load_ledger_at_ref(anchor_sha)
+    fixture_ledger = load_ledger_at_ref(fixture_sha)
     candidate_merge_base = _git("merge-base", candidate_sha, origin_main)
     candidate_paths = set(
         _git_nul(
@@ -5022,21 +5143,29 @@ def _connect_002_main_sequence_facts(
         and _exact_connect_002_merge_admission_repair_delta(
             repair_base_ledger, repair_ledger
         )
+        and anchor_sha == CONNECT_002_MERGE_ADMISSION_ANCHOR_MAIN
         and anchor_parent == control_base
-        and grant_parent == anchor_sha
+        and anchor_tree == anchor_source_tree
         and anchor_paths == set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
-        and grant_paths == set(GRANT_ALLOWED_SURFACES)
         and _exact_connect_002_merge_admission_anchor_followup_delta(
             base_ledger, anchor_ledger
         )
+        and fixture_parent == anchor_sha
+        and fixture_paths == set(CONNECT_002_GRANT_FIXTURE_FOLLOWUP_PATHS)
+        and _exact_connect_002_grant_fixture_followup_delta(
+            anchor_ledger, fixture_ledger
+        )
+        and grant_parent == fixture_sha
+        and grant_paths == set(GRANT_ALLOWED_SURFACES)
         and _exact_direction_grant_delta(
-            anchor_ledger, origin_ledger, package_id
+            fixture_ledger, origin_ledger, package_id
         )
         and candidate_merge_base == control_base
         and not (
             candidate_paths
             & (
                 set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
+                | set(CONNECT_002_GRANT_FIXTURE_FOLLOWUP_PATHS)
                 | set(GRANT_ALLOWED_SURFACES)
             )
         )
@@ -5446,11 +5575,16 @@ def evaluate_policy(
                             "connect_002_merge_admission_anchor_followup_r2"
                         )
                         != CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP
+                        or origin_ledger.get(
+                            "connect_002_grant_fixture_followup_r3"
+                        )
+                        != CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3
                     ):
                         errors.append(
                             "PS-CONNECT-002 merge remains blocked pending the "
-                            "exact separately authorized anchored follow-up "
-                            "that pins the validator repair's actual merged SHA"
+                            "exact separately authorized anchored follow-up and "
+                            "grant-fixture follow-up that pin the validator "
+                            "repair and coverage"
                         )
                     if errors:
                         return errors, warnings
@@ -5506,19 +5640,20 @@ def evaluate_policy(
                         "main control commits"
                     )
             elif package_id == CONNECT_002_PACKAGE:
-                expected_behind = 2
+                expected_behind = 3
                 expected_main_paths = (
                     set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
+                    | set(CONNECT_002_GRANT_FIXTURE_FOLLOWUP_PATHS)
                     | set(GRANT_ALLOWED_SURFACES)
                 )
                 if facts.get("behind") != expected_behind:
                     errors.append(
-                        "PS-CONNECT-002 merge requires exactly two verified "
+                        "PS-CONNECT-002 merge requires exactly three verified "
                         "main control commits"
                     )
                 if facts.get("merge_main_control_commit_count") != expected_behind:
                     errors.append(
-                        "PS-CONNECT-002 merge requires exactly two verified "
+                        "PS-CONNECT-002 merge requires exactly three verified "
                         "main control commits"
                     )
             else:
@@ -5573,11 +5708,11 @@ def evaluate_policy(
                         "post-grant registry-fixture repair are tolerated"
                     )
             elif package_id == CONNECT_002_PACKAGE:
-                if facts.get("behind") == 2:
+                if facts.get("behind") == 3:
                     warnings.append(
                         "PS-CONNECT-002 candidate predates main; only the exact "
-                        "merged-repair anchor and exact ledger-only grant are "
-                        "tolerated"
+                        "merged-repair anchor, grant-fixture follow-up, and exact "
+                        "ledger-only grant are tolerated"
                     )
             elif facts.get("behind") == expected_behind:
                 warnings.append(
@@ -5596,12 +5731,17 @@ def evaluate_policy(
             return errors, warnings
         if (
             package_id == CONNECT_002_PACKAGE
-            and origin_ledger.get("connect_002_merge_admission_anchor_followup_r2")
-            != CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP
+            and (
+                origin_ledger.get("connect_002_merge_admission_anchor_followup_r2")
+                != CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP
+                or origin_ledger.get("connect_002_grant_fixture_followup_r3")
+                != CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3
+            )
         ):
             errors.append(
                 "PS-CONNECT-002 merge authority is blocked pending the exact "
-                "separately authorized anchored follow-up"
+                "separately authorized anchored follow-up and grant-fixture "
+                "follow-up"
             )
             return errors, warnings
         if facts.get("ahead") != 1 or facts.get("behind") != 0:
@@ -6476,6 +6616,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        connect_002_grant_fixture_followup_matches = (
+            _exact_connect_002_grant_fixture_followup_matches(
+                ledger, facts, package_id
+            )
+        )
         shell_merge_repair_matches = (
             _exact_shell_merge_preflight_repair_matches(
                 ledger, facts, package_id
@@ -6538,6 +6683,12 @@ def evaluate_policy(
             warnings.append(
                 "using the exact one-time PS-CONNECT-002 merged-repair "
                 "anchor-followup boundary"
+            )
+        elif connect_002_grant_fixture_followup_matches:
+            allowed_surfaces = set(CONNECT_002_GRANT_FIXTURE_FOLLOWUP_PATHS)
+            warnings.append(
+                "using the exact one-time PS-CONNECT-002 grant-fixture "
+                "follow-up boundary"
             )
         elif shell_merge_repair_matches:
             allowed_surfaces = set(SHELL_MERGE_CONTROL_PATHS)
@@ -6659,6 +6810,7 @@ def evaluate_policy(
                 and not opportunity_close_introduction_repair_matches
                 and not connect_002_merge_admission_repair_matches
                 and not connect_002_merge_admission_anchor_followup_matches
+                and not connect_002_grant_fixture_followup_matches
                 and not shell_merge_repair_matches
                 and origin_policy != policy
             ):
@@ -6954,6 +7106,43 @@ def evaluate_policy(
                     candidate_baseline,
                     origin_baseline,
                     label="PS-CONNECT-002 merged-repair anchor follow-up",
+                    errors=errors,
+                )
+            elif connect_002_grant_fixture_followup_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "PS-CONNECT-002 grant-fixture follow-up updated_at must "
+                        "be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "PS-CONNECT-002 grant-fixture follow-up updated_at must "
+                        "strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "PS-CONNECT-002 grant-fixture follow-up may not change "
+                        "activation_policy"
+                    )
+                if not _exact_connect_002_grant_fixture_followup_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "PS-CONNECT-002 grant-fixture follow-up must be the exact "
+                        "authority-neutral ledger delta"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="PS-CONNECT-002 grant-fixture follow-up",
                     errors=errors,
                 )
             elif opportunity_schema_release_refresh_matches:
@@ -7650,6 +7839,7 @@ def evaluate_policy(
             and not opportunity_close_introduction_repair_matches
             and not connect_002_merge_admission_repair_matches
             and not connect_002_merge_admission_anchor_followup_matches
+            and not connect_002_grant_fixture_followup_matches
         ):
             _validate_baseline_activation_delta(
                 candidate_baseline,
@@ -7748,6 +7938,15 @@ def evaluate_policy(
                 errors.append(
                     "PS-CONNECT-002 merged-repair anchor follow-up must change "
                     "exactly the owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                connect_002_grant_fixture_followup_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "PS-CONNECT-002 grant-fixture follow-up must change exactly "
+                    "the owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
             if (

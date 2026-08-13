@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T18:47:00Z",
+  "updated_at": "2026-08-13T19:31:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -248,6 +248,24 @@
     },
     "reason": "Pete's complete-Profile authorization permits one narrow, code-controlled follow-up after the PS-CONNECT-002 provider was reconciled and independently reviewed against current Azure main. This record pins the actual merged repair SHA and the exact final reviewed provider candidate. It changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, enablement, or live behavior. A later ordinary merge grant remains separately required.",
     "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. It verifies that actual main a526 is the direct child of 68d, carries the original exact repair and its three paths, and is an ancestor of this follow-up base. The ledger may change only updated_at plus this record; active lanes, authority lists, and CURRENT_BASELINE.yaml must remain byte-identical. Candidate merge later accepts only this anchor followed by an exact review-bound ledger-only grant. A later branch, base, commit, altered record, timestamp, authority, path, or state cannot reuse it."
+  },
+  "connect_002_grant_fixture_followup_r3": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-13-delivery-activation-connect-002-grant-fixture-followup-r3",
+    "origin_main": "8f63e7bf086fc1fcd5ff24e3828c14a0d4e92406",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "existing_main_chain": {
+      "merge_admission_anchor_main": "8f63e7bf086fc1fcd5ff24e3828c14a0d4e92406",
+      "merge_admission_anchor_parent": "38cd81ae4fc52d3a18045c081f5d6229fcb32c1c",
+      "merge_admission_anchor_source": "ea86448eba7c1b2ef979a3c2beb3f3340c02c44d"
+    },
+    "reason": "Azure Build 1002 tested the exact ledger-only PS-CONNECT-002 merge grant and found one control-plane fixture omission: the checked-in merge-authority invariant recognized the already code-controlled Profile Core and Shell protected grants but omitted the equally code-controlled PS-CONNECT-002 grant. This repair makes the test use the production validator's exact Connect predicate, without changing the Connect candidate, review receipt, anchor, grant, lane, authority lists, baseline, product code, schema, pipeline, deployment, configuration, enablement, or live behavior.",
+    "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. It requires actual main 8f63e7b to be the direct child of 38cd81a, tree-identical to source ea86448, and to carry the exact prior anchor record. The ledger may change only updated_at plus this record; active lanes, authority lists, and CURRENT_BASELINE.yaml must remain byte-identical. The later grant is permitted only after this exact fixture follow-up, and candidate merge accepts only the exact anchor, this exact fixture follow-up, and an exact review-bound ledger-only grant. A later branch, base, commit, altered record, timestamp, authority, path, or state cannot reuse it."
   },
   "shell_merge_preflight_repair": {
     "status": "one_time_owner_authorized_repair",

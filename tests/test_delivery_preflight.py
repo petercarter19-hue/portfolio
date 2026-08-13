@@ -55,8 +55,12 @@ from scripts.delivery_preflight import (
     PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_REPAIR,
     PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_PATHS,
     CONNECT_002_BRANCH,
+    CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3,
+    CONNECT_002_GRANT_FIXTURE_FOLLOWUP_PATHS,
     CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP,
+    CONNECT_002_MERGE_ADMISSION_ANCHOR_MAIN,
     CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS,
+    CONNECT_002_MERGE_ADMISSION_ANCHOR_SOURCE,
     CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN,
     CONNECT_002_MERGE_ADMISSION_REPAIR,
     CONNECT_002_MERGE_ADMISSION_REPAIR_PATHS,
@@ -102,6 +106,8 @@ from scripts.delivery_preflight import (
     _exact_connect_002_merge_admission_repair_matches,
     _exact_connect_002_merge_admission_anchor_followup_delta,
     _exact_connect_002_merge_admission_anchor_followup_matches,
+    _exact_connect_002_grant_fixture_followup_delta,
+    _exact_connect_002_grant_fixture_followup_matches,
     _connect_002_main_sequence_facts,
     _is_connect_002_reviewed_implementation_lane,
     _profile_core_main_sequence_facts,
@@ -551,6 +557,38 @@ class DeliveryPreflightTests(unittest.TestCase):
         candidate["updated_at"] = anchored_at
         candidate["connect_002_merge_admission_anchor_followup_r2"] = copy.deepcopy(
             CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP
+        )
+        return candidate
+
+    def _connect_002_grant_fixture_origin(self) -> tuple[dict, dict]:
+        """Return exact main after the pinned anchor and before fixture repair."""
+        origin = load_ledger_at_ref(
+            CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3["origin_main"]
+        )
+        lane = next(
+            item
+            for item in origin["active_lanes"]
+            if item.get("package") == CONNECT_002_PACKAGE
+        )
+        self.assertEqual(CONNECT_002_RECONCILED_BRANCH, lane["branch"])
+        self.assertNotIn("merge_grant", lane)
+        self.assertEqual(
+            CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP,
+            origin.get("connect_002_merge_admission_anchor_followup_r2"),
+        )
+        self.assertNotIn("connect_002_grant_fixture_followup_r3", origin)
+        return origin, lane
+
+    def _connect_002_grant_fixture_candidate(
+        self,
+        origin: dict,
+        *,
+        repaired_at: str = "2026-08-13T19:31:00Z",
+    ) -> dict:
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = repaired_at
+        candidate["connect_002_grant_fixture_followup_r3"] = copy.deepcopy(
+            CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3
         )
         return candidate
 
@@ -3076,21 +3114,91 @@ with patch.object(
         )
         self.assertTrue(forged_errors)
 
-        anchored = copy.deepcopy(candidate)
-        granted_at = "2026-08-13T18:48:00Z"
+    def test_connect_002_grant_fixture_followup_is_exact_and_preserves_grant(self):
+        """The fixture repair is inert and comes before the exact grant."""
+        fixture = CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3
+        origin, original_lane = self._connect_002_grant_fixture_origin()
+        candidate = self._connect_002_grant_fixture_candidate(origin)
+        baseline = load_baseline_bytes_at_ref(fixture["origin_main"])
+        exact_facts = facts(
+            branch=fixture["branch"],
+            origin_main=fixture["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=fixture["allowed_surfaces"],
+        )
+        self.assertEqual(
+            CONNECT_002_MERGE_ADMISSION_ANCHOR_MAIN,
+            fixture["existing_main_chain"]["merge_admission_anchor_main"],
+        )
+        self.assertEqual(
+            CONNECT_002_MERGE_ADMISSION_ANCHOR_SOURCE,
+            fixture["existing_main_chain"]["merge_admission_anchor_source"],
+        )
+        self.assertTrue(
+            _exact_connect_002_grant_fixture_followup_matches(
+                candidate, exact_facts, fixture["package"]
+            )
+        )
+        self.assertTrue(
+            _exact_connect_002_grant_fixture_followup_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("grant-fixture" in item for item in warnings))
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+        self.assertEqual(
+            original_lane,
+            next(
+                lane
+                for lane in candidate["active_lanes"]
+                if lane["package"] == CONNECT_002_PACKAGE
+            ),
+        )
+
+        for label, altered_facts in (
+            (
+                "wrong-branch",
+                {**exact_facts, "branch": "work/2026-08-13-delivery-activation-forged"},
+            ),
+            ("wrong-base", {**exact_facts, "origin_main": "0" * 40}),
+            ("wrong-ahead", {**exact_facts, "ahead": 2}),
+            ("wrong-path", {**exact_facts, "changed_paths": ["app.py"]}),
+        ):
+            with self.subTest(label=label):
+                altered_errors, _ = self._evaluate_activation(
+                    copy.deepcopy(candidate),
+                    altered_facts,
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(altered_errors)
+
+        granted = copy.deepcopy(candidate)
+        granted_at = "2026-08-13T19:32:00Z"
         target = next(
             lane
-            for lane in anchored["active_lanes"]
+            for lane in granted["active_lanes"]
             if lane["package"] == CONNECT_002_PACKAGE
         )
         target["merge_grant"] = self._connect_002_grant_record(target, granted_at)
-        anchored["operating_mode"]["merge_allowed_for"] = [
+        granted["operating_mode"]["merge_allowed_for"] = [
             *candidate["operating_mode"]["merge_allowed_for"],
             CONNECT_002_PACKAGE,
         ]
-        anchored["updated_at"] = granted_at
+        granted["updated_at"] = granted_at
         grant_facts = facts(
-            branch="work/2026-08-13-delivery-grant-connect-002-exact",
+            branch="work/2026-08-13-delivery-grant-connect-002-exact-r3",
             origin_main="1" * 40,
             ahead=1,
             behind=0,
@@ -3099,7 +3207,7 @@ with patch.object(
             **self._review_evidence_facts(target["merge_grant"]),
         )
         grant_errors, _ = evaluate_policy(
-            anchored,
+            granted,
             grant_facts,
             CONNECT_002_PACKAGE,
             "grant",
@@ -3111,7 +3219,7 @@ with patch.object(
         self.assertEqual([], grant_errors)
         self.assertTrue(
             _exact_direction_grant_delta(
-                candidate, anchored, CONNECT_002_PACKAGE
+                candidate, granted, CONNECT_002_PACKAGE
             )
         )
 
@@ -3119,28 +3227,29 @@ with patch.object(
             branch=CONNECT_002_RECONCILED_BRANCH,
             head=CONNECT_002_RECONCILED_REVIEWED_SHA,
             origin_main="2" * 40,
-            behind=2,
+            behind=3,
             merge_target_remote_sha=CONNECT_002_RECONCILED_REVIEWED_SHA,
             changed_paths=["services/connection_foundation_service.py"],
             merge_main_changed_paths=sorted(
                 set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
+                | set(CONNECT_002_GRANT_FIXTURE_FOLLOWUP_PATHS)
                 | set(GRANT_ALLOWED_SURFACES)
             ),
             merge_main_control_commits_valid=True,
-            merge_main_control_commit_count=2,
+            merge_main_control_commit_count=3,
         )
         merge_errors, merge_warnings = evaluate_policy(
-            anchored,
+            granted,
             merge_facts,
             CONNECT_002_PACKAGE,
             "merge",
             require_clean=True,
-            origin_ledger=anchored,
+            origin_ledger=granted,
         )
         self.assertEqual([], merge_errors)
         self.assertTrue(any("merged-repair anchor" in item for item in merge_warnings))
 
-        wrong_review = copy.deepcopy(anchored)
+        wrong_review = copy.deepcopy(granted)
         wrong_target = next(
             lane
             for lane in wrong_review["active_lanes"]
@@ -3159,15 +3268,16 @@ with patch.object(
         )
         self.assertTrue(any("reconciled PS-CONNECT-002 SHA" in item for item in wrong_errors))
 
-    def test_connect_002_main_sequence_requires_pinned_repair_anchor_and_grant(self):
-        """The post-anchor candidate path admits no reconstructable shortcut."""
+    def test_connect_002_main_sequence_requires_pinned_repair_anchor_fixture_and_grant(self):
+        """The candidate path admits no reconstructable control shortcut."""
         control_base = CONNECT_002_MERGE_ADMISSION_ANCHOR_FOLLOWUP["origin_main"]
         repair_base, _ = self._connect_002_origin()
         repair = self._connect_002_repair_candidate(repair_base)
         base, _ = self._connect_002_anchor_origin()
         anchor = self._connect_002_anchor_candidate(base)
-        granted = copy.deepcopy(anchor)
-        granted_at = "2026-08-13T18:49:00Z"
+        fixture = self._connect_002_grant_fixture_candidate(anchor)
+        granted = copy.deepcopy(fixture)
+        granted_at = "2026-08-13T19:32:00Z"
         target = next(
             lane
             for lane in granted["active_lanes"]
@@ -3175,34 +3285,48 @@ with patch.object(
         )
         target["merge_grant"] = self._connect_002_grant_record(target, granted_at)
         granted["operating_mode"]["merge_allowed_for"] = [
-            *anchor["operating_mode"]["merge_allowed_for"],
+            *fixture["operating_mode"]["merge_allowed_for"],
             CONNECT_002_PACKAGE,
         ]
         granted["updated_at"] = granted_at
-        anchor_sha = "a" * 40
-        grant_sha = "b" * 40
-        origin_main = "c" * 40
+        anchor_sha = CONNECT_002_MERGE_ADMISSION_ANCHOR_MAIN
+        fixture_sha = "b" * 40
+        grant_sha = "c" * 40
+        origin_main = "d" * 40
 
-        def sequence(source_tree: str = "tree") -> tuple[list[str], bool, int]:
+        def sequence(
+            repair_source_tree: str = "repair-tree",
+            anchor_source_tree: str = "anchor-tree",
+        ) -> tuple[list[str], bool, int]:
             ledgers = {
                 CONNECT_002_MERGE_ADMISSION_REPAIR["origin_main"]: repair_base,
                 CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN: repair,
                 control_base: base,
                 anchor_sha: anchor,
+                fixture_sha: fixture,
             }
 
             def fake_git(*args: str, **_kwargs: object) -> str:
                 if args[:2] == ("rev-list", "--reverse"):
-                    return f"{anchor_sha}\n{grant_sha}\n"
+                    return f"{anchor_sha}\n{fixture_sha}\n{grant_sha}\n"
                 if args[0] == "rev-parse":
                     values = {
                         f"{anchor_sha}^": control_base,
-                        f"{grant_sha}^": anchor_sha,
+                        f"{fixture_sha}^": anchor_sha,
+                        f"{grant_sha}^": fixture_sha,
                         f"{CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN}^": (
                             CONNECT_002_MERGE_ADMISSION_REPAIR["origin_main"]
                         ),
-                        f"{CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN}^{{tree}}": "tree",
-                        "edfa9af025cf8b473bd8c59cfb240b786ddb3ef5^{tree}": source_tree,
+                        f"{CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN}^{{tree}}": (
+                            "repair-tree"
+                        ),
+                        "edfa9af025cf8b473bd8c59cfb240b786ddb3ef5^{tree}": (
+                            repair_source_tree
+                        ),
+                        f"{anchor_sha}^{{tree}}": "anchor-tree",
+                        f"{CONNECT_002_MERGE_ADMISSION_ANCHOR_SOURCE}^{{tree}}": (
+                            anchor_source_tree
+                        ),
                     }
                     return values[args[-1]]
                 if args[0] == "merge-base":
@@ -3213,6 +3337,7 @@ with patch.object(
                 if args[0] == "diff-tree":
                     paths = {
                         anchor_sha: CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS,
+                        fixture_sha: CONNECT_002_GRANT_FIXTURE_FOLLOWUP_PATHS,
                         grant_sha: GRANT_ALLOWED_SURFACES,
                         CONNECT_002_MERGE_ADMISSION_REPAIR_MAIN: (
                             CONNECT_002_MERGE_ADMISSION_REPAIR_PATHS
@@ -3222,6 +3347,7 @@ with patch.object(
                 if args[0] == "diff" and args[-1] == f"{control_base}..{origin_main}":
                     return sorted(
                         set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
+                        | set(CONNECT_002_GRANT_FIXTURE_FOLLOWUP_PATHS)
                         | set(GRANT_ALLOWED_SURFACES)
                     )
                 if args[0] == "diff" and args[-1] == (
@@ -3250,16 +3376,17 @@ with patch.object(
         self.assertEqual(
             sorted(
                 set(CONNECT_002_MERGE_ADMISSION_ANCHOR_PATHS)
+                | set(CONNECT_002_GRANT_FIXTURE_FOLLOWUP_PATHS)
                 | set(GRANT_ALLOWED_SURFACES)
             ),
             paths,
         )
         self.assertTrue(valid)
-        self.assertEqual(2, count)
+        self.assertEqual(3, count)
 
-        _, invalid, count = sequence(source_tree="forged-tree")
+        _, invalid, count = sequence(anchor_source_tree="forged-tree")
         self.assertFalse(invalid)
-        self.assertEqual(2, count)
+        self.assertEqual(3, count)
 
     def test_profile_core_main_sequence_rejects_bad_repair_timestamps(self):
         """The inert repair must advance a valid timestamp before its grant."""
@@ -5037,6 +5164,7 @@ with patch.object(
             if (
                 lane_class == "direction_authority"
                 or _is_profile_core_reviewed_implementation_lane(lane)
+                or _is_connect_002_reviewed_implementation_lane(lane)
                 or _is_shell_reviewed_shared_foundation_lane(lane)
             ):
                 self.assertFalse(lane.get("production_capable"))
