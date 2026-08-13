@@ -3199,13 +3199,71 @@ _INTERVIEW_JS_VERSION_TOKEN = re.compile(
 # version tokens normalized away). Confirmed byte-for-byte identical to the
 # pre-change render of the same route in the same working tree once both
 # tokens are normalized.
-FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH = 111406
+# Recaptured 2026-08-12 by PS-SHELL-001 under an owner-authorized, narrowly
+# scoped amendment to that lane's writable_surfaces (see the lane's third
+# owner_decisions entry in docs/governance/CURRENT_LANES.json). Reason: both
+# routes render the SHARED global shell, so the Editorial Top Bar changed these
+# constants by construction. This is NOT an Interview Studio regression, and
+# nothing in the Interview Studio body, template, style, script, or any other
+# assertion in this file was changed.
+#
+# Proven shell-markup-only, not asserted. An independent reviewer rendered the
+# same route with the BASE base.html injected through a Jinja ChoiceLoader —
+# touching no file — and then replaced the <header class="global-header"> block
+# and the <ul class="global-tabsource"> list with placeholders in both
+# documents, which made them byte-identical. Corroborating signal: both routes
+# moved by exactly +3427 bytes, the same delta on two different pages, which is
+# only possible if the change lives entirely in the part they share.
+#
+# Regenerate with:
+#   artifacts/2026-08-12-shell-editorial-top-bar/recapture_interview_bytelock.py
+# Second recapture, same round: the byte LENGTHS below are unchanged from the
+# first recapture (114833 / 114610) because the anonymous HTML is byte-identical
+# — only the two sha256 values moved. The renders embed public-navigation.css's
+# ?v= content fingerprint, and this test normalizes only the Interview JS/CSS
+# token, so any shell stylesheet edit changes the digest while leaving the
+# markup untouched. Identical lengths across a CSS-only change is the proof.
+#
+# NOTE for the Interview lane: this lock is brittle by construction. It will
+# break on every future shared-shell stylesheet change, with no markup delta to
+# show for it. Normalizing the shell stylesheet's token the way the Interview
+# token is already normalized would fix that permanently. Deliberately NOT done
+# here: PS-SHELL-001's amendment is scope-limited to these four constants, and
+# changing this test's normalization logic is that lane's call, not this one's.
+# Third and final recapture, taken from a pure `git checkout` tree after the
+# rebase onto main 68d14a4. Byte lengths are unchanged again (114833 / 114610)
+# across all three recaptures — the markup has been stable throughout; only
+# embedded ?v= content tokens moved, which are fixed-width and so leave the
+# length untouched. That invariance is the evidence the shell markup settled.
+#
+# Capture these ONLY from a tree whose files git wrote. The token comes from
+# the bytes on disk (app.py `_static_file_version`), so a working tree where
+# tooling authored a file directly can yield a digest that a clean checkout
+# does not reproduce — which is what happened to the previous value. CI checks
+# out from git, so a checkout-derived digest is the one that holds there.
+#
+# Fourth recapture, 2026-08-13, owner round 2 (the always-revealed logo, the
+# F1/F2 findings, and the shell colour-consistency pass). Taken from a clean
+# tree: every affected file was committed, deleted and re-checked-out, and disk
+# bytes were confirmed equal to the git blob for public-navigation.css,
+# base.html, public-mobile-nav.js, public-site-search.js, style.css,
+# site-search.js, mobile-nav.js and interview-studio.css before capture.
+#
+# BYTE LENGTHS DID NOT MOVE — 114833 / 114610 for the fourth time running. That
+# is the point: the round's one template edit is inside a Jinja {# #} comment,
+# which never reaches the response, so the anonymous Interview markup is
+# byte-identical and only the embedded public-navigation.css ?v= fingerprint
+# changed. Proven rather than assumed, on both routes: the new token
+# 9b25c57dc7ed occurs exactly once, and substituting the pre-round token
+# 4a797a2823ce back into the normalized document reproduces the previously
+# locked sha256 exactly, at identical length.
+FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH = 114833
 FLAG_OFF_INTERVIEW_STUDIO_SHA256 = (
-    '0003a96c55411e6a86da9b00030c31f306444bb53b705bfafdfd4162753cdba0'
+    'e5f5d1c3c917eb6bbcaa6cc23719c5186ea619732e90b7e8fb02326143d77448'
 )
-FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH = 111183
+FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH = 114610
 FLAG_OFF_INTERVIEW_STUDIO_HISTORY_SHA256 = (
-    'cf9e582387f02cad75a410043dd8375123668676b6e3ea1baf701823422106b2'
+    '489bd106f96043c57df5eb6b85e071bf8dacfc6af4dfa488d8026ef09f2bbff0'
 )
 
 

@@ -4,6 +4,7 @@ import os
 import threading
 import time
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import auth_routes
@@ -644,6 +645,172 @@ class AuthenticationFlowTests(unittest.TestCase):
         self.assertEqual(forged_forwarded_host.status_code, 308)
         self.assertEqual(forged_forwarded_host.headers["Location"], "https://peerslate.com/app")
         self.assertEqual(unknown.status_code, 400)
+
+
+class ShellAccountControlTests(unittest.TestCase):
+    """PS-SHELL-001 — the Editorial Top Bar's account states.
+
+    Every control is still rendered by the server for every state; the
+    optional auth-state.js only changes which of them carries `hidden`. These
+    tests pin that contract, and README assumption A3: an initial derived
+    from identity.display_name, never a photo, opening only the two controls
+    that exist today.
+    """
+
+    def setUp(self):
+        self.original = {
+            key: app.config.get(key)
+            for key in (
+                "PEERSLATE_TRUST_EASYAUTH_HEADERS",
+                "PEERSLATE_AUTH_ISSUER",
+                "PEERSLATE_AUTH_PROVIDER_NAME",
+            )
+        }
+        app.config.update(
+            PEERSLATE_AUTH_ISSUER="https://example.ciamlogin.com/example/v2.0",
+            PEERSLATE_AUTH_PROVIDER_NAME="aad",
+        )
+        self.client = app.test_client()
+
+    def tearDown(self):
+        for key, value in self.original.items():
+            if value is None:
+                app.config.pop(key, None)
+            else:
+                app.config[key] = value
+
+    def header(self, **kwargs):
+        response = self.client.get("/", base_url="http://localhost", **kwargs)
+        self.assertEqual(response.status_code, 200)
+        body = response.get_data(as_text=True)
+        return body.split('<header class="global-header">', 1)[1].split(
+            "</header>", 1
+        )[0]
+
+    def test_every_navigation_state_control_is_rendered_by_the_server(self):
+        header = self.header()
+        for control in (
+            "authenticated",
+            "workspace_waking",
+            "account_issue",
+            "signed_out",
+        ):
+            with self.subTest(control=control):
+                self.assertIn(f'data-ps-auth-control="{control}"', header)
+        # auth_unavailable shares the signed_out control by design; the fifth
+        # state is the container attribute the script reconciles against.
+        self.assertIn("data-ps-auth-controls", header)
+        self.assertIn('data-ps-auth-state="', header)
+
+    def test_signed_out_shows_sign_in_and_hides_the_account_control(self):
+        header = self.header()
+        account = header.split('class="platform-account"', 1)[1].split(
+            ">", 1
+        )[0]
+        self.assertIn("hidden", account)
+        self.assertIn('data-ps-auth-control="signed_out"', header)
+        self.assertIn(">Sign In</a>", header)
+
+    def test_authenticated_account_control_is_an_initial_not_a_photo(self):
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        header = self.header(
+            headers=easy_auth_header("shell-id", display_name="Ada Lovelace")
+        )
+
+        self.assertIn(
+            '<span class="platform-account__initial" aria-hidden="true">A</span>',
+            header,
+        )
+        self.assertIn("Account menu for Ada Lovelace", header)
+        account = header.split('class="platform-account"', 1)[1].split(
+            "</div>\n                    </div>", 1
+        )[0]
+        self.assertNotIn("<img", account)
+        self.assertNotIn("avatar", account)
+
+    def test_account_control_falls_back_to_the_existing_member_default(self):
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        principal = {
+            "auth_typ": "aad",
+            "claims": [
+                {"typ": "iss", "val": "https://example.ciamlogin.com/example/v2.0/"},
+                {"typ": "oid", "val": "no-name-id"},
+            ],
+        }
+        encoded = base64.b64encode(
+            json.dumps(principal).encode("utf-8")
+        ).decode("ascii")
+        header = self.header(headers={"X-MS-CLIENT-PRINCIPAL": encoded})
+
+        self.assertIn("Account menu for PeerSlate member", header)
+        self.assertIn(
+            '<span class="platform-account__initial" aria-hidden="true">P</span>',
+            header,
+        )
+
+    def test_account_menu_holds_only_my_slate_and_sign_out(self):
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        header = self.header(headers=easy_auth_header("shell-id"))
+        menu = header.split('class="platform-account__menu"', 1)[1].split(
+            "</form>", 1
+        )[0]
+
+        self.assertIn(">My Slate</a>", menu)
+        self.assertIn(">Sign out</button>", menu)
+        for absent in ("Settings", "Profile", "Help", "Capture", "Notification"):
+            self.assertNotIn(absent, menu)
+        self.assertIn('id="platform-account-menu"', header)
+        self.assertIn('aria-controls="platform-account-menu"', header)
+        self.assertIn('aria-expanded="false"', header)
+
+    def test_sign_out_form_keeps_its_own_state_attribute_and_action(self):
+        """The <=34rem compaction reads
+        .platform-actions:has(.nav-sign-out:not([hidden])). Moving sign out
+        into the account menu must not make that selector match an anonymous
+        row, so the form keeps its own data-ps-auth-control and `hidden`.
+        """
+        signed_out = self.header()
+        form = signed_out.split('class="nav-sign-out platform-account__form"', 1)[1]
+        form = form.split(">", 1)[0]
+        self.assertIn('data-ps-auth-control="authenticated"', form)
+        self.assertIn("hidden", form)
+        self.assertIn('action="/auth/sign-out"', form)
+        self.assertIn('method="post"', form)
+
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        signed_in = self.header(headers=easy_auth_header("shell-id"))
+        form = signed_in.split('class="nav-sign-out platform-account__form"', 1)[1]
+        form = form.split(">", 1)[0]
+        self.assertNotIn("hidden", form)
+
+    def test_the_shell_never_moves_account_state_to_the_client(self):
+        body = self.client.get("/", base_url="http://localhost").get_data(
+            as_text=True
+        )
+        self.assertIn("auth-state.js", body)
+        script = Path("static/js/auth-state.js").read_text(encoding="utf-8")
+        self.assertIn("controls[index].hidden", script)
+        for banned in ("localStorage", "sessionStorage", "document.cookie",
+                       "innerHTML"):
+            self.assertNotIn(banned, script)
+
+        shell = Path("static/js/public-mobile-nav.js").read_text(encoding="utf-8")
+        for banned in ("localStorage", "sessionStorage", "document.cookie",
+                       "fetch(", "innerHTML"):
+            self.assertNotIn(banned, shell)
+
+    def test_sign_in_return_behaviour_is_unchanged(self):
+        header = self.header()
+        self.assertIn('href="/auth/sign-in?return_to=/app"', header)
+        self.assertIn('href="/auth/complete?return_to=/app"', header)
+
+        deep = self.client.get(
+            "/app/settings", base_url="http://localhost", follow_redirects=False
+        )
+        self.assertEqual(deep.status_code, 302)
+        self.assertEqual(
+            deep.headers["Location"], "/auth/sign-in?return_to=/app/settings"
+        )
 
 
 if __name__ == "__main__":

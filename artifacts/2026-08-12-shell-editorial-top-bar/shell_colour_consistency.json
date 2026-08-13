@@ -1,0 +1,403 @@
+{
+ "states": [
+  "signedin|/experience|1100",
+  "signedin|/experience|1440",
+  "signedin|/experience|390",
+  "signedin|/experience|900",
+  "signedin|/interview-studio|1100",
+  "signedin|/interview-studio|1440",
+  "signedin|/interview-studio|390",
+  "signedin|/interview-studio|900",
+  "signedin|/opportunity-slate|1100",
+  "signedin|/opportunity-slate|1440",
+  "signedin|/opportunity-slate|390",
+  "signedin|/opportunity-slate|900",
+  "signedin|/peerslate|1100",
+  "signedin|/peerslate|1440",
+  "signedin|/peerslate|390",
+  "signedin|/peerslate|900",
+  "signedin|/petec/my-story|1100",
+  "signedin|/petec/my-story|1440",
+  "signedin|/petec/my-story|390",
+  "signedin|/petec/my-story|900",
+  "signedin|/petec/resume|1100",
+  "signedin|/petec/resume|1440",
+  "signedin|/petec/resume|390",
+  "signedin|/petec/resume|900",
+  "signedin|/the-slate|1100",
+  "signedin|/the-slate|1440",
+  "signedin|/the-slate|390",
+  "signedin|/the-slate|900",
+  "signedin|/|1100",
+  "signedin|/|1440",
+  "signedin|/|390",
+  "signedin|/|900",
+  "signedout|/experience|1100",
+  "signedout|/experience|1440",
+  "signedout|/experience|390",
+  "signedout|/experience|900",
+  "signedout|/interview-studio|1100",
+  "signedout|/interview-studio|1440",
+  "signedout|/interview-studio|390",
+  "signedout|/interview-studio|900",
+  "signedout|/opportunity-slate|1100",
+  "signedout|/opportunity-slate|1440",
+  "signedout|/opportunity-slate|390",
+  "signedout|/opportunity-slate|900",
+  "signedout|/peerslate|1100",
+  "signedout|/peerslate|1440",
+  "signedout|/peerslate|390",
+  "signedout|/peerslate|900",
+  "signedout|/petec/my-story|1100",
+  "signedout|/petec/my-story|1440",
+  "signedout|/petec/my-story|390",
+  "signedout|/petec/my-story|900",
+  "signedout|/petec/resume|1100",
+  "signedout|/petec/resume|1440",
+  "signedout|/petec/resume|390",
+  "signedout|/petec/resume|900",
+  "signedout|/the-slate|1100",
+  "signedout|/the-slate|1440",
+  "signedout|/the-slate|390",
+  "signedout|/the-slate|900",
+  "signedout|/|1100",
+  "signedout|/|1440",
+  "signedout|/|390",
+  "signedout|/|900"
+ ],
+ "tokens_by_route": {
+  "/": {
+   "--ps-shell-accent-room": "#203767",
+   "--ps-shell-accent-soft": "rgb(11 99 229 / 8%)",
+   "--ps-shell-border": "#d9e2ec",
+   "--ps-shell-rail": "#f4f8fd",
+   "--ps-shell-surface": "#ffffff",
+   "--ps-shell-text": "#061a3a",
+   "--ps-shell-text-muted": "#49617a"
+  },
+  "/experience": {
+   "--ps-shell-accent-room": "#203767",
+   "--ps-shell-accent-soft": "rgb(11 99 229 / 8%)",
+   "--ps-shell-border": "#d9e2ec",
+   "--ps-shell-rail": "#f4f8fd",
+   "--ps-shell-surface": "#ffffff",
+   "--ps-shell-text": "#061a3a",
+   "--ps-shell-text-muted": "#49617a"
+  },
+  "/peerslate": {
+   "--ps-shell-accent-room": "#203767",
+   "--ps-shell-accent-soft": "rgb(11 99 229 / 8%)",
+   "--ps-shell-border": "#d9e2ec",
+   "--ps-shell-rail": "#f4f8fd",
+   "--ps-shell-surface": "#ffffff",
+   "--ps-shell-text": "#061a3a",
+   "--ps-shell-text-muted": "#49617a"
+  },
+  "/interview-studio": {
+   "--ps-shell-accent-room": "#203767",
+   "--ps-shell-accent-soft": "rgb(11 99 229 / 8%)",
+   "--ps-shell-border": "#d9e2ec",
+   "--ps-shell-rail": "#f4f8fd",
+   "--ps-shell-surface": "#ffffff",
+   "--ps-shell-text": "#061a3a",
+   "--ps-shell-text-muted": "#49617a"
+  },
+  "/opportunity-slate": {
+   "--ps-shell-accent-room": "#203767",
+   "--ps-shell-accent-soft": "rgb(11 99 229 / 8%)",
+   "--ps-shell-border": "#d9e2ec",
+   "--ps-shell-rail": "#f4f8fd",
+   "--ps-shell-surface": "#ffffff",
+   "--ps-shell-text": "#061a3a",
+   "--ps-shell-text-muted": "#49617a"
+  },
+  "/the-slate": {
+   "--ps-shell-accent-room": "#203767",
+   "--ps-shell-accent-soft": "rgb(11 99 229 / 8%)",
+   "--ps-shell-border": "#d9e2ec",
+   "--ps-shell-rail": "#f4f8fd",
+   "--ps-shell-surface": "#ffffff",
+   "--ps-shell-text": "#061a3a",
+   "--ps-shell-text-muted": "#49617a"
+  },
+  "/petec/resume": {
+   "--ps-shell-accent-room": "#203767",
+   "--ps-shell-accent-soft": "rgb(11 99 229 / 8%)",
+   "--ps-shell-border": "#d9e2ec",
+   "--ps-shell-rail": "#f4f8fd",
+   "--ps-shell-surface": "#ffffff",
+   "--ps-shell-text": "#061a3a",
+   "--ps-shell-text-muted": "#49617a"
+  },
+  "/petec/my-story": {
+   "--ps-shell-accent-room": "#203767",
+   "--ps-shell-accent-soft": "rgb(11 99 229 / 8%)",
+   "--ps-shell-border": "#d9e2ec",
+   "--ps-shell-rail": "#f4f8fd",
+   "--ps-shell-surface": "#ffffff",
+   "--ps-shell-text": "#061a3a",
+   "--ps-shell-text-muted": "#49617a"
+  }
+ },
+ "surface_values": {
+  ".global-header {background-color}": {
+   "rgb(255, 255, 255)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header {border-bottom-color}": {
+   "rgb(217, 226, 236)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header .platform-nav__links a:not([aria-current]) {color}": {
+   "rgb(6, 26, 58)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header .nav-search__input {background-color}": {
+   "rgb(244, 248, 253)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header .nav-search__input {color}": {
+   "rgb(6, 26, 58)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header .nav-search__input {border-top-color}": {
+   "rgb(217, 226, 236)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header .nav-search__icon {stroke}": {
+   "rgb(73, 97, 122)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header .nav-search__results {background-color}": {
+   "rgb(255, 255, 255)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header .nav-search__results {border-top-color}": {
+   "rgb(217, 226, 236)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header .platform-roomswitcher__trigger {background-color}": {
+   "rgb(244, 248, 253)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header .platform-roomswitcher__trigger {color}": {
+   "rgb(6, 26, 58)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".platform-menu-toggle {background-color}": {
+   "rgb(244, 248, 253)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".platform-menu-toggle {color}": {
+   "rgb(6, 26, 58)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".platform-menu-toggle {border-top-color}": {
+   "rgb(217, 226, 236)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header .platform-nav__links a[aria-current=\"page\"] {color}": {
+   "rgb(32, 55, 103)": [
+    "/interview-studio",
+    "/opportunity-slate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header .platform-account__trigger {background-color}": {
+   "rgb(244, 248, 253)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header .platform-account__trigger {color}": {
+   "rgb(6, 26, 58)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".global-header .platform-account__trigger {border-top-color}": {
+   "rgb(217, 226, 236)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  "#mobile-tabbar {background-color}": {
+   "rgb(255, 255, 255)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/the-slate"
+   ]
+  },
+  "#mobile-tabbar {border-top-color}": {
+   "rgb(217, 226, 236)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/the-slate"
+   ]
+  },
+  ".mobile-tabbar__item:not([aria-current]) {color}": {
+   "rgb(73, 97, 122)": [
+    "/",
+    "/experience",
+    "/interview-studio",
+    "/opportunity-slate",
+    "/peerslate",
+    "/the-slate"
+   ]
+  },
+  ".global-header .platform-room-title {color}": {
+   "rgb(6, 26, 58)": [
+    "/interview-studio",
+    "/opportunity-slate",
+    "/petec/my-story",
+    "/petec/resume",
+    "/the-slate"
+   ]
+  },
+  ".mobile-tabbar__item[aria-current=\"page\"] {color}": {
+   "rgb(32, 55, 103)": [
+    "/interview-studio",
+    "/the-slate"
+   ]
+  }
+ },
+ "mismatches": []
+}

@@ -1568,7 +1568,9 @@
         "tests/test_auth.py",
         "tests/test_search_visibility.py",
         "docs/initiatives/PS-SHELL-001/",
-        "artifacts/2026-08-12-shell-editorial-top-bar/"
+        "artifacts/2026-08-12-shell-editorial-top-bar/",
+        "docs/governance/CURRENT_LANES.json",
+        "tests/test_interview_studio.py"
       ],
       "exclusions": [
         "no homepage body, copy, imagery, marketing sections, SEO, or walkthrough change; the public-facing homepage is a separate later package and remains explicitly excluded",
@@ -1608,6 +1610,13 @@
           "authorized_by": "Pete",
           "status": "authorized",
           "decision": "Pete set the model routing for this package: Opus at maximum effort architects, Opus at extra-high effort implements, and a fresh Opus at maximum effort reviews. This supersedes the package README's earlier Fable-constructs, Sonnet-implements, Opus-reviews line. He first sequenced the shell behind Profile, Opportunity Slate, and Interview, then released the Interview lane so the shell writer could activate, and authorized activation through pull request only."
+        },
+        {
+          "date": "2026-08-12",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete granted full permission to carry the package through implementation, review, merge, and release. Under that grant this lane's writable_surfaces are amended, narrowly and visibly, to add tests/test_interview_studio.py and this ledger file. Reason: that test locks the byte length and sha256 of the anonymous /interview-studio render, and that page renders the shared shell, so any shell markup change fails it by construction. It is not an Interview Studio regression: an independent reviewer proved the delta is shell markup only by rendering the same route with the base template injected through a Jinja ChoiceLoader and replacing the header and tabsource blocks with placeholders, which made the two documents identical. PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 is paused, so no writer owns that file and none can recapture it. The amendment permits recapturing exactly the four locked constants and nothing else; no Interview Studio behaviour, template, style, script, or other assertion may be changed. delivery_preflight does not machine-check writable_surfaces, so this is recorded as an explicit scope statement rather than relying on the absence of a check.",
+          "scope_limit": "tests/test_interview_studio.py: only FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH, FLAG_OFF_INTERVIEW_STUDIO_SHA256, FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH, and FLAG_OFF_INTERVIEW_STUDIO_HISTORY_SHA256 may be recaptured, with the shell-markup-only proof recorded alongside."
         }
       ],
       "sequence": "activation-only PR -> clean current-main implementation worktree -> three owner decisions answered -> shell structure and responsive behaviour -> authentication and account states -> search presentation -> pre-tokenization screenshot baseline -> tokenize by aliasing -> post-tokenization diff -> cross-route verification -> complete-diff self-review -> fresh Opus max independent review -> merge grant -> release grant if separately authorized"

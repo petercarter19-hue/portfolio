@@ -1,0 +1,5168 @@
+{
+ "/ @ 1440x900": {
+  "out": {
+   "docScrollW": 1440,
+   "innerW": 1440,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    29,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1440,
+   "innerW": 1440,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    29,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1375,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/ @ 1280x800": {
+  "out": {
+   "docScrollW": 1280,
+   "innerW": 1280,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    26,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1280,
+   "innerW": 1280,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    26,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1218,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/ @ 1100x800": {
+  "out": {
+   "docScrollW": 1100,
+   "innerW": 1100,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "hidden",
+   "switcher": "shown",
+   "search": "shown",
+   "inputW": 152,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    22,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1100,
+   "innerW": 1100,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "hidden",
+   "switcher": "shown",
+   "search": "shown",
+   "inputW": 152,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    22,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1042,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/ @ 1024x800": {
+  "out": {
+   "docScrollW": 1024,
+   "innerW": 1024,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    20,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1024,
+   "innerW": 1024,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    20,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    972,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/ @ 768x900": {
+  "out": {
+   "docScrollW": 768,
+   "innerW": 768,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 768,
+   "innerW": 768,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    720,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/ @ 743x900": {
+  "out": {
+   "docScrollW": 743,
+   "innerW": 743,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 743,
+   "innerW": 743,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    695,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/ @ 390x844": {
+  "out": {
+   "docScrollW": 390,
+   "innerW": 390,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 390,
+   "innerW": 390,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    342,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/ @ 320x700": {
+  "out": {
+   "docScrollW": 320,
+   "innerW": 320,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 320,
+   "innerW": 320,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    272,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/ @ 720x450": {
+  "out": {
+   "docScrollW": 720,
+   "innerW": 720,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 720,
+   "innerW": 720,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    672,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/experience @ 1440x900": {
+  "out": {
+   "docScrollW": 1440,
+   "innerW": 1440,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    29,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1440,
+   "innerW": 1440,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    29,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1375,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/experience @ 1280x800": {
+  "out": {
+   "docScrollW": 1280,
+   "innerW": 1280,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    26,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1280,
+   "innerW": 1280,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    26,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1218,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/experience @ 1100x800": {
+  "out": {
+   "docScrollW": 1100,
+   "innerW": 1100,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "hidden",
+   "switcher": "shown",
+   "search": "shown",
+   "inputW": 152,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    22,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1100,
+   "innerW": 1100,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "hidden",
+   "switcher": "shown",
+   "search": "shown",
+   "inputW": 152,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    22,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1042,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/experience @ 1024x800": {
+  "out": {
+   "docScrollW": 1024,
+   "innerW": 1024,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    20,
+    14,
+    122,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1024,
+   "innerW": 1024,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    20,
+    14,
+    122,
+    35
+   ],
+   "accountBox": [
+    972,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/experience @ 768x900": {
+  "out": {
+   "docScrollW": 768,
+   "innerW": 768,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    14,
+    122,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 768,
+   "innerW": 768,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    14,
+    122,
+    35
+   ],
+   "accountBox": [
+    720,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/experience @ 743x900": {
+  "out": {
+   "docScrollW": 743,
+   "innerW": 743,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    14,
+    122,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 743,
+   "innerW": 743,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    14,
+    122,
+    35
+   ],
+   "accountBox": [
+    695,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/experience @ 390x844": {
+  "out": {
+   "docScrollW": 390,
+   "innerW": 390,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    14,
+    122,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 390,
+   "innerW": 390,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    14,
+    122,
+    35
+   ],
+   "accountBox": [
+    342,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/experience @ 320x700": {
+  "out": {
+   "docScrollW": 320,
+   "innerW": 320,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    14,
+    122,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 320,
+   "innerW": 320,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    14,
+    122,
+    35
+   ],
+   "accountBox": [
+    272,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/experience @ 720x450": {
+  "out": {
+   "docScrollW": 720,
+   "innerW": 720,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    14,
+    122,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 720,
+   "innerW": 720,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(229, 231, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    14,
+    122,
+    35
+   ],
+   "accountBox": [
+    672,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/peerslate @ 1440x900": {
+  "out": {
+   "docScrollW": 1440,
+   "innerW": 1440,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    29,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1440,
+   "innerW": 1440,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    29,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1375,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/peerslate @ 1280x800": {
+  "out": {
+   "docScrollW": 1280,
+   "innerW": 1280,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    26,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1280,
+   "innerW": 1280,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    26,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1218,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/peerslate @ 1100x800": {
+  "out": {
+   "docScrollW": 1100,
+   "innerW": 1100,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "hidden",
+   "switcher": "shown",
+   "search": "shown",
+   "inputW": 152,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    22,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1100,
+   "innerW": 1100,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "hidden",
+   "switcher": "shown",
+   "search": "shown",
+   "inputW": 152,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    22,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1042,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/peerslate @ 1024x800": {
+  "out": {
+   "docScrollW": 1024,
+   "innerW": 1024,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    20,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1024,
+   "innerW": 1024,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    20,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    972,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/peerslate @ 768x900": {
+  "out": {
+   "docScrollW": 768,
+   "innerW": 768,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 768,
+   "innerW": 768,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    720,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/peerslate @ 743x900": {
+  "out": {
+   "docScrollW": 743,
+   "innerW": 743,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 743,
+   "innerW": 743,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    695,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/peerslate @ 390x844": {
+  "out": {
+   "docScrollW": 390,
+   "innerW": 390,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 390,
+   "innerW": 390,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    342,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/peerslate @ 320x700": {
+  "out": {
+   "docScrollW": 320,
+   "innerW": 320,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 320,
+   "innerW": 320,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    272,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/peerslate @ 720x450": {
+  "out": {
+   "docScrollW": 720,
+   "innerW": 720,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 720,
+   "innerW": 720,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "absent",
+   "activeLabel": null,
+   "activeColor": null,
+   "activeWeight": null,
+   "underline": null,
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    672,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/interview-studio @ 1440x900": {
+  "out": {
+   "docScrollW": 1440,
+   "innerW": 1440,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    29,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1440,
+   "innerW": 1440,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    29,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1375,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/interview-studio @ 1280x800": {
+  "out": {
+   "docScrollW": 1280,
+   "innerW": 1280,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    26,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1280,
+   "innerW": 1280,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    26,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1218,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/interview-studio @ 1100x800": {
+  "out": {
+   "docScrollW": 1100,
+   "innerW": 1100,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "hidden",
+   "switcher": "shown",
+   "search": "shown",
+   "inputW": 152,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    22,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1100,
+   "innerW": 1100,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "hidden",
+   "switcher": "shown",
+   "search": "shown",
+   "inputW": 152,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    22,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1042,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/interview-studio @ 1024x800": {
+  "out": {
+   "docScrollW": 1024,
+   "innerW": 1024,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    20,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1024,
+   "innerW": 1024,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    972,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/interview-studio @ 768x900": {
+  "out": {
+   "docScrollW": 768,
+   "innerW": 768,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 768,
+   "innerW": 768,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    720,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/interview-studio @ 743x900": {
+  "out": {
+   "docScrollW": 743,
+   "innerW": 743,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 743,
+   "innerW": 743,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    695,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/interview-studio @ 390x844": {
+  "out": {
+   "docScrollW": 390,
+   "innerW": 390,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 390,
+   "innerW": 390,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    342,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/interview-studio @ 320x700": {
+  "out": {
+   "docScrollW": 320,
+   "innerW": 320,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 320,
+   "innerW": 320,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    272,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/interview-studio @ 720x450": {
+  "out": {
+   "docScrollW": 720,
+   "innerW": 720,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 720,
+   "innerW": 720,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Interview Studio",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    672,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/opportunity-slate @ 1440x900": {
+  "out": {
+   "docScrollW": 1440,
+   "innerW": 1440,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    29,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1440,
+   "innerW": 1440,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    29,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1375,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/opportunity-slate @ 1280x800": {
+  "out": {
+   "docScrollW": 1280,
+   "innerW": 1280,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    26,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1280,
+   "innerW": 1280,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    26,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1218,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/opportunity-slate @ 1100x800": {
+  "out": {
+   "docScrollW": 1100,
+   "innerW": 1100,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "hidden",
+   "switcher": "shown",
+   "search": "shown",
+   "inputW": 152,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    22,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1100,
+   "innerW": 1100,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "hidden",
+   "switcher": "shown",
+   "search": "shown",
+   "inputW": 152,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    22,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1042,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/opportunity-slate @ 1024x800": {
+  "out": {
+   "docScrollW": 1024,
+   "innerW": 1024,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    20,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1024,
+   "innerW": 1024,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    972,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/opportunity-slate @ 768x900": {
+  "out": {
+   "docScrollW": 768,
+   "innerW": 768,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 768,
+   "innerW": 768,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    720,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/opportunity-slate @ 743x900": {
+  "out": {
+   "docScrollW": 743,
+   "innerW": 743,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 743,
+   "innerW": 743,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    695,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/opportunity-slate @ 390x844": {
+  "out": {
+   "docScrollW": 390,
+   "innerW": 390,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 390,
+   "innerW": 390,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    342,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/opportunity-slate @ 320x700": {
+  "out": {
+   "docScrollW": 320,
+   "innerW": 320,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 320,
+   "innerW": 320,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    272,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/opportunity-slate @ 720x450": {
+  "out": {
+   "docScrollW": 720,
+   "innerW": 720,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 720,
+   "innerW": 720,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "shown",
+   "tabbarSlots": [
+    "Pete's Slate",
+    "Community",
+    "Interview",
+    "More"
+   ],
+   "hasGlobalTabbar": true,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Opportunity Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    672,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/petec/resume @ 1440x900": {
+  "out": {
+   "docScrollW": 1440,
+   "innerW": 1440,
+   "overflow": false,
+   "headerH": 120,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    29,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1440,
+   "innerW": 1440,
+   "overflow": false,
+   "headerH": 120,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    29,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1375,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/petec/resume @ 1280x800": {
+  "out": {
+   "docScrollW": 1280,
+   "innerW": 1280,
+   "overflow": false,
+   "headerH": 120,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    26,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1280,
+   "innerW": 1280,
+   "overflow": false,
+   "headerH": 120,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "shown",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 176,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    26,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1218,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/petec/resume @ 1100x800": {
+  "out": {
+   "docScrollW": 1100,
+   "innerW": 1100,
+   "overflow": false,
+   "headerH": 120,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "hidden",
+   "switcher": "shown",
+   "search": "shown",
+   "inputW": 152,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    22,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1100,
+   "innerW": 1100,
+   "overflow": false,
+   "headerH": 120,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand links actions\"",
+   "links": "hidden",
+   "switcher": "shown",
+   "search": "shown",
+   "inputW": 152,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "hidden",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    22,
+    14,
+    176,
+    35
+   ],
+   "accountBox": [
+    1042,
+    14,
+    36,
+    36
+   ]
+  }
+ },
+ "/petec/resume @ 1024x800": {
+  "out": {
+   "docScrollW": 1024,
+   "innerW": 1024,
+   "overflow": false,
+   "headerH": 120,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    20,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 1024,
+   "innerW": 1024,
+   "overflow": false,
+   "headerH": 120,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    972,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/petec/resume @ 768x900": {
+  "out": {
+   "docScrollW": 768,
+   "innerW": 768,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 768,
+   "innerW": 768,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "0px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    720,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/petec/resume @ 743x900": {
+  "out": {
+   "docScrollW": 743,
+   "innerW": 743,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 743,
+   "innerW": 743,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    695,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/petec/resume @ 390x844": {
+  "out": {
+   "docScrollW": 390,
+   "innerW": 390,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 390,
+   "innerW": 390,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    342,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/petec/resume @ 320x700": {
+  "out": {
+   "docScrollW": 320,
+   "innerW": 320,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 320,
+   "innerW": 320,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    272,
+    16,
+    32,
+    32
+   ]
+  }
+ },
+ "/petec/resume @ 720x450": {
+  "out": {
+   "docScrollW": 720,
+   "innerW": 720,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "hidden",
+   "signin": "shown",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "shown",
+   "roomTitle": "hidden",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    16,
+    19,
+    122,
+    26
+   ],
+   "accountBox": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "in": {
+   "docScrollW": 720,
+   "innerW": 720,
+   "overflow": false,
+   "headerH": 65,
+   "headerBg": "rgb(255, 255, 255)",
+   "headerBorder": "1px rgb(217, 226, 236)",
+   "headerShadow": "none",
+   "innerGrid": "\"brand actions\"",
+   "links": "hidden",
+   "switcher": "hidden",
+   "search": "shown",
+   "inputW": 36,
+   "account": "shown",
+   "signin": "hidden",
+   "menuToggle": "shown",
+   "tabbar": "hidden",
+   "tabbarSlots": [
+    "My Story",
+    "Slate Board",
+    "R\u00e9sum\u00e9"
+   ],
+   "hasGlobalTabbar": false,
+   "hasMobileTabbar": true,
+   "bodyPadBottom": "58px",
+   "logo": "hidden",
+   "roomTitle": "shown",
+   "activeLabel": "Pete's Slate",
+   "activeColor": "rgb(32, 55, 103)",
+   "activeWeight": "500",
+   "underline": {
+    "height": "2px",
+    "background": "rgb(32, 55, 103)",
+    "bottom": "0px"
+   },
+   "logoBox": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "accountBox": [
+    672,
+    16,
+    32,
+    32
+   ]
+  }
+ }
+}

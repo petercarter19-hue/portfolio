@@ -1,5 +1,7 @@
+import json
 import unittest
 import xml.etree.ElementTree as ET
+from pathlib import Path
 from urllib.parse import urlsplit
 
 from app import app
@@ -145,6 +147,104 @@ class SearchVisibilityQuietPreviewTests(unittest.TestCase):
                         self.assertFalse(path.startswith("/interview-studio"))
         finally:
             app.config["PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED"] = original_flag
+
+
+class ShellSearchScopeTests(unittest.TestCase):
+    """PS-SHELL-001 — search is restyled, not re-scoped.
+
+    The Editorial Top Bar restyles the header field and makes it available at
+    every width, including the two bands that previously hid it. It must not
+    expand the destination index, add content search, change what either
+    server-rendered branch exposes, or advertise a newly linked protected
+    route to a crawler.
+    """
+
+    def setUp(self):
+        self.client = app.test_client()
+
+    def index_records(self, path="/"):
+        response = self.client.get(path, base_url="http://localhost")
+        self.assertEqual(response.status_code, 200)
+        body = response.get_data(as_text=True)
+        block = body.split('<script id="nav-search-data" type="application/json">', 1)[1]
+        return json.loads(block.split("</script>", 1)[0])
+
+    def test_the_destination_index_is_unchanged_and_still_destination_only(self):
+        records = self.index_records()
+        self.assertTrue(records)
+        for record in records:
+            with self.subTest(title=record["title"]):
+                self.assertEqual(
+                    sorted(record), ["href", "keys", "sub", "title"]
+                )
+                self.assertTrue(record["href"].startswith(("/", "http")))
+        # No content search: every entry is a route or a static file, and
+        # none of them is a member-authored record.
+        self.assertFalse(
+            [r for r in records if r["href"].startswith("/api/")]
+        )
+
+    def test_the_shell_adds_no_record_to_either_branch(self):
+        """The shell's own new controls — the room switcher, the account
+        menu, the More sheet's Settings entry — are navigation, not search
+        results. None of them may enter the index."""
+        for path in ("/", "/interview-studio"):
+            with self.subTest(path=path):
+                titles = [r["title"] for r in self.index_records(path)]
+                for absent in ("Settings", "Sign out", "My Slate", "More",
+                               "Account"):
+                    self.assertNotIn(absent, titles)
+
+    def test_the_public_branch_never_exposes_the_owner_branch(self):
+        public = {r["title"] for r in self.index_records("/")}
+        # The owner branch's distinct entries stay on the owner branch.
+        self.assertNotIn("Download Resume (PDF)", public)
+        self.assertIn("Download résumé", public)
+
+    def test_newly_linked_protected_routes_stay_out_of_crawl_scope(self):
+        """The More sheet links /app/settings for a signed-in member. That
+        namespace must remain uncrawlable and unadvertised."""
+        robots = self.client.get(
+            "/robots.txt", base_url="https://peerslate.com"
+        ).get_data(as_text=True)
+        self.assertIn("Disallow: /app", robots)
+
+        sitemap = self.client.get(
+            "/sitemap.xml", base_url="https://peerslate.com"
+        )
+        root = ET.fromstring(sitemap.get_data(as_text=True))
+        namespace = {"sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+        for location in root.findall("sitemap:url/sitemap:loc", namespace):
+            path = urlsplit(location.text).path
+            with self.subTest(path=path):
+                self.assertFalse(path.startswith("/app"))
+
+    def test_there_is_exactly_one_search_field_in_the_shell(self):
+        """The released shell carried two: a header field hidden below
+        73.75rem, and a second one inside the phone sheet. The header field is
+        now present at every width, so keeping the sheet's copy meant two
+        visible inputs — and two controls with the same accessible name —
+        whenever the sheet was open. Rendered markup, not stylesheet text:
+        one input, one results panel, one accessible name."""
+        for path in ("/", "/interview-studio", "/petec/resume"):
+            with self.subTest(path=path):
+                body = self.client.get(
+                    path, base_url="http://localhost"
+                ).get_data(as_text=True)
+                self.assertEqual(body.count('class="nav-search__input"'), 1)
+                self.assertEqual(body.count('class="nav-search__results"'), 1)
+                self.assertEqual(body.count('aria-label="Search PeerSlate"'), 1)
+                self.assertNotIn('id="nav-search-input-mobile"', body)
+                self.assertIn('id="nav-search-input"', body)
+
+    def test_search_authorization_and_behaviour_are_untouched(self):
+        source = Path("static/js/public-site-search.js").read_text(encoding="utf-8")
+        self.assertIn("No matching public destination", source)
+        self.assertNotIn("Ask Pete", source)
+        self.assertNotIn("fetch(", source)
+        self.assertNotIn("credentials", source)
+        # The index is read from the server-rendered block and nowhere else.
+        self.assertIn("document.getElementById('nav-search-data')", source)
 
 
 if __name__ == "__main__":

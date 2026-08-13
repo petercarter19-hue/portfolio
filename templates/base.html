@@ -135,7 +135,38 @@
     {% endif %}
 </head>
 
-{% set _p = request.path %}{% set is_owner_app_path = _p == '/app' or _p.startswith('/app/') %}{% set is_private_journal_path = _p.startswith('/app/journal') %}{% set is_workshop_path = request.blueprint == 'workshop' %}{% set is_legacy_owner_workspace_path = _p == '/app' %}{# Owner-directed temporary availability gate, 2026-08-03. Missing config is intentionally false; the existing dark assets stay dormant for a later redesign. #}{% set dark_theme_enabled = config.get('PEERSLATE_DARK_THEME_ENABLED', false) %}{% set page_room = 'bronze' if ('/resume' in _p or '/projects' in _p or _p.endswith('/work') or '/skills' in _p) else ('teal' if '/interview' in _p else ('plum' if 'my-story' in _p else ('amber' if 'slate-board' in _p else ('pine' if (_p.startswith('/the-slate') or _p.startswith('/feed-living-stream')) else 'iris')))) %}
+{% set _p = request.path %}{% set is_owner_app_path = _p == '/app' or _p.startswith('/app/') %}{% set is_private_journal_path = _p.startswith('/app/journal') %}{% set is_workshop_path = request.blueprint == 'workshop' %}{% set is_legacy_owner_workspace_path = _p == '/app' %}{# Owner-directed temporary availability gate, 2026-08-03. Missing config is intentionally false; the existing dark assets stay dormant for a later redesign. #}{% set dark_theme_enabled = config.get('PEERSLATE_DARK_THEME_ENABLED', false) %}{% set page_room = 'bronze' if ('/resume' in _p or '/projects' in _p or _p.endswith('/work') or '/skills' in _p) else ('teal' if '/interview' in _p else ('plum' if 'my-story' in _p else ('amber' if 'slate-board' in _p else ('pine' if (_p.startswith('/the-slate') or _p.startswith('/feed-living-stream')) else 'iris')))) %}{# PS-SHELL-001 (Editorial Top Bar). Three shell-only values, derived here so
+   the owner `/app` branch below emits no extra bytes. shell_room_label names
+   the destination the viewer is currently inside — the medium-width room
+   switcher's pill label, and the phone header's room title. shell_account_name
+   keeps identity.display_name's existing "PeerSlate member" fallback (README
+   assumption A3); shell_account_initial is the account control's initial. No
+   photo: no truthful avatar source exists for the signed-in viewer.
+
+   shell_destinations is the one description of the five product destinations.
+   The inline row, the room switcher and the phone bar all read it, so a
+   destination cannot drift between them. Each `sub` is the existing search
+   index wording for the same room — no new claim is authored here. #}{% set shell_account_name = ((current_member.display_name | trim) if (current_member and current_member.display_name and (current_member.display_name | trim)) else 'PeerSlate member') %}{% set shell_account_initial = shell_account_name[:1] | upper %}{% set shell_signed_in = auth_navigation_state == 'authenticated' %}{% set shell_destinations = [
+    {'label': "Pete's Slate", 'href': portfolio_home_url ~ '#overview', 'current': is_portfolio_path, 'sub': "Pete Carter's public Overview", 'icon': 'slate', 'show': true},
+    {'label': 'Community', 'href': url_for('the_slate'), 'current': _p.startswith('/the-slate'), 'sub': 'Visible to signed-in PeerSlate members', 'icon': 'community', 'show': true},
+    {'label': 'Interview Studio', 'href': interview_studio_url, 'current': _p.startswith('/interview-studio'), 'sub': 'Practice, coaching, video, and growth', 'icon': 'interview', 'show': true},
+    {'label': 'Workshop', 'href': workshop_url, 'current': _p.startswith('/app/workshop'), 'sub': 'Your private information library', 'icon': 'workshop', 'show': workshop_nav_enabled | default(false)},
+    {'label': 'Opportunity Slate', 'href': opportunity_slate_url, 'current': _p.startswith('/opportunity-slate'), 'sub': 'See how your evidence lines up with a role', 'icon': 'opportunity', 'show': true}
+] | selectattr('show') | list %}{% set shell_room_label = shell_destinations | selectattr('current') | map(attribute='label') | first | default(none, true) %}{% set shell_room_icons = {
+    'slate': 'M5 4h14v16l-7-3.5L5 20z',
+    'community': 'M8.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 6M17 20a5.5 5.5 0 0 0-2-4.3',
+    'interview': 'M12 4a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V7a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v3',
+    'workshop': 'M4 6.5A2.5 2.5 0 0 1 6.5 4H19v14H6.5A2.5 2.5 0 0 0 4 20.5zM19 18v2.5',
+    'opportunity': 'M4 8h16v11H4zM9 8V6a3 3 0 0 1 6 0v2M4 13h16',
+} %}{# The phone bar draws its marks from closed paths so the board's filled
+   current state is meaningful — an open stroke path cannot be filled. The
+   switcher's marks above stay stroke-only, which is what that composition
+   shows. #}{% set shell_bar_icons = {
+    'slate': 'M5 4h14v16l-7-3.5L5 20z',
+    'community': 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0z',
+    'interview': 'M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM7 11a5 5 0 0 0 10 0h2a7 7 0 0 1-6 6.93V21h-2v-3.07A7 7 0 0 1 5 11z',
+    'more': 'M6 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm6 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm6 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4z',
+} %}
 {% if standalone_owner_shell %}{# Owner Home standalone shell (U1/U3, PS-HOME-FRONTEND-001): the flag-on
    Owner Home render owns its own dark cinematic body and omits every public
    chrome class (portfolio-shell/platform-shell, slate-light,
@@ -176,7 +207,7 @@
          the text navigation stays focused on three distinct destinations. -->
     <header class="global-header">
         <nav class="platform-nav" aria-label="PeerSlate platform navigation">
-            <div class="site-container platform-nav__inner">
+            <div class="site-container platform-nav__inner"{% if not is_owner_app_path and shell_signed_in and shell_room_label %} data-ps-shell-room-title{% endif %}>
                 <div class="platform-brand">
                     {# The PeerSlate logo returns to the site root (peerslate.com),
                        not the /peerslate marketing splash. #}
@@ -187,7 +218,23 @@
                             src="{{ url_for('static', filename='images/peerslate-logo-header.png') }}"
                             alt="{{ platform_brand_name }}"
                         >
-                    </a>
+                    </a>{% if not is_owner_app_path and shell_signed_in and shell_room_label %}{# PS-SHELL-001: below 64rem a signed-in viewer inside one of the
+                       five destinations also sees the room named, BESIDE the
+                       logo rather than instead of it. Owner direction
+                       2026-08-13 — "logo should always be revealed" — which
+                       diverges from the approved boards, where the room name
+                       stands in for the mark on a signed-in phone; the
+                       divergence is recorded in the package README and in
+                       public-navigation.css. The mark now renders at every
+                       width in every auth state, and below 34rem it is the
+                       room title that stands down, never the logo.
+                       Presentation is entirely CSS: this element is rendered
+                       whenever the SERVER decides there is a room, and
+                       data-ps-shell-room-title on the row above — written by
+                       the server and by no script — is what shows it, so the
+                       brand row cannot change after paint and a stale cached
+                       render simply shows the logo alone. #}
+                    <span class="platform-room-title" data-platform-room-title>{{ shell_room_label }}</span>{% endif %}
                 </div>
 
                 <ul class="platform-nav__links"{% if not is_owner_app_path %} data-platform-links{% endif %}>
@@ -206,7 +253,40 @@
                     <li><a href="{{ interview_studio_url }}" {% if request.path.startswith('/interview-studio') %}aria-current="page"{% endif %}>Interview Studio</a></li>{# Workshop (PS-WORKSHOP-001): flag-gated and visible to everyone by owner decision 2026-08-02. That same 2026-08-02 decision (doc 20 section 6d) also removed the sign-in wall from the library/add/save routes themselves — a signed-out visitor now gets the real page over honestly-labeled sample content, not a sign-in redirect (workshop_routes.py's public preview mode). Edit/archive/restore/delete still require sign-in. workshop_nav_enabled/workshop_url come from workshop_routes.py's own app_context_processor. Kept on this line so the flag-off render adds no bytes. #}{% if workshop_nav_enabled %}<li><a href="{{ workshop_url }}" {% if request.path.startswith('/app/workshop') %}aria-current="page"{% endif %}>Workshop</a></li>{% endif %}{# Opportunity Slate (PS-OPPORTUNITY-SLATE-001 leg 7): unconditional, by Pete's 2026-08-05 order ("I need a link. I added next to the workshop link on the main page so it can be accessed anywhere.") — unlike Workshop there is no paired nav flag because the room is already live for everyone. opportunity_slate_url comes from opportunity_slate_routes.py's own app_context_processor, the same pattern Workshop uses. The route keeps its own noindex/nofollow headers; this link only adds site-internal discoverability. #}<li><a href="{{ opportunity_slate_url }}" {% if request.path.startswith('/opportunity-slate') %}aria-current="page"{% endif %}>Opportunity Slate</a></li>
                     {# The company/mission link moved to the footer as
                        "Why PeerSlate" (v1.2 rule 66 / PS-BRAND-NAV-001). #}
-                </ul>
+                </ul>{% if not is_owner_app_path %}{# PS-SHELL-001 room switcher (approved direction 2, medium width only).
+                   Between 64.01rem and 73.75rem the five inline destinations
+                   collapse into this one pill, which names the room the viewer
+                   is in and opens the same labelled destination list. Direction
+                   2's own composition: a soft borderless pill with a leading
+                   room icon, and rows of icon, title and one-line description.
+                   Same hrefs, same aria-current, no new destination — every
+                   row is one entry of shell_destinations, and each description
+                   is the wording the search index already uses for that room.
+                   CSS shows it only in that band; it is display:none elsewhere. #}
+
+                <div class="platform-roomswitcher" data-platform-roomswitcher>
+                    <button
+                        class="platform-roomswitcher__trigger"
+                        id="platform-room-trigger"
+                        type="button"
+                        aria-expanded="false"
+                        aria-controls="platform-room-list"
+                        data-platform-roomswitcher-trigger
+                    >{% set shell_current_icon = (shell_destinations | selectattr('current') | map(attribute='icon') | first | default('slate', true)) %}
+                        <svg class="platform-roomswitcher__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ shell_room_icons[shell_current_icon] }}"/></svg>
+                        {# Only claim a current room when there is one. On the
+                           homepage, the Experience film and Why PeerSlate no
+                           destination is active, and the released wording
+                           announced "current: Browse" — a room that does not
+                           exist. Those routes now read simply "Browse
+                           destinations". #}{% if shell_room_label %}<span class="platform-shell-sr">Browse destinations, current:</span>{% endif %}
+                        <span class="platform-roomswitcher__label">{{ shell_room_label or 'Browse destinations' }}</span>
+                        <svg class="platform-roomswitcher__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                    </button>
+                    <ul class="platform-roomswitcher__list" id="platform-room-list" aria-label="PeerSlate destinations" data-platform-roomswitcher-list hidden>{% for destination in shell_destinations %}
+                        <li><a href="{{ destination.href }}" {% if destination.current %}aria-current="page"{% endif %}><svg class="platform-roomswitcher__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ shell_room_icons[destination.icon] }}"/></svg><span class="platform-roomswitcher__row"><span class="platform-roomswitcher__title">{{ destination.label }}</span><span class="platform-roomswitcher__sub">{{ destination.sub }}</span></span></a></li>{% endfor %}
+                    </ul>
+                </div>{% endif %}
 
                 <div class="platform-actions"{% if not is_owner_app_path %} data-ps-auth-controls data-ps-auth-state="{{ auth_navigation_state }}"{% endif %}>
                     {# Header search uses the #nav-search-data JSON block near
@@ -227,7 +307,14 @@
                             aria-controls="nav-search-results"
                         >
                         <div class="nav-search__results" id="nav-search-results" role="listbox" hidden></div>
-                    </div>
+                    </div>{% if not is_owner_app_path %}{# PS-SHELL-001 reserved Add slot. Nothing renders here on purpose:
+                       /app/capture is owner-gated behind a fail-closed
+                       allowlist, so a global Add control would be a false
+                       affordance for a member. This marker holds the
+                       position between search and the account control so a
+                       future member capture contract is an insertion rather
+                       than a re-layout. No notification control either — no
+                       notification route, model or service exists. #}{% endif %}
 
                     {% if dark_theme_enabled %}{# Dark theme toggle (PS-THEME-001): a small accessible switch next
                        to search, off (light/current theme) by default. Flips
@@ -283,10 +370,36 @@
                        only changes their `hidden` attribute after a bounded,
                        same-origin principal-only session check; it never builds
                        HTML or reads browser auth storage. #}
-                    <a class="sign-in-btn" href="{{ owner_workspace_url }}" data-ps-auth-control="authenticated"{% if auth_navigation_state != 'authenticated' %} hidden{% endif %}>My Slate</a>
-                    <form class="nav-sign-out" method="post" action="{{ auth_sign_out_url }}" data-ps-auth-control="authenticated"{% if auth_navigation_state != 'authenticated' %} hidden{% endif %}>
-                        <button class="nav-sign-out__btn" type="submit">Sign out</button>
-                    </form>
+                    {# PS-SHELL-001 account control (README assumption A3): one
+                       initial derived from identity.display_name, never a
+                       photo, opening only the two controls that exist today.
+                       Both the wrapper and the sign-out form keep
+                       data-ps-auth-control so auth-state.js toggles them
+                       together and the existing
+                       .platform-actions:has(.nav-sign-out:not([hidden]))
+                       compaction still reads a signed-in row correctly. #}
+                    <div class="platform-account" data-platform-account data-ps-auth-control="authenticated"{% if auth_navigation_state != 'authenticated' %} hidden{% endif %}>
+                        <button
+                            class="platform-account__trigger"
+                            id="platform-account-trigger"
+                            type="button"
+                            aria-expanded="false"
+                            aria-controls="platform-account-menu"
+                            data-platform-account-trigger
+                        >
+                            <span class="platform-account__initial" aria-hidden="true">{{ shell_account_initial }}</span>
+                            <span class="platform-shell-sr">Account menu for {{ shell_account_name }}</span>
+                        </button>
+                        {# role="group" because a bare <div> cannot take an
+                           accessible name — aria-label on a role-less element
+                           is discarded, leaving the panel unnamed. #}
+                        <div class="platform-account__menu" id="platform-account-menu" role="group" aria-label="Account" data-platform-account-menu hidden>
+                            <a class="platform-account__item" href="{{ owner_workspace_url }}">My Slate</a>
+                            <form class="nav-sign-out platform-account__form" method="post" action="{{ auth_sign_out_url }}" data-ps-auth-control="authenticated"{% if auth_navigation_state != 'authenticated' %} hidden{% endif %}>
+                                <button class="nav-sign-out__btn platform-account__item" type="submit">Sign out</button>
+                            </form>
+                        </div>
+                    </div>
                     <a class="sign-in-btn" href="{{ owner_workspace_url }}" data-ps-auth-control="workspace_waking"{% if auth_navigation_state != 'workspace_waking' %} hidden{% endif %}>Workspace waking</a>
                     <a class="sign-in-btn" href="{{ auth_complete_url }}" data-ps-auth-control="account_issue"{% if auth_navigation_state != 'account_issue' %} hidden{% endif %}>Account issue</a>
                     <a class="sign-in-btn" href="{{ auth_sign_in_url }}" data-ps-auth-control="signed_out"{% if auth_navigation_state not in ('signed_out', 'auth_unavailable') %} hidden{% endif %}>Sign In</a>
@@ -301,29 +414,25 @@
                         <li><a href="{{ portfolio_home_url }}#overview" {% if is_portfolio_path %}aria-current="page"{% endif %}>Pete's Slate</a></li>
                         <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>Community</a></li>
                         <li><a href="{{ interview_studio_url }}" {% if request.path.startswith('/interview-studio') %}aria-current="page"{% endif %}>Interview Studio</a></li>{% if workshop_nav_enabled %}<li><a href="{{ workshop_url }}" {% if request.path.startswith('/app/workshop') %}aria-current="page"{% endif %}>Workshop</a></li>{% endif %}<li><a href="{{ opportunity_slate_url }}" {% if request.path.startswith('/opportunity-slate') %}aria-current="page"{% endif %}>Opportunity Slate</a></li>
-                    </ul>
-                    <div class="nav-search nav-search--mobile" data-nav-search>
-                        <svg class="nav-search__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>
-                        <input
-                            class="nav-search__input"
-                            id="nav-search-input-mobile"
-                            type="search"
-                            placeholder="Search PeerSlate"
-                            autocomplete="off"
-                            aria-label="Search PeerSlate"
-                            role="combobox"
-                            aria-expanded="false"
-                            aria-controls="nav-search-results-mobile"
-                            data-nav-search-input
-                        >
-                        <div
-                            class="nav-search__results"
-                            id="nav-search-results-mobile"
-                            role="listbox"
-                            data-nav-search-results
-                            hidden
-                        ></div>
+                    </ul>{# PS-SHELL-001: the More sheet's account group. Settings and Sign
+                       out are the only two real routes the direction's More
+                       list has; there is no Help route anywhere in the
+                       application, so no Help entry is offered. The group
+                       carries data-ps-auth-control so it follows exactly the
+                       same server-derived state as every other account
+                       control. #}
+                    <div class="platform-menu__account" data-ps-auth-control="authenticated"{% if auth_navigation_state != 'authenticated' %} hidden{% endif %}>
+                        <a class="platform-menu__account-item" href="{{ owner_workspace_url }}">My Slate</a>
+                        <a class="platform-menu__account-item" href="/app/settings">Settings</a>
+                        <form class="nav-sign-out platform-menu__account-form" method="post" action="{{ auth_sign_out_url }}">
+                            <button class="nav-sign-out__btn platform-menu__account-item" type="submit">Sign out</button>
+                        </form>
                     </div>
+                    {# The sheet's own search field is gone. The header field is
+                       now present at every width, so keeping this one meant two
+                       visible search inputs — and two controls with the same
+                       accessible name — whenever the sheet was open. One
+                       affordance, in one place. #}
                 </div>
             </div>
             {% endif %}
@@ -495,7 +604,35 @@
        jump between sections without scrolling back up. mobile-nav.js clones
        the [data-mobile-tabsource] links into it and reveals it on scroll-up.
        Hidden on desktop via CSS. #}
-    <nav class="mobile-tabbar" id="mobile-tabbar" aria-label="Section navigation" hidden></nav>
+    <nav class="mobile-tabbar" id="mobile-tabbar" aria-label="Section navigation" hidden></nav>{% if not is_owner_app_path and shell_signed_in %}{# PS-SHELL-001 global phone bottom bar (architecture section 5). There
+       must never be two fixed bottom bars, and the tabbar above is
+       page-owned — mobile-nav.js fills it with whatever section tabs the
+       current page supplies. So the global four-slot structure is a
+       *source* for the SAME element, cloned only on a route that supplies
+       no section tabs. A route with section tabs keeps its existing bar,
+       behaviour and padding contract untouched.
+
+       SIGNED-IN ONLY, and derived on the server. Both approved boards draw
+       public phone navigation as hamburger, logo and Sign in with no bottom
+       bar, which is also what production does today. A signed-out visitor
+       therefore keeps the header Menu as their one navigation affordance,
+       and it is never taken away by a bar they were not meant to get.
+
+       Slot 1 keeps "Pete's Slate" rather than the direction's "Profile":
+       README assumption A1 — no per-member profile route is registered and
+       labelling Pete's fixture portfolio "Profile" would make fixture
+       content read as shared product logic. The More slot opens the same
+       server-rendered sheet the header Menu opens, so there is one
+       destination list, not two. #}
+    <ul class="global-tabsource" data-global-tabsource hidden>
+        <li><a href="{{ portfolio_home_url }}#overview" {% if is_portfolio_path %}aria-current="page"{% endif %}><svg class="mobile-tabbar__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ shell_bar_icons['slate'] }}"/></svg><span class="mobile-tabbar__label">Pete's Slate</span></a></li>
+        <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}><svg class="mobile-tabbar__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ shell_bar_icons['community'] }}"/></svg><span class="mobile-tabbar__label">Community</span></a></li>
+        <li><a href="{{ interview_studio_url }}" aria-label="Interview Studio" {% if request.path.startswith('/interview-studio') %}aria-current="page"{% endif %}><svg class="mobile-tabbar__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ shell_bar_icons['interview'] }}"/></svg><span class="mobile-tabbar__label">Interview</span></a></li>
+        {# Slot 4 is a button, not a destination — it opens the sheet. Rendered
+           here so its mark and label come from the server like every other
+           slot, rather than being built in script. #}
+        <li data-global-more><svg class="mobile-tabbar__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ shell_bar_icons['more'] }}"/></svg><span class="mobile-tabbar__label">More</span></li>
+    </ul>{% endif %}
 
     {% if not (ask_pete_evidence_companion_enabled | default(false)) %}<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>{% endif %}
     {% if is_owner_app_path %}

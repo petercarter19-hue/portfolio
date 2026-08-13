@@ -1,0 +1,189 @@
+{
+ "F3 signed-out @320": {
+  "barVisible": false,
+  "globalSourcePresent": false,
+  "hasGlobalTabbar": false,
+  "menuToggle": "flex",
+  "bodyPadBottom": "0px"
+ },
+ "F3 signed-out @390": {
+  "barVisible": false,
+  "globalSourcePresent": false,
+  "hasGlobalTabbar": false,
+  "menuToggle": "flex",
+  "bodyPadBottom": "0px"
+ },
+ "F1 signed-in @320": {
+  "clientWidth": 320,
+  "scrollWidth": 320,
+  "overflows": false,
+  "viewport": 320,
+  "slots": [
+   {
+    "label": "Pete's Slate",
+    "x": 8,
+    "right": 84,
+    "w": 76,
+    "h": 31.8,
+    "offScreen": false
+   },
+   {
+    "label": "Community",
+    "x": 84,
+    "right": 160,
+    "w": 76,
+    "h": 31.8,
+    "offScreen": false
+   },
+   {
+    "label": "Interview",
+    "x": 160,
+    "right": 236,
+    "w": 76,
+    "h": 31.8,
+    "offScreen": false
+   },
+   {
+    "label": "More",
+    "x": 236,
+    "right": 312,
+    "w": 76,
+    "h": 31.8,
+    "offScreen": false
+   }
+  ],
+  "menuToggle": "none",
+  "barBg": "rgb(255, 255, 255)",
+  "barFilter": "none",
+  "barShadow": "none"
+ },
+ "F2 @320": {
+  "accountMySlate": {
+   "text": "My Slate",
+   "fontSize": "14.72px",
+   "boxH": 44
+  },
+  "accountSignOut": {
+   "text": "Sign out",
+   "fontSize": "14.72px",
+   "boxH": 44
+  },
+  "sheetMySlate": {
+   "text": "My Slate",
+   "fontSize": "14.72px",
+   "boxH": 44
+  },
+  "sheetSignOut": {
+   "text": "Sign out",
+   "fontSize": "14.72px",
+   "boxH": 44
+  }
+ },
+ "F6 @320": {
+  "sheetOpen": true,
+  "totalSearchInputs": 1,
+  "visibleSearchInputs": [
+   "nav-search-input"
+  ]
+ },
+ "F1 signed-in @390": {
+  "clientWidth": 390,
+  "scrollWidth": 390,
+  "overflows": false,
+  "viewport": 390,
+  "slots": [
+   {
+    "label": "Pete's Slate",
+    "x": 8,
+    "right": 101.5,
+    "w": 93.5,
+    "h": 31.8,
+    "offScreen": false
+   },
+   {
+    "label": "Community",
+    "x": 101.5,
+    "right": 195,
+    "w": 93.5,
+    "h": 31.8,
+    "offScreen": false
+   },
+   {
+    "label": "Interview",
+    "x": 195,
+    "right": 288.5,
+    "w": 93.5,
+    "h": 31.8,
+    "offScreen": false
+   },
+   {
+    "label": "More",
+    "x": 288.5,
+    "right": 382,
+    "w": 93.5,
+    "h": 31.8,
+    "offScreen": false
+   }
+  ],
+  "menuToggle": "none",
+  "barBg": "rgb(255, 255, 255)",
+  "barFilter": "none",
+  "barShadow": "none"
+ },
+ "F2 @390": {
+  "accountMySlate": {
+   "text": "My Slate",
+   "fontSize": "14.72px",
+   "boxH": 44
+  },
+  "accountSignOut": {
+   "text": "Sign out",
+   "fontSize": "14.72px",
+   "boxH": 44
+  },
+  "sheetMySlate": {
+   "text": "My Slate",
+   "fontSize": "14.72px",
+   "boxH": 44
+  },
+  "sheetSignOut": {
+   "text": "Sign out",
+   "fontSize": "14.72px",
+   "boxH": 44
+  }
+ },
+ "F6 @390": {
+  "sheetOpen": true,
+  "totalSearchInputs": 1,
+  "visibleSearchInputs": [
+   "nav-search-input"
+  ]
+ },
+ "F4/F8 desktop": {
+  "headerBottom": 65,
+  "linkBox": [
+   10,
+   44
+  ],
+  "underlineHeight": "2px",
+  "underlineBottomEdge": 54,
+  "clearanceAboveRule": 11,
+  "activeFontSize": "14.88px",
+  "activeWeight": "620",
+  "idleFontSize": "14.88px",
+  "idleWeight": "620",
+  "activeColor": "rgb(32, 55, 103)",
+  "letterSpacing": "normal"
+ },
+ "F5 focus": {
+  "focused": "Pete's Slate",
+  "outline": "rgb(74, 131, 232) solid 3px",
+  "outlineOffset": "4px",
+  "padding": "0px 8px",
+  "boxH": 44,
+  "ringTop": 3,
+  "ringBottom": 61,
+  "ringInsideHeader": true,
+  "ringClearsGlyphsBy": 12
+ }
+}

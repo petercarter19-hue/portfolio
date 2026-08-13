@@ -1,0 +1,3 @@
+states compared      : 174
+node snapshots taken : 18118
+NON-CUSTOM-PROPERTY DELTAS: 0

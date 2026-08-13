@@ -199,7 +199,12 @@ class NavigationTests(unittest.TestCase):
         menu = html.split('id="platform-mobile-menu"', 1)[1].split('</nav>', 1)[0]
         for label in ("Pete's Slate", 'Community', 'Interview Studio'):
             self.assertEqual(menu.count(f'>{label}</a>'), 1)
-        self.assertIn('id="nav-search-input-mobile"', menu)
+        # PS-SHELL-001: the sheet no longer carries its own search field. The
+        # header field is present at every width, so a second one here meant
+        # two visible inputs with the same accessible name whenever the sheet
+        # was open.
+        self.assertNotIn('id="nav-search-input-mobile"', menu)
+        self.assertEqual(html.count('class="nav-search__input"'), 1)
 
     def test_member_specific_ai_is_scoped_to_petes_public_slate(self):
         for path in (
@@ -338,6 +343,347 @@ class NavigationTests(unittest.TestCase):
                     self.assertEqual('Workshop' in titles, workshop_enabled)
         finally:
             app.config['PEERSLATE_WORKSHOP_ENABLED'] = original_workshop_flag
+
+    # ------------------------------------------------------------------
+    # PS-SHELL-001 — the Editorial Top Bar
+    # ------------------------------------------------------------------
+
+    def signed_in_client(self):
+        """A client whose SERVER render is authenticated, via the existing
+        development-identity path. The shell's signed-in markup is
+        server-derived, so it cannot be exercised any other way."""
+        originals = {
+            key: app.config.get(key)
+            for key in ('PEERSLATE_ALLOW_DEV_IDENTITY', 'PEERSLATE_DEV_USER_KEY')
+        }
+        app.config['PEERSLATE_ALLOW_DEV_IDENTITY'] = True
+        app.config['PEERSLATE_DEV_USER_KEY'] = 'shell-test-member'
+        self.addCleanup(self._restore_config, originals)
+        return app.test_client()
+
+    def _restore_config(self, originals):
+        for key, value in originals.items():
+            if value is None:
+                app.config.pop(key, None)
+            else:
+                app.config[key] = value
+
+    def test_room_switcher_repeats_the_inline_destinations_and_adds_none(self):
+        """The medium-width pill is an overflow mechanism, not a second
+        information architecture: same hrefs and same active state as the
+        inline row it replaces between 64.01rem and 73.75rem. Direction 2 adds
+        a room icon and a one-line description per row, and each description
+        is the wording the search index already uses for that room."""
+        html = self.client.get(
+            '/interview-studio', base_url='http://localhost'
+        ).get_data(as_text=True)
+
+        inline = html.split('class="platform-nav__links"', 1)[1].split(
+            '</ul>', 1
+        )[0]
+        switcher = html.split('class="platform-roomswitcher__list"', 1)[1].split(
+            '</ul>', 1
+        )[0]
+
+        inline_links = re.findall(r'<a href="([^"]+)"([^>]*)>([^<]+)</a>', inline)
+        switcher_links = re.findall(
+            r'<a href="([^"]+)"([^>]*)>.*?'
+            r'__title">([^<]+)</span>'
+            r'<span class="platform-roomswitcher__sub">([^<]+)</span>',
+            switcher,
+        )
+        # The inline row's labels are literal template text; the switcher
+        # renders them from one shared destination list, so Jinja escapes the
+        # apostrophe. Compare the text, not the escaping.
+        def unescape(value):
+            return value.replace('&#39;', "'")
+
+        self.assertEqual(
+            [(href, 'aria-current' in rest, unescape(label))
+             for href, rest, label in inline_links],
+            [(href, 'aria-current' in rest, unescape(label))
+             for href, rest, label, _ in switcher_links],
+        )
+
+        # Descriptions are the existing search-index wording, not a new claim.
+        records = {r['title']: r['sub'] for r in self.search_records(
+            '/interview-studio'
+        )}
+        for _, _, label, sub in switcher_links:
+            if unescape(label) in records:
+                with self.subTest(label=label):
+                    self.assertEqual(unescape(sub), records[unescape(label)])
+
+        # The pill names the room the viewer is in, and carries its mark.
+        self.assertIn(
+            '<span class="platform-roomswitcher__label">Interview Studio</span>',
+            html,
+        )
+        self.assertEqual(
+            switcher.count('class="platform-roomswitcher__mark"'),
+            len(switcher_links),
+        )
+        # ...and says what it does, for a screen reader.
+        self.assertIn('Browse destinations, current:', html)
+
+    def test_room_switcher_label_falls_back_where_no_destination_is_active(self):
+        homepage = self.client.get('/', base_url='http://localhost').get_data(
+            as_text=True
+        )
+        # And it does not claim a current room that does not exist: the
+        # released wording announced "current: Browse".
+        self.assertIn(
+            '<span class="platform-roomswitcher__label">Browse destinations</span>',
+            homepage,
+        )
+        self.assertNotIn('Browse destinations, current:', homepage)
+        # No room, so no phone room title either — the brand slot keeps the
+        # logo rather than rendering empty.
+        self.assertNotIn('platform-room-title', homepage)
+
+    def test_the_logo_is_revealed_at_every_width_in_every_auth_state(self):
+        """Owner direction, 2026-08-13: "logo should always be revealed ...
+        It should always be revealed", naming 768-1024 signed in.
+
+        Until this round a signed-in viewer inside one of the five
+        destinations lost the mark entirely below 64rem, because the room
+        title was drawn INSTEAD of it. The markup always carried the logo, so
+        no template assertion could have caught that — a stylesheet rule
+        removed it, and that rule is what this test guards. It also diverges
+        from the approved boards, which draw the room name in place of the
+        mark on a signed-in phone; the owner's written direction wins and the
+        divergence is recorded in the package README.
+        """
+        stylesheet = Path('static/css/public-navigation.css').read_text(
+            encoding='utf-8'
+        )
+        # Comments discuss the mark at length; only declarations count.
+        declarations = re.sub(r'/\*.*?\*/', '', stylesheet, flags=re.S)
+        blocks = re.findall(
+            r'([^{}]*platform-brand__logo[^{}]*)\{([^{}]*)\}', declarations
+        )
+        self.assertTrue(blocks, 'expected the shell to style the brand mark')
+        for selector, body in blocks:
+            with self.subTest(selector=' '.join(selector.split())[-80:]):
+                self.assertNotRegex(body, r'display\s*:\s*none')
+                # Nor may it be hidden by any other route.
+                self.assertNotRegex(body, r'visibility\s*:\s*hidden')
+                self.assertNotRegex(body, r'\bcontent-visibility\s*:\s*hidden')
+
+        # Where the row genuinely runs out of width it is the room title that
+        # gives way, never the mark — and it gives way by never being shown
+        # below 34rem rather than by being removed there. PS-SIGNIN-
+        # EXPERIENCE-001 reserves the 34rem block for sign-out-scoped
+        # compaction and forbids any rule there that removes a header control,
+        # so the title is turned ON inside its own band and off nowhere.
+        band = declarations.split(
+            '@media (max-width: 64rem) and (min-width: 34.01rem)', 1
+        )
+        self.assertEqual(len(band), 2, 'the room title should own a band')
+        self.assertRegex(
+            band[1].split('}\n', 1)[0] + band[1].split('@media', 1)[0],
+            r'platform-room-title\s*\{\s*display:\s*block',
+        )
+        crowded = declarations.split('@media (max-width: 34rem)', 1)
+        self.assertEqual(len(crowded), 2, 'the 34rem block should still exist')
+        self.assertNotIn(
+            'platform-room-title', crowded[1].split('@media', 1)[0]
+        )
+
+        paths = ('/', '/interview-studio', '/opportunity-slate', '/petec/resume')
+        # Anonymous first: signed_in_client() flips application config.
+        anonymous = {
+            path: self.client.get(path, base_url='http://localhost').get_data(
+                as_text=True
+            )
+            for path in paths
+        }
+        signed_in = self.signed_in_client()
+        for path in paths:
+            with self.subTest(path=path):
+                for html in (anonymous[path],
+                             signed_in.get(
+                                 path, base_url='http://localhost'
+                             ).get_data(as_text=True)):
+                    self.assertIn('class="platform-brand__logo"', html)
+                    self.assertIn('images/peerslate-logo-header.png', html)
+
+    def test_phone_header_names_the_room_beside_the_logo_when_signed_in(self):
+        """The room title is additive, not a replacement. It renders only for
+        a signed-in viewer inside one of the five destinations, is driven by
+        data-ps-shell-room-title, which the SERVER writes and no script
+        touches, and it sits beside a logo that is always there.
+        """
+        paths = ('/interview-studio', '/opportunity-slate', '/petec/resume')
+        # Anonymous first: signed_in_client() flips application config, so a
+        # client created before it would not stay anonymous.
+        anonymous_renders = {
+            path: self.client.get(path, base_url='http://localhost').get_data(
+                as_text=True
+            )
+            for path in paths
+        }
+
+        signed_in = self.signed_in_client()
+        for path, expected in zip(
+            paths, ('Interview Studio', 'Opportunity Slate', "Pete's Slate")
+        ):
+            with self.subTest(path=path):
+                html = signed_in.get(
+                    path, base_url='http://localhost'
+                ).get_data(as_text=True)
+                # The label is a rendered value, so Jinja escapes the
+                # apostrophe in "Pete's Slate".
+                escaped = expected.replace("'", '&#39;')
+                self.assertIn(' data-ps-shell-room-title>', html)
+                self.assertIn(
+                    '<span class="platform-room-title" '
+                    f'data-platform-room-title>{escaped}</span>',
+                    html,
+                )
+
+                # It is an addition to the brand row, not a substitution: the
+                # mark is in the same render, immediately before it.
+                self.assertLess(
+                    html.index('class="platform-brand__logo"'),
+                    html.index('class="platform-room-title"'),
+                )
+
+                anonymous = anonymous_renders[path]
+                self.assertNotIn('data-ps-shell-room-title', anonymous)
+                self.assertNotIn('platform-room-title', anonymous)
+                self.assertIn('platform-brand__logo', anonymous)
+
+        # A route that is not one of the five destinations names no room, and
+        # shows the mark alone rather than an empty brand slot.
+        homepage = signed_in.get('/', base_url='http://localhost').get_data(
+            as_text=True
+        )
+        self.assertNotIn('data-ps-shell-room-title', homepage)
+        self.assertIn('platform-brand__logo', homepage)
+
+    def test_global_phone_bar_is_signed_in_only(self):
+        """Both approved boards draw public phone navigation as hamburger,
+        logo and Sign in with no bottom bar, which is also what production
+        does today. A signed-out visitor must therefore keep the header Menu
+        as their one navigation affordance — the bar must never render and
+        take it away."""
+        # Anonymous first: signed_in_client() flips application config.
+        anonymous = self.client.get('/', base_url='http://localhost').get_data(
+            as_text=True
+        )
+        self.assertNotIn('data-global-tabsource', anonymous)
+        self.assertIn('data-platform-menu-toggle', anonymous)
+
+        signed_in = self.signed_in_client().get(
+            '/', base_url='http://localhost'
+        ).get_data(as_text=True)
+        self.assertIn('data-global-tabsource', signed_in)
+        self.assertIn('data-platform-menu-toggle', signed_in)
+
+    def test_global_phone_bar_source_offers_only_real_registered_routes(self):
+        """Architecture section 5: the four-slot structure is a source list
+        for the one existing bottom bar. Slot 1 keeps assumption A1's label
+        because no per-member profile route is registered."""
+        html = self.signed_in_client().get(
+            '/interview-studio', base_url='http://localhost'
+        ).get_data(as_text=True)
+        source = html.split('data-global-tabsource', 1)[1].split('</ul>', 1)[0]
+
+        self.assertIn(f'href="{"/petec/resume"}#overview" ', source)
+        self.assertIn(">Pete's Slate</span>", source)
+        self.assertNotIn('>Profile<', source)
+        self.assertIn('href="/the-slate"', source)
+        self.assertIn('>Community</span>', source)
+        self.assertIn('href="/interview-studio"', source)
+        # Short visible label, full accessible name (WCAG 2.2 SC 2.5.3).
+        self.assertIn('aria-label="Interview Studio"', source)
+        self.assertIn('>Interview</span>', source)
+        # Three destinations plus the More slot, which is a button rather
+        # than a destination and so carries no href.
+        self.assertEqual(source.count('<li>'), 3)
+        self.assertEqual(source.count('<li data-global-more>'), 1)
+        self.assertEqual(source.count('href='), 3)
+        # Every slot carries a server-rendered mark; nothing is built in
+        # script from data.
+        self.assertEqual(source.count('class="mobile-tabbar__mark"'), 4)
+        self.assertEqual(source.count('class="mobile-tabbar__label"'), 4)
+
+    def test_more_sheet_offers_settings_and_omits_a_help_route_that_does_not_exist(self):
+        """The direction's More list names Help, but no Help route is
+        registered anywhere in the application. Navigation gains no
+        destination that lacks a real page, so Help is not offered."""
+        html = self.client.get(
+            '/interview-studio', base_url='http://localhost'
+        ).get_data(as_text=True)
+        menu = html.split('id="platform-mobile-menu"', 1)[1].split('</nav>', 1)[0]
+
+        self.assertIn('>Settings</a>', menu)
+        self.assertIn('href="/app/settings"', menu)
+        self.assertNotIn('>Help<', menu)
+        # Every one of the five destinations is still reachable from the sheet.
+        for label in ("Pete's Slate", 'Community', 'Interview Studio',
+                      'Opportunity Slate'):
+            self.assertEqual(menu.count(f'>{label}</a>'), 1)
+
+    def test_shell_offers_no_notification_or_add_control(self):
+        """Neither has a real backing contract: no notification route, model
+        or service exists, and /app/capture is owner-gated behind a
+        fail-closed allowlist. The Add position is reserved in comment only,
+        so a future member contract is an insertion, not a re-layout."""
+        for path in ('/', '/interview-studio', '/petec/resume'):
+            with self.subTest(path=path):
+                html = self.client.get(
+                    path, base_url='http://localhost'
+                ).get_data(as_text=True)
+                header = html.split('<header class="global-header">', 1)[1].split(
+                    '</header>', 1
+                )[0]
+                for banned in ('notification', 'data-ps-notifications',
+                               'data-ps-add', 'href="/app/capture"'):
+                    self.assertNotIn(banned, header)
+
+        # The reservation is a template marker, so it ships zero bytes and
+        # cannot become a false affordance. It sits between search and the
+        # account control, which is where the future control belongs.
+        template = Path('templates/base.html').read_text(encoding='utf-8')
+        self.assertIn('PS-SHELL-001 reserved Add slot', template)
+        actions = template.split('class="platform-actions"', 1)[1]
+        self.assertLess(
+            actions.index('PS-SHELL-001 reserved Add slot'),
+            actions.index('class="platform-account"'),
+        )
+
+    def test_legacy_owner_workspace_keeps_the_unconverged_shell(self):
+        """Architecture section 6 wants one component set. /app cannot join
+        it while tests/test_owner_home.py locks that render byte for byte —
+        including the content fingerprints of style.css, site-search.js and
+        mobile-nav.js. The fork is therefore deferred, and this test pins the
+        deferral so it is visible rather than assumed."""
+        originals = {
+            key: app.config.get(key)
+            for key in ('PEERSLATE_ALLOW_DEV_IDENTITY', 'PEERSLATE_DEV_USER_KEY')
+        }
+        app.config['PEERSLATE_ALLOW_DEV_IDENTITY'] = True
+        app.config['PEERSLATE_DEV_USER_KEY'] = 'shell-test-owner'
+        try:
+            legacy = self.client.get('/app', base_url='http://localhost')
+        finally:
+            for key, value in originals.items():
+                if value is None:
+                    app.config.pop(key, None)
+                else:
+                    app.config[key] = value
+
+        self.assertEqual(legacy.status_code, 200)
+        body = legacy.get_data(as_text=True)
+        self.assertNotIn('public-navigation.css', body)
+        self.assertIn('js/site-search.js', body)
+        self.assertIn('js/mobile-nav.js', body)
+        for shell_only in ('platform-roomswitcher', 'platform-account',
+                           'platform-room-title', 'data-global-tabsource',
+                           'PS-SHELL-001 reserved Add slot'):
+            self.assertNotIn(shell_only, body)
 
     def test_sitemap_contains_only_current_canonical_public_routes(self):
         response = self.client.get(

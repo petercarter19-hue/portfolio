@@ -1,0 +1,160 @@
+{
+ "F-A 390x400": {
+  "viewport": "390x400",
+  "sheetHeight": 336,
+  "sheetBottom": 400,
+  "maxHeight": "336px",
+  "overflowY": "auto",
+  "scrollable": true,
+  "rows": 7,
+  "offscreenAtRest": [
+   "Sign out"
+  ],
+  "UNREACHABLE_by_scrolling": [],
+  "UNREACHABLE_by_keyboard": []
+ },
+ "F-A 568x320": {
+  "viewport": "568x320",
+  "sheetHeight": 256,
+  "sheetBottom": 320,
+  "maxHeight": "256px",
+  "overflowY": "auto",
+  "scrollable": true,
+  "rows": 7,
+  "offscreenAtRest": [
+   "My Slate",
+   "Settings",
+   "Sign out"
+  ],
+  "UNREACHABLE_by_scrolling": [],
+  "UNREACHABLE_by_keyboard": []
+ },
+ "F-A 640x360": {
+  "viewport": "640x360",
+  "sheetHeight": 296,
+  "sheetBottom": 360,
+  "maxHeight": "296px",
+  "overflowY": "auto",
+  "scrollable": true,
+  "rows": 7,
+  "offscreenAtRest": [
+   "Settings",
+   "Sign out"
+  ],
+  "UNREACHABLE_by_scrolling": [],
+  "UNREACHABLE_by_keyboard": []
+ },
+ "F-A 320x256": {
+  "viewport": "320x256",
+  "sheetHeight": 192,
+  "sheetBottom": 256,
+  "maxHeight": "192px",
+  "overflowY": "auto",
+  "scrollable": true,
+  "rows": 7,
+  "offscreenAtRest": [
+   "Opportunity Slate",
+   "My Slate",
+   "Settings",
+   "Sign out"
+  ],
+  "UNREACHABLE_by_scrolling": [],
+  "UNREACHABLE_by_keyboard": []
+ },
+ "F-B 390x844 signed in": {
+  "at top": {
+   "barHidden": false,
+   "menuToggle": "none"
+  },
+  "after 900px scroll": {
+   "barHidden": false,
+   "barOnScreen": true,
+   "menuToggle": "none",
+   "scrollY": 227
+  }
+ },
+ "F-D bar slots": [
+  {
+   "label": "Pete's Slate",
+   "h": 44.5,
+   "w": 93.5,
+   "hasIcon": true,
+   "iconFill": "none",
+   "current": false,
+   "color": "rgb(73, 97, 122)"
+  },
+  {
+   "label": "Community",
+   "h": 44.5,
+   "w": 93.5,
+   "hasIcon": true,
+   "iconFill": "none",
+   "current": false,
+   "color": "rgb(73, 97, 122)"
+  },
+  {
+   "label": "Interview",
+   "h": 44.5,
+   "w": 93.5,
+   "hasIcon": true,
+   "iconFill": "none",
+   "current": false,
+   "color": "rgb(73, 97, 122)"
+  },
+  {
+   "label": "More",
+   "h": 44.5,
+   "w": 93.5,
+   "hasIcon": true,
+   "iconFill": "none",
+   "current": false,
+   "color": "rgb(73, 97, 122)"
+  }
+ ],
+ "F-D current slot": {
+  "label": "Interview",
+  "color": "rgb(32, 55, 103)",
+  "iconFill": "rgb(32, 55, 103)",
+  "iconStroke": "none",
+  "indicator": "none",
+  "h": 44.5
+ },
+ "F-F underline": {
+  "headerHeight": 65,
+  "labelSpan": [
+   490.3,
+   609
+  ],
+  "underlineSpan": [
+   482.3,
+   617
+  ],
+  "overhangLeft": 8,
+  "overhangRight": 8,
+  "thickness": "3px",
+  "pctOfHeader": 4.6,
+  "clearanceAboveRule": 11
+ },
+ "F-G 200% text signed out": {
+  "docScrollWidth": 1440,
+  "innerWidth": 1440,
+  "overflowPx": 0,
+  "lastDestination": [
+   433,
+   722
+  ],
+  "rowWrapped": true,
+  "headerHeight": 265
+ },
+ "F-G 200% text signed in": {
+  "docScrollWidth": 1440,
+  "innerWidth": 1440,
+  "overflowPx": 0,
+  "lastDestination": [
+   433,
+   722
+  ],
+  "rowWrapped": true,
+  "headerHeight": 265
+ }
+}

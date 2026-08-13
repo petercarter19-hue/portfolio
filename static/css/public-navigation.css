@@ -1,7 +1,120 @@
 /*
- * PS-PUBLIC-NAV-001
+ * PS-PUBLIC-NAV-001 + PS-SHELL-001 (Editorial Top Bar)
  * Authoritative public-shell corrections. This file loads after page-level
  * styles so legacy route packages cannot change shared header geometry.
+ *
+ * PS-SHELL-001, 2026-08-12: this file now also owns the Editorial Top Bar —
+ * one quiet row on a white ground under a thin rule, logo left, five inline
+ * destinations, search, account. Approved direction 1 is authority for
+ * geometry, composition and responsive behaviour only.
+ *
+ * Colour policy for this stage: every value below is written as a production
+ * variable the shell already resolves, so the later --ps-shell-* alias layer
+ * stays a mechanical substitution. This package selects no palette.
+ *
+ * It does NOT follow that nothing changed colour. The Editorial Top Bar is a
+ * new composition, and the full inventory of finish deltas is below so the
+ * token step starts from an accurate baseline rather than an assumption.
+ * IMPLEMENTATION.md section 2 carries the same table with before/after values.
+ *
+ *  1. Header ground   #f6f7fa -> var(--surface) #ffffff
+ *  2. Header rule     rgb(125 157 198 / 34%) -> var(--border) on the routes
+ *                     that were not already resolving var(--border)
+ *  3. Header shadow   0 0.45rem 1.4rem rgb(10 27 54 / 10%) -> none
+ *  4. Brand pill      gradient + inset highlight + shadow -> none
+ *  5. Brand artwork   portfolio shell's saturate(1.18) contrast(1.08) boost
+ *                     removed; the shared drop-shadow treatment is now used
+ *                     on every route. The logo FILE is untouched.
+ *  6. Nav hover ink   var(--accent-hover) #4a83e8 -> var(--ps-page-accent)
+ *                     #203767. Authorized accessibility correction A1.
+ *  7. Underline       bottom:-4px radius 2px -> seated 11px above the header
+ *                     rule, square. Colour unchanged (#203767).
+ *  8. Search fill     color-mix(--border 22%, --surface) ~#f7f9fb ->
+ *                     var(--surface-soft) #f4f8fd
+ *  9. Search radius   999px -> 0.5rem;  focus border --accent -> --ps-page-accent
+ * 10. Results radius  14px -> 0.75rem
+ * 11. Menu toggle     color-mix(--surface 88%, transparent) -> var(--surface);
+ *                     radius 0.6rem -> 0.5rem; weight 700 -> 650; expanded
+ *                     state loses its --accent-soft fill and takes
+ *                     --ps-page-accent for border and ink
+ * 12. Sheet ground    color-mix(--bg-elevated 97%, transparent) + blur(24px)
+ *                     -> var(--surface), no blur; shadow 18% -> 12%
+ * 13. Sheet states    hover/current ink and the current dot move from
+ *                     var(--accent) #0b63e5 to var(--ps-page-accent) #203767;
+ *                     row radius 0.65rem -> 0.5rem
+ * 14. Phone bar       ONLY where it carries the global structure: frosted
+ *                     color-mix ground + blur(26px) saturate(1.5) + 14% shadow
+ *                     -> flat var(--surface) and one rule; current slot loses
+ *                     its --accent-soft fill and its 750 weight and takes
+ *                     --ps-page-accent ink with a filled mark, per
+ *                     01_editorial_top_bar_LEADING_NOT_LOCKED.png section C.
+ *                     Slots gain an icon above the label and a 2.75rem
+ *                     target. A page-owned section-tab bar is deliberately
+ *                     untouched.
+ * 15. Active underline 2px inset to the label -> 3px on the padded box, so it
+ *                     overhangs the label by 8px each side.
+ *                     GLOBAL_SHELL_PUBLIC_MEMBER_OWNER.png measures ~8px
+ *                     overhang at 5.0% of header height; 3px is 4.6% of this
+ *                     65px header. Colour and 11px clearance unchanged.
+ *                     (An earlier version of this line said "Board 3", which
+ *                     reads as Direction 3 — the REJECTED adaptive room rail,
+ *                     03_adaptive_room_rail_REJECTED_FOUNDATION.png. It never
+ *                     meant that. The three approved boards are named in full
+ *                     wherever they are cited, so no reader has to count.)
+ *
+ * The owner colour-consistency round, 2026-08-13, adds six more. They are
+ * real computed-value changes, each made so one semantic role resolves to one
+ * value across the whole shell:
+ *
+ * 16. Room title      no longer REPLACES the mark below 64rem. The logo
+ *                     renders at every width in every auth state and the room
+ *                     title sits beside it behind a 1px divider, standing
+ *                     down below 34rem. Owner direction; diverges from
+ *                     01_editorial_top_bar... C and
+ *                     02_room_switcher_MEDIUM_WIDTH_REFERENCE.png C, both of
+ *                     which draw the room name INSTEAD of the mark.
+ * 17. Switcher rows   current row gains the persistent --ps-shell-accent-soft
+ *                     fill the approved 02_room_switcher... B draws; hover
+ *                     moves from --ps-shell-rail to the same token, so one
+ *                     soft-fill role has one value in the switcher, the
+ *                     account menu and the More sheet alike.
+ * 18. Menu button     ground --ps-shell-surface -> --ps-shell-rail, matching
+ *                     the search field, the switcher pill and the account
+ *                     trigger. One control ground.
+ * 19. Sheet account   rows move from --ps-shell-text-muted to
+ *                     --ps-shell-text, matching every other menu row.
+ *                     17.26:1 on white, from 6.41:1.
+ * 20. Panel elevation the More sheet's bespoke 0 1rem 2rem rgb(10 27 54/12%)
+ *                     becomes --ps-shell-shadow, which the other three
+ *                     panels already resolved through var(--shadow).
+ * 21. Cross-route     /experience is the one route base.html does not give
+ *                     body.slate-light, so the shell repainted itself there.
+ *                     Six tokens are pinned in shell scope so the chrome is
+ *                     one palette everywhere. See the block below the family.
+ *
+ * None of the above is a contrast regression; 6 and 19 are corrections. Type
+ * scale and the palette itself belong to the Colour, Background and
+ * Typography Audit, so released weights and sizes are kept.
+ *
+ * The "now" column above is expressed in production variables because that is
+ * what those declarations said when the change was made. They are now written
+ * as --ps-shell-* aliases of exactly those variables, so every computed value
+ * in the table still holds. Two production references remain live in shell
+ * rules and are recorded rather than aliased: var(--font-serif), which the
+ * section 5 token family does not name because type belongs to the audit, and
+ * var(--accent-hover), which survives only inside a comment. var(--shadow) is
+ * no longer among them — the four floating panels now share
+ * --ps-shell-shadow. The logo's own drop-shadow literal is deliberately left
+ * alone: it is the artwork's treatment, not a shell surface role, and the
+ * mark is locked.
+ *
+ * No dark rules are added here and none are removed. Where a rule would
+ * otherwise outrank a dormant body[data-theme="dark"] declaration it carries
+ * an explicit :not([data-theme="dark"]) guard, so the paused theme keeps
+ * exactly the rules it has today. The guard is on COLOUR only, never on
+ * layout: a dormant dark rule redefines ink, not geometry, so guarding
+ * structure would leave a revived dark theme inheriting none of this shell's
+ * composition. Colour guarded, layout unguarded, deliberately.
  */
 
 :root {
@@ -10,12 +123,213 @@
     --ps-public-subheader-height: 3rem;
 }
 
+/*
+ * THE SHELL TOKEN FAMILY (architecture section 7.1).
+ *
+ * Aliases of the production variables the shell already resolves, so the
+ * computed value is identical to the day before tokenization and the Colour,
+ * Background and Typography Audit gets two levers: change the production
+ * variable globally, or override one --ps-shell-* token for the shell alone.
+ *
+ * DECLARED ON THE SHELL'S OWN ROOTS, NOT ON :root. Section 7.1 writes this
+ * block at :root, and at :root it does the exact thing section 7.1 exists to
+ * prevent. Custom properties substitute at computed-value time on the element
+ * the declaration applies to, so `--ps-shell-surface: var(--surface)` written
+ * at :root freezes to :root's --surface and inherits that frozen value straight
+ * past every later redefinition on <body>. Measured on this branch with the
+ * block at :root, on / , /experience, /peerslate and /interview-studio:
+ *
+ *     --surface           #ffffff          (live, from body.slate-light)
+ *     --ps-shell-surface  #1c2528          (frozen at :root, dark-era default)
+ *     --border            #d9e2ec  ->  rgb(255 255 255 / 14%)
+ *     plus text, accent and rail all wrong on all four routes
+ *
+ * That is a near-black header on every page. Declared on .global-header and
+ * .mobile-tabbar instead, each alias resolves against the value that element
+ * has actually inherited through :root -> body[data-theme] -> body.slate-light,
+ * which is what makes the substitution inert. Verified by COMPUTED STYLE, not
+ * by screenshot: every CSS property of every node under the shell, snapshotted
+ * with the tokenized stylesheet and again with its de-tokenized twin swapped
+ * into the same live DOM — 174 states, 18,118 node snapshots, zero
+ * non-custom-property deltas. All 11 aliases also resolve identically to their
+ * production variable on 6 routes x 2 auth states. An earlier version of this
+ * comment cited a 150-frame pixel diff; that comparison was defective and its
+ * numbers are withdrawn — see IMPLEMENTATION.md section 11.5 and
+ * tokenization_diff.txt.
+ *
+ * Flat values, light only. No @media (prefers-color-scheme), no second value
+ * set, no theme-switching scaffolding — a variable layer is exactly how a
+ * paused dark theme returns by accident.
+ *
+ * static/css/design-system/tokens.css is deliberately NOT adopted: it is an
+ * unadopted parallel --ps-* system whose values differ from live (#f7faff vs
+ * #fdfdfe, #4ea3ff vs #0b63e5), so aliasing to it would repaint. Divergence
+ * recorded, not resolved here.
+ */
+.global-header,
+.mobile-tabbar {
+    --ps-shell-ground: var(--bg);
+    --ps-shell-stage: var(--bg-elevated);
+    --ps-shell-surface: var(--surface);
+    --ps-shell-rail: var(--surface-soft);
+    --ps-shell-border: var(--border);
+    --ps-shell-text: var(--text);
+    --ps-shell-text-muted: var(--text-muted);
+    --ps-shell-accent: var(--accent);
+    --ps-shell-accent-soft: var(--accent-soft);
+
+    /* Section 7.4's documented exception, made explicit instead of implicit.
+       The shell's active state resolves from the ROOM accent, not from
+       --ps-shell-accent: --ps-page-accent is #203767 and --accent is #0b63e5,
+       so moving it would repaint every active destination on every route. It
+       is named here so the audit changes one line — point this at
+       var(--ps-shell-accent) — rather than hunting a cascade. */
+    --ps-shell-accent-room: var(--ps-page-accent);
+
+    /* Section 7.3: an honest name for the ring the shell actually draws. The
+       live value comes from --color-gold-bright, which is #ffd36a at :root and
+       #4a83e8 under body[data-theme="modern-blue"] — a blue ring from a
+       variable called gold. Measured for SC 1.4.11 before choosing: #4a83e8 is
+       3.68:1 against the header's #ffffff ground and 3.62:1 against --bg
+       #fdfdfe. Both clear the 3:1 non-text threshold, so this is an alias and
+       nothing changes. Had it failed, this is where the one authorized visual
+       correction would have gone. */
+    --ps-shell-focus: var(--color-gold-bright);
+
+    /* Owner colour-consistency round, 2026-08-13. The shell floats four
+       panels — the switcher list, the account menu, the search results and
+       the More sheet — and three of them took var(--shadow) while the sheet
+       carried a bespoke 0 1rem 2rem rgb(10 27 54 / 12%). One elevation role,
+       one value. Section 11.4 of IMPLEMENTATION.md recorded the missing
+       shadow role as out of contract; the owner has since asked for every
+       shell colour to resolve one way, and a shadow is colour, so the role is
+       named here on exactly the same terms as --ps-shell-accent-room and
+       --ps-shell-focus: an alias, with its reason written down. */
+    --ps-shell-shadow: var(--shadow);
+}
+
+/*
+ * ONE SHELL, ONE PALETTE — the cross-route correction (owner colour round,
+ * 2026-08-13).
+ *
+ * The aliases above resolve against whatever context the PAGE's <body>
+ * supplies, and one route supplies a different one. base.html gives every
+ * route body.slate-light except /experience, so there the chain stops at
+ * body[data-theme="modern-blue"] and the same global chrome paints in a
+ * different palette. (.peerslate-home-page also declares a set, but at
+ * (0,1,0) it is outranked by body[data-theme="modern-blue"] at (0,1,1) on
+ * every page, so it never wins — recorded for the Colour audit, not fixed
+ * here, because it is a page-owned block in a byte-locked file.)
+ *
+ * Measured on the running application, signed out and signed in, at
+ * 1440 / 900 / 390, across 8 routes:
+ *
+ *   token                    every other route      /experience
+ *   --ps-shell-border        #d9e2ec                #e5e7ec
+ *   --ps-shell-text          #061a3a                #16213a
+ *   --ps-shell-text-muted    #49617a                #5c6575
+ *   --ps-shell-rail          #f4f8fd                #f6f7f9
+ *   --ps-shell-accent-soft   rgb(11 99 229 / 8%)    rgb(47 111 224 / 9%)
+ *   --ps-shell-shadow        0 12px 30px            0 10px 26px
+ *                            rgb(6 26 58 / 8%)      rgb(23 33 58 / 7%)
+ *
+ * Those paint the header rule, the destination and room-title ink, the
+ * search field's fill, border, text and icon, the switcher pill and its
+ * list, the account trigger and menu, the Menu button, the More sheet, and
+ * the phone bar's ground, rule and idle labels — i.e. essentially the whole
+ * shell. "One quiet, consistent global header" cannot be true while a route
+ * repaints it, so the six values are pinned HERE, in the shell's own scope,
+ * to what the shell already resolves on every other route. No page-owned
+ * rule changes and no page colour moves: /experience keeps every one of its
+ * own values, and only the chrome sitting on top of it stops drifting.
+ *
+ * The literals are body.slate-light's, quoted from style.css rather than
+ * invented — this package still selects no palette. They are the one place
+ * the Colour, Background and Typography Audit has to reconcile, and the
+ * cleaner fix it owns is upstream: either /experience takes the same light
+ * context as every other route, or the shell's palette stops being page
+ * context at all.
+ *
+ * --ps-shell-ground, --ps-shell-stage and --ps-shell-accent are deliberately
+ * NOT pinned. No shell rule paints any of them (section 11.4), and they name
+ * the PAGE's ground and the page's accent — pinning those would assert a
+ * ground this package does not own, on the one route whose ground is
+ * genuinely different.
+ *
+ * Guarded on the dark attribute like every other colour rule in this file.
+ * These are light-theme literals; unguarded, a revived dark theme would
+ * inherit a white-page palette into its own chrome on every route that does
+ * not carry slate-light. Nothing structural is lost to the guard — this
+ * block declares colour and only colour.
+ */
+body:not([data-theme="dark"]):not(.slate-light) .global-header,
+body:not([data-theme="dark"]):not(.slate-light) .mobile-tabbar {
+    --ps-shell-rail: #f4f8fd;
+    --ps-shell-border: #d9e2ec;
+    --ps-shell-text: #061a3a;
+    --ps-shell-text-muted: #49617a;
+    --ps-shell-accent-soft: rgb(11 99 229 / 8%);
+    --ps-shell-shadow: 0 12px 30px rgb(6 26 58 / 8%);
+}
+
+/* The shell states its own focus ring rather than inheriting one from a
+   variable named --color-gold-bright that resolves blue. Same 3px, same
+   computed colour, same offset as the site rule this restates — the value is
+   an alias, so this is inert. It exists so the Colour audit can change the
+   shell's ring in one named place.
+   Two exclusions, both found by review rather than by the frame diff, which
+   could not see either. .theme-toggle draws its own double ring through
+   box-shadow with outline:none at 0,2,0; without :not() this rule outranked
+   it and stacked a third ring on top — invisible to the baseline because the
+   toggle is flag-gated off. And the dark guard is not decoration: the dormant
+   body[data-theme="dark"] :where(a,button,...):focus-visible rule is 0,1,1
+   and this would have silently outranked it. */
+body:not([data-theme="dark"]) .global-header a:focus-visible,
+body:not([data-theme="dark"]) .global-header button:not(.theme-toggle):focus-visible,
+body:not([data-theme="dark"]) .mobile-tabbar a:focus-visible,
+body:not([data-theme="dark"]) .mobile-tabbar button:focus-visible {
+    outline: 3px solid var(--ps-shell-focus);
+}
+
+/* Shell-scoped visually hidden text. The shell has no site-wide utility for
+   this, and the existing clip-path pattern in this file is the one already
+   proven on the Menu control. */
+.platform-shell-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
 .global-header .platform-nav {
     position: relative;
 }
 
+/*
+ * THE GROUND. Direction 1's authority: one quiet row, white ground, thin
+ * bottom rule. The released header carried a pale blue-grey fill plus a
+ * 1.4rem drop shadow; both are what stopped it reading as one calm line.
+ * The selector list mirrors every light-theme header background rule in
+ * style.css so this file settles the geometry once instead of leaving a
+ * per-route cascade race.
+ */
+body:not([data-theme="dark"]) .global-header,
+body.slate-light:not([data-theme="dark"]) .global-header,
+body.peerslate-home-page:not([data-theme="dark"]) .global-header,
+body.living-resume-v2-page:not([data-theme="dark"]) .global-header,
+body.portfolio-shell:not(.living-resume-v2-page):not([data-theme="dark"]) .global-header {
+    background: var(--ps-shell-surface);
+    border-bottom: 1px solid var(--ps-shell-border);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
 .global-header .platform-nav__inner,
 body.portfolio-shell .global-header .platform-nav__inner,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-nav__inner,
 body.living-resume-v2-page .global-header .platform-nav__inner,
 body.resume-overview-public-page .global-header .platform-nav__inner {
     width: 100%;
@@ -26,30 +340,445 @@ body.resume-overview-public-page .global-header .platform-nav__inner {
     display: grid;
     grid-template-areas: "brand links actions";
     grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: clamp(1.5rem, 2.8vw, 3.75rem);
+    align-items: stretch;
+    gap: clamp(1.5rem, 3vw, 2.75rem);
 }
 
-.global-header .platform-brand {
+.global-header .platform-brand,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-brand {
     grid-area: brand;
+    align-items: center;
+    gap: 0.75rem;
 }
 
+/* The logo file is locked and is not touched here. What is removed is the
+   glass pill drawn AROUND it — a gradient fill, an inset highlight and a
+   drop shadow that the editorial ground has no use for. The artwork keeps
+   its released 2.2rem height and its own soft shadow. The portfolio shell's
+   extra saturate/contrast boost goes with the pill: one header, one logo
+   treatment, and the file renders in its own colours on every route. */
+.global-header .platform-brand__logo,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-brand__logo {
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+}
+
+.global-header .platform-brand__logo img,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-brand__logo img {
+    height: 2.2rem;
+    width: auto;
+    filter: drop-shadow(0 1px 1px rgb(6 26 58 / 22%));
+}
+
+/* Phone-only room title (direction 1: a signed-in phone header names the
+   room instead of repeating the logo). Desktop never shows it. */
+.global-header .platform-room-title {
+    display: none;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--ps-shell-text);
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/*
+ * THE DESTINATIONS. Left-packed beside the logo rather than spread across
+ * the full row: an editorial bar reads as one typographic line, not as a
+ * portal that stretches its links to the window edge. Each link fills the
+ * row height, so the active underline can sit on the header's own rule and
+ * the touch target is the whole 4rem band.
+ */
 .global-header .platform-nav__links,
 body.portfolio-shell .global-header .platform-nav__links,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-nav__links,
 body.living-resume-v2-page .global-header .platform-nav__links,
 body.resume-overview-public-page .global-header .platform-nav__links {
     grid-area: links;
     grid-column: auto;
     display: flex;
     width: 100%;
-    justify-content: space-evenly;
-    gap: clamp(1.15rem, 2.3vw, 3rem);
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: clamp(0.5rem, 1.1vw, 1.25rem);
+    margin: 0;
     padding: 0;
     overflow: visible;
+    /* The responsive ladder keys on viewport width, and a media query's rem
+       is the INITIAL root font size, not the current one — so growing text
+       alone never collapses the row into the switcher. At 200% text on a
+       1440 viewport the last destination ran 4px past the edge. Wrapping is
+       the reflow answer: the row grows taller and nothing is lost or
+       clipped. Inert at 100%, where the row has room and never wraps. */
+    flex-wrap: wrap;
+    row-gap: 0;
 }
 
-.global-header .platform-actions {
+/* The flex items here are the <li>, not the <a>, so the centring has to live
+   on the list item — otherwise the link sits at the top of the row, the
+   underline lands 21px above the rule and the focus ring is drawn 7px above
+   the header. */
+.global-header .platform-nav__links li {
+    display: flex;
+    align-items: center;
+}
+
+/* Type is the released type: this package does not own the type scale, so the
+   size and weight below are exactly what production shipped.
+   The box is 2.75rem centred in the 4rem row rather than the full row height.
+   That gives three things at once: a 44px target, a focus ring that wraps the
+   label and still clears the header, and room for the underline to sit clear
+   of the header rule instead of fusing with it. */
+.global-header .platform-nav__links a,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-nav__links a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 0.5rem;
+    color: var(--ps-shell-text);
+    font-size: clamp(0.93rem, 0.85vw, 1.02rem);
+    font-weight: 620;
+    white-space: nowrap;
+    transition: color 160ms ease;
+}
+
+/* The shell has to OWN its destination ink, not merely agree with whoever
+   does. The rule above is (0,2,1) and style.css carries
+   `body[data-theme="modern-blue"] .platform-nav__links a { color: var(--text) }`
+   at (0,2,2), so on every platform-shell route the ink was actually coming
+   from style.css. That was invisible while the two resolved the same value —
+   and on /experience, the one route base.html does not give body.slate-light,
+   --text is #16213a while --ps-shell-text is #061a3a, so the shell's own
+   destinations painted a different navy there than everywhere else. Measured:
+   rgb(22,33,58) on /experience against rgb(6,26,58) on all seven other
+   routes. This is architecture section 7.4's structural point applied to the
+   idle state — the shell states the value instead of a page rule winning by
+   cascade — and the same fix the active state already carries one rule below.
+
+   Specificity is placed with care. :where() contributes nothing, so the dark
+   guard is free and this lands at exactly (0,2,2): a tie with the modern-blue
+   rule, won on source order because this file loads last; no match at all on
+   a dark body, so the dormant body[data-theme="dark"] rule at the same (0,2,2)
+   is untouched; and still BELOW Opportunity Slate v2's (0,3,2) and Interview
+   Studio's (0,5,2) page-scoped overrides, so both locked treatments keep
+   winning. Colour only — the released size and weight above are not restated,
+   so no page's type is disturbed. */
+body:where(:not([data-theme="dark"])) .global-header .platform-nav__links a {
+    color: var(--ps-shell-text);
+}
+
+/*
+ * The active state: the room accent plus a 3px underline seated clear of the
+ * header rule. Two deliberate decisions here.
+ *
+ * 1. Weight no longer changes on the active link. The released header went
+ *    620 -> 700, which re-flowed the whole row every time the current page
+ *    changed. Colour and the underline carry the state instead, at the
+ *    released idle weight.
+ * 2. The value stays var(--ps-shell-accent-room) — exactly what the live cascade
+ *    already resolves through body[data-room]. This file simply becomes the
+ *    one place that states it, instead of a room rule winning by source
+ *    position. Palette selection belongs to the Colour, Background and
+ *    Typography Audit; nothing here changes a computed colour.
+ *
+ * The underline is inset to the label rather than the padded box, and its
+ * bottom edge sits 11px above the header's rule: the 2.75rem link centred in
+ * the 4rem row ends 54px down, and the rule is at 65px. That is direction 1's
+ * clearance normalised to this header. Flush with the rule it read as a tab
+ * indicator fused to the chrome, not as an editorial underline.
+ *
+ * Specificity is deliberately set above body[data-room] and deliberately
+ * below Interview Studio's page-scoped warm override, so that package's
+ * locked visuals keep winning.
+ */
+body .global-header .platform-nav__links a[aria-current="page"],
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-nav__links a[aria-current="page"] {
+    color: var(--ps-shell-accent-room);
+    font-weight: 620;
+}
+
+/* Overhang and weight are measured from the board: its underline runs about
+   8px past each end of the label and is 5px on a 101px header — 5.0%, which
+   is ~3px on this 65px one. right/left:0 lands on the link's padded box,
+   which is exactly the label plus this package's 0.5rem padding, so the 8px
+   overhang falls out of the geometry rather than being a second magic number. */
+body .global-header .platform-nav__links a[aria-current="page"]::after,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-nav__links a[aria-current="page"]::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    border-radius: 0;
+    background: var(--ps-shell-accent-room);
+}
+
+/* Accessibility correction A1 (recorded, measured): hover/focus ink was
+   var(--accent-hover), which resolves to #4a83e8 — 3.68:1 on the #ffffff
+   ground, and 3.46:1 on the released #f6f8fc ground. Both fail SC 1.4.3.
+   The room accent #203767 measures 11.64:1 and is already the active-state
+   ink, so hover now reads as the same family and passes. */
+body .global-header .platform-nav__links a:hover,
+body .global-header .platform-nav__links a:focus-visible,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-nav__links a:hover,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-nav__links a:focus-visible {
+    color: var(--ps-shell-accent-room);
+}
+
+.global-header .platform-actions,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-actions {
     grid-area: actions;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.6rem;
+}
+
+/*
+ * THE ROOM SWITCHER. Direction 2 supplies this and nothing else: between
+ * 64.01rem and 73.75rem the five inline destinations become one pill naming
+ * the current room. Hidden at every other width.
+ */
+.global-header .platform-roomswitcher {
+    position: relative;
+    grid-area: links;
+    display: none;
+    align-self: center;
+}
+
+/* Direction 2's own composition: a soft borderless pill carrying a leading
+   room icon, and rows of icon, title and one-line description. */
+.global-header .platform-roomswitcher__trigger {
+    display: inline-flex;
+    min-height: 2.5rem;
+    max-width: 100%;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.9rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ps-shell-rail);
+    color: var(--ps-shell-text);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: clamp(0.93rem, 0.85vw, 1.02rem);
+    font-weight: 620;
+}
+
+.global-header .platform-roomswitcher__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.global-header .platform-roomswitcher__mark {
+    width: 1.05rem;
+    height: 1.05rem;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.global-header .platform-roomswitcher__chevron {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 160ms ease;
+}
+
+.global-header .platform-roomswitcher__trigger:hover,
+.global-header .platform-roomswitcher__trigger[aria-expanded="true"] {
+    color: var(--ps-shell-accent-room);
+}
+
+.global-header .platform-roomswitcher__trigger[aria-expanded="true"] .platform-roomswitcher__chevron {
+    transform: rotate(180deg);
+}
+
+.global-header .platform-roomswitcher__list[hidden] {
+    display: none;
+}
+
+.global-header .platform-roomswitcher__list {
+    position: absolute;
+    top: calc(100% + 0.45rem);
+    left: 0;
+    z-index: 1210;
+    /* Wide enough that the longest room description stays on one line, which
+       is what direction 2's rows show. */
+    min-width: 22rem;
+    margin: 0;
+    padding: 0.35rem;
+    border: 1px solid var(--ps-shell-border);
+    border-radius: 0.85rem;
+    background: var(--ps-shell-surface);
+    box-shadow: var(--ps-shell-shadow);
+    list-style: none;
+}
+
+.global-header .platform-roomswitcher__list a {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: 0.6rem;
+    color: var(--ps-shell-text);
+}
+
+.global-header .platform-roomswitcher__row {
+    display: grid;
+    min-width: 0;
+    gap: 0.1rem;
+}
+
+.global-header .platform-roomswitcher__title {
+    font-size: 0.92rem;
+    font-weight: 650;
+    line-height: 1.2;
+}
+
+.global-header .platform-roomswitcher__sub {
+    color: var(--ps-shell-text-muted);
+    font-size: 0.78rem;
+    font-weight: 400;
+    line-height: 1.25;
+}
+
+/* ONE SOFT-FILL ROLE across every shell panel. A hovered or current row in
+   the room switcher, the account menu and the More sheet is the same thing,
+   so it takes the same fill. This row used --ps-shell-rail, which is the
+   shell's CONTROL ground — the search field, the switcher pill, the account
+   trigger, the Menu button — so one token carried two roles and one role had
+   two values. Rail keeps the controls; accent-soft keeps the rows. */
+.global-header .platform-roomswitcher__list a:hover,
+.global-header .platform-roomswitcher__list a:focus-visible {
+    background: var(--ps-shell-accent-soft);
+    color: var(--ps-shell-accent-room);
+}
+
+/* Finding F2. The approved 02_room_switcher_MEDIUM_WIDTH_REFERENCE.png B
+   draws a soft PERSISTENT fill behind the current row — sampled off the board
+   at rgb(243,246,244) against its rgb(254,254,254) panel ground, about a 4%
+   drop. The released rule gave the current row accent ink and weight 750 but
+   a background only on hover and focus, so the row it is on looked identical
+   to every other row until the pointer arrived, and the More sheet's current
+   row (which does fill) and this one disagreed about what "current" looks
+   like. Same token as the sheet, so they now agree. The board's own value is
+   a green-tinted grey and is not authority: README's pixel rule keeps
+   production colour, and this package selects no palette. */
+.global-header .platform-roomswitcher__list a[aria-current="page"] {
+    background: var(--ps-shell-accent-soft);
+    color: var(--ps-shell-accent-room);
+}
+
+.global-header .platform-roomswitcher__list a[aria-current="page"] .platform-roomswitcher__title {
+    font-weight: 750;
+}
+
+/*
+ * THE ACCOUNT CONTROL (README assumption A3). An initial, never a photo:
+ * no truthful avatar source exists for the signed-in viewer. The menu holds
+ * only the two controls that exist today.
+ */
+.global-header .platform-account {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.global-header .platform-account[hidden] {
+    display: none;
+}
+
+.global-header .platform-account__trigger {
+    display: inline-flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid var(--ps-shell-border);
+    border-radius: 50%;
+    background: var(--ps-shell-rail);
+    color: var(--ps-shell-text);
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.global-header .platform-account__trigger:hover,
+.global-header .platform-account__trigger[aria-expanded="true"] {
+    border-color: var(--ps-shell-accent-room);
+    color: var(--ps-shell-accent-room);
+}
+
+.global-header .platform-account__initial {
+    font-size: 0.875rem;
+    font-weight: 650;
+    line-height: 1;
+}
+
+.global-header .platform-account__menu[hidden] {
+    display: none;
+}
+
+.global-header .platform-account__menu {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    right: 0;
+    z-index: 1210;
+    display: grid;
+    min-width: 11rem;
+    gap: 0.15rem;
+    padding: 0.35rem;
+    border: 1px solid var(--ps-shell-border);
+    border-radius: 0.75rem;
+    background: var(--ps-shell-surface);
+    box-shadow: var(--ps-shell-shadow);
+}
+
+.global-header .platform-account__form {
+    display: block;
+    margin: 0;
+}
+
+.global-header .platform-account__item {
+    display: flex;
+    width: 100%;
+    min-height: 2.75rem;
+    align-items: center;
+    padding: 0 0.65rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: none;
+    color: var(--ps-shell-text);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 650;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.global-header .platform-account__item:hover,
+.global-header .platform-account__item:focus-visible {
+    background: var(--ps-shell-accent-soft);
+    color: var(--ps-shell-accent-room);
 }
 
 .platform-menu-toggle,
@@ -91,16 +820,83 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
     right: var(--ps-public-nav-gutter);
 }
 
+/*
+ * SEARCH — presentation and responsiveness only. The index, its two
+ * server-rendered branches and its authorization scope are untouched.
+ * The released control was a tinted pill that changed width three separate
+ * ways between 1180px and 1440px; it is now one quiet field with one
+ * focus expansion.
+ */
+.global-header .nav-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.global-header .nav-search__icon {
+    left: 0.7rem;
+    stroke: var(--ps-shell-text-muted);
+}
+
+.global-header .nav-search__input,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__input {
+    width: 11rem;
+    min-height: 2.25rem;
+    padding: 0 0.75rem 0 2.1rem;
+    border: 1px solid var(--ps-shell-border);
+    border-radius: 0.5rem;
+    /* The released control carried a faint fill as well as its border; the
+       fill is what makes the field boundary readable at all, so it is kept
+       rather than dropped for a flat white box. --border alone measures
+       1.31:1 against the white ground and would leave the field boundary
+       below SC 1.4.11 — recorded for the Colour audit, which owns the
+       border value. */
+    background: var(--ps-shell-rail);
+    color: var(--ps-shell-text);
+    font-family: inherit;
+    font-size: 0.875rem;
+    transition: width 180ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.global-header .nav-search__input:focus,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__input:focus {
+    width: 15rem;
+    outline: none;
+    border-color: var(--ps-shell-accent-room);
+    background: var(--ps-shell-surface);
+}
+
+.global-header .nav-search__results,
+.platform-menu .nav-search__results {
+    border-radius: 0.75rem;
+    background: var(--ps-shell-surface);
+    border: 1px solid var(--ps-shell-border);
+    box-shadow: var(--ps-shell-shadow);
+}
+
 .nav-search__empty {
     margin: 0;
     padding: 0.7rem 0.75rem;
-    color: var(--text-muted);
+    color: var(--ps-shell-text-muted);
     font-size: 0.8rem;
 }
 
+/* The bottom bar's global source list is a server-rendered template, never
+   a visible list. mobile-nav clones it into the one #mobile-tabbar. */
+.global-tabsource,
+.global-tabsource[hidden] {
+    display: none;
+}
+
+/*
+ * MEDIUM WIDTH — 64.01rem to 73.75rem. The inline destinations give way to
+ * the room switcher, which frees the space that had forced search out of
+ * this band entirely.
+ */
 @media (max-width: 73.75rem) and (min-width: 64.01rem) {
     .global-header .platform-nav__inner,
     body.portfolio-shell .global-header .platform-nav__inner,
+    body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-nav__inner,
     body.living-resume-v2-page .global-header .platform-nav__inner,
     body.resume-overview-public-page .global-header .platform-nav__inner {
         grid-template-areas: "brand links actions";
@@ -110,8 +906,31 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
         padding-bottom: 0;
     }
 
-    .global-header .nav-search {
+    .global-header .platform-nav__links,
+    body.portfolio-shell .global-header .platform-nav__links,
+    body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-nav__links,
+    body.living-resume-v2-page .global-header .platform-nav__links,
+    body.resume-overview-public-page .global-header .platform-nav__links {
         display: none;
+    }
+
+    .global-header .platform-roomswitcher {
+        display: inline-flex;
+        justify-self: start;
+    }
+
+    .global-header .nav-search {
+        display: flex;
+    }
+
+    .global-header .nav-search__input,
+    body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__input {
+        width: 9.5rem;
+    }
+
+    .global-header .nav-search__input:focus,
+    body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__input:focus {
+        width: 13rem;
     }
 }
 
@@ -126,12 +945,14 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
 
     .global-header .platform-nav__inner,
     body.portfolio-shell .global-header .platform-nav__inner,
+    body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-nav__inner,
     body.living-resume-v2-page .global-header .platform-nav__inner,
     body.resume-overview-public-page .global-header .platform-nav__inner {
         width: 100%;
         min-height: var(--ps-public-header-height);
         grid-template-areas: "brand actions";
         grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
         gap: 0.5rem;
         padding: 0 var(--ps-public-nav-gutter);
     }
@@ -143,22 +964,23 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
     .global-header .platform-brand__logo {
         min-width: 0;
         max-width: 100%;
-        padding: 0.25rem 0.35rem;
-        border-radius: 0.7rem;
+        padding: 0;
+        border-radius: 0;
     }
 
     /* PS-SIGNIN-EXPERIENCE-001 item 5: the wordmark keeps the same 7.6rem
        mobile size, but it may no longer exceed the grid column it was given.
        Without a percentage ceiling it held that width on a crowded row and
-       the theme toggle and Menu button drew on top of it.
+       the account and Menu controls drew on top of it.
        `width` rather than `max-width: min(7.6rem, 100%)` on purpose: a
-       percentage max-width is ignored while the browser computes the pill's
-       intrinsic width, which made the pill 10.7px wider than the artwork
+       percentage max-width is ignored while the browser computes the brand
+       lockup's intrinsic width, which made it 10.7px wider than the artwork
        inside it at every width from 545px up. A definite width keeps the
        intrinsic size exactly what it is today and lets `max-width: 100%`
        take over only when the column is genuinely too narrow. object-fit
        keeps the lockup's aspect ratio in both cases. */
     .global-header .platform-brand__logo img,
+    body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-brand__logo img,
     body.living-resume-v2-page .global-header .platform-brand__logo img {
         height: 1.65rem;
         width: 7.6rem;
@@ -166,22 +988,104 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
         object-fit: contain;
     }
 
+    /*
+     * THE MARK IS ALWAYS REVEALED.
+     *
+     * Owner direction, 2026-08-13, after seeing the rendered header for the
+     * first time: "logo should always be revealed ... It should always be
+     * revealed", naming 768-1024 signed in, where it was missing. Until this
+     * change a signed-in viewer inside one of the five destinations lost the
+     * logo entirely below 64rem: the room title took its place.
+     *
+     * This is a DELIBERATE DIVERGENCE from the approved boards, recorded
+     * rather than argued. 01_editorial_top_bar_LEADING_NOT_LOCKED.png C and
+     * 02_room_switcher_MEDIUM_WIDTH_REFERENCE.png C both draw the signed-in
+     * phone header with the room name standing in for the mark. Where a board
+     * and the owner's written direction disagree, README's pixel rule says
+     * the owner's direction wins and the divergence is recorded — so the mark
+     * now renders at every width in every auth state, and the room title sits
+     * BESIDE it rather than replacing it.
+     *
+     * The mark is never shrunk, cropped or re-proportioned to make room: the
+     * img keeps the released 7.6rem x 1.65rem mobile box and its object-fit:
+     * contain, exactly as declared above, at every width. Where the row does
+     * genuinely run out of space it is the ROOM TITLE that gives way — see
+     * the 34rem block below.
+     *
+     * data-ps-shell-room-title is written by the SERVER and by nothing else.
+     * It is set only when the viewer is signed in AND the route is one of the
+     * five destinations, so the homepage, the Experience film and the Why
+     * PeerSlate page show the mark alone. Deliberately not keyed off
+     * data-ps-auth-state: auth-state.js rewrites that attribute after its
+     * session probe, which would change the brand row after paint. It needs
+     * no :has(), so it behaves identically in every browser.
+     *
+     * The divider is a border on the title itself, not a separate element, so
+     * it cannot outlive the thing it separates.
+     *
+     * The rule that shows the title lives in its own band immediately below,
+     * not here, so that nothing anywhere REMOVES a control at a narrow width.
+     */
+
     .global-header .platform-nav__links,
     body.portfolio-shell .global-header .platform-nav__links,
+    body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-nav__links,
     body.living-resume-v2-page .global-header .platform-nav__links,
     body.resume-overview-public-page .global-header .platform-nav__links {
         display: none;
     }
 
+    .global-header .platform-roomswitcher {
+        display: none;
+    }
+
     .global-header .platform-actions,
     body.portfolio-shell .global-header .platform-actions,
+    body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-actions,
     body.living-resume-v2-page .global-header .platform-actions {
         display: flex;
         grid-area: actions;
         gap: 0.45rem;
     }
 
-    .global-header .platform-actions .nav-search,
+    /* Search stays in the phone header (architecture section 4). It rests at
+       icon width and grows on focus inside the row — no overlay, so an
+       expanded field can never sit on top of the account or Menu control and
+       swallow a tap meant for either. The brand column absorbs the width:
+       the wordmark already has its percentage ceiling and the room title
+       already truncates. */
+    .global-header .platform-actions .nav-search {
+        display: flex;
+        flex: 0 1 auto;
+    }
+
+    .global-header .platform-actions .nav-search__icon {
+        left: 0.6rem;
+    }
+
+    .global-header .platform-actions .nav-search__input,
+    body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-actions .nav-search__input {
+        width: 2.25rem;
+        min-width: 2.25rem;
+        min-height: 2.25rem;
+        padding: 0 0 0 2rem;
+    }
+
+    .global-header .platform-actions .nav-search__input:focus,
+    body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-actions .nav-search__input:focus {
+        width: min(48vw, 12rem);
+        padding-right: 0.6rem;
+    }
+
+    .global-header .platform-actions .nav-search__results {
+        right: 0;
+        left: auto;
+        min-width: 0;
+        width: min(60vw, 18rem);
+        max-height: min(20rem, 55vh);
+        overflow-y: auto;
+    }
+
     .global-header .nav-ask-ai {
         display: none;
     }
@@ -197,19 +1101,29 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
         font-size: 0.72rem;
     }
 
+    .global-header .platform-account__trigger {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    /* --ps-shell-rail is the shell's CONTROL ground: the search field, the
+       switcher pill and the account trigger all sit on it. The Menu button
+       is the same kind of thing and sat on --ps-shell-surface instead, so
+       three compact controls in one row carried two grounds. Rail, like its
+       neighbours. */
     .platform-menu-toggle {
         display: inline-flex;
         min-height: 2rem;
         align-items: center;
         gap: 0.35rem;
         padding: 0 0.55rem;
-        border: 1px solid var(--border);
-        border-radius: 0.6rem;
-        background: color-mix(in srgb, var(--surface) 88%, transparent);
-        color: var(--text);
+        border: 1px solid var(--ps-shell-border);
+        border-radius: 0.5rem;
+        background: var(--ps-shell-rail);
+        color: var(--ps-shell-text);
         cursor: pointer;
         font-size: 0.72rem;
-        font-weight: 700;
+        font-weight: 650;
     }
 
     .platform-menu-toggle svg {
@@ -222,15 +1136,22 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
     }
 
     .platform-menu-toggle[aria-expanded="true"] {
-        border-color: var(--accent);
-        background: var(--accent-soft);
-        color: var(--accent);
+        border-color: var(--ps-shell-accent-room);
+        color: var(--ps-shell-accent-room);
     }
 
     .platform-menu[hidden] {
         display: none;
     }
 
+    /* The sheet is anchored to a sticky header, so its own bottom edge is
+       pinned to the viewport and scrolling the page cannot bring a row below
+       the fold into view. Signed in it is ~372px tall, and on a landscape
+       phone that put Sign out — and at 568x320 also My Slate and Settings —
+       permanently out of reach, keyboard included. It must carry its own
+       scroll: bounded to the space under the header, and scrollable inside
+       that. 100dvh rather than 100vh so a mobile browser's retracting URL bar
+       cannot leave the last row under it. */
     .platform-menu:not([hidden]) {
         position: absolute;
         top: var(--ps-public-header-height);
@@ -238,13 +1159,18 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
         left: 0;
         z-index: 1210;
         display: block;
+        max-height: calc(100dvh - var(--ps-public-header-height));
+        overflow-y: auto;
+        overscroll-behavior: contain;
         padding: 0 var(--ps-public-nav-gutter) var(--ps-public-nav-gutter);
-        background: color-mix(in srgb, var(--bg-elevated) 97%, transparent);
-        border-top: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
-        box-shadow: 0 1rem 2rem rgb(10 27 54 / 18%);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
+        background: var(--ps-shell-surface);
+        border-top: 1px solid var(--ps-shell-border);
+        border-bottom: 1px solid var(--ps-shell-border);
+        /* One elevation for all four shell panels. This sheet carried a
+           bespoke 0 1rem 2rem rgb(10 27 54 / 12%) while the switcher list,
+           the account menu and the search results all took var(--shadow);
+           the role is now named once, as --ps-shell-shadow. */
+        box-shadow: var(--ps-shell-shadow);
     }
 
     .platform-menu__inner {
@@ -255,33 +1181,35 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
 
     .platform-menu__links {
         display: grid;
-        gap: 0.25rem;
+        gap: 0.15rem;
         margin: 0;
         padding: 0;
         list-style: none;
     }
 
+    /* Released type: 0.92rem / 650, and 750 for the current row. This package
+       does not own the type scale. */
     .platform-menu__links a {
         position: relative;
         display: flex;
         min-height: 2.75rem;
         align-items: center;
         padding: 0 0.75rem;
-        border-radius: 0.65rem;
-        color: var(--text);
+        border-radius: 0.5rem;
+        color: var(--ps-shell-text);
         font-size: 0.92rem;
         font-weight: 650;
     }
 
     .platform-menu__links a:hover,
     .platform-menu__links a:focus-visible {
-        background: var(--accent-soft);
-        color: var(--accent);
+        background: var(--ps-shell-accent-soft);
+        color: var(--ps-shell-accent-room);
     }
 
     .platform-menu__links a[aria-current="page"] {
-        background: var(--accent-soft);
-        color: var(--accent);
+        background: var(--ps-shell-accent-soft);
+        color: var(--ps-shell-accent-room);
         font-weight: 750;
     }
 
@@ -291,31 +1219,56 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
         height: 1.35rem;
         margin-right: 0.6rem;
         border-radius: 999px;
-        background: var(--accent);
+        background: var(--ps-shell-accent-room);
     }
 
-    .nav-search--mobile {
+    /* The More sheet's account group. Settings and Sign out are the only
+       two real routes the direction's More list has; there is no Help route
+       in the application, so no Help entry is offered. */
+    .platform-menu__account[hidden] {
+        display: none;
+    }
+
+    .platform-menu__account {
+        display: grid;
+        gap: 0.15rem;
+        padding-top: 0.6rem;
+        border-top: 1px solid var(--ps-shell-border);
+    }
+
+    .platform-menu__account-form {
+        display: block;
+        margin: 0;
+    }
+
+    /* A menu row is a menu row. My Slate, Settings and Sign out here were
+       --ps-shell-text-muted while the identical My Slate and Sign out in the
+       account menu, and every destination row in this same sheet, were
+       --ps-shell-text — the same control reading two ways in two places,
+       and a needless contrast drop on the only place a phone can sign out.
+       Measured on the sheet's #ffffff ground: #061a3a is 17.26:1 against
+       #49617a's 6.41:1. Both pass SC 1.4.3; now they also match. */
+    .platform-menu__account-item {
         display: flex;
         width: 100%;
-    }
-
-    .nav-search--mobile .nav-search__input,
-    .nav-search--mobile .nav-search__input:focus,
-    body.portfolio-shell .nav-search--mobile .nav-search__input,
-    body.portfolio-shell .nav-search--mobile .nav-search__input:focus,
-    body.living-resume-v2-page .nav-search--mobile .nav-search__input,
-    body.living-resume-v2-page .nav-search--mobile .nav-search__input:focus {
-        width: 100%;
         min-height: 2.75rem;
+        align-items: center;
+        padding: 0 0.75rem;
+        border: 0;
+        border-radius: 0.5rem;
+        background: none;
+        color: var(--ps-shell-text);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.92rem;
+        font-weight: 650;
+        text-align: left;
     }
 
-    .nav-search--mobile .nav-search__results {
-        top: calc(100% + 0.4rem);
-        right: 0;
-        left: 0;
-        min-width: 0;
-        max-height: min(22rem, 55vh);
-        overflow-y: auto;
+    .platform-menu__account-item:hover,
+    .platform-menu__account-item:focus-visible {
+        background: var(--ps-shell-accent-soft);
+        color: var(--ps-shell-accent-room);
     }
 
     body:not(.has-mobile-tabbar) {
@@ -324,25 +1277,194 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
 }
 
 /*
+ * THE ROOM TITLE'S OWN BAND — beside the mark, never instead of it.
+ *
+ * 34.01rem to 64rem. Below 34rem the title is simply never shown, rather than
+ * shown and then removed: `.platform-room-title` is display:none by default at
+ * the top of this file, so this band turns it ON and nothing anywhere turns it
+ * off. That matters beyond tidiness — PS-SIGNIN-EXPERIENCE-001 reserves the
+ * 34rem block for sign-out-scoped compaction and forbids any rule there that
+ * removes a header control, which tests/test_signin_experience.py enforces
+ * selector by selector. A band is the honest shape for this anyway: the title
+ * is shown where it fits and absent where it does not.
+ *
+ * Why 34rem is where it stops, measured rather than guessed. Below it the
+ * brand column is about 205px at 320 and 275px at 390, against a 121.6px mark
+ * plus a 12px gap, a 1px divider and 12px of padding. At 390 the longest label,
+ * "Opportunity Slate", would have had 149.2px of room against 148.6px of text —
+ * a 0.6px margin is a coincidence, not a fit, and it clips outright on a 375px
+ * phone. At 545, the narrow end of this band, the same label occupies 148.6px
+ * and the actions column does not start for another 155px.
+ *
+ * 34rem is an existing rung of this file's ladder, not a new one. The mark is
+ * what the owner said must never give way; a signed-in phone still names its
+ * room, in the bottom bar's current slot.
+ */
+@media (max-width: 64rem) and (min-width: 34.01rem) {
+    .global-header .platform-nav__inner[data-ps-shell-room-title] .platform-room-title {
+        display: block;
+        padding-left: 0.75rem;
+        border-left: 1px solid var(--ps-shell-border);
+    }
+}
+
+/*
+ * THE PHONE BOTTOM BAR — architecture section 5.
+ *
+ * There is exactly one fixed bottom bar on this site and it already exists:
+ * #mobile-tabbar, whose contents are page-owned. The global four-slot
+ * structure is cloned into that same element, and only on a route that
+ * supplies no section tabs, so a second fixed bar can never appear and a
+ * page that owns its bar keeps every part of its released behaviour. Both
+ * cases carry body.has-mobile-tabbar, so the bottom-padding contract is
+ * identical either way. 743px is the released .mobile-tabbar visibility
+ * threshold in style.css, not a new breakpoint.
+ */
+@media (max-width: 743px) {
+    /* The bar became global shell furniture in this change, so where it
+       carries the global structure it speaks the shell's language: a flat
+       ground under one rule, no frost, no lift, the shell's ink, and the
+       board's filled-mark current slot instead of a tinted chip. A
+       page-owned section-tab bar is deliberately left exactly as released —
+       its contents belong to that room's package, not to this lane.
+       Split the same way as the slot rule below, and for the same reason:
+       layout UNGUARDED, colour guarded. Review finding F1 caught this rule
+       still mixed — gap, padding (including the safe-area inset) and
+       overflow-x were sitting inside the colour guard, which contradicts the
+       principle this file states in its own header. The dormant
+       body[data-theme="dark"] .mobile-tabbar rule in style.css redefines
+       background, border-top, box-shadow and backdrop-filter and NOTHING
+       else, so those four are all the guard has to protect; the geometry
+       below has no dark counterpart to collide with, and a revived dark
+       theme now inherits it instead of losing it. */
+    body.has-global-tabbar .mobile-tabbar {
+        gap: 0;
+        padding: 0 0.5rem calc(env(safe-area-inset-bottom, 0px));
+        overflow-x: visible;
+    }
+
+    body.has-global-tabbar:not([data-theme="dark"]) .mobile-tabbar {
+        background: var(--ps-shell-surface);
+        border-top: 1px solid var(--ps-shell-border);
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    /* Four slots must fit 320px without a hidden horizontal scroll: the bar
+       sets scrollbar-width:none, so an overflowing slot is unreachable and
+       silent. Equal columns with no per-slot padding, and the label allowed
+       to shrink, keeps every slot on screen at 320.
+       Icon above label, and a 2.75rem target — the same minimum every other
+       control this package adds already uses. Text-only 31.8px slots made
+       this the thinnest primary navigation on the site. */
+    /* Layout is UNGUARDED and colour is guarded, deliberately. The guard
+       exists for exactly one collision: the dormant
+       body[data-theme="dark"] .mobile-tabbar__item colour rule in style.css
+       is 0,1,1 and would outrank an unguarded 0,2,1 selector here. Nothing
+       in dark redefines this slot's geometry. Wrapping the whole rule in the
+       guard therefore bought nothing and cost the structure — under a
+       revived dark theme the slot would have lost display:flex, its 2.75rem
+       target, its padding, its type and its icon column, and reverted to a
+       text chip. Split, dark inherits the structure and overrides only the
+       ink, which is what a paused theme should find waiting for it. */
+    body.has-global-tabbar .mobile-tabbar__item {
+        position: relative;
+        display: flex;
+        flex: 1 1 0;
+        min-width: 0;
+        min-height: 2.75rem;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.15rem;
+        padding: 0.3rem 0.15rem calc(0.3rem + env(safe-area-inset-bottom, 0px));
+        border: 0;
+        border-radius: 0;
+        background: none;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.68rem;
+        font-weight: 650;
+        line-height: 1.15;
+        text-align: center;
+    }
+
+    body.has-global-tabbar:not([data-theme="dark"]) .mobile-tabbar__item {
+        color: var(--ps-shell-text-muted);
+    }
+
+    body.has-global-tabbar .mobile-tabbar__label {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    body.has-global-tabbar .mobile-tabbar__mark {
+        width: 1.25rem;
+        height: 1.25rem;
+        flex-shrink: 0;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    /* The board marks the current slot with a filled icon and a coloured
+       label, not with a rule above it. The 2px top indicator this replaces
+       was an invention. */
+    body.has-global-tabbar .mobile-tabbar__item[aria-current="page"] {
+        background: none;
+        font-weight: 650;
+    }
+
+    body.has-global-tabbar:not([data-theme="dark"]) .mobile-tabbar__item[aria-current="page"] {
+        color: var(--ps-shell-accent-room);
+    }
+
+    body.has-global-tabbar .mobile-tabbar__item[aria-current="page"] .mobile-tabbar__mark {
+        fill: currentColor;
+        stroke: none;
+    }
+
+    /* One affordance, not two: where the global bar renders, the header's
+       Menu button and the bar's More slot would open the same sheet. The
+       bar keeps it; the header control stands down. Where a page owns the
+       bar — and for every signed-out visitor, who gets no global bar at
+       all — the header Menu is untouched. */
+    body.has-global-tabbar .platform-menu-toggle {
+        display: none;
+    }
+}
+
+/*
  * PS-SIGNIN-EXPERIENCE-001 item 5 — the crowded signed-in phone row.
  *
- * Signed in, the header carries two controls the signed-out header does not
- * (My Slate + Sign out). Uncompacted, that row needs about 454px, so below
- * roughly 34rem the wordmark had nowhere left to go and the theme toggle and
- * Menu button rendered on top of it. The ceiling added in the 64rem block
- * above already makes the overlap impossible; this block gives the width back
- * so the wordmark stays full size instead of scaling down to fit.
+ * Signed in, the header carries a control the signed-out header does not.
+ * Uncompacted, that row needed about 454px, so below roughly 34rem the
+ * wordmark had nowhere left to go and the remaining controls rendered on top
+ * of it. The ceiling in the 64rem block above already makes the overlap
+ * impossible; this block gives the width back so the wordmark stays full
+ * size instead of scaling down to fit.
  *
  * Deliberately narrower than the 64rem block: between 34rem and 64rem the
- * signed-in row already fits, so those widths stay pixel-identical to the
- * released header. The Menu treatment is the same icon-only one this file
- * already ships at 22rem, and the sign-out pill simply gets the compact
- * sizing .sign-in-btn beside it already has. :has() scopes all of it to the
- * signed-in row; a browser without :has() falls back to a smaller wordmark,
- * never to an overlap.
+ * signed-in row already fits. The Menu treatment is the same icon-only one
+ * this file already ships at 22rem, and the sign-out control keeps the
+ * compact sizing it has today. :has() scopes all of it to the signed-in
+ * row; a browser without :has() falls back to a smaller wordmark, never to
+ * an overlap.
  */
 @media (max-width: 34rem) {
-    .global-header .nav-sign-out__btn {
+    /* The :not() pair matters. This rule was written for a standalone sign-out
+       PILL sitting in the header row. Sign out now lives inside the account
+       menu and the More sheet, where it is a menu row beside My Slate and
+       Settings — and at 0,2,0 this selector outranked those rows and shrank
+       Sign out alone to 11.5px in a 32px box while its neighbours stayed
+       15px in 44px. It reads as a rendering fault. Scoped out of both menus,
+       the rule keeps doing its original job and nothing else. */
+    .global-header .nav-sign-out__btn:not(.platform-account__item):not(.platform-menu__account-item) {
         min-height: 2rem;
         padding: 0 0.65rem;
         font-size: 0.72rem;
@@ -391,7 +1513,10 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
 
 @media (prefers-reduced-motion: reduce) {
     .platform-menu-toggle,
-    .platform-menu {
+    .platform-menu,
+    .global-header .platform-nav__links a,
+    .global-header .nav-search__input,
+    .global-header .platform-roomswitcher__chevron {
         transition: none;
     }
 }
@@ -399,7 +1524,15 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
 @media (forced-colors: active) {
     .platform-menu-toggle,
     .platform-menu,
-    .platform-menu__links a[aria-current="page"] {
+    .platform-menu__links a[aria-current="page"],
+    .global-header .platform-account__trigger,
+    .global-header .platform-account__menu,
+    .global-header .platform-roomswitcher__trigger,
+    .global-header .platform-roomswitcher__list {
         border: 1px solid CanvasText;
+    }
+
+    .global-header .platform-nav__links a[aria-current="page"]::after {
+        background: CanvasText;
     }
 }
