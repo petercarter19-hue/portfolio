@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T16:36:23Z",
+  "updated_at": "2026-08-13T16:55:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-CONNECT-002"
+      "PS-CONNECT-002",
+      "PS-SITE-AUDIT-PACKAGE-QUEUE-001"
     ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
@@ -29,7 +30,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-CONNECT-002 is the sole active non-production provider lane. It may write only its recorded surfaces; merge, release, cleanup, schema apply, Profile integration, deployment, and enablement remain unavailable until their separately governed evidence and grants are recorded."
+    "exit_authority": "Active writers: PS-CONNECT-002 on its non-production provider surfaces and PS-SITE-AUDIT-PACKAGE-QUEUE-001 on planning-only documentation/evidence surfaces. Their domains and paths are disjoint. Neither has merge, release, cleanup, schema-apply, deployment, enablement, or product-runtime authority from this record."
   },
   "activation_policy": {
     "enabled": true,
@@ -1596,6 +1597,59 @@
       ],
       "cleanup_contract": "After the exact provider candidate is merged, consumed by a verified Profile integration, and formally closed, remove only this lane's clean merged activation and implementation worktrees/branches behind recovery references. Preserve every unrelated, dirty, unverified, historical, or user-owned branch, worktree, stash, artifact, and production record.",
       "sequence": "activation-only PR -> fresh current-main implementation worktree -> write preflight -> reconcile the preserved candidate and complete disposable-SQL/adversarial validation -> one complete-diff self-review -> fresh exact-SHA independent review -> separately anchored merge grant -> Azure PR/CI/merge -> formal provider close -> later Profile D4 adapter integration; no production apply or enablement in this lane"
+    },
+    {
+      "package": "PS-SITE-AUDIT-PACKAGE-QUEUE-001",
+      "outcome": "Convert Pete's 2026-08-13 Opportunity Slate, Community, dictation, Spark, Interview Studio polish, AI-agent Round 2, Ask My Slate, and Resume feedback into a durable, correctly separated set of future package charters and a Site Audit Review delta. Record dependencies, sequencing, authority boundaries, acceptance targets, and explicit non-goals. Keep the accepted single Community post and create no missing-post work. Keep the code/Azure learning walkthrough banked and outside this round.",
+      "branch": "work/2026-08-13-site-audit-package-queue-001",
+      "writer": "Root Codex session holding Pete's package-organization conversation is the sole writer. Claude separately owns the Interview Me inline-response implementation once it lawfully activates that existing package; this direction lane does not touch its files.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "direction_authority",
+      "exclusive_domains": [
+        "program:site-audit-package-queue"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main c8d70c7be4c16f2839d3f06b739c70b360b9f33d at activation. PS-CONNECT-002 occupies one non-production implementation slot on disjoint provider/schema-proposal surfaces; the direction slot remains free. Pete directed Codex to put every remaining discussed product item into the right packages for Site Audit Review while assigning today's Interview Me inline restoration to Claude and holding the code/Azure learning reviews in the bank for later.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-SITE-AUDIT-PACKAGE-QUEUE-001/",
+        "docs/initiatives/PS-OPPORTUNITY-SLATE-CONTINUATION-001/",
+        "docs/initiatives/PS-SHARED-DICTATION-EXPERIENCE-001/",
+        "docs/initiatives/PS-COMMUNITY-AUTHORING-EXPERIENCE-001/",
+        "docs/initiatives/PS-COMMUNITY-SPARK-POST-001/",
+        "docs/initiatives/PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001/",
+        "docs/initiatives/PS-AI-AGENT-QUALITY-ROUND-2-001/",
+        "docs/initiatives/PS-INTERVIEW-ASK-MY-SLATE-001/",
+        "docs/initiatives/PS-RESUME-MEDIA-THEME-001/",
+        "artifacts/2026-08-13-site-audit-package-queue/"
+      ],
+      "exclusions": [
+        "no application, route, template, stylesheet, JavaScript, test, schema, migration, API, provider, prompt, agent, configuration, dependency, pipeline, deployment, production, or live-behavior change",
+        "no visual mockup or production visual lock; each material visual package returns to ChatGPT and Pete for its own direction and acceptance",
+        "no activation, merge, release, or authority grant for any package charter created here",
+        "no edit to the active or future Claude Interview implementation surfaces and no duplication of the inline Interview Me response package",
+        "no fake, seeded, recovered, or replacement Community post and no missing-post investigation; Pete accepted the one current post",
+        "no codebase learning curriculum, Azure services walkthrough, pipelines/worktrees training package, or ChatGPT learning workspace in this round; those remain banked for later",
+        "no overwrite of the frozen 2026-08-11 Site Audit handoff; any external coordination update is a dated delta addendum"
+      ],
+      "completion_evidence": [
+        "eight future package charters exist with distinct purposes, dependencies, trust boundaries, acceptance targets, non-goals, and activation rules",
+        "a master queue maps every 2026-08-13 owner request to exactly one package or to an explicit closed/deferred disposition",
+        "the package order keeps shared dictation before Community interaction implementation, AI-agent Round 2 before Ask My Slate, and private retrieval separate from Interview visual polish",
+        "Opportunity draft persistence versus meaningful history, Community publication and Spark persistence, private retrieval, consequential AI, and reusable media selection are marked for the appropriate Protected implementation paths",
+        "the Site Audit Review receives a dated delta pointing to the repository charters without changing the frozen original handoff or claiming implementation",
+        "the code/Azure learning review is explicitly recorded as banked and not packaged in this round",
+        "complete-diff self-review confirms every repository change is documentation/evidence only and the direction package grants no runtime authority"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-13",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete directed Codex to get the rest of the discussed work into packages for Site Audit Review, while Claude owns today's Interview Me inline-response restoration. He explicitly directed Codex to hold off on the code and Azure reviews and take those from the bank afterward."
+        }
+      ],
+      "cleanup_contract": "After a verified documentation merge and formal close, remove only this task's clean activation and package worktrees and branches behind recovery refs. Preserve the frozen audit handoff, external tracker history, every unrelated or dirty worktree, branch, stash, artifact, and all future package charters.",
+      "sequence": "activation-only control PR -> clean package worktree from resulting origin/main -> write preflight -> create master queue and eight package charters -> create dated Site Audit delta and refresh canonical tracker -> validate coverage and cross-package dependencies -> complete-diff self-review -> direction grant -> documentation PR with [skip ci] -> formal close"
     }
   ],
   "paused_lanes": [
