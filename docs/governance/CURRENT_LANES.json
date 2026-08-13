@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T04:21:00Z",
+  "updated_at": "2026-08-13T05:34:44Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -271,6 +271,19 @@
     ],
     "reason": "Required Azure PR validation of the refreshed Profile direction close candidate exposed one final fixture-only assumption: the immutable pre-close direction ledger was paired with the current mutable baseline, which no longer carries Profile after a real close. This follow-up lets the fixture helper consume the exact pre-close baseline alongside the exact pre-close ledger. It changes no active lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, or live behavior.",
     "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. The parent must retain the exact prior Profile close fixture repair; the ledger may change only updated_at plus this record, and the baseline must remain byte-identical. A later branch, base, altered record, timestamp, authority, lane, path, or baseline cannot reuse it."
+  },
+  "profile_close_absent_surface_repair": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-13-delivery-activation-profile-close-absent-surface-repair",
+    "origin_main": "f0fe066751a83fc7c0ba32a88d55b1d42a3a46f2",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "reason": "The exact Profile Core close candidate proved all existing reviewed writable surfaces are byte-identical at the frozen candidate, package merge, and current main, while one stale declared directory is absent at all three. This authority-neutral repair treats three-way absence as exact equivalence only; one- or two-sided absence still fails, and the independent introduction proof still requires at least one real candidate surface introduced by the package merge. It changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, enablement, or live behavior.",
+    "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. The ledger may change only updated_at plus this record, and the baseline must remain byte-identical. A later branch, base, altered record, timestamp, authority, lane, path, or baseline cannot reuse it."
   },
   "closing_lanes": [
     {

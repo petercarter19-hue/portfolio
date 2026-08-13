@@ -33,6 +33,7 @@ from scripts.delivery_preflight import (
     GRANT_CLOSE_FIXTURE_FOLLOWUP,
     PROFILE_CLOSE_FIXTURE_FOLLOWUP,
     PROFILE_CLOSE_BASELINE_FIXTURE_FOLLOWUP,
+    PROFILE_CLOSE_ABSENT_SURFACE_REPAIR,
     PROFILE_DIRECTION_OWNER_DECISION_SHA256,
     PROFILE_DIRECTION_REVIEW_ATTESTATION,
     PROFILE_CORE_INTEGRATION_BRANCH,
@@ -56,6 +57,7 @@ from scripts.delivery_preflight import (
     _authoritative_azure_origin,
     _canonical_sha256,
     _candidate_surface_introduction_proven,
+    _close_surface_tree_equivalent,
     _direction_control_path_sequence_valid,
     _direction_merge_grant,
     _exact_direction_grant_delta,
@@ -76,6 +78,8 @@ from scripts.delivery_preflight import (
     _exact_opportunity_close_introduction_repair_delta,
     _exact_profile_close_fixture_followup_delta,
     _exact_profile_close_baseline_fixture_followup_delta,
+    _exact_profile_close_absent_surface_repair_delta,
+    _exact_profile_close_absent_surface_repair_matches,
     _fetch_exact_origin_refs,
     _git_environment,
     _baseline_scalar,
@@ -3211,6 +3215,199 @@ with patch.object(
         self.assertTrue(
             any("may not change CURRENT_BASELINE" in error for error in baseline_errors)
         )
+
+    def test_profile_close_absent_surface_repair_is_exact_and_inert(self):
+        repair = PROFILE_CLOSE_ABSENT_SURFACE_REPAIR
+        origin = load_ledger_at_ref(repair["origin_main"])
+        baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        self.assertNotIn("profile_close_absent_surface_repair", origin)
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-13T05:34:44Z"
+        candidate["profile_close_absent_surface_repair"] = copy.deepcopy(repair)
+        exact_facts = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=repair["allowed_surfaces"],
+        )
+        self.assertTrue(
+            _exact_profile_close_absent_surface_repair_matches(
+                candidate, exact_facts, repair["package"]
+            )
+        )
+        self.assertTrue(
+            _exact_profile_close_absent_surface_repair_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("absent-surface repair" in item for item in warnings))
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+
+        for fact_mutation in (
+            {"branch": "work/forged"},
+            {"origin_main": "f" * 40},
+            {"ahead": 0},
+            {"ahead": 2},
+            {"behind": 1},
+            {"changed_paths": repair["allowed_surfaces"][:-1]},
+            {"changed_paths": [*repair["allowed_surfaces"], "app.py"]},
+        ):
+            with self.subTest(facts=fact_mutation):
+                altered_errors, _ = self._evaluate_activation(
+                    candidate,
+                    {**exact_facts, **fact_mutation},
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(altered_errors)
+
+        for timestamp in (
+            origin["updated_at"],
+            "2026-08-13T04:20:59Z",
+            "not-a-timestamp",
+        ):
+            with self.subTest(timestamp=timestamp):
+                altered = copy.deepcopy(candidate)
+                altered["updated_at"] = timestamp
+                altered_errors, _ = self._evaluate_activation(
+                    altered,
+                    exact_facts,
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(altered_errors)
+
+        for label, mutate in (
+            (
+                "authority-smuggling",
+                lambda value: value["operating_mode"]["release_allowed_for"].append(
+                    PROFILE_CORE_INTEGRATION_PACKAGE
+                ),
+            ),
+            (
+                "active-lane-mutation",
+                lambda value: value["active_lanes"][0].__setitem__(
+                    "branch", "work/forged-shell"
+                ),
+            ),
+        ):
+            with self.subTest(label=label):
+                altered = copy.deepcopy(candidate)
+                mutate(altered)
+                altered_errors, _ = self._evaluate_activation(
+                    altered,
+                    exact_facts,
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(altered_errors)
+
+        baseline_errors, _ = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline + b"\n# forged baseline\n",
+            origin_baseline=baseline,
+        )
+        self.assertTrue(baseline_errors)
+
+        preexisting_origin = copy.deepcopy(candidate)
+        preexisting_origin["updated_at"] = "2026-08-13T05:35:00Z"
+        reused = copy.deepcopy(preexisting_origin)
+        reused["updated_at"] = "2026-08-13T05:36:00Z"
+        reused_errors, _ = self._evaluate_activation(
+            reused,
+            exact_facts,
+            require_clean=True,
+            origin=preexisting_origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(reused_errors)
+
+    def test_close_surface_tree_equivalence_accepts_only_exact_three_way_state(self):
+        self.assertTrue(_close_surface_tree_equivalent("tree-a", "tree-a", "tree-a"))
+        self.assertTrue(_close_surface_tree_equivalent("", "", ""))
+        for values in (
+            ("", "tree-a", "tree-a"),
+            ("tree-a", "", "tree-a"),
+            ("tree-a", "tree-a", ""),
+            ("tree-a", "tree-b", "tree-a"),
+            (None, None, None),
+            ("", None, ""),
+        ):
+            with self.subTest(values=values):
+                self.assertFalse(_close_surface_tree_equivalent(*values))
+
+    def test_profile_close_real_merge_surface_reproduces_equivalence_and_introduction(self):
+        reviewed = PROFILE_CORE_INTEGRATION_REVIEWED_SHA
+        merged = "f0fe066751a83fc7c0ba32a88d55b1d42a3a46f2"
+        lane = next(
+            item
+            for item in load_ledger_at_ref(merged)["active_lanes"]
+            if item.get("package") == PROFILE_CORE_INTEGRATION_PACKAGE
+        )
+        missing = "docs/initiatives/PS-PROFILE-CORE-INTEGRATION-001/"
+        self.assertIn(missing, lane["writable_surfaces"])
+        self.assertEqual(reviewed, lane["merge_grant"]["reviewed_remote_sha"])
+
+        def read_tree(ref: str, surface: str) -> str:
+            result = subprocess.run(
+                ["git", "-C", str(ROOT), "rev-parse", f"{ref}:{surface.rstrip('/')}"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                check=False,
+            )
+            return result.stdout.strip() if result.returncode == 0 else ""
+
+        merge_tree = read_tree(merged, missing)
+        main_tree = read_tree(merged, missing)
+        self.assertEqual("", merge_tree)
+        self.assertEqual("", main_tree)
+        self.assertTrue(
+            _close_surface_tree_equivalent("", merge_tree, main_tree)
+        )
+
+        # Azure's squash merge may leave a main-only checkout without the
+        # source-branch commit object. The actual close command exact-fetches
+        # `reviewed`; this repository fixture uses the verified candidate-
+        # equivalent package-merge objects so it remains independent of that
+        # checkout detail while reproducing the real missing directory.
+        comparisons = []
+        introduction_checks = []
+        for surface in lane["writable_surfaces"]:
+            merge_tree = read_tree(merged, surface)
+            main_tree = read_tree(merged, surface)
+            parent_tree = read_tree(f"{merged}^", surface)
+            comparisons.append(
+                _close_surface_tree_equivalent(
+                    merge_tree, merge_tree, main_tree
+                )
+            )
+            introduction_checks.append(
+                bool(merge_tree)
+                and parent_tree != merge_tree
+            )
+        self.assertTrue(all(comparisons))
+        self.assertTrue(_candidate_surface_introduction_proven(introduction_checks))
+        self.assertFalse(_candidate_surface_introduction_proven([False]))
 
     def test_close_introduction_requires_at_least_one_changed_surface(self):
         self.assertTrue(_candidate_surface_introduction_proven([False, True]))
