@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T03:56:56Z",
+  "updated_at": "2026-08-13T04:12:02Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -15,7 +15,9 @@
       "PS-PROFILE-CORE-INTEGRATION-001",
       "PS-SHELL-001"
     ],
-    "merge_allowed_for": [],
+    "merge_allowed_for": [
+      "PS-PROFILE-CORE-INTEGRATION-001"
+    ],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -1410,7 +1412,40 @@
         "sequence": "activation -> exact foundation replay -> Profile-local D0-D4 services/schema/UI/tests -> full validation -> independent exact-SHA review -> formal pause or handoff -> later short shared integration activation -> dark deployment -> Pete review -> separate enablement -> live verification"
       },
       "cleanup_contract": "After verified integration, live verification, formal lane close, and preserved recovery evidence, remove only this task's clean activation, implementation, and review worktrees and merged branches. Preserve accepted foundation aa1fc7e until the integrated tree is independently verified and recoverable, and preserve every unrelated, dirty, unverified, historical, or user-owned branch, worktree, stash, artifact, mockup, and handoff.",
-      "sequence": "activation-only PR -> clean current-main implementation worktree -> write preflight -> replay exact aa1fc7e tree -> implement Profile-local D0-D4 contracts and UI -> focused/full/security/accessibility/mobile/visual validation -> exact-SHA independent review and findings closure -> preserve candidate and release implementation slot if shared integration is not yet available -> short later shared integration and production-capable activation -> app/auth/flag wiring and schema apply -> exact dark deployment -> Pete review -> separate enablement -> live smoke -> formal close and task-local cleanup"
+      "sequence": "activation-only PR -> clean current-main implementation worktree -> write preflight -> replay exact aa1fc7e tree -> implement Profile-local D0-D4 contracts and UI -> focused/full/security/accessibility/mobile/visual validation -> exact-SHA independent review and findings closure -> preserve candidate and release implementation slot if shared integration is not yet available -> short later shared integration and production-capable activation -> app/auth/flag wiring and schema apply -> exact dark deployment -> Pete review -> separate enablement -> live smoke -> formal close and task-local cleanup",
+      "merge_grant": {
+        "authorized_by": "Pete",
+        "authority_decision_index": 0,
+        "authority_decision_sha256": "81ffce41cfae9518b12e1cf6246667a298520ddf36b33b78850317bd14a98b26",
+        "independent_review": {
+          "reviewer_task": "/root/profile_descendant_exact_review",
+          "reviewer_mode": "independent_read_only_non_writer",
+          "reviewed_sha": "78b0203fb8fbbbedefa9de499427755d02ac6fa2",
+          "reviewed_branch": "work/2026-08-12-profile-experience-build-001",
+          "verdict": "PASS",
+          "verdict_text": "PASS — exact-SHA final Protected review passed for 78b0203fb8fbbbedefa9de499427755d02ac6fa2, branch-equal to origin/work/2026-08-12-profile-experience-build-001 and clean.",
+          "verdict_sha256": "ca55863d2534caa1be65d41e3dd8f530298f2485940c736f56a46ca969500b10",
+          "basis": [
+            "full_tree_at_78b0203fb8fbbbedefa9de499427755d02ac6fa2",
+            "complete_diff_9e91f5832d8b14836330ced85f40a5eac8a4f6c7_to_78b0203fb8fbbbedefa9de499427755d02ac6fa2",
+            "profile_suite_85_of_85_schema_governance_151_of_151_pycompile_pass"
+          ],
+          "scope": "protected_profile_core_implementation_merge_only",
+          "exclusions": "release_schema_deployment_enablement",
+          "evidence_path": "artifacts/2026-08-12-profile-core-integration-001/IMPLEMENTATION_CHECKPOINT.md",
+          "evidence_git_blob_sha": "de3aa79a52f3712c72aecdeb40a8c5a00f9e63b5",
+          "evidence_bytes_sha256": "b9fbd2163a89268cfdc8fe677503f088e3ed2cae840054b6e042e3df7694670e",
+          "received_by": "Root Codex program manager",
+          "received_date": "2026-08-12",
+          "attestation_sha256": "f1e86c208ebaa5a99da2c8a2e29275ed9e5e4b39abb6e03339a0b59e7e5e3c06"
+        },
+        "reviewed_remote_sha": "78b0203fb8fbbbedefa9de499427755d02ac6fa2",
+        "granted_at": "2026-08-13T04:12:02Z",
+        "review_result": "pass",
+        "review_evidence_paths": [
+          "artifacts/2026-08-12-profile-core-integration-001/IMPLEMENTATION_CHECKPOINT.md"
+        ]
+      }
     },
     {
       "package": "PS-SHELL-001",
