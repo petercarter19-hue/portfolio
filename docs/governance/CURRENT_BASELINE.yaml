@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 and PS-PROFILE-CORE-INTEGRATION-001 on work/2026-08-12-profile-experience-build-001 are disjoint; Interview retains production/app/auth."
+  current_assignments: "Active writer lanes: PS-PROFILE-CORE-INTEGRATION-001. PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 is paused and preserved; it may resume only through fresh activation."
 
 governing_documents:
   bible:
@@ -58,9 +58,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001
-    status: active_delivery
-    scope: "Protected post-enable mobile correction of the live authenticated Interview Studio: post-review scroll and focus, responsive coaching grids, in-composer phone controls with integrated dictation, intentional mobile Mode/Session/History composition, and a post-review optional model answer that never auto-applies. No logo, global shell, route, provider, cloud History, or owner-specific logic change."
   - id: PS-PROFILE-CORE-INTEGRATION-001
     status: active_delivery
     scope: "Disjoint non-production Profile D0-D4 build: replay aa1fc7e; no app/auth registration, schema apply, deployment, or enablement."
@@ -155,7 +152,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Continue Interview and PS-PROFILE-CORE-INTEGRATION-001 on disjoint surfaces; serialize later app/auth integration and release."
+next_gate: "Continue only the active writer packages: PS-PROFILE-CORE-INTEGRATION-001. PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 remains paused; use fresh activation to resume it."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
