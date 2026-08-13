@@ -3313,6 +3313,151 @@ def _registered_worktrees(repository: Path) -> list[Path]:
     ]
 
 
+def _collect_workspace_cleanup_targets(
+    target_worktrees: list[str],
+    origin_ledger: dict,
+    origin_main: str,
+) -> list[dict]:
+    """Prove exact, recoverable, non-authoritative workspace cleanup targets."""
+    if not target_worktrees:
+        raise ValueError("workspace cleanup requires at least one target worktree")
+
+    verifier = ROOT.resolve()
+    registered = _registered_worktrees(ROOT)
+    if registered.count(verifier) != 1:
+        raise RuntimeError("workspace cleanup verifier is not exactly registered")
+    common_dir = _absolute_git_common_dir(ROOT)
+    origin_url = _authoritative_azure_origin(ROOT)
+    protected_branches = {
+        lane.get("branch")
+        for lifecycle_name in ("active_lanes", "closing_lanes", "paused_lanes")
+        for lane in origin_ledger.get(lifecycle_name, [])
+        if isinstance(lane, dict) and isinstance(lane.get("branch"), str)
+    }
+
+    seen: set[Path] = set()
+    target_facts: list[dict] = []
+    for raw_target in target_worktrees:
+        raw_path = Path(raw_target)
+        if not raw_path.is_absolute():
+            raise ValueError("workspace cleanup targets must be absolute paths")
+        target = raw_path.resolve(strict=True)
+        if target in seen:
+            raise ValueError("workspace cleanup target paths must be unique")
+        seen.add(target)
+        if target == verifier:
+            raise ValueError("workspace cleanup target must differ from the verifier")
+        if registered.count(target) != 1:
+            raise RuntimeError("workspace cleanup target must be exactly registered")
+        target_top = Path(
+            _git_at(target, "rev-parse", "--show-toplevel")
+        ).resolve()
+        if target_top != target:
+            raise ValueError(
+                "workspace cleanup target must name the exact worktree top level"
+            )
+        if _absolute_git_common_dir(target) != common_dir:
+            raise RuntimeError(
+                "workspace cleanup target must share the verifier Git directory"
+            )
+        if _authoritative_azure_origin(target) != origin_url:
+            raise RuntimeError(
+                "workspace cleanup target must share the authoritative Azure origin"
+            )
+        if _clean_status_entries(target):
+            raise RuntimeError("workspace cleanup target must be clean")
+
+        head = _git_at(target, "rev-parse", "HEAD")
+        if not FULL_GIT_SHA.fullmatch(head):
+            raise RuntimeError("workspace cleanup target has no valid HEAD")
+        branch = _git_at(target, "branch", "--show-current", check=False)
+        if branch in protected_branches:
+            raise RuntimeError(
+                "workspace cleanup target branch is recorded by an active, closing, "
+                "or paused lane"
+            )
+        if branch and _git_at(
+            ROOT,
+            "ls-remote",
+            "--heads",
+            origin_url,
+            f"refs/heads/{branch}",
+            check=False,
+        ):
+            raise RuntimeError(
+                "workspace cleanup target branch still exists on Azure"
+            )
+
+        ancestor = (
+            _git_returncode_at(
+                ROOT, "merge-base", "--is-ancestor", head, origin_main
+            )
+            == 0
+        )
+        cherry = [
+            line
+            for line in _git_at(
+                ROOT, "cherry", origin_main, head, check=False
+            ).splitlines()
+            if line
+        ]
+        patch_integrated = bool(cherry) and all(
+            line.startswith("- ") for line in cherry
+        )
+        if not ancestor and not patch_integrated:
+            raise RuntimeError(
+                "workspace cleanup target is not integrated into origin/main"
+            )
+
+        slug = re.sub(r"[^a-z0-9-]+", "-", target.name.casefold()).strip("-")
+        if not slug:
+            raise RuntimeError("workspace cleanup target has no safe tag slug")
+        recovery_tag = (
+            f"archive/{date.today().isoformat()}/workspace-housekeeping/"
+            f"{slug}-{head[:12]}"
+        )
+        local_tag_head = _git_at(
+            ROOT,
+            "rev-parse",
+            "--verify",
+            f"refs/tags/{recovery_tag}^{{commit}}",
+            check=False,
+        )
+        remote_tag_lines = [
+            line
+            for line in _git_at(
+                ROOT,
+                "ls-remote",
+                "--tags",
+                origin_url,
+                f"refs/tags/{recovery_tag}",
+                check=False,
+            ).splitlines()
+            if line
+        ]
+        expected_remote_tag = f"{head}\trefs/tags/{recovery_tag}"
+        if local_tag_head != head or remote_tag_lines != [expected_remote_tag]:
+            raise RuntimeError(
+                "workspace cleanup target lacks an exact local and Azure recovery tag"
+            )
+
+        target_facts.append(
+            {
+                "path": str(target),
+                "head": head,
+                "branch": branch or None,
+                "integrated": True,
+                "remote_branch_absent": True,
+                "lifecycle_unowned": True,
+                "clean": True,
+                "registered": True,
+                "recovery_tag": recovery_tag,
+                "recovery_tag_local_and_remote": True,
+            }
+        )
+    return target_facts
+
+
 def _opportunity_main_sequence_facts(
     origin_ledger: dict,
     package_id: str,
@@ -3682,12 +3827,13 @@ def _collect_direction_candidate_merge(
 def evaluate_policy(
     ledger: dict,
     facts: dict,
-    package_id: str,
+    package_id: str | None,
     intent: str,
     require_clean: bool = False,
     origin_ledger: dict | None = None,
     candidate_baseline: bytes | None = None,
     origin_baseline: bytes | None = None,
+    workspace_cleanup: bool = False,
 ) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -5550,42 +5696,95 @@ def evaluate_policy(
         if ledger != origin_ledger:
             errors.append("cleanup verifier ledger must equal fetched origin/main")
 
-        active = origin_ledger.get("active_lanes")
-        active = active if isinstance(active, list) else []
-        if any(
-            isinstance(lane, dict) and lane.get("package") == package_id
-            for lane in active
-        ):
-            errors.append(
-                f"cleanup requires {package_id} to be paused or closed, not active"
-            )
-
-        lifecycle_matches: list[tuple[str, dict]] = []
-        for lifecycle_name in ("paused_lanes", "closing_lanes"):
-            records = origin_ledger.get(lifecycle_name)
-            if not isinstance(records, list):
-                errors.append(f"origin/main {lifecycle_name} must be a list")
-                continue
-            lifecycle_matches.extend(
-                (lifecycle_name, record)
-                for record in records
-                if isinstance(record, dict) and record.get("package") == package_id
-            )
-        if len(lifecycle_matches) != 1:
-            errors.append(
-                f"cleanup requires exactly one paused or closed record for {package_id}"
-            )
-        else:
-            lifecycle_name, lifecycle_record = lifecycle_matches[0]
-            cleanup_contract = lifecycle_record.get("cleanup_contract")
-            if not isinstance(cleanup_contract, str) or not cleanup_contract.strip():
+        if not workspace_cleanup:
+            active = origin_ledger.get("active_lanes")
+            active = active if isinstance(active, list) else []
+            if any(
+                isinstance(lane, dict) and lane.get("package") == package_id
+                for lane in active
+            ):
                 errors.append(
-                    f"{lifecycle_name} cleanup requires a non-empty cleanup_contract"
+                    f"cleanup requires {package_id} to be paused or closed, not active"
                 )
+
+            lifecycle_matches: list[tuple[str, dict]] = []
+            for lifecycle_name in ("paused_lanes", "closing_lanes"):
+                records = origin_ledger.get(lifecycle_name)
+                if not isinstance(records, list):
+                    errors.append(f"origin/main {lifecycle_name} must be a list")
+                    continue
+                lifecycle_matches.extend(
+                    (lifecycle_name, record)
+                    for record in records
+                    if isinstance(record, dict)
+                    and record.get("package") == package_id
+                )
+            if len(lifecycle_matches) != 1:
+                errors.append(
+                    "cleanup requires exactly one paused or closed record for "
+                    f"{package_id}"
+                )
+            else:
+                lifecycle_name, lifecycle_record = lifecycle_matches[0]
+                cleanup_contract = lifecycle_record.get("cleanup_contract")
+                if (
+                    not isinstance(cleanup_contract, str)
+                    or not cleanup_contract.strip()
+                ):
+                    errors.append(
+                        f"{lifecycle_name} cleanup requires a non-empty "
+                        "cleanup_contract"
+                    )
 
         workspace = origin_ledger.get("workspace_snapshot")
         if not isinstance(workspace, dict) or workspace.get("cleanup_authorized") is not True:
             errors.append("cleanup requires recorded owner cleanup authority")
+
+        if workspace_cleanup:
+            if package_id is not None:
+                errors.append("workspace cleanup must not claim a package")
+            targets = facts.get("workspace_cleanup_targets")
+            if not isinstance(targets, list) or not targets:
+                errors.append("workspace cleanup requires verified target worktrees")
+            else:
+                paths: set[str] = set()
+                tags: set[str] = set()
+                required_true = (
+                    "integrated",
+                    "remote_branch_absent",
+                    "lifecycle_unowned",
+                    "clean",
+                    "registered",
+                    "recovery_tag_local_and_remote",
+                )
+                for target in targets:
+                    if not isinstance(target, dict):
+                        errors.append("workspace cleanup target facts must be objects")
+                        continue
+                    path = target.get("path")
+                    tag = target.get("recovery_tag")
+                    if not isinstance(path, str) or not path:
+                        errors.append("workspace cleanup target requires an exact path")
+                    elif path in paths:
+                        errors.append("workspace cleanup target paths must be unique")
+                    else:
+                        paths.add(path)
+                    if not isinstance(tag, str) or not tag:
+                        errors.append("workspace cleanup target requires a recovery tag")
+                    elif tag in tags:
+                        errors.append("workspace cleanup recovery tags must be unique")
+                    else:
+                        tags.add(tag)
+                    failed = [field for field in required_true if target.get(field) is not True]
+                    if failed:
+                        errors.append(
+                            "workspace cleanup target failed: " + ", ".join(failed)
+                        )
+            return errors, warnings
+
+        if package_id is None:
+            errors.append("package cleanup requires --package")
+            return errors, warnings
 
         origin_mode = origin_ledger.get("operating_mode")
         origin_mode = origin_mode if isinstance(origin_mode, dict) else {}
@@ -5653,7 +5852,7 @@ def evaluate_policy(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--package", required=True, help="authoritative package ID")
+    parser.add_argument("--package", help="authoritative package ID")
     parser.add_argument(
         "--intent",
         choices=(
@@ -5688,12 +5887,49 @@ def build_parser() -> argparse.ArgumentParser:
             "merge with --fetch --require-clean from trusted origin/main"
         ),
     )
+    parser.add_argument(
+        "--workspace-cleanup",
+        action="store_true",
+        help=(
+            "verify exact recoverable workspace housekeeping without claiming "
+            "a product package; valid only with --intent cleanup"
+        ),
+    )
+    parser.add_argument(
+        "--cleanup-target-worktree",
+        action="append",
+        default=[],
+        help=(
+            "absolute finished worktree to verify for workspace cleanup; "
+            "repeat once per exact target"
+        ),
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     activation_argument_errors: list[str] = []
+    if args.workspace_cleanup:
+        if args.intent != "cleanup":
+            activation_argument_errors.append(
+                "--workspace-cleanup requires --intent cleanup"
+            )
+        if args.package is not None:
+            activation_argument_errors.append(
+                "--workspace-cleanup must not be combined with --package"
+            )
+        if not args.cleanup_target_worktree:
+            activation_argument_errors.append(
+                "--workspace-cleanup requires --cleanup-target-worktree"
+            )
+    else:
+        if args.package is None:
+            activation_argument_errors.append("--package is required")
+        if args.cleanup_target_worktree:
+            activation_argument_errors.append(
+                "--cleanup-target-worktree requires --workspace-cleanup"
+            )
     if args.candidate_worktree and (
         args.intent != "merge" or not args.fetch or not args.require_clean
     ):
@@ -5778,6 +6014,14 @@ def main(argv: list[str] | None = None) -> int:
                 if args.candidate_worktree else load_baseline_bytes()
             )
             origin_baseline = load_baseline_bytes_at_ref(facts["origin_main"])
+            if args.workspace_cleanup:
+                facts["workspace_cleanup_targets"] = (
+                    _collect_workspace_cleanup_targets(
+                        args.cleanup_target_worktree,
+                        origin_ledger,
+                        facts["origin_main"],
+                    )
+                )
             if args.intent in {"pause", "transfer", "grant", "close", "merge"}:
                 origin_lanes = origin_ledger.get("active_lanes")
                 target = next(
@@ -5983,7 +6227,18 @@ def main(argv: list[str] | None = None) -> int:
             origin_ledger=origin_ledger,
             candidate_baseline=candidate_baseline,
             origin_baseline=origin_baseline,
+            workspace_cleanup=args.workspace_cleanup,
         )
+        if args.workspace_cleanup:
+            refreshed_cleanup_targets = _collect_workspace_cleanup_targets(
+                args.cleanup_target_worktree,
+                origin_ledger,
+                facts["origin_main"],
+            )
+            if refreshed_cleanup_targets != facts["workspace_cleanup_targets"]:
+                raise RuntimeError(
+                    "workspace cleanup target facts changed during preflight"
+                )
         if exact_control_refs is not None:
             _, final_refs = _authoritative_ref_snapshot(
                 ROOT,
@@ -6007,6 +6262,7 @@ def main(argv: list[str] | None = None) -> int:
         "result": "pass" if not errors else "fail",
         "package": args.package,
         "intent": args.intent,
+        "cleanup_scope": "workspace" if args.workspace_cleanup else "package",
         "operating_mode": (
             payload_mode.get("state")
             if isinstance(payload_mode, dict)

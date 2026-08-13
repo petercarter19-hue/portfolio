@@ -2744,6 +2744,118 @@ with patch.object(
         )
         self.assertEqual([], errors)
 
+    def test_workspace_cleanup_accepts_only_verified_unowned_recoverable_targets(self):
+        origin_main = "9" * 40
+        target = {
+            "path": r"C:\finished-worktree",
+            "head": "8" * 40,
+            "branch": "work/2026-08-12-finished-control",
+            "integrated": True,
+            "remote_branch_absent": True,
+            "lifecycle_unowned": True,
+            "clean": True,
+            "registered": True,
+            "recovery_tag": (
+                "archive/2026-08-12/workspace-housekeeping/"
+                "finished-worktree-888888888888"
+            ),
+            "recovery_tag_local_and_remote": True,
+        }
+        cleanup_facts = facts(
+            branch="work/2026-08-12-delivery-cleanup-workspace-housekeeping",
+            head=origin_main,
+            origin_main=origin_main,
+            fetched=True,
+            workspace_cleanup_targets=[target],
+        )
+        errors, warnings = evaluate_policy(
+            self.ledger,
+            cleanup_facts,
+            None,
+            "cleanup",
+            require_clean=True,
+            origin_ledger=self.ledger,
+            workspace_cleanup=True,
+        )
+        self.assertEqual([], errors)
+        self.assertEqual([], warnings)
+
+        for field in (
+            "integrated",
+            "remote_branch_absent",
+            "lifecycle_unowned",
+            "clean",
+            "registered",
+            "recovery_tag_local_and_remote",
+        ):
+            with self.subTest(field=field):
+                invalid = copy.deepcopy(cleanup_facts)
+                invalid["workspace_cleanup_targets"][0][field] = False
+                invalid_errors, _ = evaluate_policy(
+                    self.ledger,
+                    invalid,
+                    None,
+                    "cleanup",
+                    require_clean=True,
+                    origin_ledger=self.ledger,
+                    workspace_cleanup=True,
+                )
+                self.assertTrue(
+                    any(field in error for error in invalid_errors),
+                    invalid_errors,
+                )
+
+    def test_workspace_cleanup_does_not_claim_package_or_accept_empty_targets(self):
+        origin_main = "7" * 40
+        cleanup_facts = facts(
+            branch="work/2026-08-12-delivery-cleanup-workspace-housekeeping",
+            head=origin_main,
+            origin_main=origin_main,
+            fetched=True,
+            workspace_cleanup_targets=[],
+        )
+        errors, _ = evaluate_policy(
+            self.ledger,
+            cleanup_facts,
+            "PS-NOT-A-WORKSPACE-SCOPE-001",
+            "cleanup",
+            require_clean=True,
+            origin_ledger=self.ledger,
+            workspace_cleanup=True,
+        )
+        self.assertIn("workspace cleanup must not claim a package", errors)
+        self.assertIn("workspace cleanup requires verified target worktrees", errors)
+
+    def test_workspace_cleanup_cli_arguments_fail_closed(self):
+        common = ["--intent", "cleanup", "--fetch", "--require-clean"]
+        with patch("builtins.print"):
+            self.assertEqual(2, main(common))
+            self.assertEqual(
+                2,
+                main(
+                    common
+                    + [
+                        "--workspace-cleanup",
+                        "--package",
+                        "PS-INVALID-001",
+                        "--cleanup-target-worktree",
+                        r"C:\finished-worktree",
+                    ]
+                ),
+            )
+            self.assertEqual(
+                2,
+                main(
+                    common
+                    + [
+                        "--package",
+                        "PS-INVALID-001",
+                        "--cleanup-target-worktree",
+                        r"C:\finished-worktree",
+                    ]
+                ),
+            )
+
     def test_paused_cleanup_fails_closed_without_contract_or_exact_verifier(self):
         package = "PS-OPPORTUNITY-SLATE-R1-LAUNCH-001"
         origin = copy.deepcopy(self.ledger)
