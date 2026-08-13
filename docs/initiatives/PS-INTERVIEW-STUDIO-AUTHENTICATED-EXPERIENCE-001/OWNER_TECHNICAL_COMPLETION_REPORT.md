@@ -256,3 +256,57 @@ Two things are worth remembering from that repair:
 The signed-in walk on production is Pete's; the flow was proven in a scripted
 browser at all three widths against the same code. The lane remains active.
 
+## Round 3: the two carried items, closed (2026-08-13)
+
+Both items had been recorded as carried P3s with the reason each was
+deferred. Neither changed the route, the visual design, or the workflow.
+**Live at release `3cbd9dec2e36c4d3577bc807` (main `b06f473`).**
+
+**Attempt-counter drift.** A failed revision review left the attempt number
+already incremented, so a retry laballed the snapshot one attempt high. The
+increment was speculative -- it happened in the click handler before the
+request was sent. Rolling it back on failure had been rejected at the time for
+a good reason: two consecutive submissions would then produce an identical
+request binding, re-opening the stale-response acceptance path the binding
+exists to close.
+
+The fix separates the two concerns rather than trading one for the other. A
+monotonic `requestSeq` joins the binding and advances on every submission, so
+late responses are still discarded on their own evidence. That frees the
+attempt number to mean what it says: `submitReview` derives the attempt being
+sent from an explicit `isRevision` flag, keeps it local, and commits it to the
+session only when a review actually returns. A failure now leaves nothing to
+roll back.
+
+Proven in a real browser rather than by source assertion alone: with the
+revision **and its automatic retry** both failing, a manual retry is laballed
+Attempt 2; the identical scenario against the pre-change script produces
+Attempt 3.
+
+**Latent follow-up server surface.** The model-answer endpoint still accepted
+a follow-up carrying a validly signed context token even though the
+authenticated Studio deliberately ships that control disabled while
+`interview_followup_mode_provenance` is open -- so the only thing between a
+caller and that path was the client. The authenticated path now refuses it and
+fails closed, answering identically whether or not the token is readable, so
+the boundary cannot be probed for token validity. The public branch keeps its
+working affordance untouched.
+
+**Tests.** Six new ones, each confirmed to fail with its fix reverted. Five
+existing tests located `submitReview` by its old signature and were updated;
+one of them documented the speculative increment as the mechanism, and its
+docstring now describes what replaced it. What the server receives is
+unchanged. Full suite green apart from the four pre-existing Community
+failures, which fail identically on a checkout without these changes.
+
+**Verified live:** the served script carries the new binding, the revision
+flag and the success-only commit; `/interview-studio` still redirects
+signed-out visitors; all four interview APIs answer 401 signed out; the
+homepage and public resume are unaffected.
+
+**Note for a future round.** During this work the page was observed to retry a
+failed review once automatically. That is existing, intended behaviour
+(`postReviewWithOneRetry`) and is unrelated to these items, but it means a
+single click can produce two review requests -- worth knowing before anyone
+reasons about request counts here again.
+
