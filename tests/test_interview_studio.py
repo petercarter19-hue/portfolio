@@ -4456,13 +4456,18 @@ class InterviewStudioSlice56RecompositionTests(_InterviewStudioAuthenticatedTest
 
     def test_the_inline_example_reuses_the_existing_endpoint_contract(self):
         """No new endpoint, provider, prompt or evidence contract: the same
-        call the Interview AI panel already makes, on the current question."""
+        call the Interview AI panel already makes, on the current question.
+
+        The mode is still derived from the member's own source selection --
+        see inlineExampleMode() -- but a Compare selection is narrowed to the
+        single grounded generation this card actually renders, so it is no
+        longer paid for twice."""
         script = _studio_script()
         block = script.split('function revealInlineExample(anchor) {', 1)[1]
         block = block.split('\n    /* Post-review entry point', 1)[0]
         self.assertIn("postJSON('/api/interview/model-answer', {", block)
         self.assertIn('question: question.text,', block)
-        self.assertIn('mode: selectedAiMode(),', block)
+        self.assertIn('mode: inlineExampleMode(),', block)
         self.assertIn('opportunity_context: explicitContextForAi()', block)
         # A follow-up is never smuggled in from this path.
         self.assertIn("follow_up: ''", block)
@@ -5319,3 +5324,60 @@ class InterviewStudioCarriedItemsTests(_InterviewStudioAuthenticatedTestCase):
         self.assertIn('session.requestSeq += 1;', script)
         self.assertNotIn('session.requestSeq -= 1', script)
         self.assertNotIn('session.requestSeq = 0;', script)
+
+
+class InterviewStudioAcceptedFindingsTests(_InterviewStudioAuthenticatedTestCase):
+    """The two findings the previous round accepted rather than fixed.
+
+    Pete reversed that judgement on 2026-08-13: nothing glitchy stays.
+    """
+
+    def test_the_inline_example_asks_for_one_generation_not_two(self):
+        """A member who left the Interview AI source selector on Compare was
+        paying for two generations while this card discarded the second. The
+        server builds the grounded answer from the identical call in both
+        modes, so asking for the single grounded one returns exactly what the
+        card already rendered."""
+        script = _studio_script()
+        mapper = script.split('function inlineExampleMode() {', 1)[1]
+        mapper = mapper.split('\n    }', 1)[0]
+        self.assertIn("mode === 'compare' ? 'member_history' : mode", mapper)
+
+        block = script.split('function revealInlineExample(anchor) {', 1)[1]
+        block = block.split('\n    /* Post-review entry point', 1)[0]
+        self.assertIn('mode: inlineExampleMode(),', block)
+        self.assertNotIn('mode: selectedAiMode(),', block)
+
+        # Compare itself is untouched where it belongs: the AI panel still
+        # sends exactly what the member selected.
+        panel = script.split('function requestModelAnswer(followUp) {', 1)[1]
+        panel = panel.split('\n    }', 1)[0]
+        self.assertIn('mode: selectedAiMode(),', panel)
+
+    def test_machine_error_tokens_are_translated_for_the_member(self):
+        """A session that ended mid-request answered 'sign_in_required' and a
+        waking database answered 'workspace_waking'; both were rendered to the
+        member verbatim. They are translated at the single point every
+        interview request turns a server error into a message, so the inline
+        card and the Interview AI panel are both covered."""
+        script = _studio_script()
+        table = script.split('var SERVER_TOKEN_SENTENCES = {', 1)[1]
+        table = table.split('};', 1)[0]
+        self.assertIn('sign_in_required', table)
+        self.assertIn('workspace_waking', table)
+        self.assertIn('Sign in again to continue.', table)
+        self.assertIn('still waking up', table)
+
+        reader = script.split('function readableServerError(raw) {', 1)[1]
+        reader = reader.split('\n    }', 1)[0]
+        # Unknown strings pass through untouched: a message the server wrote
+        # for a person must never be rewritten.
+        self.assertIn('hasOwnProperty.call(SERVER_TOKEN_SENTENCES, raw)', reader)
+        self.assertIn(': raw;', reader)
+        self.assertIn("if (!raw) return 'That request did not complete.';", reader)
+
+        # Wired into the one shared error path, not a single call site.
+        post = script.split('function postJSON(url, body, signal) {', 1)[1]
+        post = post.split('\n    }', 1)[0]
+        self.assertIn('new Error(readableServerError(payload.error))', post)
+        self.assertNotIn("new Error(payload.error ||", post)

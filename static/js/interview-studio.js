@@ -1818,6 +1818,35 @@
         button.addEventListener('click', function () { requestNudges(button.closest('[data-is-nudge-panel]')); });
     });
 
+    /* A few server errors are machine tokens meant for a caller, not
+       sentences meant for a person: a session that ended mid-request answers
+       "sign_in_required", and a database still waking answers
+       "workspace_waking". Both were being rendered to the member verbatim.
+
+       Translating them here rather than at one call site is deliberate. Every
+       interview request -- review, improve, nudge, the Interview AI panel and
+       the inline example -- turns a server error into a message through this
+       one function, so fixing it here covers all of them at once instead of
+       leaving one surface reading like an error log while its neighbour reads
+       like English. Anything not in this map is passed through untouched, so
+       a message the server wrote for a person is never rewritten. */
+    /* Kept deliberately short and free of reassurance about the member's
+       own work: each caller already appends its own version of that, and
+       two of them in one breath reads like a machine apologising twice. */
+    var SERVER_TOKEN_SENTENCES = {
+        sign_in_required: 'Your session has ended. Sign in again to continue.',
+        workspace_waking:
+            'Your workspace is still waking up. Give it a few seconds and '
+            + 'try again.'
+    };
+
+    function readableServerError(raw) {
+        if (!raw) return 'That request did not complete.';
+        return Object.prototype.hasOwnProperty.call(SERVER_TOKEN_SENTENCES, raw)
+            ? SERVER_TOKEN_SENTENCES[raw]
+            : raw;
+    }
+
     /* Review, feedback, retry, and improvement */
     function postJSON(url, body, signal) {
         return fetch(url, {
@@ -1829,7 +1858,7 @@
         }).then(function (response) {
             return response.json().catch(function () { return {}; }).then(function (payload) {
                 if (!response.ok) {
-                    var error = new Error(payload.error || 'That request did not complete.');
+                    var error = new Error(readableServerError(payload.error));
                     error.status = response.status;
                     throw error;
                 }
@@ -2347,6 +2376,20 @@
         focusInlineExample(host);
     }
 
+    /* The inline card shows one example, so it asks for one. The Interview
+       AI source selector otherwise carries straight over from that panel,
+       and a member who left it on Compare would pay for two generations
+       while this card silently discarded the second. The server builds the
+       grounded answer from the identical call in Compare and in
+       member_history, so asking for the single grounded generation returns
+       exactly what this card already rendered -- same answer, half the work.
+       Compare is untouched where it belongs, in the Interview AI panel,
+       which actually shows both halves. */
+    function inlineExampleMode() {
+        var mode = selectedAiMode();
+        return mode === 'compare' ? 'member_history' : mode;
+    }
+
     /* Both entry points land here. `anchor` is the element the disclosure
        opens beneath, so the pre-answer reveal sits under the composer and
        the post-review reveal sits under that coaching section. */
@@ -2403,7 +2446,7 @@
             context_token: '',
             level: session.level,
             family: session.family,
-            mode: selectedAiMode(),
+            mode: inlineExampleMode(),
             opportunity_context: explicitContextForAi()
         }, controller.signal).then(function (payload) {
             if (seq !== inlineExampleSeq) return;
