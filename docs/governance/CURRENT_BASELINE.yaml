@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active: PS-CONNECT-002 on work/2026-08-13-connect-002-provider-merge-001 (provider); PS-SITE-AUDIT-PACKAGE-QUEUE-001 on work/2026-08-13-site-audit-package-queue-001 (documentation only); PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 on work/2026-08-13-interview-me-inline-example (inline example)."
+  current_assignments: "Active writer lanes: PS-CONNECT-002, PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001. PS-SITE-AUDIT-PACKAGE-QUEUE-001 is paused and preserved; it may resume only through fresh activation."
 
 governing_documents:
   bible:
@@ -61,9 +61,6 @@ active_packages:
   - id: PS-CONNECT-002
     status: active_delivery
     scope: "Non-production relationship-provider reconciliation, disposable-SQL proof, review-bound merge preparation, and no Profile wiring, schema apply, deployment, or enablement."
-  - id: PS-SITE-AUDIT-PACKAGE-QUEUE-001
-    status: active_delivery
-    scope: "Planning-only package queue for the remaining 2026-08-13 Opportunity, Community, dictation, Spark, Interview polish, agent-quality, Ask My Slate, and Resume work. No runtime implementation, package activation, code/Azure learning review, merge, deployment, or live authority."
   - id: PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001
     status: active_delivery
     scope: "Same-page AI example inside Interview Me; no mode switch."
@@ -159,7 +156,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Continue each active package only on its own surfaces: PS-CONNECT-002 provider, PS-SITE-AUDIT-PACKAGE-QUEUE-001 documentation/evidence, PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 Interview. Future product packages remain inactive."
+next_gate: "Continue only the active writer packages: PS-CONNECT-002, PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001. PS-SITE-AUDIT-PACKAGE-QUEUE-001 remains paused; use fresh activation to resume it."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
