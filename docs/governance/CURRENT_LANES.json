@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T19:31:00Z",
+  "updated_at": "2026-08-13T19:33:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -14,7 +14,9 @@
     "writes_allowed_for": [
       "PS-CONNECT-002"
     ],
-    "merge_allowed_for": [],
+    "merge_allowed_for": [
+      "PS-CONNECT-002"
+    ],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -1641,6 +1643,46 @@
           "decision": "Pete directed Codex to complete the Profile package through lawful implementation, review, merge, deployment, enablement, and verified signed-in behavior; he specifically requires Projects, Media, and Connections to be built coherently with Voice where the accepted Profile direction requires it. This authorizes the first non-production Connections dependency resume, while preserving the separately governed merge, production, and enablement gates."
         }
       ],
+      "merge_grant": {
+        "authorized_by": "Pete",
+        "authority_decision_index": 0,
+        "authority_decision_sha256": "0fc2948713d77dc2f3596f8522de783821f16534cc021d10a176bf8c63fcc30d",
+        "independent_review": {
+          "reviewer_task": "/root/connect_002_rebase_final_review",
+          "reviewer_mode": "independent_read_only_non_writer",
+          "reviewed_sha": "f6b0e0809ef2fd21afc764162e9f0962911b3dcb",
+          "reviewed_branch": "work/2026-08-13-connect-002-provider-merge-001",
+          "verdict": "PASS",
+          "verdict_text": "PASS - exact-SHA independent read-only review accepted for f6b0e0809ef2fd21afc764162e9f0962911b3dcb, branch-equal to origin/work/2026-08-13-connect-002-provider-merge-001 and clean; the complete candidate diff, repaired reciprocal lifecycle, exact SQL/Python opaque-key contract, final disposable SQL gate, two-owner fail-closed privacy, and focused 107-test verification passed. Future Profile wiring must retain server-side identity derivation.",
+          "verdict_sha256": "f2c5d4128e0d477ddd1e0294be530a79d46e862d750a825b9780228d2ae72fe8",
+          "basis": [
+            "full_tree_at_f6b0e0809ef2fd21afc764162e9f0962911b3dcb",
+            "complete_diff_38cd81ae4fc52d3a18045c081f5d6229fcb32c1c_to_f6b0e0809ef2fd21afc764162e9f0962911b3dcb",
+            "provider_owned_blobs_5e912efe4b85fe57173fc0129ed39b55fcbbbf0e_to_f6b0e0809ef2fd21afc764162e9f0962911b3dcb_equal_checkpoint_provenance_only",
+            "checkpoint_blob_aa68ba114cce122e15bc7ecf1545d1431c1eeadb_bytes_sha256_4dbc286d9df59afd925266c68b4790eb58c0ee34440af5080675f3d2260ac21b",
+            "py_compile_pass",
+            "focused_unittest_107_of_107_pass",
+            "two_owner_server_identity_privacy_sql_static_contract_pass",
+            "govern_sql_migrations_check_pass_executable_sha256_b5a2695916d0b1b658341cd7b103894456dcc58b13db580525ed45600f315606",
+            "git_diff_check_pass",
+            "delivery_preflight_write_fetch_require_clean_pass_origin_main_38cd81ae4fc52d3a18045c081f5d6229fcb32c1c"
+          ],
+          "scope": "protected_connect_002_non_production_provider_merge_only",
+          "exclusions": "schema_apply_deployment_profile_integration_enablement",
+          "evidence_path": "artifacts/2026-08-13-connect-002/IMPLEMENTATION_CHECKPOINT.md",
+          "evidence_git_blob_sha": "aa68ba114cce122e15bc7ecf1545d1431c1eeadb",
+          "evidence_bytes_sha256": "4dbc286d9df59afd925266c68b4790eb58c0ee34440af5080675f3d2260ac21b",
+          "received_by": "Root Codex program manager",
+          "received_date": "2026-08-13",
+          "attestation_sha256": "b5b6de09beb4663f3e817aa8b1b2927072a0805d4278673e671512a5316562d1"
+        },
+        "reviewed_remote_sha": "f6b0e0809ef2fd21afc764162e9f0962911b3dcb",
+        "granted_at": "2026-08-13T19:33:00Z",
+        "review_result": "pass",
+        "review_evidence_paths": [
+          "artifacts/2026-08-13-connect-002/IMPLEMENTATION_CHECKPOINT.md"
+        ]
+      },
       "cleanup_contract": "After the exact provider candidate is merged, consumed by a verified Profile integration, and formally closed, remove only this lane's clean merged activation and implementation worktrees/branches behind recovery references. Preserve every unrelated, dirty, unverified, historical, or user-owned branch, worktree, stash, artifact, and production record.",
       "sequence": "activation-only PR -> fresh current-main implementation worktree -> write preflight -> reconcile the preserved candidate and complete disposable-SQL/adversarial validation -> one complete-diff self-review -> fresh exact-SHA independent review -> separately anchored merge grant -> Azure PR/CI/merge -> formal provider close -> later Profile D4 adapter integration; no production apply or enablement in this lane"
     }
