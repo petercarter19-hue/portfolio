@@ -54,11 +54,20 @@ from scripts.delivery_preflight import (
     PROFILE_CORE_MERGE_REPAIR_MAIN,
     PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_REPAIR,
     PROFILE_CORE_POST_GRANT_REGISTRY_FIXTURE_PATHS,
+    CONNECT_002_BRANCH,
+    CONNECT_002_MERGE_ADMISSION_REPAIR,
+    CONNECT_002_MERGE_ADMISSION_REPAIR_PATHS,
+    CONNECT_002_MERGE_CANDIDATE_CONTRACT,
+    CONNECT_002_OWNER_DECISION_SHA256,
+    CONNECT_002_PACKAGE,
+    CONNECT_002_REVIEW_ATTESTATION,
+    CONNECT_002_REVIEWED_SHA,
     _affirmative_merge_decision,
     _authoritative_azure_origin,
     _canonical_sha256,
     _candidate_surface_introduction_proven,
     _close_surface_tree_equivalent,
+    _direction_main_sequence_facts,
     _direction_control_path_sequence_valid,
     _direction_merge_grant,
     _exact_direction_grant_delta,
@@ -72,6 +81,8 @@ from scripts.delivery_preflight import (
     _exact_profile_core_post_grant_registry_fixture_repair_delta,
     _exact_profile_core_post_grant_registry_fixture_repair_matches,
     _is_profile_core_reviewed_implementation_lane,
+    _exact_connect_002_merge_admission_repair_delta,
+    _exact_connect_002_merge_admission_repair_matches,
     _profile_core_main_sequence_facts,
     _exact_opportunity_schema_repair_release_refresh_matches,
     _exact_opportunity_lifecycle_fixture_repair_delta,
@@ -461,6 +472,34 @@ class DeliveryPreflightTests(unittest.TestCase):
                 PROFILE_CORE_INTEGRATION_REVIEW_ATTESTATION["evidence_path"]
             ],
         }
+
+    def _connect_002_origin(self) -> tuple[dict, dict]:
+        """Return the exact pre-repair PS-CONNECT-002 ledger and lane."""
+        origin = load_ledger_at_ref(
+            CONNECT_002_MERGE_ADMISSION_REPAIR["origin_main"]
+        )
+        lane = next(
+            item
+            for item in origin["active_lanes"]
+            if item.get("package") == CONNECT_002_PACKAGE
+        )
+        self.assertEqual(CONNECT_002_BRANCH, lane["branch"])
+        self.assertNotIn("merge_grant", lane)
+        self.assertNotIn("connect_002_merge_admission_repair", origin)
+        return origin, lane
+
+    def _connect_002_repair_candidate(
+        self,
+        origin: dict,
+        *,
+        repaired_at: str = "2026-08-13T07:54:08Z",
+    ) -> dict:
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = repaired_at
+        candidate["connect_002_merge_admission_repair"] = copy.deepcopy(
+            CONNECT_002_MERGE_ADMISSION_REPAIR
+        )
+        return candidate
 
     def _opportunity_origin(self) -> tuple[dict, dict]:
         origin = copy.deepcopy(self.ledger)
@@ -1316,10 +1355,13 @@ with patch.object(
                         for item in ledger["closing_lanes"]
                         if item.get("branch")
                     )
-                # Profile Core is intentionally not a generic implementation
-                # fixture: its exact package name is reserved for the frozen
-                # review-bound candidate path exercised above.
-                if lane["package"] == PROFILE_CORE_INTEGRATION_PACKAGE:
+                # Profile Core and Connect 002 are intentionally not generic
+                # implementation fixtures: each exact package name is reserved
+                # for its frozen review-bound candidate path exercised above.
+                if lane["package"] in {
+                    PROFILE_CORE_INTEGRATION_PACKAGE,
+                    CONNECT_002_PACKAGE,
+                }:
                     lane["package"] = "PS-GENERIC-IMPLEMENTATION-001"
                     lane["branch"] = "work/2026-08-13-generic-implementation-001"
                 lane["lane_class"] = "implementation"
@@ -2204,6 +2246,298 @@ with patch.object(
         )
         self.assertTrue(
             any("exact code-controlled" in item for item in malformed_errors)
+        )
+
+    def test_connect_002_merge_admission_repair_is_exact_and_fails_closed(self):
+        expected_review = {
+            "reviewer_task": "/root/profile_descendant_exact_review",
+            "reviewer_mode": "independent_read_only_non_writer",
+            "reviewed_sha": "db20e2285f82c0f61baa73c49cd6f0bee0771620",
+            "reviewed_branch": "work/2026-08-13-connect-002-profile-relationships",
+            "verdict": "PASS",
+            "verdict_text": (
+                "PASS - exact-tree mechanical re-review passed for "
+                "db20e2285f82c0f61baa73c49cd6f0bee0771620, branch-equal to "
+                "origin/work/2026-08-13-connect-002-profile-relationships and "
+                "clean; the 03ab-to-db20 delta is exactly three files and five "
+                "semantics-preserving keyword-unpack call-site rewrites; normalized "
+                "ASTs are identical; focused Connect tests pass; Gitleaks 8.30.1 "
+                "full-history scan exited 0 with no leaks."
+            ),
+            "verdict_sha256": (
+                "a6650dcf13e0b94e3f7f09f8e22daad3c57edcaa6eccfac74aa42bee4ab8ecca"
+            ),
+            "basis": [
+                "full_tree_at_db20e2285f82c0f61baa73c49cd6f0bee0771620",
+                "complete_diff_03abfa777160e4e7293f2a89c3ce76fba22872ce_to_"
+                "db20e2285f82c0f61baa73c49cd6f0bee0771620_exact_3_files_5_"
+                "callsite_rewrites_normalized_ast_equal",
+                "connect_focused_unittest_31_of_31_pycompile_diff_check_pass",
+                "gitleaks_8_30_1_full_history_exit_0_1255_commits_no_leaks",
+                "prior_semantic_lifecycle_sql_provider_review_at_"
+                "03abfa777160e4e7293f2a89c3ce76fba22872ce_unchanged",
+            ],
+            "scope": "protected_connect_002_non_production_provider_merge_only",
+            "exclusions": "schema_apply_deployment_profile_integration_enablement",
+            "evidence_path": (
+                "artifacts/2026-08-13-connect-002/IMPLEMENTATION_CHECKPOINT.md"
+            ),
+            "evidence_git_blob_sha": "c43fdb404aed9aa5293b745c3c3918245be0d056",
+            "evidence_bytes_sha256": (
+                "993380d46f760eb90172a774031ede66e19861d6487757612ef31ae54e32891e"
+            ),
+            "received_by": "Root Codex program manager",
+            "received_date": "2026-08-13",
+            "attestation_sha256": (
+                "d07748edb202c4d7a0e5e7a26a0eb86b53d5449fa13f3597fa03525ba5573aa4"
+            ),
+        }
+        self.assertEqual(expected_review, CONNECT_002_REVIEW_ATTESTATION)
+        expected_contract = {
+            "package": CONNECT_002_PACKAGE,
+            "branch": CONNECT_002_BRANCH,
+            "reviewed_remote_sha": "db20e2285f82c0f61baa73c49cd6f0bee0771620",
+            "owner_decision_sha256": (
+                "fa9ecd740f844e833c50d97f86c413996fbb324edb56ce02422408182e062f96"
+            ),
+            "reviewer_task": "/root/profile_descendant_exact_review",
+            "review_attestation_sha256": expected_review["attestation_sha256"],
+            "review_evidence_path": expected_review["evidence_path"],
+            "review_evidence_git_blob_sha": expected_review["evidence_git_blob_sha"],
+            "review_evidence_bytes_sha256": expected_review[
+                "evidence_bytes_sha256"
+            ],
+        }
+        self.assertEqual(expected_contract, CONNECT_002_MERGE_CANDIDATE_CONTRACT)
+        self.assertEqual(
+            expected_contract,
+            CONNECT_002_MERGE_ADMISSION_REPAIR["candidate_contract"],
+        )
+        supplied_attestation = dict(CONNECT_002_REVIEW_ATTESTATION)
+        supplied_digest = supplied_attestation.pop("attestation_sha256")
+        self.assertEqual(supplied_digest, _canonical_sha256(supplied_attestation))
+        origin, original_lane = self._connect_002_origin()
+        candidate = self._connect_002_repair_candidate(origin)
+        baseline = load_baseline_bytes_at_ref(
+            CONNECT_002_MERGE_ADMISSION_REPAIR["origin_main"]
+        )
+        exact_facts = facts(
+            branch=CONNECT_002_MERGE_ADMISSION_REPAIR["branch"],
+            origin_main=CONNECT_002_MERGE_ADMISSION_REPAIR["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=CONNECT_002_MERGE_ADMISSION_REPAIR["allowed_surfaces"],
+        )
+        self.assertTrue(
+            _exact_connect_002_merge_admission_repair_matches(
+                candidate,
+                exact_facts,
+                CONNECT_002_MERGE_ADMISSION_REPAIR["package"],
+            )
+        )
+        self.assertTrue(
+            _exact_connect_002_merge_admission_repair_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("authority-neutral" in item for item in warnings))
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+        target = next(
+            lane
+            for lane in candidate["active_lanes"]
+            if lane["package"] == CONNECT_002_PACKAGE
+        )
+        self.assertEqual(original_lane, target)
+        self.assertNotIn("merge_grant", target)
+        self.assertNotIn(
+            CONNECT_002_PACKAGE,
+            candidate["operating_mode"]["merge_allowed_for"],
+        )
+        self.assertEqual([], candidate["operating_mode"]["release_allowed_for"])
+        self.assertEqual([], candidate["operating_mode"]["cleanup_allowed_for"])
+        self.assertEqual(
+            CONNECT_002_OWNER_DECISION_SHA256,
+            _canonical_sha256(target["owner_decisions"][0]),
+        )
+        self.assertTrue(
+            _affirmative_merge_decision(
+                target["owner_decisions"][0], CONNECT_002_PACKAGE
+            )
+        )
+
+        def activation_errors(
+            altered: dict,
+            altered_facts: dict = exact_facts,
+            *,
+            altered_origin: dict = origin,
+            altered_baseline: bytes = baseline,
+        ) -> list[str]:
+            result, _ = self._evaluate_activation(
+                altered,
+                altered_facts,
+                require_clean=True,
+                origin=altered_origin,
+                candidate_baseline=altered_baseline,
+                origin_baseline=baseline,
+            )
+            return result
+
+        for label, altered_facts in (
+            ("wrong-branch", {**exact_facts, "branch": "work/2026-08-13-delivery-activation-forged"}),
+            ("wrong-base", {**exact_facts, "origin_main": "0" * 40}),
+            ("ahead-zero", {**exact_facts, "ahead": 0}),
+            ("ahead-two", {**exact_facts, "ahead": 2}),
+            ("behind-one", {**exact_facts, "behind": 1}),
+            ("wrong-path", {**exact_facts, "changed_paths": ["app.py"]}),
+            (
+                "missing-path",
+                {**exact_facts, "changed_paths": [
+                    "docs/governance/CURRENT_LANES.json",
+                    "scripts/delivery_preflight.py",
+                ]},
+            ),
+            (
+                "extra-path",
+                {**exact_facts, "changed_paths": [
+                    *CONNECT_002_MERGE_ADMISSION_REPAIR["allowed_surfaces"],
+                    "README.md",
+                ]},
+            ),
+        ):
+            with self.subTest(label=label):
+                self.assertTrue(activation_errors(copy.deepcopy(candidate), altered_facts))
+
+        self.assertTrue(
+            activation_errors(
+                copy.deepcopy(candidate),
+                altered_baseline=baseline + b"\nforged baseline mutation",
+            )
+        )
+        for label, mutate in (
+            (
+                "lane",
+                lambda value: next(
+                    lane for lane in value["active_lanes"]
+                    if lane["package"] == CONNECT_002_PACKAGE
+                ).__setitem__("branch", "work/2026-08-13-connect-002-forged"),
+            ),
+            (
+                "authority",
+                lambda value: value["operating_mode"]["writes_allowed_for"].append(
+                    "PS-FORGED-001"
+                ),
+            ),
+            (
+                "merge",
+                lambda value: value["operating_mode"]["merge_allowed_for"].append(
+                    CONNECT_002_PACKAGE
+                ),
+            ),
+            (
+                "release",
+                lambda value: value["operating_mode"]["release_allowed_for"].append(
+                    CONNECT_002_PACKAGE
+                ),
+            ),
+            (
+                "cleanup",
+                lambda value: value["operating_mode"]["cleanup_allowed_for"].append(
+                    CONNECT_002_PACKAGE
+                ),
+            ),
+            (
+                "record",
+                lambda value: value["connect_002_merge_admission_repair"]["candidate_contract"].__setitem__(
+                    "reviewed_remote_sha", "0" * 40
+                ),
+            ),
+        ):
+            with self.subTest(label=label):
+                altered = copy.deepcopy(candidate)
+                mutate(altered)
+                self.assertTrue(activation_errors(altered))
+
+        for label, repaired_at in (
+            ("equal", origin["updated_at"]),
+            ("earlier", "2026-08-13T06:52:51Z"),
+            ("malformed", "not-a-timestamp"),
+        ):
+            with self.subTest(label=label):
+                self.assertTrue(
+                    activation_errors(
+                        self._connect_002_repair_candidate(
+                            origin, repaired_at=repaired_at
+                        )
+                    )
+                )
+
+        preexisting_origin = copy.deepcopy(origin)
+        preexisting_origin["updated_at"] = "2026-08-13T07:00:00Z"
+        preexisting_origin["connect_002_merge_admission_repair"] = copy.deepcopy(
+            CONNECT_002_MERGE_ADMISSION_REPAIR
+        )
+        self.assertTrue(
+            activation_errors(
+                self._connect_002_repair_candidate(preexisting_origin),
+                altered_origin=preexisting_origin,
+            )
+        )
+
+        grant_errors, _ = evaluate_policy(
+            candidate,
+            exact_facts,
+            CONNECT_002_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(any("anchored follow-up" in item for item in grant_errors))
+
+        exact_merge_errors, _ = evaluate_policy(
+            origin,
+            {**exact_facts, "branch": CONNECT_002_BRANCH, "fetched": True},
+            CONNECT_002_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=origin,
+        )
+        self.assertTrue(
+            any("anchored follow-up" in item for item in exact_merge_errors)
+        )
+
+        malformed = copy.deepcopy(origin)
+        malformed_target = next(
+            lane for lane in malformed["active_lanes"]
+            if lane["package"] == CONNECT_002_PACKAGE
+        )
+        malformed_target["branch"] = "work/2026-08-13-connect-002-forged"
+        merge_errors, _ = evaluate_policy(
+            malformed,
+            {**exact_facts, "branch": malformed_target["branch"], "fetched": True},
+            CONNECT_002_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=malformed,
+        )
+        self.assertTrue(any("exact code-controlled" in item for item in merge_errors))
+
+    def test_connect_002_candidate_merge_stays_blocked_until_anchored(self):
+        """The repair must not recognize a reconstructable merge sequence."""
+        self.assertEqual(
+            ([], False, 0),
+            _direction_main_sequence_facts(
+                {}, CONNECT_002_PACKAGE, CONNECT_002_REVIEWED_SHA, "0" * 40
+            ),
         )
 
     def test_profile_core_main_sequence_rejects_bad_repair_timestamps(self):

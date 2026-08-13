@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T06:52:52Z",
+  "updated_at": "2026-08-13T07:54:08Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -196,6 +196,30 @@
     },
     "reason": "Azure build 939 found one stale Opportunity Slate registry fixture: it required PS-OPPSLATE-004 to be the final registry entry instead of validating the migration loader's own recorded position. This repair changes that fixture to validate ordered loader placement and the same prerequisite boundary. It changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, enablement, or live behavior.",
     "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact four changed paths. The parent must retain the exact f1db repair, 1ab fixture follow-up, 3808 anchor follow-up, and 4bc ledger-only grant in that order; the ledger may change only updated_at plus this record, and the baseline must remain byte-identical. Candidate merge admission rejects a sixth or alternate main commit. A later branch, base, altered record, timestamp, authority, path, or state cannot reuse it."
+  },
+  "connect_002_merge_admission_repair": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-13-delivery-activation-connect-002-merge-admission",
+    "origin_main": "68d14a44de4007f8643396833a481601d5dbb4a3",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "candidate_contract": {
+      "package": "PS-CONNECT-002",
+      "branch": "work/2026-08-13-connect-002-profile-relationships",
+      "reviewed_remote_sha": "db20e2285f82c0f61baa73c49cd6f0bee0771620",
+      "owner_decision_sha256": "fa9ecd740f844e833c50d97f86c413996fbb324edb56ce02422408182e062f96",
+      "reviewer_task": "/root/profile_descendant_exact_review",
+      "review_attestation_sha256": "d07748edb202c4d7a0e5e7a26a0eb86b53d5449fa13f3597fa03525ba5573aa4",
+      "review_evidence_path": "artifacts/2026-08-13-connect-002/IMPLEMENTATION_CHECKPOINT.md",
+      "review_evidence_git_blob_sha": "c43fdb404aed9aa5293b745c3c3918245be0d056",
+      "review_evidence_bytes_sha256": "993380d46f760eb90172a774031ede66e19861d6487757612ef31ae54e32891e"
+    },
+    "reason": "Pete authorized one code-controlled, fail-closed PS-CONNECT-002 merge-admission validator repair for the exact independently reviewed non-production relationship-provider candidate. It records the exact candidate, owner-decision, review, and evidence pins for a separately authorized later anchored follow-up. This repair admits no candidate and grants no merge, release, schema apply, deployment, Profile integration, enablement, cleanup, or live authority.",
+    "verification_contract": "This repair is audit evidence, not self-granted candidate or merge authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, exact three changed paths, and an unchanged baseline. The ledger may change only updated_at plus this record; active lanes and every authority list must remain byte-for-byte equivalent. A separately authorized follow-up must pin this repair's actual merged SHA before any reviewed candidate merge validation can be registered. A later branch, base, altered record, timestamp, authority, path, or state cannot reuse this repair."
   },
   "opportunity_schema_repair_release_refresh": {
     "status": "one_time_owner_authorized_repair",
