@@ -39,6 +39,8 @@ from scripts.delivery_preflight import (
     PROFILE_CORE_INTEGRATION_PACKAGE,
     PROFILE_CORE_INTEGRATION_REVIEW_ATTESTATION,
     PROFILE_CORE_INTEGRATION_REVIEWED_SHA,
+    PROFILE_CORE_GRANT_FIXTURE_FOLLOWUP,
+    PROFILE_CORE_GRANT_FOLLOWUP_PATHS,
     PROFILE_CORE_MERGE_CONTROL_PATHS,
     PROFILE_CORE_MERGE_PREFLIGHT_REPAIR,
     _affirmative_merge_decision,
@@ -50,7 +52,10 @@ from scripts.delivery_preflight import (
     _exact_direction_grant_delta,
     _exact_grant_close_fixture_followup_delta,
     _exact_implementation_release_preflight_repair_matches,
+    _exact_profile_core_grant_fixture_followup_delta,
+    _exact_profile_core_grant_fixture_followup_matches,
     _exact_profile_core_merge_preflight_repair_matches,
+    _is_profile_core_reviewed_implementation_lane,
     _profile_core_main_sequence_facts,
     _exact_opportunity_schema_repair_release_refresh_matches,
     _exact_opportunity_lifecycle_fixture_repair_delta,
@@ -1635,6 +1640,94 @@ with patch.object(
                 )
                 self.assertTrue(forged_errors)
 
+    def test_profile_core_grant_fixture_followup_is_exact_and_inert(self):
+        repair = PROFILE_CORE_MERGE_PREFLIGHT_REPAIR
+        followup = PROFILE_CORE_GRANT_FIXTURE_FOLLOWUP
+        origin = load_ledger_at_ref(followup["origin_main"])
+        self.assertEqual(
+            repair, origin.get("profile_core_merge_preflight_repair")
+        )
+        self.assertNotIn("profile_core_grant_fixture_followup", origin)
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-13T03:36:53Z"
+        candidate["profile_core_grant_fixture_followup"] = copy.deepcopy(
+            followup
+        )
+        baseline = load_baseline_bytes_at_ref(followup["origin_main"])
+        exact_facts = facts(
+            branch=followup["branch"],
+            origin_main=followup["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=followup["allowed_surfaces"],
+        )
+        self.assertTrue(
+            _exact_profile_core_grant_fixture_followup_matches(
+                candidate, exact_facts, followup["package"]
+            )
+        )
+        self.assertTrue(
+            _exact_profile_core_grant_fixture_followup_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(
+            any("Profile Core grant-fixture" in item for item in warnings)
+        )
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+        self.assertEqual([], candidate["operating_mode"]["merge_allowed_for"])
+        self.assertEqual([], candidate["operating_mode"]["release_allowed_for"])
+
+        for label, mutate, altered_facts in (
+            (
+                "wrong-origin",
+                lambda _value: None,
+                {**exact_facts, "origin_main": "0" * 40},
+            ),
+            (
+                "wrong-path",
+                lambda _value: None,
+                {**exact_facts, "changed_paths": ["app.py"]},
+            ),
+            (
+                "forged-record",
+                lambda value: value.__setitem__("origin_main", "0" * 40),
+                exact_facts,
+            ),
+            (
+                "authority-smuggling",
+                lambda _value: candidate["operating_mode"][
+                    "merge_allowed_for"
+                ].append(PROFILE_CORE_INTEGRATION_PACKAGE),
+                exact_facts,
+            ),
+        ):
+            with self.subTest(label=label):
+                forged = copy.deepcopy(candidate)
+                if label == "authority-smuggling":
+                    forged["operating_mode"]["merge_allowed_for"].append(
+                        PROFILE_CORE_INTEGRATION_PACKAGE
+                    )
+                else:
+                    mutate(forged["profile_core_grant_fixture_followup"])
+                forged_errors, _ = self._evaluate_activation(
+                    forged,
+                    altered_facts,
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(forged_errors)
+
     def test_profile_core_grant_and_merge_are_exact_candidate_only(self):
         origin, lane = self._profile_core_origin()
         repaired = copy.deepcopy(origin)
@@ -1642,8 +1735,16 @@ with patch.object(
         repaired["profile_core_merge_preflight_repair"] = copy.deepcopy(
             PROFILE_CORE_MERGE_PREFLIGHT_REPAIR
         )
-        candidate = copy.deepcopy(repaired)
-        granted_at = "2026-08-13T02:16:00Z"
+        followed = copy.deepcopy(repaired)
+        followed["updated_at"] = "2026-08-13T03:36:53Z"
+        followed["profile_core_grant_fixture_followup"] = copy.deepcopy(
+            PROFILE_CORE_GRANT_FIXTURE_FOLLOWUP
+        )
+        self.assertTrue(
+            _exact_profile_core_grant_fixture_followup_delta(repaired, followed)
+        )
+        candidate = copy.deepcopy(followed)
+        granted_at = "2026-08-13T03:37:30Z"
         candidate_lane = next(
             item
             for item in candidate["active_lanes"]
@@ -1653,7 +1754,7 @@ with patch.object(
             candidate_lane, granted_at
         )
         candidate["operating_mode"]["merge_allowed_for"] = [
-            *repaired["operating_mode"]["merge_allowed_for"],
+            *followed["operating_mode"]["merge_allowed_for"],
             PROFILE_CORE_INTEGRATION_PACKAGE,
         ]
         candidate["updated_at"] = granted_at
@@ -1672,23 +1773,24 @@ with patch.object(
             PROFILE_CORE_INTEGRATION_PACKAGE,
             "grant",
             require_clean=True,
-            origin_ledger=repaired,
+            origin_ledger=followed,
             candidate_baseline=self.baseline,
             origin_baseline=self.baseline,
         )
         self.assertEqual([], errors)
         self.assertTrue(
             _exact_direction_grant_delta(
-                repaired, candidate, PROFILE_CORE_INTEGRATION_PACKAGE
+                followed, candidate, PROFILE_CORE_INTEGRATION_PACKAGE
             )
         )
+        self._assert_valid_merge_authorities(candidate)
         self.assertEqual([], candidate["operating_mode"]["release_allowed_for"])
 
         wrong_sha = copy.deepcopy(candidate)
         wrong_sha["active_lanes"][0]["merge_grant"]["reviewed_remote_sha"] = "0" * 40
         wrong_sha_errors, _ = evaluate_policy(
             wrong_sha, grant_facts, PROFILE_CORE_INTEGRATION_PACKAGE, "grant",
-            require_clean=True, origin_ledger=repaired,
+            require_clean=True, origin_ledger=followed,
             candidate_baseline=self.baseline, origin_baseline=self.baseline,
         )
         self.assertTrue(any("accepted Profile Core SHA" in item for item in wrong_sha_errors))
@@ -1699,7 +1801,7 @@ with patch.object(
         ] = "/root/forged_profile_review"
         wrong_review_errors, _ = evaluate_policy(
             wrong_review, grant_facts, PROFILE_CORE_INTEGRATION_PACKAGE, "grant",
-            require_clean=True, origin_ledger=repaired,
+            require_clean=True, origin_ledger=followed,
             candidate_baseline=self.baseline, origin_baseline=self.baseline,
         )
         self.assertTrue(any("code-controlled attestation" in item for item in wrong_review_errors))
@@ -1710,7 +1812,7 @@ with patch.object(
         ] = "0" * 64
         wrong_digest_errors, _ = evaluate_policy(
             wrong_digest, grant_facts, PROFILE_CORE_INTEGRATION_PACKAGE, "grant",
-            require_clean=True, origin_ledger=repaired,
+            require_clean=True, origin_ledger=followed,
             candidate_baseline=self.baseline, origin_baseline=self.baseline,
         )
         self.assertTrue(any("pinned Profile Core owner" in item for item in wrong_digest_errors))
@@ -1721,7 +1823,7 @@ with patch.object(
             PROFILE_CORE_INTEGRATION_PACKAGE,
             "grant",
             require_clean=True,
-            origin_ledger=repaired,
+            origin_ledger=followed,
             candidate_baseline=self.baseline,
             origin_baseline=self.baseline,
         )
@@ -1738,15 +1840,16 @@ with patch.object(
             branch=PROFILE_CORE_INTEGRATION_BRANCH,
             head=PROFILE_CORE_INTEGRATION_REVIEWED_SHA,
             origin_main="2" * 40,
-            behind=2,
+            behind=3,
             merge_target_remote_sha=PROFILE_CORE_INTEGRATION_REVIEWED_SHA,
             changed_paths=["profile_routes.py"],
             merge_main_changed_paths=sorted(
                 set(PROFILE_CORE_MERGE_CONTROL_PATHS)
+                | set(PROFILE_CORE_GRANT_FOLLOWUP_PATHS)
                 | {"docs/governance/CURRENT_LANES.json"}
             ),
             merge_main_control_commits_valid=True,
-            merge_main_control_commit_count=2,
+            merge_main_control_commit_count=3,
         )
         merge_errors, merge_warnings = evaluate_policy(
             candidate,
@@ -1763,8 +1866,8 @@ with patch.object(
             candidate,
             {
                 **merge_facts,
-                "behind": 3,
-                "merge_main_control_commit_count": 3,
+                "behind": 4,
+                "merge_main_control_commit_count": 4,
                 "merge_main_control_commits_valid": False,
             },
             PROFILE_CORE_INTEGRATION_PACKAGE,
@@ -1772,7 +1875,7 @@ with patch.object(
             require_clean=True,
             origin_ledger=candidate,
         )
-        self.assertTrue(any("exactly two verified" in item for item in extra_main_errors))
+        self.assertTrue(any("exactly three verified" in item for item in extra_main_errors))
         self.assertTrue(any("exact repair-plus-target-grant" in item for item in extra_main_errors))
 
         malformed_profile = copy.deepcopy(candidate)
@@ -1803,14 +1906,15 @@ with patch.object(
         candidate_sha = PROFILE_CORE_INTEGRATION_REVIEWED_SHA
         control_base = PROFILE_CORE_MERGE_PREFLIGHT_REPAIR["origin_main"]
         repair_sha = "a" * 40
-        grant_sha = "b" * 40
-        origin_main = "c" * 40
+        followup_sha = "b" * 40
+        grant_sha = "c" * 40
+        origin_main = "d" * 40
 
         def ledgers(
             *,
             base_updated_at: str = "2026-08-13T02:13:14Z",
             repair_updated_at: str = "2026-08-13T02:15:00Z",
-        ) -> tuple[dict, dict, dict]:
+        ) -> tuple[dict, dict, dict, dict]:
             base, _ = self._profile_core_origin()
             base["updated_at"] = base_updated_at
             repair = copy.deepcopy(base)
@@ -1818,8 +1922,13 @@ with patch.object(
             repair["profile_core_merge_preflight_repair"] = copy.deepcopy(
                 PROFILE_CORE_MERGE_PREFLIGHT_REPAIR
             )
-            granted = copy.deepcopy(repair)
-            granted_at = "2026-08-13T02:16:00Z"
+            followed = copy.deepcopy(repair)
+            followed["updated_at"] = "2026-08-13T03:36:53Z"
+            followed["profile_core_grant_fixture_followup"] = copy.deepcopy(
+                PROFILE_CORE_GRANT_FIXTURE_FOLLOWUP
+            )
+            granted = copy.deepcopy(followed)
+            granted_at = "2026-08-13T03:37:30Z"
             lane = next(
                 item
                 for item in granted["active_lanes"]
@@ -1827,36 +1936,39 @@ with patch.object(
             )
             lane["merge_grant"] = self._profile_core_grant_record(lane, granted_at)
             granted["operating_mode"]["merge_allowed_for"] = [
-                *repair["operating_mode"]["merge_allowed_for"], package
+                *followed["operating_mode"]["merge_allowed_for"], package
             ]
             granted["updated_at"] = granted_at
-            return base, repair, granted
+            return base, repair, followed, granted
 
         def sequence_valid(
-            base: dict, repair: dict, granted: dict
+            base: dict, repair: dict, followed: dict, granted: dict
         ) -> tuple[list[str], bool, int]:
             def fake_git(*args: str, **_kwargs: object) -> str:
                 if args[:2] == ("rev-list", "--reverse"):
-                    return f"{repair_sha}\n{grant_sha}"
+                    return f"{repair_sha}\n{followup_sha}\n{grant_sha}"
                 if args == ("rev-parse", f"{repair_sha}^"):
                     return control_base
-                if args == ("rev-parse", f"{grant_sha}^"):
+                if args == ("rev-parse", f"{followup_sha}^"):
                     return repair_sha
+                if args == ("rev-parse", f"{grant_sha}^"):
+                    return followup_sha
                 if args == ("merge-base", candidate_sha, origin_main):
                     return control_base
                 self.fail(f"unexpected git command: {args}")
 
             def fake_git_nul(*args: str, **_kwargs: object) -> list[str]:
                 if args[0] == "diff-tree":
-                    return (
-                        sorted(PROFILE_CORE_MERGE_CONTROL_PATHS)
-                        if args[-1] == repair_sha
-                        else ["docs/governance/CURRENT_LANES.json"]
-                    )
+                    if args[-1] == repair_sha:
+                        return sorted(PROFILE_CORE_MERGE_CONTROL_PATHS)
+                    if args[-1] == followup_sha:
+                        return sorted(PROFILE_CORE_GRANT_FOLLOWUP_PATHS)
+                    return ["docs/governance/CURRENT_LANES.json"]
                 if args[0] == "diff":
                     return (
                         sorted(
                             set(PROFILE_CORE_MERGE_CONTROL_PATHS)
+                            | set(PROFILE_CORE_GRANT_FOLLOWUP_PATHS)
                             | {"docs/governance/CURRENT_LANES.json"}
                         )
                         if args[-1] == f"{control_base}..{origin_main}"
@@ -1870,17 +1982,18 @@ with patch.object(
                 "scripts.delivery_preflight.load_ledger_at_ref",
                 side_effect=lambda ref: (
                     base if ref == control_base else repair
-                    if ref == repair_sha else self.fail(f"unexpected ledger ref: {ref}")
+                    if ref == repair_sha else followed
+                    if ref == followup_sha else self.fail(f"unexpected ledger ref: {ref}")
                 ),
             ):
                 return _profile_core_main_sequence_facts(
                     granted, package, candidate_sha, origin_main
                 )
 
-        base, repair, granted = ledgers()
-        _, valid, count = sequence_valid(base, repair, granted)
+        base, repair, followed, granted = ledgers()
+        _, valid, count = sequence_valid(base, repair, followed, granted)
         self.assertTrue(valid)
-        self.assertEqual(2, count)
+        self.assertEqual(3, count)
 
         for label, base_time, repair_time in (
             ("equal", "2026-08-13T02:13:14Z", "2026-08-13T02:13:14Z"),
@@ -1889,13 +2002,15 @@ with patch.object(
             ("invalid-base", "not-a-timestamp", "2026-08-13T02:15:00Z"),
         ):
             with self.subTest(label=label):
-                base, repair, granted = ledgers(
+                base, repair, followed, granted = ledgers(
                     base_updated_at=base_time,
                     repair_updated_at=repair_time,
                 )
-                _, valid, count = sequence_valid(base, repair, granted)
+                _, valid, count = sequence_valid(
+                    base, repair, followed, granted
+                )
                 self.assertFalse(valid)
-                self.assertEqual(2, count)
+                self.assertEqual(3, count)
 
     def test_profile_core_frozen_candidate_uses_temp_repo_repair_then_grant(self):
         """Exercise the real Profile-only repair -> grant -> candidate flow."""
@@ -1903,6 +2018,7 @@ with patch.object(
         candidate_branch = PROFILE_CORE_INTEGRATION_BRANCH
         candidate_sha = PROFILE_CORE_INTEGRATION_REVIEWED_SHA
         repair_base = PROFILE_CORE_MERGE_PREFLIGHT_REPAIR["origin_main"]
+        repair_main = PROFILE_CORE_GRANT_FIXTURE_FOLLOWUP["origin_main"]
 
         def run(
             *args: str,
@@ -1971,7 +2087,24 @@ with patch.object(
             run("git", "clone", "--shared", str(ROOT), str(seed))
             git(seed, "config", "user.name", "PeerSlate Test")
             git(seed, "config", "user.email", "peerslate-test@example.invalid")
-            git(seed, "checkout", "-B", "profile-core-repair-fixture", repair_base)
+            git(seed, "checkout", "-B", "profile-core-repair-fixture", repair_main)
+            self.assertEqual(
+                repair_base,
+                git(seed, "rev-parse", f"{repair_main}^").stdout.strip(),
+            )
+            self.assertEqual(
+                set(PROFILE_CORE_MERGE_CONTROL_PATHS),
+                set(
+                    git(
+                        seed,
+                        "diff-tree",
+                        "--no-commit-id",
+                        "--name-only",
+                        "-r",
+                        repair_main,
+                    ).stdout.split()
+                ),
+            )
 
             for relative in (
                 "scripts/delivery_preflight.py",
@@ -1983,27 +2116,36 @@ with patch.object(
                 shutil.copy2(source, destination)
 
             ledger_path = seed / "docs" / "governance" / "CURRENT_LANES.json"
-            base_ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
-            self.assertNotIn("profile_core_merge_preflight_repair", base_ledger)
-            repair_ledger = copy.deepcopy(base_ledger)
-            repair_ledger["updated_at"] = "2026-08-13T02:15:00Z"
-            repair_ledger["profile_core_merge_preflight_repair"] = copy.deepcopy(
-                PROFILE_CORE_MERGE_PREFLIGHT_REPAIR
+            repair_ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                PROFILE_CORE_MERGE_PREFLIGHT_REPAIR,
+                repair_ledger.get("profile_core_merge_preflight_repair"),
+            )
+            self.assertNotIn("profile_core_grant_fixture_followup", repair_ledger)
+            followup_ledger = copy.deepcopy(repair_ledger)
+            followup_ledger["updated_at"] = "2026-08-13T03:36:53Z"
+            followup_ledger["profile_core_grant_fixture_followup"] = copy.deepcopy(
+                PROFILE_CORE_GRANT_FIXTURE_FOLLOWUP
+            )
+            self.assertTrue(
+                _exact_profile_core_grant_fixture_followup_delta(
+                    repair_ledger, followup_ledger
+                )
             )
             ledger_path.write_text(
-                json.dumps(repair_ledger, indent=2, ensure_ascii=False) + "\n",
+                json.dumps(followup_ledger, indent=2, ensure_ascii=False) + "\n",
                 encoding="utf-8",
             )
-            git(seed, "add", "--", *PROFILE_CORE_MERGE_CONTROL_PATHS)
+            git(seed, "add", "--", *PROFILE_CORE_GRANT_FOLLOWUP_PATHS)
             self.assertEqual(
-                set(PROFILE_CORE_MERGE_CONTROL_PATHS),
+                set(PROFILE_CORE_GRANT_FOLLOWUP_PATHS),
                 set(git(seed, "diff", "--cached", "--name-only").stdout.split()),
             )
-            git(seed, "commit", "-m", "Repair Profile Core merge preflight")
-            repair_sha = git(seed, "rev-parse", "HEAD").stdout.strip()
+            git(seed, "commit", "-m", "Repair Profile Core grant fixture")
+            followup_sha = git(seed, "rev-parse", "HEAD").stdout.strip()
             self.assertEqual(
-                repair_base,
-                git(seed, "rev-parse", f"{repair_sha}^").stdout.strip(),
+                repair_main,
+                git(seed, "rev-parse", f"{followup_sha}^").stdout.strip(),
             )
 
             grant_ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
@@ -2012,7 +2154,7 @@ with patch.object(
                 for item in grant_ledger["active_lanes"]
                 if item.get("package") == package
             )
-            granted_at = "2026-08-13T02:16:00Z"
+            granted_at = "2026-08-13T03:37:30Z"
             grant_lane["merge_grant"] = self._profile_core_grant_record(
                 grant_lane, granted_at
             )
@@ -2021,7 +2163,7 @@ with patch.object(
             ]
             grant_ledger["updated_at"] = granted_at
             self.assertTrue(
-                _exact_direction_grant_delta(repair_ledger, grant_ledger, package)
+                _exact_direction_grant_delta(followup_ledger, grant_ledger, package)
             )
             ledger_path.write_text(
                 json.dumps(grant_ledger, indent=2, ensure_ascii=False) + "\n",
@@ -2031,7 +2173,7 @@ with patch.object(
             git(seed, "commit", "-m", "Grant exact Profile Core merge")
             grant_sha = git(seed, "rev-parse", "HEAD").stdout.strip()
             self.assertEqual(
-                repair_sha,
+                followup_sha,
                 git(seed, "rev-parse", f"{grant_sha}^").stdout.strip(),
             )
 
@@ -2070,10 +2212,10 @@ with patch.object(
             self.assertEqual("pass", payload["result"])
             self.assertTrue(payload["facts"]["direction_candidate_verified_from_main"])
             self.assertEqual(candidate_sha, payload["facts"]["candidate_head"])
-            self.assertEqual(2, payload["facts"]["behind"])
+            self.assertEqual(3, payload["facts"]["behind"])
             self.assertEqual(candidate_sha, git(candidate, "rev-parse", "HEAD").stdout.strip())
 
-            # A third, otherwise harmless main control commit is enough to
+            # A fourth, otherwise harmless main control commit is enough to
             # invalidate this expired one-time sequence.
             with (seed / "tests" / "test_delivery_preflight.py").open(
                 "a", encoding="utf-8"
@@ -2086,7 +2228,7 @@ with patch.object(
             git(verifier, "merge", "--ff-only", "origin/main")
             extra_main = invoke(verifier, candidate)
             self.assertEqual(2, extra_main.returncode)
-            self.assertIn("exactly two verified main control commits", extra_main.stdout)
+            self.assertIn("exactly three verified main control commits", extra_main.stdout)
 
     def test_opportunity_schema_repair_release_refresh_is_exact_and_grants_nothing(self):
         repair = OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH
@@ -3109,7 +3251,10 @@ with patch.object(
             lane = active_by_package.get(package)
             self.assertIsNotNone(lane)
             lane_class = lane.get("lane_class")
-            if lane_class == "direction_authority":
+            if (
+                lane_class == "direction_authority"
+                or _is_profile_core_reviewed_implementation_lane(lane)
+            ):
                 self.assertFalse(lane.get("production_capable"))
                 grant = lane.get("merge_grant")
                 self.assertIsInstance(grant, dict)

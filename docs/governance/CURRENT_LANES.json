@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T02:15:00Z",
+  "updated_at": "2026-08-13T03:36:53Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -150,6 +150,19 @@
     },
     "reason": "Pete authorized a one-time fail-closed delivery-control repair for the exact independently reviewed non-production Profile Core candidate. It can later validate only an exact-review-bound merge grant for that package and records no merge, release, schema, deployment, configuration, enablement, or live authority itself.",
     "verification_contract": "This is audit evidence, not self-granted authority. The preflight recognizes it only when the entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. The later grant must separately bind the pinned candidate, owner-decision digest, independent-review attestation, and evidence hashes."
+  },
+  "profile_core_grant_fixture_followup": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-13-delivery-activation-profile-core-grant-fixture-followup",
+    "origin_main": "f1dbbe03cbba01a48cc8732df468643c73e8fc5b",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "reason": "The exact Profile Core grant passed its fail-closed grant preflight, but Azure build 932's 3,598-test run found one stale governance assertion: the checked-in lane invariant inspected Profile Core as a generic implementation prose grant instead of its stricter code-controlled exact-review merge grant. This follow-up makes the test use the production validator and permits only the exact initial repair, this inert follow-up, then the ledger-only grant sequence. It changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, enablement, or live behavior.",
+    "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exact three changed paths. The parent must retain the exact Profile Core merge-preflight repair; the ledger may change only updated_at plus this record, and the baseline must remain byte-identical. Candidate merge admission additionally proves the exact repair, follow-up, then grant commit order and each semantic delta. A later branch, base, altered record, timestamp, authority, path, or state cannot reuse it."
   },
   "opportunity_schema_repair_release_refresh": {
     "status": "one_time_owner_authorized_repair",
