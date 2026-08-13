@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T06:07:18Z",
+  "updated_at": "2026-08-13T06:30:12Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,12 +12,9 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-PROFILE-CORE-INTEGRATION-001",
       "PS-SHELL-001"
     ],
-    "merge_allowed_for": [
-      "PS-PROFILE-CORE-INTEGRATION-001"
-    ],
+    "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -32,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-PROFILE-CORE-INTEGRATION-001 and PS-SHELL-001 are the active writer lanes and may write only their own recorded surfaces. Profile is non-production and excludes the global shell; PS-SHELL-001 holds shared:shell and the sole production-capable slot. Merge and production release remain fail-closed for both until their exact reviewed grants are recorded. PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 is paused with its delivered work merged and its branch preserved; it retains no write, merge, cleanup, or release authority."
+    "exit_authority": "Active writer lanes: PS-SHELL-001. PS-PROFILE-CORE-INTEGRATION-001 is merged_closed and retains no authority."
   },
   "activation_policy": {
     "enabled": true,
@@ -1371,9 +1368,7 @@
       "close_evidence_paths": [
         "docs/initiatives/PS-OPPORTUNITY-SLATE-002/COMPLETION_RECORD_R1.md"
       ]
-    }
-  ],
-  "active_lanes": [
+    },
     {
       "package": "PS-PROFILE-CORE-INTEGRATION-001",
       "outcome": "Build the complete disjoint Profile implementation foundation in parallel with Interview Studio: replay the exact independently accepted Profile Core tree at aa1fc7e889fa63e31a432074da5c5040698f4aea; add durable reusable multi-user Profile identity, source, projection, placement, revision, owner draft, exact Public preview, explicit publish and withdrawal, Home, Posts, About, and the Profile-local portions of Media, Voice, Projects, Connections, search, moderation, accessibility, mobile, and complete visual states that do not require shared app/auth registration. This lane is non-production and may not register or expose routes. It prepares the D0-D4 implementation candidate while Interview retains app.py, auth_routes.py, shared navigation/auth tests, and the sole production-capable slot. A later short integration activation or explicit file handoff must wire and deploy the complete dark Profile, followed by Pete's review and separate enablement.",
@@ -1491,8 +1486,18 @@
         "review_evidence_paths": [
           "artifacts/2026-08-12-profile-core-integration-001/IMPLEMENTATION_CHECKPOINT.md"
         ]
-      }
-    },
+      },
+      "disposition": "merged_closed",
+      "closed_at": "2026-08-13T06:30:12Z",
+      "reviewed_remote_sha": "78b0203fb8fbbbedefa9de499427755d02ac6fa2",
+      "merged_main_sha": "b095b209828f42004fbcba927158d33ce4a9726b",
+      "package_merge_sha": "f0fe066751a83fc7c0ba32a88d55b1d42a3a46f2",
+      "close_evidence_paths": [
+        "artifacts/2026-08-12-profile-core-integration-001/IMPLEMENTATION_CHECKPOINT.md"
+      ]
+    }
+  ],
+  "active_lanes": [
     {
       "package": "PS-SHELL-001",
       "outcome": "Implement the owner-approved Editorial Top Bar shared global shell across PeerSlate's public, signed-in member, owner, tablet, and mobile states, preserving the production logo exactly and keeping page- and room-specific controls inside their rooms. Centralize a namespaced, light-theme-only shell token family for ground, stage, surface, rail, border, text, muted text, accent, focus, and semantic status roles, defined as aliases of the production variables the shell already resolves, so the later cross-site Colour, Background, and Typography Audit can apply accepted system-level decisions without rebuilding shell layout or behaviour.",
