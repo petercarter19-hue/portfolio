@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active writer lanes: PS-SHELL-001. PS-PROFILE-CORE-INTEGRATION-001 is closed and archived."
+  current_assignments: "Active writer lanes: PS-SHELL-001 and PS-CONNECT-002. PS-CONNECT-002 is assigned to work/2026-08-13-connect-002-profile-relationships and supplies the disjoint relationship dependency for the complete Profile release; Profile Core is closed."
 
 governing_documents:
   bible:
@@ -61,6 +61,9 @@ active_packages:
   - id: PS-SHELL-001
     status: active_delivery
     scope: "Editorial Top Bar global shell across public, member, owner, tablet, and mobile states; production logo locked; adds a light-only shell token family aliased to production values."
+  - id: PS-CONNECT-002
+    status: active_delivery
+    scope: "Non-production relationship lifecycle, epoch, audience-snapshot, and additive schema foundation required by the complete Profile release; no app, shell, deployment, or enablement work."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -153,7 +156,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Continue only the active writer packages: PS-SHELL-001. PS-PROFILE-CORE-INTEGRATION-001 is closed and archived."
+next_gate: "Continue only the disjoint active writer packages: PS-SHELL-001 and PS-CONNECT-002. Profile integration consumes PS-CONNECT-002 only after its exact reviewed provider is separately merged and closed."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
