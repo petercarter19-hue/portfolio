@@ -432,3 +432,43 @@ proven in a scripted browser against this exact code at three widths, and the
 served files were checked directly, but no one has yet clicked it while signed
 in on the live site.
 
+## Round 6: the two accepted findings, closed (2026-08-13)
+
+The previous round accepted two review findings rather than fixing them, with
+reasons recorded. Pete heard both described and reversed that judgement:
+nothing glitchy stays. **Live at release `69baf81d1e3cc9c6a9e3ee23` (main
+`3dae0d8`).**
+
+**The inline example no longer pays for work it throws away.** It inherited the
+Interview AI source selector, so a member who had left that on Compare spent
+two generations while the card rendered one and discarded the other. The server
+builds the grounded answer from the identical call in Compare and in
+member_history, so the inline entry point now asks for the single grounded
+generation and the rendered card is unchanged. Compare itself is untouched in
+the Interview AI panel, which actually shows both halves. Proven in a browser:
+with Compare selected, the inline card sends member_history and makes exactly
+one request.
+
+**Machine tokens are no longer shown to a person.** A session that ended
+mid-request answered `sign_in_required`, and a database still waking answered
+`workspace_waking`; both were rendered verbatim. They are translated at the one
+function where every interview request turns a server error into a message, so
+the inline card and the Interview AI panel are both covered rather than one
+reading like an error log beside the other -- which is exactly why the previous
+round had deferred it. Anything outside that short map passes through
+untouched, so a sentence the server wrote for a person is never rewritten;
+proven alongside both tokens.
+
+The translated sentences deliberately carry no reassurance about the member's
+own work, because each caller already appends its own and two in one breath
+reads like a machine apologising twice.
+
+**No server change.** The token translation is a client presentation fix and
+the endpoint contract is unchanged.
+
+306 interview tests pass, including new ones for both fixes and an updated
+assertion where an earlier test of this package pinned the mode call this round
+changes. Full suite green apart from the four pre-existing Community failures.
+
+**Nothing recorded on this package is now outstanding.**
+
