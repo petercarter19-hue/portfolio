@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-INTERVIEW-ROLE-CONTEXT-001 is active on work/2026-08-14-interview-role-context-001 for a non-production O*NET recovery record and future Interview job-context package only. No runtime, schema, deployment, release, or production work is authorized."
+  current_assignments: "No active writer lanes. PS-INTERVIEW-ROLE-CONTEXT-001 is paused and preserved; activate an exact implementation or direction/authority outcome before repository writes."
 
 governing_documents:
   bible:
@@ -58,9 +58,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-INTERVIEW-ROLE-CONTEXT-001
-    status: active_delivery
-    scope: "Protected non-production direction package: record the O*NET planning gap and define future Interview Me tailoring from paste, upload, public job link, or exact authorized Opportunity Slate context. No implementation or live change."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -154,7 +151,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Complete only PS-INTERVIEW-ROLE-CONTEXT-001 documentation, registry, and audit-queue records; merge with explicit skip-ci and return to controlled idle before any runtime implementation is considered."
+next_gate: "No active writer lanes. Select and activate the next exact outcome under the three-lane class, path, and exclusive-domain rules."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
