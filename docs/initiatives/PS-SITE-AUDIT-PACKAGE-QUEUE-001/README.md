@@ -1,7 +1,7 @@
 # PS-SITE-AUDIT-PACKAGE-QUEUE-001 - August 13 Site Audit package queue
 
 **Status:** `paused_preserved` on 2026-08-13; no active documentation writer.
-The eight child packages remain planned and inactive. The queue's former
+The nine child packages remain planned and inactive. The queue's former
 one-dimensional order is superseded by the dependency-based master sequence
 in the August 13 comprehensive audit companion; the child charters remain
 durable inputs rather than one serial execution block.
@@ -25,6 +25,7 @@ This queue records direction; it does not activate any child package.
 | [PS-COMMUNITY-AUTHORING-EXPERIENCE-001](../PS-COMMUNITY-AUTHORING-EXPERIENCE-001/README.md) | Revision to Community direction | Compact new-post modal, truthful audience, purposeful rails |
 | [PS-COMMUNITY-SPARK-POST-001](../PS-COMMUNITY-SPARK-POST-001/README.md) | Protected Community child | Preserve Spark question as a first-class post relationship |
 | [PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001](../PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001/README.md) | Follow-up after Claude's Interview release | Narrower Interview Me and corrected Video Practice composition |
+| [PS-INTERVIEW-ROLE-CONTEXT-001](../PS-INTERVIEW-ROLE-CONTEXT-001/README.md) | Protected functional follow-up shared with Opportunity Slate | Tailor Interview Me questions from paste, upload, public link, or exact authorized Opportunity Slate context; recover optional offline O*NET evaluation |
 | [PS-AI-AGENT-QUALITY-ROUND-2-001](../PS-AI-AGENT-QUALITY-ROUND-2-001/README.md) | Execution round under `PS-AI-PRODUCT-EVAL-001` | Specialist-agent inventory, guardrails, prompts, and evaluation |
 | [PS-INTERVIEW-ASK-MY-SLATE-001](../PS-INTERVIEW-ASK-MY-SLATE-001/README.md) | Bounded use of `PS-ASK-SLATE-AI-001` | Minimal, cited memory retrieval for the current interview question |
 | [PS-RESUME-MEDIA-THEME-001](../PS-RESUME-MEDIA-THEME-001/README.md) | Follow-up to `PS-RESUME-PUBLIC-REFINE-001` | One-image composition, theme continuity, curated image choices |
@@ -38,9 +39,13 @@ This queue records direction; it does not activate any child package.
 4. Lock **Community Authoring** direction, then scope **Spark Post** persistence.
 5. Review **Interview Studio Polish** only after Claude's inline-answer work is
    released and the resulting surface is inspected.
-6. Review **Ask My Slate** only after AI quality and private retrieval contracts
+6. Review **Interview Role Context** after the Opportunity Slate source/version
+   contract and current authenticated Interview flow are verified. Employer
+   source intake and exact transfer can ship without O*NET; optional offline
+   O*NET evaluation follows only after blinded evidence.
+7. Review **Ask My Slate** only after AI quality and private retrieval contracts
    are ready.
-7. Review **Resume Media and Theme** as an independent visual direction lane.
+8. Review **Resume Media and Theme** as an independent visual direction lane.
 
 This is a recommended audit order, not permission to run multiple writers or
 direction lanes simultaneously.
