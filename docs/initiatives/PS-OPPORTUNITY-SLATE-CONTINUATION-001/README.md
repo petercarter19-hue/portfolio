@@ -12,6 +12,33 @@ Clicking **Opportunity Slate** opens an Opportunity Home rather than reopening
 the last retained review. Unfinished work is preserved, but resuming it is an
 intentional choice. The workbench feels bounded and calm on a wide monitor.
 
+## Urgent owner-reported diagnostic intake - 2026-08-14
+
+Pete reports that Opportunity Slate is substantially broken in current use.
+A link imported on 2026-08-14 appears in the source list, but no expected
+extracted content or usable downstream result appears. The sidebar/workbench
+also feels strange or broken. These are owner observations, not yet reproduced
+causes or verified fixes.
+
+The next activation must begin read-first and preserve the existing source.
+It must separately trace URL acquisition, redirects/response type, parsing,
+raw-text extraction, persistence/version state, refresh/resume, and the later
+requirements-interpretation handoff. It must not delete and re-import Pete's
+source merely to make the symptom disappear.
+
+### Extraction direction
+
+- Fetching, decoding, normalizing, and raw-text extraction use focused,
+  deterministic tooling with explicit failure states.
+- A general-purpose LLM is not the extraction authority and must not fabricate
+  missing source text.
+- Any later AI statement/requirement interpretation consumes bounded extracted
+  text as untrusted employer source, returns a reviewable proposal, and remains
+  visibly separate from extraction success.
+- A source record with missing, partial, stale, blocked, or failed extraction
+  shows that truth plus retry/recovery; it cannot appear complete merely because
+  the original link was retained.
+
 ## Direction contract
 
 ### Opportunity Home
@@ -56,3 +83,8 @@ From Opportunity Home a member can deliberately start, continue, archive, and
 inspect history without losing work or confusing a draft with a saved version.
 The signed-in member can refresh and return on another supported device with
 truthful state. A new visual lock and protected persistence design precede code.
+
+The gate also requires the existing 2026-08-14 imported source to be diagnosed
+non-destructively and the complete source-to-extracted-text-to-interpretation
+chain to expose truthful success, partial, empty, blocked, timeout, retry, and
+failure states.

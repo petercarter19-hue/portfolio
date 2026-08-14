@@ -16,6 +16,24 @@ Convert Pete's August 13 product review into durable, correctly separated
 packages that the Comprehensive Site Audit Review can evaluate and sequence.
 This queue records direction; it does not activate any child package.
 
+## August 14 owner findings
+
+The dated [owner-reported findings register](OWNER_REPORTED_FINDINGS_2026-08-14.md)
+adds current hands-on observations without claiming diagnosis or correction:
+
+- Opportunity Slate's imported-source and extraction journey is the urgent
+  owner priority after the current Interview AI review;
+- Interview Studio must revisit left-rail spacing/dropdowns and whether a
+  session object or its restrictions should exist at all;
+- Ask Pete requires a real-iPad functionality and latency diagnosis during its
+  queued AI deep review; and
+- Interview AI Constitution sections 1-3 are accepted product direction,
+  including private searchable practice History and member-controlled
+  similar-question nudges, while remaining open to later refinement.
+
+Each item is routed to an existing planned child package. No child is activated
+by this queue update.
+
 ## Package map
 
 | Package | Placement | Outcome |

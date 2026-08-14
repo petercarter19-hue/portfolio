@@ -1,6 +1,9 @@
 # PS-AI-AGENT-QUALITY-ROUND-2-001 - Specialist AI quality execution round
 
-**Status:** Active - Interview Studio AI evaluation baseline in progress.
+**Status:** `paused_preserved` after the Interview evaluation baseline merged.
+Owner review continues conversationally; Shared Interview AI Constitution
+sections 1-3 are accepted direction as of 2026-08-14, with later refinement
+explicitly allowed. No runtime AI authority is active.
 **Authority placement:** Execution round/addendum under
 `PS-AI-PRODUCT-EVAL-001`, not a competing AI constitution.
 **Risk path:** Protected for any prompt, provider, model, retrieval, or release
@@ -8,7 +11,7 @@ change.
 **Runtime status:** This charter changes no prompt, model, provider, tool,
 endpoint, evaluation gate, or live behavior.
 
-## Active execution order
+## Review order
 
 The site-wide inventory is intentionally shallow. Each AI surface receives a
 complete owner-reviewable dossier before the next surface begins:
@@ -38,6 +41,18 @@ packaged. No later surface is being designed in parallel.
   scoring instructions and result record;
 - [05_CHATGPT_WORK_OWNER_REVIEW.md](05_CHATGPT_WORK_OWNER_REVIEW.md) - guided
   owner walkthrough after the repository baseline is validated.
+- [06_INTERVIEW_AI_OWNER_DECISIONS.md](06_INTERVIEW_AI_OWNER_DECISIONS.md) -
+  accepted Shared Constitution direction and the searchable private practice-
+  History correction.
+
+## August 14 owner-reported Ask Pete intake
+
+Pete reports that Ask Pete AI on his iPad either does not work properly or
+takes long enough to appear broken. Preserve this as a required input to the
+queued Ask Pete deep review. That round must test real iPad Safari, measure
+panel/render, network, server, provider, validation, transfer, and final-paint
+latency separately, and distinguish UI failure from slow or failed provider
+behavior. This observation is not yet a reproduced diagnosis.
 
 ## Outcome
 
