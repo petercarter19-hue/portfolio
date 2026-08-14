@@ -5,8 +5,27 @@
 **Delivery class:** Protected when implemented because it introduces private
 external-source intake, cross-room authorization, and consequential AI.
 **Runtime status:** No Interview Studio, Opportunity Slate, O*NET, schema,
-provider, configuration, deployment, or production behavior is changed by this
-package record.
+provider, configuration, or product behavior is changed by this package record.
+The documentation/governance artifact was included in the successful production
+deployment recorded below; that deployment did not implement or enable this
+feature.
+
+## Release truth
+
+- Activation PR 478 merged as `292932f42e8cdf2e7b045e657ea198c1f5e1314d`.
+- A delayed automatic main run, Azure pipeline 1047, successfully deployed that
+  documentation/governance artifact. Its production application stage
+  succeeded, while schema, candidate, and community-maintenance stages were
+  skipped.
+- Live `/healthz` returned HTTP 200 with release
+  `163dff4cc7391327c320a7e0` after the deployment.
+- Package PR 479 merged as `cecad54a5c8b1041892fcc94e09fc3b269f1a84a`
+  with `[skip ci]`; initial pause PR 480 merged as
+  `350af4bcfc4172fc300349a7fcb677670c10f394` with `[skip ci]`.
+
+This is deployment evidence for the repository artifact only. It is not
+evidence that job-source intake, Opportunity Slate transfer, tailored question
+generation, or O*NET use exists in production.
 
 ## Owner outcome
 

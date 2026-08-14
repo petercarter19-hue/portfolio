@@ -63,5 +63,8 @@ availability, or its latest mutable response.
 
 As of this record, PeerSlate uses no O*NET database content in its runtime,
 Opportunity Slate, Interview Studio, search, model prompts, or member-facing UI.
-This file restores the decision and next gate; it does not claim acquisition,
-implementation, deployment, enablement, or live use.
+This file restores the decision and next gate; it does not claim O*NET
+acquisition, implementation, enablement, or live use. The surrounding
+documentation/governance artifact was included in Azure pipeline 1047's
+successful production deployment, but that did not deploy an O*NET archive,
+service, schema, configuration, or product behavior.
