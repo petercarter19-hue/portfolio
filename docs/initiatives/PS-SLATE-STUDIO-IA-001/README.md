@@ -1,5 +1,12 @@
 # PS-SLATE-STUDIO-IA-001 — Slate Studio direction and information architecture
 
+> **Reconciliation banner (2026-08-13):** This package contains mixed
+> generations. Preserve its current Workshop/My Knowledge truth and accepted
+> evidence, but do not treat historical Build Your Future, Slate Board,
+> rejected Slice 2, or older visual generations as the next implementation
+> authority. No active writer exists; a fresh Workshop authority reconciliation
+> must precede runtime work.
+
 **Program nickname:** Project Croatia (owner-chosen).
 **Owner:** Pete. **Current designated manager:** the active ChatGPT Work/Codex
 manager task, by Pete's 2026-07-24 owner override recorded in document 11.

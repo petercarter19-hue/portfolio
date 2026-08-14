@@ -2,6 +2,12 @@
 
 ## Status and boundary
 
+> **Current-status correction (2026-08-13):** This accepted D0 checkpoint is
+> `paused_preserved` at `aa1fc7e`. It has no active writer and must not be
+> independently registered or released. Reconcile what the later merged
+> Profile integration lineage consumed before classifying this separate
+> foundation as historical.
+
 - Delivery path: **Protected** (owner isolation, publication contract, and
   material visual authority are involved).
 - Runtime state: **unregistered and non-production**. Neither `app.py` nor a

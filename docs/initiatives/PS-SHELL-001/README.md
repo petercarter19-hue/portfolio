@@ -1,8 +1,9 @@
 # PS-SHELL-001 — Shared global shell: the Editorial Top Bar
 
-**Status:** Active writer lane, activated 2026-08-12 by PR 430 (main `9e91f58`).
-Branch `work/2026-08-12-shell-editorial-top-bar-001`. Lane class
-`shared_foundation`, delivery path Protected, exclusive domain `shared:shell`.
+**Status:** Delivered and live; `paused_preserved` on 2026-08-13 with preserved
+head `5816f36`. There is no active shell writer. Branch
+`work/2026-08-12-shell-editorial-top-bar-001` is retained as recovery evidence;
+a future shell change requires a fresh activation.
 **Visual authority:** Direction 1, the Editorial Top Bar, approved by Pete on
 2026-08-12 — structure and responsive behaviour. Direction 2 informs
 medium-width overflow only. Direction 3 is rejected.

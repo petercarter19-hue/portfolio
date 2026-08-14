@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "threshold_bytes": 1000000,
+  "entries": [
+    {
+      "sha256": "240d059b41660cf257ce78fdb91b1743868221ee782382555f55b71169c17b8f",
+      "bytes": 2226222,
+      "canonical_path": "docs/initiatives/PS-OPPORTUNITY-SLATE-001/evidence/os-3/public-10-alignment-desktop-1440.png",
+      "duplicate_paths": [
+        "docs/initiatives/PS-OPPORTUNITY-SLATE-001/evidence/os-3/public-16-alignment-reduced-motion-1440.png"
+      ],
+      "rationale": "The two names are intentional OS-3 state-matrix evidence: the reduced-motion state must prove byte parity with the default desktop state while remaining independently addressable in the package evidence."
+    },
+    {
+      "sha256": "e0f0c4283e321da10a6ee423b26b7b31231314741819a436d84487b3233e5d8b",
+      "bytes": 1653546,
+      "canonical_path": "docs/initiatives/PS-SLATE-STUDIO-IA-001/visual-authority/workshop-approved-2026-08-01/06_APPROVED_desktop-my-information.png",
+      "duplicate_paths": [
+        "docs/initiatives/PS-COMMUNITY-FEED-VISUAL-001/visual-authority/2026-08-01-pete-voice-first-lock/REFERENCE-workshop-type-and-color.png"
+      ],
+      "rationale": "The Community Pete-lock is a self-contained accepted authority set and explicitly retains this Workshop image as its named cross-product type-and-color reference. Neither accepted authority may be rewritten by routine deduplication."
+    }
+  ]
+}

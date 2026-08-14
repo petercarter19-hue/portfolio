@@ -4,6 +4,11 @@
 
 Complete, released, and verified live on 2026-07-29.
 
+> **Supersession note (2026-08-13):** Retain this package as release evidence.
+> Current shared navigation and shell behavior is owned by `PS-SHELL-001` and
+> the live Editorial Top Bar; this package is not authority for a new shell
+> implementation.
+
 This package is a narrow owner-authorized override of the
 `PS-AI-OPS-CHECKPOINT-001` hold. It does not reopen unrelated runtime work.
 

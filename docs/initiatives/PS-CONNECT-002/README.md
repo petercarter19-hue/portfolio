@@ -1,7 +1,12 @@
 # PS-CONNECT-002 — Profile relationship foundation
 
-Status: active, non-production implementation candidate; disposable SQL gate
-passed on `ps-connect-002-gate-202608131840` at `2026-08-13T18:29:53Z`.
+> **Current-status correction (2026-08-13):** The provider foundation is
+> `merged_closed`; its reviewed candidate merged to `main` as `1381cb0`.
+> It remains non-production: the proposed schema is unapplied, the provider is
+> unregistered, and Profile integration and enablement remain future work.
+
+Historical candidate checkpoint: disposable SQL gate passed on
+`ps-connect-002-gate-202608131840` at `2026-08-13T18:29:53Z`.
 
 This bounded extension preserves `PS-PLAT-004` as the source of truth for
 existing directed requests, active/ended member connections, and directional

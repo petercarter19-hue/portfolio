@@ -1,6 +1,8 @@
 # PS-DATA-FOUNDATION-001 — PeerSlate AI, Knowledge, Evidence, and Data Foundation
 
-- Status: active, non-production additive slice
+- Status: completed non-production foundation; merged through Azure PR 311 as
+  `779ab5f`. This README preserves the delivered slice and grants no current
+  writer, provider, route, schema, deployment, or production authority.
 - Owner: Pete
 - Implementation branch: work/2026-08-06-ai-foundation-ask-pete-slice-1
 - Delivery path: Protected

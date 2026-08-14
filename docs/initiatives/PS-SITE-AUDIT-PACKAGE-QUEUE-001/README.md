@@ -1,6 +1,10 @@
 # PS-SITE-AUDIT-PACKAGE-QUEUE-001 - August 13 Site Audit package queue
 
-**Status:** Active documentation lane; child packages are planned and not active.
+**Status:** `paused_preserved` on 2026-08-13; no active documentation writer.
+The eight child packages remain planned and inactive. The queue's former
+one-dimensional order is superseded by the dependency-based master sequence
+in the August 13 comprehensive audit companion; the child charters remain
+durable inputs rather than one serial execution block.
 **Owner:** Pete.
 **Manager / writer:** Codex on `work/2026-08-13-site-audit-package-queue-001`.
 **Runtime status:** Planning only. No product code, schema, prompt, provider,

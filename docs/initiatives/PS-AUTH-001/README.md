@@ -1,6 +1,13 @@
 # PS-AUTH-001 — External identity
 
-**Status:** Application and SQL foundation implemented; Entra External ID provider configuration pending.
+> **Current-status correction (2026-08-13):** This README is the historical
+> foundation checkpoint. Entra configuration is no longer pending; later auth,
+> sign-in, callback, SQL-wake, and production-recovery packages contain the
+> current implementation and release evidence. Read `CURRENT_BASELINE.yaml`
+> and `CURRENT_LANES.json` before making a present-tense auth claim.
+
+**Historical checkpoint:** Application and SQL foundation implemented; Entra
+External ID provider configuration was pending at this slice.
 
 ## Accepted slice
 

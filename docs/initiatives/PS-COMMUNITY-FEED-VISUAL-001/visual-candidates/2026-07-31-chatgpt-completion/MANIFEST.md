@@ -5,21 +5,24 @@
 - **Creator:** ChatGPT visual-creation lane using the built-in image generation
   path
 - **Custodian:** current Codex task
-- **State:** candidate; not Pete-locked visual authority
-- **Primary references:** the six immutable files in
-  `PS-COMMUNITY-FEED-DIRECTION-001/visual-authority/2026-07-31-pete-lock/`
-- **Owner decision:** pending exact-file review
+- **State:** historical, non-authoritative candidate. Unique boards 01 and 02
+  remain here; duplicate boards 00, 03, 04, and 05 use canonical Pete-lock
+  pointers after the 2026-08-13 rationalization.
+- **Canonical accepted reference:**
+  `../../visual-authority/2026-07-31-pete-public-pilot-lock/`
+- **Owner decision:** this candidate set was not locked as a whole; later
+  public-pilot authority controls where it differs
 
-## Candidate files
+## Evidence files after rationalization
 
 | File | Board purpose | Raster size | Bytes | SHA-256 |
 | --- | --- | ---: | ---: | --- |
-| `00-feed-availability-and-completion.png` | Feed availability and completion | 1536 x 1024 | 1175705 | `1BD5A05715BD8CA44F35F6EE6A6AB87C5B8E822C9C0F9ABB37FB79308005AAC7` |
+| `../../visual-authority/2026-07-31-pete-public-pilot-lock/00-feed-availability-and-completion.png` | Canonical accepted copy; Feed availability and completion | 1536 x 1024 | 1175705 | `1BD5A05715BD8CA44F35F6EE6A6AB87C5B8E822C9C0F9ABB37FB79308005AAC7` |
 | `01-composer-and-publication.png` | Composer and publication | 1536 x 1024 | 1373731 | `A87171E39DDB48B8546B5EAA73E97FAD80747DB9AAA9D5FB74FEFCE6D2BAF29F` |
 | `02-search-shell-and-signed-out.png` | Search, shell, and signed-out truth | 1536 x 1024 | 1586986 | `3CB39702C05ABFA37EC4115AD50D47B50847031EBAB4944F3F569FCC1914BF2A` |
-| `03-conversation-lifecycle-and-safety.png` | Conversation lifecycle and safety | 1448 x 1086 | 1198869 | `0A8B343C33102779C9AA7332DB9F846A96F766607F0C9660CAD3332B4F9923DC` |
-| `04-visible-actions-and-messaging-truth.png` | Visible actions and messaging truth | 1536 x 1024 | 1590737 | `87360C9E084F20E814A03874132E4D22068A95671EF0D1187B952081CDA01A86` |
-| `05-responsive-theme-and-mobile-modules.png` | Responsive, theme, and mobile module disposition | 1536 x 1024 | 1480767 | `6E9BAD74067FBDC7C890C17F571FA27E4A930B5F978829E55C1E8EB94A1D95DA` |
+| `../../visual-authority/2026-07-31-pete-public-pilot-lock/03-conversation-lifecycle-and-safety.png` | Canonical accepted copy; Conversation lifecycle and safety | 1448 x 1086 | 1198869 | `0A8B343C33102779C9AA7332DB9F846A96F766607F0C9660CAD3332B4F9923DC` |
+| `../../visual-authority/2026-07-31-pete-public-pilot-lock/04-visible-actions-and-messaging-truth.png` | Canonical accepted copy; Visible actions and messaging truth | 1536 x 1024 | 1590737 | `87360C9E084F20E814A03874132E4D22068A95671EF0D1187B952081CDA01A86` |
+| `../../visual-authority/2026-07-31-pete-public-pilot-lock/05-responsive-theme-and-mobile-modules.png` | Canonical accepted copy; Responsive, theme, and mobile module disposition | 1536 x 1024 | 1480767 | `6E9BAD74067FBDC7C890C17F571FA27E4A930B5F978829E55C1E8EB94A1D95DA` |
 
 ## Internal review and refinements
 
@@ -52,7 +55,7 @@ listed in the direction package.
 
 ## Lock boundary
 
-Generation does not equal approval. Pete must inspect the exact saved files.
-After approval, the accepted bytes are copied to a separately named Pete-lock
-directory with a final manifest; rejected candidates remain non-authoritative
-evidence or are removed through a separately authorized cleanup.
+Generation does not equal approval. The two unique files retained here remain
+non-authoritative historical candidate evidence. The four byte-identical
+secondary copies were removed under the separately authorized rationalization
+package; their exact accepted bytes remain at the canonical paths above.
