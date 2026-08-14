@@ -1,12 +1,43 @@
 # PS-AI-AGENT-QUALITY-ROUND-2-001 - Specialist AI quality execution round
 
-**Status:** Planned - not active; owner marked this work urgent.
+**Status:** Active - Interview Studio AI evaluation baseline in progress.
 **Authority placement:** Execution round/addendum under
 `PS-AI-PRODUCT-EVAL-001`, not a competing AI constitution.
 **Risk path:** Protected for any prompt, provider, model, retrieval, or release
 change.
 **Runtime status:** This charter changes no prompt, model, provider, tool,
 endpoint, evaluation gate, or live behavior.
+
+## Active execution order
+
+The site-wide inventory is intentionally shallow. Each AI surface receives a
+complete owner-reviewable dossier before the next surface begins:
+
+1. Interview Studio AI - active;
+2. Opportunity Slate AI - queued;
+3. Ask Pete - queued;
+4. Workshop AI - queued;
+5. any additional provider-backed surface confirmed by the inventory.
+
+For Interview Studio, the dossier separates the current review, improvement,
+nudge, and model-answer jobs. Pete reviews the proposed specialist identity,
+system-prompt authority, knowledge boundary, authorization, guardrails,
+failure behavior, and evaluation evidence before any runtime correction is
+packaged. No later surface is being designed in parallel.
+
+## Baseline documents
+
+- [01_AI_SURFACE_SEQUENCE.md](01_AI_SURFACE_SEQUENCE.md) - shallow platform map
+  and one-surface-at-a-time order;
+- [02_INTERVIEW_STUDIO_AI_DOSSIER.md](02_INTERVIEW_STUDIO_AI_DOSSIER.md) -
+  current production truth, proposed specialist architecture, and owner
+  decisions;
+- [03_INTERVIEW_STUDIO_GOLDEN_CASES.md](03_INTERVIEW_STUDIO_GOLDEN_CASES.md) -
+  synthetic evaluation library;
+- [04_INTERVIEW_STUDIO_SCORECARD.md](04_INTERVIEW_STUDIO_SCORECARD.md) - human
+  scoring instructions and result record;
+- [05_CHATGPT_WORK_OWNER_REVIEW.md](05_CHATGPT_WORK_OWNER_REVIEW.md) - guided
+  owner walkthrough after the repository baseline is validated.
 
 ## Outcome
 
