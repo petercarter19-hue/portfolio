@@ -1,17 +1,19 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-13T22:00:00Z",
+  "updated_at": "2026-08-14T02:23:14Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "controlled_idle",
+    "state": "active_delivery",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [],
+    "writes_allowed_for": [
+      "PS-REPOSITORY-RATIONALIZATION-001"
+    ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -27,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "No active writer lanes. PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 is paused with its delivered work merged and its branch preserved; it retains no write, merge, cleanup, or release authority."
+    "exit_authority": "PS-REPOSITORY-RATIONALIZATION-001 is the sole active non-production shared-foundation lane. It may write only its recorded package-catalog, status-normalization, evidence-retention, exact-deduplication, and recurrence-check surfaces. It has no product-runtime, schema, deployment, production, release, or unrelated cleanup authority."
   },
   "activation_policy": {
     "enabled": true,
@@ -1690,7 +1692,73 @@
       ]
     }
   ],
-  "active_lanes": [],
+  "active_lanes": [
+    {
+      "package": "PS-REPOSITORY-RATIONALIZATION-001",
+      "outcome": "Create one complete repository package registry, reconcile the specifically identified stale package status labels, establish a retention-safe canonical evidence policy, remove only the byte-identical Opportunity Slate OS-4 and Community candidate copies whose retained canonical authority is explicit, and add automated checks that prevent large unapproved exact duplicates from returning. Preserve every unique, accepted-authority, release, migration, legal, security, privacy, incident, user-owned, or ambiguous artifact.",
+      "branch": "work/2026-08-13-repository-rationalization-001",
+      "writer": "Root Codex session holding Pete's full package census and cleanup approval is the sole writer.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "shared_foundation",
+      "exclusive_domains": [
+        "repository:package-registry",
+        "repository:evidence-retention",
+        "repository:tracked-hygiene"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main c0450dbd675554e7363c8fc262a6d4f8bf2c6921 after the complete 112-package census and the separately completed workspace-hygiene outcome. Pete reviewed that result and explicitly directed Cleanup Outcome 2 with 'Do it.'",
+      "writable_surfaces": [
+        "docs/initiatives/PS-REPOSITORY-RATIONALIZATION-001/",
+        "docs/governance/PACKAGE_REGISTRY.json",
+        "docs/governance/EVIDENCE_RETENTION_AND_DEDUPLICATION.md",
+        "docs/governance/EVIDENCE_DUPLICATE_ALLOWLIST.json",
+        "docs/initiatives/PS-AUTH-001/README.md",
+        "docs/initiatives/PS-CONNECT-002/README.md",
+        "docs/initiatives/PS-DATA-FOUNDATION-001/README.md",
+        "docs/initiatives/PS-PROFILE-CORE-FOUNDATION-001/README.md",
+        "docs/initiatives/PS-PUBLIC-NAV-001/README.md",
+        "docs/initiatives/PS-SHELL-001/README.md",
+        "docs/initiatives/PS-SITE-AUDIT-PACKAGE-QUEUE-001/README.md",
+        "docs/initiatives/PS-SLATE-STUDIO-IA-001/README.md",
+        "artifacts/2026-08-04-os4/",
+        "docs/initiatives/PS-COMMUNITY-FEED-VISUAL-001/visual-candidates/2026-07-31-chatgpt-completion/",
+        "docs/initiatives/PS-COMMUNITY-FEED-VISUAL-001/visual-candidates/2026-07-31-chatgpt-public-pilot/",
+        "scripts/check_repository_evidence_policy.py",
+        "tests/test_package_registry.py",
+        "tests/test_repository_evidence_policy.py",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml"
+      ],
+      "exclusions": [
+        "no application, route, template, stylesheet, JavaScript, service, API, prompt, model, schema, migration, configuration, dependency, pipeline, deployment, production, or live-behavior change",
+        "no worktree, branch, stash, recovery-ref, remote-branch, production-data, or member-authored-content deletion; workspace hygiene was a separate completed outcome",
+        "no removal or rewriting of unique evidence, accepted visual authority, applied or proposed migration records, legal/privacy/security/incident proof, release evidence, or sealed handoffs",
+        "no removal based on hash alone: each deleted copy must have one named canonical retained path, an exact hash mapping, and verified reference replacement",
+        "no broad historical rewrite, Git LFS migration, published-history rewrite, or external evidence migration",
+        "no change to package product direction; the registry indexes rationalization disposition and points to the live control plane rather than replacing it"
+      ],
+      "completion_evidence": [
+        "activation record merges and the clean implementation worktree passes package write preflight from the resulting origin/main",
+        "PACKAGE_REGISTRY.json accounts for every initiative directory exactly once and distinguishes current/protect, future/finish, reconcile, historical/evidence-only, and retire/supersede without pretending to replace CURRENT_LANES or CURRENT_BASELINE",
+        "the eight identified stale or mixed-status READMEs receive concise current-status or supersession banners without rewriting their historical evidence",
+        "all 25 byte-identical OS-4 artifact-side copies are removed only after retaining the package-local canonical evidence and recording path/hash mappings",
+        "the byte-identical Community public-pilot candidate copies and only the duplicate completion-candidate images are replaced by canonical accepted-authority pointers while unique candidate images remain",
+        "a deterministic policy check scans tracked initiative/artifact blobs, rejects new unapproved large exact duplicates, and validates every allowlist rationale and canonical retained path",
+        "before/after measurements report exact duplicate groups, instances, and bytes; focused tests, governance tests, git diff --check, and complete-diff self-review pass",
+        "an Azure documentation/foundation PR carries the exact reviewed change; the completion record states merged-not-deployed and no runtime release occurs"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-13",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "After reviewing the full package census and completion of workspace hygiene, Pete directed the recommended separate tracked package/status/evidence rationalization outcome with: 'Do it.'"
+        }
+      ],
+      "cleanup_contract": "After a verified merge and formal close, remove only this lane's clean activation and implementation worktrees and local task branches behind recovery refs. Preserve every unrelated, dirty, remote-backed, lifecycle-held, unique, ambiguous, user-owned, or historical workspace and artifact.",
+      "sequence": "activation-only control PR -> clean current-main implementation worktree -> write preflight -> package registry and status banners -> canonical evidence maps and exact duplicate removal -> recurrence checks and measurements -> focused/full validation -> complete-diff self-review -> exact review and Azure PR -> merge without deployment -> formal close"
+    }
+  ],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",

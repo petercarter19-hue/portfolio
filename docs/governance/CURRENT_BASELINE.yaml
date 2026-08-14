@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "No active writer lanes. PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 is paused and preserved; activate an exact implementation or direction/authority outcome before repository writes."
+  current_assignments: "PS-REPOSITORY-RATIONALIZATION-001 is active on work/2026-08-13-repository-rationalization-001 for non-production package-registry, status-normalization, evidence-retention, exact-deduplication, and recurrence-check work only."
 
 governing_documents:
   bible:
@@ -58,6 +58,9 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
+  - id: PS-REPOSITORY-RATIONALIZATION-001
+    status: active_delivery
+    scope: "Protected non-production repository rationalization: complete package registry, eight stale or mixed-status README banners, retention-safe canonical evidence pointers, exact OS-4 and Community duplicate removal, and recurrence checks. No product behavior, schema, deployment, production, or unrelated cleanup."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -151,7 +154,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "No active writer lanes. Select and activate the next exact outcome under the three-lane class, path, and exclusive-domain rules."
+next_gate: "Complete PS-REPOSITORY-RATIONALIZATION-001 only on its recorded non-production repository-hygiene surfaces; all product packages remain inactive."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
