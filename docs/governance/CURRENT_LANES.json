@@ -1,17 +1,19 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-14T03:00:00Z",
+  "updated_at": "2026-08-14T03:17:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "controlled_idle",
+    "state": "active_delivery",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [],
+    "writes_allowed_for": [
+      "PS-REPOSITORY-RATIONALIZATION-001"
+    ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -27,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-REPOSITORY-RATIONALIZATION-001 is paused and preserved after verified merge; it retains no write, merge, cleanup, release, deployment, or production authority. No active writer lanes remain."
+    "exit_authority": "PS-REPOSITORY-RATIONALIZATION-001 is the sole active non-production release-truth correction lane. It may correct only its README and completion report after automatic main run 1027; it has no application, schema, deployment, release, or unrelated cleanup authority."
   },
   "activation_policy": {
     "enabled": true,
@@ -1690,7 +1692,51 @@
       ]
     }
   ],
-  "active_lanes": [],
+  "active_lanes": [
+    {
+      "package": "PS-REPOSITORY-RATIONALIZATION-001",
+      "outcome": "Correct the completed rationalization package's release record after delayed Azure main run 1027 proved that implementation merge eea1293a80091b8f19229a47782b5c2222e7ec32 was automatically deployed. Record the exact run, successful production stage, live health/release identity, unchanged runtime-source boundary, and the process correction requiring explicit skip-ci squash messages for the follow-up. Change no product behavior and trigger no additional deployment.",
+      "branch": "work/2026-08-13-repository-rationalization-release-truth",
+      "writer": "Root Codex session that completed the rationalization and observed delayed main run 1027 is the sole writer.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "shared_foundation",
+      "exclusive_domains": [
+        "repository:rationalization-release-truth"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 28445244346385361470b465337c1c934bf6903d after implementation PR 473 and inert pause PR 474. Delayed automatic main run 1027 succeeded for eea1293a80091b8f19229a47782b5c2222e7ec32, including the production deployment stage; live /healthz returned 200 with release 8f30f3770dc1d8a6a440da94.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-REPOSITORY-RATIONALIZATION-001/README.md",
+        "docs/initiatives/PS-REPOSITORY-RATIONALIZATION-001/COMPLETION_REPORT.md",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml"
+      ],
+      "exclusions": [
+        "no application, route, template, stylesheet, JavaScript, service, API, prompt, model, schema, migration, configuration, dependency, pipeline, production-data, member-data, or live-behavior change",
+        "no rollback or redeployment: run 1027 succeeded and the rationalization changed no runtime source",
+        "no expansion of package registry, evidence deletion, status normalization, or recurrence policy",
+        "no unrelated workspace, package, audit, or product work"
+      ],
+      "completion_evidence": [
+        "activation-only control PR merges with an explicit skip-ci squash message and no automatic main deployment",
+        "fresh current-main implementation worktree passes the package write preflight",
+        "README and completion report replace the false no-deployment claim with run 1027, source SHA, production-stage result, health result, and live release identity",
+        "the record distinguishes automatic deployment from application-behavior change and records that artifacts are excluded while docs are runtime-packaged",
+        "focused package, evidence-policy, and governance tests pass; complete-diff review confirms only the two package documents changed",
+        "implementation and pause PRs use explicit skip-ci squash messages, merge without another main run, and return the repository to controlled idle"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-13",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete directed Codex to finish all cleanup work while he was away: 'I'm going to bed so you can finish all the cleanups. You have my approval.' Correcting the discovered automatic-deployment truth is required to finish that approved cleanup honestly."
+        }
+      ],
+      "cleanup_contract": "After verified skip-ci implementation and pause merges, remove only this correction lane's clean activation, implementation, pause, and verifier worktrees/branches behind exact recovery tags. Preserve every unrelated, dirty, lifecycle-held, unique, ambiguous, or user-owned workspace and artifact.",
+      "sequence": "activation-only control PR with explicit skip-ci merge message -> clean current-main implementation worktree -> write preflight -> correct the two package records -> focused validation and complete-diff review -> Azure PR/build -> explicit skip-ci squash merge -> inert pause with exact skip-ci merge message -> task-local cleanup"
+    }
+  ],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
@@ -2140,76 +2186,6 @@
       "pause_reason": "Delivery is complete, merged and live. Both findings the previous round accepted are now closed at Pete's direction: the inline example no longer pays for a discarded generation, and machine error tokens are translated for the member across both interview surfaces. Released as paused rather than closed for the documented reason that --intent close cannot represent a production-capable implementation lane that merges more than once.",
       "resume_contract": "No resume is expected. Nothing recorded on this package is outstanding: the authenticated experience, the mobile correction, the two carried P3s, the same-page example restoration and both accepted review findings are all delivered and live. To reopen, re-activate under the ordinary START_HERE flow; activation forbids reusing a recorded branch, so expect a fresh one. Branch work/2026-08-13-interview-accepted-findings and tag archive/2026-08-13-interview-accepted-findings preserve this round; each earlier round keeps its own archive tag.",
       "preserved_head_sha": "f19d083ccfbf59262c235a22a7ad13f591985d98"
-    },
-    {
-      "package": "PS-REPOSITORY-RATIONALIZATION-001",
-      "outcome": "Create one complete repository package registry, reconcile the specifically identified stale package status labels, establish a retention-safe canonical evidence policy, remove only the byte-identical Opportunity Slate OS-4 and Community candidate copies whose retained canonical authority is explicit, and add automated checks that prevent large unapproved exact duplicates from returning. Preserve every unique, accepted-authority, release, migration, legal, security, privacy, incident, user-owned, or ambiguous artifact.",
-      "branch": "work/2026-08-13-repository-rationalization-001",
-      "writer": "Root Codex session holding Pete's full package census and cleanup approval is the sole writer.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "shared_foundation",
-      "exclusive_domains": [
-        "repository:package-registry",
-        "repository:evidence-retention",
-        "repository:tracked-hygiene"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main c0450dbd675554e7363c8fc262a6d4f8bf2c6921 after the complete 112-package census and the separately completed workspace-hygiene outcome. Pete reviewed that result and explicitly directed Cleanup Outcome 2 with 'Do it.'",
-      "writable_surfaces": [
-        "docs/initiatives/PS-REPOSITORY-RATIONALIZATION-001/",
-        "docs/governance/PACKAGE_REGISTRY.json",
-        "docs/governance/EVIDENCE_RETENTION_AND_DEDUPLICATION.md",
-        "docs/governance/EVIDENCE_DUPLICATE_ALLOWLIST.json",
-        "docs/initiatives/PS-AUTH-001/README.md",
-        "docs/initiatives/PS-CONNECT-002/README.md",
-        "docs/initiatives/PS-DATA-FOUNDATION-001/README.md",
-        "docs/initiatives/PS-PROFILE-CORE-FOUNDATION-001/README.md",
-        "docs/initiatives/PS-PUBLIC-NAV-001/README.md",
-        "docs/initiatives/PS-SHELL-001/README.md",
-        "docs/initiatives/PS-SITE-AUDIT-PACKAGE-QUEUE-001/README.md",
-        "docs/initiatives/PS-SLATE-STUDIO-IA-001/README.md",
-        "artifacts/2026-08-04-os4/",
-        "docs/initiatives/PS-COMMUNITY-FEED-VISUAL-001/visual-candidates/2026-07-31-chatgpt-completion/",
-        "docs/initiatives/PS-COMMUNITY-FEED-VISUAL-001/visual-candidates/2026-07-31-chatgpt-public-pilot/",
-        "scripts/check_repository_evidence_policy.py",
-        "tests/test_package_registry.py",
-        "tests/test_repository_evidence_policy.py",
-        "docs/governance/CURRENT_LANES.json",
-        "docs/governance/CURRENT_BASELINE.yaml"
-      ],
-      "exclusions": [
-        "no application, route, template, stylesheet, JavaScript, service, API, prompt, model, schema, migration, configuration, dependency, pipeline, deployment, production, or live-behavior change",
-        "no worktree, branch, stash, recovery-ref, remote-branch, production-data, or member-authored-content deletion; workspace hygiene was a separate completed outcome",
-        "no removal or rewriting of unique evidence, accepted visual authority, applied or proposed migration records, legal/privacy/security/incident proof, release evidence, or sealed handoffs",
-        "no removal based on hash alone: each deleted copy must have one named canonical retained path, an exact hash mapping, and verified reference replacement",
-        "no broad historical rewrite, Git LFS migration, published-history rewrite, or external evidence migration",
-        "no change to package product direction; the registry indexes rationalization disposition and points to the live control plane rather than replacing it"
-      ],
-      "completion_evidence": [
-        "activation record merges and the clean implementation worktree passes package write preflight from the resulting origin/main",
-        "PACKAGE_REGISTRY.json accounts for every initiative directory exactly once and distinguishes current/protect, future/finish, reconcile, historical/evidence-only, and retire/supersede without pretending to replace CURRENT_LANES or CURRENT_BASELINE",
-        "the eight identified stale or mixed-status READMEs receive concise current-status or supersession banners without rewriting their historical evidence",
-        "all 25 byte-identical OS-4 artifact-side copies are removed only after retaining the package-local canonical evidence and recording path/hash mappings",
-        "the byte-identical Community public-pilot candidate copies and only the duplicate completion-candidate images are replaced by canonical accepted-authority pointers while unique candidate images remain",
-        "a deterministic policy check scans tracked initiative/artifact blobs, rejects new unapproved large exact duplicates, and validates every allowlist rationale and canonical retained path",
-        "before/after measurements report exact duplicate groups, instances, and bytes; focused tests, governance tests, git diff --check, and complete-diff self-review pass",
-        "an Azure documentation/foundation PR carries the exact reviewed change; the completion record states merged-not-deployed and no runtime release occurs"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-13",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "After reviewing the full package census and completion of workspace hygiene, Pete directed the recommended separate tracked package/status/evidence rationalization outcome with: 'Do it.'"
-        }
-      ],
-      "cleanup_contract": "After a verified merge and formal close, remove only this lane's clean activation and implementation worktrees and local task branches behind recovery refs. Preserve every unrelated, dirty, remote-backed, lifecycle-held, unique, ambiguous, user-owned, or historical workspace and artifact.",
-      "sequence": "activation-only control PR -> clean current-main implementation worktree -> write preflight -> package registry and status banners -> canonical evidence maps and exact duplicate removal -> recurrence checks and measurements -> focused/full validation -> complete-diff self-review -> exact review and Azure PR -> merge without deployment -> formal close",
-      "disposition": "paused_preserved",
-      "paused_at": "2026-08-14T03:00:00Z",
-      "pause_reason": "Delivery is complete and merged without deployment. Azure PR 473 carried exact candidate 08eed8f14cce53cd543ac9b7922e7daa2335b3e4, required build 1026 succeeded, and the squash merge entered main as eea1293a80091b8f19229a47782b5c2222e7ec32. The lane is paused rather than formally closed because the current --intent close contract requires a code-controlled merge_grant profile, while this generic non-production shared-foundation lane has no grant representation. Pete's explicit cleanup and finish approval, the passed Azure policies, and the package completion record support the ordinary merge; this inert pause records the control-plane limitation without inventing authority.",
-      "resume_contract": "No resume is expected. The package registry, eight status corrections, evidence-retention policy, verified exact-duplicate consolidation, and recurrence checks are merged. Any later repository-rationalization change requires fresh activation from current origin/main on a new branch. The exact candidate remains recoverable through origin/work/2026-08-13-repository-rationalization-001 and recovery/2026-08-13-repository-rationalization-final-08eed8f1 until governed cleanup removes the branch; the Azure recovery tag remains durable.",
-      "preserved_head_sha": "08eed8f14cce53cd543ac9b7922e7daa2335b3e4"
     }
   ],
   "workspace_snapshot": {
