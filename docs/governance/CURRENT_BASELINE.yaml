@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "PS-REPOSITORY-RATIONALIZATION-001 is active on work/2026-08-13-repository-rationalization-release-truth only to correct its release truth after delayed automatic main run 1027; no application, schema, deployment, release, or unrelated cleanup work is authorized."
+  current_assignments: "No active writer lanes. PS-REPOSITORY-RATIONALIZATION-001 is paused and preserved; activate an exact implementation or direction/authority outcome before repository writes."
 
 governing_documents:
   bible:
@@ -58,9 +58,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-REPOSITORY-RATIONALIZATION-001
-    status: active_delivery
-    scope: "Protected non-production documentation correction: record automatic main run 1027 and live release truth in the completed rationalization package, then merge and pause with explicit skip-ci messages. No runtime-source or product change."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -154,7 +151,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Correct only PS-REPOSITORY-RATIONALIZATION-001 release truth, merge with an explicit skip-ci message, then return to controlled idle."
+next_gate: "No active writer lanes. Select and activate the next exact outcome under the three-lane class, path, and exclusive-domain rules."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"

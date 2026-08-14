@@ -1,19 +1,17 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-14T03:17:00Z",
+  "updated_at": "2026-08-14T03:33:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-REPOSITORY-RATIONALIZATION-001"
-    ],
+    "writes_allowed_for": [],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -29,7 +27,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-REPOSITORY-RATIONALIZATION-001 is the sole active non-production release-truth correction lane. It may correct only its README and completion report after automatic main run 1027; it has no application, schema, deployment, release, or unrelated cleanup authority."
+    "exit_authority": "PS-REPOSITORY-RATIONALIZATION-001 release-truth correction is paused and preserved after verified skip-ci merge; it retains no write, merge, cleanup, release, deployment, or production authority. No active writer lanes remain."
   },
   "activation_policy": {
     "enabled": true,
@@ -1692,51 +1690,7 @@
       ]
     }
   ],
-  "active_lanes": [
-    {
-      "package": "PS-REPOSITORY-RATIONALIZATION-001",
-      "outcome": "Correct the completed rationalization package's release record after delayed Azure main run 1027 proved that implementation merge eea1293a80091b8f19229a47782b5c2222e7ec32 was automatically deployed. Record the exact run, successful production stage, live health/release identity, unchanged runtime-source boundary, and the process correction requiring explicit skip-ci squash messages for the follow-up. Change no product behavior and trigger no additional deployment.",
-      "branch": "work/2026-08-13-repository-rationalization-release-truth",
-      "writer": "Root Codex session that completed the rationalization and observed delayed main run 1027 is the sole writer.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "shared_foundation",
-      "exclusive_domains": [
-        "repository:rationalization-release-truth"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main 28445244346385361470b465337c1c934bf6903d after implementation PR 473 and inert pause PR 474. Delayed automatic main run 1027 succeeded for eea1293a80091b8f19229a47782b5c2222e7ec32, including the production deployment stage; live /healthz returned 200 with release 8f30f3770dc1d8a6a440da94.",
-      "writable_surfaces": [
-        "docs/initiatives/PS-REPOSITORY-RATIONALIZATION-001/README.md",
-        "docs/initiatives/PS-REPOSITORY-RATIONALIZATION-001/COMPLETION_REPORT.md",
-        "docs/governance/CURRENT_LANES.json",
-        "docs/governance/CURRENT_BASELINE.yaml"
-      ],
-      "exclusions": [
-        "no application, route, template, stylesheet, JavaScript, service, API, prompt, model, schema, migration, configuration, dependency, pipeline, production-data, member-data, or live-behavior change",
-        "no rollback or redeployment: run 1027 succeeded and the rationalization changed no runtime source",
-        "no expansion of package registry, evidence deletion, status normalization, or recurrence policy",
-        "no unrelated workspace, package, audit, or product work"
-      ],
-      "completion_evidence": [
-        "activation-only control PR merges with an explicit skip-ci squash message and no automatic main deployment",
-        "fresh current-main implementation worktree passes the package write preflight",
-        "README and completion report replace the false no-deployment claim with run 1027, source SHA, production-stage result, health result, and live release identity",
-        "the record distinguishes automatic deployment from application-behavior change and records that artifacts are excluded while docs are runtime-packaged",
-        "focused package, evidence-policy, and governance tests pass; complete-diff review confirms only the two package documents changed",
-        "implementation and pause PRs use explicit skip-ci squash messages, merge without another main run, and return the repository to controlled idle"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-13",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Pete directed Codex to finish all cleanup work while he was away: 'I'm going to bed so you can finish all the cleanups. You have my approval.' Correcting the discovered automatic-deployment truth is required to finish that approved cleanup honestly."
-        }
-      ],
-      "cleanup_contract": "After verified skip-ci implementation and pause merges, remove only this correction lane's clean activation, implementation, pause, and verifier worktrees/branches behind exact recovery tags. Preserve every unrelated, dirty, lifecycle-held, unique, ambiguous, or user-owned workspace and artifact.",
-      "sequence": "activation-only control PR with explicit skip-ci merge message -> clean current-main implementation worktree -> write preflight -> correct the two package records -> focused validation and complete-diff review -> Azure PR/build -> explicit skip-ci squash merge -> inert pause with exact skip-ci merge message -> task-local cleanup"
-    }
-  ],
+  "active_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
@@ -2186,6 +2140,54 @@
       "pause_reason": "Delivery is complete, merged and live. Both findings the previous round accepted are now closed at Pete's direction: the inline example no longer pays for a discarded generation, and machine error tokens are translated for the member across both interview surfaces. Released as paused rather than closed for the documented reason that --intent close cannot represent a production-capable implementation lane that merges more than once.",
       "resume_contract": "No resume is expected. Nothing recorded on this package is outstanding: the authenticated experience, the mobile correction, the two carried P3s, the same-page example restoration and both accepted review findings are all delivered and live. To reopen, re-activate under the ordinary START_HERE flow; activation forbids reusing a recorded branch, so expect a fresh one. Branch work/2026-08-13-interview-accepted-findings and tag archive/2026-08-13-interview-accepted-findings preserve this round; each earlier round keeps its own archive tag.",
       "preserved_head_sha": "f19d083ccfbf59262c235a22a7ad13f591985d98"
+    },
+    {
+      "package": "PS-REPOSITORY-RATIONALIZATION-001",
+      "outcome": "Correct the completed rationalization package's release record after delayed Azure main run 1027 proved that implementation merge eea1293a80091b8f19229a47782b5c2222e7ec32 was automatically deployed. Record the exact run, successful production stage, live health/release identity, unchanged runtime-source boundary, and the process correction requiring explicit skip-ci squash messages for the follow-up. Change no product behavior and trigger no additional deployment.",
+      "branch": "work/2026-08-13-repository-rationalization-release-truth",
+      "writer": "Root Codex session that completed the rationalization and observed delayed main run 1027 is the sole writer.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "shared_foundation",
+      "exclusive_domains": [
+        "repository:rationalization-release-truth"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 28445244346385361470b465337c1c934bf6903d after implementation PR 473 and inert pause PR 474. Delayed automatic main run 1027 succeeded for eea1293a80091b8f19229a47782b5c2222e7ec32, including the production deployment stage; live /healthz returned 200 with release 8f30f3770dc1d8a6a440da94.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-REPOSITORY-RATIONALIZATION-001/README.md",
+        "docs/initiatives/PS-REPOSITORY-RATIONALIZATION-001/COMPLETION_REPORT.md",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml"
+      ],
+      "exclusions": [
+        "no application, route, template, stylesheet, JavaScript, service, API, prompt, model, schema, migration, configuration, dependency, pipeline, production-data, member-data, or live-behavior change",
+        "no rollback or redeployment: run 1027 succeeded and the rationalization changed no runtime source",
+        "no expansion of package registry, evidence deletion, status normalization, or recurrence policy",
+        "no unrelated workspace, package, audit, or product work"
+      ],
+      "completion_evidence": [
+        "activation-only control PR merges with an explicit skip-ci squash message and no automatic main deployment",
+        "fresh current-main implementation worktree passes the package write preflight",
+        "README and completion report replace the false no-deployment claim with run 1027, source SHA, production-stage result, health result, and live release identity",
+        "the record distinguishes automatic deployment from application-behavior change and records that artifacts are excluded while docs are runtime-packaged",
+        "focused package, evidence-policy, and governance tests pass; complete-diff review confirms only the two package documents changed",
+        "implementation and pause PRs use explicit skip-ci squash messages, merge without another main run, and return the repository to controlled idle"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-13",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete directed Codex to finish all cleanup work while he was away: 'I'm going to bed so you can finish all the cleanups. You have my approval.' Correcting the discovered automatic-deployment truth is required to finish that approved cleanup honestly."
+        }
+      ],
+      "cleanup_contract": "After verified skip-ci implementation and pause merges, remove only this correction lane's clean activation, implementation, pause, and verifier worktrees/branches behind exact recovery tags. Preserve every unrelated, dirty, lifecycle-held, unique, ambiguous, or user-owned workspace and artifact.",
+      "sequence": "activation-only control PR with explicit skip-ci merge message -> clean current-main implementation worktree -> write preflight -> correct the two package records -> focused validation and complete-diff review -> Azure PR/build -> explicit skip-ci squash merge -> inert pause with exact skip-ci merge message -> task-local cleanup",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-14T03:33:00Z",
+      "pause_reason": "Release-truth correction is complete and merged without another deployment. Activation PR 475 passed build 1031 and merged as 207f1e33213daac3b366990201c1e85852eb3d32; implementation PR 476 passed build 1032 and merged exact correction candidate 7e0bbb503fed4b70b1be97fb822e32fd1948623e as 4e42612485e3f4e9a384c90e56154a5648d6f303. Both squash messages explicitly contain [skip ci]. The corrected package records automatic run 1027, successful production deployment of implementation main eea1293a80091b8f19229a47782b5c2222e7ec32, HTTP 200 health, live release 8f30f3770dc1d8a6a440da94, and the unchanged application-runtime-source boundary.",
+      "resume_contract": "No resume is expected. Any later correction or repository rationalization requires fresh activation from current origin/main on a new branch. Recovery tags preserve the exact activation and correction candidates; task-local worktrees and branches may be removed after the pause merge and final no-new-main-run verification.",
+      "preserved_head_sha": "7e0bbb503fed4b70b1be97fb822e32fd1948623e"
     }
   ],
   "workspace_snapshot": {
