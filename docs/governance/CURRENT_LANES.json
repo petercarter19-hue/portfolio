@@ -1,17 +1,19 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-14T03:33:00Z",
+  "updated_at": "2026-08-14T15:25:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "controlled_idle",
+    "state": "active_delivery",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [],
+    "writes_allowed_for": [
+      "PS-INTERVIEW-ROLE-CONTEXT-001"
+    ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -27,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-REPOSITORY-RATIONALIZATION-001 release-truth correction is paused and preserved after verified skip-ci merge; it retains no write, merge, cleanup, release, deployment, or production authority. No active writer lanes remain."
+    "exit_authority": "PS-INTERVIEW-ROLE-CONTEXT-001 is the sole active non-production shared-foundation lane. It may record the O*NET recovery status and create the future Interview role-context package and queue entry only. It has no application, schema, migration, deployment, release, production, or live-behavior authority."
   },
   "activation_policy": {
     "enabled": true,
@@ -1690,7 +1692,56 @@
       ]
     }
   ],
-  "active_lanes": [],
+  "active_lanes": [
+    {
+      "package": "PS-INTERVIEW-ROLE-CONTEXT-001",
+      "outcome": "Determine what happened to the previously discussed O*NET database direction and create one future implementation package for Interview Me to tailor questions from a member-pasted job posting, uploaded job source, public job link, or an exact authorized Opportunity Slate transfer. Keep the visual-only Interview Studio polish package separate, preserve the current Interview workflow and truth boundary, and record O*NET as optional offline occupational research rather than a runtime or member-facing dependency.",
+      "branch": "work/2026-08-14-interview-role-context-001",
+      "writer": "Root Codex session holding Pete's 2026-08-14 Interview role-context and O*NET package direction is the sole writer.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "shared_foundation",
+      "exclusive_domains": [
+        "product:interview-role-context",
+        "product:opportunity-to-interview-context",
+        "data:onet-offline-reference-direction"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main f8bd8b9362894f245aafac9fbe53e219d0fc8a29. Repository and local handoff searches found no O*NET snapshot, importer, migration, service, or test. The August 4 strategy accepted only an optional versioned offline research snapshot, but its package activation was blocked and the later Opportunity Slate replacement did not adopt that scope. The official current release is O*NET 30.3 (May 2026).",
+      "writable_surfaces": [
+        "docs/initiatives/PS-INTERVIEW-ROLE-CONTEXT-001/",
+        "docs/initiatives/PS-SITE-AUDIT-PACKAGE-QUEUE-001/README.md",
+        "docs/governance/PACKAGE_REGISTRY.json",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/CURRENT_BASELINE.yaml"
+      ],
+      "exclusions": [
+        "no application, route, template, stylesheet, JavaScript, service, API, prompt, model, question generation, source fetch, schema, migration, configuration, dependency, pipeline, deployment, production-data, member-data, or live-behavior change",
+        "no O*NET download, vendoring, database import, web-service registration, runtime API dependency, occupation mapping, or member-facing O*NET hierarchy",
+        "no change to the completed authenticated Interview Studio package, current route/name, visual locks, or the separately planned visual-only Interview Studio Experience Polish package",
+        "no implementation claim for Opportunity Slate transfer; this package records the exact future contract and dependencies only",
+        "no score, rank, employer prediction, qualification verdict, automatic save, silent context transfer, or use of private evidence without server-side authorization and explicit member action"
+      ],
+      "completion_evidence": [
+        "activation-only control PR merges with an explicit skip-ci message and no automatic main deployment",
+        "fresh current-main package worktree passes the package write preflight",
+        "the package records the exact O*NET planning-to-activation gap and the absence of any current snapshot, importer, migration, runtime service, or test",
+        "the package defines paste, upload, public-link, and exact Opportunity Slate transfer entry paths with source/version provenance, member confirmation, authorization, retention/deletion, stale-context, and failure behavior",
+        "the package keeps O*NET optional, offline, versioned, attributed, and independently testable; direct runtime Web Services use and member-facing O*NET truth remain excluded",
+        "PACKAGE_REGISTRY and the site-audit queue account for the new package without changing the visual-polish package",
+        "focused package-registry, governance, evidence-policy, JSON/YAML, and complete-diff checks pass; the documentation PR merges with no runtime deployment and the lane returns to controlled idle"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-14",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete directed: 'we need to find out whatever happened to the O-Net database that we're gonna use' and required Interview Me to tailor questions when a member provides a job link or posting, including transfer from Opportunity Slate, and said 'we need to put that into the package.'"
+        }
+      ],
+      "cleanup_contract": "After a verified documentation merge and inert pause, remove only this package's clean activation, package, and pause worktrees/branches behind exact recovery tags. Preserve every unrelated, dirty, active, paused, unique, ambiguous, or user-owned worktree, branch, stash, artifact, handoff, and data file.",
+      "sequence": "activation-only control PR with explicit skip-ci merge message -> clean current-main package worktree -> write preflight -> O*NET status record and Interview role-context charter -> registry and audit-queue update -> focused validation and complete-diff self-review -> Azure PR/build -> explicit skip-ci squash merge -> inert pause -> task-local cleanup"
+    }
+  ],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
