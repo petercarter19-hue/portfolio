@@ -1,19 +1,17 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-14T19:29:49Z",
+  "updated_at": "2026-08-14T19:57:33Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-SITE-AUDIT-OWNER-FINDINGS-001"
-    ],
+    "writes_allowed_for": [],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -29,7 +27,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-SITE-AUDIT-OWNER-FINDINGS-001 is active only to record Pete's 2026-08-14 reported defects, route them to existing planned audit packages, and preserve his accepted Interview AI direction. It has no diagnosis, application, prompt, model, provider, retrieval, schema, configuration, visual-lock, release, deployment, or enablement authority."
+    "exit_authority": "PS-SITE-AUDIT-OWNER-FINDINGS-001 is paused and preserved. Controlled idle; a new write requires fresh activation for one exact owner-selected outcome under the lane-class, path-collision, and exclusive-domain rules."
   },
   "activation_policy": {
     "enabled": true,
@@ -1692,53 +1690,7 @@
       ]
     }
   ],
-  "active_lanes": [
-    {
-      "package": "PS-SITE-AUDIT-OWNER-FINDINGS-001",
-      "outcome": "Record Pete's 2026-08-14 owner-reported Opportunity Slate, Interview Studio, and Ask Pete device/latency findings in the durable Site Audit queue and corresponding planned package charters; record acceptance of Interview AI Constitution sections 1-3 and its searchable private practice-history correction; distinguish reported symptoms from diagnosis and authorize no runtime change.",
-      "branch": "work/2026-08-14-site-audit-owner-findings",
-      "writer": "Root Codex session directed by Pete is the sole documentation writer; later child-package writers must diagnose and verify the reported behavior independently.",
-      "delivery_path": "Bounded",
-      "production_capable": false,
-      "lane_class": "direction_authority",
-      "exclusive_domains": [
-        "product:site-audit-owner-findings"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main df7d953de75844c47f1d05d30048b030879bfb17. Repository control is controlled_idle with zero active writers. These are Pete's current observations from desktop/iPad use and are not yet reproduced or diagnosed.",
-      "writable_surfaces": [
-        "docs/initiatives/PS-SITE-AUDIT-OWNER-FINDINGS-001",
-        "docs/initiatives/PS-SITE-AUDIT-PACKAGE-QUEUE-001",
-        "docs/initiatives/PS-OPPORTUNITY-SLATE-CONTINUATION-001",
-        "docs/initiatives/PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001",
-        "docs/initiatives/PS-AI-AGENT-QUALITY-ROUND-2-001"
-      ],
-      "exclusions": [
-        "no application, route, template, stylesheet, JavaScript, service, API, prompt, model, provider, extraction, retrieval, search, source-policy, schema, migration, configuration, dependency, test-fixture, pipeline, production-data, or live-behavior change",
-        "no claim that an owner-reported symptom is reproduced, diagnosed, fixed, merged, deployed, or live-verified",
-        "no destructive testing, account mutation, source deletion, session/history cleanup, link re-import, provider request, or production troubleshooting",
-        "no reopening or rewriting the completion truth of delivered Opportunity Slate, Interview Studio, Ask Pete, shell, or AI baseline packages",
-        "no material visual direction or runtime implementation; each future debugging or redesign outcome requires fresh activation in its owning child package"
-      ],
-      "completion_evidence": [
-        "one dated owner-findings register preserves Pete's language and separates observation, intended direction, routing package, verification needed, and prohibited premature conclusion",
-        "Opportunity Slate Continuation records the missing imported-source content, extraction-focus/no-general-LLM direction, sidebar/workbench symptoms, and priority debugging journey",
-        "Interview Studio Experience Polish records left-rail dropdown, spacing, New Session inconsistency, and the owner direction to challenge or remove session restrictions rather than preserving them by assumption",
-        "AI Agent Quality Round 2 records Ask Pete iPad slowness/non-working behavior for its queued deep review and preserves Pete's acceptance of Interview Constitution sections 1-3 including private searchable History and similar-question nudges",
-        "package links, governance pointers, evidence-policy checks, and complete-diff review pass; the completion record states that no runtime behavior changed",
-        "activation, documentation, and pause PRs use explicit skip-ci squash messages and return the repository to controlled idle"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-14",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Pete directed Codex to put the newly reported Opportunity Slate, Interview Studio, and Ask Pete issues into the respective packages for later debugging, and said the presented Interview AI ideas were perfect while allowing later refinement."
-        }
-      ],
-      "cleanup_contract": "After verified skip-ci activation, documentation, and pause merges, remove only this task's clean activation, documentation, and pause worktrees/branches behind exact local and Azure recovery tags. Preserve every unrelated dirty checkout, worktree, branch, stash, artifact, session, credential, and user-authored file.",
-      "sequence": "activation-only PR with explicit skip-ci squash -> clean current-main documentation worktree -> write preflight -> owner-findings register and child-charter routing -> Interview AI acceptance record -> focused validation and complete-diff self-review -> Azure PR/build -> explicit skip-ci merge -> pause -> task-local cleanup"
-    }
-  ],
+  "active_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
@@ -2333,6 +2285,56 @@
       "pause_reason": "The non-production AI inventory, Interview evaluation baseline, and ChatGPT Work owner handoff are complete. Activation PR 484 passed Azure build 1055 and merged as 7eb9cb963e0fce5c1639188a9a827245470dfc82; documentation PR 485 passed Azure build 1056 and merged exact candidate bead71342778fc07838708d56d73d4eb79d076ca as a007e1af32b96cfb0617f9b8a6565ad6d863f213. Both squash messages explicitly contain [skip ci]. No application, prompt, model, provider, retrieval, schema, configuration, release, deployment, or live behavior changed.",
       "resume_contract": "Do not resume this baseline lane for runtime work. Pete must first review the Interview role map, adaptive length policy, knowledge boundaries, golden cases, and scorecard. Each accepted prompt, routing, provider/model, retrieval, O*NET/job-context, observability, or UI correction requires a fresh exact package activation from current origin/main. Recovery tags preserve the activation and documentation candidates; task-local worktrees and branches may be removed after this pause merge and final no-new-main-run verification.",
       "preserved_head_sha": "bead71342778fc07838708d56d73d4eb79d076ca"
+    },
+    {
+      "package": "PS-SITE-AUDIT-OWNER-FINDINGS-001",
+      "outcome": "Record Pete's 2026-08-14 owner-reported Opportunity Slate, Interview Studio, and Ask Pete device/latency findings in the durable Site Audit queue and corresponding planned package charters; record acceptance of Interview AI Constitution sections 1-3 and its searchable private practice-history correction; distinguish reported symptoms from diagnosis and authorize no runtime change.",
+      "branch": "work/2026-08-14-site-audit-owner-findings",
+      "writer": "Root Codex session directed by Pete is the sole documentation writer; later child-package writers must diagnose and verify the reported behavior independently.",
+      "delivery_path": "Bounded",
+      "production_capable": false,
+      "lane_class": "direction_authority",
+      "exclusive_domains": [
+        "product:site-audit-owner-findings"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main df7d953de75844c47f1d05d30048b030879bfb17. Repository control is controlled_idle with zero active writers. These are Pete's current observations from desktop/iPad use and are not yet reproduced or diagnosed.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-SITE-AUDIT-OWNER-FINDINGS-001",
+        "docs/initiatives/PS-SITE-AUDIT-PACKAGE-QUEUE-001",
+        "docs/initiatives/PS-OPPORTUNITY-SLATE-CONTINUATION-001",
+        "docs/initiatives/PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001",
+        "docs/initiatives/PS-AI-AGENT-QUALITY-ROUND-2-001"
+      ],
+      "exclusions": [
+        "no application, route, template, stylesheet, JavaScript, service, API, prompt, model, provider, extraction, retrieval, search, source-policy, schema, migration, configuration, dependency, test-fixture, pipeline, production-data, or live-behavior change",
+        "no claim that an owner-reported symptom is reproduced, diagnosed, fixed, merged, deployed, or live-verified",
+        "no destructive testing, account mutation, source deletion, session/history cleanup, link re-import, provider request, or production troubleshooting",
+        "no reopening or rewriting the completion truth of delivered Opportunity Slate, Interview Studio, Ask Pete, shell, or AI baseline packages",
+        "no material visual direction or runtime implementation; each future debugging or redesign outcome requires fresh activation in its owning child package"
+      ],
+      "completion_evidence": [
+        "one dated owner-findings register preserves Pete's language and separates observation, intended direction, routing package, verification needed, and prohibited premature conclusion",
+        "Opportunity Slate Continuation records the missing imported-source content, extraction-focus/no-general-LLM direction, sidebar/workbench symptoms, and priority debugging journey",
+        "Interview Studio Experience Polish records left-rail dropdown, spacing, New Session inconsistency, and the owner direction to challenge or remove session restrictions rather than preserving them by assumption",
+        "AI Agent Quality Round 2 records Ask Pete iPad slowness/non-working behavior for its queued deep review and preserves Pete's acceptance of Interview Constitution sections 1-3 including private searchable History and similar-question nudges",
+        "package links, governance pointers, evidence-policy checks, and complete-diff review pass; the completion record states that no runtime behavior changed",
+        "activation, documentation, and pause PRs use explicit skip-ci squash messages and return the repository to controlled idle"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-14",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete directed Codex to put the newly reported Opportunity Slate, Interview Studio, and Ask Pete issues into the respective packages for later debugging, and said the presented Interview AI ideas were perfect while allowing later refinement."
+        }
+      ],
+      "cleanup_contract": "After verified skip-ci activation, documentation, and pause merges, remove only this task's clean activation, documentation, and pause worktrees/branches behind exact local and Azure recovery tags. Preserve every unrelated dirty checkout, worktree, branch, stash, artifact, session, credential, and user-authored file.",
+      "sequence": "activation-only PR with explicit skip-ci squash -> clean current-main documentation worktree -> write preflight -> owner-findings register and child-charter routing -> Interview AI acceptance record -> focused validation and complete-diff self-review -> Azure PR/build -> explicit skip-ci merge -> pause -> task-local cleanup",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-14T19:57:33Z",
+      "pause_reason": "The documentation-only owner-findings intake is complete. Activation PR 487 passed Azure build 1060 and merged as a0c03b6b369e498786398319a7e48707121742f8. Documentation PR 488 initially failed build 1061 because a transient standalone initiative directory was not in the formal registry; the dated records were moved into the existing Site Audit queue, exact candidate 0eac200513829c3f2bb4dc27653d55032c199760 passed replacement build 1062, and merged as 8316f93610a329e47a4638f5873283d115cfd240. Both squash messages explicitly contain [skip ci]. No application, prompt, model, provider, extraction, retrieval, search, schema, configuration, release, deployment, production data, or live behavior changed.",
+      "resume_contract": "Do not resume this intake lane for diagnosis or runtime work. Finish the current Interview AI owner review, then activate a fresh exact Protected Opportunity Slate diagnostic from current origin/main. Interview rail/session and Ask Pete iPad investigations each require their own later activation. Recovery tags preserve the activation and documentation candidates; task-local worktrees and branches may be removed after this pause merge and final no-new-main-run verification.",
+      "preserved_head_sha": "0eac200513829c3f2bb4dc27653d55032c199760"
     }
   ],
   "workspace_snapshot": {
