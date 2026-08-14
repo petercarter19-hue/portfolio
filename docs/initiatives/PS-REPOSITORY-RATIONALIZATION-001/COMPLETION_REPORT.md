@@ -7,8 +7,10 @@
 - **Outcome and member/site effect:** the repository now has a complete
   non-authoritative registry for all 113 initiative directories, corrected
   status framing for eight stale or mixed packages, an evidence retention and
-  exact-deduplication standard, and a deterministic recurrence check. This
-  changes no member-facing behavior or live site state.
+  exact-deduplication standard, and a deterministic recurrence check. No
+  application-runtime source or intended member-facing behavior changed. The
+  implementation merge did advance the deployed application release through
+  automatic main run 1027, as recorded below.
 - **Branch and base:**
   `work/2026-08-13-repository-rationalization-001`, based on
   `fdb71c604f81d305b971775bd28aeac964231ebe`.
@@ -18,17 +20,26 @@
   and this record; eight initiative status banners; two Community candidate
   manifests; the OS-4 canonical evidence map; the approved exact duplicate
   deletion set; the recurrence checker and focused tests.
-- **Release state:** the implementation candidate is locally validated and is
-  delivered only through the normal Azure PR policy. The exact PR, build,
-  merge, and inert lifecycle disposition are recorded in the current control
-  plane and the August 13 audit companion. Nothing was deployed.
+- **Release state:** implementation candidate
+  `08eed8f14cce53cd543ac9b7922e7daa2335b3e4` passed required build 1026 and
+  merged through PR 473 as
+  `eea1293a80091b8f19229a47782b5c2222e7ec32`. Delayed automatic main run 1027
+  succeeded, including the production application stage. Live `/healthz`
+  returned HTTP 200 with release `8f30f3770dc1d8a6a440da94`. The governed
+  pause passed build 1028 and merged through PR 474 as
+  `28445244346385361470b465337c1c934bf6903d`. Release-truth correction
+  activation PR 475 passed build 1031 and merged as
+  `207f1e33213daac3b366990201c1e85852eb3d32` with an explicit `[skip ci]`
+  squash message.
 - **Known limits and deferred work:** the registry is an index, not lifecycle
   authority. `CURRENT_LANES.json` and `CURRENT_BASELINE.yaml` remain
   authoritative. Runtime asset retirement, package implementation, product
   redesign, production operations, and live verification are outside this
   slice.
-- **Next action:** follow the current lane control plane. No runtime release is
-  required or authorized by this package.
+- **Next action:** finish this documentation-only truth correction and inert
+  pause with explicit `[skip ci]` squash messages. No rollback or additional
+  runtime release is required: run 1027 succeeded and the rationalization
+  changed no application-runtime source.
 
 ## Exact evidence reduction
 
@@ -88,9 +99,17 @@ authority.
   release/incident/migration proof, legal/privacy/security evidence, sealed
   handoff, member data, branch, stash, worktree content, or recovery ref was
   removed.
-- **Shared infrastructure:** no runtime, route, schema, migration,
-  configuration, dependency, pipeline, deployment, production-data, or live
-  state changed. Deployment and rollback evidence do not apply.
+- **Shared infrastructure:** the source change contained no runtime, route,
+  schema, migration, configuration, dependency, pipeline, or production-data
+  mutation. Run 1027 nevertheless built and deployed the production
+  application because PR 473's squash message lacked `[skip ci]`. The
+  production application stage and `DeployWebApp` job succeeded; schema apply,
+  isolated candidate, maintenance, and candidate-stop stages were skipped.
+  Live health returned 200. `artifacts/` is excluded from the deployment
+  package, while `docs/` is retained for live Control Room and knowledge
+  readers. A rollback is not indicated because the deployment succeeded and
+  carried no application-runtime source change. Follow-up control merges use
+  explicit `[skip ci]` merge messages.
 - **Material visual work:** none. Accepted visual authority was preserved
   byte-for-byte; this slice only removes redundant copies and corrects
   pointers.

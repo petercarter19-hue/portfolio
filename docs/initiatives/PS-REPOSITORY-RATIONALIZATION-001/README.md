@@ -1,9 +1,10 @@
 # PS-REPOSITORY-RATIONALIZATION-001 - Package and evidence rationalization
 
-**Status:** Implementation candidate complete and locally validated in a
-protected, non-production shared-foundation lane. The exact Azure delivery and
-lifecycle state belongs to `CURRENT_LANES.json`; nothing in this package is a
-deployment claim.
+**Status:** Completed and merged through Azure review. Implementation main
+`eea1293a80091b8f19229a47782b5c2222e7ec32` was automatically deployed by run
+1027; live health returned 200 at release `8f30f3770dc1d8a6a440da94`. The change
+contained no application-runtime source or intended product behavior change.
+The exact current lifecycle state belongs to `CURRENT_LANES.json`.
 
 ## Outcome
 
@@ -25,10 +26,13 @@ discarding authority or history:
 and lifecycle state. The registry is a rationalization index; it does not
 activate, release, retire, or prove a package live.
 
-This package changes no application behavior, route, schema, migration,
-configuration, dependency, pipeline, deployment, production data, or live
-state. Runtime and dormant-asset retirement remains a separate Gate Retire
-decision.
+The rationalization changed no application-runtime source, route, schema,
+migration, configuration, dependency, pipeline, production data, or intended
+product behavior. Its implementation merge nevertheless triggered the normal
+main pipeline and production deployment. `artifacts/` is excluded from the
+deployment package, while `docs/` is included because the live Control Room
+has runtime readers. Runtime and dormant-asset retirement remains a separate
+Gate Retire decision.
 
 ## Retention boundary
 
