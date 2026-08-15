@@ -1,19 +1,17 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-14T20:25:00Z",
+  "updated_at": "2026-08-15T02:36:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001"
-    ],
+    "writes_allowed_for": [],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -29,7 +27,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001 is active only to add Pete's 2026-08-14 required same-page versus focused pop-out Interview Me comparison to its planned direction. It has no visual-lock, application, route, template, stylesheet, script, test, schema, configuration, release, deployment, or enablement authority."
+    "exit_authority": "PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001 is paused and preserved with Pete's required focus-window comparison. Controlled idle; a new write requires fresh activation for one exact owner-selected outcome under the lane-class, path-collision, and exclusive-domain rules."
   },
   "activation_policy": {
     "enabled": true,
@@ -1692,47 +1690,7 @@
       ]
     }
   ],
-  "active_lanes": [
-    {
-      "package": "PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001",
-      "outcome": "Amend the planned Interview Me and Video Practice polish package to require an explicit owner-reviewed comparison between the current same-page Interview Me experience and an optional focused pop-out interview window, including class and focus, interruption reduction, continuity, supported-device behavior, responsive composition, accessibility, browser popup blocking, recovery, and a complete same-page fallback; record no selected visual direction or runtime decision by assumption.",
-      "branch": "work/2026-08-14-interview-popout-evaluation",
-      "writer": "Root Codex session directed by Pete is the sole documentation writer.",
-      "delivery_path": "Bounded",
-      "production_capable": false,
-      "lane_class": "direction_authority",
-      "exclusive_domains": [
-        "product:interview-studio-experience-direction"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main 3e2d338f37462f68cf7a010f5def5e234fb7db7c. Repository control is controlled_idle with zero active writers. Pete explicitly requested that the next Interview Me package evaluate whether a focused pop-out screen would create a classier, more focused initial interview experience.",
-      "writable_surfaces": [
-        "docs/initiatives/PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001/"
-      ],
-      "exclusions": [
-        "no application, route, template, stylesheet, JavaScript, service, API, prompt, model, provider, schema, migration, configuration, test-fixture, pipeline, production-data, or live-behavior change",
-        "no material visual authority, mockup lock, implementation choice, merge-to-runtime, deployment, enablement, or live claim",
-        "no assumption that a pop-out is superior, mandatory, available, or safe on every browser or device; the package must compare and preserve an equivalent same-page fallback",
-        "no edit to other Interview, shell, responsive-audit, Resume, Review, Ask Pete, Opportunity Slate, AI-quality, governance, or historical package surfaces after activation"
-      ],
-      "completion_evidence": [
-        "the package contains a dated owner-required focused-window decision section and clearly labels the comparison as open rather than accepted visual or runtime direction",
-        "the comparison covers focus and polish, distraction reduction, second-window context and continuity, popup blocking, refresh/recovery, History relationship, keyboard and screen-reader focus, reduced motion, zoom/reflow, iPad and phone behavior, and same-page fallback",
-        "acceptance criteria require that neither path restore artificial sessions or prevent the member from changing scope, stopping, resuming, or moving between questions",
-        "package links, governance pointers, and complete-diff review pass; the completion record states that no runtime behavior changed",
-        "activation, package amendment, and pause PRs use explicit skip-ci truth and return the repository to controlled idle"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-14",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Pete directed Codex to add a comparison of a focused pop-out Interview Me screen to the next Interview Me package, asking whether it would create a classier and more focused initial experience. This authorizes the package amendment, not the selection or implementation of the pop-out."
-        }
-      ],
-      "cleanup_contract": "After verified skip-ci activation, package-amendment, and pause merges, remove only this task's clean worktrees and branches behind exact local and Azure recovery tags. Preserve every unrelated dirty checkout, worktree, branch, stash, artifact, session, credential, and user-authored file.",
-      "sequence": "activation-only PR with explicit skip-ci squash -> clean current-main documentation worktree -> write preflight -> package amendment -> focused validation and complete-diff self-review -> Azure PR/build -> explicit skip-ci merge -> pause -> task-local cleanup"
-    }
-  ],
+  "active_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
@@ -2377,6 +2335,50 @@
       "pause_reason": "The documentation-only owner-findings intake is complete. Activation PR 487 passed Azure build 1060 and merged as a0c03b6b369e498786398319a7e48707121742f8. Documentation PR 488 initially failed build 1061 because a transient standalone initiative directory was not in the formal registry; the dated records were moved into the existing Site Audit queue, exact candidate 0eac200513829c3f2bb4dc27653d55032c199760 passed replacement build 1062, and merged as 8316f93610a329e47a4638f5873283d115cfd240. Both squash messages explicitly contain [skip ci]. No application, prompt, model, provider, extraction, retrieval, search, schema, configuration, release, deployment, production data, or live behavior changed.",
       "resume_contract": "Do not resume this intake lane for diagnosis or runtime work. Finish the current Interview AI owner review, then activate a fresh exact Protected Opportunity Slate diagnostic from current origin/main. Interview rail/session and Ask Pete iPad investigations each require their own later activation. Recovery tags preserve the activation and documentation candidates; task-local worktrees and branches may be removed after this pause merge and final no-new-main-run verification.",
       "preserved_head_sha": "0eac200513829c3f2bb4dc27653d55032c199760"
+    },
+    {
+      "package": "PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001",
+      "outcome": "Amend the planned Interview Me and Video Practice polish package to require an explicit owner-reviewed comparison between the current same-page Interview Me experience and an optional focused pop-out interview window, including class and focus, interruption reduction, continuity, supported-device behavior, responsive composition, accessibility, browser popup blocking, recovery, and a complete same-page fallback; record no selected visual direction or runtime decision by assumption.",
+      "branch": "work/2026-08-14-interview-popout-evaluation",
+      "writer": "Root Codex session directed by Pete is the sole documentation writer.",
+      "delivery_path": "Bounded",
+      "production_capable": false,
+      "lane_class": "direction_authority",
+      "exclusive_domains": [
+        "product:interview-studio-experience-direction"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 3e2d338f37462f68cf7a010f5def5e234fb7db7c. Repository control is controlled_idle with zero active writers. Pete explicitly requested that the next Interview Me package evaluate whether a focused pop-out screen would create a classier, more focused initial interview experience.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001/"
+      ],
+      "exclusions": [
+        "no application, route, template, stylesheet, JavaScript, service, API, prompt, model, provider, schema, migration, configuration, test-fixture, pipeline, production-data, or live-behavior change",
+        "no material visual authority, mockup lock, implementation choice, merge-to-runtime, deployment, enablement, or live claim",
+        "no assumption that a pop-out is superior, mandatory, available, or safe on every browser or device; the package must compare and preserve an equivalent same-page fallback",
+        "no edit to other Interview, shell, responsive-audit, Resume, Review, Ask Pete, Opportunity Slate, AI-quality, governance, or historical package surfaces after activation"
+      ],
+      "completion_evidence": [
+        "the package contains a dated owner-required focused-window decision section and clearly labels the comparison as open rather than accepted visual or runtime direction",
+        "the comparison covers focus and polish, distraction reduction, second-window context and continuity, popup blocking, refresh/recovery, History relationship, keyboard and screen-reader focus, reduced motion, zoom/reflow, iPad and phone behavior, and same-page fallback",
+        "acceptance criteria require that neither path restore artificial sessions or prevent the member from changing scope, stopping, resuming, or moving between questions",
+        "package links, governance pointers, and complete-diff review pass; the completion record states that no runtime behavior changed",
+        "activation, package amendment, and pause PRs use explicit skip-ci truth and return the repository to controlled idle"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-14",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete directed Codex to add a comparison of a focused pop-out Interview Me screen to the next Interview Me package, asking whether it would create a classier and more focused initial experience. This authorizes the package amendment, not the selection or implementation of the pop-out."
+        }
+      ],
+      "cleanup_contract": "After verified skip-ci activation, package-amendment, and pause merges, remove only this task's clean worktrees and branches behind exact local and Azure recovery tags. Preserve every unrelated dirty checkout, worktree, branch, stash, artifact, session, credential, and user-authored file.",
+      "sequence": "activation-only PR with explicit skip-ci squash -> clean current-main documentation worktree -> write preflight -> package amendment -> focused validation and complete-diff self-review -> Azure PR/build -> explicit skip-ci merge -> pause -> task-local cleanup",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-15T02:36:00Z",
+      "pause_reason": "The documentation-only focus-window comparison is complete. Activation PR 490 passed Azure build 1071 and merged as ae628c5681cae4a34681163518dd088b31cab9ad. Package PR 491 passed repository evidence policy locally, passed Azure build 1072 at exact candidate 7bd95e82c27ac37eda365cc6bd98285b13733bfa, and merged as 445e8dbbfa4ff8eb5e7fb279c447d0952ed039ce. Both squash messages explicitly contain [skip ci]. No application, visual lock, route, template, stylesheet, script, test, schema, configuration, release, deployment, production data, or live behavior changed.",
+      "resume_contract": "Do not resume this documentation lane for visual or runtime work. When Interview Me polish becomes the selected next outcome, activate a fresh exact package from current origin/main, compare same-page Studio, same-tab Focus mode, and a member-initiated dedicated window using real desktop/iPad/phone evidence, obtain Pete's visual decision, and separately authorize implementation. Preserve the same-page fallback and session-free member freedom.",
+      "preserved_head_sha": "7bd95e82c27ac37eda365cc6bd98285b13733bfa"
     }
   ],
   "workspace_snapshot": {
