@@ -44,6 +44,59 @@ The exact width is a visual-lock decision and must adapt responsively. This
 package does not add a permanent right rail or change Claude's inline answer
 flow.
 
+## Focused interview window decision - owner-required 2026-08-14
+
+Pete asked the next Interview Me review to determine whether the initial
+written interview should be able to open in a cleaner pop-out window, and
+whether that would feel classier and more focused than keeping the entire
+experience inside the ordinary Studio page. This is an open comparison, not an
+accepted visual direction or runtime choice.
+
+Compare three honest alternatives before implementation:
+
+1. the complete same-page Studio experience;
+2. an in-page or same-tab **Focus mode** that temporarily removes secondary
+   Studio chrome; and
+3. a member-initiated dedicated browser window with only the question, useful
+   role/context cues, answer composer, dictation, review action, recovery, and
+   a clear return to Studio.
+
+Judge the options on more than appearance. Record whether each one improves
+attention, calm, interview realism, readable answer width, control hierarchy,
+and movement between answering, coaching, retrying, and History. Also record
+the costs: popup blocking, iPad/Safari opening a tab rather than a true window,
+phone behavior, authentication/cookie continuity, duplicate windows, stale or
+conflicting drafts, refresh and crash recovery, closing the focused view,
+keyboard and screen-reader focus, zoom/reflow, and the member losing context
+when returning to Studio.
+
+The dedicated window, if selected later, must be progressive enhancement:
+
+- It opens only from an explicit member action and never as an automatic
+  popup.
+- The same-page path remains complete and first-class when the browser blocks
+  or cannot support a separate window.
+- The member can return, stop, resume, change the role or question scope, skip,
+  or move elsewhere at any time. A focused view must not recreate `New
+  Session`, a fixed question count, or an artificial session object.
+- One authoritative draft/history record prevents duplicate or divergent
+  answers across windows. Closing either view cannot silently discard work.
+- On phones and constrained tablet states, prefer the strongest usable
+  same-page Focus mode unless real-device evidence shows a separate window is
+  clearer.
+- A pop-out cannot be used to conceal an early responsive collapse or a broken
+  Studio layout. Preserve the desktop composition until measured content
+  pressure requires reflow, and make the ordinary page work at every supported
+  width.
+
+The decision gate requires side-by-side owner review of the same realistic
+question and long-answer flow on desktop plus real iPad portrait/landscape and
+phone evidence. Select a dedicated window only if it produces a meaningfully
+better focused experience without weakening continuity, accessibility,
+recovery, or member freedom. ChatGPT supplies any materially revised visual
+direction and Pete locks the selected authority before a later implementation
+package is activated.
+
 ## Video Practice correction
 
 - Bound the camera stage to a true 16:9 composition; initial desktop targets are
