@@ -175,11 +175,14 @@ general model knowledge, Journal/private Slate, or open web.
 - Interview AI cannot create invisible long-term personality, weakness,
   employability, sensitive-trait, or History summaries about a member.
 
-## Still open
+## Accepted continuation
 
-Later Shared Constitution sections remain to be reviewed: truthfulness and
-evidence detail; injection/abuse resistance; fairness, sensitive information,
-and confidentiality; output/action/schema controls; failure/fallback; and
-observability/evaluation/release. Each specialist then receives its own
-purpose, knowledge, system instruction, deterministic guardian, schema,
-failure, and golden-case contract before runtime implementation is considered.
+Pete subsequently accepted the Shared Constitution continuation, specialist
+map, adaptive-length policy, readable output composition, session-free
+orchestration, and Role Context direction. Those decisions are recorded in
+[`07_INTERVIEW_AI_ACCEPTED_DIRECTION_CONTINUATION.md`](07_INTERVIEW_AI_ACCEPTED_DIRECTION_CONTINUATION.md).
+
+The continuation corrects `session-confirmed context` to current-practice
+confirmed context; it does not authorize an Interview Session product object.
+Every runtime prompt, guardian, schema, provider/model, retrieval, data, visual,
+and release outcome remains separately gated.

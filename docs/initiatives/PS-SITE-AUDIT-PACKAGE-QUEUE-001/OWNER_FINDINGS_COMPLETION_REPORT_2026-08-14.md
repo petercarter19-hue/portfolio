@@ -52,3 +52,15 @@ delete/re-import anything, test an iPad, measure Ask Pete latency, exercise New
 Session, or diagnose any cause. Finish the current Interview AI owner review,
 then activate an exact Protected Opportunity Slate diagnostic as the first
 runtime investigation.
+
+## Subsequent owner-review closeout - 2026-08-15
+
+The statements above remain the honest completion truth for the 2026-08-14
+owner-findings intake. The later Interview AI conversation is now durably
+closed through Shared Constitution section 9 and specialists 1-5B in
+`PS-AI-AGENT-QUALITY-ROUND-2-001/07_INTERVIEW_AI_ACCEPTED_DIRECTION_CONTINUATION.md`.
+The current next action is therefore the protected Opportunity Slate read-first
+diagnostic. Pete selected Claude as the later architect after the relevant
+decision round and diagnosis; Claude sends the architecture package back to
+Pete and Codex for reconciliation before Pete accepts or revises it and before
+any implementation package is activated.

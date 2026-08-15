@@ -15,7 +15,7 @@ active one merely because both currently call the same provider.
 
 | Order | Surface | Current provider-backed jobs | Deep-review state |
 | --- | --- | --- | --- |
-| 1 | Interview Studio | answer review, answer improvement, nudge, grounded/generic model answer | Baseline merged; owner review in progress; Shared Constitution sections 1-3 accepted direction |
+| 1 | Interview Studio | answer review, answer improvement, nudge, grounded/generic model answer | Owner-review direction complete through Shared Constitution section 9 and specialists 1-5B; runtime architecture/implementation separately gated |
 | 2 | Opportunity Slate | extraction concerns, statement interpretation, alignment analysis | Queued immediately after Interview acceptance; owner reports the 2026-08-14 imported-source journey as substantially broken |
 | 3 | Ask Pete | grounded public-profile answer generation | Queued; owner reports iPad failure or severe latency requiring real-device measurement |
 | 4 | Workshop | review and proposal assistance behind Workshop contracts | Queued |

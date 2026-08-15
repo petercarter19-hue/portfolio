@@ -21,15 +21,19 @@ This queue records direction; it does not activate any child package.
 The dated [owner-reported findings register](OWNER_REPORTED_FINDINGS_2026-08-14.md)
 adds current hands-on observations without claiming diagnosis or correction:
 
-- Opportunity Slate's imported-source and extraction journey is the urgent
-  owner priority after the current Interview AI review;
+- the Interview Studio portion of AI Agent Quality Round 2 is direction-complete
+  through Shared Constitution section 9 and specialists 1-5B; and
+- Opportunity Slate's imported-source and extraction journey is now the urgent
+  next owner priority;
 - Interview Studio must revisit left-rail spacing/dropdowns and whether a
   session object or its restrictions should exist at all;
 - Ask Pete requires a real-iPad functionality and latency diagnosis during its
   queued AI deep review; and
-- Interview AI Constitution sections 1-3 are accepted product direction,
-  including private searchable practice History and member-controlled
-  similar-question nudges, while remaining open to later refinement.
+- Interview AI's accepted direction includes private searchable practice
+  History, member-controlled similar-question nudges, adaptive length,
+  structured output, session-free orchestration, and private Role Context,
+  while remaining open to later refinement. Claude is the future architecture
+  owner after the relevant decision round and read-first diagnosis.
 
 Each item is routed to an existing planned child package. No child is activated
 by this queue update.
@@ -50,9 +54,11 @@ by this queue update.
 
 ## Dependency and review sequence
 
-1. Review **AI Agent Quality Round 2** first because Pete marked specialist
-   agent quality urgent.
-2. Review **Opportunity Slate Continuation** independently.
+1. **Interview Studio AI owner direction is complete.** Remaining AI surfaces
+   stay queued for their own later deep reviews; runtime architecture and
+   implementation remain separately gated.
+2. Run **Opportunity Slate Continuation** as the next protected, read-first
+   diagnostic before selecting architecture or repairs.
 3. Review **Shared Dictation** and diagnose Community transcription reliability.
 4. Lock **Community Authoring** direction, then scope **Spark Post** persistence.
 5. Review **Interview Studio Polish** only after Claude's inline-answer work is

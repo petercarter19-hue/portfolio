@@ -1,9 +1,11 @@
 # PS-AI-AGENT-QUALITY-ROUND-2-001 - Specialist AI quality execution round
 
-**Status:** `paused_preserved` after the Interview evaluation baseline merged.
-Owner review continues conversationally; Shared Interview AI Constitution
-sections 1-3 are accepted direction as of 2026-08-14, with later refinement
-explicitly allowed. No runtime AI authority is active.
+**Status:** Interview Studio AI owner-review direction complete as of
+2026-08-15. Shared Interview AI Constitution sections 1-9, the specialist map
+through 5B, adaptive length, structured output, session-free orchestration, and
+Role Context are accepted direction with later refinement explicitly allowed.
+The broader AI quality round continues one surface at a time; no runtime AI
+authority is active.
 **Authority placement:** Execution round/addendum under
 `PS-AI-PRODUCT-EVAL-001`, not a competing AI constitution.
 **Risk path:** Protected for any prompt, provider, model, retrieval, or release
@@ -16,7 +18,8 @@ endpoint, evaluation gate, or live behavior.
 The site-wide inventory is intentionally shallow. Each AI surface receives a
 complete owner-reviewable dossier before the next surface begins:
 
-1. Interview Studio AI - active;
+1. Interview Studio AI - owner-review direction complete; runtime architecture
+   and implementation remain separately gated;
 2. Opportunity Slate AI - queued;
 3. Ask Pete - queued;
 4. Workshop AI - queued;
@@ -44,6 +47,11 @@ packaged. No later surface is being designed in parallel.
 - [06_INTERVIEW_AI_OWNER_DECISIONS.md](06_INTERVIEW_AI_OWNER_DECISIONS.md) -
   accepted Shared Constitution direction and the searchable private practice-
   History correction.
+- [07_INTERVIEW_AI_ACCEPTED_DIRECTION_CONTINUATION.md](07_INTERVIEW_AI_ACCEPTED_DIRECTION_CONTINUATION.md) -
+  accepted sections 4-9, specialists 1-5B, adaptive length, structured output,
+  session-free orchestration, Role Context, and Claude architecture timing.
+- [OWNER_DECISION_CLOSEOUT_2026-08-15.md](OWNER_DECISION_CLOSEOUT_2026-08-15.md) -
+  proportional documentation closeout and next-action truth.
 
 ## August 14 owner-reported Ask Pete intake
 
@@ -73,9 +81,11 @@ For every AI surface, record:
 - golden cases, graders, human reviewers, launch threshold, and current release
   truth.
 
-The review must decide whether Interview is best served by one routed
-specialist or separate coaching, model-answer, and nudge specialists. That
-choice is evidence-driven, not predetermined by this charter.
+The owner review selected a routed specialist system: Diagnostician/Router,
+Answer Coach, Revision Partner, private History Nudge, Grounded Example, and
+Generic Example, with a future Role-Context-bound Question Generator. Later
+architecture and implementation must validate the separation through the
+accepted golden cases rather than collapsing the jobs into one generic prompt.
 
 ## Interview expert contract
 
@@ -104,11 +114,12 @@ cost, and unavailable behavior.
 
 ## Site Audit owner checkpoint
 
-Before selecting runtime changes, walk Pete through the AI surface map in plain
-language: which specialist handles each job, what it can see, what it cannot do,
-the guardrails, sample good/bad results, evaluation evidence, and remaining
-tradeoffs. Runtime corrections must be split into bounded implementation
-packages with their own acceptance and release proof.
+Pete completed the Interview AI direction review in plain language. Runtime
+corrections remain split into bounded Protected packages with their own
+architecture, acceptance, evaluation, and release proof. Pete selected Claude
+as the later architect after this decision round and the relevant read-first
+diagnosis are complete; Claude sends the architecture package back to Pete and
+Codex for reconciliation, and Pete accepts or revises it before implementation.
 
 This checkpoint is about product AI quality. It is not the banked code/Azure
 learning walkthrough.

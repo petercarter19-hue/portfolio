@@ -120,22 +120,29 @@ delivered package or infer a technical cause from the observed symptom.
 4. Distinguish panel/layout failure from provider latency and server failure.
 5. Preserve Ask Pete's public-approved-source boundary while diagnosing it.
 
-### Interview AI direction - accepted and still refinable
+### Interview AI direction - owner-review complete and still refinable
 
-Pete accepted the Interview AI ideas reviewed through Shared Constitution
-sections 1-3 and said later refinements remain allowed. The durable decision
-record is `PS-AI-AGENT-QUALITY-ROUND-2-001/06_INTERVIEW_AI_OWNER_DECISIONS.md`.
+Pete accepted the Interview AI direction through Shared Constitution section 9,
+the specialist map through 5B, adaptive length, structured output, session-free
+orchestration, and private Role Context, and said later refinements remain
+allowed. The durable records are
+`PS-AI-AGENT-QUALITY-ROUND-2-001/06_INTERVIEW_AI_OWNER_DECISIONS.md` and
+`07_INTERVIEW_AI_ACCEPTED_DIRECTION_CONTINUATION.md`.
 
 The accepted direction includes private searchable practice History,
 member-controlled similar-question retrieval for **Need a nudge?**, a useful
 no-match prompt, server-derived identity, authorization before retrieval,
 source-class separation, and specialist-specific least-privilege knowledge.
 Acceptance is product direction, not a runtime prompt, schema, provider,
-retrieval, migration, implementation, release, or deployment grant.
+retrieval, migration, implementation, release, or deployment grant. Pete
+selected Claude as the future architect after the decision round and relevant
+read-first diagnosis; Claude sends the architecture package back to Pete and
+Codex for reconciliation, and Pete accepts or revises it before implementation.
 
 ## Recommended continuation order
 
-1. Finish the current Interview AI Constitution owner review.
+1. Treat the Interview AI owner-review direction as complete and preserve it
+   for later Claude architecture and separately gated runtime packages.
 2. Return immediately to Opportunity Slate for a protected, read-first
    diagnostic because Pete reports the core imported-source journey as broken.
 3. Review Interview Studio's rail and session model before another visual lock.
