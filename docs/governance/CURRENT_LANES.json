@@ -1,17 +1,19 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-15T21:28:14Z",
+  "updated_at": "2026-08-15T21:36:52Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "controlled_idle",
+    "state": "active_delivery",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [],
+    "writes_allowed_for": [
+      "PS-TRUST-SAFETY-001"
+    ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -27,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-MEMBER-FEEDBACK-001 is paused and preserved. No active writer lanes remain; activate an exact implementation or direction/authority outcome before repository writes."
+    "exit_authority": "Active direction-authority writer: PS-TRUST-SAFETY-001. It may create the site-wide moderation, reporting, member-control, appeal, and support architecture package on its recorded documentation surfaces. It grants no runtime, schema, material visual, merge, deployment, configuration, enforcement, notification, or live authority."
   },
   "activation_policy": {
     "enabled": true,
@@ -1690,7 +1692,61 @@
       ]
     }
   ],
-  "active_lanes": [],
+  "active_lanes": [
+    {
+      "package": "PS-TRUST-SAFETY-001",
+      "outcome": "Create the protected direction and architecture package for reusable, site-wide Trust and Safety, with Community as the first runtime consumer. Define immediate member controls, reporting and intake, case and evidence boundaries, deterministic authorization, moderation decisions, affected-member notice, appeals, support escalation, legal and emergency routing, retention and deletion, AI-assist limits, operational metrics, dependencies, and a build-ready first slice. Preserve Pete's accepted Community controls: Hide a post, Unfollow, Disconnect, Block, and Report, while separating personal controls from platform enforcement. Make the package implementation-ready without changing runtime in this direction lane.",
+      "branch": "work/2026-08-15-trust-safety-direction",
+      "writer": "Root Codex session holding Pete's Community and comprehensive audit conversation is the sole writer.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "direction_authority",
+      "exclusive_domains": [
+        "product:trust-safety-moderation",
+        "program:site-audit-trust-safety"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main c6c7d42a2b8c91ca92c43990ab1d257035cc681d at activation. Current control state was controlled_idle with no active writers. Pete accepted Hide, Unfollow, Disconnect, Block, and Report as Community member controls, accepted the proposed moderation/reporting direction, and explicitly directed: 'Yes, make a package.'",
+      "writable_surfaces": [
+        "docs/initiatives/PS-TRUST-SAFETY-001/",
+        "docs/initiatives/PS-SITE-AUDIT-PACKAGE-QUEUE-001/",
+        "artifacts/2026-08-15-trust-safety/"
+      ],
+      "exclusions": [
+        "no application, route, template, stylesheet, JavaScript, test, schema, migration, API, provider, prompt, agent, configuration, dependency, pipeline, deployment, production, or live-behavior change",
+        "no visual mockup or production visual lock; any material reporting, case-queue, notification, or support presentation returns to ChatGPT and Pete under the visual-integrity standard before runtime implementation",
+        "no activation, merge, release, enforcement authority, or authority grant for a Trust and Safety runtime implementation",
+        "no automatic AI removal, suspension, report disposition, account penalty, legal classification, emergency determination, or appeal decision",
+        "no claim of legal compliance, counsel approval, security assessment, trained moderation staffing, response-time service level, emergency service, or 24-hour coverage",
+        "no implementation of Community authoring, Connections, general notifications, messaging, public profile publication, search, analytics vendor, or admin tooling; define only their Trust and Safety contracts and ownership boundaries",
+        "no secret moderator access, Pete-specific permissions, browser-supplied identity trust, silent evidence mutation, indefinite retention, or reporter disclosure beyond the minimum lawful and safety-preserving need",
+        "no overwrite of the frozen August 11 comprehensive audit or the preserved Member Feedback package; update only the authoritative repository queue and package-local evidence"
+      ],
+      "completion_evidence": [
+        "a package README states purpose, owner decisions, current truth, constitutional rules, dependencies, non-goals, trust boundaries, first runtime slice, legal-readiness gates, and fresh-activation rules",
+        "member-control requirements distinguish Hide, Unfollow, Disconnect, Block, and Report, including immediate effect, reversibility where appropriate, cross-device truth, failure states, and how each differs from platform enforcement",
+        "a concise report taxonomy and accessible intake flow cover posts, comments, profiles, connections, future messages, public AI output, impersonation, spam or scam, harassment, hate or threats, dangerous or sexual content, copyright, privacy, and other concerns without requiring legal expertise",
+        "architecture separates report, immutable evidence snapshot, target reference, reporter privacy, case, triage, decision, action, notice, appeal, support contact, audit, legal hold, and aggregate transparency records",
+        "authorization and operations rules define server-derived identity, least-privilege moderator roles, authorization-before-retrieval, dual-control for high-impact actions, evidence access, break-glass logging, conflict handling, and support-versus-moderation boundaries",
+        "decision requirements define severity, urgency, action options, proportionality, reason codes, affected-member notice, reporter status, appeal, restoration, repeat abuse, false-report abuse, and human review while keeping AI advisory only",
+        "privacy and lifecycle rules cover collection minimization, retention schedules, export, correction, deletion propagation, evidence preservation, legal hold, account deletion, moderator notes, notification privacy, and support artifacts without overpromising deletion or anonymity",
+        "legal and emergency readiness registers copyright and counter-notice, apparent child sexual exploitation material, credible threats, self-harm or immediate danger, lawful requests, minors and age position, acceptable-use parity, counsel questions, and exact release gates as unresolved operational obligations rather than repository-approved compliance",
+        "the Community-first runtime slice is implementation-ready and includes in-context Report plus Hide, Unfollow, Disconnect, and Block; protected case intake; human triage; reasoned action; status and appeal; audit; accessibility; abuse controls; and useful unavailable or delayed states",
+        "metrics and readiness measure intake completeness, urgent-triage latency, decision quality, reversal, repeat harm, support resolution, reporter burden, moderator wellbeing, accessibility, and audit integrity rather than removal volume or engagement",
+        "the Site Audit package queue registers PS-TRUST-SAFETY-001 once as a cross-site foundation before broader Community, notifications, Connections expansion, public content expansion, or Messaging",
+        "a proportional completion record and complete-diff self-review confirm every repository change is documentation or evidence only and the package grants no runtime authority"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-15",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete accepted the proposed Community moderation and reporting direction after choosing Hide, Unfollow, Disconnect, Block, and Report as member controls. When Codex recommended a reusable site-wide PS-TRUST-SAFETY-001 package, Pete directed: 'Yes, make a package.'"
+        }
+      ],
+      "cleanup_contract": "After a verified direction-package merge and formal close, remove only this task's clean activation and package worktrees and branches behind recovery refs. Preserve the comprehensive audit, the paused Member Feedback package, every unrelated or dirty worktree, branch, stash, artifact, and user-authored file.",
+      "sequence": "activation-only control PR -> clean package worktree from resulting origin/main -> write preflight -> create member-control, report, case, authorization, moderation, appeal, support, legal-readiness, metrics, and Community-first rollout documents -> validate links, evidence policy, package coverage, and complete diff -> direction grant after independent review -> documentation PR with [skip ci] -> formal close -> separately activate the first Protected Community Trust and Safety runtime slice"
+    }
+  ],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
