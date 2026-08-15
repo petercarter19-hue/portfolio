@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "No active writer lanes. PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001 is paused and preserved; activate an exact implementation or direction/authority outcome before repository writes."
+  current_assignments: "PS-AI-AGENT-QUALITY-ROUND-2-001 is active on work/2026-08-15-interview-ai-decision-closeout only to reconcile Pete's accepted Interview AI direction and make Opportunity Slate the next package; no prompt, model, retrieval, code, release, deployment, or unrelated work is authorized."
 
 governing_documents:
   bible:
@@ -58,6 +58,9 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
+  - id: PS-AI-AGENT-QUALITY-ROUND-2-001
+    status: active_delivery
+    scope: "Direction-only closeout: record the accepted Interview AI Constitution continuation, specialist map, adaptive-length and output rules, session-free orchestration, Role Context boundary, and next-package sequence without runtime changes."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -151,7 +154,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "No active writer lanes. Select and activate the next exact outcome under the three-lane class, path, and exclusive-domain rules."
+next_gate: "Complete only the PS-AI-AGENT-QUALITY-ROUND-2-001 accepted-direction reconciliation, merge with explicit skip-ci truth, pause, then make a fresh owner-selected activation for the protected Opportunity Slate read-first diagnostic."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
