@@ -1,19 +1,17 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-15T19:40:00Z",
+  "updated_at": "2026-08-15T21:28:14Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-MEMBER-FEEDBACK-001"
-    ],
+    "writes_allowed_for": [],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -29,7 +27,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active direction-authority writer: PS-MEMBER-FEEDBACK-001. It may create the site-wide survey and member-feedback architecture package on its recorded documentation surfaces. It grants no runtime, schema, visual, merge, deployment, configuration, notification, or live authority."
+    "exit_authority": "PS-MEMBER-FEEDBACK-001 is paused and preserved. No active writer lanes remain; activate an exact implementation or direction/authority outcome before repository writes."
   },
   "activation_policy": {
     "enabled": true,
@@ -1692,57 +1690,7 @@
       ]
     }
   ],
-  "active_lanes": [
-    {
-      "package": "PS-MEMBER-FEEDBACK-001",
-      "outcome": "Create the protected direction and architecture package for a reusable, site-wide member survey system, with Community as the first visible consumer. Expand Pete's customer-obsessed direction into clear survey types, placement and frequency rules, privacy and consent, personalization boundaries, response storage and lifecycle, owner review and action loops, accessibility, measurement, administration, abuse prevention, rollout slices, dependencies, and acceptance gates. Make the first runtime slice implementation-ready without changing runtime in this direction lane.",
-      "branch": "work/2026-08-15-member-feedback-direction",
-      "writer": "Root Codex session holding Pete's Community and comprehensive audit conversation is the sole writer.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "direction_authority",
-      "exclusive_domains": [
-        "product:member-feedback-surveys",
-        "program:site-audit-member-feedback"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main f16687ee55dc4992ae43e120c411c355f3e96680 at activation. Current control state was controlled_idle with no active writers. Pete explicitly directed that surveys be implemented, expanded, and placed into a package after selecting surveys as a first-class, site-wide feedback capability with Community as the first visible implementation.",
-      "writable_surfaces": [
-        "docs/initiatives/PS-MEMBER-FEEDBACK-001/",
-        "docs/initiatives/PS-SITE-AUDIT-PACKAGE-QUEUE-001/",
-        "artifacts/2026-08-15-member-feedback/"
-      ],
-      "exclusions": [
-        "no application, route, template, stylesheet, JavaScript, test, schema, migration, API, provider, prompt, agent, configuration, dependency, pipeline, deployment, production, or live-behavior change",
-        "no visual mockup or production visual lock; material survey presentation returns to ChatGPT and Pete under the visual-integrity standard before runtime implementation",
-        "no activation, merge, release, or authority grant for a runtime survey implementation",
-        "no automatic publication, Profile or canonical-history writeback, consequential inference, psychological profiling, or silent personalization from survey answers",
-        "no decorative polls, fake participation, manufactured trends, coercive prompts, survey-gated product access, or engagement-pressure mechanics",
-        "no notification, messaging, Community-authoring, Return Value, analytics-vendor, or admin-control implementation; define only the exact integration contracts and ownership boundaries",
-        "no overwrite of the frozen August 11 comprehensive audit; update only the authoritative repository queue and package-local evidence"
-      ],
-      "completion_evidence": [
-        "a package README states purpose, owner decisions, current truth, scope, dependencies, non-goals, trust boundaries, first runtime slice, and activation rules",
-        "requirements define quick-pulse, feature, experience, direction, and personalization surveys with truthful identity, purpose, duration, account-linkage, optionality, and use disclosures",
-        "architecture separates survey definition and version, placement eligibility, assignment, response, preference/dismissal, analysis, owner action, and audit records",
-        "privacy and lifecycle rules cover server-derived identity, authorization-before-retrieval, anonymous-versus-account-linked truth, retention, export, correction, deletion, suppression, moderation, and support access",
-        "Community-first placement, site-wide reuse, frequency caps, dismissal memory, accessibility, failure states, and responsive presentation are implementation-ready without a runtime change",
-        "an owner feedback loop prevents collected responses from becoming a dead database and records how findings become reviewed product actions without silently changing member data",
-        "metrics measure response usefulness, issue resolution, personalization choices, and survey burden rather than time-on-site or compulsive engagement",
-        "the Site Audit package queue registers PS-MEMBER-FEEDBACK-001 once with its dependencies and build-now placement",
-        "complete-diff self-review confirms every repository change is documentation/evidence only and the package grants no runtime authority"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-15",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Pete said surveys are required, should appear somewhat more than the other participation prompts, and must support a customer-obsessed product that members enjoy and can make uniquely their own. He then directed: 'Yes we need to implement this and expand up on this idea more in a package.'"
-        }
-      ],
-      "cleanup_contract": "After a verified direction-package merge and formal close, remove only this task's clean activation and package worktrees and branches behind recovery refs. Preserve the comprehensive audit, paused packages, every unrelated or dirty worktree, branch, stash, artifact, and user-authored file.",
-      "sequence": "activation-only control PR -> clean package worktree from resulting origin/main -> write preflight -> create survey requirements, protected architecture, placement and rollout plan, owner-review loop, and queue registration -> validate JSON, governance pointers, package coverage, and complete diff -> direction grant -> documentation PR with [skip ci] -> formal close -> separately activate the first protected runtime slice"
-    }
-  ],
+  "active_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
@@ -2431,6 +2379,60 @@
       "pause_reason": "The documentation-only Interview Studio AI owner-direction reconciliation is complete. Activation PR 493 passed Azure build 1085 and merged as d9ac0522029d6e62afc17bfbd60a928cbe676e46. Documentation PR 494 passed relative Markdown links, repository evidence policy, 21 governance-pointer tests, package write preflight, Azure build 1086 at exact candidate d6027e2279f68c04b73d0dbd26873751434d6298, and merged as d0e868f102f0cba5ced3bd0f6123127cf037aa89. Both squash messages explicitly contain [skip ci]. No application, prompt, model, provider, retrieval, search, schema, configuration, visual lock, release, deployment, production data, or live behavior changed.",
       "resume_contract": "Do not resume this direction-closeout lane for runtime work. The next exact outcome is a fresh Protected Opportunity Slate read-first diagnostic. Claude performs later architecture only after the relevant decision round and diagnosis are complete, sends the architecture package back to Pete and Codex for reconciliation, and Pete accepts or revises it before any implementation activation.",
       "preserved_head_sha": "d6027e2279f68c04b73d0dbd26873751434d6298"
+    },
+    {
+      "package": "PS-MEMBER-FEEDBACK-001",
+      "outcome": "Create the protected direction and architecture package for a reusable, site-wide member survey system, with Community as the first visible consumer. Expand Pete's customer-obsessed direction into clear survey types, placement and frequency rules, privacy and consent, personalization boundaries, response storage and lifecycle, owner review and action loops, accessibility, measurement, administration, abuse prevention, rollout slices, dependencies, and acceptance gates. Make the first runtime slice implementation-ready without changing runtime in this direction lane.",
+      "branch": "work/2026-08-15-member-feedback-direction",
+      "writer": "Root Codex session holding Pete's Community and comprehensive audit conversation is the sole writer.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "direction_authority",
+      "exclusive_domains": [
+        "product:member-feedback-surveys",
+        "program:site-audit-member-feedback"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main f16687ee55dc4992ae43e120c411c355f3e96680 at activation. Current control state was controlled_idle with no active writers. Pete explicitly directed that surveys be implemented, expanded, and placed into a package after selecting surveys as a first-class, site-wide feedback capability with Community as the first visible implementation.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-MEMBER-FEEDBACK-001/",
+        "docs/initiatives/PS-SITE-AUDIT-PACKAGE-QUEUE-001/",
+        "artifacts/2026-08-15-member-feedback/"
+      ],
+      "exclusions": [
+        "no application, route, template, stylesheet, JavaScript, test, schema, migration, API, provider, prompt, agent, configuration, dependency, pipeline, deployment, production, or live-behavior change",
+        "no visual mockup or production visual lock; material survey presentation returns to ChatGPT and Pete under the visual-integrity standard before runtime implementation",
+        "no activation, merge, release, or authority grant for a runtime survey implementation",
+        "no automatic publication, Profile or canonical-history writeback, consequential inference, psychological profiling, or silent personalization from survey answers",
+        "no decorative polls, fake participation, manufactured trends, coercive prompts, survey-gated product access, or engagement-pressure mechanics",
+        "no notification, messaging, Community-authoring, Return Value, analytics-vendor, or admin-control implementation; define only the exact integration contracts and ownership boundaries",
+        "no overwrite of the frozen August 11 comprehensive audit; update only the authoritative repository queue and package-local evidence"
+      ],
+      "completion_evidence": [
+        "a package README states purpose, owner decisions, current truth, scope, dependencies, non-goals, trust boundaries, first runtime slice, and activation rules",
+        "requirements define quick-pulse, feature, experience, direction, and personalization surveys with truthful identity, purpose, duration, account-linkage, optionality, and use disclosures",
+        "architecture separates survey definition and version, placement eligibility, assignment, response, preference/dismissal, analysis, owner action, and audit records",
+        "privacy and lifecycle rules cover server-derived identity, authorization-before-retrieval, anonymous-versus-account-linked truth, retention, export, correction, deletion, suppression, moderation, and support access",
+        "Community-first placement, site-wide reuse, frequency caps, dismissal memory, accessibility, failure states, and responsive presentation are implementation-ready without a runtime change",
+        "an owner feedback loop prevents collected responses from becoming a dead database and records how findings become reviewed product actions without silently changing member data",
+        "metrics measure response usefulness, issue resolution, personalization choices, and survey burden rather than time-on-site or compulsive engagement",
+        "the Site Audit package queue registers PS-MEMBER-FEEDBACK-001 once with its dependencies and build-now placement",
+        "complete-diff self-review confirms every repository change is documentation/evidence only and the package grants no runtime authority"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-15",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete said surveys are required, should appear somewhat more than the other participation prompts, and must support a customer-obsessed product that members enjoy and can make uniquely their own. He then directed: 'Yes we need to implement this and expand up on this idea more in a package.'"
+        }
+      ],
+      "cleanup_contract": "After a verified direction-package merge and formal close, remove only this task's clean activation and package worktrees and branches behind recovery refs. Preserve the comprehensive audit, paused packages, every unrelated or dirty worktree, branch, stash, artifact, and user-authored file.",
+      "sequence": "activation-only control PR -> clean package worktree from resulting origin/main -> write preflight -> create survey requirements, protected architecture, placement and rollout plan, owner-review loop, and queue registration -> validate JSON, governance pointers, package coverage, and complete diff -> direction grant -> documentation PR with [skip ci] -> formal close -> separately activate the first protected runtime slice",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-15T21:28:14Z",
+      "pause_reason": "The PS-MEMBER-FEEDBACK-001 direction package is complete on its protected branch and pushed at the exact preserved SHA. The package defines the reusable site-wide survey architecture and Community-first slice; it has not been independently reviewed, granted, merged, implemented, deployed, or made live. Pete selected Trust and Safety as the next package, so this completed direction is preserved without consuming the single direction-authority writer lane.",
+      "resume_contract": "Resume only through fresh activation from current origin/main. First reconcile and independently review the preserved package branch, then obtain an exact direction grant before any package merge. Any survey runtime, material visual direction, schema, notification integration, deployment, or production enablement requires its own newly activated package and authority.",
+      "preserved_head_sha": "9e5391a5519e4fa6dd9dbab8db140d3690ac746d"
     }
   ],
   "workspace_snapshot": {
