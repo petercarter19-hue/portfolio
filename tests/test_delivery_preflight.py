@@ -89,6 +89,9 @@ from scripts.delivery_preflight import (
     INTERVIEW_AI_D13_ATTESTATION_BRANCH,
     INTERVIEW_AI_D13_ATTESTATION_PATHS,
     INTERVIEW_AI_D13_ATTESTATION_REGISTRATION,
+    INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_BASE,
+    INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP,
+    INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_PATHS,
     INTERVIEW_AI_D13_OWNER_DECISION,
     INTERVIEW_AI_D13_OWNER_DECISION_SHA256,
     INTERVIEW_AI_D13_REVIEW_ATTESTATION,
@@ -128,6 +131,8 @@ from scripts.delivery_preflight import (
     _exact_interview_ai_d13_admission_repair_matches,
     _exact_interview_ai_d13_attestation_registration_delta,
     _exact_interview_ai_d13_attestation_registration_matches,
+    _exact_interview_ai_d13_lifecycle_fixture_followup_delta,
+    _exact_interview_ai_d13_lifecycle_fixture_followup_matches,
     _exact_interview_ai_relocation_write,
     _is_shell_reviewed_shared_foundation_lane,
     _exact_connect_002_merge_admission_repair_delta,
@@ -1885,6 +1890,7 @@ with patch.object(
             INTERVIEW_AI_D13_OWNER_DECISION
         ]:
             reconciled["owner_decisions"].pop()
+        reconciled.pop("merge_grant", None)
         self.assertEqual(
             INTERVIEW_AI_RECONCILED_LANE_SHA256,
             _canonical_sha256(reconciled),
@@ -2075,7 +2081,7 @@ with patch.object(
 
     def _interview_ai_d13_attestation_fixture(self):
         origin = load_ledger_at_ref(INTERVIEW_AI_D13_ATTESTATION_BASE)
-        candidate = copy.deepcopy(self.ledger)
+        candidate = load_ledger_at_ref(INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_BASE)
         baseline = load_baseline_bytes_at_ref(INTERVIEW_AI_D13_ATTESTATION_BASE)
         exact_facts = facts(
             branch=INTERVIEW_AI_D13_ATTESTATION_BRANCH,
@@ -2085,6 +2091,60 @@ with patch.object(
             changed_paths=sorted(INTERVIEW_AI_D13_ATTESTATION_PATHS),
         )
         return origin, candidate, baseline, exact_facts
+
+    def test_interview_ai_d13_lifecycle_fixture_followup_is_exact_and_inert(self):
+        origin = load_ledger_at_ref(INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_BASE)
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-16T23:20:24Z"
+        candidate["interview_ai_d13_lifecycle_fixture_followup"] = copy.deepcopy(
+            INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP
+        )
+        baseline = load_baseline_bytes_at_ref(
+            INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_BASE
+        )
+        exact_facts = facts(
+            branch=INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP["branch"],
+            origin_main=INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_BASE,
+            ahead=1,
+            behind=0,
+            changed_paths=sorted(INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_PATHS),
+        )
+        self.assertTrue(
+            _exact_interview_ai_d13_lifecycle_fixture_followup_matches(
+                candidate, exact_facts, "PS-DELIVERY-CONTROL-001"
+            )
+        )
+        self.assertTrue(
+            _exact_interview_ai_d13_lifecycle_fixture_followup_delta(
+                origin, candidate
+            )
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("lifecycle-fixture" in item for item in warnings))
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+
+        forged = copy.deepcopy(candidate)
+        forged["operating_mode"]["merge_allowed_for"].append(
+            INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        )
+        forged_errors, _ = self._evaluate_activation(
+            forged,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(forged_errors)
 
     def test_interview_ai_d13_attestation_is_exact_inert_and_grant_ready(self):
         origin, candidate, baseline, exact_facts = (

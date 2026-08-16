@@ -1717,6 +1717,52 @@ INTERVIEW_AI_D13_ATTESTED_LANE_SHA256 = (
     "cb96af3a4207409d10a9863f1b57b9742a2c7ed57482de4d038f1c8a40937328"
 )
 
+# Azure Build 1148 exercised the exact Interview AI ledger-only grant and
+# exposed two fixture-only lifecycle assumptions: the historical D13 admission
+# replay inherited the later merge grant, while the attestation replay inherited
+# both that grant and its temporary merge authority. This one-time inert
+# follow-up makes those historical fixtures reconstruct their own lifecycle
+# state. It grants no authority and is the exact follow-up step already allowed
+# between the attestation registration and the later ledger-only grant.
+INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_BASE = (
+    "e2418f0cbb5c6d2060a7ec4b7dca631845de2c8b"
+)
+INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_BRANCH = (
+    "work/2026-08-16-delivery-activation-"
+    "interview-ai-d13-lifecycle-fixture-repair"
+)
+INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_BRANCH,
+    "origin_main": INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_BASE,
+    "allowed_surfaces": sorted(DIRECTION_MERGE_FOLLOWUP_PATHS),
+    "reason": (
+        "Pete authorized completion of the exact Interview AI D13 sequence. "
+        "Azure Build 1148 then exposed two test-only lifecycle assumptions: "
+        "the historical admission and attestation fixtures inherited the later "
+        "merge grant and temporary merge authority from the current ledger. "
+        "This inert follow-up makes those fixtures reconstruct their own "
+        "historical states. It changes no lane, authority list, baseline, "
+        "product code, schema, pipeline, deployment, configuration, provider "
+        "call, enablement, or live behavior."
+    ),
+    "verification_contract": (
+        "The preflight recognizes this one-time record only on the exact "
+        "branch, exact origin/main base, one commit, and the exact three "
+        "DIRECTION_MERGE_FOLLOWUP_PATHS. The parent must retain the exact "
+        "Interview AI D13 attestation registration; the ledger may change "
+        "only updated_at plus this record, and CURRENT_BASELINE must remain "
+        "byte-identical. The later ordinary grant remains separate and the "
+        "Interview merge sequence must be attestation, this follow-up, then "
+        "the ledger-only grant. A later branch, base, record, timestamp, "
+        "authority, path, or state cannot reuse it."
+    ),
+}
+INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_PATHS = frozenset(
+    INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP["allowed_surfaces"]
+)
+
 REVIEW_ATTESTATION_FIELDS = frozenset(
     PROFILE_DIRECTION_REVIEW_ATTESTATION
 )
@@ -3688,6 +3734,55 @@ def _exact_interview_ai_d13_attestation_registration_delta(
         INTERVIEW_AI_D13_ATTESTATION_REGISTRATION
     )
     expected["active_lanes"][index] = copy.deepcopy(candidate_lanes[index])
+    return (
+        candidate_ledger == expected
+        and _utc_timestamp_strictly_advances(
+            candidate_ledger.get("updated_at"), parent_ledger.get("updated_at")
+        )
+    )
+
+
+def _exact_interview_ai_d13_lifecycle_fixture_followup_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    """Match only the exact one-commit D13 lifecycle-fixture follow-up."""
+    return (
+        ledger.get("interview_ai_d13_lifecycle_fixture_followup")
+        == INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP
+        and package_id
+        == INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP["package"]
+        and facts.get("branch") == INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_BRANCH
+        and facts.get("origin_main") == INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_BASE
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_PATHS)
+    )
+
+
+def _exact_interview_ai_d13_lifecycle_fixture_followup_delta(
+    parent_ledger: object,
+    candidate_ledger: object,
+) -> bool:
+    """Prove the D13 fixture follow-up changes no lane or authority."""
+    if not isinstance(parent_ledger, dict) or not isinstance(candidate_ledger, dict):
+        return False
+    if (
+        parent_ledger.get("interview_ai_d13_attestation_registration")
+        != INTERVIEW_AI_D13_ATTESTATION_REGISTRATION
+        or parent_ledger.get("interview_ai_d13_lifecycle_fixture_followup")
+        is not None
+        or candidate_ledger.get("interview_ai_d13_lifecycle_fixture_followup")
+        != INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP
+    ):
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = candidate_ledger.get("updated_at")
+    expected["interview_ai_d13_lifecycle_fixture_followup"] = (
+        INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP
+    )
     return (
         candidate_ledger == expected
         and _utc_timestamp_strictly_advances(
@@ -5833,14 +5928,21 @@ def _direction_main_sequence_facts(
             if sha
         ]
         valid = False
-        if len(commits) == 2 and base == INTERVIEW_AI_D13_ATTESTATION_BASE:
-            attestation_sha, grant_sha = commits
+        if len(commits) == 3 and base == INTERVIEW_AI_D13_ATTESTATION_BASE:
+            attestation_sha, fixture_sha, grant_sha = commits
             attestation_parent = _git("rev-parse", f"{attestation_sha}^")
+            fixture_parent = _git("rev-parse", f"{fixture_sha}^")
             grant_parent = _git("rev-parse", f"{grant_sha}^")
             attestation_paths = set(
                 _git_nul(
                     "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
                     attestation_sha,
+                )
+            )
+            fixture_paths = set(
+                _git_nul(
+                    "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                    fixture_sha,
                 )
             )
             grant_paths = set(
@@ -5851,6 +5953,7 @@ def _direction_main_sequence_facts(
             )
             parent_ledger = load_ledger_at_ref(attestation_parent)
             attested_ledger = load_ledger_at_ref(attestation_sha)
+            fixture_ledger = load_ledger_at_ref(fixture_sha)
             target = next(
                 (
                     lane
@@ -5862,14 +5965,20 @@ def _direction_main_sequence_facts(
             )
             valid = bool(
                 attestation_parent == base
-                and grant_parent == attestation_sha
+                and fixture_parent == attestation_sha
+                and grant_parent == fixture_sha
                 and attestation_paths == set(INTERVIEW_AI_D13_ATTESTATION_PATHS)
+                and fixture_paths
+                == set(INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_PATHS)
                 and grant_paths == set(GRANT_ALLOWED_SURFACES)
                 and _exact_interview_ai_d13_attestation_registration_delta(
                     parent_ledger, attested_ledger
                 )
+                and _exact_interview_ai_d13_lifecycle_fixture_followup_delta(
+                    attested_ledger, fixture_ledger
+                )
                 and _exact_direction_grant_delta(
-                    attested_ledger, origin_ledger, package_id
+                    fixture_ledger, origin_ledger, package_id
                 )
                 and isinstance(target, dict)
                 and target.get("merge_grant", {}).get("reviewed_remote_sha")
@@ -6337,19 +6446,20 @@ def evaluate_policy(
                         "main control commits"
                     )
             elif package_id == INTERVIEW_AI_ARCHITECTURE_PACKAGE:
-                expected_behind = 2
+                expected_behind = 3
                 expected_main_paths = (
                     set(INTERVIEW_AI_D13_ATTESTATION_PATHS)
+                    | set(INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_PATHS)
                     | set(GRANT_ALLOWED_SURFACES)
                 )
                 if facts.get("behind") != expected_behind:
                     errors.append(
-                        "Interview AI merge requires exactly two verified main "
+                        "Interview AI merge requires exactly three verified main "
                         "control commits"
                     )
                 if facts.get("merge_main_control_commit_count") != expected_behind:
                     errors.append(
-                        "Interview AI merge requires exactly two verified main "
+                        "Interview AI merge requires exactly three verified main "
                         "control commits"
                     )
             else:
@@ -6411,11 +6521,11 @@ def evaluate_policy(
                         "ledger-only grant are tolerated"
                     )
             elif package_id == INTERVIEW_AI_ARCHITECTURE_PACKAGE:
-                if facts.get("behind") == 2:
+                if facts.get("behind") == 3:
                     warnings.append(
                         "Interview AI candidate predates main; only the exact "
-                        "review-attestation registration and exact ledger-only "
-                        "grant are tolerated"
+                        "review-attestation registration, lifecycle-fixture "
+                        "follow-up, and exact ledger-only grant are tolerated"
                     )
             elif facts.get("behind") == expected_behind:
                 warnings.append(
@@ -6449,12 +6559,18 @@ def evaluate_policy(
             return errors, warnings
         if (
             package_id == INTERVIEW_AI_ARCHITECTURE_PACKAGE
-            and origin_ledger.get("interview_ai_d13_attestation_registration")
-            != INTERVIEW_AI_D13_ATTESTATION_REGISTRATION
+            and (
+                origin_ledger.get("interview_ai_d13_attestation_registration")
+                != INTERVIEW_AI_D13_ATTESTATION_REGISTRATION
+                or origin_ledger.get(
+                    "interview_ai_d13_lifecycle_fixture_followup"
+                )
+                != INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP
+            )
         ):
             errors.append(
                 "Interview AI merge authority is blocked pending the exact "
-                "review-attestation registration"
+                "review-attestation registration and lifecycle-fixture follow-up"
             )
             return errors, warnings
         if facts.get("ahead") != 1 or facts.get("behind") != 0:
@@ -7349,6 +7465,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        interview_ai_d13_lifecycle_fixture_matches = (
+            _exact_interview_ai_d13_lifecycle_fixture_followup_matches(
+                ledger, facts, package_id
+            )
+        )
         if bootstrap_matches:
             allowed_surfaces = set(BOOTSTRAP_CONTROL_REPAIR["allowed_surfaces"])
             warnings.append(
@@ -7429,6 +7550,12 @@ def evaluate_policy(
             warnings.append(
                 "using the exact one-time Interview AI D13 review-attestation "
                 "registration boundary"
+            )
+        elif interview_ai_d13_lifecycle_fixture_matches:
+            allowed_surfaces = set(INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_PATHS)
+            warnings.append(
+                "using the exact one-time Interview AI D13 lifecycle-fixture "
+                "follow-up boundary"
             )
         elif opportunity_schema_release_refresh_matches:
             allowed_surfaces = set(
@@ -7864,6 +7991,51 @@ def evaluate_policy(
                     candidate_baseline,
                     origin_baseline,
                     label="Interview AI D13 attestation",
+                    errors=errors,
+                )
+            elif interview_ai_d13_lifecycle_fixture_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "Interview AI D13 lifecycle-fixture follow-up updated_at "
+                        "must be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "Interview AI D13 lifecycle-fixture follow-up updated_at "
+                        "must strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "Interview AI D13 lifecycle-fixture follow-up may not "
+                        "change activation_policy"
+                    )
+                if _root_changes(ledger, origin_ledger) != {
+                    "updated_at",
+                    "interview_ai_d13_lifecycle_fixture_followup",
+                }:
+                    errors.append(
+                        "Interview AI D13 lifecycle-fixture follow-up must change "
+                        "exactly updated_at and its inert record"
+                    )
+                if not _exact_interview_ai_d13_lifecycle_fixture_followup_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "Interview AI D13 lifecycle-fixture follow-up must be "
+                        "the exact authority-neutral delta"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="Interview AI D13 lifecycle-fixture follow-up",
                     errors=errors,
                 )
             elif connect_002_merge_admission_repair_matches:
@@ -8658,6 +8830,7 @@ def evaluate_policy(
             and not shell_merge_repair_matches
             and not interview_ai_d13_admission_matches
             and not interview_ai_d13_attestation_matches
+            and not interview_ai_d13_lifecycle_fixture_matches
             and not profile_core_grant_fixture_followup_matches
             and not profile_core_grant_anchor_followup_matches
             and not profile_core_post_grant_registry_fixture_repair_matches
@@ -8763,6 +8936,15 @@ def evaluate_policy(
                 errors.append(
                     "Interview AI D13 attestation must change exactly the "
                     "owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                interview_ai_d13_lifecycle_fixture_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "Interview AI D13 lifecycle-fixture follow-up must change "
+                    "exactly the owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
             if (

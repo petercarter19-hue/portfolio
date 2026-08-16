@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-16T22:54:00Z",
+  "updated_at": "2026-08-16T23:20:24Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -158,6 +158,19 @@
     },
     "reason": "Pete approved the exact relocated Interview AI v2.8 candidate after fresh independent review. This inert registration hard-pins that exact candidate, review, evidence, and owner decision so a later ordinary ledger-only grant can be validated. It grants no authority itself.",
     "verification_contract": "The preflight recognizes this one-time record only on the exact branch, exact origin/main base, one commit, and three control paths. The ledger may change only updated_at, this record, and one exact owner decision appended to the Interview AI lane. Operating-mode authority lists, every other lane including Portable, activation policy, and CURRENT_BASELINE remain byte-identical. Grant, merge, and close remain separate later policy-gated transitions."
+  },
+  "interview_ai_d13_lifecycle_fixture_followup": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-16-delivery-activation-interview-ai-d13-lifecycle-fixture-repair",
+    "origin_main": "e2418f0cbb5c6d2060a7ec4b7dca631845de2c8b",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "reason": "Pete authorized completion of the exact Interview AI D13 sequence. Azure Build 1148 then exposed two test-only lifecycle assumptions: the historical admission and attestation fixtures inherited the later merge grant and temporary merge authority from the current ledger. This inert follow-up makes those fixtures reconstruct their own historical states. It changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, provider call, enablement, or live behavior.",
+    "verification_contract": "The preflight recognizes this one-time record only on the exact branch, exact origin/main base, one commit, and the exact three DIRECTION_MERGE_FOLLOWUP_PATHS. The parent must retain the exact Interview AI D13 attestation registration; the ledger may change only updated_at plus this record, and CURRENT_BASELINE must remain byte-identical. The later ordinary grant remains separate and the Interview merge sequence must be attestation, this follow-up, then the ledger-only grant. A later branch, base, record, timestamp, authority, path, or state cannot reuse it."
   },
   "implementation_release_preflight_repair": {
     "status": "one_time_owner_authorized_repair",
