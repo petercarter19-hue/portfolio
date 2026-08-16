@@ -1763,6 +1763,65 @@ INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_PATHS = frozenset(
     INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP["allowed_surfaces"]
 )
 
+# The exact post-grant merge preflight for the reviewed relocation proved that
+# the generic lane-surface check rejects PACKAGE_REGISTRY.json even though the
+# D13 admission already pins that file and the exact 12 relocated documents.
+# This one-time inert repair admits only that immutable candidate/path set and
+# adds itself as the fourth, final control commit before the package merge.
+INTERVIEW_AI_D13_MERGE_SURFACE_BASE = (
+    "854f6268e41220dc908f0b3bf92a8e799670bbd2"
+)
+INTERVIEW_AI_D13_MERGE_SURFACE_BRANCH = (
+    "work/2026-08-16-delivery-activation-"
+    "interview-ai-d13-merge-surface-repair"
+)
+INTERVIEW_AI_D13_MERGE_SURFACE_REPAIR = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": INTERVIEW_AI_D13_MERGE_SURFACE_BRANCH,
+    "origin_main": INTERVIEW_AI_D13_MERGE_SURFACE_BASE,
+    "allowed_surfaces": sorted(DIRECTION_MERGE_FOLLOWUP_PATHS),
+    "candidate_contract": {
+        "package": INTERVIEW_AI_ARCHITECTURE_PACKAGE,
+        "branch": INTERVIEW_AI_ARCHITECTURE_BRANCH,
+        "reviewed_remote_sha": INTERVIEW_AI_D13_REVIEWED_SHA,
+        "allowed_merge_paths": sorted(
+            INTERVIEW_AI_TARGET_PATHS | {INTERVIEW_AI_REGISTRY_PATH}
+        ),
+    },
+    "reason": (
+        "Pete authorized completion of the exact Interview AI package. The "
+        "post-grant merge preflight then rejected only PACKAGE_REGISTRY.json "
+        "because the generic lane-surface check cannot represent the already "
+        "pinned D13 relocation. This inert repair admits that governance path "
+        "only for reviewed candidate 52242c4 and its exact 12 target documents. "
+        "It creates no generic governance-write authority and changes no lane, "
+        "authority list, baseline, product code, schema, pipeline, deployment, "
+        "configuration, provider call, enablement, or live behavior."
+    ),
+    "verification_contract": (
+        "The preflight recognizes this one-time record only on the exact "
+        "branch, exact origin/main base, one commit, and the exact three "
+        "DIRECTION_MERGE_FOLLOWUP_PATHS. The parent must retain the exact "
+        "attestation, lifecycle follow-up, and ledger-only grant. The ledger "
+        "may change only updated_at plus this record, and CURRENT_BASELINE "
+        "must remain byte-identical. Candidate merge accepts only exact SHA "
+        "52242c4 with exactly the 12 target Markdown files and "
+        "PACKAGE_REGISTRY.json, and proves the four-commit sequence: "
+        "attestation, lifecycle follow-up, grant, this repair. A later branch, "
+        "base, candidate, path, record, timestamp, authority, or state cannot "
+        "reuse it."
+    ),
+}
+INTERVIEW_AI_D13_MERGE_SURFACE_PATHS = frozenset(
+    INTERVIEW_AI_D13_MERGE_SURFACE_REPAIR["allowed_surfaces"]
+)
+INTERVIEW_AI_D13_MERGE_CANDIDATE_PATHS = frozenset(
+    INTERVIEW_AI_D13_MERGE_SURFACE_REPAIR["candidate_contract"][
+        "allowed_merge_paths"
+    ]
+)
+
 REVIEW_ATTESTATION_FIELDS = frozenset(
     PROFILE_DIRECTION_REVIEW_ATTESTATION
 )
@@ -2956,6 +3015,48 @@ def _validate_changed_paths_within_lane(
             )
 
 
+def _validate_interview_ai_merge_paths(
+    lane: dict,
+    facts: dict,
+    errors: list[str],
+) -> None:
+    """Admit only the exact reviewed D13 relocation path set at merge."""
+    grant = lane.get("merge_grant")
+    exact_identity = bool(
+        lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        and lane.get("branch") == INTERVIEW_AI_ARCHITECTURE_BRANCH
+        and isinstance(grant, dict)
+        and grant.get("reviewed_remote_sha") == INTERVIEW_AI_D13_REVIEWED_SHA
+        and facts.get("head") == INTERVIEW_AI_D13_REVIEWED_SHA
+        and facts.get("merge_target_remote_sha")
+        == INTERVIEW_AI_D13_REVIEWED_SHA
+    )
+    raw_paths = facts.get("changed_paths")
+    if not isinstance(raw_paths, list) or not all(
+        isinstance(path, str) and path for path in raw_paths
+    ):
+        errors.append("merge changed_paths must be a list of non-empty strings")
+        return
+    normalized_paths: list[str] = []
+    for index, raw_path in enumerate(raw_paths):
+        normalized = _normalize_repo_surface(
+            raw_path,
+            f"merge changed_paths[{index}]",
+            errors,
+        )
+        if normalized is not None:
+            normalized_paths.append(normalized)
+    if (
+        not exact_identity
+        or len(normalized_paths) != len(INTERVIEW_AI_D13_MERGE_CANDIDATE_PATHS)
+        or set(normalized_paths) != set(INTERVIEW_AI_D13_MERGE_CANDIDATE_PATHS)
+    ):
+        errors.append(
+            "Interview AI merge paths must be exactly the pinned 12 relocated "
+            "documents plus PACKAGE_REGISTRY.json for reviewed candidate 52242c4"
+        )
+
+
 def _validate_added_branch_uniqueness(
     branch: str | None,
     origin_lanes: list[dict],
@@ -3782,6 +3883,74 @@ def _exact_interview_ai_d13_lifecycle_fixture_followup_delta(
     expected["updated_at"] = candidate_ledger.get("updated_at")
     expected["interview_ai_d13_lifecycle_fixture_followup"] = (
         INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP
+    )
+    return (
+        candidate_ledger == expected
+        and _utc_timestamp_strictly_advances(
+            candidate_ledger.get("updated_at"), parent_ledger.get("updated_at")
+        )
+    )
+
+
+def _exact_interview_ai_d13_merge_surface_repair_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    """Match only the exact one-commit D13 merge-surface repair."""
+    return (
+        ledger.get("interview_ai_d13_merge_surface_repair")
+        == INTERVIEW_AI_D13_MERGE_SURFACE_REPAIR
+        and package_id == INTERVIEW_AI_D13_MERGE_SURFACE_REPAIR["package"]
+        and facts.get("branch") == INTERVIEW_AI_D13_MERGE_SURFACE_BRANCH
+        and facts.get("origin_main") == INTERVIEW_AI_D13_MERGE_SURFACE_BASE
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(INTERVIEW_AI_D13_MERGE_SURFACE_PATHS)
+    )
+
+
+def _exact_interview_ai_d13_merge_surface_repair_delta(
+    parent_ledger: object,
+    candidate_ledger: object,
+) -> bool:
+    """Prove the D13 merge-surface repair changes no lane or authority."""
+    if not isinstance(parent_ledger, dict) or not isinstance(candidate_ledger, dict):
+        return False
+    if (
+        parent_ledger.get("interview_ai_d13_attestation_registration")
+        != INTERVIEW_AI_D13_ATTESTATION_REGISTRATION
+        or parent_ledger.get("interview_ai_d13_lifecycle_fixture_followup")
+        != INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP
+        or parent_ledger.get("interview_ai_d13_merge_surface_repair") is not None
+        or candidate_ledger.get("interview_ai_d13_merge_surface_repair")
+        != INTERVIEW_AI_D13_MERGE_SURFACE_REPAIR
+    ):
+        return False
+    parent_lane = next(
+        (
+            lane
+            for lane in parent_ledger.get("active_lanes", [])
+            if isinstance(lane, dict)
+            and lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        ),
+        None,
+    )
+    if not isinstance(parent_lane, dict):
+        return False
+    grant_errors: list[str] = []
+    grant = _direction_merge_grant(parent_lane, "Interview AI repair parent", grant_errors)
+    if (
+        grant_errors
+        or not isinstance(grant, dict)
+        or grant.get("reviewed_remote_sha") != INTERVIEW_AI_D13_REVIEWED_SHA
+    ):
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = candidate_ledger.get("updated_at")
+    expected["interview_ai_d13_merge_surface_repair"] = (
+        INTERVIEW_AI_D13_MERGE_SURFACE_REPAIR
     )
     return (
         candidate_ledger == expected
@@ -5928,11 +6097,12 @@ def _direction_main_sequence_facts(
             if sha
         ]
         valid = False
-        if len(commits) == 3 and base == INTERVIEW_AI_D13_ATTESTATION_BASE:
-            attestation_sha, fixture_sha, grant_sha = commits
+        if len(commits) == 4 and base == INTERVIEW_AI_D13_ATTESTATION_BASE:
+            attestation_sha, fixture_sha, grant_sha, surface_sha = commits
             attestation_parent = _git("rev-parse", f"{attestation_sha}^")
             fixture_parent = _git("rev-parse", f"{fixture_sha}^")
             grant_parent = _git("rev-parse", f"{grant_sha}^")
+            surface_parent = _git("rev-parse", f"{surface_sha}^")
             attestation_paths = set(
                 _git_nul(
                     "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
@@ -5951,9 +6121,16 @@ def _direction_main_sequence_facts(
                     grant_sha,
                 )
             )
+            surface_paths = set(
+                _git_nul(
+                    "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                    surface_sha,
+                )
+            )
             parent_ledger = load_ledger_at_ref(attestation_parent)
             attested_ledger = load_ledger_at_ref(attestation_sha)
             fixture_ledger = load_ledger_at_ref(fixture_sha)
+            granted_ledger = load_ledger_at_ref(grant_sha)
             target = next(
                 (
                     lane
@@ -5967,10 +6144,13 @@ def _direction_main_sequence_facts(
                 attestation_parent == base
                 and fixture_parent == attestation_sha
                 and grant_parent == fixture_sha
+                and grant_sha == INTERVIEW_AI_D13_MERGE_SURFACE_BASE
+                and surface_parent == grant_sha
                 and attestation_paths == set(INTERVIEW_AI_D13_ATTESTATION_PATHS)
                 and fixture_paths
                 == set(INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_PATHS)
                 and grant_paths == set(GRANT_ALLOWED_SURFACES)
+                and surface_paths == set(INTERVIEW_AI_D13_MERGE_SURFACE_PATHS)
                 and _exact_interview_ai_d13_attestation_registration_delta(
                     parent_ledger, attested_ledger
                 )
@@ -5978,7 +6158,10 @@ def _direction_main_sequence_facts(
                     attested_ledger, fixture_ledger
                 )
                 and _exact_direction_grant_delta(
-                    fixture_ledger, origin_ledger, package_id
+                    fixture_ledger, granted_ledger, package_id
+                )
+                and _exact_interview_ai_d13_merge_surface_repair_delta(
+                    granted_ledger, origin_ledger
                 )
                 and isinstance(target, dict)
                 and target.get("merge_grant", {}).get("reviewed_remote_sha")
@@ -6396,7 +6579,10 @@ def evaluate_policy(
                 errors.append("merge HEAD must equal the reviewed_remote_sha")
             if facts.get("merge_target_remote_sha") != reviewed_sha:
                 errors.append("merge target remote tip must equal the reviewed_remote_sha")
-            _validate_changed_paths_within_lane(target, facts, "merge", errors)
+            if package_id == INTERVIEW_AI_ARCHITECTURE_PACKAGE:
+                _validate_interview_ai_merge_paths(target, facts, errors)
+            else:
+                _validate_changed_paths_within_lane(target, facts, "merge", errors)
             main_paths = facts.get("merge_main_changed_paths")
             if package_id == OPPORTUNITY_SLATE_PACKAGE:
                 expected_control_commits = 2
@@ -6446,20 +6632,21 @@ def evaluate_policy(
                         "main control commits"
                     )
             elif package_id == INTERVIEW_AI_ARCHITECTURE_PACKAGE:
-                expected_behind = 3
+                expected_behind = 4
                 expected_main_paths = (
                     set(INTERVIEW_AI_D13_ATTESTATION_PATHS)
                     | set(INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_PATHS)
+                    | set(INTERVIEW_AI_D13_MERGE_SURFACE_PATHS)
                     | set(GRANT_ALLOWED_SURFACES)
                 )
                 if facts.get("behind") != expected_behind:
                     errors.append(
-                        "Interview AI merge requires exactly three verified main "
+                        "Interview AI merge requires exactly four verified main "
                         "control commits"
                     )
                 if facts.get("merge_main_control_commit_count") != expected_behind:
                     errors.append(
-                        "Interview AI merge requires exactly three verified main "
+                        "Interview AI merge requires exactly four verified main "
                         "control commits"
                     )
             else:
@@ -6521,11 +6708,12 @@ def evaluate_policy(
                         "ledger-only grant are tolerated"
                     )
             elif package_id == INTERVIEW_AI_ARCHITECTURE_PACKAGE:
-                if facts.get("behind") == 3:
+                if facts.get("behind") == 4:
                     warnings.append(
                         "Interview AI candidate predates main; only the exact "
                         "review-attestation registration, lifecycle-fixture "
-                        "follow-up, and exact ledger-only grant are tolerated"
+                        "follow-up, exact ledger-only grant, and merge-surface "
+                        "repair are tolerated"
                     )
             elif facts.get("behind") == expected_behind:
                 warnings.append(
@@ -7470,6 +7658,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        interview_ai_d13_merge_surface_matches = (
+            _exact_interview_ai_d13_merge_surface_repair_matches(
+                ledger, facts, package_id
+            )
+        )
         if bootstrap_matches:
             allowed_surfaces = set(BOOTSTRAP_CONTROL_REPAIR["allowed_surfaces"])
             warnings.append(
@@ -7556,6 +7749,12 @@ def evaluate_policy(
             warnings.append(
                 "using the exact one-time Interview AI D13 lifecycle-fixture "
                 "follow-up boundary"
+            )
+        elif interview_ai_d13_merge_surface_matches:
+            allowed_surfaces = set(INTERVIEW_AI_D13_MERGE_SURFACE_PATHS)
+            warnings.append(
+                "using the exact one-time Interview AI D13 merge-surface "
+                "repair boundary"
             )
         elif opportunity_schema_release_refresh_matches:
             allowed_surfaces = set(
@@ -8036,6 +8235,51 @@ def evaluate_policy(
                     candidate_baseline,
                     origin_baseline,
                     label="Interview AI D13 lifecycle-fixture follow-up",
+                    errors=errors,
+                )
+            elif interview_ai_d13_merge_surface_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "Interview AI D13 merge-surface repair updated_at must "
+                        "be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "Interview AI D13 merge-surface repair updated_at must "
+                        "strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "Interview AI D13 merge-surface repair may not change "
+                        "activation_policy"
+                    )
+                if _root_changes(ledger, origin_ledger) != {
+                    "updated_at",
+                    "interview_ai_d13_merge_surface_repair",
+                }:
+                    errors.append(
+                        "Interview AI D13 merge-surface repair must change "
+                        "exactly updated_at and its inert record"
+                    )
+                if not _exact_interview_ai_d13_merge_surface_repair_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "Interview AI D13 merge-surface repair must be the "
+                        "exact authority-neutral delta"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="Interview AI D13 merge-surface repair",
                     errors=errors,
                 )
             elif connect_002_merge_admission_repair_matches:
@@ -8831,6 +9075,7 @@ def evaluate_policy(
             and not interview_ai_d13_admission_matches
             and not interview_ai_d13_attestation_matches
             and not interview_ai_d13_lifecycle_fixture_matches
+            and not interview_ai_d13_merge_surface_matches
             and not profile_core_grant_fixture_followup_matches
             and not profile_core_grant_anchor_followup_matches
             and not profile_core_post_grant_registry_fixture_repair_matches
@@ -8945,6 +9190,15 @@ def evaluate_policy(
                 errors.append(
                     "Interview AI D13 lifecycle-fixture follow-up must change "
                     "exactly the owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                interview_ai_d13_merge_surface_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "Interview AI D13 merge-surface repair must change exactly "
+                    "the owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
             if (

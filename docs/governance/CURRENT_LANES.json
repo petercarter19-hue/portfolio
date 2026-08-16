@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-16T23:30:06Z",
+  "updated_at": "2026-08-16T23:40:58Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -173,6 +173,39 @@
     ],
     "reason": "Pete authorized completion of the exact Interview AI D13 sequence. Azure Build 1148 then exposed two test-only lifecycle assumptions: the historical admission and attestation fixtures inherited the later merge grant and temporary merge authority from the current ledger. This inert follow-up makes those fixtures reconstruct their own historical states. It changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, provider call, enablement, or live behavior.",
     "verification_contract": "The preflight recognizes this one-time record only on the exact branch, exact origin/main base, one commit, and the exact three DIRECTION_MERGE_FOLLOWUP_PATHS. The parent must retain the exact Interview AI D13 attestation registration; the ledger may change only updated_at plus this record, and CURRENT_BASELINE must remain byte-identical. The later ordinary grant remains separate and the Interview merge sequence must be attestation, this follow-up, then the ledger-only grant. A later branch, base, record, timestamp, authority, path, or state cannot reuse it."
+  },
+  "interview_ai_d13_merge_surface_repair": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-16-delivery-activation-interview-ai-d13-merge-surface-repair",
+    "origin_main": "854f6268e41220dc908f0b3bf92a8e799670bbd2",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "candidate_contract": {
+      "package": "PS-INTERVIEW-AI-ARCHITECTURE-001",
+      "branch": "work/2026-08-15-interview-ai-architecture",
+      "reviewed_remote_sha": "52242c4ad8c26b5b9061c17aaf083063d42b5875",
+      "allowed_merge_paths": [
+        "docs/governance/PACKAGE_REGISTRY.json",
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/00_CONSOLIDATED_ARCHITECTURE.md",
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/01_GATE_A_CURRENT_SYSTEM_DIAGNOSIS.md",
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/02_GATE_A_ERRATA.md",
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/03_AUTHENTICATED_EVIDENCE.md",
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/10_SECTION_1_CONSTITUTION_VERSIONING_ROUTER.md",
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/11_SECTION_2_ANSWER_COACH_AND_REVISION_PARTNER.md",
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/12_SECTION_3_PRIVATE_HISTORY_AND_ROLE_CONTEXT.md",
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/13_SECTION_4_GROUNDED_AND_GENERIC_EXAMPLES.md",
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/14_SECTION_5_GUARDIANS_TELEMETRY_EVALUATION_ROLLOUT.md",
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/20_INDEPENDENT_REVIEW.md",
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/21_CODEX_RECONCILIATION.md",
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/README.md"
+      ]
+    },
+    "reason": "Pete authorized completion of the exact Interview AI package. The post-grant merge preflight then rejected only PACKAGE_REGISTRY.json because the generic lane-surface check cannot represent the already pinned D13 relocation. This inert repair admits that governance path only for reviewed candidate 52242c4 and its exact 12 target documents. It creates no generic governance-write authority and changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, provider call, enablement, or live behavior.",
+    "verification_contract": "The preflight recognizes this one-time record only on the exact branch, exact origin/main base, one commit, and the exact three DIRECTION_MERGE_FOLLOWUP_PATHS. The parent must retain the exact attestation, lifecycle follow-up, and ledger-only grant. The ledger may change only updated_at plus this record, and CURRENT_BASELINE must remain byte-identical. Candidate merge accepts only exact SHA 52242c4 with exactly the 12 target Markdown files and PACKAGE_REGISTRY.json, and proves the four-commit sequence: attestation, lifecycle follow-up, grant, this repair. A later branch, base, candidate, path, record, timestamp, authority, or state cannot reuse it."
   },
   "implementation_release_preflight_repair": {
     "status": "one_time_owner_authorized_repair",

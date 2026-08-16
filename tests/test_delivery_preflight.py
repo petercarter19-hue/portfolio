@@ -92,6 +92,10 @@ from scripts.delivery_preflight import (
     INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_BASE,
     INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP,
     INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_PATHS,
+    INTERVIEW_AI_D13_MERGE_CANDIDATE_PATHS,
+    INTERVIEW_AI_D13_MERGE_SURFACE_BASE,
+    INTERVIEW_AI_D13_MERGE_SURFACE_PATHS,
+    INTERVIEW_AI_D13_MERGE_SURFACE_REPAIR,
     INTERVIEW_AI_D13_OWNER_DECISION,
     INTERVIEW_AI_D13_OWNER_DECISION_SHA256,
     INTERVIEW_AI_D13_REVIEW_ATTESTATION,
@@ -133,6 +137,8 @@ from scripts.delivery_preflight import (
     _exact_interview_ai_d13_attestation_registration_matches,
     _exact_interview_ai_d13_lifecycle_fixture_followup_delta,
     _exact_interview_ai_d13_lifecycle_fixture_followup_matches,
+    _exact_interview_ai_d13_merge_surface_repair_delta,
+    _exact_interview_ai_d13_merge_surface_repair_matches,
     _exact_interview_ai_relocation_write,
     _is_shell_reviewed_shared_foundation_lane,
     _exact_connect_002_merge_admission_repair_delta,
@@ -2145,6 +2151,86 @@ with patch.object(
             origin_baseline=baseline,
         )
         self.assertTrue(forged_errors)
+
+    def test_interview_ai_d13_merge_surface_repair_is_exact_and_candidate_bound(self):
+        origin = load_ledger_at_ref(INTERVIEW_AI_D13_MERGE_SURFACE_BASE)
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-16T23:40:58Z"
+        candidate["interview_ai_d13_merge_surface_repair"] = copy.deepcopy(
+            INTERVIEW_AI_D13_MERGE_SURFACE_REPAIR
+        )
+        baseline = load_baseline_bytes_at_ref(INTERVIEW_AI_D13_MERGE_SURFACE_BASE)
+        exact_facts = facts(
+            branch=INTERVIEW_AI_D13_MERGE_SURFACE_REPAIR["branch"],
+            origin_main=INTERVIEW_AI_D13_MERGE_SURFACE_BASE,
+            ahead=1,
+            behind=0,
+            changed_paths=sorted(INTERVIEW_AI_D13_MERGE_SURFACE_PATHS),
+        )
+        self.assertTrue(
+            _exact_interview_ai_d13_merge_surface_repair_matches(
+                candidate, exact_facts, "PS-DELIVERY-CONTROL-001"
+            )
+        )
+        self.assertTrue(
+            _exact_interview_ai_d13_merge_surface_repair_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("merge-surface" in item for item in warnings))
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+
+        merge_facts = facts(
+            branch=INTERVIEW_AI_ARCHITECTURE_BRANCH,
+            head=INTERVIEW_AI_D13_REVIEWED_SHA,
+            behind=4,
+            changed_paths=sorted(INTERVIEW_AI_D13_MERGE_CANDIDATE_PATHS),
+            merge_target_remote_sha=INTERVIEW_AI_D13_REVIEWED_SHA,
+            merge_main_changed_paths=sorted(
+                INTERVIEW_AI_D13_ATTESTATION_PATHS
+                | INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_PATHS
+                | INTERVIEW_AI_D13_MERGE_SURFACE_PATHS
+                | GRANT_ALLOWED_SURFACES
+            ),
+            merge_main_control_commit_count=4,
+            merge_main_control_commits_valid=True,
+        )
+        merge_errors, _ = evaluate_policy(
+            candidate,
+            merge_facts,
+            INTERVIEW_AI_ARCHITECTURE_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=candidate,
+        )
+        self.assertEqual([], merge_errors)
+
+        extra_path = {
+            **merge_facts,
+            "changed_paths": [
+                *merge_facts["changed_paths"],
+                "docs/governance/CURRENT_LANES.json",
+            ],
+        }
+        extra_errors, _ = evaluate_policy(
+            candidate,
+            extra_path,
+            INTERVIEW_AI_ARCHITECTURE_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=candidate,
+        )
+        self.assertTrue(
+            any("pinned 12 relocated" in item for item in extra_errors)
+        )
 
     def test_interview_ai_d13_attestation_is_exact_inert_and_grant_ready(self):
         origin, candidate, baseline, exact_facts = (
