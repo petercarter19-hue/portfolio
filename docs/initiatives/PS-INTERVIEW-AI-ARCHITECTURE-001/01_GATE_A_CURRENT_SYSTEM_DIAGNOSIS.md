@@ -6,6 +6,22 @@
 **Live observation:** `https://peerslate.com`, anonymous only, 2026-08-15
 **Runtime effect of this document:** none.
 
+> ## ⚠ Superseded on seven points — read the errata first
+>
+> [`02_GATE_A_ERRATA.md`](02_GATE_A_ERRATA.md) corrects this document and **overrides
+> it wherever they disagree**. This original text is preserved unedited as the audit
+> record; it is not the current statement of fact.
+>
+> Corrected here: the provider client is **not unbounded** (E1 — `anthropic==0.112.0`
+> supplies a 600s/2-retry default; what is missing is a deliberate PeerSlate policy);
+> the base64 envelope is **not a deterministic anti-injection guarantee** (E2);
+> content-free logging applies **only** to the deliberate validation path (E3);
+> browser-local History **can** be deleted locally, per-record and in bulk (E4);
+> only two endpoints plus the Studio route were anonymously observed (E5); the
+> 60–120s finding is now anchored to deployed SHA `f42e5399` and **strengthened**
+> (E6); and Gate A was **merged before owner acceptance without merge authority**
+> (E7).
+
 ## Evidence classification
 
 Every statement below carries one of four labels. Nothing is asserted without one.
