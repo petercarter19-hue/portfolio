@@ -1,17 +1,19 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-15T21:52:40Z",
+  "updated_at": "2026-08-15T23:10:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "controlled_idle",
+    "state": "active_delivery",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [],
+    "writes_allowed_for": [
+      "PS-INTERVIEW-AI-ARCHITECTURE-001"
+    ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -27,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-TRUST-SAFETY-001 is paused and preserved. No active writer lanes remain; activate an exact implementation or direction/authority outcome before repository writes."
+    "exit_authority": "Active direction-authority writer: PS-INTERVIEW-AI-ARCHITECTURE-001. It may produce the Interview Studio AI current-system diagnosis and architecture candidate on its recorded documentation and evidence surfaces. It grants no runtime, prompt, provider, model, schema, retrieval, material visual, merge, deployment, configuration, enablement, or live authority. PS-TRUST-SAFETY-001 remains paused and preserved."
   },
   "activation_policy": {
     "enabled": true,
@@ -1690,7 +1692,61 @@
       ]
     }
   ],
-  "active_lanes": [],
+  "active_lanes": [
+    {
+      "package": "PS-INTERVIEW-AI-ARCHITECTURE-001",
+      "outcome": "Produce the owner-reviewable Interview Studio AI architecture in two gates under Pete's 2026-08-15 handoff. Gate A returns a cited current-system diagnosis that separates confirmed behavior, source-supported inference, live observation, and unverified behavior, and stops for Pete and Codex review. Gate B, only after diagnosis acceptance, produces the architecture in reviewable increments (shared constitution/versioning and Diagnostician/Router; Answer Coach and Revision Partner; Private History Nudge and private retrieval; Grounded and Generic Examples; consolidated orchestration, evaluation, failure, rollback, and implementation sequence) followed by one consolidated package. Translate the accepted direction into versioned specialist instructions, deterministic guardians, knowledge manifests, schemas, evaluation design, telemetry, rollback, and bounded future implementation packages without changing runtime.",
+      "branch": "work/2026-08-15-interview-ai-architecture",
+      "writer": "Claude session holding Pete's 2026-08-15 Interview AI architecture handoff is the sole writer.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "direction_authority",
+      "exclusive_domains": [
+        "product:interview-studio-ai-architecture"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main f7a71739e7a0d88c184f7deee0b0df0e2444a0dc at activation, the exact SHA named by Pete's handoff. Control state was controlled_idle with no active writers. Parent PS-AI-AGENT-QUALITY-ROUND-2-001 is paused and preserved and is not resumed by this lane; its accepted direction files are read-only authority here.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/",
+        "artifacts/2026-08-15-interview-ai-architecture/"
+      ],
+      "exclusions": [
+        "no application, route, template, stylesheet, JavaScript, test, prompt, model, provider, schema, migration, index, API, configuration, dependency, pipeline, deployment, production-data, or live-behavior change",
+        "no runtime implementation, paid provider call, evaluation execution, production member data use, or launch-threshold selection; Wave 1 means design the evaluation execution plan only",
+        "no provider switch, Azure AI Search deployment, or premature retrieval implementation",
+        "no Opportunity Slate AI, Ask Pete, Workshop AI, O*NET, Community, Profile, or Journal architecture or implementation inside this child package",
+        "no independent redesign of Role Context; integrate with the existing PS-INTERVIEW-ROLE-CONTEXT-001 contract and preserve its recorded authority",
+        "no resumption, rewrite, or supersession of the paused parent PS-AI-AGENT-QUALITY-ROUND-2-001",
+        "no material Interview Studio visual redesign; a material visual decision returns to ChatGPT and Pete as a concise brief under the visual-integrity standard",
+        "no Interview Session product object, New Session gate, fixed question count, time limit, or universal answer-length rule",
+        "no grant, merge, deployment, enablement, or live claim before Pete and Codex review the candidate"
+      ],
+      "completion_evidence": [
+        "Gate A returns a cited current-state map covering endpoints and UI callers, the review/improve/nudge/grounded-example/generic-example jobs, prompt construction, provider and model configuration with timeout/retry/latency/usage/cost visibility, input normalization and output validation, server-derived identity and authorization-before-retrieval, source-class boundaries, persistence and History behavior, telemetry content-safety, test coverage and gaps, and every discrepancy between current code, live behavior, and the accepted direction",
+        "Gate A evidence is explicitly classified as confirmed behavior, source-supported inference, live observation, or unverified behavior, with no production member answer used as a fixture",
+        "Pete and Codex accept the diagnosis before any Gate B increment begins",
+        "Gate B increments each carry purpose, input manifest, output schema, deterministic guardians, failure behavior, evaluation slice, and version identity for their specialists",
+        "a decision-to-enforcement matrix maps every accepted rule to a prompt, deterministic guardian, data/authorization control, schema, UI contract, evaluation, or release control, and assigns no privacy or authorization rule to a prompt alone",
+        "the consolidated package states one recommendation with rejected alternatives, the smallest safe first implementation slice with dependency order and rollback, and an owner decision register separating recommendations from questions Pete must answer",
+        "a proportional completion record and complete-diff self-review confirm every repository change is documentation or evidence only and the package grants no runtime authority"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-15",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete directed 'Proceed with Interview AI first.' This is Pete's latest owner decision and deliberately changes the earlier sequence recorded in docs/initiatives/PS-AI-AGENT-QUALITY-ROUND-2-001/OWNER_DECISION_CLOSEOUT_2026-08-15.md, which named the Opportunity Slate read-first diagnostic as the next activation. Opportunity Slate remains a required protected diagnostic and is queued, not canceled; it does not precede this Interview AI architecture assignment."
+        },
+        {
+          "date": "2026-08-15",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete accepted the reviewer's corrections to the handoff: use a direction_authority lane with production_capable false while keeping the Protected delivery path because this concerns consequential AI, private retrieval, authorization, and future data boundaries; use child package PS-INTERVIEW-AI-ARCHITECTURE-001; split delivery into Gate A diagnosis and Gate B staged architecture; preserve and integrate with PS-INTERVIEW-ROLE-CONTEXT-001; resolve the reading list to complete repository paths; and treat Wave 1 as evaluation-plan design only."
+        }
+      ],
+      "cleanup_contract": "After a verified merge and formal close, remove only this task's clean activation and package worktrees and branches behind recovery refs. Preserve the paused parent package, the Role Context package, and every unrelated or dirty worktree, branch, stash, artifact, and user-authored file.",
+      "sequence": "activation-only control PR -> clean package worktree from resulting origin/main -> Gate A diagnosis -> Pete and Codex review and acceptance -> Gate B staged architecture increments -> consolidated architecture package -> documentation PR with [skip ci] -> formal close -> separately activate the first Protected Interview AI runtime slice"
+    }
+  ],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",

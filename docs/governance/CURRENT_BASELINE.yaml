@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "No active writer lanes. PS-TRUST-SAFETY-001 is paused and preserved; activate an exact implementation or direction/authority outcome before repository writes."
+  current_assignments: "Active direction-authority writer: PS-INTERVIEW-AI-ARCHITECTURE-001 on work/2026-08-15-interview-ai-architecture."
 
 governing_documents:
   bible:
@@ -58,6 +58,9 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
+  - id: PS-INTERVIEW-AI-ARCHITECTURE-001
+    status: active_delivery
+    scope: "Planning-only Interview Studio AI architecture in two gates: Gate A current-system diagnosis, then Gate B staged specialist architecture after owner acceptance. No runtime, prompt, provider, model, schema, retrieval, evaluation-execution, material visual, merge, deployment, or live authority."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -151,7 +154,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "No active writer lanes. Select and activate the next exact outcome under the three-lane class, path, and exclusive-domain rules."
+next_gate: "Return PS-INTERVIEW-AI-ARCHITECTURE-001 Gate A, the Interview Studio AI current-system diagnosis, to Pete and Codex for review. Begin Gate B staged architecture only after they accept the diagnosis; the Opportunity Slate protected diagnostic remains queued behind it."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
