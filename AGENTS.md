@@ -69,6 +69,11 @@ evidence, not default reading or additional gates.
 - The writer implements, validates, and self-reviews once. Manager handoff and
   independent review occur only for an actual transfer, cross-lane conflict,
   Protected risk trigger, package requirement, or owner request.
+- For package-manager and specialist selection, follow
+  [AI model and role routing](docs/AI_MODEL_AND_ROLE_ROUTING.md). Overall audit
+  manager, package manager, material visual creator, architect, writer,
+  reviewer, and release owner are separate assignments; no role silently
+  inherits another.
 - Candidate, Launch, Operate, Retire, full-site audits, and visual acceptance
   are event/risk-driven. They must not block unrelated Routine or Bounded work.
 

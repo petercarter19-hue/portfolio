@@ -4,7 +4,7 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-15"
+updated_at: "2026-08-16"
 
 authority:
   remote: origin
@@ -39,6 +39,8 @@ governing_documents:
     path: "docs/governance/DECISIONS.md"
   delivery_workflow:
     path: "docs/AI_WORKFLOW.md"
+  model_and_role_routing:
+    path: "docs/AI_MODEL_AND_ROLE_ROUTING.md"
   current_lanes:
     version: "1"
     path: "docs/governance/CURRENT_LANES.json"

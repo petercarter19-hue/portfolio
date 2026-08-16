@@ -33,9 +33,12 @@ alone does not establish independent review.
 
 ## Stable role rules
 
-- Each package names exactly one manager and one active writer. The manager
-  owns product decisions, scope, sequencing, shared-governance reservations,
-  visual authority, conflict resolution, and final scope/product readiness.
+- Every package activated or transferred under this rule names exactly one
+  package manager and one active writer. A package already active on 2026-08-16
+  records its manager at its next handoff. The manager owns product decisions,
+  scope, sequencing, shared-governance reservations, custody and routing of
+  locked visual authority, conflict resolution, and final scope/product
+  readiness.
 - The architect is used only for new or materially changed architecture. Preserve
   its accepted package; a second architect is an escalation, not normal process.
 - The writer owns implementation, complete-diff self-review, corrections, tests,
@@ -50,6 +53,55 @@ alone does not establish independent review.
   gaps, and forbidden scope—not a chat transcript.
 - A governance-only package may assign its manager as sole writer when no second
   writer is active; it still receives complete-diff review and applicable tests.
+
+## Package manager and specialist routing
+
+PeerSlate has two management levels. The overall site-audit manager owns the
+global package map, dependency order, status, and dispatch. It does not
+automatically manage each package. Each active package names exactly one package
+manager when it is activated or transferred; an older active package does so at
+its next handoff. The manager owns that bounded package through one truthful
+package-exit record.
+Selection is based on the package outcome and evidence needed, not vendor
+preference.
+
+| Primary outcome or evidence | Default package manager | Use when |
+|---|---|---|
+| Member experience and product readiness | **ChatGPT Work** | The package benefits materially from connected files, live or on-screen signed-in review, responsive or device evidence, voice or dictation testing, multi-source synthesis, owner decision capture, or coordination across visual and technical specialists. ChatGPT Work is the default package manager for substantial product and experience packages with these needs. |
+| Repository and technical truth | **Codex** | The primary work is repository evidence, code, tests, security, schema, backend, protected operations, Azure PR/pipeline truth, or release reconciliation. Codex may manage a bounded technical package directly. |
+| Explicit Claude planning coordination | **Claude Co-Work** | The active package expressly assigns cross-artifact planning, architecture coordination, or a Claude-centered delivery lane. Claude Co-Work management is distinct from Claude Code writing. |
+
+Codex is the default manager when the primary outcome is repository truth,
+code, tests, security, schema, backend, protected operations, or release
+evidence. Claude Co-Work is selected only by an explicit active-package
+assignment.
+
+ChatGPT Work is not mandatory for every package. A Routine or simple Bounded
+package may be self-managed by its sole writer when a separate manager would
+only repeat the writer's review; the package still records that assignment.
+Being package manager grants no repository, writer, merge, release, deployment,
+credential, or production-operator authority. Codex or Claude writes only when
+the active package separately names that writer, branch, and mutable surface.
+
+Original ChatGPT is the sole creator of new or materially revised
+production-intent visual authority. It works directly with Pete during visual
+revisions, then returns the exact accepted artifacts and state set to the
+package manager. Visual assignment does not make Original ChatGPT the package
+manager, architect, writer, reviewer, or release owner. ChatGPT Work may gather
+and redact current signed-in evidence, brief the visual specialist, and compare
+the accepted result with the live surface; it may not originate or substitute
+material visual direction.
+
+A package may name Claude or Codex as its architect. Architecture does not grant
+manager or writer authority. Specialists return their accepted artifacts and
+evidence to the package manager. The package manager returns one package-exit
+record to the overall site-audit manager; only a genuine cross-package or
+authority conflict bypasses that normal return path.
+
+For authenticated work, Pete completes sign-in, MFA, recovery, and credential
+entry himself. An agent may use an already signed-in visible session within the
+package scope, but it never requests, records, exports, or persists passwords,
+session cookies, access tokens, recovery codes, or private session files.
 
 ## Mandatory independent-review triggers
 
@@ -135,7 +187,7 @@ real architecture question.
 ## Visual workflow
 
 ```text
-ChatGPT creates the complete production-intent visual and state set
+Original ChatGPT creates the complete production-intent visual and state set
 → Pete selects and locks one exact durable authority
 → manager records interaction, truth, and accessibility contract
 → package records whether Pete or the assigned writer/agent is the visual inspector
@@ -153,19 +205,20 @@ ChatGPT creates the complete production-intent visual and state set
 → Azure release evidence and live verification
 ```
 
-ChatGPT is the sole visual-creation surface for new or materially revised
-PeerSlate authority. This rule covers concepts, mockups, storyboards, responsive
-and state sets, style exploration, and image generation or editing. Authorities
-Pete locked before 2026-07-24 remain valid until materially revised. Codex and
-Claude implementers may translate the exact locked authority into code, capture
-implementation screenshots, report parity, usability, truth, or accessibility
-findings, and make documented non-material adaptations for semantic structure,
-focus, WCAG contrast, touch targets, reduced motion, truthful state wiring, or
-text reflow. Those evidence and implementation activities are not new visual
-design. Claude Chat, Co-Work, Code, and Design may not originate or substitute
-the visual authority. A change to composition, hierarchy, dominant
-object/action, typography family, color language, or responsive interaction
-model is material and returns to ChatGPT and Pete for a revised exact lock.
+Original ChatGPT is the sole visual-creation surface for new or materially
+revised PeerSlate authority. This rule covers concepts, mockups, storyboards,
+responsive and state sets, style exploration, and image generation or editing.
+Authorities Pete locked before 2026-07-24 remain valid until materially revised.
+Codex and Claude implementers may translate the exact locked authority into
+code, capture implementation screenshots, report parity, usability, truth, or
+accessibility findings, and make documented non-material adaptations for
+semantic structure, focus, WCAG contrast, touch targets, reduced motion,
+truthful state wiring, or text reflow. Those evidence and implementation
+activities are not new visual design. ChatGPT Work, Codex, Claude Chat,
+Co-Work, Code, and Design may not originate or substitute the visual authority.
+A change to composition, hierarchy, dominant object/action, typography family,
+color language, or responsive interaction model is material and returns to
+Original ChatGPT and Pete for a revised exact lock.
 
 When implementation is based on an approved mockup, that exact mockup remains
 the primary visual authority throughout delivery; neither the current build nor
@@ -218,11 +271,11 @@ Every substantial handoff contains:
   periodically verified model-version authority.
 - **PS-AI-OPS-010:** Cross-vendor work is used only for a bounded independent
   risk question, never to duplicate the delivery route.
-- **PS-AI-OPS-011:** ChatGPT is the sole creator of new or materially revised
-  production-intent visual authority. Existing Pete-locked authorities remain
-  valid; implementation/review agents may compare and make documented
-  non-material accessibility, truth, and reflow adaptations, but may not create
-  a competing or substitute design.
+- **PS-AI-OPS-011:** Original ChatGPT is the sole creator of new or materially
+  revised production-intent visual authority. Existing Pete-locked authorities
+  remain valid; ChatGPT Work and implementation/review agents may compare and
+  make documented non-material accessibility, truth, and reflow adaptations,
+  but may not create a competing or substitute design.
 - **PS-AI-OPS-012:** An approved mockup remains the primary authority throughout
   implementation and review. When Pete is not personally performing the visual
   inspection, the writer repeatedly renders, compares, records, refines, and

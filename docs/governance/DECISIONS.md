@@ -808,3 +808,26 @@ can push it all the way to deployment."
   for a plumbing change with no visitor-visible effect, which is exactly the
   friction the owner declined to carry. This supersedes the 2026-08-08
   reviewer-policy decision.
+
+## 2026-08-16 - Separate audit, package-manager, and specialist roles
+
+- Owner direction: the overall site-audit manager owns the global package map,
+  order, status, and dispatch. Each newly activated or transferred package names
+  exactly one manager selected for its outcome and evidence; older active work
+  records that manager at its next handoff.
+- ChatGPT Work is the default manager for substantial product and experience
+  packages that materially benefit from connected files, signed-in/on-screen
+  review, device, voice, or responsive evidence, owner decision capture, or
+  coordination across specialists. It is not mandatory when those capabilities
+  add no value.
+- Codex is the default manager for bounded repository, technical, security,
+  schema, backend, test, and release-evidence outcomes. Claude Co-Work may manage
+  a package only when the active initiative explicitly assigns it.
+- Original ChatGPT remains the sole creator of new or materially revised
+  production-intent visual authority and may work directly with Pete. This
+  supersedes older generic wording that treated ChatGPT Work as the creator;
+  Work may gather evidence, coordinate, and validate, but may not originate the
+  visual authority.
+- Management and architecture grant no repository, credential, merge, release,
+  deployment, or production authority. Routine or simple Bounded work may
+  remain self-managed when another manager would only duplicate review.

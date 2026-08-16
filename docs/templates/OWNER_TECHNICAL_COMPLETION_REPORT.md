@@ -8,6 +8,8 @@ applied.
 
 - Task/package and delivery path: Routine / Bounded / Protected
 - Outcome and member/site effect:
+- Package manager and why (including ChatGPT Work yes/no when relevant):
+- Triggered specialists and return target:
 - Branch, base SHA, final SHA, and changed paths:
 - Verification performed and result:
 - Release state: local only / PR / merged / pipeline verified / live verified

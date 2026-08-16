@@ -36,6 +36,16 @@ class LeanStartupTests(unittest.TestCase):
             self.assertIn("Bounded", body)
             self.assertIn("Protected", body)
 
+    def test_manager_and_specialist_routing_is_visible_at_startup(self):
+        body = _read("AGENTS.md")
+        self.assertIn(
+            "[AI model and role routing](docs/AI_MODEL_AND_ROLE_ROUTING.md)",
+            body,
+        )
+        normalized = " ".join(body.split())
+        self.assertIn("Overall audit manager, package manager", normalized)
+        self.assertIn("no role silently inherits another", normalized)
+
     def test_startup_is_safe_and_proportional(self):
         body = _read("START_HERE.md")
         self.assertIn("git status --short --branch", body)
@@ -85,6 +95,13 @@ class ControlPlaneTests(unittest.TestCase):
         self.assertEqual(
             "docs/governance/PeerSlate_Roadmap_v3.0.md",
             governing["roadmap"]["path"],
+        )
+
+    def test_model_and_role_routing_pointer_is_canonical(self):
+        governing = self.data["governing_documents"]
+        self.assertEqual(
+            "docs/AI_MODEL_AND_ROLE_ROUTING.md",
+            governing["model_and_role_routing"]["path"],
         )
 
     def test_all_current_paths_exist(self):
@@ -183,6 +200,29 @@ class ControlPlaneTests(unittest.TestCase):
 
 
 class ProductTrustTests(unittest.TestCase):
+    def test_package_manager_routing_stays_clear_and_bounded(self):
+        body = " ".join(
+            _read("docs", "AI_MODEL_AND_ROLE_ROUTING.md").split()
+        )
+        for phrase in (
+            "Every package activated or transferred under this rule names exactly one package manager",
+            "records its manager at its next handoff",
+            "Selection is based on the package outcome and evidence needed",
+            "ChatGPT Work is not mandatory for every package",
+            "Codex is the default manager when the primary outcome is repository truth",
+            "Claude Co-Work management is distinct from Claude Code writing",
+            "Visual assignment does not make Original ChatGPT the package manager",
+            "Being package manager grants no repository, writer, merge, release, deployment, credential, or production-operator authority",
+            "The package manager returns one package-exit record to the overall site-audit manager",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, body)
+        completion = _read(
+            "docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md"
+        )
+        self.assertIn("Package manager and why", completion)
+        self.assertIn("Triggered specialists and return target", completion)
+
     def test_constitution_retains_the_trust_contract(self):
         body = _read("docs", "governance", "PeerSlate_Constitution_v3.0.md")
         normalized = " ".join(body.split())
@@ -232,12 +272,24 @@ class ProductTrustTests(unittest.TestCase):
             ("AGENTS.md",),
             ("CLAUDE.md",),
             ("docs", "AI_WORKFLOW.md"),
+            ("docs", "AI_MODEL_AND_ROLE_ROUTING.md"),
             ("docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md"),
         ):
             body = _read(*parts)
             self.assertIn("ChatGPT", body)
             self.assertRegex(body, r"(?i)creat(e|es|or)")
             self.assertRegex(body, r"(?i)material")
+        authority = " ".join(
+            _read("docs", "AI_MODEL_AND_ROLE_ROUTING.md").split()
+        )
+        self.assertIn(
+            "Original ChatGPT is the sole creator of new or materially revised production-intent visual authority",
+            authority,
+        )
+        self.assertIn(
+            "ChatGPT Work, Codex, Claude Chat, Co-Work, Code, and Design may not originate or substitute the visual authority",
+            authority,
+        )
 
     def test_protected_release_controls_are_triggered(self):
         body = " ".join(_read("docs", "initiatives", "PS-OPS-001", "README.md").replace(">", "").split())
