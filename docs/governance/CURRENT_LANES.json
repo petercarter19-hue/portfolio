@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-16T23:20:24Z",
+  "updated_at": "2026-08-16T23:30:06Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -15,7 +15,9 @@
       "PS-INTERVIEW-AI-ARCHITECTURE-001",
       "PS-PORTABLE-SESSION-MANAGER-002"
     ],
-    "merge_allowed_for": [],
+    "merge_allowed_for": [
+      "PS-INTERVIEW-AI-ARCHITECTURE-001"
+    ],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -1840,6 +1842,41 @@
           "conditions": "Register the exact independent review in origin/main; then use a separate ledger-only grant; merge PR 502 only after its fresh exact-source/target preview and all required policies pass; formally close only after the verified merge. No release, deployment, runtime, provider-call, evaluation-execution, enablement, or live authority is granted."
         }
       ],
+      "merge_grant": {
+        "authorized_by": "Pete",
+        "authority_decision_index": 6,
+        "authority_decision_sha256": "af7cea5825ce1be7bf75221ffb9e6f38acb572807da524e78722d0984796c0cb",
+        "independent_review": {
+          "reviewer_task": "/root/interview_relocated_exact_review",
+          "reviewer_mode": "independent_read_only_non_writer",
+          "reviewed_sha": "52242c4ad8c26b5b9061c17aaf083063d42b5875",
+          "reviewed_branch": "work/2026-08-15-interview-ai-architecture",
+          "verdict": "ACCEPT",
+          "verdict_text": "ACCEPT — exact SHA/base/clean/one-commit verified; local D13 preflight passes; 12 target Markdown files exactly present and source absent; registry exactly once in future_finish at 23/116; 3 targeted tests pass; 29/29 local Markdown links resolve; 00/README/21 consistently record accepted v2.8 and D3/D8/D9, PR502 withholding, authority-neutral relocation; changed paths are docs/registry only and no status-edit architecture contradiction found.",
+          "verdict_sha256": "cde3ad5e86685b4ac3e89efba5467f1903390d457b30bdcdbcc0abc4992affc3",
+          "basis": [
+            "full_tree_at_52242c4ad8c26b5b9061c17aaf083063d42b5875",
+            "complete_diff_b4d79b217b1b8b68128a5271031390bb2be521b6_to_52242c4ad8c26b5b9061c17aaf083063d42b5875",
+            "d13_preflight_pass_12_target_markdown_source_absent_registry_future_finish_23_of_116",
+            "targeted_tests_3_of_3_and_local_markdown_links_29_of_29_pass",
+            "normative_00_readme_21_authority_and_status_consistency_pass"
+          ],
+          "scope": "direction_package_acceptance_and_merge_only",
+          "exclusions": "runtime_schema_deployment_enablement",
+          "evidence_path": "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/21_CODEX_RECONCILIATION.md",
+          "evidence_git_blob_sha": "f64283e3410e53b3024f5d3c6436d438cce90cd7",
+          "evidence_bytes_sha256": "4324122b7d2f8006716ee31d12ad709a09c231ac3728c97c4d42294fb65d7175",
+          "received_by": "Root Codex program manager",
+          "received_date": "2026-08-16",
+          "attestation_sha256": "421aa64fa12e4a9c6159c42b0b6c73cfb617f58c315194b7a8781aff8734e1b5"
+        },
+        "reviewed_remote_sha": "52242c4ad8c26b5b9061c17aaf083063d42b5875",
+        "granted_at": "2026-08-16T23:30:06Z",
+        "review_result": "pass",
+        "review_evidence_paths": [
+          "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/21_CODEX_RECONCILIATION.md"
+        ]
+      },
       "cleanup_contract": "After a verified merge and formal close, remove only this task's clean activation and package worktrees and branches behind recovery refs. Preserve the paused parent package, the Role Context package, and every unrelated or dirty worktree, branch, stash, artifact, and user-authored file.",
       "sequence": "activation-only control PR -> Gate A diagnosis and acceptance (completed) -> separately authorized Gate B staged architecture and consolidated v2.8 package (completed) -> D13 admission control PR -> integrate that exact main into the package branch -> relocate the package and add its exact future_finish registry entry -> fresh author sweep, internal review, and independent Codex review -> Pete approves or rejects the exact relocated SHA -> separate code-controlled review-attestation admission -> separate ledger-only merge grant -> fresh PR 502 merge preview and policy build -> merge only if all exact-SHA gates pass -> formal close -> separately activate the first Protected Interview AI runtime slice"
     },
