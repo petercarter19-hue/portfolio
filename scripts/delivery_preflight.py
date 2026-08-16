@@ -1589,6 +1589,134 @@ INTERVIEW_AI_RELOCATION_PATHS = (
     | {INTERVIEW_AI_REGISTRY_PATH}
 )
 
+INTERVIEW_AI_D13_REVIEWED_SHA = (
+    "52242c4ad8c26b5b9061c17aaf083063d42b5875"
+)
+INTERVIEW_AI_D13_ATTESTATION_BASE = (
+    "b4d79b217b1b8b68128a5271031390bb2be521b6"
+)
+INTERVIEW_AI_D13_ATTESTATION_BRANCH = (
+    "work/2026-08-16-delivery-activation-interview-ai-d13-attestation"
+)
+INTERVIEW_AI_D13_OWNER_DECISION = {
+    "date": "2026-08-16",
+    "authorized_by": "Pete",
+    "status": "authorized_subject_to_exact_policy_gates",
+    "decision": "direction_package_merge_authority",
+    "action": "grant_then_merge_then_close",
+    "scope": "direction_package_only",
+    "package": INTERVIEW_AI_ARCHITECTURE_PACKAGE,
+    "reviewed_remote_sha": INTERVIEW_AI_D13_REVIEWED_SHA,
+    "pull_request": 502,
+    "verbatim_approval": "I approve. Be done with this.",
+    "conditions": (
+        "Register the exact independent review in origin/main; then use a "
+        "separate ledger-only grant; merge PR 502 only after its fresh exact-"
+        "source/target preview and all required policies pass; formally close "
+        "only after the verified merge. No release, deployment, runtime, "
+        "provider-call, evaluation-execution, enablement, or live authority "
+        "is granted."
+    ),
+}
+INTERVIEW_AI_D13_OWNER_DECISION_SHA256 = (
+    "af7cea5825ce1be7bf75221ffb9e6f38acb572807da524e78722d0984796c0cb"
+)
+INTERVIEW_AI_D13_REVIEW_ATTESTATION = {
+    "reviewer_task": "/root/interview_relocated_exact_review",
+    "reviewer_mode": "independent_read_only_non_writer",
+    "reviewed_sha": INTERVIEW_AI_D13_REVIEWED_SHA,
+    "reviewed_branch": INTERVIEW_AI_ARCHITECTURE_BRANCH,
+    "verdict": "ACCEPT",
+    "verdict_text": (
+        "ACCEPT — exact SHA/base/clean/one-commit verified; local D13 preflight "
+        "passes; 12 target Markdown files exactly present and source absent; "
+        "registry exactly once in future_finish at 23/116; 3 targeted tests "
+        "pass; 29/29 local Markdown links resolve; 00/README/21 consistently "
+        "record accepted v2.8 and D3/D8/D9, PR502 withholding, authority-neutral "
+        "relocation; changed paths are docs/registry only and no status-edit "
+        "architecture contradiction found."
+    ),
+    "verdict_sha256": (
+        "cde3ad5e86685b4ac3e89efba5467f1903390d457b30bdcdbcc0abc4992affc3"
+    ),
+    "basis": [
+        "full_tree_at_52242c4ad8c26b5b9061c17aaf083063d42b5875",
+        "complete_diff_b4d79b217b1b8b68128a5271031390bb2be521b6_to_"
+        "52242c4ad8c26b5b9061c17aaf083063d42b5875",
+        "d13_preflight_pass_12_target_markdown_source_absent_registry_"
+        "future_finish_23_of_116",
+        "targeted_tests_3_of_3_and_local_markdown_links_29_of_29_pass",
+        "normative_00_readme_21_authority_and_status_consistency_pass",
+    ],
+    "scope": "direction_package_acceptance_and_merge_only",
+    "exclusions": "runtime_schema_deployment_enablement",
+    "evidence_path": (
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/"
+        "21_CODEX_RECONCILIATION.md"
+    ),
+    "evidence_git_blob_sha": "f64283e3410e53b3024f5d3c6436d438cce90cd7",
+    "evidence_bytes_sha256": (
+        "4324122b7d2f8006716ee31d12ad709a09c231ac3728c97c4d42294fb65d7175"
+    ),
+    "received_by": "Root Codex program manager",
+    "received_date": "2026-08-16",
+}
+INTERVIEW_AI_D13_REVIEW_ATTESTATION["attestation_sha256"] = (
+    "421aa64fa12e4a9c6159c42b0b6c73cfb617f58c315194b7a8781aff8734e1b5"
+)
+INTERVIEW_AI_D13_ATTESTATION_REGISTRATION = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": INTERVIEW_AI_D13_ATTESTATION_BRANCH,
+    "origin_main": INTERVIEW_AI_D13_ATTESTATION_BASE,
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "candidate_contract": {
+        "package": INTERVIEW_AI_ARCHITECTURE_PACKAGE,
+        "branch": INTERVIEW_AI_ARCHITECTURE_BRANCH,
+        "reviewed_remote_sha": INTERVIEW_AI_D13_REVIEWED_SHA,
+        "owner_decision_sha256": INTERVIEW_AI_D13_OWNER_DECISION_SHA256,
+        "reviewer_task": INTERVIEW_AI_D13_REVIEW_ATTESTATION["reviewer_task"],
+        "review_attestation_sha256": (
+            INTERVIEW_AI_D13_REVIEW_ATTESTATION["attestation_sha256"]
+        ),
+        "review_evidence_path": INTERVIEW_AI_D13_REVIEW_ATTESTATION["evidence_path"],
+        "review_evidence_git_blob_sha": (
+            INTERVIEW_AI_D13_REVIEW_ATTESTATION["evidence_git_blob_sha"]
+        ),
+        "review_evidence_bytes_sha256": (
+            INTERVIEW_AI_D13_REVIEW_ATTESTATION["evidence_bytes_sha256"]
+        ),
+    },
+    "reason": (
+        "Pete approved the exact relocated Interview AI v2.8 candidate after "
+        "fresh independent review. This inert registration hard-pins that exact "
+        "candidate, review, evidence, and owner decision so a later ordinary "
+        "ledger-only grant can be validated. It grants no authority itself."
+    ),
+    "verification_contract": (
+        "The preflight recognizes this one-time record only on the exact branch, "
+        "exact origin/main base, one commit, and three control paths. The ledger "
+        "may change only updated_at, this record, and one exact owner decision "
+        "appended to the Interview AI lane. Operating-mode authority lists, every "
+        "other lane including Portable, activation policy, and CURRENT_BASELINE "
+        "remain byte-identical. Grant, merge, and close remain separate later "
+        "policy-gated transitions."
+    ),
+}
+INTERVIEW_AI_D13_ATTESTATION_PATHS = frozenset(
+    INTERVIEW_AI_D13_ATTESTATION_REGISTRATION["allowed_surfaces"]
+)
+INTERVIEW_AI_D13_ATTESTATION_PARENT_LANE_SHA256 = (
+    "6e2b70235354fe7f90c19f343429c4868ebde7458e4109ec059c68b9721b148d"
+)
+INTERVIEW_AI_D13_ATTESTED_LANE_SHA256 = (
+    "cb96af3a4207409d10a9863f1b57b9742a2c7ed57482de4d038f1c8a40937328"
+)
+
 REVIEW_ATTESTATION_FIELDS = frozenset(
     PROFILE_DIRECTION_REVIEW_ATTESTATION
 )
@@ -3493,6 +3621,81 @@ def _exact_interview_ai_d13_admission_repair_delta(
     )
 
 
+def _exact_interview_ai_d13_attestation_registration_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    """Match only Pete's exact one-commit D13 review registration."""
+    return (
+        ledger.get("interview_ai_d13_attestation_registration")
+        == INTERVIEW_AI_D13_ATTESTATION_REGISTRATION
+        and package_id == INTERVIEW_AI_D13_ATTESTATION_REGISTRATION["package"]
+        and facts.get("branch") == INTERVIEW_AI_D13_ATTESTATION_BRANCH
+        and facts.get("origin_main") == INTERVIEW_AI_D13_ATTESTATION_BASE
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(INTERVIEW_AI_D13_ATTESTATION_PATHS)
+    )
+
+
+def _exact_interview_ai_d13_attestation_registration_delta(
+    parent_ledger: object,
+    candidate_ledger: object,
+) -> bool:
+    """Prove the registration is inert except for one exact owner decision."""
+    if not isinstance(parent_ledger, dict) or not isinstance(candidate_ledger, dict):
+        return False
+    if (
+        parent_ledger.get("interview_ai_d13_attestation_registration") is not None
+        or candidate_ledger.get("interview_ai_d13_attestation_registration")
+        != INTERVIEW_AI_D13_ATTESTATION_REGISTRATION
+    ):
+        return False
+    parent_lanes = parent_ledger.get("active_lanes")
+    candidate_lanes = candidate_ledger.get("active_lanes")
+    if not isinstance(parent_lanes, list) or not isinstance(candidate_lanes, list):
+        return False
+    matches = [
+        index
+        for index, lane in enumerate(parent_lanes)
+        if isinstance(lane, dict)
+        and lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+    ]
+    if len(matches) != 1 or len(candidate_lanes) != len(parent_lanes):
+        return False
+    index = matches[0]
+    if (
+        _canonical_sha256(parent_lanes[index])
+        != INTERVIEW_AI_D13_ATTESTATION_PARENT_LANE_SHA256
+        or _canonical_sha256(candidate_lanes[index])
+        != INTERVIEW_AI_D13_ATTESTED_LANE_SHA256
+    ):
+        return False
+    before = parent_lanes[index].get("owner_decisions")
+    after = candidate_lanes[index].get("owner_decisions")
+    if (
+        not isinstance(before, list)
+        or not isinstance(after, list)
+        or after != [*before, INTERVIEW_AI_D13_OWNER_DECISION]
+        or "merge_grant" in candidate_lanes[index]
+    ):
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = candidate_ledger.get("updated_at")
+    expected["interview_ai_d13_attestation_registration"] = (
+        INTERVIEW_AI_D13_ATTESTATION_REGISTRATION
+    )
+    expected["active_lanes"][index] = copy.deepcopy(candidate_lanes[index])
+    return (
+        candidate_ledger == expected
+        and _utc_timestamp_strictly_advances(
+            candidate_ledger.get("updated_at"), parent_ledger.get("updated_at")
+        )
+    )
+
+
 def _exact_interview_ai_relocation_write(
     ledger: object,
     facts: object,
@@ -3875,6 +4078,13 @@ def _exact_connect_002_grant_fixture_followup_matches(
 
 def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
     """Accept a pinned reviewed-lane authority or exact direction decision."""
+    if package_id == INTERVIEW_AI_ARCHITECTURE_PACKAGE:
+        return bool(
+            isinstance(decision, dict)
+            and decision == INTERVIEW_AI_D13_OWNER_DECISION
+            and _canonical_sha256(decision)
+            == INTERVIEW_AI_D13_OWNER_DECISION_SHA256
+        )
     if package_id == "PS-PROFILE-EXPERIENCE-001":
         return (
             isinstance(decision, dict)
@@ -4082,6 +4292,9 @@ def _direction_merge_grant(
                 PROFILE_CORE_INTEGRATION_REVIEW_ATTESTATION
             ),
             CONNECT_002_PACKAGE: CONNECT_002_RECONCILED_REVIEW_ATTESTATION,
+            INTERVIEW_AI_ARCHITECTURE_PACKAGE: (
+                INTERVIEW_AI_D13_REVIEW_ATTESTATION
+            ),
         }.get(lane.get("package"))
         if expected_review is None:
             errors.append(
@@ -4103,7 +4316,13 @@ def _direction_merge_grant(
             errors.append(
                 f"{label} independent_review reviewed_sha must equal reviewed_remote_sha"
             )
-        expected_review_verdict = "APPROVED" if is_opportunity_release else "PASS"
+        expected_review_verdict = (
+            "APPROVED"
+            if is_opportunity_release
+            else "ACCEPT"
+            if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+            else "PASS"
+        )
         expected_review_scope = (
             "protected_dark_merge_deploy_and_additive_schema_release"
             if is_opportunity_release
@@ -4174,6 +4393,8 @@ def _direction_merge_grant(
             or verdict_text != (
                 OPPORTUNITY_SLATE_REVIEW_ATTESTATION["verdict_text"]
                 if is_opportunity_release
+                else INTERVIEW_AI_D13_REVIEW_ATTESTATION["verdict_text"]
+                if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
                 else PROFILE_CORE_INTEGRATION_REVIEW_ATTESTATION["verdict_text"]
                 if is_profile_core
                 else CONNECT_002_RECONCILED_REVIEW_ATTESTATION["verdict_text"]
@@ -4202,6 +4423,19 @@ def _direction_merge_grant(
         errors.append(
             f"{label} authority_decision_sha256 must equal the pinned Profile owner decision digest"
         )
+    if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE:
+        if (
+            grant.get("authority_decision_sha256")
+            != INTERVIEW_AI_D13_OWNER_DECISION_SHA256
+        ):
+            errors.append(
+                f"{label} authority_decision_sha256 must equal the pinned "
+                "Interview AI owner decision digest"
+            )
+        if reviewed_sha != INTERVIEW_AI_D13_REVIEWED_SHA:
+            errors.append(
+                f"{label} reviewed_remote_sha must equal the accepted Interview AI SHA"
+            )
     if is_profile_core:
         if (
             grant.get("authority_decision_sha256")
@@ -5586,6 +5820,62 @@ def _direction_main_sequence_facts(
         return _connect_002_main_sequence_facts(
             origin_ledger, package_id, candidate_sha, origin_main
         )
+    if package_id == INTERVIEW_AI_ARCHITECTURE_PACKAGE:
+        base = _git("merge-base", candidate_sha, origin_main)
+        main_paths = sorted(
+            _git_nul("diff", "--name-only", "-z", f"{base}..{origin_main}")
+        )
+        commits = [
+            sha
+            for sha in _git(
+                "rev-list", "--reverse", f"{base}..{origin_main}"
+            ).splitlines()
+            if sha
+        ]
+        valid = False
+        if len(commits) == 2 and base == INTERVIEW_AI_D13_ATTESTATION_BASE:
+            attestation_sha, grant_sha = commits
+            attestation_parent = _git("rev-parse", f"{attestation_sha}^")
+            grant_parent = _git("rev-parse", f"{grant_sha}^")
+            attestation_paths = set(
+                _git_nul(
+                    "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                    attestation_sha,
+                )
+            )
+            grant_paths = set(
+                _git_nul(
+                    "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                    grant_sha,
+                )
+            )
+            parent_ledger = load_ledger_at_ref(attestation_parent)
+            attested_ledger = load_ledger_at_ref(attestation_sha)
+            target = next(
+                (
+                    lane
+                    for lane in origin_ledger.get("active_lanes", [])
+                    if isinstance(lane, dict)
+                    and lane.get("package") == package_id
+                ),
+                None,
+            )
+            valid = bool(
+                attestation_parent == base
+                and grant_parent == attestation_sha
+                and attestation_paths == set(INTERVIEW_AI_D13_ATTESTATION_PATHS)
+                and grant_paths == set(GRANT_ALLOWED_SURFACES)
+                and _exact_interview_ai_d13_attestation_registration_delta(
+                    parent_ledger, attested_ledger
+                )
+                and _exact_direction_grant_delta(
+                    attested_ledger, origin_ledger, package_id
+                )
+                and isinstance(target, dict)
+                and target.get("merge_grant", {}).get("reviewed_remote_sha")
+                == candidate_sha
+            )
+        return main_paths, valid, len(commits)
     base = _git("merge-base", candidate_sha, origin_main)
     main_paths = sorted(
         _git_nul("diff", "--name-only", "-z", f"{base}..{origin_main}")
@@ -6046,6 +6336,22 @@ def evaluate_policy(
                         "PS-CONNECT-002 merge requires exactly three verified "
                         "main control commits"
                     )
+            elif package_id == INTERVIEW_AI_ARCHITECTURE_PACKAGE:
+                expected_behind = 2
+                expected_main_paths = (
+                    set(INTERVIEW_AI_D13_ATTESTATION_PATHS)
+                    | set(GRANT_ALLOWED_SURFACES)
+                )
+                if facts.get("behind") != expected_behind:
+                    errors.append(
+                        "Interview AI merge requires exactly two verified main "
+                        "control commits"
+                    )
+                if facts.get("merge_main_control_commit_count") != expected_behind:
+                    errors.append(
+                        "Interview AI merge requires exactly two verified main "
+                        "control commits"
+                    )
             else:
                 expected_behind = (
                     3 if package_id == "PS-PROFILE-EXPERIENCE-001" else 1
@@ -6104,6 +6410,13 @@ def evaluate_policy(
                         "merged-repair anchor, grant-fixture follow-up, and exact "
                         "ledger-only grant are tolerated"
                     )
+            elif package_id == INTERVIEW_AI_ARCHITECTURE_PACKAGE:
+                if facts.get("behind") == 2:
+                    warnings.append(
+                        "Interview AI candidate predates main; only the exact "
+                        "review-attestation registration and exact ledger-only "
+                        "grant are tolerated"
+                    )
             elif facts.get("behind") == expected_behind:
                 warnings.append(
                     f"merge candidate is {facts['behind']} commit(s) behind origin/main; "
@@ -6132,6 +6445,16 @@ def evaluate_policy(
                 "PS-CONNECT-002 merge authority is blocked pending the exact "
                 "separately authorized anchored follow-up and grant-fixture "
                 "follow-up"
+            )
+            return errors, warnings
+        if (
+            package_id == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+            and origin_ledger.get("interview_ai_d13_attestation_registration")
+            != INTERVIEW_AI_D13_ATTESTATION_REGISTRATION
+        ):
+            errors.append(
+                "Interview AI merge authority is blocked pending the exact "
+                "review-attestation registration"
             )
             return errors, warnings
         if facts.get("ahead") != 1 or facts.get("behind") != 0:
@@ -7021,6 +7344,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        interview_ai_d13_attestation_matches = (
+            _exact_interview_ai_d13_attestation_registration_matches(
+                ledger, facts, package_id
+            )
+        )
         if bootstrap_matches:
             allowed_surfaces = set(BOOTSTRAP_CONTROL_REPAIR["allowed_surfaces"])
             warnings.append(
@@ -7095,6 +7423,12 @@ def evaluate_policy(
             warnings.append(
                 "using the exact one-time authority-neutral Interview AI D13 "
                 "admission boundary"
+            )
+        elif interview_ai_d13_attestation_matches:
+            allowed_surfaces = set(INTERVIEW_AI_D13_ATTESTATION_PATHS)
+            warnings.append(
+                "using the exact one-time Interview AI D13 review-attestation "
+                "registration boundary"
             )
         elif opportunity_schema_release_refresh_matches:
             allowed_surfaces = set(
@@ -7214,6 +7548,7 @@ def evaluate_policy(
                 and not connect_002_grant_fixture_followup_matches
                 and not shell_merge_repair_matches
                 and not interview_ai_d13_admission_matches
+                and not interview_ai_d13_attestation_matches
                 and origin_policy != policy
             ):
                 errors.append(
@@ -7488,6 +7823,47 @@ def evaluate_policy(
                     candidate_baseline,
                     origin_baseline,
                     label="Interview AI D13 admission",
+                    errors=errors,
+                )
+            elif interview_ai_d13_attestation_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "Interview AI D13 attestation updated_at must be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append("origin/main ledger updated_at must be a real UTC timestamp")
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "Interview AI D13 attestation updated_at must strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "Interview AI D13 attestation may not change activation_policy"
+                    )
+                if _root_changes(ledger, origin_ledger) != {
+                    "updated_at",
+                    "interview_ai_d13_attestation_registration",
+                    "active_lanes",
+                }:
+                    errors.append(
+                        "Interview AI D13 attestation must change exactly updated_at, "
+                        "its registration record, and the owner-decision append"
+                    )
+                if not _exact_interview_ai_d13_attestation_registration_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "Interview AI D13 attestation must be the exact inert "
+                        "registration and owner-decision delta"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="Interview AI D13 attestation",
                     errors=errors,
                 )
             elif connect_002_merge_admission_repair_matches:
@@ -8281,6 +8657,7 @@ def evaluate_policy(
             and not profile_core_merge_repair_matches
             and not shell_merge_repair_matches
             and not interview_ai_d13_admission_matches
+            and not interview_ai_d13_attestation_matches
             and not profile_core_grant_fixture_followup_matches
             and not profile_core_grant_anchor_followup_matches
             and not profile_core_post_grant_registry_fixture_repair_matches
@@ -8376,6 +8753,15 @@ def evaluate_policy(
             ):
                 errors.append(
                     "Interview AI D13 admission must change exactly the "
+                    "owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                interview_ai_d13_attestation_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "Interview AI D13 attestation must change exactly the "
                     "owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )

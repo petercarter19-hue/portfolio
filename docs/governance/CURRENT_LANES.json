@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-16T21:20:00Z",
+  "updated_at": "2026-08-16T22:54:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -134,6 +134,30 @@
     },
     "reason": "Pete authorized this one-time D13 reconciliation after accepting Interview AI architecture v2.8 decisions D3, D8, and D9. The repair records the earlier bounded five-application-request evidence authorization and Gate B continuation, corrects the lane's stale historical constraints, and admits one exact later relocation of the package from artifacts to docs/initiatives with its single future_finish registry entry. It preserves PS-PORTABLE-SESSION-MANAGER-002 byte-for-byte and grants no merge, release, deployment, configuration, provider-call, evaluation-execution, enablement, cleanup, or live authority. PR 502 remains withheld until the relocated candidate receives a fresh author sweep, internal review, independent Codex review, and Pete approves that exact relocated SHA.",
     "verification_contract": "This is audit evidence, not self-granted package authority. The preflight recognizes it only when this entire record equals the validator's hard-coded record and Git proves the exact branch, exact origin/main base, exactly one commit, and exactly three changed control paths. The ledger may change only updated_at, this record, and the exact pinned Interview AI lane reconciliation; every other lane, operating-mode authority list, activation policy, and CURRENT_BASELINE.yaml must remain byte-identical. The later write exception requires the recorded source SHA to resolve to the exact source tree with exact parent 6c188980c1299289b3b0fe146ac73f3a6219600a, requires current origin/main to be an ancestor of the candidate, removes the source directory, creates exactly the recorded Markdown filenames at the target, confines the candidate diff to the recorded source, target, and registry surfaces, and changes PACKAGE_REGISTRY.json only by adding the package once to future_finish with the exact count increments. It never grants merge or release authority, and a later branch, base, record, package, path, registry delta, or candidate cannot reuse it."
+  },
+  "interview_ai_d13_attestation_registration": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-16-delivery-activation-interview-ai-d13-attestation",
+    "origin_main": "b4d79b217b1b8b68128a5271031390bb2be521b6",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "candidate_contract": {
+      "package": "PS-INTERVIEW-AI-ARCHITECTURE-001",
+      "branch": "work/2026-08-15-interview-ai-architecture",
+      "reviewed_remote_sha": "52242c4ad8c26b5b9061c17aaf083063d42b5875",
+      "owner_decision_sha256": "af7cea5825ce1be7bf75221ffb9e6f38acb572807da524e78722d0984796c0cb",
+      "reviewer_task": "/root/interview_relocated_exact_review",
+      "review_attestation_sha256": "421aa64fa12e4a9c6159c42b0b6c73cfb617f58c315194b7a8781aff8734e1b5",
+      "review_evidence_path": "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/21_CODEX_RECONCILIATION.md",
+      "review_evidence_git_blob_sha": "f64283e3410e53b3024f5d3c6436d438cce90cd7",
+      "review_evidence_bytes_sha256": "4324122b7d2f8006716ee31d12ad709a09c231ac3728c97c4d42294fb65d7175"
+    },
+    "reason": "Pete approved the exact relocated Interview AI v2.8 candidate after fresh independent review. This inert registration hard-pins that exact candidate, review, evidence, and owner decision so a later ordinary ledger-only grant can be validated. It grants no authority itself.",
+    "verification_contract": "The preflight recognizes this one-time record only on the exact branch, exact origin/main base, one commit, and three control paths. The ledger may change only updated_at, this record, and one exact owner decision appended to the Interview AI lane. Operating-mode authority lists, every other lane including Portable, activation policy, and CURRENT_BASELINE remain byte-identical. Grant, merge, and close remain separate later policy-gated transitions."
   },
   "implementation_release_preflight_repair": {
     "status": "one_time_owner_authorized_repair",
@@ -1788,6 +1812,19 @@
           "authorized_by": "Pete",
           "status": "authorized_with_merge_withheld",
           "decision": "Pete explicitly accepted Interview AI architecture v2.8 decisions D3, D8, and D9: retain Compare; allow settings-and-restart rollback only between mechanically compatible release sets and never treat it as code or deployment rollback; and always let the member choose the specialist while AI may only advise and enforce prerequisites. Pete also authorized D13 control reconciliation, relocation to docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001, registry addition, and fresh review. PR 502 must not merge unless and until Pete separately approves the exact relocated and freshly reviewed source SHA and a later code-controlled review attestation and merge grant enter origin/main."
+        },
+        {
+          "date": "2026-08-16",
+          "authorized_by": "Pete",
+          "status": "authorized_subject_to_exact_policy_gates",
+          "decision": "direction_package_merge_authority",
+          "action": "grant_then_merge_then_close",
+          "scope": "direction_package_only",
+          "package": "PS-INTERVIEW-AI-ARCHITECTURE-001",
+          "reviewed_remote_sha": "52242c4ad8c26b5b9061c17aaf083063d42b5875",
+          "pull_request": 502,
+          "verbatim_approval": "I approve. Be done with this.",
+          "conditions": "Register the exact independent review in origin/main; then use a separate ledger-only grant; merge PR 502 only after its fresh exact-source/target preview and all required policies pass; formally close only after the verified merge. No release, deployment, runtime, provider-call, evaluation-execution, enablement, or live authority is granted."
         }
       ],
       "cleanup_contract": "After a verified merge and formal close, remove only this task's clean activation and package worktrees and branches behind recovery refs. Preserve the paused parent package, the Role Context package, and every unrelated or dirty worktree, branch, stash, artifact, and user-authored file.",

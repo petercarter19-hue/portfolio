@@ -85,6 +85,14 @@ from scripts.delivery_preflight import (
     INTERVIEW_AI_BASE_REGISTRY_SHA256,
     INTERVIEW_AI_D13_ADMISSION_REPAIR,
     INTERVIEW_AI_D13_CONTROL_PATHS,
+    INTERVIEW_AI_D13_ATTESTATION_BASE,
+    INTERVIEW_AI_D13_ATTESTATION_BRANCH,
+    INTERVIEW_AI_D13_ATTESTATION_PATHS,
+    INTERVIEW_AI_D13_ATTESTATION_REGISTRATION,
+    INTERVIEW_AI_D13_OWNER_DECISION,
+    INTERVIEW_AI_D13_OWNER_DECISION_SHA256,
+    INTERVIEW_AI_D13_REVIEW_ATTESTATION,
+    INTERVIEW_AI_D13_REVIEWED_SHA,
     INTERVIEW_AI_PACKAGE_FILES,
     INTERVIEW_AI_RECONCILED_LANE_SHA256,
     INTERVIEW_AI_REGISTRY_PATH,
@@ -118,6 +126,8 @@ from scripts.delivery_preflight import (
     _exact_shell_merge_preflight_repair_matches,
     _exact_interview_ai_d13_admission_repair_delta,
     _exact_interview_ai_d13_admission_repair_matches,
+    _exact_interview_ai_d13_attestation_registration_delta,
+    _exact_interview_ai_d13_attestation_registration_matches,
     _exact_interview_ai_relocation_write,
     _is_shell_reviewed_shared_foundation_lane,
     _exact_connect_002_merge_admission_repair_delta,
@@ -1867,10 +1877,14 @@ with patch.object(
         candidate["updated_at"] = "2026-08-16T21:20:00Z"
         candidate["interview_ai_d13_admission_repair"] = copy.deepcopy(repair)
         reconciled = next(
-            lane
+            copy.deepcopy(lane)
             for lane in self.ledger["active_lanes"]
             if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
         )
+        if reconciled.get("owner_decisions", [])[-1:] == [
+            INTERVIEW_AI_D13_OWNER_DECISION
+        ]:
+            reconciled["owner_decisions"].pop()
         self.assertEqual(
             INTERVIEW_AI_RECONCILED_LANE_SHA256,
             _canonical_sha256(reconciled),
@@ -2057,6 +2071,143 @@ with patch.object(
                 if relocated
                 else INTERVIEW_AI_BASE_REGISTRY_SHA256
             ),
+        )
+
+    def _interview_ai_d13_attestation_fixture(self):
+        origin = load_ledger_at_ref(INTERVIEW_AI_D13_ATTESTATION_BASE)
+        candidate = copy.deepcopy(self.ledger)
+        baseline = load_baseline_bytes_at_ref(INTERVIEW_AI_D13_ATTESTATION_BASE)
+        exact_facts = facts(
+            branch=INTERVIEW_AI_D13_ATTESTATION_BRANCH,
+            origin_main=INTERVIEW_AI_D13_ATTESTATION_BASE,
+            ahead=1,
+            behind=0,
+            changed_paths=sorted(INTERVIEW_AI_D13_ATTESTATION_PATHS),
+        )
+        return origin, candidate, baseline, exact_facts
+
+    def test_interview_ai_d13_attestation_is_exact_inert_and_grant_ready(self):
+        origin, candidate, baseline, exact_facts = (
+            self._interview_ai_d13_attestation_fixture()
+        )
+        self.assertTrue(
+            _exact_interview_ai_d13_attestation_registration_matches(
+                candidate, exact_facts, "PS-DELIVERY-CONTROL-001"
+            )
+        )
+        self.assertTrue(
+            _exact_interview_ai_d13_attestation_registration_delta(
+                origin, candidate
+            )
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("review-attestation" in item for item in warnings))
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        portable_before = next(
+            lane for lane in origin["active_lanes"]
+            if lane.get("package") == "PS-PORTABLE-SESSION-MANAGER-002"
+        )
+        portable_after = next(
+            lane for lane in candidate["active_lanes"]
+            if lane.get("package") == "PS-PORTABLE-SESSION-MANAGER-002"
+        )
+        self.assertEqual(portable_before, portable_after)
+
+        lane = next(
+            copy.deepcopy(item) for item in candidate["active_lanes"]
+            if item.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        )
+        self.assertEqual(INTERVIEW_AI_D13_OWNER_DECISION, lane["owner_decisions"][-1])
+        index = len(lane["owner_decisions"]) - 1
+        lane["merge_grant"] = {
+            "authorized_by": "Pete",
+            "authority_decision_index": index,
+            "authority_decision_sha256": INTERVIEW_AI_D13_OWNER_DECISION_SHA256,
+            "independent_review": copy.deepcopy(
+                INTERVIEW_AI_D13_REVIEW_ATTESTATION
+            ),
+            "reviewed_remote_sha": INTERVIEW_AI_D13_REVIEWED_SHA,
+            "granted_at": "2026-08-16T23:00:00Z",
+            "review_result": "pass",
+            "review_evidence_paths": [
+                INTERVIEW_AI_D13_REVIEW_ATTESTATION["evidence_path"]
+            ],
+        }
+        grant_errors = []
+        self.assertIsNotNone(_direction_merge_grant(lane, "Interview", grant_errors))
+        self.assertEqual([], grant_errors)
+
+    def test_interview_ai_d13_attestation_mutations_fail_closed(self):
+        origin, candidate, baseline, exact_facts = (
+            self._interview_ai_d13_attestation_fixture()
+        )
+        for label, mutation in (
+            (
+                "record",
+                lambda value: value[
+                    "interview_ai_d13_attestation_registration"
+                ]["candidate_contract"].__setitem__(
+                    "reviewed_remote_sha", "0" * 40
+                ),
+            ),
+            (
+                "decision",
+                lambda value: next(
+                    lane for lane in value["active_lanes"]
+                    if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+                )["owner_decisions"][-1].__setitem__("conditions", "forged"),
+            ),
+            (
+                "authority",
+                lambda value: value["operating_mode"][
+                    "merge_allowed_for"
+                ].append(INTERVIEW_AI_ARCHITECTURE_PACKAGE),
+            ),
+        ):
+            with self.subTest(label=label):
+                forged = copy.deepcopy(candidate)
+                mutation(forged)
+                errors, _ = self._evaluate_activation(
+                    forged,
+                    exact_facts,
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(errors)
+
+        lane = next(
+            copy.deepcopy(item) for item in candidate["active_lanes"]
+            if item.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        )
+        lane["merge_grant"] = {
+            "authorized_by": "Pete",
+            "authority_decision_index": len(lane["owner_decisions"]) - 1,
+            "authority_decision_sha256": INTERVIEW_AI_D13_OWNER_DECISION_SHA256,
+            "independent_review": copy.deepcopy(
+                INTERVIEW_AI_D13_REVIEW_ATTESTATION
+            ),
+            "reviewed_remote_sha": INTERVIEW_AI_D13_REVIEWED_SHA,
+            "granted_at": "2026-08-16T23:00:00Z",
+            "review_result": "pass",
+            "review_evidence_paths": [
+                INTERVIEW_AI_D13_REVIEW_ATTESTATION["evidence_path"]
+            ],
+        }
+        lane["merge_grant"]["independent_review"]["verdict"] = "PASS"
+        forged_errors = []
+        _direction_merge_grant(lane, "Interview", forged_errors)
+        self.assertTrue(
+            any("code-controlled attestation" in item for item in forged_errors)
         )
 
     def test_interview_ai_relocation_write_is_exact_and_fail_closed(self):
