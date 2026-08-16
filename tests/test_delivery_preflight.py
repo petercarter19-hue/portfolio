@@ -80,6 +80,21 @@ from scripts.delivery_preflight import (
     SHELL_MERGE_CONTROL_PATHS,
     SHELL_MERGE_PREFLIGHT_REPAIR,
     SHELL_PACKAGE,
+    INTERVIEW_AI_ARCHITECTURE_BRANCH,
+    INTERVIEW_AI_ARCHITECTURE_PACKAGE,
+    INTERVIEW_AI_BASE_REGISTRY_SHA256,
+    INTERVIEW_AI_D13_ADMISSION_REPAIR,
+    INTERVIEW_AI_D13_CONTROL_PATHS,
+    INTERVIEW_AI_PACKAGE_FILES,
+    INTERVIEW_AI_RECONCILED_LANE_SHA256,
+    INTERVIEW_AI_REGISTRY_PATH,
+    INTERVIEW_AI_RELOCATED_REGISTRY_SHA256,
+    INTERVIEW_AI_SOURCE_PATHS,
+    INTERVIEW_AI_SOURCE_ROOT,
+    INTERVIEW_AI_SOURCE_SHA,
+    INTERVIEW_AI_SOURCE_TREE,
+    INTERVIEW_AI_TARGET_PATHS,
+    INTERVIEW_AI_TARGET_ROOT,
     _affirmative_merge_decision,
     _authoritative_azure_origin,
     _canonical_sha256,
@@ -101,6 +116,9 @@ from scripts.delivery_preflight import (
     _is_profile_core_reviewed_implementation_lane,
     _exact_shell_merge_preflight_repair_delta,
     _exact_shell_merge_preflight_repair_matches,
+    _exact_interview_ai_d13_admission_repair_delta,
+    _exact_interview_ai_d13_admission_repair_matches,
+    _exact_interview_ai_relocation_write,
     _is_shell_reviewed_shared_foundation_lane,
     _exact_connect_002_merge_admission_repair_delta,
     _exact_connect_002_merge_admission_repair_matches,
@@ -1840,6 +1858,296 @@ with patch.object(
             changed_paths=repair["allowed_surfaces"],
         )
         return repair, origin, candidate, baseline, exact_facts
+
+    def _interview_ai_d13_fixture(self):
+        repair = INTERVIEW_AI_D13_ADMISSION_REPAIR
+        origin = load_ledger_at_ref(repair["origin_main"])
+        self.assertNotIn("interview_ai_d13_admission_repair", origin)
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-16T21:20:00Z"
+        candidate["interview_ai_d13_admission_repair"] = copy.deepcopy(repair)
+        reconciled = next(
+            lane
+            for lane in self.ledger["active_lanes"]
+            if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        )
+        self.assertEqual(
+            INTERVIEW_AI_RECONCILED_LANE_SHA256,
+            _canonical_sha256(reconciled),
+        )
+        lane_index = next(
+            index
+            for index, lane in enumerate(candidate["active_lanes"])
+            if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        )
+        candidate["active_lanes"][lane_index] = copy.deepcopy(reconciled)
+        baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        exact_facts = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            ahead=1,
+            behind=0,
+            changed_paths=repair["allowed_surfaces"],
+        )
+        return repair, origin, candidate, baseline, exact_facts
+
+    def test_interview_ai_d13_admission_is_exact_and_authority_neutral(self):
+        repair, origin, candidate, baseline, exact_facts = (
+            self._interview_ai_d13_fixture()
+        )
+        self.assertTrue(
+            _exact_interview_ai_d13_admission_repair_matches(
+                candidate, exact_facts, repair["package"]
+            )
+        )
+        self.assertTrue(
+            _exact_interview_ai_d13_admission_repair_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("Interview AI D13" in item for item in warnings))
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual([], candidate["operating_mode"]["merge_allowed_for"])
+        self.assertEqual([], candidate["operating_mode"]["release_allowed_for"])
+        portable_before = next(
+            lane
+            for lane in origin["active_lanes"]
+            if lane.get("package") == "PS-PORTABLE-SESSION-MANAGER-002"
+        )
+        portable_after = next(
+            lane
+            for lane in candidate["active_lanes"]
+            if lane.get("package") == "PS-PORTABLE-SESSION-MANAGER-002"
+        )
+        self.assertEqual(portable_before, portable_after)
+        target = next(
+            lane
+            for lane in candidate["active_lanes"]
+            if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        )
+        self.assertNotIn("merge_grant", target)
+        self.assertIn("retain Compare", target["owner_decisions"][-1]["decision"])
+        self.assertIn(
+            "never treat it as code or deployment rollback",
+            target["owner_decisions"][-1]["decision"],
+        )
+        self.assertIn(
+            "member choose the specialist",
+            target["owner_decisions"][-1]["decision"],
+        )
+        self.assertEqual(
+            repair, self.ledger["interview_ai_d13_admission_repair"]
+        )
+
+    def test_interview_ai_d13_admission_mutations_fail_closed(self):
+        repair, origin, candidate, baseline, exact_facts = (
+            self._interview_ai_d13_fixture()
+        )
+        cases = (
+            ("branch", None, {**exact_facts, "branch": "work/wrong"}, baseline),
+            ("base", None, {**exact_facts, "origin_main": "0" * 40}, baseline),
+            ("ahead", None, {**exact_facts, "ahead": 2}, baseline),
+            ("behind", None, {**exact_facts, "behind": 1}, baseline),
+            ("paths", None, {**exact_facts, "changed_paths": ["app.py"]}, baseline),
+            (
+                "record",
+                lambda value: value["interview_ai_d13_admission_repair"].__setitem__(
+                    "reason", "forged"
+                ),
+                exact_facts,
+                baseline,
+            ),
+            (
+                "merge-authority",
+                lambda value: value["operating_mode"]["merge_allowed_for"].append(
+                    INTERVIEW_AI_ARCHITECTURE_PACKAGE
+                ),
+                exact_facts,
+                baseline,
+            ),
+            (
+                "portable",
+                lambda value: next(
+                    lane
+                    for lane in value["active_lanes"]
+                    if lane.get("package") == "PS-PORTABLE-SESSION-MANAGER-002"
+                ).__setitem__("writer", "forged"),
+                exact_facts,
+                baseline,
+            ),
+            (
+                "target-grant",
+                lambda value: next(
+                    lane
+                    for lane in value["active_lanes"]
+                    if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+                ).__setitem__("merge_grant", {}),
+                exact_facts,
+                baseline,
+            ),
+            ("baseline", None, exact_facts, baseline + b"\nforged"),
+        )
+        for label, mutate, altered_facts, candidate_baseline in cases:
+            with self.subTest(label=label):
+                forged = copy.deepcopy(candidate)
+                if mutate:
+                    mutate(forged)
+                errors, _ = self._evaluate_activation(
+                    forged,
+                    altered_facts,
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=candidate_baseline,
+                    origin_baseline=baseline,
+                )
+                self.assertTrue(errors)
+
+        replay_origin = copy.deepcopy(candidate)
+        replay = copy.deepcopy(candidate)
+        replay["updated_at"] = "2026-08-16T21:21:00Z"
+        replay_errors, _ = self._evaluate_activation(
+            replay,
+            exact_facts,
+            require_clean=True,
+            origin=replay_origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(
+            any("one-time and already recorded" in item for item in replay_errors)
+        )
+
+    def _interview_ai_relocation_facts(self, *, relocated=False):
+        changed_paths = (
+            sorted(INTERVIEW_AI_TARGET_PATHS | {INTERVIEW_AI_REGISTRY_PATH})
+            if relocated
+            else sorted(INTERVIEW_AI_SOURCE_PATHS)
+        )
+        return facts(
+            branch=INTERVIEW_AI_ARCHITECTURE_BRANCH,
+            ahead=1,
+            behind=0,
+            changed_paths=changed_paths,
+            interview_ai_source_sha=INTERVIEW_AI_SOURCE_SHA,
+            interview_ai_source_parent=INTERVIEW_AI_D13_ADMISSION_REPAIR[
+                "origin_main"
+            ],
+            interview_ai_source_reference_tree=INTERVIEW_AI_SOURCE_TREE,
+            interview_ai_origin_main_is_ancestor=True,
+            interview_ai_origin_main_has_exact_admission=True,
+            interview_ai_ledger_matches_origin_main=True,
+            interview_ai_relocation_phase=(
+                "relocated" if relocated else "source_ready"
+            ),
+            interview_ai_source_tree=("" if relocated else INTERVIEW_AI_SOURCE_TREE),
+            interview_ai_target_tree=("candidate-tree" if relocated else ""),
+            interview_ai_target_files=(
+                sorted(INTERVIEW_AI_TARGET_PATHS) if relocated else []
+            ),
+            interview_ai_target_files_regular=relocated,
+            interview_ai_registry_sha256=(
+                INTERVIEW_AI_RELOCATED_REGISTRY_SHA256
+                if relocated
+                else INTERVIEW_AI_BASE_REGISTRY_SHA256
+            ),
+        )
+
+    def test_interview_ai_relocation_write_is_exact_and_fail_closed(self):
+        _, _, candidate, _, _ = self._interview_ai_d13_fixture()
+        for relocated in (False, True):
+            with self.subTest(phase="relocated" if relocated else "source_ready"):
+                exact_facts = self._interview_ai_relocation_facts(
+                    relocated=relocated
+                )
+                self.assertTrue(
+                    _exact_interview_ai_relocation_write(
+                        candidate,
+                        exact_facts,
+                        INTERVIEW_AI_ARCHITECTURE_PACKAGE,
+                    )
+                )
+                errors, warnings = evaluate_policy(
+                    candidate,
+                    exact_facts,
+                    INTERVIEW_AI_ARCHITECTURE_PACKAGE,
+                    "write",
+                    require_clean=True,
+                )
+                self.assertEqual([], errors)
+                self.assertTrue(any("D13 relocation" in item for item in warnings))
+
+        exact_relocated = self._interview_ai_relocation_facts(relocated=True)
+        for label, mutate_ledger, altered_facts in (
+            (
+                "record",
+                lambda value: value["interview_ai_d13_admission_repair"].__setitem__(
+                    "reason", "forged"
+                ),
+                exact_relocated,
+            ),
+            (
+                "branch",
+                None,
+                {**exact_relocated, "branch": "work/wrong"},
+            ),
+            (
+                "source-reference",
+                None,
+                {**exact_relocated, "interview_ai_source_reference_tree": "0" * 40},
+            ),
+            (
+                "main-lineage",
+                None,
+                {**exact_relocated, "interview_ai_origin_main_is_ancestor": False},
+            ),
+            (
+                "target-file",
+                None,
+                {
+                    **exact_relocated,
+                    "interview_ai_target_files": sorted(INTERVIEW_AI_TARGET_PATHS)[:-1],
+                },
+            ),
+            (
+                "registry",
+                None,
+                {**exact_relocated, "interview_ai_registry_sha256": "0" * 64},
+            ),
+            (
+                "unrelated-path",
+                None,
+                {
+                    **exact_relocated,
+                    "changed_paths": exact_relocated["changed_paths"] + ["app.py"],
+                },
+            ),
+        ):
+            with self.subTest(label=label):
+                forged = copy.deepcopy(candidate)
+                if mutate_ledger:
+                    mutate_ledger(forged)
+                self.assertFalse(
+                    _exact_interview_ai_relocation_write(
+                        forged,
+                        altered_facts,
+                        INTERVIEW_AI_ARCHITECTURE_PACKAGE,
+                    )
+                )
+                errors, _ = evaluate_policy(
+                    forged,
+                    altered_facts,
+                    INTERVIEW_AI_ARCHITECTURE_PACKAGE,
+                    "write",
+                    require_clean=True,
+                )
+                self.assertTrue(errors)
 
     def test_shell_merge_repair_is_exact_and_grants_nothing(self):
         repair, origin, candidate, baseline, exact_facts = (

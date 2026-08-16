@@ -1470,6 +1470,125 @@ SHELL_MERGE_CONTROL_PATHS = frozenset(
     SHELL_MERGE_PREFLIGHT_REPAIR["allowed_surfaces"]
 )
 
+# Pete accepted the completed Interview AI v2.8 architecture decisions and
+# authorized exactly one control reconciliation plus a later documentation
+# relocation.  This admission is intentionally authority-neutral: it repairs
+# historical lane truth and lets the existing direction-authority writer move
+# one exact frozen package into the initiative registry, but it cannot grant
+# merge, release, runtime, provider-call, evaluation, or deployment authority.
+INTERVIEW_AI_ARCHITECTURE_PACKAGE = "PS-INTERVIEW-AI-ARCHITECTURE-001"
+INTERVIEW_AI_ARCHITECTURE_BRANCH = (
+    "work/2026-08-15-interview-ai-architecture"
+)
+INTERVIEW_AI_D13_CONTROL_BASE = "6c188980c1299289b3b0fe146ac73f3a6219600a"
+INTERVIEW_AI_D13_CONTROL_BRANCH = (
+    "work/2026-08-16-delivery-activation-interview-ai-d13-admission"
+)
+INTERVIEW_AI_SOURCE_SHA = "cb57d3c124869456a93a093de4555e467952ffbf"
+INTERVIEW_AI_SOURCE_ROOT = "artifacts/2026-08-15-interview-ai-architecture/"
+INTERVIEW_AI_TARGET_ROOT = (
+    "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/"
+)
+INTERVIEW_AI_REGISTRY_PATH = "docs/governance/PACKAGE_REGISTRY.json"
+INTERVIEW_AI_PACKAGE_FILES = (
+    "00_CONSOLIDATED_ARCHITECTURE.md",
+    "01_GATE_A_CURRENT_SYSTEM_DIAGNOSIS.md",
+    "02_GATE_A_ERRATA.md",
+    "03_AUTHENTICATED_EVIDENCE.md",
+    "10_SECTION_1_CONSTITUTION_VERSIONING_ROUTER.md",
+    "11_SECTION_2_ANSWER_COACH_AND_REVISION_PARTNER.md",
+    "12_SECTION_3_PRIVATE_HISTORY_AND_ROLE_CONTEXT.md",
+    "13_SECTION_4_GROUNDED_AND_GENERIC_EXAMPLES.md",
+    "14_SECTION_5_GUARDIANS_TELEMETRY_EVALUATION_ROLLOUT.md",
+    "20_INDEPENDENT_REVIEW.md",
+    "21_CODEX_RECONCILIATION.md",
+    "README.md",
+)
+INTERVIEW_AI_SOURCE_TREE = "93c2d23aaf35554999315150f9fb4525f067d74f"
+INTERVIEW_AI_PARENT_LANE_SHA256 = (
+    "28a5e1f61d1ac5a0e8783f3f024c8bc315813b815ed06f72727a2b3404c68b65"
+)
+INTERVIEW_AI_RECONCILED_LANE_SHA256 = (
+    "6e2b70235354fe7f90c19f343429c4868ebde7458e4109ec059c68b9721b148d"
+)
+INTERVIEW_AI_BASE_REGISTRY_SHA256 = (
+    "73cd2d8a33122c2969cfead9070a605c7120267ea2e80b2808cf3310b94a8102"
+)
+INTERVIEW_AI_RELOCATED_REGISTRY_SHA256 = (
+    "0d39f5752ae926b5a0fa422a42d584df3da3d30b131b7d32e61c0b0a4796fc17"
+)
+INTERVIEW_AI_D13_ADMISSION_REPAIR = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": INTERVIEW_AI_D13_CONTROL_BRANCH,
+    "origin_main": INTERVIEW_AI_D13_CONTROL_BASE,
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "candidate_contract": {
+        "package": INTERVIEW_AI_ARCHITECTURE_PACKAGE,
+        "branch": INTERVIEW_AI_ARCHITECTURE_BRANCH,
+        "source_remote_sha": INTERVIEW_AI_SOURCE_SHA,
+        "source_root": INTERVIEW_AI_SOURCE_ROOT,
+        "target_root": INTERVIEW_AI_TARGET_ROOT,
+        "registry_path": INTERVIEW_AI_REGISTRY_PATH,
+        "registry_category": "future_finish",
+        "pull_request": 502,
+        "merge_withheld": True,
+    },
+    "reason": (
+        "Pete authorized this one-time D13 reconciliation after accepting "
+        "Interview AI architecture v2.8 decisions D3, D8, and D9. The repair "
+        "records the earlier bounded five-application-request evidence "
+        "authorization and Gate B continuation, corrects the lane's stale "
+        "historical constraints, and admits one exact later relocation of the "
+        "package from artifacts to docs/initiatives with its single "
+        "future_finish registry entry. It preserves "
+        "PS-PORTABLE-SESSION-MANAGER-002 byte-for-byte and grants no merge, "
+        "release, deployment, configuration, provider-call, evaluation-"
+        "execution, enablement, cleanup, or live authority. PR 502 remains "
+        "withheld until the relocated candidate receives a fresh author sweep, "
+        "internal review, independent Codex review, and Pete approves that "
+        "exact relocated SHA."
+    ),
+    "verification_contract": (
+        "This is audit evidence, not self-granted package authority. The "
+        "preflight recognizes it only when this entire record equals the "
+        "validator's hard-coded record and Git proves the exact branch, exact "
+        "origin/main base, exactly one commit, and exactly three changed "
+        "control paths. The ledger may change only updated_at, this record, "
+        "and the exact pinned Interview AI lane reconciliation; every other "
+        "lane, operating-mode authority list, activation policy, and "
+        "CURRENT_BASELINE.yaml must remain byte-identical. The later write "
+        "exception requires the recorded source SHA to resolve to the exact "
+        "source tree with exact parent "
+        "6c188980c1299289b3b0fe146ac73f3a6219600a, requires current origin/main "
+        "to be an ancestor of the candidate, removes the source directory, "
+        "creates exactly the recorded Markdown filenames at the target, "
+        "confines the candidate diff to the recorded source, target, and "
+        "registry surfaces, and changes PACKAGE_REGISTRY.json only by adding "
+        "the package once to future_finish with the exact count increments. "
+        "It never grants merge or release authority, and a later branch, base, "
+        "record, package, path, registry delta, or candidate cannot reuse it."
+    ),
+}
+INTERVIEW_AI_D13_CONTROL_PATHS = frozenset(
+    INTERVIEW_AI_D13_ADMISSION_REPAIR["allowed_surfaces"]
+)
+INTERVIEW_AI_SOURCE_PATHS = frozenset(
+    INTERVIEW_AI_SOURCE_ROOT + name for name in INTERVIEW_AI_PACKAGE_FILES
+)
+INTERVIEW_AI_TARGET_PATHS = frozenset(
+    INTERVIEW_AI_TARGET_ROOT + name for name in INTERVIEW_AI_PACKAGE_FILES
+)
+INTERVIEW_AI_RELOCATION_PATHS = (
+    INTERVIEW_AI_SOURCE_PATHS
+    | INTERVIEW_AI_TARGET_PATHS
+    | {INTERVIEW_AI_REGISTRY_PATH}
+)
+
 REVIEW_ATTESTATION_FIELDS = frozenset(
     PROFILE_DIRECTION_REVIEW_ATTESTATION
 )
@@ -3292,6 +3411,167 @@ def _exact_shell_merge_preflight_repair_delta(
     )
 
 
+def _exact_interview_ai_d13_admission_repair_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    """Match only Pete's exact one-commit D13 control admission."""
+    return (
+        ledger.get("interview_ai_d13_admission_repair")
+        == INTERVIEW_AI_D13_ADMISSION_REPAIR
+        and package_id == INTERVIEW_AI_D13_ADMISSION_REPAIR["package"]
+        and facts.get("branch") == INTERVIEW_AI_D13_CONTROL_BRANCH
+        and facts.get("origin_main") == INTERVIEW_AI_D13_CONTROL_BASE
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(INTERVIEW_AI_D13_CONTROL_PATHS)
+    )
+
+
+def _exact_interview_ai_d13_admission_repair_delta(
+    parent_ledger: object,
+    repair_ledger: object,
+) -> bool:
+    """Prove D13 changes only its record and the exact Interview truth repair.
+
+    Canonical hashes pin both the known pre-reconciliation lane and the exact
+    post-reconciliation lane.  Rebuilding the candidate from the parent then
+    proves every other lane (including Portable), authority list, policy, and
+    root field remained byte-for-byte equal as parsed JSON.
+    """
+    if not isinstance(parent_ledger, dict) or not isinstance(repair_ledger, dict):
+        return False
+    if (
+        parent_ledger.get("interview_ai_d13_admission_repair") is not None
+        or repair_ledger.get("interview_ai_d13_admission_repair")
+        != INTERVIEW_AI_D13_ADMISSION_REPAIR
+    ):
+        return False
+
+    parent_lanes = parent_ledger.get("active_lanes")
+    repair_lanes = repair_ledger.get("active_lanes")
+    if not isinstance(parent_lanes, list) or not isinstance(repair_lanes, list):
+        return False
+    parent_matches = [
+        index
+        for index, lane in enumerate(parent_lanes)
+        if isinstance(lane, dict)
+        and lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+    ]
+    repair_matches = [
+        index
+        for index, lane in enumerate(repair_lanes)
+        if isinstance(lane, dict)
+        and lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+    ]
+    if parent_matches != repair_matches or len(parent_matches) != 1:
+        return False
+    lane_index = parent_matches[0]
+    if (
+        _canonical_sha256(parent_lanes[lane_index])
+        != INTERVIEW_AI_PARENT_LANE_SHA256
+        or _canonical_sha256(repair_lanes[lane_index])
+        != INTERVIEW_AI_RECONCILED_LANE_SHA256
+    ):
+        return False
+
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = repair_ledger.get("updated_at")
+    expected["interview_ai_d13_admission_repair"] = (
+        INTERVIEW_AI_D13_ADMISSION_REPAIR
+    )
+    expected["active_lanes"][lane_index] = copy.deepcopy(
+        repair_lanes[lane_index]
+    )
+    return (
+        repair_ledger == expected
+        and _utc_timestamp_strictly_advances(
+            repair_ledger.get("updated_at"), parent_ledger.get("updated_at")
+        )
+    )
+
+
+def _exact_interview_ai_relocation_write(
+    ledger: object,
+    facts: object,
+    package_id: object,
+) -> bool:
+    """Admit only the exact clean pre-move or exact committed D13 relocation.
+
+    The pre-move checkpoint makes the prospective registry exception usable by
+    the mandatory before-write command.  The relocated checkpoint proves the
+    completed move and exact registry delta.  Neither checkpoint is consulted
+    by merge or release policy.
+    """
+    if not isinstance(ledger, dict) or not isinstance(facts, dict):
+        return False
+    if (
+        package_id != INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        or facts.get("branch") != INTERVIEW_AI_ARCHITECTURE_BRANCH
+        or facts.get("behind") != 0
+        or not isinstance(facts.get("ahead"), int)
+        or facts.get("ahead", 0) < 1
+        or ledger.get("interview_ai_d13_admission_repair")
+        != INTERVIEW_AI_D13_ADMISSION_REPAIR
+        or facts.get("interview_ai_source_sha") != INTERVIEW_AI_SOURCE_SHA
+        or facts.get("interview_ai_source_parent")
+        != INTERVIEW_AI_D13_CONTROL_BASE
+        or facts.get("interview_ai_source_reference_tree")
+        != INTERVIEW_AI_SOURCE_TREE
+        or facts.get("interview_ai_origin_main_is_ancestor") is not True
+        or facts.get("interview_ai_origin_main_has_exact_admission") is not True
+        or facts.get("interview_ai_ledger_matches_origin_main") is not True
+    ):
+        return False
+
+    active_lanes = ledger.get("active_lanes")
+    matches = [
+        lane
+        for lane in active_lanes
+        if isinstance(lane, dict)
+        and lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+    ] if isinstance(active_lanes, list) else []
+    if (
+        len(matches) != 1
+        or _canonical_sha256(matches[0])
+        != INTERVIEW_AI_RECONCILED_LANE_SHA256
+    ):
+        return False
+
+    changed_paths = facts.get("changed_paths")
+    if not isinstance(changed_paths, list) or not all(
+        isinstance(path, str) and path for path in changed_paths
+    ):
+        return False
+    phase = facts.get("interview_ai_relocation_phase")
+    if phase == "source_ready":
+        return (
+            set(changed_paths) == set(INTERVIEW_AI_SOURCE_PATHS)
+            and facts.get("interview_ai_source_tree")
+            == INTERVIEW_AI_SOURCE_TREE
+            and facts.get("interview_ai_target_tree") == ""
+            and facts.get("interview_ai_registry_sha256")
+            == INTERVIEW_AI_BASE_REGISTRY_SHA256
+        )
+    if phase == "relocated":
+        return (
+            set(changed_paths).issubset(INTERVIEW_AI_RELOCATION_PATHS)
+            and INTERVIEW_AI_REGISTRY_PATH in changed_paths
+            and any(
+                path in INTERVIEW_AI_TARGET_PATHS for path in changed_paths
+            )
+            and facts.get("interview_ai_source_tree") == ""
+            and set(facts.get("interview_ai_target_files") or [])
+            == set(INTERVIEW_AI_TARGET_PATHS)
+            and facts.get("interview_ai_target_files_regular") is True
+            and facts.get("interview_ai_registry_sha256")
+            == INTERVIEW_AI_RELOCATED_REGISTRY_SHA256
+        )
+    return False
+
+
 def _exact_profile_core_grant_fixture_followup_matches(
     ledger: dict,
     facts: dict,
@@ -4557,6 +4837,116 @@ def collect_facts(
             }
         )
     return facts
+
+
+def _collect_interview_ai_relocation_facts(
+    ledger: dict,
+    facts: dict,
+) -> None:
+    """Enrich clean write facts for the hard-pinned D13 relocation contract."""
+    head = facts.get("head")
+    origin_main = facts.get("origin_main")
+    source_sha = _git(
+        "rev-parse", "--verify", f"{INTERVIEW_AI_SOURCE_SHA}^{{commit}}", check=False
+    )
+    source_parent = _git(
+        "rev-parse", "--verify", f"{INTERVIEW_AI_SOURCE_SHA}^", check=False
+    )
+    facts["interview_ai_source_sha"] = source_sha
+    facts["interview_ai_source_parent"] = source_parent
+    facts["interview_ai_source_reference_tree"] = _git_object_id_at(
+        INTERVIEW_AI_SOURCE_SHA, INTERVIEW_AI_SOURCE_ROOT
+    )
+    facts["interview_ai_origin_main_is_ancestor"] = bool(
+        isinstance(origin_main, str)
+        and isinstance(head, str)
+        and _git_returncode_at(
+            ROOT, "merge-base", "--is-ancestor", origin_main, head
+        )
+        == 0
+    )
+
+    try:
+        origin_ledger = load_ledger_at_ref(origin_main)
+    except (RuntimeError, ValueError):
+        origin_ledger = None
+    origin_lanes = (
+        origin_ledger.get("active_lanes")
+        if isinstance(origin_ledger, dict)
+        else None
+    )
+    origin_interview_lanes = [
+        lane
+        for lane in origin_lanes
+        if isinstance(lane, dict)
+        and lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+    ] if isinstance(origin_lanes, list) else []
+    facts["interview_ai_origin_main_has_exact_admission"] = bool(
+        isinstance(origin_ledger, dict)
+        and origin_ledger.get("interview_ai_d13_admission_repair")
+        == INTERVIEW_AI_D13_ADMISSION_REPAIR
+        and len(origin_interview_lanes) == 1
+        and _canonical_sha256(origin_interview_lanes[0])
+        == INTERVIEW_AI_RECONCILED_LANE_SHA256
+    )
+    facts["interview_ai_ledger_matches_origin_main"] = bool(
+        isinstance(origin_ledger, dict) and ledger == origin_ledger
+    )
+
+    facts["interview_ai_source_tree"] = _git_object_id_at(
+        head, INTERVIEW_AI_SOURCE_ROOT
+    )
+    facts["interview_ai_target_tree"] = _git_object_id_at(
+        head, INTERVIEW_AI_TARGET_ROOT
+    )
+    target_files = sorted(
+        _git_nul(
+            "ls-tree",
+            "-r",
+            "--name-only",
+            "-z",
+            head,
+            "--",
+            INTERVIEW_AI_TARGET_ROOT,
+        )
+    ) if isinstance(head, str) else []
+    facts["interview_ai_target_files"] = target_files
+    facts["interview_ai_target_files_regular"] = bool(
+        target_files
+        and all(
+            _git_object_type(head, path) == "blob"
+            and _git_object_mode(head, path) == "100644"
+            for path in target_files
+        )
+    )
+    registry_sha256 = ""
+    if isinstance(head, str):
+        try:
+            registry = json.loads(
+                _git_bytes(
+                    "show", f"{head}:{INTERVIEW_AI_REGISTRY_PATH}"
+                ).decode("utf-8")
+            )
+        except (RuntimeError, UnicodeDecodeError, json.JSONDecodeError):
+            registry = None
+        if isinstance(registry, dict):
+            registry_sha256 = _canonical_sha256(registry)
+    facts["interview_ai_registry_sha256"] = registry_sha256
+    if (
+        facts["interview_ai_source_tree"] == INTERVIEW_AI_SOURCE_TREE
+        and facts["interview_ai_target_tree"] == ""
+        and registry_sha256 == INTERVIEW_AI_BASE_REGISTRY_SHA256
+    ):
+        facts["interview_ai_relocation_phase"] = "source_ready"
+    elif (
+        facts["interview_ai_source_tree"] == ""
+        and set(target_files) == set(INTERVIEW_AI_TARGET_PATHS)
+        and facts["interview_ai_target_files_regular"] is True
+        and registry_sha256 == INTERVIEW_AI_RELOCATED_REGISTRY_SHA256
+    ):
+        facts["interview_ai_relocation_phase"] = "relocated"
+    else:
+        facts["interview_ai_relocation_phase"] = "invalid"
 
 
 def _absolute_git_common_dir(repository: Path) -> Path:
@@ -6626,6 +7016,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        interview_ai_d13_admission_matches = (
+            _exact_interview_ai_d13_admission_repair_matches(
+                ledger, facts, package_id
+            )
+        )
         if bootstrap_matches:
             allowed_surfaces = set(BOOTSTRAP_CONTROL_REPAIR["allowed_surfaces"])
             warnings.append(
@@ -6694,6 +7089,12 @@ def evaluate_policy(
             allowed_surfaces = set(SHELL_MERGE_CONTROL_PATHS)
             warnings.append(
                 "using the exact one-time Shell merge-preflight-repair boundary"
+            )
+        elif interview_ai_d13_admission_matches:
+            allowed_surfaces = set(INTERVIEW_AI_D13_CONTROL_PATHS)
+            warnings.append(
+                "using the exact one-time authority-neutral Interview AI D13 "
+                "admission boundary"
             )
         elif opportunity_schema_release_refresh_matches:
             allowed_surfaces = set(
@@ -6812,6 +7213,7 @@ def evaluate_policy(
                 and not connect_002_merge_admission_anchor_followup_matches
                 and not connect_002_grant_fixture_followup_matches
                 and not shell_merge_repair_matches
+                and not interview_ai_d13_admission_matches
                 and origin_policy != policy
             ):
                 errors.append(
@@ -7032,6 +7434,60 @@ def evaluate_policy(
                     candidate_baseline,
                     origin_baseline,
                     label="Shell merge-preflight repair",
+                    errors=errors,
+                )
+            elif interview_ai_d13_admission_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "Interview AI D13 admission updated_at must be a real "
+                        "UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "Interview AI D13 admission updated_at must strictly "
+                        "advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "Interview AI D13 admission may not change "
+                        "activation_policy"
+                    )
+                if _root_changes(ledger, origin_ledger) != {
+                    "updated_at",
+                    "interview_ai_d13_admission_repair",
+                    "active_lanes",
+                }:
+                    errors.append(
+                        "Interview AI D13 admission must change exactly "
+                        "updated_at, its repair record, and the reconciled lane"
+                    )
+                if (
+                    origin_ledger.get("interview_ai_d13_admission_repair")
+                    is not None
+                ):
+                    errors.append(
+                        "Interview AI D13 admission is one-time and already "
+                        "recorded"
+                    )
+                if not _exact_interview_ai_d13_admission_repair_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "Interview AI D13 admission must be exactly its record "
+                        "plus the pinned Interview lane truth reconciliation"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="Interview AI D13 admission",
                     errors=errors,
                 )
             elif connect_002_merge_admission_repair_matches:
@@ -7824,6 +8280,7 @@ def evaluate_policy(
             and not implementation_release_repair_matches
             and not profile_core_merge_repair_matches
             and not shell_merge_repair_matches
+            and not interview_ai_d13_admission_matches
             and not profile_core_grant_fixture_followup_matches
             and not profile_core_grant_anchor_followup_matches
             and not profile_core_post_grant_registry_fixture_repair_matches
@@ -7910,6 +8367,15 @@ def evaluate_policy(
             if shell_merge_repair_matches and changed_paths != allowed_surfaces:
                 errors.append(
                     "Shell merge-preflight repair must change exactly the "
+                    "owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                interview_ai_d13_admission_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "Interview AI D13 admission must change exactly the "
                     "owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
@@ -8156,6 +8622,11 @@ def evaluate_policy(
             )
         return errors, warnings
 
+    interview_ai_relocation_write = bool(
+        intent == "write"
+        and _exact_interview_ai_relocation_write(ledger, facts, package_id)
+    )
+
     allowed_key = {
         "write": "writes_allowed_for",
         "merge": "merge_allowed_for",
@@ -8191,7 +8662,13 @@ def evaluate_policy(
             f"{active_lane.get('branch')}"
         )
     elif intent in {"write", "merge", "release"}:
-        _validate_changed_paths_within_lane(active_lane, facts, intent, errors)
+        if interview_ai_relocation_write:
+            warnings.append(
+                "using the exact authority-neutral Interview AI D13 relocation "
+                "write boundary; merge and release remain withheld"
+            )
+        else:
+            _validate_changed_paths_within_lane(active_lane, facts, intent, errors)
 
     if facts.get("ahead", 0):
         warnings.append(
@@ -8353,6 +8830,11 @@ def main(argv: list[str] | None = None) -> int:
                     raise RuntimeError(
                         "captured origin/main does not equal advertised main"
                     )
+        if (
+            args.intent == "write"
+            and args.package == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        ):
+            _collect_interview_ai_relocation_facts(ledger, facts)
         if args.intent in {
             "activate", "pause", "transfer", "grant", "close", "cleanup", "merge"
         }:
