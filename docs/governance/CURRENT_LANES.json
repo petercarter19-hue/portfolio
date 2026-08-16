@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-15T23:10:00Z",
+  "updated_at": "2026-08-16T18:55:26Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-INTERVIEW-AI-ARCHITECTURE-001"
+      "PS-INTERVIEW-AI-ARCHITECTURE-001",
+      "PS-PORTABLE-SESSION-MANAGER-002"
     ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
@@ -29,7 +30,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active direction-authority writer: PS-INTERVIEW-AI-ARCHITECTURE-001. It may produce the Interview Studio AI current-system diagnosis and architecture candidate on its recorded documentation and evidence surfaces. It grants no runtime, prompt, provider, model, schema, retrieval, material visual, merge, deployment, configuration, enablement, or live authority. PS-TRUST-SAFETY-001 remains paused and preserved."
+    "exit_authority": "Active writer lanes: PS-INTERVIEW-AI-ARCHITECTURE-001 remains the sole direction-authority writer on its recorded Interview AI documentation and evidence surfaces; PS-PORTABLE-SESSION-MANAGER-002 is the separate non-production shared-foundation writer on only its recorded manager/tool-routing governance surfaces. Neither package has merge, release, deployment, configuration, enablement, or live authority. PS-TRUST-SAFETY-001 remains paused and preserved."
   },
   "activation_policy": {
     "enabled": true,
@@ -1745,6 +1746,56 @@
       ],
       "cleanup_contract": "After a verified merge and formal close, remove only this task's clean activation and package worktrees and branches behind recovery refs. Preserve the paused parent package, the Role Context package, and every unrelated or dirty worktree, branch, stash, artifact, and user-authored file.",
       "sequence": "activation-only control PR -> clean package worktree from resulting origin/main -> Gate A diagnosis -> Pete and Codex review and acceptance -> Gate B staged architecture increments -> consolidated architecture package -> documentation PR with [skip ci] -> formal close -> separately activate the first Protected Interview AI runtime slice"
+    },
+    {
+      "package": "PS-PORTABLE-SESSION-MANAGER-002",
+      "outcome": "Make package-manager and tool routing durable across every PeerSlate repository session and computer. Establish one canonical outcome-based rule for when ChatGPT Work manages a substantial product or experience package, when Codex manages a bounded repository or technical package directly, when Claude Co-Work may manage by explicit assignment, and why Original ChatGPT remains the material visual specialist rather than automatically becoming package manager. Add the always-visible startup pointer, current-control pointer, package role record, owner decision, initiative authority, registry entry, and deterministic guardrails without changing runtime behavior.",
+      "branch": "work/2026-08-16-portable-session-manager-002",
+      "writer": "The current Codex site-audit manager session is the sole writer. Read-only specialists may review current governance and tests but may not edit this branch.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "shared_foundation",
+      "exclusive_domains": [
+        "governance:manager-tool-routing"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 6b3f90d598f1dc90f1d4aec186c2e7053ab4e170 at activation. Pete selected the exact cross-session routing outcome on 2026-08-16 and then directed Codex to implement it while preserving Interview AI. The existing PS-INTERVIEW-AI-ARCHITECTURE-001 direction lane remains byte-for-byte unchanged and owns disjoint paths and domain.",
+      "writable_surfaces": [
+        "AGENTS.md",
+        "docs/AI_MODEL_AND_ROLE_ROUTING.md",
+        "docs/governance/CURRENT_BASELINE.yaml",
+        "docs/governance/DECISIONS.md",
+        "docs/governance/PACKAGE_REGISTRY.json",
+        "docs/initiatives/PS-PORTABLE-SESSION-MANAGER-002/",
+        "docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+        "tests/test_governance_pointers.py"
+      ],
+      "exclusions": [
+        "no application, route, template, stylesheet, JavaScript, prompt, model, provider, schema, migration, dependency, infrastructure, pipeline, deployment, configuration, production-data, or live-behavior change",
+        "no change to PS-INTERVIEW-AI-ARCHITECTURE-001, its branch, writable surfaces, exclusive domain, diagnosis, architecture, evidence, sequence, or owner decisions",
+        "no automatic assignment of ChatGPT Work to every package; manager selection remains outcome-based and every active package has exactly one named manager",
+        "no transfer of material visual creation away from Original ChatGPT and no inference that visual creation grants package-management or implementation authority",
+        "no inference that package manager, architect, writer, reviewer, merge owner, release owner, or production operator are the same role",
+        "no repository write from the stale primary checkout and no overwrite, cleanup, reset, move, or adoption of unrelated worktrees, branches, stashes, artifacts, or user files",
+        "no merge, deployment, enablement, or live claim from the activation record itself"
+      ],
+      "completion_evidence": [
+        "docs/AI_MODEL_AND_ROLE_ROUTING.md contains one canonical, outcome-based manager-selection matrix and explicitly separates the site-audit manager, package manager, Original ChatGPT visual specialist, architect, writer, reviewer, and release owner",
+        "root AGENTS.md points every supported repository session to the canonical routing authority and CURRENT_BASELINE.yaml exposes the same path as a machine-readable governing document",
+        "the package completion record and shared completion template require manager rationale, ChatGPT Work yes/no reasoning, specialist ownership, return target, and truthful phase/release status without creating a duplicate workflow",
+        "DECISIONS.md records Pete's 2026-08-16 clarification and PACKAGE_REGISTRY.json accounts for the new initiative exactly once",
+        "focused governance and package-registry tests pass, including assertions that Original ChatGPT remains the material visual creator but is not automatically package manager, and that ChatGPT Work is selected by package outcome rather than universally",
+        "complete-diff self-review proves all changed paths are inside this lane, the existing Interview AI lane is unchanged, and no runtime or production behavior changed"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-16",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete asked to lock the package-manager and ChatGPT Work decision into durable READMEs or agent startup authority so any new Windows or Mac session knows when to use Work and when not to. After confirming that the change does not overwrite Interview AI, Pete directed Codex: 'okay, then do it.'"
+        }
+      ],
+      "cleanup_contract": "After verified package merge and formal close, remove only this task's clean activation and implementation worktrees and branches behind recovery references. Preserve the active Interview AI lane and every unrelated, dirty, detached, historical, or user-owned worktree, branch, stash, artifact, and file.",
+      "sequence": "control-only activation PR -> merge activation -> clean package worktree from resulting origin/main -> package write preflight -> bounded documentation and guardrail implementation -> focused tests and complete-diff self-review -> Azure documentation PR with [skip ci] -> formal close; no runtime deployment"
     }
   ],
   "paused_lanes": [
