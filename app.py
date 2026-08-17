@@ -4452,6 +4452,14 @@ def _auth_recovery_response(state, status_code):
             render_template(
                 "auth_recovery.html",
                 page_title="Account check needed",
+                # PS-SIGNIN-MEMBER-ARRIVAL-001: an unusable account mapping is
+                # a service problem, not something wrong with the member's
+                # session. Say so rather than sending both here with one line.
+                recovery_state=(
+                    "account_unavailable"
+                    if state == "account_issue"
+                    else "session_check"
+                ),
             )
         )
     response.status_code = status_code

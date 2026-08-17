@@ -80,6 +80,7 @@ scoped_findings:
     blocks: "Nothing since 2026-08-07: resolved by the singular Community recovery lane, request-path maintenance removal, bounded waits, additive schema proof/apply, exact-source deployment, staged maintenance and pilot enablement, and live public-demo verification. Kept for provenance; broader member authoring still requires its own package."
 
 completed_packages:
+  - PS-SIGNIN-MEMBER-ARRIVAL-001
   - PS-AGENT-OPERATIONS-001
   - PS-ASK-PETE-DIRECT-001
   - PS-DELIVERY-PREFLIGHT-001

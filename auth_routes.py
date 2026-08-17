@@ -3,7 +3,7 @@
 import re
 import threading
 import time
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import urlencode
 
 from flask import (
     Blueprint,
@@ -27,6 +27,10 @@ from identity import (
     get_optional_identity,
     get_optional_principal,
 )
+from safe_return import (
+    MAX_RETURN_PATH_LENGTH,
+    safe_return_path as _safe_return_path,
+)
 from services.database_service import DatabaseServiceError
 from services.owner_home_service import OwnerHomeContractError, owner_home_service
 
@@ -37,7 +41,6 @@ AUTH_PROVIDER_NAME = re.compile(r"^[A-Za-z0-9._-]{1,50}$")
 # PS-SIGNIN-EXPERIENCE-001 item 2: how long a waking surface keeps checking
 # automatically before it stops and leaves the member in manual control.
 WAKING_RETRY_BUDGET_SECONDS = 90
-MAX_RETURN_PATH_LENGTH = 2048
 
 # PS-SIGNIN-EXPERIENCE-001 item 2.3 (sign-in pre-warm). /auth/sign-in is a
 # public, unauthenticated endpoint, so the pre-warm must never let a caller
@@ -54,43 +57,27 @@ def _auth_enabled():
     return current_app.config.get("PEERSLATE_TRUST_EASYAUTH_HEADERS", False) is True
 
 
-def _safe_return_path(candidate, default="/app"):
-    if not candidate or not isinstance(candidate, str):
-        return default
-    if len(candidate) > MAX_RETURN_PATH_LENGTH:
-        return default
-    if any(ord(character) < 32 or ord(character) == 127 for character in candidate):
-        return default
-    parsed = urlsplit(candidate)
-    if (
-        parsed.scheme
-        or parsed.netloc
-        or parsed.fragment
-        or not candidate.startswith("/")
-    ):
-        return default
-    if candidate.startswith("//") or "\\" in candidate:
-        return default
-    if "//" in candidate:
-        return default
-    if parsed.path == "/auth" or parsed.path.startswith("/auth/"):
-        return default
-    if parsed.path == "/.auth" or parsed.path.startswith("/.auth/"):
-        return default
-    # PS-COMMUNITY-AUTH-WALL-001: Community lives behind sign-in, so its
-    # namespace joins the private-app namespace as the only permitted
-    # post-auth destinations. Every other path stays rejected.
-    # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: Interview Studio's
-    # canonical namespace joins the same allowlist. This is unconditional
-    # (not flag-gated) — a return_to=/interview-studio round-trip is correct
-    # even while the page is still public (architecture 04 section 1).
-    allowed = ("/app", "/the-slate", "/interview-studio")
-    if not any(
-        parsed.path == prefix or parsed.path.startswith(prefix + "/")
-        for prefix in allowed
-    ):
-        return default
-    return candidate
+def _current_return_target():
+    """The page the member is on now, as a return target for sign-in.
+
+    PS-SIGNIN-MEMBER-ARRIVAL-001.  The global header's Sign In control and the
+    recovery surface's retry link both used to hardcode ``/app``, so the single
+    most-clicked sign-in entry point on the site discarded the member's context
+    on every page — undoing the work every per-route redirect does to preserve
+    it.  A public or unrecognised page still resolves to ``/app`` through the
+    same validator; only the default input becomes honest.
+
+    Deliberately path-only.  The query string is caller-controlled and this
+    value is rendered into every page's header, so carrying it would reflect
+    arbitrary input site-wide for no benefit — returning the member to the page
+    is the whole point, and the per-route redirects still preserve their own
+    query strings where that genuinely matters (``/app/settings?tab=account``).
+    """
+    try:
+        return _safe_return_path(request.path)
+    except RuntimeError:
+        # Rendered outside a request: there is no page to return to.
+        return "/app"
 
 
 def _easy_auth_path(action, return_path):
@@ -117,7 +104,7 @@ def _render_auth_unavailable():
     )
 
 
-def _render_auth_recovery(status_code=401):
+def _render_auth_recovery(status_code=401, recovery_state="sign_in_incomplete"):
     """Render a manual, non-looping account recovery surface.
 
     This is also used by the completion checkpoint when no trusted principal
@@ -131,6 +118,7 @@ def _render_auth_recovery(status_code=401):
         render_template(
             "auth_recovery.html",
             page_title="Account check needed",
+            recovery_state=recovery_state,
         ),
         status_code,
     )
@@ -138,7 +126,19 @@ def _render_auth_recovery(status_code=401):
     return response
 
 
-def _render_identity_storage_unavailable():
+def render_identity_storage_unavailable(retry_path=None):
+    """The honest "your workspace is waking up" surface.
+
+    Azure SQL serverless auto-pauses, so a ``DatabaseServiceError`` on the
+    first signed-in request after an idle period usually means the database is
+    resuming — a transient wake-up that resolves itself in well under a
+    minute, not a failure worth an error page.
+
+    PS-SIGNIN-MEMBER-ARRIVAL-001 made this shared.  ``/app`` already answered
+    this way, but Community — an equally valid place to land straight after
+    signing in — fell through to Werkzeug's unbranded 503.  ``retry_path``
+    lets each surface send the member back to where they actually were.
+    """
     # Rendering base.html normally resolves the navigation identity again. The
     # request has already proved that the trusted principal reached Flask and
     # that only identity storage failed, so prevent a duplicate SQL wake-up
@@ -148,7 +148,7 @@ def _render_identity_storage_unavailable():
         render_template(
             "identity_storage_unavailable.html",
             page_title="Your workspace is waking up",
-            retry_path=url_for("auth.owner_workspace"),
+            retry_path=retry_path or url_for("auth.owner_workspace"),
             waking_budget_seconds=WAKING_RETRY_BUDGET_SECONDS,
         ),
         503,
@@ -156,6 +156,10 @@ def _render_identity_storage_unavailable():
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["Retry-After"] = "5"
     return response
+
+
+def _render_identity_storage_unavailable():
+    return render_identity_storage_unavailable()
 
 
 def _prewarm_identity_storage():
@@ -544,9 +548,16 @@ def shared_authentication_state():
         "auth_enabled": _auth_enabled(),
         "identity_storage_available": identity_storage_available,
         "auth_navigation_state": navigation_state,
-        "auth_sign_in_url": url_for("auth.sign_in", return_to="/app"),
+        # PS-SIGNIN-MEMBER-ARRIVAL-001: return the member to the page they
+        # were reading, not always to /app. Unrecognised and public paths
+        # still resolve to /app through the same validator.
+        "auth_sign_in_url": url_for(
+            "auth.sign_in", return_to=_current_return_target()
+        ),
         "auth_sign_out_url": url_for("auth.sign_out"),
-        "auth_complete_url": url_for("auth.complete", return_to="/app"),
+        "auth_complete_url": url_for(
+            "auth.complete", return_to=_current_return_target()
+        ),
         "owner_workspace_url": url_for("auth.owner_workspace"),
         # Default off for every route. Only the flag-on Owner Home render
         # (PS-HOME-FRONTEND-001) passes standalone_owner_shell=True to

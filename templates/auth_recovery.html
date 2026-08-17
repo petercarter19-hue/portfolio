@@ -9,12 +9,34 @@
 {% block content %}
 <div class="owner-app">
     <section class="owner-app__panel" aria-labelledby="auth-recovery-title">
+        {# PS-SIGNIN-MEMBER-ARRIVAL-001: this surface answered three distinct
+           situations with one sentence, because it was never told which one it
+           was in. A member whose sign-in simply did not complete was told
+           their account needed checking, which reads as something being wrong
+           with them. Same components, same actions — only the wording now
+           tells the truth about what happened. #}
         <p class="owner-app__eyebrow">PeerSlate account</p>
+        {% if recovery_state == 'sign_in_incomplete' %}
+        <h1 id="auth-recovery-title">Your sign-in didn't finish.</h1>
+        <p>
+            You came back from the sign-in page, but PeerSlate did not receive a
+            completed session. That usually means the page was left open a while,
+            or sign-in was cancelled. Nothing private was opened or changed.
+        </p>
+        {% elif recovery_state == 'account_unavailable' %}
+        <h1 id="auth-recovery-title">We couldn't open your account just now.</h1>
+        <p>
+            Your sign-in worked, but PeerSlate could not load your account. This
+            is usually temporary. No private workspace content was opened or
+            changed.
+        </p>
+        {% else %}
         <h1 id="auth-recovery-title">We need to check your account session.</h1>
         <p>
             PeerSlate could not safely continue with this browser session. No
             private workspace content was opened or changed.
         </p>
+        {% endif %}
         <div class="owner-app__actions">
             <form class="nav-sign-out" method="post" action="{{ auth_sign_out_url }}">
                 <button class="owner-app__secondary" type="submit">Sign out</button>

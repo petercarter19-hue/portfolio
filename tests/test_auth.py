@@ -417,7 +417,12 @@ class AuthenticationFlowTests(unittest.TestCase):
         self.assertEqual(completed.headers["Location"], "/app/settings")
         self.assertEqual(missing.status_code, 401)
         self.assertEqual(missing.headers["Cache-Control"], "private, no-store")
-        self.assertIn(b"We need to check your account session", missing.data)
+        # PS-SIGNIN-MEMBER-ARRIVAL-001 changed this copy deliberately. Coming
+        # back from the provider without a principal means the sign-in did not
+        # complete — it is not evidence that the member's account needs
+        # checking. The property this test exists for is the assertion below:
+        # this surface must never re-enter the provider automatically.
+        self.assertIn(b"Your sign-in didn't finish", missing.data)
         self.assertNotIn(b"/.auth/login", missing.data)
         first_row.assert_not_called()
 
@@ -519,7 +524,14 @@ class AuthenticationFlowTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
-        self.assertIn(b"We need to check your account session", response.data)
+        # PS-SIGNIN-MEMBER-ARRIVAL-001 changed this copy deliberately. An
+        # unusable account mapping is a service problem; telling the member
+        # their "account session" needs checking read as though something were
+        # wrong with them. What this test actually guards is unchanged and
+        # asserted below: no claim detail, no provider re-entry, private and
+        # unstorable, one <main>.
+        self.assertIn(b"We couldn't open your account just now", response.data)
+        self.assertNotIn(b"We need to check your account session", response.data)
         self.assertNotIn(b"pete-id", response.data)
         self.assertNotIn(b"/.auth/login", response.data)
         self.assertEqual(response.data.lower().count(b"<main"), 1)

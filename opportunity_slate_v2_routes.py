@@ -74,6 +74,7 @@ from flask import (
 )
 
 from identity import AuthenticationRequired, get_current_identity
+from safe_return import safe_return_path as shared_safe_return_path
 from services.database_service import DatabaseServiceError
 from services.opportunity_slate_v2_service import (
     MAX_IDENTITY_FIELD_UNITS,
@@ -244,19 +245,16 @@ def _is_same_origin_write():
 def _safe_return_path(candidate, default=None):
     """Same-origin-only return target for the sign-in redirect.
 
-    Mirrors ``workshop_routes._safe_return_path`` exactly: a scheme,
-    host, or ``//``/backslash-prefixed candidate is never trusted, because
-    an open redirect through ``return_to`` would defeat the whole point of
-    a same-origin check elsewhere in this file.
+    PS-SIGNIN-MEMBER-ARRIVAL-001: delegates to the one shared validator in
+    :mod:`safe_return`.  This function previously carried its own weaker rules
+    and a docstring claiming it mirrored ``workshop_routes`` "exactly" — it did
+    not parse the URL at all.  Worse, the value it produced was rejected on
+    arrival because ``/opportunity-slate`` was never on the consumer's
+    allowlist, so every signed-out member was silently dropped on ``/app``.
+    The room is registered in :data:`safe_return.PROTECTED_DESTINATIONS` now,
+    and both halves of the round trip use the same rules.
     """
-    fallback = default or ROOM_PATH
-    if not candidate or not isinstance(candidate, str):
-        return fallback
-    if not candidate.startswith("/") or candidate.startswith("//"):
-        return fallback
-    if "\\" in candidate or "://" in candidate:
-        return fallback
-    return candidate
+    return shared_safe_return_path(candidate, default or ROOM_PATH)
 
 
 @opportunity_slate_v2.after_request

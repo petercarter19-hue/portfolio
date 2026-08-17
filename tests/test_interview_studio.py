@@ -3190,8 +3190,14 @@ def _interview_user_for_subject(_procedure_name, parameters):
 # does not. This is the same documented exception tests/test_owner_home.py's
 # byte-identical baseline uses for an asset that changed underneath an
 # otherwise-unchanged render.
+# PS-SIGNIN-MEMBER-ARRIVAL-001 widened this from the two Interview Studio
+# assets to every versioned static asset. The token is a content hash the build
+# derives, not authored HTML, so it is exactly what this baseline should ignore
+# — the previous pattern let an unrelated shared script (easy-auth-callback.js)
+# break an Interview Studio HTML baseline for a reason that has nothing to do
+# with Interview Studio's HTML.
 _INTERVIEW_JS_VERSION_TOKEN = re.compile(
-    r'(/static/(?:js/interview-studio\.js|css/interview-studio\.css)\?v=)[0-9a-f]+'
+    r'(/static/[A-Za-z0-9_./-]+\?v=)[0-9a-f]+'
 )
 
 # Captured from this package's own slice-3/4 base (via the exact GET request
@@ -3258,13 +3264,22 @@ _INTERVIEW_JS_VERSION_TOKEN = re.compile(
 # 9b25c57dc7ed occurs exactly once, and substituting the pre-round token
 # 4a797a2823ce back into the normalized document reproduces the previously
 # locked sha256 exactly, at identical length.
-FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH = 114833
+# PS-SIGNIN-MEMBER-ARRIVAL-001 recapture: +26 bytes, which is exactly the
+# two header controls now offering to return the member to
+# /interview-studio (17 chars) instead of /app (4), twice. That is the fix
+# working on this page: a signed-out reader who signs in from here now
+# comes back here. Proven by rendering this exact request before and after
+# -- the only other diff is a versioned asset token, now normalized above.
+FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH = 114859
 FLAG_OFF_INTERVIEW_STUDIO_SHA256 = (
-    'e5f5d1c3c917eb6bbcaa6cc23719c5186ea619732e90b7e8fb02326143d77448'
+    '9b6f66f504eb66a9e2cbf25e1ca0a0f8116f9dc8cbd2c4b60f10cc298e800914'
 )
-FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH = 114610
+# PS-SIGNIN-MEMBER-ARRIVAL-001 recapture: +42 bytes, exactly the two header
+# controls now returning to /interview-studio/history (25 chars) rather
+# than /app (4), twice.
+FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH = 114652
 FLAG_OFF_INTERVIEW_STUDIO_HISTORY_SHA256 = (
-    '489bd106f96043c57df5eb6b85e071bf8dacfc6af4dfa488d8026ef09f2bbff0'
+    '01fd1902c8246872049cd601299aef2f13a0c894ab6d2c29de90f8ee0c9f2b20'
 )
 
 

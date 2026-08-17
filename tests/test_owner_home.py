@@ -86,14 +86,30 @@ FAILED_B = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 # and the older recaptures continue to chain from there unchanged. No owner
 # workspace markup, layout, destination, or control semantics changed.
 FLAG_OFF_APP_RENDER_BYTE_LENGTH = 15777
+# PS-SIGNIN-MEMBER-ARRIVAL-001 recapture. The byte LENGTH is unchanged
+# (15777) and the sole delta is the easy-auth-callback.js content
+# fingerprint, which changed because that script's private-path guard was
+# widened to the namespaces that moved behind sign-in. Proven by rendering
+# this exact request before and after: the diff is one `?v=` token and
+# nothing else. No owner workspace markup, layout, destination, or control
+# semantics changed, and the recapture chain below still normalizes that
+# token back to reproduce every earlier locked baseline.
 FLAG_OFF_APP_RENDER_SHA256 = (
-    "f2aa044f85900ef408f4bef916d7b8f742baa65f4d00c37331e1667e4b42aa8d"
+    "e6a4cfc78864dd612663c39971a7c0b3b0bcd394f53e72a6670c829ddcb9f4fd"
 )
+# The chain intermediates below (PRE_AUTH_WALL, PRE_OPPSLATE_NAV,
+# PRE_NAV_WRAP, THEME_PAUSE_BASE, STYLE_BASE) moved for that one reason too:
+# each is hashed while the render still carries the new callback token.
+# FLAG_OFF_APP_RENDER_PREVIOUS_SHA256 is deliberately NOT recaptured — it is
+# the terminal step, taken after the token is normalized back, and it still
+# matches the historically locked render byte for byte. That is the proof
+# this recapture is an asset fingerprint and not a markup change: if any
+# owner workspace byte had moved, the terminal assertion would fail.
 FLAG_OFF_APP_RENDER_AUTH_WALL_COMMUNITY_SEARCH_SPAN = b'Visible to signed-in PeerSlate members", "href": "/the-slate", "keys": "the slate hub feed people community goals progress proof connect'
 FLAG_OFF_APP_RENDER_PRE_AUTH_WALL_COMMUNITY_SEARCH_SPAN = b'People, interests, goals, and progress", "href": "/the-slate", "keys": "the slate hub feed people community goals progress proof connect"},\n        {"title": "Community \xc2\xb7 My Slate", "sub": "Your goal map", "href": "/the-slate/my-slate", "keys": "my slate goals goal map board whiteboard ideas drafts rooms connections"},\n        {"title": "Community \xc2\xb7 Daily Slate", "sub": "Log what moved forward today", "href": "/the-slate/daily", "keys": "daily slate log progress today streak wins check-in updates"},\n        {"title": "Community \xc2\xb7 My Paths", "sub": "Paths and milestones on My Slate", "href": "/the-slate/my-slate#ts-mypaths", "keys": "paths guided tracks milestones pmp run portfolio join community"},\n        {"title": "Feed \xc2\xb7 People & Interests", "sub": "The living board of goals and moments", "href": "/the-slate", "keys": "feed activity progress updates community posts milestones people interests board corkboard notes"},\n        {"title": "Feed \xc2\xb7 Pulse", "sub": "Community momentum", "href": "/the-slate/pulse", "keys": "pulse trending stats momentum numbers skills goals"},\n        {"title": "Feed \xc2\xb7 Break", "sub": "Step back and recharge", "href": "/the-slate/break", "keys": "break recharge rest quotes shout-outs spark"},\n        {"title": "Feed Preview \xc2\xb7 Living Stream", "sub": "A design preview of PeerSlate\'s next Feed \xe2\x80\x94 sample data only", "href": "/feed-living-stream", "keys": "feed preview living stream design concept voice ai capture publish'
 FLAG_OFF_APP_RENDER_PRE_AUTH_WALL_BYTE_LENGTH = 17116
 FLAG_OFF_APP_RENDER_PRE_AUTH_WALL_SHA256 = (
-    "1c1ff4a333b1caf2fe7080ad66655540a19d9df87e3f8b11144330531dd068f0"
+    "69810cc0f530ae83f7d043593b63e61a87bfe4609d2e504814f5a9773ba59d90"
 )
 FLAG_OFF_APP_RENDER_OPPSLATE_NAV_LI = (
     b'<li><a href="/opportunity-slate" >Opportunity Slate</a></li>'
@@ -113,7 +129,7 @@ FLAG_OFF_APP_RENDER_OPPSLATE_NAV_SEARCH_RECORD = (
 # control semantics changed.
 FLAG_OFF_APP_RENDER_PRE_OPPSLATE_NAV_BYTE_LENGTH = 16840
 FLAG_OFF_APP_RENDER_PRE_OPPSLATE_NAV_SHA256 = (
-    "4be4db68e4477a82b218222ff9b7d9f842110ebb753dd887a730f59225de1d3a"
+    "320d2582049eb1bb2788d229d8bd320e4acae0381f8f32d63fb52e710ec6604d"
 )
 # Audit fix F3 (2026-08-04) recapture. static/css/style.css gained a
 # flex-wrap rule inside its existing max-width:743px mobile block, so the
@@ -124,18 +140,18 @@ FLAG_OFF_APP_RENDER_PRE_OPPSLATE_NAV_SHA256 = (
 # locked hash byte for byte. No /app markup, layout, destination, or control
 # semantics changed.
 FLAG_OFF_APP_RENDER_PRE_NAV_WRAP_SHA256 = (
-    "177d342fd52affde5ede1b3a21d9079229ac02b87d21c571c5923aa58e4c480c"
+    "8077126be183c8202a31a25c5820dc043bd7e3da59a5d40aa6f926ad79632b74"
 )
 FLAG_OFF_APP_RENDER_THEME_PAUSE_BASE_SHA256 = (
-    "729335580bf560b0a76dee15e0809e599e132b06ed5de68ed1ee61f2d81d15f1"
+    "219a0f6f7051ceadf4b42139397d85c643a17b4041c63f0b383df8bbee2affbc"
 )
 FLAG_OFF_APP_RENDER_STYLE_BASE_SHA256 = (
-    "7f97a1847fd78db54ba8097bea2d0de577b171da732c80edae09af81b4413152"
+    "99684daeb559ed6e5289d42df4628092285b73c442713848d604e4dace4ae487"
 )
 FLAG_OFF_APP_RENDER_PREVIOUS_SHA256 = (
     "073aeba498b180fa69d48a3baae0090b6de89f146574aa717c1c29d827e20815"
 )
-FLAG_OFF_CALLBACK_VERSION = b"fd13bc50ca97"
+FLAG_OFF_CALLBACK_VERSION = b"bfd4097e46c7"
 FLAG_OFF_CALLBACK_PREVIOUS_VERSION = b"9a8e38ddf7ba"
 FLAG_OFF_STYLE_VERSION = b"2b76a653fdca"
 FLAG_OFF_STYLE_PRE_NAV_WRAP_VERSION = b"ee65b37f38c5"

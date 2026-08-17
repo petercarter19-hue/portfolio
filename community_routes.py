@@ -18,8 +18,10 @@ from flask import (
     url_for,
 )
 
+from auth_routes import render_identity_storage_unavailable
 from identity import AuthenticationRequired, get_current_identity
 from owner_authorization import is_owner
+from safe_return import safe_return_path
 from services.community_contracts import (
     CommunityNotFoundError,
     CommunityUnavailableError,
@@ -39,11 +41,20 @@ def enabled():
 
 
 def _sign_in_redirect():
-    """Send a signed-out GET through sign-in, back to this exact page."""
+    """Send a signed-out GET through sign-in, back to this exact page.
+
+    PS-SIGNIN-MEMBER-ARRIVAL-001: the return target now goes through the one
+    shared validator rather than straight from the request.  This was the only
+    sign-in producer with no validation at all; the consumer re-validated, so
+    nothing unsafe reached a member, but the producer and consumer disagreeing
+    is the defect class this package exists to remove.
+    """
     return_to = request.full_path if request.query_string else request.path
     if return_to.endswith("?"):
         return_to = return_to[:-1]
-    return redirect(url_for("auth.sign_in", return_to=return_to))
+    return redirect(
+        url_for("auth.sign_in", return_to=safe_return_path(return_to, "/the-slate"))
+    )
 
 
 def require_community_member():
@@ -71,8 +82,16 @@ def require_community_member():
     except DatabaseServiceError:
         # Identity storage failing is a service problem, not a sign-in
         # problem: a private 503, never an anonymous or demo render.
+        #
+        # PS-SIGNIN-MEMBER-ARRIVAL-001: answer it with the same honest
+        # "waking up" surface /app already returns, instead of Werkzeug's
+        # unbranded 503 page. Community is one of the destinations a member
+        # can land on straight after signing in, and Azure SQL serverless
+        # auto-pauses — so a paused database is the single most likely
+        # first-arrival failure here, and it resolves itself in well under a
+        # minute. The response stays private, unstorable and payload-free.
         current_app.logger.error("Community identity resolution failed.")
-        abort(503)
+        return None, render_identity_storage_unavailable(retry_path="/the-slate")
 
 
 def viewer_context(identity):

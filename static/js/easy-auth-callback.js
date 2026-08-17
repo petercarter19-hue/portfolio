@@ -43,11 +43,30 @@
       return clearCallbackAndReload(windowRef);
     }
 
+    // PS-SIGNIN-MEMBER-ARRIVAL-001. Keep in step with
+    // safe_return.PROTECTED_DESTINATIONS; tests/test_signin_member_arrival.py
+    // fails if these two lists drift apart. This guard was written when /app
+    // was the only private namespace and was never extended as Community,
+    // Interview Studio and the Opportunity Slate room moved behind sign-in —
+    // so those pages could restore a signed-in body under a signed-out header
+    // after a Back press in any browser that revives a no-store document.
+    var PRIVATE_PREFIXES = ['/app', '/the-slate', '/interview-studio', '/opportunity-slate'];
+
     function isPrivatePath() {
       var pathname = windowRef && windowRef.location && windowRef.location.pathname;
-      return typeof pathname === 'string'
-        && (pathname === '/app' || pathname.indexOf('/app/') === 0
-          || pathname.indexOf('/auth/') === 0);
+      if (typeof pathname !== 'string') {
+        return false;
+      }
+      if (pathname.indexOf('/auth/') === 0) {
+        return true;
+      }
+      for (var index = 0; index < PRIVATE_PREFIXES.length; index += 1) {
+        var prefix = PRIVATE_PREFIXES[index];
+        if (pathname === prefix || pathname.indexOf(prefix + '/') === 0) {
+          return true;
+        }
+      }
+      return false;
     }
 
     checkForCallback();

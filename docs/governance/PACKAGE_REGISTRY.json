@@ -67,6 +67,7 @@
       "PS-SEC-EDGE-001",
       "PS-SHELL-001",
       "PS-SIGNIN-EXPERIENCE-001",
+      "PS-SIGNIN-MEMBER-ARRIVAL-001",
       "PS-VISUAL-INTEGRITY-GOV-001",
       "PS-VISUAL-MATERIALITY-001",
       "PS-VOICE-001",
@@ -140,11 +141,11 @@
     ]
   },
   "counts": {
-    "current_protect": 58,
+    "current_protect": 59,
     "future_finish": 23,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 116
+    "total": 117
   }
 }

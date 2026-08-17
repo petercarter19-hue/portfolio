@@ -67,7 +67,6 @@ completely unchanged — the session-delta branch is reached only when
 identity resolution raises ``AuthenticationRequired``.
 """
 
-from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
 from flask import (
@@ -83,6 +82,7 @@ from flask import (
 )
 
 from identity import AuthenticationRequired, get_current_identity
+from safe_return import safe_return_path as shared_safe_return_path
 from services import workshop_demo_library
 from services import workshop_voice_service
 from services.database_service import DatabaseServiceError
@@ -251,14 +251,17 @@ def _workshop_dev_fixture_enabled():
 
 
 def _safe_return_path(candidate, default="/app/workshop"):
-    if not candidate or not isinstance(candidate, str):
-        return default
-    parsed = urlsplit(candidate)
-    if parsed.scheme or parsed.netloc or not candidate.startswith("/"):
-        return default
-    if candidate.startswith("//") or "\\" in candidate:
-        return default
-    return candidate
+    """PS-SIGNIN-MEMBER-ARRIVAL-001: delegates to the one shared validator.
+
+    The local copy this replaces omitted six of the canonical function's
+    controls (length cap, control characters, fragment, embedded ``//``, the
+    ``/auth`` and ``/.auth`` exclusions, and the allowlist) while its module
+    docstring claimed it mirrored ``auth_routes`` "exactly".  Nothing was
+    exploitable, because the consumer re-validated — but a producer that
+    disagrees with the consumer is how a member's destination gets silently
+    discarded, which is exactly what happened to Opportunity Slate.
+    """
+    return shared_safe_return_path(candidate, default)
 
 
 def _is_same_origin_write():
