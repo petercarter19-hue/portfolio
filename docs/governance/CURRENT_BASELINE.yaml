@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active writer lanes: PS-COMMUNITY-AUTHORING-RUNTIME-001. PS-PORTABLE-SESSION-MANAGER-002 is paused and preserved; it may resume only through fresh activation."
+  current_assignments: "Active writer lanes: PS-COMMUNITY-AUTHORING-RUNTIME-001 and PS-PORTABLE-SESSION-MANAGER-002 on work/2026-08-17-portable-session-manager-002-one-file. The earlier portable-manager candidate remains paused and preserved."
 
 governing_documents:
   bible:
@@ -63,6 +63,9 @@ active_packages:
   - id: PS-COMMUNITY-AUTHORING-RUNTIME-001
     status: active_delivery
     scope: "Protected non-production Community architecture/runtime: locked responsive visuals, safe authoring, authorized audiences, drafts, media, AI proposals, replies, accessibility, and truthful failures. Independent review required before merge or release."
+  - id: PS-PORTABLE-SESSION-MANAGER-002
+    status: active_delivery
+    scope: "Non-production one-file workflow simplification in docs/AI_WORKFLOW.md only; no new per-phase documents, runtime, deployment, or live change."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -158,7 +161,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Continue only the active writer packages: PS-COMMUNITY-AUTHORING-RUNTIME-001. PS-PORTABLE-SESSION-MANAGER-002 remains paused; use fresh activation to resume it."
+next_gate: "Continue PS-COMMUNITY-AUTHORING-RUNTIME-001 and the one-file PS-PORTABLE-SESSION-MANAGER-002 workflow simplification on work/2026-08-17-portable-session-manager-002-one-file."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
