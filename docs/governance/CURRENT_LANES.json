@@ -1,19 +1,17 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-17T21:51:34Z",
+  "updated_at": "2026-08-17T22:08:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-COMMUNITY-AUTHORING-RUNTIME-001"
-    ],
+    "writes_allowed_for": [],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -29,7 +27,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active writer lane: PS-COMMUNITY-AUTHORING-RUNTIME-001. PS-PORTABLE-SESSION-MANAGER-002 is paused and preserved after its owner-authorized documentation merge; it may resume only through fresh activation."
+    "exit_authority": "PS-COMMUNITY-AUTHORING-RUNTIME-001 is paused and preserved at its exact pushed implementation checkpoint. Resume requires fresh activation from current origin/main with the now-uncontested package-registry surface."
   },
   "activation_policy": {
     "enabled": true,
@@ -1953,87 +1951,7 @@
       ]
     }
   ],
-  "active_lanes": [
-    {
-      "package": "PS-COMMUNITY-AUTHORING-RUNTIME-001",
-      "outcome": "Implement the Pete-locked Mine/Ours/Beyond Community page and compact desktop, tablet, and mobile authoring experience as a review-ready, default-dark runtime candidate. Preserve signed-in privacy, server-derived identity, deliberate publication, safe draft recovery, Voice, attachments, optional AI proposals, audience authorization, replies, accessibility, truthful failure states, and existing Community data while replacing the superseded composition. Stop before merge, schema apply, deployment, configuration enablement, broad member launch, or any live claim so a different reviewer can inspect the exact candidate.",
-      "branch": "work/2026-08-17-community-authoring-runtime-001",
-      "writer": "The current root Codex session is the sole architecture and implementation writer. A different reviewer will be assigned only after the exact candidate is complete and frozen; no sub-agent or other session may edit this lane.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "implementation",
-      "exclusive_domains": [
-        "product:community-authoring-runtime",
-        "data:community-audience-and-draft-contract",
-        "visual:community-mine-ours-beyond"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main ae40aec8a6d4bce1aef13de9a06256428deb61a5 at activation. Pete approved the compact Community visual sequence, accepted the current color direction for implementation subject to a later whole-site color review, and explicitly directed this Codex session to build the architecture and implementation before handing the completed candidate to a different reviewer. The owner-locked visual package is preserved on codex/2026-08-16-community-color-direction at 0243b3941c74de80d90bff612161c1c17e7a00b8 for deliberate integration after this activation merges.",
-      "writable_surfaces": [
-        "app.py",
-        "community_api.py",
-        "community_routes.py",
-        "services/community_contracts.py",
-        "services/community_command_service.py",
-        "services/community_feed_service.py",
-        "services/community_media_service.py",
-        "services/community_media_storage.py",
-        "services/community_voice_service.py",
-        "services/community_ai_service.py",
-        "prompts/community/",
-        "templates/community_feed.html",
-        "static/css/community-v1.css",
-        "static/js/community-v1.js",
-        "SQL FIles/Migrations/proposed/PS-COMMUNITY-AUTHORING-001_community_authoring.sql",
-        "SQL FIles/Migrations/proposed/PS-COMMUNITY-AUTHORING-001_community_authoring_rollback.sql",
-        "SQL FIles/Verification/Verify_PS-COMMUNITY-AUTHORING-001.sql",
-        "SQL FIles/Migrations/registry.json",
-        "scripts/run_community_disposable_sql_proof.py",
-        "tests/community_draft_expiry.test.js",
-        "tests/community_focus_lifecycle.test.js",
-        "tests/community_authoring_runtime.test.js",
-        "tests/test_community_disposable_sql_proof.py",
-        "tests/test_community_draft_expiry.py",
-        "tests/test_community_public_pilot.py",
-        "tests/test_community_secondary_states.py",
-        "tests/test_community_tabs.py",
-        "tests/test_community_voice.py",
-        "tests/test_community_xlsx_support.py",
-        "tests/test_community_authoring_runtime.py",
-        "tests/test_navigation.py",
-        "docs/initiatives/PS-COMMUNITY-VISUAL-REFINEMENT-001/",
-        "docs/initiatives/PS-COMMUNITY-AUTHORING-RUNTIME-001/"
-      ],
-      "exclusions": [
-        "no merge, schema apply, deployment, production configuration, feature enablement, broad member launch, production-data mutation, or live-behavior claim from this non-production lane",
-        "no silent conversion of the transitional stored public token into a broader audience and no audience shown or accepted without server-side authorization and neutral inaccessible outcomes",
-        "no client-supplied identity, Pete-specific shared-product rule, automatic connection inference, or exposure of private drafts, attachments, saves, replies, or author-only controls",
-        "no AI auto-save, auto-publish, canonical mutation, hidden content ranking, training claim, or silent replacement of member text; AI output remains an optional editable proposal with useful unavailable behavior",
-        "no public anonymous permalink or Connections enablement unless the candidate includes its exact server authorization, revocation, blocked-account, attachment, count, cache, and regression contracts and the reviewer can verify them",
-        "no messaging, notification, Journal projection, public audio/video publishing, unrelated Community moderation expansion, package-registry edit while PS-PORTABLE-SESSION-MANAGER-002 owns that surface, global-shell redesign, or whole-site color-system change",
-        "no overwrite or deletion of existing Community content, applied migration history, prior visual authorities, evidence, unrelated branches, worktrees, stashes, artifacts, secrets, or user-authored files",
-        "no self-review presented as the independent review; the final exact candidate must be handed to a different reviewer before any later merge or release decision"
-      ],
-      "completion_evidence": [
-        "the accepted 10-image Community visual authority and its implementation handoff are integrated without recompression or material reinterpretation, with any trust-driven runtime variance explicitly documented",
-        "one responsive Community implementation preserves the desktop three-column Mine/Ours/Beyond composition, compact white composer, efficient icon strip, iPad presentation, mobile bottom sheet, 200 percent reflow, large text, forced colors, reduced motion, keyboard order, focus return, and touch targets",
-        "server-derived member identity and audience-aware read/write contracts fail closed; private drafts remain private; Connections and Public cannot be selected or read unless their exact authorization contracts are satisfied",
-        "draft recovery, Voice transcription proposals, photo/file lifecycle, optional AI proposals, deliberate publication confirmation, idempotent retry, replies, saves, removal states, and dependency-unavailable states are implemented or truthfully marked unavailable without fabricated success",
-        "an additive migration candidate, rollback, verifier, registry entry, and disposable SQL proof cover every required schema or procedure change without applying anything to production; if schema expansion is unnecessary, the completion report removes these surfaces and explains why",
-        "focused Python and JavaScript tests, relevant Community regressions, static checks, representative browser captures, accessibility checks, and a complete-diff authorized-surface audit pass on the exact candidate",
-        "the proportional completion report records base and final SHAs, changed paths, verification, truthful limitations, no-merge/no-deploy status, and an exact handoff for a different reviewer"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-17",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "After approving the compact Community visuals and accepting the current color direction for now, Pete directed: 'Okay, so I actually want you to do this yourself. I want you to build the architecture. I want you to implement it. And then when it's ready for review, we'll hand it off to a different reviewer.'"
-        }
-      ],
-      "cleanup_contract": "Preserve the visual-authority branch and all unrelated work. After the activation PR merges, create one clean implementation worktree from the resulting origin/main. Do not remove the activation or implementation branch until the exact candidate is reviewable and recoverability is verified; no cleanup authority extends to any other branch, worktree, stash, artifact, or user file.",
-      "sequence": "control-only activation PR -> merge activation -> clean implementation worktree from resulting origin/main -> package write preflight -> integrate the exact visual authority -> architecture and trust reconciliation -> implementation -> focused, visual, responsive, accessibility, and complete-diff verification -> freeze exact candidate -> hand to a different reviewer; no merge, schema apply, deployment, configuration enablement, broad launch, or live claim"
-    }
-  ],
+  "active_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
@@ -2878,6 +2796,90 @@
       "pause_reason": "Pete approved and merged PR 520. Azure main dc1823b74635c3d024b6f8e7d47e2eb4cb515bcf changes only docs/AI_WORKFLOW.md; required PR policy build 1197 succeeded; 24 governance-pointer tests and the package write preflight passed; no runtime deployment or live-site change was required. The one-file writer lane has no remaining work and relinquishes all mutation authority.",
       "resume_contract": "No resume is expected. Any later workflow revision requires a fresh exact-outcome activation from current origin/main; do not reopen or edit this preserved branch in place.",
       "preserved_head_sha": "cd0bef14a7dee423c184dced7c7d5f700b0f0197"
+    },
+    {
+      "package": "PS-COMMUNITY-AUTHORING-RUNTIME-001",
+      "outcome": "Implement the Pete-locked Mine/Ours/Beyond Community page and compact desktop, tablet, and mobile authoring experience as a review-ready, default-dark runtime candidate. Preserve signed-in privacy, server-derived identity, deliberate publication, safe draft recovery, Voice, attachments, optional AI proposals, audience authorization, replies, accessibility, truthful failure states, and existing Community data while replacing the superseded composition. Stop before merge, schema apply, deployment, configuration enablement, broad member launch, or any live claim so a different reviewer can inspect the exact candidate.",
+      "branch": "work/2026-08-17-community-authoring-runtime-001",
+      "writer": "The current root Codex session is the sole architecture and implementation writer. A different reviewer will be assigned only after the exact candidate is complete and frozen; no sub-agent or other session may edit this lane.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "product:community-authoring-runtime",
+        "data:community-audience-and-draft-contract",
+        "visual:community-mine-ours-beyond"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main ae40aec8a6d4bce1aef13de9a06256428deb61a5 at activation. Pete approved the compact Community visual sequence, accepted the current color direction for implementation subject to a later whole-site color review, and explicitly directed this Codex session to build the architecture and implementation before handing the completed candidate to a different reviewer. The owner-locked visual package is preserved on codex/2026-08-16-community-color-direction at 0243b3941c74de80d90bff612161c1c17e7a00b8 for deliberate integration after this activation merges.",
+      "writable_surfaces": [
+        "app.py",
+        "community_api.py",
+        "community_routes.py",
+        "services/community_contracts.py",
+        "services/community_command_service.py",
+        "services/community_feed_service.py",
+        "services/community_media_service.py",
+        "services/community_media_storage.py",
+        "services/community_voice_service.py",
+        "services/community_ai_service.py",
+        "prompts/community/",
+        "templates/community_feed.html",
+        "static/css/community-v1.css",
+        "static/js/community-v1.js",
+        "SQL FIles/Migrations/proposed/PS-COMMUNITY-AUTHORING-001_community_authoring.sql",
+        "SQL FIles/Migrations/proposed/PS-COMMUNITY-AUTHORING-001_community_authoring_rollback.sql",
+        "SQL FIles/Verification/Verify_PS-COMMUNITY-AUTHORING-001.sql",
+        "SQL FIles/Migrations/registry.json",
+        "scripts/run_community_disposable_sql_proof.py",
+        "tests/community_draft_expiry.test.js",
+        "tests/community_focus_lifecycle.test.js",
+        "tests/community_authoring_runtime.test.js",
+        "tests/test_community_disposable_sql_proof.py",
+        "tests/test_community_draft_expiry.py",
+        "tests/test_community_public_pilot.py",
+        "tests/test_community_secondary_states.py",
+        "tests/test_community_tabs.py",
+        "tests/test_community_voice.py",
+        "tests/test_community_xlsx_support.py",
+        "tests/test_community_authoring_runtime.py",
+        "tests/test_navigation.py",
+        "docs/initiatives/PS-COMMUNITY-VISUAL-REFINEMENT-001/",
+        "docs/initiatives/PS-COMMUNITY-AUTHORING-RUNTIME-001/"
+      ],
+      "exclusions": [
+        "no merge, schema apply, deployment, production configuration, feature enablement, broad member launch, production-data mutation, or live-behavior claim from this non-production lane",
+        "no silent conversion of the transitional stored public token into a broader audience and no audience shown or accepted without server-side authorization and neutral inaccessible outcomes",
+        "no client-supplied identity, Pete-specific shared-product rule, automatic connection inference, or exposure of private drafts, attachments, saves, replies, or author-only controls",
+        "no AI auto-save, auto-publish, canonical mutation, hidden content ranking, training claim, or silent replacement of member text; AI output remains an optional editable proposal with useful unavailable behavior",
+        "no public anonymous permalink or Connections enablement unless the candidate includes its exact server authorization, revocation, blocked-account, attachment, count, cache, and regression contracts and the reviewer can verify them",
+        "no messaging, notification, Journal projection, public audio/video publishing, unrelated Community moderation expansion, package-registry edit while PS-PORTABLE-SESSION-MANAGER-002 owns that surface, global-shell redesign, or whole-site color-system change",
+        "no overwrite or deletion of existing Community content, applied migration history, prior visual authorities, evidence, unrelated branches, worktrees, stashes, artifacts, secrets, or user-authored files",
+        "no self-review presented as the independent review; the final exact candidate must be handed to a different reviewer before any later merge or release decision"
+      ],
+      "completion_evidence": [
+        "the accepted 10-image Community visual authority and its implementation handoff are integrated without recompression or material reinterpretation, with any trust-driven runtime variance explicitly documented",
+        "one responsive Community implementation preserves the desktop three-column Mine/Ours/Beyond composition, compact white composer, efficient icon strip, iPad presentation, mobile bottom sheet, 200 percent reflow, large text, forced colors, reduced motion, keyboard order, focus return, and touch targets",
+        "server-derived member identity and audience-aware read/write contracts fail closed; private drafts remain private; Connections and Public cannot be selected or read unless their exact authorization contracts are satisfied",
+        "draft recovery, Voice transcription proposals, photo/file lifecycle, optional AI proposals, deliberate publication confirmation, idempotent retry, replies, saves, removal states, and dependency-unavailable states are implemented or truthfully marked unavailable without fabricated success",
+        "an additive migration candidate, rollback, verifier, registry entry, and disposable SQL proof cover every required schema or procedure change without applying anything to production; if schema expansion is unnecessary, the completion report removes these surfaces and explains why",
+        "focused Python and JavaScript tests, relevant Community regressions, static checks, representative browser captures, accessibility checks, and a complete-diff authorized-surface audit pass on the exact candidate",
+        "the proportional completion report records base and final SHAs, changed paths, verification, truthful limitations, no-merge/no-deploy status, and an exact handoff for a different reviewer"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-17",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "After approving the compact Community visuals and accepting the current color direction for now, Pete directed: 'Okay, so I actually want you to do this yourself. I want you to build the architecture. I want you to implement it. And then when it's ready for review, we'll hand it off to a different reviewer.'"
+        }
+      ],
+      "cleanup_contract": "Preserve the visual-authority branch and all unrelated work. After the activation PR merges, create one clean implementation worktree from the resulting origin/main. Do not remove the activation or implementation branch until the exact candidate is reviewable and recoverability is verified; no cleanup authority extends to any other branch, worktree, stash, artifact, or user file.",
+      "sequence": "control-only activation PR -> merge activation -> clean implementation worktree from resulting origin/main -> package write preflight -> integrate the exact visual authority -> architecture and trust reconciliation -> implementation -> focused, visual, responsive, accessibility, and complete-diff verification -> freeze exact candidate -> hand to a different reviewer; no merge, schema apply, deployment, configuration enablement, broad launch, or live claim",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-17T22:08:00Z",
+      "pause_reason": "The Community architecture and runtime implementation is frozen, clean, and pushed. Repository-wide verification exposed one governance-only failure because its two authorized initiative directories are absent from PACKAGE_REGISTRY.json. No active package now owns that registry surface, but the current Community activation still does not authorize the path, so this pause preserves the exact candidate and relinquishes capacity for a correctly scoped fresh activation.",
+      "resume_contract": "Resume only through fresh activation from then-current origin/main on a new implementation branch. Add docs/governance/PACKAGE_REGISTRY.json as an exact writable surface, replace only the superseded conditional registry exclusion, replay preserved checkpoint 2b01ce9c72a1471e5dd250ad267f5e0fc1b16b85 deliberately, add PS-COMMUNITY-AUTHORING-RUNTIME-001 and PS-COMMUNITY-VISUAL-REFINEMENT-001 exactly once, rerun the full suite and complete-diff review, then freeze for a different reviewer. No merge, deployment, configuration enablement, broad launch, or live claim.",
+      "preserved_head_sha": "2b01ce9c72a1471e5dd250ad267f5e0fc1b16b85"
     }
   ],
   "workspace_snapshot": {
