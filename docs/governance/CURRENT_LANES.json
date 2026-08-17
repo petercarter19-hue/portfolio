@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-16T23:40:58Z",
+  "updated_at": "2026-08-17T00:14:11Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -206,6 +206,25 @@
     },
     "reason": "Pete authorized completion of the exact Interview AI package. The post-grant merge preflight then rejected only PACKAGE_REGISTRY.json because the generic lane-surface check cannot represent the already pinned D13 relocation. This inert repair admits that governance path only for reviewed candidate 52242c4 and its exact 12 target documents. It creates no generic governance-write authority and changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, provider call, enablement, or live behavior.",
     "verification_contract": "The preflight recognizes this one-time record only on the exact branch, exact origin/main base, one commit, and the exact three DIRECTION_MERGE_FOLLOWUP_PATHS. The parent must retain the exact attestation, lifecycle follow-up, and ledger-only grant. The ledger may change only updated_at plus this record, and CURRENT_BASELINE must remain byte-identical. Candidate merge accepts only exact SHA 52242c4 with exactly the 12 target Markdown files and PACKAGE_REGISTRY.json, and proves the four-commit sequence: attestation, lifecycle follow-up, grant, this repair. A later branch, base, candidate, path, record, timestamp, authority, or state cannot reuse it."
+  },
+  "interview_ai_d13_close_fixture_repair": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-17-delivery-activation-interview-ai-d13-close-fixture-repair",
+    "origin_main": "17b67b58603aaf23975559c87f30f30bfa312758",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "completed_merge": {
+      "package": "PS-INTERVIEW-AI-ARCHITECTURE-001",
+      "reviewed_remote_sha": "52242c4ad8c26b5b9061c17aaf083063d42b5875",
+      "pull_request": 502,
+      "package_merge_sha": "17b67b58603aaf23975559c87f30f30bfa312758"
+    },
+    "reason": "Pete authorized completion and formal close of the exact Interview AI package. Azure Build 1157 then exposed one test-only lifecycle assumption: the historical D13 fixture searched active_lanes only after the valid close candidate moved Interview AI to closing_lanes. This inert repair makes that historical fixture read both lifecycle collections and remove only the close envelope before comparing its already-pinned reconciled hash. It changes no lane, authority list, baseline, product code, schema, pipeline, deployment, configuration, provider call, enablement, or live behavior.",
+    "verification_contract": "The preflight recognizes this one-time record only on the exact branch, exact post-PR-502 origin/main base, one commit, and the exact three DIRECTION_MERGE_FOLLOWUP_PATHS. The parent must retain the exact Interview AI D13 admission, attestation, lifecycle, and merge-surface records; the ledger may change only updated_at plus this record, and CURRENT_BASELINE must remain byte-identical. A later branch, base, record, timestamp, authority, path, merge, or package cannot reuse it."
   },
   "implementation_release_preflight_repair": {
     "status": "one_time_owner_authorized_repair",

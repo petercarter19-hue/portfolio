@@ -1822,6 +1822,56 @@ INTERVIEW_AI_D13_MERGE_CANDIDATE_PATHS = frozenset(
     ]
 )
 
+# Azure Build 1157 exercised the valid post-merge Interview AI close candidate
+# and exposed one last test-fixture lifecycle assumption: the historical D13
+# reconstruction searched active_lanes only, after close had correctly moved
+# the exact lane into closing_lanes. This one-time authority-neutral repair
+# teaches that historical fixture to read either lifecycle collection and to
+# remove only the close envelope before checking the pinned reconciled hash.
+INTERVIEW_AI_D13_CLOSE_FIXTURE_BASE = (
+    "17b67b58603aaf23975559c87f30f30bfa312758"
+)
+INTERVIEW_AI_D13_CLOSE_FIXTURE_BRANCH = (
+    "work/2026-08-17-delivery-activation-"
+    "interview-ai-d13-close-fixture-repair"
+)
+INTERVIEW_AI_D13_CLOSE_FIXTURE_REPAIR = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": INTERVIEW_AI_D13_CLOSE_FIXTURE_BRANCH,
+    "origin_main": INTERVIEW_AI_D13_CLOSE_FIXTURE_BASE,
+    "allowed_surfaces": sorted(DIRECTION_MERGE_FOLLOWUP_PATHS),
+    "completed_merge": {
+        "package": INTERVIEW_AI_ARCHITECTURE_PACKAGE,
+        "reviewed_remote_sha": INTERVIEW_AI_D13_REVIEWED_SHA,
+        "pull_request": 502,
+        "package_merge_sha": INTERVIEW_AI_D13_CLOSE_FIXTURE_BASE,
+    },
+    "reason": (
+        "Pete authorized completion and formal close of the exact Interview AI "
+        "package. Azure Build 1157 then exposed one test-only lifecycle "
+        "assumption: the historical D13 fixture searched active_lanes only "
+        "after the valid close candidate moved Interview AI to closing_lanes. "
+        "This inert repair makes that historical fixture read both lifecycle "
+        "collections and remove only the close envelope before comparing its "
+        "already-pinned reconciled hash. It changes no lane, authority list, "
+        "baseline, product code, schema, pipeline, deployment, configuration, "
+        "provider call, enablement, or live behavior."
+    ),
+    "verification_contract": (
+        "The preflight recognizes this one-time record only on the exact "
+        "branch, exact post-PR-502 origin/main base, one commit, and the exact "
+        "three DIRECTION_MERGE_FOLLOWUP_PATHS. The parent must retain the exact "
+        "Interview AI D13 admission, attestation, lifecycle, and merge-surface "
+        "records; the ledger may change only updated_at plus this record, and "
+        "CURRENT_BASELINE must remain byte-identical. A later branch, base, "
+        "record, timestamp, authority, path, merge, or package cannot reuse it."
+    ),
+}
+INTERVIEW_AI_D13_CLOSE_FIXTURE_PATHS = frozenset(
+    INTERVIEW_AI_D13_CLOSE_FIXTURE_REPAIR["allowed_surfaces"]
+)
+
 REVIEW_ATTESTATION_FIELDS = frozenset(
     PROFILE_DIRECTION_REVIEW_ATTESTATION
 )
@@ -3951,6 +4001,59 @@ def _exact_interview_ai_d13_merge_surface_repair_delta(
     expected["updated_at"] = candidate_ledger.get("updated_at")
     expected["interview_ai_d13_merge_surface_repair"] = (
         INTERVIEW_AI_D13_MERGE_SURFACE_REPAIR
+    )
+    return (
+        candidate_ledger == expected
+        and _utc_timestamp_strictly_advances(
+            candidate_ledger.get("updated_at"), parent_ledger.get("updated_at")
+        )
+    )
+
+
+def _exact_interview_ai_d13_close_fixture_repair_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    """Match only the exact one-commit post-merge close-fixture repair."""
+    return (
+        ledger.get("interview_ai_d13_close_fixture_repair")
+        == INTERVIEW_AI_D13_CLOSE_FIXTURE_REPAIR
+        and package_id == INTERVIEW_AI_D13_CLOSE_FIXTURE_REPAIR["package"]
+        and facts.get("branch") == INTERVIEW_AI_D13_CLOSE_FIXTURE_BRANCH
+        and facts.get("origin_main") == INTERVIEW_AI_D13_CLOSE_FIXTURE_BASE
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(INTERVIEW_AI_D13_CLOSE_FIXTURE_PATHS)
+    )
+
+
+def _exact_interview_ai_d13_close_fixture_repair_delta(
+    parent_ledger: object,
+    candidate_ledger: object,
+) -> bool:
+    """Prove the post-merge fixture repair changes no lane or authority."""
+    if not isinstance(parent_ledger, dict) or not isinstance(candidate_ledger, dict):
+        return False
+    if (
+        parent_ledger.get("interview_ai_d13_admission_repair")
+        != INTERVIEW_AI_D13_ADMISSION_REPAIR
+        or parent_ledger.get("interview_ai_d13_attestation_registration")
+        != INTERVIEW_AI_D13_ATTESTATION_REGISTRATION
+        or parent_ledger.get("interview_ai_d13_lifecycle_fixture_followup")
+        != INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP
+        or parent_ledger.get("interview_ai_d13_merge_surface_repair")
+        != INTERVIEW_AI_D13_MERGE_SURFACE_REPAIR
+        or parent_ledger.get("interview_ai_d13_close_fixture_repair") is not None
+        or candidate_ledger.get("interview_ai_d13_close_fixture_repair")
+        != INTERVIEW_AI_D13_CLOSE_FIXTURE_REPAIR
+    ):
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = candidate_ledger.get("updated_at")
+    expected["interview_ai_d13_close_fixture_repair"] = (
+        INTERVIEW_AI_D13_CLOSE_FIXTURE_REPAIR
     )
     return (
         candidate_ledger == expected
@@ -7663,6 +7766,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        interview_ai_d13_close_fixture_matches = (
+            _exact_interview_ai_d13_close_fixture_repair_matches(
+                ledger, facts, package_id
+            )
+        )
         if bootstrap_matches:
             allowed_surfaces = set(BOOTSTRAP_CONTROL_REPAIR["allowed_surfaces"])
             warnings.append(
@@ -7754,6 +7862,12 @@ def evaluate_policy(
             allowed_surfaces = set(INTERVIEW_AI_D13_MERGE_SURFACE_PATHS)
             warnings.append(
                 "using the exact one-time Interview AI D13 merge-surface "
+                "repair boundary"
+            )
+        elif interview_ai_d13_close_fixture_matches:
+            allowed_surfaces = set(INTERVIEW_AI_D13_CLOSE_FIXTURE_PATHS)
+            warnings.append(
+                "using the exact one-time Interview AI D13 close-fixture "
                 "repair boundary"
             )
         elif opportunity_schema_release_refresh_matches:
@@ -8280,6 +8394,51 @@ def evaluate_policy(
                     candidate_baseline,
                     origin_baseline,
                     label="Interview AI D13 merge-surface repair",
+                    errors=errors,
+                )
+            elif interview_ai_d13_close_fixture_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "Interview AI D13 close-fixture repair updated_at must "
+                        "be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "Interview AI D13 close-fixture repair updated_at must "
+                        "strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "Interview AI D13 close-fixture repair may not change "
+                        "activation_policy"
+                    )
+                if _root_changes(ledger, origin_ledger) != {
+                    "updated_at",
+                    "interview_ai_d13_close_fixture_repair",
+                }:
+                    errors.append(
+                        "Interview AI D13 close-fixture repair must change "
+                        "exactly updated_at and its inert record"
+                    )
+                if not _exact_interview_ai_d13_close_fixture_repair_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "Interview AI D13 close-fixture repair must be the "
+                        "exact authority-neutral delta"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="Interview AI D13 close-fixture repair",
                     errors=errors,
                 )
             elif connect_002_merge_admission_repair_matches:
@@ -9076,6 +9235,7 @@ def evaluate_policy(
             and not interview_ai_d13_attestation_matches
             and not interview_ai_d13_lifecycle_fixture_matches
             and not interview_ai_d13_merge_surface_matches
+            and not interview_ai_d13_close_fixture_matches
             and not profile_core_grant_fixture_followup_matches
             and not profile_core_grant_anchor_followup_matches
             and not profile_core_post_grant_registry_fixture_repair_matches
@@ -9198,6 +9358,15 @@ def evaluate_policy(
             ):
                 errors.append(
                     "Interview AI D13 merge-surface repair must change exactly "
+                    "the owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                interview_ai_d13_close_fixture_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "Interview AI D13 close-fixture repair must change exactly "
                     "the owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )

@@ -92,6 +92,9 @@ from scripts.delivery_preflight import (
     INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_BASE,
     INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_FOLLOWUP,
     INTERVIEW_AI_D13_LIFECYCLE_FIXTURE_PATHS,
+    INTERVIEW_AI_D13_CLOSE_FIXTURE_BASE,
+    INTERVIEW_AI_D13_CLOSE_FIXTURE_PATHS,
+    INTERVIEW_AI_D13_CLOSE_FIXTURE_REPAIR,
     INTERVIEW_AI_D13_MERGE_CANDIDATE_PATHS,
     INTERVIEW_AI_D13_MERGE_SURFACE_BASE,
     INTERVIEW_AI_D13_MERGE_SURFACE_PATHS,
@@ -137,6 +140,8 @@ from scripts.delivery_preflight import (
     _exact_interview_ai_d13_attestation_registration_matches,
     _exact_interview_ai_d13_lifecycle_fixture_followup_delta,
     _exact_interview_ai_d13_lifecycle_fixture_followup_matches,
+    _exact_interview_ai_d13_close_fixture_repair_delta,
+    _exact_interview_ai_d13_close_fixture_repair_matches,
     _exact_interview_ai_d13_merge_surface_repair_delta,
     _exact_interview_ai_d13_merge_surface_repair_matches,
     _exact_interview_ai_relocation_write,
@@ -1889,9 +1894,19 @@ with patch.object(
         candidate["interview_ai_d13_admission_repair"] = copy.deepcopy(repair)
         reconciled = next(
             copy.deepcopy(lane)
-            for lane in self.ledger["active_lanes"]
+            for collection in ("active_lanes", "closing_lanes")
+            for lane in self.ledger.get(collection, [])
             if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
         )
+        for close_only_field in (
+            "disposition",
+            "closed_at",
+            "reviewed_remote_sha",
+            "merged_main_sha",
+            "package_merge_sha",
+            "close_evidence_paths",
+        ):
+            reconciled.pop(close_only_field, None)
         if reconciled.get("owner_decisions", [])[-1:] == [
             INTERVIEW_AI_D13_OWNER_DECISION
         ]:
@@ -2151,6 +2166,95 @@ with patch.object(
             origin_baseline=baseline,
         )
         self.assertTrue(forged_errors)
+
+    def test_interview_ai_d13_close_fixture_repair_is_exact_and_inert(self):
+        origin = load_ledger_at_ref(INTERVIEW_AI_D13_CLOSE_FIXTURE_BASE)
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-17T00:14:11Z"
+        candidate["interview_ai_d13_close_fixture_repair"] = copy.deepcopy(
+            INTERVIEW_AI_D13_CLOSE_FIXTURE_REPAIR
+        )
+        baseline = load_baseline_bytes_at_ref(INTERVIEW_AI_D13_CLOSE_FIXTURE_BASE)
+        exact_facts = facts(
+            branch=INTERVIEW_AI_D13_CLOSE_FIXTURE_REPAIR["branch"],
+            origin_main=INTERVIEW_AI_D13_CLOSE_FIXTURE_BASE,
+            ahead=1,
+            behind=0,
+            changed_paths=sorted(INTERVIEW_AI_D13_CLOSE_FIXTURE_PATHS),
+        )
+        self.assertTrue(
+            _exact_interview_ai_d13_close_fixture_repair_matches(
+                candidate, exact_facts, "PS-DELIVERY-CONTROL-001"
+            )
+        )
+        self.assertTrue(
+            _exact_interview_ai_d13_close_fixture_repair_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("close-fixture" in item for item in warnings))
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+        self.assertEqual(origin["closing_lanes"], candidate["closing_lanes"])
+
+        forged = copy.deepcopy(candidate)
+        forged["operating_mode"]["merge_allowed_for"].append("PS-FORGED-001")
+        forged_errors, _ = self._evaluate_activation(
+            forged,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(forged_errors)
+
+    def test_interview_ai_d13_historical_fixture_accepts_closed_lane_source(self):
+        closed_ledger = copy.deepcopy(self.ledger)
+        source_lane = next(
+            lane
+            for lane in closed_ledger["active_lanes"]
+            if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        )
+        closed_ledger["active_lanes"] = [
+            lane
+            for lane in closed_ledger["active_lanes"]
+            if lane.get("package") != INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        ]
+        closed_lane = copy.deepcopy(source_lane)
+        closed_lane.update(
+            {
+                "disposition": "merged_closed",
+                "closed_at": "2026-08-17T00:01:19Z",
+                "reviewed_remote_sha": INTERVIEW_AI_D13_REVIEWED_SHA,
+                "merged_main_sha": INTERVIEW_AI_D13_CLOSE_FIXTURE_BASE,
+                "package_merge_sha": INTERVIEW_AI_D13_CLOSE_FIXTURE_BASE,
+                "close_evidence_paths": [
+                    INTERVIEW_AI_D13_REVIEW_ATTESTATION["evidence_path"]
+                ],
+            }
+        )
+        closed_ledger["closing_lanes"].append(closed_lane)
+        with patch.object(self, "ledger", closed_ledger):
+            _, _, candidate, _, _ = self._interview_ai_d13_fixture()
+        reconstructed = next(
+            lane
+            for lane in candidate["active_lanes"]
+            if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        )
+        self.assertNotIn("merge_grant", reconstructed)
+        self.assertNotIn("disposition", reconstructed)
+        self.assertEqual(
+            INTERVIEW_AI_RECONCILED_LANE_SHA256,
+            _canonical_sha256(reconstructed),
+        )
 
     def test_interview_ai_d13_merge_surface_repair_is_exact_and_candidate_bound(self):
         origin = load_ledger_at_ref(INTERVIEW_AI_D13_MERGE_SURFACE_BASE)
