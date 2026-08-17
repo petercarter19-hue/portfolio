@@ -19,6 +19,40 @@ No task requires an architecture pass, manager handoff, independent reviewer,
 Candidate environment, all-specialist-documents reading, or a full-site audit
 unless its delivery path or package specifically triggers it.
 
+## Audit package orchestration
+
+Use this loop for a normal audit-derived product or experience package; its
+existing repository package remains the durable link across fresh tasks.
+
+```text
+ChatGPT Work manages the package
+  -> ChatGPT product reasoning and material visuals
+  -> Work approves direction and creates the Codex handoff
+  -> Codex repository discovery, architecture, and implementation in Cursor
+  -> Grok independent first review of the frozen SHA
+  -> Codex adjudication, repair, and verification
+  -> Work product and visual acceptance
+  -> Pete merge and deployment authorization
+  -> Azure deployment and Codex production verification
+  -> Work final closeout
+```
+
+Grok is review-only on the branch/SHA, diff, and evidence.
+
+Reuse package and handoff records. Do not create a brief, status, handoff, or
+Markdown file for every phase unless the
+package contract requires it. Keep approval, implementation, review, merge,
+deployment, live verification, and closeout as separate truthful states.
+
+### Codex bootstrap prompt
+
+```text
+Open START_HERE.md and docs/AI_WORKFLOW.md; fetch origin/main; resume the named
+package from its existing package/handoff. Before editing, report phase,
+decision, branch/base SHA, writable surfaces, exclusions, and next gate. Do not
+create workflow or per-phase status files.
+```
+
 ## Delivery paths
 
 | Path | Typical work | Required control |
@@ -33,8 +67,7 @@ trust boundary is actually touched; state the reason in the completion record.
 ## Non-negotiable integrity rules
 
 - Treat Azure DevOps `origin/main` as authoritative where reachable; never push
-  directly to `main`. Preserve unrelated edits, worktrees, branches, stashes,
-  artifacts, and secrets.
+  directly to `main`. Preserve unrelated work and secrets.
 - One writer owns a mutable file or surface at a time. A manager is required
   only to resolve a real cross-lane or owner decision, not to repeat a writer's
   review.
@@ -52,19 +85,18 @@ Read the following only when relevant:
 
 | Trigger | Authority/evidence |
 |---|---|
-| Material visual direction or a change to a locked design | `OWNER_VISUAL_INTEGRITY_STANDARD.md`; ChatGPT is the sole creator of revised production visual authority and the owner accepts it. |
+| Material visual direction or locked-design change | `OWNER_VISUAL_INTEGRITY_STANDARD.md`; ChatGPT creates revised authority and the owner accepts it. |
 | Story composition | `OWNER_STORY_COMPOSITION_STANDARD.md`. |
 | Capture, Moment, Journal, audience, or projection truth | `PS-JOURNAL-001` and its linked contract. |
 | Projects | `PS-PROJECTS-001`. |
 | Protected release, migration, identity/security, deletion/publication, shared infrastructure | The relevant package and `PS-OPS-001`; Candidate/Launch/Operate/Retire only when their stated trigger applies. |
-| Actual writer or manager transfer | `MANAGER_SESSION_HANDOFF.md`, with pushed SHA and explicit relinquishment; record an in-place active-lane writer change through the control-only `--intent transfer` preflight before the receiver writes. |
+| Writer or manager transfer | `MANAGER_SESSION_HANDOFF.md`; pushed SHA, relinquishment, and `--intent transfer` before the receiver writes. |
 
-An existing approved mockup remains binding visual authority. Non-material
-accessibility, truth, focus, or reflow adaptations are allowed when documented;
-a material composition, hierarchy, dominant action, color language, type, or
-responsive-interaction change returns to the owner/ChatGPT visual-creation
-lane. Homepage parity is required only when the homepage makes a current claim
-about a materially changed product.
+Approved mockups remain binding. Documented non-material accessibility, truth,
+focus, or reflow adaptations are allowed. Changes to composition, hierarchy,
+dominant action, color, type, or responsive interaction return to ChatGPT and
+the owner. Require homepage parity only for a current claim about changed
+product.
 
 ## Review and release
 
@@ -84,45 +116,34 @@ about a materially changed product.
 
 Use `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md` once. Core evidence
 is outcome, branch/base/final SHA, changed paths, verification, release state,
-and an honest limit/next step. Add protected evidence only for the risk that
-triggered it. Update `CURRENT_BASELINE.yaml` only for current authority,
-ownership, scoped hold, or verified release fact; do not duplicate it in every
-historical status document.
+and an honest limit/next step. Add only triggered protected evidence. Update
+`CURRENT_BASELINE.yaml` only for current authority, ownership, holds, or
+verified release facts.
 
 ### Documentation-only closeout
 
-When a change affects only governance/evidence/tests and does not need to alter
-the deployed artifact immediately, validate the exact branch, merge it through
-an Azure PR whose final squash commit message contains `[skip ci]`, and let the
-files enter production with the next normal runtime release. A PR title alone
-does not guarantee that Azure will copy the marker into the squash commit.
-Record that source authority is merged but the deployed copy is unchanged.
-Do not restart App Service merely to publish bookkeeping. Do not manually
-queue a fallback while an automatic run for the same `main` SHA is active.
-
-Run the normal pipeline when documentation is itself runtime-consumed and must
-become live immediately, or when the change also affects application code,
-configuration, dependencies, packaging, or deployment behavior.
+For governance/evidence/test-only changes that need not alter the deployed
+artifact immediately, validate and merge through an Azure PR whose final
+squash message contains `[skip ci]`; a PR title is insufficient. Record source
+authority as merged while the deployed copy remains unchanged.
+Do not restart App Service merely to publish bookkeeping. Do not queue a
+same-SHA fallback while the automatic run is active. Run the normal pipeline
+for runtime-consumed docs or changes to code, configuration, dependencies,
+packaging, or deployment.
 
 For a non-production `direction_authority` lane, use the executable grant ->
-merge -> close lifecycle. Grant references a pre-existing Pete decision and
-binds the exact pushed/reviewed SHA plus review evidence; it may not append
-authority. Merge tolerates only non-overlapping control changes that entered
-main after review. Close proves the exact package tree is on current main,
-removes every authority-list entry, and archives the immutable lane record.
+merge -> close lifecycle. Grant binds a pre-existing Pete decision, reviewed
+SHA, and evidence and may not append authority. Merge allows non-overlapping
+later control changes. Close proves the package tree is on current main,
+removes mutation authority, and archives the lane.
 
 An implementation candidate may use that lifecycle only when validator code
-registers its exact package, branch, SHA, review, PR/CI, and release scope. Its
-grant records Pete's approval and may add merge plus the sole serialized
-`release_allowed_for` entry. Scope is dark deployment and the named additive
-migration only—never public enablement, app registration, configuration, later
-slices, rollback, destructive schema work, or another candidate.
-When the candidate predates the control repair, keep its reviewed SHA and
-worktree unchanged. Run the current `origin/main` script from a distinct clean
-verifier with `--intent merge --fetch --require-clean --candidate-worktree
-<absolute-path>`. Both paths must be registered worktrees in one Git common
-directory with the same Azure origin; the candidate stays clean on its
-recorded branch and tip.
+registers its exact package, branch, SHA, review, PR/CI, and scope. Pete's grant
+may add merge and the sole `release_allowed_for` entry for the named dark
+deployment and additive migration—not enablement, configuration, later slices,
+rollback, or destructive schema. Keep an older candidate unchanged; validate
+from a clean current-main verifier with `--candidate-worktree <absolute-path>`
+and the same Azure origin.
 
 ## Stop conditions
 
