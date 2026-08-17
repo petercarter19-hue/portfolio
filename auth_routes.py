@@ -72,8 +72,20 @@ def _current_return_target():
     arbitrary input site-wide for no benefit — returning the member to the page
     is the whole point, and the per-route redirects still preserve their own
     query strings where that genuinely matters (``/app/settings?tab=account``).
+
+    On the auth surfaces themselves the current path is deliberately not a
+    destination — ``/auth/...`` is excluded by the validator — so the member's
+    requested destination is taken from ``return_to`` instead.  Without this
+    the recovery page's "Try again" sends a member who deep-linked to Community
+    or the Opportunity Slate room to ``/app``, which is the same loss of
+    context this package exists to remove, on the one surface where the member
+    has already had one thing go wrong.  The value is validated by exactly the
+    same rules before it is used, and this branch is scoped to ``/auth/`` so
+    caller-controlled input is never reflected into ordinary pages.
     """
     try:
+        if request.path == "/auth" or request.path.startswith("/auth/"):
+            return _safe_return_path(request.args.get("return_to"))
         return _safe_return_path(request.path)
     except RuntimeError:
         # Rendered outside a request: there is no page to return to.

@@ -72,6 +72,15 @@ caught by `tests/test_workshop_checkpoint.py`, which proved it reflected
 `?user_key=someone-else` into the page. Per-route redirects still preserve
 their own query strings where that matters.
 
+On the auth surfaces themselves the current path is `/auth/...`, which the
+validator correctly refuses, so there the requested destination is read from
+`return_to` instead. **Live verification caught this**: the first deployed
+revision left the recovery page's "Try again" falling back to `/app`, which is
+the same loss of context this package exists to remove, on the one surface
+where something has already gone wrong for the member. Fixed in the same
+package with its own tests, including hostile `return_to` values on that
+branch.
+
 **Community's database-wake is honest.** An identity-storage failure on
 `/the-slate` fell through to Werkzeug's unbranded 503. Community is a
 first-class place to land straight after signing in and Azure SQL serverless
@@ -90,9 +99,9 @@ checking, which reads as something being wrong with them.
 
 ## Verification
 
-Full suite: **3809 passed, 4 skipped** (`tests/`, 283s).
+Full suite: **3812 passed, 4 skipped** (`tests/`, 254s).
 
-New: `tests/test_signin_member_arrival.py` — 21 tests, 63 subtests. Round trip
+New: `tests/test_signin_member_arrival.py` — 24 tests, 67 subtests. Round trip
 through the real endpoints for every registered destination; dot-segment
 traversal; `/app` prefix confusion (`/the-slate` and `/interview-studio` had
 these negatives, `/app` did not); the full control-character class (only NUL

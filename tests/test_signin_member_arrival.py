@@ -373,6 +373,40 @@ class HeaderReturnsMemberToTheirPageTests(unittest.TestCase):
         with app.app_context():
             self.assertEqual("/app", auth_routes._current_return_target())
 
+    def test_recovery_retry_keeps_the_destination_the_member_asked_for(self):
+        # The recovery surface renders at /auth/complete, which the validator
+        # correctly refuses as a destination. Taking the current path there
+        # would send a member who deep-linked to Community back to /app —
+        # losing their destination on the one surface where something has
+        # already gone wrong for them. The requested destination is in the
+        # query string, and is validated by the same rules.
+        with app.test_request_context("/auth/complete?return_to=/the-slate"):
+            self.assertEqual("/the-slate", auth_routes._current_return_target())
+        with app.test_request_context(
+            "/auth/complete?return_to=/opportunity-slate"
+        ):
+            app.config["PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED"] = True
+            self.assertEqual(
+                "/opportunity-slate", auth_routes._current_return_target()
+            )
+
+    def test_auth_surfaces_never_reflect_a_hostile_return_to(self):
+        for hostile in (
+            "https://attacker.example/app",
+            "//attacker.example",
+            "/app/../.auth/logout",
+            "/petec/resume",
+        ):
+            with self.subTest(hostile=hostile):
+                with app.test_request_context(
+                    "/auth/complete", query_string={"return_to": hostile}
+                ):
+                    self.assertEqual("/app", auth_routes._current_return_target())
+
+    def test_auth_surface_without_a_return_to_falls_back(self):
+        with app.test_request_context("/auth/complete"):
+            self.assertEqual("/app", auth_routes._current_return_target())
+
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
