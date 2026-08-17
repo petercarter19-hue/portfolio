@@ -95,6 +95,9 @@ from scripts.delivery_preflight import (
     INTERVIEW_AI_D13_CLOSE_FIXTURE_BASE,
     INTERVIEW_AI_D13_CLOSE_FIXTURE_PATHS,
     INTERVIEW_AI_D13_CLOSE_FIXTURE_REPAIR,
+    INTERVIEW_AI_D13_CLOSE_FIXTURE_R2_BASE,
+    INTERVIEW_AI_D13_CLOSE_FIXTURE_R2_PATHS,
+    INTERVIEW_AI_D13_CLOSE_FIXTURE_R2_REPAIR,
     INTERVIEW_AI_D13_MERGE_CANDIDATE_PATHS,
     INTERVIEW_AI_D13_MERGE_SURFACE_BASE,
     INTERVIEW_AI_D13_MERGE_SURFACE_PATHS,
@@ -142,6 +145,8 @@ from scripts.delivery_preflight import (
     _exact_interview_ai_d13_lifecycle_fixture_followup_matches,
     _exact_interview_ai_d13_close_fixture_repair_delta,
     _exact_interview_ai_d13_close_fixture_repair_matches,
+    _exact_interview_ai_d13_close_fixture_r2_repair_delta,
+    _exact_interview_ai_d13_close_fixture_r2_repair_matches,
     _exact_interview_ai_d13_merge_surface_repair_delta,
     _exact_interview_ai_d13_merge_surface_repair_matches,
     _exact_interview_ai_relocation_write,
@@ -2219,8 +2224,9 @@ with patch.object(
     def test_interview_ai_d13_historical_fixture_accepts_closed_lane_source(self):
         closed_ledger = copy.deepcopy(self.ledger)
         source_lane = next(
-            lane
-            for lane in closed_ledger["active_lanes"]
+            copy.deepcopy(lane)
+            for collection in ("active_lanes", "closing_lanes")
+            for lane in closed_ledger.get(collection, [])
             if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
         )
         closed_ledger["active_lanes"] = [
@@ -2228,7 +2234,12 @@ with patch.object(
             for lane in closed_ledger["active_lanes"]
             if lane.get("package") != INTERVIEW_AI_ARCHITECTURE_PACKAGE
         ]
-        closed_lane = copy.deepcopy(source_lane)
+        closed_ledger["closing_lanes"] = [
+            lane
+            for lane in closed_ledger["closing_lanes"]
+            if lane.get("package") != INTERVIEW_AI_ARCHITECTURE_PACKAGE
+        ]
+        closed_lane = source_lane
         closed_lane.update(
             {
                 "disposition": "merged_closed",
@@ -2255,6 +2266,47 @@ with patch.object(
             INTERVIEW_AI_RECONCILED_LANE_SHA256,
             _canonical_sha256(reconstructed),
         )
+
+    def test_interview_ai_d13_close_fixture_r2_repair_is_exact_and_inert(self):
+        origin = load_ledger_at_ref(INTERVIEW_AI_D13_CLOSE_FIXTURE_R2_BASE)
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-17T00:36:21Z"
+        candidate["interview_ai_d13_close_fixture_r2_repair"] = copy.deepcopy(
+            INTERVIEW_AI_D13_CLOSE_FIXTURE_R2_REPAIR
+        )
+        baseline = load_baseline_bytes_at_ref(
+            INTERVIEW_AI_D13_CLOSE_FIXTURE_R2_BASE
+        )
+        exact_facts = facts(
+            branch=INTERVIEW_AI_D13_CLOSE_FIXTURE_R2_REPAIR["branch"],
+            origin_main=INTERVIEW_AI_D13_CLOSE_FIXTURE_R2_BASE,
+            ahead=1,
+            behind=0,
+            changed_paths=sorted(INTERVIEW_AI_D13_CLOSE_FIXTURE_R2_PATHS),
+        )
+        self.assertTrue(
+            _exact_interview_ai_d13_close_fixture_r2_repair_matches(
+                candidate, exact_facts, "PS-DELIVERY-CONTROL-001"
+            )
+        )
+        self.assertTrue(
+            _exact_interview_ai_d13_close_fixture_r2_repair_delta(
+                origin, candidate
+            )
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            exact_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("close-fixture-r2" in item for item in warnings))
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+        self.assertEqual(origin["closing_lanes"], candidate["closing_lanes"])
 
     def test_interview_ai_d13_merge_surface_repair_is_exact_and_candidate_bound(self):
         origin = load_ledger_at_ref(INTERVIEW_AI_D13_MERGE_SURFACE_BASE)
