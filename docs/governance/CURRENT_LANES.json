@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-17T00:36:21Z",
+  "updated_at": "2026-08-17T00:46:45Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,12 +12,9 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-INTERVIEW-AI-ARCHITECTURE-001",
       "PS-PORTABLE-SESSION-MANAGER-002"
     ],
-    "merge_allowed_for": [
-      "PS-INTERVIEW-AI-ARCHITECTURE-001"
-    ],
+    "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -32,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active writer lanes: PS-INTERVIEW-AI-ARCHITECTURE-001 remains the sole direction-authority writer on its recorded Interview AI documentation and evidence surfaces; PS-PORTABLE-SESSION-MANAGER-002 is the separate non-production shared-foundation writer on only its recorded manager/tool-routing governance surfaces. Neither package has merge, release, deployment, configuration, enablement, or live authority. PS-TRUST-SAFETY-001 remains paused and preserved."
+    "exit_authority": "Active writer lanes: PS-PORTABLE-SESSION-MANAGER-002. PS-INTERVIEW-AI-ARCHITECTURE-001 is merged_closed and retains no authority."
   },
   "activation_policy": {
     "enabled": true,
@@ -1823,9 +1820,7 @@
         "docs/initiatives/PS-CONNECT-002/README.md",
         "artifacts/2026-08-13-connect-002/IMPLEMENTATION_CHECKPOINT.md"
       ]
-    }
-  ],
-  "active_lanes": [
+    },
     {
       "package": "PS-INTERVIEW-AI-ARCHITECTURE-001",
       "outcome": "Deliver the owner-reviewable Interview Studio AI architecture under Pete's 2026-08-15 handoff. Gate A produced the cited current-system diagnosis and was accepted; Pete separately authorized Gate B, whose staged specialist architecture is now consolidated as v2.8. Preserve the accepted direction as versioned specialist instructions, deterministic guardians, knowledge manifests, schemas, evaluation design, telemetry, rollback, and bounded future implementation packages without changing runtime, then relocate and freshly review the exact package before any merge grant.",
@@ -1947,8 +1942,18 @@
         ]
       },
       "cleanup_contract": "After a verified merge and formal close, remove only this task's clean activation and package worktrees and branches behind recovery refs. Preserve the paused parent package, the Role Context package, and every unrelated or dirty worktree, branch, stash, artifact, and user-authored file.",
-      "sequence": "activation-only control PR -> Gate A diagnosis and acceptance (completed) -> separately authorized Gate B staged architecture and consolidated v2.8 package (completed) -> D13 admission control PR -> integrate that exact main into the package branch -> relocate the package and add its exact future_finish registry entry -> fresh author sweep, internal review, and independent Codex review -> Pete approves or rejects the exact relocated SHA -> separate code-controlled review-attestation admission -> separate ledger-only merge grant -> fresh PR 502 merge preview and policy build -> merge only if all exact-SHA gates pass -> formal close -> separately activate the first Protected Interview AI runtime slice"
-    },
+      "sequence": "activation-only control PR -> Gate A diagnosis and acceptance (completed) -> separately authorized Gate B staged architecture and consolidated v2.8 package (completed) -> D13 admission control PR -> integrate that exact main into the package branch -> relocate the package and add its exact future_finish registry entry -> fresh author sweep, internal review, and independent Codex review -> Pete approves or rejects the exact relocated SHA -> separate code-controlled review-attestation admission -> separate ledger-only merge grant -> fresh PR 502 merge preview and policy build -> merge only if all exact-SHA gates pass -> formal close -> separately activate the first Protected Interview AI runtime slice",
+      "disposition": "merged_closed",
+      "closed_at": "2026-08-17T00:46:45Z",
+      "reviewed_remote_sha": "52242c4ad8c26b5b9061c17aaf083063d42b5875",
+      "merged_main_sha": "89d4bc0633c1e512f508e275c7241d8cf0c30771",
+      "package_merge_sha": "17b67b58603aaf23975559c87f30f30bfa312758",
+      "close_evidence_paths": [
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/21_CODEX_RECONCILIATION.md"
+      ]
+    }
+  ],
+  "active_lanes": [
     {
       "package": "PS-PORTABLE-SESSION-MANAGER-002",
       "outcome": "Make package-manager and tool routing durable across every PeerSlate repository session and computer. Establish one canonical outcome-based rule for when ChatGPT Work manages a substantial product or experience package, when Codex manages a bounded repository or technical package directly, when Claude Co-Work may manage by explicit assignment, and why Original ChatGPT remains the material visual specialist rather than automatically becoming package manager. Add the always-visible startup pointer, current-control pointer, package role record, owner decision, initiative authority, registry entry, and deterministic guardrails without changing runtime behavior.",

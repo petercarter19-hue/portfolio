@@ -4,7 +4,7 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-16"
+updated_at: "2026-08-17"
 
 authority:
   remote: origin
@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active writer lanes: PS-INTERVIEW-AI-ARCHITECTURE-001 on work/2026-08-15-interview-ai-architecture; PS-PORTABLE-SESSION-MANAGER-002 on work/2026-08-16-portable-session-manager-002."
+  current_assignments: "Active writer lanes: PS-PORTABLE-SESSION-MANAGER-002. PS-INTERVIEW-AI-ARCHITECTURE-001 is closed and archived."
 
 governing_documents:
   bible:
@@ -60,9 +60,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-INTERVIEW-AI-ARCHITECTURE-001
-    status: active_delivery
-    scope: "Planning-only Interview Studio AI architecture in two gates: Gate A current-system diagnosis, then Gate B staged specialist architecture after owner acceptance. No runtime, prompt, provider, model, schema, retrieval, evaluation-execution, material visual, merge, deployment, or live authority."
   - id: PS-PORTABLE-SESSION-MANAGER-002
     status: active_delivery
     scope: "Non-production manager/tool-routing governance: central authority, startup and baseline pointers, initiative evidence, and guardrails. No Interview AI or runtime change."
@@ -145,6 +142,7 @@ completed_packages:
   - PS-OPPORTUNITY-SLATE-002
   - PS-PROFILE-CORE-INTEGRATION-001
   - PS-CONNECT-002
+  - PS-INTERVIEW-AI-ARCHITECTURE-001
 
 retired_packages:
   - id: PS-WORKSHOP-ACCESS-001
@@ -159,7 +157,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Review PS-INTERVIEW-AI-ARCHITECTURE-001 Gate A while PS-PORTABLE-SESSION-MANAGER-002 delivers isolated documentation-only routing guardrails; neither lane has merge or runtime authority."
+next_gate: "Continue only the active writer packages: PS-PORTABLE-SESSION-MANAGER-002. PS-INTERVIEW-AI-ARCHITECTURE-001 is closed and archived."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
