@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active: PS-PORTABLE-SESSION-MANAGER-002 and PS-COMMUNITY-AUTHORING-RUNTIME-001 (work/2026-08-17-community-authoring-runtime-001). Interview AI is closed."
+  current_assignments: "Active writer lanes: PS-COMMUNITY-AUTHORING-RUNTIME-001. PS-PORTABLE-SESSION-MANAGER-002 is paused and preserved; it may resume only through fresh activation."
 
 governing_documents:
   bible:
@@ -60,9 +60,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-PORTABLE-SESSION-MANAGER-002
-    status: active_delivery
-    scope: "Non-production manager/tool-routing governance: central authority, startup and baseline pointers, initiative evidence, and guardrails. No Interview AI or runtime change."
   - id: PS-COMMUNITY-AUTHORING-RUNTIME-001
     status: active_delivery
     scope: "Protected non-production Community architecture/runtime: locked responsive visuals, safe authoring, authorized audiences, drafts, media, AI proposals, replies, accessibility, and truthful failures. Independent review required before merge or release."
@@ -161,7 +158,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Continue only PS-PORTABLE-SESSION-MANAGER-002 and PS-COMMUNITY-AUTHORING-RUNTIME-001; freeze Community's verified candidate for a different reviewer before any merge or release."
+next_gate: "Continue only the active writer packages: PS-COMMUNITY-AUTHORING-RUNTIME-001. PS-PORTABLE-SESSION-MANAGER-002 remains paused; use fresh activation to resume it."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
