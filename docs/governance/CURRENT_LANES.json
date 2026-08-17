@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-17T21:29:25Z",
+  "updated_at": "2026-08-17T21:51:34Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,8 +12,7 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-COMMUNITY-AUTHORING-RUNTIME-001",
-      "PS-PORTABLE-SESSION-MANAGER-002"
+      "PS-COMMUNITY-AUTHORING-RUNTIME-001"
     ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
@@ -30,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active writer lanes: PS-COMMUNITY-AUTHORING-RUNTIME-001 and the fresh one-file PS-PORTABLE-SESSION-MANAGER-002 continuation. The earlier PS-PORTABLE-SESSION-MANAGER-002 candidate remains paused and preserved at its exact pushed SHA. PS-INTERVIEW-AI-ARCHITECTURE-001 is merged_closed and retains no authority."
+    "exit_authority": "Active writer lane: PS-COMMUNITY-AUTHORING-RUNTIME-001. PS-PORTABLE-SESSION-MANAGER-002 is paused and preserved after its owner-authorized documentation merge; it may resume only through fresh activation."
   },
   "activation_policy": {
     "enabled": true,
@@ -2033,45 +2032,6 @@
       ],
       "cleanup_contract": "Preserve the visual-authority branch and all unrelated work. After the activation PR merges, create one clean implementation worktree from the resulting origin/main. Do not remove the activation or implementation branch until the exact candidate is reviewable and recoverability is verified; no cleanup authority extends to any other branch, worktree, stash, artifact, or user file.",
       "sequence": "control-only activation PR -> merge activation -> clean implementation worktree from resulting origin/main -> package write preflight -> integrate the exact visual authority -> architecture and trust reconciliation -> implementation -> focused, visual, responsive, accessibility, and complete-diff verification -> freeze exact candidate -> hand to a different reviewer; no merge, schema apply, deployment, configuration enablement, broad launch, or live claim"
-    },
-    {
-      "package": "PS-PORTABLE-SESSION-MANAGER-002",
-      "outcome": "Consolidate PeerSlate audit-package orchestration into one concise section in the existing docs/AI_WORKFLOW.md. Preserve the agreed sequence: ChatGPT Work manages the package; ChatGPT handles product reasoning and visual creation; Work accepts that direction and creates the Codex handoff; Codex discovers the repository, defines architecture, and performs the primary implementation inside Cursor; Grok performs the independent first review; Codex adjudicates, repairs, and verifies; ChatGPT Work performs product and visual acceptance; Pete authorizes merge and deployment; Azure deploys; verified production evidence returns to ChatGPT Work for final closeout. Include one short Codex bootstrap prompt and state that normal packages reuse the repository's existing package and handoff structure instead of creating new Markdown files for every phase.",
-      "branch": "work/2026-08-17-portable-session-manager-002-one-file",
-      "writer": "This Codex task is the sole writer for the one-file continuation. The earlier PS-PORTABLE-SESSION-MANAGER-002 branch remains read-only and preserved.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "shared_foundation",
-      "exclusive_domains": [
-        "governance:manager-tool-routing"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main c221a612bd53e4e2b44aef2eda2d9e10683fc432 after PR 518 preserved and paused the earlier eight-file candidate. On 2026-08-17 Pete explicitly redirected the package to one concise Codex workflow document and rejected a phase-by-phase Markdown system.",
-      "writable_surfaces": [
-        "docs/AI_WORKFLOW.md"
-      ],
-      "exclusions": [
-        "no new workflow, package-status, phase-status, handoff, bootstrap, decision, routing, registry, initiative, template, evidence, or completion Markdown file",
-        "no change to AGENTS.md, docs/AI_MODEL_AND_ROLE_ROUTING.md, CURRENT_BASELINE.yaml outside the activation control record, package registry, decision log, initiative documentation, templates, tests, application code, prompts, models, providers, schema, infrastructure, pipeline, deployment, configuration, production data, or live behavior",
-        "no requirement that every phase create a separate artifact; normal packages continue using the repository's existing package and handoff records",
-        "no automatic merge, deployment, production verification, or closeout claim from this activation",
-        "no edit, rebase, merge, cleanup, reset, or adoption of the preserved earlier PS-PORTABLE-SESSION-MANAGER-002 branch or any unrelated work"
-      ],
-      "completion_evidence": [
-        "docs/AI_WORKFLOW.md contains one concise normal audit-package orchestration section with the accepted role sequence and truthful acceptance, merge, deployment, live-verification, and closeout boundaries",
-        "the same section states that existing package and handoff structures are reused and that normal phases do not require newly created Markdown files",
-        "the same section includes one short copy-paste bootstrap prompt for a fresh Codex task",
-        "complete-diff review and git diff --check prove docs/AI_WORKFLOW.md is the only implementation path changed and no runtime or production behavior changed"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-17",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Pete directed Codex to simplify the PeerSlate audit orchestration package into one concise workflow document, prefer docs/AI_WORKFLOW.md, preserve the agreed Work/ChatGPT/Codex/Grok/Azure sequence, include a short Codex bootstrap prompt, and avoid new Markdown files for every phase."
-        }
-      ],
-      "cleanup_contract": "After the one-file candidate is verified and handed off, preserve its branch until any authorized merge and closeout are confirmed. Remove only this task's clean worktrees or branches after recoverability is established; preserve the earlier candidate and every unrelated worktree, branch, stash, artifact, and user file.",
-      "sequence": "control-only activation PR -> merge activation -> clean one-file worktree from resulting origin/main -> write preflight -> edit only docs/AI_WORKFLOW.md -> focused documentation and complete-diff validation -> Azure documentation PR with [skip ci] if Pete authorizes merge -> no runtime deployment"
     }
   ],
   "paused_lanes": [
@@ -2874,6 +2834,50 @@
       "pause_reason": "The PS-TRUST-SAFETY-001 direction package is complete and pushed at the exact preserved SHA. It defines site-wide personal controls, reporting, protected case/evidence architecture, human moderation, notices, appeals, support and urgent/legal routing, operating readiness, and a Community-first runtime slice. Evidence policy, link checks, 21 governance tests, complete-diff review, and package write preflight passed. The candidate has not been independently reviewed, granted, merged, implemented, staffed, deployed, enabled, or made live.",
       "resume_contract": "Resume only through fresh activation from current origin/main. First independently review the exact preserved candidate and reconcile findings with Pete and Codex; then obtain an exact direction grant before package merge. Any runtime, schema, role, policy, moderator queue, material visual, notification, AI moderation, vendor, deployment, public enablement, or production operation requires its own Protected activation and applicable professional-readiness evidence.",
       "preserved_head_sha": "41086bdde7b05e603ad915f9fe802579d41275f5"
+    },
+    {
+      "package": "PS-PORTABLE-SESSION-MANAGER-002",
+      "outcome": "Consolidate PeerSlate audit-package orchestration into one concise section in the existing docs/AI_WORKFLOW.md. Preserve the agreed sequence: ChatGPT Work manages the package; ChatGPT handles product reasoning and visual creation; Work accepts that direction and creates the Codex handoff; Codex discovers the repository, defines architecture, and performs the primary implementation inside Cursor; Grok performs the independent first review; Codex adjudicates, repairs, and verifies; ChatGPT Work performs product and visual acceptance; Pete authorizes merge and deployment; Azure deploys; verified production evidence returns to ChatGPT Work for final closeout. Include one short Codex bootstrap prompt and state that normal packages reuse the repository's existing package and handoff structure instead of creating new Markdown files for every phase.",
+      "branch": "work/2026-08-17-portable-session-manager-002-one-file",
+      "writer": "This Codex task is the sole writer for the one-file continuation. The earlier PS-PORTABLE-SESSION-MANAGER-002 branch remains read-only and preserved.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "shared_foundation",
+      "exclusive_domains": [
+        "governance:manager-tool-routing"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main c221a612bd53e4e2b44aef2eda2d9e10683fc432 after PR 518 preserved and paused the earlier eight-file candidate. On 2026-08-17 Pete explicitly redirected the package to one concise Codex workflow document and rejected a phase-by-phase Markdown system.",
+      "writable_surfaces": [
+        "docs/AI_WORKFLOW.md"
+      ],
+      "exclusions": [
+        "no new workflow, package-status, phase-status, handoff, bootstrap, decision, routing, registry, initiative, template, evidence, or completion Markdown file",
+        "no change to AGENTS.md, docs/AI_MODEL_AND_ROLE_ROUTING.md, CURRENT_BASELINE.yaml outside the activation control record, package registry, decision log, initiative documentation, templates, tests, application code, prompts, models, providers, schema, infrastructure, pipeline, deployment, configuration, production data, or live behavior",
+        "no requirement that every phase create a separate artifact; normal packages continue using the repository's existing package and handoff records",
+        "no automatic merge, deployment, production verification, or closeout claim from this activation",
+        "no edit, rebase, merge, cleanup, reset, or adoption of the preserved earlier PS-PORTABLE-SESSION-MANAGER-002 branch or any unrelated work"
+      ],
+      "completion_evidence": [
+        "docs/AI_WORKFLOW.md contains one concise normal audit-package orchestration section with the accepted role sequence and truthful acceptance, merge, deployment, live-verification, and closeout boundaries",
+        "the same section states that existing package and handoff structures are reused and that normal phases do not require newly created Markdown files",
+        "the same section includes one short copy-paste bootstrap prompt for a fresh Codex task",
+        "complete-diff review and git diff --check prove docs/AI_WORKFLOW.md is the only implementation path changed and no runtime or production behavior changed"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-17",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete directed Codex to simplify the PeerSlate audit orchestration package into one concise workflow document, prefer docs/AI_WORKFLOW.md, preserve the agreed Work/ChatGPT/Codex/Grok/Azure sequence, include a short Codex bootstrap prompt, and avoid new Markdown files for every phase."
+        }
+      ],
+      "cleanup_contract": "After the one-file candidate is verified and handed off, preserve its branch until any authorized merge and closeout are confirmed. Remove only this task's clean worktrees or branches after recoverability is established; preserve the earlier candidate and every unrelated worktree, branch, stash, artifact, and user file.",
+      "sequence": "control-only activation PR -> merge activation -> clean one-file worktree from resulting origin/main -> write preflight -> edit only docs/AI_WORKFLOW.md -> focused documentation and complete-diff validation -> Azure documentation PR with [skip ci] if Pete authorizes merge -> no runtime deployment",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-17T21:51:34Z",
+      "pause_reason": "Pete approved and merged PR 520. Azure main dc1823b74635c3d024b6f8e7d47e2eb4cb515bcf changes only docs/AI_WORKFLOW.md; required PR policy build 1197 succeeded; 24 governance-pointer tests and the package write preflight passed; no runtime deployment or live-site change was required. The one-file writer lane has no remaining work and relinquishes all mutation authority.",
+      "resume_contract": "No resume is expected. Any later workflow revision requires a fresh exact-outcome activation from current origin/main; do not reopen or edit this preserved branch in place.",
+      "preserved_head_sha": "cd0bef14a7dee423c184dced7c7d5f700b0f0197"
     }
   ],
   "workspace_snapshot": {
