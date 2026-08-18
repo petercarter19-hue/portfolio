@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-17T23:45:00Z",
+  "updated_at": "2026-08-18T12:25:44Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -1974,7 +1974,7 @@
       "package": "PS-COMMUNITY-AUTHORING-RUNTIME-001",
       "outcome": "Implement the Pete-locked Mine/Ours/Beyond Community page and compact desktop, tablet, and mobile authoring experience as a review-ready, default-dark runtime candidate. Preserve signed-in privacy, server-derived identity, deliberate publication, safe draft recovery, Voice, attachments, optional AI proposals, audience authorization, replies, accessibility, truthful failure states, and existing Community data while replacing the superseded composition. Stop before merge, schema apply, deployment, configuration enablement, broad member launch, or any live claim so a different reviewer can inspect the exact candidate.",
       "branch": "work/2026-08-17-community-authoring-runtime-001-r2",
-      "writer": "The current root Codex session is the sole architecture and implementation writer. A different reviewer will be assigned only after the exact candidate is complete and frozen; no sub-agent or other session may edit this lane.",
+      "writer": "This root Codex session is the sole correction and completion writer after independently reviewing the frozen candidate; it may extend only the existing package branch and authorized surfaces, and no sub-agent or other session may edit this lane.",
       "delivery_path": "Protected",
       "production_capable": false,
       "lane_class": "implementation",
@@ -2047,6 +2047,10 @@
           "authorized_by": "Pete",
           "status": "authorized",
           "decision": "After approving the compact Community visuals and accepting the current color direction for now, Pete directed: 'Okay, so I actually want you to do this yourself. I want you to build the architecture. I want you to implement it. And then when it's ready for review, we'll hand it off to a different reviewer.'"
+        },
+        {
+          "date": "2026-08-18",
+          "decision": "The prior writer pushed and relinquished the package branch at exact handoff SHA dd372fea3e7e63b31aacef2523a4d6aa717f20e5. After the fresh independent review found one draft-preservation defect, Pete directed this root Codex session: 'Fix and complete it.' This transfers the existing lane for the bounded correction, verification, governed merge and deployment sequence without broadening its writable surfaces, audience, configuration, schema, or product scope."
         }
       ],
       "cleanup_contract": "Preserve the visual-authority branch and all unrelated work. After the activation PR merges, create one clean implementation worktree from the resulting origin/main. Do not remove the activation or implementation branch until the exact candidate is reviewable and recoverability is verified; no cleanup authority extends to any other branch, worktree, stash, artifact, or user file.",
