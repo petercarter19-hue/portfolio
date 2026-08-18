@@ -64,9 +64,15 @@ def _owner_identity():
     return identity, None
 
 
-def _voice_failure(status, code, message, *, retryable):
+def _voice_failure(status, code, message, *, retry="none"):
+    if retry not in {"none", "same_recording", "new_recording", "after_permission"}:
+        raise ValueError("Unsupported Voice retry contract.")
     return jsonify(
-        success=False, code=code, message=message, retryable=retryable
+        success=False,
+        code=code,
+        message=message,
+        retryable=retry == "same_recording",
+        retry=retry,
     ), status
 
 
@@ -75,14 +81,13 @@ def _voice_owner_identity():
         identity = get_current_identity()
     except AuthenticationRequired:
         return None, _voice_failure(
-            401, "authentication_required", "Sign in is required.", retryable=False
+            401, "authentication_required", "Sign in is required."
         )
     if not is_owner(identity):
         return None, _voice_failure(
             403,
             "action_unavailable",
             "This action is not available.",
-            retryable=False,
         )
     return identity, None
 
@@ -94,7 +99,7 @@ def _idempotency_header():
 def _signed_out_response():
     if request.endpoint == VOICE_TRANSCRIPTION_ENDPOINT:
         return _voice_failure(
-            401, "authentication_required", "Sign in is required.", retryable=False
+            401, "authentication_required", "Sign in is required."
         )
     return jsonify(success=False, message="Sign in is required."), 401
 
@@ -123,7 +128,7 @@ def _require_authenticated_member():
 def protect_community():
     if not current_app.config.get("PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED", False):
         if request.endpoint == VOICE_TRANSCRIPTION_ENDPOINT:
-            return _voice_failure(404, "not_found", "Not found.", retryable=False)
+            return _voice_failure(404, "not_found", "Not found.")
         return jsonify(success=False, message="Not found."), 404
     denied = _require_authenticated_member()
     if denied:
@@ -142,7 +147,6 @@ def protect_community():
                 403,
                 "same_origin_required",
                 "A same-origin request header is required.",
-                retryable=False,
             )
         return jsonify(success=False, message="A same-origin request header is required."), 403
     origin = request.headers.get("Origin")
@@ -152,7 +156,6 @@ def protect_community():
                 403,
                 "same_origin_required",
                 "Cross-origin writes are not allowed.",
-                retryable=False,
             )
         return jsonify(success=False, message="Cross-origin writes are not allowed."), 403
     fetch_site = request.headers.get("Sec-Fetch-Site")
@@ -162,7 +165,6 @@ def protect_community():
                 403,
                 "same_origin_required",
                 "Cross-site writes are not allowed.",
-                retryable=False,
             )
         return jsonify(success=False, message="Cross-site writes are not allowed."), 403
     if request.endpoint not in {
@@ -214,7 +216,7 @@ def request_too_large(error):
             413,
             "recording_too_large",
             "This recording is too large. Record a shorter clip.",
-            retryable=False,
+            retry="new_recording",
         )
     return jsonify(success=False, message="Request is too large."), 413
 
@@ -226,7 +228,6 @@ def community_rate_limited(error):
             429,
             "voice_rate_limited",
             "Voice transcription is temporarily busy. Try again later.",
-            retryable=True,
         )
     return jsonify(success=False, message="Too many requests."), 429
 
@@ -308,14 +309,13 @@ def transcribe_voice():
             415,
             "multipart_required",
             "Voice transcription requires a recording form upload.",
-            retryable=False,
         )
     if request.content_length and request.content_length > VOICE_MULTIPART_LIMIT:
         return _voice_failure(
             413,
             "recording_too_large",
             "This recording is too large. Record a shorter clip.",
-            retryable=False,
+            retry="new_recording",
         )
     form_fields = set(request.form)
     file_fields = set(request.files)
@@ -329,21 +329,19 @@ def transcribe_voice():
             422,
             "invalid_context",
             "This Voice request has unsupported fields.",
-            retryable=False,
         )
     if "composer_context" not in form_fields:
         return _voice_failure(
             422,
             "invalid_context",
             "Choose an available Voice composer context.",
-            retryable=False,
         )
     if "duration_seconds" not in form_fields:
         return _voice_failure(
             422,
             "invalid_duration",
             "The recording duration is invalid.",
-            retryable=False,
+            retry="new_recording",
         )
     audio_parts = request.files.getlist("audio")
     if not audio_parts:
@@ -351,14 +349,13 @@ def transcribe_voice():
             422,
             "recording_required",
             "Choose a recording before transcribing.",
-            retryable=False,
+            retry="new_recording",
         )
     if len(audio_parts) != 1:
         return _voice_failure(
             422,
             "invalid_context",
             "This Voice request has unsupported fields.",
-            retryable=False,
         )
     try:
         proposal = community_voice_service.transcribe(
@@ -368,26 +365,97 @@ def transcribe_voice():
         )
     except CommunityVoiceError as error:
         details = {
-            "invalid-context": ("invalid_context", "Choose an available Voice composer context."),
-            "recording-required": ("recording_required", "Choose a recording before transcribing."),
-            "invalid-duration": ("invalid_duration", "The recording duration is invalid."),
-            "recording-too-long": ("recording_too_long", "Recordings are limited to three minutes."),
-            "recording-too-large": ("recording_too_large", "This recording is too large. Record a shorter clip."),
-            "unsupported-recording": ("unsupported_recording", "This recording format is not supported."),
-            "transcript-empty": ("transcript_empty", "No reviewable speech was detected."),
-            "transcript-too-long": ("transcript_too_long", "Speech returned a transcript that is too long for this comment. Record a shorter clip or keep typing."),
-            "transcription-unavailable": ("transcription_unavailable", "Voice transcription is unavailable. You can keep typing and try again later."),
+            "invalid-context": (
+                "invalid_context",
+                "Choose an available Voice composer context.",
+                422,
+                "none",
+            ),
+            "recording-required": (
+                "recording_required",
+                "Choose a recording before transcribing.",
+                422,
+                "new_recording",
+            ),
+            "invalid-duration": (
+                "invalid_duration",
+                "The recording duration is invalid.",
+                422,
+                "new_recording",
+            ),
+            "recording-too-long": (
+                "recording_too_long",
+                "Recordings are limited to three minutes.",
+                422,
+                "new_recording",
+            ),
+            "recording-too-large": (
+                "recording_too_large",
+                "This recording is too large. Record a shorter clip.",
+                413,
+                "new_recording",
+            ),
+            "unsupported-recording": (
+                "unsupported_recording",
+                "This recording format is not supported.",
+                422,
+                "new_recording",
+            ),
+            "speech-empty": (
+                "no_speech",
+                "We couldn't hear any words in that recording. Check your microphone and record again — or keep typing.",
+                422,
+                "new_recording",
+            ),
+            "transcript-too-long": (
+                "transcript_too_long",
+                "Speech returned a transcript that is too long for this comment. Record a shorter clip or keep typing.",
+                422,
+                "new_recording",
+            ),
+            "speech-timeout": (
+                "provider_timeout",
+                "Voice transcription took too long. Try the same recording again.",
+                503,
+                "same_recording",
+            ),
+            "speech-busy": (
+                "provider_busy",
+                "Voice transcription is temporarily busy. Try the same recording again.",
+                503,
+                "same_recording",
+            ),
+            "transcription-unavailable": (
+                "transcription_unavailable",
+                "Voice transcription is unavailable. You can keep typing and try again later.",
+                503,
+                "none",
+            ),
+            "transcription-failed": (
+                "transcription_failed",
+                "Voice could not process that recording. Record again or keep typing.",
+                503,
+                "new_recording",
+            ),
+            "unsupported-locale": (
+                "recording_invalid",
+                "This recording locale is not supported.",
+                422,
+                "none",
+            ),
+            "provider-response-invalid": (
+                "provider_response_invalid",
+                "Voice transcription returned an invalid response. Try the same recording again.",
+                503,
+                "same_recording",
+            ),
         }
-        code, message = details.get(error.code, details["transcription-unavailable"])
-        status = {
-            "transcription_unavailable": 503,
-            "recording_too_large": 413,
-        }.get(code, 422)
+        code, message, status, retry = details.get(
+            error.code, details["transcription-unavailable"]
+        )
         if status == 503:
             current_app.logger.warning("Community Voice transcription unavailable.")
-        return _voice_failure(
-            status, code, message, retryable=status == 503
-        )
+        return _voice_failure(status, code, message, retry=retry)
     return jsonify(success=True, proposal=proposal)
 
 

@@ -10,7 +10,10 @@ from services.community_contracts import (
     POST_BODY_MAX,
     utf16_length,
 )
-from services.speech_transcription_service import speech_transcription_service
+from services.speech_transcription_service import (
+    SpeechTranscriptionError,
+    speech_transcription_service,
+)
 from services.voice_capture_service import (
     MAX_VOICE_DURATION_SECONDS,
     VOICE_LOCALE,
@@ -52,10 +55,10 @@ class CommunityVoiceService:
     @staticmethod
     def _normalized_text(value):
         if not isinstance(value, str):
-            raise CommunityVoiceError("transcript-empty")
+            raise CommunityVoiceError("provider-response-invalid")
         text = unicodedata.normalize("NFC", value).strip()
         if not text:
-            raise CommunityVoiceError("transcript-empty")
+            raise CommunityVoiceError("provider-response-invalid")
         return text
 
     def transcribe(self, upload, duration_seconds, composer_context):
@@ -77,6 +80,19 @@ class CommunityVoiceService:
             result = self.speech.transcribe(
                 audio.data, audio.content_type, VOICE_LOCALE
             )
+        except SpeechTranscriptionError as error:
+            raise CommunityVoiceError(
+                {
+                    "speech_empty": "speech-empty",
+                    "speech_timeout": "speech-timeout",
+                    "speech_busy": "speech-busy",
+                    "speech_unavailable": "transcription-unavailable",
+                    "speech_auth_failed": "transcription-unavailable",
+                    "speech_failed": "transcription-failed",
+                    "speech_malformed": "provider-response-invalid",
+                    "unsupported_locale": "unsupported-locale",
+                }.get(error.code, "transcription-unavailable")
+            ) from error
         except Exception as error:
             # Provider detail, identifiers, bytes, and payloads never cross
             # this request-only boundary.
@@ -85,14 +101,14 @@ class CommunityVoiceService:
         if not isinstance(result, dict) or not isinstance(
             result.get("provider_transcript"), str
         ):
-            raise CommunityVoiceError("transcription-unavailable")
+            raise CommunityVoiceError("provider-response-invalid")
         provider_duration = result.get("duration_seconds")
         try:
             provider_duration = float(provider_duration)
         except (TypeError, ValueError):
-            raise CommunityVoiceError("transcription-unavailable")
+            raise CommunityVoiceError("provider-response-invalid")
         if not math.isfinite(provider_duration) or provider_duration < 0:
-            raise CommunityVoiceError("transcription-unavailable")
+            raise CommunityVoiceError("provider-response-invalid")
         if provider_duration > MAX_VOICE_DURATION_SECONDS:
             raise CommunityVoiceError("recording-too-long")
         text = self._normalized_text(result["provider_transcript"])

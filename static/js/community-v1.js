@@ -1,8 +1,273 @@
+/* Community Voice retry contract. Kept DOM-free so the production state
+   transitions and response normalization run directly in Node tests. */
+(function (root, factory) {
+  'use strict';
+
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  root.PeerSlateCommunityVoiceRetry = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  var RETRY_TTL_MS = 5 * 60 * 1000;
+  var RETRY_KINDS = ['none', 'same_recording', 'new_recording', 'after_permission'];
+
+  function own(value, key) {
+    return Boolean(value) && Object.prototype.hasOwnProperty.call(value, key);
+  }
+
+  function integerRetryAfter(value) {
+    return Number.isInteger(value) && value >= 1 && value <= 300 ? value : null;
+  }
+
+  function fallbackFailure(status) {
+    if (!status) {
+      return {
+        code: 'upload_network',
+        message: "Couldn't reach Voice just now. You can try the same recording again.",
+        retryKind: 'same_recording'
+      };
+    }
+    if (status === 401 || status === 403) {
+      return {
+        code: 'voice_unauthorized',
+        message: 'Your session may have expired. Refresh the page and sign in, then try Voice again. Your text is unchanged.',
+        retryKind: 'none'
+      };
+    }
+    if (status === 404 || status === 405) {
+      return {
+        code: 'voice_route_error',
+        message: "Voice isn't reachable right now. Refresh the page and try again.",
+        retryKind: 'none'
+      };
+    }
+    if (status === 413) {
+      return {
+        code: 'recording_too_large',
+        message: 'This recording is too large. Record a shorter clip.',
+        retryKind: 'new_recording'
+      };
+    }
+    if (status === 429) {
+      return {
+        code: 'voice_rate_limited',
+        message: 'Voice transcription is temporarily busy. Try again later.',
+        retryKind: 'none'
+      };
+    }
+    if (status >= 400 && status < 500) {
+      return {
+        code: 'voice_request_rejected',
+        message: "Voice couldn't process that request. You can keep typing.",
+        retryKind: 'none'
+      };
+    }
+    if (status >= 500) {
+      return {
+        code: 'transcription_unavailable',
+        message: 'Voice transcription is unavailable. You can keep typing.',
+        retryKind: 'same_recording'
+      };
+    }
+    return {
+      code: 'voice_request_failed',
+      message: 'Voice could not complete that request. You can keep typing.',
+      retryKind: 'none'
+    };
+  }
+
+  function legacyRetryKind(status, payload) {
+    var recordAgainCodes = [
+      'no_speech', 'transcript_empty', 'recording_required', 'invalid_duration',
+      'recording_too_long', 'recording_too_large', 'unsupported_recording',
+      'transcript_too_long', 'transcription_failed'
+    ];
+    if (recordAgainCodes.indexOf(payload && payload.code) >= 0) return 'new_recording';
+    if (status !== 429 && payload && payload.retryable === true) return 'same_recording';
+    return fallbackFailure(status).retryKind;
+  }
+
+  function normalizeFailure(status, payload, now, retainedAt) {
+    var body = payload && typeof payload === 'object' ? payload : null;
+    var fallback = fallbackFailure(status);
+    var retryKind;
+    if (body && own(body, 'retry')) {
+      retryKind = RETRY_KINDS.indexOf(body.retry) >= 0 ? body.retry : 'none';
+    } else {
+      retryKind = legacyRetryKind(status, body);
+    }
+
+    var retryAfterSeconds = null;
+    if (retryKind === 'same_recording' && body && body.code === 'voice_rate_limited') {
+      retryAfterSeconds = integerRetryAfter(body.retry_after_seconds);
+      if (retryAfterSeconds === null) retryKind = 'none';
+    } else if (body && own(body, 'retry_after_seconds')) {
+      retryKind = 'none';
+    }
+
+    var clock = Number.isFinite(now) ? now : Date.now();
+    var retained = Number.isFinite(retainedAt) ? retainedAt : clock;
+    if (
+      retryKind === 'same_recording' && retryAfterSeconds !== null &&
+      retryAfterSeconds * 1000 >= retained + RETRY_TTL_MS - clock
+    ) {
+      retryKind = 'none';
+      retryAfterSeconds = null;
+    }
+
+    return {
+      status: status || 0,
+      code: body && typeof body.code === 'string' ? body.code : fallback.code,
+      message: body && typeof body.message === 'string' && body.message ? body.message : fallback.message,
+      retryKind: retryKind,
+      retryable: retryKind === 'same_recording',
+      retryAfterSeconds: retryAfterSeconds
+    };
+  }
+
+  function failureError(normalized) {
+    var error = new Error(normalized.message);
+    error.status = normalized.status;
+    error.code = normalized.code;
+    error.retry = normalized.retryKind;
+    error.retryable = normalized.retryable;
+    error.retryAfterSeconds = normalized.retryAfterSeconds;
+    return error;
+  }
+
+  function request(fetchImpl, url, options, now, retainedAt) {
+    var requestOptions = Object.assign({}, options || {});
+    requestOptions.headers = Object.assign({}, requestOptions.headers || {});
+    requestOptions.headers['X-PeerSlate-Request'] = 'same-origin';
+    return Promise.resolve().then(function () {
+      return fetchImpl(url, requestOptions);
+    }).then(function (response) {
+      var type = response.headers && response.headers.get
+        ? response.headers.get('content-type') || ''
+        : '';
+      var payloadPromise = type.indexOf('application/json') >= 0
+        ? response.json().catch(function () { return null; })
+        : Promise.resolve(null);
+      return payloadPromise.then(function (payload) {
+        if (!response.ok) throw failureError(normalizeFailure(response.status, payload, now, retainedAt));
+        return payload && typeof payload === 'object' ? payload : {};
+      });
+    }).catch(function (error) {
+      if (error && (error.retry || error.name === 'AbortError')) throw error;
+      throw failureError(normalizeFailure(0, null, now, retainedAt));
+    });
+  }
+
+  function emptyRetryState(hasAudio) {
+    return {
+      retryKind: 'none',
+      retryCount: 0,
+      retainedAt: null,
+      retryAvailableAt: null,
+      hasAudio: Boolean(hasAudio),
+      holdsRegistry: false
+    };
+  }
+
+  function copyRetryState(state) {
+    return {
+      retryKind: state && state.retryKind || 'none',
+      retryCount: state && Number.isInteger(state.retryCount) ? state.retryCount : 0,
+      retainedAt: state && Number.isFinite(state.retainedAt) ? state.retainedAt : null,
+      retryAvailableAt: state && Number.isFinite(state.retryAvailableAt) ? state.retryAvailableAt : null,
+      hasAudio: Boolean(state && state.hasAudio),
+      holdsRegistry: Boolean(state && state.holdsRegistry)
+    };
+  }
+
+  function canRetrySameRecording(state, now) {
+    var current = copyRetryState(state);
+    var clock = Number.isFinite(now) ? now : Date.now();
+    return current.retryKind === 'same_recording' && current.hasAudio &&
+      current.retryCount < 1 && current.retainedAt !== null &&
+      clock < current.retainedAt + RETRY_TTL_MS &&
+      (current.retryAvailableAt === null || clock >= current.retryAvailableAt);
+  }
+
+  function transitionRetryState(state, event, now, details) {
+    var current = copyRetryState(state);
+    var clock = Number.isFinite(now) ? now : Date.now();
+    var options = details || {};
+    if (event === 'captured') return emptyRetryState(true);
+    if (event === 'failure') {
+      var kind = RETRY_KINDS.indexOf(options.retryKind) >= 0 ? options.retryKind : 'none';
+      if (kind !== 'same_recording' || !current.hasAudio) {
+        var released = emptyRetryState(false);
+        released.retryKind = kind === 'same_recording' ? 'new_recording' : kind;
+        return released;
+      }
+      if (current.retryCount >= 1) {
+        var exhausted = emptyRetryState(false);
+        exhausted.retryKind = 'new_recording';
+        return exhausted;
+      }
+      current.retryKind = 'same_recording';
+      current.holdsRegistry = true;
+      current.retainedAt = current.retainedAt === null ? clock : current.retainedAt;
+      current.retryAvailableAt = Number.isInteger(options.retryAfterSeconds)
+        ? clock + options.retryAfterSeconds * 1000
+        : clock;
+      if (
+        clock >= current.retainedAt + RETRY_TTL_MS ||
+        current.retryAvailableAt >= current.retainedAt + RETRY_TTL_MS
+      ) {
+        var expired = emptyRetryState(false);
+        expired.retryKind = 'new_recording';
+        return expired;
+      }
+      return current;
+    }
+    if (event === 'retry') {
+      if (!canRetrySameRecording(current, clock)) {
+        var unavailable = emptyRetryState(false);
+        unavailable.retryKind = 'new_recording';
+        return unavailable;
+      }
+      current.retryCount += 1;
+      return current;
+    }
+    if (event === 'expiry') {
+      var timedOut = emptyRetryState(false);
+      timedOut.retryKind = 'new_recording';
+      return timedOut;
+    }
+    return emptyRetryState(false);
+  }
+
+  function nextRetryWakeAt(state) {
+    var current = copyRetryState(state);
+    if (!current.hasAudio || current.retainedAt === null) return null;
+    var deadline = current.retainedAt + RETRY_TTL_MS;
+    if (current.retryAvailableAt !== null && current.retryAvailableAt < deadline) {
+      return current.retryAvailableAt;
+    }
+    return deadline;
+  }
+
+  return {
+    RETRY_TTL_MS: RETRY_TTL_MS,
+    normalizeFailure: normalizeFailure,
+    request: request,
+    emptyRetryState: emptyRetryState,
+    canRetrySameRecording: canRetrySameRecording,
+    transitionRetryState: transitionRetryState,
+    nextRetryWakeAt: nextRetryWakeAt
+  };
+});
+
 (function () {
   'use strict';
 
+  if (typeof document === 'undefined') return;
   var app = document.querySelector('[data-community-app]');
   if (!app) return;
+  var communityVoiceRetry = globalThis.PeerSlateCommunityVoiceRetry;
 
   var viewportMeta = document.querySelector('meta[name="viewport"]');
   if (viewportMeta) {
@@ -296,6 +561,13 @@
     this.elapsedTimer = null;
     this.elapsedNode = null;
     this.abortController = null;
+    this.requestGeneration = 0;
+    this.requestTimer = null;
+    this.requestTimedOut = false;
+    this.retryTimer = null;
+    this.retryState = communityVoiceRetry.emptyRetryState(false);
+    this.retryActionRendered = false;
+    this.failureMessage = '';
     this.cancelled = false;
     this.panel = el('section', 'cv1-comment-voice-panel');
     this.panel.hidden = true;
@@ -334,8 +606,14 @@
   };
 
   CommunityVoiceController.prototype.clearAudio = function () {
+    this.requestGeneration += 1;
     if (this.abortController) this.abortController.abort();
     this.abortController = null;
+    if (this.requestTimer) window.clearTimeout(this.requestTimer);
+    this.requestTimer = null;
+    this.requestTimedOut = false;
+    if (this.retryTimer) window.clearTimeout(this.retryTimer);
+    this.retryTimer = null;
     if (this.stopTimer) window.clearTimeout(this.stopTimer);
     this.stopTimer = null;
     if (this.elapsedTimer) window.clearInterval(this.elapsedTimer);
@@ -347,12 +625,130 @@
     this.blob = null;
     this.startedAt = null;
     this.durationSeconds = null;
+    this.retryState = communityVoiceRetry.emptyRetryState(false);
     this.release();
   };
 
   CommunityVoiceController.prototype.focusTrigger = function () {
     var control = this.trigger;
     window.setTimeout(function () { if (control && control.isConnected) control.focus(); }, 0);
+  };
+
+  CommunityVoiceController.prototype.voiceOwnsFocus = function () {
+    var active = document.activeElement;
+    return !active || active === document.body || active === this.trigger || this.panel.contains(active);
+  };
+
+  CommunityVoiceController.prototype.clearRequestTimer = function () {
+    if (this.requestTimer) window.clearTimeout(this.requestTimer);
+    this.requestTimer = null;
+  };
+
+  CommunityVoiceController.prototype.scheduleRetryWake = function () {
+    var self = this;
+    if (this.retryTimer) window.clearTimeout(this.retryTimer);
+    this.retryTimer = null;
+    if (!this.retryState.hasAudio || this.retryState.retainedAt === null) return;
+    var now = Date.now();
+    var wakeAt = communityVoiceRetry.nextRetryWakeAt(this.retryState);
+    var deadline = this.retryState.retainedAt + communityVoiceRetry.RETRY_TTL_MS;
+    if (wakeAt === null || wakeAt <= now) wakeAt = deadline;
+    this.retryTimer = window.setTimeout(function () {
+      self.retryTimer = null;
+      self.checkRetryWindow();
+    }, Math.max(0, wakeAt - now) + 1);
+  };
+
+  CommunityVoiceController.prototype.expireRetainedAudio = function () {
+    var focusVoice = this.voiceOwnsFocus();
+    this.clearAudio();
+    this.retryState = communityVoiceRetry.transitionRetryState(
+      this.retryState, 'expiry', Date.now()
+    );
+    this.failureMessage = 'That recording can no longer be retried. Record again or keep typing.';
+    this.setState('failure', this.failureMessage);
+    if (focusVoice) this.focusTrigger();
+  };
+
+  CommunityVoiceController.prototype.checkRetryWindow = function () {
+    if (!this.panel.isConnected) {
+      this.dispose();
+      return false;
+    }
+    if (!this.retryState.hasAudio || this.retryState.retainedAt === null) return false;
+    var now = Date.now();
+    var deadline = this.retryState.retainedAt + communityVoiceRetry.RETRY_TTL_MS;
+    if (now >= deadline) {
+      this.expireRetainedAudio();
+      return false;
+    }
+    var canRetry = communityVoiceRetry.canRetrySameRecording(this.retryState, now);
+    if (this.state === 'failure' && canRetry && !this.retryActionRendered) this.render();
+    this.scheduleRetryWake();
+    return canRetry;
+  };
+
+  CommunityVoiceController.prototype.setLocalFailure = function (message, retryKind) {
+    var focusVoice = this.voiceOwnsFocus();
+    this.blob = null;
+    this.chunks = [];
+    this.retryState = communityVoiceRetry.emptyRetryState(false);
+    this.retryState.retryKind = retryKind || 'none';
+    this.failureMessage = message;
+    this.release();
+    this.setState('failure', message);
+    if (focusVoice) this.focusTrigger();
+  };
+
+  CommunityVoiceController.prototype.applyTranscriptionFailure = function (error) {
+    if (!this.panel.isConnected) {
+      this.dispose();
+      return;
+    }
+    var focusVoice = this.voiceOwnsFocus();
+    var requestedRetry = error && error.retry || 'none';
+    this.retryState = communityVoiceRetry.transitionRetryState(
+      this.retryState,
+      'failure',
+      Date.now(),
+      {
+        retryKind: requestedRetry,
+        retryAfterSeconds: error && error.retryAfterSeconds
+      }
+    );
+    if (!this.retryState.holdsRegistry) {
+      this.blob = null;
+      this.release();
+    } else {
+      this.scheduleRetryWake();
+    }
+    this.failureMessage = (error && error.message) || 'Voice transcription is unavailable. You can keep typing.';
+    if (requestedRetry === 'same_recording' && this.retryState.retryKind === 'new_recording') {
+      this.failureMessage = 'Voice could not complete that recording. Record again or keep typing.';
+    }
+    this.setState('failure', this.failureMessage);
+    if (focusVoice) this.focusTrigger();
+  };
+
+  CommunityVoiceController.prototype.retrySameRecording = function () {
+    this.checkRetryWindow();
+    var next = communityVoiceRetry.transitionRetryState(
+      this.retryState, 'retry', Date.now()
+    );
+    if (!next.hasAudio) {
+      this.retryState = next;
+      this.blob = null;
+      this.release();
+      this.setState('failure', 'That recording can no longer be retried. Record again or keep typing.');
+      return;
+    }
+    this.retryState = next;
+    this.transcribe();
+  };
+
+  CommunityVoiceController.prototype.recordAgain = function () {
+    this.discard(false);
+    this.start();
   };
 
   CommunityVoiceController.prototype.setState = function (state, message) {
@@ -377,6 +773,7 @@
   CommunityVoiceController.prototype.render = function () {
     var self = this;
     this.panel.replaceChildren();
+    this.retryActionRendered = false;
     if (this.state === 'ready' || this.state === 'ready-to-send') return;
     this.panel.appendChild(this.status);
     if (this.state === 'permission') {
@@ -430,11 +827,19 @@
       return;
     }
     if (this.state === 'failure') {
-      if (this.blob) {
-        if (this.retryable) this.panel.appendChild(this.action('Retry', function () { self.transcribe(); }, 'cv1-primary'));
+      if (this.retryState.retryKind === 'same_recording' && this.blob) {
+        if (communityVoiceRetry.canRetrySameRecording(this.retryState, Date.now())) {
+          this.panel.appendChild(this.action('Retry', function () { self.retrySameRecording(); }, 'cv1-primary'));
+          this.retryActionRendered = true;
+        }
         this.panel.appendChild(this.action('Discard', function () { self.discard(true); }, 'cv1-secondary'));
+      } else if (this.retryState.retryKind === 'new_recording') {
+        this.panel.appendChild(this.action('Record again', function () { self.recordAgain(); }, 'cv1-primary'));
+        this.panel.appendChild(this.action('Not now', function () { self.discard(true); }, 'cv1-secondary'));
+      } else if (this.retryState.retryKind === 'after_permission') {
+        this.panel.appendChild(this.action('Enable microphone', function () { self.recordAgain(); }, 'cv1-primary'));
+        this.panel.appendChild(this.action('Not now', function () { self.discard(true); }, 'cv1-secondary'));
       } else {
-        this.panel.appendChild(this.action('Try again', function () { self.start(); }, 'cv1-primary'));
         this.panel.appendChild(this.action('Not now', function () { self.discard(true); }, 'cv1-secondary'));
       }
     }
@@ -449,8 +854,7 @@
     this.durationSeconds = null;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
       this.release();
-      this.setState('failure', 'Voice recording is unavailable on this device. You can keep typing.');
-      this.focusTrigger();
+      this.setLocalFailure('Voice recording is unavailable on this device. You can keep typing.', 'none');
       return;
     }
     this.setState('permission', 'Requesting microphone permission. You can keep typing.');
@@ -464,8 +868,7 @@
         self.recorder = new MediaRecorder(stream);
       } catch (error) {
         self.clearAudio();
-        self.setState('failure', 'Voice recording is unavailable on this device. You can keep typing.');
-        self.focusTrigger();
+        self.setLocalFailure('Voice recording is unavailable on this device. You can keep typing.', 'new_recording');
         return;
       }
       self.chunks = [];
@@ -485,11 +888,12 @@
         self.blob = new Blob(self.chunks, {type: type});
         self.chunks = [];
         if (!self.blob.size) {
-          self.setState('failure', 'No recording was captured. You can keep typing or record again.');
-          self.release();
-          self.focusTrigger();
+          self.setLocalFailure('No recording was captured. You can keep typing or record again.', 'new_recording');
           return;
         }
+        self.retryState = communityVoiceRetry.transitionRetryState(
+          self.retryState, 'captured', Date.now()
+        );
         if (self.localOnly) {
           self.release();
           self.setState('local-review', 'Recording captured locally. It was not uploaded or transcribed and will disappear when this page closes.');
@@ -502,8 +906,7 @@
         self.recorder.start();
       } catch (error) {
         self.clearAudio();
-        self.setState('failure', 'Voice recording is unavailable on this device. You can keep typing.');
-        self.focusTrigger();
+        self.setLocalFailure('Voice recording is unavailable on this device. You can keep typing.', 'new_recording');
         return;
       }
       self.setState('recording', self.localOnly
@@ -518,8 +921,7 @@
     }).catch(function () {
       if (self.cancelled || self.state !== 'permission') return;
       self.release();
-      self.setState('failure', 'Microphone permission was not granted. You can keep typing.');
-      self.focusTrigger();
+      self.setLocalFailure('Microphone permission was not granted. You can keep typing.', 'after_permission');
     });
   };
 
@@ -542,30 +944,58 @@
   CommunityVoiceController.prototype.transcribe = function () {
     var self = this;
     if (!this.blob || !this.claim()) return;
+    var requestGeneration = ++this.requestGeneration;
     this.setState('processing', 'Transcribing your recording. You can keep typing.');
     var data = new FormData();
     data.append('audio', this.blob, 'voice-' + this.context + '.webm');
     data.append('duration_seconds', String(this.durationSeconds || .01));
     data.append('composer_context', this.context);
     this.abortController = new AbortController();
-    api('/api/v1/community/voice/transcriptions', {
+    this.requestTimedOut = false;
+    this.clearRequestTimer();
+    this.requestTimer = window.setTimeout(function () {
+      if (!self.abortController) return;
+      self.requestTimedOut = true;
+      self.abortController.abort();
+    }, 60000);
+    communityVoiceRetry.request(fetch, '/api/v1/community/voice/transcriptions', {
       method: 'POST', body: data, signal: this.abortController.signal
-    }).then(function (payload) {
+    }, undefined, this.retryState.retainedAt).then(function (payload) {
+      if (requestGeneration !== self.requestGeneration) return;
+      if (!self.panel.isConnected) {
+        self.dispose();
+        return;
+      }
+      self.clearRequestTimer();
       self.abortController = null;
-      self.release();
-      self.retryable = true;
-      self.proposal = payload.proposal && payload.proposal.text || '';
-      if (!self.proposal) throw new Error('No reviewable speech was detected.');
+      var proposalText = payload.proposal && payload.proposal.text;
+      if (typeof proposalText !== 'string' || !proposalText.trim()) {
+        var invalid = new Error('Voice transcription returned an invalid response. Try the same recording again.');
+        invalid.code = 'provider_response_invalid';
+        invalid.retry = 'same_recording';
+        invalid.retryable = true;
+        throw invalid;
+      }
+      self.proposal = proposalText;
+      self.clearAudio();
       self.setState('preview', 'Review the transcript. It will not be inserted or sent until you choose Use transcript.');
       var proposal = self.panel.querySelector('.cv1-comment-voice-proposal');
       if (proposal) proposal.focus();
     }).catch(function (error) {
-      if (error && error.name === 'AbortError') return;
+      if (requestGeneration !== self.requestGeneration) return;
+      var timedOut = self.requestTimedOut;
+      self.clearRequestTimer();
       self.abortController = null;
-      self.release();
-      self.retryable = !error || error.retryable !== false;
-      self.setState('failure', (error && error.message) || 'Voice transcription is unavailable. You can keep typing.');
-      self.focusTrigger();
+      self.requestTimedOut = false;
+      if (error && error.name === 'AbortError') {
+        if (self.cancelled) return;
+        if (!timedOut) return;
+        error = new Error("Couldn't reach Voice just now. You can try the same recording again.");
+        error.code = 'upload_network';
+        error.retry = 'same_recording';
+        error.retryable = true;
+      }
+      self.applyTranscriptionFailure(error);
     });
   };
 
@@ -611,6 +1041,40 @@
     communityVoiceRegistry.controllers.slice().forEach(function (controller) {
       if (!lifetime || controller.lifetime === lifetime) controller.dispose();
     });
+  }
+
+  function checkCommunityVoiceRetryWindows() {
+    communityVoiceRegistry.controllers.slice().forEach(function (controller) {
+      if (!controller.panel.isConnected) controller.dispose();
+      else controller.checkRetryWindow();
+    });
+  }
+
+  function bindCommunityVoiceLifecycleEvents() {
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') checkCommunityVoiceRetryWindows();
+    });
+    window.addEventListener('pageshow', checkCommunityVoiceRetryWindows);
+    ['pointerdown', 'keydown', 'input', 'change'].forEach(function (eventName) {
+      document.addEventListener(eventName, checkCommunityVoiceRetryWindows, true);
+    });
+    window.addEventListener('pagehide', function () {
+      disposeCommunityVoiceControllers();
+    });
+  }
+
+  if (
+    typeof module === 'object' && module.exports &&
+    globalThis.PeerSlateCommunityVoiceControllerTestMode
+  ) {
+    communityVoiceRetry.controllerTest = {
+      Controller: CommunityVoiceController,
+      registry: communityVoiceRegistry,
+      checkRetryWindows: checkCommunityVoiceRetryWindows,
+      disposeControllers: disposeCommunityVoiceControllers
+    };
+    bindCommunityVoiceLifecycleEvents();
+    return;
   }
 
   function resizePrimaryComment(form) {
@@ -3072,9 +3536,7 @@
     var deepLink = location.pathname.match(/^\/the-slate\/posts\/([^/]+)(?:\/contributions\/([^/]+))?\/?$/);
     if (deepLink) openConversation(decodeURIComponent(deepLink[1]), false, deepLink[2] ? decodeURIComponent(deepLink[2]) : null);
   });
-  window.addEventListener('pagehide', function () {
-    disposeCommunityVoiceControllers();
-  });
+  bindCommunityVoiceLifecycleEvents();
 
   setMobileCommunityView('ours');
   loadFeed(false);

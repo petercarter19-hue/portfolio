@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import io
 import os
+import shutil
+import subprocess
 import unittest
 from unittest.mock import Mock, patch
 from uuid import uuid4
@@ -15,7 +17,9 @@ from app import app, limiter
 from services.community_voice_service import (
     CommunityVoiceError,
     CommunityVoiceService,
+    community_voice_service,
 )
+from services.speech_transcription_service import SpeechTranscriptionError
 from services.voice_capture_service import MAX_VOICE_BYTES
 
 
@@ -72,7 +76,7 @@ class CommunityVoiceServiceTests(unittest.TestCase):
             "provider_transcript": "   ",
             "duration_seconds": 1,
         }
-        with self.assertRaisesRegex(CommunityVoiceError, "transcript-empty"):
+        with self.assertRaisesRegex(CommunityVoiceError, "provider-response-invalid"):
             self.service.transcribe(Upload(), "1", "post")
         with self.assertRaisesRegex(CommunityVoiceError, "recording-too-long"):
             self.service.transcribe(Upload(), "181", "post")
@@ -82,6 +86,29 @@ class CommunityVoiceServiceTests(unittest.TestCase):
         with self.assertRaisesRegex(CommunityVoiceError, "transcription-unavailable") as raised:
             self.service.transcribe(Upload(), "1", "contribution")
         self.assertNotIn("PRIVATE", str(raised.exception))
+
+    def test_preserves_only_safe_adapter_classifications(self):
+        expected = {
+            "speech_empty": "speech-empty",
+            "speech_timeout": "speech-timeout",
+            "speech_busy": "speech-busy",
+            "speech_unavailable": "transcription-unavailable",
+            "speech_auth_failed": "transcription-unavailable",
+            "speech_failed": "transcription-failed",
+            "speech_malformed": "provider-response-invalid",
+            "unsupported_locale": "unsupported-locale",
+            "private_provider_code": "transcription-unavailable",
+        }
+        for adapter_code, community_code in expected.items():
+            with self.subTest(adapter_code=adapter_code):
+                self.speech.transcribe.side_effect = SpeechTranscriptionError(
+                    adapter_code
+                )
+                with self.assertRaisesRegex(
+                    CommunityVoiceError, community_code
+                ) as raised:
+                    self.service.transcribe(Upload(), "1", "contribution")
+                self.assertNotIn(adapter_code, str(raised.exception))
 
     def test_malformed_provider_result_is_retryable_instead_of_an_empty_transcript_claim(self):
         for result in (
@@ -95,7 +122,7 @@ class CommunityVoiceServiceTests(unittest.TestCase):
             with self.subTest(result=result):
                 self.speech.transcribe.return_value = result
                 with self.assertRaisesRegex(
-                    CommunityVoiceError, "transcription-unavailable"
+                    CommunityVoiceError, "provider-response-invalid"
                 ):
                     self.service.transcribe(Upload(), "1", "contribution")
 
@@ -238,10 +265,57 @@ class CommunityVoiceRouteTests(unittest.TestCase):
             )
         payload = response.get_json()
         self.assertEqual((response.status_code, payload["code"]), (503, "transcription_unavailable"))
-        self.assertTrue(payload["retryable"])
+        self.assertEqual((payload["retry"], payload["retryable"]), ("none", False))
         self.assertNotIn("provider", str(payload).lower())
         self.assertNotIn("voice.webm", repr(log.call_args))
         self.assertEqual(log.call_args.args, ("Community Voice transcription unavailable.",))
+
+    @patch("community_api.community_voice_service.transcribe")
+    def test_route_exposes_truthful_additive_retry_contract(self, transcribe):
+        cases = {
+            "speech-empty": (422, "no_speech", "new_recording"),
+            "speech-timeout": (503, "provider_timeout", "same_recording"),
+            "speech-busy": (503, "provider_busy", "same_recording"),
+            "transcription-unavailable": (503, "transcription_unavailable", "none"),
+            "transcription-failed": (503, "transcription_failed", "new_recording"),
+            "unsupported-locale": (422, "recording_invalid", "none"),
+            "provider-response-invalid": (503, "provider_response_invalid", "same_recording"),
+            "recording-too-large": (413, "recording_too_large", "new_recording"),
+            "transcript-too-long": (422, "transcript_too_long", "new_recording"),
+        }
+        for service_code, expected in cases.items():
+            with self.subTest(service_code=service_code):
+                transcribe.side_effect = CommunityVoiceError(service_code)
+                response = self.client.post(
+                    "/api/v1/community/voice/transcriptions",
+                    data=self.form(),
+                    headers=self.headers(),
+                    content_type="multipart/form-data",
+                )
+                payload = response.get_json()
+                status, code, retry = expected
+                self.assertEqual((response.status_code, payload["code"]), (status, code))
+                self.assertEqual(payload["retry"], retry)
+                self.assertEqual(payload["retryable"], retry == "same_recording")
+                self.assertNotIn("speech_", str(payload).lower())
+                self.assertNotIn("request_id", str(payload).lower())
+
+    def test_adapter_empty_result_reaches_route_as_no_speech_not_unavailable(self):
+        with patch.object(
+            community_voice_service.speech,
+            "transcribe",
+            side_effect=SpeechTranscriptionError("speech_empty"),
+        ):
+            response = self.client.post(
+                "/api/v1/community/voice/transcriptions",
+                data=self.form(),
+                headers=self.headers(),
+                content_type="multipart/form-data",
+            )
+        payload = response.get_json()
+        self.assertEqual((response.status_code, payload["code"]), (422, "no_speech"))
+        self.assertEqual((payload["retry"], payload["retryable"]), ("new_recording", False))
+        self.assertNotIn("speech_empty", str(payload))
 
     def test_route_source_keeps_the_twenty_per_hour_limit_and_voice_ceiling(self):
         source = (ROOT / "app.py").read_text(encoding="utf-8")
@@ -306,6 +380,10 @@ class CommunityVoiceRouteTests(unittest.TestCase):
         self.assertEqual([response.status_code for response in responses[:20]], [200] * 20)
         self.assertEqual(responses[-1].status_code, 429)
         self.assertEqual(responses[-1].get_json()["code"], "voice_rate_limited")
+        self.assertEqual(
+            (responses[-1].get_json()["retry"], responses[-1].get_json()["retryable"]),
+            ("none", False),
+        )
 
 
 class CommunityVoiceFrontendContracts(unittest.TestCase):
@@ -333,14 +411,26 @@ class CommunityVoiceFrontendContracts(unittest.TestCase):
         self.assertIn("data.append('composer_context', this.context)", controller)
         self.assertIn("input.value.slice(0, start) + proposal + this.input.value.slice(start)", controller)
         self.assertIn("utf16Length(combined) > this.maxLength", controller)
-        self.assertIn("Try again", controller)
+        self.assertIn("Record again", controller)
         self.assertIn("Not now", controller)
         self.assertIn("Retry", controller)
+        self.assertIn("Enable microphone", controller)
+        self.assertIn("communityVoiceRetry.request(fetch", controller)
+        self.assertNotIn("api('/api/v1/community/voice/transcriptions'", controller)
+        self.assertIn("this.retryState", controller)
+        self.assertIn("communityVoiceRetry.RETRY_TTL_MS", controller)
+        self.assertIn("this.retryState, 'expiry'", controller)
+        self.assertIn("this.retryState, 'retry'", controller)
+        self.assertIn("voiceOwnsFocus", controller)
+        self.assertIn("if (!this.panel.isConnected)", controller)
+        self.assertIn("requestGeneration !== self.requestGeneration", controller)
         self.assertIn("if (self.cancelled || self.state !== 'permission') return;", controller)
         self.assertNotIn("localStorage", controller)
         self.assertNotIn("requestSubmit", controller)
         self.assertNotIn("sendPrimaryComment", controller)
         self.assertIn("pagehide", self.script)
+        self.assertIn("visibilitychange", self.script)
+        self.assertIn("pageshow", self.script)
         self.assertIn("new CommunityVoiceController({", self.script)
         self.assertIn("context: 'post'", self.script)
         self.assertIn("maxLength: 4000", self.script)
@@ -369,6 +459,23 @@ class CommunityVoiceFrontendContracts(unittest.TestCase):
         self.assertIn("cv1-voice-control.cv1-secondary", self.styles)
         self.assertIn("background: #10243c; color: #b9d3ff", self.styles)
         self.assertIn("Speech transcription provider", self.policy)
+
+    def test_focused_node_retry_lifecycle_contract(self):
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("Node.js is unavailable.")
+        completed = subprocess.run(
+            [node, str(ROOT / "tests" / "community_voice_retry.test.js")],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(
+            completed.returncode,
+            0,
+            completed.stdout + completed.stderr,
+        )
 
     def test_voice_propagation_keeps_existing_send_boundaries_and_scoped_lifetimes(self):
         # PS-COMMUNITY-AUTH-WALL-001: the signed-out demo Voice instance is
