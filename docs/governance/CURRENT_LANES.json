@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-17T22:18:00Z",
+  "updated_at": "2026-08-17T23:45:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -109,6 +109,22 @@
     ],
     "reason": "Pete explicitly authorized Codex on 2026-08-11 to make the one-time writer-transfer preflight repair after the mandated Opportunity Slate governance transfer branch failed closed because the validator only recognized the implementation branch. The repair adds a dedicated, fail-closed transfer intent without changing active-lane capacity, product code, schema, pipeline, deployment, production configuration, or live behavior.",
     "verification_contract": "This is audit evidence, not self-granted authority. The preflight recognizes this repair only when the entire record equals the validator's hard-coded owner-authorized record and command facts prove the exact branch and origin/main base above. A later branch, base, or altered record cannot reuse the exception."
+  },
+  "community_authoring_surface_repair": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-17-delivery-activation-community-authoring-surface-repair",
+    "origin_main": "d08255d924c95722c34c398d669e9542e2f52b4a",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "target_package": "PS-COMMUNITY-AUTHORING-RUNTIME-001",
+    "target_branch": "work/2026-08-17-community-authoring-runtime-001-r2",
+    "added_surface": "scripts/preview_community_primary_feed.py",
+    "reason": "Pete explicitly authorized this one-time control correction on 2026-08-17 after the clean, current Community authoring candidate failed its mandatory write preflight solely because the local browser-review fixture was omitted from the active lane surfaces. The repair preserves the existing package, sole writer, branch, lane class, domains, exclusions, and authority while appending exactly the one missing non-production preview path.",
+    "verification_contract": "The validator recognizes this record only on the exact pinned control branch and origin/main base, with exactly three changed control paths. The active lane may change only by appending the exact preview path; CURRENT_BASELINE.yaml and every operating-mode authority remain unchanged. The repair grants no merge, schema, deployment, configuration, enablement, broad-launch, or live-behavior authority."
   },
   "interview_ai_d13_admission_repair": {
     "status": "one_time_owner_authorized_repair",
@@ -2002,7 +2018,8 @@
         "tests/test_navigation.py",
         "docs/initiatives/PS-COMMUNITY-VISUAL-REFINEMENT-001/",
         "docs/initiatives/PS-COMMUNITY-AUTHORING-RUNTIME-001/",
-        "docs/governance/PACKAGE_REGISTRY.json"
+        "docs/governance/PACKAGE_REGISTRY.json",
+        "scripts/preview_community_primary_feed.py"
       ],
       "exclusions": [
         "no merge, schema apply, deployment, production configuration, feature enablement, broad member launch, production-data mutation, or live-behavior claim from this non-production lane",

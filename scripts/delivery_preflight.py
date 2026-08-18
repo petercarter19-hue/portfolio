@@ -140,6 +140,43 @@ WRITER_TRANSFER_PREFLIGHT_REPAIR = {
     ),
 }
 
+# Pete explicitly authorized this one-time surface correction on 2026-08-17
+# after the resumed Community authoring branch failed its write preflight solely
+# because its local browser-review fixture was omitted from the activated lane.
+# The exception is pinned to one base, branch, package, lane, and appended path;
+# it grants no new product, merge, release, deployment, or live authority.
+COMMUNITY_AUTHORING_SURFACE_REPAIR = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-17-delivery-activation-community-authoring-surface-repair",
+    "origin_main": "d08255d924c95722c34c398d669e9542e2f52b4a",
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "target_package": "PS-COMMUNITY-AUTHORING-RUNTIME-001",
+    "target_branch": "work/2026-08-17-community-authoring-runtime-001-r2",
+    "added_surface": "scripts/preview_community_primary_feed.py",
+    "reason": (
+        "Pete explicitly authorized this one-time control correction on "
+        "2026-08-17 after the clean, current Community authoring candidate "
+        "failed its mandatory write preflight solely because the local "
+        "browser-review fixture was omitted from the active lane surfaces. "
+        "The repair preserves the existing package, sole writer, branch, lane "
+        "class, domains, exclusions, and authority while appending exactly the "
+        "one missing non-production preview path."
+    ),
+    "verification_contract": (
+        "The validator recognizes this record only on the exact pinned control "
+        "branch and origin/main base, with exactly three changed control paths. "
+        "The active lane may change only by appending the exact preview path; "
+        "CURRENT_BASELINE.yaml and every operating-mode authority remain "
+        "unchanged. The repair grants no merge, schema, deployment, "
+        "configuration, enablement, broad-launch, or live-behavior authority."
+    ),
+}
+
 # Pete's 2026-08-12 approval of the exact Opportunity Slate R1 candidate
 # exposed the implementation counterpart of the direction-only lifecycle gap:
 # the standing grant path could not bind an independently reviewed dark
@@ -3670,6 +3707,23 @@ def _exact_writer_transfer_preflight_repair_matches(
         and facts.get("branch") == WRITER_TRANSFER_PREFLIGHT_REPAIR["branch"]
         and facts.get("origin_main")
         == WRITER_TRANSFER_PREFLIGHT_REPAIR["origin_main"]
+    )
+
+
+def _exact_community_authoring_surface_repair_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("community_authoring_surface_repair")
+        == COMMUNITY_AUTHORING_SURFACE_REPAIR
+        and package_id == COMMUNITY_AUTHORING_SURFACE_REPAIR["package"]
+        and facts.get("branch") == COMMUNITY_AUTHORING_SURFACE_REPAIR["branch"]
+        and facts.get("origin_main")
+        == COMMUNITY_AUTHORING_SURFACE_REPAIR["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
     )
 
 
@@ -7745,6 +7799,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        community_authoring_surface_repair_matches = (
+            _exact_community_authoring_surface_repair_matches(
+                ledger, facts, package_id
+            )
+        )
         implementation_release_repair_matches = (
             _exact_implementation_release_preflight_repair_matches(
                 ledger, facts, package_id
@@ -7879,6 +7938,13 @@ def evaluate_policy(
             )
             warnings.append(
                 "using the exact one-time writer-transfer preflight-repair boundary"
+            )
+        elif community_authoring_surface_repair_matches:
+            allowed_surfaces = set(
+                COMMUNITY_AUTHORING_SURFACE_REPAIR["allowed_surfaces"]
+            )
+            warnings.append(
+                "using the exact one-time Community authoring surface-repair boundary"
             )
         elif implementation_release_repair_matches:
             allowed_surfaces = set(
@@ -8071,6 +8137,7 @@ def evaluate_policy(
             if (
                 not bootstrap_matches
                 and not writer_transfer_repair_matches
+                and not community_authoring_surface_repair_matches
                 and not implementation_release_repair_matches
                 and not profile_core_merge_repair_matches
                 and not profile_core_grant_fixture_followup_matches
@@ -9105,6 +9172,89 @@ def evaluate_policy(
                     candidate_baseline, origin_baseline,
                     label="grant-close preflight repair", errors=errors,
                 )
+            elif community_authoring_surface_repair_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "Community authoring surface repair updated_at must be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "Community authoring surface repair updated_at must strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "Community authoring surface repair may not change activation_policy"
+                    )
+                if _root_changes(ledger, origin_ledger) != {
+                    "updated_at",
+                    "active_lanes",
+                    "community_authoring_surface_repair",
+                }:
+                    errors.append(
+                        "Community authoring surface repair must change exactly updated_at, active_lanes, and its repair record"
+                    )
+                if origin_ledger.get("community_authoring_surface_repair") is not None:
+                    errors.append(
+                        "Community authoring surface repair is one-time and already recorded"
+                    )
+                if (
+                    ledger.get("community_authoring_surface_repair")
+                    != COMMUNITY_AUTHORING_SURFACE_REPAIR
+                ):
+                    errors.append(
+                        "Community authoring surface repair record is not exact"
+                    )
+
+                target_package = COMMUNITY_AUTHORING_SURFACE_REPAIR["target_package"]
+                target_branch = COMMUNITY_AUTHORING_SURFACE_REPAIR["target_branch"]
+                added_surface = COMMUNITY_AUTHORING_SURFACE_REPAIR["added_surface"]
+                origin_matches = [
+                    (index, lane)
+                    for index, lane in enumerate(origin_lanes)
+                    if lane.get("package") == target_package
+                ]
+                if len(origin_matches) != 1:
+                    errors.append(
+                        "Community authoring surface repair requires exactly one target active lane"
+                    )
+                else:
+                    target_index, origin_target = origin_matches[0]
+                    if origin_target.get("branch") != target_branch:
+                        errors.append(
+                            "Community authoring surface repair target branch is not exact"
+                        )
+                    expected_target = copy.deepcopy(origin_target)
+                    raw_surfaces = expected_target.get("writable_surfaces")
+                    if not isinstance(raw_surfaces, list):
+                        errors.append(
+                            "Community authoring surface repair target surfaces must be a list"
+                        )
+                    elif added_surface in raw_surfaces:
+                        errors.append(
+                            "Community authoring surface repair path is already registered"
+                        )
+                    else:
+                        raw_surfaces.append(added_surface)
+                        expected_lanes = copy.deepcopy(origin_lanes)
+                        expected_lanes[target_index] = expected_target
+                        if active_lanes != expected_lanes:
+                            errors.append(
+                                "Community authoring surface repair may only append the exact preview path"
+                            )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="Community authoring surface repair",
+                    errors=errors,
+                )
             elif writer_transfer_repair_matches:
                 if origin_policy != policy:
                     errors.append(
@@ -9376,6 +9526,7 @@ def evaluate_policy(
                     )
         if (
             not writer_transfer_repair_matches
+            and not community_authoring_surface_repair_matches
             and not implementation_release_repair_matches
             and not profile_core_merge_repair_matches
             and not shell_merge_repair_matches
@@ -9429,6 +9580,15 @@ def evaluate_policy(
             ):
                 errors.append(
                     "writer-transfer preflight repair must change exactly the "
+                    "owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                community_authoring_surface_repair_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "Community authoring surface repair must change exactly the "
                     "owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )

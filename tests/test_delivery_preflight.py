@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 from scripts.delivery_preflight import (
     BOOTSTRAP_CONTROL_REPAIR,
+    COMMUNITY_AUTHORING_SURFACE_REPAIR,
     CLEANUP_BRANCH_PATTERN,
     DIRECTION_MERGE_CONTROL_PATHS,
     DIRECTION_MERGE_FOLLOWUP_PATHS,
@@ -127,6 +128,7 @@ from scripts.delivery_preflight import (
     _exact_direction_grant_delta,
     _exact_grant_close_fixture_followup_delta,
     _exact_implementation_release_preflight_repair_matches,
+    _exact_community_authoring_surface_repair_matches,
     _exact_profile_core_grant_anchor_followup_delta,
     _exact_profile_core_grant_anchor_followup_matches,
     _exact_profile_core_grant_fixture_followup_delta,
@@ -8721,6 +8723,63 @@ with patch.object(
             origin_baseline=origin_baseline,
         )
         self.assertTrue(altered_errors)
+
+    def test_community_authoring_surface_repair_is_exact_and_narrow(self):
+        repair = COMMUNITY_AUTHORING_SURFACE_REPAIR
+        origin_ledger = load_ledger_at_ref(repair["origin_main"])
+        origin_baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        candidate = copy.deepcopy(origin_ledger)
+        candidate["updated_at"] = "2026-08-17T23:45:00Z"
+        candidate["community_authoring_surface_repair"] = copy.deepcopy(repair)
+        target = next(
+            lane
+            for lane in candidate["active_lanes"]
+            if lane["package"] == repair["target_package"]
+        )
+        target["writable_surfaces"].append(repair["added_surface"])
+        exact = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            ahead=1,
+            changed_paths=repair["allowed_surfaces"],
+        )
+
+        self.assertTrue(
+            _exact_community_authoring_surface_repair_matches(
+                candidate, exact, repair["package"]
+            )
+        )
+        exact_errors, exact_warnings = self._evaluate_activation(
+            candidate,
+            exact,
+            require_clean=True,
+            origin=origin_ledger,
+            candidate_baseline=origin_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertEqual([], exact_errors)
+        self.assertTrue(
+            any("Community authoring surface-repair" in item for item in exact_warnings)
+        )
+
+        altered = copy.deepcopy(candidate)
+        altered_target = next(
+            lane
+            for lane in altered["active_lanes"]
+            if lane["package"] == repair["target_package"]
+        )
+        altered_target["writer"] = "A different writer"
+        altered_errors, _ = self._evaluate_activation(
+            altered,
+            exact,
+            require_clean=True,
+            origin=origin_ledger,
+            candidate_baseline=origin_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertTrue(
+            any("may only append the exact preview path" in item for item in altered_errors)
+        )
 
     def test_bootstrap_control_repair_is_exact_and_one_time(self):
         # Replay the historical one-time exception against the exact merged
