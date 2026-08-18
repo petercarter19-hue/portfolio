@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-18T22:08:43Z",
+  "updated_at": "2026-08-18T22:49:46Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -15,9 +15,13 @@
       "PS-SHARED-DICTATION-RELIABILITY-001",
       "PS-DELIVERY-CONTROL-SD1-001"
     ],
-    "merge_allowed_for": [],
+    "merge_allowed_for": [
+      "PS-SHARED-DICTATION-RELIABILITY-001"
+    ],
     "cleanup_allowed_for": [],
-    "release_allowed_for": [],
+    "release_allowed_for": [
+      "PS-SHARED-DICTATION-RELIABILITY-001"
+    ],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
       "new feature or product write outside the exact surfaces recorded for its activated lane",
@@ -2185,7 +2189,58 @@
         }
       ],
       "cleanup_contract": "Preserve all existing work. After this control activation merges, the sole writer may create only the recorded implementation branch/worktree from resulting current origin/main and must pass the package write preflight before edits. Preserve the activation and implementation branches through exact-SHA review and any later authorized close; no cleanup authority extends to any other branch, worktree, stash, artifact, or user file.",
-      "sequence": "control-only activation PR -> merge activation -> sole writer creates the exact clean implementation branch/worktree from resulting origin/main -> package write preflight -> implement only the five-path SD-1 boundary -> focused Python and JavaScript tests plus complete-diff self-review -> freeze and push exact candidate -> fresh independent Protected-risk review -> same writer corrects accepted findings and refreshes evidence -> package-manager acceptance -> separate owner decision for any merge or deployment; no provider invocation, enablement, widening, or live claim"
+      "sequence": "control-only activation PR -> merge activation -> sole writer creates the exact clean implementation branch/worktree from resulting origin/main -> package write preflight -> implement only the five-path SD-1 boundary -> focused Python and JavaScript tests plus complete-diff self-review -> freeze and push exact candidate -> fresh independent Protected-risk review -> same writer corrects accepted findings and refreshes evidence -> package-manager acceptance -> separate owner decision for any merge or deployment; no provider invocation, enablement, widening, or live claim",
+      "merge_grant": {
+        "authorized_by": "Pete",
+        "authority_decision_index": 2,
+        "authority_decision_sha256": "f49133e181460c49e6406c02863d8f876c2c03b4189b181bdff1ed9b80c6330d",
+        "independent_review": {
+          "reviewer_task": "/root/sd1_reviewer",
+          "reviewer_model": "GPT-5.6 Sol high",
+          "reviewer_mode": "independent_read_only_non_writer",
+          "reviewed_sha": "b7b9b6eadecef27d2004ea1a5543fa490bc80260",
+          "reviewed_branch": "work/2026-08-18-shared-dictation-reliability-001",
+          "prior_rejected_sha": "b3cf65695a29629ad06fb3c04a0981fd783da275",
+          "verdict": "APPROVE",
+          "verdict_text": "APPROVE — exact b7b9b6eadecef27d2004ea1a5543fa490bc80260 verified with zero P0-P3 after closing the P1 expiry-teardown and P2 controller-test findings from b3cf65695a29629ad06fb3c04a0981fd783da275; five authorized paths, clean remote custody, focused Node/Python passes, and no provider or application calls passed. Limitation: deterministic fake DOM/timers only; no provider integration.",
+          "verdict_sha256": "fa617f0ef89efa61cce1bddf743749ae25a28bbef8156814c524a1208efbe122",
+          "basis": [
+            "full_tree_at_b7b9b6eadecef27d2004ea1a5543fa490bc80260",
+            "complete_diff_b3218a3a9c444202a1b599000199be3acd489448_to_b7b9b6eadecef27d2004ea1a5543fa490bc80260",
+            "clean_origin_work_2026_08_18_shared_dictation_reliability_001",
+            "five_authorized_paths_only",
+            "focused_node_and_python_pass",
+            "no_provider_or_application_calls"
+          ],
+          "scope": "protected_shared_dictation_reliability_merge_and_deployment",
+          "exclusions": "schema_configuration_enablement_community_widening_provider_invocation_broader_dictation",
+          "evidence_mode": "immutable_control_attestation_no_candidate_markdown",
+          "azure_receipt": {
+            "pull_request": 533,
+            "source_ci_build": 1242,
+            "source_ci_result": "succeeded",
+            "speculative_merge_sha": "f88fb44dff98fb73480e338b1fac89b3a8faecf8"
+          },
+          "received_by": "Root Codex program manager",
+          "received_date": "2026-08-18"
+        },
+        "reviewed_remote_sha": "b7b9b6eadecef27d2004ea1a5543fa490bc80260",
+        "granted_at": "2026-08-18T22:49:46Z",
+        "review_result": "pass",
+        "review_evidence_paths": [],
+        "release_scope": {
+          "pull_request": 533,
+          "ci_build": 1242,
+          "ci_speculative_merge_sha": "f88fb44dff98fb73480e338b1fac89b3a8faecf8",
+          "application_action": "merge_and_deploy_reviewed_shared_dictation_reliability",
+          "schema_action": "none",
+          "production_configuration_change": false,
+          "public_enablement": false,
+          "community_widening": false,
+          "provider_invocation": false,
+          "broader_dictation_work": false
+        }
+      }
     },
     {
       "package": "PS-DELIVERY-CONTROL-SD1-001",
