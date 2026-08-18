@@ -15,6 +15,15 @@ from unittest.mock import patch
 from scripts.delivery_preflight import (
     BOOTSTRAP_CONTROL_REPAIR,
     COMMUNITY_AUTHORING_SURFACE_REPAIR,
+    COMMUNITY_AUTHORING_BRANCH,
+    COMMUNITY_AUTHORING_IMPLEMENTATION_SHA,
+    COMMUNITY_AUTHORING_OWNER_DECISION_SHA256,
+    COMMUNITY_AUTHORING_PACKAGE,
+    COMMUNITY_AUTHORING_RELEASE_ADMISSION,
+    COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS,
+    COMMUNITY_AUTHORING_RELEASE_SCOPE,
+    COMMUNITY_AUTHORING_REVIEW_ATTESTATION,
+    COMMUNITY_AUTHORING_REVIEWED_SHA,
     CLEANUP_BRANCH_PATTERN,
     DIRECTION_MERGE_CONTROL_PATHS,
     DIRECTION_MERGE_FOLLOWUP_PATHS,
@@ -129,6 +138,8 @@ from scripts.delivery_preflight import (
     _exact_grant_close_fixture_followup_delta,
     _exact_implementation_release_preflight_repair_matches,
     _exact_community_authoring_surface_repair_matches,
+    _exact_community_authoring_release_admission_delta,
+    _exact_community_authoring_release_admission_matches,
     _exact_profile_core_grant_anchor_followup_delta,
     _exact_profile_core_grant_anchor_followup_matches,
     _exact_profile_core_grant_fixture_followup_delta,
@@ -161,6 +172,7 @@ from scripts.delivery_preflight import (
     _exact_connect_002_grant_fixture_followup_matches,
     _connect_002_main_sequence_facts,
     _is_connect_002_reviewed_implementation_lane,
+    _is_community_authoring_reviewed_implementation_lane,
     _profile_core_main_sequence_facts,
     _exact_opportunity_schema_repair_release_refresh_matches,
     _exact_opportunity_lifecycle_fixture_repair_delta,
@@ -664,6 +676,47 @@ class DeliveryPreflightTests(unittest.TestCase):
             ],
         }
 
+    def _community_authoring_origin(self) -> tuple[dict, dict]:
+        origin = load_ledger_at_ref(
+            COMMUNITY_AUTHORING_RELEASE_ADMISSION["origin_main"]
+        )
+        lane = next(
+            item
+            for item in origin["active_lanes"]
+            if item.get("package") == COMMUNITY_AUTHORING_PACKAGE
+        )
+        self.assertEqual(COMMUNITY_AUTHORING_BRANCH, lane["branch"])
+        self.assertNotIn("merge_grant", lane)
+        self.assertNotIn("community_authoring_release_admission", origin)
+        return origin, lane
+
+    def _community_authoring_grant_record(
+        self,
+        lane: dict,
+        granted_at: str,
+    ) -> dict:
+        decision_index = 1
+        decision = lane["owner_decisions"][decision_index]
+        self.assertEqual(
+            COMMUNITY_AUTHORING_OWNER_DECISION_SHA256,
+            _canonical_sha256(decision),
+        )
+        return {
+            "authorized_by": "Pete",
+            "authority_decision_index": decision_index,
+            "authority_decision_sha256": _canonical_sha256(decision),
+            "independent_review": copy.deepcopy(
+                COMMUNITY_AUTHORING_REVIEW_ATTESTATION
+            ),
+            "reviewed_remote_sha": COMMUNITY_AUTHORING_REVIEWED_SHA,
+            "granted_at": granted_at,
+            "review_result": "pass",
+            "review_evidence_paths": [
+                COMMUNITY_AUTHORING_REVIEW_ATTESTATION["evidence_path"]
+            ],
+            "release_scope": copy.deepcopy(COMMUNITY_AUTHORING_RELEASE_SCOPE),
+        }
+
     def _opportunity_origin(self) -> tuple[dict, dict]:
         origin = copy.deepcopy(self.ledger)
         candidates = [
@@ -1007,6 +1060,220 @@ class DeliveryPreflightTests(unittest.TestCase):
         self.assertTrue(
             any("serialized release slot" in error for error in occupied_errors)
         )
+
+    def test_community_authoring_release_admission_is_exact_inert_and_one_time(self):
+        origin, _ = self._community_authoring_origin()
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-18T13:08:00Z"
+        candidate["community_authoring_release_admission"] = copy.deepcopy(
+            COMMUNITY_AUTHORING_RELEASE_ADMISSION
+        )
+        baseline = load_baseline_bytes_at_ref(
+            COMMUNITY_AUTHORING_RELEASE_ADMISSION["origin_main"]
+        )
+        admission_facts = facts(
+            branch=COMMUNITY_AUTHORING_RELEASE_ADMISSION["branch"],
+            head="admission-candidate",
+            ahead=1,
+            origin_main=COMMUNITY_AUTHORING_RELEASE_ADMISSION["origin_main"],
+            changed_paths=sorted(COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS),
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            admission_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(
+            any("Community Authoring release-admission" in item for item in warnings)
+        )
+        self.assertTrue(
+            _exact_community_authoring_release_admission_matches(
+                candidate, admission_facts, "PS-DELIVERY-CONTROL-001"
+            )
+        )
+        self.assertTrue(
+            _exact_community_authoring_release_admission_delta(origin, candidate)
+        )
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+
+        widened = copy.deepcopy(candidate)
+        widened["community_authoring_release_admission"]["candidate_contract"][
+            "release_scope"
+        ]["schema_action"] = "apply"
+        widened_errors, _ = self._evaluate_activation(
+            widened,
+            admission_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(widened_errors)
+        self.assertFalse(
+            _exact_community_authoring_release_admission_delta(origin, widened)
+        )
+
+        replay_origin = copy.deepcopy(candidate)
+        replay = copy.deepcopy(candidate)
+        replay["updated_at"] = "2026-08-18T13:09:00Z"
+        replay_errors, _ = self._evaluate_activation(
+            replay,
+            {**admission_facts, "origin_main": "later-main"},
+            require_clean=True,
+            origin=replay_origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(replay_errors)
+        self.assertFalse(
+            _exact_community_authoring_release_admission_delta(
+                replay_origin, replay
+            )
+        )
+
+    def test_community_authoring_grant_and_merge_are_exact_candidate_only(self):
+        base, _ = self._community_authoring_origin()
+        admitted = copy.deepcopy(base)
+        admitted["updated_at"] = "2026-08-18T13:08:00Z"
+        admitted["community_authoring_release_admission"] = copy.deepcopy(
+            COMMUNITY_AUTHORING_RELEASE_ADMISSION
+        )
+        granted = copy.deepcopy(admitted)
+        granted_at = "2026-08-18T14:00:00Z"
+        granted["updated_at"] = granted_at
+        granted_lane = next(
+            item
+            for item in granted["active_lanes"]
+            if item.get("package") == COMMUNITY_AUTHORING_PACKAGE
+        )
+        granted_lane["merge_grant"] = self._community_authoring_grant_record(
+            granted_lane, granted_at
+        )
+        granted["operating_mode"]["merge_allowed_for"] = [
+            COMMUNITY_AUTHORING_PACKAGE
+        ]
+        granted["operating_mode"]["release_allowed_for"] = [
+            COMMUNITY_AUTHORING_PACKAGE
+        ]
+        baseline = load_baseline_bytes_at_ref(
+            COMMUNITY_AUTHORING_RELEASE_ADMISSION["origin_main"]
+        )
+        grant_facts = facts(
+            branch="work/2026-08-18-delivery-grant-community-authoring",
+            head="grant-candidate",
+            ahead=1,
+            origin_main="admission-main",
+            changed_paths=sorted(GRANT_ALLOWED_SURFACES),
+            grant_target_remote_sha=COMMUNITY_AUTHORING_REVIEWED_SHA,
+            **self._review_evidence_facts(granted_lane["merge_grant"]),
+        )
+        grant_errors, _ = evaluate_policy(
+            granted,
+            grant_facts,
+            COMMUNITY_AUTHORING_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=admitted,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], grant_errors)
+        self.assertTrue(
+            _exact_direction_grant_delta(
+                admitted, granted, COMMUNITY_AUTHORING_PACKAGE
+            )
+        )
+
+        no_admission_errors, _ = evaluate_policy(
+            granted,
+            grant_facts,
+            COMMUNITY_AUTHORING_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=base,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(
+            any("release admission" in item for item in no_admission_errors)
+        )
+
+        widened = copy.deepcopy(granted)
+        widened_lane = next(
+            item
+            for item in widened["active_lanes"]
+            if item.get("package") == COMMUNITY_AUTHORING_PACKAGE
+        )
+        widened_lane["merge_grant"]["release_scope"]["public_enablement"] = True
+        widened_errors, _ = evaluate_policy(
+            widened,
+            grant_facts,
+            COMMUNITY_AUTHORING_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=admitted,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(any("release_scope" in item for item in widened_errors))
+
+        candidate_path = "static/js/community-v1.js"
+        merge_facts = facts(
+            branch=COMMUNITY_AUTHORING_BRANCH,
+            head=COMMUNITY_AUTHORING_REVIEWED_SHA,
+            ahead=14,
+            behind=2,
+            origin_main="grant-main",
+            changed_paths=[candidate_path],
+            merge_target_remote_sha=COMMUNITY_AUTHORING_REVIEWED_SHA,
+            merge_main_changed_paths=sorted(
+                set(COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS)
+                | set(GRANT_ALLOWED_SURFACES)
+            ),
+            merge_main_control_commits_valid=True,
+            merge_main_control_commit_count=2,
+        )
+        merge_errors, merge_warnings = evaluate_policy(
+            granted,
+            merge_facts,
+            COMMUNITY_AUTHORING_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=granted,
+        )
+        self.assertEqual([], merge_errors)
+        self.assertTrue(
+            any("Community Authoring candidate predates main" in item for item in merge_warnings)
+        )
+
+        wrong_count_errors, _ = evaluate_policy(
+            granted,
+            {**merge_facts, "merge_main_control_commit_count": 3},
+            COMMUNITY_AUTHORING_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=granted,
+        )
+        self.assertTrue(
+            any("exactly two" in item for item in wrong_count_errors)
+        )
+
+        no_admission = copy.deepcopy(granted)
+        no_admission.pop("community_authoring_release_admission")
+        missing_errors, _ = evaluate_policy(
+            no_admission,
+            merge_facts,
+            COMMUNITY_AUTHORING_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=no_admission,
+        )
+        self.assertTrue(any("release admission" in item for item in missing_errors))
 
     def test_merge_requires_origin_grant_exact_head_remote_and_nonoverlap(self):
         origin, lane = self._direction_origin()
@@ -1524,6 +1791,7 @@ with patch.object(
                 if lane["package"] in {
                     PROFILE_CORE_INTEGRATION_PACKAGE,
                     CONNECT_002_PACKAGE,
+                    COMMUNITY_AUTHORING_PACKAGE,
                 }:
                     lane["package"] = "PS-GENERIC-IMPLEMENTATION-001"
                     lane["branch"] = "work/2026-08-13-generic-implementation-001"

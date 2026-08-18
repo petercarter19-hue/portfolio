@@ -1425,6 +1425,137 @@ CONNECT_002_GRANT_FIXTURE_FOLLOWUP_PATHS = frozenset(
     CONNECT_002_GRANT_FIXTURE_FOLLOWUP_R3["allowed_surfaces"]
 )
 
+# Pete's 2026-08-18 direction to "Fix and complete" the already activated
+# Community authoring package includes the governed merge and deployment
+# sequence recorded by the exact transferred lane decision. The candidate was
+# independently accepted only after two draft-lifecycle rejections were
+# corrected. This one-time admission binds that exact reviewed remote tip,
+# implementation-content SHA, PR, successful CI build, review receipt, and
+# no-schema/no-configuration release scope. It grants no authority by itself;
+# the ordinary ledger-only grant remains separately required.
+COMMUNITY_AUTHORING_PACKAGE = "PS-COMMUNITY-AUTHORING-RUNTIME-001"
+COMMUNITY_AUTHORING_BRANCH = (
+    "work/2026-08-17-community-authoring-runtime-001-r2"
+)
+COMMUNITY_AUTHORING_REVIEWED_SHA = (
+    "c8818319a418dd28cc1a24ba0c30e65274cfdbdf"
+)
+COMMUNITY_AUTHORING_IMPLEMENTATION_SHA = (
+    "887bd087e722562fd4c78f4d75a3b128d1cd74d9"
+)
+COMMUNITY_AUTHORING_OWNER_DECISION_SHA256 = (
+    "0bcf423b2dee95653ac2785930a9f1e566edc52fffdb58462848263675c5ba83"
+)
+COMMUNITY_AUTHORING_RELEASE_SCOPE = {
+    "pull_request": 527,
+    "ci_build": 1223,
+    "application_action": "merge_and_deploy_reviewed_community_authoring_runtime",
+    "schema_action": "none",
+    "public_enablement": False,
+    "broad_member_authoring": False,
+    "production_configuration_change": False,
+    "implementation_content_sha": COMMUNITY_AUTHORING_IMPLEMENTATION_SHA,
+}
+COMMUNITY_AUTHORING_REVIEW_ATTESTATION = {
+    "reviewer_task": "/root/community_corrected_review",
+    "reviewer_mode": "independent_read_only_non_writer",
+    "reviewed_sha": COMMUNITY_AUTHORING_REVIEWED_SHA,
+    "reviewed_branch": COMMUNITY_AUTHORING_BRANCH,
+    "verdict": "ACCEPT",
+    "verdict_text": (
+        "ACCEPT — exact branch tip "
+        "c8818319a418dd28cc1a24ba0c30e65274cfdbdf and implementation-content "
+        "SHA 887bd087e722562fd4c78f4d75a3b128d1cd74d9 independently verified; "
+        "complete asynchronous create, edit, and ordinary-close draft "
+        "lifecycle, 17-check shipped harness, focused 198-test suite, all "
+        "original corrections, authorized surfaces, and trust boundaries "
+        "passed with no blocking findings."
+    ),
+    "verdict_sha256": (
+        "91f81cd2184af2cd7cc7aaa256f709223a2c1652d36410fa65015ed486859a2c"
+    ),
+    "basis": [
+        "full_tree_at_c8818319a418dd28cc1a24ba0c30e65274cfdbdf",
+        "complete_diff_ffbeca40868e4aee414b68bf48a486d833d1a0e3_to_"
+        "c8818319a418dd28cc1a24ba0c30e65274cfdbdf",
+        "implementation_content_887bd087e722562fd4c78f4d75a3b128d1cd74d9",
+        "integrated_draft_close_harness_17_of_17_pass",
+        "focused_community_and_registry_198_of_198_pass",
+        "full_suite_3834_pass_24_expected_skips",
+        "authorized_surface_and_trust_boundary_audit_pass",
+    ],
+    "scope": "protected_community_authoring_runtime_merge_and_application_release",
+    "exclusions": "schema_apply_configuration_enablement_broad_member_authoring",
+    "evidence_path": (
+        "docs/initiatives/PS-COMMUNITY-AUTHORING-RUNTIME-001/"
+        "OWNER_TECHNICAL_COMPLETION_REPORT.md"
+    ),
+    "evidence_git_blob_sha": "4441318f63e7a378fe5213cb8dfe5356b9678cf4",
+    "evidence_bytes_sha256": (
+        "877279abe4301b8485d6d3edfb1cd123860950a4febfc750261a09ef46234a13"
+    ),
+    "received_by": "Root Codex program manager",
+    "received_date": "2026-08-18",
+}
+COMMUNITY_AUTHORING_REVIEW_ATTESTATION["attestation_sha256"] = (
+    "f3b191f747e7ff12f285480500d617878e60798d93bde8984fb66ef03c8e37ec"
+)
+COMMUNITY_AUTHORING_RELEASE_ADMISSION = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": (
+        "work/2026-08-18-delivery-activation-"
+        "community-authoring-release-admission"
+    ),
+    "origin_main": "ffbeca40868e4aee414b68bf48a486d833d1a0e3",
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "candidate_contract": {
+        "package": COMMUNITY_AUTHORING_PACKAGE,
+        "branch": COMMUNITY_AUTHORING_BRANCH,
+        "reviewed_remote_sha": COMMUNITY_AUTHORING_REVIEWED_SHA,
+        "implementation_content_sha": COMMUNITY_AUTHORING_IMPLEMENTATION_SHA,
+        "owner_decision_sha256": COMMUNITY_AUTHORING_OWNER_DECISION_SHA256,
+        "reviewer_task": COMMUNITY_AUTHORING_REVIEW_ATTESTATION["reviewer_task"],
+        "review_attestation_sha256": (
+            COMMUNITY_AUTHORING_REVIEW_ATTESTATION["attestation_sha256"]
+        ),
+        "review_evidence_path": COMMUNITY_AUTHORING_REVIEW_ATTESTATION[
+            "evidence_path"
+        ],
+        "review_evidence_git_blob_sha": COMMUNITY_AUTHORING_REVIEW_ATTESTATION[
+            "evidence_git_blob_sha"
+        ],
+        "review_evidence_bytes_sha256": COMMUNITY_AUTHORING_REVIEW_ATTESTATION[
+            "evidence_bytes_sha256"
+        ],
+        "release_scope": COMMUNITY_AUTHORING_RELEASE_SCOPE,
+    },
+    "reason": (
+        "Pete transferred the exact active Community authoring lane after an "
+        "independent rejection and directed this session to 'Fix and complete "
+        "it.' The corrected candidate then passed a fresh independent exact-"
+        "SHA review, focused and full-suite tests, integrated asynchronous "
+        "draft lifecycle proof, browser verification, and required Azure PR "
+        "build 1223. This admission records those immutable facts without "
+        "changing any lane or authority list."
+    ),
+    "verification_contract": (
+        "This record grants no merge or release authority. The preflight "
+        "recognizes it only on the exact branch, exact origin/main base, exact "
+        "one-commit three-path delta, and exact candidate, review, PR, CI, and "
+        "release-scope pins above. A later ordinary ledger-only grant remains "
+        "required. No schema apply, production configuration change, public "
+        "enablement, broad member authoring, or candidate mutation is admitted."
+    ),
+}
+COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS = frozenset(
+    COMMUNITY_AUTHORING_RELEASE_ADMISSION["allowed_surfaces"]
+)
+
 # PS-SHELL-001 finished its owner-approved Editorial Top Bar candidate under two
 # independent Protected reviews and then had nowhere to go: _direction_merge_grant
 # admitted only direction_authority lanes and the code-pinned Opportunity Slate,
@@ -3745,6 +3876,48 @@ def _exact_implementation_release_preflight_repair_matches(
     )
 
 
+def _exact_community_authoring_release_admission_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("community_authoring_release_admission")
+        == COMMUNITY_AUTHORING_RELEASE_ADMISSION
+        and package_id == COMMUNITY_AUTHORING_RELEASE_ADMISSION["package"]
+        and facts.get("branch") == COMMUNITY_AUTHORING_RELEASE_ADMISSION["branch"]
+        and facts.get("origin_main")
+        == COMMUNITY_AUTHORING_RELEASE_ADMISSION["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS)
+    )
+
+
+def _exact_community_authoring_release_admission_delta(
+    parent_ledger: object,
+    admission_ledger: object,
+) -> bool:
+    if not isinstance(parent_ledger, dict) or not isinstance(admission_ledger, dict):
+        return False
+    if parent_ledger.get("community_authoring_release_admission") is not None:
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = admission_ledger.get("updated_at")
+    expected["community_authoring_release_admission"] = (
+        COMMUNITY_AUTHORING_RELEASE_ADMISSION
+    )
+    return bool(
+        admission_ledger == expected
+        and _valid_utc_timestamp(parent_ledger.get("updated_at"))
+        and _valid_utc_timestamp(admission_ledger.get("updated_at"))
+        and _utc_timestamp_strictly_advances(
+            admission_ledger.get("updated_at"), parent_ledger.get("updated_at")
+        )
+    )
+
+
 def _exact_profile_core_merge_preflight_repair_matches(
     ledger: dict,
     facts: dict,
@@ -4591,6 +4764,13 @@ def _exact_connect_002_grant_fixture_followup_matches(
 
 def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
     """Accept a pinned reviewed-lane authority or exact direction decision."""
+    if package_id == COMMUNITY_AUTHORING_PACKAGE:
+        return bool(
+            isinstance(decision, dict)
+            and set(decision) == {"date", "decision"}
+            and _canonical_sha256(decision)
+            == COMMUNITY_AUTHORING_OWNER_DECISION_SHA256
+        )
     if package_id == INTERVIEW_AI_ARCHITECTURE_PACKAGE:
         return bool(
             isinstance(decision, dict)
@@ -4694,6 +4874,18 @@ def _is_connect_002_reviewed_implementation_lane(lane: object) -> bool:
     )
 
 
+def _is_community_authoring_reviewed_implementation_lane(lane: object) -> bool:
+    """Identify only the exact accepted Community runtime lane."""
+    return bool(
+        isinstance(lane, dict)
+        and lane.get("package") == COMMUNITY_AUTHORING_PACKAGE
+        and lane.get("branch") == COMMUNITY_AUTHORING_BRANCH
+        and lane.get("lane_class") == "implementation"
+        and lane.get("delivery_path") == "Protected"
+        and lane.get("production_capable") is False
+    )
+
+
 def _is_shell_reviewed_shared_foundation_lane(lane: object) -> bool:
     """Identify only the code-pinned non-production PS-SHELL-001 lane.
 
@@ -4728,18 +4920,22 @@ def _direction_merge_grant(
     )
     is_profile_core = _is_profile_core_reviewed_implementation_lane(lane)
     is_connect_002 = _is_connect_002_reviewed_implementation_lane(lane)
+    is_community_authoring = _is_community_authoring_reviewed_implementation_lane(
+        lane
+    )
     is_shell = _is_shell_reviewed_shared_foundation_lane(lane)
     if (
         not is_direction
         and not is_opportunity_release
         and not is_profile_core
         and not is_connect_002
+        and not is_community_authoring
         and not is_shell
     ):
         errors.append(
             f"{label} is available only to direction_authority lanes or the "
-            "code-controlled Opportunity Slate, Profile Core, Connect, or "
-            "Shell reviewed lanes"
+            "code-controlled Opportunity Slate, Profile Core, Connect, "
+            "Community Authoring, or Shell reviewed lanes"
         )
     if lane.get("production_capable") is not False:
         errors.append(f"{label} requires production_capable false")
@@ -4757,7 +4953,7 @@ def _direction_merge_grant(
         "review_result",
         "review_evidence_paths",
     }
-    if is_opportunity_release:
+    if is_opportunity_release or is_community_authoring:
         expected_fields.add("release_scope")
     if set(grant) != expected_fields:
         errors.append(
@@ -4805,6 +5001,7 @@ def _direction_merge_grant(
                 PROFILE_CORE_INTEGRATION_REVIEW_ATTESTATION
             ),
             CONNECT_002_PACKAGE: CONNECT_002_RECONCILED_REVIEW_ATTESTATION,
+            COMMUNITY_AUTHORING_PACKAGE: COMMUNITY_AUTHORING_REVIEW_ATTESTATION,
             INTERVIEW_AI_ARCHITECTURE_PACKAGE: (
                 INTERVIEW_AI_D13_REVIEW_ATTESTATION
             ),
@@ -4833,12 +5030,16 @@ def _direction_merge_grant(
             "APPROVED"
             if is_opportunity_release
             else "ACCEPT"
+            if is_community_authoring
+            else "ACCEPT"
             if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
             else "PASS"
         )
         expected_review_scope = (
             "protected_dark_merge_deploy_and_additive_schema_release"
             if is_opportunity_release
+            else "protected_community_authoring_runtime_merge_and_application_release"
+            if is_community_authoring
             else "protected_profile_core_implementation_merge_only"
             if is_profile_core
             else "protected_connect_002_non_production_provider_merge_only"
@@ -4858,6 +5059,8 @@ def _direction_merge_grant(
         expected_review_exclusions = (
             "public_enablement_app_registration_r2_plus"
             if is_opportunity_release
+            else "schema_apply_configuration_enablement_broad_member_authoring"
+            if is_community_authoring
             else "release_schema_deployment_enablement"
             if is_profile_core
             else "schema_apply_deployment_profile_integration_enablement"
@@ -4906,6 +5109,8 @@ def _direction_merge_grant(
             or verdict_text != (
                 OPPORTUNITY_SLATE_REVIEW_ATTESTATION["verdict_text"]
                 if is_opportunity_release
+                else COMMUNITY_AUTHORING_REVIEW_ATTESTATION["verdict_text"]
+                if is_community_authoring
                 else INTERVIEW_AI_D13_REVIEW_ATTESTATION["verdict_text"]
                 if lane.get("package") == INTERVIEW_AI_ARCHITECTURE_PACKAGE
                 else PROFILE_CORE_INTEGRATION_REVIEW_ATTESTATION["verdict_text"]
@@ -4974,6 +5179,25 @@ def _direction_merge_grant(
             errors.append(
                 f"{label} reviewed_remote_sha must equal the accepted "
                 "reconciled PS-CONNECT-002 SHA"
+            )
+    if is_community_authoring:
+        if (
+            grant.get("authority_decision_sha256")
+            != COMMUNITY_AUTHORING_OWNER_DECISION_SHA256
+        ):
+            errors.append(
+                f"{label} authority_decision_sha256 must equal the pinned "
+                "Community Authoring owner decision digest"
+            )
+        if grant.get("release_scope") != COMMUNITY_AUTHORING_RELEASE_SCOPE:
+            errors.append(
+                f"{label} release_scope must equal the code-controlled "
+                "Community Authoring application release scope"
+            )
+        if reviewed_sha != COMMUNITY_AUTHORING_REVIEWED_SHA:
+            errors.append(
+                f"{label} reviewed_remote_sha must equal the accepted "
+                "Community Authoring SHA"
             )
     if is_opportunity_release:
         if grant.get("release_scope") != OPPORTUNITY_SLATE_RELEASE_SCOPE:
@@ -5054,7 +5278,7 @@ def _exact_direction_grant_delta(
         return False
     expected_mode = dict(parent_mode)
     expected_mode["merge_allowed_for"] = [*parent_allowed, package_id]
-    if package_id == OPPORTUNITY_SLATE_PACKAGE:
+    if package_id in {OPPORTUNITY_SLATE_PACKAGE, COMMUNITY_AUTHORING_PACKAGE}:
         parent_release = parent_mode.get("release_allowed_for")
         if (
             not isinstance(parent_release, list)
@@ -6321,6 +6545,81 @@ def _direction_main_sequence_facts(
     candidate_sha: str,
     origin_main: str,
 ) -> tuple[list[str], bool, int]:
+    if package_id == COMMUNITY_AUTHORING_PACKAGE:
+        if candidate_sha != COMMUNITY_AUTHORING_REVIEWED_SHA:
+            return [], False, 0
+        control_base = COMMUNITY_AUTHORING_RELEASE_ADMISSION["origin_main"]
+        main_commits = [
+            sha
+            for sha in _git(
+                "rev-list", "--reverse", f"{control_base}..{origin_main}"
+            ).splitlines()
+            if sha
+        ]
+        main_paths = sorted(
+            _git_nul(
+                "diff", "--name-only", "-z", f"{control_base}..{origin_main}"
+            )
+        )
+        if len(main_commits) != 2:
+            return main_paths, False, len(main_commits)
+        admission_sha, grant_sha = main_commits
+        admission_parent = _git("rev-parse", f"{admission_sha}^")
+        grant_parent = _git("rev-parse", f"{grant_sha}^")
+        admission_paths = set(
+            _git_nul(
+                "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                admission_sha,
+            )
+        )
+        grant_paths = set(
+            _git_nul(
+                "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                grant_sha,
+            )
+        )
+        base_ledger = load_ledger_at_ref(control_base)
+        admission_ledger = load_ledger_at_ref(admission_sha)
+        candidate_merge_base = _git("merge-base", candidate_sha, origin_main)
+        candidate_paths = set(
+            _git_nul(
+                "diff", "--name-only", "-z", f"{control_base}..{candidate_sha}"
+            )
+        )
+        final_target = next(
+            (
+                item
+                for item in origin_ledger.get("active_lanes", [])
+                if isinstance(item, dict) and item.get("package") == package_id
+            ),
+            None,
+        )
+        valid = bool(
+            admission_parent == control_base
+            and grant_parent == admission_sha
+            and admission_paths
+            == set(COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS)
+            and grant_paths == set(GRANT_ALLOWED_SURFACES)
+            and _exact_community_authoring_release_admission_delta(
+                base_ledger, admission_ledger
+            )
+            and _exact_direction_grant_delta(
+                admission_ledger, origin_ledger, package_id
+            )
+            and candidate_merge_base == control_base
+            and not (
+                candidate_paths
+                & (
+                    set(COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS)
+                    | set(GRANT_ALLOWED_SURFACES)
+                )
+            )
+            and isinstance(final_target, dict)
+            and _is_community_authoring_reviewed_implementation_lane(final_target)
+            and final_target.get("merge_grant", {}).get("reviewed_remote_sha")
+            == candidate_sha
+        )
+        return main_paths, valid, len(main_commits)
     if package_id == OPPORTUNITY_SLATE_PACKAGE:
         return _opportunity_main_sequence_facts(
             origin_ledger, package_id, candidate_sha, origin_main
@@ -6582,12 +6881,16 @@ def _collect_direction_candidate_merge(
     )
     is_profile_core = _is_profile_core_reviewed_implementation_lane(target)
     is_connect_002 = _is_connect_002_reviewed_implementation_lane(target)
+    is_community_authoring = _is_community_authoring_reviewed_implementation_lane(
+        target
+    )
     if (
         (
             not is_direction
             and not is_opportunity_release
             and not is_profile_core
             and not is_connect_002
+            and not is_community_authoring
         )
         or target.get("production_capable") is not False
     ):
@@ -6751,6 +7054,10 @@ def evaluate_policy(
                 isinstance(target, dict)
                 and target.get("package") == CONNECT_002_PACKAGE
             )
+            is_community_authoring_package = bool(
+                isinstance(target, dict)
+                and target.get("package") == COMMUNITY_AUTHORING_PACKAGE
+            )
             is_reviewed_target = bool(
                 isinstance(target, dict)
                 and (
@@ -6762,13 +7069,16 @@ def evaluate_policy(
                     )
                     or _is_profile_core_reviewed_implementation_lane(target)
                     or _is_connect_002_reviewed_implementation_lane(target)
+                    or _is_community_authoring_reviewed_implementation_lane(target)
                     or is_profile_core_package
                     or is_connect_002_package
+                    or is_community_authoring_package
                 )
                 and (
                     target.get("production_capable") is False
                     or is_profile_core_package
                     or is_connect_002_package
+                    or is_community_authoring_package
                 )
             )
             if not is_reviewed_target:
@@ -6789,6 +7099,25 @@ def evaluate_policy(
                     errors.append(
                         "PS-CONNECT-002 merge target does not equal the exact "
                         "code-controlled non-production provider lane"
+                    )
+                if (
+                    is_community_authoring_package
+                    and not _is_community_authoring_reviewed_implementation_lane(
+                        target
+                    )
+                ):
+                    errors.append(
+                        "Community Authoring merge target does not equal the "
+                        "exact code-controlled reviewed implementation lane"
+                    )
+                if (
+                    is_community_authoring_package
+                    and origin_ledger.get("community_authoring_release_admission")
+                    != COMMUNITY_AUTHORING_RELEASE_ADMISSION
+                ):
+                    errors.append(
+                        "Community Authoring merge remains blocked pending the "
+                        "exact one-time release admission"
                     )
                 if is_connect_002_package:
                     if (
@@ -6833,7 +7162,29 @@ def evaluate_policy(
             else:
                 _validate_changed_paths_within_lane(target, facts, "merge", errors)
             main_paths = facts.get("merge_main_changed_paths")
-            if package_id == OPPORTUNITY_SLATE_PACKAGE:
+            if package_id == COMMUNITY_AUTHORING_PACKAGE:
+                expected_behind = 2
+                expected_main_paths = (
+                    set(COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS)
+                    | set(GRANT_ALLOWED_SURFACES)
+                )
+                if facts.get("behind") != expected_behind:
+                    errors.append(
+                        "Community Authoring merge requires exactly two "
+                        "verified main control commits"
+                    )
+                if facts.get("merge_main_control_commit_count") != expected_behind:
+                    errors.append(
+                        "Community Authoring merge requires exactly two "
+                        "verified main control commits"
+                    )
+                if facts.get("behind") == 2:
+                    warnings.append(
+                        "Community Authoring candidate predates main; only the "
+                        "exact inert release admission and exact review-bound "
+                        "grant are tolerated"
+                    )
+            elif package_id == OPPORTUNITY_SLATE_PACKAGE:
                 expected_control_commits = 2
                 expected_main_paths = (
                     set(OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH["allowed_surfaces"])
@@ -6978,6 +7329,16 @@ def evaluate_policy(
             errors.append("grant requires --require-clean")
         if origin_ledger is None or not isinstance(origin_ledger, dict):
             errors.append("grant requires the fetched origin/main lane ledger")
+            return errors, warnings
+        if (
+            package_id == COMMUNITY_AUTHORING_PACKAGE
+            and origin_ledger.get("community_authoring_release_admission")
+            != COMMUNITY_AUTHORING_RELEASE_ADMISSION
+        ):
+            errors.append(
+                "Community Authoring grant remains blocked pending the exact "
+                "one-time release admission"
+            )
             return errors, warnings
         if (
             package_id == CONNECT_002_PACKAGE
@@ -7139,13 +7500,16 @@ def evaluate_policy(
         else:
             expected_mode = dict(origin_mode)
             expected_mode["merge_allowed_for"] = [*origin_merge, package_id]
-            if package_id == OPPORTUNITY_SLATE_PACKAGE:
+            if package_id in {
+                OPPORTUNITY_SLATE_PACKAGE,
+                COMMUNITY_AUTHORING_PACKAGE,
+            }:
                 origin_release = origin_mode.get("release_allowed_for")
                 if not isinstance(origin_release, list):
                     errors.append("origin/main release_allowed_for must be a list")
                 elif origin_release:
                     errors.append(
-                        "Opportunity Slate grant requires the serialized release slot to be empty"
+                        "implementation release grant requires the serialized release slot to be empty"
                     )
                 else:
                     expected_mode["release_allowed_for"] = [package_id]
@@ -7809,6 +8173,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        community_authoring_release_admission_matches = (
+            _exact_community_authoring_release_admission_matches(
+                ledger, facts, package_id
+            )
+        )
         profile_core_merge_repair_matches = (
             _exact_profile_core_merge_preflight_repair_matches(
                 ledger, facts, package_id
@@ -7953,6 +8322,12 @@ def evaluate_policy(
             warnings.append(
                 "using the exact one-time implementation-release "
                 "preflight-repair boundary"
+            )
+        elif community_authoring_release_admission_matches:
+            allowed_surfaces = set(COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS)
+            warnings.append(
+                "using the exact one-time Community Authoring release-admission "
+                "boundary"
             )
         elif profile_core_merge_repair_matches:
             allowed_surfaces = set(PROFILE_CORE_MERGE_CONTROL_PATHS)
@@ -8139,6 +8514,7 @@ def evaluate_policy(
                 and not writer_transfer_repair_matches
                 and not community_authoring_surface_repair_matches
                 and not implementation_release_repair_matches
+                and not community_authoring_release_admission_matches
                 and not profile_core_merge_repair_matches
                 and not profile_core_grant_fixture_followup_matches
                 and not profile_core_grant_anchor_followup_matches
@@ -9134,6 +9510,25 @@ def evaluate_policy(
                     label="implementation-release preflight repair",
                     errors=errors,
                 )
+            elif community_authoring_release_admission_matches:
+                if origin_policy != policy:
+                    errors.append(
+                        "Community Authoring release admission may not change "
+                        "activation_policy"
+                    )
+                if not _exact_community_authoring_release_admission_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "Community Authoring release admission must be the "
+                        "exact inert ledger delta"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="Community Authoring release admission",
+                    errors=errors,
+                )
             elif grant_close_repair_matches:
                 candidate_updated_at = ledger.get("updated_at")
                 origin_updated_at = origin_ledger.get("updated_at")
@@ -9528,6 +9923,7 @@ def evaluate_policy(
             not writer_transfer_repair_matches
             and not community_authoring_surface_repair_matches
             and not implementation_release_repair_matches
+            and not community_authoring_release_admission_matches
             and not profile_core_merge_repair_matches
             and not shell_merge_repair_matches
             and not interview_ai_d13_admission_matches
@@ -9598,6 +9994,15 @@ def evaluate_policy(
             ):
                 errors.append(
                     "implementation-release preflight repair must change exactly "
+                    "the owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                community_authoring_release_admission_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "Community Authoring release admission must change exactly "
                     "the owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
