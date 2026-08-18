@@ -1,17 +1,19 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-18T14:08:15Z",
+  "updated_at": "2026-08-18T20:47:49Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "controlled_idle",
+    "state": "active_delivery",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [],
+    "writes_allowed_for": [
+      "PS-SHARED-DICTATION-RELIABILITY-001"
+    ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -27,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "No active writer lanes. PS-COMMUNITY-AUTHORING-RUNTIME-001 is merged_closed and retains no authority."
+    "exit_authority": "Active writer lane: PS-SHARED-DICTATION-RELIABILITY-001 on work/2026-08-18-shared-dictation-reliability-001. Community authoring is merged_closed and retains no authority. The SD-1 writer must stop before merge, deployment, enablement, widening, provider invocation, or any live claim."
   },
   "activation_policy": {
     "enabled": true,
@@ -2108,7 +2110,63 @@
       ]
     }
   ],
-  "active_lanes": [],
+  "active_lanes": [
+    {
+      "package": "PS-SHARED-DICTATION-RELIABILITY-001",
+      "outcome": "Implement only the accepted SD-1 Shared Dictation reliability slice on the current Community dictation path: classify no usable speech truthfully as reason no_speech with HTTP 422 and the member action Record again; permit at most one same-recording retry only for genuine transient failures while holding audio for no more than five wall-clock minutes; clean up held audio on success, failure, cancel, unload, and expiry; suppress provider details; and preserve the existing Community composition and global shared helper. Produce a frozen review-ready candidate and stop before merge, deployment, enablement, widening, provider invocation, or any live claim.",
+      "branch": "work/2026-08-18-shared-dictation-reliability-001",
+      "writer": "Codex subtask /root/sd1_writer is the sole implementation writer after this activation merges. Codex task 01a01233-d76b-7871-9d3a-a32fea8b9048 remains the package manager and does not edit the implementation branch. No other task may write these surfaces.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "product:shared-dictation-reliability",
+        "privacy:ephemeral-dictation-audio-retry",
+        "runtime:community-voice-transcription"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 8efe587b18bb2d09131d8cb09d1d2dcd2ea27abd after PS-COMMUNITY-AUTHORING-RUNTIME-001 was formally closed and relinquished all write authority. Gate A rev 3 diagnosis and Gate B rev 10 architecture remain accepted at their stated levels. Pete validly accepted Option 3 on 2026-08-18 after the central owner-decision gate opened, then directed this package manager to perform the proposed SD-1 registration and activation by replying 'dp it'. The final provider probe remains disabled, unexecuted in final form, and unauthorized.",
+      "writable_surfaces": [
+        "services/community_voice_service.py",
+        "community_api.py",
+        "static/js/community-v1.js",
+        "tests/test_community_voice.py",
+        "tests/community_voice_retry.test.js"
+      ],
+      "exclusions": [
+        "no preview-panel removal, transcript-in-field convergence, caret repair, shared dictation controller, Workshop adoption, or adoption by any other surface",
+        "no speech-adapter refactor, global shared-helper change, telemetry or logging expansion, feature flag, configuration, schema, migration, storage, dependency, prompt, model, or provider-call change",
+        "no separate Use Transcript or Discard Transcript screen and no reopening of accepted Gate B rev 10, Option C, ordinary edit/delete behavior, privacy wording, or the Community-widening bar",
+        "no provider details in member-facing or API responses and no audio retention beyond the single bounded retry window",
+        "no merge, deployment, production configuration, enablement, Community widening, live validation, or claim that the provider path was exercised",
+        "no material change to existing Community composition, hierarchy, dominant actions, responsive interaction model, color language, or typography; any such need stops for Original ChatGPT direction and Pete acceptance",
+        "no edit, reset, adoption, review, cleanup, or deletion of the closed Community candidate branch or any unrelated branch, worktree, stash, artifact, secret, production data, or user-authored content"
+      ],
+      "completion_evidence": [
+        "focused Python contract tests prove no usable speech returns reason no_speech with HTTP 422 and no provider detail, while genuine transient failures remain distinctly classified",
+        "focused JavaScript lifecycle tests prove Record again for no_speech, at most one same-recording retry for allowed transient failures, a five-minute wall-clock hold limit, and cleanup on success, failure, cancel, unload, and expiry",
+        "existing Community voice regressions and the new tests/community_voice_retry.test.js pass without a real provider or application call",
+        "complete-diff self-review proves changes are confined to the five writable paths, the global helper is untouched, and the existing Community visual composition is materially unchanged",
+        "the frozen exact candidate SHA receives a fresh independent Protected-risk review; the same writer corrects accepted findings and refreshes affected evidence",
+        "the completion record states base and final SHAs, changed paths, test evidence, privacy and cleanup evidence, single-code-revert rollback, additive response contract, no schema or configuration rollback, and truthful no-merge/no-deploy/no-live status"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-18",
+          "authorized_by": "Pete",
+          "status": "accepted",
+          "decision": "Pete replied 'Accepted' to the fresh formal Option 3 decision after the centrally recorded owner-review gate opened. This preserved the complete accepted architecture sequence, governed slices just in time, and made SD-1 eligible only after Community formally released all four overlapping paths."
+        },
+        {
+          "date": "2026-08-18",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "After the package manager reported that Community was merged_closed, described the next step as assigning an SD-1 child ID, registering only that child, activating its Protected lane, and assigning a separate writer, Pete directed: 'dp it'. This authorizes this control-only registration and activation, not implementation by the package manager or any merge, deployment, enablement, widening, provider invocation, or live validation."
+        }
+      ],
+      "cleanup_contract": "Preserve all existing work. After this control activation merges, the sole writer may create only the recorded implementation branch/worktree from resulting current origin/main and must pass the package write preflight before edits. Preserve the activation and implementation branches through exact-SHA review and any later authorized close; no cleanup authority extends to any other branch, worktree, stash, artifact, or user file.",
+      "sequence": "control-only activation PR -> merge activation -> sole writer creates the exact clean implementation branch/worktree from resulting origin/main -> package write preflight -> implement only the five-path SD-1 boundary -> focused Python and JavaScript tests plus complete-diff self-review -> freeze and push exact candidate -> fresh independent Protected-risk review -> same writer corrects accepted findings and refreshes evidence -> package-manager acceptance -> separate owner decision for any merge or deployment; no provider invocation, enablement, widening, or live claim"
+    }
+  ],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
