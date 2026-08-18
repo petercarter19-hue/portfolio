@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-18T13:08:00Z",
+  "updated_at": "2026-08-18T13:26:58Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -3041,5 +3041,40 @@
     },
     "reason": "Pete transferred the exact active Community authoring lane after an independent rejection and directed this session to 'Fix and complete it.' The corrected candidate then passed a fresh independent exact-SHA review, focused and full-suite tests, integrated asynchronous draft lifecycle proof, browser verification, and required Azure PR build 1223. This admission records those immutable facts without changing any lane or authority list.",
     "verification_contract": "This record grants no merge or release authority. The preflight recognizes it only on the exact branch, exact origin/main base, exact one-commit three-path delta, and exact candidate, review, PR, CI, and release-scope pins above. A later ordinary ledger-only grant remains required. No schema apply, production configuration change, public enablement, broad member authoring, or candidate mutation is admitted."
+  },
+  "community_authoring_grant_fixture_followup": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": "work/2026-08-18-delivery-activation-community-authoring-grant-fixture-followup",
+    "origin_main": "3123a783f5a216932c9186a02c76cc539bd4182f",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "candidate_contract": {
+      "package": "PS-COMMUNITY-AUTHORING-RUNTIME-001",
+      "branch": "work/2026-08-17-community-authoring-runtime-001-r2",
+      "reviewed_remote_sha": "c8818319a418dd28cc1a24ba0c30e65274cfdbdf",
+      "implementation_content_sha": "887bd087e722562fd4c78f4d75a3b128d1cd74d9",
+      "owner_decision_sha256": "0bcf423b2dee95653ac2785930a9f1e566edc52fffdb58462848263675c5ba83",
+      "reviewer_task": "/root/community_corrected_review",
+      "review_attestation_sha256": "f3b191f747e7ff12f285480500d617878e60798d93bde8984fb66ef03c8e37ec",
+      "review_evidence_path": "docs/initiatives/PS-COMMUNITY-AUTHORING-RUNTIME-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+      "review_evidence_git_blob_sha": "4441318f63e7a378fe5213cb8dfe5356b9678cf4",
+      "review_evidence_bytes_sha256": "877279abe4301b8485d6d3edfb1cd123860950a4febfc750261a09ef46234a13",
+      "release_scope": {
+        "pull_request": 527,
+        "ci_build": 1223,
+        "application_action": "merge_and_deploy_reviewed_community_authoring_runtime",
+        "schema_action": "none",
+        "public_enablement": false,
+        "broad_member_authoring": false,
+        "production_configuration_change": false,
+        "implementation_content_sha": "887bd087e722562fd4c78f4d75a3b128d1cd74d9"
+      }
+    },
+    "reason": "The exact first Community grant candidate correctly passed the review-bound grant evaluator but exposed that the checked-in generic ledger invariant did not yet route the exact Community reviewed lane through the specialized grant validator. This inert follow-up adds that fixture routing and updates the exact main control sequence from admission-plus-grant to admission-plus-fixture-plus-grant.",
+    "verification_contract": "This record grants no merge or release authority. It is recognized only on the exact branch, exact origin/main parent, exact one-commit three-path delta, and unchanged candidate contract. It changes no lane, authority list, baseline, product code, schema, configuration, deployment, public enablement, or broad member authoring boundary."
   }
 }

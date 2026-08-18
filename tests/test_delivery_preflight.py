@@ -16,6 +16,8 @@ from scripts.delivery_preflight import (
     BOOTSTRAP_CONTROL_REPAIR,
     COMMUNITY_AUTHORING_SURFACE_REPAIR,
     COMMUNITY_AUTHORING_BRANCH,
+    COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP,
+    COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP_PATHS,
     COMMUNITY_AUTHORING_IMPLEMENTATION_SHA,
     COMMUNITY_AUTHORING_OWNER_DECISION_SHA256,
     COMMUNITY_AUTHORING_PACKAGE,
@@ -140,6 +142,8 @@ from scripts.delivery_preflight import (
     _exact_community_authoring_surface_repair_matches,
     _exact_community_authoring_release_admission_delta,
     _exact_community_authoring_release_admission_matches,
+    _exact_community_authoring_grant_fixture_followup_delta,
+    _exact_community_authoring_grant_fixture_followup_matches,
     _exact_profile_core_grant_anchor_followup_delta,
     _exact_profile_core_grant_anchor_followup_matches,
     _exact_profile_core_grant_fixture_followup_delta,
@@ -1143,7 +1147,12 @@ class DeliveryPreflightTests(unittest.TestCase):
         admitted["community_authoring_release_admission"] = copy.deepcopy(
             COMMUNITY_AUTHORING_RELEASE_ADMISSION
         )
-        granted = copy.deepcopy(admitted)
+        fixture = copy.deepcopy(admitted)
+        fixture["updated_at"] = "2026-08-18T13:26:58Z"
+        fixture["community_authoring_grant_fixture_followup"] = copy.deepcopy(
+            COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP
+        )
+        granted = copy.deepcopy(fixture)
         granted_at = "2026-08-18T14:00:00Z"
         granted["updated_at"] = granted_at
         granted_lane = next(
@@ -1178,14 +1187,14 @@ class DeliveryPreflightTests(unittest.TestCase):
             COMMUNITY_AUTHORING_PACKAGE,
             "grant",
             require_clean=True,
-            origin_ledger=admitted,
+            origin_ledger=fixture,
             candidate_baseline=baseline,
             origin_baseline=baseline,
         )
         self.assertEqual([], grant_errors)
         self.assertTrue(
             _exact_direction_grant_delta(
-                admitted, granted, COMMUNITY_AUTHORING_PACKAGE
+                fixture, granted, COMMUNITY_AUTHORING_PACKAGE
             )
         )
 
@@ -1203,6 +1212,20 @@ class DeliveryPreflightTests(unittest.TestCase):
             any("release admission" in item for item in no_admission_errors)
         )
 
+        no_fixture_errors, _ = evaluate_policy(
+            granted,
+            grant_facts,
+            COMMUNITY_AUTHORING_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=admitted,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(
+            any("grant-fixture follow-up" in item for item in no_fixture_errors)
+        )
+
         widened = copy.deepcopy(granted)
         widened_lane = next(
             item
@@ -1216,7 +1239,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             COMMUNITY_AUTHORING_PACKAGE,
             "grant",
             require_clean=True,
-            origin_ledger=admitted,
+            origin_ledger=fixture,
             candidate_baseline=baseline,
             origin_baseline=baseline,
         )
@@ -1227,16 +1250,17 @@ class DeliveryPreflightTests(unittest.TestCase):
             branch=COMMUNITY_AUTHORING_BRANCH,
             head=COMMUNITY_AUTHORING_REVIEWED_SHA,
             ahead=14,
-            behind=2,
+            behind=3,
             origin_main="grant-main",
             changed_paths=[candidate_path],
             merge_target_remote_sha=COMMUNITY_AUTHORING_REVIEWED_SHA,
             merge_main_changed_paths=sorted(
                 set(COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS)
+                | set(COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP_PATHS)
                 | set(GRANT_ALLOWED_SURFACES)
             ),
             merge_main_control_commits_valid=True,
-            merge_main_control_commit_count=2,
+            merge_main_control_commit_count=3,
         )
         merge_errors, merge_warnings = evaluate_policy(
             granted,
@@ -1253,14 +1277,14 @@ class DeliveryPreflightTests(unittest.TestCase):
 
         wrong_count_errors, _ = evaluate_policy(
             granted,
-            {**merge_facts, "merge_main_control_commit_count": 3},
+            {**merge_facts, "merge_main_control_commit_count": 4},
             COMMUNITY_AUTHORING_PACKAGE,
             "merge",
             require_clean=True,
             origin_ledger=granted,
         )
         self.assertTrue(
-            any("exactly two" in item for item in wrong_count_errors)
+            any("exactly three" in item for item in wrong_count_errors)
         )
 
         no_admission = copy.deepcopy(granted)
@@ -1274,6 +1298,73 @@ class DeliveryPreflightTests(unittest.TestCase):
             origin_ledger=no_admission,
         )
         self.assertTrue(any("release admission" in item for item in missing_errors))
+
+    def test_community_authoring_grant_fixture_followup_is_exact_and_inert(self):
+        origin, _ = self._community_authoring_origin()
+        origin["updated_at"] = "2026-08-18T13:08:00Z"
+        origin["community_authoring_release_admission"] = copy.deepcopy(
+            COMMUNITY_AUTHORING_RELEASE_ADMISSION
+        )
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-18T13:26:58Z"
+        candidate["community_authoring_grant_fixture_followup"] = copy.deepcopy(
+            COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP
+        )
+        baseline = load_baseline_bytes_at_ref(
+            COMMUNITY_AUTHORING_RELEASE_ADMISSION["origin_main"]
+        )
+        followup_facts = facts(
+            branch=COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP["branch"],
+            head="fixture-followup-candidate",
+            ahead=1,
+            origin_main=COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP["origin_main"],
+            changed_paths=sorted(
+                COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP_PATHS
+            ),
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            followup_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(
+            any("grant-fixture follow-up" in item for item in warnings)
+        )
+        self.assertTrue(
+            _exact_community_authoring_grant_fixture_followup_matches(
+                candidate, followup_facts, "PS-DELIVERY-CONTROL-001"
+            )
+        )
+        self.assertTrue(
+            _exact_community_authoring_grant_fixture_followup_delta(
+                origin, candidate
+            )
+        )
+        self.assertEqual(origin["active_lanes"], candidate["active_lanes"])
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+
+        mutated = copy.deepcopy(candidate)
+        mutated["community_authoring_grant_fixture_followup"][
+            "candidate_contract"
+        ]["release_scope"]["production_configuration_change"] = True
+        mutation_errors, _ = self._evaluate_activation(
+            mutated,
+            followup_facts,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(mutation_errors)
+        self.assertFalse(
+            _exact_community_authoring_grant_fixture_followup_delta(
+                origin, mutated
+            )
+        )
 
     def test_merge_requires_origin_grant_exact_head_remote_and_nonoverlap(self):
         origin, lane = self._direction_origin()
@@ -6196,6 +6287,7 @@ with patch.object(
                 lane_class == "direction_authority"
                 or _is_profile_core_reviewed_implementation_lane(lane)
                 or _is_connect_002_reviewed_implementation_lane(lane)
+                or _is_community_authoring_reviewed_implementation_lane(lane)
                 or _is_shell_reviewed_shared_foundation_lane(lane)
             ):
                 self.assertFalse(lane.get("production_capable"))

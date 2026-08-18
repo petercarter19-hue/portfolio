@@ -1556,6 +1556,47 @@ COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS = frozenset(
     COMMUNITY_AUTHORING_RELEASE_ADMISSION["allowed_surfaces"]
 )
 
+# The first checked-in Community grant fixture exposed one authority-neutral
+# test-routing omission: the generic ledger invariant did not route this exact
+# reviewed implementation lane through _direction_merge_grant. This one-time
+# follow-up changes only the control ledger, validator, and validator tests. It
+# grants no authority and leaves every candidate/review/release pin unchanged.
+COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": (
+        "work/2026-08-18-delivery-activation-"
+        "community-authoring-grant-fixture-followup"
+    ),
+    "origin_main": "3123a783f5a216932c9186a02c76cc539bd4182f",
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "candidate_contract": COMMUNITY_AUTHORING_RELEASE_ADMISSION[
+        "candidate_contract"
+    ],
+    "reason": (
+        "The exact first Community grant candidate correctly passed the "
+        "review-bound grant evaluator but exposed that the checked-in generic "
+        "ledger invariant did not yet route the exact Community reviewed lane "
+        "through the specialized grant validator. This inert follow-up adds "
+        "that fixture routing and updates the exact main control sequence from "
+        "admission-plus-grant to admission-plus-fixture-plus-grant."
+    ),
+    "verification_contract": (
+        "This record grants no merge or release authority. It is recognized "
+        "only on the exact branch, exact origin/main parent, exact one-commit "
+        "three-path delta, and unchanged candidate contract. It changes no "
+        "lane, authority list, baseline, product code, schema, configuration, "
+        "deployment, public enablement, or broad member authoring boundary."
+    ),
+}
+COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP_PATHS = frozenset(
+    COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP["allowed_surfaces"]
+)
+
 # PS-SHELL-001 finished its owner-approved Editorial Top Bar candidate under two
 # independent Protected reviews and then had nowhere to go: _direction_merge_grant
 # admitted only direction_authority lanes and the code-pinned Opportunity Slate,
@@ -3914,6 +3955,54 @@ def _exact_community_authoring_release_admission_delta(
         and _valid_utc_timestamp(admission_ledger.get("updated_at"))
         and _utc_timestamp_strictly_advances(
             admission_ledger.get("updated_at"), parent_ledger.get("updated_at")
+        )
+    )
+
+
+def _exact_community_authoring_grant_fixture_followup_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("community_authoring_grant_fixture_followup")
+        == COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP
+        and package_id == COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP["package"]
+        and facts.get("branch")
+        == COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP["branch"]
+        and facts.get("origin_main")
+        == COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP_PATHS)
+    )
+
+
+def _exact_community_authoring_grant_fixture_followup_delta(
+    parent_ledger: object,
+    followup_ledger: object,
+) -> bool:
+    if not isinstance(parent_ledger, dict) or not isinstance(followup_ledger, dict):
+        return False
+    if parent_ledger.get("community_authoring_grant_fixture_followup") is not None:
+        return False
+    if (
+        parent_ledger.get("community_authoring_release_admission")
+        != COMMUNITY_AUTHORING_RELEASE_ADMISSION
+    ):
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = followup_ledger.get("updated_at")
+    expected["community_authoring_grant_fixture_followup"] = (
+        COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP
+    )
+    return bool(
+        followup_ledger == expected
+        and _valid_utc_timestamp(parent_ledger.get("updated_at"))
+        and _valid_utc_timestamp(followup_ledger.get("updated_at"))
+        and _utc_timestamp_strictly_advances(
+            followup_ledger.get("updated_at"), parent_ledger.get("updated_at")
         )
     )
 
@@ -6561,10 +6650,11 @@ def _direction_main_sequence_facts(
                 "diff", "--name-only", "-z", f"{control_base}..{origin_main}"
             )
         )
-        if len(main_commits) != 2:
+        if len(main_commits) != 3:
             return main_paths, False, len(main_commits)
-        admission_sha, grant_sha = main_commits
+        admission_sha, fixture_sha, grant_sha = main_commits
         admission_parent = _git("rev-parse", f"{admission_sha}^")
+        fixture_parent = _git("rev-parse", f"{fixture_sha}^")
         grant_parent = _git("rev-parse", f"{grant_sha}^")
         admission_paths = set(
             _git_nul(
@@ -6578,8 +6668,15 @@ def _direction_main_sequence_facts(
                 grant_sha,
             )
         )
+        fixture_paths = set(
+            _git_nul(
+                "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                fixture_sha,
+            )
+        )
         base_ledger = load_ledger_at_ref(control_base)
         admission_ledger = load_ledger_at_ref(admission_sha)
+        fixture_ledger = load_ledger_at_ref(fixture_sha)
         candidate_merge_base = _git("merge-base", candidate_sha, origin_main)
         candidate_paths = set(
             _git_nul(
@@ -6596,21 +6693,28 @@ def _direction_main_sequence_facts(
         )
         valid = bool(
             admission_parent == control_base
-            and grant_parent == admission_sha
+            and fixture_parent == admission_sha
+            and grant_parent == fixture_sha
             and admission_paths
             == set(COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS)
+            and fixture_paths
+            == set(COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP_PATHS)
             and grant_paths == set(GRANT_ALLOWED_SURFACES)
             and _exact_community_authoring_release_admission_delta(
                 base_ledger, admission_ledger
             )
+            and _exact_community_authoring_grant_fixture_followup_delta(
+                admission_ledger, fixture_ledger
+            )
             and _exact_direction_grant_delta(
-                admission_ledger, origin_ledger, package_id
+                fixture_ledger, origin_ledger, package_id
             )
             and candidate_merge_base == control_base
             and not (
                 candidate_paths
                 & (
                     set(COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS)
+                    | set(COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP_PATHS)
                     | set(GRANT_ALLOWED_SURFACES)
                 )
             )
@@ -7112,12 +7216,18 @@ def evaluate_policy(
                     )
                 if (
                     is_community_authoring_package
-                    and origin_ledger.get("community_authoring_release_admission")
-                    != COMMUNITY_AUTHORING_RELEASE_ADMISSION
+                    and (
+                        origin_ledger.get("community_authoring_release_admission")
+                        != COMMUNITY_AUTHORING_RELEASE_ADMISSION
+                        or origin_ledger.get(
+                            "community_authoring_grant_fixture_followup"
+                        )
+                        != COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP
+                    )
                 ):
                     errors.append(
                         "Community Authoring merge remains blocked pending the "
-                        "exact one-time release admission"
+                        "exact release admission and grant-fixture follow-up"
                     )
                 if is_connect_002_package:
                     if (
@@ -7163,26 +7273,27 @@ def evaluate_policy(
                 _validate_changed_paths_within_lane(target, facts, "merge", errors)
             main_paths = facts.get("merge_main_changed_paths")
             if package_id == COMMUNITY_AUTHORING_PACKAGE:
-                expected_behind = 2
+                expected_behind = 3
                 expected_main_paths = (
                     set(COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS)
+                    | set(COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP_PATHS)
                     | set(GRANT_ALLOWED_SURFACES)
                 )
                 if facts.get("behind") != expected_behind:
                     errors.append(
-                        "Community Authoring merge requires exactly two "
+                        "Community Authoring merge requires exactly three "
                         "verified main control commits"
                     )
                 if facts.get("merge_main_control_commit_count") != expected_behind:
                     errors.append(
-                        "Community Authoring merge requires exactly two "
+                        "Community Authoring merge requires exactly three "
                         "verified main control commits"
                     )
-                if facts.get("behind") == 2:
+                if facts.get("behind") == 3:
                     warnings.append(
                         "Community Authoring candidate predates main; only the "
-                        "exact inert release admission and exact review-bound "
-                        "grant are tolerated"
+                        "exact inert release admission, inert grant-fixture "
+                        "follow-up, and exact review-bound grant are tolerated"
                     )
             elif package_id == OPPORTUNITY_SLATE_PACKAGE:
                 expected_control_commits = 2
@@ -7332,12 +7443,16 @@ def evaluate_policy(
             return errors, warnings
         if (
             package_id == COMMUNITY_AUTHORING_PACKAGE
-            and origin_ledger.get("community_authoring_release_admission")
-            != COMMUNITY_AUTHORING_RELEASE_ADMISSION
+            and (
+                origin_ledger.get("community_authoring_release_admission")
+                != COMMUNITY_AUTHORING_RELEASE_ADMISSION
+                or origin_ledger.get("community_authoring_grant_fixture_followup")
+                != COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP
+            )
         ):
             errors.append(
                 "Community Authoring grant remains blocked pending the exact "
-                "one-time release admission"
+                "release admission and grant-fixture follow-up"
             )
             return errors, warnings
         if (
@@ -8178,6 +8293,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        community_authoring_grant_fixture_followup_matches = (
+            _exact_community_authoring_grant_fixture_followup_matches(
+                ledger, facts, package_id
+            )
+        )
         profile_core_merge_repair_matches = (
             _exact_profile_core_merge_preflight_repair_matches(
                 ledger, facts, package_id
@@ -8328,6 +8448,14 @@ def evaluate_policy(
             warnings.append(
                 "using the exact one-time Community Authoring release-admission "
                 "boundary"
+            )
+        elif community_authoring_grant_fixture_followup_matches:
+            allowed_surfaces = set(
+                COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP_PATHS
+            )
+            warnings.append(
+                "using the exact one-time Community Authoring grant-fixture "
+                "follow-up boundary"
             )
         elif profile_core_merge_repair_matches:
             allowed_surfaces = set(PROFILE_CORE_MERGE_CONTROL_PATHS)
@@ -8515,6 +8643,7 @@ def evaluate_policy(
                 and not community_authoring_surface_repair_matches
                 and not implementation_release_repair_matches
                 and not community_authoring_release_admission_matches
+                and not community_authoring_grant_fixture_followup_matches
                 and not profile_core_merge_repair_matches
                 and not profile_core_grant_fixture_followup_matches
                 and not profile_core_grant_anchor_followup_matches
@@ -9529,6 +9658,25 @@ def evaluate_policy(
                     label="Community Authoring release admission",
                     errors=errors,
                 )
+            elif community_authoring_grant_fixture_followup_matches:
+                if origin_policy != policy:
+                    errors.append(
+                        "Community Authoring grant-fixture follow-up may not "
+                        "change activation_policy"
+                    )
+                if not _exact_community_authoring_grant_fixture_followup_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "Community Authoring grant-fixture follow-up must be the "
+                        "exact inert ledger delta"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="Community Authoring grant-fixture follow-up",
+                    errors=errors,
+                )
             elif grant_close_repair_matches:
                 candidate_updated_at = ledger.get("updated_at")
                 origin_updated_at = origin_ledger.get("updated_at")
@@ -9924,6 +10072,7 @@ def evaluate_policy(
             and not community_authoring_surface_repair_matches
             and not implementation_release_repair_matches
             and not community_authoring_release_admission_matches
+            and not community_authoring_grant_fixture_followup_matches
             and not profile_core_merge_repair_matches
             and not shell_merge_repair_matches
             and not interview_ai_d13_admission_matches
@@ -10004,6 +10153,15 @@ def evaluate_policy(
                 errors.append(
                     "Community Authoring release admission must change exactly "
                     "the owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                community_authoring_grant_fixture_followup_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "Community Authoring grant-fixture follow-up must change "
+                    "exactly the owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
             if (
