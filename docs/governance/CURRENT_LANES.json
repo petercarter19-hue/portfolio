@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-18T21:42:52Z",
+  "updated_at": "2026-08-18T22:08:43Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -2162,6 +2162,26 @@
           "authorized_by": "Pete",
           "status": "authorized",
           "decision": "After the package manager reported that Community was merged_closed, described the next step as assigning an SD-1 child ID, registering only that child, activating its Protected lane, and assigning a separate writer, Pete directed: 'dp it'. This authorizes this control-only registration and activation, not implementation by the package manager or any merge, deployment, enablement, widening, provider invocation, or live validation."
+        },
+        {
+          "date": "2026-08-18",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "exact_reviewed_sd1_merge_and_deployment_authority",
+          "action": "merge_and_deploy",
+          "scope": "PS-SHARED-DICTATION-RELIABILITY-001_exact_reviewed_candidate_only",
+          "package": "PS-SHARED-DICTATION-RELIABILITY-001",
+          "branch": "work/2026-08-18-shared-dictation-reliability-001",
+          "reviewed_remote_sha": "b7b9b6eadecef27d2004ea1a5543fa490bc80260",
+          "pull_request": 533,
+          "ci_build": 1242,
+          "ci_speculative_merge_sha": "f88fb44dff98fb73480e338b1fac89b3a8faecf8",
+          "configuration_change": false,
+          "community_widening": false,
+          "provider_invocation": false,
+          "broader_dictation_work": false,
+          "verbatim_approval": "yes",
+          "verbatim_completion_direction": "yes. complete this package. go all the way"
         }
       ],
       "cleanup_contract": "Preserve all existing work. After this control activation merges, the sole writer may create only the recorded implementation branch/worktree from resulting current origin/main and must pass the package write preflight before edits. Preserve the activation and implementation branches through exact-SHA review and any later authorized close; no cleanup authority extends to any other branch, worktree, stash, artifact, or user file.",
@@ -3230,5 +3250,96 @@
     },
     "reason": "The exact first Community grant candidate correctly passed the review-bound grant evaluator but exposed that the checked-in generic ledger invariant did not yet route the exact Community reviewed lane through the specialized grant validator. This inert follow-up adds that fixture routing and updates the exact main control sequence from admission-plus-grant to admission-plus-fixture-plus-grant.",
     "verification_contract": "This record grants no merge or release authority. It is recognized only on the exact branch, exact origin/main parent, exact one-commit three-path delta, and unchanged candidate contract. It changes no lane, authority list, baseline, product code, schema, configuration, deployment, public enablement, or broad member authoring boundary."
+  },
+  "shared_dictation_reliability_release_admission": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-SD1-001",
+    "branch": "work/2026-08-18-sd1-release-control-repair",
+    "origin_main": "e013959b9c269611c2f5ddf80797f0cd4e9c502c",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "candidate_contract": {
+      "package": "PS-SHARED-DICTATION-RELIABILITY-001",
+      "branch": "work/2026-08-18-shared-dictation-reliability-001",
+      "candidate_base_sha": "b3218a3a9c444202a1b599000199be3acd489448",
+      "prior_rejected_sha": "b3cf65695a29629ad06fb3c04a0981fd783da275",
+      "reviewed_remote_sha": "b7b9b6eadecef27d2004ea1a5543fa490bc80260",
+      "candidate_paths": [
+        "community_api.py",
+        "services/community_voice_service.py",
+        "static/js/community-v1.js",
+        "tests/community_voice_retry.test.js",
+        "tests/test_community_voice.py"
+      ],
+      "owner_decision_sha256": "f49133e181460c49e6406c02863d8f876c2c03b4189b181bdff1ed9b80c6330d",
+      "review_attestation_sha256": "8090e64183ed090f699fa25129e0985bac91e6d9d84e223efd973aa6a9fe0170",
+      "release_scope": {
+        "pull_request": 533,
+        "ci_build": 1242,
+        "ci_speculative_merge_sha": "f88fb44dff98fb73480e338b1fac89b3a8faecf8",
+        "application_action": "merge_and_deploy_reviewed_shared_dictation_reliability",
+        "schema_action": "none",
+        "production_configuration_change": false,
+        "public_enablement": false,
+        "community_widening": false,
+        "provider_invocation": false,
+        "broader_dictation_work": false
+      }
+    },
+    "owner_decision": {
+      "date": "2026-08-18",
+      "authorized_by": "Pete",
+      "status": "authorized",
+      "decision": "exact_reviewed_sd1_merge_and_deployment_authority",
+      "action": "merge_and_deploy",
+      "scope": "PS-SHARED-DICTATION-RELIABILITY-001_exact_reviewed_candidate_only",
+      "package": "PS-SHARED-DICTATION-RELIABILITY-001",
+      "branch": "work/2026-08-18-shared-dictation-reliability-001",
+      "reviewed_remote_sha": "b7b9b6eadecef27d2004ea1a5543fa490bc80260",
+      "pull_request": 533,
+      "ci_build": 1242,
+      "ci_speculative_merge_sha": "f88fb44dff98fb73480e338b1fac89b3a8faecf8",
+      "configuration_change": false,
+      "community_widening": false,
+      "provider_invocation": false,
+      "broader_dictation_work": false,
+      "verbatim_approval": "yes",
+      "verbatim_completion_direction": "yes. complete this package. go all the way"
+    },
+    "review_attestation": {
+      "reviewer_task": "/root/sd1_reviewer",
+      "reviewer_model": "GPT-5.6 Sol high",
+      "reviewer_mode": "independent_read_only_non_writer",
+      "reviewed_sha": "b7b9b6eadecef27d2004ea1a5543fa490bc80260",
+      "reviewed_branch": "work/2026-08-18-shared-dictation-reliability-001",
+      "prior_rejected_sha": "b3cf65695a29629ad06fb3c04a0981fd783da275",
+      "verdict": "APPROVE",
+      "verdict_text": "APPROVE — exact b7b9b6eadecef27d2004ea1a5543fa490bc80260 verified with zero P0-P3 after closing the P1 expiry-teardown and P2 controller-test findings from b3cf65695a29629ad06fb3c04a0981fd783da275; five authorized paths, clean remote custody, focused Node/Python passes, and no provider or application calls passed. Limitation: deterministic fake DOM/timers only; no provider integration.",
+      "verdict_sha256": "fa617f0ef89efa61cce1bddf743749ae25a28bbef8156814c524a1208efbe122",
+      "basis": [
+        "full_tree_at_b7b9b6eadecef27d2004ea1a5543fa490bc80260",
+        "complete_diff_b3218a3a9c444202a1b599000199be3acd489448_to_b7b9b6eadecef27d2004ea1a5543fa490bc80260",
+        "clean_origin_work_2026_08_18_shared_dictation_reliability_001",
+        "five_authorized_paths_only",
+        "focused_node_and_python_pass",
+        "no_provider_or_application_calls"
+      ],
+      "scope": "protected_shared_dictation_reliability_merge_and_deployment",
+      "exclusions": "schema_configuration_enablement_community_widening_provider_invocation_broader_dictation",
+      "evidence_mode": "immutable_control_attestation_no_candidate_markdown",
+      "azure_receipt": {
+        "pull_request": 533,
+        "source_ci_build": 1242,
+        "source_ci_result": "succeeded",
+        "speculative_merge_sha": "f88fb44dff98fb73480e338b1fac89b3a8faecf8"
+      },
+      "received_by": "Root Codex program manager",
+      "received_date": "2026-08-18"
+    },
+    "reason": "Pete authorized only the exact corrected SD-1 candidate after its independent APPROVE and successful PR 533 CI build 1242. The frozen candidate predates this control child and has no Markdown evidence path inside its five writable surfaces, so this repair records the immutable review receipt without changing the candidate.",
+    "verification_contract": "This record grants no merge, release, deployment, schema, configuration, enablement, Community widening, provider invocation, or broader dictation authority. The preflight recognizes it only on the exact branch, exact origin/main base, exact one-commit three-path delta, and exact candidate, owner, review, PR, CI, and exclusion pins. It may only record the pre-existing owner decision on the active SD-1 lane; merge_allowed_for and release_allowed_for remain empty until a later separate grant."
   }
 }

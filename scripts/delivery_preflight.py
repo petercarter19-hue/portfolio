@@ -1597,6 +1597,151 @@ COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP_PATHS = frozenset(
     COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP["allowed_surfaces"]
 )
 
+# SD-1 is an independently reviewed Protected reliability candidate whose
+# five-path branch was frozen before this child control lane existed.  The
+# candidate has no Markdown completion record within its authorized surfaces,
+# so this exact profile keeps the attestation in the one-time control record
+# rather than pretending an unrelated candidate file is review evidence.
+# It does not grant merge or release authority; a later ledger-only grant is
+# still required and binds the same constants again.
+SD1_PACKAGE = "PS-SHARED-DICTATION-RELIABILITY-001"
+SD1_BRANCH = "work/2026-08-18-shared-dictation-reliability-001"
+SD1_CANDIDATE_BASE_SHA = "b3218a3a9c444202a1b599000199be3acd489448"
+SD1_PRIOR_REJECTED_SHA = "b3cf65695a29629ad06fb3c04a0981fd783da275"
+SD1_REVIEWED_SHA = "b7b9b6eadecef27d2004ea1a5543fa490bc80260"
+SD1_CANDIDATE_PATHS = frozenset(
+    {
+        "community_api.py",
+        "services/community_voice_service.py",
+        "static/js/community-v1.js",
+        "tests/community_voice_retry.test.js",
+        "tests/test_community_voice.py",
+    }
+)
+SD1_OWNER_RELEASE_DECISION = {
+    "date": "2026-08-18",
+    "authorized_by": "Pete",
+    "status": "authorized",
+    "decision": "exact_reviewed_sd1_merge_and_deployment_authority",
+    "action": "merge_and_deploy",
+    "scope": "PS-SHARED-DICTATION-RELIABILITY-001_exact_reviewed_candidate_only",
+    "package": SD1_PACKAGE,
+    "branch": SD1_BRANCH,
+    "reviewed_remote_sha": SD1_REVIEWED_SHA,
+    "pull_request": 533,
+    "ci_build": 1242,
+    "ci_speculative_merge_sha": "f88fb44dff98fb73480e338b1fac89b3a8faecf8",
+    "configuration_change": False,
+    "community_widening": False,
+    "provider_invocation": False,
+    "broader_dictation_work": False,
+    "verbatim_approval": "yes",
+    "verbatim_completion_direction": "yes. complete this package. go all the way",
+}
+SD1_OWNER_RELEASE_DECISION_SHA256 = (
+    "f49133e181460c49e6406c02863d8f876c2c03b4189b181bdff1ed9b80c6330d"
+)
+SD1_RELEASE_SCOPE = {
+    "pull_request": 533,
+    "ci_build": 1242,
+    "ci_speculative_merge_sha": "f88fb44dff98fb73480e338b1fac89b3a8faecf8",
+    "application_action": "merge_and_deploy_reviewed_shared_dictation_reliability",
+    "schema_action": "none",
+    "production_configuration_change": False,
+    "public_enablement": False,
+    "community_widening": False,
+    "provider_invocation": False,
+    "broader_dictation_work": False,
+}
+SD1_REVIEW_ATTESTATION = {
+    "reviewer_task": "/root/sd1_reviewer",
+    "reviewer_model": "GPT-5.6 Sol high",
+    "reviewer_mode": "independent_read_only_non_writer",
+    "reviewed_sha": SD1_REVIEWED_SHA,
+    "reviewed_branch": SD1_BRANCH,
+    "prior_rejected_sha": SD1_PRIOR_REJECTED_SHA,
+    "verdict": "APPROVE",
+    "verdict_text": (
+        "APPROVE — exact b7b9b6eadecef27d2004ea1a5543fa490bc80260 "
+        "verified with zero P0-P3 after closing the P1 expiry-teardown and "
+        "P2 controller-test findings from b3cf65695a29629ad06fb3c04a0981fd783da275; "
+        "five authorized paths, clean remote custody, focused Node/Python "
+        "passes, and no provider or application calls passed. Limitation: "
+        "deterministic fake DOM/timers only; no provider integration."
+    ),
+    "verdict_sha256": "fa617f0ef89efa61cce1bddf743749ae25a28bbef8156814c524a1208efbe122",
+    "basis": [
+        "full_tree_at_b7b9b6eadecef27d2004ea1a5543fa490bc80260",
+        "complete_diff_b3218a3a9c444202a1b599000199be3acd489448_to_"
+        "b7b9b6eadecef27d2004ea1a5543fa490bc80260",
+        "clean_origin_work_2026_08_18_shared_dictation_reliability_001",
+        "five_authorized_paths_only",
+        "focused_node_and_python_pass",
+        "no_provider_or_application_calls",
+    ],
+    "scope": "protected_shared_dictation_reliability_merge_and_deployment",
+    "exclusions": (
+        "schema_configuration_enablement_community_widening_provider_invocation_"
+        "broader_dictation"
+    ),
+    "evidence_mode": "immutable_control_attestation_no_candidate_markdown",
+    "azure_receipt": {
+        "pull_request": 533,
+        "source_ci_build": 1242,
+        "source_ci_result": "succeeded",
+        "speculative_merge_sha": "f88fb44dff98fb73480e338b1fac89b3a8faecf8",
+    },
+    "received_by": "Root Codex program manager",
+    "received_date": "2026-08-18",
+}
+SD1_REVIEW_ATTESTATION_SHA256 = (
+    "8090e64183ed090f699fa25129e0985bac91e6d9d84e223efd973aa6a9fe0170"
+)
+SD1_RELEASE_ADMISSION = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-SD1-001",
+    "branch": "work/2026-08-18-sd1-release-control-repair",
+    "origin_main": "e013959b9c269611c2f5ddf80797f0cd4e9c502c",
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "candidate_contract": {
+        "package": SD1_PACKAGE,
+        "branch": SD1_BRANCH,
+        "candidate_base_sha": SD1_CANDIDATE_BASE_SHA,
+        "prior_rejected_sha": SD1_PRIOR_REJECTED_SHA,
+        "reviewed_remote_sha": SD1_REVIEWED_SHA,
+        "candidate_paths": sorted(SD1_CANDIDATE_PATHS),
+        "owner_decision_sha256": SD1_OWNER_RELEASE_DECISION_SHA256,
+        "review_attestation_sha256": SD1_REVIEW_ATTESTATION_SHA256,
+        "release_scope": SD1_RELEASE_SCOPE,
+    },
+    "owner_decision": SD1_OWNER_RELEASE_DECISION,
+    "review_attestation": SD1_REVIEW_ATTESTATION,
+    "reason": (
+        "Pete authorized only the exact corrected SD-1 candidate after its "
+        "independent APPROVE and successful PR 533 CI build 1242. The frozen "
+        "candidate predates this control child and has no Markdown evidence "
+        "path inside its five writable surfaces, so this repair records the "
+        "immutable review receipt without changing the candidate."
+    ),
+    "verification_contract": (
+        "This record grants no merge, release, deployment, schema, "
+        "configuration, enablement, Community widening, provider invocation, "
+        "or broader dictation authority. The preflight recognizes it only on "
+        "the exact branch, exact origin/main base, exact one-commit three-path "
+        "delta, and exact candidate, owner, review, PR, CI, and exclusion "
+        "pins. It may only record the pre-existing owner decision on the "
+        "active SD-1 lane; merge_allowed_for and release_allowed_for remain "
+        "empty until a later separate grant."
+    ),
+}
+SD1_RELEASE_ADMISSION_PATHS = frozenset(
+    SD1_RELEASE_ADMISSION["allowed_surfaces"]
+)
+
 # PS-SHELL-001 finished its owner-approved Editorial Top Bar candidate under two
 # independent Protected reviews and then had nowhere to go: _direction_merge_grant
 # admitted only direction_authority lanes and the code-pinned Opportunity Slate,
@@ -4007,6 +4152,64 @@ def _exact_community_authoring_grant_fixture_followup_delta(
     )
 
 
+def _exact_sd1_release_admission_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    """Match only the one-time SD-1 review-bound release-profile repair."""
+    return (
+        ledger.get("shared_dictation_reliability_release_admission")
+        == SD1_RELEASE_ADMISSION
+        and _canonical_sha256(SD1_OWNER_RELEASE_DECISION)
+        == SD1_OWNER_RELEASE_DECISION_SHA256
+        and _canonical_sha256(SD1_REVIEW_ATTESTATION)
+        == SD1_REVIEW_ATTESTATION_SHA256
+        and package_id == SD1_RELEASE_ADMISSION["package"]
+        and facts.get("branch") == SD1_RELEASE_ADMISSION["branch"]
+        and facts.get("origin_main") == SD1_RELEASE_ADMISSION["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and set(facts.get("changed_paths") or [])
+        == set(SD1_RELEASE_ADMISSION_PATHS)
+    )
+
+
+def _exact_sd1_release_admission_delta(
+    parent_ledger: object,
+    admission_ledger: object,
+) -> bool:
+    """Allow only the inert SD-1 receipt plus its prior owner decision."""
+    if not isinstance(parent_ledger, dict) or not isinstance(admission_ledger, dict):
+        return False
+    if parent_ledger.get("shared_dictation_reliability_release_admission") is not None:
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = admission_ledger.get("updated_at")
+    expected["shared_dictation_reliability_release_admission"] = (
+        SD1_RELEASE_ADMISSION
+    )
+    target = next(
+        (
+            lane
+            for lane in expected.get("active_lanes", [])
+            if isinstance(lane, dict) and lane.get("package") == SD1_PACKAGE
+        ),
+        None,
+    )
+    if not isinstance(target, dict) or not isinstance(target.get("owner_decisions"), list):
+        return False
+    target["owner_decisions"].append(SD1_OWNER_RELEASE_DECISION)
+    return bool(
+        admission_ledger == expected
+        and _valid_utc_timestamp(parent_ledger.get("updated_at"))
+        and _valid_utc_timestamp(admission_ledger.get("updated_at"))
+        and _utc_timestamp_strictly_advances(
+            admission_ledger.get("updated_at"), parent_ledger.get("updated_at")
+        )
+    )
+
+
 def _exact_profile_core_merge_preflight_repair_matches(
     ledger: dict,
     facts: dict,
@@ -4853,6 +5056,12 @@ def _exact_connect_002_grant_fixture_followup_matches(
 
 def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
     """Accept a pinned reviewed-lane authority or exact direction decision."""
+    if package_id == SD1_PACKAGE:
+        return bool(
+            isinstance(decision, dict)
+            and decision == SD1_OWNER_RELEASE_DECISION
+            and _canonical_sha256(decision) == SD1_OWNER_RELEASE_DECISION_SHA256
+        )
     if package_id == COMMUNITY_AUTHORING_PACKAGE:
         return bool(
             isinstance(decision, dict)
@@ -4975,6 +5184,18 @@ def _is_community_authoring_reviewed_implementation_lane(lane: object) -> bool:
     )
 
 
+def _is_sd1_reviewed_implementation_lane(lane: object) -> bool:
+    """Identify only the frozen, independently approved SD-1 lane."""
+    return bool(
+        isinstance(lane, dict)
+        and lane.get("package") == SD1_PACKAGE
+        and lane.get("branch") == SD1_BRANCH
+        and lane.get("lane_class") == "implementation"
+        and lane.get("delivery_path") == "Protected"
+        and lane.get("production_capable") is False
+    )
+
+
 def _is_shell_reviewed_shared_foundation_lane(lane: object) -> bool:
     """Identify only the code-pinned non-production PS-SHELL-001 lane.
 
@@ -4990,6 +5211,85 @@ def _is_shell_reviewed_shared_foundation_lane(lane: object) -> bool:
         and lane.get("delivery_path") == SHELL_DELIVERY_PATH
         and lane.get("production_capable") is False
     )
+
+
+def _sd1_merge_grant(
+    lane: dict,
+    label: str,
+    errors: list[str],
+) -> dict | None:
+    """Validate SD-1's immutable control-record attestation mode.
+
+    The frozen candidate cannot truthfully supply a Markdown review file from
+    one of its five runtime/test surfaces.  This exception accepts no external
+    path: it binds the exact code-controlled review receipt instead and is
+    deliberately unavailable to every other package.
+    """
+    if lane.get("production_capable") is not False:
+        errors.append(f"{label} requires production_capable false")
+    if _canonical_sha256(SD1_OWNER_RELEASE_DECISION) != SD1_OWNER_RELEASE_DECISION_SHA256:
+        errors.append(f"{label} SD-1 owner decision SHA-256 is invalid")
+    if _canonical_sha256(SD1_REVIEW_ATTESTATION) != SD1_REVIEW_ATTESTATION_SHA256:
+        errors.append(f"{label} SD-1 review attestation SHA-256 is invalid")
+    grant = lane.get("merge_grant")
+    if not isinstance(grant, dict):
+        errors.append(f"{label} merge_grant must be an object")
+        return None
+    expected_fields = {
+        "authorized_by",
+        "authority_decision_index",
+        "authority_decision_sha256",
+        "independent_review",
+        "reviewed_remote_sha",
+        "granted_at",
+        "review_result",
+        "review_evidence_paths",
+        "release_scope",
+    }
+    if set(grant) != expected_fields:
+        errors.append(
+            f"{label} merge_grant must contain exactly: "
+            + ", ".join(sorted(expected_fields))
+        )
+    if grant.get("authorized_by") != "Pete":
+        errors.append(f"{label} merge_grant authorized_by must be Pete")
+    decisions = lane.get("owner_decisions")
+    index = grant.get("authority_decision_index")
+    if not isinstance(index, int) or isinstance(index, bool) or index < 0:
+        errors.append(
+            f"{label} merge_grant authority_decision_index must be a non-negative integer"
+        )
+    elif (
+        not isinstance(decisions, list)
+        or index != len(decisions) - 1
+        or decisions[index] != SD1_OWNER_RELEASE_DECISION
+    ):
+        errors.append(
+            f"{label} merge_grant must bind the exact pre-recorded SD-1 owner decision"
+        )
+    if grant.get("authority_decision_sha256") != SD1_OWNER_RELEASE_DECISION_SHA256:
+        errors.append(
+            f"{label} authority_decision_sha256 must equal the pinned SD-1 owner decision"
+        )
+    if grant.get("independent_review") != SD1_REVIEW_ATTESTATION:
+        errors.append(
+            f"{label} independent_review must equal the pinned SD-1 attestation"
+        )
+    elif _canonical_sha256(grant["independent_review"]) != SD1_REVIEW_ATTESTATION_SHA256:
+        errors.append(f"{label} independent_review attestation SHA-256 is invalid")
+    if grant.get("reviewed_remote_sha") != SD1_REVIEWED_SHA:
+        errors.append(f"{label} reviewed_remote_sha must equal the accepted SD-1 SHA")
+    if grant.get("release_scope") != SD1_RELEASE_SCOPE:
+        errors.append(f"{label} release_scope must equal the pinned SD-1 scope")
+    if grant.get("review_result") != "pass":
+        errors.append(f"{label} merge_grant review_result must be pass")
+    if grant.get("review_evidence_paths") != []:
+        errors.append(
+            f"{label} SD-1 uses only its immutable control attestation and no review paths"
+        )
+    if not _valid_utc_timestamp(grant.get("granted_at")):
+        errors.append(f"{label} merge_grant granted_at must be a UTC timestamp")
+    return grant
 
 
 def _direction_merge_grant(
@@ -5012,7 +5312,10 @@ def _direction_merge_grant(
     is_community_authoring = _is_community_authoring_reviewed_implementation_lane(
         lane
     )
+    is_sd1 = _is_sd1_reviewed_implementation_lane(lane)
     is_shell = _is_shell_reviewed_shared_foundation_lane(lane)
+    if is_sd1:
+        return _sd1_merge_grant(lane, label, errors)
     if (
         not is_direction
         and not is_opportunity_release
@@ -5367,7 +5670,11 @@ def _exact_direction_grant_delta(
         return False
     expected_mode = dict(parent_mode)
     expected_mode["merge_allowed_for"] = [*parent_allowed, package_id]
-    if package_id in {OPPORTUNITY_SLATE_PACKAGE, COMMUNITY_AUTHORING_PACKAGE}:
+    if package_id in {
+        OPPORTUNITY_SLATE_PACKAGE,
+        COMMUNITY_AUTHORING_PACKAGE,
+        SD1_PACKAGE,
+    }:
         parent_release = parent_mode.get("release_allowed_for")
         if (
             not isinstance(parent_release, list)
@@ -6634,6 +6941,80 @@ def _direction_main_sequence_facts(
     candidate_sha: str,
     origin_main: str,
 ) -> tuple[list[str], bool, int]:
+    if package_id == SD1_PACKAGE:
+        if candidate_sha != SD1_REVIEWED_SHA:
+            return [], False, 0
+        control_base = SD1_RELEASE_ADMISSION["origin_main"]
+        main_commits = [
+            sha
+            for sha in _git(
+                "rev-list", "--reverse", f"{control_base}..{origin_main}"
+            ).splitlines()
+            if sha
+        ]
+        main_paths = sorted(
+            _git_nul(
+                "diff", "--name-only", "-z", f"{control_base}..{origin_main}"
+            )
+        )
+        if len(main_commits) != 2:
+            return main_paths, False, len(main_commits)
+        admission_sha, grant_sha = main_commits
+        admission_parent = _git("rev-parse", f"{admission_sha}^")
+        grant_parent = _git("rev-parse", f"{grant_sha}^")
+        admission_paths = set(
+            _git_nul(
+                "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                admission_sha,
+            )
+        )
+        grant_paths = set(
+            _git_nul(
+                "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                grant_sha,
+            )
+        )
+        base_ledger = load_ledger_at_ref(control_base)
+        admission_ledger = load_ledger_at_ref(admission_sha)
+        candidate_merge_base = _git("merge-base", candidate_sha, control_base)
+        candidate_paths = set(
+            _git_nul(
+                "diff",
+                "--name-only",
+                "-z",
+                f"{SD1_CANDIDATE_BASE_SHA}..{candidate_sha}",
+            )
+        )
+        final_target = next(
+            (
+                item
+                for item in origin_ledger.get("active_lanes", [])
+                if isinstance(item, dict) and item.get("package") == package_id
+            ),
+            None,
+        )
+        valid = bool(
+            _git("rev-parse", f"{control_base}^") == SD1_CANDIDATE_BASE_SHA
+            and admission_parent == control_base
+            and grant_parent == admission_sha
+            and admission_paths == set(SD1_RELEASE_ADMISSION_PATHS)
+            and grant_paths == set(GRANT_ALLOWED_SURFACES)
+            and _exact_sd1_release_admission_delta(base_ledger, admission_ledger)
+            and _exact_direction_grant_delta(
+                admission_ledger, origin_ledger, package_id
+            )
+            and candidate_merge_base == SD1_CANDIDATE_BASE_SHA
+            and candidate_paths == set(SD1_CANDIDATE_PATHS)
+            and not (
+                candidate_paths
+                & (set(SD1_RELEASE_ADMISSION_PATHS) | set(GRANT_ALLOWED_SURFACES))
+            )
+            and isinstance(final_target, dict)
+            and _is_sd1_reviewed_implementation_lane(final_target)
+            and final_target.get("merge_grant", {}).get("reviewed_remote_sha")
+            == candidate_sha
+        )
+        return main_paths, valid, len(main_commits)
     if package_id == COMMUNITY_AUTHORING_PACKAGE:
         if candidate_sha != COMMUNITY_AUTHORING_REVIEWED_SHA:
             return [], False, 0
@@ -6988,6 +7369,7 @@ def _collect_direction_candidate_merge(
     is_community_authoring = _is_community_authoring_reviewed_implementation_lane(
         target
     )
+    is_sd1 = _is_sd1_reviewed_implementation_lane(target)
     if (
         (
             not is_direction
@@ -6995,6 +7377,7 @@ def _collect_direction_candidate_merge(
             and not is_profile_core
             and not is_connect_002
             and not is_community_authoring
+            and not is_sd1
         )
         or target.get("production_capable") is not False
     ):
@@ -7162,6 +7545,9 @@ def evaluate_policy(
                 isinstance(target, dict)
                 and target.get("package") == COMMUNITY_AUTHORING_PACKAGE
             )
+            is_sd1_package = bool(
+                isinstance(target, dict) and target.get("package") == SD1_PACKAGE
+            )
             is_reviewed_target = bool(
                 isinstance(target, dict)
                 and (
@@ -7174,15 +7560,18 @@ def evaluate_policy(
                     or _is_profile_core_reviewed_implementation_lane(target)
                     or _is_connect_002_reviewed_implementation_lane(target)
                     or _is_community_authoring_reviewed_implementation_lane(target)
+                    or _is_sd1_reviewed_implementation_lane(target)
                     or is_profile_core_package
                     or is_connect_002_package
                     or is_community_authoring_package
+                    or is_sd1_package
                 )
                 and (
                     target.get("production_capable") is False
                     or is_profile_core_package
                     or is_connect_002_package
                     or is_community_authoring_package
+                    or is_sd1_package
                 )
             )
             if not is_reviewed_target:
@@ -7214,6 +7603,13 @@ def evaluate_policy(
                         "Community Authoring merge target does not equal the "
                         "exact code-controlled reviewed implementation lane"
                     )
+                if is_sd1_package and not _is_sd1_reviewed_implementation_lane(
+                    target
+                ):
+                    errors.append(
+                        "SD-1 merge target does not equal the exact "
+                        "code-controlled reviewed implementation lane"
+                    )
                 if (
                     is_community_authoring_package
                     and (
@@ -7228,6 +7624,15 @@ def evaluate_policy(
                     errors.append(
                         "Community Authoring merge remains blocked pending the "
                         "exact release admission and grant-fixture follow-up"
+                    )
+                if (
+                    is_sd1_package
+                    and origin_ledger.get("shared_dictation_reliability_release_admission")
+                    != SD1_RELEASE_ADMISSION
+                ):
+                    errors.append(
+                        "SD-1 merge remains blocked pending the exact "
+                        "release-profile admission"
                     )
                 if is_connect_002_package:
                     if (
@@ -7272,7 +7677,23 @@ def evaluate_policy(
             else:
                 _validate_changed_paths_within_lane(target, facts, "merge", errors)
             main_paths = facts.get("merge_main_changed_paths")
-            if package_id == COMMUNITY_AUTHORING_PACKAGE:
+            if package_id == SD1_PACKAGE:
+                expected_behind = 3
+                expected_control_commits = 2
+                expected_main_paths = (
+                    set(SD1_RELEASE_ADMISSION_PATHS) | set(GRANT_ALLOWED_SURFACES)
+                )
+                if facts.get("behind") != expected_behind:
+                    errors.append(
+                        "SD-1 merge requires its activation plus exactly two "
+                        "verified main control commits"
+                    )
+                if facts.get("merge_main_control_commit_count") != expected_control_commits:
+                    errors.append(
+                        "SD-1 merge requires exactly two verified post-activation "
+                        "main control commits"
+                    )
+            elif package_id == COMMUNITY_AUTHORING_PACKAGE:
                 expected_behind = 3
                 expected_main_paths = (
                     set(COMMUNITY_AUTHORING_RELEASE_ADMISSION_PATHS)
@@ -7426,6 +7847,13 @@ def evaluate_policy(
                         "follow-up, exact ledger-only grant, and merge-surface "
                         "repair are tolerated"
                     )
+            elif package_id == SD1_PACKAGE:
+                if facts.get("behind") == 3:
+                    warnings.append(
+                        "SD-1 candidate predates its control child; only the "
+                        "activation, exact immutable admission, and exact "
+                        "review-bound grant are tolerated"
+                    )
             elif facts.get("behind") == expected_behind:
                 warnings.append(
                     f"merge candidate is {facts['behind']} commit(s) behind origin/main; "
@@ -7453,6 +7881,15 @@ def evaluate_policy(
             errors.append(
                 "Community Authoring grant remains blocked pending the exact "
                 "release admission and grant-fixture follow-up"
+            )
+            return errors, warnings
+        if (
+            package_id == SD1_PACKAGE
+            and origin_ledger.get("shared_dictation_reliability_release_admission")
+            != SD1_RELEASE_ADMISSION
+        ):
+            errors.append(
+                "SD-1 grant remains blocked pending the exact release-profile admission"
             )
             return errors, warnings
         if (
@@ -7573,41 +8010,50 @@ def evaluate_policy(
                     errors.append(
                         "grant reviewed_remote_sha must equal the fetched target branch tip"
                     )
-                evidence_paths = _paths_within_lane(
-                    grant.get("review_evidence_paths"), candidate_lane,
-                    "grant review_evidence_paths", errors,
-                )
-                existing = facts.get("grant_review_evidence_existing")
-                if existing != evidence_paths:
-                    errors.append(
-                        "grant requires every review evidence path to exist at reviewed_remote_sha"
-                    )
-                evidence = facts.get("grant_review_evidence")
-                if not isinstance(evidence, list) or len(evidence) != len(evidence_paths):
-                    errors.append("grant requires exact review evidence content for every path")
+                if package_id == SD1_PACKAGE:
+                    if facts.get("grant_review_evidence_existing") != []:
+                        errors.append(
+                            "SD-1 grant must not substitute candidate-path review evidence"
+                        )
+                    if facts.get("grant_review_evidence") != []:
+                        errors.append(
+                            "SD-1 grant must use only the immutable control attestation"
+                        )
                 else:
-                    review = grant.get("independent_review")
-                    independent_sha = review.get("reviewed_sha") if isinstance(review, dict) else None
-                    for item, path in zip(evidence, evidence_paths, strict=True):
-                        if not isinstance(item, dict) or item.get("path") != path:
-                            errors.append("grant review evidence content/path binding is invalid")
-                            continue
-                        if (
-                            item.get("object_type") != "blob"
-                            or item.get("object_mode") != "100644"
-                            or not path.casefold().endswith(".md")
-                        ):
-                            errors.append("grant review evidence must be regular Markdown blob files")
-                        content = item.get("content")
-                        if not isinstance(content, str) or not content:
-                            errors.append(
-                                "grant review evidence content must be non-empty UTF-8 text"
-                            )
-                            continue
-                        if item.get("git_blob_sha") != review.get("evidence_git_blob_sha"):
-                            errors.append("grant review evidence Git blob SHA is not attested")
-                        if item.get("bytes_sha256") != review.get("evidence_bytes_sha256"):
-                            errors.append("grant review evidence bytes SHA-256 is not attested")
+                    evidence_paths = _paths_within_lane(
+                        grant.get("review_evidence_paths"), candidate_lane,
+                        "grant review_evidence_paths", errors,
+                    )
+                    existing = facts.get("grant_review_evidence_existing")
+                    if existing != evidence_paths:
+                        errors.append(
+                            "grant requires every review evidence path to exist at reviewed_remote_sha"
+                        )
+                    evidence = facts.get("grant_review_evidence")
+                    if not isinstance(evidence, list) or len(evidence) != len(evidence_paths):
+                        errors.append("grant requires exact review evidence content for every path")
+                    else:
+                        review = grant.get("independent_review")
+                        for item, path in zip(evidence, evidence_paths, strict=True):
+                            if not isinstance(item, dict) or item.get("path") != path:
+                                errors.append("grant review evidence content/path binding is invalid")
+                                continue
+                            if (
+                                item.get("object_type") != "blob"
+                                or item.get("object_mode") != "100644"
+                                or not path.casefold().endswith(".md")
+                            ):
+                                errors.append("grant review evidence must be regular Markdown blob files")
+                            content = item.get("content")
+                            if not isinstance(content, str) or not content:
+                                errors.append(
+                                    "grant review evidence content must be non-empty UTF-8 text"
+                                )
+                                continue
+                            if item.get("git_blob_sha") != review.get("evidence_git_blob_sha"):
+                                errors.append("grant review evidence Git blob SHA is not attested")
+                            if item.get("bytes_sha256") != review.get("evidence_bytes_sha256"):
+                                errors.append("grant review evidence bytes SHA-256 is not attested")
         expected_mode = dict(origin_mode)
         origin_merge = origin_mode.get("merge_allowed_for")
         if not isinstance(origin_merge, list):
@@ -7618,6 +8064,7 @@ def evaluate_policy(
             if package_id in {
                 OPPORTUNITY_SLATE_PACKAGE,
                 COMMUNITY_AUTHORING_PACKAGE,
+                SD1_PACKAGE,
             }:
                 origin_release = origin_mode.get("release_allowed_for")
                 if not isinstance(origin_release, list):
@@ -7749,12 +8196,34 @@ def evaluate_policy(
                     errors.append("close merged_main_sha must equal fetched origin/main")
                 if closing.get("package_merge_sha") != facts.get("close_package_merge_sha"):
                     errors.append("close package_merge_sha must equal the verified merge commit")
-                evidence = _paths_within_lane(
-                    closing.get("close_evidence_paths"), target,
-                    "close close_evidence_paths", errors,
-                )
-                if evidence != facts.get("close_evidence_existing"):
-                    errors.append("close requires every bounded evidence path at package merge SHA")
+                if target.get("package") == SD1_PACKAGE:
+                    if (
+                        origin_ledger.get(
+                            "shared_dictation_reliability_release_admission"
+                        )
+                        != SD1_RELEASE_ADMISSION
+                    ):
+                        errors.append(
+                            "SD-1 close requires the exact immutable release-profile admission"
+                        )
+                    if closing.get("close_evidence_paths") != []:
+                        errors.append(
+                            "SD-1 close must retain its immutable control attestation "
+                            "instead of adding candidate-path evidence"
+                        )
+                    if facts.get("close_evidence_existing") != []:
+                        errors.append(
+                            "SD-1 close must not substitute candidate-path evidence"
+                        )
+                else:
+                    evidence = _paths_within_lane(
+                        closing.get("close_evidence_paths"), target,
+                        "close close_evidence_paths", errors,
+                    )
+                    if evidence != facts.get("close_evidence_existing"):
+                        errors.append(
+                            "close requires every bounded evidence path at package merge SHA"
+                        )
         if facts.get("close_target_remote_sha") != target.get("merge_grant", {}).get("reviewed_remote_sha"):
             errors.append("close requires target remote tip to remain the reviewed SHA")
         if facts.get("close_surface_tree_equal") is not True:
@@ -8203,7 +8672,10 @@ def evaluate_policy(
             )
         if not policy.get("enabled", False):
             errors.append("the lane activation policy is disabled")
-        if package_id != policy.get("package"):
+        if package_id not in {
+            policy.get("package"),
+            SD1_RELEASE_ADMISSION["package"],
+        }:
             errors.append(
                 "activation must use the standing control package "
                 f"{policy.get('package', '(unset)')}"
@@ -8226,7 +8698,10 @@ def evaluate_policy(
                     f"{exc}"
                 )
             else:
-                if not branch_matches:
+                if not branch_matches and not (
+                    package_id == SD1_RELEASE_ADMISSION["package"]
+                    and branch == SD1_RELEASE_ADMISSION["branch"]
+                ):
                     errors.append(
                         f"activation branch does not match {branch_pattern!r}"
                     )
@@ -8297,6 +8772,9 @@ def evaluate_policy(
             _exact_community_authoring_grant_fixture_followup_matches(
                 ledger, facts, package_id
             )
+        )
+        sd1_release_admission_matches = _exact_sd1_release_admission_matches(
+            ledger, facts, package_id
         )
         profile_core_merge_repair_matches = (
             _exact_profile_core_merge_preflight_repair_matches(
@@ -8456,6 +8934,11 @@ def evaluate_policy(
             warnings.append(
                 "using the exact one-time Community Authoring grant-fixture "
                 "follow-up boundary"
+            )
+        elif sd1_release_admission_matches:
+            allowed_surfaces = set(SD1_RELEASE_ADMISSION_PATHS)
+            warnings.append(
+                "using the exact one-time SD-1 release-profile admission boundary"
             )
         elif profile_core_merge_repair_matches:
             allowed_surfaces = set(PROFILE_CORE_MERGE_CONTROL_PATHS)
@@ -8644,6 +9127,7 @@ def evaluate_policy(
                 and not implementation_release_repair_matches
                 and not community_authoring_release_admission_matches
                 and not community_authoring_grant_fixture_followup_matches
+                and not sd1_release_admission_matches
                 and not profile_core_merge_repair_matches
                 and not profile_core_grant_fixture_followup_matches
                 and not profile_core_grant_anchor_followup_matches
@@ -9677,6 +10161,23 @@ def evaluate_policy(
                     label="Community Authoring grant-fixture follow-up",
                     errors=errors,
                 )
+            elif sd1_release_admission_matches:
+                if origin_policy != policy:
+                    errors.append(
+                        "SD-1 release-profile admission may not change "
+                        "activation_policy"
+                    )
+                if not _exact_sd1_release_admission_delta(origin_ledger, ledger):
+                    errors.append(
+                        "SD-1 release-profile admission must be the exact "
+                        "owner-decision-plus-receipt ledger delta"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="SD-1 release-profile admission",
+                    errors=errors,
+                )
             elif grant_close_repair_matches:
                 candidate_updated_at = ledger.get("updated_at")
                 origin_updated_at = origin_ledger.get("updated_at")
@@ -10073,6 +10574,7 @@ def evaluate_policy(
             and not implementation_release_repair_matches
             and not community_authoring_release_admission_matches
             and not community_authoring_grant_fixture_followup_matches
+            and not sd1_release_admission_matches
             and not profile_core_merge_repair_matches
             and not shell_merge_repair_matches
             and not interview_ai_d13_admission_matches
@@ -10162,6 +10664,12 @@ def evaluate_policy(
                 errors.append(
                     "Community Authoring grant-fixture follow-up must change "
                     "exactly the owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if sd1_release_admission_matches and changed_paths != allowed_surfaces:
+                errors.append(
+                    "SD-1 release-profile admission must change exactly the "
+                    "owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
             if (
@@ -10749,6 +11257,7 @@ def main(argv: list[str] | None = None) -> int:
                         or target.get("package") == PROFILE_CORE_INTEGRATION_PACKAGE
                         or _is_profile_core_reviewed_implementation_lane(target)
                         or _is_connect_002_reviewed_implementation_lane(target)
+                        or _is_sd1_reviewed_implementation_lane(target)
                     )
                 ):
                     missing_candidate_message = (

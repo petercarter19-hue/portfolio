@@ -26,6 +26,18 @@ from scripts.delivery_preflight import (
     COMMUNITY_AUTHORING_RELEASE_SCOPE,
     COMMUNITY_AUTHORING_REVIEW_ATTESTATION,
     COMMUNITY_AUTHORING_REVIEWED_SHA,
+    SD1_BRANCH,
+    SD1_CANDIDATE_BASE_SHA,
+    SD1_CANDIDATE_PATHS,
+    SD1_OWNER_RELEASE_DECISION,
+    SD1_OWNER_RELEASE_DECISION_SHA256,
+    SD1_PACKAGE,
+    SD1_RELEASE_ADMISSION,
+    SD1_RELEASE_ADMISSION_PATHS,
+    SD1_RELEASE_SCOPE,
+    SD1_REVIEW_ATTESTATION,
+    SD1_REVIEW_ATTESTATION_SHA256,
+    SD1_REVIEWED_SHA,
     CLEANUP_BRANCH_PATTERN,
     DIRECTION_MERGE_CONTROL_PATHS,
     DIRECTION_MERGE_FOLLOWUP_PATHS,
@@ -144,6 +156,8 @@ from scripts.delivery_preflight import (
     _exact_community_authoring_release_admission_matches,
     _exact_community_authoring_grant_fixture_followup_delta,
     _exact_community_authoring_grant_fixture_followup_matches,
+    _exact_sd1_release_admission_delta,
+    _exact_sd1_release_admission_matches,
     _exact_profile_core_grant_anchor_followup_delta,
     _exact_profile_core_grant_anchor_followup_matches,
     _exact_profile_core_grant_fixture_followup_delta,
@@ -719,6 +733,58 @@ class DeliveryPreflightTests(unittest.TestCase):
                 COMMUNITY_AUTHORING_REVIEW_ATTESTATION["evidence_path"]
             ],
             "release_scope": copy.deepcopy(COMMUNITY_AUTHORING_RELEASE_SCOPE),
+        }
+
+    def _sd1_release_admission_origin(self) -> tuple[dict, dict]:
+        """Return main just before the one-time SD-1 control repair."""
+        origin = load_ledger_at_ref(SD1_RELEASE_ADMISSION["origin_main"])
+        lane = next(
+            item
+            for item in origin["active_lanes"]
+            if item.get("package") == SD1_PACKAGE
+        )
+        self.assertEqual(SD1_BRANCH, lane["branch"])
+        self.assertNotIn("merge_grant", lane)
+        self.assertNotIn("shared_dictation_reliability_release_admission", origin)
+        self.assertEqual(2, len(lane["owner_decisions"]))
+        return origin, lane
+
+    def _sd1_release_admission_candidate(self, origin: dict) -> dict:
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-18T22:08:43Z"
+        candidate["shared_dictation_reliability_release_admission"] = copy.deepcopy(
+            SD1_RELEASE_ADMISSION
+        )
+        lane = next(
+            item
+            for item in candidate["active_lanes"]
+            if item.get("package") == SD1_PACKAGE
+        )
+        lane["owner_decisions"].append(copy.deepcopy(SD1_OWNER_RELEASE_DECISION))
+        return candidate
+
+    def _sd1_grant_record(self, lane: dict, granted_at: str) -> dict:
+        decision_index = len(lane["owner_decisions"]) - 1
+        decision = lane["owner_decisions"][decision_index]
+        self.assertEqual(SD1_OWNER_RELEASE_DECISION, decision)
+        self.assertEqual(
+            SD1_OWNER_RELEASE_DECISION_SHA256,
+            _canonical_sha256(decision),
+        )
+        self.assertEqual(
+            SD1_REVIEW_ATTESTATION_SHA256,
+            _canonical_sha256(SD1_REVIEW_ATTESTATION),
+        )
+        return {
+            "authorized_by": "Pete",
+            "authority_decision_index": decision_index,
+            "authority_decision_sha256": _canonical_sha256(decision),
+            "independent_review": copy.deepcopy(SD1_REVIEW_ATTESTATION),
+            "reviewed_remote_sha": SD1_REVIEWED_SHA,
+            "granted_at": granted_at,
+            "review_result": "pass",
+            "review_evidence_paths": [],
+            "release_scope": copy.deepcopy(SD1_RELEASE_SCOPE),
         }
 
     def _opportunity_origin(self) -> tuple[dict, dict]:
@@ -1299,6 +1365,486 @@ class DeliveryPreflightTests(unittest.TestCase):
         )
         self.assertTrue(any("release admission" in item for item in missing_errors))
 
+    def test_sd1_release_admission_is_exact_inert_and_one_time(self):
+        origin, _ = self._sd1_release_admission_origin()
+        candidate = self._sd1_release_admission_candidate(origin)
+        baseline = load_baseline_bytes_at_ref(SD1_RELEASE_ADMISSION["origin_main"])
+        admission_facts = facts(
+            branch=SD1_RELEASE_ADMISSION["branch"],
+            head="sd1-admission-candidate",
+            ahead=1,
+            origin_main=SD1_RELEASE_ADMISSION["origin_main"],
+            changed_paths=sorted(SD1_RELEASE_ADMISSION_PATHS),
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            admission_facts,
+            package=SD1_RELEASE_ADMISSION["package"],
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(any("SD-1 release-profile admission" in item for item in warnings))
+        self.assertTrue(
+            _exact_sd1_release_admission_matches(
+                candidate,
+                admission_facts,
+                SD1_RELEASE_ADMISSION["package"],
+            )
+        )
+        self.assertTrue(_exact_sd1_release_admission_delta(origin, candidate))
+        self.assertEqual(
+            origin["operating_mode"],
+            candidate["operating_mode"],
+        )
+        self.assertEqual(
+            [
+                lane
+                for lane in origin["active_lanes"]
+                if lane["package"] != SD1_PACKAGE
+            ],
+            [
+                lane
+                for lane in candidate["active_lanes"]
+                if lane["package"] != SD1_PACKAGE
+            ],
+        )
+
+        widened = copy.deepcopy(candidate)
+        widened["shared_dictation_reliability_release_admission"]["candidate_contract"][
+            "release_scope"
+        ]["provider_invocation"] = True
+        widened_errors, _ = self._evaluate_activation(
+            widened,
+            admission_facts,
+            package=SD1_RELEASE_ADMISSION["package"],
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(widened_errors)
+        self.assertFalse(_exact_sd1_release_admission_delta(origin, widened))
+
+        wrong_surfaces_errors, _ = self._evaluate_activation(
+            candidate,
+            {**admission_facts, "changed_paths": ["scripts/delivery_preflight.py"]},
+            package=SD1_RELEASE_ADMISSION["package"],
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(wrong_surfaces_errors)
+
+        replay_origin = copy.deepcopy(candidate)
+        replay = copy.deepcopy(candidate)
+        replay["updated_at"] = "2026-08-18T22:10:00Z"
+        replay_errors, _ = self._evaluate_activation(
+            replay,
+            {**admission_facts, "origin_main": "later-main"},
+            package=SD1_RELEASE_ADMISSION["package"],
+            require_clean=True,
+            origin=replay_origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(replay_errors)
+        self.assertFalse(_exact_sd1_release_admission_delta(replay_origin, replay))
+
+    def test_sd1_grant_and_merge_are_exact_candidate_only(self):
+        base, _ = self._sd1_release_admission_origin()
+        admitted = self._sd1_release_admission_candidate(base)
+        granted = copy.deepcopy(admitted)
+        granted_at = "2026-08-18T22:20:00Z"
+        granted["updated_at"] = granted_at
+        granted_lane = next(
+            item
+            for item in granted["active_lanes"]
+            if item.get("package") == SD1_PACKAGE
+        )
+        granted_lane["merge_grant"] = self._sd1_grant_record(
+            granted_lane, granted_at
+        )
+        granted["operating_mode"]["merge_allowed_for"] = [SD1_PACKAGE]
+        granted["operating_mode"]["release_allowed_for"] = [SD1_PACKAGE]
+        baseline = load_baseline_bytes_at_ref(SD1_RELEASE_ADMISSION["origin_main"])
+        grant_facts = facts(
+            branch="work/2026-08-18-delivery-grant-sd1",
+            head="sd1-grant-candidate",
+            ahead=1,
+            origin_main="sd1-admission-main",
+            changed_paths=sorted(GRANT_ALLOWED_SURFACES),
+            grant_target_remote_sha=SD1_REVIEWED_SHA,
+            grant_review_evidence_existing=[],
+            grant_review_evidence=[],
+        )
+        grant_errors, _ = evaluate_policy(
+            granted,
+            grant_facts,
+            SD1_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=admitted,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], grant_errors)
+        self.assertTrue(_exact_direction_grant_delta(admitted, granted, SD1_PACKAGE))
+
+        no_admission_errors, _ = evaluate_policy(
+            granted,
+            grant_facts,
+            SD1_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=base,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(any("release-profile admission" in item for item in no_admission_errors))
+
+        substituted_evidence_errors, _ = evaluate_policy(
+            granted,
+            {
+                **grant_facts,
+                "grant_review_evidence_existing": ["README.md"],
+                "grant_review_evidence": [
+                    {"path": "README.md", "content": "forged evidence"}
+                ],
+            },
+            SD1_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=admitted,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(
+            any("immutable control attestation" in item for item in substituted_evidence_errors)
+        )
+
+        widened = copy.deepcopy(granted)
+        widened_lane = next(
+            item
+            for item in widened["active_lanes"]
+            if item.get("package") == SD1_PACKAGE
+        )
+        widened_lane["merge_grant"]["release_scope"]["provider_invocation"] = True
+        widened_errors, _ = evaluate_policy(
+            widened,
+            grant_facts,
+            SD1_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=admitted,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(any("release_scope" in item for item in widened_errors))
+
+        merge_facts = facts(
+            branch=SD1_BRANCH,
+            head=SD1_REVIEWED_SHA,
+            ahead=2,
+            behind=3,
+            origin_main="sd1-grant-main",
+            changed_paths=sorted(SD1_CANDIDATE_PATHS),
+            merge_target_remote_sha=SD1_REVIEWED_SHA,
+            merge_main_changed_paths=sorted(
+                set(SD1_RELEASE_ADMISSION_PATHS) | set(GRANT_ALLOWED_SURFACES)
+            ),
+            merge_main_control_commits_valid=True,
+            merge_main_control_commit_count=2,
+        )
+        merge_errors, merge_warnings = evaluate_policy(
+            granted,
+            merge_facts,
+            SD1_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=granted,
+        )
+        self.assertEqual([], merge_errors)
+        self.assertTrue(
+            any("SD-1 candidate predates its control child" in item for item in merge_warnings)
+        )
+
+        wrong_count_errors, _ = evaluate_policy(
+            granted,
+            {**merge_facts, "merge_main_control_commit_count": 3},
+            SD1_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=granted,
+        )
+        self.assertTrue(any("exactly two" in item for item in wrong_count_errors))
+
+        wrong_candidate_errors, _ = evaluate_policy(
+            granted,
+            {**merge_facts, "head": "d" * 40},
+            SD1_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=granted,
+        )
+        self.assertTrue(any("reviewed" in item for item in wrong_candidate_errors))
+
+    def test_sd1_main_sequence_collector_requires_the_exact_two_control_commits(self):
+        base, _ = self._sd1_release_admission_origin()
+        admitted = self._sd1_release_admission_candidate(base)
+        granted = copy.deepcopy(admitted)
+        granted_at = "2026-08-18T22:20:00Z"
+        granted["updated_at"] = granted_at
+        target = next(
+            item
+            for item in granted["active_lanes"]
+            if item.get("package") == SD1_PACKAGE
+        )
+        target["merge_grant"] = self._sd1_grant_record(target, granted_at)
+        granted["operating_mode"]["merge_allowed_for"] = [SD1_PACKAGE]
+        granted["operating_mode"]["release_allowed_for"] = [SD1_PACKAGE]
+
+        admission_sha = "1" * 40
+        grant_sha = "2" * 40
+        merged_main_sha = "3" * 40
+        expected_control_paths = sorted(
+            set(SD1_RELEASE_ADMISSION_PATHS) | set(GRANT_ALLOWED_SURFACES)
+        )
+
+        def fake_git(*args: str) -> str:
+            responses = {
+                (
+                    "rev-list",
+                    "--reverse",
+                    f"{SD1_RELEASE_ADMISSION['origin_main']}..{merged_main_sha}",
+                ): f"{admission_sha}\n{grant_sha}\n",
+                ("rev-parse", f"{admission_sha}^"): SD1_RELEASE_ADMISSION[
+                    "origin_main"
+                ],
+                ("rev-parse", f"{grant_sha}^"): admission_sha,
+                (
+                    "merge-base",
+                    SD1_REVIEWED_SHA,
+                    SD1_RELEASE_ADMISSION["origin_main"],
+                ): SD1_CANDIDATE_BASE_SHA,
+                (
+                    "rev-parse",
+                    f"{SD1_RELEASE_ADMISSION['origin_main']}^",
+                ): SD1_CANDIDATE_BASE_SHA,
+            }
+            return responses[args]
+
+        def fake_git_nul(*args: str) -> list[str]:
+            if args[-1] == f"{SD1_RELEASE_ADMISSION['origin_main']}..{merged_main_sha}":
+                return expected_control_paths
+            if args[-1] == admission_sha:
+                return sorted(SD1_RELEASE_ADMISSION_PATHS)
+            if args[-1] == grant_sha:
+                return sorted(GRANT_ALLOWED_SURFACES)
+            if args[-1] == (
+                f"{SD1_CANDIDATE_BASE_SHA}..{SD1_REVIEWED_SHA}"
+            ):
+                return sorted(SD1_CANDIDATE_PATHS)
+            raise AssertionError(args)
+
+        with (
+            patch("scripts.delivery_preflight._git", side_effect=fake_git),
+            patch("scripts.delivery_preflight._git_nul", side_effect=fake_git_nul),
+            patch(
+                "scripts.delivery_preflight.load_ledger_at_ref",
+                side_effect=lambda ref: {
+                    SD1_RELEASE_ADMISSION["origin_main"]: base,
+                    admission_sha: admitted,
+                }[ref],
+            ),
+        ):
+            paths, valid, count = _direction_main_sequence_facts(
+                granted,
+                SD1_PACKAGE,
+                SD1_REVIEWED_SHA,
+                merged_main_sha,
+            )
+        self.assertEqual(expected_control_paths, paths)
+        self.assertTrue(valid)
+        self.assertEqual(2, count)
+
+    def test_sd1_close_allows_only_empty_evidence_with_exact_merge_proof(self):
+        base, _ = self._sd1_release_admission_origin()
+        admitted = self._sd1_release_admission_candidate(base)
+        granted = copy.deepcopy(admitted)
+        granted_at = "2026-08-18T22:20:00Z"
+        granted["updated_at"] = granted_at
+        target = next(
+            item
+            for item in granted["active_lanes"]
+            if item.get("package") == SD1_PACKAGE
+        )
+        target["merge_grant"] = self._sd1_grant_record(target, granted_at)
+        granted["operating_mode"]["merge_allowed_for"] = [SD1_PACKAGE]
+        granted["operating_mode"]["release_allowed_for"] = [SD1_PACKAGE]
+
+        candidate = copy.deepcopy(granted)
+        closed_at = "2026-08-18T22:30:00Z"
+        candidate["updated_at"] = closed_at
+        candidate["active_lanes"] = [
+            lane for lane in candidate["active_lanes"]
+            if lane.get("package") != SD1_PACKAGE
+        ]
+        candidate["operating_mode"]["writes_allowed_for"] = [
+            item
+            for item in candidate["operating_mode"]["writes_allowed_for"]
+            if item != SD1_PACKAGE
+        ]
+        candidate["operating_mode"]["merge_allowed_for"] = []
+        candidate["operating_mode"]["release_allowed_for"] = []
+        candidate["operating_mode"]["exit_authority"] = (
+            "Active writer lanes: PS-DELIVERY-CONTROL-SD1-001. "
+            + SD1_PACKAGE
+            + " is merged_closed and retains no authority."
+        )
+        closing = copy.deepcopy(target)
+        package_merge_sha = "d" * 40
+        merged_main_sha = "a" * 40
+        closing.update(
+            {
+                "disposition": "merged_closed",
+                "closed_at": closed_at,
+                "reviewed_remote_sha": SD1_REVIEWED_SHA,
+                "merged_main_sha": merged_main_sha,
+                "package_merge_sha": package_merge_sha,
+                "close_evidence_paths": [],
+            }
+        )
+        candidate["closing_lanes"] = [
+            *granted.get("closing_lanes", []),
+            closing,
+        ]
+
+        origin_baseline = load_baseline_bytes_at_ref(
+            SD1_RELEASE_ADMISSION["origin_main"]
+        )
+        baseline_text = origin_baseline.decode("utf-8")
+        baseline_text = re.sub(
+            r'^  current_assignments: .+$',
+            (
+                '  current_assignments: "Active writer lanes: '
+                "PS-DELIVERY-CONTROL-SD1-001. "
+                + SD1_PACKAGE
+                + ' is closed and archived."'
+            ),
+            baseline_text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        baseline_text = re.sub(
+            r"(?ms)^  - id: PS-SHARED-DICTATION-RELIABILITY-001\n.*?(?=^  - id:|^scoped_findings:)",
+            "",
+            baseline_text,
+            count=1,
+        )
+        baseline_text = re.sub(
+            r'^next_gate: .+$',
+            (
+                'next_gate: "Continue only the active writer packages: '
+                "PS-DELIVERY-CONTROL-SD1-001. "
+                + SD1_PACKAGE
+                + ' is closed and archived."'
+            ),
+            baseline_text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        completed = re.search(
+            r"(?ms)^completed_packages:\n(?P<body>.*?)(?=^[A-Za-z_]+:|\Z)",
+            baseline_text,
+        )
+        self.assertIsNotNone(completed)
+        assert completed is not None
+        candidate_baseline = (
+            baseline_text[: completed.start("body")]
+            + completed.group("body").rstrip()
+            + "\n  - "
+            + SD1_PACKAGE
+            + "\n"
+            + baseline_text[completed.end("body") :]
+        ).encode("utf-8")
+        close_facts = facts(
+            branch="work/2026-08-18-delivery-close-sd1",
+            ahead=1,
+            origin_main=merged_main_sha,
+            changed_paths=sorted(
+                [
+                    "docs/governance/CURRENT_BASELINE.yaml",
+                    "docs/governance/CURRENT_LANES.json",
+                ]
+            ),
+            close_target_remote_sha=SD1_REVIEWED_SHA,
+            close_surface_tree_equal=True,
+            close_package_merge_sha=package_merge_sha,
+            close_package_merge_ancestor=True,
+            close_package_merge_introduced_candidate=True,
+            close_evidence_existing=[],
+        )
+        close_errors, _ = evaluate_policy(
+            candidate,
+            close_facts,
+            SD1_PACKAGE,
+            "close",
+            require_clean=True,
+            origin_ledger=granted,
+            candidate_baseline=candidate_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertEqual([], close_errors)
+
+        substituted_evidence = copy.deepcopy(candidate)
+        substituted_evidence["closing_lanes"][-1]["close_evidence_paths"] = [
+            "README.md"
+        ]
+        evidence_errors, _ = evaluate_policy(
+            substituted_evidence,
+            {**close_facts, "close_evidence_existing": ["README.md"]},
+            SD1_PACKAGE,
+            "close",
+            require_clean=True,
+            origin_ledger=granted,
+            candidate_baseline=candidate_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertTrue(
+            any("immutable control attestation" in item for item in evidence_errors)
+        )
+
+        no_introduction_errors, _ = evaluate_policy(
+            candidate,
+            {**close_facts, "close_package_merge_introduced_candidate": False},
+            SD1_PACKAGE,
+            "close",
+            require_clean=True,
+            origin_ledger=granted,
+            candidate_baseline=candidate_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertTrue(
+            any("introduced the reviewed" in item for item in no_introduction_errors)
+        )
+
+    def test_empty_review_evidence_remains_denied_for_other_profiles(self):
+        _, lane = self._direction_origin()
+        lane["merge_grant"] = self._grant_record(
+            lane,
+            PROFILE_DIRECTION_REVIEW_ATTESTATION["reviewed_sha"],
+        )
+        lane["merge_grant"]["review_evidence_paths"] = []
+        errors: list[str] = []
+        _direction_merge_grant(lane, "generic target", errors)
+        self.assertTrue(
+            any("review_evidence_paths must be non-empty" in item for item in errors)
+        )
+
     def test_community_authoring_grant_fixture_followup_is_exact_and_inert(self):
         origin, _ = self._community_authoring_origin()
         origin["updated_at"] = "2026-08-18T13:08:00Z"
@@ -1876,13 +2422,14 @@ with patch.object(
                         for item in ledger["closing_lanes"]
                         if item.get("branch")
                     )
-                # Profile Core and Connect 002 are intentionally not generic
-                # implementation fixtures: each exact package name is reserved
-                # for its frozen review-bound candidate path exercised above.
+                # The exact-profile packages are intentionally not generic
+                # implementation fixtures: each package name is reserved for
+                # its frozen review-bound candidate path exercised above.
                 if lane["package"] in {
                     PROFILE_CORE_INTEGRATION_PACKAGE,
                     CONNECT_002_PACKAGE,
                     COMMUNITY_AUTHORING_PACKAGE,
+                    SD1_PACKAGE,
                 }:
                     lane["package"] = "PS-GENERIC-IMPLEMENTATION-001"
                     lane["branch"] = "work/2026-08-13-generic-implementation-001"
