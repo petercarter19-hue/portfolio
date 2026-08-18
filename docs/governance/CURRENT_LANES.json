@@ -1,19 +1,17 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-18T23:30:00Z",
+  "updated_at": "2026-08-18T23:39:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-DELIVERY-CONTROL-SD1-001"
-    ],
+    "writes_allowed_for": [],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -29,7 +27,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active writer lanes: PS-DELIVERY-CONTROL-SD1-001. PS-SHARED-DICTATION-RELIABILITY-001 is merged_closed and retains no authority."
+    "exit_authority": "No active writer lanes. PS-DELIVERY-CONTROL-SD1-001 is paused and preserved; it may resume only through fresh activation."
   },
   "activation_policy": {
     "enabled": true,
@@ -2242,51 +2240,7 @@
       "close_evidence_paths": []
     }
   ],
-  "active_lanes": [
-    {
-      "package": "PS-DELIVERY-CONTROL-SD1-001",
-      "outcome": "Add one fail-closed reviewed-implementation release profile for PS-SHARED-DICTATION-RELIABILITY-001 so the existing grant, candidate-merge, release, and close gates can represent only the exact approved branch and candidate. Pin the profile to work/2026-08-18-shared-dictation-reliability-001, reviewed SHA b7b9b6eadecef27d2004ea1a5543fa490bc80260, Azure PR 533, successful CI build 1242, the fresh independent APPROVE after correction, Pete's exact release decision, and the no-schema/no-configuration/no-enablement/no-widening/no-provider boundary. The repair grants no authority itself and must preserve every existing release profile and fail-closed default.",
-      "branch": "work/2026-08-18-sd1-release-control-repair",
-      "writer": "Codex subtask /root/sd1_release_control_writer is the sole writer for this control repair after its activation merges. Codex task 01a01233-d76b-7871-9d3a-a32fea8b9048 remains package manager. The SD-1 runtime writer may not edit this control lane.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "shared_foundation",
-      "exclusive_domains": [
-        "governance:sd1-review-bound-release-profile"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main b3218a3a9c444202a1b599000199be3acd489448 with PS-SHARED-DICTATION-RELIABILITY-001 active and frozen at reviewed remote SHA b7b9b6eadecef27d2004ea1a5543fa490bc80260. Independent GPT-5.6 Sol review approved that corrected exact SHA with no P0-P3 findings. Azure PR 533 is open, auto-complete is disabled, and required CI build 1242 succeeded for source b7b9b6ea and speculative merge f88fb44dff98fb73480e338b1fac89b3a8faecf8. The current validator rejects this new package because reviewed implementation release profiles are code-pinned only for earlier packages. The unique PS-DELIVERY-CONTROL-SD1-001 child avoids reactivating the historically closed PS-DELIVERY-CONTROL-001 umbrella while implementing exactly its authorized one-time repair. Pete authorized the exact repair and directed: 'yes. complete this package. go all the way'.",
-      "writable_surfaces": [
-        "docs/governance/CURRENT_LANES.json",
-        "scripts/delivery_preflight.py",
-        "tests/test_delivery_preflight.py"
-      ],
-      "exclusions": [
-        "no application, route, template, stylesheet, JavaScript, provider, prompt, model, schema, migration, configuration, infrastructure, pipeline, production-data, or live-behavior change",
-        "no mutation of the frozen SD-1 candidate, its five paths, exact SHA, branch, review result, PR, or CI evidence",
-        "no merge_allowed_for, release_allowed_for, cleanup_allowed_for, production_capable, active-lane membership, package writer, package scope, or baseline change from the repair implementation itself",
-        "no generic implementation-release bypass, wildcard package support, weakened SHA/branch/review/PR/CI binding, policy bypass, or change to another existing release profile",
-        "no authority for schema, configuration, public enablement, Community widening, provider invocation, broader dictation work, automatic merge, deployment, or live-proof claim",
-        "no edit, reset, adoption, cleanup, or deletion of unrelated branches, worktrees, stashes, artifacts, secrets, production data, or user-authored content"
-      ],
-      "completion_evidence": [
-        "the validator recognizes only the exact SD-1 package, branch, reviewed SHA, owner decision, independent review attestation, PR 533, CI 1242, and explicitly excluded release actions",
-        "negative tests prove a changed package, branch, SHA, review result, owner decision, PR, CI, schema/config/enablement/widening/provider request, missing admission, missing grant, or altered existing profile fails closed",
-        "grant, candidate-worktree merge, release, and close fixture tests prove authority remains separate and candidate merge cannot proceed before the repair and exact later grant reach origin/main",
-        "the full delivery-preflight and governance-pointer suites pass, git diff --check passes, and complete-diff review proves exactly the three writable paths changed",
-        "a fresh independent exact-SHA control review approves the repair before merge; no repair merge implies runtime release or deployment"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-18",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Pete first authorized exact reviewed SD-1 SHA b7b9b6eadecef27d2004ea1a5543fa490bc80260 through governed Azure PR, required CI, merge, and deployment with no configuration change, Community widening, provider invocation, or broader dictation work. After PR 533 and CI 1242 succeeded and the package manager explained that the shared validator had no profile for this new child, Pete authorized the exact fail-closed PS-DELIVERY-CONTROL-001 repair and directed: 'yes. complete this package. go all the way'."
-        }
-      ],
-      "cleanup_contract": "After this activation merges, create only the exact clean repair branch/worktree from resulting current origin/main and pass the package write preflight before edits. Preserve the SD-1 candidate, PR, activation branch, repair branch, and all unrelated work through independent review and any later authorized close. No cleanup authority is granted by this lane.",
-      "sequence": "control-only repair activation PR -> merge activation -> clean repair worktree from resulting origin/main -> PS-DELIVERY-CONTROL-SD1-001 write preflight -> implement exact three-path fail-closed profile and deterministic tests -> complete-diff self-review -> freeze and push repair SHA -> fresh independent control review -> correction if needed -> separate repair PR and required CI -> merge repair only -> separately record exact SD-1 admission/grant -> current-main candidate merge preflight -> complete PR 533 -> deploy exact merged application -> safe identity/route verification without provider invocation -> close SD-1 and repair lanes"
-    }
-  ],
+  "active_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
@@ -3131,6 +3085,54 @@
       "pause_reason": "Pete approved and merged PR 520. Azure main dc1823b74635c3d024b6f8e7d47e2eb4cb515bcf changes only docs/AI_WORKFLOW.md; required PR policy build 1197 succeeded; 24 governance-pointer tests and the package write preflight passed; no runtime deployment or live-site change was required. The one-file writer lane has no remaining work and relinquishes all mutation authority.",
       "resume_contract": "No resume is expected. Any later workflow revision requires a fresh exact-outcome activation from current origin/main; do not reopen or edit this preserved branch in place.",
       "preserved_head_sha": "cd0bef14a7dee423c184dced7c7d5f700b0f0197"
+    },
+    {
+      "package": "PS-DELIVERY-CONTROL-SD1-001",
+      "outcome": "Add one fail-closed reviewed-implementation release profile for PS-SHARED-DICTATION-RELIABILITY-001 so the existing grant, candidate-merge, release, and close gates can represent only the exact approved branch and candidate. Pin the profile to work/2026-08-18-shared-dictation-reliability-001, reviewed SHA b7b9b6eadecef27d2004ea1a5543fa490bc80260, Azure PR 533, successful CI build 1242, the fresh independent APPROVE after correction, Pete's exact release decision, and the no-schema/no-configuration/no-enablement/no-widening/no-provider boundary. The repair grants no authority itself and must preserve every existing release profile and fail-closed default.",
+      "branch": "work/2026-08-18-sd1-release-control-repair",
+      "writer": "Codex subtask /root/sd1_release_control_writer is the sole writer for this control repair after its activation merges. Codex task 01a01233-d76b-7871-9d3a-a32fea8b9048 remains package manager. The SD-1 runtime writer may not edit this control lane.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "shared_foundation",
+      "exclusive_domains": [
+        "governance:sd1-review-bound-release-profile"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main b3218a3a9c444202a1b599000199be3acd489448 with PS-SHARED-DICTATION-RELIABILITY-001 active and frozen at reviewed remote SHA b7b9b6eadecef27d2004ea1a5543fa490bc80260. Independent GPT-5.6 Sol review approved that corrected exact SHA with no P0-P3 findings. Azure PR 533 is open, auto-complete is disabled, and required CI build 1242 succeeded for source b7b9b6ea and speculative merge f88fb44dff98fb73480e338b1fac89b3a8faecf8. The current validator rejects this new package because reviewed implementation release profiles are code-pinned only for earlier packages. The unique PS-DELIVERY-CONTROL-SD1-001 child avoids reactivating the historically closed PS-DELIVERY-CONTROL-001 umbrella while implementing exactly its authorized one-time repair. Pete authorized the exact repair and directed: 'yes. complete this package. go all the way'.",
+      "writable_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py"
+      ],
+      "exclusions": [
+        "no application, route, template, stylesheet, JavaScript, provider, prompt, model, schema, migration, configuration, infrastructure, pipeline, production-data, or live-behavior change",
+        "no mutation of the frozen SD-1 candidate, its five paths, exact SHA, branch, review result, PR, or CI evidence",
+        "no merge_allowed_for, release_allowed_for, cleanup_allowed_for, production_capable, active-lane membership, package writer, package scope, or baseline change from the repair implementation itself",
+        "no generic implementation-release bypass, wildcard package support, weakened SHA/branch/review/PR/CI binding, policy bypass, or change to another existing release profile",
+        "no authority for schema, configuration, public enablement, Community widening, provider invocation, broader dictation work, automatic merge, deployment, or live-proof claim",
+        "no edit, reset, adoption, cleanup, or deletion of unrelated branches, worktrees, stashes, artifacts, secrets, production data, or user-authored content"
+      ],
+      "completion_evidence": [
+        "the validator recognizes only the exact SD-1 package, branch, reviewed SHA, owner decision, independent review attestation, PR 533, CI 1242, and explicitly excluded release actions",
+        "negative tests prove a changed package, branch, SHA, review result, owner decision, PR, CI, schema/config/enablement/widening/provider request, missing admission, missing grant, or altered existing profile fails closed",
+        "grant, candidate-worktree merge, release, and close fixture tests prove authority remains separate and candidate merge cannot proceed before the repair and exact later grant reach origin/main",
+        "the full delivery-preflight and governance-pointer suites pass, git diff --check passes, and complete-diff review proves exactly the three writable paths changed",
+        "a fresh independent exact-SHA control review approves the repair before merge; no repair merge implies runtime release or deployment"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-18",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete first authorized exact reviewed SD-1 SHA b7b9b6eadecef27d2004ea1a5543fa490bc80260 through governed Azure PR, required CI, merge, and deployment with no configuration change, Community widening, provider invocation, or broader dictation work. After PR 533 and CI 1242 succeeded and the package manager explained that the shared validator had no profile for this new child, Pete authorized the exact fail-closed PS-DELIVERY-CONTROL-001 repair and directed: 'yes. complete this package. go all the way'."
+        }
+      ],
+      "cleanup_contract": "After this activation merges, create only the exact clean repair branch/worktree from resulting current origin/main and pass the package write preflight before edits. Preserve the SD-1 candidate, PR, activation branch, repair branch, and all unrelated work through independent review and any later authorized close. No cleanup authority is granted by this lane.",
+      "sequence": "control-only repair activation PR -> merge activation -> clean repair worktree from resulting origin/main -> PS-DELIVERY-CONTROL-SD1-001 write preflight -> implement exact three-path fail-closed profile and deterministic tests -> complete-diff self-review -> freeze and push repair SHA -> fresh independent control review -> correction if needed -> separate repair PR and required CI -> merge repair only -> separately record exact SD-1 admission/grant -> current-main candidate merge preflight -> complete PR 533 -> deploy exact merged application -> safe identity/route verification without provider invocation -> close SD-1 and repair lanes",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-18T23:39:00Z",
+      "pause_reason": "The exact release-profile repair is merged and its SD-1 runtime child is merged_closed. This auxiliary lane now retains no operating authority and is preserved only as exact historical evidence because the generic close contract cannot truthfully reconstruct its ledger surface after the later grant and runtime close.",
+      "resume_contract": "Resume only through fresh activation with a new exact owner-selected outcome; do not reuse this lane for runtime, release, configuration, schema, widening, provider invocation, or broader dictation work.",
+      "preserved_head_sha": "279d10ee9f90e7bf931d30dc2b9a3c5856ce6d46"
     }
   ],
   "workspace_snapshot": {
