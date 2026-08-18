@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-18T22:49:46Z",
+  "updated_at": "2026-08-18T23:30:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,16 +12,11 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-SHARED-DICTATION-RELIABILITY-001",
       "PS-DELIVERY-CONTROL-SD1-001"
     ],
-    "merge_allowed_for": [
-      "PS-SHARED-DICTATION-RELIABILITY-001"
-    ],
+    "merge_allowed_for": [],
     "cleanup_allowed_for": [],
-    "release_allowed_for": [
-      "PS-SHARED-DICTATION-RELIABILITY-001"
-    ],
+    "release_allowed_for": [],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
       "new feature or product write outside the exact surfaces recorded for its activated lane",
@@ -34,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active writer lanes: PS-SHARED-DICTATION-RELIABILITY-001 on work/2026-08-18-shared-dictation-reliability-001 and its exact release-profile control child PS-DELIVERY-CONTROL-SD1-001 on work/2026-08-18-sd1-release-control-repair. The repair grants no merge or release authority; candidate merge and deployment remain blocked pending its independent review, merge, and a separate exact grant."
+    "exit_authority": "Active writer lanes: PS-DELIVERY-CONTROL-SD1-001. PS-SHARED-DICTATION-RELIABILITY-001 is merged_closed and retains no authority."
   },
   "activation_policy": {
     "enabled": true,
@@ -2113,9 +2108,7 @@
       "close_evidence_paths": [
         "docs/initiatives/PS-COMMUNITY-AUTHORING-RUNTIME-001/OWNER_TECHNICAL_COMPLETION_REPORT.md"
       ]
-    }
-  ],
-  "active_lanes": [
+    },
     {
       "package": "PS-SHARED-DICTATION-RELIABILITY-001",
       "outcome": "Implement only the accepted SD-1 Shared Dictation reliability slice on the current Community dictation path: classify no usable speech truthfully as reason no_speech with HTTP 422 and the member action Record again; permit at most one same-recording retry only for genuine transient failures while holding audio for no more than five wall-clock minutes; clean up held audio on success, failure, cancel, unload, and expiry; suppress provider details; and preserve the existing Community composition and global shared helper. Produce a frozen review-ready candidate and stop before merge, deployment, enablement, widening, provider invocation, or any live claim.",
@@ -2240,8 +2233,16 @@
           "provider_invocation": false,
           "broader_dictation_work": false
         }
-      }
-    },
+      },
+      "disposition": "merged_closed",
+      "closed_at": "2026-08-18T23:30:00Z",
+      "reviewed_remote_sha": "b7b9b6eadecef27d2004ea1a5543fa490bc80260",
+      "merged_main_sha": "a1e7438c781355f2853ba6dce605955abd3bb725",
+      "package_merge_sha": "a1e7438c781355f2853ba6dce605955abd3bb725",
+      "close_evidence_paths": []
+    }
+  ],
+  "active_lanes": [
     {
       "package": "PS-DELIVERY-CONTROL-SD1-001",
       "outcome": "Add one fail-closed reviewed-implementation release profile for PS-SHARED-DICTATION-RELIABILITY-001 so the existing grant, candidate-merge, release, and close gates can represent only the exact approved branch and candidate. Pin the profile to work/2026-08-18-shared-dictation-reliability-001, reviewed SHA b7b9b6eadecef27d2004ea1a5543fa490bc80260, Azure PR 533, successful CI build 1242, the fresh independent APPROVE after correction, Pete's exact release decision, and the no-schema/no-configuration/no-enablement/no-widening/no-provider boundary. The repair grants no authority itself and must preserve every existing release profile and fail-closed default.",

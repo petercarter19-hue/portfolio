@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active lanes: PS-SHARED-DICTATION-RELIABILITY-001 and PS-DELIVERY-CONTROL-SD1-001 on work/2026-08-18-sd1-release-control-repair. This Codex task manages both; /root/sd1_writer and /root/sd1_release_control_writer are their sole writers."
+  current_assignments: "Active writer lanes: PS-DELIVERY-CONTROL-SD1-001. PS-SHARED-DICTATION-RELIABILITY-001 is closed and archived."
 
 governing_documents:
   bible:
@@ -60,9 +60,6 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
-  - id: PS-SHARED-DICTATION-RELIABILITY-001
-    status: active_delivery
-    scope: "Protected, non-production SD-1 reliability slice: truthful no-speech classification, one bounded transient same-recording retry, complete ephemeral-audio cleanup, focused tests, and exact-SHA independent review within five paths."
   - id: PS-DELIVERY-CONTROL-SD1-001
     status: active_delivery
     scope: "Fail-closed release-profile repair pinned to exact SD-1 evidence; grants no authority itself."
@@ -148,6 +145,7 @@ completed_packages:
   - PS-CONNECT-002
   - PS-INTERVIEW-AI-ARCHITECTURE-001
   - PS-COMMUNITY-AUTHORING-RUNTIME-001
+  - PS-SHARED-DICTATION-RELIABILITY-001
 
 retired_packages:
   - id: PS-WORKSHOP-ACCESS-001
@@ -162,7 +160,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Review and merge only PS-DELIVERY-CONTROL-SD1-001, then record the separate exact grant before candidate merge or deployment. Schema, configuration, enablement, widening, and provider invocation remain excluded."
+next_gate: "Continue only the active writer packages: PS-DELIVERY-CONTROL-SD1-001. PS-SHARED-DICTATION-RELIABILITY-001 is closed and archived."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
