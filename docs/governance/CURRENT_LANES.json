@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-18T13:26:58Z",
+  "updated_at": "2026-08-18T13:36:25Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -14,9 +14,13 @@
     "writes_allowed_for": [
       "PS-COMMUNITY-AUTHORING-RUNTIME-001"
     ],
-    "merge_allowed_for": [],
+    "merge_allowed_for": [
+      "PS-COMMUNITY-AUTHORING-RUNTIME-001"
+    ],
     "cleanup_allowed_for": [],
-    "release_allowed_for": [],
+    "release_allowed_for": [
+      "PS-COMMUNITY-AUTHORING-RUNTIME-001"
+    ],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
       "new feature or product write outside the exact surfaces recorded for its activated lane",
@@ -2053,6 +2057,53 @@
           "decision": "The prior writer pushed and relinquished the package branch at exact handoff SHA dd372fea3e7e63b31aacef2523a4d6aa717f20e5. After the fresh independent review found one draft-preservation defect, Pete directed this root Codex session: 'Fix and complete it.' This transfers the existing lane for the bounded correction, verification, governed merge and deployment sequence without broadening its writable surfaces, audience, configuration, schema, or product scope."
         }
       ],
+      "merge_grant": {
+        "authorized_by": "Pete",
+        "authority_decision_index": 1,
+        "authority_decision_sha256": "0bcf423b2dee95653ac2785930a9f1e566edc52fffdb58462848263675c5ba83",
+        "independent_review": {
+          "reviewer_task": "/root/community_corrected_review",
+          "reviewer_mode": "independent_read_only_non_writer",
+          "reviewed_sha": "c8818319a418dd28cc1a24ba0c30e65274cfdbdf",
+          "reviewed_branch": "work/2026-08-17-community-authoring-runtime-001-r2",
+          "verdict": "ACCEPT",
+          "verdict_text": "ACCEPT — exact branch tip c8818319a418dd28cc1a24ba0c30e65274cfdbdf and implementation-content SHA 887bd087e722562fd4c78f4d75a3b128d1cd74d9 independently verified; complete asynchronous create, edit, and ordinary-close draft lifecycle, 17-check shipped harness, focused 198-test suite, all original corrections, authorized surfaces, and trust boundaries passed with no blocking findings.",
+          "verdict_sha256": "91f81cd2184af2cd7cc7aaa256f709223a2c1652d36410fa65015ed486859a2c",
+          "basis": [
+            "full_tree_at_c8818319a418dd28cc1a24ba0c30e65274cfdbdf",
+            "complete_diff_ffbeca40868e4aee414b68bf48a486d833d1a0e3_to_c8818319a418dd28cc1a24ba0c30e65274cfdbdf",
+            "implementation_content_887bd087e722562fd4c78f4d75a3b128d1cd74d9",
+            "integrated_draft_close_harness_17_of_17_pass",
+            "focused_community_and_registry_198_of_198_pass",
+            "full_suite_3834_pass_24_expected_skips",
+            "authorized_surface_and_trust_boundary_audit_pass"
+          ],
+          "scope": "protected_community_authoring_runtime_merge_and_application_release",
+          "exclusions": "schema_apply_configuration_enablement_broad_member_authoring",
+          "evidence_path": "docs/initiatives/PS-COMMUNITY-AUTHORING-RUNTIME-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+          "evidence_git_blob_sha": "4441318f63e7a378fe5213cb8dfe5356b9678cf4",
+          "evidence_bytes_sha256": "877279abe4301b8485d6d3edfb1cd123860950a4febfc750261a09ef46234a13",
+          "received_by": "Root Codex program manager",
+          "received_date": "2026-08-18",
+          "attestation_sha256": "f3b191f747e7ff12f285480500d617878e60798d93bde8984fb66ef03c8e37ec"
+        },
+        "reviewed_remote_sha": "c8818319a418dd28cc1a24ba0c30e65274cfdbdf",
+        "granted_at": "2026-08-18T13:36:25Z",
+        "review_result": "pass",
+        "review_evidence_paths": [
+          "docs/initiatives/PS-COMMUNITY-AUTHORING-RUNTIME-001/OWNER_TECHNICAL_COMPLETION_REPORT.md"
+        ],
+        "release_scope": {
+          "pull_request": 527,
+          "ci_build": 1223,
+          "application_action": "merge_and_deploy_reviewed_community_authoring_runtime",
+          "schema_action": "none",
+          "public_enablement": false,
+          "broad_member_authoring": false,
+          "production_configuration_change": false,
+          "implementation_content_sha": "887bd087e722562fd4c78f4d75a3b128d1cd74d9"
+        }
+      },
       "cleanup_contract": "Preserve the visual-authority branch and all unrelated work. After the activation PR merges, create one clean implementation worktree from the resulting origin/main. Do not remove the activation or implementation branch until the exact candidate is reviewable and recoverability is verified; no cleanup authority extends to any other branch, worktree, stash, artifact, or user file.",
       "sequence": "control-only reactivation PR -> merge activation -> clean r2 implementation worktree from resulting origin/main -> package write preflight -> replay exact preserved checkpoint 2b01ce9c -> add the two exact package-registry entries -> rerun focused, full-suite, visual, responsive, accessibility, and complete-diff verification -> freeze exact candidate -> hand to a different reviewer; no merge, schema apply, deployment, configuration enablement, broad launch, or live claim"
     }
