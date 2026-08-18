@@ -159,4 +159,121 @@ check(
 
 check('an absent reply draft yields an empty box', replyHarness(null).body, '');
 
+/* Editing an existing post shares the composer with create-post drafts, but it
+ * must not consume that separate unsent draft or its pending idempotency key.
+ * Successful create cleanup also has to survive the subsequent close path:
+ * closeComposer normally saves a nonempty create form before closing. */
+const clearCreateDraftMatch = source.match(
+  /function clearCreateDraftAfterSuccessfulMutation\(editing\) \{[\s\S]*?\n  \}/
+);
+const saveDraftMatch = source.match(
+  /function saveDraft\(\) \{[\s\S]*?\n  \}/
+);
+const finalizeComposerDraftMatch = source.match(
+  /function finalizeComposerDraftAfterClose\(\) \{[\s\S]*?\n  \}/
+);
+const closeComposerMatch = source.match(
+  /function closeComposer\(options\) \{[\s\S]*?\n  \}/
+);
+if (!clearCreateDraftMatch || !saveDraftMatch || !finalizeComposerDraftMatch || !closeComposerMatch) {
+  console.error('FAIL: could not locate the create-draft mutation lifecycle');
+  process.exit(1);
+}
+
+function mutationCleanupHarness(editing, successfulMutation) {
+  const values = new Map([
+    ['create-draft', JSON.stringify({body: 'unrelated unsent draft'})],
+    ['create-draft:pending-command', 'pending-command']
+  ]);
+  const localStorage = {
+    getItem(key) {
+      return values.has(key) ? values.get(key) : null;
+    },
+    setItem(key, value) {
+      values.set(key, value);
+    },
+    removeItem(key) {
+      values.delete(key);
+    }
+  };
+  const state = {
+    editPost: editing ? {key: 'existing-post'} : null,
+    composerReturnFocus: null,
+    suppressNextComposerCloseDraftSave: false
+  };
+  const fields = {
+    body: {value: successfulMutation ? 'published body' : 'unsent body'},
+    intent: {value: 'post'},
+    response_posture: {value: 'open_feedback'}
+  };
+  const run = new Function(
+    'state',
+    'draftKey',
+    'postCommandStorageKey',
+    'localStorage',
+    'fields',
+    'successfulMutation',
+    'owner',
+    'composerForm',
+    'formField',
+    'draftStatus',
+    'composerVoiceController',
+    'composer',
+    'quickCompose',
+    'restoreComposerHome',
+    `${saveDraftMatch[0]}
+     ${clearCreateDraftMatch[0]}
+     ${finalizeComposerDraftMatch[0]}
+     ${closeComposerMatch[0]}
+     if (successfulMutation) {
+       clearCreateDraftAfterSuccessfulMutation(Boolean(state.editPost));
+       closeComposer({saveDraft: false});
+     } else {
+       closeComposer();
+     }
+     finalizeComposerDraftAfterClose();
+     return {
+       draft: localStorage.getItem(draftKey),
+       command: localStorage.getItem(postCommandStorageKey)
+     };`
+  );
+  return run(
+    state,
+    'create-draft',
+    'create-draft:pending-command',
+    localStorage,
+    fields,
+    successfulMutation,
+    true,
+    {},
+    function (_form, name) { return fields[name]; },
+    function () {},
+    null,
+    {open: true, close() { this.open = false; }},
+    null,
+    function () {}
+  );
+}
+
+check(
+  'a successful edit preserves the unrelated create draft and command key',
+  JSON.stringify(mutationCleanupHarness(true, true)),
+  JSON.stringify({
+    draft: JSON.stringify({body: 'unrelated unsent draft'}),
+    command: 'pending-command'
+  })
+);
+
+check(
+  'a successful new post leaves its draft and command key absent after close',
+  JSON.stringify(mutationCleanupHarness(false, true)),
+  JSON.stringify({draft: null, command: null})
+);
+
+check(
+  'an ordinary create-composer close still saves unsent text privately',
+  JSON.parse(mutationCleanupHarness(false, false).draft).body,
+  'unsent body'
+);
+
 console.log(`${checks} behavioral checks passed`);

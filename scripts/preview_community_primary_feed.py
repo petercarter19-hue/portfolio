@@ -29,7 +29,15 @@ POST_KEY = "11111111-1111-4111-8111-111111111111"
 ATTACHMENT_KEY = "22222222-2222-4222-8222-222222222222"
 RESPONSE_INTENTIONS = {"celebrate", "support", "i_relate", "ask", "offer_help"}
 fixture_response = None
+fixture_saved = False
 fixture_comment_count = 12
+fixture_body = (
+    "I turned a loose vendor handoff into a one-page decision guide today.\n\n"
+    "The useful part was not the template—it was making ownership, evidence, "
+    "and the next decision visible in one place."
+)
+fixture_revision = 1
+fixture_edited_at = None
 
 
 def fixture_contributions(published_at):
@@ -120,18 +128,14 @@ def fixture_post():
             "display_name": "Pete Carter",
             "avatar_url": "/static/images/story/pete-headshot-m.jpg",
         },
-        "body": (
-            "I turned a loose vendor handoff into a one-page decision guide today.\n\n"
-            "The useful part was not the template—it was making ownership, "
-            "evidence, and the next decision visible in one place."
-        ),
+        "body": fixture_body,
         "conversation_label": "A one-page vendor handoff decision guide",
         "intent": "small_win",
         "response_posture": "questions_welcome",
         "audience": "Public",
         "published_at_utc": published_at.isoformat().replace("+00:00", "Z"),
-        "edited_at_utc": None,
-        "revision": 1,
+        "edited_at_utc": fixture_edited_at,
+        "revision": fixture_revision,
         "contribution_count": fixture_comment_count,
         "attachments": [
             {
@@ -146,7 +150,7 @@ def fixture_post():
             }
         ],
         "permalink": f"/the-slate/posts/{POST_KEY}",
-        "viewer": {"saved": False, "response": fixture_response},
+        "viewer": {"saved": fixture_saved, "response": fixture_response},
         "preview_contributions": fixture_contributions(published_at),
         "next_shelf_cursor": None,
     }
@@ -175,7 +179,8 @@ app.config.update(TESTING=True)
 
 @app.before_request
 def local_primary_feed_preview():
-    global fixture_comment_count, fixture_response
+    global fixture_body, fixture_comment_count, fixture_edited_at, fixture_response
+    global fixture_revision, fixture_saved
 
     if request.path.startswith("/static/"):
         return None
@@ -192,6 +197,19 @@ def local_primary_feed_preview():
             window_limit=1,
         )
 
+    if request.path == "/api/v1/community/posts" and request.method == "POST":
+        payload = request.get_json(silent=True) or {}
+        body = payload.get("body")
+        if (
+            not isinstance(body, str)
+            or not body.strip()
+            or len(body) > 4_000
+            or payload.get("audience") != "public"
+            or payload.get("attachment_keys") != []
+        ):
+            return jsonify(success=False, message="The preview post is invalid.", retryable=False), 400
+        return jsonify(success=True, result={"outcome": "created"}), 201
+
     response_path = f"/api/v1/community/posts/{POST_KEY}/response"
     if request.path == response_path and request.method == "PUT":
         intention = (request.get_json(silent=True) or {}).get("intention")
@@ -203,6 +221,31 @@ def local_primary_feed_preview():
     if request.path == response_path and request.method == "DELETE":
         fixture_response = None
         return jsonify(success=True, intention=None)
+
+    save_path = f"/api/v1/community/posts/{POST_KEY}/save"
+    if request.path == save_path and request.method == "PUT":
+        fixture_saved = True
+        return jsonify(success=True, result={"outcome": "saved"})
+
+    if request.path == save_path and request.method == "DELETE":
+        fixture_saved = False
+        return jsonify(success=True, result={"outcome": "removed"})
+
+    post_path = f"/api/v1/community/posts/{POST_KEY}"
+    if request.path == post_path and request.method == "PATCH":
+        payload = request.get_json(silent=True) or {}
+        body = payload.get("body")
+        if (
+            not isinstance(body, str)
+            or not body.strip()
+            or len(body) > 4_000
+            or payload.get("expected_revision") != fixture_revision
+        ):
+            return jsonify(success=False, message="The preview edit is no longer current.", retryable=False), 409
+        fixture_body = body
+        fixture_revision += 1
+        fixture_edited_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        return jsonify(success=True, result={"outcome": "updated"})
 
     contribution_path = f"/api/v1/community/posts/{POST_KEY}/contributions"
     if request.path == contribution_path and request.method == "POST":
@@ -219,7 +262,7 @@ def local_primary_feed_preview():
         return (
             jsonify(
                 success=False,
-                message="Only the primary Feed and its in-memory response/comment actions are available in this local review fixture.",
+                message="Only the primary Feed and its in-memory response, save, and comment actions are available in this local review fixture; the fixture also accepts in-memory post edits for long-content review.",
                 retryable=False,
             ),
             409,

@@ -1341,7 +1341,8 @@ class CommunityRouteAndApiTests(unittest.TestCase):
         body = self.client.get("/the-slate").get_data(as_text=True)
         self.assertIn("data-composer-form", body)
         self.assertIn("data-reply-attachment-input", body)
-        self.assertIn("Draft · only you can see this", body)
+        self.assertIn("Not saved yet", body)
+        self.assertIn("Private drafts stay private until you publish.", body)
         self.assertIn("Choose audience", body)
         self.assertIn("Community content is not sent to a generative model", body)
         self.assertIn("Optional Voice dictation sends a transient private recording to Speech", body)
@@ -2022,32 +2023,36 @@ class CommunityFrontendContractTests(unittest.TestCase):
         cls.app_source = (ROOT / "app.py").read_text(encoding="utf-8")
         cls.preview = (ROOT / "scripts" / "preview_community_primary_feed.py").read_text(encoding="utf-8")
 
-    def test_primary_feed_uses_the_owner_corrected_desktop_rails_and_wider_center_stage(self):
+    def test_primary_feed_uses_the_locked_mine_ours_beyond_responsive_stage(self):
         self.assertLess(
             self.template.index('class="cv1-main cv1-primary-feed-stage"'),
             self.template.index('class="cv1-rail cv1-rail--left"'),
         )
         self.assertIn('grid-template-areas: "left main right"', self.styles)
-        self.assertIn('grid-template-columns: 234px minmax(0, 748px) 234px', self.styles)
-        self.assertIn('.cv1-main { grid-area: main; width: 100%; max-width: 748px;', self.styles)
-        self.assertIn('.cv1-rail { display: grid;', self.styles)
-        self.assertIn('@media (max-width: 1288px)', self.styles)
-        self.assertIn('.cv1-rail { display: none; }', self.styles)
-        self.assertIn('.cv1-mobile-tools { display: grid;', self.styles)
-        self.assertIn('.cv1-mobile-tool-control > span:nth-child(2) { flex: 0 0 auto; white-space: nowrap;', self.styles)
-        self.assertIn('font-size: .84rem', self.styles)
+        self.assertIn('grid-template-columns: minmax(205px, 250px) minmax(520px, 1fr) minmax(220px, 270px)', self.styles)
+        self.assertIn('width: min(100%, 1500px)', self.styles)
+        self.assertIn('.cv1-rail {\n  display: block;', self.styles)
+        self.assertIn('@media (max-width: 900px)', self.styles)
+        self.assertIn('class="cv1-mobile-tabs" aria-label="Community areas"', self.template)
+        self.assertIn('data-community-view="mine"', self.template)
+        self.assertIn('data-community-view="ours" aria-pressed="true"', self.template)
+        self.assertIn('data-community-view="beyond"', self.template)
+        self.assertIn("setMobileCommunityView('ours')", self.script)
 
     def test_owner_composer_bar_replaces_the_floating_new_post_button(self):
         self.assertIn('class="cv1-quick-compose"', self.template)
-        self.assertIn('What’s on your mind, {{ (community_display_name or \'Pete\').split()[0] }}?', self.template)
+        self.assertIn('Share something meaningful…', self.template)
         self.assertIn('class="cv1-quick-compose-action cv1-quick-compose-action--media"', self.template)
         self.assertIn('class="cv1-quick-compose-action cv1-quick-compose-action--voice"', self.template)
         self.assertIn('data-top-voice', self.template)
         self.assertNotIn('class="cv1-primary cv1-new-post"', self.template)
         self.assertIn('.cv1-quick-compose { display: grid;', self.styles)
-        self.assertIn('grid-template-columns: 42px minmax(0, 1fr) 40px 40px', self.styles)
+        self.assertIn('grid-template-columns: 46px minmax(160px, 1fr) 44px 44px auto auto', self.styles)
+        self.assertIn('class="cv1-quick-compose-audience"', self.template)
+        self.assertIn('class="cv1-quick-compose-submit"', self.template)
         self.assertIn("openComposer('post', null, false);", self.script)
         self.assertIn("composerVoiceController.start();", self.script)
+        self.assertIn('@media (max-width: 390px)', self.styles)
         self.assertIn('.cv1-quick-compose-action--media { display: none; }', self.styles)
 
     def test_browser_draft_and_retry_keys_are_private_and_content_free(self):
@@ -2113,7 +2118,9 @@ class CommunityFrontendContractTests(unittest.TestCase):
             self.template.index("data-activity-dialog"),
         )
         self.assertIn("See all activity", self.template)
-        self.assertIn("data-spark-prompt", self.template)
+        self.assertNotIn("data-spark-prompt", self.template)
+        self.assertNotIn("Use this Spark", self.template)
+        self.assertIn('data-community-view="ours" aria-pressed="true"', self.template)
         self.assertIn(".cv1-mobile-activity { display: none; }", self.styles)
         self.assertIn("viewport-fit=cover", self.script)
         self.assertIn("width=device-width, initial-scale=1", self.script)
@@ -2147,13 +2154,19 @@ class CommunityFrontendContractTests(unittest.TestCase):
         self.assertIn("conversationHeaderActions._communityPost || state.currentPost", self.script)
         self.assertIn("if (action.dataset.action === 'menu')", self.script)
 
-    def test_feed_images_use_the_current_feed_full_width_landscape_treatment(self):
+    def test_feed_images_use_the_locked_compact_attachment_treatment(self):
         self.assertIn("link.classList.add('cv1-attachment--image')", self.script)
-        self.assertIn(".cv1-attachment--image { width: 100%; max-width: none; aspect-ratio: 16 / 7;", self.styles)
-        self.assertIn("[data-primary-feed-card] .cv1-attachment--image { aspect-ratio: 16 / 8.5;", self.styles)
-        self.assertIn(".cv1-image-gallery { width: 100%;", self.styles)
+        self.assertIn("cv1-attachment-image-copy", self.script)
+        self.assertIn(
+            "[data-primary-feed-card] .cv1-attachment--image { display: grid; grid-template-columns: 112px minmax(0, 1fr); width: 100%; height: 72px;",
+            self.styles,
+        )
+        self.assertIn(
+            "[data-primary-feed-card] .cv1-attachment--image img { width: 112px; height: 72px;",
+            self.styles,
+        )
 
-    def test_primary_card_uses_locked_closed_actions_without_duplicate_open_or_save(self):
+    def test_primary_card_uses_locked_closed_actions_with_private_save(self):
         card_start = self.script.index("function cardNode(post, compact)")
         primary_start = self.script.index("if (!compact) {", card_start)
         primary_end = self.script.index("    var conversationCopy", primary_start)
@@ -2173,6 +2186,7 @@ class CommunityFrontendContractTests(unittest.TestCase):
         self.assertNotIn("Open post", primary)
         self.assertNotIn("saveLabel", primary)
         self.assertIn("renderConversationShelf(post)", primary)
+        self.assertIn("postSaveControl(post)", primary)
         self.assertLess(
             primary.index("primaryCommentComposer(post)"),
             primary.index("renderConversationShelf(post)"),
@@ -2239,7 +2253,7 @@ class CommunityFrontendContractTests(unittest.TestCase):
         self.assertIn("Sample content is not persisted or published", self.template)
         self.assertIn("community_preview=True", self.preview)
         self.assertIn("app.config.update(TESTING=True)", self.preview)
-        self.assertIn("Only the primary Feed and its in-memory response/comment actions are available", self.preview)
+        self.assertIn("Only the primary Feed and its in-memory response, save, and comment actions are available", self.preview)
         self.assertIn('request.method == "PUT"', self.preview)
         self.assertIn('request.method == "DELETE"', self.preview)
         self.assertIn('request.method == "POST"', self.preview)
@@ -2272,20 +2286,20 @@ class CommunityFrontendContractTests(unittest.TestCase):
                 self.assertNotIn(hook, self.template)
         self.assertNotIn("demo", self.script.lower())
 
-    def test_motion_cards_have_locked_density_attachment_cues_and_owner_approved_color(self):
-        self.assertIn("grid-auto-columns: 145px", self.styles)
-        self.assertIn("grid-auto-columns: 96px", self.styles)
-        self.assertIn("gap: 12px", self.styles)
-        self.assertIn("linear-gradient(145deg, #f8fafd, #edf2f8)", self.styles)
-        self.assertIn("background: #edf3ff", self.styles)
-        self.assertIn("linear-gradient(145deg, #172c4b, #10213a)", self.styles)
+    def test_reply_previews_use_locked_vertical_density_and_member_context(self):
+        self.assertIn("cv1-reply-preview-avatar", self.script)
+        self.assertIn("cv1-reply-preview-copy", self.script)
+        self.assertIn("cv1-reply-preview-meta", self.script)
+        self.assertIn("grid-auto-flow: row", self.styles)
+        self.assertIn("grid-auto-columns: auto", self.styles)
+        self.assertIn("[data-conversation-shelf-track] > li:nth-child(n + 4) { display: none; }", self.styles)
         self.assertIn("fileLabel = 'XLSX'", self.script)
         self.assertIn("card.dataset.contributionKind", self.script)
         shelf_start = self.script.index("function appendShelfItems")
         shelf_end = self.script.index("function updateShelfControls", shelf_start)
         self.assertNotIn("Author update", self.script[shelf_start:shelf_end])
-        self.assertIn("font-size: .82rem", self.styles)
-        self.assertIn("[data-conversation-shelf-card] > strong", self.styles)
+        self.assertIn(".cv1-reply-preview-copy > strong", self.styles)
+        self.assertIn(".cv1-reply-preview-copy > p", self.styles)
 
     def test_xlsx_is_selectable_in_post_and_reply_and_described_as_member_visible(self):
         # Composer and reply only — the local demo leg is retired, and the
@@ -2304,12 +2318,13 @@ class CommunityFrontendContractTests(unittest.TestCase):
     def test_composer_matches_desktop_pairing_and_mobile_posture_order(self):
         self.assertLess(
             self.template.index('class="cv1-audience-field"'),
-            self.template.index('class="cv1-response-posture-field"'),
+            self.template.index('class="cv1-response-posture-field'),
         )
-        self.assertIn('.cv1-composer .cv1-attachment-list { order: 4; }', self.styles)
-        self.assertIn('.cv1-composer .cv1-response-posture-field { order: 5;', self.styles)
+        self.assertIn('class="cv1-response-posture-field cv1-visually-hidden"', self.template)
+        self.assertIn('width: min(540px, calc(100vw - 32px))', self.styles)
+        self.assertIn('height: min(72dvh, 720px)', self.styles)
         self.assertIn(
-            '.cv1-composer .cv1-dialog-head [data-close-composer] { grid-column: 1;',
+            '.cv1-composer .cv1-dialog-head [data-close-composer] { grid-column: 3;',
             self.styles,
         )
         self.assertNotIn('class="cv1-intent-fieldset"', self.template)

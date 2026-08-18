@@ -26,14 +26,11 @@
         <p><strong>Local fixture preview</strong> · Pete-only sample content · Sample content is not persisted or published.</p>
     </aside>
     {% endif %}
-    <section class="cv1-mobile-tools" aria-label="Community tools">
-        <button class="cv1-mobile-tool-control cv1-mobile-catchup" type="button" data-open-catchup data-mobile-catchup>
-            <span aria-hidden="true">✓</span><span>Catch up</span><small>Return context, Spark, and activity</small><span aria-hidden="true">›</span>
-        </button>
-        <button class="cv1-mobile-tool-control cv1-mobile-activity" type="button" data-open-activity>
-            <span aria-hidden="true">⌁</span><span>Community activity</span><small>Pulse and active questions</small><span aria-hidden="true">›</span>
-        </button>
-    </section>
+    <nav class="cv1-mobile-tabs" aria-label="Community areas">
+        <button type="button" data-community-view="mine" aria-pressed="false">Mine</button>
+        <button type="button" data-community-view="ours" aria-pressed="true">Ours</button>
+        <button type="button" data-community-view="beyond" aria-pressed="false">Beyond</button>
+    </nav>
 
     {% if not community_owner %}
     <aside class="cv1-public-note" aria-label="Community access">
@@ -54,7 +51,7 @@
                 <p><strong>Posted to Community</strong><span data-publication-banner-copy>Your post is now visible to signed-in PeerSlate members.</span></p>
                 <button type="button" data-dismiss-publication-banner aria-label="Dismiss publication confirmation">×</button>
             </div>
-            <div class="cv1-toolbar">
+            <div class="cv1-toolbar" data-community-search-tools>
                 <label class="cv1-search">
                     <span class="cv1-visually-hidden">Search Community</span>
                     <span aria-hidden="true">⌕</span>
@@ -66,9 +63,11 @@
             {% if community_owner %}
             <section class="cv1-quick-compose" aria-label="Start a Community post">
                 <span class="cv1-avatar" aria-hidden="true">{{ (community_display_name or 'P')[:1] }}</span>
-                <button class="cv1-prompt" type="button" data-open-composer>What’s on your mind, {{ (community_display_name or 'Pete').split()[0] }}?</button>
+                <button class="cv1-prompt" type="button" data-open-composer>Share something meaningful…</button>
                 <button class="cv1-quick-compose-action cv1-quick-compose-action--media" type="button" data-open-composer data-intent="post" aria-label="Start a Community post with a photo or file"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m5 17 4.5-4.5 3.2 3.2 2.3-2.3 4 3.6"></path></svg></button>
                 <button class="cv1-quick-compose-action cv1-quick-compose-action--voice" type="button" data-top-voice aria-label="Start a Voice post" aria-pressed="false" title="Start a private Voice post draft"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v4M8.5 21h7"></path></svg></button>
+                <button class="cv1-quick-compose-audience" type="button" data-open-composer data-focus-audience aria-label="Start a post for Community"><span aria-hidden="true">◎</span> Community <span aria-hidden="true">⌄</span></button>
+                <button class="cv1-quick-compose-submit" type="button" data-open-composer>Start a post</button>
             </section>
             {% endif %}
 
@@ -90,44 +89,43 @@
             <button class="cv1-load-more" type="button" data-load-more hidden>Load more</button>
         </section>
 
-        <aside class="cv1-rail cv1-rail--left" aria-label="Community catch up">
+        <aside class="cv1-rail cv1-rail--left" aria-label="Mine" data-community-region="mine">
+            <h2>Mine</h2>
             <section>
                 <p class="cv1-eyebrow">Since you were here</p>
-                <div class="cv1-quiet-state">
-                    <span class="cv1-quiet-icon" aria-hidden="true">◷</span>
-                    <strong>PeerSlate Community</strong>
-                    <span>New Community conversations will appear here.</span>
-                </div>
+                <ul class="cv1-mine-list">
+                    <li><span class="cv1-medallion cv1-medallion--photo" aria-hidden="true">▢</span><p><strong>New replies will appear here</strong><small>Return to a conversation without hunting for it.</small></p></li>
+                    <li><span class="cv1-medallion cv1-medallion--video" aria-hidden="true">♧</span><p><strong>Offers to help</strong><small>See who continued something you shared.</small></p></li>
+                    <li><span class="cv1-medallion cv1-medallion--voice" aria-hidden="true">▢</span><p><strong>Continue a conversation</strong><small>Open any post to return to its replies.</small></p></li>
+                    <li><span class="cv1-medallion cv1-medallion--ai" aria-hidden="true">✣</span><p><strong>Add what happened next</strong><small>Post a follow-up when the work changes.</small></p></li>
+                </ul>
             </section>
-            <section>
-                <p class="cv1-eyebrow">Continue the conversation</p>
-                <p class="cv1-rail-copy">Open any post to view its full replies and author updates.</p>
-            </section>
-            <section class="cv1-spark">
-                <span aria-hidden="true">✦</span>
-                <p class="cv1-eyebrow">A spark for you</p>
-                <strong>What did you make easier for someone else this week?</strong>
-                {% if community_owner %}<button type="button" data-open-composer data-intent="small_win" data-spark-prompt="What did you make easier for someone else this week?">Use this Spark <span aria-hidden="true">→</span></button>{% endif %}
-            </section>
-            <section class="cv1-caught-rail">
-                <span aria-hidden="true">✓</span>
-                <p><strong>You’re caught up</strong><br><button type="button" data-open-activity>See Community activity</button></p>
+            <section class="cv1-rail-link-row">
+                <button type="button" data-open-catchup>View personal Community activity <span aria-hidden="true">›</span></button>
             </section>
         </aside>
 
-        <aside class="cv1-rail cv1-rail--right" aria-label="Community activity">
+        <aside class="cv1-rail cv1-rail--right" aria-label="Beyond" data-community-region="beyond">
+            <h2>Beyond</h2>
             <section>
                 <p class="cv1-eyebrow">Community pulse</p>
                 <ul class="cv1-pulse-list">
-                    <li><span class="cv1-blue" aria-hidden="true">◯</span><p><strong>Questions looking for input</strong><small>PeerSlate Community</small></p></li>
-                    <li><span class="cv1-green" aria-hidden="true">♧</span><p><strong>Ways to offer help</strong><small>Read the latest posts</small></p></li>
-                    <li><span class="cv1-gold" aria-hidden="true">✦</span><p><strong>Wins shared recently</strong><small>Growing with the Feed</small></p></li>
+                    <li><span class="cv1-medallion cv1-medallion--photo" aria-hidden="true">▢</span><p><strong>Questions looking for input</strong><small>Browse current conversations</small></p></li>
+                    <li><span class="cv1-medallion cv1-medallion--video" aria-hidden="true">♧</span><p><strong>Ways to offer help</strong><small>Read what members need</small></p></li>
                 </ul>
             </section>
             <section>
                 <p class="cv1-eyebrow">Active questions</p>
-                <p class="cv1-rail-copy">Questions appear here once the owner publishes them.</p>
+                <p class="cv1-rail-copy cv1-rail-empty"><strong>No active questions to show.</strong><span>Questions will appear here when member-backed results are available.</span></p>
                 <button class="cv1-link-button" type="button" data-search-questions>See all questions <span aria-hidden="true">→</span></button>
+            </section>
+            <section>
+                <p class="cv1-eyebrow">My mix</p>
+                <p class="cv1-rail-copy cv1-rail-empty"><strong>No recommendations yet.</strong><span>Your Mix will appear here when member-backed recommendations are available.</span></p>
+            </section>
+            <section>
+                <p class="cv1-eyebrow">Explore</p>
+                <div class="cv1-mix-item"><span class="cv1-medallion cv1-medallion--ai" aria-hidden="true">♧</span><p><strong>Explore Community</strong><small>People, paths, questions, and learning.</small></p></div>
             </section>
         </aside>
     </div>
@@ -138,57 +136,67 @@
     <dialog class="cv1-dialog cv1-composer" data-composer aria-labelledby="cv1-composer-title">
         <form method="dialog" class="cv1-dialog-frame" data-composer-form>
             <header class="cv1-dialog-head">
-                <div>
-                    <h2 id="cv1-composer-title">New Community post</h2>
-                    <p><span aria-hidden="true">▣</span> Draft · only you can see this</p>
-                </div>
+                <div><h2 id="cv1-composer-title">Create post</h2></div>
                 <button class="cv1-icon-button" type="button" data-close-composer aria-label="Close composer">×</button>
             </header>
-            <div class="cv1-spark-context" data-spark-context hidden>
-                <div>
-                    <span class="cv1-spark-context__label"><span aria-hidden="true">✦</span> Spark attached</span>
-                    <strong data-spark-context-prompt>What did you make easier for someone else this week?</strong>
+            {# Kept only as a defensive JavaScript hook; Spark has no visible
+               launcher or state in this locked implementation. #}
+            <div data-spark-context hidden><strong data-spark-context-prompt></strong></div>
+            <div class="cv1-composer-identity">
+                <span class="cv1-avatar" aria-hidden="true">{{ (community_display_name or 'P')[:1] }}</span>
+                <strong>{{ community_display_name or 'Pete Carter' }}</strong>
+                <div class="cv1-audience-field">
+                    <select class="cv1-visually-hidden" name="audience" required aria-label="Post audience" tabindex="-1">
+                        <option value="public">Community</option>
+                    </select>
+                    <button class="cv1-audience-trigger" type="button" data-audience-trigger aria-haspopup="listbox" aria-expanded="false">
+                        <span aria-hidden="true">◎</span><span data-audience-label>Community</span><span aria-hidden="true">⌄</span>
+                    </button>
+                    <div class="cv1-audience-menu" data-audience-menu role="listbox" aria-label="Choose audience" hidden>
+                        <button type="button" role="option" aria-selected="false" aria-disabled="true" data-audience-unavailable="Private drafts stay private until you publish."><span aria-hidden="true">▣</span><span><strong>Private</strong><small>Draft only in this release</small></span></button>
+                        <button type="button" role="option" aria-selected="false" aria-disabled="true" data-audience-unavailable="Connections are not available yet."><span aria-hidden="true">♧</span><span><strong>Connections</strong><small>Not available yet</small></span></button>
+                        <button type="button" role="option" aria-selected="true" data-audience-choice="public"><span aria-hidden="true">◎</span><span><strong>Community</strong><small>Signed-in PeerSlate members</small></span><span aria-hidden="true">✓</span></button>
+                        <button type="button" role="option" aria-selected="false" aria-disabled="true" data-audience-unavailable="Public posting is not available yet."><span aria-hidden="true">◉</span><span><strong>Public</strong><small>Not available yet</small></span></button>
+                    </div>
                 </div>
-                <button type="button" data-remove-spark aria-label="Remove attached Spark">×</button>
-            </div>
-            <div class="cv1-composer-grid">
-                <label class="cv1-audience-field">Audience
-                    <select name="audience" required>
-                        <option value="">Choose audience</option>
-                        {# PS-COMMUNITY-AUTH-WALL-001: the stored token stays
-                           "public" (transitional schema debt); the audience a
-                           member is shown is the truthful one. #}
-                        <option value="public">PeerSlate Community — visible to signed-in members</option>
-                    </select>
-                </label>
-                <label class="cv1-response-posture-field">Response posture
-                    <select name="response_posture" required>
-                        <option value="open_feedback">Open to feedback</option>
-                        <option value="questions_welcome">Questions welcome</option>
-                        <option value="sharing_only">Sharing only</option>
-                        <option value="help_welcome">Help welcome</option>
-                    </select>
-                </label>
+                <span class="cv1-draft-status" role="status" aria-live="polite" data-draft-status><span aria-hidden="true">▣</span> Not saved yet</span>
             </div>
             <input type="hidden" name="intent" value="post">
-            <label><span data-composer-body-label>What’s on your mind?</span>
-                <textarea name="body" maxlength="4000" rows="7" required></textarea>
+            <label class="cv1-composer-editor"><span class="cv1-visually-hidden" data-composer-body-label>Share something meaningful</span>
+                <textarea name="body" maxlength="4000" rows="3" placeholder="Share something meaningful…" required></textarea>
                 <span class="cv1-character-count" data-character-count>0 / 4,000</span>
+            </label>
+            <label class="cv1-response-posture-field cv1-visually-hidden">Response posture
+                <select name="response_posture" required tabindex="-1">
+                    <option value="open_feedback">Open to feedback</option>
+                    <option value="questions_welcome">Questions welcome</option>
+                    <option value="sharing_only">Sharing only</option>
+                    <option value="help_welcome">Help welcome</option>
+                </select>
             </label>
             <div data-composer-voice-panel-host></div>
             <div class="cv1-attachment-list" data-attachment-list data-composer-attachment-control></div>
             <div class="cv1-composer-error" role="alert" data-composer-error hidden></div>
             <footer class="cv1-dialog-actions">
-                <div class="cv1-composer-tool-strip" aria-label="Post tools">
-                    <label class="cv1-composer-tool" title="Attach a PDF or macro-free XLSX file" data-composer-attachment-control>⌇<span>File</span><input type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" data-attachment-input></label>
-                    <label class="cv1-composer-tool" title="Attach a JPEG or PNG photo" data-composer-attachment-control>▧<span>Photo</span><input type="file" accept="image/jpeg,image/png" data-photo-attachment-input></label>
-                    <button class="cv1-composer-tool" type="button" data-composer-voice aria-label="Start a Voice post" aria-pressed="false" title="Record a private Voice post draft">♩<span>Voice</span></button>
-                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-video-unavailable aria-label="Video — not yet available" aria-disabled="true" title="Video is not yet available">▻<span>Video</span></button>
-                    <button class="cv1-composer-tool cv1-composer-tool--unavailable" type="button" data-public-audio-unavailable aria-label="Shared audio — not yet available" aria-disabled="true" title="Shared audio is not yet available">⌁<span>Public audio</span></button>
+                <div class="cv1-add-tools">
+                    <strong>Add to your post</strong>
+                    <div class="cv1-composer-tool-strip" aria-label="Post tools">
+                        <label class="cv1-composer-tool cv1-composer-tool--photo" title="Add a photo" data-composer-attachment-control aria-label="Add a photo"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m5 17 4.5-4.5 3.2 3.2 2.3-2.3 4 3.6"></path></svg><input type="file" accept="image/jpeg,image/png" data-photo-attachment-input></label>
+                        <button class="cv1-composer-tool cv1-composer-tool--video cv1-composer-tool--unavailable" type="button" data-video-unavailable aria-label="Add video — not yet available" aria-disabled="true" title="Video is not yet available"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="13" height="14" rx="2"></rect><path d="m16 10 5-3v10l-5-3"></path></svg></button>
+                        <label class="cv1-composer-tool cv1-composer-tool--file" title="Add a PDF or spreadsheet" data-composer-attachment-control aria-label="Add a file"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"></path><path d="M14 3v5h5"></path></svg><input type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" data-attachment-input></label>
+                        <button class="cv1-composer-tool cv1-composer-tool--voice" type="button" data-composer-voice aria-label="Start Voice dictation" aria-pressed="false" title="Start private Voice dictation"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v4M8.5 21h7"></path></svg></button>
+                        <div class="cv1-ai-wrap">
+                            <button class="cv1-composer-tool cv1-composer-tool--ai" type="button" data-ai-trigger aria-label="Optional AI writing help" aria-haspopup="menu" aria-expanded="false" title="Optional AI writing help"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 1.5 5.2L19 9l-5.5 1.8L12 16l-1.5-5.2L5 9l5.5-1.8z"></path><path d="m19 14 .8 2.4L22 17l-2.2.7L19 20l-.8-2.3L16 17l2.2-.6z"></path></svg></button>
+                            <div class="cv1-ai-menu" data-ai-menu role="menu" hidden>
+                                <button type="button" role="menuitem" aria-disabled="true" data-ai-unavailable>Make clearer</button>
+                                <button type="button" role="menuitem" aria-disabled="true" data-ai-unavailable>Make shorter</button>
+                                <button type="button" role="menuitem" aria-disabled="true" data-ai-unavailable>Ask a better question</button>
+                                <small>Your original stays unchanged. AI proposals are not enabled yet.</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <span class="cv1-draft-safe" data-edit-attachment-note hidden>Published attachments stay unchanged while editing.</span>
-                <span class="cv1-draft-safe" role="status" aria-live="polite" data-draft-status hidden>Your draft is saved on this device.</span>
-                <button class="cv1-secondary" type="button" data-close-composer>Cancel</button>
                 <button class="cv1-primary" type="submit" value="default" data-publish>Review Community post</button>
             </footer>
         </form>
@@ -250,7 +258,6 @@
             <div class="cv1-catchup-copy">
                 <section aria-labelledby="cv1-catchup-return"><h3 id="cv1-catchup-return">Since you were here</h3><p><strong>PeerSlate Community</strong><br>New Community conversations appear in the Feed.</p></section>
                 <section aria-labelledby="cv1-catchup-continue"><h3 id="cv1-catchup-continue">Continue the conversation</h3><p>Open any post to return to its replies and author updates.</p></section>
-                {% if community_owner %}<section class="cv1-activity-spark" aria-labelledby="cv1-catchup-spark"><span aria-hidden="true">✦</span><h3 id="cv1-catchup-spark">A Spark for you</h3><p><strong>What did you make easier for someone else this week?</strong></p><button class="cv1-link-button" type="button" data-open-composer data-intent="small_win" data-spark-prompt="What did you make easier for someone else this week?">Use this Spark <span aria-hidden="true">→</span></button></section>{% endif %}
                 <section class="cv1-catchup-complete" aria-labelledby="cv1-catchup-complete"><h3 id="cv1-catchup-complete">You’re caught up</h3><p>This return snapshot has no more Community activity.</p></section>
                 <button class="cv1-secondary" type="button" data-open-activity>See all activity</button>
                 <button class="cv1-primary" type="button" data-catchup-to-feed>Open in Feed <span aria-hidden="true">→</span></button>

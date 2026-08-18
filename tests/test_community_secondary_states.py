@@ -71,9 +71,11 @@ class CommunitySecondaryStateContracts(unittest.TestCase):
         # The stored audience token stays "public" (transitional schema debt);
         # the label a member reads is the truthful Community one.
         self.assertIn(
-            '<option value="public">PeerSlate Community — visible to signed-in members</option>',
+            '<option value="public">Community</option>',
             self.template,
         )
+        self.assertIn("Signed-in PeerSlate members", self.template)
+        self.assertNotIn("PeerSlate Community — visible to signed-in members</option>", self.template)
         self.assertIn("Posted to Community", self.template)
 
     def test_demo_hooks_are_retired_from_the_template_and_script(self):

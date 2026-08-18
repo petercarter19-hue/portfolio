@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-16",
+  "updated_at": "2026-08-17",
   "classification_checkpoint": "c0450dbd675554e7363c8fc262a6d4f8bf2c6921",
   "current_checkpoint_at_creation": "fdb71c604f81d305b971775bd28aeac964231ebe",
   "authority_note": "This is a complete rationalization index, not delivery authority. CURRENT_LANES.json and CURRENT_BASELINE.yaml remain authoritative for current lifecycle and release state.",
@@ -28,10 +28,12 @@
       "PS-CAPTURE-001",
       "PS-CAPTURE-002",
       "PS-COMMUNITY-AUTH-WALL-001",
+      "PS-COMMUNITY-AUTHORING-RUNTIME-001",
       "PS-COMMUNITY-FEED-AUTHORITY-001",
       "PS-COMMUNITY-FEED-VISUAL-001",
       "PS-COMMUNITY-PUBLIC-PILOT-001",
       "PS-COMMUNITY-TABS-001",
+      "PS-COMMUNITY-VISUAL-REFINEMENT-001",
       "PS-CONNECT-002",
       "PS-DATA-FOUNDATION-001",
       "PS-DELIVERY-RESET-001",
@@ -141,11 +143,11 @@
     ]
   },
   "counts": {
-    "current_protect": 59,
+    "current_protect": 61,
     "future_finish": 23,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 117
+    "total": 119
   }
 }

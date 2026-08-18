@@ -30,6 +30,10 @@
   var activityDialog = app.querySelector('[data-activity-dialog]');
   var publicationBanner = app.querySelector('[data-publication-banner]');
   var toast = app.querySelector('[data-community-toast]');
+  var audienceTrigger = app.querySelector('[data-audience-trigger]');
+  var audienceMenu = app.querySelector('[data-audience-menu]');
+  var aiTrigger = app.querySelector('[data-ai-trigger]');
+  var aiMenu = app.querySelector('[data-ai-menu]');
   var composerPlaceholder = composer ? document.createComment('community-composer-home') : null;
   if (composer) composer.parentNode.insertBefore(composerPlaceholder, composer);
 
@@ -59,6 +63,8 @@
     conversationPushed: false,
     activityReturnFocus: null,
     catchupReturnFocus: null,
+    composerReturnFocus: null,
+    suppressNextComposerCloseDraftSave: false,
     sheetHistory: null,
     sheetHistoryClosing: false
   };
@@ -220,6 +226,23 @@
       closePrimaryResponsePicker(wrapper, true);
     });
     return wrapper;
+  }
+
+  function setPostSaveControl(control, saved) {
+    control.replaceChildren();
+    var icon = svgPart('svg', {viewBox: '0 0 24 24', 'aria-hidden': 'true', focusable: 'false'});
+    icon.appendChild(svgPart('path', {d: 'M6 3.5h12v17l-6-3.8-6 3.8Z'}));
+    control.appendChild(icon);
+    control.appendChild(el('span', '', saved ? 'Saved privately' : 'Save privately'));
+    control.setAttribute('aria-pressed', saved ? 'true' : 'false');
+    control.setAttribute('aria-label', saved ? 'Remove private save' : 'Save privately');
+    control.setAttribute('title', saved ? 'Remove private save' : 'Save privately');
+  }
+
+  function postSaveControl(post) {
+    var control = button('', 'save-post', 'cv1-save-private');
+    setPostSaveControl(control, Boolean(post.viewer && post.viewer.saved));
+    return control;
   }
 
   function primaryCommentIcon(kind) {
@@ -829,6 +852,46 @@
     return form && form.elements ? form.elements.namedItem(name) : null;
   }
 
+  function closeAudienceMenu(restoreFocus) {
+    if (!audienceMenu || audienceMenu.hidden) return;
+    audienceMenu.hidden = true;
+    audienceTrigger.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) audienceTrigger.focus({preventScroll: true});
+  }
+
+  function openAudienceMenu() {
+    if (!audienceMenu || !audienceTrigger) return;
+    closeAiMenu(false);
+    audienceMenu.hidden = false;
+    audienceTrigger.setAttribute('aria-expanded', 'true');
+    var selected = audienceMenu.querySelector('[aria-selected="true"]');
+    if (selected) selected.focus({preventScroll: true});
+  }
+
+  function closeAiMenu(restoreFocus) {
+    if (!aiMenu || aiMenu.hidden) return;
+    aiMenu.hidden = true;
+    aiTrigger.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) aiTrigger.focus({preventScroll: true});
+  }
+
+  function openAiMenu() {
+    if (!aiMenu || !aiTrigger) return;
+    closeAudienceMenu(false);
+    aiMenu.hidden = false;
+    aiTrigger.setAttribute('aria-expanded', 'true');
+    var first = aiMenu.querySelector('[role="menuitem"]');
+    if (first) first.focus({preventScroll: true});
+  }
+
+  function setMobileCommunityView(view) {
+    if (['mine', 'ours', 'beyond'].indexOf(view) < 0) return;
+    app.dataset.mobileView = view;
+    app.querySelectorAll('[data-community-view]').forEach(function (control) {
+      control.setAttribute('aria-pressed', control.dataset.communityView === view ? 'true' : 'false');
+    });
+  }
+
   function api(url, options) {
     options = options || {};
     options.headers = options.headers || {};
@@ -888,6 +951,12 @@
       image.alt = item.display_name;
       image.loading = 'lazy';
       link.appendChild(image);
+      if (opensConversation) {
+        var imageCopy = el('span', 'cv1-attachment-image-copy');
+        imageCopy.appendChild(el('strong', '', item.display_name));
+        imageCopy.appendChild(el('small', '', 'Photo attachment'));
+        link.appendChild(imageCopy);
+      }
     } else {
       link.appendChild(el('span', '', '▱'));
       var copy = el('span', 'cv1-attachment-name');
@@ -982,13 +1051,21 @@
       card.dataset.contributionKey = item.key;
       card.dataset.contributionKind = item.kind || 'comment';
       card.setAttribute('aria-label', 'Open reply from ' + item.author.display_name);
-      card.appendChild(el('strong', '', item.author.display_name));
-      card.appendChild(el('p', '', item.body));
+      var replyAvatar = avatar(item.author);
+      replyAvatar.classList.add('cv1-reply-preview-avatar');
+      card.appendChild(replyAvatar);
+      var replyCopy = el('span', 'cv1-reply-preview-copy');
+      replyCopy.appendChild(el('strong', '', item.author.display_name));
+      replyCopy.appendChild(el('p', '', item.body));
       var attachment = compactAttachmentCue(item);
-      if (attachment) card.appendChild(attachment);
+      if (attachment) replyCopy.appendChild(attachment);
       var context = relativeTime(item.created_at_utc);
       if (item.child_reply_count) context += ' · ' + item.child_reply_count + (item.child_reply_count === 1 ? ' reply' : ' replies');
-      card.appendChild(el('small', '', context));
+      var replyMeta = el('span', 'cv1-reply-preview-meta');
+      replyMeta.appendChild(el('small', '', context));
+      if (item.kind === 'author_update') replyMeta.appendChild(el('span', 'cv1-author-badge', 'Author'));
+      replyCopy.appendChild(replyMeta);
+      card.appendChild(replyCopy);
       var listItem = el('li');
       var position = track.querySelectorAll(':scope > li').length + 1;
       listItem.setAttribute('aria-posinset', String(position));
@@ -1190,6 +1267,7 @@
       comment.appendChild(el('span', 'cv1-action-count', post.contribution_count));
       primaryActions.appendChild(comment);
       if (owner) primaryActions.appendChild(primaryRespondControl(post));
+      if (owner) primaryActions.appendChild(postSaveControl(post));
       card.appendChild(primaryActions);
       if (owner) card.appendChild(primaryCommentComposer(post));
       var primaryShelf = renderConversationShelf(post);
@@ -1382,7 +1460,10 @@
 
   function draftStatus(saved) {
     var node = app.querySelector('[data-draft-status]');
-    if (node) node.hidden = !saved;
+    if (!node) return;
+    node.hidden = false;
+    node.innerHTML = '<span aria-hidden="true">▣</span> ' + (saved ? 'Saved privately' : 'Not saved yet');
+    node.dataset.saved = saved ? 'true' : 'false';
   }
 
   function saveDraft() {
@@ -1424,9 +1505,20 @@
   }
 
   function updateCount() {
-    var count = formField(composerForm, 'body').value.length;
+    var editor = formField(composerForm, 'body');
+    var count = editor.value.length;
     app.querySelector('[data-character-count]').textContent = count.toLocaleString() + ' / 4,000';
+    editor.style.height = 'auto';
+    editor.style.height = Math.max(92, Math.min(editor.scrollHeight, 240)) + 'px';
+    editor.style.overflowY = editor.scrollHeight > 240 ? 'auto' : 'hidden';
     updatePublishState();
+  }
+
+  function recalculateEditorAfterComposerOpen() {
+    window.requestAnimationFrame(function () {
+      updateCount();
+      window.requestAnimationFrame(updateCount);
+    });
   }
 
   function updatePublishState() {
@@ -1437,7 +1529,7 @@
     var audienceReady = editing || formField(composerForm, 'audience').value === 'public';
     var mediaReady = editing || state.attachments.every(function (item) { return item.state === 'ready'; });
     publishControl.disabled = !(bodyReady && audienceReady && mediaReady);
-    publishControl.textContent = editing ? 'Save changes' : 'Review public post';
+    publishControl.textContent = editing ? 'Save changes' : 'Post';
   }
 
   function setEditAttachmentMode(editing) {
@@ -1462,7 +1554,7 @@
   function resetComposer() {
     if (composerVoiceController) composerVoiceController.discard(false);
     composerForm.reset();
-    formField(composerForm, 'audience').value = '';
+    formField(composerForm, 'audience').value = 'public';
     formField(composerForm, 'audience').disabled = false;
     releaseUploadPreviews(state.attachments);
     state.attachments = [];
@@ -1472,8 +1564,8 @@
     state.postPayloadFingerprint = null;
     app.querySelector('[data-attachment-list]').replaceChildren();
     app.querySelector('[data-composer-error]').hidden = true;
-    app.querySelector('#cv1-composer-title').textContent = 'New Community post';
-    app.querySelector('[data-composer-body-label]').textContent = 'What’s on your mind?';
+    app.querySelector('#cv1-composer-title').textContent = 'Create post';
+    app.querySelector('[data-composer-body-label]').textContent = 'Share something meaningful';
     app.querySelector('[data-spark-context]').hidden = true;
     setEditAttachmentMode(false);
     draftStatus(false);
@@ -1487,29 +1579,36 @@
   }
 
   function presentComposer() {
-    if (mobilePresentation()) {
-      restoreComposerHome();
-      composer.showModal();
-    } else {
-      var main = app.querySelector('.cv1-main');
-      var anchor = quickCompose || feedList;
-      main.insertBefore(composer, anchor);
-      if (quickCompose) quickCompose.hidden = true;
-      composer.classList.add('cv1-composer-inline');
-      composer.show();
-      composer.scrollIntoView({block: 'nearest'});
-    }
+    restoreComposerHome();
+    composer.showModal();
   }
 
   function mobilePresentation() {
-    return window.matchMedia('(max-width: 620px), (max-height: 520px) and (max-width: 950px)').matches;
+    return window.matchMedia('(max-width: 700px), (max-height: 520px) and (max-width: 950px)').matches;
   }
 
-  function closeComposer() {
+  function finalizeComposerDraftAfterClose() {
+    if (state.suppressNextComposerCloseDraftSave) {
+      state.suppressNextComposerCloseDraftSave = false;
+      return;
+    }
+    saveDraft();
+  }
+
+  function closeComposer(options) {
+    var saveOnClose = !options || options.saveDraft !== false;
+    if (saveOnClose) saveDraft();
     if (composerVoiceController) composerVoiceController.discard(false);
-    if (composer && composer.open) composer.close();
+    if (composer && composer.open) {
+      state.suppressNextComposerCloseDraftSave = !saveOnClose;
+      composer.close();
+    }
     if (quickCompose) quickCompose.hidden = false;
     restoreComposerHome();
+    if (state.composerReturnFocus && state.composerReturnFocus.isConnected) {
+      state.composerReturnFocus.focus({preventScroll: true});
+    }
+    state.composerReturnFocus = null;
   }
 
   function openComposer(intent, sparkPrompt, focusAudience) {
@@ -1519,6 +1618,7 @@
       window.setTimeout(function () { openComposer(intent, sparkPrompt, focusAudience); }, 0);
       return;
     }
+    state.composerReturnFocus = document.activeElement;
     resetComposer();
     restoreDraft();
     if (intent) formField(composerForm, 'intent').value = intent;
@@ -1528,11 +1628,13 @@
       app.querySelector('[data-spark-context]').hidden = false;
       app.querySelector('[data-composer-body-label]').textContent = state.sparkPrompt;
     }
-    formField(composerForm, 'audience').value = '';
+    formField(composerForm, 'audience').value = 'public';
     updateCount();
     presentComposer();
+    recalculateEditorAfterComposerOpen();
     if (focusAudience) {
-      formField(composerForm, 'audience').focus();
+      var audienceTrigger = app.querySelector('[data-audience-trigger]');
+      if (audienceTrigger) audienceTrigger.focus();
     } else if (mobilePresentation()) {
       var composerTitle = app.querySelector('#cv1-composer-title');
       composerTitle.tabIndex = -1;
@@ -1544,6 +1646,7 @@
   }
 
   function openEdit(post) {
+    state.composerReturnFocus = document.activeElement;
     resetComposer();
     state.editPost = post;
     app.querySelector('#cv1-composer-title').textContent = 'Edit Community post';
@@ -1555,6 +1658,7 @@
     setEditAttachmentMode(true);
     updateCount();
     presentComposer();
+    recalculateEditorAfterComposerOpen();
     if (mobilePresentation()) {
       var editTitle = app.querySelector('#cv1-composer-title');
       editTitle.tabIndex = -1;
@@ -1742,7 +1846,7 @@
       return false;
     }
     if (!state.editPost && formField(composerForm, 'audience').value !== 'public') {
-      errorNode.textContent = 'Select Public before reviewing this post.';
+      errorNode.textContent = 'Choose Community before posting.';
       errorNode.hidden = false;
       return false;
     }
@@ -1774,6 +1878,16 @@
     publicConfirmation.close();
   }
 
+  function clearCreateDraftAfterSuccessfulMutation(editing) {
+    if (editing) return;
+    if (draftKey) {
+      try { localStorage.removeItem(draftKey); } catch (ignore) {}
+    }
+    if (postCommandStorageKey) {
+      try { localStorage.removeItem(postCommandStorageKey); } catch (ignoreCommand) {}
+    }
+  }
+
   function submitComposerMutation() {
     if (!composerReadyForSubmission() || !composerVoiceReadyForSubmission()) return;
     var errorNode = app.querySelector('[data-composer-error]');
@@ -1795,16 +1909,11 @@
     app.querySelector('[data-publish]').disabled = true;
     request.then(function () {
       if (composerVoiceController) composerVoiceController.discard(false);
-      if (draftKey) {
-        try { localStorage.removeItem(draftKey); } catch (ignore) {}
-      }
-      if (postCommandStorageKey) {
-        try { localStorage.removeItem(postCommandStorageKey); } catch (ignoreCommand) {}
-      }
+      clearCreateDraftAfterSuccessfulMutation(editing);
       state.postCommandKey = null;
       state.postPayloadFingerprint = null;
       closePublicConfirmation();
-      closeComposer();
+      closeComposer({saveDraft: false});
       if (editing) showToast('Post updated.');
       else showPublicationBanner();
       state.cursor = null;
@@ -2386,6 +2495,27 @@
     });
   }
 
+  function performPostSave(control, post) {
+    if (!control || !post || control.disabled) return;
+    var saved = Boolean(post.viewer && post.viewer.saved);
+    control.disabled = true;
+    api(
+      '/api/v1/community/posts/' + encodeURIComponent(post.key) + '/save',
+      jsonOptions(saved ? 'DELETE' : 'PUT', {})
+    ).then(function () {
+      post.viewer = post.viewer || {};
+      post.viewer.saved = !saved;
+      app.querySelectorAll('[data-post-key="' + CSS.escape(post.key) + '"] .cv1-save-private').forEach(function (candidate) {
+        setPostSaveControl(candidate, !saved);
+      });
+      showToast(saved ? 'Private save removed.' : 'Saved privately.');
+    }).catch(function (error) {
+      showToast(error.message, true);
+    }).finally(function () {
+      control.disabled = false;
+    });
+  }
+
   function deletePost(postKey, revision) {
     if (!window.confirm('Remove this Community post? Its link and attachments will stop working immediately.')) return;
     api('/api/v1/community/posts/' + encodeURIComponent(postKey), jsonOptions('DELETE', {expected_revision: revision}))
@@ -2574,6 +2704,10 @@
       event.preventDefault();
       performPrimaryResponse(actionNode.closest('[data-primary-response-control]'), post, actionNode.dataset.response);
     }
+    if (action === 'save-post') {
+      event.preventDefault();
+      performPostSave(actionNode, post);
+    }
     if (action === 'write') openComposer();
     if (action === 'retry-feed') loadFeed(actionNode.dataset.append === 'true');
     if (action === 'retry-search') search(state.lastSearch);
@@ -2602,6 +2736,44 @@
   conversation.addEventListener('keydown', handlePostMenuKeydown);
 
   app.addEventListener('click', function (event) {
+    var mobileViewControl = event.target.closest('[data-community-view]');
+    if (mobileViewControl) {
+      setMobileCommunityView(mobileViewControl.dataset.communityView);
+      return;
+    }
+    var audienceControl = event.target.closest('[data-audience-trigger]');
+    if (audienceControl) {
+      if (audienceMenu.hidden) openAudienceMenu();
+      else closeAudienceMenu(true);
+      return;
+    }
+    var audienceChoice = event.target.closest('[data-audience-choice]');
+    if (audienceChoice) {
+      formField(composerForm, 'audience').value = audienceChoice.dataset.audienceChoice;
+      app.querySelector('[data-audience-label]').textContent = 'Community';
+      closeAudienceMenu(true);
+      updatePublishState();
+      return;
+    }
+    var unavailableAudience = event.target.closest('[data-audience-unavailable]');
+    if (unavailableAudience) {
+      showToast(unavailableAudience.dataset.audienceUnavailable);
+      closeAudienceMenu(true);
+      return;
+    }
+    var aiControl = event.target.closest('[data-ai-trigger]');
+    if (aiControl) {
+      if (aiMenu.hidden) openAiMenu();
+      else closeAiMenu(true);
+      return;
+    }
+    if (event.target.closest('[data-ai-unavailable]')) {
+      showToast('AI writing proposals are not enabled yet. Your original is unchanged.');
+      closeAiMenu(true);
+      return;
+    }
+    if (!event.target.closest('.cv1-audience-field')) closeAudienceMenu(false);
+    if (!event.target.closest('.cv1-ai-wrap')) closeAiMenu(false);
     if (!event.target.closest('[data-primary-response-control]')) {
       app.querySelectorAll('[data-primary-response-control]').forEach(function (wrapper) {
         closePrimaryResponsePicker(wrapper, false);
@@ -2798,8 +2970,15 @@
   }
 
   if (composer) composer.addEventListener('close', function () {
+    finalizeComposerDraftAfterClose();
+    closeAudienceMenu(false);
+    closeAiMenu(false);
     if (composerVoiceController) composerVoiceController.discard(false);
     restoreComposerHome();
+    if (state.composerReturnFocus && state.composerReturnFocus.isConnected) {
+      state.composerReturnFocus.focus({preventScroll: true});
+      state.composerReturnFocus = null;
+    }
   });
   catchupDialog.addEventListener('close', function () {
     var catchupFocus = state.catchupReturnFocus;
@@ -2847,6 +3026,16 @@
   });
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') return;
+    if (audienceMenu && !audienceMenu.hidden) {
+      event.preventDefault();
+      closeAudienceMenu(true);
+      return;
+    }
+    if (aiMenu && !aiMenu.hidden) {
+      event.preventDefault();
+      closeAiMenu(true);
+      return;
+    }
     var contributionMenu = event.target.closest('details.cv1-contribution-owner-controls[open]');
     if (!contributionMenu) return;
     event.preventDefault();
@@ -2854,7 +3043,12 @@
     contributionMenu.querySelector('summary').focus();
   });
   loadMore.addEventListener('click', function () { loadFeed(true); });
-  app.querySelector('[data-search-questions]').addEventListener('click', function () { searchInput.focus(); showToast('Search published questions by topic.'); });
+  app.querySelector('[data-search-questions]').addEventListener('click', function () {
+    setMobileCommunityView('ours');
+    document.body.classList.add('community-search-active');
+    searchInput.focus();
+    showToast('Search published questions by topic.');
+  });
   window.addEventListener('popstate', function () {
     if (state.sheetHistoryClosing) {
       state.sheetHistoryClosing = false;
@@ -2882,6 +3076,7 @@
     disposeCommunityVoiceControllers();
   });
 
+  setMobileCommunityView('ours');
   loadFeed(false);
   if (app.dataset.postKey) openConversation(app.dataset.postKey, false, app.dataset.contributionKey || null);
 }());
