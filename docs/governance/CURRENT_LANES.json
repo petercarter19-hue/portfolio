@@ -1,17 +1,19 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-19T14:16:32Z",
+  "updated_at": "2026-08-19T14:26:04Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "controlled_idle",
+    "state": "active_delivery",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [],
+    "writes_allowed_for": [
+      "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001"
+    ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -27,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "No active writer lanes. PS-DELIVERY-CONTROL-SEARCH-001 is paused and preserved; it may resume only through fresh activation."
+    "exit_authority": "Active writer lane PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001 may change only the ten registered governance/test surfaces and must land through its exact reviewed atomic integration; no merge, release, cleanup, deployment, runtime, or Azure authority exists."
   },
   "activation_policy": {
     "enabled": true,
@@ -2373,7 +2375,58 @@
       "close_evidence_paths": []
     }
   ],
-  "active_lanes": [],
+  "active_lanes": [
+    {
+      "package": "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001",
+      "outcome": "Semantically forward-port the independently reviewed four-writer policy from frozen candidate 4ff435ea773efdbfa590f1aa4bbb6c7f4c759748 onto current Search-era main, correct the stale CURRENT_BASELINE wording and review-handoff command, preserve every collision and specialized-cap control plus Search historical compatibility, and land through one exact owner-authorized atomic integration that closes only this child lane and returns controlled_idle.",
+      "branch": "work/2026-08-19-delivery-control-concurrency-integration-001",
+      "writer": "This Root Codex task is the sole writer for the exact ten registered governance and test surfaces. The frozen 4ff435ea773efdbfa590f1aa4bbb6c7f4c759748 branch remains read-only evidence; reviewer agents may inspect but may not edit.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "shared_foundation",
+      "exclusive_domains": [
+        "governance:delivery-lane-concurrency"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main ebeaf3ff081e3c914845b0a972ae1fd5ed7ed31c at controlled_idle with zero active writers and empty write, merge, cleanup, and release authority after Search 3F merged, released, live-verified, closed, and its temporary admission lane was paused. The prior 4ff435ea candidate received a Conditional review solely for stale three-lane CURRENT_BASELINE wording and an invalid detached reviewer preflight command; its executable capacity and collision controls otherwise passed. Pete directed Codex to finish the package, then provide a detailed handoff for an independent reviewer.",
+      "writable_surfaces": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "START_HERE.md",
+        "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+        "docs/governance/CURRENT_BASELINE.yaml",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+        "tests/test_governance_pointers.py"
+      ],
+      "exclusions": [
+        "no application route, template, stylesheet, browser bundle, service, schema, migration, dependency, release pipeline, Azure resource, configuration, deployment, production data, or live behavior change",
+        "no weakening of duplicate-branch, writable-path overlap, hierarchical exclusive-domain, direction-authority surface, shared-foundation, production-capable, changed-path, merge, release, cleanup, or ownership controls",
+        "no blind cherry-pick, mutation, merge, deletion, or reinterpretation of frozen candidate 4ff435ea773efdbfa590f1aa4bbb6c7f4c759748 or its paused history",
+        "no rewriting or invalidating Search 3F release evidence, standing proof resources, exact teardown schedule, or historical three-lane repair and admission replays",
+        "no generic bypass or reusable self-close: the integration must pin this package, branch, activation-main SHA, exact lane digest, one-commit shape, ten paths, policy transition, baseline delta, and distinct historical close record"
+      ],
+      "completion_evidence": [
+        "all operational docs, CURRENT_LANES, CURRENT_BASELINE, validator constants, and tests agree on four total writers and four implementation/shared-foundation slots",
+        "tests prove a fourth disjoint writer passes and a fifth fails while duplicate branch, path overlap, hierarchical domain collision, second direction-authority, second shared-foundation, second production-capable, and direction-runtime writes fail",
+        "historical three-lane repairs including exact Search release admission remain replayable only under their code-pinned legacy contract",
+        "the exact atomic transition removes and closes only this child lane, preserves the frozen 4ff paused record and all unrelated history, clears every mutation authority list, and leaves controlled_idle",
+        "full governance/preflight tests, compile, JSON, diff, branch/base/path checks, Azure PR CI, and fresh independent exact-SHA review pass before landing",
+        "a detailed external independent-review handoff uses a valid clean current-main verifier and detached candidate inspection without the invalid detached read-plus-fetch command"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-19",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete directed Codex to finish the package, prevent real overlap without withholding collision-free writer capacity, complete all steps itself, and provide a detailed handoff for an independent reviewer of the lane change. This authorizes the narrow current-main semantic forward-port and one-time atomic self-close, not runtime, Azure, release, cleanup, or generic bypass authority."
+        }
+      ],
+      "cleanup_contract": "Preserve the prior frozen candidate, paused lane record, Search evidence/resources, all unrelated branches/worktrees/artifacts, and the exact review history. This child lane closes atomically only after its exact reviewed policy candidate lands; rollback before merge is branch abandonment, and any later policy reversal requires a separate reviewed governance package.",
+      "sequence": "control-only activation PR -> merge activation -> create clean implementation worktree from resulting origin/main -> write preflight -> semantic forward-port of 4ff plus baseline/handoff corrections and exact atomic matcher -> full validation -> freeze and push one-commit ten-path candidate -> detailed external handoff -> fresh independent exact-SHA review -> PR CI -> exact special activate preflight -> squash merge -> verify controlled_idle and no authority; no ordinary grant, close, pause, deployment, or Azure action"
+    }
+  ],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
