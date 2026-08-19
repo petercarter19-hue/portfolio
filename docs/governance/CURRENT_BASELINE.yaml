@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active writer: PS-SEARCH-DARK-PROOF-001 on work/2026-08-19-search-dark-proof-v3-r2 after this activation merges; scope is limited to the two fresh review corrections and exact-SHA re-review."
+  current_assignments: "Active disjoint lanes: PS-SEARCH-DARK-PROOF-001 and PS-DELIVERY-CONTROL-SEARCH-001 on work/2026-08-19-search-release-control-repair."
 
 governing_documents:
   bible:
@@ -63,6 +63,9 @@ active_packages:
   - id: PS-SEARCH-DARK-PROOF-001
     status: active_delivery
     scope: "Protected, non-production correction of the valid scoped Azure CLI role query and deployment-bytecode exclusion; no Azure mutation, proof rerun, teardown, merge, deployment, or member-facing change."
+  - id: PS-DELIVERY-CONTROL-SEARCH-001
+    status: active_delivery
+    scope: "Exact review-bound Search admission repair; grants nothing."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -160,7 +163,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Continue only PS-SEARCH-DARK-PROOF-001 on work/2026-08-19-search-dark-proof-v3-r2 through a frozen successor and fresh exact-SHA independent review; no Azure mutation, proof rerun, teardown, merge, deployment, or live claim is authorized by this activation."
+next_gate: "Continue only PS-SEARCH-DARK-PROOF-001 and PS-DELIVERY-CONTROL-SEARCH-001; no merge or release authority exists."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
