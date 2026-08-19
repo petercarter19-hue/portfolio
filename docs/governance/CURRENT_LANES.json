@@ -1,19 +1,17 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-18T23:50:53Z",
+  "updated_at": "2026-08-19T01:01:16Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-SEARCH-DARK-PROOF-001"
-    ],
+    "writes_allowed_for": [],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -29,7 +27,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active writer PS-SEARCH-DARK-PROOF-001 stops after a frozen exact-SHA independent-review handoff. It may not merge, deploy, enable, widen, invoke a provider, mutate Azure, rerun the proof battery, or make a live claim. Pete's later lane-concurrency policy direction is a separate post-handoff package and may not alter this Search candidate."
+    "exit_authority": "PS-SEARCH-DARK-PROOF-001 is paused and preserved at pushed SHA 20db036eabe7272f4a78b673f3ad6efea5800deb after its exact-SHA independent re-review handoff. No package currently owns a mutable surface; the separate owner-directed lane-concurrency policy outcome must activate through the current delivery-control flow."
   },
   "activation_policy": {
     "enabled": true,
@@ -2242,57 +2240,7 @@
       "close_evidence_paths": []
     }
   ],
-  "active_lanes": [
-    {
-      "package": "PS-SEARCH-DARK-PROOF-001",
-      "outcome": "Reconcile both independent Search 3F reviews into one internally consistent V3 architecture and repository-native non-production implementation. Preserve the executed 2024-07-01 Azure proof as limited historical evidence; implement a zero-network default, complete query/fence/serializer and cleanup contracts, honest evidence claims, deployment-artifact exclusion, focused tests, and a frozen exact-SHA independent-review candidate. Do not mutate Azure, rerun the proof battery, touch Ask Pete, merge, deploy, enable member-facing search, or make a live claim.",
-      "branch": "work/2026-08-18-search-dark-proof-v3",
-      "writer": "This Codex task is the sole writer after this activation merges. The original handoff and both prior independent reviews are read-only source evidence; no other task may edit this lane's surfaces.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "implementation",
-      "exclusive_domains": [
-        "product:public-search-dark-proof",
-        "privacy:public-search-projection-fence",
-        "operations:search-proof-cleanup"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main fac8864ee61343a595d66e5d474a66fc93db84b4 at controlled_idle with zero active writers and empty write, merge, release, and cleanup authority. Pete assigned this Codex task ownership on 2026-08-18: 'You now own this. take this all the way. first, get it to a pass state, and then I will have an independent reviewer review it as well', then directed 'great keep going'. Two read-only independent reviews found the historical Azure mechanics useful but the V2 architecture and staged bundle not landing-ready. This activation authorizes reconciliation and implementation only, not Azure mutation or proof re-execution.",
-      "writable_surfaces": [
-        "docs/governance/PACKAGE_REGISTRY.json",
-        "docs/initiatives/PS-SEARCH-DARK-PROOF-001/",
-        "scripts/run_public_search_dark_proof.py",
-        "scripts/build_public_content_fixture_manifest.py",
-        "tests/test_public_search_dark_proof.py",
-        "azure-pipelines.yml"
-      ],
-      "exclusions": [
-        "no application route, template, browser bundle, app setting, feature flag, schema, migration, dependency, public sitemap, or member-facing search behavior",
-        "no Azure resource, index, document, role, principal, credential, service setting, key, capacity, cost object, or Ask Pete mutation and no rerun of the live proof battery",
-        "no real member content; fixtures remain wholly synthetic and no browser or application identity receives Azure Search credentials",
-        "no rewriting historical execution as 2026-04-01 evidence; the executed proof remains truthfully bound to 2024-07-01",
-        "no merge, deployment, enablement, Gate L2 claim, production-readiness claim, or live capability claim before a frozen exact-SHA independent review and later owner authorization",
-        "no edit, reset, adoption, cleanup, or deletion of another lane, branch, worktree, stash, artifact, secret, production data, or user-authored content"
-      ],
-      "completion_evidence": [
-        "one consolidated V3 removes or resolves every privacy-, cleanup-, schema-, pin-, decision-, and test-register contradiction raised by either review",
-        "repository-native tooling defaults to a zero-network plan, validates a complete pre-authorized manifest before execution, enforces pre-dispatch ceilings, and keeps cleanup executable at or after expiry while refusing non-cleanup mutation",
-        "offline tests prove fixed lexical query construction, adaptive bounded paging, complete canonical fence ordering, exact canonical serializer output, content-free transport census, manifest validation, expiry behavior, and full target-specific teardown planning without Azure calls",
-        "historical execution evidence is labelled as a limited 2024-07-01 synthetic mechanics proof; Ask Pete, isolation, separation, cost, determinism, and deletion claims are no stronger than their instruments",
-        "the deployment artifact excludes the two proof-only operator scripts, the bundle contains no bytecode or import-time write, and focused plus applicable full repository tests pass",
-        "a complete-diff self-review confirms only recorded surfaces changed and the frozen pushed SHA receives a fresh independent Protected-risk review before any merge request"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-18",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Pete assigned Search 3F ownership to this Codex task, directed it to take the package to a pass-ready state, and reserved the next independent review to another reviewer. Pete then required a detailed exact-SHA reviewer handoff before any separate lane-concurrency policy change. This authorizes only the recorded non-production Search reconciliation and candidate."
-        }
-      ],
-      "cleanup_contract": "Preserve the original handoff, reviews, standing Azure evidence, and all unrelated work. This repository lane does not authorize Azure teardown. Any teardown uses the separately pre-authorized exact-target Retire procedure before the 2026-08-23 23:59 CDT deadline and must not use the staged V2 teardown command unchanged. Preserve both activation and implementation branches through independent review and any later owner decision. Pete's requested lane-concurrency policy change starts only after the detailed Search review handoff and must use a separate branch/package.",
-      "sequence": "control-only activation PR -> merge activation -> create the exact clean implementation worktree from resulting origin/main -> package write preflight -> register Search 3F and implement the consolidated V3 docs/tooling/tests within recorded surfaces -> focused and applicable full validation -> complete-diff writer self-review -> freeze and push exact candidate -> deliver detailed exact-SHA independent-review handoff -> fresh independent Protected review; only after the handoff may a separate lane-concurrency policy package begin, and any Search merge, deployment, Azure teardown, or member-facing search remains a separate owner-authorized step"
-    }
-  ],
+  "active_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
@@ -3185,6 +3133,60 @@
       "pause_reason": "The exact release-profile repair is merged and its SD-1 runtime child is merged_closed. This auxiliary lane now retains no operating authority and is preserved only as exact historical evidence because the generic close contract cannot truthfully reconstruct its ledger surface after the later grant and runtime close.",
       "resume_contract": "Resume only through fresh activation with a new exact owner-selected outcome; do not reuse this lane for runtime, release, configuration, schema, widening, provider invocation, or broader dictation work.",
       "preserved_head_sha": "279d10ee9f90e7bf931d30dc2b9a3c5856ce6d46"
+    },
+    {
+      "package": "PS-SEARCH-DARK-PROOF-001",
+      "outcome": "Reconcile both independent Search 3F reviews into one internally consistent V3 architecture and repository-native non-production implementation. Preserve the executed 2024-07-01 Azure proof as limited historical evidence; implement a zero-network default, complete query/fence/serializer and cleanup contracts, honest evidence claims, deployment-artifact exclusion, focused tests, and a frozen exact-SHA independent-review candidate. Do not mutate Azure, rerun the proof battery, touch Ask Pete, merge, deploy, enable member-facing search, or make a live claim.",
+      "branch": "work/2026-08-18-search-dark-proof-v3",
+      "writer": "This Codex task is the sole writer after this activation merges. The original handoff and both prior independent reviews are read-only source evidence; no other task may edit this lane's surfaces.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "product:public-search-dark-proof",
+        "privacy:public-search-projection-fence",
+        "operations:search-proof-cleanup"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main fac8864ee61343a595d66e5d474a66fc93db84b4 at controlled_idle with zero active writers and empty write, merge, release, and cleanup authority. Pete assigned this Codex task ownership on 2026-08-18: 'You now own this. take this all the way. first, get it to a pass state, and then I will have an independent reviewer review it as well', then directed 'great keep going'. Two read-only independent reviews found the historical Azure mechanics useful but the V2 architecture and staged bundle not landing-ready. This activation authorizes reconciliation and implementation only, not Azure mutation or proof re-execution.",
+      "writable_surfaces": [
+        "docs/governance/PACKAGE_REGISTRY.json",
+        "docs/initiatives/PS-SEARCH-DARK-PROOF-001/",
+        "scripts/run_public_search_dark_proof.py",
+        "scripts/build_public_content_fixture_manifest.py",
+        "tests/test_public_search_dark_proof.py",
+        "azure-pipelines.yml"
+      ],
+      "exclusions": [
+        "no application route, template, browser bundle, app setting, feature flag, schema, migration, dependency, public sitemap, or member-facing search behavior",
+        "no Azure resource, index, document, role, principal, credential, service setting, key, capacity, cost object, or Ask Pete mutation and no rerun of the live proof battery",
+        "no real member content; fixtures remain wholly synthetic and no browser or application identity receives Azure Search credentials",
+        "no rewriting historical execution as 2026-04-01 evidence; the executed proof remains truthfully bound to 2024-07-01",
+        "no merge, deployment, enablement, Gate L2 claim, production-readiness claim, or live capability claim before a frozen exact-SHA independent review and later owner authorization",
+        "no edit, reset, adoption, cleanup, or deletion of another lane, branch, worktree, stash, artifact, secret, production data, or user-authored content"
+      ],
+      "completion_evidence": [
+        "one consolidated V3 removes or resolves every privacy-, cleanup-, schema-, pin-, decision-, and test-register contradiction raised by either review",
+        "repository-native tooling defaults to a zero-network plan, validates a complete pre-authorized manifest before execution, enforces pre-dispatch ceilings, and keeps cleanup executable at or after expiry while refusing non-cleanup mutation",
+        "offline tests prove fixed lexical query construction, adaptive bounded paging, complete canonical fence ordering, exact canonical serializer output, content-free transport census, manifest validation, expiry behavior, and full target-specific teardown planning without Azure calls",
+        "historical execution evidence is labelled as a limited 2024-07-01 synthetic mechanics proof; Ask Pete, isolation, separation, cost, determinism, and deletion claims are no stronger than their instruments",
+        "the deployment artifact excludes the two proof-only operator scripts, the bundle contains no bytecode or import-time write, and focused plus applicable full repository tests pass",
+        "a complete-diff self-review confirms only recorded surfaces changed and the frozen pushed SHA receives a fresh independent Protected-risk review before any merge request"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-18",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete assigned Search 3F ownership to this Codex task, directed it to take the package to a pass-ready state, and reserved the next independent review to another reviewer. Pete then required a detailed exact-SHA reviewer handoff before any separate lane-concurrency policy change. This authorizes only the recorded non-production Search reconciliation and candidate."
+        }
+      ],
+      "cleanup_contract": "Preserve the original handoff, reviews, standing Azure evidence, and all unrelated work. This repository lane does not authorize Azure teardown. Any teardown uses the separately pre-authorized exact-target Retire procedure before the 2026-08-23 23:59 CDT deadline and must not use the staged V2 teardown command unchanged. Preserve both activation and implementation branches through independent review and any later owner decision. Pete's requested lane-concurrency policy change starts only after the detailed Search review handoff and must use a separate branch/package.",
+      "sequence": "control-only activation PR -> merge activation -> create the exact clean implementation worktree from resulting origin/main -> package write preflight -> register Search 3F and implement the consolidated V3 docs/tooling/tests within recorded surfaces -> focused and applicable full validation -> complete-diff writer self-review -> freeze and push exact candidate -> deliver detailed exact-SHA independent-review handoff -> fresh independent Protected review; only after the handoff may a separate lane-concurrency policy package begin, and any Search merge, deployment, Azure teardown, or member-facing search remains a separate owner-authorized step",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-19T01:01:16Z",
+      "pause_reason": "The corrected Search 3F V3 R1 candidate is complete, frozen, pushed at exact SHA 20db036eabe7272f4a78b673f3ad6efea5800deb, and delivered in a detailed independent re-review handoff after the prior Conditional verdict. It remains unmerged, undeployed, not member-facing, and preserved without writer authority while the fresh review is performed.",
+      "resume_contract": "Resume only through fresh activation after the independent re-review and a new exact Pete-selected outcome. Preserve candidate SHA 20db036eabe7272f4a78b673f3ad6efea5800deb unchanged; do not infer merge, deployment, teardown, retention extension, Gate L2, or member-facing authority.",
+      "preserved_head_sha": "20db036eabe7272f4a78b673f3ad6efea5800deb"
     }
   ],
   "workspace_snapshot": {
