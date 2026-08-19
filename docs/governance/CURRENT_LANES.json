@@ -1,19 +1,17 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-19T14:10:17Z",
+  "updated_at": "2026-08-19T14:16:32Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-DELIVERY-CONTROL-SEARCH-001"
-    ],
+    "writes_allowed_for": [],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -29,7 +27,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active writer lanes: PS-DELIVERY-CONTROL-SEARCH-001. PS-SEARCH-DARK-PROOF-001 is merged_closed and retains no authority."
+    "exit_authority": "No active writer lanes. PS-DELIVERY-CONTROL-SEARCH-001 is paused and preserved; it may resume only through fresh activation."
   },
   "activation_policy": {
     "enabled": true,
@@ -2375,50 +2373,7 @@
       "close_evidence_paths": []
     }
   ],
-  "active_lanes": [
-    {
-      "package": "PS-DELIVERY-CONTROL-SEARCH-001",
-      "outcome": "Add one fail-closed reviewed-implementation admission profile so existing grant, candidate-merge, and close gates can represent only Search 3F package PS-SEARCH-DARK-PROOF-001 on branch work/2026-08-19-search-dark-proof-v3-r2 at independently passed SHA d7c5ad6d4098aa0f0f987e591fcd27b982a60e24. Pin the exact candidate paths, owner decision, independent review attestation, Azure PR 548 and its successful required CI receipt, non-production/no-Azure-mutation scope, and exact control sequence. The repair grants no authority itself and must preserve every existing profile and fail-closed default.",
-      "branch": "work/2026-08-19-search-release-control-repair",
-      "writer": "This Codex task is the sole writer for the three control surfaces after this activation merges. Search candidate d7c5ad6d4098aa0f0f987e591fcd27b982a60e24 is frozen and read-only; reviewer agents may inspect but may not edit either lane.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "shared_foundation",
-      "exclusive_domains": [
-        "governance:search-review-bound-release-profile"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main 7e19d2f8259d9367030915614d8af7c37f3303c8 with only Search active. Exact remote candidate d7c5ad6d4098aa0f0f987e591fcd27b982a60e24 received an independent Pass with no blocker or Major; focused review counted 69 passing tests, verified both corrected live CLI command shapes read-only, confirmed post-compile artifact exclusion, and found a clean current-main merge tree. Azure PR 548 is open at that exact source and required build 1286 is running. Current generic grant/merge refuses this unregistered implementation package. Pete directed Codex to complete everything and finish the steps itself.",
-      "writable_surfaces": [
-        "docs/governance/CURRENT_LANES.json",
-        "scripts/delivery_preflight.py",
-        "tests/test_delivery_preflight.py"
-      ],
-      "exclusions": [
-        "no application, route, template, stylesheet, JavaScript, schema, migration, dependency, pipeline, Azure resource, configuration, production data, proof resource, or live behavior change",
-        "no mutation of the frozen Search candidate, its fifteen changed paths, exact SHA, branch, independent Pass, PR, or CI evidence",
-        "no generic implementation-release bypass, wildcard package support, weakened SHA/branch/review/PR/CI binding, altered existing profile, or authority granted by the repair itself",
-        "no authority for proof rerun, Azure teardown, retention extension, member-facing enablement, schema, configuration, provider invocation, automatic merge, deployment, or live capability claim",
-        "no edit, reset, adoption, cleanup, or deletion of unrelated branches, worktrees, stashes, artifacts, secrets, production data, or user-authored content"
-      ],
-      "completion_evidence": [
-        "the validator recognizes only the exact Search package, branch, reviewed SHA, fifteen candidate paths, owner decision, independent Pass attestation, PR 548, successful required CI receipt, and excluded release actions",
-        "negative tests prove changed package, branch, SHA, path, review result, owner decision, PR, CI, scope, missing admission, missing grant, or altered existing profile fails closed",
-        "grant, candidate-worktree merge, and close fixtures prove authority remains separate and merge cannot proceed until the exact repair and later ledger-only grant reach origin/main",
-        "the full delivery-preflight and governance-pointer suites pass, git diff --check passes, and complete-diff review proves exactly the three writable paths changed",
-        "a fresh independent exact-SHA control review approves the repair before merge; no repair merge implies Search merge, deployment, teardown, or live capability"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-19",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Pete assigned Codex ownership, required a passing independent review, then directed 'complete everything' and 'Just finish the steps yourself.' The Search successor now has an exact-SHA independent Pass. This authorizes the narrow fail-closed release-profile repair and governed landing sequence without proof rerun, Azure mutation, retention extension, member-facing enablement, schema, configuration, or live capability expansion."
-        }
-      ],
-      "cleanup_contract": "Preserve the Search candidate, PR, review, activation and repair branches, evidence, standing Azure proof resources, and unrelated work. This repair grants no cleanup or teardown authority; Search teardown remains separately scheduled at the existing 2026-08-23 23:59 CDT expiry.",
-      "sequence": "activation PR -> merge activation -> wait for exact PR 548 required CI success -> clean repair worktree from resulting main -> package write preflight -> implement exact three-path fail-closed profile and tests -> freeze/push -> fresh independent repair review -> repair PR/CI/merge -> exact ledger-only Search grant -> current-main candidate merge verifier -> refresh PR 548 CI after all target movement -> squash merge -> verify artifact/release identity/health -> exact Search close"
-    }
-  ],
+  "active_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
@@ -3364,6 +3319,53 @@
       "pause_reason": "The four-writer collision-control candidate is complete, frozen, pushed at exact SHA 4ff435ea773efdbfa590f1aa4bbb6c7f4c759748, and delivered in a detailed independent-review handoff. It remains unmerged, undeployed, and preserved without writer authority while Grok performs the fresh review.",
       "resume_contract": "Resume only through fresh activation after the independent review and a new exact Pete-selected outcome. Preserve candidate SHA 4ff435ea773efdbfa590f1aa4bbb6c7f4c759748 unchanged; do not infer merge, release, deployment, production, or cleanup authority.",
       "preserved_head_sha": "4ff435ea773efdbfa590f1aa4bbb6c7f4c759748"
+    },
+    {
+      "package": "PS-DELIVERY-CONTROL-SEARCH-001",
+      "outcome": "Add one fail-closed reviewed-implementation admission profile so existing grant, candidate-merge, and close gates can represent only Search 3F package PS-SEARCH-DARK-PROOF-001 on branch work/2026-08-19-search-dark-proof-v3-r2 at independently passed SHA d7c5ad6d4098aa0f0f987e591fcd27b982a60e24. Pin the exact candidate paths, owner decision, independent review attestation, Azure PR 548 and its successful required CI receipt, non-production/no-Azure-mutation scope, and exact control sequence. The repair grants no authority itself and must preserve every existing profile and fail-closed default.",
+      "branch": "work/2026-08-19-search-release-control-repair",
+      "writer": "This Codex task is the sole writer for the three control surfaces after this activation merges. Search candidate d7c5ad6d4098aa0f0f987e591fcd27b982a60e24 is frozen and read-only; reviewer agents may inspect but may not edit either lane.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "shared_foundation",
+      "exclusive_domains": [
+        "governance:search-review-bound-release-profile"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 7e19d2f8259d9367030915614d8af7c37f3303c8 with only Search active. Exact remote candidate d7c5ad6d4098aa0f0f987e591fcd27b982a60e24 received an independent Pass with no blocker or Major; focused review counted 69 passing tests, verified both corrected live CLI command shapes read-only, confirmed post-compile artifact exclusion, and found a clean current-main merge tree. Azure PR 548 is open at that exact source and required build 1286 is running. Current generic grant/merge refuses this unregistered implementation package. Pete directed Codex to complete everything and finish the steps itself.",
+      "writable_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py"
+      ],
+      "exclusions": [
+        "no application, route, template, stylesheet, JavaScript, schema, migration, dependency, pipeline, Azure resource, configuration, production data, proof resource, or live behavior change",
+        "no mutation of the frozen Search candidate, its fifteen changed paths, exact SHA, branch, independent Pass, PR, or CI evidence",
+        "no generic implementation-release bypass, wildcard package support, weakened SHA/branch/review/PR/CI binding, altered existing profile, or authority granted by the repair itself",
+        "no authority for proof rerun, Azure teardown, retention extension, member-facing enablement, schema, configuration, provider invocation, automatic merge, deployment, or live capability claim",
+        "no edit, reset, adoption, cleanup, or deletion of unrelated branches, worktrees, stashes, artifacts, secrets, production data, or user-authored content"
+      ],
+      "completion_evidence": [
+        "the validator recognizes only the exact Search package, branch, reviewed SHA, fifteen candidate paths, owner decision, independent Pass attestation, PR 548, successful required CI receipt, and excluded release actions",
+        "negative tests prove changed package, branch, SHA, path, review result, owner decision, PR, CI, scope, missing admission, missing grant, or altered existing profile fails closed",
+        "grant, candidate-worktree merge, and close fixtures prove authority remains separate and merge cannot proceed until the exact repair and later ledger-only grant reach origin/main",
+        "the full delivery-preflight and governance-pointer suites pass, git diff --check passes, and complete-diff review proves exactly the three writable paths changed",
+        "a fresh independent exact-SHA control review approves the repair before merge; no repair merge implies Search merge, deployment, teardown, or live capability"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-19",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete assigned Codex ownership, required a passing independent review, then directed 'complete everything' and 'Just finish the steps yourself.' The Search successor now has an exact-SHA independent Pass. This authorizes the narrow fail-closed release-profile repair and governed landing sequence without proof rerun, Azure mutation, retention extension, member-facing enablement, schema, configuration, or live capability expansion."
+        }
+      ],
+      "cleanup_contract": "Preserve the Search candidate, PR, review, activation and repair branches, evidence, standing Azure proof resources, and unrelated work. This repair grants no cleanup or teardown authority; Search teardown remains separately scheduled at the existing 2026-08-23 23:59 CDT expiry.",
+      "sequence": "activation PR -> merge activation -> wait for exact PR 548 required CI success -> clean repair worktree from resulting main -> package write preflight -> implement exact three-path fail-closed profile and tests -> freeze/push -> fresh independent repair review -> repair PR/CI/merge -> exact ledger-only Search grant -> current-main candidate merge verifier -> refresh PR 548 CI after all target movement -> squash merge -> verify artifact/release identity/health -> exact Search close",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-19T14:16:32Z",
+      "pause_reason": "Search 3F merged, released, live-verified, and closed; the temporary exact Search admission profile has no remaining writer work.",
+      "resume_contract": "Resume only through fresh owner-selected activation on a clean branch from current origin/main; this preserved lane grants no standing merge, release, cleanup, Search mutation, proof-rerun, teardown, or retention authority.",
+      "preserved_head_sha": "2e5216bfaeaf2ea7dab40fccfe8b703050106a24"
     }
   ],
   "workspace_snapshot": {
