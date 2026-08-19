@@ -38,6 +38,18 @@ from scripts.delivery_preflight import (
     SD1_REVIEW_ATTESTATION,
     SD1_REVIEW_ATTESTATION_SHA256,
     SD1_REVIEWED_SHA,
+    SEARCH_BRANCH,
+    SEARCH_CANDIDATE_BASE_SHA,
+    SEARCH_CANDIDATE_PATHS,
+    SEARCH_OWNER_RELEASE_DECISION,
+    SEARCH_OWNER_RELEASE_DECISION_SHA256,
+    SEARCH_PACKAGE,
+    SEARCH_RELEASE_ADMISSION,
+    SEARCH_RELEASE_ADMISSION_PATHS,
+    SEARCH_RELEASE_SCOPE,
+    SEARCH_REVIEW_ATTESTATION,
+    SEARCH_REVIEW_ATTESTATION_SHA256,
+    SEARCH_REVIEWED_SHA,
     CLEANUP_BRANCH_PATTERN,
     DIRECTION_MERGE_CONTROL_PATHS,
     DIRECTION_MERGE_FOLLOWUP_PATHS,
@@ -158,6 +170,8 @@ from scripts.delivery_preflight import (
     _exact_community_authoring_grant_fixture_followup_matches,
     _exact_sd1_release_admission_delta,
     _exact_sd1_release_admission_matches,
+    _exact_search_release_admission_delta,
+    _exact_search_release_admission_matches,
     _exact_profile_core_grant_anchor_followup_delta,
     _exact_profile_core_grant_anchor_followup_matches,
     _exact_profile_core_grant_fixture_followup_delta,
@@ -191,6 +205,7 @@ from scripts.delivery_preflight import (
     _connect_002_main_sequence_facts,
     _is_connect_002_reviewed_implementation_lane,
     _is_community_authoring_reviewed_implementation_lane,
+    _is_search_reviewed_implementation_lane,
     _profile_core_main_sequence_facts,
     _exact_opportunity_schema_repair_release_refresh_matches,
     _exact_opportunity_lifecycle_fixture_repair_delta,
@@ -785,6 +800,57 @@ class DeliveryPreflightTests(unittest.TestCase):
             "review_result": "pass",
             "review_evidence_paths": [],
             "release_scope": copy.deepcopy(SD1_RELEASE_SCOPE),
+        }
+
+    def _search_release_admission_origin(self) -> tuple[dict, dict]:
+        """Return main just before the one-time Search control repair."""
+        origin = load_ledger_at_ref(SEARCH_RELEASE_ADMISSION["origin_main"])
+        lane = next(
+            item
+            for item in origin["active_lanes"]
+            if item.get("package") == SEARCH_PACKAGE
+        )
+        self.assertEqual(SEARCH_BRANCH, lane["branch"])
+        self.assertNotIn("merge_grant", lane)
+        self.assertNotIn("search_dark_proof_release_admission", origin)
+        return origin, lane
+
+    def _search_release_admission_candidate(self, origin: dict) -> dict:
+        candidate = copy.deepcopy(origin)
+        candidate["updated_at"] = "2026-08-19T13:10:15Z"
+        candidate["search_dark_proof_release_admission"] = copy.deepcopy(
+            SEARCH_RELEASE_ADMISSION
+        )
+        lane = next(
+            item
+            for item in candidate["active_lanes"]
+            if item.get("package") == SEARCH_PACKAGE
+        )
+        lane["owner_decisions"].append(copy.deepcopy(SEARCH_OWNER_RELEASE_DECISION))
+        return candidate
+
+    def _search_grant_record(self, lane: dict, granted_at: str) -> dict:
+        decision_index = len(lane["owner_decisions"]) - 1
+        decision = lane["owner_decisions"][decision_index]
+        self.assertEqual(SEARCH_OWNER_RELEASE_DECISION, decision)
+        self.assertEqual(
+            SEARCH_OWNER_RELEASE_DECISION_SHA256,
+            _canonical_sha256(decision),
+        )
+        self.assertEqual(
+            SEARCH_REVIEW_ATTESTATION_SHA256,
+            _canonical_sha256(SEARCH_REVIEW_ATTESTATION),
+        )
+        return {
+            "authorized_by": "Pete",
+            "authority_decision_index": decision_index,
+            "authority_decision_sha256": _canonical_sha256(decision),
+            "independent_review": copy.deepcopy(SEARCH_REVIEW_ATTESTATION),
+            "reviewed_remote_sha": SEARCH_REVIEWED_SHA,
+            "granted_at": granted_at,
+            "review_result": "pass",
+            "review_evidence_paths": [],
+            "release_scope": copy.deepcopy(SEARCH_RELEASE_SCOPE),
         }
 
     def _opportunity_origin(self) -> tuple[dict, dict]:
@@ -1832,6 +1898,490 @@ class DeliveryPreflightTests(unittest.TestCase):
             any("introduced the reviewed" in item for item in no_introduction_errors)
         )
 
+    def test_search_release_admission_is_exact_inert_and_one_time(self):
+        origin, _ = self._search_release_admission_origin()
+        candidate = self._search_release_admission_candidate(origin)
+        baseline = load_baseline_bytes_at_ref(SEARCH_RELEASE_ADMISSION["origin_main"])
+        admission_facts = facts(
+            branch=SEARCH_RELEASE_ADMISSION["branch"],
+            head="search-admission-candidate",
+            ahead=1,
+            origin_main=SEARCH_RELEASE_ADMISSION["origin_main"],
+            changed_paths=sorted(SEARCH_RELEASE_ADMISSION_PATHS),
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            admission_facts,
+            package=SEARCH_RELEASE_ADMISSION["package"],
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertTrue(
+            any("Search release-profile admission" in item for item in warnings)
+        )
+        self.assertTrue(
+            _exact_search_release_admission_matches(
+                candidate,
+                admission_facts,
+                SEARCH_RELEASE_ADMISSION["package"],
+            )
+        )
+        self.assertTrue(_exact_search_release_admission_delta(origin, candidate))
+        self.assertEqual(origin["operating_mode"], candidate["operating_mode"])
+        self.assertEqual(
+            [
+                lane
+                for lane in origin["active_lanes"]
+                if lane["package"] != SEARCH_PACKAGE
+            ],
+            [
+                lane
+                for lane in candidate["active_lanes"]
+                if lane["package"] != SEARCH_PACKAGE
+            ],
+        )
+
+        widened = copy.deepcopy(candidate)
+        widened["search_dark_proof_release_admission"]["candidate_contract"][
+            "release_scope"
+        ]["azure_search_mutation"] = True
+        widened_errors, _ = self._evaluate_activation(
+            widened,
+            admission_facts,
+            package=SEARCH_RELEASE_ADMISSION["package"],
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(widened_errors)
+        self.assertFalse(_exact_search_release_admission_delta(origin, widened))
+
+        wrong_branch_errors, _ = self._evaluate_activation(
+            candidate,
+            {**admission_facts, "branch": "work/2026-08-19-search-release-control-other"},
+            package=SEARCH_RELEASE_ADMISSION["package"],
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(wrong_branch_errors)
+        wrong_surfaces_errors, _ = self._evaluate_activation(
+            candidate,
+            {**admission_facts, "changed_paths": ["scripts/delivery_preflight.py"]},
+            package=SEARCH_RELEASE_ADMISSION["package"],
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(wrong_surfaces_errors)
+
+        replay_origin = copy.deepcopy(candidate)
+        replay = copy.deepcopy(candidate)
+        replay["updated_at"] = "2026-08-19T13:11:15Z"
+        replay_errors, _ = self._evaluate_activation(
+            replay,
+            {**admission_facts, "origin_main": "later-main"},
+            package=SEARCH_RELEASE_ADMISSION["package"],
+            require_clean=True,
+            origin=replay_origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(replay_errors)
+        self.assertFalse(_exact_search_release_admission_delta(replay_origin, replay))
+
+    def test_search_grant_and_merge_are_exact_candidate_only(self):
+        base, _ = self._search_release_admission_origin()
+        admitted = self._search_release_admission_candidate(base)
+        granted = copy.deepcopy(admitted)
+        granted_at = "2026-08-19T13:20:00Z"
+        granted["updated_at"] = granted_at
+        granted_lane = next(
+            item
+            for item in granted["active_lanes"]
+            if item.get("package") == SEARCH_PACKAGE
+        )
+        granted_lane["merge_grant"] = self._search_grant_record(
+            granted_lane, granted_at
+        )
+        granted["operating_mode"]["merge_allowed_for"] = [SEARCH_PACKAGE]
+        granted["operating_mode"]["release_allowed_for"] = [SEARCH_PACKAGE]
+        baseline = load_baseline_bytes_at_ref(SEARCH_RELEASE_ADMISSION["origin_main"])
+        grant_facts = facts(
+            branch="work/2026-08-19-delivery-grant-search-dark-proof",
+            head="search-grant-candidate",
+            ahead=1,
+            origin_main="search-admission-main",
+            changed_paths=sorted(GRANT_ALLOWED_SURFACES),
+            grant_target_remote_sha=SEARCH_REVIEWED_SHA,
+            grant_review_evidence_existing=[],
+            grant_review_evidence=[],
+        )
+        grant_errors, _ = evaluate_policy(
+            granted,
+            grant_facts,
+            SEARCH_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=admitted,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], grant_errors)
+        self.assertTrue(
+            _exact_direction_grant_delta(admitted, granted, SEARCH_PACKAGE)
+        )
+
+        no_admission_errors, _ = evaluate_policy(
+            granted,
+            grant_facts,
+            SEARCH_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=base,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(
+            any("release-profile admission" in item for item in no_admission_errors)
+        )
+        substituted_evidence_errors, _ = evaluate_policy(
+            granted,
+            {
+                **grant_facts,
+                "grant_review_evidence_existing": ["README.md"],
+                "grant_review_evidence": [
+                    {"path": "README.md", "content": "forged evidence"}
+                ],
+            },
+            SEARCH_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=admitted,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(
+            any(
+                "immutable control attestation" in item
+                for item in substituted_evidence_errors
+            )
+        )
+
+        widened = copy.deepcopy(granted)
+        widened_lane = next(
+            item
+            for item in widened["active_lanes"]
+            if item.get("package") == SEARCH_PACKAGE
+        )
+        widened_lane["merge_grant"]["release_scope"]["proof_rerun"] = True
+        widened_errors, _ = evaluate_policy(
+            widened,
+            grant_facts,
+            SEARCH_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=admitted,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertTrue(any("release_scope" in item for item in widened_errors))
+
+        merge_facts = facts(
+            branch=SEARCH_BRANCH,
+            head=SEARCH_REVIEWED_SHA,
+            ahead=3,
+            behind=3,
+            origin_main="search-grant-main",
+            changed_paths=sorted(SEARCH_CANDIDATE_PATHS),
+            merge_target_remote_sha=SEARCH_REVIEWED_SHA,
+            merge_main_changed_paths=sorted(
+                set(SEARCH_RELEASE_ADMISSION_PATHS) | set(GRANT_ALLOWED_SURFACES)
+            ),
+            merge_main_control_commits_valid=True,
+            merge_main_control_commit_count=2,
+        )
+        merge_errors, merge_warnings = evaluate_policy(
+            granted,
+            merge_facts,
+            SEARCH_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=granted,
+        )
+        self.assertEqual([], merge_errors)
+        self.assertTrue(
+            any(
+                "Search 3F candidate predates its control child" in item
+                for item in merge_warnings
+            )
+        )
+
+        wrong_count_errors, _ = evaluate_policy(
+            granted,
+            {**merge_facts, "merge_main_control_commit_count": 3},
+            SEARCH_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=granted,
+        )
+        self.assertTrue(any("exactly two" in item for item in wrong_count_errors))
+        wrong_candidate_errors, _ = evaluate_policy(
+            granted,
+            {**merge_facts, "head": "d" * 40},
+            SEARCH_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=granted,
+        )
+        self.assertTrue(any("reviewed" in item for item in wrong_candidate_errors))
+
+    def test_search_main_sequence_collector_requires_the_exact_two_control_commits(self):
+        base, _ = self._search_release_admission_origin()
+        admitted = self._search_release_admission_candidate(base)
+        granted = copy.deepcopy(admitted)
+        granted_at = "2026-08-19T13:20:00Z"
+        granted["updated_at"] = granted_at
+        target = next(
+            item
+            for item in granted["active_lanes"]
+            if item.get("package") == SEARCH_PACKAGE
+        )
+        target["merge_grant"] = self._search_grant_record(target, granted_at)
+        granted["operating_mode"]["merge_allowed_for"] = [SEARCH_PACKAGE]
+        granted["operating_mode"]["release_allowed_for"] = [SEARCH_PACKAGE]
+
+        admission_sha = "4" * 40
+        grant_sha = "5" * 40
+        merged_main_sha = "6" * 40
+        expected_control_paths = sorted(
+            set(SEARCH_RELEASE_ADMISSION_PATHS) | set(GRANT_ALLOWED_SURFACES)
+        )
+
+        def fake_git(*args: str) -> str:
+            responses = {
+                (
+                    "rev-list",
+                    "--reverse",
+                    f"{SEARCH_RELEASE_ADMISSION['origin_main']}..{merged_main_sha}",
+                ): f"{admission_sha}\n{grant_sha}\n",
+                ("rev-parse", f"{admission_sha}^"): SEARCH_RELEASE_ADMISSION[
+                    "origin_main"
+                ],
+                ("rev-parse", f"{grant_sha}^"): admission_sha,
+                (
+                    "merge-base",
+                    SEARCH_REVIEWED_SHA,
+                    SEARCH_RELEASE_ADMISSION["origin_main"],
+                ): SEARCH_CANDIDATE_BASE_SHA,
+                (
+                    "rev-parse",
+                    f"{SEARCH_RELEASE_ADMISSION['origin_main']}^",
+                ): SEARCH_CANDIDATE_BASE_SHA,
+            }
+            return responses[args]
+
+        def fake_git_nul(*args: str) -> list[str]:
+            if args[-1] == f"{SEARCH_RELEASE_ADMISSION['origin_main']}..{merged_main_sha}":
+                return expected_control_paths
+            if args[-1] == admission_sha:
+                return sorted(SEARCH_RELEASE_ADMISSION_PATHS)
+            if args[-1] == grant_sha:
+                return sorted(GRANT_ALLOWED_SURFACES)
+            if args[-1] == (
+                f"{SEARCH_CANDIDATE_BASE_SHA}..{SEARCH_REVIEWED_SHA}"
+            ):
+                return sorted(SEARCH_CANDIDATE_PATHS)
+            raise AssertionError(args)
+
+        with (
+            patch("scripts.delivery_preflight._git", side_effect=fake_git),
+            patch("scripts.delivery_preflight._git_nul", side_effect=fake_git_nul),
+            patch(
+                "scripts.delivery_preflight.load_ledger_at_ref",
+                side_effect=lambda ref: {
+                    SEARCH_RELEASE_ADMISSION["origin_main"]: base,
+                    admission_sha: admitted,
+                }[ref],
+            ),
+        ):
+            paths, valid, count = _direction_main_sequence_facts(
+                granted,
+                SEARCH_PACKAGE,
+                SEARCH_REVIEWED_SHA,
+                merged_main_sha,
+            )
+        self.assertEqual(expected_control_paths, paths)
+        self.assertTrue(valid)
+        self.assertEqual(2, count)
+
+    def test_search_close_allows_only_empty_evidence_with_exact_merge_proof(self):
+        base, _ = self._search_release_admission_origin()
+        admitted = self._search_release_admission_candidate(base)
+        granted = copy.deepcopy(admitted)
+        granted_at = "2026-08-19T13:20:00Z"
+        granted["updated_at"] = granted_at
+        target = next(
+            item
+            for item in granted["active_lanes"]
+            if item.get("package") == SEARCH_PACKAGE
+        )
+        target["merge_grant"] = self._search_grant_record(target, granted_at)
+        granted["operating_mode"]["merge_allowed_for"] = [SEARCH_PACKAGE]
+        granted["operating_mode"]["release_allowed_for"] = [SEARCH_PACKAGE]
+
+        candidate = copy.deepcopy(granted)
+        closed_at = "2026-08-19T13:30:00Z"
+        candidate["updated_at"] = closed_at
+        candidate["active_lanes"] = [
+            lane
+            for lane in candidate["active_lanes"]
+            if lane.get("package") != SEARCH_PACKAGE
+        ]
+        candidate["operating_mode"]["writes_allowed_for"] = [
+            item
+            for item in candidate["operating_mode"]["writes_allowed_for"]
+            if item != SEARCH_PACKAGE
+        ]
+        candidate["operating_mode"]["merge_allowed_for"] = []
+        candidate["operating_mode"]["release_allowed_for"] = []
+        candidate["operating_mode"]["exit_authority"] = (
+            "Active writer lanes: PS-DELIVERY-CONTROL-SEARCH-001. "
+            + SEARCH_PACKAGE
+            + " is merged_closed and retains no authority."
+        )
+        closing = copy.deepcopy(target)
+        package_merge_sha = "e" * 40
+        merged_main_sha = "f" * 40
+        closing.update(
+            {
+                "disposition": "merged_closed",
+                "closed_at": closed_at,
+                "reviewed_remote_sha": SEARCH_REVIEWED_SHA,
+                "merged_main_sha": merged_main_sha,
+                "package_merge_sha": package_merge_sha,
+                "close_evidence_paths": [],
+            }
+        )
+        candidate["closing_lanes"] = [
+            *granted.get("closing_lanes", []),
+            closing,
+        ]
+
+        origin_baseline = load_baseline_bytes_at_ref(
+            SEARCH_RELEASE_ADMISSION["origin_main"]
+        )
+        baseline_text = origin_baseline.decode("utf-8")
+        baseline_text = re.sub(
+            r'^  current_assignments: .+$',
+            (
+                '  current_assignments: "Active writer lanes: '
+                "PS-DELIVERY-CONTROL-SEARCH-001. "
+                + SEARCH_PACKAGE
+                + ' is closed and archived."'
+            ),
+            baseline_text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        baseline_text = re.sub(
+            r"(?ms)^  - id: PS-SEARCH-DARK-PROOF-001\n.*?(?=^  - id:|^scoped_findings:)",
+            "",
+            baseline_text,
+            count=1,
+        )
+        baseline_text = re.sub(
+            r'^next_gate: .+$',
+            (
+                'next_gate: "Continue only the active writer packages: '
+                "PS-DELIVERY-CONTROL-SEARCH-001. "
+                + SEARCH_PACKAGE
+                + ' is closed and archived."'
+            ),
+            baseline_text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        completed = re.search(
+            r"(?ms)^completed_packages:\n(?P<body>.*?)(?=^[A-Za-z_]+:|\Z)",
+            baseline_text,
+        )
+        self.assertIsNotNone(completed)
+        assert completed is not None
+        candidate_baseline = (
+            baseline_text[: completed.start("body")]
+            + completed.group("body").rstrip()
+            + "\n  - "
+            + SEARCH_PACKAGE
+            + "\n"
+            + baseline_text[completed.end("body") :]
+        ).encode("utf-8")
+        close_facts = facts(
+            branch="work/2026-08-19-delivery-close-search-dark-proof",
+            ahead=1,
+            origin_main=merged_main_sha,
+            changed_paths=sorted(
+                [
+                    "docs/governance/CURRENT_BASELINE.yaml",
+                    "docs/governance/CURRENT_LANES.json",
+                ]
+            ),
+            close_target_remote_sha=SEARCH_REVIEWED_SHA,
+            close_surface_tree_equal=True,
+            close_package_merge_sha=package_merge_sha,
+            close_package_merge_ancestor=True,
+            close_package_merge_introduced_candidate=True,
+            close_evidence_existing=[],
+        )
+        close_errors, _ = evaluate_policy(
+            candidate,
+            close_facts,
+            SEARCH_PACKAGE,
+            "close",
+            require_clean=True,
+            origin_ledger=granted,
+            candidate_baseline=candidate_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertEqual([], close_errors)
+
+        substituted_evidence = copy.deepcopy(candidate)
+        substituted_evidence["closing_lanes"][-1]["close_evidence_paths"] = [
+            "README.md"
+        ]
+        evidence_errors, _ = evaluate_policy(
+            substituted_evidence,
+            {**close_facts, "close_evidence_existing": ["README.md"]},
+            SEARCH_PACKAGE,
+            "close",
+            require_clean=True,
+            origin_ledger=granted,
+            candidate_baseline=candidate_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertTrue(
+            any("immutable control attestation" in item for item in evidence_errors)
+        )
+        no_introduction_errors, _ = evaluate_policy(
+            candidate,
+            {**close_facts, "close_package_merge_introduced_candidate": False},
+            SEARCH_PACKAGE,
+            "close",
+            require_clean=True,
+            origin_ledger=granted,
+            candidate_baseline=candidate_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertTrue(
+            any("introduced the reviewed" in item for item in no_introduction_errors)
+        )
+
     def test_empty_review_evidence_remains_denied_for_other_profiles(self):
         _, lane = self._direction_origin()
         lane["merge_grant"] = self._grant_record(
@@ -2430,6 +2980,7 @@ with patch.object(
                     CONNECT_002_PACKAGE,
                     COMMUNITY_AUTHORING_PACKAGE,
                     SD1_PACKAGE,
+                    SEARCH_PACKAGE,
                 }:
                     lane["package"] = "PS-GENERIC-IMPLEMENTATION-001"
                     lane["branch"] = "work/2026-08-13-generic-implementation-001"
@@ -6835,6 +7386,7 @@ with patch.object(
                 or _is_profile_core_reviewed_implementation_lane(lane)
                 or _is_connect_002_reviewed_implementation_lane(lane)
                 or _is_community_authoring_reviewed_implementation_lane(lane)
+                or _is_search_reviewed_implementation_lane(lane)
                 or _is_shell_reviewed_shared_foundation_lane(lane)
             ):
                 self.assertFalse(lane.get("production_capable"))
@@ -9443,6 +9995,55 @@ with patch.object(
         self.assertEqual(2, result)
         self.assertIn(
             "direction-authority merge requires --candidate-worktree",
+            printed.call_args.args[0],
+        )
+
+    def test_search_merge_requires_frozen_candidate_worktree(self):
+        base, _ = self._search_release_admission_origin()
+        origin = self._search_release_admission_candidate(base)
+        granted_at = "2026-08-19T13:20:00Z"
+        origin["updated_at"] = granted_at
+        lane = next(
+            item
+            for item in origin["active_lanes"]
+            if item.get("package") == SEARCH_PACKAGE
+        )
+        lane["merge_grant"] = self._search_grant_record(lane, granted_at)
+        origin["operating_mode"]["merge_allowed_for"] = [SEARCH_PACKAGE]
+        origin["operating_mode"]["release_allowed_for"] = [SEARCH_PACKAGE]
+
+        with (
+            patch("scripts.delivery_preflight.load_ledger", return_value=origin),
+            patch(
+                "scripts.delivery_preflight.collect_facts",
+                return_value=facts(
+                    branch=SEARCH_BRANCH,
+                    head=SEARCH_REVIEWED_SHA,
+                    behind=3,
+                ),
+            ),
+            patch(
+                "scripts.delivery_preflight.load_ledger_at_ref",
+                return_value=origin,
+            ),
+            patch(
+                "scripts.delivery_preflight.load_baseline_bytes",
+                return_value=self.baseline,
+            ),
+            patch(
+                "scripts.delivery_preflight.load_baseline_bytes_at_ref",
+                return_value=self.baseline,
+            ),
+            patch("builtins.print") as printed,
+        ):
+            result = main([
+                "--package", SEARCH_PACKAGE, "--intent", "merge",
+                "--fetch", "--require-clean",
+            ])
+
+        self.assertEqual(2, result)
+        self.assertIn(
+            "review-bound merge requires --candidate-worktree",
             printed.call_args.args[0],
         )
 

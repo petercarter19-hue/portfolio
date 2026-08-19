@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-19T12:50:16Z",
+  "updated_at": "2026-08-19T13:10:15Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -2287,6 +2287,28 @@
           "authorized_by": "Pete",
           "status": "authorized",
           "decision": "After receiving the other review and asking Codex to continue, Pete directed: 'complete everything' and 'Just finish the steps yourself.' This authorizes Codex to correct the finite independent-review findings and complete the governed package steps, while retaining the package's explicit no-Azure-mutation, no-proof-rerun, and separate exact release-authority boundaries."
+        },
+        {
+          "date": "2026-08-19",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "exact_reviewed_search_3f_merge_and_normal_pipeline_authority",
+          "action": "merge_and_verify_normal_pipeline",
+          "scope": "PS-SEARCH-DARK-PROOF-001_exact_reviewed_candidate_only",
+          "package": "PS-SEARCH-DARK-PROOF-001",
+          "branch": "work/2026-08-19-search-dark-proof-v3-r2",
+          "reviewed_remote_sha": "d7c5ad6d4098aa0f0f987e591fcd27b982a60e24",
+          "pull_request": 548,
+          "ci_build": 1286,
+          "ci_speculative_merge_sha": "9ba8ce6825501ff6506fff0e052ac3f95a550337",
+          "azure_search_mutation": false,
+          "proof_rerun": false,
+          "teardown_execution": false,
+          "retention_extension": false,
+          "member_search_enablement": false,
+          "gate_l2_claim": false,
+          "live_capability_claim": false,
+          "verbatim_completion_direction": "complete everything; Just finish the steps yourself"
         }
       ],
       "cleanup_contract": "Preserve the original handoff, all reviews, standing Azure evidence, frozen candidate 20db036eabe7272f4a78b673f3ad6efea5800deb, and unrelated work. This repository correction lane does not authorize Azure teardown. The separately pre-authorized exact-target Retire procedure remains scheduled for the existing 2026-08-23 23:59 CDT expiry after a passing repository candidate is established.",
@@ -3546,5 +3568,114 @@
     },
     "reason": "Pete authorized only the exact corrected SD-1 candidate after its independent APPROVE and successful PR 533 CI build 1242. The frozen candidate predates this control child and has no Markdown evidence path inside its five writable surfaces, so this repair records the immutable review receipt without changing the candidate.",
     "verification_contract": "This record grants no merge, release, deployment, schema, configuration, enablement, Community widening, provider invocation, or broader dictation authority. The preflight recognizes it only on the exact branch, exact origin/main base, exact one-commit three-path delta, and exact candidate, owner, review, PR, CI, and exclusion pins. It may only record the pre-existing owner decision on the active SD-1 lane; merge_allowed_for and release_allowed_for remain empty until a later separate grant."
+  },
+  "search_dark_proof_release_admission": {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-SEARCH-001",
+    "branch": "work/2026-08-19-search-release-control-repair",
+    "origin_main": "c84e9b4fbcfcd211108de3ea5befc19a4306fd3d",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "candidate_contract": {
+      "package": "PS-SEARCH-DARK-PROOF-001",
+      "branch": "work/2026-08-19-search-dark-proof-v3-r2",
+      "candidate_base_sha": "7e19d2f8259d9367030915614d8af7c37f3303c8",
+      "prior_rejected_sha": "d5748155e8eef441503f96e067c16f88dfb4cd6d",
+      "reviewed_remote_sha": "d7c5ad6d4098aa0f0f987e591fcd27b982a60e24",
+      "candidate_paths": [
+        "azure-pipelines.yml",
+        "docs/governance/PACKAGE_REGISTRY.json",
+        "docs/initiatives/PS-SEARCH-DARK-PROOF-001/ARCHITECTURE_V3.md",
+        "docs/initiatives/PS-SEARCH-DARK-PROOF-001/HISTORICAL_EXECUTION_EVIDENCE.md",
+        "docs/initiatives/PS-SEARCH-DARK-PROOF-001/INDEPENDENT_REVIEW_CHECKLIST.md",
+        "docs/initiatives/PS-SEARCH-DARK-PROOF-001/OWNER_DECISIONS.md",
+        "docs/initiatives/PS-SEARCH-DARK-PROOF-001/README.md",
+        "docs/initiatives/PS-SEARCH-DARK-PROOF-001/REVIEW_RESOLUTION.md",
+        "docs/initiatives/PS-SEARCH-DARK-PROOF-001/VERIFICATION_MATRIX.md",
+        "docs/initiatives/PS-SEARCH-DARK-PROOF-001/fixtures/cleanup-manifest.template.json",
+        "docs/initiatives/PS-SEARCH-DARK-PROOF-001/fixtures/public-content-proof-manifest.json",
+        "docs/initiatives/PS-SEARCH-DARK-PROOF-001/schema/public-content-index-v3.json",
+        "scripts/build_public_content_fixture_manifest.py",
+        "scripts/run_public_search_dark_proof.py",
+        "tests/test_public_search_dark_proof.py"
+      ],
+      "owner_decision_sha256": "d688d42143662ecce770e60b973cb2dc1ea173d3a83a69cd690e7570f6f6ba83",
+      "review_attestation_sha256": "916ebaceec447244d6746a9aeb881787666eb016a52bb38803483d92dfdfb5e7",
+      "release_scope": {
+        "pull_request": 548,
+        "ci_build": 1286,
+        "ci_speculative_merge_sha": "9ba8ce6825501ff6506fff0e052ac3f95a550337",
+        "application_action": "merge_non_runtime_search_3f_evidence_and_verify_normal_pipeline",
+        "schema_action": "none",
+        "azure_search_mutation": false,
+        "proof_rerun": false,
+        "teardown_execution": false,
+        "retention_extension": false,
+        "production_configuration_change": false,
+        "public_or_member_search_enablement": false,
+        "gate_l2_claim": false,
+        "live_capability_claim": false
+      }
+    },
+    "owner_decision": {
+      "date": "2026-08-19",
+      "authorized_by": "Pete",
+      "status": "authorized",
+      "decision": "exact_reviewed_search_3f_merge_and_normal_pipeline_authority",
+      "action": "merge_and_verify_normal_pipeline",
+      "scope": "PS-SEARCH-DARK-PROOF-001_exact_reviewed_candidate_only",
+      "package": "PS-SEARCH-DARK-PROOF-001",
+      "branch": "work/2026-08-19-search-dark-proof-v3-r2",
+      "reviewed_remote_sha": "d7c5ad6d4098aa0f0f987e591fcd27b982a60e24",
+      "pull_request": 548,
+      "ci_build": 1286,
+      "ci_speculative_merge_sha": "9ba8ce6825501ff6506fff0e052ac3f95a550337",
+      "azure_search_mutation": false,
+      "proof_rerun": false,
+      "teardown_execution": false,
+      "retention_extension": false,
+      "member_search_enablement": false,
+      "gate_l2_claim": false,
+      "live_capability_claim": false,
+      "verbatim_completion_direction": "complete everything; Just finish the steps yourself"
+    },
+    "review_attestation": {
+      "reviewer_task": "/root/search_final_review",
+      "reviewer_mode": "independent_read_only_non_writer",
+      "reviewed_sha": "d7c5ad6d4098aa0f0f987e591fcd27b982a60e24",
+      "reviewed_branch": "work/2026-08-19-search-dark-proof-v3-r2",
+      "prior_rejected_sha": "d5748155e8eef441503f96e067c16f88dfb4cd6d",
+      "verdict": "Pass",
+      "verdict_text": "Pass. No blockers or Majors. Both prior Majors are closed: the exact-scope Azure role queries now succeed without --all, and post-compile artifact selection excludes both proof sources and generated bytecode. Remote custody, zero-network boundaries, 69 focused checks, and the current-main merge tree passed. One non-blocking documentation Minor remains: the verification matrix uses the former name of the still-present 50-shuffle test.",
+      "basis": [
+        "full_tree_at_d7c5ad6d4098aa0f0f987e591fcd27b982a60e24",
+        "complete_diff_7e19d2f8259d9367030915614d8af7c37f3303c8_to_d7c5ad6d4098aa0f0f987e591fcd27b982a60e24",
+        "clean_remote_custody",
+        "fifteen_authorized_paths_only",
+        "sixty_nine_focused_checks_passed",
+        "live_read_only_exact_scope_role_query_succeeded",
+        "post_compile_artifact_exclusion_passed",
+        "zero_network_plan_preserved",
+        "current_main_merge_tree_clean"
+      ],
+      "non_blocking_minor": "VERIFICATION_MATRIX.md names the deterministic 50-shuffle test by its former name; the implemented passing coverage remains present.",
+      "scope": "protected_search_3f_non_runtime_evidence_merge_and_pipeline_verification",
+      "exclusions": "azure_search_mutation_proof_rerun_teardown_retention_extension_schema_configuration_member_search_enablement_gate_l2_live_capability",
+      "evidence_mode": "immutable_control_attestation_no_candidate_verdict_file",
+      "azure_receipt": {
+        "pull_request": 548,
+        "source_ci_build": 1286,
+        "source_ci_result": "succeeded",
+        "speculative_merge_sha": "9ba8ce6825501ff6506fff0e052ac3f95a550337"
+      },
+      "azure_snapshot_at": "2026-08-19T07:42:58-05:00",
+      "received_by": "Root Codex program manager",
+      "received_date": "2026-08-19"
+    },
+    "reason": "Pete directed Codex to complete Search 3F after exact candidate d7c5ad6d4098aa0f0f987e591fcd27b982a60e24 received an independent Pass and PR 548 build 1286 succeeded. The frozen candidate predates this control child, so this repair records the immutable receipts without changing the candidate.",
+    "verification_contract": "This record grants no merge, release, deployment, proof rerun, Azure mutation, teardown, retention extension, schema, configuration, search enablement, Gate L2, or live-capability authority. The preflight recognizes it only on the exact branch, exact origin/main base, exact one-commit three-path delta, and exact candidate, owner, review, PR, CI, path, and exclusion pins. Merge and release authority remain empty until a later separate grant."
   }
 }
