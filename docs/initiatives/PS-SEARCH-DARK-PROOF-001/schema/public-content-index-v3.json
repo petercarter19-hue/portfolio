@@ -1,0 +1,232 @@
+{
+  "name": "peerslate-public-content-v1",
+  "fields": [
+    {
+      "name": "document_id",
+      "type": "Edm.String",
+      "key": true,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "stored": true,
+      "sortable": true,
+      "facetable": false
+    },
+    {
+      "name": "profile_key",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "profile_slug",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "member_display_name",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": true,
+      "filterable": false,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false,
+      "analyzer": "en.microsoft"
+    },
+    {
+      "name": "audience",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "publication_revision_key",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "projection_version_key",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "projection_key",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "projection_digest",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "result_type",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "destination",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "title",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": true,
+      "filterable": false,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false,
+      "analyzer": "en.microsoft"
+    },
+    {
+      "name": "summary",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": true,
+      "filterable": false,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false,
+      "analyzer": "en.microsoft"
+    },
+    {
+      "name": "search_text",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": true,
+      "filterable": false,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false,
+      "analyzer": "en.microsoft"
+    },
+    {
+      "name": "aliases",
+      "type": "Collection(Edm.String)",
+      "key": false,
+      "searchable": true,
+      "filterable": false,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false,
+      "analyzer": "en.microsoft"
+    },
+    {
+      "name": "period_label",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": false,
+      "filterable": false,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "locale",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "title_sort",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": false,
+      "filterable": false,
+      "retrievable": true,
+      "stored": true,
+      "sortable": true,
+      "facetable": false
+    },
+    {
+      "name": "schema_version",
+      "type": "Edm.String",
+      "key": false,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "stored": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "indexed_at",
+      "type": "Edm.DateTimeOffset",
+      "key": false,
+      "searchable": false,
+      "filterable": true,
+      "retrievable": true,
+      "stored": true,
+      "sortable": true,
+      "facetable": false
+    }
+  ],
+  "semantic": null,
+  "vectorSearch": null
+}

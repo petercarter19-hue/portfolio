@@ -1,0 +1,45 @@
+{
+  "schema_version": 3,
+  "package": "PS-SEARCH-DARK-PROOF-001",
+  "classification": "PRIVATE_OPERATOR_ONLY_DO_NOT_COMMIT_FILLED_COPY",
+  "historical_execution_api_version": "2024-07-01",
+  "future_contract_api_version": "2026-04-01",
+  "created_at": "2026-08-16T19:05:00-05:00",
+  "teardown_not_before": "2026-08-23T23:59:00-05:00",
+  "expires_at": "2026-08-23T23:59:00-05:00",
+  "authorization": {
+    "authorized_by": "Pete",
+    "decision_date": "2026-08-16",
+    "action": "teardown_exact_targets",
+    "extension_allowed": false
+  },
+  "service": {
+    "subscription_id": "<PRIVATE_SUBSCRIPTION_UUID>",
+    "tenant_id": "<PRIVATE_TENANT_UUID>",
+    "resource_group": "peerslate",
+    "name": "proj-default-srch-f0z1",
+    "endpoint": "https://proj-default-srch-f0z1.search.windows.net"
+  },
+  "targets": {
+    "index_name": "peerslate-public-content-v1",
+    "role_assignment_resource_ids": [
+      "<PRIVATE_PUBLISHER_ROLE_ASSIGNMENT_RESOURCE_ID>",
+      "<PRIVATE_QUERY_ROLE_ASSIGNMENT_RESOURCE_ID>"
+    ],
+    "service_principal_object_ids": [
+      "<PRIVATE_PUBLISHER_SERVICE_PRINCIPAL_OBJECT_UUID>",
+      "<PRIVATE_QUERY_SERVICE_PRINCIPAL_OBJECT_UUID>"
+    ],
+    "application_ids": [
+      "<PRIVATE_PUBLISHER_APPLICATION_UUID>",
+      "<PRIVATE_QUERY_APPLICATION_UUID>"
+    ]
+  },
+  "confirmation_phrase_sha256": "<PRIVATE_SHA256_OF_OPERATOR_CONFIRMATION_PHRASE>",
+  "never_delete": [
+    "search_service",
+    "resource_group",
+    "pre_existing_role_assignments",
+    "pre_existing_indexes"
+  ]
+}
