@@ -78,3 +78,18 @@ condition = "AND"
 paths = ['''^docs/initiatives/PS-COMMUNITY-PUBLIC-PILOT-001/PRIMARY_FEED_ARCHITECTURE_AMENDMENT_2026-08-01\.md$''']
 regexTarget = "line"
 regexes = ['''^\s*server audio, no content-bearing logs, owner-only access, size/duration and\s*$''']
+
+[[allowlists]]
+description = """Known non-secret Search 3F proof-manifest identifiers. The \
+manifest is a deterministic synthetic fixture, and these two fields identify \
+fixture publication revisions and projections rather than credentials. The \
+pipeline scans every fetched Git ref, so the frozen review branch remains in \
+scope even though this fixture is not on main."""
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^docs/initiatives/PS-SEARCH-DARK-PROOF-001/fixtures/public-content-proof-manifest\.json$''']
+regexTarget = "line"
+regexes = [
+  '''^\s*"publication_revision_[k]ey": "rev_(?:alder-quist|ben-okafor|mira-ostrand)_001",\s*$''',
+  '''^\s*"projection_[k]ey": "proj_(?:alder-quist|ben-okafor|mira-ostrand)_(?:experience|skill)_[0-9]{3}",\s*$''',
+]

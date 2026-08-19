@@ -34,7 +34,7 @@ ROOT = os.path.dirname(os.path.dirname(__file__))
 
 
 class GitleaksConfigurationTests(unittest.TestCase):
-    def test_community_false_positive_allowlists_stay_exact_and_conjunctive(
+    def test_false_positive_allowlists_stay_exact_and_conjunctive(
         self,
     ):
         with open(os.path.join(ROOT, '.gitleaks.toml'), 'rb') as config_file:
@@ -55,7 +55,7 @@ class GitleaksConfigurationTests(unittest.TestCase):
         # history, deleting the files (they are already gone from main) could
         # not clear it. Both entries are scoped by path and exact line and are
         # not commit-pinned, so they survive the required squash merge.
-        self.assertEqual(5, len(allowlists))
+        self.assertEqual(6, len(allowlists))
         self.assertEqual(
             {
                 'description': (
@@ -88,6 +88,29 @@ class GitleaksConfigurationTests(unittest.TestCase):
                 'owner-only ',
                 'access, ',
                 r'size/duration and\s*$',
+            )
+        )
+        search_manifest_path = ''.join(
+            (
+                r'^docs/initiatives/',
+                'PS-SEARCH-DARK-PROOF-001/',
+                'fixtures/',
+                r'public-content-proof-manifest\.json$',
+            )
+        )
+        search_revision_line = ''.join(
+            (
+                r'^\s*"publication_revision_',
+                r'[k]ey": "rev_',
+                r'(?:alder-quist|ben-okafor|mira-ostrand)_001",\s*$',
+            )
+        )
+        search_projection_line = ''.join(
+            (
+                r'^\s*"projection_',
+                r'[k]ey": "proj_',
+                r'(?:alder-quist|ben-okafor|mira-ostrand)_',
+                r'(?:experience|skill)_[0-9]{3}",\s*$',
             )
         )
 
@@ -135,6 +158,10 @@ class GitleaksConfigurationTests(unittest.TestCase):
                         r'[A-Za-z]+_123",\s*$',
                     )
                 ),
+            ],
+            search_manifest_path: [
+                search_revision_line,
+                search_projection_line,
             ],
         }
 
