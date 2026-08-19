@@ -1,17 +1,19 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-19T01:01:16Z",
+  "updated_at": "2026-08-19T01:11:53Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "controlled_idle",
+    "state": "active_delivery",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [],
+    "writes_allowed_for": [
+      "PS-DELIVERY-CONTROL-CONCURRENCY-001"
+    ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -27,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-SEARCH-DARK-PROOF-001 is paused and preserved at pushed SHA 20db036eabe7272f4a78b673f3ad6efea5800deb after its exact-SHA independent re-review handoff. No package currently owns a mutable surface; the separate owner-directed lane-concurrency policy outcome must activate through the current delivery-control flow."
+    "exit_authority": "Active writer PS-DELIVERY-CONTROL-CONCURRENCY-001 stops after a frozen exact-SHA independent-review handoff. It may change only delivery-lane capacity and collision-control documentation, validator code, ledger policy, and focused governance tests; it may not change product/runtime behavior, merge itself, deploy, mutate Azure, or alter the paused Search candidate."
   },
   "activation_policy": {
     "enabled": true,
@@ -2240,7 +2242,56 @@
       "close_evidence_paths": []
     }
   ],
-  "active_lanes": [],
+  "active_lanes": [
+    {
+      "package": "PS-DELIVERY-CONTROL-CONCURRENCY-001",
+      "outcome": "Replace the artificial two-implementation/three-writer ceiling with a four-writer total ceiling so three or four disjoint writers may hold lanes when branches, writable surfaces, and hierarchical exclusive domains do not collide. Retain one direction-authority lane, one shared-foundation lane, one production-capable lane, unique branches, direction-only surface restrictions, and serialized merge/release authority. Freeze the exact candidate and deliver a detailed independent-review handoff before any merge.",
+      "branch": "work/2026-08-18-delivery-control-concurrency-001",
+      "writer": "This Codex task is the sole writer for the delivery-control concurrency package. Search 3F is paused and read-only at 20db036eabe7272f4a78b673f3ad6efea5800deb; no other task may edit this lane's surfaces.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "shared_foundation",
+      "exclusive_domains": [
+        "governance:delivery-lane-concurrency"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 392075fb6cd19c6206b9303f159af24fafdcc811 at controlled_idle after Search 3F was paused and preserved. Pete directed that three or four writers should receive lanes whenever there is no collision, overwrite, or potential overlap, required the rules to prevent actual overlap without withholding capacity for no reason, and requested a detailed independent-review handoff for this lane change.",
+      "writable_surfaces": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "START_HERE.md",
+        "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+        "tests/test_governance_pointers.py"
+      ],
+      "exclusions": [
+        "no product route, template, style, browser bundle, service, application test, schema, migration, dependency, release pipeline, Azure resource, configuration, deployment, or production behavior change",
+        "no weakening or removal of unique-branch, writable-surface overlap, hierarchical exclusive-domain, direction-authority surface, shared-foundation, production-capable, changed-path, merge, or release controls",
+        "no rewriting the historical one-time three-lane repair record or its pinned branch, base, rationale, and evidence",
+        "no edit, merge, teardown, retention change, or reinterpretation of the paused Search 3F candidate or its independent review",
+        "no merge of this policy candidate before a frozen exact-SHA independent review and a later owner decision"
+      ],
+      "completion_evidence": [
+        "operational docs, CURRENT_LANES activation policy, and validator constants agree on four total writers and four implementation/shared-foundation slots",
+        "tests prove four disjoint implementation lanes pass and a fifth lane fails while second direction-authority, second shared-foundation, second production-capable, duplicate branch, path overlap, and hierarchical exclusive-domain collisions still fail",
+        "direction-authority remains documentation/evidence-only and merge/release/production authority remains separately serialized",
+        "focused governance and preflight suites plus JSON, compile, and diff checks pass on the complete candidate",
+        "the exact pushed candidate receives a detailed independent-review handoff before any merge request"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-18",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Pete authorized this one-time lane-rule package after Search 3F completion: allow three or four writers to hold lanes when there are no collisions, overwrites, or potential issues; retain controls that prevent real overlap; and provide a detailed independent-review handoff for the lane change before landing it."
+        }
+      ],
+      "cleanup_contract": "Preserve every existing lane, historical repair record, branch, worktree, artifact, and paused Search candidate. This package changes only prospective lane-capacity policy and its enforcement tests; rollback is removal of the unmerged candidate or, after a separately authorized merge, a reviewed policy revert.",
+      "sequence": "control-only activation PR -> merge activation -> create exact implementation worktree from resulting origin/main -> write preflight -> update prospective policy docs, ledger constants, validator, and tests -> focused and applicable validation -> complete-diff self-review -> freeze and push exact candidate -> detailed fresh independent-review handoff; no policy merge follows automatically"
+    }
+  ],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",

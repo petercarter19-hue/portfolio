@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "No active writer lanes. PS-SEARCH-DARK-PROOF-001 is paused and preserved; activate an exact implementation or direction/authority outcome before repository writes."
+  current_assignments: "Active writer: PS-DELIVERY-CONTROL-CONCURRENCY-001 on work/2026-08-18-delivery-control-concurrency-001 after this activation merges."
 
 governing_documents:
   bible:
@@ -60,6 +60,9 @@ governing_documents:
 theme: light_modern_blue_dark_theme_paused
 
 active_packages:
+  - id: PS-DELIVERY-CONTROL-CONCURRENCY-001
+    status: active_delivery
+    scope: "Protected delivery-control policy and validation only; no product, runtime, release, schema, Azure, or production change."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -157,7 +160,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "No active writer lanes. Select and activate the next exact outcome under the three-lane class, path, and exclusive-domain rules."
+next_gate: "Continue only PS-DELIVERY-CONTROL-CONCURRENCY-001 on work/2026-08-18-delivery-control-concurrency-001; freeze an exact-SHA four-writer collision-control candidate and deliver the detailed independent-review handoff before any merge request."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
