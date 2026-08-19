@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-19T13:26:28Z",
+  "updated_at": "2026-08-19T14:10:17Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,16 +12,11 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-SEARCH-DARK-PROOF-001",
       "PS-DELIVERY-CONTROL-SEARCH-001"
     ],
-    "merge_allowed_for": [
-      "PS-SEARCH-DARK-PROOF-001"
-    ],
+    "merge_allowed_for": [],
     "cleanup_allowed_for": [],
-    "release_allowed_for": [
-      "PS-SEARCH-DARK-PROOF-001"
-    ],
+    "release_allowed_for": [],
     "blocked_actions": [
       "new implementation worktree outside an activated lane",
       "new feature or product write outside the exact surfaces recorded for its activated lane",
@@ -34,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Search candidate d7c5ad6d4098aa0f0f987e591fcd27b982a60e24 has an independent Pass and open PR 548 but no merge authority. PS-DELIVERY-CONTROL-SEARCH-001 may implement only the exact review-bound admission profile after required CI succeeds; the repair itself grants nothing."
+    "exit_authority": "Active writer lanes: PS-DELIVERY-CONTROL-SEARCH-001. PS-SEARCH-DARK-PROOF-001 is merged_closed and retains no authority."
   },
   "activation_policy": {
     "enabled": true,
@@ -2245,9 +2240,7 @@
       "merged_main_sha": "a1e7438c781355f2853ba6dce605955abd3bb725",
       "package_merge_sha": "a1e7438c781355f2853ba6dce605955abd3bb725",
       "close_evidence_paths": []
-    }
-  ],
-  "active_lanes": [
+    },
     {
       "package": "PS-SEARCH-DARK-PROOF-001",
       "outcome": "Correct the two finite findings from the fresh independent review of preserved Search 3F candidate 20db036eabe7272f4a78b673f3ad6efea5800deb: use valid exact-scope Azure CLI role-assignment queries in both teardown gates, and exclude generated proof-tool bytecode from the deployment artifact with post-compile artifact regression coverage. Preserve all already-closed review findings, freeze and push the successor, and obtain a fresh exact-SHA independent review. Do not mutate Azure, rerun the proof battery, execute teardown, merge, deploy, enable member-facing search, or make a live claim.",
@@ -2373,8 +2366,16 @@
           "gate_l2_claim": false,
           "live_capability_claim": false
         }
-      }
-    },
+      },
+      "disposition": "merged_closed",
+      "closed_at": "2026-08-19T14:10:17Z",
+      "reviewed_remote_sha": "d7c5ad6d4098aa0f0f987e591fcd27b982a60e24",
+      "merged_main_sha": "b9ded067d49ff6f6de0e1dd31af8c889c436528b",
+      "package_merge_sha": "b9ded067d49ff6f6de0e1dd31af8c889c436528b",
+      "close_evidence_paths": []
+    }
+  ],
+  "active_lanes": [
     {
       "package": "PS-DELIVERY-CONTROL-SEARCH-001",
       "outcome": "Add one fail-closed reviewed-implementation admission profile so existing grant, candidate-merge, and close gates can represent only Search 3F package PS-SEARCH-DARK-PROOF-001 on branch work/2026-08-19-search-dark-proof-v3-r2 at independently passed SHA d7c5ad6d4098aa0f0f987e591fcd27b982a60e24. Pin the exact candidate paths, owner decision, independent review attestation, Azure PR 548 and its successful required CI receipt, non-production/no-Azure-mutation scope, and exact control sequence. The repair grants no authority itself and must preserve every existing profile and fail-closed default.",
