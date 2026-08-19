@@ -42,20 +42,21 @@ create a branch or worktree to work around a failed preflight.
 In-place writer changes use the control-only `--intent transfer` flow in
 `MANAGER_SESSION_HANDOFF.md`.
 
-From `controlled_idle`, Pete must name one exact outcome before the small
-ledger/baseline activation branch is created. During `active_delivery`, the
-same path may add a writer only within the two-implementation-plus-one-direction
-limit and with disjoint paths and exclusive domains. The direction slot may
-write only initiative documentation/evidence, and only one active lane may be
-production-capable. Run:
+From `controlled_idle`, Pete names one exact outcome. During `active_delivery`,
+up to four writers may be active; all may be implementation lanes.
+Shared-foundation and direction/authority are specialized, not reserved: at
+most one of each and one production-capable lane. A duplicate branch,
+writable-path overlap, or hierarchical exclusive-domain collision is a stop.
+With capacity and all checks passing, two implementation lanes do not block a
+third or fourth writer. Direction/authority is documentation/evidence-only.
+Run:
 
 ```bash
 python scripts/delivery_preflight.py --package PS-DELIVERY-CONTROL-001 --intent activate --fetch --require-clean
 ```
 
-Record the branch, writer, class, domains, surfaces, exclusions, and path. Merge
-that control record before creating the implementation worktree. Product code,
-a full class limit, or a path/domain collision is a stop.
+Record branch, writer, class, domains, surfaces, exclusions, and path; merge the
+activation before creating its worktree. Any failed control check is a stop.
 
 Only writers consume capacity. To pause safely, commit and push the work
 checkpoint, then create a dedicated

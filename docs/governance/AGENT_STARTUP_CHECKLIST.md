@@ -12,11 +12,14 @@ Use this for a change, not for a read-only discussion.
   the exact package and intended read/write/release action.
 - [ ] For a new lane, confirmed Pete selected one exact outcome and used the
   ledger-only activation flow before implementation. Activation may start
-  from `controlled_idle`, or from `active_delivery` only when the three-lane
-  class limit has capacity and neither mutable paths nor exclusive domains
-  conflict. At most two implementation/shared-foundation lanes and one
-  direction/authority lane may be active. The direction lane is restricted to
-  initiative documentation/evidence, and only one lane may be production-capable.
+  from `controlled_idle`, or from `active_delivery` while capacity remains. Up
+  to four writer lanes may be active, and all four may be implementation lanes.
+  Shared-foundation and direction/authority are specialized classes, not
+  reserved slots: at most one of each and at most one production-capable lane
+  may be active. A duplicate branch, writable-path overlap, or hierarchical
+  exclusive-domain collision is a stop. When every check passes, two
+  implementation lanes are not a reason to refuse a third or fourth writer.
+  Direction/authority is restricted to initiative documentation/evidence.
 - [ ] Confirmed this package is actually writing. Read-only research and a
   preserved pause consume no writer lane; resumption requires fresh activation.
 - [ ] For a pause, committed and pushed the intended checkpoint, then used a

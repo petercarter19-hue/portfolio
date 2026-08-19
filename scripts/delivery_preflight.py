@@ -643,8 +643,8 @@ OPPORTUNITY_CLOSE_INTRODUCTION_REPAIR = {
     ),
 }
 
-MAX_ACTIVE_LANES = 3
-MAX_IMPLEMENTATION_LANES = 2
+MAX_ACTIVE_LANES = 4
+MAX_IMPLEMENTATION_LANES = 4
 MAX_DIRECTION_AUTHORITY_LANES = 1
 MAX_SHARED_FOUNDATION_LANES = 1
 MAX_PRODUCTION_CAPABLE_LANES = 1
@@ -671,7 +671,43 @@ BOOTSTRAP_ORIGIN_ACTIVE_PACKAGES = frozenset(
         "PS-WORKSHOP-EXPERIENCE-001",
     }
 )
-ACTIVATION_POLICY_INSTRUCTION = "Create a clean activation branch from current origin/main, run delivery_preflight.py with --intent activate, and append exactly one selected outcome with a new implementation branch, lane_class, production_capable flag, exclusive_domains, writable surfaces, exclusions, and completion evidence. At most two implementation/shared-foundation lanes, one direction/authority lane, and one production-capable lane may be active, with three writers total. Direction/authority surfaces are restricted to docs/initiatives and artifacts. A logical domain or path collision is a stop. Read-only research consumes no lane. Paused work consumes no lane and may resume only through a fresh activation."
+HISTORICAL_THREE_WRITER_IDLE_NEXT_GATE = (
+    "No active writer lanes. Select and activate the next exact outcome under "
+    "the three-lane class, path, and exclusive-domain rules."
+)
+FOUR_WRITER_IDLE_NEXT_GATE = (
+    "No active writer lanes. Select and activate the next exact outcome under "
+    "the four-writer class, path, and exclusive-domain rules."
+)
+FOUR_WRITER_INTEGRATION_MANAGER_ASSIGNMENT = (
+    "No active writer lanes. "
+    "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001 is closed and archived; "
+    "activate an exact implementation or direction/authority outcome before "
+    "repository writes."
+)
+FOUR_WRITER_INTEGRATION_EXIT_AUTHORITY = (
+    "No active writer lanes. "
+    "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001 is "
+    "policy_integrated_closed and retains no authority; activate an exact "
+    "implementation or direction/authority outcome before repository writes."
+)
+ACTIVATION_POLICY_INSTRUCTION = (
+    "Create a clean activation branch from current origin/main, run "
+    "delivery_preflight.py with --intent activate, and append exactly one "
+    "selected outcome with a new implementation branch, lane_class, "
+    "production_capable flag, exclusive_domains, writable surfaces, exclusions, "
+    "and completion evidence. Up to four writer lanes may be active. All four "
+    "may be implementation lanes. Shared-foundation and direction/authority are "
+    "specialized lane classes, not reserved slots: at most one shared-foundation "
+    "lane, at most one direction/authority lane, and at most one "
+    "production-capable lane may be active. Direction/authority surfaces are "
+    "restricted to docs/initiatives and artifacts. A duplicate branch, "
+    "writable-path overlap, or hierarchical exclusive-domain collision is a "
+    "stop. When capacity remains and every check passes, two existing "
+    "implementation lanes are not a reason to refuse a third or fourth writer. "
+    "Read-only research consumes no lane. Paused work consumes no lane and may "
+    "resume only through a fresh activation."
+)
 EXPECTED_ACTIVATION_POLICY = {
     "enabled": True,
     "package": "PS-DELIVERY-CONTROL-001",
@@ -696,6 +732,28 @@ EXPECTED_ACTIVATION_POLICY = {
         "docs/governance/CURRENT_BASELINE.yaml",
     ],
     "instruction": ACTIVATION_POLICY_INSTRUCTION,
+}
+# Historical repair and admission replays are immutable audit evidence. They
+# predate the four-writer policy and retain the exact policy object that
+# governed them. This object is accepted only when a code-pinned historical
+# matcher succeeds; it is never valid for an ordinary or future activation.
+HISTORICAL_THREE_LANE_ACTIVATION_POLICY = {
+    **EXPECTED_ACTIVATION_POLICY,
+    "max_active_lanes": 3,
+    "max_implementation_lanes": 2,
+    "instruction": (
+        "Create a clean activation branch from current origin/main, run "
+        "delivery_preflight.py with --intent activate, and append exactly one "
+        "selected outcome with a new implementation branch, lane_class, "
+        "production_capable flag, exclusive_domains, writable surfaces, "
+        "exclusions, and completion evidence. At most two "
+        "implementation/shared-foundation lanes, one direction/authority lane, "
+        "and one production-capable lane may be active, with three writers "
+        "total. Direction/authority surfaces are restricted to docs/initiatives "
+        "and artifacts. A logical domain or path collision is a stop. Read-only "
+        "research consumes no lane. Paused work consumes no lane and may resume "
+        "only through a fresh activation."
+    ),
 }
 PAUSE_ALLOWED_SURFACES = frozenset(
     {
@@ -1904,6 +1962,94 @@ SEARCH_RELEASE_ADMISSION = {
 SEARCH_RELEASE_ADMISSION_PATHS = frozenset(
     SEARCH_RELEASE_ADMISSION["allowed_surfaces"]
 )
+
+FOUR_WRITER_POLICY_INTEGRATION_PACKAGE = (
+    "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001"
+)
+FOUR_WRITER_POLICY_INTEGRATION_BRANCH = (
+    "work/2026-08-19-delivery-control-concurrency-integration-001"
+)
+FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN = (
+    "1faf03b073f8c8b328b308e9af3b0b19a15a4d7b"
+)
+FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_LEDGER_SHA256 = (
+    "f0840166f1b7ce63e51e1d41fcd4635f135da424086fe03a6fd355eb383b03e8"
+)
+FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_BASELINE_SHA256 = (
+    "3278c7a3dc69e3777ecfec24727ef0ed8332b9f376680600e092c17b65f152ce"
+)
+FOUR_WRITER_POLICY_INTEGRATION_LANE_SHA256 = (
+    "48a5f49fc79dd65f6c316cc811623677b49d498b4c6b8237b5eebff587d9368f"
+)
+FOUR_WRITER_POLICY_INTEGRATION_PATHS = frozenset(
+    {
+        "AGENTS.md",
+        "CLAUDE.md",
+        "START_HERE.md",
+        "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+        "docs/governance/CURRENT_BASELINE.yaml",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+        "tests/test_governance_pointers.py",
+    }
+)
+FOUR_WRITER_POLICY_ATOMIC_INTEGRATION = {
+    "status": "one_time_owner_authorized_atomic_integration",
+    "package": FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+    "branch": FOUR_WRITER_POLICY_INTEGRATION_BRANCH,
+    "origin_main": FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN,
+    "origin_ledger_sha256": (
+        FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_LEDGER_SHA256
+    ),
+    "origin_baseline_sha256": (
+        FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_BASELINE_SHA256
+    ),
+    "activation_lane_sha256": FOUR_WRITER_POLICY_INTEGRATION_LANE_SHA256,
+    "allowed_surfaces": sorted(FOUR_WRITER_POLICY_INTEGRATION_PATHS),
+    "source_candidate": {
+        "branch": "work/2026-08-18-delivery-control-concurrency-001",
+        "base_sha": "4e35b5ec4453289d156b0c223c94d9dca086cbdd",
+        "reviewed_sha": "4ff435ea773efdbfa590f1aa4bbb6c7f4c759748",
+        "disposition": "paused_preserved_forward_port_only",
+    },
+    "target_contract": {
+        "max_active_lanes": 4,
+        "max_implementation_lanes": 4,
+        "max_direction_authority_lanes": 1,
+        "max_shared_foundation_lanes": 1,
+        "max_production_capable_lanes": 1,
+        "requires_disjoint_branches": True,
+        "requires_disjoint_paths": True,
+        "requires_disjoint_hierarchical_exclusive_domains": True,
+    },
+    "landing_contract": {
+        "state": "controlled_idle",
+        "active_lanes": 0,
+        "writes_allowed_for": [],
+        "merge_allowed_for": [],
+        "cleanup_allowed_for": [],
+        "release_allowed_for": [],
+        "child_disposition": "policy_integrated_closed",
+    },
+    "reason": (
+        "Pete directed completion of the four-writer rule after Search 3F. "
+        "The frozen candidate's capacity and collision logic passed independent "
+        "review; this exact current-main forward-port corrects its stale baseline "
+        "wording and closes only the temporary integration child lane."
+    ),
+    "verification_contract": (
+        "The preflight recognizes this exception only on the exact package, "
+        "branch, origin/main base and hashes, one-commit shape, activation-lane "
+        "digest, and ten changed paths. It installs only the four-writer policy, "
+        "closes only this child with a distinct policy_integrated_closed record, "
+        "clears all mutation authority, preserves the frozen 4ff lane and Search "
+        "history, and leaves controlled_idle. It grants no product, merge, "
+        "release, deployment, schema, configuration, Azure mutation, proof rerun, "
+        "teardown, or cleanup authority."
+    ),
+}
 
 # PS-SHELL-001 finished its owner-approved Editorial Top Bar candidate under two
 # independent Protected reviews and then had nowhere to go: _direction_merge_grant
@@ -3138,6 +3284,37 @@ def _validate_baseline_unchanged(
         errors.append(f"{label} may not change CURRENT_BASELINE.yaml")
 
 
+def _validate_baseline_four_writer_policy_atomic_integration_delta(
+    candidate_baseline: object,
+    origin_baseline: object,
+    *,
+    errors: list[str],
+) -> None:
+    """Validate the exact child-close baseline against the pinned origin."""
+    if not isinstance(origin_baseline, (bytes, bytearray)):
+        errors.append(
+            "four-writer policy integration requires fetched origin/main "
+            "CURRENT_BASELINE.yaml bytes"
+        )
+        return
+    if (
+        hashlib.sha256(bytes(origin_baseline)).hexdigest()
+        != FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_BASELINE_SHA256
+    ):
+        errors.append(
+            "four-writer policy integration origin/main baseline hash is not exact"
+        )
+        return
+    _validate_baseline_pause_delta(
+        candidate_baseline,
+        origin_baseline,
+        paused_package=FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+        remaining_lanes=[],
+        action="close",
+        errors=errors,
+    )
+
+
 def _remaining_package_ids(remaining_lanes: list[dict]) -> list[str]:
     return [
         package.strip()
@@ -3176,10 +3353,7 @@ def _expected_pause_next_gate(
             + ", ".join(remaining)
             + f". {paused_package} remains paused; use fresh activation to resume it."
         )
-    return (
-        "No active writer lanes. Select and activate the next exact outcome under "
-        "the three-lane class, path, and exclusive-domain rules."
-    )
+    return FOUR_WRITER_IDLE_NEXT_GATE
 
 
 def _validate_baseline_pause_delta(
@@ -3317,7 +3491,7 @@ def _validate_baseline_pause_delta(
                 + ", ".join(_remaining_package_ids(remaining_lanes))
                 + f". {paused_package} is closed and archived."
                 if remaining_lanes
-                else "No active writer lanes. Select and activate the next exact outcome under the three-lane class, path, and exclusive-domain rules."
+                else FOUR_WRITER_IDLE_NEXT_GATE
             )
         )
         if candidate_gate[0] != expected_gate:
@@ -3553,7 +3727,7 @@ def _validate_direction_authority_surfaces(
     label: str,
     errors: list[str],
 ) -> None:
-    """Keep the third lane documentation/evidence-only by construction."""
+    """Keep any direction/authority lane documentation/evidence-only."""
     if lane.get("lane_class") != "direction_authority":
         return
     raw_surfaces = lane.get("writable_surfaces")
@@ -3782,7 +3956,7 @@ def _domains_overlap(left: str, right: str) -> bool:
 
 
 def _validate_lane_mix(lanes: list[dict], label: str, errors: list[str]) -> None:
-    """Enforce two implementation lanes plus one direction/authority lane."""
+    """Enforce total capacity and the specialized direction/shared/prod caps."""
     classes: list[str] = []
     domain_owners: list[tuple[str, str]] = []
     production_capable_count = 0
@@ -4425,6 +4599,131 @@ def _exact_search_release_admission_delta(
         and _valid_utc_timestamp(admission_ledger.get("updated_at"))
         and _utc_timestamp_strictly_advances(
             admission_ledger.get("updated_at"), parent_ledger.get("updated_at")
+        )
+    )
+
+
+def _exact_four_writer_policy_atomic_integration_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    """Match only the exact one-time current-main policy integration."""
+    return (
+        ledger.get("four_writer_policy_atomic_integration")
+        == FOUR_WRITER_POLICY_ATOMIC_INTEGRATION
+        and package_id == FOUR_WRITER_POLICY_INTEGRATION_PACKAGE
+        and facts.get("branch") == FOUR_WRITER_POLICY_INTEGRATION_BRANCH
+        and facts.get("origin_main")
+        == FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and facts.get("fetched") is True
+        and set(facts.get("changed_paths") or [])
+        == set(FOUR_WRITER_POLICY_INTEGRATION_PATHS)
+    )
+
+
+def _four_writer_policy_integrated_close(
+    active_lane: dict,
+    closed_at: object,
+) -> dict:
+    closed = copy.deepcopy(active_lane)
+    closed.update(
+        {
+            "disposition": "policy_integrated_closed",
+            "closed_at": closed_at,
+            "integration_origin_main_sha": (
+                FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN
+            ),
+            "prior_frozen_candidate_sha": (
+                FOUR_WRITER_POLICY_ATOMIC_INTEGRATION["source_candidate"][
+                    "reviewed_sha"
+                ]
+            ),
+            "integration_record": "four_writer_policy_atomic_integration",
+            "close_evidence_paths": [],
+        }
+    )
+    return closed
+
+
+def _exact_four_writer_policy_atomic_integration_delta(
+    parent_ledger: object,
+    integration_ledger: object,
+) -> bool:
+    """Allow only the exact active-child to controlled-idle atomic close."""
+    if not isinstance(parent_ledger, dict) or not isinstance(
+        integration_ledger, dict
+    ):
+        return False
+    if (
+        _canonical_sha256(parent_ledger)
+        != FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_LEDGER_SHA256
+    ):
+        return False
+    if parent_ledger.get("four_writer_policy_atomic_integration") is not None:
+        return False
+    if (
+        parent_ledger.get("activation_policy")
+        != HISTORICAL_THREE_LANE_ACTIVATION_POLICY
+    ):
+        return False
+    parent_lanes = parent_ledger.get("active_lanes")
+    if not isinstance(parent_lanes, list) or len(parent_lanes) != 1:
+        return False
+    parent_lane = parent_lanes[0]
+    if (
+        not isinstance(parent_lane, dict)
+        or parent_lane.get("package")
+        != FOUR_WRITER_POLICY_INTEGRATION_PACKAGE
+        or parent_lane.get("branch") != FOUR_WRITER_POLICY_INTEGRATION_BRANCH
+        or _canonical_sha256(parent_lane)
+        != FOUR_WRITER_POLICY_INTEGRATION_LANE_SHA256
+    ):
+        return False
+    parent_mode = parent_ledger.get("operating_mode")
+    if not isinstance(parent_mode, dict):
+        return False
+    if (
+        parent_mode.get("state") != "active_delivery"
+        or parent_mode.get("writes_allowed_for")
+        != [FOUR_WRITER_POLICY_INTEGRATION_PACKAGE]
+        or any(
+            parent_mode.get(field) != []
+            for field in (
+                "merge_allowed_for",
+                "cleanup_allowed_for",
+                "release_allowed_for",
+            )
+        )
+    ):
+        return False
+
+    candidate_updated_at = integration_ledger.get("updated_at")
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = candidate_updated_at
+    expected["activation_policy"] = copy.deepcopy(EXPECTED_ACTIVATION_POLICY)
+    expected["four_writer_policy_atomic_integration"] = copy.deepcopy(
+        FOUR_WRITER_POLICY_ATOMIC_INTEGRATION
+    )
+    expected["active_lanes"] = []
+    expected_mode = expected["operating_mode"]
+    expected_mode["state"] = "controlled_idle"
+    expected_mode["writes_allowed_for"] = []
+    expected_mode["exit_authority"] = FOUR_WRITER_INTEGRATION_EXIT_AUTHORITY
+    expected["closing_lanes"] = [
+        *expected.get("closing_lanes", []),
+        _four_writer_policy_integrated_close(parent_lane, candidate_updated_at),
+    ]
+
+    return bool(
+        integration_ledger == expected
+        and _valid_utc_timestamp(parent_ledger.get("updated_at"))
+        and _valid_utc_timestamp(candidate_updated_at)
+        and _utc_timestamp_strictly_advances(
+            candidate_updated_at,
+            parent_ledger.get("updated_at"),
         )
     )
 
@@ -9158,6 +9457,7 @@ def evaluate_policy(
             policy.get("package"),
             SD1_RELEASE_ADMISSION["package"],
             SEARCH_RELEASE_ADMISSION["package"],
+            FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
         }:
             errors.append(
                 "activation must use the standing control package "
@@ -9190,38 +9490,15 @@ def evaluate_policy(
                         package_id == SEARCH_RELEASE_ADMISSION["package"]
                         and branch == SEARCH_RELEASE_ADMISSION["branch"]
                     )
+                    or (
+                        package_id == FOUR_WRITER_POLICY_INTEGRATION_PACKAGE
+                        and branch == FOUR_WRITER_POLICY_INTEGRATION_BRANCH
+                    )
                 ):
                     errors.append(
                         f"activation branch does not match {branch_pattern!r}"
                     )
 
-        lane_limit = policy.get("max_active_lanes")
-        if lane_limit != MAX_ACTIVE_LANES:
-            errors.append(
-                f"activation policy must retain the {MAX_ACTIVE_LANES}-lane limit"
-            )
-        if policy.get("max_implementation_lanes") != MAX_IMPLEMENTATION_LANES:
-            errors.append(
-                "activation policy must retain the two-implementation-lane limit"
-            )
-        if (
-            policy.get("max_direction_authority_lanes")
-            != MAX_DIRECTION_AUTHORITY_LANES
-        ):
-            errors.append(
-                "activation policy must retain the one-direction-authority-lane limit"
-            )
-        if policy.get("max_shared_foundation_lanes") != MAX_SHARED_FOUNDATION_LANES:
-            errors.append(
-                "activation policy must retain the one-shared-foundation-lane limit"
-            )
-        if (
-            policy.get("max_production_capable_lanes")
-            != MAX_PRODUCTION_CAPABLE_LANES
-        ):
-            errors.append(
-                "activation policy must retain the one-production-capable-lane limit"
-            )
         if set(policy.get("allowed_lane_classes") or []) != set(VALID_LANE_CLASSES):
             errors.append("activation policy allowed_lane_classes is not canonical")
         raw_allowed_surfaces = policy.get("allowed_surfaces")
@@ -9386,7 +9663,93 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
-        if bootstrap_matches:
+        four_writer_policy_integration_matches = (
+            _exact_four_writer_policy_atomic_integration_matches(
+                ledger, facts, package_id
+            )
+        )
+        historical_activation_matches = any(
+            (
+                bootstrap_matches,
+                writer_transfer_repair_matches,
+                community_authoring_surface_repair_matches,
+                implementation_release_repair_matches,
+                community_authoring_release_admission_matches,
+                community_authoring_grant_fixture_followup_matches,
+                sd1_release_admission_matches,
+                search_release_admission_matches,
+                profile_core_merge_repair_matches,
+                profile_core_grant_fixture_followup_matches,
+                profile_core_grant_anchor_followup_matches,
+                profile_core_post_grant_registry_fixture_repair_matches,
+                opportunity_schema_release_refresh_matches,
+                grant_close_repair_matches,
+                grant_close_fixture_followup_matches,
+                profile_close_fixture_followup_matches,
+                profile_close_baseline_fixture_followup_matches,
+                profile_close_absent_surface_repair_matches,
+                profile_close_object_id_repair_matches,
+                opportunity_lifecycle_fixture_repair_matches,
+                opportunity_resume_fixture_repair_matches,
+                opportunity_close_introduction_repair_matches,
+                connect_002_merge_admission_repair_matches,
+                connect_002_merge_admission_anchor_followup_matches,
+                connect_002_grant_fixture_followup_matches,
+                shell_merge_repair_matches,
+                interview_ai_d13_admission_matches,
+                interview_ai_d13_attestation_matches,
+                interview_ai_d13_lifecycle_fixture_matches,
+                interview_ai_d13_merge_surface_matches,
+                interview_ai_d13_close_fixture_matches,
+                interview_ai_d13_close_fixture_r2_matches,
+            )
+        )
+        activation_policy_contract = (
+            HISTORICAL_THREE_LANE_ACTIVATION_POLICY
+            if historical_activation_matches
+            else EXPECTED_ACTIVATION_POLICY
+        )
+        lane_limit = policy.get("max_active_lanes")
+        expected_lane_limit = activation_policy_contract["max_active_lanes"]
+        if lane_limit != expected_lane_limit:
+            errors.append(
+                f"activation policy must retain the {expected_lane_limit}-lane limit"
+            )
+        expected_implementation_limit = activation_policy_contract[
+            "max_implementation_lanes"
+        ]
+        if policy.get("max_implementation_lanes") != expected_implementation_limit:
+            errors.append(
+                "activation policy must retain the "
+                f"{expected_implementation_limit}-implementation-lane limit"
+            )
+        for field, message in (
+            (
+                "max_direction_authority_lanes",
+                "activation policy must retain the one-direction-authority-lane limit",
+            ),
+            (
+                "max_shared_foundation_lanes",
+                "activation policy must retain the one-shared-foundation-lane limit",
+            ),
+            (
+                "max_production_capable_lanes",
+                "activation policy must retain the one-production-capable-lane limit",
+            ),
+        ):
+            if policy.get(field) != activation_policy_contract[field]:
+                errors.append(message)
+        if policy != activation_policy_contract:
+            errors.append(
+                "activation policy must match its exact code-controlled contract"
+            )
+
+        if four_writer_policy_integration_matches:
+            allowed_surfaces = set(FOUR_WRITER_POLICY_INTEGRATION_PATHS)
+            warnings.append(
+                "using the exact one-time four-writer atomic integration boundary"
+            )
+        elif bootstrap_matches:
             allowed_surfaces = set(BOOTSTRAP_CONTROL_REPAIR["allowed_surfaces"])
             warnings.append(
                 "using the exact one-time bootstrap control-repair boundary"
@@ -9618,7 +9981,8 @@ def evaluate_policy(
                 )
 
             if (
-                not bootstrap_matches
+                not four_writer_policy_integration_matches
+                and not bootstrap_matches
                 and not writer_transfer_repair_matches
                 and not community_authoring_surface_repair_matches
                 and not implementation_release_repair_matches
@@ -9657,7 +10021,30 @@ def evaluate_policy(
                     f"activation candidate exceeds the {MAX_ACTIVE_LANES}-lane limit"
                 )
 
-            if profile_core_merge_repair_matches:
+            if four_writer_policy_integration_matches:
+                if origin_policy != HISTORICAL_THREE_LANE_ACTIVATION_POLICY:
+                    errors.append(
+                        "four-writer integration requires the exact historical "
+                        "three-lane origin policy"
+                    )
+                if policy != EXPECTED_ACTIVATION_POLICY:
+                    errors.append(
+                        "four-writer integration must install the exact "
+                        "four-writer policy"
+                    )
+                if not _exact_four_writer_policy_atomic_integration_delta(
+                    origin_ledger, ledger
+                ):
+                    errors.append(
+                        "four-writer integration must be the exact active-child "
+                        "to controlled-idle atomic ledger delta"
+                    )
+                _validate_baseline_four_writer_policy_atomic_integration_delta(
+                    candidate_baseline,
+                    origin_baseline,
+                    errors=errors,
+                )
+            elif profile_core_merge_repair_matches:
                 candidate_updated_at = ledger.get("updated_at")
                 origin_updated_at = origin_ledger.get("updated_at")
                 if not _valid_utc_timestamp(candidate_updated_at):
@@ -10846,7 +11233,7 @@ def evaluate_policy(
                     errors=errors,
                 )
             elif bootstrap_matches:
-                if policy != EXPECTED_ACTIVATION_POLICY:
+                if policy != HISTORICAL_THREE_LANE_ACTIVATION_POLICY:
                     errors.append(
                         "bootstrap control repair activation_policy must match the exact code-controlled policy"
                     )
@@ -11083,7 +11470,8 @@ def evaluate_policy(
                         + ", ".join(unexpected_root_changes)
                     )
         if (
-            not writer_transfer_repair_matches
+            not four_writer_policy_integration_matches
+            and not writer_transfer_repair_matches
             and not community_authoring_surface_repair_matches
             and not implementation_release_repair_matches
             and not community_authoring_release_admission_matches
@@ -11130,6 +11518,15 @@ def evaluate_policy(
             errors.append("activation changed_paths must be a list of non-empty strings")
         else:
             changed_paths = set(raw_changed_paths)
+            if (
+                four_writer_policy_integration_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "four-writer integration must change exactly the "
+                    "owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
             if bootstrap_matches and changed_paths != allowed_surfaces:
                 errors.append(
                     "bootstrap control repair must change exactly the "

@@ -169,6 +169,96 @@ class ControlPlaneTests(unittest.TestCase):
         self.assertIn("non-production `direction_authority`", workflow)
         self.assertIn("may not append", workflow)
 
+    def test_four_writer_capacity_keeps_collision_and_authority_controls_visible(self):
+        ledger = json.loads(
+            _read("docs", "governance", "CURRENT_LANES.json")
+        )
+        policy = ledger["activation_policy"]
+        self.assertEqual("PS-DELIVERY-CONTROL-001", policy["package"])
+        self.assertEqual(4, policy["max_active_lanes"])
+        self.assertEqual(4, policy["max_implementation_lanes"])
+        self.assertEqual(1, policy["max_direction_authority_lanes"])
+        self.assertEqual(1, policy["max_shared_foundation_lanes"])
+        self.assertEqual(1, policy["max_production_capable_lanes"])
+        instruction = policy["instruction"]
+        for phrase in (
+            "duplicate branch",
+            "writable-path overlap",
+            "hierarchical exclusive-domain collision",
+            "third or fourth writer",
+        ):
+            self.assertIn(phrase, instruction)
+
+        for parts in (
+            ("AGENTS.md",),
+            ("CLAUDE.md",),
+            ("START_HERE.md",),
+            ("docs", "governance", "AGENT_STARTUP_CHECKLIST.md"),
+            ("docs", "governance", "PEERSLATE_OWNER_DELIVERY_GUIDE.md"),
+        ):
+            normalized = " ".join(
+                _read(*parts).lower().replace(">", " ").split()
+            )
+            self.assertIn("four", normalized, "/".join(parts))
+            self.assertIn("writable-path overlap", normalized, "/".join(parts))
+            self.assertIn(
+                "hierarchical exclusive-domain collision",
+                normalized,
+                "/".join(parts),
+            )
+            self.assertIn("production-capable", normalized, "/".join(parts))
+            self.assertNotIn("three-lane", normalized, "/".join(parts))
+
+        mode = ledger["operating_mode"]
+        self.assertEqual("controlled_idle", mode["state"])
+        self.assertEqual([], ledger["active_lanes"])
+        for field in (
+            "writes_allowed_for",
+            "merge_allowed_for",
+            "cleanup_allowed_for",
+            "release_allowed_for",
+        ):
+            self.assertEqual([], mode[field])
+
+        child = "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001"
+        closes = [
+            lane for lane in ledger["closing_lanes"] if lane.get("package") == child
+        ]
+        self.assertEqual(1, len(closes))
+        self.assertEqual("policy_integrated_closed", closes[0]["disposition"])
+        self.assertEqual(ledger["updated_at"], closes[0]["closed_at"])
+        self.assertEqual(
+            "four_writer_policy_atomic_integration",
+            closes[0]["integration_record"],
+        )
+        old = [
+            lane
+            for lane in ledger["paused_lanes"]
+            if lane.get("package") == "PS-DELIVERY-CONTROL-CONCURRENCY-001"
+        ]
+        self.assertEqual(1, len(old))
+        self.assertEqual(
+            "4ff435ea773efdbfa590f1aa4bbb6c7f4c759748",
+            old[0]["preserved_head_sha"],
+        )
+        self.assertEqual([], self.data.get("active_packages") or [])
+        self.assertEqual(
+            1,
+            (self.data.get("completed_packages") or []).count(child),
+        )
+        self.assertEqual(
+            "No active writer lanes. "
+            "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001 is closed and "
+            "archived; activate an exact implementation or direction/authority "
+            "outcome before repository writes.",
+            self.data["manager"]["current_assignments"],
+        )
+        self.assertEqual(
+            "No active writer lanes. Select and activate the next exact outcome "
+            "under the four-writer class, path, and exclusive-domain rules.",
+            self.data["next_gate"],
+        )
+
     def test_production_truth_is_separate_from_current_git(self):
         authority = self.data["authority"]
         self.assertEqual("origin", authority["remote"])

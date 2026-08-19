@@ -30,12 +30,14 @@ chooses the next outcome to build.
 | Kind | Limit | Meaning |
 |---|---:|---|
 | Production-capable lane | 1 | The only lane allowed to merge toward production or touch a protected operation. |
-| Implementation lanes | 2 total | They must have non-overlapping files and only one may be production-capable. |
-| Product/visual discovery lane | 1 | Discussion and authority creation only; no runtime branch until activated. |
+| Writer lanes | 4 total | All four may be implementation lanes when paths and hierarchical exclusive domains are disjoint. |
+| Shared-foundation lane | 1 | A specialized class within the four-writer total, not a reserved slot. |
+| Direction/authority lane | 1 | A specialized class within the four-writer total; documentation and authority evidence only. |
 | Ideas and future possibilities | Unlimited | Capture them without activating implementation. |
 
-When the limit is full, a new idea is not rejected. It waits until Pete closes
-or explicitly pauses one current lane.
+When the limit is full or a branch, path, hierarchical domain, or specialized
+class cap collides, a new idea is not rejected. It waits until Pete closes or
+explicitly pauses the conflicting lane.
 
 ## Which delivery path applies?
 
@@ -192,25 +194,31 @@ lane, branch, worktree, class, exclusive domains, and non-overlapping surfaces
 visible to every other session before writing begins. It is not itself an
 architecture round, feature review, or implementation package.
 
-PeerSlate permits three active writers, but they are not interchangeable:
+PeerSlate permits up to four active writers, but they are not interchangeable:
 
-- At most two lanes may be `implementation` or `shared_foundation`.
-- At most one lane may be `direction_authority`.
-- At most one shared-foundation lane may be active.
+- All four may be `implementation` lanes.
+- At most one `direction_authority` lane may be active.
+- At most one `shared_foundation` lane may be active.
 - At most one active lane may be production-capable.
+- Shared-foundation and direction/authority are specialized lane classes, not
+  reserved slots.
 - A direction/authority lane may write only beneath `docs/initiatives/` or
   `artifacts/`; it cannot carry templates, styles, scripts, services, tests, or
   other runtime implementation.
-- A path overlap or an exclusive-domain overlap is a stop even when a slot is
-  numerically free. Typical domains include `product:profile`,
+- A duplicate branch, writable-path overlap, or hierarchical exclusive-domain
+  collision is a stop even when a slot is numerically free. Typical domains
+  include `product:profile`,
   `shared:global-shell`, `shared:auth`, `shared:data-schema`, and
   `shared:visual-foundation`.
-- Both implementation lanes may prepare work, but production-boundary actions
-  remain serialized through the existing merge/release authority.
+- Implementation lanes may prepare work concurrently, but production-boundary
+  actions remain serialized through the existing merge/release authority.
 
-An empty third slot is intentional when the proposed work depends on an active
-lane or needs one of its domains. Read-only researchers and reviewers are not
-writers and consume no lane.
+An empty slot is intentional when the proposed work depends on an active lane,
+needs one of its paths or domains, duplicates a branch, exceeds a specialized
+class cap, or needs the occupied production-capable slot. Conversely, when
+capacity remains and every check passes, two existing implementation lanes are
+not a reason to refuse a third or fourth writer. Read-only researchers and
+reviewers are not writers and consume no lane.
 
 Only an actually writing package belongs in `active_lanes`. A package waiting
 for owner input, a visual-generation round, a dependency, or later resumption

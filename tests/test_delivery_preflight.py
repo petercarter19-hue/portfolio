@@ -53,7 +53,17 @@ from scripts.delivery_preflight import (
     CLEANUP_BRANCH_PATTERN,
     DIRECTION_MERGE_CONTROL_PATHS,
     DIRECTION_MERGE_FOLLOWUP_PATHS,
+    EXPECTED_ACTIVATION_POLICY,
+    FOUR_WRITER_IDLE_NEXT_GATE,
+    FOUR_WRITER_INTEGRATION_EXIT_AUTHORITY,
+    FOUR_WRITER_INTEGRATION_MANAGER_ASSIGNMENT,
+    FOUR_WRITER_POLICY_ATOMIC_INTEGRATION,
+    FOUR_WRITER_POLICY_INTEGRATION_BRANCH,
+    FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN,
+    FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+    FOUR_WRITER_POLICY_INTEGRATION_PATHS,
     GRANT_ALLOWED_SURFACES,
+    HISTORICAL_THREE_LANE_ACTIVATION_POLICY,
     IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR,
     OPPORTUNITY_SCHEMA_REPAIR_RELEASE_REFRESH,
     OPPORTUNITY_SLATE_BRANCH,
@@ -172,6 +182,8 @@ from scripts.delivery_preflight import (
     _exact_sd1_release_admission_matches,
     _exact_search_release_admission_delta,
     _exact_search_release_admission_matches,
+    _exact_four_writer_policy_atomic_integration_delta,
+    _exact_four_writer_policy_atomic_integration_matches,
     _exact_profile_core_grant_anchor_followup_delta,
     _exact_profile_core_grant_anchor_followup_matches,
     _exact_profile_core_grant_fixture_followup_delta,
@@ -497,8 +509,13 @@ class DeliveryPreflightTests(unittest.TestCase):
         """The current ledger as it looks from controlled idle."""
         idle = copy.deepcopy(self.ledger)
         idle["operating_mode"]["state"] = "controlled_idle"
-        idle["operating_mode"]["writes_allowed_for"] = []
-        idle["operating_mode"]["release_allowed_for"] = []
+        for field in (
+            "writes_allowed_for",
+            "merge_allowed_for",
+            "cleanup_allowed_for",
+            "release_allowed_for",
+        ):
+            idle["operating_mode"][field] = []
         idle["active_lanes"] = []
         return idle
 
@@ -1996,6 +2013,283 @@ class DeliveryPreflightTests(unittest.TestCase):
         self.assertTrue(replay_errors)
         self.assertFalse(_exact_search_release_admission_delta(replay_origin, replay))
 
+    def test_four_writer_atomic_integration_closes_only_child_and_all_authority(self):
+        origin = load_ledger_at_ref(FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN)
+        origin_baseline = load_baseline_bytes_at_ref(
+            FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN
+        )
+        candidate = copy.deepcopy(self.ledger)
+        integration_facts = facts(
+            branch=FOUR_WRITER_POLICY_INTEGRATION_BRANCH,
+            head="four-writer-integration-candidate",
+            ahead=1,
+            behind=0,
+            origin_main=FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN,
+            changed_paths=sorted(FOUR_WRITER_POLICY_INTEGRATION_PATHS),
+        )
+
+        self.assertTrue(
+            _exact_four_writer_policy_atomic_integration_matches(
+                candidate,
+                integration_facts,
+                FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+            )
+        )
+        self.assertTrue(
+            _exact_four_writer_policy_atomic_integration_delta(origin, candidate)
+        )
+        errors, warnings = self._evaluate_activation(
+            candidate,
+            integration_facts,
+            package=FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+            require_clean=True,
+            origin=origin,
+            candidate_baseline=self.baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertEqual([], errors)
+        self.assertEqual(
+            ["using the exact one-time four-writer atomic integration boundary"],
+            warnings,
+        )
+        self.assertEqual("controlled_idle", candidate["operating_mode"]["state"])
+        self.assertEqual([], candidate["active_lanes"])
+        for field in (
+            "writes_allowed_for",
+            "merge_allowed_for",
+            "cleanup_allowed_for",
+            "release_allowed_for",
+        ):
+            self.assertEqual([], candidate["operating_mode"][field])
+        self.assertEqual(
+            FOUR_WRITER_INTEGRATION_EXIT_AUTHORITY,
+            candidate["operating_mode"]["exit_authority"],
+        )
+        self.assertEqual(EXPECTED_ACTIVATION_POLICY, candidate["activation_policy"])
+        self.assertEqual(
+            FOUR_WRITER_POLICY_ATOMIC_INTEGRATION,
+            candidate["four_writer_policy_atomic_integration"],
+        )
+
+        closes = [
+            lane
+            for lane in candidate["closing_lanes"]
+            if lane.get("package") == FOUR_WRITER_POLICY_INTEGRATION_PACKAGE
+        ]
+        self.assertEqual(1, len(closes))
+        self.assertEqual("policy_integrated_closed", closes[0]["disposition"])
+        self.assertEqual(candidate["updated_at"], closes[0]["closed_at"])
+        self.assertEqual([], closes[0]["close_evidence_paths"])
+        old_paused = next(
+            lane
+            for lane in candidate["paused_lanes"]
+            if lane.get("package") == "PS-DELIVERY-CONTROL-CONCURRENCY-001"
+        )
+        self.assertEqual(
+            "4ff435ea773efdbfa590f1aa4bbb6c7f4c759748",
+            old_paused["preserved_head_sha"],
+        )
+        baseline_text = self.baseline.decode("utf-8")
+        self.assertIn(
+            f'current_assignments: "{FOUR_WRITER_INTEGRATION_MANAGER_ASSIGNMENT}"',
+            baseline_text,
+        )
+        self.assertIn(
+            f'next_gate: "{FOUR_WRITER_IDLE_NEXT_GATE}"',
+            baseline_text,
+        )
+        self.assertEqual(
+            1,
+            baseline_text.count(
+                "  - PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001"
+            ),
+        )
+
+    def test_four_writer_atomic_integration_mutations_fail_closed(self):
+        origin = load_ledger_at_ref(FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN)
+        origin_baseline = load_baseline_bytes_at_ref(
+            FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN
+        )
+        exact_facts = facts(
+            branch=FOUR_WRITER_POLICY_INTEGRATION_BRANCH,
+            ahead=1,
+            behind=0,
+            origin_main=FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN,
+            changed_paths=sorted(FOUR_WRITER_POLICY_INTEGRATION_PATHS),
+        )
+
+        fact_cases = {
+            "wrong package": (
+                "PS-DELIVERY-CONTROL-001",
+                exact_facts,
+            ),
+            "wrong branch": (
+                FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+                {**exact_facts, "branch": "work/2026-08-19-wrong"},
+            ),
+            "wrong base": (
+                FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+                {**exact_facts, "origin_main": "0" * 40},
+            ),
+            "not one commit": (
+                FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+                {**exact_facts, "ahead": 2},
+            ),
+            "behind main": (
+                FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+                {**exact_facts, "behind": 1},
+            ),
+            "not fetched": (
+                FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+                {**exact_facts, "fetched": False},
+            ),
+            "missing path": (
+                FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+                {
+                    **exact_facts,
+                    "changed_paths": sorted(
+                        FOUR_WRITER_POLICY_INTEGRATION_PATHS - {"AGENTS.md"}
+                    ),
+                },
+            ),
+            "extra path": (
+                FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+                {
+                    **exact_facts,
+                    "changed_paths": sorted(
+                        FOUR_WRITER_POLICY_INTEGRATION_PATHS | {"app.py"}
+                    ),
+                },
+            ),
+        }
+        for label, (package, mutated_facts) in fact_cases.items():
+            with self.subTest(facts=label):
+                errors, _ = self._evaluate_activation(
+                    copy.deepcopy(self.ledger),
+                    mutated_facts,
+                    package=package,
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=self.baseline,
+                    origin_baseline=origin_baseline,
+                )
+                self.assertTrue(errors)
+
+        def retain_active(candidate):
+            candidate["active_lanes"] = copy.deepcopy(origin["active_lanes"])
+
+        def retain_write(candidate):
+            candidate["operating_mode"]["writes_allowed_for"] = [
+                FOUR_WRITER_POLICY_INTEGRATION_PACKAGE
+            ]
+
+        def add_release(candidate):
+            candidate["operating_mode"]["release_allowed_for"] = [
+                FOUR_WRITER_POLICY_INTEGRATION_PACKAGE
+            ]
+
+        def mutate_policy(candidate):
+            candidate["activation_policy"] = copy.deepcopy(
+                HISTORICAL_THREE_LANE_ACTIVATION_POLICY
+            )
+
+        def mutate_paused(candidate):
+            next(
+                lane
+                for lane in candidate["paused_lanes"]
+                if lane.get("package") == "PS-DELIVERY-CONTROL-CONCURRENCY-001"
+            )["preserved_head_sha"] = "0" * 40
+
+        def remove_close(candidate):
+            candidate["closing_lanes"] = candidate["closing_lanes"][:-1]
+
+        def fake_close(candidate):
+            candidate["closing_lanes"][-1]["disposition"] = "merged_closed"
+
+        def stale_time(candidate):
+            candidate["updated_at"] = origin["updated_at"]
+            candidate["closing_lanes"][-1]["closed_at"] = origin["updated_at"]
+
+        def remove_record(candidate):
+            candidate.pop("four_writer_policy_atomic_integration")
+
+        def mutate_unrelated(candidate):
+            candidate["workspace_snapshot"]["cleanup_authorized"] = False
+
+        candidate_mutations = {
+            "active child retained": retain_active,
+            "write authority retained": retain_write,
+            "release authority added": add_release,
+            "legacy policy retained": mutate_policy,
+            "frozen paused record changed": mutate_paused,
+            "child close missing": remove_close,
+            "generic close substituted": fake_close,
+            "timestamp not advanced": stale_time,
+            "integration record missing": remove_record,
+            "unrelated root changed": mutate_unrelated,
+        }
+        for label, mutate in candidate_mutations.items():
+            with self.subTest(candidate=label):
+                candidate = copy.deepcopy(self.ledger)
+                mutate(candidate)
+                errors, _ = self._evaluate_activation(
+                    candidate,
+                    exact_facts,
+                    package=FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=self.baseline,
+                    origin_baseline=origin_baseline,
+                )
+                self.assertTrue(errors)
+                self.assertFalse(
+                    _exact_four_writer_policy_atomic_integration_delta(
+                        origin, candidate
+                    )
+                )
+
+        reused_origin = copy.deepcopy(origin)
+        reused_origin["four_writer_policy_atomic_integration"] = copy.deepcopy(
+            FOUR_WRITER_POLICY_ATOMIC_INTEGRATION
+        )
+        reuse_errors, _ = self._evaluate_activation(
+            copy.deepcopy(self.ledger),
+            exact_facts,
+            package=FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+            require_clean=True,
+            origin=reused_origin,
+            candidate_baseline=self.baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertTrue(reuse_errors)
+
+        baseline_cases = {
+            "stale manager": self.baseline.replace(
+                FOUR_WRITER_INTEGRATION_MANAGER_ASSIGNMENT.encode(),
+                b"Activation assigns the integration child.",
+            ),
+            "stale three-lane gate": self.baseline.replace(
+                FOUR_WRITER_IDLE_NEXT_GATE.encode(),
+                b"No active writer lanes. Select and activate the next exact outcome under the three-lane class, path, and exclusive-domain rules.",
+            ),
+            "completed child missing": self.baseline.replace(
+                b"  - PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001\n",
+                b"",
+            ),
+        }
+        for label, candidate_baseline in baseline_cases.items():
+            with self.subTest(baseline=label):
+                errors, _ = self._evaluate_activation(
+                    copy.deepcopy(self.ledger),
+                    exact_facts,
+                    package=FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
+                    require_clean=True,
+                    origin=origin,
+                    candidate_baseline=candidate_baseline,
+                    origin_baseline=origin_baseline,
+                )
+                self.assertTrue(errors)
+
     def test_search_grant_and_merge_are_exact_candidate_only(self):
         base, _ = self._search_release_admission_origin()
         admitted = self._search_release_admission_candidate(base)
@@ -3047,7 +3341,7 @@ with patch.object(
         candidate_baseline = candidate_baseline[:section.start()] + "active_packages:\n" + candidate_baseline[section.end():]
         candidate_baseline = re.sub(
             r'^next_gate: .+$',
-            'next_gate: "No active writer lanes. Select and activate the next exact outcome under the three-lane class, path, and exclusive-domain rules."',
+            'next_gate: "No active writer lanes. Select and activate the next exact outcome under the four-writer class, path, and exclusive-domain rules."',
             candidate_baseline, count=1, flags=re.MULTILINE,
         )
         candidate_baseline = candidate_baseline.replace(
@@ -7423,7 +7717,7 @@ with patch.object(
             lane["package"] for lane in closing
         }
         self.assertIn(mode["state"], {"controlled_idle", "active_delivery"})
-        self.assertLessEqual(len(active), 3)
+        self.assertLessEqual(len(active), 4)
         self.assertEqual(set(mode["writes_allowed_for"]), active_packages)
         self.assertLessEqual(set(mode["merge_allowed_for"]), closable_packages)
         self.assertLessEqual(set(mode["cleanup_allowed_for"]), closable_packages)
@@ -7441,12 +7735,15 @@ with patch.object(
             {"controlled_idle", "active_delivery"},
             set(parsed["activation_policy"]["allowed_operating_states"]),
         )
-        self.assertEqual(3, parsed["activation_policy"]["max_active_lanes"])
+        self.assertEqual(4, parsed["activation_policy"]["max_active_lanes"])
         self.assertEqual(
-            2, parsed["activation_policy"]["max_implementation_lanes"]
+            4, parsed["activation_policy"]["max_implementation_lanes"]
         )
         self.assertEqual(
             1, parsed["activation_policy"]["max_direction_authority_lanes"]
+        )
+        self.assertEqual(
+            1, parsed["activation_policy"]["max_shared_foundation_lanes"]
         )
         self.assertEqual(
             1, parsed["activation_policy"]["max_production_capable_lanes"]
@@ -7933,14 +8230,23 @@ with patch.object(
             require_clean=True,
             origin=third_lane,
         )
-        self.assertIn("activation refused because the lane limit is full", fourth_errors)
+        self.assertEqual([], fourth_errors)
+
+        fifth_lane = self._activation_candidate(fourth_lane, "PS-FIFTH-001")
+        fifth_errors, _ = self._evaluate_activation(
+            fifth_lane,
+            activation_facts,
+            require_clean=True,
+            origin=fourth_lane,
+        )
+        self.assertIn("activation refused because the lane limit is full", fifth_errors)
 
         full_unchanged_errors, _ = evaluate_policy(
-            copy.deepcopy(third_lane),
+            copy.deepcopy(fourth_lane),
             activation_facts,
             "PS-DELIVERY-CONTROL-001",
             "activate",
-            origin_ledger=third_lane,
+            origin_ledger=fourth_lane,
         )
         self.assertIn("activation refused because the lane limit is full", full_unchanged_errors)
 
@@ -8070,7 +8376,7 @@ with patch.object(
             origin_one,
             "PS-SECOND-001",
         )
-        policy_mutation["activation_policy"]["max_active_lanes"] = 4
+        policy_mutation["activation_policy"]["max_active_lanes"] = 5
         policy_errors, _ = evaluate_policy(
             policy_mutation,
             activation_facts,
@@ -8080,28 +8386,58 @@ with patch.object(
         )
         self.assertIn("activation may not change activation_policy", policy_errors)
         self.assertIn(
-            "activation policy must retain the 3-lane limit",
+            "activation policy must retain the 4-lane limit",
             policy_errors,
         )
 
-    def test_three_lane_model_enforces_class_and_domain_integrity(self):
+        legacy_policy = self._activation_candidate(
+            origin_one,
+            "PS-SECOND-001",
+        )
+        legacy_policy["activation_policy"] = copy.deepcopy(
+            HISTORICAL_THREE_LANE_ACTIVATION_POLICY
+        )
+        legacy_errors, _ = evaluate_policy(
+            legacy_policy,
+            activation_facts,
+            "PS-DELIVERY-CONTROL-001",
+            "activate",
+            origin_ledger=origin_one,
+        )
+        self.assertIn("activation may not change activation_policy", legacy_errors)
+        self.assertIn(
+            "activation policy must match its exact code-controlled contract",
+            legacy_errors,
+        )
+
+    def test_four_writer_model_uses_capacity_without_weakening_integrity(self):
         activation_facts = facts(
-            branch="work/2026-08-10-delivery-activation-three-lane-test"
+            branch="work/2026-08-18-delivery-activation-four-writer-test"
         )
         idle = self._idle_ledger()
         first = self._activation_candidate(idle, "PS-FIRST-001")
         second = self._activation_candidate(first, "PS-SECOND-001")
 
         third_implementation = self._activation_candidate(second, "PS-THIRD-001")
-        implementation_errors, _ = self._evaluate_activation(
+        third_errors, _ = self._evaluate_activation(
             third_implementation,
             activation_facts,
             require_clean=True,
             origin=second,
         )
-        self.assertTrue(
-            any("2-implementation-lane limit" in error for error in implementation_errors)
+        self.assertEqual([], third_errors)
+
+        fourth_implementation = self._activation_candidate(
+            third_implementation,
+            "PS-FOURTH-001",
         )
+        fourth_errors, _ = self._evaluate_activation(
+            fourth_implementation,
+            activation_facts,
+            require_clean=True,
+            origin=third_implementation,
+        )
+        self.assertEqual([], fourth_errors)
 
         direction_origin = self._activation_candidate(idle, "PS-DIRECTION-ONE-001")
         direction_origin["active_lanes"][-1]["lane_class"] = "direction_authority"
@@ -8125,6 +8461,26 @@ with patch.object(
             any(
                 "1-direction-authority-lane limit" in error
                 for error in direction_errors
+            )
+        )
+
+        shared_origin = self._activation_candidate(idle, "PS-SHARED-ONE-001")
+        shared_origin["active_lanes"][-1]["lane_class"] = "shared_foundation"
+        second_shared = self._activation_candidate(
+            shared_origin,
+            "PS-SHARED-TWO-001",
+        )
+        second_shared["active_lanes"][-1]["lane_class"] = "shared_foundation"
+        shared_errors, _ = self._evaluate_activation(
+            second_shared,
+            activation_facts,
+            require_clean=True,
+            origin=shared_origin,
+        )
+        self.assertTrue(
+            any(
+                "1-shared-foundation-lane limit" in error
+                for error in shared_errors
             )
         )
 
@@ -10381,7 +10737,7 @@ with patch.object(
         )
 
         changed_policy = copy.deepcopy(repair_ledger)
-        changed_policy["activation_policy"]["max_active_lanes"] = 4
+        changed_policy["activation_policy"]["max_active_lanes"] = 5
         policy_errors, _ = evaluate_policy(
             changed_policy,
             exact,

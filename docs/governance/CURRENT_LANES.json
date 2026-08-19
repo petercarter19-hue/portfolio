@@ -1,19 +1,17 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-19T14:26:04Z",
+  "updated_at": "2026-08-19T14:34:34Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "active_delivery",
+    "state": "controlled_idle",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [
-      "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001"
-    ],
+    "writes_allowed_for": [],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -29,7 +27,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active writer lane PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001 may change only the ten registered governance/test surfaces and must land through its exact reviewed atomic integration; no merge, release, cleanup, deployment, runtime, or Azure authority exists."
+    "exit_authority": "No active writer lanes. PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001 is policy_integrated_closed and retains no authority; activate an exact implementation or direction/authority outcome before repository writes."
   },
   "activation_policy": {
     "enabled": true,
@@ -37,8 +35,8 @@
     "branch_pattern": "work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-activation-[a-z0-9-]+",
     "intent": "activate",
     "requires_explicit_owner_outcome": true,
-    "max_active_lanes": 3,
-    "max_implementation_lanes": 2,
+    "max_active_lanes": 4,
+    "max_implementation_lanes": 4,
     "max_direction_authority_lanes": 1,
     "max_shared_foundation_lanes": 1,
     "max_production_capable_lanes": 1,
@@ -55,7 +53,7 @@
       "docs/governance/CURRENT_LANES.json",
       "docs/governance/CURRENT_BASELINE.yaml"
     ],
-    "instruction": "Create a clean activation branch from current origin/main, run delivery_preflight.py with --intent activate, and append exactly one selected outcome with a new implementation branch, lane_class, production_capable flag, exclusive_domains, writable surfaces, exclusions, and completion evidence. At most two implementation/shared-foundation lanes, one direction/authority lane, and one production-capable lane may be active, with three writers total. Direction/authority surfaces are restricted to docs/initiatives and artifacts. A logical domain or path collision is a stop. Read-only research consumes no lane. Paused work consumes no lane and may resume only through a fresh activation."
+    "instruction": "Create a clean activation branch from current origin/main, run delivery_preflight.py with --intent activate, and append exactly one selected outcome with a new implementation branch, lane_class, production_capable flag, exclusive_domains, writable surfaces, exclusions, and completion evidence. Up to four writer lanes may be active. All four may be implementation lanes. Shared-foundation and direction/authority are specialized lane classes, not reserved slots: at most one shared-foundation lane, at most one direction/authority lane, and at most one production-capable lane may be active. Direction/authority surfaces are restricted to docs/initiatives and artifacts. A duplicate branch, writable-path overlap, or hierarchical exclusive-domain collision is a stop. When capacity remains and every check passes, two existing implementation lanes are not a reason to refuse a third or fourth writer. Read-only research consumes no lane. Paused work consumes no lane and may resume only through a fresh activation."
   },
   "bootstrap_control_repair": {
     "status": "one_time_owner_authorized_repair",
@@ -2373,9 +2371,7 @@
       "merged_main_sha": "b9ded067d49ff6f6de0e1dd31af8c889c436528b",
       "package_merge_sha": "b9ded067d49ff6f6de0e1dd31af8c889c436528b",
       "close_evidence_paths": []
-    }
-  ],
-  "active_lanes": [
+    },
     {
       "package": "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001",
       "outcome": "Semantically forward-port the independently reviewed four-writer policy from frozen candidate 4ff435ea773efdbfa590f1aa4bbb6c7f4c759748 onto current Search-era main, correct the stale CURRENT_BASELINE wording and review-handoff command, preserve every collision and specialized-cap control plus Search historical compatibility, and land through one exact owner-authorized atomic integration that closes only this child lane and returns controlled_idle.",
@@ -2424,9 +2420,16 @@
         }
       ],
       "cleanup_contract": "Preserve the prior frozen candidate, paused lane record, Search evidence/resources, all unrelated branches/worktrees/artifacts, and the exact review history. This child lane closes atomically only after its exact reviewed policy candidate lands; rollback before merge is branch abandonment, and any later policy reversal requires a separate reviewed governance package.",
-      "sequence": "control-only activation PR -> merge activation -> create clean implementation worktree from resulting origin/main -> write preflight -> semantic forward-port of 4ff plus baseline/handoff corrections and exact atomic matcher -> full validation -> freeze and push one-commit ten-path candidate -> detailed external handoff -> fresh independent exact-SHA review -> PR CI -> exact special activate preflight -> squash merge -> verify controlled_idle and no authority; no ordinary grant, close, pause, deployment, or Azure action"
+      "sequence": "control-only activation PR -> merge activation -> create clean implementation worktree from resulting origin/main -> write preflight -> semantic forward-port of 4ff plus baseline/handoff corrections and exact atomic matcher -> full validation -> freeze and push one-commit ten-path candidate -> detailed external handoff -> fresh independent exact-SHA review -> PR CI -> exact special activate preflight -> squash merge -> verify controlled_idle and no authority; no ordinary grant, close, pause, deployment, or Azure action",
+      "disposition": "policy_integrated_closed",
+      "closed_at": "2026-08-19T14:34:34Z",
+      "integration_origin_main_sha": "1faf03b073f8c8b328b308e9af3b0b19a15a4d7b",
+      "prior_frozen_candidate_sha": "4ff435ea773efdbfa590f1aa4bbb6c7f4c759748",
+      "integration_record": "four_writer_policy_atomic_integration",
+      "close_evidence_paths": []
     }
   ],
+  "active_lanes": [],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
@@ -3794,5 +3797,53 @@
     },
     "reason": "Pete directed Codex to complete Search 3F after exact candidate d7c5ad6d4098aa0f0f987e591fcd27b982a60e24 received an independent Pass and PR 548 build 1286 succeeded. The frozen candidate predates this control child, so this repair records the immutable receipts without changing the candidate.",
     "verification_contract": "This record grants no merge, release, deployment, proof rerun, Azure mutation, teardown, retention extension, schema, configuration, search enablement, Gate L2, or live-capability authority. The preflight recognizes it only on the exact branch, exact origin/main base, exact one-commit three-path delta, and exact candidate, owner, review, PR, CI, path, and exclusion pins. Merge and release authority remain empty until a later separate grant."
+  },
+  "four_writer_policy_atomic_integration": {
+    "status": "one_time_owner_authorized_atomic_integration",
+    "package": "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001",
+    "branch": "work/2026-08-19-delivery-control-concurrency-integration-001",
+    "origin_main": "1faf03b073f8c8b328b308e9af3b0b19a15a4d7b",
+    "origin_ledger_sha256": "f0840166f1b7ce63e51e1d41fcd4635f135da424086fe03a6fd355eb383b03e8",
+    "origin_baseline_sha256": "3278c7a3dc69e3777ecfec24727ef0ed8332b9f376680600e092c17b65f152ce",
+    "activation_lane_sha256": "48a5f49fc79dd65f6c316cc811623677b49d498b4c6b8237b5eebff587d9368f",
+    "allowed_surfaces": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      "START_HERE.md",
+      "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+      "docs/governance/CURRENT_BASELINE.yaml",
+      "docs/governance/CURRENT_LANES.json",
+      "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py",
+      "tests/test_governance_pointers.py"
+    ],
+    "source_candidate": {
+      "branch": "work/2026-08-18-delivery-control-concurrency-001",
+      "base_sha": "4e35b5ec4453289d156b0c223c94d9dca086cbdd",
+      "reviewed_sha": "4ff435ea773efdbfa590f1aa4bbb6c7f4c759748",
+      "disposition": "paused_preserved_forward_port_only"
+    },
+    "target_contract": {
+      "max_active_lanes": 4,
+      "max_implementation_lanes": 4,
+      "max_direction_authority_lanes": 1,
+      "max_shared_foundation_lanes": 1,
+      "max_production_capable_lanes": 1,
+      "requires_disjoint_branches": true,
+      "requires_disjoint_paths": true,
+      "requires_disjoint_hierarchical_exclusive_domains": true
+    },
+    "landing_contract": {
+      "state": "controlled_idle",
+      "active_lanes": 0,
+      "writes_allowed_for": [],
+      "merge_allowed_for": [],
+      "cleanup_allowed_for": [],
+      "release_allowed_for": [],
+      "child_disposition": "policy_integrated_closed"
+    },
+    "reason": "Pete directed completion of the four-writer rule after Search 3F. The frozen candidate's capacity and collision logic passed independent review; this exact current-main forward-port corrects its stale baseline wording and closes only the temporary integration child lane.",
+    "verification_contract": "The preflight recognizes this exception only on the exact package, branch, origin/main base and hashes, one-commit shape, activation-lane digest, and ten changed paths. It installs only the four-writer policy, closes only this child with a distinct policy_integrated_closed record, clears all mutation authority, preserves the frozen 4ff lane and Search history, and leaves controlled_idle. It grants no product, merge, release, deployment, schema, configuration, Azure mutation, proof rerun, teardown, or cleanup authority."
   }
 }

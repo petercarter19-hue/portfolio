@@ -15,13 +15,18 @@
 > --fetch --require-clean`. A failed preflight is a stop, not permission to
 > create another branch or worktree. The package/branch/surface-bounded
 > `--intent activate` flow in `START_HERE.md` may reserve a lane from
-> `controlled_idle` or add a writer during `active_delivery` while the
-> three-lane class, path, and exclusive-domain limits have capacity; it always
-> requires Pete to select the exact next outcome first. Only actively writing
-> packages consume capacity. A preserved pause uses the exact `--intent pause`
-> control transition and resumes only through fresh activation. The third
-> direction/authority lane is documentation/evidence-only, and only one active
-> lane may be production-capable. A pause is published from a separate
+> `controlled_idle` or add a writer during `active_delivery`; it always requires
+> Pete to select the exact next outcome first. Up to four writer lanes may be
+> active, and all four may be implementation lanes. Shared-foundation and
+> direction/authority are specialized classes, not reserved slots: at most one
+> of each and at most one production-capable lane may be active. A duplicate
+> branch, writable-path overlap, or hierarchical exclusive-domain collision is
+> a stop. When capacity remains and every check passes, two implementation lanes
+> are not a reason to refuse a third or fourth writer. Direction/authority is
+> documentation/evidence-only. Only actively writing packages consume capacity.
+> A preserved pause uses the exact `--intent pause` control transition and
+> resumes only through fresh activation. A pause is published from
+> a separate
 > control-only branch and records the pushed work branch's exact commit; never
 > merge the unfinished work merely to free capacity.
 > An in-place writer change uses a separate control-only branch and `--intent
