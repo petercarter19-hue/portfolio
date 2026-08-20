@@ -245,6 +245,15 @@ from scripts.delivery_preflight import (
 )
 
 
+# The four-writer integration test is a historical exact-candidate fixture.
+# Later package activations legitimately change the live ledger, so load the
+# accepted integration result instead of treating the current checkout as that
+# one-time candidate forever.
+FOUR_WRITER_POLICY_INTEGRATION_RESULT = (
+    "9f742614949b2a84811c7f6f20e7fbe203e09df2"
+)
+
+
 ROOT = Path(__file__).resolve().parents[1]
 
 # Exact main merge that carried the one-time three-lane control repair. The
@@ -2018,7 +2027,10 @@ class DeliveryPreflightTests(unittest.TestCase):
         origin_baseline = load_baseline_bytes_at_ref(
             FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN
         )
-        candidate = copy.deepcopy(self.ledger)
+        candidate = load_ledger_at_ref(FOUR_WRITER_POLICY_INTEGRATION_RESULT)
+        candidate_baseline = load_baseline_bytes_at_ref(
+            FOUR_WRITER_POLICY_INTEGRATION_RESULT
+        )
         integration_facts = facts(
             branch=FOUR_WRITER_POLICY_INTEGRATION_BRANCH,
             head="four-writer-integration-candidate",
@@ -2044,7 +2056,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             package=FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
             require_clean=True,
             origin=origin,
-            candidate_baseline=self.baseline,
+            candidate_baseline=candidate_baseline,
             origin_baseline=origin_baseline,
         )
         self.assertEqual([], errors)
@@ -2089,7 +2101,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             "4ff435ea773efdbfa590f1aa4bbb6c7f4c759748",
             old_paused["preserved_head_sha"],
         )
-        baseline_text = self.baseline.decode("utf-8")
+        baseline_text = candidate_baseline.decode("utf-8")
         self.assertIn(
             f'current_assignments: "{FOUR_WRITER_INTEGRATION_MANAGER_ASSIGNMENT}"',
             baseline_text,
@@ -2109,6 +2121,12 @@ class DeliveryPreflightTests(unittest.TestCase):
         origin = load_ledger_at_ref(FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN)
         origin_baseline = load_baseline_bytes_at_ref(
             FOUR_WRITER_POLICY_INTEGRATION_ORIGIN_MAIN
+        )
+        accepted_candidate = load_ledger_at_ref(
+            FOUR_WRITER_POLICY_INTEGRATION_RESULT
+        )
+        accepted_baseline = load_baseline_bytes_at_ref(
+            FOUR_WRITER_POLICY_INTEGRATION_RESULT
         )
         exact_facts = facts(
             branch=FOUR_WRITER_POLICY_INTEGRATION_BRANCH,
@@ -2165,12 +2183,12 @@ class DeliveryPreflightTests(unittest.TestCase):
         for label, (package, mutated_facts) in fact_cases.items():
             with self.subTest(facts=label):
                 errors, _ = self._evaluate_activation(
-                    copy.deepcopy(self.ledger),
+                    copy.deepcopy(accepted_candidate),
                     mutated_facts,
                     package=package,
                     require_clean=True,
                     origin=origin,
-                    candidate_baseline=self.baseline,
+                    candidate_baseline=accepted_baseline,
                     origin_baseline=origin_baseline,
                 )
                 self.assertTrue(errors)
@@ -2230,7 +2248,7 @@ class DeliveryPreflightTests(unittest.TestCase):
         }
         for label, mutate in candidate_mutations.items():
             with self.subTest(candidate=label):
-                candidate = copy.deepcopy(self.ledger)
+                candidate = copy.deepcopy(accepted_candidate)
                 mutate(candidate)
                 errors, _ = self._evaluate_activation(
                     candidate,
@@ -2238,7 +2256,7 @@ class DeliveryPreflightTests(unittest.TestCase):
                     package=FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
                     require_clean=True,
                     origin=origin,
-                    candidate_baseline=self.baseline,
+                    candidate_baseline=accepted_baseline,
                     origin_baseline=origin_baseline,
                 )
                 self.assertTrue(errors)
@@ -2253,26 +2271,26 @@ class DeliveryPreflightTests(unittest.TestCase):
             FOUR_WRITER_POLICY_ATOMIC_INTEGRATION
         )
         reuse_errors, _ = self._evaluate_activation(
-            copy.deepcopy(self.ledger),
+            copy.deepcopy(accepted_candidate),
             exact_facts,
             package=FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
             require_clean=True,
             origin=reused_origin,
-            candidate_baseline=self.baseline,
+            candidate_baseline=accepted_baseline,
             origin_baseline=origin_baseline,
         )
         self.assertTrue(reuse_errors)
 
         baseline_cases = {
-            "stale manager": self.baseline.replace(
+            "stale manager": accepted_baseline.replace(
                 FOUR_WRITER_INTEGRATION_MANAGER_ASSIGNMENT.encode(),
                 b"Activation assigns the integration child.",
             ),
-            "stale three-lane gate": self.baseline.replace(
+            "stale three-lane gate": accepted_baseline.replace(
                 FOUR_WRITER_IDLE_NEXT_GATE.encode(),
                 b"No active writer lanes. Select and activate the next exact outcome under the three-lane class, path, and exclusive-domain rules.",
             ),
-            "completed child missing": self.baseline.replace(
+            "completed child missing": accepted_baseline.replace(
                 b"  - PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001\n",
                 b"",
             ),
@@ -2280,7 +2298,7 @@ class DeliveryPreflightTests(unittest.TestCase):
         for label, candidate_baseline in baseline_cases.items():
             with self.subTest(baseline=label):
                 errors, _ = self._evaluate_activation(
-                    copy.deepcopy(self.ledger),
+                    copy.deepcopy(accepted_candidate),
                     exact_facts,
                     package=FOUR_WRITER_POLICY_INTEGRATION_PACKAGE,
                     require_clean=True,

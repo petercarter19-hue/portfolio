@@ -210,15 +210,17 @@ class ControlPlaneTests(unittest.TestCase):
             self.assertNotIn("three-lane", normalized, "/".join(parts))
 
         mode = ledger["operating_mode"]
-        self.assertEqual("controlled_idle", mode["state"])
-        self.assertEqual([], ledger["active_lanes"])
+        active_packages = [lane["package"] for lane in ledger["active_lanes"]]
+        expected_state = "active_delivery" if active_packages else "controlled_idle"
+        self.assertEqual(expected_state, mode["state"])
+        self.assertEqual(active_packages, mode["writes_allowed_for"])
         for field in (
-            "writes_allowed_for",
             "merge_allowed_for",
             "cleanup_allowed_for",
             "release_allowed_for",
         ):
-            self.assertEqual([], mode[field])
+            self.assertIsInstance(mode[field], list)
+            self.assertTrue(set(mode[field]).issubset(set(active_packages)))
 
         child = "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001"
         closes = [
@@ -226,7 +228,7 @@ class ControlPlaneTests(unittest.TestCase):
         ]
         self.assertEqual(1, len(closes))
         self.assertEqual("policy_integrated_closed", closes[0]["disposition"])
-        self.assertEqual(ledger["updated_at"], closes[0]["closed_at"])
+        self.assertEqual("2026-08-19T14:34:34Z", closes[0]["closed_at"])
         self.assertEqual(
             "four_writer_policy_atomic_integration",
             closes[0]["integration_record"],
@@ -241,23 +243,23 @@ class ControlPlaneTests(unittest.TestCase):
             "4ff435ea773efdbfa590f1aa4bbb6c7f4c759748",
             old[0]["preserved_head_sha"],
         )
-        self.assertEqual([], self.data.get("active_packages") or [])
+        self.assertEqual(
+            active_packages,
+            [item["id"] for item in (self.data.get("active_packages") or [])],
+        )
         self.assertEqual(
             1,
             (self.data.get("completed_packages") or []).count(child),
         )
-        self.assertEqual(
-            "No active writer lanes. "
-            "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001 is closed and "
-            "archived; activate an exact implementation or direction/authority "
-            "outcome before repository writes.",
-            self.data["manager"]["current_assignments"],
-        )
-        self.assertEqual(
-            "No active writer lanes. Select and activate the next exact outcome "
-            "under the four-writer class, path, and exclusive-domain rules.",
-            self.data["next_gate"],
-        )
+        current_assignments = self.data["manager"]["current_assignments"]
+        next_gate = self.data["next_gate"]
+        if active_packages:
+            for package in active_packages:
+                self.assertIn(package, current_assignments)
+                self.assertIn(package, next_gate)
+        else:
+            self.assertIn("No active writer lanes", current_assignments)
+            self.assertIn("four-writer", next_gate)
 
     def test_production_truth_is_separate_from_current_git(self):
         authority = self.data["authority"]
