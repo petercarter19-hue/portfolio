@@ -1,17 +1,19 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-19T14:34:34Z",
+  "updated_at": "2026-08-20T17:26:13Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
     "main_sha_at_reset_entry": "af1c6a2216bdb5cddd932fbc3d5c1d0e23ef95b3"
   },
   "operating_mode": {
-    "state": "controlled_idle",
+    "state": "active_delivery",
     "authorized_by": "Pete",
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
-    "writes_allowed_for": [],
+    "writes_allowed_for": [
+      "PS-INTERVIEW-AI-EXTRACT-001"
+    ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -27,7 +29,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "No active writer lanes. PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001 is policy_integrated_closed and retains no authority; activate an exact implementation or direction/authority outcome before repository writes."
+    "exit_authority": "PS-INTERVIEW-AI-EXTRACT-001 may write only its recorded Protected implementation surfaces after this activation reaches origin/main and its exact implementation branch passes the write preflight. No merge, schema apply, configuration, provider-call, evaluation-spend, deployment, enablement, or production authority is granted."
   },
   "activation_policy": {
     "enabled": true,
@@ -2429,7 +2431,82 @@
       "close_evidence_paths": []
     }
   ],
-  "active_lanes": [],
+  "active_lanes": [
+    {
+      "package": "PS-INTERVIEW-AI-EXTRACT-001",
+      "outcome": "Implement only the accepted first Interview AI slice: extract the five legacy provider jobs (coach, revision, planning_hints, grounded_example, generic_example) into immutable bundles and a release-set runtime while proving exact legacy prompt, provider-request, validation, response, refusal, and Compare-order parity. Add the accepted operational deltas only: content-free server_call telemetry with a dedicated append boundary and 90-day purge design, plus bounded Interview exception logging that never serializes raw exceptions or member/model content. Produce one frozen exact candidate, self-review it, and obtain a fresh independent review. Stop before provider calls, paid evaluation, production schema apply, configuration, merge, deployment, enablement, or live claims.",
+      "branch": "work/2026-08-20-interview-ai-extract-001",
+      "writer": "The dedicated Claude session commissioned by Pete on 2026-08-20 is the sole implementation writer on branch work/2026-08-20-interview-ai-extract-001. Codex task 01a01233-d773-7ed1-9ac8-cb0d2bb8cf07 remains the end-to-end package manager and may govern control transitions but may not co-write the implementation candidate. A fresh independent reviewer may inspect the frozen exact candidate but may not edit it. No other task may write these surfaces.",
+      "delivery_path": "Protected",
+      "production_capable": true,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "product:interview-ai-runtime-extraction",
+        "ai:interview-provider-request-parity",
+        "ai:interview-release-identity",
+        "telemetry:interview-ai-server-call",
+        "schema:interview-ai-telemetry",
+        "operations:interview-ai-telemetry-retention",
+        "configuration:interview-ai-active-release"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 73c4e63dc74a2e67fb6bed0ed4c3d9e58e3525c5 at controlled_idle with zero active writers and empty write, merge, cleanup, and release authority. That checkpoint contains only the authority-neutral active-state test-fixture repair after 9f742614949b2a84811c7f6f20e7fbe203e09df2; Interview runtime source is unchanged. PS-INTERVIEW-AI-ARCHITECTURE-001 v2.8 is accepted and closed at the architecture level. Pete approved the coordinated Interview AI and Question Intelligence intake on 2026-08-19 and expressly overrode the audit-only decision-lock procedure for that intake. On 2026-08-20 the Site Audit Manager routed this package manager to continue PS-INTERVIEW-AI-EXTRACT-001 end to end while preserving all later authority gates, and Pete selected the dedicated Claude session as sole implementation writer.",
+      "writable_surfaces": [
+        "docs/governance/PACKAGE_REGISTRY.json",
+        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/",
+        "app.py",
+        "services/database_service.py",
+        "services/interview_ai/",
+        "prompts/interview/",
+        "tests/test_interview_studio.py",
+        "tests/test_database_service.py",
+        "tests/interview_ai/",
+        "scripts/interview_ai/",
+        "SQL FIles/Migrations/proposed/PS-INTERVIEW-AI-EXTRACT-001_telemetry.sql",
+        "SQL FIles/Migrations/proposed/PS-INTERVIEW-AI-EXTRACT-001_telemetry_rollback.sql",
+        "SQL FIles/Migrations/registry.json",
+        "azure-pipelines.yml"
+      ],
+      "exclusions": [
+        "no adaptive answer length, timeout/retry change, evidence short-circuit, client_view, response attempt or release identity, Diagnostician, Router, History, History Nudge, expanded guardian runtime, Coach v3, Revision proposal lifecycle, claim-granular Grounded redesign, private-free Generic redesign, Compare partial-result or half-retry behavior, or any other later-slice implementation",
+        "no prompt wording, whitespace, provider/model, max_tokens, explicit provider parameter, request order, validator, response transformation, status code, member copy, rate-limit, authorization, evidence, signed-context, persistence, or current sequential Compare behavior change outside the separately frozen telemetry and bounded-logging operational contracts",
+        "no templates, static Interview JavaScript or CSS, material visual direction, public-route retirement, Ask Pete, Ask Slate, Opportunity Slate, Community, Profile, Journal, Workshop, Homepage, or other non-Interview behavior",
+        "no provider call, paid evaluation, model bake-off, dependency or secret change, Azure resource mutation, production schema apply, App Service setting change, migration execution, merge, deployment, enablement, or live verification",
+        "no reuse of Community maintenance identity or enable flag; Interview telemetry maintenance remains independently named, scoped, default-off, and separately permissioned",
+        "no edit, reset, adoption, cleanup, deletion, or overwrite of another branch, worktree, stash, artifact, secret, production datum, or user-authored content"
+      ],
+      "completion_evidence": [
+        "an immutable five-bundle catalog with zero-byte initial constitutions recomputes every full bundle SHA-256 and proves exact system and user request bytes, provider method, model, max_tokens, explicit keyword set, call count, and grounded-before-generic Compare order against a frozen legacy oracle",
+        "release-set, candidate-system, runtime-core, contract, bundle-label/full-hash, guarded-path closure, compatibility, initial-extraction, and unresolved-active-release tests pass without adding Slice 3 response identities or changing pre-provider refusal precedence",
+        "content-free telemetry sentinel tests prove the closed field, enum, numeric, exception, source-count, pricing, Compare parent/child, duplicate-attempt, no-client-view, and no-free-string contracts; telemetry-write failure never changes or repeats a provider result",
+        "the proposed additive SQL migration, rollback, append procedure, duplicate handling, application append-only permission, separate purge permission, 90-day boundary, bounded batch, wrong-database refusal, and scheduled default-off maintenance path receive static and disposable proof without any production apply",
+        "all existing Interview Studio tests, focused new Extract tests, database allowlist regressions, configuration failures, compile/JSON/diff checks, and applicable repository CI pass without a real provider call or production database access",
+        "complete-diff self-review confirms changes stay within recorded surfaces, all later slices remain absent, raw exception strings are removed from Interview logs, and rollback is executable through the prior application artifact plus D8-compatible release selection only where allowed",
+        "the exact pushed candidate SHA receives a fresh independent Protected review focused on byte parity, release identity, privacy/content-free telemetry, SQL least privilege and retention, pricing identity, Compare accounting, fail-closed active-release behavior, later-slice exclusion, and rollback"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-19",
+          "authorized_by": "Pete",
+          "status": "accepted",
+          "decision": "Pete approved the coordinated Interview AI and Question Intelligence package intakes, their separate boundaries and sequence, the five-slot Extract parity boundary, reuse rules, exclusions, and recorded authority gates. This acceptance did not itself authorize implementation or release actions."
+        },
+        {
+          "date": "2026-08-20",
+          "authorized_by": "Site Audit Manager under Pete's clarified package-management model",
+          "status": "authorized",
+          "decision": "Continue PS-INTERVIEW-AI-EXTRACT-001 through exact registration and activation, local implementation, writer self-review, and fresh independent exact-candidate review. Later slices, provider calls/spend, schema apply, merge, deployment, configuration, enablement, and production authority remain separate."
+        },
+        {
+          "date": "2026-08-20",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Use the dedicated Claude session as sole implementation writer for PS-INTERVIEW-AI-EXTRACT-001 after Codex supplies the merged activation SHA, exact branch/base, writable surfaces, source checkpoint, passing write preflight, golden-fixture rule, and complete slice constraints. Codex remains package manager; this grants no provider, evaluation-spend, schema-apply, configuration, merge, deployment, enablement, or production authority."
+        }
+      ],
+      "cleanup_contract": "Preserve all existing work. Merge only this activation control record before creating the exact implementation worktree from resulting current origin/main. Preserve activation and implementation branches through exact-SHA review and any later authorized merge/close. This lane grants no cleanup authority over any other branch, worktree, stash, artifact, or user file.",
+      "sequence": "control-only activation PR -> merge activation -> create the exact clean implementation branch/worktree from resulting origin/main -> package write preflight -> register only PS-INTERVIEW-AI-EXTRACT-001 and implement the bounded five-slot candidate -> focused and repository validation -> complete-diff writer self-review -> freeze and push exact candidate -> fresh independent exact-SHA Protected review -> reconcile accepted findings -> return the completed Extract candidate for a separate merge/schema/configuration/deployment decision; do not activate Eval or any later Interview slice"
+    }
+  ],
   "paused_lanes": [
     {
       "package": "PS-EXTERNAL-VISUAL-REVIEW-HANDOFF-001",
