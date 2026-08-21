@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-21T01:25:36Z",
+  "updated_at": "2026-08-21T01:44:47Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -2511,7 +2511,7 @@
       "package": "PS-SYNTHETIC-MULTI-MEMBER-QA-001",
       "outcome": "Implement a reusable, non-production QA foundation for two neutral synthetic-member aliases, provider-free identity and isolation contracts, clean-client and same-client account-switch journey definitions, evidence minimization, and fail-closed cleanup verification. Produce one frozen exact candidate, self-review it, and obtain a fresh independent Protected review. Stop before identity provisioning, live login, authenticated browser operation, production data access, implementation-candidate merge, deployment, enablement, or production proof.",
       "branch": "work/2026-08-20-synthetic-multi-member-qa-001",
-      "writer": "Receiving Claude Code session b199749d-5c60-4b11-986a-b01eea3f07e5 on Fable 5 is the sole package manager and writer for the remaining governed delivery and attended-proof work on branch work/2026-08-20-synthetic-multi-member-qa-001 after this transfer reaches origin/main. The implementation remains frozen at exact pushed handoff SHA 7923913049450c8c5fa1871576c71ba44233de04 unless a new review and CI cycle is explicitly governed. Codex task 01a01224-3a9d-7fe0-aa80-db247058d9f6 relinquishes writer custody when this transfer merges. Pete alone provisions identities and performs login or MFA at a separately authorized attended proof. No other task may write these surfaces.",
+      "writer": "Receiving Claude Code desktop session 708d6f8b-e2d9-437d-950f-52a084e41381 on Fable 5 is the sole package manager and writer for the remaining governed delivery and attended-proof work on branch work/2026-08-20-synthetic-multi-member-qa-001 after this replacement transfer reaches origin/main. The implementation remains frozen at exact pushed handoff SHA 7923913049450c8c5fa1871576c71ba44233de04 unless a new review and CI cycle is explicitly governed. Previously named Claude session b199749d-5c60-4b11-986a-b01eea3f07e5 is superseded and must not write the package after this replacement transfer merges. Pete alone provisions identities and performs login or MFA at a separately authorized attended proof. No other task may write these surfaces.",
       "delivery_path": "Protected",
       "production_capable": false,
       "lane_class": "shared_foundation",
@@ -2562,6 +2562,10 @@
         {
           "date": "2026-08-20",
           "decision": "After the Site-audit manager recorded OWNER REVIEW COMPLETE — DECISION GATE OPEN, Pete answered yes to the exact PS-SYNTHETIC-MULTI-MEMBER-QA-001 candidate and authorized continued progress through separately governed registry-collision clearance, Azure/Linux CI, PR/merge, deployment, and Pete-attended two-identity proof gates, subject to each gate passing and without credential, MFA, token, cookie, or session handling. Pete then directed the remaining package work to Claude. Receiving Claude Code session b199749d-5c60-4b11-986a-b01eea3f07e5 on Fable 5 acknowledged read-only custody and directly verified current origin/main, the frozen remote branch, draft PR 560, and the safety boundary. Codex task 01a01224-3a9d-7fe0-aa80-db247058d9f6 pushed and relinquishes the active lane at exact handoff SHA 7923913049450c8c5fa1871576c71ba44233de04 when this transfer reaches origin/main. The exact SHA received fresh independent APPROVE with no P0-P3 findings and Azure/Linux build 1346 succeeded. This transfer preserves the package branch, capacity, domains, writable surfaces, exclusions, registry deferral, and every later gate; it grants no registry write while Interview owns that path, no provider/schema/configuration/enablement authority, no credential or session handling, and no production-acceptance claim."
+        },
+        {
+          "date": "2026-08-20",
+          "decision": "Pete chose the simplest Claude continuation path and directed the package to replacement Claude Code desktop session 708d6f8b-e2d9-437d-950f-52a084e41381 on Fable 5. The replacement session completed the required read-only boot, directly verified Azure origin/main 90c110b110b271146c2ff5a808664be7e9ff3d32, draft PR 560, the active registry collision, and exact remote candidate SHA 7923913049450c8c5fa1871576c71ba44233de04, and confirmed no repository edits. When this replacement transfer reaches origin/main, session 708d6f8b-e2d9-437d-950f-52a084e41381 becomes the sole package manager and writer and previously named session b199749d-5c60-4b11-986a-b01eea3f07e5 is superseded. This transfer changes only session custody; it preserves the exact frozen candidate, package branch, delivery path, capacity, domains, writable surfaces, exclusions, registry deferral, review and CI receipts, Pete-only login and MFA boundary, and every later gate, and grants no new implementation, credential, provider, schema, configuration, enablement, deployment, or production-acceptance authority."
         }
       ],
       "cleanup_contract": "Preserve all existing work. Merge only this control activation before creating the exact implementation worktree from resulting current origin/main. Retain no real identity inventory or session material. Preserve activation and implementation branches through exact-SHA review and any later authorized merge or close. This lane grants no cleanup authority over any other branch, worktree, stash, artifact, identity, production record, or user file.",
