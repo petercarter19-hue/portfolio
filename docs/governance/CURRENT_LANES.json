@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-21T20:16:35Z",
+  "updated_at": "2026-08-21T23:30:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -13,7 +13,8 @@
     "read_only_work_allowed": true,
     "writes_allowed_for": [
       "PS-SYNTHETIC-MULTI-MEMBER-QA-001",
-      "PS-INTERVIEW-AI-EXTRACT-001"
+      "PS-INTERVIEW-AI-EXTRACT-001",
+      "PS-SIGNIN-MEMBER-ARRIVAL-001"
     ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
@@ -30,7 +31,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-SYNTHETIC-MULTI-MEMBER-QA-001 may continue only its existing disjoint shared-foundation work. PS-INTERVIEW-AI-EXTRACT-001 may write only the newly recorded dark telemetry-infrastructure branch and exact infrastructure surfaces after this activation reaches origin/main and the branch passes write preflight. Runtime branch work/2026-08-20-interview-ai-extract-001 remains preserved and read-only at d546b525a84d62ba3eef3ef7dc3f5e2833647582. No merge of PR 564 or the future infrastructure implementation PR, SQL apply, production identity provisioning, retention enablement, production configuration, deployment, provider call, spend, or production operation is granted."
+    "exit_authority": "PS-SYNTHETIC-MULTI-MEMBER-QA-001 may continue only its existing disjoint shared-foundation work. PS-INTERVIEW-AI-EXTRACT-001 may write only the newly recorded dark telemetry-infrastructure branch and exact infrastructure surfaces after this activation reaches origin/main and the branch passes write preflight. Runtime branch work/2026-08-20-interview-ai-extract-001 remains preserved and read-only at d546b525a84d62ba3eef3ef7dc3f5e2833647582. No merge of PR 564 or the future infrastructure implementation PR, SQL apply, production identity provisioning, retention enablement, production configuration, deployment, provider call, spend, or production operation is granted. PS-SIGNIN-MEMBER-ARRIVAL-001 is re-activated as a third, non-production-capable implementation lane to close the two limitations its own completion report named and to correct two stale sibling release records. It may write only the exact surfaces recorded below after this activation reaches origin/main and its branch passes write preflight. It receives no merge, deployment, release, configuration, provider, schema, or production authority, and it must not write tests/test_operational_readiness.py or the CURRENT_BASELINE.yaml release-truth block, both of which PS-INTERVIEW-AI-EXTRACT-001 currently owns."
   },
   "activation_policy": {
     "enabled": true,
@@ -2580,6 +2581,53 @@
       ],
       "cleanup_contract": "Preserve runtime branch work/2026-08-20-interview-ai-extract-001, exact runtime tip d546b525a84d62ba3eef3ef7dc3f5e2833647582, PR 564, accepted implementation baseline dd545348939a668e4d4ff375526d689fa4174f89, all rejected/correction history, SQL gate evidence, and every unrelated lane. The dark branch must be created only after this activation reaches origin/main and must remain preserved through exact-SHA review. This lane grants no branch deletion, production cleanup, SQL rollback, or other destructive authority.",
       "sequence": "merge this control-only activation with skip-ci after validation and independent review -> create the exact clean dark-infrastructure branch/worktree from resulting origin/main -> pass package write preflight -> Claude separates only the recorded infrastructure bytes and writes the bounded evidence/tests -> focused and applicable validation -> complete-diff writer self-review -> freeze and push exact candidate -> open a separate non-auto-complete dark-infrastructure PR -> Azure/Linux CI -> fresh independent exact-SHA review -> return the reviewed candidate for a separate merge decision; do not merge PR 564 or the infrastructure PR and do not apply or enable anything"
+    },
+    {
+      "package": "PS-SIGNIN-MEMBER-ARRIVAL-001",
+      "outcome": "Close the two open limitations recorded in this package's own completion report and correct the stale release records of two sibling auth packages. Reconcile cross-tab sign-out on the private owner workspace: today a member who signs out in one tab is still shown a signed-in workspace in another until they navigate. Follow the existing private-path precedent in easy-auth-callback.js and reload rather than only swapping header controls, so the server re-authorizes and private content leaves the screen instead of sitting under a Sign In button. Keep the /auth/ surfaces excluded so a sign-in page cannot reconcile itself into a loop. Recapture the /app byte-lock chain with proof that the markup delta is exactly the one added script tag. Record the measured Azure session policy as evidence, since the governing lifetime lives in App Service configuration and cannot be regression-tested from source. Correct PS-SIGNIN-EXPERIENCE-001 and PS-AUTH-CALLBACK-001, whose completion records still read 'Not deployed, not pushed' and 'Pending' for gates that demonstrably shipped. Produce one exact self-reviewed candidate. Stop before merge, deployment, release, configuration change, or any production operation.",
+      "branch": "work/2026-08-21-signin-member-arrival-followup",
+      "writer": "Claude Code desktop session acd9f218-d287-490f-b2d5-a185c5bceb27 on Opus 5 is the sole writer, working in clean worktree C:/Users/peter/Documents/portfolio-signin-member-arrival-followup-20260821. Pete directed this work on 2026-08-21. No other task may write these surfaces.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "product:signin-cross-tab-reconciliation",
+        "evidence:signin-package-release-record-truth"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 8bb3339b7ada4a2419b0d71eeec92a66a55d4b6e with two active writers and capacity for a third implementation lane. Production is verified as commit 9f742614949b2a84811c7f6f20e7fbe203e09df2 via Azure build 1303 (buildNumber 20260819.44), deployed to the production slot 2026-08-19T15:14:16Z and still the active deployment; live /healthz returns HTTP 200 with release 2edbd8819968a72e74a933e5, which scripts/release_identity.py derives from exactly that commit and build. That deployment contains both PS-SIGNIN-MEMBER-ARRIVAL-001 merges (PR 514 eaed34c3, PR 516 ae40aec8), and the live safe-return behaviour was re-verified unauthenticated on 2026-08-21: all four registered destinations round trip and every hostile, malformed, or unregistered target falls back to /app.",
+      "writable_surfaces": [
+        "templates/base.html",
+        "static/js/auth-state.js",
+        "tests/auth_state.test.js",
+        "tests/test_auth.py",
+        "tests/test_owner_home.py",
+        "tests/test_signin_member_arrival.py",
+        "docs/initiatives/PS-SIGNIN-MEMBER-ARRIVAL-001/",
+        "docs/initiatives/PS-SIGNIN-EXPERIENCE-001/COMPLETION.md",
+        "docs/initiatives/PS-AUTH-CALLBACK-001/COMPLETION_REPORT.md"
+      ],
+      "exclusions": [
+        "no write to tests/test_operational_readiness.py or to the CURRENT_BASELINE.yaml release-truth block: PS-INTERVIEW-AI-EXTRACT-001 holds that test file, the two move in enforced lockstep, and the stale pair recorded there is therefore reported as evidence for that lane's owner rather than corrected here",
+        "no change to safe_return.py, auth_routes.py, community_routes.py, workshop_routes.py, opportunity_slate_v2_routes.py, or any released safe-return behaviour, which live verification shows is correct",
+        "no schema, migration, dependency, pipeline, App Service configuration, session duration, cookie policy, provider, tenant, callback, DNS, TLS, secret, or RBAC change; the measured session policy is recorded as read-only evidence only",
+        "no account state moves to the client: auth-state.js must keep asserting free of localStorage, sessionStorage, document.cookie, and innerHTML, and must continue to preserve the server-rendered controls whenever the session check is unavailable, ambiguous, or returns a state it does not recognise",
+        "no reload loop: a reload is attempted at most once per document, never on an /auth/ surface, and never when the session endpoint is unavailable",
+        "no credential, MFA code, token, cookie, raw principal, browser profile, or session state is requested, captured, stored, exported, or inspected",
+        "no material visual change: no new page, component, composition, hierarchy, dominant action, typography, colour language, or responsive interaction model",
+        "no merge, deployment, release, production mutation, or live-behaviour claim",
+        "no recapture of a byte lock or relaxation of a test merely to make it pass; every changed expectation must be proven by rendering the exact request before and after",
+        "no write outside the recorded surfaces, and no change to another writer's branch, worktree, stash, or artifact"
+      ],
+      "completion_evidence": [
+        "a member signed out in one tab no longer keeps a usable private workspace in another: on focus the workspace re-checks the session and reloads, and the server returns the sign-in redirect rather than leaving private content on screen",
+        "the /auth/ surfaces stay excluded, the reload is attempted at most once per document, and an unavailable or ambiguous session check still preserves the server-rendered UI",
+        "the /app byte-lock chain is recaptured with the documented proof step: stripping exactly the one added script tag reproduces the previous locked baseline byte for byte, and FLAG_OFF_APP_RENDER_PREVIOUS_SHA256 still matches unrecaptured",
+        "tests/auth_state.test.js and the shell's no-client-state assertions still pass, proving no browser storage, cookie, or innerHTML path was introduced",
+        "focused owner-home, auth, signin-member-arrival, navigation, and shell tests pass, and the wider suite is run because the shared shell changed",
+        "the package record states the measured Azure session policy (fixed 8-hour cookie expiration, 72-hour token refresh extension, 5-minute validated nonce) and names it as configuration evidence that source tests cannot assert",
+        "the two sibling records state their actual released state with the exact commit, build, deployment time, and derived live release identity",
+        "a complete-diff self-review and one proportional Protected completion record"
+      ]
     }
   ],
   "paused_lanes": [
@@ -3574,7 +3622,8 @@
       "pause_reason": "Search 3F merged, released, live-verified, and closed; the temporary exact Search admission profile has no remaining writer work.",
       "resume_contract": "Resume only through fresh owner-selected activation on a clean branch from current origin/main; this preserved lane grants no standing merge, release, cleanup, Search mutation, proof-rerun, teardown, or retention authority.",
       "preserved_head_sha": "2e5216bfaeaf2ea7dab40fccfe8b703050106a24"
-    }  ],
+    }
+  ],
   "workspace_snapshot": {
     "captured_at": "2026-08-04T21:45:30Z",
     "registered_worktrees": 69,
