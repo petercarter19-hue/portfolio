@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-20T17:26:13Z",
+  "updated_at": "2026-08-20T23:57:56Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-INTERVIEW-AI-EXTRACT-001"
+      "PS-INTERVIEW-AI-EXTRACT-001",
+      "PS-SYNTHETIC-MULTI-MEMBER-QA-001"
     ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
@@ -29,7 +30,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-INTERVIEW-AI-EXTRACT-001 may write only its recorded Protected implementation surfaces after this activation reaches origin/main and its exact implementation branch passes the write preflight. No merge, schema apply, configuration, provider-call, evaluation-spend, deployment, enablement, or production authority is granted."
+    "exit_authority": "PS-INTERVIEW-AI-EXTRACT-001 and PS-SYNTHETIC-MULTI-MEMBER-QA-001 may write only their disjoint recorded Protected surfaces after this activation reaches origin/main and each exact implementation branch passes its write preflight. No implementation-candidate merge, identity provisioning, live login, session handling, provider call, schema apply, configuration, deployment, enablement, or production authority is granted."
   },
   "activation_policy": {
     "enabled": true,
@@ -2505,6 +2506,62 @@
       ],
       "cleanup_contract": "Preserve all existing work. Merge only this activation control record before creating the exact implementation worktree from resulting current origin/main. Preserve activation and implementation branches through exact-SHA review and any later authorized merge/close. This lane grants no cleanup authority over any other branch, worktree, stash, artifact, or user file.",
       "sequence": "control-only activation PR -> merge activation -> create the exact clean implementation branch/worktree from resulting origin/main -> package write preflight -> register only PS-INTERVIEW-AI-EXTRACT-001 and implement the bounded five-slot candidate -> focused and repository validation -> complete-diff writer self-review -> freeze and push exact candidate -> fresh independent exact-SHA Protected review -> reconcile accepted findings -> return the completed Extract candidate for a separate merge/schema/configuration/deployment decision; do not activate Eval or any later Interview slice"
+    },
+    {
+      "package": "PS-SYNTHETIC-MULTI-MEMBER-QA-001",
+      "outcome": "Implement a reusable, non-production QA foundation for two neutral synthetic-member aliases, provider-free identity and isolation contracts, clean-client and same-client account-switch journey definitions, evidence minimization, and fail-closed cleanup verification. Produce one frozen exact candidate, self-review it, and obtain a fresh independent Protected review. Stop before identity provisioning, live login, authenticated browser operation, production data access, implementation-candidate merge, deployment, enablement, or production proof.",
+      "branch": "work/2026-08-20-synthetic-multi-member-qa-001",
+      "writer": "The dedicated Codex package-manager task approved by Pete on 2026-08-20 is the sole implementation writer on branch work/2026-08-20-synthetic-multi-member-qa-001. A fresh independent reviewer may inspect the frozen exact candidate but may not edit it. Pete alone provisions identities and performs login or MFA at a separately authorized attended proof. No other task may write these surfaces.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "shared_foundation",
+      "exclusive_domains": [
+        "quality:synthetic-multi-member-qa",
+        "identity:synthetic-qa-alias-contract",
+        "privacy:multi-member-isolation-evidence",
+        "testing:clean-client-attended-proof",
+        "testing:synthetic-evidence-cleanup"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 5322f105c3a84b440072100f13880c7b377e7c54 with one active Interview AI implementation writer and capacity for this disjoint non-production shared-foundation lane. Existing source proves trusted-header identity mapping, mocked two-member separation, owner-scoped SQL transaction verifiers, and one-member production sign-in journeys, but the Sign-in Member Arrival completion report records GAP-SYNTHETIC-MULTI-MEMBER-QA because no reusable two-member end-to-end proof exists. Pete completed the four-chunk owner review and approved the bounded package on 2026-08-20.",
+      "writable_surfaces": [
+        "docs/initiatives/PS-SYNTHETIC-MULTI-MEMBER-QA-001/",
+        "qa/synthetic_member/",
+        "scripts/run_synthetic_member_qa.py",
+        "tests/synthetic_member_qa/"
+      ],
+      "exclusions": [
+        "no edit to identity.py, auth_routes.py, app.py, templates, static assets, feature services, SQL migrations or verifiers, Azure pipelines, dependencies, environment files, or production configuration",
+        "no PACKAGE_REGISTRY.json edit while PS-INTERVIEW-AI-EXTRACT-001 owns that shared path; the registry entry is deferred until the collision clears and receives its normal authority",
+        "no creation, invitation, naming, retirement, or operation of Entra or other live identities; no request for or handling of passwords, MFA codes, recovery codes, cookies, tokens, claims, headers, browser profiles, storage state, or session files",
+        "no authenticated browser automation, production data access, broad database query, screenshot of private content, member-content fixture, real-person identity, destructive cleanup, or claim of permanent deletion beyond verified application behavior",
+        "no test of every PeerSlate feature, feature enablement, public or member rollout, schema apply, implementation-candidate merge, deployment, live verification, or production proof",
+        "no edit, reset, adoption, cleanup, deletion, or overwrite of another branch, worktree, stash, artifact, secret, production datum, or user-authored content"
+      ],
+      "completion_evidence": [
+        "contract tests prove exactly two neutral aliases, no external identity inventory, no secret or personally identifying fields, and fail-closed rejection of forbidden evidence keys and unsafe free text",
+        "the canonical journey matrix covers signed-out baseline, distinct first arrival, simultaneous clients, bidirectional read/update/delete/export denial, forged references, same-client account switching, refresh/tab/public return/session failure reporting, repeatability, and cleanup",
+        "the attended-proof runbook assigns every login and MFA action to Pete and keeps the harness limited to local plan generation, sanitized result entry, validation, and cleanup accounting without browser or session control",
+        "evidence validation retains only run metadata, neutral aliases, safe journey identifiers, expected versus observed structural outcomes, status, and bounded notes; incomplete isolation, session, or cleanup evidence cannot become Pass",
+        "cleanup tests require a pre-run owner-scoped baseline, a run-local item ledger, normal application deletion where separately authorized, zero active residue, honest soft-delete or retention disclosure, client destruction attestation, and Fail or Conditional containment when cleanup is incomplete",
+        "focused foundation tests plus the relevant existing auth/member-arrival and browser-local storage isolation regressions pass without network, provider, production database, credential, or live identity access",
+        "complete-diff self-review and secret/evidence scans confirm all changes stay within the four recorded surfaces and the exact pushed candidate receives a fresh independent Protected review"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-20",
+          "authorized_by": "Site Audit Manager under Pete's clarified package-management model",
+          "status": "authorized",
+          "decision": "Continue GAP-SYNTHETIC-MULTI-MEMBER-QA end to end through owner review, exact QA-foundation registration and activation, local implementation, self-review, fresh independent review, evidence minimization, cleanup proof, and bounded verification while preserving all identity, live-access, merge, deployment, enablement, and production gates."
+        },
+        {
+          "date": "2026-08-20",
+          "authorized_by": "Pete",
+          "status": "approved",
+          "decision": "Pete completed the four manageable owner-review chunks and replied 'approved' on the separate decision turn for the exact PS-SYNTHETIC-MULTI-MEMBER-QA-001 boundary. Registration, control activation, local implementation, writer self-review, and fresh independent review are authorized. Identity provisioning, live login, session handling, implementation-candidate merge, deployment, enablement, and production proof remain withheld."
+        }
+      ],
+      "cleanup_contract": "Preserve all existing work. Merge only this control activation before creating the exact implementation worktree from resulting current origin/main. Retain no real identity inventory or session material. Preserve activation and implementation branches through exact-SHA review and any later authorized merge or close. This lane grants no cleanup authority over any other branch, worktree, stash, artifact, identity, production record, or user file.",
+      "sequence": "control-only activation PR -> merge activation -> create the exact clean implementation branch/worktree from resulting origin/main -> package write preflight -> implement only the four disjoint QA-foundation surfaces while deferring the shared registry entry -> focused and relevant regression validation -> complete-diff writer self-review -> freeze and push exact candidate -> fresh independent exact-SHA Protected review -> reconcile accepted findings -> return the completed local candidate for separate registry, attended identity proof, implementation-candidate merge, deployment, and production decisions"
     }
   ],
   "paused_lanes": [

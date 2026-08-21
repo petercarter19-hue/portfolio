@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Codex manages PS-INTERVIEW-AI-EXTRACT-001; Claude is its sole writer on work/2026-08-20-interview-ai-extract-001 for five-slot parity extraction, release identity, content-free telemetry/logging, tests, and review. Release authority is withheld."
+  current_assignments: "Active on disjoint Protected surfaces: PS-INTERVIEW-AI-EXTRACT-001 with Claude, and PS-SYNTHETIC-MULTI-MEMBER-QA-001 on work/2026-08-20-synthetic-multi-member-qa-001 with Codex. All release and live-identity authority is withheld."
 
 governing_documents:
   bible:
@@ -63,6 +63,9 @@ active_packages:
   - id: PS-INTERVIEW-AI-EXTRACT-001
     status: active_delivery
     scope: "Five-slot legacy parity extraction, release identity, content-free server_call telemetry, bounded logging, tests, rollback, and independent review."
+  - id: PS-SYNTHETIC-MULTI-MEMBER-QA-001
+    status: active_delivery
+    scope: "Reusable two-member QA contracts, sanitized evidence, cleanup verification, tests, and review."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -162,7 +165,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "PS-INTERVIEW-AI-EXTRACT-001 completes implementation and independent review; merge, schema, configuration, provider, evaluation, deployment, enablement, and production remain separately gated."
+next_gate: "PS-INTERVIEW-AI-EXTRACT-001 and PS-SYNTHETIC-MULTI-MEMBER-QA-001 complete implementation and review; the QA registry waits for its shared path. Release and live-identity actions remain gated."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
