@@ -177,6 +177,69 @@ COMMUNITY_AUTHORING_SURFACE_REPAIR = {
     ),
 }
 
+# Pete directed Codex on 2026-08-21 to finish the consolidated Extract B1-B6
+# review, establish manager custody of the reviewed anchor trust root, and add
+# the one shared operational-readiness test surface only after the technical
+# corrections passed. The exception is pinned to one base, branch, package,
+# target lane, candidate checkpoint, trust-root byte digest, and appended path.
+# It grants no candidate acceptance, merge, release, schema, provider, spend,
+# deployment, configuration, enablement, or production authority.
+INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR = {
+    "status": "one_time_owner_authorized_repair",
+    "package": "PS-DELIVERY-CONTROL-001",
+    "branch": (
+        "work/2026-08-21-delivery-activation-"
+        "interview-extract-review-controls"
+    ),
+    "origin_main": "f6419d4f73e650492697b68d6a3637faa08cdfa6",
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        (
+            "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/"
+            "ANCHOR_TRUST_ROOT.json"
+        ),
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "target_package": "PS-INTERVIEW-AI-EXTRACT-001",
+    "target_branch": "work/2026-08-20-interview-ai-extract-001",
+    "reviewed_unfrozen_sha": (
+        "75318ec244ec0a14386875e896de29bfe1004d8d"
+    ),
+    "added_surface": "tests/test_operational_readiness.py",
+    "trust_root_path": (
+        "docs/initiatives/PS-INTERVIEW-AI-ARCHITECTURE-001/"
+        "ANCHOR_TRUST_ROOT.json"
+    ),
+    "trust_root_sha256": (
+        "3fa52af9b5bc8fc4c2f01ace947668f55319fd9f6d2353c797e1cf7fcff53912"
+    ),
+    "reason": (
+        "Pete directed Codex to complete the consolidated B1-B6 review, "
+        "establish package-manager custody of the Interview anchor trust "
+        "record, and land the one-path operational-readiness test grant after "
+        "the technical corrections passed. The repair independently "
+        "introduces the five-value trust record from current origin/main, "
+        "outside Claude's implementation surfaces, and appends exactly "
+        "tests/test_operational_readiness.py to the existing Extract lane so "
+        "Claude can update the pinned stage list. It preserves the package, "
+        "sole writer, branch, class, domains, exclusions, all authority lists, "
+        "and every other lane."
+    ),
+    "verification_contract": (
+        "The validator recognizes this one-time record only on the exact "
+        "branch, exact origin/main base, one commit, exact four changed paths, "
+        "and the exact trust-root bytes pinned by SHA-256. CURRENT_LANES may "
+        "change only updated_at, this record, and the one appended test "
+        "surface on the exact Extract lane; CURRENT_BASELINE, operating-mode "
+        "authority, activation policy, every other lane, product code, schema, "
+        "pipeline, configuration, and live behavior remain unchanged. This is "
+        "custody plus write-surface correction only; it grants no candidate "
+        "acceptance, merge, provider call, spend, schema apply, deployment, "
+        "enablement, or production authority."
+    ),
+}
+
 # Pete's 2026-08-12 approval of the exact Opportunity Slate R1 candidate
 # exposed the implementation counterpart of the direction-only lifecycle gap:
 # the standing grant path could not bind an independently reviewed dark
@@ -4378,6 +4441,26 @@ def _exact_community_authoring_surface_repair_matches(
         == COMMUNITY_AUTHORING_SURFACE_REPAIR["origin_main"]
         and facts.get("ahead") == 1
         and facts.get("behind") == 0
+    )
+
+
+def _exact_interview_extract_review_control_repair_matches(
+    ledger: dict,
+    facts: dict,
+    package_id: str,
+) -> bool:
+    return (
+        ledger.get("interview_extract_review_control_repair")
+        == INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR
+        and package_id == INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR["package"]
+        and facts.get("branch")
+        == INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR["branch"]
+        and facts.get("origin_main")
+        == INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR["origin_main"]
+        and facts.get("ahead") == 1
+        and facts.get("behind") == 0
+        and facts.get("interview_extract_trust_root_sha256")
+        == INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR["trust_root_sha256"]
     )
 
 
@@ -9524,6 +9607,11 @@ def evaluate_policy(
                 ledger, facts, package_id
             )
         )
+        interview_extract_review_control_repair_matches = (
+            _exact_interview_extract_review_control_repair_matches(
+                ledger, facts, package_id
+            )
+        )
         implementation_release_repair_matches = (
             _exact_implementation_release_preflight_repair_matches(
                 ledger, facts, package_id
@@ -9768,6 +9856,14 @@ def evaluate_policy(
             warnings.append(
                 "using the exact one-time Community authoring surface-repair boundary"
             )
+        elif interview_extract_review_control_repair_matches:
+            allowed_surfaces = set(
+                INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR["allowed_surfaces"]
+            )
+            warnings.append(
+                "using the exact one-time Interview Extract review-control "
+                "repair boundary"
+            )
         elif implementation_release_repair_matches:
             allowed_surfaces = set(
                 IMPLEMENTATION_RELEASE_PREFLIGHT_REPAIR["allowed_surfaces"]
@@ -9985,6 +10081,7 @@ def evaluate_policy(
                 and not bootstrap_matches
                 and not writer_transfer_repair_matches
                 and not community_authoring_surface_repair_matches
+                and not interview_extract_review_control_repair_matches
                 and not implementation_release_repair_matches
                 and not community_authoring_release_admission_matches
                 and not community_authoring_grant_fixture_followup_matches
@@ -11117,6 +11214,119 @@ def evaluate_policy(
                     candidate_baseline, origin_baseline,
                     label="grant-close preflight repair", errors=errors,
                 )
+            elif interview_extract_review_control_repair_matches:
+                candidate_updated_at = ledger.get("updated_at")
+                origin_updated_at = origin_ledger.get("updated_at")
+                if not _valid_utc_timestamp(candidate_updated_at):
+                    errors.append(
+                        "Interview Extract review-control repair updated_at "
+                        "must be a real UTC timestamp"
+                    )
+                if not _valid_utc_timestamp(origin_updated_at):
+                    errors.append(
+                        "origin/main ledger updated_at must be a real UTC timestamp"
+                    )
+                elif not _utc_timestamp_strictly_advances(
+                    candidate_updated_at, origin_updated_at
+                ):
+                    errors.append(
+                        "Interview Extract review-control repair updated_at "
+                        "must strictly advance origin/main"
+                    )
+                if origin_policy != policy:
+                    errors.append(
+                        "Interview Extract review-control repair may not change "
+                        "activation_policy"
+                    )
+                if _root_changes(ledger, origin_ledger) != {
+                    "updated_at",
+                    "active_lanes",
+                    "interview_extract_review_control_repair",
+                }:
+                    errors.append(
+                        "Interview Extract review-control repair must change "
+                        "exactly updated_at, active_lanes, and its repair record"
+                    )
+                if (
+                    origin_ledger.get("interview_extract_review_control_repair")
+                    is not None
+                ):
+                    errors.append(
+                        "Interview Extract review-control repair is one-time "
+                        "and already recorded"
+                    )
+                if (
+                    ledger.get("interview_extract_review_control_repair")
+                    != INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR
+                ):
+                    errors.append(
+                        "Interview Extract review-control repair record is not exact"
+                    )
+
+                target_package = INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR[
+                    "target_package"
+                ]
+                target_branch = INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR[
+                    "target_branch"
+                ]
+                added_surface = INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR[
+                    "added_surface"
+                ]
+                origin_matches = [
+                    (index, lane)
+                    for index, lane in enumerate(origin_lanes)
+                    if lane.get("package") == target_package
+                ]
+                if len(origin_matches) != 1:
+                    errors.append(
+                        "Interview Extract review-control repair requires "
+                        "exactly one target active lane"
+                    )
+                else:
+                    target_index, origin_target = origin_matches[0]
+                    if origin_target.get("branch") != target_branch:
+                        errors.append(
+                            "Interview Extract review-control repair target "
+                            "branch is not exact"
+                        )
+                    expected_target = copy.deepcopy(origin_target)
+                    raw_surfaces = expected_target.get("writable_surfaces")
+                    if not isinstance(raw_surfaces, list):
+                        errors.append(
+                            "Interview Extract review-control repair target "
+                            "surfaces must be a list"
+                        )
+                    elif added_surface in raw_surfaces:
+                        errors.append(
+                            "Interview Extract review-control repair path is "
+                            "already registered"
+                        )
+                    else:
+                        raw_surfaces.append(added_surface)
+                        expected_lanes = copy.deepcopy(origin_lanes)
+                        expected_lanes[target_index] = expected_target
+                        if active_lanes != expected_lanes:
+                            errors.append(
+                                "Interview Extract review-control repair may "
+                                "only append the exact operational-readiness "
+                                "test path"
+                            )
+                if (
+                    facts.get("interview_extract_trust_root_sha256")
+                    != INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR[
+                        "trust_root_sha256"
+                    ]
+                ):
+                    errors.append(
+                        "Interview Extract manager trust-root bytes do not "
+                        "match the pinned SHA-256"
+                    )
+                _validate_baseline_unchanged(
+                    candidate_baseline,
+                    origin_baseline,
+                    label="Interview Extract review-control repair",
+                    errors=errors,
+                )
             elif community_authoring_surface_repair_matches:
                 candidate_updated_at = ledger.get("updated_at")
                 origin_updated_at = origin_ledger.get("updated_at")
@@ -11473,6 +11683,7 @@ def evaluate_policy(
             not four_writer_policy_integration_matches
             and not writer_transfer_repair_matches
             and not community_authoring_surface_repair_matches
+            and not interview_extract_review_control_repair_matches
             and not implementation_release_repair_matches
             and not community_authoring_release_admission_matches
             and not community_authoring_grant_fixture_followup_matches
@@ -11549,6 +11760,15 @@ def evaluate_policy(
                 errors.append(
                     "Community authoring surface repair must change exactly the "
                     "owner-authorized surfaces: "
+                    + ", ".join(sorted(allowed_surfaces))
+                )
+            if (
+                interview_extract_review_control_repair_matches
+                and changed_paths != allowed_surfaces
+            ):
+                errors.append(
+                    "Interview Extract review-control repair must change "
+                    "exactly the owner-authorized surfaces: "
                     + ", ".join(sorted(allowed_surfaces))
                 )
             if (
@@ -12120,6 +12340,18 @@ def main(argv: list[str] | None = None) -> int:
                 "release",
                 },
             )
+            if args.intent == "activate":
+                trust_root_path = (
+                    ROOT
+                    / INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR[
+                        "trust_root_path"
+                    ]
+                )
+                facts["interview_extract_trust_root_sha256"] = (
+                    hashlib.sha256(trust_root_path.read_bytes()).hexdigest()
+                    if trust_root_path.is_file()
+                    else ""
+                )
             if exact_control_refs is not None:
                 facts["fetched"] = True
                 facts["origin_url"] = exact_control_origin

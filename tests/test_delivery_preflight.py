@@ -15,6 +15,7 @@ from unittest.mock import patch
 from scripts.delivery_preflight import (
     BOOTSTRAP_CONTROL_REPAIR,
     COMMUNITY_AUTHORING_SURFACE_REPAIR,
+    INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR,
     COMMUNITY_AUTHORING_BRANCH,
     COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP,
     COMMUNITY_AUTHORING_GRANT_FIXTURE_FOLLOWUP_PATHS,
@@ -174,6 +175,7 @@ from scripts.delivery_preflight import (
     _exact_grant_close_fixture_followup_delta,
     _exact_implementation_release_preflight_repair_matches,
     _exact_community_authoring_surface_repair_matches,
+    _exact_interview_extract_review_control_repair_matches,
     _exact_community_authoring_release_admission_delta,
     _exact_community_authoring_release_admission_matches,
     _exact_community_authoring_grant_fixture_followup_delta,
@@ -10662,6 +10664,78 @@ with patch.object(
         self.assertTrue(
             any("may only append the exact preview path" in item for item in altered_errors)
         )
+
+    def test_interview_extract_review_control_repair_is_exact_and_narrow(self):
+        repair = INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR
+        origin_ledger = load_ledger_at_ref(repair["origin_main"])
+        origin_baseline = load_baseline_bytes_at_ref(repair["origin_main"])
+        candidate = copy.deepcopy(origin_ledger)
+        candidate["updated_at"] = "2026-08-21T15:38:14Z"
+        candidate["interview_extract_review_control_repair"] = copy.deepcopy(
+            repair
+        )
+        target = next(
+            lane
+            for lane in candidate["active_lanes"]
+            if lane["package"] == repair["target_package"]
+        )
+        target["writable_surfaces"].append(repair["added_surface"])
+        exact = facts(
+            branch=repair["branch"],
+            origin_main=repair["origin_main"],
+            ahead=1,
+            changed_paths=repair["allowed_surfaces"],
+            interview_extract_trust_root_sha256=repair["trust_root_sha256"],
+        )
+
+        self.assertTrue(
+            _exact_interview_extract_review_control_repair_matches(
+                candidate, exact, repair["package"]
+            )
+        )
+        exact_errors, exact_warnings = self._evaluate_activation(
+            candidate,
+            exact,
+            require_clean=True,
+            origin=origin_ledger,
+            candidate_baseline=origin_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertEqual([], exact_errors)
+        self.assertTrue(
+            any("Interview Extract review-control" in item
+                for item in exact_warnings)
+        )
+
+        altered = copy.deepcopy(candidate)
+        altered_target = next(
+            lane
+            for lane in altered["active_lanes"]
+            if lane["package"] == repair["target_package"]
+        )
+        altered_target["writer"] = "A different writer"
+        altered_errors, _ = self._evaluate_activation(
+            altered,
+            exact,
+            require_clean=True,
+            origin=origin_ledger,
+            candidate_baseline=origin_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertTrue(
+            any("only append the exact operational-readiness" in item
+                for item in altered_errors)
+        )
+
+        wrong_trust_errors, _ = self._evaluate_activation(
+            candidate,
+            {**exact, "interview_extract_trust_root_sha256": "0" * 64},
+            require_clean=True,
+            origin=origin_ledger,
+            candidate_baseline=origin_baseline,
+            origin_baseline=origin_baseline,
+        )
+        self.assertTrue(wrong_trust_errors)
 
     def test_bootstrap_control_repair_is_exact_and_one_time(self):
         # Replay the historical one-time exception against the exact merged

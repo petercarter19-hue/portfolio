@@ -1,0 +1,10 @@
+{
+ "custody": "Package-manager record (PS-INTERVIEW-AI-ARCHITECTURE-001, Codex). This file lives OUTSIDE the PS-INTERVIEW-AI-EXTRACT-001 writer's writable surfaces; its five pinned values were dictated verbatim by the manager's review packet of 2026-08-21 and any later edit belongs to the package manager alone.",
+ "manager_review": "PS-INTERVIEW-AI-EXTRACT-001 consolidated B1-B6 review, 2026-08-21, which names this SHA as the reviewed candidate and requires its preservation in history",
+ "manager_review_sha": "a0402d33d066baa18e446bad2f632a48e2f84380",
+ "schema": "interview-anchor-trust-root@1",
+ "trusted_anchor_count": 5,
+ "trusted_blob_sha256": "a0aa1302245022abad2780d791f9a7adc28ade989a389fb389ea2f4437172b0d",
+ "trusted_latest_chain": "670927cb7b1fe26f7200d816201a05a9b8522439fd5372bc0b87028c70a0163c",
+ "trusted_prefix_sha256": "37f66fc7caf43e07aec9ced203a79f7a5246e16e02937ea713cd9f5f041b4fdb"
+}
