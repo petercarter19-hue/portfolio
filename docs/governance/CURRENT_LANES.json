@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-22T02:05:07Z",
+  "updated_at": "2026-08-22T02:47:22Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -14,8 +14,7 @@
     "writes_allowed_for": [
       "PS-SYNTHETIC-MULTI-MEMBER-QA-001",
       "PS-INTERVIEW-AI-EXTRACT-001",
-      "PS-SIGNIN-MEMBER-ARRIVAL-001",
-      "PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001"
+      "PS-SIGNIN-MEMBER-ARRIVAL-001"
     ],
     "merge_allowed_for": [
       "PS-INTERVIEW-AI-EXTRACT-001"
@@ -34,7 +33,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-SYNTHETIC-MULTI-MEMBER-QA-001, PS-INTERVIEW-AI-EXTRACT-001, and PS-SIGNIN-MEMBER-ARRIVAL-001 retain only their recorded disjoint scopes. PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001 may add only the code-controlled, exact-SHA, repository-only merge admission and grant profile required to express Pete's accepted PR 567 decision. It receives no authority to modify the accepted PR 567 candidate, grant any other package, merge, deploy, apply SQL, provision identities, enable retention, change configuration, call a provider, run evaluations, or advance later Interview slices."
+    "exit_authority": "PS-SYNTHETIC-MULTI-MEMBER-QA-001, PS-INTERVIEW-AI-EXTRACT-001, and PS-SIGNIN-MEMBER-ARRIVAL-001 retain only their recorded disjoint scopes. PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001 is paused after the exact repository-only PR 567 merge and owns no mutable surface. merge_allowed_for remains limited to PS-INTERVIEW-AI-EXTRACT-001 pending central reconciliation. No SQL, deployment, configuration, identity, retention, provider, evaluation, production, Sign-in merge, or Sign-in release authority is granted."
   },
   "activation_policy": {
     "enabled": true,
@@ -2712,48 +2711,6 @@
         "the two sibling records state their actual released state with the exact commit, build, deployment time, and derived live release identity",
         "a complete-diff self-review and one proportional Protected completion record"
       ]
-    },
-    {
-      "package": "PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001",
-      "outcome": "Add the smallest fail-closed delivery-control profile that can express Pete's already accepted repository-only merge decision for exact PS-INTERVIEW-AI-EXTRACT-001 PR 567 source 8fa7dd82b975796f9df767a48cefb0b79214e6aa. Pin the exact candidate, PR, Azure validation, speculative merge, owner request and response turns, accepted technical and documentation reviews, deployment-suppressed scope, unapplied SQL boundary, and every excluded authority. Produce one frozen control candidate and stop before recording the ordinary grant or merging anything.",
-      "branch": "work/2026-08-21-interview-extract-merge-control",
-      "writer": "Codex task 01a01233-d773-7ed1-9ac8-cb0d2bb8cf07 is the sole writer and manager for this temporary auxiliary control child. A fresh non-writer reviewer must independently inspect the frozen exact SHA before the repair may land. This child is noncanonical control scaffolding and no other task may write its three surfaces.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "implementation",
-      "exclusive_domains": [
-        "delivery-control:interview-extract-repository-only-merge-profile"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main 068e4bcd7dc5e88ee980cabf0f1810ad46ac6f5e. Exact PR 567 source 8fa7dd82b975796f9df767a48cefb0b79214e6aa passed technical, documentation, fresh-target, and Azure validation review, and Pete authorized its governed repository-only merge with application deployment suppressed and SQL unapplied. Central control independently verified that current origin/main cannot represent that grant and authorized this exact temporary child on 2026-08-21.",
-      "writable_surfaces": [
-        "docs/governance/CURRENT_LANES.json",
-        "scripts/delivery_preflight.py",
-        "tests/test_delivery_preflight.py"
-      ],
-      "exclusions": [
-        "no change to PR 567, its source branch, any accepted Interview candidate byte, PR 564, Interview runtime, prompts, model configuration, provider adapter, schema proposal, SQL proof, pipeline, application code, or package evidence",
-        "no generic relaxation of grant or merge rules; no authority for another package, branch, SHA, PR, build, review, owner decision, scope, or production_capable lane",
-        "no manual CURRENT_LANES authority append outside the validated ordinary grant flow; the repair itself grants no merge_allowed_for, release_allowed_for, cleanup_allowed_for, deployment, schema, configuration, identity, retention, provider, evaluation, or later-slice authority",
-        "no SQL apply or new disposable SQL proof; no application deployment; no production identity or permission provisioning; no retention enablement; no production configuration; no provider call or spend; no evaluation execution; no Eval or later Interview package",
-        "no reset, rebase, overwrite, deletion, or adoption of another branch, worktree, stash, artifact, secret, production datum, or user content"
-      ],
-      "completion_evidence": [
-        "the code-controlled profile pins PS-INTERVIEW-AI-EXTRACT-001, source 8fa7dd82b975796f9df767a48cefb0b79214e6aa, PR 567, run 1386, speculative merge 1a93094371b5a48d6ead62a384f0b21048863f39, owner request turn 01a026e1-d028-7580-8423-3529115e9c34, response turn 01a026e3-6576-7812-be1b-b60f28897e9f, and Pete's exact response 'I authorize'",
-        "positive tests prove only the exact repository-only, deployment-suppressed, SQL-unapplied profile can pass admission, ordinary grant, and merge preflight",
-        "hostile tests mutate every pinned identity, review, authority, and scope field and prove fail-closed rejection without weakening generic grant rules or treating production_capable true as general permission",
-        "focused and complete delivery-control suites, JSON parsing, compile checks, and git diff --check pass on the exact three-surface candidate",
-        "complete-diff writer self-review confirms no accepted Interview candidate path or other active lane changed, followed by a fresh independent exact-SHA non-writer review and Azure Build-only validation"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-21",
-          "authorized_by": "Site Audit Manager under Pete's accepted PR 567 decision",
-          "status": "authorized",
-          "decision": "Activate and implement one temporary noncanonical fail-closed auxiliary child, PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001, using the available fourth lane and only CURRENT_LANES.json, delivery_preflight.py, and test_delivery_preflight.py. The child may add only the exact repository-only admission and grant profile needed to represent Pete's already accepted PR 567 decision. It grants no merge, deployment, SQL, identity, retention, configuration, provider, evaluation, or later-slice authority itself."
-        }
-      ],
-      "cleanup_contract": "Preserve PR 567, exact source 8fa7dd82b975796f9df767a48cefb0b79214e6aa, PR 564, all accepted and rejected Interview history, all active lanes, and every unrelated worktree. Land only the reviewed control repair, then use the ordinary exact grant and merge flows. This child receives no cleanup authority.",
-      "sequence": "control-only activation PR with skip-ci -> clean implementation worktree from resulting origin/main -> write preflight -> exact three-surface profile and hostile tests -> focused and full delivery-control validation -> complete-diff self-review -> freeze and push -> fresh independent exact-SHA review -> Azure Build-only validation -> land only the control repair with skip-ci -> ordinary exact PR 567 grant -> merge preflight from untouched candidate/verifier worktrees -> repository-only PR 567 merge with deployment suppressed and SQL unapplied -> verify and return checkpoint"
     }
   ],
   "paused_lanes": [
@@ -3748,6 +3705,53 @@
       "pause_reason": "Search 3F merged, released, live-verified, and closed; the temporary exact Search admission profile has no remaining writer work.",
       "resume_contract": "Resume only through fresh owner-selected activation on a clean branch from current origin/main; this preserved lane grants no standing merge, release, cleanup, Search mutation, proof-rerun, teardown, or retention authority.",
       "preserved_head_sha": "2e5216bfaeaf2ea7dab40fccfe8b703050106a24"
+    },
+    {
+      "package": "PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001",
+      "outcome": "Add the smallest fail-closed delivery-control profile that can express Pete's already accepted repository-only merge decision for exact PS-INTERVIEW-AI-EXTRACT-001 PR 567 source 8fa7dd82b975796f9df767a48cefb0b79214e6aa. Pin the exact candidate, PR, Azure validation, speculative merge, owner request and response turns, accepted technical and documentation reviews, deployment-suppressed scope, unapplied SQL boundary, and every excluded authority. Produce one frozen control candidate and stop before recording the ordinary grant or merging anything.",
+      "branch": "work/2026-08-21-interview-extract-merge-control",
+      "writer": "Codex task 01a01233-d773-7ed1-9ac8-cb0d2bb8cf07 is the sole writer and manager for this temporary auxiliary control child. A fresh non-writer reviewer must independently inspect the frozen exact SHA before the repair may land. This child is noncanonical control scaffolding and no other task may write its three surfaces.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "delivery-control:interview-extract-repository-only-merge-profile"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 068e4bcd7dc5e88ee980cabf0f1810ad46ac6f5e. Exact PR 567 source 8fa7dd82b975796f9df767a48cefb0b79214e6aa passed technical, documentation, fresh-target, and Azure validation review, and Pete authorized its governed repository-only merge with application deployment suppressed and SQL unapplied. Central control independently verified that current origin/main cannot represent that grant and authorized this exact temporary child on 2026-08-21.",
+      "writable_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py"
+      ],
+      "exclusions": [
+        "no change to PR 567, its source branch, any accepted Interview candidate byte, PR 564, Interview runtime, prompts, model configuration, provider adapter, schema proposal, SQL proof, pipeline, application code, or package evidence",
+        "no generic relaxation of grant or merge rules; no authority for another package, branch, SHA, PR, build, review, owner decision, scope, or production_capable lane",
+        "no manual CURRENT_LANES authority append outside the validated ordinary grant flow; the repair itself grants no merge_allowed_for, release_allowed_for, cleanup_allowed_for, deployment, schema, configuration, identity, retention, provider, evaluation, or later-slice authority",
+        "no SQL apply or new disposable SQL proof; no application deployment; no production identity or permission provisioning; no retention enablement; no production configuration; no provider call or spend; no evaluation execution; no Eval or later Interview package",
+        "no reset, rebase, overwrite, deletion, or adoption of another branch, worktree, stash, artifact, secret, production datum, or user content"
+      ],
+      "completion_evidence": [
+        "the code-controlled profile pins PS-INTERVIEW-AI-EXTRACT-001, source 8fa7dd82b975796f9df767a48cefb0b79214e6aa, PR 567, run 1386, speculative merge 1a93094371b5a48d6ead62a384f0b21048863f39, owner request turn 01a026e1-d028-7580-8423-3529115e9c34, response turn 01a026e3-6576-7812-be1b-b60f28897e9f, and Pete's exact response 'I authorize'",
+        "positive tests prove only the exact repository-only, deployment-suppressed, SQL-unapplied profile can pass admission, ordinary grant, and merge preflight",
+        "hostile tests mutate every pinned identity, review, authority, and scope field and prove fail-closed rejection without weakening generic grant rules or treating production_capable true as general permission",
+        "focused and complete delivery-control suites, JSON parsing, compile checks, and git diff --check pass on the exact three-surface candidate",
+        "complete-diff writer self-review confirms no accepted Interview candidate path or other active lane changed, followed by a fresh independent exact-SHA non-writer review and Azure Build-only validation"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-21",
+          "authorized_by": "Site Audit Manager under Pete's accepted PR 567 decision",
+          "status": "authorized",
+          "decision": "Activate and implement one temporary noncanonical fail-closed auxiliary child, PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001, using the available fourth lane and only CURRENT_LANES.json, delivery_preflight.py, and test_delivery_preflight.py. The child may add only the exact repository-only admission and grant profile needed to represent Pete's already accepted PR 567 decision. It grants no merge, deployment, SQL, identity, retention, configuration, provider, evaluation, or later-slice authority itself."
+        }
+      ],
+      "cleanup_contract": "Preserve PR 567, exact source 8fa7dd82b975796f9df767a48cefb0b79214e6aa, PR 564, all accepted and rejected Interview history, all active lanes, and every unrelated worktree. Land only the reviewed control repair, then use the ordinary exact grant and merge flows. This child receives no cleanup authority.",
+      "sequence": "control-only activation PR with skip-ci -> clean implementation worktree from resulting origin/main -> write preflight -> exact three-surface profile and hostile tests -> focused and full delivery-control validation -> complete-diff self-review -> freeze and push -> fresh independent exact-SHA review -> Azure Build-only validation -> land only the control repair with skip-ci -> ordinary exact PR 567 grant -> merge preflight from untouched candidate/verifier worktrees -> repository-only PR 567 merge with deployment suppressed and SQL unapplied -> verify and return checkpoint",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-22T02:47:22Z",
+      "pause_reason": "The exact repository-only Interview Extract sequence is complete: PR 573 landed the independently passed final sequence repair, real current-main merge preflight passed, fresh PR 567 validation build 1396 succeeded with every operational stage skipped, and PR 567 merged as main 28ed324486fa05b3baa9c7cf47fd9009f251061e with deployment suppressed and SQL unapplied. This temporary auxiliary child has no remaining writer work.",
+      "resume_contract": "Preserved for provenance only. Do not resume or modify the Interview profile. Any future Interview control change requires a fresh owner-selected activation. The separately authorized next control outcome is a new PS-DELIVERY-CONTROL-SIGNIN-001 child; this pause grants it no authority.",
+      "preserved_head_sha": "3a508aaebf10c1553c91438260f6a8431c4fd332"
     }
   ],
   "workspace_snapshot": {
