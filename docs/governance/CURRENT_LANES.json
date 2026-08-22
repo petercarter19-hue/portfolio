@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-22T00:59:17Z",
+  "updated_at": "2026-08-22T02:05:07Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -17,7 +17,9 @@
       "PS-SIGNIN-MEMBER-ARRIVAL-001",
       "PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001"
     ],
-    "merge_allowed_for": [],
+    "merge_allowed_for": [
+      "PS-INTERVIEW-AI-EXTRACT-001"
+    ],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -2578,8 +2580,89 @@
           "authorized_by": "Pete",
           "status": "authorized",
           "decision": "Merge independently passed control PR 565 and, after fresh verification and successful validation, merge this subsequent control-only activation. These control merges grant no authority to merge either implementation PR or perform any SQL, identity, retention, configuration, deployment, provider, spending, or production action."
+        },
+        {
+          "date": "2026-08-21",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "package": "PS-INTERVIEW-AI-EXTRACT-001",
+          "action": "merge_repository_only",
+          "branch": "work/2026-08-21-interview-ai-extract-dark-infrastructure",
+          "reviewed_remote_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
+          "pull_request": 567,
+          "validation_run": 1386,
+          "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
+          "request_turn": "01a026e1-d028-7580-8423-3529115e9c34",
+          "response_turn": "01a026e3-6576-7812-be1b-b60f28897e9f",
+          "verbatim_response": "I authorize",
+          "decision": "Authorize the governed repository-only merge of exact PR 567 source 8fa7dd82b975796f9df767a48cefb0b79214e6aa with application deployment suppressed and the Interview telemetry SQL migration unapplied."
         }
       ],
+      "merge_grant": {
+        "authorized_by": "Pete",
+        "authority_decision_index": 2,
+        "authority_decision_sha256": "2c2b1afa7c6593766e4cfe45b96b19020ff9c7102d6e8bbafa64992a011f154e",
+        "admission_sha256": "5bdfb69b1be793fa66719e2df2e249c5963eb49131a205a04df197edfd4a180c",
+        "review_attestations": {
+          "technical": {
+            "review_type": "technical_exact_sha",
+            "reviewer_mode": "fresh_independent_read_only_non_writer",
+            "reviewed_sha": "6680d0a95035ce79056fee2007199e056c005568",
+            "result": "pass",
+            "accepted_by": "Site Audit Manager",
+            "accepted_date": "2026-08-21",
+            "scope": "dark_telemetry_technical_corrections_and_disposable_sql_proof",
+            "proof_result": "105_of_105_pass",
+            "migration_digest": "2291c3df758b18d98cbb4e6d13ed9817d27e0b3356053679b94fcc2c09410b85",
+            "production_sql_applied": false
+          },
+          "documentation": {
+            "review_type": "documentation_exact_sha",
+            "reviewer_mode": "fresh_independent_read_only_non_writer",
+            "reviewed_sha": "df12e40535b5178ebe655249b610aa293f9132a0",
+            "technical_parent_sha": "6680d0a95035ce79056fee2007199e056c005568",
+            "result": "pass",
+            "accepted_by": "Site Audit Manager",
+            "accepted_date": "2026-08-21",
+            "scope": "one_file_dark_telemetry_evidence_truth_correction",
+            "focused_result": "44_of_44_pass",
+            "new_sql_gate_required": false
+          },
+          "fresh_target": {
+            "review_type": "fresh_target_validation",
+            "reviewer_mode": "independent_central_reconciliation",
+            "reviewed_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
+            "accepted_documentation_sha": "df12e40535b5178ebe655249b610aa293f9132a0",
+            "target_main": "068e4bcd7dc5e88ee980cabf0f1810ad46ac6f5e",
+            "pull_request": 567,
+            "validation_run": 1386,
+            "validation_result": "succeeded",
+            "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
+            "result": "pass"
+          }
+        },
+        "reviewed_remote_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
+        "granted_at": "2026-08-22T02:05:07Z",
+        "review_result": "pass",
+        "review_evidence_paths": [],
+        "release_scope": {
+          "candidate_source_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
+          "pull_request": 567,
+          "validation_run": 1386,
+          "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
+          "repository_action": "merge_exact_reviewed_dark_telemetry_infrastructure_only",
+          "application_deployment": "suppressed",
+          "sql_migration": "remains_unapplied",
+          "production_identity_or_permission_change": false,
+          "retention_enablement": false,
+          "production_configuration_change": false,
+          "provider_invocation": false,
+          "provider_spend": false,
+          "evaluation_execution": false,
+          "runtime_pr_564_merge": false,
+          "later_interview_package_authority": false
+        }
+      },
       "cleanup_contract": "Preserve runtime branch work/2026-08-20-interview-ai-extract-001, exact runtime tip d546b525a84d62ba3eef3ef7dc3f5e2833647582, PR 564, accepted implementation baseline dd545348939a668e4d4ff375526d689fa4174f89, all rejected/correction history, SQL gate evidence, and every unrelated lane. The dark branch must be created only after this activation reaches origin/main and must remain preserved through exact-SHA review. This lane grants no branch deletion, production cleanup, SQL rollback, or other destructive authority.",
       "sequence": "merge this control-only activation with skip-ci after validation and independent review -> create the exact clean dark-infrastructure branch/worktree from resulting origin/main -> pass package write preflight -> Claude separates only the recorded infrastructure bytes and writes the bounded evidence/tests -> focused and applicable validation -> complete-diff writer self-review -> freeze and push exact candidate -> open a separate non-auto-complete dark-infrastructure PR -> Azure/Linux CI -> fresh independent exact-SHA review -> return the reviewed candidate for a separate merge decision; do not merge PR 564 or the infrastructure PR and do not apply or enable anything"
     },
