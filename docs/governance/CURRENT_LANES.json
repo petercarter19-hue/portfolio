@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-22T02:47:22Z",
+  "updated_at": "2026-08-22T02:55:13Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -14,7 +14,8 @@
     "writes_allowed_for": [
       "PS-SYNTHETIC-MULTI-MEMBER-QA-001",
       "PS-INTERVIEW-AI-EXTRACT-001",
-      "PS-SIGNIN-MEMBER-ARRIVAL-001"
+      "PS-SIGNIN-MEMBER-ARRIVAL-001",
+      "PS-DELIVERY-CONTROL-SIGNIN-001"
     ],
     "merge_allowed_for": [
       "PS-INTERVIEW-AI-EXTRACT-001"
@@ -33,7 +34,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-SYNTHETIC-MULTI-MEMBER-QA-001, PS-INTERVIEW-AI-EXTRACT-001, and PS-SIGNIN-MEMBER-ARRIVAL-001 retain only their recorded disjoint scopes. PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001 is paused after the exact repository-only PR 567 merge and owns no mutable surface. merge_allowed_for remains limited to PS-INTERVIEW-AI-EXTRACT-001 pending central reconciliation. No SQL, deployment, configuration, identity, retention, provider, evaluation, production, Sign-in merge, or Sign-in release authority is granted."
+    "exit_authority": "PS-SYNTHETIC-MULTI-MEMBER-QA-001, PS-INTERVIEW-AI-EXTRACT-001, PS-SIGNIN-MEMBER-ARRIVAL-001, and PS-DELIVERY-CONTROL-SIGNIN-001 retain only their recorded disjoint scopes. PS-DELIVERY-CONTROL-SIGNIN-001 may write only CURRENT_LANES.json, delivery_preflight.py, and test_delivery_preflight.py to add the exact fail-closed Sign-in admission/review-attestation profile for e1847ad0; it must preserve the Interview profile/history. It receives no Sign-in grant, merge, release, deployment, configuration, identity, private-proof, SQL, provider, evaluation, or production authority."
   },
   "activation_policy": {
     "enabled": true,
@@ -2711,6 +2712,49 @@
         "the two sibling records state their actual released state with the exact commit, build, deployment time, and derived live release identity",
         "a complete-diff self-review and one proportional Protected completion record"
       ]
+    },
+    {
+      "package": "PS-DELIVERY-CONTROL-SIGNIN-001",
+      "outcome": "Add one exact fail-closed Sign-in merge-admission and review-attestation profile for PS-SIGNIN-MEMBER-ARRIVAL-001 candidate e1847ad0a884a349a7b5eed0526075cd0104dd62, without changing the accepted Sign-in candidate or the existing Interview Extract admission/history. Produce one frozen control candidate, obtain fresh independent Grok review of its exact SHA, and stop before any Sign-in grant, merge, release, deployment, configuration, private proof, or production action.",
+      "branch": "work/2026-08-22-signin-merge-control",
+      "writer": "Claude Code desktop session acd9f218-d287-490f-b2d5-a185c5bceb27 on Opus 5, already selected by Pete as the end-to-end PS-SIGNIN-MEMBER-ARRIVAL-001 manager, is the sole writer for this temporary noncanonical control child after this activation reaches origin/main. Codex task 01a02744-9d45-7103-a5db-f13ad4fa7a99 relinquishes the three control surfaces at that merged activation SHA. Grok reviews the frozen exact control candidate read-only. No other task may write these surfaces.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "delivery-control:signin-member-arrival-merge-admission"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main b7970d1cc75611246adcb6f26abefd2a90f323d2 after PS-INTERVIEW-AI-EXTRACT-001 PR 567 merged repository-only as 28ed324486fa05b3baa9c7cf47fd9009f251061e with all fourteen candidate blobs verified and SQL unapplied, and after the temporary PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001 child was paused and preserved. Exact Sign-in remote candidate e1847ad0a884a349a7b5eed0526075cd0104dd62 remains clean and accepted. The fourth slot and all three control surfaces are free. Pete previously directed Claude to manage the Sign-in follow-up end to end, and Site Audit Manager authorized this exact sequential successor activation without a new owner decision.",
+      "writable_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py"
+      ],
+      "exclusions": [
+        "no change to work/2026-08-21-signin-member-arrival-followup, exact candidate e1847ad0a884a349a7b5eed0526075cd0104dd62, its accepted application files, tests, evidence, or review state",
+        "no change, broadening, invalidation, replacement, deletion, or weakening of the existing Interview Extract repository-only admission, grant, exact sequence, tests, or historical records",
+        "no generic relaxation, wildcard package support, reusable production-capable bypass, or authority for another package, branch, SHA, PR, build, review, owner decision, scope, or release",
+        "no Sign-in grant, implementation merge, release, deployment, configuration change, session-policy change, identity or permission mutation, private signed-in proof, credential, MFA, token, cookie, browser-profile, or production action",
+        "no SQL apply, migration, retention enablement, provider call, evaluation, spend, Eval advancement, Interview runtime action, or later package authority",
+        "no reset, rebase, overwrite, deletion, cleanup, or adoption of another branch, worktree, stash, artifact, secret, production datum, or user content"
+      ],
+      "completion_evidence": [
+        "the code-controlled profile pins only PS-SIGNIN-MEMBER-ARRIVAL-001, its exact branch and accepted remote SHA e1847ad0a884a349a7b5eed0526075cd0104dd62, its exact review attestation and future Azure PR/CI receipt, and the deployment/release boundaries selected by Pete",
+        "positive and hostile tests prove only the exact Sign-in profile can pass its later admission and ordinary grant gates, with mutated package, branch, SHA, paths, review, PR, CI, scope, or authority rejected fail closed",
+        "regression tests prove the existing Interview Extract admission, five-control-commit sequence, repository-only scope, history, and hostile mutation coverage remain unchanged and passing",
+        "focused and complete delivery-control suites, JSON parsing, compile checks, and git diff --check pass on exactly the three recorded surfaces",
+        "the exact pushed control candidate receives fresh independent Grok review before Azure Build-only validation and merge; the control repair itself adds no merge_allowed_for or release_allowed_for authority"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-21",
+          "authorized_by": "Pete and Site Audit Manager",
+          "status": "authorized",
+          "decision": "After the exact Interview repository-only sequence completes, replace its temporary auxiliary control slot with PS-DELIVERY-CONTROL-SIGNIN-001, assign the existing Claude Sign-in manager, transfer only CURRENT_LANES.json, delivery_preflight.py, and test_delivery_preflight.py, preserve the Interview profile/history, and grant no Sign-in merge, release, deployment, candidate modification, or production authority. Claude implements the profile, Grok independently reviews its exact SHA, and Claude then continues only through the ordinary separately validated lifecycle."
+        }
+      ],
+      "cleanup_contract": "Preserve the completed Interview Extract profile and all accepted/rejected history, PR 567, PR 564, exact Sign-in candidate e1847ad0a884a349a7b5eed0526075cd0104dd62, its branch and worktrees, every other active lane, and all unrelated work. This child receives no cleanup authority.",
+      "sequence": "control-only activation PR with skip-ci -> Claude creates exact clean work/2026-08-22-signin-merge-control from the merged activation -> write preflight -> implement only the exact fail-closed Sign-in admission/review-attestation profile across the three control surfaces while preserving Interview history -> focused/full control validation and self-review -> freeze/push exact SHA -> Grok independent read-only review -> Azure Build-only validation -> merge control repair with skip-ci -> ordinary Sign-in grant and current-main candidate preflight -> separately authorized implementation merge, deploy, live checks, and package exit; Pete alone performs any private signed-in proof"
     }
   ],
   "paused_lanes": [

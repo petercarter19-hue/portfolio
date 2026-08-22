@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active writer lanes: PS-SYNTHETIC-MULTI-MEMBER-QA-001, PS-INTERVIEW-AI-EXTRACT-001, PS-SIGNIN-MEMBER-ARRIVAL-001. PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001 is paused and preserved; it may resume only through fresh activation."
+  current_assignments: "Writers: PS-SYNTHETIC-MULTI-MEMBER-QA-001, PS-INTERVIEW-AI-EXTRACT-001, PS-SIGNIN-MEMBER-ARRIVAL-001, and PS-DELIVERY-CONTROL-SIGNIN-001 on work/2026-08-22-signin-merge-control with Claude; Interview control preserved."
 
 governing_documents:
   bible:
@@ -69,6 +69,9 @@ active_packages:
   - id: PS-SIGNIN-MEMBER-ARRIVAL-001
     status: active_delivery
     scope: "Cross-tab sign-out reconciliation, session-policy evidence, two stale sibling records."
+  - id: PS-DELIVERY-CONTROL-SIGNIN-001
+    status: active_delivery
+    scope: "e1847ad0 admission only; no merge/release."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -168,7 +171,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Continue only the active writer packages: PS-SYNTHETIC-MULTI-MEMBER-QA-001, PS-INTERVIEW-AI-EXTRACT-001, PS-SIGNIN-MEMBER-ARRIVAL-001. PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001 remains paused; use fresh activation to resume it."
+next_gate: "Continue PS-SYNTHETIC-MULTI-MEMBER-QA-001, PS-INTERVIEW-AI-EXTRACT-001, PS-SIGNIN-MEMBER-ARRIVAL-001, and PS-DELIVERY-CONTROL-SIGNIN-001. Sign-in: e1847ad0 admission only; no merge/release/deployment/production. Do not advance Interview Eval."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
