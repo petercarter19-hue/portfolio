@@ -56,15 +56,20 @@ from scripts.delivery_preflight import (
     INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA,
     INTERVIEW_EXTRACT_CANDIDATE_PATHS,
     INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN,
+    INTERVIEW_EXTRACT_CONTROL_PROFILE_MAIN,
     INTERVIEW_EXTRACT_CONTROL_PATHS,
     INTERVIEW_EXTRACT_DOCUMENTATION_REVIEW_ATTESTATION,
     INTERVIEW_EXTRACT_FRESH_TARGET_ATTESTATION,
+    INTERVIEW_EXTRACT_FIXTURE_REPAIR_MAIN,
+    INTERVIEW_EXTRACT_FIXTURE_REPAIR_PATHS,
+    INTERVIEW_EXTRACT_GRANT_MAIN,
     INTERVIEW_EXTRACT_OWNER_MERGE_DECISION,
     INTERVIEW_EXTRACT_OWNER_MERGE_DECISION_SHA256,
     INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION,
     INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION_SHA256,
     INTERVIEW_EXTRACT_REPOSITORY_ONLY_SCOPE,
     INTERVIEW_EXTRACT_REVIEWED_SHA,
+    INTERVIEW_EXTRACT_SEQUENCE_REPAIR_PATHS,
     INTERVIEW_EXTRACT_TARGET_BRANCH,
     INTERVIEW_EXTRACT_TARGET_PACKAGE,
     INTERVIEW_EXTRACT_TECHNICAL_REVIEW_ATTESTATION,
@@ -276,10 +281,6 @@ FOUR_WRITER_POLICY_INTEGRATION_RESULT = (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-INTERVIEW_EXTRACT_CONTROL_PROFILE_MAIN = (
-    "eb3f35ab66e01a1793d5dc3ae628270c6c64ec10"
-)
-
 # Exact main merge that carried the one-time three-lane control repair. The
 # bootstrap replay test pins its candidate state to this commit so the
 # historical exception stays verifiable after later activations move the live
@@ -1279,17 +1280,19 @@ class DeliveryPreflightTests(unittest.TestCase):
             branch=INTERVIEW_EXTRACT_TARGET_BRANCH,
             head=INTERVIEW_EXTRACT_REVIEWED_SHA,
             ahead=1,
-            behind=3,
+            behind=5,
             origin_main="interview-extract-grant-main",
             changed_paths=sorted(INTERVIEW_EXTRACT_CANDIDATE_PATHS),
             merge_target_remote_sha=INTERVIEW_EXTRACT_REVIEWED_SHA,
             merge_main_changed_paths=sorted(
                 set(INTERVIEW_EXTRACT_ACTIVATION_PATHS)
                 | set(INTERVIEW_EXTRACT_CONTROL_PATHS)
+                | set(INTERVIEW_EXTRACT_FIXTURE_REPAIR_PATHS)
                 | set(GRANT_ALLOWED_SURFACES)
+                | set(INTERVIEW_EXTRACT_SEQUENCE_REPAIR_PATHS)
             ),
             merge_main_control_commits_valid=True,
-            merge_main_control_commit_count=3,
+            merge_main_control_commit_count=5,
         )
         merge_errors, merge_warnings = evaluate_policy(
             granted,
@@ -1400,17 +1403,20 @@ class DeliveryPreflightTests(unittest.TestCase):
         _direction_merge_grant(unrelated, "unrelated", unrelated_errors)
         self.assertTrue(any("available only" in item for item in unrelated_errors))
 
-    def test_interview_extract_main_sequence_requires_exact_three_control_commits(self):
+    def test_interview_extract_main_sequence_requires_exact_five_control_commits(self):
         parent = load_ledger_at_ref(INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN)
         profiled, granted = self._interview_extract_granted_ledger()
-        profile_sha = "1" * 40
-        grant_sha = "2" * 40
-        final_main = "3" * 40
+        profile_sha = INTERVIEW_EXTRACT_CONTROL_PROFILE_MAIN
+        fixture_repair_sha = INTERVIEW_EXTRACT_FIXTURE_REPAIR_MAIN
+        grant_sha = INTERVIEW_EXTRACT_GRANT_MAIN
+        final_main = "5" * 40
         tree = "4" * 40
         expected_paths = sorted(
             set(INTERVIEW_EXTRACT_ACTIVATION_PATHS)
             | set(INTERVIEW_EXTRACT_CONTROL_PATHS)
+            | set(INTERVIEW_EXTRACT_FIXTURE_REPAIR_PATHS)
             | set(GRANT_ALLOWED_SURFACES)
+            | set(INTERVIEW_EXTRACT_SEQUENCE_REPAIR_PATHS)
         )
 
         def fake_git(*args: str) -> str:
@@ -1421,7 +1427,8 @@ class DeliveryPreflightTests(unittest.TestCase):
                     f"{INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA}..{final_main}",
                 ): (
                     f"{INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN}\n"
-                    f"{profile_sha}\n{grant_sha}\n"
+                    f"{profile_sha}\n{fixture_repair_sha}\n{grant_sha}\n"
+                    f"{final_main}\n"
                 ),
                 (
                     "rev-parse",
@@ -1430,7 +1437,9 @@ class DeliveryPreflightTests(unittest.TestCase):
                 ("rev-parse", f"{profile_sha}^"): (
                     INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN
                 ),
-                ("rev-parse", f"{grant_sha}^"): profile_sha,
+                ("rev-parse", f"{fixture_repair_sha}^"): profile_sha,
+                ("rev-parse", f"{grant_sha}^"): fixture_repair_sha,
+                ("rev-parse", f"{final_main}^"): grant_sha,
                 (
                     "rev-parse",
                     f"{INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN}^{{tree}}",
@@ -1456,8 +1465,12 @@ class DeliveryPreflightTests(unittest.TestCase):
                 return sorted(INTERVIEW_EXTRACT_ACTIVATION_PATHS)
             if args[-1] == profile_sha:
                 return sorted(INTERVIEW_EXTRACT_CONTROL_PATHS)
+            if args[-1] == fixture_repair_sha:
+                return sorted(INTERVIEW_EXTRACT_FIXTURE_REPAIR_PATHS)
             if args[-1] == grant_sha:
                 return sorted(GRANT_ALLOWED_SURFACES)
+            if args[-1] == final_main:
+                return sorted(INTERVIEW_EXTRACT_SEQUENCE_REPAIR_PATHS)
             if args[-1] == (
                 f"{INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA}..{INTERVIEW_EXTRACT_REVIEWED_SHA}"
             ):
@@ -1472,6 +1485,8 @@ class DeliveryPreflightTests(unittest.TestCase):
                 side_effect=lambda ref: {
                     INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN: parent,
                     profile_sha: profiled,
+                    fixture_repair_sha: profiled,
+                    grant_sha: granted,
                 }[ref],
             ),
         ):
@@ -1483,7 +1498,7 @@ class DeliveryPreflightTests(unittest.TestCase):
             )
         self.assertEqual(expected_paths, paths)
         self.assertTrue(valid)
-        self.assertEqual(3, count)
+        self.assertEqual(5, count)
 
     def test_grant_binds_existing_authority_review_and_exact_remote(self):
         origin, lane = self._direction_origin()

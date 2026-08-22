@@ -2047,6 +2047,24 @@ INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA = (
 INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN = (
     "196fd502a8425e7ee35eaec15efff30f58e2bab0"
 )
+INTERVIEW_EXTRACT_CONTROL_PROFILE_MAIN = (
+    "eb3f35ab66e01a1793d5dc3ae628270c6c64ec10"
+)
+INTERVIEW_EXTRACT_FIXTURE_REPAIR_MAIN = (
+    "adf8bc4af8463864e51faadaef7afc3ee34d84e1"
+)
+INTERVIEW_EXTRACT_GRANT_MAIN = (
+    "b562535a2db9712c33f9d79b65c6bd7b64f819f1"
+)
+INTERVIEW_EXTRACT_FIXTURE_REPAIR_PATHS = frozenset(
+    {"tests/test_delivery_preflight.py"}
+)
+INTERVIEW_EXTRACT_SEQUENCE_REPAIR_PATHS = frozenset(
+    {
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    }
+)
 INTERVIEW_EXTRACT_CONTROL_ACTIVATION_SOURCE = (
     "ea81be4a67efba7659c0259cfd863a903715bf38"
 )
@@ -7993,12 +8011,20 @@ def _direction_main_sequence_facts(
                 "diff", "--name-only", "-z", f"{control_base}..{origin_main}"
             )
         )
-        if len(main_commits) != 3:
+        if len(main_commits) != 5:
             return main_paths, False, len(main_commits)
-        activation_sha, profile_sha, grant_sha = main_commits
+        (
+            activation_sha,
+            profile_sha,
+            fixture_repair_sha,
+            grant_sha,
+            sequence_repair_sha,
+        ) = main_commits
         activation_parent = _git("rev-parse", f"{activation_sha}^")
         profile_parent = _git("rev-parse", f"{profile_sha}^")
+        fixture_repair_parent = _git("rev-parse", f"{fixture_repair_sha}^")
         grant_parent = _git("rev-parse", f"{grant_sha}^")
+        sequence_repair_parent = _git("rev-parse", f"{sequence_repair_sha}^")
         activation_paths = set(
             _git_nul(
                 "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
@@ -8011,10 +8037,22 @@ def _direction_main_sequence_facts(
                 profile_sha,
             )
         )
+        fixture_repair_paths = set(
+            _git_nul(
+                "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                fixture_repair_sha,
+            )
+        )
         grant_paths = set(
             _git_nul(
                 "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
                 grant_sha,
+            )
+        )
+        sequence_repair_paths = set(
+            _git_nul(
+                "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                sequence_repair_sha,
             )
         )
         activation_tree = _git("rev-parse", f"{activation_sha}^{{tree}}")
@@ -8023,6 +8061,8 @@ def _direction_main_sequence_facts(
         )
         activation_ledger = load_ledger_at_ref(activation_sha)
         profile_ledger = load_ledger_at_ref(profile_sha)
+        fixture_repair_ledger = load_ledger_at_ref(fixture_repair_sha)
+        grant_ledger = load_ledger_at_ref(grant_sha)
         candidate_merge_base = _git("merge-base", candidate_sha, origin_main)
         candidate_paths = set(
             _git_nul(
@@ -8039,19 +8079,28 @@ def _direction_main_sequence_facts(
         )
         valid = bool(
             activation_sha == INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN
+            and profile_sha == INTERVIEW_EXTRACT_CONTROL_PROFILE_MAIN
+            and fixture_repair_sha == INTERVIEW_EXTRACT_FIXTURE_REPAIR_MAIN
+            and grant_sha == INTERVIEW_EXTRACT_GRANT_MAIN
             and activation_parent == control_base
             and profile_parent == activation_sha
-            and grant_parent == profile_sha
+            and fixture_repair_parent == profile_sha
+            and grant_parent == fixture_repair_sha
+            and sequence_repair_parent == grant_sha
             and activation_paths == set(INTERVIEW_EXTRACT_ACTIVATION_PATHS)
             and profile_paths == set(INTERVIEW_EXTRACT_CONTROL_PATHS)
+            and fixture_repair_paths == set(INTERVIEW_EXTRACT_FIXTURE_REPAIR_PATHS)
             and grant_paths == set(GRANT_ALLOWED_SURFACES)
+            and sequence_repair_paths == set(INTERVIEW_EXTRACT_SEQUENCE_REPAIR_PATHS)
             and activation_tree == activation_source_tree
             and _exact_interview_extract_repository_only_profile_delta(
                 activation_ledger, profile_ledger
             )
+            and fixture_repair_ledger == profile_ledger
             and _exact_direction_grant_delta(
-                profile_ledger, origin_ledger, package_id
+                fixture_repair_ledger, grant_ledger, package_id
             )
+            and origin_ledger == grant_ledger
             and candidate_merge_base == control_base
             and candidate_paths == set(INTERVIEW_EXTRACT_CANDIDATE_PATHS)
             and not (
@@ -8957,7 +9006,7 @@ def evaluate_policy(
                         "main control commits"
                     )
             elif package_id == INTERVIEW_EXTRACT_TARGET_PACKAGE:
-                expected_behind = 3
+                expected_behind = 5
                 expected_main_paths = (
                     set(INTERVIEW_EXTRACT_ACTIVATION_PATHS)
                     | set(INTERVIEW_EXTRACT_CONTROL_PATHS)
@@ -8966,11 +9015,12 @@ def evaluate_policy(
                 if facts.get("behind") != expected_behind:
                     errors.append(
                         "Interview Extract merge requires exactly its activation, "
-                        "repository-only profile, and exact grant commits"
+                        "repository-only profile, exact fixture repair, exact grant, "
+                        "and final sequence repair commits"
                     )
                 if facts.get("merge_main_control_commit_count") != expected_behind:
                     errors.append(
-                        "Interview Extract merge requires exactly three verified "
+                        "Interview Extract merge requires exactly five verified "
                         "main control commits"
                     )
             elif package_id == SEARCH_PACKAGE:
@@ -9158,11 +9208,12 @@ def evaluate_policy(
                         "grant are tolerated"
                     )
             elif package_id == INTERVIEW_EXTRACT_TARGET_PACKAGE:
-                if facts.get("behind") == 3:
+                if facts.get("behind") == 5:
                     warnings.append(
                         "Interview Extract candidate predates its exact control "
-                        "profile; only the activation, inert profile, and "
-                        "repository-only grant are tolerated"
+                        "profile; only the activation, inert profile, exact fixture "
+                        "repair, repository-only grant, and final sequence repair "
+                        "are tolerated"
                     )
             elif facts.get("behind") == expected_behind:
                 warnings.append(
