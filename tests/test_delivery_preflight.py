@@ -13,6 +13,25 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.delivery_preflight import (
+    SIGNIN_MERGE_BRANCH,
+    SIGNIN_MERGE_PACKAGE,
+    SIGNIN_OWNER_MERGE_DECISION,
+    SIGNIN_OWNER_MERGE_DECISION_SHA256,
+    SIGNIN_REVIEWED_BASE,
+    SIGNIN_REVIEWED_SHA,
+    SIGNIN_REVIEW_ATTESTATION,
+    SIGNIN_CANDIDATE_PATHS,
+    SIGNIN_MERGE_EXPECTED_BEHIND,
+    SIGNIN_MERGE_LANDED_MAIN_COMMITS,
+    SIGNIN_MERGE_MAIN_PATHS,
+    SIGNIN_MERGE_MAX_PENDING_CONTROL_COMMITS,
+    SIGNIN_MERGE_PENDING_CONTROL_PATHS,
+    SIGNIN_REVIEWED_BASE,
+    _direction_main_sequence_facts,
+    evaluate_policy,
+    _canonical_sha256,
+    _direction_merge_grant,
+    _is_signin_reviewed_implementation_lane,
     BOOTSTRAP_CONTROL_REPAIR,
     COMMUNITY_AUTHORING_SURFACE_REPAIR,
     INTERVIEW_EXTRACT_REVIEW_CONTROL_REPAIR,
@@ -11464,6 +11483,541 @@ with patch.object(
         )
         self.assertTrue(any("Azure DevOps" in error for error in remote_errors))
 
+
+class SigninMergeAdmissionTests(unittest.TestCase):
+    """PS-DELIVERY-CONTROL-SIGNIN-001: exactly one candidate, and nothing else.
+
+    The Sign-in admission exists because the repository had no way to grant
+    merge authority to this reviewed candidate. It must admit that exact
+    candidate and create no generic implementation-lane permission: every
+    pinned value below is load-bearing, and each mutation must remove the
+    admission rather than widen it.
+    """
+
+    LEDGER = Path(__file__).resolve().parents[1] / "docs/governance/CURRENT_LANES.json"
+
+    def signin_lane(self):
+        ledger = json.loads(self.LEDGER.read_text(encoding="utf-8"))
+        lanes = [
+            lane
+            for lane in ledger["active_lanes"]
+            if lane.get("package") == SIGNIN_MERGE_PACKAGE
+        ]
+        self.assertEqual(1, len(lanes), "exactly one Sign-in lane must be active")
+        return copy.deepcopy(lanes[0])
+
+    def granted_lane(self, lane=None):
+        lane = copy.deepcopy(lane if lane is not None else self.signin_lane())
+        lane["merge_grant"] = {
+            "authorized_by": "Pete",
+            "authority_decision_index": 0,
+            "authority_decision_sha256": _canonical_sha256(lane["owner_decisions"][0]),
+            "independent_review": copy.deepcopy(SIGNIN_REVIEW_ATTESTATION),
+            "reviewed_remote_sha": SIGNIN_REVIEWED_SHA,
+            "granted_at": "2026-08-22T03:30:00Z",
+            "review_result": "pass",
+            "review_evidence_paths": [SIGNIN_REVIEW_ATTESTATION["evidence_path"]],
+        }
+        return lane
+
+    def errors_for(self, lane):
+        errors = []
+        _direction_merge_grant(lane, "grant target", errors)
+        return errors
+
+    def test_the_pinned_profile_matches_the_live_ledger_lane(self):
+        lane = self.signin_lane()
+        self.assertEqual(SIGNIN_MERGE_BRANCH, lane["branch"])
+        self.assertEqual("implementation", lane["lane_class"])
+        self.assertEqual("Protected", lane["delivery_path"])
+        self.assertIs(False, lane["production_capable"])
+        self.assertTrue(_is_signin_reviewed_implementation_lane(lane))
+        self.assertEqual([SIGNIN_OWNER_MERGE_DECISION], lane["owner_decisions"])
+        self.assertEqual(
+            SIGNIN_OWNER_MERGE_DECISION_SHA256,
+            _canonical_sha256(lane["owner_decisions"][0]),
+        )
+
+    def test_the_attestation_binds_the_exact_reviewed_candidate(self):
+        self.assertEqual(SIGNIN_REVIEWED_SHA, SIGNIN_REVIEW_ATTESTATION["reviewed_sha"])
+        self.assertEqual(
+            SIGNIN_MERGE_BRANCH, SIGNIN_REVIEW_ATTESTATION["reviewed_branch"]
+        )
+        self.assertEqual("PASS", SIGNIN_REVIEW_ATTESTATION["verdict"])
+        self.assertIn(SIGNIN_REVIEWED_SHA, SIGNIN_REVIEW_ATTESTATION["verdict_text"])
+        self.assertIn(SIGNIN_REVIEWED_BASE, SIGNIN_REVIEW_ATTESTATION["verdict_text"])
+        self.assertEqual(
+            hashlib.sha256(
+                SIGNIN_REVIEW_ATTESTATION["verdict_text"].encode("utf-8")
+            ).hexdigest(),
+            SIGNIN_REVIEW_ATTESTATION["verdict_sha256"],
+        )
+        attestation = dict(SIGNIN_REVIEW_ATTESTATION)
+        digest = attestation.pop("attestation_sha256")
+        self.assertEqual(_canonical_sha256(attestation), digest)
+
+    def test_the_exact_grant_is_admitted(self):
+        self.assertEqual([], self.errors_for(self.granted_lane()))
+
+    def test_no_other_package_gains_merge_authority(self):
+        lane = self.granted_lane()
+        lane["package"] = "PS-SOME-OTHER-001"
+        self.assertTrue(self.errors_for(lane))
+        self.assertFalse(_is_signin_reviewed_implementation_lane(lane))
+
+    def test_every_pinned_lane_field_is_load_bearing(self):
+        for field, value in (
+            ("package", "PS-SOME-OTHER-001"),
+            ("branch", "work/2026-08-21-somewhere-else"),
+            ("lane_class", "direction_authority"),
+            ("delivery_path", "Bounded"),
+            ("production_capable", True),
+            ("writable_surfaces", ["app.py"]),
+            ("exclusions", []),
+            ("outcome", "a different outcome"),
+            ("writer", "someone else"),
+            ("exclusive_domains", ["anything"]),
+        ):
+            with self.subTest(field=field):
+                lane = self.signin_lane()
+                lane[field] = value
+                self.assertFalse(_is_signin_reviewed_implementation_lane(lane))
+                self.assertTrue(self.errors_for(self.granted_lane(lane)))
+
+    def test_every_grant_field_mutation_is_rejected(self):
+        mutations = {
+            "candidate sha": lambda l: l["merge_grant"].update(
+                reviewed_remote_sha="0" * 40
+            ),
+            "evidence path": lambda l: l["merge_grant"].update(
+                review_evidence_paths=["docs/initiatives/elsewhere.md"]
+            ),
+            "evidence blob": lambda l: l["merge_grant"]["independent_review"].update(
+                evidence_git_blob_sha="0" * 40
+            ),
+            "evidence bytes": lambda l: l["merge_grant"]["independent_review"].update(
+                evidence_bytes_sha256="0" * 64
+            ),
+            "verdict": lambda l: l["merge_grant"]["independent_review"].update(
+                verdict="FAIL"
+            ),
+            "verdict text": lambda l: l["merge_grant"]["independent_review"].update(
+                verdict_text="passed, trust me"
+            ),
+            "scope": lambda l: l["merge_grant"]["independent_review"].update(
+                scope="protected_everything"
+            ),
+            "exclusions": lambda l: l["merge_grant"]["independent_review"].update(
+                exclusions="none"
+            ),
+            "reviewer mode": lambda l: l["merge_grant"]["independent_review"].update(
+                reviewer_mode="writer"
+            ),
+            "received_by": lambda l: l["merge_grant"]["independent_review"].update(
+                received_by="anyone"
+            ),
+            "owner decision digest": lambda l: l["merge_grant"].update(
+                authority_decision_sha256="0" * 64
+            ),
+            "owner decision text": lambda l: l["owner_decisions"][0].update(
+                decision="anything goes"
+            ),
+            "owner provenance": lambda l: l["owner_decisions"][0].update(
+                provenance="unrecorded"
+            ),
+            "authorized_by": lambda l: l["merge_grant"].update(authorized_by="Someone"),
+            "review_result": lambda l: l["merge_grant"].update(review_result="fail"),
+            "decision index": lambda l: l["merge_grant"].update(
+                authority_decision_index=7
+            ),
+        }
+        for label, mutate in mutations.items():
+            with self.subTest(mutation=label):
+                lane = self.granted_lane()
+                mutate(lane)
+                self.assertTrue(
+                    self.errors_for(lane),
+                    "%s must remove the Sign-in admission" % label,
+                )
+
+    def test_the_admission_grants_no_release_or_deployment_authority(self):
+        lane = self.granted_lane()
+        self.assertNotIn("release_scope", lane["merge_grant"])
+        self.assertIs(False, lane["production_capable"])
+        self.assertEqual(
+            "schema_configuration_deployment_enablement_private_signed_in_proof",
+            SIGNIN_REVIEW_ATTESTATION["exclusions"],
+        )
+
+
+class SigninMergeGateTests(unittest.TestCase):
+    """The merge gate itself, not just the grant helper.
+
+    Independent review rejected the first control freeze on exactly this gap:
+    `_direction_merge_grant` recognised the Sign-in lane, but the merge intent
+    did not, so `is_reviewed_target` was false, the grant was never consulted at
+    merge, and HEAD was never compared to the reviewed SHA. The seven
+    admission tests could not see it because none of them called
+    `evaluate_policy`. These do.
+    """
+
+    LEDGER = Path(__file__).resolve().parents[1] / "docs/governance/CURRENT_LANES.json"
+    ORIGIN_MAIN = "6602768f3dddeb71af7836728bbd4cf8f1f59742"
+
+    def granted_ledger(self):
+        ledger = json.loads(self.LEDGER.read_text(encoding="utf-8"))
+        lane = next(
+            l for l in ledger["active_lanes"] if l["package"] == SIGNIN_MERGE_PACKAGE
+        )
+        lane["merge_grant"] = {
+            "authorized_by": "Pete",
+            "authority_decision_index": 0,
+            "authority_decision_sha256": _canonical_sha256(lane["owner_decisions"][0]),
+            "independent_review": copy.deepcopy(SIGNIN_REVIEW_ATTESTATION),
+            "reviewed_remote_sha": SIGNIN_REVIEWED_SHA,
+            "granted_at": "2026-08-22T03:30:00Z",
+            "review_result": "pass",
+            "review_evidence_paths": [SIGNIN_REVIEW_ATTESTATION["evidence_path"]],
+        }
+        ledger["operating_mode"]["merge_allowed_for"] = [SIGNIN_MERGE_PACKAGE]
+        return ledger
+
+    def facts(self, **overrides):
+        base = {
+            "repository": "/candidate",
+            "branch": SIGNIN_MERGE_BRANCH,
+            "head": SIGNIN_REVIEWED_SHA,
+            "origin_main": self.ORIGIN_MAIN,
+            "ahead": 1,
+            "behind": SIGNIN_MERGE_EXPECTED_BEHIND,
+            "tracked_changes": 0,
+            "untracked_changes": 0,
+            "fetched": True,
+            "origin_is_azure": True,
+            "origin_url": (
+                "https://peerslate19@dev.azure.com/peerslate19/"
+                "portfolio-site/_git/portfolio-site"
+            ),
+            "changed_paths": sorted(SIGNIN_CANDIDATE_PATHS),
+            "merge_target_remote_sha": SIGNIN_REVIEWED_SHA,
+            "grant_target_remote_sha": SIGNIN_REVIEWED_SHA,
+            "merge_main_changed_paths": sorted(SIGNIN_MERGE_MAIN_PATHS),
+            "merge_main_control_commits_valid": True,
+            "merge_main_control_commit_count": SIGNIN_MERGE_EXPECTED_BEHIND,
+        }
+        base.update(overrides)
+        return base
+
+    def merge_errors(self, **overrides):
+        ledger = self.granted_ledger()
+        errors, _ = evaluate_policy(
+            ledger,
+            self.facts(**overrides),
+            SIGNIN_MERGE_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=ledger,
+        )
+        return errors
+
+    def test_a_wrong_head_cannot_merge(self):
+        """The defect that shipped in the first control freeze."""
+        errors = self.merge_errors(head="dead" + "beef" * 9)
+        self.assertIn("merge HEAD must equal the reviewed_remote_sha", errors)
+
+    def test_a_wrong_remote_tip_cannot_merge(self):
+        errors = self.merge_errors(merge_target_remote_sha="dead" + "beef" * 9)
+        self.assertIn(
+            "merge target remote tip must equal the reviewed_remote_sha", errors
+        )
+
+    def test_a_wrong_branch_cannot_merge(self):
+        errors = self.merge_errors(branch="work/2026-08-21-somewhere-else")
+        self.assertTrue(errors)
+
+    def test_an_unexpected_behind_count_cannot_merge(self):
+        for behind in (0, 1, SIGNIN_MERGE_EXPECTED_BEHIND + 1):
+            with self.subTest(behind=behind):
+                self.assertTrue(self.merge_errors(behind=behind))
+
+    def test_unexpected_main_side_paths_cannot_merge(self):
+        extra = sorted(set(SIGNIN_MERGE_MAIN_PATHS) | {"app.py"})
+        self.assertTrue(self.merge_errors(merge_main_changed_paths=extra))
+
+    def test_merge_is_blocked_without_the_origin_grant(self):
+        ledger = self.granted_ledger()
+        ledger["operating_mode"]["merge_allowed_for"] = []
+        errors, _ = evaluate_policy(
+            ledger,
+            self.facts(),
+            SIGNIN_MERGE_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=ledger,
+        )
+        self.assertIn(
+            "merge is blocked for %s on origin/main" % SIGNIN_MERGE_PACKAGE, errors
+        )
+
+    def test_the_intervening_main_commits_do_not_touch_the_candidate(self):
+        """Why merging over eight commits is safe here.
+
+        The count alone proves nothing. What makes it safe is that none of the
+        paths those commits changed is a path this candidate changed, so the
+        reviewed diff still applies cleanly to what it is being merged into.
+        """
+        self.assertEqual(
+            frozenset(), SIGNIN_MERGE_MAIN_PATHS & SIGNIN_CANDIDATE_PATHS
+        )
+        self.assertEqual(9, len(SIGNIN_CANDIDATE_PATHS))
+
+
+class SigninMainSequenceTests(unittest.TestCase):
+    """The real sequence-facts source, not a stubbed fact.
+
+    Round-2 review found that `_direction_main_sequence_facts` had no Sign-in
+    branch, so the lane fell through to `_direction_control_path_sequence_valid`,
+    which only recognises one-, two- and three-commit control shapes. Live merge
+    would therefore have injected
+    `merge_main_control_commits_valid=False` and refused for ever. The gate
+    tests could not see it because they stubbed that fact to `True`.
+
+    These call the helper.
+    """
+
+    LEDGER = Path(__file__).resolve().parents[1] / "docs/governance/CURRENT_LANES.json"
+    ORIGIN_MAIN = "6602768f3dddeb71af7836728bbd4cf8f1f59742"
+
+    def granted_ledger(self):
+        ledger = json.loads(self.LEDGER.read_text(encoding="utf-8"))
+        lane = next(
+            l for l in ledger["active_lanes"] if l["package"] == SIGNIN_MERGE_PACKAGE
+        )
+        lane["merge_grant"] = {
+            "authorized_by": "Pete",
+            "authority_decision_index": 0,
+            "authority_decision_sha256": _canonical_sha256(lane["owner_decisions"][0]),
+            "independent_review": copy.deepcopy(SIGNIN_REVIEW_ATTESTATION),
+            "reviewed_remote_sha": SIGNIN_REVIEWED_SHA,
+            "granted_at": "2026-08-22T03:30:00Z",
+            "review_result": "pass",
+            "review_evidence_paths": [SIGNIN_REVIEW_ATTESTATION["evidence_path"]],
+        }
+        return ledger
+
+    def facts_for(self, origin_main=None, candidate=None):
+        return _direction_main_sequence_facts(
+            self.granted_ledger(),
+            SIGNIN_MERGE_PACKAGE,
+            candidate or SIGNIN_REVIEWED_SHA,
+            origin_main or self.ORIGIN_MAIN,
+        )
+
+    def test_the_real_sequence_validates_against_live_git(self):
+        paths, valid, count = self.facts_for()
+        self.assertTrue(valid, "the enumerated Sign-in sequence must validate")
+        self.assertGreaterEqual(count, len(SIGNIN_MERGE_LANDED_MAIN_COMMITS))
+        self.assertLessEqual(
+            count,
+            len(SIGNIN_MERGE_LANDED_MAIN_COMMITS)
+            + SIGNIN_MERGE_MAX_PENDING_CONTROL_COMMITS,
+        )
+        self.assertTrue(set(paths) <= set(SIGNIN_MERGE_MAIN_PATHS))
+
+    def test_the_generic_control_shape_helper_would_have_refused(self):
+        """Why Sign-in needed its own branch rather than the shared helper."""
+        from scripts.delivery_preflight import _direction_control_path_sequence_valid
+
+        eight = [{path} for path in sorted(SIGNIN_MERGE_MAIN_PATHS)][:8]
+        self.assertFalse(_direction_control_path_sequence_valid(eight))
+
+    def test_a_wrong_candidate_sha_invalidates_the_sequence(self):
+        paths, valid, count = self.facts_for(candidate="0" * 40)
+        self.assertFalse(valid)
+        self.assertEqual([], paths)
+        self.assertEqual(0, count)
+
+    def test_the_landed_prefix_is_pinned_to_real_history(self):
+        """The pinned SHAs must be the actual commits, in order."""
+        actual = subprocess.run(
+            [
+                "git",
+                "rev-list",
+                "--reverse",
+                "%s..%s" % (SIGNIN_REVIEWED_BASE, self.ORIGIN_MAIN),
+            ],
+            capture_output=True,
+            text=True,
+            cwd=str(Path(__file__).resolve().parents[1]),
+        ).stdout.split()
+        self.assertEqual(
+            list(SIGNIN_MERGE_LANDED_MAIN_COMMITS), actual[: len(SIGNIN_MERGE_LANDED_MAIN_COMMITS)]
+        )
+
+    def test_an_ungranted_lane_does_not_validate(self):
+        ledger = json.loads(self.LEDGER.read_text(encoding="utf-8"))
+        _, valid, _ = _direction_main_sequence_facts(
+            ledger, SIGNIN_MERGE_PACKAGE, SIGNIN_REVIEWED_SHA, self.ORIGIN_MAIN
+        )
+        self.assertFalse(valid, "no merge_grant means no validated sequence")
+
+    def test_pending_control_commits_are_bounded_and_surface_limited(self):
+        self.assertEqual(2, SIGNIN_MERGE_MAX_PENDING_CONTROL_COMMITS)
+        self.assertEqual(
+            frozenset(
+                {
+                    "docs/governance/CURRENT_LANES.json",
+                    "scripts/delivery_preflight.py",
+                    "tests/test_delivery_preflight.py",
+                }
+            ),
+            SIGNIN_MERGE_PENDING_CONTROL_PATHS,
+        )
+
+
+class SigninBrokenPinTests(unittest.TestCase):
+    """Breaking the hash pin must fail closed, not fall through.
+
+    Round-2 review found the opposite: `is_reviewed_target` consulted only the
+    hashed classifier, so a Sign-in lane whose hash had been broken stopped
+    being a reviewed target and dropped into generic merge, where
+    `merge_allowed_for` alone was enough and HEAD was never compared. A wrong
+    HEAD then merged with zero errors. The package-identity flag keeps a broken
+    lane on the reviewed path so the break surfaces as an error.
+    """
+
+    LEDGER = Path(__file__).resolve().parents[1] / "docs/governance/CURRENT_LANES.json"
+    ORIGIN_MAIN = "6602768f3dddeb71af7836728bbd4cf8f1f59742"
+
+    def mutated_merge_errors(self, mutate):
+        ledger = json.loads(self.LEDGER.read_text(encoding="utf-8"))
+        lane = next(
+            l for l in ledger["active_lanes"] if l["package"] == SIGNIN_MERGE_PACKAGE
+        )
+        lane["merge_grant"] = {
+            "authorized_by": "Pete",
+            "authority_decision_index": 0,
+            "authority_decision_sha256": _canonical_sha256(lane["owner_decisions"][0]),
+            "independent_review": copy.deepcopy(SIGNIN_REVIEW_ATTESTATION),
+            "reviewed_remote_sha": SIGNIN_REVIEWED_SHA,
+            "granted_at": "2026-08-22T03:30:00Z",
+            "review_result": "pass",
+            "review_evidence_paths": [SIGNIN_REVIEW_ATTESTATION["evidence_path"]],
+        }
+        mutate(lane)
+        ledger["operating_mode"]["merge_allowed_for"] = [SIGNIN_MERGE_PACKAGE]
+        facts = {
+            "repository": "/candidate",
+            "branch": SIGNIN_MERGE_BRANCH,
+            "head": "dead" + "beef" * 9,
+            "origin_main": self.ORIGIN_MAIN,
+            "ahead": 1,
+            "behind": SIGNIN_MERGE_EXPECTED_BEHIND,
+            "tracked_changes": 0,
+            "untracked_changes": 0,
+            "fetched": True,
+            "origin_is_azure": True,
+            "origin_url": (
+                "https://peerslate19@dev.azure.com/peerslate19/"
+                "portfolio-site/_git/portfolio-site"
+            ),
+            "changed_paths": sorted(SIGNIN_CANDIDATE_PATHS),
+            "merge_target_remote_sha": SIGNIN_REVIEWED_SHA,
+            "grant_target_remote_sha": SIGNIN_REVIEWED_SHA,
+            "merge_main_changed_paths": sorted(SIGNIN_MERGE_MAIN_PATHS),
+            "merge_main_control_commits_valid": True,
+            "merge_main_control_commit_count": SIGNIN_MERGE_EXPECTED_BEHIND,
+        }
+        errors, _ = evaluate_policy(
+            ledger,
+            facts,
+            SIGNIN_MERGE_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=ledger,
+        )
+        return errors
+
+    def test_a_broken_hash_pin_cannot_reach_generic_merge(self):
+        for label, mutate in (
+            ("outcome", lambda l: l.__setitem__("outcome", l["outcome"] + " x")),
+            ("writer", lambda l: l.__setitem__("writer", "someone else")),
+            ("exclusions", lambda l: l.__setitem__("exclusions", [])),
+            (
+                "writable_surfaces",
+                lambda l: l.__setitem__("writable_surfaces", ["app.py"]),
+            ),
+            (
+                "domains",
+                lambda l: l.__setitem__("exclusive_domains", ["anything"]),
+            ),
+            ("delivery_path", lambda l: l.__setitem__("delivery_path", "Bounded")),
+            ("branch", lambda l: l.__setitem__("branch", "work/2026-08-21-other")),
+        ):
+            with self.subTest(broken=label):
+                errors = self.mutated_merge_errors(mutate)
+                self.assertTrue(
+                    errors,
+                    "a broken pin must fail closed, not fall through to generic merge",
+                )
+
+    def test_production_capable_cannot_delete_the_lock(self):
+        """The field that lives in the *second* conjunct of is_reviewed_target.
+
+        Round-3 review found that any `production_capable` value other than
+        exact `False` removed the lane from the reviewed path and merged a
+        bogus HEAD with zero errors. The round-2 negative test could not see
+        it: it removed `is_signin_package` from the first conjunct only, so it
+        was structurally blind to the second. Every falsy-looking and
+        truthy-looking variant is covered here.
+        """
+        for label, mutate in (
+            ("True", lambda l: l.__setitem__("production_capable", True)),
+            ("missing", lambda l: l.pop("production_capable", None)),
+            ("zero", lambda l: l.__setitem__("production_capable", 0)),
+            ("None", lambda l: l.__setitem__("production_capable", None)),
+            ("string false", lambda l: l.__setitem__("production_capable", "false")),
+            ("string true", lambda l: l.__setitem__("production_capable", "true")),
+        ):
+            with self.subTest(production_capable=label):
+                errors = self.mutated_merge_errors(mutate)
+                self.assertTrue(errors, "must not fall through to generic merge")
+                self.assertIn(
+                    "merge HEAD must equal the reviewed_remote_sha",
+                    errors,
+                    "the HEAD comparison must still happen",
+                )
+                self.assertTrue(
+                    any("no longer matches its pinned" in e for e in errors),
+                    "the mismatch must be named, not merely implied",
+                )
+
+    def test_both_conjuncts_of_the_reviewed_target_test_are_load_bearing(self):
+        """Guard against the exact blind spot that produced M5.
+
+        `is_reviewed_target` is two `and`-ed groups. Sign-in must appear in
+        BOTH. A future edit that drops it from either one re-opens the
+        fall-through, and a negative test that only exercises one group cannot
+        tell. This reads the source so neither can be removed silently.
+        """
+        source = (
+            Path(__file__).resolve().parents[1] / "scripts/delivery_preflight.py"
+        ).read_text(encoding="utf-8")
+        start = source.index("is_reviewed_target = bool(")
+        end = source.index("if not is_reviewed_target:", start)
+        block = source[start:end]
+        conjuncts = block.split("and (")
+        self.assertEqual(
+            3, len(conjuncts), "is_reviewed_target is expected to be two and-ed groups"
+        )
+        for index, group in enumerate(conjuncts[1:], start=1):
+            with self.subTest(conjunct=index):
+                self.assertIn(
+                    "is_signin_package",
+                    group,
+                    "Sign-in must be named in conjunct %d or a broken pin "
+                    "falls through to generic merge" % index,
+                )
 
 if __name__ == "__main__":
     unittest.main()

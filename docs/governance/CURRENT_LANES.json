@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-22T02:55:13Z",
+  "updated_at": "2026-08-22T03:20:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -2711,6 +2711,15 @@
         "the package record states the measured Azure session policy (fixed 8-hour cookie expiration, 72-hour token refresh extension, 5-minute validated nonce) and names it as configuration evidence that source tests cannot assert",
         "the two sibling records state their actual released state with the exact commit, build, deployment time, and derived live release identity",
         "a complete-diff self-review and one proportional Protected completion record"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-21",
+          "authorized_by": "Pete",
+          "status": "accepted",
+          "decision": "Pete authorizes Claude Code desktop session acd9f218-d287-490f-b2d5-a185c5bceb27 to manage PS-SIGNIN-MEMBER-ARRIVAL-001 end to end through implementation, correction, PR management, merge, deployment, live verification, and final package exit, continuing without repeatedly requesting owner approval and stopping only at a genuine independent-review point or a real blocker requiring Pete's participation. Grok is the named independent reviewer for the frozen implementation candidate.",
+          "provenance": "Recorded verbatim in Claude Code session acd9f218-d287-490f-b2d5-a185c5bceb27 on 2026-08-21, in the owner turn beginning 'Correction to the previous instruction: there is no fixed number of reviews.', following the earlier owner turn 'I want you to do everything.' Re-affirmed by the Site-audit manager handoff 'UNBLOCK AND COMPLETE PS-SIGNIN-MEMBER-ARRIVAL-001'."
+        }
       ]
     },
     {

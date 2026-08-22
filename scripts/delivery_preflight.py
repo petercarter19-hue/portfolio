@@ -2026,6 +2026,139 @@ SEARCH_RELEASE_ADMISSION_PATHS = frozenset(
     SEARCH_RELEASE_ADMISSION["allowed_surfaces"]
 )
 
+# PS-DELIVERY-CONTROL-SIGNIN-001: the exact, fail-closed Sign-in merge
+# admission. It admits ONE candidate on ONE branch with ONE review, and it
+# creates no generic implementation-lane merge permission: every value below is
+# pinned, and the lane itself is bound by canonical hash.
+# The Sign-in candidate predates main by an exact, enumerated sequence: four
+# Interview Extract control commits, the Interview telemetry dark-infrastructure
+# landing, the Sign-in control successor activation, this control repair's own
+# merge, and the Sign-in grant. Naming the count alone would not be enough, so
+# the exact path union is pinned too. None of these paths intersects the Sign-in
+# candidate's own nine changed paths -- SigninMergeAdmissionTests asserts that
+# disjointness, which is the property that actually makes merging over them
+# safe. If anything else lands on main, both checks fail closed and the merge
+# must be re-verified rather than assumed.
+# The six commits that were already on main when this admission was written,
+# pinned by SHA and in order. Anything after them must be this lane's own
+# control landing and its grant, and may touch only the three control surfaces.
+# Pinning the landed prefix and bounding the tail is stronger than a bare count:
+# it survives a squash-versus-fast-forward difference without widening, and any
+# unexpected commit fails closed.
+SIGNIN_MERGE_LANDED_MAIN_COMMITS = (
+    "adf8bc4af8463864e51faadaef7afc3ee34d84e1",
+    "b562535a2db9712c33f9d79b65c6bd7b64f819f1",
+    "5664f1f64b82e2c69c23702f2590d9765e0b1a8a",
+    "28ed324486fa05b3baa9c7cf47fd9009f251061e",
+    "b7970d1cc75611246adcb6f26abefd2a90f323d2",
+    "6602768f3dddeb71af7836728bbd4cf8f1f59742",
+)
+SIGNIN_MERGE_PENDING_CONTROL_PATHS = frozenset(
+    {
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    }
+)
+SIGNIN_MERGE_MAX_PENDING_CONTROL_COMMITS = 2
+SIGNIN_MERGE_EXPECTED_BEHIND = 8
+SIGNIN_MERGE_MAIN_PATHS = frozenset(
+    {
+        "SQL FIles/Migrations/proposed/PS-INTERVIEW-AI-EXTRACT-001_telemetry.sql",
+        (
+            "SQL FIles/Migrations/proposed/"
+            "PS-INTERVIEW-AI-EXTRACT-001_telemetry_rollback.sql"
+        ),
+        "SQL FIles/Migrations/registry.json",
+        "azure-pipelines.yml",
+        "docs/governance/CURRENT_BASELINE.yaml",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/PACKAGE_REGISTRY.json",
+        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/05_SQL_DISPOSABLE_PROOF.json",
+        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/10_RELEASE_PLAN.md",
+        (
+            "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/"
+            "11_DARK_TELEMETRY_INFRASTRUCTURE_EVIDENCE.md"
+        ),
+        "scripts/delivery_preflight.py",
+        "scripts/interview_ai/run_interview_telemetry_purge.py",
+        "scripts/interview_ai/run_interview_telemetry_sql_proof.py",
+        "services/database_service.py",
+        "tests/test_database_service.py",
+        "tests/test_delivery_preflight.py",
+        "tests/test_interview_ai_dark_telemetry_infrastructure.py",
+        "tests/test_operational_readiness.py",
+    }
+)
+# The nine paths the reviewed Sign-in candidate itself changes. Pinned so the
+# disjointness above is checkable rather than asserted in prose.
+SIGNIN_CANDIDATE_PATHS = frozenset(
+    {
+        "docs/initiatives/PS-AUTH-CALLBACK-001/COMPLETION_REPORT.md",
+        "docs/initiatives/PS-SIGNIN-EXPERIENCE-001/COMPLETION.md",
+        (
+            "docs/initiatives/PS-SIGNIN-MEMBER-ARRIVAL-001/"
+            "FOLLOWUP_COMPLETION_REPORT.md"
+        ),
+        (
+            "docs/initiatives/PS-SIGNIN-MEMBER-ARRIVAL-001/"
+            "INDEPENDENT_REVIEW_HANDOFF.md"
+        ),
+        "static/js/auth-state.js",
+        "templates/base.html",
+        "tests/auth_state.test.js",
+        "tests/test_owner_home.py",
+        "tests/test_signin_member_arrival.py",
+    }
+)
+
+
+SIGNIN_MERGE_PACKAGE = "PS-SIGNIN-MEMBER-ARRIVAL-001"
+SIGNIN_MERGE_BRANCH = "work/2026-08-21-signin-member-arrival-followup"
+SIGNIN_REVIEWED_SHA = "e1847ad0a884a349a7b5eed0526075cd0104dd62"
+SIGNIN_REVIEWED_BASE = "eb3f35ab66e01a1793d5dc3ae628270c6c64ec10"
+# The Sign-in lane exactly as it must stand before its grant, owner decision
+# included and merge_grant excluded.
+SIGNIN_BASE_LANE_SHA256 = (
+    "7a73e095229dd3e5bde9c7e1495f07a38a29e79832937d74b325be346afb4310"
+)
+# Pete's standing end-to-end authorization, recorded verbatim with recoverable
+# task and turn provenance rather than re-requested.
+SIGNIN_OWNER_MERGE_DECISION = {
+    "date": "2026-08-21",
+    "authorized_by": "Pete",
+    "status": "accepted",
+    "decision": "Pete authorizes Claude Code desktop session acd9f218-d287-490f-b2d5-a185c5bceb27 to manage PS-SIGNIN-MEMBER-ARRIVAL-001 end to end through implementation, correction, PR management, merge, deployment, live verification, and final package exit, continuing without repeatedly requesting owner approval and stopping only at a genuine independent-review point or a real blocker requiring Pete's participation. Grok is the named independent reviewer for the frozen implementation candidate.",
+    "provenance": "Recorded verbatim in Claude Code session acd9f218-d287-490f-b2d5-a185c5bceb27 on 2026-08-21, in the owner turn beginning 'Correction to the previous instruction: there is no fixed number of reviews.', following the earlier owner turn 'I want you to do everything.' Re-affirmed by the Site-audit manager handoff 'UNBLOCK AND COMPLETE PS-SIGNIN-MEMBER-ARRIVAL-001'."
+}
+SIGNIN_OWNER_MERGE_DECISION_SHA256 = (
+    "9f9ef74c72a5ef5024c07fcffd97fc4271a20c1e3abb0ea49bec53424c7b8311"
+)
+# Grok's independent exact-SHA acceptance, bound to the evidence blob and bytes
+# that exist at SIGNIN_REVIEWED_SHA.
+SIGNIN_REVIEW_ATTESTATION = {
+    "reviewer_task": "/root/signin_member_arrival_exact_sha_review",
+    "reviewer_mode": "independent_read_only_non_writer",
+    "reviewed_sha": "e1847ad0a884a349a7b5eed0526075cd0104dd62",
+    "reviewed_branch": "work/2026-08-21-signin-member-arrival-followup",
+    "verdict": "PASS",
+    "verdict_text": "ACCEPTED_FOR_OWNER_RELEASE_DECISION - exact-SHA independent Protected review passed for e1847ad0a884a349a7b5eed0526075cd0104dd62, branch-equal to origin/work/2026-08-21-signin-member-arrival-followup and clean, on base eb3f35ab66e01a1793d5dc3ae628270c6c64ec10.",
+    "verdict_sha256": "7bfb9d79c5e28adabd46fd0eb72690e6e636d5ab89e8558de7fc47364528313c",
+    "basis": [
+        "full_tree_at_e1847ad0a884a349a7b5eed0526075cd0104dd62",
+        "complete_diff_eb3f35ab66e01a1793d5dc3ae628270c6c64ec10_to_e1847ad0a884a349a7b5eed0526075cd0104dd62"
+    ],
+    "scope": "protected_signin_member_arrival_implementation_merge_only",
+    "exclusions": "schema_configuration_deployment_enablement_private_signed_in_proof",
+    "evidence_path": "docs/initiatives/PS-SIGNIN-MEMBER-ARRIVAL-001/INDEPENDENT_REVIEW_HANDOFF.md",
+    "evidence_git_blob_sha": "76067fcef402f1f04605926ab32af9c53e129b2e",
+    "evidence_bytes_sha256": "90d3a48a19078252241c71be26978f1683ad656418fa8410a9635a7b5d6349c1",
+    "received_by": "Claude Code PS-SIGNIN-MEMBER-ARRIVAL-001 package manager",
+    "received_date": "2026-08-22",
+    "attestation_sha256": "c6e5a826683f417ed8a07c70ceab65d254ffd5966651390178e1624786b29446"
+}
+
+
 # The Extract dark-infrastructure candidate is production-capable only because
 # its files are intended for a later, separately governed production sequence.
 # Pete authorized one repository-only merge with deployment suppressed; that
@@ -5861,6 +5994,13 @@ def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
             and _canonical_sha256(decision)
             == INTERVIEW_EXTRACT_OWNER_MERGE_DECISION_SHA256
         )
+    if package_id == SIGNIN_MERGE_PACKAGE:
+        return bool(
+            isinstance(decision, dict)
+            and decision == SIGNIN_OWNER_MERGE_DECISION
+            and _canonical_sha256(decision)
+            == SIGNIN_OWNER_MERGE_DECISION_SHA256
+        )
     if package_id == SEARCH_PACKAGE:
         return bool(
             isinstance(decision, dict)
@@ -6016,6 +6156,29 @@ def _is_search_reviewed_implementation_lane(lane: object) -> bool:
         and lane.get("lane_class") == "implementation"
         and lane.get("delivery_path") == "Protected"
         and lane.get("production_capable") is False
+    )
+
+
+def _is_signin_reviewed_implementation_lane(lane: object) -> bool:
+    """Identify only the exact reviewed Sign-in lane.
+
+    Deliberately narrower than a lane-class test: package, branch, delivery
+    path, lane class and production_capable are all pinned, and the whole lane
+    minus its merge_grant must hash to the exact recorded value. A renamed
+    branch, a widened surface list, a changed exclusion or any other edit
+    changes that hash and the admission disappears.
+    """
+    if not isinstance(lane, dict):
+        return False
+    normalized = copy.deepcopy(lane)
+    normalized.pop("merge_grant", None)
+    return bool(
+        lane.get("package") == SIGNIN_MERGE_PACKAGE
+        and lane.get("branch") == SIGNIN_MERGE_BRANCH
+        and lane.get("lane_class") == "implementation"
+        and lane.get("delivery_path") == "Protected"
+        and lane.get("production_capable") is False
+        and _canonical_sha256(normalized) == SIGNIN_BASE_LANE_SHA256
     )
 
 
@@ -6328,6 +6491,7 @@ def _direction_merge_grant(
     is_sd1 = _is_sd1_reviewed_implementation_lane(lane)
     is_search = _is_search_reviewed_implementation_lane(lane)
     is_interview_extract = _is_interview_extract_reviewed_implementation_lane(lane)
+    is_signin = _is_signin_reviewed_implementation_lane(lane)
     is_shell = _is_shell_reviewed_shared_foundation_lane(lane)
     if is_interview_extract:
         return _interview_extract_merge_grant(lane, label, errors)
@@ -6344,11 +6508,12 @@ def _direction_merge_grant(
         and not is_shell
         and not is_search
         and not is_interview_extract
+        and not is_signin
     ):
         errors.append(
             f"{label} is available only to direction_authority lanes or the "
             "code-controlled Opportunity Slate, Profile Core, Connect, "
-            "Community Authoring, Search, or Shell reviewed lanes"
+            "Community Authoring, Search, Shell, or Sign-in reviewed lanes"
         )
     if lane.get("production_capable") is not False:
         errors.append(f"{label} requires production_capable false")
@@ -6418,6 +6583,7 @@ def _direction_merge_grant(
             INTERVIEW_AI_ARCHITECTURE_PACKAGE: (
                 INTERVIEW_AI_D13_REVIEW_ATTESTATION
             ),
+            SIGNIN_MERGE_PACKAGE: SIGNIN_REVIEW_ATTESTATION,
         }.get(lane.get("package"))
         if expected_review is None:
             errors.append(
@@ -6457,6 +6623,8 @@ def _direction_merge_grant(
             if is_profile_core
             else "protected_connect_002_non_production_provider_merge_only"
             if is_connect_002
+            else "protected_signin_member_arrival_implementation_merge_only"
+            if is_signin
             else "direction_package_acceptance_and_merge_only"
         )
         if (
@@ -6478,11 +6646,21 @@ def _direction_merge_grant(
             if is_profile_core
             else "schema_apply_deployment_profile_integration_enablement"
             if is_connect_002
+            else (
+                "schema_configuration_deployment_enablement_"
+                "private_signed_in_proof"
+            )
+            if is_signin
             else "runtime_schema_deployment_enablement"
         )
         if review.get("exclusions") != expected_review_exclusions:
             errors.append(f"{label} independent_review exclusions are invalid")
-        if review.get("received_by") != "Root Codex program manager":
+        expected_received_by = (
+            "Claude Code PS-SIGNIN-MEMBER-ARRIVAL-001 package manager"
+            if is_signin
+            else "Root Codex program manager"
+        )
+        if review.get("received_by") != expected_received_by:
             errors.append(f"{label} independent_review received_by is invalid")
         if not _valid_baseline_date(review.get("received_date")):
             errors.append(f"{label} independent_review received_date is invalid")
@@ -6530,6 +6708,8 @@ def _direction_merge_grant(
                 if is_profile_core
                 else CONNECT_002_RECONCILED_REVIEW_ATTESTATION["verdict_text"]
                 if is_connect_002
+                else SIGNIN_REVIEW_ATTESTATION["verdict_text"]
+                if is_signin
                 else expected_verdict
             )
         ):
@@ -6566,6 +6746,25 @@ def _direction_merge_grant(
         if reviewed_sha != INTERVIEW_AI_D13_REVIEWED_SHA:
             errors.append(
                 f"{label} reviewed_remote_sha must equal the accepted Interview AI SHA"
+            )
+    if is_signin:
+        if grant.get("authority_decision_sha256") != (
+            SIGNIN_OWNER_MERGE_DECISION_SHA256
+        ):
+            errors.append(
+                f"{label} authority_decision_sha256 must equal the pinned "
+                "Sign-in owner decision digest"
+            )
+        if reviewed_sha != SIGNIN_REVIEWED_SHA:
+            errors.append(
+                f"{label} reviewed_remote_sha must equal the accepted Sign-in SHA"
+            )
+        if grant.get("review_evidence_paths") != [
+            SIGNIN_REVIEW_ATTESTATION["evidence_path"]
+        ]:
+            errors.append(
+                f"{label} Sign-in review_evidence_paths must be exactly the "
+                "accepted review evidence document"
             )
     if is_profile_core:
         if (
@@ -7995,6 +8194,65 @@ def _direction_main_sequence_facts(
     candidate_sha: str,
     origin_main: str,
 ) -> tuple[list[str], bool, int]:
+    if package_id == SIGNIN_MERGE_PACKAGE:
+        # Sign-in must not reuse _direction_control_path_sequence_valid: that
+        # helper only recognises one-, two- and three-commit control shapes, and
+        # this candidate sits behind an eight-commit sequence that includes a
+        # non-control Interview telemetry landing. Falling through to it would
+        # have produced a merge that could never be admitted, which the stubbed
+        # tests could not see.
+        if candidate_sha != SIGNIN_REVIEWED_SHA:
+            return [], False, 0
+        base = SIGNIN_REVIEWED_BASE
+        main_commits = [
+            sha
+            for sha in _git("rev-list", "--reverse", f"{base}..{origin_main}").splitlines()
+            if sha
+        ]
+        main_paths = sorted(
+            _git_nul("diff", "--name-only", "-z", f"{base}..{origin_main}")
+        )
+        landed_count = len(SIGNIN_MERGE_LANDED_MAIN_COMMITS)
+        if len(main_commits) < landed_count:
+            return main_paths, False, len(main_commits)
+        if tuple(main_commits[:landed_count]) != SIGNIN_MERGE_LANDED_MAIN_COMMITS:
+            return main_paths, False, len(main_commits)
+        pending = main_commits[landed_count:]
+        if len(pending) > SIGNIN_MERGE_MAX_PENDING_CONTROL_COMMITS:
+            return main_paths, False, len(main_commits)
+        for sha in pending:
+            commit_paths = set(
+                _git_nul(
+                    "diff-tree", "--no-commit-id", "--name-only", "-r", "-z", sha
+                )
+            )
+            if not commit_paths or not commit_paths <= SIGNIN_MERGE_PENDING_CONTROL_PATHS:
+                return main_paths, False, len(main_commits)
+        for previous, sha in zip(main_commits, main_commits[1:]):
+            if _git("rev-parse", f"{sha}^") != previous:
+                return main_paths, False, len(main_commits)
+        final_target = next(
+            (
+                lane
+                for lane in origin_ledger.get("active_lanes", [])
+                if isinstance(lane, dict)
+                and lane.get("package") == SIGNIN_MERGE_PACKAGE
+            ),
+            None,
+        )
+        valid = bool(
+            isinstance(final_target, dict)
+            and isinstance(final_target.get("merge_grant"), dict)
+            and final_target["merge_grant"].get("reviewed_remote_sha") == candidate_sha
+            # The tail may only add the grant. If a control commit in it retuned
+            # any pinned lane field, the lane stops hash-matching and the
+            # sequence is not valid -- so a hostile control commit cannot buy
+            # itself a widened admission while still looking well-formed.
+            and _is_signin_reviewed_implementation_lane(final_target)
+            # The property that makes merging over these commits safe at all.
+            and set(main_paths).isdisjoint(SIGNIN_CANDIDATE_PATHS)
+        )
+        return main_paths, valid, len(main_commits)
     if package_id == INTERVIEW_EXTRACT_TARGET_PACKAGE:
         if candidate_sha != INTERVIEW_EXTRACT_REVIEWED_SHA:
             return [], False, 0
@@ -8626,6 +8884,7 @@ def _collect_direction_candidate_merge(
     is_interview_extract = _is_interview_extract_reviewed_implementation_lane(
         target
     )
+    is_signin = _is_signin_reviewed_implementation_lane(target)
     if (
         (
             not is_direction
@@ -8636,6 +8895,7 @@ def _collect_direction_candidate_merge(
             and not is_sd1
             and not is_search
             and not is_interview_extract
+            and not is_signin
         )
         or (
             target.get("production_capable") is not False
@@ -8816,6 +9076,16 @@ def evaluate_policy(
                 isinstance(target, dict)
                 and target.get("package") == INTERVIEW_EXTRACT_TARGET_PACKAGE
             )
+            # Without this, a Sign-in lane whose hash pin has been broken stops
+            # being a reviewed target and falls through to generic merge, where
+            # merge_allowed_for alone is enough and HEAD is never compared.
+            # Breaking the pin must fail CLOSED, so the package identity keeps
+            # the lane on the reviewed path and the broken pin surfaces as a
+            # grant error instead of a bypass.
+            is_signin_package = bool(
+                isinstance(target, dict)
+                and target.get("package") == SIGNIN_MERGE_PACKAGE
+            )
             is_reviewed_target = bool(
                 isinstance(target, dict)
                 and (
@@ -8831,6 +9101,8 @@ def evaluate_policy(
                     or _is_sd1_reviewed_implementation_lane(target)
                     or _is_search_reviewed_implementation_lane(target)
                     or _is_interview_extract_reviewed_implementation_lane(target)
+                    or _is_signin_reviewed_implementation_lane(target)
+                    or is_signin_package
                     or is_profile_core_package
                     or is_connect_002_package
                     or is_community_authoring_package
@@ -8846,6 +9118,7 @@ def evaluate_policy(
                     or is_sd1_package
                     or is_search_package
                     or is_interview_extract_package
+                    or is_signin_package
                 )
             )
             if not is_reviewed_target:
@@ -8974,6 +9247,14 @@ def evaluate_policy(
             pass
         else:
             grant = _direction_merge_grant(target, "merge target", errors)
+            if is_signin_package and not _is_signin_reviewed_implementation_lane(
+                target
+            ):
+                errors.append(
+                    "Sign-in merge target no longer matches its pinned reviewed "
+                    "lane; the admission is void until the lane is restored or a "
+                    "fresh control candidate is reviewed"
+                )
             allowed = origin_mode.get("merge_allowed_for")
             if not isinstance(allowed, list) or package_id not in allowed:
                 errors.append(f"merge is blocked for {package_id} on origin/main")
@@ -9004,6 +9285,33 @@ def evaluate_policy(
                     errors.append(
                         "SD-1 merge requires exactly two verified post-activation "
                         "main control commits"
+                    )
+            elif package_id == SIGNIN_MERGE_PACKAGE:
+                expected_main_paths = set(SIGNIN_MERGE_MAIN_PATHS)
+                # The count is taken from the validated walk rather than
+                # hard-coded, so a squash-versus-fast-forward difference in this
+                # lane's own two commits cannot block a legitimate merge, while
+                # anything outside the pinned prefix and the bounded control
+                # tail still fails closed in _direction_main_sequence_facts.
+                walked = facts.get("merge_main_control_commit_count")
+                lower = len(SIGNIN_MERGE_LANDED_MAIN_COMMITS)
+                upper = lower + SIGNIN_MERGE_MAX_PENDING_CONTROL_COMMITS
+                if (
+                    not isinstance(walked, int)
+                    or isinstance(walked, bool)
+                    or not lower <= walked <= upper
+                ):
+                    errors.append(
+                        "Sign-in merge requires between "
+                        f"{lower} and {upper} verified main commits"
+                    )
+                    expected_behind = SIGNIN_MERGE_EXPECTED_BEHIND
+                else:
+                    expected_behind = walked
+                if facts.get("behind") != expected_behind:
+                    errors.append(
+                        "Sign-in merge requires behind to equal the verified "
+                        "main commit sequence length"
                     )
             elif package_id == INTERVIEW_EXTRACT_TARGET_PACKAGE:
                 expected_behind = 5
@@ -12973,6 +13281,8 @@ def main(argv: list[str] | None = None) -> int:
                         or _is_interview_extract_reviewed_implementation_lane(
                             target
                         )
+                        or _is_signin_reviewed_implementation_lane(target)
+                        or target.get("package") == SIGNIN_MERGE_PACKAGE
                     )
                 ):
                     missing_candidate_message = (
