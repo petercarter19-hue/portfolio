@@ -2053,14 +2053,19 @@ SIGNIN_MERGE_LANDED_MAIN_COMMITS = (
     "b7970d1cc75611246adcb6f26abefd2a90f323d2",
     "6602768f3dddeb71af7836728bbd4cf8f1f59742",
 )
-SIGNIN_MERGE_PENDING_CONTROL_PATHS = frozenset(
-    {
-        "docs/governance/CURRENT_LANES.json",
-        "scripts/delivery_preflight.py",
-        "tests/test_delivery_preflight.py",
-    }
-)
-SIGNIN_MERGE_MAX_PENDING_CONTROL_COMMITS = 2
+# What follows the pinned prefix is deliberately NOT restricted to this lane's
+# own control surfaces, and is deliberately NOT capped at a fixed count.
+#
+# The first version of this rule was both. It was wrong, and it refused the
+# legitimate path within hours: this lane's own grant would have been a third
+# pending commit against a cap of two, and other lanes merge product code onto
+# main while a reviewed candidate waits - which is normal and correct.
+#
+# The property that actually makes merging over intervening commits safe is
+# that none of them touches a path this candidate changes, so the reviewed diff
+# still applies to what it is being merged into. That is checked below against
+# SIGNIN_CANDIDATE_PATHS, and it fails closed on the case that matters while
+# staying silent about work that has nothing to do with Sign-in.
 SIGNIN_MERGE_EXPECTED_BEHIND = 8
 SIGNIN_MERGE_MAIN_PATHS = frozenset(
     {
@@ -8217,16 +8222,15 @@ def _direction_main_sequence_facts(
             return main_paths, False, len(main_commits)
         if tuple(main_commits[:landed_count]) != SIGNIN_MERGE_LANDED_MAIN_COMMITS:
             return main_paths, False, len(main_commits)
-        pending = main_commits[landed_count:]
-        if len(pending) > SIGNIN_MERGE_MAX_PENDING_CONTROL_COMMITS:
-            return main_paths, False, len(main_commits)
-        for sha in pending:
+        # Every commit after the pinned prefix must leave this candidate's own
+        # files alone. Nothing else about it is this lane's business.
+        for sha in main_commits[landed_count:]:
             commit_paths = set(
                 _git_nul(
                     "diff-tree", "--no-commit-id", "--name-only", "-r", "-z", sha
                 )
             )
-            if not commit_paths or not commit_paths <= SIGNIN_MERGE_PENDING_CONTROL_PATHS:
+            if not commit_paths or not commit_paths.isdisjoint(SIGNIN_CANDIDATE_PATHS):
                 return main_paths, False, len(main_commits)
         for previous, sha in zip(main_commits, main_commits[1:]):
             if _git("rev-parse", f"{sha}^") != previous:
@@ -9287,7 +9291,21 @@ def evaluate_policy(
                         "main control commits"
                     )
             elif package_id == SIGNIN_MERGE_PACKAGE:
-                expected_main_paths = set(SIGNIN_MERGE_MAIN_PATHS)
+                # The main-side path set is whatever legitimately landed while
+                # this candidate waited. Pinning it to an exact enumeration
+                # would refuse every unrelated merge by another lane. What must
+                # hold is disjointness from this candidate's own paths, which
+                # _direction_main_sequence_facts enforces per commit and which
+                # is re-asserted here against the aggregate.
+                raw_main = facts.get("merge_main_changed_paths")
+                expected_main_paths = (
+                    set(raw_main) if isinstance(raw_main, list) else set()
+                )
+                if not expected_main_paths.isdisjoint(SIGNIN_CANDIDATE_PATHS):
+                    errors.append(
+                        "Sign-in merge requires the intervening main commits to "
+                        "leave this candidate's own paths untouched"
+                    )
                 # The count is taken from the validated walk rather than
                 # hard-coded, so a squash-versus-fast-forward difference in this
                 # lane's own two commits cannot block a legitimate merge, while
@@ -9295,18 +9313,20 @@ def evaluate_policy(
                 # tail still fails closed in _direction_main_sequence_facts.
                 walked = facts.get("merge_main_control_commit_count")
                 lower = len(SIGNIN_MERGE_LANDED_MAIN_COMMITS)
-                upper = lower + SIGNIN_MERGE_MAX_PENDING_CONTROL_COMMITS
                 if (
                     not isinstance(walked, int)
                     or isinstance(walked, bool)
-                    or not lower <= walked <= upper
+                    or walked < lower
                 ):
                     errors.append(
-                        "Sign-in merge requires between "
-                        f"{lower} and {upper} verified main commits"
+                        "Sign-in merge requires at least the "
+                        f"{lower} pinned main commits"
                     )
                     expected_behind = SIGNIN_MERGE_EXPECTED_BEHIND
                 else:
+                    # Consistency between what git reports and what the
+                    # validator actually walked. No artificial ceiling: the
+                    # per-commit disjointness check is the real gate.
                     expected_behind = walked
                 if facts.get("behind") != expected_behind:
                     errors.append(

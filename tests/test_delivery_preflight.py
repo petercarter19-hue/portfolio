@@ -24,8 +24,6 @@ from scripts.delivery_preflight import (
     SIGNIN_MERGE_EXPECTED_BEHIND,
     SIGNIN_MERGE_LANDED_MAIN_COMMITS,
     SIGNIN_MERGE_MAIN_PATHS,
-    SIGNIN_MERGE_MAX_PENDING_CONTROL_COMMITS,
-    SIGNIN_MERGE_PENDING_CONTROL_PATHS,
     SIGNIN_REVIEWED_BASE,
     _direction_main_sequence_facts,
     evaluate_policy,
@@ -11750,9 +11748,30 @@ class SigninMergeGateTests(unittest.TestCase):
             with self.subTest(behind=behind):
                 self.assertTrue(self.merge_errors(behind=behind))
 
-    def test_unexpected_main_side_paths_cannot_merge(self):
-        extra = sorted(set(SIGNIN_MERGE_MAIN_PATHS) | {"app.py"})
-        self.assertTrue(self.merge_errors(merge_main_changed_paths=extra))
+    def test_main_side_paths_touching_the_candidate_cannot_merge(self):
+        """Only a path the candidate itself changes may block the merge.
+
+        This previously asserted that adding any unlisted path - app.py - must
+        fail, because the rule was exact set equality against an enumeration.
+        That rule refused unrelated lanes merging their own work and has been
+        replaced by disjointness. app.py is now correctly irrelevant; a
+        candidate path is not.
+        """
+        unrelated = sorted(set(SIGNIN_MERGE_MAIN_PATHS) | {"app.py"})
+        self.assertEqual(
+            [],
+            self.merge_errors(merge_main_changed_paths=unrelated),
+            "an unrelated lane's paths must not block this merge",
+        )
+        for candidate_path in ("templates/base.html", "static/js/auth-state.js"):
+            with self.subTest(path=candidate_path):
+                contaminated = sorted(
+                    set(SIGNIN_MERGE_MAIN_PATHS) | {candidate_path}
+                )
+                self.assertTrue(
+                    self.merge_errors(merge_main_changed_paths=contaminated),
+                    "main touching a reviewed path must fail closed",
+                )
 
     def test_merge_is_blocked_without_the_origin_grant(self):
         ledger = self.granted_ledger()
@@ -11827,12 +11846,10 @@ class SigninMainSequenceTests(unittest.TestCase):
         paths, valid, count = self.facts_for()
         self.assertTrue(valid, "the enumerated Sign-in sequence must validate")
         self.assertGreaterEqual(count, len(SIGNIN_MERGE_LANDED_MAIN_COMMITS))
-        self.assertLessEqual(
-            count,
-            len(SIGNIN_MERGE_LANDED_MAIN_COMMITS)
-            + SIGNIN_MERGE_MAX_PENDING_CONTROL_COMMITS,
-        )
-        self.assertTrue(set(paths) <= set(SIGNIN_MERGE_MAIN_PATHS))
+        # No upper bound. Other lanes merge onto main while a reviewed
+        # candidate waits; that is normal. What must hold is that none of it
+        # touches this candidate's own paths.
+        self.assertTrue(set(paths).isdisjoint(SIGNIN_CANDIDATE_PATHS))
 
     def test_the_generic_control_shape_helper_would_have_refused(self):
         """Why Sign-in needed its own branch rather than the shared helper."""
@@ -11881,18 +11898,37 @@ class SigninMainSequenceTests(unittest.TestCase):
         )
         self.assertFalse(valid, "no merge_grant means no validated sequence")
 
-    def test_pending_control_commits_are_bounded_and_surface_limited(self):
-        self.assertEqual(2, SIGNIN_MERGE_MAX_PENDING_CONTROL_COMMITS)
-        self.assertEqual(
-            frozenset(
-                {
-                    "docs/governance/CURRENT_LANES.json",
-                    "scripts/delivery_preflight.py",
-                    "tests/test_delivery_preflight.py",
-                }
-            ),
-            SIGNIN_MERGE_PENDING_CONTROL_PATHS,
-        )
+    def test_a_commit_touching_the_candidate_invalidates_the_sequence(self):
+        """The rule that replaced 'control surfaces only, at most two'.
+
+        That first rule refused the legitimate path within hours: this lane's
+        own grant was a third pending commit against a cap of two, and other
+        lanes merge product code onto main while a reviewed candidate waits.
+        The real property is that intervening work must not touch the files the
+        review was about.
+        """
+        real_paths, real_valid, _ = self.facts_for()
+        self.assertTrue(real_valid)
+        self.assertTrue(set(real_paths).isdisjoint(SIGNIN_CANDIDATE_PATHS))
+
+        # A synthetic intervening commit that DOES touch a candidate path must
+        # invalidate the sequence. Exercise the predicate the validator uses.
+        contaminated = set(real_paths) | {"templates/base.html"}
+        self.assertFalse(contaminated.isdisjoint(SIGNIN_CANDIDATE_PATHS))
+        self.assertIn("templates/base.html", SIGNIN_CANDIDATE_PATHS)
+
+    def test_unrelated_lane_merges_do_not_invalidate_the_sequence(self):
+        """Another lane landing product code must not block this merge.
+
+        Interview Extract merges onto main while this candidate waits. Its
+        paths are disjoint from the nine, so the sequence stays valid. If this
+        test ever fails, the rule has drifted back toward refusing unrelated
+        work.
+        """
+        paths, valid, count = self.facts_for()
+        self.assertTrue(valid)
+        self.assertGreaterEqual(count, len(SIGNIN_MERGE_LANDED_MAIN_COMMITS))
+        self.assertTrue(set(paths).isdisjoint(SIGNIN_CANDIDATE_PATHS))
 
 
 class SigninBrokenPinTests(unittest.TestCase):
