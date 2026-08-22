@@ -180,6 +180,38 @@ class RetentionGatingTests(unittest.TestCase):
         for name in community_connections:
             self.assertNotIn(name, body)
 
+    def test_purge_runs_inside_the_interview_service_connection(self):
+        """Defect correction: the purge must execute inside an AzureCLI
+        task bound to the dedicated Interview maintenance service
+        connection, as Community maintenance does. A plain script step has
+        no identity on a hosted agent and could never authenticate the
+        nonsecret ActiveDirectoryDefault connection. The task is inserted
+        at COMPILE time only once the connection variable exists, because
+        Azure resolves azureSubscription when the YAML compiles and an
+        undefined connection would invalidate the whole pipeline."""
+        body = self._stage_body("InterviewTelemetryMaintenance")
+        purge_index = body.index("run_interview_telemetry_purge.py")
+        preceding = body[:purge_index]
+        task_index = preceding.rfind("- task: AzureCLI@2")
+        script_index = preceding.rfind("- script:")
+        self.assertGreater(task_index, -1, "purge is not inside an AzureCLI task")
+        self.assertGreater(task_index, script_index,
+                           "a plain script step precedes the purge invocation")
+        self.assertIn(
+            "azureSubscription: $(interviewTelemetryMaintenanceServiceConnectionId)",
+            body[task_index:purge_index],
+        )
+        guard = preceding.rfind(
+            "- ${{ if ne(variables['interviewTelemetryMaintenanceServiceConnectionId'], '') }}:"
+        )
+        self.assertGreater(guard, -1, "the AzureCLI task is not compile-time guarded")
+        self.assertLess(guard, task_index)
+        # The continuation lines are real (multi-line inline script).
+        self.assertIn("run_interview_telemetry_purge.py \\\n", body)
+        community = self._stage_body("CommunityMaintenance")
+        self.assertNotIn("interviewTelemetryMaintenanceServiceConnectionId", community)
+        self.assertNotIn("communityMaintenanceServiceConnectionId", body)
+
     def test_retention_evidence_artifact_is_published_on_every_run(self):
         body = self._stage_body("InterviewTelemetryMaintenance")
         self.assertIn("artifact: InterviewTelemetryMaintenanceEvidence", body)

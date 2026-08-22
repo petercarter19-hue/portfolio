@@ -111,6 +111,45 @@ Absent from the pipeline (asserted by test): `interview-runtime-lock.txt`,
   `scripts/interview_ai/` contains exactly the two telemetry tools, and
   neither mentions a provider SDK or a message-create call.
 
+## 4a. Defect correction found at Extract completion (2026-08-22)
+
+**Defect.** The landed `InterviewTelemetryMaintenance` stage ran the purge
+as a plain `script:` step carrying only the nonsecret
+`ActiveDirectoryDefault` connection string. On a hosted agent a plain
+script step has no identity context, so that connection could never
+authenticate as the maintenance principal: every enabled nightly run
+would have reported `connection_failed`. It passed review twice because
+retention is default-off by design and the path had never executed.
+Community maintenance avoids this by running its purge INSIDE an
+`AzureCLI@2` task bound to its workload-identity-federated service
+connection, which is what supplies the identity.
+
+**Correction.** The purge step is now an `AzureCLI@2` task bound to
+`$(interviewTelemetryMaintenanceServiceConnectionId)` - the dedicated
+Interview service connection, never Community's and never the
+schema/deployment connection - with the same `succeeded()` +
+enablement condition, the same bounded invocation, the same
+content-free artifact, and the same dedicated connection variable. The
+dependency-install and disabled-report steps are unchanged. A new test
+(`test_purge_runs_inside_the_interview_service_connection`) asserts the
+invocation sits inside an AzureCLI task bound to the Interview
+connection and that neither stage borrows the other's connection.
+
+**Compile-time guard.** Azure resolves `azureSubscription` when the
+YAML compiles, so referencing a not-yet-created service connection
+invalidates the entire pipeline (validation run 1414 proved it). The
+AzureCLI task is therefore inserted only when
+`interviewTelemetryMaintenanceServiceConnectionId` is defined
+(`${{ if ne(variables[...], '') }}`): until the operator creates the
+Interview service connection and its nonsecret variable (release step 4),
+the step does not exist, the guaranteed fallback report still publishes,
+and retention is default-off at compile time as well as at run time.
+
+**Scope.** Pipeline stage + test + this record only. No migration,
+purge-script, proof-tool, runtime, or identity bytes changed; the gate
+receipt is unaffected. Retention remains default-off and unproven until
+the separately authorized enablement phase.
+
 ## 5. Gate receipt and approval timing (Fixes 3-4)
 
 **Approval timing, stated plainly:** the three disposable gate runs of

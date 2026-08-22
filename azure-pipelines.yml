@@ -1030,27 +1030,50 @@ stages:
                 eq(variables['interviewTelemetryMaintenanceEnabled'], 'true')
               )
 
-          - script: |
-              set -euo pipefail
-              python scripts/interview_ai/run_interview_telemetry_purge.py \
-                --batch-size 1000 \
-                --max-batches 10 \
-                --expect-database "$(schemaDatabaseName)" \
-                | tee "$(Build.ArtifactStagingDirectory)/interview-telemetry-maintenance/report.json"
-            displayName: Run the default-off bounded retention purge
-            condition: >-
-              and(
-                succeeded(),
-                eq(variables['interviewTelemetryMaintenanceEnabled'], 'true')
-              )
-            env:
-              # The dedicated Interview maintenance identity's connection
-              # string — deliberately NOT the application connection and NOT
-              # the Community maintenance connection. Created by an operator
-              # only after the telemetry migration is applied and the
-              # maintenance identity is bound into the
-              # interview_telemetry_maintenance role.
-              INTERVIEW_TELEMETRY_SQL_CONNECTIONSTRING: $(interviewTelemetryMaintenanceSqlConnectionString)
+          # Defect correction (Extract completion, 2026-08-22): the purge
+          # must run INSIDE an AzureCLI task bound to the dedicated Interview
+          # maintenance service connection, exactly as Community maintenance
+          # does. A plain script step has no identity on a hosted agent, so
+          # the nonsecret ActiveDirectoryDefault connection could never
+          # authenticate and every nightly run would report
+          # connection_failed. The service connection is the Interview
+          # workload-identity-federated one - never Community's and never the
+          # schema/deployment connection.
+          #
+          # The task is inserted at COMPILE time only once the operator has
+          # created the service connection and its nonsecret variable: Azure
+          # resolves azureSubscription when the YAML compiles, so a reference
+          # to an undefined connection would invalidate the whole pipeline.
+          # Until then the step does not exist, the guaranteed fallback report
+          # above still publishes, and retention stays default-off at compile
+          # time as well as at run time.
+          - ${{ if ne(variables['interviewTelemetryMaintenanceServiceConnectionId'], '') }}:
+            - task: AzureCLI@2
+              displayName: Run the default-off bounded retention purge
+              condition: >-
+                and(
+                  succeeded(),
+                  eq(variables['interviewTelemetryMaintenanceEnabled'], 'true')
+                )
+              inputs:
+                azureSubscription: $(interviewTelemetryMaintenanceServiceConnectionId)
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  set -euo pipefail
+                  python scripts/interview_ai/run_interview_telemetry_purge.py \
+                    --batch-size 1000 \
+                    --max-batches 10 \
+                    --expect-database "$(schemaDatabaseName)" \
+                    | tee "$(Build.ArtifactStagingDirectory)/interview-telemetry-maintenance/report.json"
+              env:
+                # The dedicated Interview maintenance identity's connection
+                # string - deliberately NOT the application connection and NOT
+                # the Community maintenance connection. Created by an operator
+                # only after the telemetry migration is applied and the
+                # maintenance identity is bound into the
+                # interview_telemetry_maintenance role.
+                INTERVIEW_TELEMETRY_SQL_CONNECTIONSTRING: $(interviewTelemetryMaintenanceSqlConnectionString)
 
           - publish: '$(Build.ArtifactStagingDirectory)/interview-telemetry-maintenance'
             artifact: InterviewTelemetryMaintenanceEvidence
