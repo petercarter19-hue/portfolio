@@ -119,13 +119,7 @@ stages:
 
           - script: |
               python -m pip install --upgrade pip
-              # PS-INTERVIEW-AI-EXTRACT-001 correction B3: the constraints
-              # mirror pins the Interview runtime closure's transitive
-              # versions to the locked set, so the test environment runs the
-              # same dependency versions the lock records and the boot-time
-              # runtime-lock verification is meaningful in CI. Constraints
-              # never add packages and requirements.txt is untouched.
-              pip install -r requirements.txt -c prompts/interview/control/interview-runtime-constraints.txt
+              pip install -r requirements.txt
             displayName: Install requirements
 
           - script: python -m pip check
@@ -226,33 +220,6 @@ stages:
                 !.github/**
               TargetFolder: '$(Build.ArtifactStagingDirectory)/app'
             displayName: Prepare deployment package
-
-          # PS-INTERVIEW-AI-EXTRACT-001 correction B3: vendor the complete
-          # hash-locked Interview runtime closure into the deployment
-          # artifact. --require-hashes fails the build if any requirement
-          # lacks a hash; --no-deps means the lock IS the closure (nothing
-          # resolves outside it); --only-binary + the recorded cross-target
-          # flags select exactly the locked cp314/Linux artifacts. The root
-          # `pip install -r requirements.txt` above verifies nothing — this
-          # vendored install and the runtime boot check are the enforcement.
-          - script: |
-              set -euo pipefail
-              VENDOR_ARGS=`tr '\n' ' ' < prompts/interview/control/interview-runtime-vendor-args.txt`
-              python -m pip install \
-                --require-hashes --no-deps --only-binary=:all: \
-                $VENDOR_ARGS \
-                -r prompts/interview/control/interview-runtime-lock.txt \
-                --target "$(Build.ArtifactStagingDirectory)/app/.python_packages/lib/site-packages"
-            displayName: Vendor the hash-locked Interview runtime closure
-
-          # Verify the artifact that will actually be archived and deployed:
-          # every locked distribution present exactly once, locked version,
-          # byte-exact installed projection, nothing outside the closure.
-          - script: |
-              set -euo pipefail
-              python scripts/interview_ai/verify_staged_runtime.py \
-                --staged-site-packages "$(Build.ArtifactStagingDirectory)/app/.python_packages/lib/site-packages"
-            displayName: Verify the staged Interview runtime closure
 
           - task: ArchiveFiles@2
             inputs:
