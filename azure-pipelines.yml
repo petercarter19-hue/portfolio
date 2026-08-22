@@ -20,6 +20,19 @@ schedules:
         - main
     always: true
     batch: true
+  # PS-INTERVIEW-AI-EXTRACT-001: the Interview telemetry 90-day retention
+  # purge. Isolated from Community maintenance by schedule display name
+  # (both schedule-gated stages check Build.CronSchedule.DisplayName) and
+  # by its own default-off enablement variable; this schedule triggers
+  # nothing operative until interviewTelemetryMaintenanceEnabled is set
+  # true AND the telemetry migration has actually been applied.
+  - cron: '41 2 * * *'
+    displayName: Interview telemetry retention nightly
+    branches:
+      include:
+        - main
+    always: true
+    batch: true
 
 parameters:
   # Break-glass, not routine. A merge to `main` deploys on its own and no
@@ -856,9 +869,14 @@ stages:
   - stage: CommunityMaintenance
     displayName: Run independently gated Community maintenance
     dependsOn: []
+    # Pinned to its own schedule display name so a second cron on this
+    # pipeline (the Interview telemetry purge) can never trigger Community
+    # maintenance, and vice versa. The hourly Community behaviour under its
+    # own schedule is unchanged.
     condition: >-
       and(
         eq(variables['Build.Reason'], 'Schedule'),
+        eq(variables['Build.CronSchedule.DisplayName'], 'Community maintenance hourly'),
         eq(variables['Build.SourceBranch'], 'refs/heads/main')
       )
     jobs:
@@ -938,3 +956,103 @@ stages:
             artifact: CommunityMaintenanceEvidence
             condition: always()
             displayName: Publish content-free maintenance evidence
+
+  # PS-INTERVIEW-AI-EXTRACT-001: the Interview telemetry retention purge.
+  # Fires only on its own named schedule, shares no identity, variable, or
+  # connection with Community maintenance, and every operative step is
+  # gated behind interviewTelemetryMaintenanceEnabled, which does not exist
+  # until an operator creates it (default off). Until then a scheduled run
+  # of this stage records a disabled report and exits. Bounded failure is
+  # visible: the purge report artifact publishes on every run, including
+  # failures.
+  - stage: InterviewTelemetryMaintenance
+    displayName: Run independently gated Interview telemetry retention
+    dependsOn: []
+    condition: >-
+      and(
+        eq(variables['Build.Reason'], 'Schedule'),
+        eq(variables['Build.CronSchedule.DisplayName'], 'Interview telemetry retention nightly'),
+        eq(variables['Build.SourceBranch'], 'refs/heads/main')
+      )
+    jobs:
+      - job: RunInterviewTelemetryPurge
+        displayName: Run the bounded 90-day telemetry purge
+        timeoutInMinutes: 10
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: self
+            fetchDepth: 1
+            persistCredentials: false
+            clean: true
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(pythonVersion)'
+            displayName: Use Python $(pythonVersion)
+
+          # Correction C1: a valid, content-free report must exist BEFORE
+          # any dependency install or purge is attempted, so a failed
+          # install or purge can never publish an empty or missing
+          # artifact. `purge_did_not_run` comes from the purge tool's own
+          # closed reason enum. Later steps overwrite this file; if they
+          # never run, this bounded truth is what publishes.
+          - script: |
+              set -euo pipefail
+              mkdir -p "$(Build.ArtifactStagingDirectory)/interview-telemetry-maintenance"
+              printf '{"reason": "purge_did_not_run", "result": "failed"}\n' \
+                > "$(Build.ArtifactStagingDirectory)/interview-telemetry-maintenance/report.json"
+            displayName: Guarantee a content-free retention report
+            condition: always()
+
+          - script: |
+              set -euo pipefail
+              printf '{"reason": "retention_not_enabled", "result": "disabled"}\n' \
+                | tee "$(Build.ArtifactStagingDirectory)/interview-telemetry-maintenance/report.json"
+            displayName: Record independently disabled retention
+            condition: >-
+              and(
+                succeeded(),
+                ne(variables['interviewTelemetryMaintenanceEnabled'], 'true')
+              )
+
+          # Operative steps keep succeeded() as well as the enablement
+          # check (C1): an enable variable alone would let a step run
+          # after an earlier step in this job had already failed.
+          - script: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+              python -m pip check
+            displayName: Install and verify purge dependencies
+            condition: >-
+              and(
+                succeeded(),
+                eq(variables['interviewTelemetryMaintenanceEnabled'], 'true')
+              )
+
+          - script: |
+              set -euo pipefail
+              python scripts/interview_ai/run_interview_telemetry_purge.py \
+                --batch-size 1000 \
+                --max-batches 10 \
+                --expect-database "$(schemaDatabaseName)" \
+                | tee "$(Build.ArtifactStagingDirectory)/interview-telemetry-maintenance/report.json"
+            displayName: Run the default-off bounded retention purge
+            condition: >-
+              and(
+                succeeded(),
+                eq(variables['interviewTelemetryMaintenanceEnabled'], 'true')
+              )
+            env:
+              # The dedicated Interview maintenance identity's connection
+              # string — deliberately NOT the application connection and NOT
+              # the Community maintenance connection. Created by an operator
+              # only after the telemetry migration is applied and the
+              # maintenance identity is bound into the
+              # interview_telemetry_maintenance role.
+              INTERVIEW_TELEMETRY_SQL_CONNECTIONSTRING: $(interviewTelemetryMaintenanceSqlConnectionString)
+
+          - publish: '$(Build.ArtifactStagingDirectory)/interview-telemetry-maintenance'
+            artifact: InterviewTelemetryMaintenanceEvidence
+            condition: always()
+            displayName: Publish content-free retention evidence

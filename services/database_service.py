@@ -146,6 +146,13 @@ ALLOWED_PROCEDURES = frozenset(
         # Owner-scoped, version-fenced new/read/archived change. Archive-only:
         # there is deliberately no delete or purge procedure to allowlist.
         "usp_SetRecruiterQuestionStatusForOwner",
+        # PS-INTERVIEW-AI-EXTRACT-001: the content-free Interview AI
+        # server_call telemetry append. The application identity holds
+        # EXECUTE on this one procedure only (INSERT reaches the table
+        # solely through it); the 90-day purge procedure is deliberately
+        # NOT allowlisted here — it belongs to the separately named
+        # Interview maintenance identity, out of process, never the app.
+        "usp_AppendInterviewAIServerCall",
         # PS-COMMUNITY-RETENTION-001 and PS-COMMUNITY-RESTORE-001. Omitting a
         # procedure here does not merely disable it: execute_procedure raises
         # ValueError before the database boundary. The retired request-path

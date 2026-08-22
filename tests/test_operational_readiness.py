@@ -769,6 +769,7 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
                 'CandidateSmoke',
                 'CandidateStop',
                 'CommunityMaintenance',
+                'InterviewTelemetryMaintenance',
             ],
             stages,
         )

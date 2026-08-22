@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-18",
+  "updated_at": "2026-08-21",
   "classification_checkpoint": "c0450dbd675554e7363c8fc262a6d4f8bf2c6921",
   "current_checkpoint_at_creation": "fdb71c604f81d305b971775bd28aeac964231ebe",
   "authority_note": "This is a complete rationalization index, not delivery authority. CURRENT_LANES.json and CURRENT_BASELINE.yaml remain authoritative for current lifecycle and release state.",
@@ -48,6 +48,7 @@
       "PS-INTERVIEW-LOCAL-REVIEW-001",
       "PS-INTERVIEW-PUBLIC-GATE-001",
       "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
+      "PS-INTERVIEW-AI-EXTRACT-001",
       "PS-INTERVIEW-STUDIO-CALIBRATION-001",
       "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
       "PS-INTERVIEW-STUDIO-INTEGRATION-001",
@@ -144,11 +145,11 @@
     ]
   },
   "counts": {
-    "current_protect": 62,
+    "current_protect": 63,
     "future_finish": 23,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 120
+    "total": 121
   }
 }

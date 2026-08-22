@@ -325,6 +325,16 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_ListRecruiterQuestionsForOwner",
             "usp_SetRecruiterQuestionStatusForOwner",
         }
+        # PS-INTERVIEW-AI-EXTRACT-001: the content-free server_call append.
+        # Append only — the 90-day purge procedure
+        # (usp_PurgeInterviewAIServerCalls) is deliberately absent because
+        # it belongs to the separately named Interview maintenance identity,
+        # never the application;
+        # tests/test_interview_ai_dark_telemetry_infrastructure.py asserts
+        # that absence independently of this literal.
+        interview_ai_telemetry = {
+            "usp_AppendInterviewAIServerCall",
+        }
         expected = (
             base
             | oppslate_os1
@@ -335,6 +345,7 @@ class DatabaseServiceTests(unittest.TestCase):
             | general
             | ask_pete_direct
             | community
+            | interview_ai_telemetry
         )
         # The groups above must not overlap each other — a name counted
         # twice would silently shrink the real union below the true count
@@ -349,9 +360,10 @@ class DatabaseServiceTests(unittest.TestCase):
             general,
             ask_pete_direct,
             community,
+            interview_ai_telemetry,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 136)
+        self.assertEqual(len(expected), 137)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_photo_procedures_are_explicitly_allowlisted(self):

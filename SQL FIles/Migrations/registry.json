@@ -1470,6 +1470,74 @@
         "operator": "Codex (Pete-delegated)",
         "notes": "Disposable Azure AD gate; no production database contacted."
       }
+    },
+    {
+      "id": "PS-INTERVIEW-AI-EXTRACT-001",
+      "forward": "SQL FIles/Migrations/proposed/PS-INTERVIEW-AI-EXTRACT-001_telemetry.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-INTERVIEW-AI-EXTRACT-001_telemetry_rollback.sql",
+      "requires": [
+        "PS-PLAT-001"
+      ],
+      "summary": "PROPOSAL from the Interview AI extraction slice, never applied by it: the content-free server_call telemetry sink (telemetry-contract@1) - one append-only table whose CHECK constraints enforce every enum and null-pairing rule, a duplicate-dropping append procedure, a bounded 90-day purge procedure, and two execute-only roles keeping the application append path and the separately named Interview maintenance purge path apart.",
+      "gate": {
+        "executable_sha256": "2291c3df758b18d98cbb4e6d13ed9817d27e0b3356053679b94fcc2c09410b85",
+        "gated_at_utc": "2026-08-21T23:13:36Z",
+        "gate_database": "ps-interview-extract-gate-c3-20260821",
+        "gate_server": "peerslate",
+        "prerequisites": [
+          "PS-PLAT-000",
+          "PS-PLAT-001"
+        ],
+        "objects": [
+          "CHECK_CONSTRAINT:dbo.CK_iasc_bundle_label_canonical",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_bundle_pair",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_composition",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_cost_pair",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_duration_total",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_durations",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_event_kind",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_event_type",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_exception",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_exception_attrs_json",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_exception_class_enum",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_failure_reason",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_failure_reason_enum",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_failure_state",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_failure_state_enum",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_guardian_json",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_guardian_legacy_empty",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_http_status",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_kind_shape",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_operation_id_slice1",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_outcome",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_outcome_reserved_slice1",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_reason_reserved_slice1",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_release_state_matrix",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_retry_ordinal",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_sha_bundle",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_sha_pricing",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_sha_release",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_source_counts_json",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_specialist",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_specialist_resolution",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_state_exception_matrix",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_state_reason_matrix",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_state_validation_matrix",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_usage_pair",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_usage_state_matrix",
+          "CHECK_CONSTRAINT:dbo.CK_iasc_validation_result",
+          "DEFAULT_CONSTRAINT:dbo.DF_iasc_event_type",
+          "DEFAULT_CONSTRAINT:dbo.DF_interview_ai_server_calls_recorded_at",
+          "FOREIGN_KEY_CONSTRAINT:dbo.FK_iasc_parent",
+          "PRIMARY_KEY_CONSTRAINT:dbo.PK_interview_ai_server_calls",
+          "SQL_STORED_PROCEDURE:dbo.usp_AppendInterviewAIServerCall",
+          "SQL_STORED_PROCEDURE:dbo.usp_PurgeInterviewAIServerCalls",
+          "USER_TABLE:dbo.interview_ai_server_calls"
+        ],
+        "verification": "none available",
+        "operator": "Claude (PS-INTERVIEW-AI-EXTRACT-001 dark-infrastructure writer, Pete-approved)",
+        "notes": "Pete-approved final gate: runtime-compatible bundle_label <semver>+<sha8> with specialist separate (combined identity specialist@bundle_label); named errors 50050/50051/50053/50054; VARCHAR(80) parameter with overlong+short guards; 50052 retired with the prefix rule"
+      }
     }
   ]
 }
