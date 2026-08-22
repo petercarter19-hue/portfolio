@@ -8122,7 +8122,17 @@ with patch.object(
                 and "authorizes adding the package to merge_allowed_for"
                 in normalized
             )
-            if structured_grant or recorded_grant:
+            # The exact pinned Sign-in standing authorization, accepted by
+            # digest rather than by widening either shape above. This is the
+            # same constant scripts/delivery_preflight.py binds, so it cannot
+            # drift independently of the admission it authorises.
+            pinned_signin_grant = bool(
+                not negated
+                and package == SIGNIN_MERGE_PACKAGE
+                and _canonical_sha256(decision)
+                == SIGNIN_OWNER_MERGE_DECISION_SHA256
+            )
+            if structured_grant or recorded_grant or pinned_signin_grant:
                 return True
         return False
 
@@ -11855,7 +11865,17 @@ class SigninMainSequenceTests(unittest.TestCase):
         )
 
     def test_an_ungranted_lane_does_not_validate(self):
+        """Constructed, not read from the live ledger.
+
+        An earlier version of this test asserted the live ledger had no
+        merge_grant. That was true when written and false the moment the grant
+        landed, so it failed the grant's own CI - a test bound to a
+        transitional state rather than to behaviour.
+        """
         ledger = json.loads(self.LEDGER.read_text(encoding="utf-8"))
+        for lane in ledger["active_lanes"]:
+            if lane.get("package") == SIGNIN_MERGE_PACKAGE:
+                lane.pop("merge_grant", None)
         _, valid, _ = _direction_main_sequence_facts(
             ledger, SIGNIN_MERGE_PACKAGE, SIGNIN_REVIEWED_SHA, self.ORIGIN_MAIN
         )
