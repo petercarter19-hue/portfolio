@@ -276,6 +276,9 @@ FOUR_WRITER_POLICY_INTEGRATION_RESULT = (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+INTERVIEW_EXTRACT_CONTROL_PROFILE_MAIN = (
+    "eb3f35ab66e01a1793d5dc3ae628270c6c64ec10"
+)
 
 # Exact main merge that carried the one-time three-lane control repair. The
 # bootstrap replay test pins its candidate state to this commit so the
@@ -901,7 +904,11 @@ class DeliveryPreflightTests(unittest.TestCase):
         }
 
     def _interview_extract_profiled_origin(self) -> tuple[dict, dict]:
-        origin = copy.deepcopy(self.ledger)
+        # The repository-only grant legitimately changes the live ledger after
+        # this exact inert profile lands. Keep the profile and grant fixtures
+        # anchored to the immutable pre-grant main snapshot so the same tests
+        # continue to prove both states after the one-file grant is recorded.
+        origin = load_ledger_at_ref(INTERVIEW_EXTRACT_CONTROL_PROFILE_MAIN)
         self.assertEqual(
             INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION,
             origin.get("interview_extract_repository_only_merge_admission"),
@@ -1144,7 +1151,7 @@ class DeliveryPreflightTests(unittest.TestCase):
 
     def test_interview_extract_repository_only_profile_is_exact_and_inert(self):
         parent = load_ledger_at_ref(INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN)
-        candidate = copy.deepcopy(self.ledger)
+        candidate = load_ledger_at_ref(INTERVIEW_EXTRACT_CONTROL_PROFILE_MAIN)
         self.assertEqual(
             INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION_SHA256,
             _canonical_sha256(INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION),
@@ -8117,6 +8124,7 @@ with patch.object(
             lane = active_by_package.get(package)
             self.assertIsNotNone(lane)
             lane_class = lane.get("lane_class")
+            is_interview_extract = package == INTERVIEW_EXTRACT_TARGET_PACKAGE
             if (
                 lane_class == "direction_authority"
                 or _is_profile_core_reviewed_implementation_lane(lane)
@@ -8124,8 +8132,16 @@ with patch.object(
                 or _is_community_authoring_reviewed_implementation_lane(lane)
                 or _is_search_reviewed_implementation_lane(lane)
                 or _is_shell_reviewed_shared_foundation_lane(lane)
+                or is_interview_extract
             ):
-                self.assertFalse(lane.get("production_capable"))
+                if is_interview_extract:
+                    self.assertTrue(
+                        _is_interview_extract_reviewed_implementation_lane(lane)
+                    )
+                    self.assertTrue(lane.get("production_capable"))
+                    self.assertNotIn(package, mode["release_allowed_for"])
+                else:
+                    self.assertFalse(lane.get("production_capable"))
                 grant = lane.get("merge_grant")
                 self.assertIsInstance(grant, dict)
                 grant_errors: list[str] = []
@@ -8147,6 +8163,71 @@ with patch.object(
                 self.assertTrue(
                     self._has_affirmative_owner_merge_decision(lane, package)
                 )
+
+    def test_interview_extract_live_grant_uses_the_exact_merge_validator(self):
+        _, granted = self._interview_extract_granted_ledger()
+        self._assert_valid_merge_authorities(granted)
+
+        mutations = {
+            "decision": lambda value: next(
+                lane
+                for lane in value["active_lanes"]
+                if lane["package"] == INTERVIEW_EXTRACT_TARGET_PACKAGE
+            )["owner_decisions"][-1].__setitem__(
+                "verbatim_response", "approved"
+            ),
+            "review": lambda value: next(
+                lane
+                for lane in value["active_lanes"]
+                if lane["package"] == INTERVIEW_EXTRACT_TARGET_PACKAGE
+            )["merge_grant"]["review_attestations"]["technical"].__setitem__(
+                "result", "approved"
+            ),
+            "sha": lambda value: next(
+                lane
+                for lane in value["active_lanes"]
+                if lane["package"] == INTERVIEW_EXTRACT_TARGET_PACKAGE
+            )["merge_grant"].__setitem__("reviewed_remote_sha", "0" * 40),
+            "scope": lambda value: next(
+                lane
+                for lane in value["active_lanes"]
+                if lane["package"] == INTERVIEW_EXTRACT_TARGET_PACKAGE
+            )["merge_grant"]["release_scope"].__setitem__(
+                "sql_migration", "apply"
+            ),
+            "release_authority": lambda value: value["operating_mode"][
+                "release_allowed_for"
+            ].append(INTERVIEW_EXTRACT_TARGET_PACKAGE),
+            "generic_fallback_bypass": lambda value: (
+                next(
+                    lane
+                    for lane in value["active_lanes"]
+                    if lane["package"] == INTERVIEW_EXTRACT_TARGET_PACKAGE
+                )["owner_decisions"].append(
+                    {
+                        "date": "2026-08-22",
+                        "authorized_by": "Pete",
+                        "status": "authorized",
+                        "package": INTERVIEW_EXTRACT_TARGET_PACKAGE,
+                        "action": "merge_repository_only",
+                        "decision": "Merge authority is authorized.",
+                    }
+                ),
+                next(
+                    lane
+                    for lane in value["active_lanes"]
+                    if lane["package"] == INTERVIEW_EXTRACT_TARGET_PACKAGE
+                )["merge_grant"]["release_scope"].__setitem__(
+                    "sql_migration", "apply"
+                ),
+            ),
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(name=name):
+                forged = copy.deepcopy(granted)
+                mutate(forged)
+                with self.assertRaises(AssertionError):
+                    self._assert_valid_merge_authorities(forged)
 
     def test_lane_ledger_has_a_valid_operating_state(self):
         parsed = json.loads(self.path.read_text(encoding="utf-8"))
@@ -8197,6 +8278,7 @@ with patch.object(
     def test_merge_authority_accepts_recorded_implementation_owner_grant(self):
         parsed = json.loads(self.path.read_text(encoding="utf-8"))
         implementation = copy.deepcopy(self._lane_fixture(parsed))
+        implementation["package"] = "PS-TEST-IMPLEMENTATION-MERGE-001"
         implementation["lane_class"] = "implementation"
         implementation["production_capable"] = True
         implementation["owner_decisions"] = [
@@ -8234,6 +8316,7 @@ with patch.object(
     def test_merge_authority_rejects_implementation_without_owner_grant(self):
         parsed = json.loads(self.path.read_text(encoding="utf-8"))
         implementation = copy.deepcopy(self._lane_fixture(parsed))
+        implementation["package"] = "PS-TEST-IMPLEMENTATION-MERGE-001"
         implementation["lane_class"] = "implementation"
         implementation["production_capable"] = True
         implementation["owner_decisions"] = [
@@ -8249,6 +8332,7 @@ with patch.object(
     def test_merge_authority_keeps_direction_grant_contract_strict(self):
         parsed = json.loads(self.path.read_text(encoding="utf-8"))
         direction = copy.deepcopy(self._lane_fixture(parsed))
+        direction["package"] = "PS-TEST-DIRECTION-MERGE-001"
         direction["lane_class"] = "direction_authority"
         direction["production_capable"] = False
         parsed["active_lanes"] = [direction]
