@@ -11,7 +11,9 @@ The rule they enforce: a producer and the consumer must never disagree about
 where a member may be returned to.
 """
 
+import re
 import unittest
+from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 import auth_routes
@@ -406,6 +408,253 @@ class HeaderReturnsMemberToTheirPageTests(unittest.TestCase):
     def test_auth_surface_without_a_return_to_falls_back(self):
         with app.test_request_context("/auth/complete"):
             self.assertEqual("/app", auth_routes._current_return_target())
+
+
+class PrivateNamespaceParityTests(unittest.TestCase):
+    """The server's registered destinations and the browser's private-path
+    lists must never disagree.
+
+    ``safe_return.py`` decides where a member may be *returned* to.  Two
+    browser scripts decide what counts as a *private document*:
+    ``auth-state.js`` reloads one whose session has ended in another tab, and
+    ``easy-auth-callback.js`` reloads one restored from bfcache.  A namespace
+    that is private on the server but unknown to a script is the same
+    producer/consumer mismatch that silently dropped Opportunity Slate members
+    on ``/app`` — this time across the Python/JavaScript boundary, where
+    nothing was watching.
+
+    Registering a destination in ``safe_return.py`` and forgetting a script
+    now fails here instead of in a member's browser.
+    """
+
+    SCRIPTS = ("auth-state.js", "easy-auth-callback.js")
+
+    def declared_prefixes(self, filename):
+        source = (Path("static") / "js" / filename).read_text(encoding="utf-8")
+        match = re.search(r"PRIVATE_PREFIXES = \[(.*?)\]", source, re.S)
+        self.assertIsNotNone(
+            match, f"{filename} must declare a PRIVATE_PREFIXES list"
+        )
+        return sorted(re.findall(r"'([^']+)'", match.group(1)))
+
+    def test_browser_private_paths_match_the_registered_destinations(self):
+        registered = sorted(
+            destination.prefix for destination in PROTECTED_DESTINATIONS
+        )
+        # Sorted, because agreement is about membership; the order a script
+        # happens to list them in carries no meaning.
+        for filename in self.SCRIPTS:
+            with self.subTest(script=filename):
+                self.assertEqual(registered, self.declared_prefixes(filename))
+
+    def test_the_registered_set_is_not_accidentally_empty(self):
+        # A regex that stopped matching would otherwise make the test above
+        # pass by comparing two empty lists.
+        self.assertTrue(PROTECTED_DESTINATIONS)
+        for filename in self.SCRIPTS:
+            with self.subTest(script=filename):
+                self.assertTrue(self.declared_prefixes(filename))
+
+
+class PrivateWorkspaceReconciliationTests(unittest.TestCase):
+    """The shell must load the reconciliation script on private documents.
+
+    Before this round it was excluded from ``/app`` and ``/auth/``.  The
+    ``/auth/`` exclusion is deliberate and stays: reloading a sign-in page on
+    a signed-out session is a loop.  The ``/app`` exclusion was the bug — and
+    note that loading the script there does not merely swap header controls,
+    because ``templates/base.html`` renders no ``data-ps-auth-control``
+    elements on the owner workspace at all.  Its job there is the reload.
+    """
+
+    def setUp(self):
+        self.client = app.test_client()
+        self.original = {
+            key: app.config.get(key)
+            for key in (
+                "PEERSLATE_OWNER_HOME_ENABLED",
+                "PEERSLATE_DEV_USER_KEY",
+                "PEERSLATE_ALLOW_DEV_IDENTITY",
+            )
+        }
+        app.config["PEERSLATE_OWNER_HOME_ENABLED"] = False
+        app.config["PEERSLATE_DEV_USER_KEY"] = "existing-owner"
+        app.config["PEERSLATE_ALLOW_DEV_IDENTITY"] = True
+
+    def tearDown(self):
+        for key, value in self.original.items():
+            app.config[key] = value
+
+    def test_the_private_workspace_loads_the_reconciliation_script(self):
+        response = self.client.get("/app")
+
+        self.assertEqual(200, response.status_code)
+        self.assertIn(b"/static/js/auth-state.js?v=", response.data)
+        # The owner workspace renders none of the toggleable controls, which
+        # is why a header swap would have been a no-op here.
+        self.assertNotIn(b"data-ps-auth-control", response.data)
+
+    def test_a_flag_gated_namespace_can_render_public_and_says_so(self):
+        """Why the client cannot treat a private prefix as always private.
+
+        Three of the four registered namespaces are reachable only behind
+        sign-in in production, but their gate is configuration. With the gate
+        off, the same path serves an ordinary public page to a signed-out
+        visitor — and that render is truthful, not stale: it already carries
+        ``data-ps-auth-state="signed_out"``.
+
+        ``auth-state.js`` must therefore reload a private document only when
+        the server rendered it for a signed-IN member. Without that check a
+        signed-out visitor on a public Interview Studio would be reloaded every
+        time they returned to the tab.
+        """
+        original = {
+            key: app.config.get(key)
+            for key in (
+                "PEERSLATE_TRUST_EASYAUTH_HEADERS",
+                "PEERSLATE_ALLOW_DEV_IDENTITY",
+                "PEERSLATE_DEV_USER_KEY",
+            )
+        }
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        app.config["PEERSLATE_ALLOW_DEV_IDENTITY"] = False
+        app.config["PEERSLATE_DEV_USER_KEY"] = None
+        try:
+            response = app.test_client().get(
+                "/interview-studio", follow_redirects=False
+            )
+            if response.status_code != 200:
+                self.skipTest(
+                    "Interview Studio is behind its sign-in gate in this "
+                    "configuration, which is production's setting; the public "
+                    "render this guards against is not reachable here."
+                )
+            self.assertIn(
+                b'data-ps-auth-state="signed_out"',
+                response.data,
+                "a public render must declare the signed-out state it is in",
+            )
+            self.assertIn(b"/static/js/auth-state.js?v=", response.data)
+        finally:
+            for key, value in original.items():
+                app.config[key] = value
+
+    def test_the_public_workshop_preview_declares_signed_out_and_is_left_alone(self):
+        """The case that made the missing-container heuristic unsafe.
+
+        ``/app/workshop`` is a deliberately public preview — owner decision
+        2026-08-02 — and returns 200 to a signed-out visitor in production
+        today. It renders on the *owner* shell, which carries no account
+        controls at all, so an earlier revision of this package inferred
+        "private document" from that absence and would have reloaded the page
+        every time a signed-out visitor returned to the tab.
+
+        The shell must therefore declare what it rendered, on every branch.
+        """
+        original = {
+            key: app.config.get(key)
+            for key in (
+                "PEERSLATE_TRUST_EASYAUTH_HEADERS",
+                "PEERSLATE_ALLOW_DEV_IDENTITY",
+                "PEERSLATE_DEV_USER_KEY",
+                "PEERSLATE_WORKSHOP_ENABLED",
+            )
+        }
+        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        app.config["PEERSLATE_ALLOW_DEV_IDENTITY"] = False
+        app.config["PEERSLATE_DEV_USER_KEY"] = None
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        try:
+            response = app.test_client().get(
+                "/app/workshop", follow_redirects=False
+            )
+            self.assertEqual(
+                200,
+                response.status_code,
+                "the Workshop preview is public by owner decision",
+            )
+            self.assertIn(b"/static/js/auth-state.js?v=", response.data)
+            self.assertIn(
+                b'data-ps-auth-state="signed_out"',
+                response.data,
+                "a public owner-shell render must declare the state it is in, "
+                "or the client cannot tell it from a stale private page",
+            )
+            # The owner shell renders no account controls; the declared state
+            # is the only signal, which is exactly why it must be present.
+            self.assertNotIn(b"data-ps-auth-control=", response.data)
+        finally:
+            for key, value in original.items():
+                app.config[key] = value
+
+    def test_the_signed_in_owner_shell_declares_authenticated(self):
+        """The counterpart: a real private render must be reloadable."""
+        original = {
+            key: app.config.get(key)
+            for key in ("PEERSLATE_WORKSHOP_ENABLED",)
+        }
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        try:
+            for path in ("/app", "/app/workshop"):
+                with self.subTest(path=path):
+                    response = self.client.get(path, follow_redirects=False)
+                    # Status is not the invariant here: without a database the
+                    # Workshop library answers its truthful 503 surface. Both
+                    # renders go through the owner shell, and both must declare
+                    # the signed-in state, because that declaration is the only
+                    # thing telling the client this document is private.
+                    self.assertIn(
+                        response.status_code,
+                        (200, 503),
+                        "the owner shell must render, not redirect",
+                    )
+                    self.assertIn(
+                        b'data-ps-auth-state="authenticated"', response.data
+                    )
+                    self.assertIn(b"/static/js/auth-state.js?v=", response.data)
+        finally:
+            for key, value in original.items():
+                app.config[key] = value
+
+    def test_both_owner_shells_declare_their_state(self):
+        """The declaration must survive the shell the flag chooses.
+
+        ``/app`` renders through two different shells. Flag-off uses the global
+        header, whose ``platform-actions`` carries the declaration. Flag-on uses
+        the standalone Owner Home shell, where ``{% if not
+        standalone_owner_shell %}`` skips that entire header — so the
+        declaration has to live on ``<body>`` as well.
+
+        Independent review found this hole, and production runs the flag **on**:
+        without the body declaration the cross-tab fix would have been inert on
+        the one page this package exists to fix, while still passing every
+        flag-off test.
+        """
+        original = app.config.get("PEERSLATE_OWNER_HOME_ENABLED")
+        try:
+            for enabled in (False, True):
+                with self.subTest(owner_home_enabled=enabled):
+                    app.config["PEERSLATE_OWNER_HOME_ENABLED"] = enabled
+                    response = self.client.get("/app", follow_redirects=False)
+                    self.assertIn(response.status_code, (200, 503))
+                    self.assertIn(b"/static/js/auth-state.js?v=", response.data)
+                    self.assertIn(
+                        b'data-ps-auth-state="authenticated"',
+                        response.data,
+                        "a signed-in owner workspace must declare itself on "
+                        "either shell, or the client cannot reload it",
+                    )
+                    self.assertEqual(
+                        enabled, b"owner-home-shell" in response.data
+                    )
+        finally:
+            app.config["PEERSLATE_OWNER_HOME_ENABLED"] = original
+
+    def test_the_auth_surfaces_still_exclude_it(self):
+        for path in ("/auth/sign-in", "/auth/complete"):
+            with self.subTest(path=path):
+                response = self.client.get(path, follow_redirects=False)
+                self.assertNotIn(b"auth-state.js", response.data)
 
 
 if __name__ == "__main__":  # pragma: no cover

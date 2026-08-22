@@ -85,16 +85,40 @@ FAILED_B = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 # baseline (now FLAG_OFF_APP_RENDER_PRE_AUTH_WALL_SHA256) byte for byte,
 # and the older recaptures continue to chain from there unchanged. No owner
 # workspace markup, layout, destination, or control semantics changed.
-FLAG_OFF_APP_RENDER_BYTE_LENGTH = 15777
-# PS-SIGNIN-MEMBER-ARRIVAL-001 recapture. The byte LENGTH is unchanged
-# (15777) and the sole delta is the easy-auth-callback.js content
-# fingerprint, which changed because that script's private-path guard was
-# widened to the namespaces that moved behind sign-in. Proven by rendering
-# this exact request before and after: the diff is one `?v=` token and
-# nothing else. No owner workspace markup, layout, destination, or control
-# semantics changed, and the recapture chain below still normalizes that
-# token back to reproduce every earlier locked baseline.
+# PS-SIGNIN-MEMBER-ARRIVAL-001 follow-up recapture. The private workspace now
+# loads the account-control reconciliation script, so a member who signed out
+# in another tab no longer keeps a usable private page here. That one <script>
+# tag is the ONLY delta: the byte length moves 15777 -> 15846, exactly its 69
+# bytes, and the first recapture step below strips it to reproduce the
+# previous locked baseline byte for byte. No owner workspace markup, layout,
+# destination, or control semantics changed. The `?v=` value is auth-state.js's
+# own content token; .gitattributes pins the repository to LF, so it is the
+# same on Windows and on the Linux build agent.
+FLAG_OFF_APP_RENDER_AUTH_STATE_SCRIPT = (
+    b'<script src="/static/js/auth-state.js?v=21716f20541f" defer></script>'
+)
+# The second of this round's two deltas, added after independent review found
+# DEFECT-1: the owner shell now declares the state it rendered. Before this it
+# declared nothing, and the client inferred "private" from the ABSENCE of the
+# account-controls container -- which is also absent on /app/workshop, a public
+# preview served 200 to signed-out visitors in production. 35 bytes.
+FLAG_OFF_APP_RENDER_OWNER_SHELL_STATE_MARK = (
+    b' data-ps-auth-state="authenticated"'
+)
+FLAG_OFF_APP_RENDER_PRE_STATE_MARK_BYTE_LENGTH = 15812
+FLAG_OFF_APP_RENDER_BYTE_LENGTH = 15881
 FLAG_OFF_APP_RENDER_SHA256 = (
+    "d27434eddfd5bf7e69cb9a4c6e4c3f8a3a1d37b36209ed4aedb2d0485a0efd85"
+)
+# PS-SIGNIN-MEMBER-ARRIVAL-001 recapture (the package's first round). The byte
+# LENGTH was unchanged (15777) and the sole delta was the easy-auth-callback.js
+# content fingerprint, which changed because that script's private-path guard
+# was widened to the namespaces that moved behind sign-in. Proven by rendering
+# this exact request before and after: the diff was one `?v=` token and
+# nothing else. The recapture chain below still normalizes that token back to
+# reproduce every earlier locked baseline.
+FLAG_OFF_APP_RENDER_PRE_AUTH_STATE_BYTE_LENGTH = 15777
+FLAG_OFF_APP_RENDER_PRE_AUTH_STATE_SHA256 = (
     "e6a4cfc78864dd612663c39971a7c0b3b0bcd394f53e72a6670c829ddcb9f4fd"
 )
 # The chain intermediates below (PRE_AUTH_WALL, PRE_OPPSLATE_NAV,
@@ -500,17 +524,54 @@ class OwnerHomeRouteTests(unittest.TestCase):
             hashlib.sha256(response.data).hexdigest(),
             FLAG_OFF_APP_RENDER_SHA256,
         )
+        # PS-SIGNIN-MEMBER-ARRIVAL-001 follow-up recapture step: the account-
+        # control reconciliation script tag is the only new byte sequence this
+        # round adds to the /app render. Stripping exactly it must reproduce
+        # the previously locked baseline byte for byte. If loading that script
+        # had disturbed any other owner workspace byte, this is where it would
+        # fail.
+        self.assertEqual(
+            response.data.count(FLAG_OFF_APP_RENDER_AUTH_STATE_SCRIPT), 1
+        )
+        pre_state_mark_base = response.data.replace(
+            FLAG_OFF_APP_RENDER_AUTH_STATE_SCRIPT, b""
+        )
+        self.assertEqual(
+            len(pre_state_mark_base),
+            FLAG_OFF_APP_RENDER_PRE_STATE_MARK_BYTE_LENGTH,
+        )
+        # Second recapture step: remove the owner shell's declared state. Only
+        # then must the previously locked baseline reappear byte for byte. If
+        # this round had disturbed any other owner workspace byte, it fails
+        # here.
+        self.assertEqual(
+            pre_state_mark_base.count(
+                FLAG_OFF_APP_RENDER_OWNER_SHELL_STATE_MARK
+            ),
+            1,
+        )
+        pre_auth_state_base = pre_state_mark_base.replace(
+            FLAG_OFF_APP_RENDER_OWNER_SHELL_STATE_MARK, b""
+        )
+        self.assertEqual(
+            len(pre_auth_state_base),
+            FLAG_OFF_APP_RENDER_PRE_AUTH_STATE_BYTE_LENGTH,
+        )
+        self.assertEqual(
+            hashlib.sha256(pre_auth_state_base).hexdigest(),
+            FLAG_OFF_APP_RENDER_PRE_AUTH_STATE_SHA256,
+        )
         # PS-COMMUNITY-AUTH-WALL-001 recapture step: swapping the reworded
         # Community search record back to the retired public-destination
         # block must reproduce the previously locked baseline byte for byte
         # before the older recapture chain below continues.
         self.assertEqual(
-            response.data.count(
+            pre_auth_state_base.count(
                 FLAG_OFF_APP_RENDER_AUTH_WALL_COMMUNITY_SEARCH_SPAN
             ),
             1,
         )
-        pre_auth_wall_base = response.data.replace(
+        pre_auth_wall_base = pre_auth_state_base.replace(
             FLAG_OFF_APP_RENDER_AUTH_WALL_COMMUNITY_SEARCH_SPAN,
             FLAG_OFF_APP_RENDER_PRE_AUTH_WALL_COMMUNITY_SEARCH_SPAN,
         )

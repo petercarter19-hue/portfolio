@@ -177,8 +177,17 @@ homepage header itself is covered by item 5 and is pixel-identical above 544px.
 
 ## Honest limits
 
-1. **Not deployed, not pushed.** No pipeline has run and no production behaviour
-   has been verified. Everything above is local.
+1. **No longer a limit — this shipped.** *(Corrected 2026-08-21 by the PS-SIGNIN-MEMBER-ARRIVAL-001
+   follow-up. This limitation was written before the merge and then left
+   unrevisited for nineteen days, so the record went on claiming the work was
+   local long after members were using it.)* Merged as PR 229, main
+   `54f9b6a8`, on 2026-08-02. That commit is an ancestor of the currently
+   deployed `9f742614949b2a84811c7f6f20e7fbe203e09df2`, produced by Azure
+   build 1303 and active on the production slot since 2026-08-19T15:14:16Z;
+   live `/healthz` returns release `2edbd8819968a72e74a933e5`, which
+   `scripts/release_identity.py` derives from exactly that commit and build.
+   The original text is preserved above in the body of this report; only this
+   status line was wrong.
 2. **Chromium only.** All browser evidence is headless Chromium. The signed-in
    compaction is scoped with `:has()`; a browser without `:has()` support falls
    back to a proportionally smaller wordmark, never to an overlap, because the

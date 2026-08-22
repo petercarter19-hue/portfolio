@@ -15,7 +15,7 @@
        every page. It ignores ordinary fragments and still never parses or
        stores a callback value, so a provider return cannot retain stale
        content on a public page or an authenticated one. #}
-    <script src="{{ url_for('static', filename='js/easy-auth-callback.js') }}"></script>{% if not (request.path == '/app' or request.path.startswith('/app/') or request.path.startswith('/auth/')) %}<script src="{{ url_for('static', filename='js/auth-state.js') }}" defer></script>{% endif %}
+    <script src="{{ url_for('static', filename='js/easy-auth-callback.js') }}"></script>{% if not request.path.startswith('/auth/') %}<script src="{{ url_for('static', filename='js/auth-state.js') }}" defer></script>{% endif %}
 
     <!-- REAL TABLETS GET THE DESKTOP LAYOUT (added 2026-07-05, reworked
          2026-07-06)
@@ -172,7 +172,7 @@
    chrome class (portfolio-shell/platform-shell, slate-light,
    ps-editorial-surface) and the site light/dark theme attribute — this
    route is not affected by the shared theme toggle. Every other route is
-   completely unaffected by this branch. #}<body class="owner-home-shell">{% else %}<body data-room="{{ page_room }}" class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% if request.path.startswith('/the-slate') %}the-slate-page {% endif %}{# EDITORIAL GLASS (2026-07-13): every page EXCEPT the protected
+   completely unaffected by this branch. #}<body class="owner-home-shell" data-ps-auth-state="{{ auth_navigation_state }}">{% else %}<body data-room="{{ page_room }}" class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% if request.path.startswith('/the-slate') %}the-slate-page {% endif %}{# EDITORIAL GLASS (2026-07-13): every page EXCEPT the protected
        cinematic homepage (served at "/" and its comparison link
        /experience) gets the pale editorial background + card finish.
        All of that CSS is scoped under this class in editorial-glass.css,
@@ -288,7 +288,7 @@
                     </ul>
                 </div>{% endif %}
 
-                <div class="platform-actions"{% if not is_owner_app_path %} data-ps-auth-controls data-ps-auth-state="{{ auth_navigation_state }}"{% endif %}>
+                <div class="platform-actions"{% if not is_owner_app_path %} data-ps-auth-controls data-ps-auth-state="{{ auth_navigation_state }}"{% else %} data-ps-auth-state="{{ auth_navigation_state }}"{% endif %}>
                     {# Header search uses the #nav-search-data JSON block near
                        the scripts. Public routes get destination-only search;
                        the unchanged legacy owner shell retains its prior

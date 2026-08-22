@@ -88,11 +88,16 @@ gate is introduced.
 |---|---|
 | Local implementation | Complete |
 | Local self-review | Complete |
-| Azure DevOps branch push | Pending |
-| Azure DevOps pull request and squash merge | Pending |
-| Main pipeline build/deploy | Pending |
-| Production static asset and route verification | Pending |
+| Azure DevOps branch push | Complete |
+| Azure DevOps pull request and squash merge | Complete - PR 165, main `e8bbc3bf`, 2026-07-24 |
+| Main pipeline build/deploy | Complete - `e8bbc3bf` is an ancestor of the deployed `9f742614`, Azure build 1303, live since 2026-08-19T15:14:16Z |
+| Production static asset and route verification | Complete - `GET /static/js/easy-auth-callback.js` returns 200 in production, served as `?v=bfd4097e46c7` |
 | Fresh owner sign-in and callback verification | Pending owner credential interaction |
+
+*Release rows corrected 2026-08-21 by the PS-SIGNIN-MEMBER-ARRIVAL-001
+follow-up. They had read Pending for four weeks after the work shipped. The
+final row is genuinely still open: it needs Pete at a real sign-in, and no
+agent may perform it.*
 
 ## 8. Remaining risks and decisions
 
