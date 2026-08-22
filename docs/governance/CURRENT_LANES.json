@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-22T00:42:00Z",
+  "updated_at": "2026-08-22T00:59:17Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -4040,6 +4040,117 @@
     },
     "reason": "Pete directed Codex to complete Search 3F after exact candidate d7c5ad6d4098aa0f0f987e591fcd27b982a60e24 received an independent Pass and PR 548 build 1286 succeeded. The frozen candidate predates this control child, so this repair records the immutable receipts without changing the candidate.",
     "verification_contract": "This record grants no merge, release, deployment, proof rerun, Azure mutation, teardown, retention extension, schema, configuration, search enablement, Gate L2, or live-capability authority. The preflight recognizes it only on the exact branch, exact origin/main base, exact one-commit three-path delta, and exact candidate, owner, review, PR, CI, path, and exclusion pins. Merge and release authority remain empty until a later separate grant."
+  },
+  "interview_extract_repository_only_merge_admission": {
+    "status": "one_time_fail_closed_repository_only_admission",
+    "package": "PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001",
+    "target_package": "PS-INTERVIEW-AI-EXTRACT-001",
+    "target_branch": "work/2026-08-21-interview-ai-extract-dark-infrastructure",
+    "origin_main": "196fd502a8425e7ee35eaec15efff30f58e2bab0",
+    "control_activation_source": "ea81be4a67efba7659c0259cfd863a903715bf38",
+    "allowed_surfaces": [
+      "docs/governance/CURRENT_LANES.json",
+      "scripts/delivery_preflight.py",
+      "tests/test_delivery_preflight.py"
+    ],
+    "candidate_contract": {
+      "candidate_base_sha": "068e4bcd7dc5e88ee980cabf0f1810ad46ac6f5e",
+      "reviewed_remote_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
+      "candidate_paths": [
+        "SQL FIles/Migrations/proposed/PS-INTERVIEW-AI-EXTRACT-001_telemetry.sql",
+        "SQL FIles/Migrations/proposed/PS-INTERVIEW-AI-EXTRACT-001_telemetry_rollback.sql",
+        "SQL FIles/Migrations/registry.json",
+        "azure-pipelines.yml",
+        "docs/governance/PACKAGE_REGISTRY.json",
+        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/05_SQL_DISPOSABLE_PROOF.json",
+        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/10_RELEASE_PLAN.md",
+        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/11_DARK_TELEMETRY_INFRASTRUCTURE_EVIDENCE.md",
+        "scripts/interview_ai/run_interview_telemetry_purge.py",
+        "scripts/interview_ai/run_interview_telemetry_sql_proof.py",
+        "services/database_service.py",
+        "tests/test_database_service.py",
+        "tests/test_interview_ai_dark_telemetry_infrastructure.py",
+        "tests/test_operational_readiness.py"
+      ],
+      "target_lane_sha256": "8ddacdbe653876d47ad1e6082452c82ce5d1b524b38ea32d5f075e0dc8c9e54c",
+      "pull_request": 567,
+      "validation_run": 1386,
+      "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39"
+    },
+    "owner_decision": {
+      "date": "2026-08-21",
+      "authorized_by": "Pete",
+      "status": "authorized",
+      "package": "PS-INTERVIEW-AI-EXTRACT-001",
+      "action": "merge_repository_only",
+      "branch": "work/2026-08-21-interview-ai-extract-dark-infrastructure",
+      "reviewed_remote_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
+      "pull_request": 567,
+      "validation_run": 1386,
+      "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
+      "request_turn": "01a026e1-d028-7580-8423-3529115e9c34",
+      "response_turn": "01a026e3-6576-7812-be1b-b60f28897e9f",
+      "verbatim_response": "I authorize",
+      "decision": "Authorize the governed repository-only merge of exact PR 567 source 8fa7dd82b975796f9df767a48cefb0b79214e6aa with application deployment suppressed and the Interview telemetry SQL migration unapplied."
+    },
+    "owner_decision_sha256": "2c2b1afa7c6593766e4cfe45b96b19020ff9c7102d6e8bbafa64992a011f154e",
+    "review_attestations": {
+      "technical": {
+        "review_type": "technical_exact_sha",
+        "reviewer_mode": "fresh_independent_read_only_non_writer",
+        "reviewed_sha": "6680d0a95035ce79056fee2007199e056c005568",
+        "result": "pass",
+        "accepted_by": "Site Audit Manager",
+        "accepted_date": "2026-08-21",
+        "scope": "dark_telemetry_technical_corrections_and_disposable_sql_proof",
+        "proof_result": "105_of_105_pass",
+        "migration_digest": "2291c3df758b18d98cbb4e6d13ed9817d27e0b3356053679b94fcc2c09410b85",
+        "production_sql_applied": false
+      },
+      "documentation": {
+        "review_type": "documentation_exact_sha",
+        "reviewer_mode": "fresh_independent_read_only_non_writer",
+        "reviewed_sha": "df12e40535b5178ebe655249b610aa293f9132a0",
+        "technical_parent_sha": "6680d0a95035ce79056fee2007199e056c005568",
+        "result": "pass",
+        "accepted_by": "Site Audit Manager",
+        "accepted_date": "2026-08-21",
+        "scope": "one_file_dark_telemetry_evidence_truth_correction",
+        "focused_result": "44_of_44_pass",
+        "new_sql_gate_required": false
+      },
+      "fresh_target": {
+        "review_type": "fresh_target_validation",
+        "reviewer_mode": "independent_central_reconciliation",
+        "reviewed_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
+        "accepted_documentation_sha": "df12e40535b5178ebe655249b610aa293f9132a0",
+        "target_main": "068e4bcd7dc5e88ee980cabf0f1810ad46ac6f5e",
+        "pull_request": 567,
+        "validation_run": 1386,
+        "validation_result": "succeeded",
+        "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
+        "result": "pass"
+      }
+    },
+    "release_scope": {
+      "candidate_source_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
+      "pull_request": 567,
+      "validation_run": 1386,
+      "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
+      "repository_action": "merge_exact_reviewed_dark_telemetry_infrastructure_only",
+      "application_deployment": "suppressed",
+      "sql_migration": "remains_unapplied",
+      "production_identity_or_permission_change": false,
+      "retention_enablement": false,
+      "production_configuration_change": false,
+      "provider_invocation": false,
+      "provider_spend": false,
+      "evaluation_execution": false,
+      "runtime_pr_564_merge": false,
+      "later_interview_package_authority": false
+    },
+    "reason": "Current delivery control could not encode Pete's already accepted exact repository-only PR 567 decision because the target lane is correctly production-capable while generic reviewed grants require false.",
+    "verification_contract": "This inert profile grants nothing. It is recognized only with the exact target package, branch, candidate SHA, PR, validation, owner exchange, reviews, candidate path set, lane digest, and repository-only exclusions. An ordinary later ledger-only grant remains required. No other package, candidate, release, SQL, identity, retention, configuration, deployment, provider, evaluation, or later-slice action is admitted."
   },
   "four_writer_policy_atomic_integration": {
     "status": "one_time_owner_authorized_atomic_integration",

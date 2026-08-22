@@ -51,6 +51,23 @@ from scripts.delivery_preflight import (
     SEARCH_REVIEW_ATTESTATION,
     SEARCH_REVIEW_ATTESTATION_SHA256,
     SEARCH_REVIEWED_SHA,
+    INTERVIEW_EXTRACT_ACTIVATION_PATHS,
+    INTERVIEW_EXTRACT_BASE_LANE_SHA256,
+    INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA,
+    INTERVIEW_EXTRACT_CANDIDATE_PATHS,
+    INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN,
+    INTERVIEW_EXTRACT_CONTROL_PATHS,
+    INTERVIEW_EXTRACT_DOCUMENTATION_REVIEW_ATTESTATION,
+    INTERVIEW_EXTRACT_FRESH_TARGET_ATTESTATION,
+    INTERVIEW_EXTRACT_OWNER_MERGE_DECISION,
+    INTERVIEW_EXTRACT_OWNER_MERGE_DECISION_SHA256,
+    INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION,
+    INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION_SHA256,
+    INTERVIEW_EXTRACT_REPOSITORY_ONLY_SCOPE,
+    INTERVIEW_EXTRACT_REVIEWED_SHA,
+    INTERVIEW_EXTRACT_TARGET_BRANCH,
+    INTERVIEW_EXTRACT_TARGET_PACKAGE,
+    INTERVIEW_EXTRACT_TECHNICAL_REVIEW_ATTESTATION,
     CLEANUP_BRANCH_PATTERN,
     DIRECTION_MERGE_CONTROL_PATHS,
     DIRECTION_MERGE_FOLLOWUP_PATHS,
@@ -172,6 +189,7 @@ from scripts.delivery_preflight import (
     _direction_control_path_sequence_valid,
     _direction_merge_grant,
     _exact_direction_grant_delta,
+    _exact_interview_extract_repository_only_profile_delta,
     _exact_grant_close_fixture_followup_delta,
     _exact_implementation_release_preflight_repair_matches,
     _exact_community_authoring_surface_repair_matches,
@@ -220,6 +238,7 @@ from scripts.delivery_preflight import (
     _is_connect_002_reviewed_implementation_lane,
     _is_community_authoring_reviewed_implementation_lane,
     _is_search_reviewed_implementation_lane,
+    _is_interview_extract_reviewed_implementation_lane,
     _profile_core_main_sequence_facts,
     _exact_opportunity_schema_repair_release_refresh_matches,
     _exact_opportunity_lifecycle_fixture_repair_delta,
@@ -881,6 +900,72 @@ class DeliveryPreflightTests(unittest.TestCase):
             "release_scope": copy.deepcopy(SEARCH_RELEASE_SCOPE),
         }
 
+    def _interview_extract_profiled_origin(self) -> tuple[dict, dict]:
+        origin = copy.deepcopy(self.ledger)
+        self.assertEqual(
+            INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION,
+            origin.get("interview_extract_repository_only_merge_admission"),
+        )
+        lane = next(
+            item
+            for item in origin["active_lanes"]
+            if item.get("package") == INTERVIEW_EXTRACT_TARGET_PACKAGE
+        )
+        self.assertTrue(_is_interview_extract_reviewed_implementation_lane(lane))
+        self.assertNotIn("merge_grant", lane)
+        return origin, lane
+
+    def _interview_extract_grant_record(
+        self,
+        lane: dict,
+        granted_at: str,
+    ) -> dict:
+        decision_index = len(lane["owner_decisions"]) - 1
+        decision = lane["owner_decisions"][decision_index]
+        self.assertEqual(INTERVIEW_EXTRACT_OWNER_MERGE_DECISION, decision)
+        return {
+            "authorized_by": "Pete",
+            "authority_decision_index": decision_index,
+            "authority_decision_sha256": (
+                INTERVIEW_EXTRACT_OWNER_MERGE_DECISION_SHA256
+            ),
+            "admission_sha256": (
+                INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION_SHA256
+            ),
+            "review_attestations": copy.deepcopy(
+                INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION["review_attestations"]
+            ),
+            "reviewed_remote_sha": INTERVIEW_EXTRACT_REVIEWED_SHA,
+            "granted_at": granted_at,
+            "review_result": "pass",
+            "review_evidence_paths": [],
+            "release_scope": copy.deepcopy(
+                INTERVIEW_EXTRACT_REPOSITORY_ONLY_SCOPE
+            ),
+        }
+
+    def _interview_extract_granted_ledger(self) -> tuple[dict, dict]:
+        origin, _ = self._interview_extract_profiled_origin()
+        granted = copy.deepcopy(origin)
+        granted_at = "2026-08-22T01:30:00Z"
+        granted["updated_at"] = granted_at
+        lane = next(
+            item
+            for item in granted["active_lanes"]
+            if item.get("package") == INTERVIEW_EXTRACT_TARGET_PACKAGE
+        )
+        lane["owner_decisions"].append(
+            copy.deepcopy(INTERVIEW_EXTRACT_OWNER_MERGE_DECISION)
+        )
+        lane["merge_grant"] = self._interview_extract_grant_record(
+            lane, granted_at
+        )
+        granted["operating_mode"]["merge_allowed_for"] = [
+            *origin["operating_mode"]["merge_allowed_for"],
+            INTERVIEW_EXTRACT_TARGET_PACKAGE,
+        ]
+        return origin, granted
+
     def _opportunity_origin(self) -> tuple[dict, dict]:
         origin = copy.deepcopy(self.ledger)
         candidates = [
@@ -1056,6 +1141,342 @@ class DeliveryPreflightTests(unittest.TestCase):
             "review_result": "pass",
             "review_evidence_paths": [evidence_path],
         }
+
+    def test_interview_extract_repository_only_profile_is_exact_and_inert(self):
+        parent = load_ledger_at_ref(INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN)
+        candidate = copy.deepcopy(self.ledger)
+        self.assertEqual(
+            INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION_SHA256,
+            _canonical_sha256(INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION),
+        )
+        self.assertEqual(
+            INTERVIEW_EXTRACT_OWNER_MERGE_DECISION_SHA256,
+            _canonical_sha256(INTERVIEW_EXTRACT_OWNER_MERGE_DECISION),
+        )
+        self.assertTrue(
+            _exact_interview_extract_repository_only_profile_delta(parent, candidate)
+        )
+        self.assertEqual(parent["operating_mode"], candidate["operating_mode"])
+        self.assertEqual(parent["active_lanes"], candidate["active_lanes"])
+        self.assertNotIn(
+            INTERVIEW_EXTRACT_TARGET_PACKAGE,
+            candidate["operating_mode"]["merge_allowed_for"],
+        )
+        self.assertNotIn(
+            INTERVIEW_EXTRACT_TARGET_PACKAGE,
+            candidate["operating_mode"]["release_allowed_for"],
+        )
+
+        mutations = {
+            "target_package": lambda value: value.__setitem__(
+                "target_package", "PS-FORGED-001"
+            ),
+            "target_branch": lambda value: value.__setitem__(
+                "target_branch", "work/2026-08-21-forged"
+            ),
+            "candidate_sha": lambda value: value["candidate_contract"].__setitem__(
+                "reviewed_remote_sha", "f" * 40
+            ),
+            "pull_request": lambda value: value["candidate_contract"].__setitem__(
+                "pull_request", 999
+            ),
+            "validation_run": lambda value: value["candidate_contract"].__setitem__(
+                "validation_run", 999
+            ),
+            "speculative_merge": lambda value: value["candidate_contract"].__setitem__(
+                "speculative_merge_sha", "e" * 40
+            ),
+            "request_turn": lambda value: value["owner_decision"].__setitem__(
+                "request_turn", "forged"
+            ),
+            "response_turn": lambda value: value["owner_decision"].__setitem__(
+                "response_turn", "forged"
+            ),
+            "verbatim_response": lambda value: value["owner_decision"].__setitem__(
+                "verbatim_response", "yes"
+            ),
+            "technical_review": lambda value: value["review_attestations"][
+                "technical"
+            ].__setitem__("reviewed_sha", "d" * 40),
+            "documentation_review": lambda value: value["review_attestations"][
+                "documentation"
+            ].__setitem__("result", "accept"),
+            "fresh_target_review": lambda value: value["review_attestations"][
+                "fresh_target"
+            ].__setitem__("validation_run", 0),
+            "deployment": lambda value: value["release_scope"].__setitem__(
+                "application_deployment", "allowed"
+            ),
+            "sql": lambda value: value["release_scope"].__setitem__(
+                "sql_migration", "apply"
+            ),
+            "provider": lambda value: value["release_scope"].__setitem__(
+                "provider_invocation", True
+            ),
+            "evaluation": lambda value: value["release_scope"].__setitem__(
+                "evaluation_execution", True
+            ),
+            "later_slice": lambda value: value["release_scope"].__setitem__(
+                "later_interview_package_authority", True
+            ),
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(name=name):
+                forged = copy.deepcopy(candidate)
+                mutate(forged["interview_extract_repository_only_merge_admission"])
+                self.assertFalse(
+                    _exact_interview_extract_repository_only_profile_delta(
+                        parent, forged
+                    )
+                )
+
+    def test_interview_extract_grant_and_merge_are_repository_only(self):
+        origin, granted = self._interview_extract_granted_ledger()
+        baseline = load_baseline_bytes()
+        grant_facts = facts(
+            branch="work/2026-08-22-delivery-grant-interview-extract",
+            head="interview-extract-grant-candidate",
+            ahead=1,
+            origin_main="interview-extract-profile-main",
+            changed_paths=sorted(GRANT_ALLOWED_SURFACES),
+            grant_target_remote_sha=INTERVIEW_EXTRACT_REVIEWED_SHA,
+            grant_review_evidence_existing=[],
+            grant_review_evidence=[],
+        )
+        grant_errors, _ = evaluate_policy(
+            granted,
+            grant_facts,
+            INTERVIEW_EXTRACT_TARGET_PACKAGE,
+            "grant",
+            require_clean=True,
+            origin_ledger=origin,
+            candidate_baseline=baseline,
+            origin_baseline=baseline,
+        )
+        self.assertEqual([], grant_errors)
+        self.assertTrue(
+            _exact_direction_grant_delta(
+                origin, granted, INTERVIEW_EXTRACT_TARGET_PACKAGE
+            )
+        )
+        self.assertIn(
+            INTERVIEW_EXTRACT_TARGET_PACKAGE,
+            granted["operating_mode"]["merge_allowed_for"],
+        )
+        self.assertNotIn(
+            INTERVIEW_EXTRACT_TARGET_PACKAGE,
+            granted["operating_mode"]["release_allowed_for"],
+        )
+
+        merge_facts = facts(
+            branch=INTERVIEW_EXTRACT_TARGET_BRANCH,
+            head=INTERVIEW_EXTRACT_REVIEWED_SHA,
+            ahead=1,
+            behind=3,
+            origin_main="interview-extract-grant-main",
+            changed_paths=sorted(INTERVIEW_EXTRACT_CANDIDATE_PATHS),
+            merge_target_remote_sha=INTERVIEW_EXTRACT_REVIEWED_SHA,
+            merge_main_changed_paths=sorted(
+                set(INTERVIEW_EXTRACT_ACTIVATION_PATHS)
+                | set(INTERVIEW_EXTRACT_CONTROL_PATHS)
+                | set(GRANT_ALLOWED_SURFACES)
+            ),
+            merge_main_control_commits_valid=True,
+            merge_main_control_commit_count=3,
+        )
+        merge_errors, merge_warnings = evaluate_policy(
+            granted,
+            merge_facts,
+            INTERVIEW_EXTRACT_TARGET_PACKAGE,
+            "merge",
+            require_clean=True,
+            origin_ledger=granted,
+        )
+        self.assertEqual([], merge_errors)
+        self.assertTrue(
+            any("Interview Extract candidate predates" in item for item in merge_warnings)
+        )
+
+        for name, changed in {
+            "wrong_sha": {"head": "c" * 40},
+            "wrong_remote": {"merge_target_remote_sha": "b" * 40},
+            "wrong_behind": {"behind": 2},
+            "wrong_commit_count": {"merge_main_control_commit_count": 2},
+            "bad_sequence": {"merge_main_control_commits_valid": False},
+            "extra_path": {
+                "changed_paths": sorted(
+                    set(INTERVIEW_EXTRACT_CANDIDATE_PATHS) | {"app.py"}
+                )
+            },
+        }.items():
+            with self.subTest(name=name):
+                errors, _ = evaluate_policy(
+                    granted,
+                    {**merge_facts, **changed},
+                    INTERVIEW_EXTRACT_TARGET_PACKAGE,
+                    "merge",
+                    require_clean=True,
+                    origin_ledger=granted,
+                )
+                self.assertTrue(errors)
+
+    def test_interview_extract_grant_rejects_every_authority_widening(self):
+        _, granted = self._interview_extract_granted_ledger()
+        lane = next(
+            item
+            for item in granted["active_lanes"]
+            if item.get("package") == INTERVIEW_EXTRACT_TARGET_PACKAGE
+        )
+        errors: list[str] = []
+        self.assertIsNotNone(_direction_merge_grant(lane, "exact", errors))
+        self.assertEqual([], errors)
+
+        mutations = {
+            "decision": lambda value: value["owner_decisions"][-1].__setitem__(
+                "verbatim_response", "approved"
+            ),
+            "decision_digest": lambda value: value["merge_grant"].__setitem__(
+                "authority_decision_sha256", "0" * 64
+            ),
+            "admission_digest": lambda value: value["merge_grant"].__setitem__(
+                "admission_sha256", "0" * 64
+            ),
+            "technical_review": lambda value: value["merge_grant"][
+                "review_attestations"
+            ]["technical"].__setitem__("result", "approved"),
+            "documentation_review": lambda value: value["merge_grant"][
+                "review_attestations"
+            ]["documentation"].__setitem__("reviewed_sha", "0" * 40),
+            "fresh_target": lambda value: value["merge_grant"][
+                "review_attestations"
+            ]["fresh_target"].__setitem__("speculative_merge_sha", "0" * 40),
+            "pr": lambda value: value["merge_grant"]["release_scope"].__setitem__(
+                "pull_request", 568
+            ),
+            "deploy": lambda value: value["merge_grant"]["release_scope"].__setitem__(
+                "application_deployment", "normal"
+            ),
+            "sql": lambda value: value["merge_grant"]["release_scope"].__setitem__(
+                "sql_migration", "apply"
+            ),
+            "identity": lambda value: value["merge_grant"]["release_scope"].__setitem__(
+                "production_identity_or_permission_change", True
+            ),
+            "retention": lambda value: value["merge_grant"]["release_scope"].__setitem__(
+                "retention_enablement", True
+            ),
+            "configuration": lambda value: value["merge_grant"]["release_scope"].__setitem__(
+                "production_configuration_change", True
+            ),
+            "provider": lambda value: value["merge_grant"]["release_scope"].__setitem__(
+                "provider_invocation", True
+            ),
+            "runtime_pr": lambda value: value["merge_grant"]["release_scope"].__setitem__(
+                "runtime_pr_564_merge", True
+            ),
+            "production_flag": lambda value: value.__setitem__(
+                "production_capable", False
+            ),
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(name=name):
+                forged = copy.deepcopy(lane)
+                mutate(forged)
+                forged_errors: list[str] = []
+                _direction_merge_grant(forged, name, forged_errors)
+                self.assertTrue(forged_errors)
+
+        unrelated = copy.deepcopy(lane)
+        unrelated["package"] = "PS-FORGED-PRODUCTION-001"
+        unrelated["branch"] = "work/2026-08-22-forged-production"
+        unrelated_errors: list[str] = []
+        _direction_merge_grant(unrelated, "unrelated", unrelated_errors)
+        self.assertTrue(any("available only" in item for item in unrelated_errors))
+
+    def test_interview_extract_main_sequence_requires_exact_three_control_commits(self):
+        parent = load_ledger_at_ref(INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN)
+        profiled, granted = self._interview_extract_granted_ledger()
+        profile_sha = "1" * 40
+        grant_sha = "2" * 40
+        final_main = "3" * 40
+        tree = "4" * 40
+        expected_paths = sorted(
+            set(INTERVIEW_EXTRACT_ACTIVATION_PATHS)
+            | set(INTERVIEW_EXTRACT_CONTROL_PATHS)
+            | set(GRANT_ALLOWED_SURFACES)
+        )
+
+        def fake_git(*args: str) -> str:
+            responses = {
+                (
+                    "rev-list",
+                    "--reverse",
+                    f"{INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA}..{final_main}",
+                ): (
+                    f"{INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN}\n"
+                    f"{profile_sha}\n{grant_sha}\n"
+                ),
+                (
+                    "rev-parse",
+                    f"{INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN}^",
+                ): INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA,
+                ("rev-parse", f"{profile_sha}^"): (
+                    INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN
+                ),
+                ("rev-parse", f"{grant_sha}^"): profile_sha,
+                (
+                    "rev-parse",
+                    f"{INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN}^{{tree}}",
+                ): tree,
+                (
+                    "rev-parse",
+                    f"{INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION['control_activation_source']}^{{tree}}",
+                ): tree,
+                (
+                    "merge-base",
+                    INTERVIEW_EXTRACT_REVIEWED_SHA,
+                    final_main,
+                ): INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA,
+            }
+            return responses[args]
+
+        def fake_git_nul(*args: str) -> list[str]:
+            if args[-1] == (
+                f"{INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA}..{final_main}"
+            ):
+                return expected_paths
+            if args[-1] == INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN:
+                return sorted(INTERVIEW_EXTRACT_ACTIVATION_PATHS)
+            if args[-1] == profile_sha:
+                return sorted(INTERVIEW_EXTRACT_CONTROL_PATHS)
+            if args[-1] == grant_sha:
+                return sorted(GRANT_ALLOWED_SURFACES)
+            if args[-1] == (
+                f"{INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA}..{INTERVIEW_EXTRACT_REVIEWED_SHA}"
+            ):
+                return sorted(INTERVIEW_EXTRACT_CANDIDATE_PATHS)
+            raise AssertionError(args)
+
+        with (
+            patch("scripts.delivery_preflight._git", side_effect=fake_git),
+            patch("scripts.delivery_preflight._git_nul", side_effect=fake_git_nul),
+            patch(
+                "scripts.delivery_preflight.load_ledger_at_ref",
+                side_effect=lambda ref: {
+                    INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN: parent,
+                    profile_sha: profiled,
+                }[ref],
+            ),
+        ):
+            paths, valid, count = _direction_main_sequence_facts(
+                granted,
+                INTERVIEW_EXTRACT_TARGET_PACKAGE,
+                INTERVIEW_EXTRACT_REVIEWED_SHA,
+                final_main,
+            )
+        self.assertEqual(expected_paths, paths)
+        self.assertTrue(valid)
+        self.assertEqual(3, count)
 
     def test_grant_binds_existing_authority_review_and_exact_remote(self):
         origin, lane = self._direction_origin()
@@ -3295,6 +3716,7 @@ with patch.object(
                     COMMUNITY_AUTHORING_PACKAGE,
                     SD1_PACKAGE,
                     SEARCH_PACKAGE,
+                    INTERVIEW_EXTRACT_TARGET_PACKAGE,
                 }:
                     lane["package"] = "PS-GENERIC-IMPLEMENTATION-001"
                     lane["branch"] = "work/2026-08-13-generic-implementation-001"

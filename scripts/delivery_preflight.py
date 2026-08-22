@@ -2026,6 +2026,185 @@ SEARCH_RELEASE_ADMISSION_PATHS = frozenset(
     SEARCH_RELEASE_ADMISSION["allowed_surfaces"]
 )
 
+# The Extract dark-infrastructure candidate is production-capable only because
+# its files are intended for a later, separately governed production sequence.
+# Pete authorized one repository-only merge with deployment suppressed; that
+# decision is not representable by the generic production-capable grant path.
+# This exact profile is deliberately narrower than a release grant.  It binds
+# one candidate, one PR/build, the recorded owner exchange, three accepted
+# review checkpoints, and a scope that keeps SQL unapplied and every runtime or
+# provider action withheld.  No other production-capable lane can reuse it.
+INTERVIEW_EXTRACT_TARGET_PACKAGE = "PS-INTERVIEW-AI-EXTRACT-001"
+INTERVIEW_EXTRACT_TARGET_BRANCH = (
+    "work/2026-08-21-interview-ai-extract-dark-infrastructure"
+)
+INTERVIEW_EXTRACT_REVIEWED_SHA = (
+    "8fa7dd82b975796f9df767a48cefb0b79214e6aa"
+)
+INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA = (
+    "068e4bcd7dc5e88ee980cabf0f1810ad46ac6f5e"
+)
+INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN = (
+    "196fd502a8425e7ee35eaec15efff30f58e2bab0"
+)
+INTERVIEW_EXTRACT_CONTROL_ACTIVATION_SOURCE = (
+    "ea81be4a67efba7659c0259cfd863a903715bf38"
+)
+INTERVIEW_EXTRACT_BASE_LANE_SHA256 = (
+    "8ddacdbe653876d47ad1e6082452c82ce5d1b524b38ea32d5f075e0dc8c9e54c"
+)
+INTERVIEW_EXTRACT_CANDIDATE_PATHS = frozenset(
+    {
+        "SQL FIles/Migrations/proposed/PS-INTERVIEW-AI-EXTRACT-001_telemetry.sql",
+        "SQL FIles/Migrations/proposed/PS-INTERVIEW-AI-EXTRACT-001_telemetry_rollback.sql",
+        "SQL FIles/Migrations/registry.json",
+        "azure-pipelines.yml",
+        "docs/governance/PACKAGE_REGISTRY.json",
+        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/05_SQL_DISPOSABLE_PROOF.json",
+        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/10_RELEASE_PLAN.md",
+        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/11_DARK_TELEMETRY_INFRASTRUCTURE_EVIDENCE.md",
+        "scripts/interview_ai/run_interview_telemetry_purge.py",
+        "scripts/interview_ai/run_interview_telemetry_sql_proof.py",
+        "services/database_service.py",
+        "tests/test_database_service.py",
+        "tests/test_interview_ai_dark_telemetry_infrastructure.py",
+        "tests/test_operational_readiness.py",
+    }
+)
+INTERVIEW_EXTRACT_OWNER_MERGE_DECISION = {
+    "date": "2026-08-21",
+    "authorized_by": "Pete",
+    "status": "authorized",
+    "package": INTERVIEW_EXTRACT_TARGET_PACKAGE,
+    "action": "merge_repository_only",
+    "branch": INTERVIEW_EXTRACT_TARGET_BRANCH,
+    "reviewed_remote_sha": INTERVIEW_EXTRACT_REVIEWED_SHA,
+    "pull_request": 567,
+    "validation_run": 1386,
+    "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
+    "request_turn": "01a026e1-d028-7580-8423-3529115e9c34",
+    "response_turn": "01a026e3-6576-7812-be1b-b60f28897e9f",
+    "verbatim_response": "I authorize",
+    "decision": (
+        "Authorize the governed repository-only merge of exact PR 567 source "
+        "8fa7dd82b975796f9df767a48cefb0b79214e6aa with application deployment "
+        "suppressed and the Interview telemetry SQL migration unapplied."
+    ),
+}
+INTERVIEW_EXTRACT_OWNER_MERGE_DECISION_SHA256 = (
+    "2c2b1afa7c6593766e4cfe45b96b19020ff9c7102d6e8bbafa64992a011f154e"
+)
+INTERVIEW_EXTRACT_TECHNICAL_REVIEW_ATTESTATION = {
+    "review_type": "technical_exact_sha",
+    "reviewer_mode": "fresh_independent_read_only_non_writer",
+    "reviewed_sha": "6680d0a95035ce79056fee2007199e056c005568",
+    "result": "pass",
+    "accepted_by": "Site Audit Manager",
+    "accepted_date": "2026-08-21",
+    "scope": "dark_telemetry_technical_corrections_and_disposable_sql_proof",
+    "proof_result": "105_of_105_pass",
+    "migration_digest": (
+        "2291c3df758b18d98cbb4e6d13ed9817d27e0b3356053679b94fcc2c09410b85"
+    ),
+    "production_sql_applied": False,
+}
+INTERVIEW_EXTRACT_DOCUMENTATION_REVIEW_ATTESTATION = {
+    "review_type": "documentation_exact_sha",
+    "reviewer_mode": "fresh_independent_read_only_non_writer",
+    "reviewed_sha": "df12e40535b5178ebe655249b610aa293f9132a0",
+    "technical_parent_sha": "6680d0a95035ce79056fee2007199e056c005568",
+    "result": "pass",
+    "accepted_by": "Site Audit Manager",
+    "accepted_date": "2026-08-21",
+    "scope": "one_file_dark_telemetry_evidence_truth_correction",
+    "focused_result": "44_of_44_pass",
+    "new_sql_gate_required": False,
+}
+INTERVIEW_EXTRACT_FRESH_TARGET_ATTESTATION = {
+    "review_type": "fresh_target_validation",
+    "reviewer_mode": "independent_central_reconciliation",
+    "reviewed_sha": INTERVIEW_EXTRACT_REVIEWED_SHA,
+    "accepted_documentation_sha": "df12e40535b5178ebe655249b610aa293f9132a0",
+    "target_main": INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA,
+    "pull_request": 567,
+    "validation_run": 1386,
+    "validation_result": "succeeded",
+    "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
+    "result": "pass",
+}
+INTERVIEW_EXTRACT_REPOSITORY_ONLY_SCOPE = {
+    "candidate_source_sha": INTERVIEW_EXTRACT_REVIEWED_SHA,
+    "pull_request": 567,
+    "validation_run": 1386,
+    "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
+    "repository_action": "merge_exact_reviewed_dark_telemetry_infrastructure_only",
+    "application_deployment": "suppressed",
+    "sql_migration": "remains_unapplied",
+    "production_identity_or_permission_change": False,
+    "retention_enablement": False,
+    "production_configuration_change": False,
+    "provider_invocation": False,
+    "provider_spend": False,
+    "evaluation_execution": False,
+    "runtime_pr_564_merge": False,
+    "later_interview_package_authority": False,
+}
+INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION = {
+    "status": "one_time_fail_closed_repository_only_admission",
+    "package": "PS-DELIVERY-CONTROL-INTERVIEW-EXTRACT-001",
+    "target_package": INTERVIEW_EXTRACT_TARGET_PACKAGE,
+    "target_branch": INTERVIEW_EXTRACT_TARGET_BRANCH,
+    "origin_main": INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN,
+    "control_activation_source": INTERVIEW_EXTRACT_CONTROL_ACTIVATION_SOURCE,
+    "allowed_surfaces": [
+        "docs/governance/CURRENT_LANES.json",
+        "scripts/delivery_preflight.py",
+        "tests/test_delivery_preflight.py",
+    ],
+    "candidate_contract": {
+        "candidate_base_sha": INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA,
+        "reviewed_remote_sha": INTERVIEW_EXTRACT_REVIEWED_SHA,
+        "candidate_paths": sorted(INTERVIEW_EXTRACT_CANDIDATE_PATHS),
+        "target_lane_sha256": INTERVIEW_EXTRACT_BASE_LANE_SHA256,
+        "pull_request": 567,
+        "validation_run": 1386,
+        "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
+    },
+    "owner_decision": INTERVIEW_EXTRACT_OWNER_MERGE_DECISION,
+    "owner_decision_sha256": INTERVIEW_EXTRACT_OWNER_MERGE_DECISION_SHA256,
+    "review_attestations": {
+        "technical": INTERVIEW_EXTRACT_TECHNICAL_REVIEW_ATTESTATION,
+        "documentation": INTERVIEW_EXTRACT_DOCUMENTATION_REVIEW_ATTESTATION,
+        "fresh_target": INTERVIEW_EXTRACT_FRESH_TARGET_ATTESTATION,
+    },
+    "release_scope": INTERVIEW_EXTRACT_REPOSITORY_ONLY_SCOPE,
+    "reason": (
+        "Current delivery control could not encode Pete's already accepted exact "
+        "repository-only PR 567 decision because the target lane is correctly "
+        "production-capable while generic reviewed grants require false."
+    ),
+    "verification_contract": (
+        "This inert profile grants nothing. It is recognized only with the exact "
+        "target package, branch, candidate SHA, PR, validation, owner exchange, "
+        "reviews, candidate path set, lane digest, and repository-only exclusions. "
+        "An ordinary later ledger-only grant remains required. No other package, "
+        "candidate, release, SQL, identity, retention, configuration, deployment, "
+        "provider, evaluation, or later-slice action is admitted."
+    ),
+}
+INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION_SHA256 = (
+    "5bdfb69b1be793fa66719e2df2e249c5963eb49131a205a04df197edfd4a180c"
+)
+INTERVIEW_EXTRACT_CONTROL_PATHS = frozenset(
+    INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION["allowed_surfaces"]
+)
+INTERVIEW_EXTRACT_ACTIVATION_PATHS = frozenset(
+    {
+        "docs/governance/CURRENT_BASELINE.yaml",
+        "docs/governance/CURRENT_LANES.json",
+    }
+)
+
 FOUR_WRITER_POLICY_INTEGRATION_PACKAGE = (
     "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001"
 )
@@ -5657,6 +5836,13 @@ def _exact_connect_002_grant_fixture_followup_matches(
 
 def _affirmative_merge_decision(decision: object, package_id: object) -> bool:
     """Accept a pinned reviewed-lane authority or exact direction decision."""
+    if package_id == INTERVIEW_EXTRACT_TARGET_PACKAGE:
+        return bool(
+            isinstance(decision, dict)
+            and decision == INTERVIEW_EXTRACT_OWNER_MERGE_DECISION
+            and _canonical_sha256(decision)
+            == INTERVIEW_EXTRACT_OWNER_MERGE_DECISION_SHA256
+        )
     if package_id == SEARCH_PACKAGE:
         return bool(
             isinstance(decision, dict)
@@ -5812,6 +5998,30 @@ def _is_search_reviewed_implementation_lane(lane: object) -> bool:
         and lane.get("lane_class") == "implementation"
         and lane.get("delivery_path") == "Protected"
         and lane.get("production_capable") is False
+    )
+
+
+def _is_interview_extract_reviewed_implementation_lane(lane: object) -> bool:
+    """Identify only the exact Extract lane, allowing only its exact grant delta."""
+    if not isinstance(lane, dict):
+        return False
+    normalized = copy.deepcopy(lane)
+    normalized.pop("merge_grant", None)
+    decisions = normalized.get("owner_decisions")
+    if (
+        isinstance(decisions, list)
+        and decisions
+        and decisions[-1] == INTERVIEW_EXTRACT_OWNER_MERGE_DECISION
+    ):
+        normalized["owner_decisions"] = decisions[:-1]
+    return bool(
+        lane.get("package") == INTERVIEW_EXTRACT_TARGET_PACKAGE
+        and lane.get("branch") == INTERVIEW_EXTRACT_TARGET_BRANCH
+        and lane.get("lane_class") == "implementation"
+        and lane.get("delivery_path") == "Protected"
+        and lane.get("production_capable") is True
+        and _canonical_sha256(normalized)
+        == INTERVIEW_EXTRACT_BASE_LANE_SHA256
     )
 
 
@@ -5993,6 +6203,90 @@ def _search_merge_grant(
     return grant
 
 
+def _interview_extract_merge_grant(
+    lane: dict,
+    label: str,
+    errors: list[str],
+) -> dict | None:
+    """Validate one repository-only Extract grant; never a release grant."""
+    if not _is_interview_extract_reviewed_implementation_lane(lane):
+        errors.append(f"{label} is not the exact code-pinned Extract lane")
+    if (
+        _canonical_sha256(INTERVIEW_EXTRACT_OWNER_MERGE_DECISION)
+        != INTERVIEW_EXTRACT_OWNER_MERGE_DECISION_SHA256
+    ):
+        errors.append(f"{label} Extract owner decision SHA-256 is invalid")
+    if (
+        _canonical_sha256(INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION)
+        != INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION_SHA256
+    ):
+        errors.append(f"{label} Extract admission SHA-256 is invalid")
+    grant = lane.get("merge_grant")
+    if not isinstance(grant, dict):
+        errors.append(f"{label} merge_grant must be an object")
+        return None
+    expected_fields = {
+        "authorized_by",
+        "authority_decision_index",
+        "authority_decision_sha256",
+        "admission_sha256",
+        "review_attestations",
+        "reviewed_remote_sha",
+        "granted_at",
+        "review_result",
+        "review_evidence_paths",
+        "release_scope",
+    }
+    if set(grant) != expected_fields:
+        errors.append(
+            f"{label} merge_grant must contain exactly: "
+            + ", ".join(sorted(expected_fields))
+        )
+    if grant.get("authorized_by") != "Pete":
+        errors.append(f"{label} merge_grant authorized_by must be Pete")
+    decisions = lane.get("owner_decisions")
+    index = grant.get("authority_decision_index")
+    if not isinstance(index, int) or isinstance(index, bool) or index < 0:
+        errors.append(
+            f"{label} merge_grant authority_decision_index must be a non-negative integer"
+        )
+    elif (
+        not isinstance(decisions, list)
+        or index != len(decisions) - 1
+        or decisions[index] != INTERVIEW_EXTRACT_OWNER_MERGE_DECISION
+    ):
+        errors.append(
+            f"{label} merge_grant must bind the exact appended Extract owner decision"
+        )
+    if (
+        grant.get("authority_decision_sha256")
+        != INTERVIEW_EXTRACT_OWNER_MERGE_DECISION_SHA256
+    ):
+        errors.append(f"{label} authority_decision_sha256 is not the Extract decision")
+    if (
+        grant.get("admission_sha256")
+        != INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION_SHA256
+    ):
+        errors.append(f"{label} admission_sha256 is not the exact Extract profile")
+    if grant.get("review_attestations") != INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION[
+        "review_attestations"
+    ]:
+        errors.append(f"{label} review_attestations are not the accepted Extract set")
+    if grant.get("reviewed_remote_sha") != INTERVIEW_EXTRACT_REVIEWED_SHA:
+        errors.append(f"{label} reviewed_remote_sha is not exact PR 567 source")
+    if grant.get("release_scope") != INTERVIEW_EXTRACT_REPOSITORY_ONLY_SCOPE:
+        errors.append(f"{label} release_scope is not repository-only and deployment-suppressed")
+    if grant.get("review_result") != "pass":
+        errors.append(f"{label} merge_grant review_result must be pass")
+    if grant.get("review_evidence_paths") != []:
+        errors.append(
+            f"{label} uses immutable control attestations and no candidate review paths"
+        )
+    if not _valid_utc_timestamp(grant.get("granted_at")):
+        errors.append(f"{label} merge_grant granted_at must be a UTC timestamp")
+    return grant
+
+
 def _direction_merge_grant(
     lane: object,
     label: str,
@@ -6015,7 +6309,10 @@ def _direction_merge_grant(
     )
     is_sd1 = _is_sd1_reviewed_implementation_lane(lane)
     is_search = _is_search_reviewed_implementation_lane(lane)
+    is_interview_extract = _is_interview_extract_reviewed_implementation_lane(lane)
     is_shell = _is_shell_reviewed_shared_foundation_lane(lane)
+    if is_interview_extract:
+        return _interview_extract_merge_grant(lane, label, errors)
     if is_search:
         return _search_merge_grant(lane, label, errors)
     if is_sd1:
@@ -6028,6 +6325,7 @@ def _direction_merge_grant(
         and not is_community_authoring
         and not is_shell
         and not is_search
+        and not is_interview_extract
     ):
         errors.append(
             f"{label} is available only to direction_authority lanes or the "
@@ -6350,7 +6648,10 @@ def _exact_direction_grant_delta(
     for before, after in zip(parent_lanes, granted_lanes, strict=True):
         if before.get("package") == package_id:
             expected = dict(before)
-            if package_id == OPPORTUNITY_SLATE_PACKAGE:
+            if package_id in {
+                OPPORTUNITY_SLATE_PACKAGE,
+                INTERVIEW_EXTRACT_TARGET_PACKAGE,
+            }:
                 before_decisions = before.get("owner_decisions")
                 after_decisions = after.get("owner_decisions")
                 if (
@@ -6403,6 +6704,35 @@ def _exact_direction_grant_delta(
     if granted_target.get("merge_grant", {}).get("granted_at") != granted_at:
         return False
     return not errors
+
+
+def _exact_interview_extract_repository_only_profile_delta(
+    parent_ledger: object,
+    profiled_ledger: object,
+) -> bool:
+    """Prove the inert Extract profile changes no lane or authority state."""
+    if not isinstance(parent_ledger, dict) or not isinstance(profiled_ledger, dict):
+        return False
+    if (
+        parent_ledger.get("interview_extract_repository_only_merge_admission")
+        is not None
+        or profiled_ledger.get("interview_extract_repository_only_merge_admission")
+        != INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION
+        or _canonical_sha256(INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION)
+        != INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION_SHA256
+    ):
+        return False
+    expected = copy.deepcopy(parent_ledger)
+    expected["updated_at"] = profiled_ledger.get("updated_at")
+    expected["interview_extract_repository_only_merge_admission"] = (
+        INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION
+    )
+    return bool(
+        profiled_ledger == expected
+        and _utc_timestamp_strictly_advances(
+            profiled_ledger.get("updated_at"), parent_ledger.get("updated_at")
+        )
+    )
 
 
 def _exact_connect_002_merge_admission_repair_delta(
@@ -7647,6 +7977,99 @@ def _direction_main_sequence_facts(
     candidate_sha: str,
     origin_main: str,
 ) -> tuple[list[str], bool, int]:
+    if package_id == INTERVIEW_EXTRACT_TARGET_PACKAGE:
+        if candidate_sha != INTERVIEW_EXTRACT_REVIEWED_SHA:
+            return [], False, 0
+        control_base = INTERVIEW_EXTRACT_CANDIDATE_BASE_SHA
+        main_commits = [
+            sha
+            for sha in _git(
+                "rev-list", "--reverse", f"{control_base}..{origin_main}"
+            ).splitlines()
+            if sha
+        ]
+        main_paths = sorted(
+            _git_nul(
+                "diff", "--name-only", "-z", f"{control_base}..{origin_main}"
+            )
+        )
+        if len(main_commits) != 3:
+            return main_paths, False, len(main_commits)
+        activation_sha, profile_sha, grant_sha = main_commits
+        activation_parent = _git("rev-parse", f"{activation_sha}^")
+        profile_parent = _git("rev-parse", f"{profile_sha}^")
+        grant_parent = _git("rev-parse", f"{grant_sha}^")
+        activation_paths = set(
+            _git_nul(
+                "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                activation_sha,
+            )
+        )
+        profile_paths = set(
+            _git_nul(
+                "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                profile_sha,
+            )
+        )
+        grant_paths = set(
+            _git_nul(
+                "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
+                grant_sha,
+            )
+        )
+        activation_tree = _git("rev-parse", f"{activation_sha}^{{tree}}")
+        activation_source_tree = _git(
+            "rev-parse", f"{INTERVIEW_EXTRACT_CONTROL_ACTIVATION_SOURCE}^{{tree}}"
+        )
+        activation_ledger = load_ledger_at_ref(activation_sha)
+        profile_ledger = load_ledger_at_ref(profile_sha)
+        candidate_merge_base = _git("merge-base", candidate_sha, origin_main)
+        candidate_paths = set(
+            _git_nul(
+                "diff", "--name-only", "-z", f"{control_base}..{candidate_sha}"
+            )
+        )
+        final_target = next(
+            (
+                item
+                for item in origin_ledger.get("active_lanes", [])
+                if isinstance(item, dict) and item.get("package") == package_id
+            ),
+            None,
+        )
+        valid = bool(
+            activation_sha == INTERVIEW_EXTRACT_CONTROL_ACTIVATION_MAIN
+            and activation_parent == control_base
+            and profile_parent == activation_sha
+            and grant_parent == profile_sha
+            and activation_paths == set(INTERVIEW_EXTRACT_ACTIVATION_PATHS)
+            and profile_paths == set(INTERVIEW_EXTRACT_CONTROL_PATHS)
+            and grant_paths == set(GRANT_ALLOWED_SURFACES)
+            and activation_tree == activation_source_tree
+            and _exact_interview_extract_repository_only_profile_delta(
+                activation_ledger, profile_ledger
+            )
+            and _exact_direction_grant_delta(
+                profile_ledger, origin_ledger, package_id
+            )
+            and candidate_merge_base == control_base
+            and candidate_paths == set(INTERVIEW_EXTRACT_CANDIDATE_PATHS)
+            and not (
+                candidate_paths
+                & (
+                    set(INTERVIEW_EXTRACT_ACTIVATION_PATHS)
+                    | set(INTERVIEW_EXTRACT_CONTROL_PATHS)
+                    | set(GRANT_ALLOWED_SURFACES)
+                )
+            )
+            and origin_ledger.get("interview_extract_repository_only_merge_admission")
+            == INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION
+            and isinstance(final_target, dict)
+            and _is_interview_extract_reviewed_implementation_lane(final_target)
+            and final_target.get("merge_grant", {}).get("reviewed_remote_sha")
+            == candidate_sha
+        )
+        return main_paths, valid, len(main_commits)
     if package_id == SEARCH_PACKAGE:
         if candidate_sha != SEARCH_REVIEWED_SHA:
             return [], False, 0
@@ -8151,6 +8574,9 @@ def _collect_direction_candidate_merge(
     )
     is_sd1 = _is_sd1_reviewed_implementation_lane(target)
     is_search = _is_search_reviewed_implementation_lane(target)
+    is_interview_extract = _is_interview_extract_reviewed_implementation_lane(
+        target
+    )
     if (
         (
             not is_direction
@@ -8160,8 +8586,12 @@ def _collect_direction_candidate_merge(
             and not is_community_authoring
             and not is_sd1
             and not is_search
+            and not is_interview_extract
         )
-        or target.get("production_capable") is not False
+        or (
+            target.get("production_capable") is not False
+            and not is_interview_extract
+        )
     ):
         raise RuntimeError(
             "--candidate-worktree is only for a code-controlled non-production reviewed lane"
@@ -8333,6 +8763,10 @@ def evaluate_policy(
             is_search_package = bool(
                 isinstance(target, dict) and target.get("package") == SEARCH_PACKAGE
             )
+            is_interview_extract_package = bool(
+                isinstance(target, dict)
+                and target.get("package") == INTERVIEW_EXTRACT_TARGET_PACKAGE
+            )
             is_reviewed_target = bool(
                 isinstance(target, dict)
                 and (
@@ -8347,11 +8781,13 @@ def evaluate_policy(
                     or _is_community_authoring_reviewed_implementation_lane(target)
                     or _is_sd1_reviewed_implementation_lane(target)
                     or _is_search_reviewed_implementation_lane(target)
+                    or _is_interview_extract_reviewed_implementation_lane(target)
                     or is_profile_core_package
                     or is_connect_002_package
                     or is_community_authoring_package
                     or is_sd1_package
                     or is_search_package
+                    or is_interview_extract_package
                 )
                 and (
                     target.get("production_capable") is False
@@ -8360,6 +8796,7 @@ def evaluate_policy(
                     or is_community_authoring_package
                     or is_sd1_package
                     or is_search_package
+                    or is_interview_extract_package
                 )
             )
             if not is_reviewed_target:
@@ -8407,6 +8844,16 @@ def evaluate_policy(
                         "code-controlled reviewed implementation lane"
                     )
                 if (
+                    is_interview_extract_package
+                    and not _is_interview_extract_reviewed_implementation_lane(
+                        target
+                    )
+                ):
+                    errors.append(
+                        "Interview Extract merge target does not equal the exact "
+                        "code-controlled production-capable lane"
+                    )
+                if (
                     is_community_authoring_package
                     and (
                         origin_ledger.get("community_authoring_release_admission")
@@ -8438,6 +8885,17 @@ def evaluate_policy(
                     errors.append(
                         "Search 3F merge remains blocked pending the exact "
                         "release-profile admission"
+                    )
+                if (
+                    is_interview_extract_package
+                    and origin_ledger.get(
+                        "interview_extract_repository_only_merge_admission"
+                    )
+                    != INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION
+                ):
+                    errors.append(
+                        "Interview Extract merge remains blocked pending the exact "
+                        "repository-only admission profile"
                     )
                 if is_connect_002_package:
                     if (
@@ -8496,6 +8954,23 @@ def evaluate_policy(
                 if facts.get("merge_main_control_commit_count") != expected_control_commits:
                     errors.append(
                         "SD-1 merge requires exactly two verified post-activation "
+                        "main control commits"
+                    )
+            elif package_id == INTERVIEW_EXTRACT_TARGET_PACKAGE:
+                expected_behind = 3
+                expected_main_paths = (
+                    set(INTERVIEW_EXTRACT_ACTIVATION_PATHS)
+                    | set(INTERVIEW_EXTRACT_CONTROL_PATHS)
+                    | set(GRANT_ALLOWED_SURFACES)
+                )
+                if facts.get("behind") != expected_behind:
+                    errors.append(
+                        "Interview Extract merge requires exactly its activation, "
+                        "repository-only profile, and exact grant commits"
+                    )
+                if facts.get("merge_main_control_commit_count") != expected_behind:
+                    errors.append(
+                        "Interview Extract merge requires exactly three verified "
                         "main control commits"
                     )
             elif package_id == SEARCH_PACKAGE:
@@ -8682,6 +9157,13 @@ def evaluate_policy(
                         "activation, exact immutable admission, and exact review-bound "
                         "grant are tolerated"
                     )
+            elif package_id == INTERVIEW_EXTRACT_TARGET_PACKAGE:
+                if facts.get("behind") == 3:
+                    warnings.append(
+                        "Interview Extract candidate predates its exact control "
+                        "profile; only the activation, inert profile, and "
+                        "repository-only grant are tolerated"
+                    )
             elif facts.get("behind") == expected_behind:
                 warnings.append(
                     f"merge candidate is {facts['behind']} commit(s) behind origin/main; "
@@ -8727,6 +9209,18 @@ def evaluate_policy(
         ):
             errors.append(
                 "Search 3F grant remains blocked pending the exact release-profile admission"
+            )
+            return errors, warnings
+        if (
+            package_id == INTERVIEW_EXTRACT_TARGET_PACKAGE
+            and origin_ledger.get(
+                "interview_extract_repository_only_merge_admission"
+            )
+            != INTERVIEW_EXTRACT_REPOSITORY_ONLY_ADMISSION
+        ):
+            errors.append(
+                "Interview Extract grant remains blocked pending the exact "
+                "repository-only admission profile"
             )
             return errors, warnings
         if (
@@ -8804,7 +9298,10 @@ def evaluate_policy(
                     )
                 continue
             expected_lane = dict(origin_lane)
-            if package_id == OPPORTUNITY_SLATE_PACKAGE:
+            if package_id in {
+                OPPORTUNITY_SLATE_PACKAGE,
+                INTERVIEW_EXTRACT_TARGET_PACKAGE,
+            }:
                 origin_decisions = origin_lane.get("owner_decisions")
                 candidate_decisions = candidate_lane.get("owner_decisions")
                 if (
@@ -8817,8 +9314,8 @@ def evaluate_policy(
                     )
                 ):
                     errors.append(
-                        "Opportunity Slate grant must append exactly the "
-                        "code-controlled owner release decision"
+                        "grant must append exactly the code-controlled owner "
+                        "decision for its reviewed package"
                     )
                 else:
                     expected_lane["owner_decisions"] = candidate_decisions
@@ -8831,7 +9328,11 @@ def evaluate_policy(
             if "merge_grant" in origin_lane:
                 errors.append("grant target already has a merge_grant")
             if (
-                package_id != OPPORTUNITY_SLATE_PACKAGE
+                package_id
+                not in {
+                    OPPORTUNITY_SLATE_PACKAGE,
+                    INTERVIEW_EXTRACT_TARGET_PACKAGE,
+                }
                 and candidate_lane.get("owner_decisions")
                 != origin_lane.get("owner_decisions")
             ):
@@ -8864,6 +9365,15 @@ def evaluate_policy(
                     if facts.get("grant_review_evidence") != []:
                         errors.append(
                             "Search grant must use only the immutable control attestation"
+                        )
+                elif package_id == INTERVIEW_EXTRACT_TARGET_PACKAGE:
+                    if facts.get("grant_review_evidence_existing") != []:
+                        errors.append(
+                            "Interview Extract grant must not substitute candidate-path review evidence"
+                        )
+                    if facts.get("grant_review_evidence") != []:
+                        errors.append(
+                            "Interview Extract grant must use only the immutable control attestations"
                         )
                 else:
                     evidence_paths = _paths_within_lane(
@@ -12409,6 +12919,9 @@ def main(argv: list[str] | None = None) -> int:
                         or _is_connect_002_reviewed_implementation_lane(target)
                         or _is_sd1_reviewed_implementation_lane(target)
                         or _is_search_reviewed_implementation_lane(target)
+                        or _is_interview_extract_reviewed_implementation_lane(
+                            target
+                        )
                     )
                 ):
                     missing_candidate_message = (
