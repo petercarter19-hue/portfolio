@@ -1,0 +1,29 @@
+{
+ "clock": 1755648000,
+ "env": {
+  "ANTHROPIC_API_KEY": "parity-oracle-fixed-key",
+  "INTERVIEW_CONTEXT_SIGNING_KEY": "parity-oracle-interview-context-signing-key",
+  "PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED": null
+ },
+ "fixture": "coach_refusal_not_json_415",
+ "source_checkpoint": "73c4e63dc74a2e67fb6bed0ed4c3d9e58e3525c5",
+ "steps": [
+  {
+   "database_calls": [],
+   "provider_call_count": 0,
+   "provider_calls": [],
+   "provider_replies": [],
+   "request": {
+    "data": "question=x",
+    "json": null,
+    "path": "/api/interview/review"
+   },
+   "response": {
+    "body_b64": "eyJlcnJvciI6IlNlbmQgaW50ZXJ2aWV3IHJlcXVlc3RzIGFzIEpTT04uIn0K",
+    "content_type": "application/json",
+    "status": 415
+   },
+   "unconsumed_replies": 0
+  }
+ ]
+}

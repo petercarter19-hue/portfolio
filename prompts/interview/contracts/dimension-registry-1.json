@@ -1,0 +1,45 @@
+{
+ "families": {
+  "behavioral": [
+   "situation_clarity",
+   "action_ownership",
+   "evidence",
+   "outcome",
+   "reflection"
+  ],
+  "motivation_fit": [
+   "authentic_rationale",
+   "specificity",
+   "role_connection",
+   "forward_direction"
+  ],
+  "professional_intro": [
+   "identity",
+   "relevant_proof",
+   "value",
+   "direction"
+  ],
+  "role_specific": [
+   "relevance",
+   "reasoning",
+   "evidence",
+   "priorities",
+   "execution"
+  ],
+  "situational": [
+   "problem_framing",
+   "judgment",
+   "tradeoffs",
+   "action_plan",
+   "communication"
+  ],
+  "technical_case": [
+   "framing",
+   "assumptions",
+   "reasoning",
+   "tradeoffs",
+   "conclusion"
+  ]
+ },
+ "schema": "interview-dimension-registry@1"
+}

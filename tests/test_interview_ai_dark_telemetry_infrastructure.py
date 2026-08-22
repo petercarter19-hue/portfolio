@@ -423,51 +423,33 @@ class MigrationAuthorityBoundaryTests(unittest.TestCase):
         self.assertEqual(json.loads(completed.stdout)["result"], "refused")
 
 
-class SeparationTests(unittest.TestCase):
-    """No runtime, provider, or B3 material entered this branch."""
+class RuntimeLandedTests(unittest.TestCase):
+    """The infrastructure-era SeparationTests asserted that NO Interview
+    runtime existed in the dark-infrastructure branch. That was a property
+    of that branch, not of main: once the accepted runtime projection
+    lands, the runtime package, its parity oracle, its tooling, and the B3
+    pipeline vendoring are all present BY DESIGN, and separation is
+    enforced by the runtime's own guarded-closure, trust-root, and
+    runtime-lock suites under tests/interview_ai/. These tests record
+    that transition so the file cannot silently assert a stale world."""
 
-    def test_no_interview_runtime_package_is_present(self):
-        self.assertFalse((ROOT / "services" / "interview_ai").exists())
-        self.assertFalse((ROOT / "prompts" / "interview").exists())
-        self.assertFalse((ROOT / "tests" / "interview_ai").exists())
-
-    def test_no_parity_oracle_is_copied_here(self):
-        # The runtime parity oracle stays on the runtime branch.
-        self.assertFalse(
-            (ROOT / "tests" / "interview_ai" / "fixtures" / "parity").exists()
+    def test_runtime_package_and_its_own_guards_are_present(self):
+        self.assertTrue((ROOT / "services" / "interview_ai").is_dir())
+        self.assertTrue(
+            (ROOT / "tests" / "interview_ai" / "test_guarded_app_closure.py").is_file()
+        )
+        self.assertTrue(
+            (ROOT / "tests" / "interview_ai" / "test_runtime_lock.py").is_file()
         )
 
-    def test_pipeline_carries_no_runtime_lock_material(self):
-        for marker in (
-            "interview-runtime-lock.txt",
-            "interview-runtime-constraints.txt",
-            "interview-runtime-vendor-args.txt",
-            "verify_staged_runtime",
-            "--require-hashes",
-            ".python_packages",
-        ):
-            self.assertNotIn(marker, PIPELINE, marker)
-
-    def test_this_branch_dispatches_to_no_provider(self):
-        for script in sorted(
-            (ROOT / "scripts" / "interview_ai").glob("*.py")
-        ):
-            source = script.read_text(encoding="utf-8")
-            self.assertNotIn("anthropic", source.lower(), script.name)
-            self.assertNotIn("messages.create", source, script.name)
-
-    def test_only_the_two_telemetry_scripts_are_present(self):
-        names = sorted(
-            path.name
-            for path in (ROOT / "scripts" / "interview_ai").glob("*.py")
-        )
-        self.assertEqual(
-            names,
-            [
-                "run_interview_telemetry_purge.py",
-                "run_interview_telemetry_sql_proof.py",
-            ],
-        )
+    def test_telemetry_tools_remain_provider_free(self):
+        for name in ("run_interview_telemetry_purge.py",
+                     "run_interview_telemetry_sql_proof.py"):
+            source = (ROOT / "scripts" / "interview_ai" / name).read_text(
+                encoding="utf-8"
+            )
+            self.assertNotIn("anthropic", source.lower(), name)
+            self.assertNotIn("messages.create", source, name)
 
 
 class BoundedOperationTests(unittest.TestCase):

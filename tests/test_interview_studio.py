@@ -33,6 +33,43 @@ from app import (
     _extract_json_object,
 )
 from services.database_service import DatabaseServiceError
+from services import interview_ai
+
+
+# PS-INTERVIEW-AI-EXTRACT-001: the Interview AI provider paths now resolve
+# an active release set before any provider dispatch, failing closed to 503
+# when none is configured. Under the recorded initial-extraction release the
+# behaviour is byte-identical to the legacy in-route implementation (proven
+# by tests/interview_ai/test_parity_replay.py), so this module selects that
+# recorded release for the whole file and every pre-existing expectation
+# stands unchanged.
+_CONTROL_REGISTRY = json.loads(
+    (Path(__file__).parents[1] / 'prompts' / 'interview' / 'control'
+     / 'registry.json').read_text(encoding='utf-8')
+)
+_ACTIVE_RELEASE_ID = (
+    _CONTROL_REGISTRY['active_release_set']['interview_release_set_id']
+)
+_release_config_before_module = None
+
+
+def setUpModule():
+    global _release_config_before_module
+    _release_config_before_module = app.config.get(
+        interview_ai.ACTIVE_RELEASE_CONFIG_KEY
+    )
+    app.config[interview_ai.ACTIVE_RELEASE_CONFIG_KEY] = _ACTIVE_RELEASE_ID
+    interview_ai.reset_resolution_cache()
+    # B3 second round: requests never initialize; the module performs the
+    # process-boot act explicitly after its simulated restart.
+    interview_ai.boot.initialize(_ACTIVE_RELEASE_ID)
+
+
+def tearDownModule():
+    app.config[interview_ai.ACTIVE_RELEASE_CONFIG_KEY] = (
+        _release_config_before_module
+    )
+    interview_ai.reset_resolution_cache()
 
 
 DIMENSIONS = INTERVIEW_FAMILY_DIMENSIONS['behavioral']
@@ -2702,12 +2739,18 @@ class InterviewFailureReasonTests(unittest.TestCase):
         also be classified, or coaching failures silently become unattributable
         again.
         """
-        source = (Path(__file__).parents[1] / 'app.py').read_text(encoding='utf-8')
+        # PS-INTERVIEW-AI-EXTRACT-001 correction C1: the validators live in
+        # the guarded runtime package now; the coverage sweep follows them.
+        source = (
+            Path(__file__).parents[1] / 'services' / 'interview_ai'
+            / 'validation.py'
+        ).read_text(encoding='utf-8')
         tree = ast.parse(source)
         watched = {
             '_dimension_score',
             '_string_list',
             '_extract_json_object',
+            'extract_json_object',
             'validate_interview_review',
             'validate_interview_model_answer',
             'validate_interview_improvement',
@@ -4158,10 +4201,16 @@ class InterviewStudioConsequenceStackContractTests(unittest.TestCase):
             r"var IMPROVEMENT_MARKER_PATTERN = /\[[A-Z][a-zA-Z]*\s[^[\]]*\.\]/g;",
             script,
         )
-        app_source = Path('app.py').read_text(encoding='utf-8')
+        # PS-INTERVIEW-AI-EXTRACT-001 correction C1: the server pattern's
+        # single definition lives in the guarded contracts module; app.py
+        # aliases it. The byte-for-byte source assertion follows the
+        # definition so the JS/server equivalence guard keeps its teeth.
+        marker_source = Path(
+            'services/interview_ai/contracts.py'
+        ).read_text(encoding='utf-8')
         self.assertIn(
             r"_IMPROVEMENT_MARKER_PATTERN = re.compile(r'\[[A-Z][a-zA-Z]*\s[^\[\]]*\.\]')",
-            app_source,
+            marker_source,
         )
         self.assertIn('function unresolvedMarkerCount(draftText)', script)
         self.assertIn('reviewRevisedButton.disabled = count > 0;', script)

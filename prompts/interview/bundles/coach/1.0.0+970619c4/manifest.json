@@ -1,0 +1,12 @@
+{
+ "bundle_content_sha256": "970619c421094b00c3b75fbed81620b0b94cc77b3fc592ec54395faf4942e6fe",
+ "bundle_label": "1.0.0+970619c4",
+ "files": {
+  "constitution.md": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "instruction.md": "a219a9cbfb777f9a57997441794acfa179a1ac1fe44059854869582544958382",
+  "provider.json": "508e88ed5e976ac8065f1c7304dd624b2fce7f91a9d62cb2a47a82ab7dba14c9",
+  "schema.json": "e067527cb08d9fbda85ed94229c69b269dc809cb88947f7785152eaf8833247e"
+ },
+ "semver": "1.0.0",
+ "specialist": "coach"
+}

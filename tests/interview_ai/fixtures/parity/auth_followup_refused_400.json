@@ -1,0 +1,43 @@
+{
+ "auth": {
+  "identity": {
+   "display_name": "Casey Rivera",
+   "user_key": "synthetic-user-key-0001"
+  },
+  "owner": true
+ },
+ "clock": 1755648000,
+ "env": {
+  "ANTHROPIC_API_KEY": "parity-oracle-fixed-key",
+  "INTERVIEW_CONTEXT_SIGNING_KEY": "parity-oracle-interview-context-signing-key",
+  "PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED": "true"
+ },
+ "fixture": "auth_followup_refused_400",
+ "provenance": "Recorded post-rejection (correction C10) from legacy checkpoint 73c4e63d via a detached provenance worktree; the original 32 fixtures re-recorded byte-identically in the same run.",
+ "source_checkpoint": "73c4e63dc74a2e67fb6bed0ed4c3d9e58e3525c5",
+ "steps": [
+  {
+   "database_calls": [],
+   "provider_call_count": 0,
+   "provider_calls": [],
+   "provider_replies": [],
+   "request": {
+    "data": null,
+    "json": {
+     "family": "behavioral",
+     "follow_up": "And what happened next?",
+     "level": "experienced",
+     "mode": "member_history",
+     "question": "Tell me about a time you led a project under pressure."
+    },
+    "path": "/api/interview/model-answer"
+   },
+   "response": {
+    "body_b64": "eyJlcnJvciI6IkZvbGxvdy11cCBxdWVzdGlvbnMgYXJlIG5vdCBhdmFpbGFibGUgeWV0LiJ9Cg==",
+    "content_type": "application/json",
+    "status": 400
+   },
+   "unconsumed_replies": 0
+  }
+ ]
+}

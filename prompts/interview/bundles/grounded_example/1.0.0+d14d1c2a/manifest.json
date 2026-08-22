@@ -1,0 +1,12 @@
+{
+ "bundle_content_sha256": "d14d1c2a34e0c61a35a5c0ada74b4471d406fa2c179be6fc9910b77bdbccd5cc",
+ "bundle_label": "1.0.0+d14d1c2a",
+ "files": {
+  "constitution.md": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "instruction.md": "dac5347f34c5de0226bf69d7632bf3885bea383f5cd6637b9c026e026e4ff2b2",
+  "provider.json": "3f73aab130844792fd25dc02d9339f4c89cb9570d019ae822fccbae15df96aee",
+  "schema.json": "addacf00d6b72b1bf64c8c13136c32043996fa70bff6e6f5c9f1ace3b9e9ddeb"
+ },
+ "semver": "1.0.0",
+ "specialist": "grounded_example"
+}

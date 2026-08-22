@@ -1,0 +1,20 @@
+{
+ "input_manifest": {
+  "question": {
+   "authorization": "current_practice_authorized",
+   "provenance": "member_submitted"
+  },
+  "role_context": {
+   "authorization": "reference_only",
+   "provenance": "external_untrusted"
+  }
+ },
+ "output_contract": {
+  "fields": [
+   "hints"
+  ],
+  "note": "Mirrors the legacy validator contract for this specialist; the Python validators in the guarded runtime remain the enforcing boundary (guardian-runtime-legacy@1)."
+ },
+ "schema": "interview-ai-bundle-schema@1",
+ "specialist": "planning_hints"
+}
