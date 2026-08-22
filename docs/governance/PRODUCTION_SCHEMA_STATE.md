@@ -6,9 +6,9 @@ This file is the repository's record of which schema migrations the named databa
 
 - Database: `peerslate-database`
 - Server: `peerslate`
-- Read at: `2026-08-07T16:19:24Z` UTC
+- Read at: `2026-08-22T22:31:10Z` UTC
 
-## Applied (25)
+## Applied (28)
 
 In registry order.
 
@@ -39,19 +39,29 @@ In registry order.
 | 23 | `PS-COMMUNITY-RETENTION-001` | 2026-08-04T12:13:39.0945281 | yes |
 | 24 | `PS-COMMUNITY-RESTORE-001` | 2026-08-04T12:13:39.1616332 | yes |
 | 25 | `PS-COMMUNITY-REVIVAL-001` | 2026-08-07T16:08:11.6886179 | yes |
+| 26 | `PS-ASK-PETE-DIRECT-001` | 2026-08-09T02:53:06.6949801 | yes |
+| 27 | `PS-OPPSLATE-004` | 2026-08-12T14:44:53.0420853 | yes |
+| 28 | `PS-INTERVIEW-AI-EXTRACT-001` | 2026-08-22T22:27:00.0344489 | yes |
 
-## Registered but not applied (2)
+## Registered but not applied (4)
 
 | Migration | Gate proof | Summary |
 | --- | --- | --- |
 | `PS-JOURNAL-001` | **none or stale** | Derived private Journal read, idempotent Save Moment, and deterministic owner-authorized search. |
 | `PS-PLAT-008` | **none or stale** | People and Interests feed domain. Never approved for any database; see the file header. |
+| `PS-PROFILE-002` | **none or stale** | Dark additive governed Profile publication foundation: normalized Profile-native versions, exact source projection references, private draft placements, immutable audience revision manifests, idempotent command records, and reserved slug history. Connections activation remains gated on the future PS-CONNECT-002 relationship hardening and is not enabled by this candidate. |
+| `PS-CONNECT-002` | matches file | Non-production additive relationship foundation for future Profile audience authorization: preserves PS-PLAT-004 request, connection, and block truth while adding pair-scoped lifecycle state, append-only event/epoch evidence, binary exact idempotent commands, and actor-scoped snapshots. It is not wired, applied, released, or enabled by this candidate. |
 
 ## Machine-readable record
 
 ```json
 {
   "applied": [
+    {
+      "applied_at_utc": "2026-08-09T02:53:06.6949801",
+      "id": "PS-ASK-PETE-DIRECT-001",
+      "registered": true
+    },
     {
       "applied_at_utc": "2026-07-17T00:05:49.0647696",
       "id": "PS-AUTH-001",
@@ -98,6 +108,11 @@ In registry order.
       "registered": true
     },
     {
+      "applied_at_utc": "2026-08-22T22:27:00.0344489",
+      "id": "PS-INTERVIEW-AI-EXTRACT-001",
+      "registered": true
+    },
+    {
       "applied_at_utc": "2026-07-18T23:01:15.1212428",
       "id": "PS-MOMENT-001",
       "registered": true
@@ -115,6 +130,11 @@ In registry order.
     {
       "applied_at_utc": "2026-08-06T00:48:14.4860869",
       "id": "PS-OPPSLATE-003",
+      "registered": true
+    },
+    {
+      "applied_at_utc": "2026-08-12T14:44:53.0420853",
+      "id": "PS-OPPSLATE-004",
       "registered": true
     },
     {
@@ -179,10 +199,12 @@ In registry order.
     }
   ],
   "database": "peerslate-database",
-  "generated_at_utc": "2026-08-07T16:19:24Z",
+  "generated_at_utc": "2026-08-22T22:31:10Z",
   "pending": [
     "PS-JOURNAL-001",
-    "PS-PLAT-008"
+    "PS-PLAT-008",
+    "PS-PROFILE-002",
+    "PS-CONNECT-002"
   ],
   "pipeline_build_id": "",
   "pipeline_source_version": "",
