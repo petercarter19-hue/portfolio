@@ -14,6 +14,11 @@ The tests below hold the separation contract:
 - the migration and rollback match the CURRENT recorded disposable-gate
   receipt, refreshed on a new throwaway database whenever the SQL bytes
   change;
+- the migration carries schema only: the two execute-only roles, their
+  grants and the identity memberships are created by the administrator-run
+  authority script, because the governed apply identity holds
+  db_ddladmin only (run 1419, 2026-08-22, refused the in-migration
+  version transactionally and wrote nothing);
 - no runtime, provider, or B3 runtime-lock material entered this branch;
 - evidence carries no secret, connection string, member content, model
   content, URL, or raw exception text.
@@ -226,6 +231,164 @@ class GateReceiptTests(unittest.TestCase):
         self.assertEqual(
             proof["rollback_completes_against_empty_table"], "pass"
         )
+
+
+class MigrationAuthorityBoundaryTests(unittest.TestCase):
+    """Schema and security-principal work are separate operations.
+
+    The governed apply identity (peerslate-ado-schema) holds db_ddladmin
+    only. It can create tables and procedures; it can neither create
+    database roles nor grant execute permission. Run 1419 (2026-08-22)
+    refused the migration that embedded both - transactionally, nothing
+    written - so the roles, grants and memberships now come from the
+    administrator-run authority script, exactly as Community maintenance
+    already does. The disposable gate proves the same function.
+    """
+
+    AUTHORITY = ROOT / "scripts" / "configure_interview_telemetry_sql_authority.py"
+    PROOF = ROOT / "scripts" / "interview_ai" / "run_interview_telemetry_sql_proof.py"
+    # T-SQL is case-insensitive, so the probe is too; comments are
+    # stripped first so prose can neither hide a statement nor trip it.
+    SECURITY_STATEMENTS = re.compile(
+        r"\b(CREATE\s+ROLE|ALTER\s+ROLE|DROP\s+ROLE|GRANT|DENY|REVOKE"
+        r"|CREATE\s+USER|ALTER\s+USER|DROP\s+USER|ALTER\s+AUTHORIZATION"
+        r"|CREATE\s+SCHEMA|EXECUTE\s+AS|sp_addrolemember|sp_droprolemember"
+        r"|sp_addsrvrolemember)\b",
+        re.IGNORECASE,
+    )
+
+    @staticmethod
+    def _statements_only(sql):
+        without_blocks = re.sub(r"/\*.*?\*/", " ", sql, flags=re.S)
+        return re.sub(r"--[^\r\n]*", " ", without_blocks)
+
+    def test_comment_stripping_and_case_folding_are_real(self):
+        # Negative controls: the probe must fire on lowercase statements
+        # and must NOT fire on statements that live only inside comments.
+        self.assertEqual(
+            [m.upper() for m in self.SECURITY_STATEMENTS.findall(
+                self._statements_only("create role x; /* GRANT y */ -- DENY z"))],
+            ["CREATE ROLE"],
+        )
+
+    def test_forward_migration_carries_schema_only(self):
+        self.assertEqual(
+            self.SECURITY_STATEMENTS.findall(
+                self._statements_only(FORWARD_SQL.read_text(encoding="utf-8"))
+            ),
+            [],
+            "the forward migration must not create roles, users or grants: the "
+            "governed apply identity cannot execute them",
+        )
+
+    def test_rollback_carries_no_role_teardown(self):
+        self.assertEqual(
+            self.SECURITY_STATEMENTS.findall(
+                self._statements_only(ROLLBACK_SQL.read_text(encoding="utf-8"))
+            ),
+            [],
+        )
+
+    def test_rollback_is_recorded_as_administrator_run(self):
+        # The empty-table guard reads the table, which db_ddladmin cannot;
+        # the rollback file and the release plan must both say so.
+        rollback = ROLLBACK_SQL.read_text(encoding="utf-8")
+        self.assertIn("runs as the administrator", rollback)
+        plan = (EVIDENCE_DIR / "10_RELEASE_PLAN.md").read_text(encoding="utf-8")
+        self.assertIn("Administrator-run rollback", plan)
+
+    def test_authority_script_owns_roles_grants_and_memberships(self):
+        self.assertTrue(self.AUTHORITY.is_file())
+        source = self.AUTHORITY.read_text(encoding="utf-8")
+        for expected in (
+            "interview_telemetry_append",
+            "interview_telemetry_maintenance",
+            APPEND_PROCEDURE,
+            PURGE_PROCEDURE,
+            "CREATE ROLE",
+            "GRANT EXECUTE ON OBJECT::dbo.",
+            "TYPE = E",
+            "ALTER ROLE",
+            "--confirm-apply",
+            'ALLOWED_DATABASE = "peerslate-database"',
+            "def ensure_roles_and_grants",
+            "def ensure_application_denies",
+            "DENY EXECUTE ON OBJECT::dbo.",
+            "DENY SELECT, INSERT, UPDATE, DELETE ON OBJECT::dbo.",
+        ):
+            self.assertIn(expected, source, expected)
+        # Exactly one grant per role, each to its own procedure, never a table.
+        self.assertIn(
+            "(APPEND_ROLE, APPEND_PROCEDURE),", source
+        )
+        self.assertIn(
+            "(MAINTENANCE_ROLE, PURGE_PROCEDURE),", source
+        )
+        # The only GRANT verb in the script is EXECUTE; the table is
+        # touched only by DENY.
+        self.assertEqual(
+            set(re.findall(r"\bGRANT\s+([A-Z]+)", source)), {"EXECUTE"}
+        )
+        self.assertIn("DENY SELECT, INSERT, UPDATE, DELETE ON OBJECT::dbo.{TELEMETRY_TABLE}", source)
+        # The script connects as the Entra administrator and never reads a
+        # credential: SQL-auth cannot impersonate an EXTERNAL_USER.
+        self.assertIn("Authentication=ActiveDirectoryDefault", source)
+        self.assertNotIn("get_connection", source)
+        self.assertNotIn("AZURE_SQL_CONNECTIONSTRING", source)
+        self.assertNotIn("--env-file", source)
+        # Every failure path reports an exception class, never raw text.
+        self.assertNotIn("import traceback", source)
+        self.assertGreaterEqual(source.count('"error_class": type(error).__name__'), 3)
+        # The Community maintenance identity is named only to assert its absence.
+        self.assertNotIn(
+            "ADD MEMBER [peerslate-community-maintenance]", source
+        )
+
+    def test_authority_script_never_dispatches_to_a_provider(self):
+        source = self.AUTHORITY.read_text(encoding="utf-8").lower()
+        self.assertNotIn("anthropic", source)
+        self.assertNotIn("messages.create", source)
+
+    def test_proof_tool_binds_roles_through_the_authority_module(self):
+        source = self.PROOF.read_text(encoding="utf-8")
+        self.assertIn(
+            "from configure_interview_telemetry_sql_authority import", source
+        )
+        self.assertIn("ensure_roles_and_grants(cursor)", source)
+        self.assertNotIn("CREATE ROLE", source)
+        # Round 2: apply() and verify() run end to end on stand-ins, and
+        # the recorded proof carries the end-to-end result.
+        self.assertIn("authority_apply(", source)
+        self.assertIn("authority_verify(", source)
+        self.assertEqual(
+            DISPOSABLE_PROOF["checks"].get("authority_apply_and_verify_end_to_end"),
+            "pass",
+        )
+        self.assertEqual(
+            DISPOSABLE_PROOF["checks"].get(
+                "authority_verify_maintenance_principal_external_with_expected_sid"),
+            "pass",
+        )
+
+    def test_authority_script_refuses_apply_without_confirmation(self):
+        completed = subprocess.run(
+            [sys.executable, str(self.AUTHORITY), "apply",
+             "--maintenance-client-id", "00000000-0000-0000-0000-000000000000"],
+            capture_output=True, text=True, timeout=60,
+        )
+        self.assertEqual(completed.returncode, 2, completed.stderr)
+        report = json.loads(completed.stdout)
+        self.assertEqual(report["result"], "refused")
+        self.assertIn("--confirm-apply", report["reason"])
+
+    def test_authority_script_refuses_a_malformed_client_id(self):
+        completed = subprocess.run(
+            [sys.executable, str(self.AUTHORITY), "verify",
+             "--maintenance-client-id", "not-a-guid"],
+            capture_output=True, text=True, timeout=60,
+        )
+        self.assertEqual(completed.returncode, 2, completed.stderr)
+        self.assertEqual(json.loads(completed.stdout)["result"], "refused")
 
 
 class SeparationTests(unittest.TestCase):
@@ -691,7 +854,7 @@ class ContentFreeEvidenceTests(unittest.TestCase):
         # Statement-anchored: the docstring legitimately SAYS the words
         # "import traceback" while forbidding the act.
         self.assertIsNone(
-            re.search(r"(?m)^\s*import traceback", source)
+            re.search(r"(?m)^\s*import traceback\b", source)
         )
         self.assertNotIn("print_exc", source)
         self.assertNotIn("format_exc", source)

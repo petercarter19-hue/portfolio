@@ -200,9 +200,28 @@ the governed path only: queue the pipeline with a non-default
 `peerslate-database-schema` environment. Schema never moves because a
 pull request merged.
 
-- Already gated: disposable-database proof 88/88, gate receipt in
-  `SQL FIles/Migrations/registry.json`, gate database
-  `ps-interview-extract-gate-b6-20260821` created **and deleted**.
+- Gated: the governing disposable-database proof is `c6` (132/132,
+  `ps-interview-extract-gate-c6-20260822`, created **and deleted**
+  2026-08-22, digest `83ab8c08...`), run after the round-2 corrections
+  below over an Entra-authenticated connection; the earlier `c4`
+  112/112, `c5` (aborted), `c3` 105/105, `b6` 88/88 and `c2`/`c2b`/`c2c`
+  runs are preserved history, not the governing proof.
+- **Run 1419 (2026-08-22) — refused, nothing written.** The first
+  governed apply of the `c3` bytes was refused by SQL Server with a
+  permission error and rolled back transactionally: the ledger, table,
+  procedures and roles were all confirmed absent afterwards. Cause: the
+  governed apply identity (`peerslate-ado-schema`) holds `db_ddladmin`
+  only and can neither `CREATE ROLE` nor `GRANT`, and this migration was
+  the first in the repository to embed both; the disposable gate ran as
+  an administrator and so could not expose the gap. Correction: the
+  migration now carries schema only; roles, grants and memberships
+  move to the administrator-run
+  `scripts/configure_interview_telemetry_sql_authority.py` (the house
+  pattern Community maintenance already uses), and the proof tool runs
+  that script's `apply` and `verify` end to end on stand-ins. The
+  corrected bytes were re-gated on `c6` (132/132, deleted) and still
+  require fresh exact-SHA review and a new governed run, with its own
+  environment approval, before any re-apply.
 - **Any later edit to the migration bytes invalidates that receipt and
   requires a fresh gate on a new throwaway database.**
 - **Verify (provider-free):** schema objects exist as recorded — table,
@@ -211,10 +230,34 @@ pull request merged.
   telemetry table holding any rows (`THROW 50090`). Retiring a non-empty
   production table is its own separately authorized retention-safe
   operation.
+- **Administrator-run rollback.** The empty-table guard reads the table,
+  and `db_ddladmin` carries no data access, so the governed apply
+  identity cannot execute this rollback file (it would be refused
+  before the guard is evaluated - the same shape as every other guarded
+  rollback in the repository; widening that identity is out of scope).
+  A rollback of this migration therefore runs as the administrator
+  through `govern_sql_migrations.py rollback` with the house connection,
+  never through the pipeline's `schemaAction=rollback`. After it, the
+  roles, the maintenance user and their memberships persist with no
+  object permission; removing them is a separate administrator
+  operation (§5a of the evidence record).
 
 ## 7. Phase 4 — Append identity *(WITHHELD)*
 
 Per §3 step 3. Bind and verify the application's append identity.
+
+The `interview_telemetry_append` role and its single execute grant are
+created here by `scripts/configure_interview_telemetry_sql_authority.py`
+(run as the server's Entra administrator over an
+`ActiveDirectoryDefault` connection - a SQL-authenticated administrator
+cannot impersonate an `EXTERNAL_USER`, so `verify` would fail - one
+transaction, verified before commit), not by the
+migration; the application's existing EXTERNAL_USER is then added as
+its only member.
+Because that identity already holds `db_datawriter` and a database-wide
+`EXECUTE` grant, the same transaction places explicit `DENY`s on it for
+the purge procedure and for direct access to the telemetry table;
+`verify` proves the effective boundary on the real identity.
 
 - **Verify (provider-free):** stored-procedure behaviour and permission
   separation — the append role can execute the append procedure and
@@ -225,6 +268,11 @@ Per §3 step 3. Bind and verify the application's append identity.
 
 Per §3 step 4. Provision and verify the independent maintenance identity
 and the scheduled 90-day purge path.
+
+The `interview_telemetry_maintenance` role, its single execute grant and
+the dedicated Interview maintenance EXTERNAL_USER (SID = its Entra
+application ID, never the Community identity) are created by the same
+authority script in the same transaction as Phase 4.
 
 - **Verify (provider-free):** the maintenance role can execute the purge
   procedure and **cannot** append or delete directly; purge readiness is

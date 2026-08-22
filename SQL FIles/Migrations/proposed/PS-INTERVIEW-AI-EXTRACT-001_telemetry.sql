@@ -9,8 +9,9 @@
    frozen in docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/
    01_FROZEN_CONTRACTS.md, hardened per correction B4): one append-only
    table for server_call rows, one allowlisted append procedure, one
-   bounded 90-day purge procedure, and two database roles separating
-   those paths.
+   bounded 90-day purge procedure. The two database roles separating
+   those paths are created by the administrator-run authority script
+   (scripts/configure_interview_telemetry_sql_authority.py), not here.
 
    Correction B4 - SQL enforces the SAME closed contract as the Python
    sentinel; a trusted caller is never a substitute:
@@ -44,9 +45,10 @@
      that never mutate the first stored row, even when the duplicate
      carries a different payload.
 
-   The application identity holds EXECUTE on the append procedure only;
-   the separately named maintenance identity holds EXECUTE on the purge
-   procedure only; neither role has any direct table permission. There is
+   Once the authority script has run, the application identity holds
+   EXECUTE on the append procedure only; the separately named maintenance
+   identity holds EXECUTE on the purge procedure only; neither role has
+   any direct table permission. There is
    no free-text column anywhere; raw SDK/Python class names, messages,
    tracebacks, URLs, bodies, headers, provider ids, member text, and
    model output are structurally unstorable.
@@ -809,20 +811,22 @@ BEGIN TRY
         END;
     ');
 
-    /* Two roles, two paths, no shared identity. The application identity
-       is added to interview_telemetry_append at apply time; the separately
-       named Interview maintenance identity (never the Community one) is
-       added to interview_telemetry_maintenance at apply time. Neither role
-       receives any direct table permission. */
-    IF DATABASE_PRINCIPAL_ID(N'interview_telemetry_append') IS NULL
-        CREATE ROLE interview_telemetry_append;
-    IF DATABASE_PRINCIPAL_ID(N'interview_telemetry_maintenance') IS NULL
-        CREATE ROLE interview_telemetry_maintenance;
-
-    GRANT EXECUTE ON dbo.usp_AppendInterviewAIServerCall
-        TO interview_telemetry_append;
-    GRANT EXECUTE ON dbo.usp_PurgeInterviewAIServerCalls
-        TO interview_telemetry_maintenance;
+    /* Two roles, two paths, no shared identity - but NOT created here.
+       The governed apply identity (peerslate-ado-schema) holds
+       db_ddladmin only: it can create tables and procedures and cannot
+       create database roles or grant execute permission. Run 1419
+       (2026-08-22) proved this transactionally - the statement block
+       that used to live here was refused and nothing was written.
+       Following the house pattern already used for Community
+       maintenance, security-principal work is a separate protected
+       authorization operation run by an administrator:
+         scripts/configure_interview_telemetry_sql_authority.py
+       creates interview_telemetry_append (execute on the append
+       procedure only; member: the application identity) and
+       interview_telemetry_maintenance (execute on the purge procedure
+       only; member: the separately named Interview maintenance
+       identity, never the Community one). Neither role receives any
+       direct table permission. This migration carries schema only. */
 
     IF NOT EXISTS
     (
@@ -837,7 +841,7 @@ BEGIN TRY
         VALUES
         (
             N'PS-INTERVIEW-AI-EXTRACT-001',
-            N'Content-free Interview AI server_call telemetry: one append-only table with enum, bound, null-pairing, and JSON shape-closure enforcement, one allowlisted concurrency-safe append procedure with transactional parent/child validation, one bounded 90-day purge procedure, and two execute-only roles separating the append and purge paths.',
+            N'Content-free Interview AI server_call telemetry: one append-only table with enum, bound, null-pairing, and JSON shape-closure enforcement, one allowlisted concurrency-safe append procedure with transactional parent/child validation, one bounded 90-day purge procedure. Schema only: the two execute-only roles separating the append and purge paths are bound by the administrator-run authority script.',
             N'PeerSlate Bible and Roadmap v3.0'
         );
 

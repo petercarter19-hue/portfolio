@@ -1478,11 +1478,11 @@
       "requires": [
         "PS-PLAT-001"
       ],
-      "summary": "PROPOSAL from the Interview AI extraction slice, never applied by it: the content-free server_call telemetry sink (telemetry-contract@1) - one append-only table whose CHECK constraints enforce every enum and null-pairing rule, a duplicate-dropping append procedure, a bounded 90-day purge procedure, and two execute-only roles keeping the application append path and the separately named Interview maintenance purge path apart.",
+      "summary": "PROPOSAL from the Interview AI extraction slice, never applied by it: the content-free server_call telemetry sink (telemetry-contract@1) - one append-only table whose CHECK constraints enforce every enum and null-pairing rule, a duplicate-dropping append procedure, and a bounded 90-day purge procedure. Schema only: the two execute-only roles keeping the application append path and the separately named Interview maintenance purge path apart are created by the administrator-run scripts/configure_interview_telemetry_sql_authority.py, because the governed apply identity holds db_ddladmin and cannot create roles or grant (run 1419, 2026-08-22, refused the in-migration form and wrote nothing); the disposable proof runs that script's apply and verify end to end on stand-ins.",
       "gate": {
-        "executable_sha256": "2291c3df758b18d98cbb4e6d13ed9817d27e0b3356053679b94fcc2c09410b85",
-        "gated_at_utc": "2026-08-21T23:13:36Z",
-        "gate_database": "ps-interview-extract-gate-c3-20260821",
+        "executable_sha256": "83ab8c082ea4e8ba939ca1dcbee1636582295db56ef050f31b42e11a354145ab",
+        "gated_at_utc": "2026-08-22T17:29:43Z",
+        "gate_database": "ps-interview-extract-gate-c6-20260822",
         "gate_server": "peerslate",
         "prerequisites": [
           "PS-PLAT-000",
@@ -1535,8 +1535,8 @@
           "USER_TABLE:dbo.interview_ai_server_calls"
         ],
         "verification": "none available",
-        "operator": "Claude (PS-INTERVIEW-AI-EXTRACT-001 dark-infrastructure writer, Pete-approved)",
-        "notes": "Pete-approved final gate: runtime-compatible bundle_label <semver>+<sha8> with specialist separate (combined identity specialist@bundle_label); named errors 50050/50051/50053/50054; VARCHAR(80) parameter with overlong+short guards; 50052 retired with the prefix rule"
+        "operator": "Claude (PS-INTERVIEW-AI-EXTRACT-001 completion manager, Pete-approved correction 2026-08-22)",
+        "notes": "Round-2 review corrections after run 1419: migration carries schema only (header and ledger description say so); roles, grants, maintenance user, memberships and application DENYs live in scripts/configure_interview_telemetry_sql_authority.py, run as the Entra administrator; the proof tool runs its apply and verify end to end on stand-ins over an Entra connection; rollback is administrator-run"
       }
     }
   ]

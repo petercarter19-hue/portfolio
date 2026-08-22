@@ -137,8 +137,9 @@ channel closure without breaking the runtime's recorded
 itself now rejected), and the concurrency case is a genuine
 barrier-synchronized two-connection race.
 
-**Governing evidence:** the approved `c3` proof with its 105/105 checks
-is the governing evidence for this candidate. The `c2`, `c2b`, and `c2c`
+**Governing evidence:** the `c3` proof (105/105) governed the candidate
+until run 1419 exposed the authority defect recorded in §5a; the `c6`
+proof (132/132) now governs. The `c2`, `c2b`, and `c2c`
 runs are preserved preapproval history — recorded for completeness and
 auditability — and are NOT the final governed proof.
 
@@ -148,6 +149,111 @@ day. Temporary Basic-tier resources are billable while they exist, so no
 categorical no-cost claim is made; what is claimed is that every proof
 database was deleted and that no production database was contacted at
 any point, by any run.
+
+## 5a. Governed apply attempt, run 1419 (2026-08-22): refused, nothing written
+
+Under Pete's end-to-end completion authority the `c3` migration bytes
+were queued through the governed path (manual run 1419 on `main`
+`6602768f`, `schemaAction=apply`, no application deploy; the read-only
+preflight passed and the approval was registered against the
+`peerslate-database-schema` environment with every listed fact
+re-verified). The apply step was refused by SQL Server with a
+permission error. Each migration runs in its own transaction, so the
+refusal left nothing behind: the run's own post-failure ledger read and
+a direct catalog read both confirmed no ledger row, no table, no
+procedure and no role. The live application was never redeployed.
+
+**Cause.** The governed apply identity, `peerslate-ado-schema`, holds
+`db_ddladmin` plus the ledger table only. That is enough to create
+tables and procedures and deliberately not enough to create database
+roles or grant execute permission. This migration was the first in the
+repository to embed `CREATE ROLE` and `GRANT`; no earlier migration
+carries any security-principal statement, and the one package that
+needed such work (Community maintenance) did it in a separate
+administrator-run authority script. The disposable gate ran as
+an administrator on a throwaway database and therefore could not
+expose the gap - a real limit of that proof, now recorded.
+
+**Correction (this record's branch).** The migration carries schema
+only. Roles, grants, the maintenance EXTERNAL_USER and both memberships
+move to `scripts/configure_interview_telemetry_sql_authority.py`
+(plan/apply/verify, one transaction, complete boundary verified before
+commit, content-free report), mirroring the Community script. The
+rollback no longer touches roles (dropping a procedure drops its grants
+with it). The proof tool now calls the same `ensure_roles_and_grants`
+function - twice for idempotency, and again after the rollback/re-apply
+case - so the gate proves the exact statements an administrator runs.
+`MigrationAuthorityBoundaryTests` hold the split.
+
+**Second finding from the read-only production plan.** The application
+identity (`peerslate-pete`) already holds `db_datareader`,
+`db_datawriter` and a database-wide `EXECUTE` grant. Those predate this
+package and are not changed here, but they would let the application
+execute the purge procedure and write the telemetry table directly -
+the reviewed "application may append and may NOT purge" boundary was
+proven on clean proof users, not on the real identity. The authority
+script therefore also places two explicit `DENY`s on the application
+identity (EXECUTE on the purge procedure; SELECT/INSERT/UPDATE/DELETE
+on the telemetry table). A `DENY` overrides every broader `GRANT`; the
+append procedure keeps working because it and the table share an owner.
+`verify` now proves the effective result for the real identities.
+Whether to keep or narrow the application identity's standing grants
+more generally is outside this package.
+
+**Round-2 independent review (fresh read-only reviewer on `9cbd475c`)
+returned CORRECTIONS REQUIRED with nothing in the gated forward bytes;
+all findings are corrected here:** (1) the rollback's empty-table guard
+reads the table, which `db_ddladmin` cannot - the rollback is now
+recorded, in the file and in the release plan, as administrator-run
+through the governor (a house-wide pattern; widening the apply identity
+is out of scope); (2) `plan`/`verify` could print a raw error dump -
+every mode now reports an exception class only; (3) the proof had not
+exercised `ensure_maintenance_user`, `ensure_memberships` or `verify()` -
+the proof now runs the script's `apply()` and `verify()` end to end on
+stand-ins, including an `EXTERNAL_USER` created from a synthetic SID so
+`EXECUTE AS` on a TYPE = E principal is proven; (4) the statement probe
+in the tests is now case-insensitive, comment-stripped and covers
+`ALTER AUTHORIZATION`, `sp_addrolemember`, `CREATE SCHEMA`, user DDL and
+`EXECUTE AS`, with a negative control; (5) the DENY checks pass only on
+SQL's permission refusal (229) and the delete/insert probes touch no row;
+(6) `HAS_PERMS_BY_NAME` NULL is a failure in both directions; (7) the
+forward header and ledger description no longer say the migration
+creates roles (a text-only byte change, re-gated below); (8) the rollback
+header states exactly what persists after a rollback and that its
+removal is a manual administrator operation: `ALTER ROLE ... DROP
+MEMBER`, `DROP ROLE`, `DROP USER`; (9) the vacuous table-grant
+assertion is replaced by an exact "only EXECUTE is ever granted" check.
+(10) The first end-to-end proof run surfaced a real defect the reviewer had
+flagged as a risk: SQL Server refuses `EXECUTE AS` on an `EXTERNAL_USER`
+from a SQL-authenticated connection ("only active directory users can
+impersonate other active directory users"), and the house `.env`
+connection is SQL-authenticated - so the script's `verify` would have
+failed in production exactly there. The authority script now connects as
+the server's Entra administrator over `ActiveDirectoryDefault` (the
+Community pattern; no credential is read), the proof runs over the same
+kind of connection and records the end-to-end result as a named check,
+and the half-applied `c5` throwaway was deleted in favour of a fresh
+`c6`. The one-byte repair of the traceback-absence probe is out of the
+stated scope and is disclosed as such.
+
+**Consequences, stated plainly.** The corrected bytes no longer match
+the `c3` receipt; the governing status of `c3` ended there. With
+Pete's approval of this correction, the corrected migration was
+re-gated - finally on `ps-interview-extract-gate-c6-20260822` (Basic
+tier, created and deleted 2026-08-22; governor gate passed with
+prerequisites, forward apply, idempotent re-apply, rollback rehearsal and
+re-apply; digest `83ab8c08...` now in the registry receipt) after the
+round-2 corrections, with the full proof battery on that same throwaway
+over an Entra-authenticated connection: 132/132, including the 105
+preserved checks, the authority-function idempotency and re-grant
+checks, the production-shaped stand-in that first reproduces the
+premise (broad grants reach the purge without a DENY) and then proves
+its closure, and the authority script's own `apply` and `verify` run
+end to end (every `verify` check recorded by name). The intermediate
+`c4` (112/112) and `c5` (aborted) throwaways are preserved history. Fresh exact-SHA independent review and a new governed run
+with its own environment approval are still required before any
+re-apply. The Azure approval check itself was neither removed nor
+weakened.
 
 ## 6. Content-free evidence
 

@@ -16,10 +16,26 @@
    recorded operational telemetry.
 
    When the guard passes, teardown runs in reverse dependency order:
-   procedures first, then role members (generated from the catalog, so
-   no knowledge of apply-time identity binding is needed), then roles,
-   then the empty table. The ledger row is removed last so a database
-   can never claim a migration it no longer carries.
+   procedures first, then the empty table. The ledger row is removed
+   last so a database can never claim a migration it no longer carries.
+   The two execute-only roles are NOT touched here: they are created
+   by the administrator-run authority script
+   (scripts/configure_interview_telemetry_sql_authority.py), not by the
+   forward migration, because the governed apply identity holds
+   db_ddladmin only and can neither create nor drop roles. Dropping a
+   procedure or table removes its grants and DENYs with it, so after
+   this rollback the roles, the maintenance user and their memberships
+   persist holding no object permission at all; removing them is a
+   separate administrator operation (ALTER ROLE ... DROP MEMBER, DROP
+   ROLE, DROP USER), recorded in 11_DARK_TELEMETRY_INFRASTRUCTURE_
+   EVIDENCE.md section 5a and deliberately not automated.
+
+   Who runs this file: the empty-table guard below READS the table, and
+   db_ddladmin carries no data access, so the governed apply identity
+   cannot execute this rollback (it would be refused before the guard
+   is evaluated - the same shape as every other guarded rollback in
+   this repository). This rollback therefore runs as the administrator
+   through the governor, as recorded in 10_RELEASE_PLAN.md section 6.
    ============================================================ */
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -37,28 +53,6 @@ BEGIN TRY
         DROP PROCEDURE dbo.usp_PurgeInterviewAIServerCalls;
     IF OBJECT_ID(N'dbo.usp_AppendInterviewAIServerCall', N'P') IS NOT NULL
         DROP PROCEDURE dbo.usp_AppendInterviewAIServerCall;
-
-    /* Any identities bound into the roles at apply time must leave first,
-       or DROP ROLE refuses; the removal is generated from the catalog so
-       the rollback needs no knowledge of which identities were bound. */
-    DECLARE @DropMembers NVARCHAR(MAX) = N'';
-    SELECT @DropMembers = @DropMembers
-        + N'ALTER ROLE ' + QUOTENAME(roles.name)
-        + N' DROP MEMBER ' + QUOTENAME(members.name) + N';'
-    FROM sys.database_role_members AS role_members
-    JOIN sys.database_principals AS roles
-        ON roles.principal_id = role_members.role_principal_id
-    JOIN sys.database_principals AS members
-        ON members.principal_id = role_members.member_principal_id
-    WHERE roles.name IN
-        (N'interview_telemetry_append', N'interview_telemetry_maintenance');
-    IF LEN(@DropMembers) > 0
-        EXEC(@DropMembers);
-
-    IF DATABASE_PRINCIPAL_ID(N'interview_telemetry_append') IS NOT NULL
-        DROP ROLE interview_telemetry_append;
-    IF DATABASE_PRINCIPAL_ID(N'interview_telemetry_maintenance') IS NOT NULL
-        DROP ROLE interview_telemetry_maintenance;
 
     IF OBJECT_ID(N'dbo.interview_ai_server_calls', N'U') IS NOT NULL
         DROP TABLE dbo.interview_ai_server_calls;

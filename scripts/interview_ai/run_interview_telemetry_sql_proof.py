@@ -1,7 +1,9 @@
 """Disposable-database proof for the Interview telemetry schema (C3/C9/B4).
 
 Runs ONLY against a throwaway database: the connection is taken from
-INTERVIEW_TELEMETRY_SQL_PROOF_CONNECTIONSTRING and the tool refuses any
+INTERVIEW_TELEMETRY_SQL_PROOF_CONNECTIONSTRING (which must be an
+Entra-authenticated administrator connection, Authentication=
+ActiveDirectoryDefault, for the authority end-to-end case) and the tool refuses any
 database whose name is not explicitly passed via --expect-database, or
 whose name looks like production. Nothing here may connect to or alter
 production SQL.
@@ -33,6 +35,13 @@ from pathlib import Path
 from mssql_python import connect
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "scripts"))
+from configure_interview_telemetry_sql_authority import (  # noqa: E402
+    apply as authority_apply,
+    ensure_application_denies,
+    ensure_roles_and_grants,
+    verify as authority_verify,
+)
 CONNECTION_ENV = "INTERVIEW_TELEMETRY_SQL_PROOF_CONNECTIONSTRING"
 _DATABASE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
 
@@ -325,6 +334,16 @@ def main():
         cursor.execute(FORWARD_SQL.read_text(encoding="utf-8"))
         cursor.execute(FORWARD_SQL.read_text(encoding="utf-8"))
         results["idempotent_forward_applies_twice"] = "pass"
+
+        # The forward migration carries schema only. The two execute-only
+        # roles and their grants come from the administrator-run authority
+        # script (the governed apply identity holds db_ddladmin only and
+        # cannot create roles or grant; run 1419 proved it). The gate runs
+        # the very same function, twice, so it proves that path and its
+        # idempotency as well.
+        ensure_roles_and_grants(cursor)
+        ensure_roles_and_grants(cursor)
+        results["authority_roles_and_grants_idempotent"] = "pass"
 
         def expect_reject(check, values):
             """Correction C3: a hostile case passes ONLY when the boundary
@@ -917,6 +936,23 @@ def main():
             else:
                 results[check] = "FAIL (no error raised)"
 
+        def expect_permission_denied(check, statement):
+            """Round-2 correction: a DENY check passes ONLY on SQL's
+            permission refusal (error 229), never on an unrelated failure
+            such as a foreign-key violation. Only the number is recorded."""
+            try:
+                cursor.execute(statement)
+                cursor.fetchall()
+            except Exception as error:
+                text = str(error)
+                denied = (re.search(r"(?<![0-9])229(?![0-9])", text) is not None
+                          or "permission was denied" in text.lower())
+                results[check] = (
+                    "pass" if denied else "FAIL (not a permission denial)"
+                )
+            else:
+                results[check] = "FAIL (no error raised)"
+
         cursor.execute("EXECUTE AS USER = 'proof_append';")
         expect_error_sql("append_role_cannot_insert_directly",
                          "INSERT dbo.interview_ai_server_calls (attempt_uuid,"
@@ -959,6 +995,105 @@ def main():
         except Exception:
             results["maintenance_role_can_execute_purge"] = "FAIL"
         cursor.execute("REVERT;")
+
+        # -- production-shaped application identity ----------------------
+        # The real application identity holds db_datareader, db_datawriter
+        # and a database-wide EXECUTE grant. A stand-in with exactly those
+        # grants plus the append role proves that the authority script's
+        # DENYs close purge and direct table access while ownership
+        # chaining keeps the append procedure working.
+        cursor.execute(
+            "IF DATABASE_PRINCIPAL_ID(N'proof_application') IS NULL "
+            "CREATE USER proof_application WITHOUT LOGIN;"
+        )
+        cursor.execute("ALTER ROLE db_datareader ADD MEMBER proof_application;")
+        cursor.execute("ALTER ROLE db_datawriter ADD MEMBER proof_application;")
+        cursor.execute("GRANT EXECUTE TO proof_application;")
+        cursor.execute(
+            "ALTER ROLE interview_telemetry_append ADD MEMBER proof_application;"
+        )
+        cursor.execute("EXECUTE AS USER = 'proof_application';")
+        try:
+            cursor.execute(
+                "EXEC dbo.usp_PurgeInterviewAIServerCalls "
+                "@BatchSize = 10, @MaxBatches = 1;"
+            )
+            cursor.fetchall()
+            broad_grants_reach_purge = True
+        except Exception:
+            broad_grants_reach_purge = False
+        cursor.execute("REVERT;")
+        results["broad_application_grants_reach_purge_without_deny"] = (
+            "pass" if broad_grants_reach_purge else "FAIL (premise not reproduced)"
+        )
+        ensure_application_denies(cursor, "proof_application")
+        ensure_application_denies(cursor, "proof_application")
+        cursor.execute("EXECUTE AS USER = 'proof_application';")
+        expect_permission_denied("denied_application_cannot_purge",
+                                 "EXEC dbo.usp_PurgeInterviewAIServerCalls "
+                                 "@BatchSize = 10, @MaxBatches = 1;")
+        expect_permission_denied("denied_application_cannot_select",
+                                 "SELECT TOP (1) attempt_uuid "
+                                 "FROM dbo.interview_ai_server_calls;")
+        # WHERE 1 = 0 touches no row, so only the permission check can fail.
+        expect_permission_denied("denied_application_cannot_delete_directly",
+                                 "DELETE dbo.interview_ai_server_calls "
+                                 "WHERE 1 = 0;")
+        expect_permission_denied("denied_application_cannot_insert_directly",
+                                 "INSERT dbo.interview_ai_server_calls "
+                                 "(attempt_uuid) SELECT NEWID() WHERE 1 = 0;")
+        try:
+            call_append(cursor, append_arguments(str(uuid.uuid4())))
+            results["denied_application_can_still_append_via_procedure"] = "pass"
+        except Exception:
+            results["denied_application_can_still_append_via_procedure"] = "FAIL"
+        cursor.execute("REVERT;")
+
+        # -- authority script end to end -----------------------------------
+        # Round-2 correction: production apply must not be the first
+        # execution of any authority function. apply() and verify() run
+        # here exactly as the administrator will run them, on stand-ins:
+        # the broad-grant application stand-in above and a fresh
+        # EXTERNAL_USER created from a synthetic SID (TYPE = E, so
+        # EXECUTE AS on an external principal is exercised too).
+        # This part REQUIRES an Entra-authenticated proof connection: a
+        # SQL-authenticated one is refused by SQL Server when it tries to
+        # impersonate an EXTERNAL_USER ("only active directory users can
+        # impersonate other active directory users"), proven 2026-08-22.
+        # The failure is therefore a NAMED check, never a traceback.
+        synthetic_sid = uuid.uuid4().bytes_le
+        try:
+            authority_apply(
+                cursor, synthetic_sid,
+                application_principal="proof_application",
+                maintenance_principal="proof_maintenance_external",
+            )
+            authority_apply(
+                cursor, synthetic_sid,
+                application_principal="proof_application",
+                maintenance_principal="proof_maintenance_external",
+            )
+            authority_report = authority_verify(
+                cursor, synthetic_sid,
+                expected_database=arguments.expect_database,
+                application_principal="proof_application",
+                maintenance_principal="proof_maintenance_external",
+            )
+        except Exception as error:
+            results["authority_apply_and_verify_end_to_end"] = (
+                "FAIL (%s; an Entra-authenticated proof connection is required)"
+                % type(error).__name__
+            )
+        else:
+            for key in sorted(authority_report):
+                value = authority_report[key]
+                if isinstance(value, bool):
+                    results["authority_verify_" + key] = (
+                        "pass" if value else "FAIL"
+                    )
+            results["authority_apply_and_verify_end_to_end"] = (
+                "pass" if authority_report["result"] == "pass" else "FAIL"
+            )
 
         # -- preserved battery: retention boundary -----------------------
         old_uuid = str(uuid.uuid4())
@@ -1038,6 +1173,21 @@ def main():
         )
         results["forward_reapplies_after_rollback"] = (
             "pass" if cursor.fetchone()[0] is not None else "FAIL"
+        )
+        # Dropping the procedures dropped their execute grants; the roles
+        # themselves survive the rollback (it never touches them). Re-running
+        # the authority function must restore exactly one grant per role.
+        ensure_roles_and_grants(cursor)
+        cursor.execute(
+            "SELECT COUNT(*) FROM sys.database_permissions AS permission_entry "
+            "JOIN sys.database_principals AS role_principal "
+            "  ON role_principal.principal_id = permission_entry.grantee_principal_id "
+            "WHERE role_principal.name IN (N'interview_telemetry_append', "
+            "      N'interview_telemetry_maintenance') "
+            "  AND permission_entry.permission_name = N'EXECUTE';"
+        )
+        results["authority_regrants_after_forward_reapply"] = (
+            "pass" if cursor.fetchone()[0] == 2 else "FAIL"
         )
     finally:
         connection.close()
