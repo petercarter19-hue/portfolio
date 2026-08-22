@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-22T03:20:00Z",
+  "updated_at": "2026-08-22T18:20:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -18,7 +18,8 @@
       "PS-DELIVERY-CONTROL-SIGNIN-001"
     ],
     "merge_allowed_for": [
-      "PS-INTERVIEW-AI-EXTRACT-001"
+      "PS-INTERVIEW-AI-EXTRACT-001",
+      "PS-SIGNIN-MEMBER-ARRIVAL-001"
     ],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
@@ -2720,7 +2721,39 @@
           "decision": "Pete authorizes Claude Code desktop session acd9f218-d287-490f-b2d5-a185c5bceb27 to manage PS-SIGNIN-MEMBER-ARRIVAL-001 end to end through implementation, correction, PR management, merge, deployment, live verification, and final package exit, continuing without repeatedly requesting owner approval and stopping only at a genuine independent-review point or a real blocker requiring Pete's participation. Grok is the named independent reviewer for the frozen implementation candidate.",
           "provenance": "Recorded verbatim in Claude Code session acd9f218-d287-490f-b2d5-a185c5bceb27 on 2026-08-21, in the owner turn beginning 'Correction to the previous instruction: there is no fixed number of reviews.', following the earlier owner turn 'I want you to do everything.' Re-affirmed by the Site-audit manager handoff 'UNBLOCK AND COMPLETE PS-SIGNIN-MEMBER-ARRIVAL-001'."
         }
-      ]
+      ],
+      "merge_grant": {
+        "authorized_by": "Pete",
+        "authority_decision_index": 0,
+        "authority_decision_sha256": "9f9ef74c72a5ef5024c07fcffd97fc4271a20c1e3abb0ea49bec53424c7b8311",
+        "independent_review": {
+          "reviewer_task": "/root/signin_member_arrival_exact_sha_review",
+          "reviewer_mode": "independent_read_only_non_writer",
+          "reviewed_sha": "e1847ad0a884a349a7b5eed0526075cd0104dd62",
+          "reviewed_branch": "work/2026-08-21-signin-member-arrival-followup",
+          "verdict": "PASS",
+          "verdict_text": "ACCEPTED_FOR_OWNER_RELEASE_DECISION - exact-SHA independent Protected review passed for e1847ad0a884a349a7b5eed0526075cd0104dd62, branch-equal to origin/work/2026-08-21-signin-member-arrival-followup and clean, on base eb3f35ab66e01a1793d5dc3ae628270c6c64ec10.",
+          "verdict_sha256": "7bfb9d79c5e28adabd46fd0eb72690e6e636d5ab89e8558de7fc47364528313c",
+          "basis": [
+            "full_tree_at_e1847ad0a884a349a7b5eed0526075cd0104dd62",
+            "complete_diff_eb3f35ab66e01a1793d5dc3ae628270c6c64ec10_to_e1847ad0a884a349a7b5eed0526075cd0104dd62"
+          ],
+          "scope": "protected_signin_member_arrival_implementation_merge_only",
+          "exclusions": "schema_configuration_deployment_enablement_private_signed_in_proof",
+          "evidence_path": "docs/initiatives/PS-SIGNIN-MEMBER-ARRIVAL-001/INDEPENDENT_REVIEW_HANDOFF.md",
+          "evidence_git_blob_sha": "76067fcef402f1f04605926ab32af9c53e129b2e",
+          "evidence_bytes_sha256": "90d3a48a19078252241c71be26978f1683ad656418fa8410a9635a7b5d6349c1",
+          "received_by": "Claude Code PS-SIGNIN-MEMBER-ARRIVAL-001 package manager",
+          "received_date": "2026-08-22",
+          "attestation_sha256": "c6e5a826683f417ed8a07c70ceab65d254ffd5966651390178e1624786b29446"
+        },
+        "reviewed_remote_sha": "e1847ad0a884a349a7b5eed0526075cd0104dd62",
+        "granted_at": "2026-08-22T18:20:00Z",
+        "review_result": "pass",
+        "review_evidence_paths": [
+          "docs/initiatives/PS-SIGNIN-MEMBER-ARRIVAL-001/INDEPENDENT_REVIEW_HANDOFF.md"
+        ]
+      }
     },
     {
       "package": "PS-DELIVERY-CONTROL-SIGNIN-001",
