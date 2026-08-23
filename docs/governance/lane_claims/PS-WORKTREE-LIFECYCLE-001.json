@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKTREE-LIFECYCLE-001",
+  "state": "active",
+  "outcome": "Implement the owner-approved PeerSlate worktree-growth prevention workflow: one durable full worktree per active package; read-only review through Azure or diffs by default; one permanent, lease-guarded sparse control workspace that may also serve runnable verification when isolation is genuinely required; an atomic local creator and registry replacing ad hoc git worktree add; same-task retirement or reset for successful temporary isolation; and external custody with verified manifests for bulky generated evidence where practical. Preserve all pre-existing worktrees, branches, refs, tasks, transcripts, recovery material, and unrelated files. Do not migrate existing evidence, clean up legacy resources, deploy, mutate schema or configuration, or take production action.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a02f59-12ea-78b2-9b64-a4f7d4796b22",
+  "branch": "work/2026-08-23-worktree-lifecycle-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "e8ede28110d3a5014a6a5ac872d5d52d93ee0c1f",
+  "owner_outcome_ref": "session:01a02f59-12ea-78b2-9b64-a4f7d4796b22/owner-direction:2026-08-23/worktree-lifecycle-through-merge",
+  "surfaces": [
+    "AGENTS.md",
+    "START_HERE.md",
+    "docs/AI_WORKFLOW.md",
+    "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+    "docs/governance/EVIDENCE_RETENTION_AND_DEDUPLICATION.md",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+    "docs/governance/lane_claims/PS-WORKTREE-LIFECYCLE-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKTREE-LIFECYCLE-001.md",
+    "docs/governance/lane_claims/receipts/PS-WORKTREE-LIFECYCLE-001.json",
+    "docs/initiatives/PS-WORKTREE-LIFECYCLE-001",
+    "scripts/check_repository_evidence_policy.py",
+    "scripts/delivery_preflight.py",
+    "scripts/worktree_lifecycle.py",
+    "tests/test_delivery_preflight.py",
+    "tests/test_repository_evidence_policy.py",
+    "tests/test_worktree_lifecycle.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKTREE-LIFECYCLE-001.md"
+  ],
+  "domains": [
+    "governance:delivery-control:worktree-context",
+    "governance:evidence-storage",
+    "governance:worktree-lifecycle",
+    "operations:local-repository-worktrees",
+    "testing:repository-evidence-policy",
+    "testing:worktree-lifecycle"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
