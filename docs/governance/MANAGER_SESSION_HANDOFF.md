@@ -1,41 +1,35 @@
 # PeerSlate Manager/Writer Handoff
 
-Use this only when another person or agent will continue an active branch,
-take ownership of shared files, or resolve a real cross-lane decision. A
-self-managed writer continuing through PR/release needs no handoff. Starting a
-new independent package needs only `START_HERE.md`, `CURRENT_BASELINE.yaml`, and
-that package.
+Use this only when another task will continue an active branch, take shared
+surfaces, or resolve a real cross-claim decision. A self-managed implementation
+writer continuing through PR and merge needs no handoff.
 
 ## Required transfer record
 
-- Package and one-sentence outcome:
-- Current delivery path: Routine / Bounded / Protected
-- Sender, receiver, and explicit ownership relinquishment:
-- Branch, authoritative base SHA, exact pushed handoff SHA:
-- Writable and forbidden files/domains:
-- Work completed and verification result:
-- Open finding or owner decision:
-- Release state: local / PR / merged / pipeline / live:
-- Single next action:
+- Package and one-sentence outcome
+- Routine, Bounded, or Protected
+- Opaque from/to task references and explicit relinquishment
+- Branch, authoritative base SHA, and exact pushed checkpoint SHA
+- Claimed and forbidden paths/domains
+- Completed work and verification
+- Open finding or owner decision
+- Repository state and production state, separately
+- One next action
 
-Add visual authority, migration/rollback, privacy/security, or production
-evidence only when it is relevant to the transferred work. Current authority
-and active ownership remain in `CURRENT_BASELINE.yaml`; do not copy the entire
-site history into this handoff.
+Do not require or record a person's legal name, account identity, email,
+credential, MFA, token, cookie, or session material. Chat history alone is not
+an ownership transfer.
 
-Stop if the sender has not pushed the exact SHA, has not relinquished ownership,
-or if writable files overlap another active owner. Chat history by itself is
-not an ownership transfer.
-
-For an in-place active-lane writer change, preserve the package branch,
-capacity, domains, and writable surfaces. From a clean dedicated
-`work/YYYY-MM-DD-<slug>-transfer` branch based on current `origin/main`, update
-only `CURRENT_LANES.json` with the replacement writer and one appended owner
-decision naming the exact pushed handoff SHA, then run:
+For an in-place transfer, the prior writer first commits, pushes, and stops.
+From current main, create a dedicated
+`work/YYYY-MM-DD-delivery-transfer-<slug>` control branch. Change only the
+claim's `writer_ref` and `handoff` object. The handoff must contain opaque
+`from_ref` and `to_ref` values, the exact pushed `checkpoint_sha`, and
+`relinquished: true`. Commit, then run:
 
 ```bash
 python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent transfer --fetch --require-clean
 ```
 
-Merge that governance-only PR with a squash message containing `[skip ci]`
-before the receiving writer changes the implementation branch.
+Merge the one-claim control PR before the receiver writes. Stop if the pushed
+SHA, relinquishment, or collision proof is missing.

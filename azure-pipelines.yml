@@ -1,5 +1,6 @@
 # PeerSlate Azure DevOps deployment pipeline.
-# GitHub Actions are disabled; Azure DevOps deploys approved `main` changes.
+# GitHub Actions are disabled; Azure DevOps validates `main` changes. Production
+# deployment is a separate manually authorized exact-SHA operation.
 trigger:
   batch: true
   branches:
@@ -35,18 +36,21 @@ schedules:
     batch: true
 
 parameters:
-  # Break-glass, not routine. A merge to `main` deploys on its own and no
-  # longer stops at an approval, so the manual fallback below should be rare.
-  # Reach for it only when no automatic run will cover the commit: the request
-  # preflight refuses a manual fallback while an automatic run for the same SHA
-  # is still active, and names the competing run id when it does.
+  # Repository delivery and production delivery are separate. PR and automatic
+  # main runs build and test only. A web deployment requires all three manual
+  # values below, including Pete's explicit authorization reference.
   - name: forceProductionDeploy
-    displayName: Force production deploy for a manually queued main run
+    displayName: Authorize a production deploy for this manual main run
     type: boolean
     default: false
 
   - name: manualProductionSourceVersion
-    displayName: Exact 40-character main SHA for a manual production fallback
+    displayName: Exact 40-character main SHA to deploy
+    type: string
+    default: ''
+
+  - name: productionAuthorizationReference
+    displayName: Reference to Pete's explicit authorization for this deployment
     type: string
     default: ''
 
@@ -267,16 +271,16 @@ stages:
   # schemaAction=none and forceProductionDeploy=false, had no database work to
   # do, and still parked at that gate.
   #
-  # The three stages below separate the environments so a routine deploy asks
-  # nobody, while the schema approval is left exactly as it was. No Azure
-  # environment or check configuration was changed to achieve this; the schema
-  # gate is still a human decision, by intent. See
+  # The stages remain separate so a web deployment never inherits the schema
+  # approval and a schema plan still prints before that approval. Repository CI
+  # enters neither production path. No Azure environment or check configuration
+  # changes here; the schema gate remains a human decision. See
   # docs/initiatives/PS-AGENT-OPERATIONS-001/README.md.
   - stage: ProductionWebDeploy
     displayName: Deploy the production application
     dependsOn: Build
-    # This stage references only `$(environmentName)`, which carries an
-    # exclusive lock and no approval, so nothing here waits on a person.
+    # This stage references only `$(environmentName)`, which carries the shared
+    # production lock. Automatic main and PR runs never enter this stage.
     # `sequential` is required rather than decorative: the default lock
     # behaviour is `runLatest`, which would cancel a queued run in favour of a
     # later one.
@@ -285,8 +289,8 @@ stages:
       and(
         succeeded(),
         eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+        eq(variables['Build.Reason'], 'Manual'),
         or(
-          ne(variables['Build.Reason'], 'Manual'),
           ${{ eq(parameters.forceProductionDeploy, true) }},
           ${{ ne(parameters.schemaAction, 'none') }}
         )
@@ -314,6 +318,7 @@ stages:
                 --source-version "$BUILD_SOURCE_VERSION" \
                 --force-production-deploy "$FORCE_PRODUCTION_DEPLOY" \
                 --manual-source-version "$MANUAL_SOURCE_VERSION" \
+                --production-authorization-reference "$PRODUCTION_AUTHORIZATION_REFERENCE" \
                 --schema-action "$SCHEMA_ACTION" \
                 --schema-migration-id "$SCHEMA_MIGRATION_ID" \
                 --schema-rollback-confirm "$SCHEMA_ROLLBACK_CONFIRM" \
@@ -329,6 +334,7 @@ stages:
               BUILD_ID: $(Build.BuildId)
               FORCE_PRODUCTION_DEPLOY: ${{ parameters.forceProductionDeploy }}
               MANUAL_SOURCE_VERSION: ${{ parameters.manualProductionSourceVersion }}
+              PRODUCTION_AUTHORIZATION_REFERENCE: ${{ parameters.productionAuthorizationReference }}
               SCHEMA_ACTION: ${{ parameters.schemaAction }}
               SCHEMA_MIGRATION_ID: ${{ parameters.schemaMigrationId }}
               SCHEMA_ROLLBACK_CONFIRM: ${{ parameters.schemaRollbackConfirm }}
@@ -343,10 +349,7 @@ stages:
         condition: >-
           and(
             succeeded(),
-            or(
-              ne(variables['Build.Reason'], 'Manual'),
-              ${{ eq(parameters.forceProductionDeploy, true) }}
-            )
+            ${{ eq(parameters.forceProductionDeploy, true) }}
           )
         pool:
           vmImage: $(vmImageName)
@@ -385,10 +388,7 @@ stages:
         condition: >-
           and(
             succeeded(),
-            or(
-              ne(variables['Build.Reason'], 'Manual'),
-              ${{ eq(parameters.forceProductionDeploy, true) }}
-            )
+            ${{ eq(parameters.forceProductionDeploy, true) }}
           )
         environment: $(environmentName)
         pool:
@@ -433,20 +433,14 @@ stages:
   - stage: SchemaReadOnlyPreflight
     displayName: Read schema state before any approval is requested
     dependsOn: ProductionWebDeploy
-    # The production admission rule above, plus the schema trigger. The
-    # `or(...)` is repeated verbatim so all three production stages share one
-    # admission rule; it is redundant with the trailing clause on purpose and
-    # is never a substitute for it. A schema-only run leaves the deploy jobs
-    # skipped, so the stage above still succeeds and this one still runs.
+    # Schema is manual-only. A schema-only run enters the request-validation
+    # stage above while its web deployment jobs remain skipped, then prints this
+    # plan before Azure requests the schema approval.
     condition: >-
       and(
         succeeded(),
         eq(variables['Build.SourceBranch'], 'refs/heads/main'),
-        or(
-          ne(variables['Build.Reason'], 'Manual'),
-          ${{ eq(parameters.forceProductionDeploy, true) }},
-          ${{ ne(parameters.schemaAction, 'none') }}
-        ),
+        eq(variables['Build.Reason'], 'Manual'),
         ${{ ne(parameters.schemaAction, 'none') }}
       )
     jobs:
@@ -527,11 +521,7 @@ stages:
       and(
         succeeded(),
         eq(variables['Build.SourceBranch'], 'refs/heads/main'),
-        or(
-          ne(variables['Build.Reason'], 'Manual'),
-          ${{ eq(parameters.forceProductionDeploy, true) }},
-          ${{ ne(parameters.schemaAction, 'none') }}
-        ),
+        eq(variables['Build.Reason'], 'Manual'),
         ${{ ne(parameters.schemaAction, 'none') }}
       )
     jobs:
@@ -693,14 +683,9 @@ stages:
                     echo "deployments across runs."
                   displayName: Record that this reservation ships nothing
 
-  # A manual main run that requests neither deploy nor schema must never read
-  # as a plain success. Build 438 (2026-08-04) was queued manually, skipped
-  # the `ProductionWebDeploy` stage, reported `succeeded`, and was
-  # reasonably mistaken for a release; production stayed on the previous
-  # commit. This stage fires only in that exact case and downgrades the run to
-  # `succeededWithIssues` so both a human and `az pipelines runs list` can see
-  # that nothing shipped. Deliberate schema-only runs are excluded because
-  # their successful result describes the requested production operation.
+  # Every main run with no requested production operation says so explicitly.
+  # Automatic main runs remain ordinary successful CI. A manually queued no-op
+  # is marked succeeded-with-issues so it cannot be mistaken for a deployment.
   - stage: ProductionReleaseSkipped
     displayName: Report that production was not deployed
     dependsOn: Build
@@ -708,7 +693,6 @@ stages:
       and(
         succeeded(),
         eq(variables['Build.SourceBranch'], 'refs/heads/main'),
-        eq(variables['Build.Reason'], 'Manual'),
         ${{ eq(parameters.forceProductionDeploy, false) }},
         ${{ eq(parameters.schemaAction, 'none') }}
       )
@@ -722,26 +706,20 @@ stages:
 
           - script: |
               set -euo pipefail
-              echo "This manually queued main run built $BUILT_SOURCE_VERSION"
-              echo "but did NOT deploy it. The ProductionWebDeploy stage is"
-              echo "skipped for a Manual run unless forceProductionDeploy is"
-              echo "true."
-              echo ""
-              echo "Production is still running whatever the last automatic"
-              echo "run deployed. Confirm with /healthz before reporting any"
-              echo "change as live."
-              echo ""
-              echo "If an automatic run for this same commit is already active,"
-              echo "let it finish -- do not queue a manual fallback alongside"
-              echo "it. Only re-queue with forceProductionDeploy=true when no"
-              echo "automatic run will cover this commit."
-              echo "##vso[task.logissue type=warning]Built $BUILT_SOURCE_VERSION without deploying: manual main run, forceProductionDeploy=false. Production was NOT updated."
-              echo "##vso[task.complete result=SucceededWithIssues;]"
-            displayName: Warn that no production deployment occurred
+              echo "Main SHA $BUILT_SOURCE_VERSION passed the repository pipeline"
+              echo "without a production operation. Production was NOT updated."
+              echo "A merge is not a deployment. Confirm the deployed release"
+              echo "identity before reporting any change as live."
+              if [ "$BUILD_REASON" = "Manual" ]; then
+                echo "##vso[task.logissue type=warning]Manual main run requested no production operation. Production was NOT updated."
+                echo "##vso[task.complete result=SucceededWithIssues;]"
+              fi
+            displayName: Record CI-only main result
             env:
               # Same discipline as the Build stage: the SHA enters the process
               # as data, never as Bash source.
               BUILT_SOURCE_VERSION: $(Build.SourceVersion)
+              BUILD_REASON: $(Build.Reason)
 
   - stage: CandidateDeploy
     displayName: Deploy isolated candidate

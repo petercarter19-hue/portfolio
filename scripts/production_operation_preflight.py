@@ -20,6 +20,7 @@ from dataclasses import dataclass
 
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 MIGRATION_ID_RE = re.compile(r"^PS-[A-Z0-9]+(?:-[A-Z0-9]+)*$")
+AUTHORIZATION_REFERENCE_RE = re.compile(r"^[ -~]{8,240}$")
 ACTIVE_STATUSES = {"notStarted", "inProgress", "postponed"}
 AUTOMATIC_REASONS = {"individualCI", "batchedCI"}
 MAX_BUILD_PAGES = 20
@@ -34,6 +35,7 @@ class Operation:
     deploy_application: bool
     schema_action: str
     source_version: str
+    authorization_reference: str
 
 
 def parse_boolean(value: str) -> bool:
@@ -52,6 +54,7 @@ def validate_request(
     source_version: str,
     force_production_deploy: bool,
     manual_source_version: str,
+    production_authorization_reference: str,
     schema_action: str,
     schema_migration_id: str,
     schema_rollback_confirm: str,
@@ -63,8 +66,7 @@ def validate_request(
     if schema_action not in {"none", "report", "apply", "rollback"}:
         raise PreflightError(f"unknown schema action {schema_action!r}")
 
-    automatic = build_reason != "Manual"
-    deploy_application = automatic or force_production_deploy
+    deploy_application = force_production_deploy
 
     if force_production_deploy and schema_action != "none":
         raise PreflightError(
@@ -72,16 +74,27 @@ def validate_request(
         )
     if force_production_deploy:
         if build_reason != "Manual":
-            raise PreflightError("forceProductionDeploy is manual-only")
+            raise PreflightError("production deployment is manual-only")
         if manual_source_version != source_version:
             raise PreflightError(
                 "manualProductionSourceVersion must exactly match "
                 "Build.SourceVersion"
             )
-    elif manual_source_version:
+        if (
+            production_authorization_reference
+            != production_authorization_reference.strip()
+            or not AUTHORIZATION_REFERENCE_RE.fullmatch(
+                production_authorization_reference
+            )
+        ):
+            raise PreflightError(
+                "productionAuthorizationReference must be a trimmed, printable "
+                "8-240 character reference to Pete's explicit authorization"
+            )
+    elif manual_source_version or production_authorization_reference:
         raise PreflightError(
-            "manualProductionSourceVersion is allowed only with a forced "
-            "manual deployment"
+            "manualProductionSourceVersion and productionAuthorizationReference "
+            "are allowed only with an authorized manual deployment"
         )
 
     if schema_action != "none":
@@ -114,6 +127,7 @@ def validate_request(
         deploy_application=deploy_application,
         schema_action=schema_action,
         source_version=source_version,
+        authorization_reference=production_authorization_reference,
     )
 
 
@@ -131,7 +145,7 @@ def read_exact_sha_runs(
     if not project_id or not definition_id or not token:
         raise PreflightError(
             "Azure build identity and System.AccessToken are required for a "
-            "manual production fallback"
+            "manual production operation"
         )
 
     base = collection_uri.rstrip("/") + "/"
@@ -193,7 +207,7 @@ def read_exact_sha_runs(
     raise PreflightError("Azure build-state pagination exceeded its safe bound")
 
 
-def reject_duplicate_manual_fallback(
+def reject_overlapping_exact_sha_run(
     runs: list[dict], *, current_build_id: str
 ) -> None:
     automatic = [
@@ -206,18 +220,8 @@ def reject_duplicate_manual_fallback(
     if active:
         ids = ", ".join(str(run.get("id")) for run in active)
         raise PreflightError(
-            f"automatic exact-SHA run still active ({ids}); manual fallback refused"
-        )
-    successful = [
-        run
-        for run in automatic
-        if run.get("status") == "completed" and run.get("result") == "succeeded"
-    ]
-    if successful:
-        ids = ", ".join(str(run.get("id")) for run in successful)
-        raise PreflightError(
-            f"automatic exact-SHA run already succeeded ({ids}); verify live "
-            "identity instead of redeploying"
+            f"automatic exact-SHA CI run still active ({ids}); production "
+            "operation refused until it finishes"
         )
 
 
@@ -228,6 +232,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--source-version", required=True)
     parser.add_argument("--force-production-deploy", required=True)
     parser.add_argument("--manual-source-version", default="")
+    parser.add_argument("--production-authorization-reference", default="")
     parser.add_argument("--schema-action", required=True)
     parser.add_argument("--schema-migration-id", default="")
     parser.add_argument("--schema-rollback-confirm", default="")
@@ -248,6 +253,9 @@ def main(argv: list[str] | None = None) -> int:
             source_version=args.source_version,
             force_production_deploy=force,
             manual_source_version=args.manual_source_version,
+            production_authorization_reference=(
+                args.production_authorization_reference
+            ),
             schema_action=args.schema_action,
             schema_migration_id=args.schema_migration_id,
             schema_rollback_confirm=args.schema_rollback_confirm,
@@ -260,7 +268,7 @@ def main(argv: list[str] | None = None) -> int:
                 source_version=args.source_version,
                 token=os.environ.get("SYSTEM_ACCESSTOKEN", ""),
             )
-            reject_duplicate_manual_fallback(
+            reject_overlapping_exact_sha_run(
                 runs, current_build_id=args.build_id
             )
     except PreflightError as exc:
@@ -274,6 +282,7 @@ def main(argv: list[str] | None = None) -> int:
                 "source_version": operation.source_version,
                 "deploy_application": operation.deploy_application,
                 "schema_action": operation.schema_action,
+                "authorization_reference": operation.authorization_reference,
             },
             indent=2,
         )

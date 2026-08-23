@@ -1,54 +1,31 @@
 # PeerSlate Repository Instructions
 
 > **MANDATORY PRE-WORK GATE**
-> Before a write, code change, migration, deployment, or product decision, open
-> and follow [START_HERE.md](START_HERE.md). Fetch authoritative `origin/main`,
-> read [CURRENT_BASELINE.yaml](docs/governance/CURRENT_BASELINE.yaml), choose a
-> Routine, Bounded, or Protected path, then read only the package and specialist
-> authority the path requires. Stop for a real ownership, privacy,
-> authorization, migration, or material-visual conflict; do not stop for an
-> unrelated historic gate. Use the proportional
-> [completion record](docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md).
-> Before a write, also read
-> [CURRENT_LANES.json](docs/governance/CURRENT_LANES.json) and pass
-> `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write
-> --fetch --require-clean`. A failed preflight is a stop, not permission to
-> create another branch or worktree. The package/branch/surface-bounded
-> `--intent activate` flow in `START_HERE.md` may reserve a lane from
-> `controlled_idle` or add a writer during `active_delivery`; it always requires
-> Pete to select the exact next outcome first. Up to four writer lanes may be
-> active, and all four may be implementation lanes. Shared-foundation and
-> direction/authority are specialized classes, not reserved slots: at most one
-> of each and at most one production-capable lane may be active. A duplicate
-> branch, writable-path overlap, or hierarchical exclusive-domain collision is
-> a stop. When capacity remains and every check passes, two implementation lanes
-> are not a reason to refuse a third or fourth writer. Direction/authority is
-> documentation/evidence-only. Only actively writing packages consume capacity.
-> A preserved pause uses the exact `--intent pause` control transition and
-> resumes only through fresh activation. A pause is published from
-> a separate
-> control-only branch and records the pushed work branch's exact commit; never
-> merge the unfinished work merely to free capacity.
-> An in-place writer change uses a separate control-only branch and `--intent
-> transfer`; it may update only the existing lane's transfer fields in
-> `CURRENT_LANES.json` after the prior writer has pushed and relinquished an
-> exact SHA.
-> A completed non-production `direction_authority` lane advances only through
-> the separate fail-closed `--intent grant`, `--intent merge`, and `--intent
-> close` sequence in `START_HERE.md`. A grant binds the exact pushed/reviewed
-> SHA, pre-existing Pete merge authority, and review evidence; it never grants
-> runtime, release, cleanup, schema, deployment, or production authority.
-> Validate an unchanged reviewed candidate from a separate clean worktree at
-> current `origin/main` with `--intent merge --candidate-worktree <absolute
-> path> --fetch --require-clean`; never rebase, overlay, or run candidate-old
-> control code.
+> Before a write, migration, deployment, or product decision, open
+> [START_HERE.md](START_HERE.md), fetch authoritative Azure `origin/main`, read
+> [CURRENT_BASELINE.yaml](docs/governance/CURRENT_BASELINE.yaml), and choose a
+> Routine, Bounded, or Protected path. Before an implementation write, read
+> [CURRENT_LANES.json](docs/governance/CURRENT_LANES.json) and this package's
+> claim under `docs/governance/lane_claims/`, then pass:
+>
+> `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --fetch --require-clean`
+>
+> A control-only activation, authorize, transfer, pause, resume, or close is the
+> narrow exception: run `--intent read` before editing, change and commit only
+> the exact package claim on its dedicated control branch, then run the matching
+> control intent with `--fetch --require-clean` before PR. Do not change an
+> implementation surface in that control commit.
+>
+> A failed preflight is a stop, not permission to make another branch or
+> worktree. New work requires Pete's explicit outcome and the one-claim
+> activation flow in `START_HERE.md`.
 
 ## Authority
 
 Follow [DOCUMENT_CONTROL.md](docs/governance/DOCUMENT_CONTROL.md). The current
 Constitution and Roadmap named by `CURRENT_BASELINE.yaml` control durable rules
-and sequence. Historical Bibles, roadmaps, status reports, and handoffs are
-evidence, not default reading or additional gates.
+and sequence. Historical Bibles, roadmaps, ledgers, status reports, and
+handoffs are evidence, not additional gates.
 
 ## Always-on product and trust invariants
 
@@ -65,22 +42,35 @@ evidence, not default reading or additional gates.
 
 ## Ownership and delivery
 
-- One writer owns a mutable surface. Use a clean worktree for a dirty or
-  separately owned checkout; do not reset, overwrite, or adopt another
-  writer's branch without an explicit handoff.
+- One writer owns each mutable surface. Any number of writers may proceed when
+  their branches, claimed paths, and hierarchical domains are disjoint. There
+  is no numeric writer, class, or production-capable-lane cap. A real branch,
+  path, or domain collision stops only the colliding work.
+- Review-only agents and independent reviewers do not consume writer claims and
+  may not write the implementation branch.
+- An assigned implementation writer may implement, validate, correct review
+  findings, open the Azure PR, and merge accepted work unless the claim or Pete
+  explicitly gives a narrower assignment. No separate merge grant is needed.
 - Work on a short-lived branch from current `origin/main`; never push directly
-  to `main`. Use an Azure DevOps PR for runtime changes. A merge is not a
-  deployment.
-- The writer implements, validates, and self-reviews once. Manager handoff and
-  independent review occur only for an actual transfer, cross-lane conflict,
-  Protected risk trigger, package requirement, or owner request.
-- For package-manager and specialist selection, follow
-  [AI model and role routing](docs/AI_MODEL_AND_ROLE_ROUTING.md). Overall audit
-  manager, package manager, material visual creator, architect, writer,
-  reviewer, and release owner are separate assignments; no role silently
-  inherits another.
-- Candidate, Launch, Operate, Retire, full-site audits, and visual acceptance
-  are event/risk-driven. They must not block unrelated Routine or Bounded work.
+  to `main`. A merge is not a deployment.
+- Every merge requires the exact review recorded in its claim: writer
+  self-review for Routine/Bounded and independent review for Protected. The
+  reviewed candidate stays immutable; later commits may add only the review
+  receipt and fixed runtime-inert `lane_claims/evidence/<PACKAGE-ID>.md` file.
+- A claim deliberately narrowed to `write_only` cannot merge until Pete's new
+  opaque decision reference is recorded by the generic `authorize` control
+  transition. Normal implementation claims need no separate merge grant.
+- Paused work releases product scope but keeps its branch reserved. Resume uses
+  the exact fetched checkpoint and reruns collisions. Preserve the remote
+  implementation branch through claim close so reviewed squash bytes remain
+  provable.
+- Production deployment, schema mutation, configuration, enablement, rollback,
+  and destructive operations are separate. A repository claim never grants
+  them. Production deployment requires a manually queued exact main SHA and an
+  explicit Pete authorization reference; production operations stay serialized.
+- Follow [AI model and role routing](docs/AI_MODEL_AND_ROLE_ROUTING.md). Overall
+  audit manager, package manager, visual creator, architect, writer, reviewer,
+  and release owner are separate assignments; no role silently inherits another.
 
 ## Triggered authorities
 
@@ -93,7 +83,7 @@ evidence, not default reading or additional gates.
 | Projects | [PS-PROJECTS-001](docs/initiatives/PS-PROJECTS-001/README.md). |
 | Protected operations | [PS-OPS-001](docs/initiatives/PS-OPS-001/README.md). |
 
-Use the lean delivery policy in [AI_WORKFLOW.md](docs/AI_WORKFLOW.md). For a
-material closeout, report base/final SHA, changed paths, verification, release
-state, honest limitations, and the next action. Do not call a fixture live, a
-merge deployed, or an AI proposal accepted without supporting evidence.
+Use [AI_WORKFLOW.md](docs/AI_WORKFLOW.md). For material closeout, report base
+and final SHA, changed paths, verification, review, merge state, deployment
+state, honest limitations, and next action. Never call a fixture live, a merge
+deployed, or an AI proposal accepted without evidence.

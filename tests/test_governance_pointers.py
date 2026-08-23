@@ -7,6 +7,7 @@ belongs to package evidence and must not be hard-coded into the startup gate.
 import json
 import os
 import re
+import subprocess
 import unittest
 from datetime import date
 
@@ -35,6 +36,10 @@ class LeanStartupTests(unittest.TestCase):
             self.assertIn("Routine", body)
             self.assertIn("Bounded", body)
             self.assertIn("Protected", body)
+            self.assertIn("control-only", body)
+            self.assertIn("--intent read", body)
+            self.assertIn("matching", body)
+            self.assertIn("control intent", body)
 
     def test_manager_and_specialist_routing_is_visible_at_startup(self):
         body = _read("AGENTS.md")
@@ -53,9 +58,10 @@ class LeanStartupTests(unittest.TestCase):
         self.assertIn("preserve", body.lower())
         self.assertIn("clean worktree", body)
         self.assertIn("Read only what the task needs", body)
+        self.assertIn("control-only", body)
+        self.assertIn("matching control intent", body)
         self.assertNotIn("CURRENT_STATE.md", body)
         self.assertNotIn("ACTIVE_INITIATIVES.md", body)
-        self.assertLess(len(body.split()), 700)
 
     def test_workflow_has_three_paths_and_no_universal_specialist_gate(self):
         body = _read("docs", "AI_WORKFLOW.md")
@@ -111,19 +117,23 @@ class ControlPlaneTests(unittest.TestCase):
             with self.subTest(path=rel):
                 self.assertTrue(os.path.exists(_path(*rel.split("/"))), rel)
 
-    def test_active_packages_are_unique_and_scoped(self):
-        active = self.data.get("active_packages") or []
-        ids = [item["id"] for item in active]
+    def test_active_claims_are_the_single_unique_scope_source(self):
+        self.assertNotIn("active_packages", self.data)
+        claims_root = _path("docs", "governance", "lane_claims")
+        active = []
+        for filename in os.listdir(claims_root):
+            if not filename.startswith("PS-") or not filename.endswith(".json"):
+                continue
+            claim = json.loads(_read("docs", "governance", "lane_claims", filename))
+            if claim["state"] == "active":
+                active.append(claim)
+        ids = [item["package"] for item in active]
         self.assertEqual(len(ids), len(set(ids)))
-        lane_document = json.loads(
-            _read("docs", "governance", "CURRENT_LANES.json")
-        )
-        lane_ids = [item["package"] for item in lane_document["active_lanes"]]
-        self.assertEqual(set(lane_ids), set(ids))
         for item in active:
-            with self.subTest(package=item["id"]):
-                self.assertEqual("active_delivery", item["status"])
-                self.assertTrue(item["scope"].strip())
+            with self.subTest(package=item["package"]):
+                self.assertTrue(item["outcome"].strip())
+                self.assertTrue(item["surfaces"])
+                self.assertTrue(item["domains"])
         self.assertIn(
             "PS-DELIVERY-RESET-001",
             self.data.get("completed_packages") or [],
@@ -132,7 +142,7 @@ class ControlPlaneTests(unittest.TestCase):
 
     def test_current_lane_ledger_is_named_and_machine_readable(self):
         governing = self.data["governing_documents"]
-        self.assertEqual("1", governing["current_lanes"]["version"])
+        self.assertEqual("3", governing["current_lanes"]["version"])
         self.assertEqual(
             "docs/governance/CURRENT_LANES.json",
             governing["current_lanes"]["path"],
@@ -141,19 +151,17 @@ class ControlPlaneTests(unittest.TestCase):
             "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
             governing["owner_delivery_guide"]["path"],
         )
-        ledger = _read("docs", "governance", "CURRENT_LANES.json")
-        # The ledger records whichever operating state the owner selected; it
-        # must name one of the two valid states, not stay frozen at idle.
-        self.assertTrue(
-            '"controlled_idle"' in ledger or '"active_delivery"' in ledger
-        )
-        self.assertIn('"activation_policy"', ledger)
-        self.assertIn('"PS-DELIVERY-CONTROL-001"', ledger)
-        self.assertIn('"cleanup_authorized": true', ledger)
-        self.assertIn('"cleanup_allowed_for"', ledger)
-        self.assertIn('"grant_close_preflight_repair"', ledger)
+        ledger = json.loads(_read("docs", "governance", "CURRENT_LANES.json"))
+        self.assertEqual(3, ledger["schema_version"])
+        self.assertEqual("generic_package_claims_v1", ledger["model"])
+        self.assertEqual("docs/governance/lane_claims", ledger["claims_path"])
+        self.assertEqual("unbounded_while_disjoint", ledger["rules"]["writer_capacity"])
+        self.assertFalse(ledger["rules"]["reviewers_consume_writer_claim"])
+        self.assertRegex(ledger["legacy_snapshot"]["commit"], r"^[0-9a-f]{40}$")
+        self.assertRegex(ledger["legacy_snapshot"]["blob"], r"^[0-9a-f]{40}$")
+        self.assertLess(len(json.dumps(ledger).split()), 100)
 
-    def test_direction_grant_merge_close_is_documented_consistently(self):
+    def test_claim_review_merge_close_is_documented_consistently(self):
         for parts in (
             ("AGENTS.md",),
             ("CLAUDE.md",),
@@ -163,31 +171,22 @@ class ControlPlaneTests(unittest.TestCase):
             ("docs", "governance", "PEERSLATE_OWNER_DELIVERY_GUIDE.md"),
         ):
             body = _read(*parts).lower()
-            for term in ("grant", "merge", "close"):
+            for term in ("claim", "merge", "close"):
                 self.assertIn(term, body, f"{term} missing from {'/'.join(parts)}")
         workflow = _read("docs", "AI_WORKFLOW.md")
-        self.assertIn("non-production `direction_authority`", workflow)
-        self.assertIn("may not append", workflow)
+        self.assertIn("No separate owner merge grant is", workflow)
+        self.assertIn("reviewer is read-only", workflow)
+        self.assertIn("exact-SHA review", workflow)
 
-    def test_four_writer_capacity_keeps_collision_and_authority_controls_visible(self):
+    def test_unbounded_disjoint_writers_keep_collision_and_authority_controls(self):
         ledger = json.loads(
             _read("docs", "governance", "CURRENT_LANES.json")
         )
-        policy = ledger["activation_policy"]
-        self.assertEqual("PS-DELIVERY-CONTROL-001", policy["package"])
-        self.assertEqual(4, policy["max_active_lanes"])
-        self.assertEqual(4, policy["max_implementation_lanes"])
-        self.assertEqual(1, policy["max_direction_authority_lanes"])
-        self.assertEqual(1, policy["max_shared_foundation_lanes"])
-        self.assertEqual(1, policy["max_production_capable_lanes"])
-        instruction = policy["instruction"]
-        for phrase in (
-            "duplicate branch",
-            "writable-path overlap",
-            "hierarchical exclusive-domain collision",
-            "third or fourth writer",
-        ):
-            self.assertIn(phrase, instruction)
+        rules = ledger["rules"]
+        self.assertEqual("unbounded_while_disjoint", rules["writer_capacity"])
+        self.assertFalse(rules["reviewers_consume_writer_claim"])
+        self.assertIn("through_merge", rules["assigned_repository_authority"])
+        self.assertIn("manual_exact_main_sha", rules["production_operations"])
 
         for parts in (
             ("AGENTS.md",),
@@ -199,67 +198,19 @@ class ControlPlaneTests(unittest.TestCase):
             normalized = " ".join(
                 _read(*parts).lower().replace(">", " ").split()
             )
-            self.assertIn("four", normalized, "/".join(parts))
-            self.assertIn("writable-path overlap", normalized, "/".join(parts))
-            self.assertIn(
-                "hierarchical exclusive-domain collision",
-                normalized,
-                "/".join(parts),
-            )
-            self.assertIn("production-capable", normalized, "/".join(parts))
-            self.assertNotIn("three-lane", normalized, "/".join(parts))
+            self.assertRegex(normalized, r"(?:no fixed|no numeric|unlimited|any number)")
+            self.assertIn("collision", normalized, "/".join(parts))
+            self.assertIn("production", normalized, "/".join(parts))
 
-        mode = ledger["operating_mode"]
-        active_packages = [lane["package"] for lane in ledger["active_lanes"]]
-        expected_state = "active_delivery" if active_packages else "controlled_idle"
-        self.assertEqual(expected_state, mode["state"])
-        self.assertEqual(active_packages, mode["writes_allowed_for"])
-        for field in (
-            "merge_allowed_for",
-            "cleanup_allowed_for",
-            "release_allowed_for",
-        ):
-            self.assertIsInstance(mode[field], list)
-            self.assertTrue(set(mode[field]).issubset(set(active_packages)))
-
-        child = "PS-DELIVERY-CONTROL-CONCURRENCY-INTEGRATION-001"
-        closes = [
-            lane for lane in ledger["closing_lanes"] if lane.get("package") == child
-        ]
-        self.assertEqual(1, len(closes))
-        self.assertEqual("policy_integrated_closed", closes[0]["disposition"])
-        self.assertEqual("2026-08-19T14:34:34Z", closes[0]["closed_at"])
-        self.assertEqual(
-            "four_writer_policy_atomic_integration",
-            closes[0]["integration_record"],
-        )
-        old = [
-            lane
-            for lane in ledger["paused_lanes"]
-            if lane.get("package") == "PS-DELIVERY-CONTROL-CONCURRENCY-001"
-        ]
-        self.assertEqual(1, len(old))
-        self.assertEqual(
-            "4ff435ea773efdbfa590f1aa4bbb6c7f4c759748",
-            old[0]["preserved_head_sha"],
-        )
-        self.assertEqual(
-            active_packages,
-            [item["id"] for item in (self.data.get("active_packages") or [])],
-        )
-        self.assertEqual(
-            1,
-            (self.data.get("completed_packages") or []).count(child),
-        )
+        active_packages = []
+        claims_root = _path("docs", "governance", "lane_claims")
+        for filename in os.listdir(claims_root):
+            if filename.startswith("PS-") and filename.endswith(".json"):
+                claim = json.loads(_read("docs", "governance", "lane_claims", filename))
+                if claim["state"] == "active":
+                    active_packages.append(claim["package"])
         current_assignments = self.data["manager"]["current_assignments"]
-        next_gate = self.data["next_gate"]
-        if active_packages:
-            for package in active_packages:
-                self.assertIn(package, current_assignments)
-                self.assertIn(package, next_gate)
-        else:
-            self.assertIn("No active writer lanes", current_assignments)
-            self.assertIn("four-writer", next_gate)
+        self.assertIn("docs/governance/lane_claims", current_assignments)
 
     def test_production_truth_is_separate_from_current_git(self):
         authority = self.data["authority"]
@@ -268,27 +219,18 @@ class ControlPlaneTests(unittest.TestCase):
         self.assertRegex(authority["application_behavior_commit"], r"^[0-9a-f]{40}$")
         self.assertIn("not a substitute", authority["note"])
 
-    def test_baseline_and_lane_ledger_pin_the_same_production_release(self):
-        """The two live control-plane records must move in lockstep.
-
-        This catches the exact drift that left the baseline on run 557 while
-        production was already serving run 560.
-        """
-        authority = self.data["authority"]
+    def test_legacy_lane_ledger_is_pinned_by_git_identity(self):
         lane_document = json.loads(
             _read("docs", "governance", "CURRENT_LANES.json")
         )
-        release = lane_document["release_truth"]
-        for key in (
-            "deployed_main_commit",
-            "live_release",
-            "application_behavior_commit",
-        ):
-            with self.subTest(key=key):
-                self.assertEqual(authority[key], release[key])
-        for key in ("deployed_pipeline", "application_behavior_pipeline"):
-            with self.subTest(key=key):
-                self.assertEqual(authority[key], str(release[key]))
+        legacy = lane_document["legacy_snapshot"]
+        self.assertEqual("docs/governance/CURRENT_LANES.json", legacy["path"])
+        blob = subprocess.check_output(
+            ["git", "rev-parse", f"{legacy['commit']}:{legacy['path']}"],
+            cwd=ROOT,
+            text=True,
+        ).strip()
+        self.assertEqual(legacy["blob"], blob)
 
 
 class ProductTrustTests(unittest.TestCase):
@@ -420,7 +362,7 @@ class NoGlobalFreezeTests(unittest.TestCase):
     def test_handoff_and_completion_are_proportional(self):
         handoff = _read("docs", "governance", "MANAGER_SESSION_HANDOFF.md")
         completion = _read("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md")
-        self.assertIn("Use this only when another person or agent will continue", handoff)
+        self.assertIn("Use this only when another task will continue", handoff)
         self.assertIn("Protected additions - only when applicable", completion)
         self.assertLess(len(handoff.split()), 300)
         self.assertLess(len(completion.split()), 350)

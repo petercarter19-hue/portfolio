@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-CONTROL-SIMPLIFICATION-001",
+  "candidate_sha": "ff3959815f3e4a9ca4dc5dd404a42a5e11ec462a",
+  "review_type": "independent",
+  "reviewer_ref": "agent:pipeline-patch-spec-independent-review",
+  "result": "pass",
+  "reviewed_at": "2026-08-23T03:39:04Z",
+  "findings": [
+    {
+      "summary": "Resume validates the prospective claim against fetched current-main claims.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Legacy bootstrap conservatively preserves explicit merge boundaries.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Activation rejects non-active and preseeded lifecycle state.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Pause and close preserve immutable handoff provenance.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Control-only transitions use a non-circular pre-edit read check.",
+      "status": "resolved"
+    }
+  ],
+  "evidence_ref": "task:01a02b5c-1ac8-7960-8694-e4a288ec9cf4/review:ff3959815f3e4a9ca4dc5dd404a42a5e11ec462a"
+}

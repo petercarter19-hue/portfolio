@@ -816,6 +816,11 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             pipeline,
             r'(?ms)- name: manualProductionSourceVersion.*?default: \'\'',
         )
+        self.assertIn('name: productionAuthorizationReference', pipeline)
+        self.assertRegex(
+            pipeline,
+            r'(?ms)- name: productionAuthorizationReference.*?default: \'\'',
+        )
         self.assertIn(
             'python scripts/production_operation_preflight.py',
             production_stage,
@@ -824,6 +829,11 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
         self.assertIn(
             'MANUAL_SOURCE_VERSION: '
             '${{ parameters.manualProductionSourceVersion }}',
+            production_stage,
+        )
+        self.assertIn(
+            'PRODUCTION_AUTHORIZATION_REFERENCE: '
+            '${{ parameters.productionAuthorizationReference }}',
             production_stage,
         )
         self.assertRegex(production_stage, r'(?m)^    dependsOn: Build$')
@@ -836,6 +846,10 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             production_stage,
         )
         self.assertIn(
+            "eq(variables['Build.Reason'], 'Manual')",
+            production_stage,
+        )
+        self.assertNotIn(
             "ne(variables['Build.Reason'], 'Manual')",
             production_stage,
         )
@@ -863,16 +877,12 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
         self.assertIn('--warmup-seconds 420', production_stage)
         self.assertNotIn('--warmup-seconds 180', production_stage)
 
-        # A manual main run that skips the deploy must announce itself rather
-        # than report a bare success.
+        # Every main run with no production request records that it is CI-only;
+        # a manual no-op additionally reports succeeded-with-issues.
         skipped_stage = stage_bodies['ProductionReleaseSkipped']
         self.assertRegex(skipped_stage, r'(?m)^    dependsOn: Build$')
         self.assertIn(
             "eq(variables['Build.SourceBranch'], 'refs/heads/main')",
-            skipped_stage,
-        )
-        self.assertIn(
-            "eq(variables['Build.Reason'], 'Manual')",
             skipped_stage,
         )
         self.assertIn(
@@ -888,6 +898,8 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             '##vso[task.complete result=SucceededWithIssues;]',
             skipped_stage,
         )
+        self.assertIn('BUILD_REASON: $(Build.Reason)', skipped_stage)
+        self.assertIn('without a production operation', skipped_stage)
         # It reports only; it must never touch the web app.
         self.assertNotIn('AzureWebApp@1', skipped_stage)
         self.assertNotIn('az webapp', skipped_stage)
@@ -1316,12 +1328,9 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
             apply_stage, r'(?m)^    dependsOn: SchemaReadOnlyPreflight$'
         )
 
-        # 6. The three stage conditions, compared exactly. The web stage keeps
-        #    the original admission rule verbatim -- `schemaAction` appears only
-        #    inside its `or(...)`, admitting a schema-only run to the request
-        #    validator, and never as a requirement for deploying. Each schema
-        #    stage is that same rule with `schemaAction != none` added as a
-        #    conjunct, so a `none` run enters neither.
+        # 6. All production stages are manual-only. The web stage admits either
+        #    an authorized deployment or a schema-only request for validation;
+        #    the schema stages additionally require a non-none action.
         def stage_condition(body):
             # Stop at the next stage-level key (four spaces, then content),
             # otherwise the block scan runs on into the stage's jobs. No
@@ -1337,12 +1346,16 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
         admission = (
             "and( succeeded(), "
             "eq(variables['Build.SourceBranch'], 'refs/heads/main'), "
-            "or( ne(variables['Build.Reason'], 'Manual'), "
+            "eq(variables['Build.Reason'], 'Manual'), "
+            "or( "
             "${{ eq(parameters.forceProductionDeploy, true) }}, "
             "${{ ne(parameters.schemaAction, 'none') }} ) )"
         )
-        schema_admission = admission[:-1].rstrip() + (
-            ", ${{ ne(parameters.schemaAction, 'none') }} )"
+        schema_admission = (
+            "and( succeeded(), "
+            "eq(variables['Build.SourceBranch'], 'refs/heads/main'), "
+            "eq(variables['Build.Reason'], 'Manual'), "
+            "${{ ne(parameters.schemaAction, 'none') }} )"
         )
         self.assertEqual(admission, stage_condition(web_stage))
         self.assertEqual(schema_admission, stage_condition(preflight_stage))
@@ -1410,9 +1423,10 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
 
         for expected in (
             'Azure production release reliability',
-            'automatic Azure run for a merged `main` SHA is authoritative',
-            'same-SHA fallback while the automatic run exists',
-            'manual production deployment must be an explicit',
+            'automatic Azure run for a merged `main` SHA is authoritative repository CI only',
+            'automatic exact-SHA run is still active',
+            'production deployment is false by default and manual-only',
+            '`productionAuthorizationReference`',
             'Production deployment and its exact source/build smoke',
             'Batch rapid `main` changes',
             'Once ZipDeploy/Oryx has begun, do not cancel casually',
@@ -1478,26 +1492,26 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
         # record release evidence with [skip ci] unless this test was run
         # locally against the exact record being merged.
         self.assertIn(
-            'deployed_main_commit: "aa4a4ec6a12d334805298f81041fee49c6fdc51a"',
+            'deployed_main_commit: "00f73f86887d80645524626a0def44e52f79c9c9"',
             baseline,
         )
-        self.assertIn('deployed_pipeline: 722', baseline)
+        self.assertIn('deployed_pipeline: 1453', baseline)
         expected_release = release_id_for_build(
-            'aa4a4ec6a12d334805298f81041fee49c6fdc51a',
-            '722',
+            '00f73f86887d80645524626a0def44e52f79c9c9',
+            '1453',
         )
         self.assertIn(f'/healthz release {expected_release}', baseline)
         self.assertIn(
-            'application_behavior_commit: "aa4a4ec6a12d334805298f81041fee49c6fdc51a"',
+            'application_behavior_commit: "00f73f86887d80645524626a0def44e52f79c9c9"',
             baseline,
         )
-        self.assertIn('application_behavior_pipeline: 722', baseline)
+        self.assertIn('application_behavior_pipeline: 1453', baseline)
         self.assertIn('PS-AZURE-RELEASE-RELIABILITY-001', baseline)
         self.assertIn('PS-DELIVERY-RESET-001', baseline)
         self.assertIn('PS-GOV-LEAN-001', baseline)
         self.assertIn('Historical narrative snapshot', state)
         self.assertIn('Historical lane snapshot', initiatives)
-        self.assertIn('Use this only when another person or agent will continue', handoff)
+        self.assertIn('Use this only when another task will continue', handoff)
         self.assertLess(len(handoff.split()), 300)
 
 

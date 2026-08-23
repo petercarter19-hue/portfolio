@@ -87,9 +87,9 @@ wording implied more than the pipeline now does:
 
 - Azure evaluates the exclusive lock **after** approvals, not before. A schema
   run waiting on its approval therefore does **not** hold the production lock,
-  and a merge that lands during that wait deploys normally. Serialization
-  covers the execution window, which is the window that matters; it is no
-  longer a queue behind a human.
+  and a merge that lands during that wait runs CI without deploying.
+  Serialization covers the production execution window, which is the window
+  that matters; it is no longer a queue behind a human.
 - `SchemaReadOnlyPreflight` holds no lock at all, by design. It only reads.
 
 This replaced a single `ProductionOperation` stage that held both environments.
@@ -282,9 +282,10 @@ ship a hand-written guess, and it means the record is derived from day one. See
 
 Application code and schema remain separate actions inside one shared
 production reservation. A deliberate schema-only run does not deploy the
-application and is not downgraded by `ProductionReleaseSkipped`; that warning
-stage is reserved for a manual run that requested neither web deployment nor
-schema work. Read the operation and stage results, not the run icon alone.
+application and does not enter `ProductionReleaseSkipped`. Automatic main CI
+uses that stage to record a successful build-only result; a manual run with no
+web or schema request uses it to warn that nothing shipped. Read the operation
+and stage results, not the run icon alone.
 
 ## Rolling a migration back
 

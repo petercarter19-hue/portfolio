@@ -93,18 +93,19 @@ compensating control, and focused retrospective.
 These rules apply to every initiative that can trigger the shared production
 pipeline:
 
-- The automatic Azure run for a merged `main` SHA is authoritative. Before
-  queueing anything manually, list queued, running, and completed runs for that
-  exact SHA. Do not create a same-SHA fallback while the automatic run exists.
-- A manual production deployment must be an explicit false-by-default override,
-  not the default effect of clicking **Run pipeline**. Use it only after current
-  live identity and the automatic-run state have been inspected. It must name
-  the exact 40-character `manualProductionSourceVersion`; the pipeline queries
-  Azure and refuses the fallback when an automatic exact-SHA run is active or
-  has already succeeded.
-- Application deployment and schema work share the single sequential
-  `ProductionOperation` stage. They cannot overlap across runs, and one run is
-  not allowed to request both operations.
+- The automatic Azure run for a merged `main` SHA is authoritative repository
+  CI only. It builds and tests; it does not deploy. Before queueing a production
+  operation, require that exact-SHA CI to finish and inspect current live
+  identity. The preflight refuses a manual production operation while the
+  automatic exact-SHA run is still active; a completed green CI run is expected
+  evidence, not a competing deployment.
+- A production deployment is false by default and manual-only. It must set
+  `forceProductionDeploy=true`, name the exact 40-character
+  `manualProductionSourceVersion`, and supply a bounded
+  `productionAuthorizationReference` pointing to Pete's explicit decision.
+- Application deployment and schema work use separate stages but borrow the
+  same sequential production environment lock. They cannot overlap across
+  runs, and one run cannot request both operations.
 - Production deployment and its exact source/build smoke must remain in one
   locked operation. Do not split verification outside the lock or weaken the
   build-specific release identity to make an overwritten run appear green.
@@ -149,8 +150,9 @@ way to move PeerSlate schema. Read it before proposing, gating, applying, or
 rolling back a migration. In short:
 
 - the pipeline's schema operation runs only when a person queues it with an
-  explicit `schemaAction` inside the shared `ProductionOperation` stage and an
-  approver releases the `peerslate-database-schema` environment; merging a
+  explicit `schemaAction`; the manual-only production stages share one
+  serialized reservation, and an approver releases the
+  `peerslate-database-schema` environment; merging a
   migration file applies nothing;
 - a migration cannot be applied unless `SQL FIles/Migrations/registry.json`
   carries a gate proof whose digest still matches its T-SQL;

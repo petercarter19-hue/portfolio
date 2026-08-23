@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-MULTI-MEMBER-QA-001",
+  "state": "active",
+  "outcome": "Complete the reusable provider-free two-member QA foundation and its sanitized, fail-closed evidence without handling credentials, sessions, private production data, deployment, or live identity proof.",
+  "assignment": "implementation",
+  "writer_ref": "task:708d6f8b-e2d9-437d-950f-52a084e41381",
+  "branch": "work/2026-08-20-synthetic-multi-member-qa-001",
+  "delivery_path": "Protected",
+  "repository_authority": "write_only",
+  "production_authority": "withheld",
+  "activated_from_main": "c024293d8b8dfee98bf973b25e6f33e70745e0cd",
+  "owner_outcome_ref": "legacy-snapshot:c024293d8b8dfee98bf973b25e6f33e70745e0cd/package:PS-SYNTHETIC-MULTI-MEMBER-QA-001",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SYNTHETIC-MULTI-MEMBER-QA-001.json",
+    "docs/initiatives/PS-SYNTHETIC-MULTI-MEMBER-QA-001",
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-MULTI-MEMBER-QA-001.md",
+    "docs/governance/lane_claims/receipts/PS-SYNTHETIC-MULTI-MEMBER-QA-001.json",
+    "qa/synthetic_member",
+    "scripts/run_synthetic_member_qa.py",
+    "tests/synthetic_member_qa"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-MULTI-MEMBER-QA-001.md"
+  ],
+  "domains": [
+    "quality:synthetic-multi-member-qa",
+    "identity:synthetic-qa-alias-contract",
+    "privacy:multi-member-isolation-evidence",
+    "testing:clean-client-attended-proof",
+    "testing:synthetic-evidence-cleanup"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}

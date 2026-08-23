@@ -1,116 +1,133 @@
-# PeerSlate - START HERE
+# PeerSlate - Start Here
 
-Use this first for work that may change files, behavior, data, or a release.
-It prevents unsafe work without turning every task into governance.
-
-## 1. Establish a safe starting point
-
-Before editing, inspect the checkout, fetch the authority, and preserve work
-that is not yours:
+## 1. Establish a safe base
 
 ```bash
 git status --short --branch
 git remote -v
 git branch --show-current
-git log -1 --format='%H %s'
 git fetch origin --prune
-git status --short --branch
+git log -1 --format='%H %s' origin/main
 ```
 
-- Confirm what `origin` means. Azure DevOps `origin/main` is authoritative;
-  GitHub is a backup mirror.
-- Do not switch, reset, clean, or edit a dirty checkout that belongs to another
-  task. Use a clean worktree when needed.
-- Start a task branch from current `origin/main`. Do not push directly to
-  `main`.
+- Azure DevOps `origin/main` is authoritative.
+- Preserve dirty or unrelated work. Use a clean worktree instead of switching,
+  resetting, cleaning, or adopting somebody else's checkout.
+- Use a short-lived work branch from current `origin/main`; never push to main.
 
 ## 2. Read only what the task needs
 
-Read `docs/governance/CURRENT_BASELINE.yaml`, then classify the work before
-reading more:
-
-Also read `docs/governance/CURRENT_LANES.json` and run the executable preflight:
+Read `docs/governance/CURRENT_BASELINE.yaml`, the small
+`docs/governance/CURRENT_LANES.json` index, and the package's JSON claim under
+`docs/governance/lane_claims/`. Before implementation edits, run:
 
 ```bash
 python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --fetch --require-clean
 ```
 
-Use `--intent read` for a read-only audit. If the ledger reports an
-owner-directed reset, only its `writes_allowed_for` package may write. Do not
-create a branch or worktree to work around a failed preflight.
+Use `--intent read` for read-only work; failures stop. A control-only
+activation, authorize, transfer, pause, resume, or close uses `read` before the
+edit, changes and commits only the exact claim on its dedicated control branch,
+then runs the matching control intent with `--fetch --require-clean` before PR.
+It may not change an implementation surface.
 
-In-place writer changes use the control-only `--intent transfer` flow in
-`MANAGER_SESSION_HANDOFF.md`.
-
-From `controlled_idle`, Pete names one exact outcome. During `active_delivery`,
-up to four writers may be active; all may be implementation lanes.
-Shared-foundation and direction/authority are specialized, not reserved: at
-most one of each and one production-capable lane. A duplicate branch,
-writable-path overlap, or hierarchical exclusive-domain collision is a stop.
-With capacity and all checks passing, two implementation lanes do not block a
-third or fourth writer. Direction/authority is documentation/evidence-only.
-Run:
-
-```bash
-python scripts/delivery_preflight.py --package PS-DELIVERY-CONTROL-001 --intent activate --fetch --require-clean
-```
-
-Record branch, writer, class, domains, surfaces, exclusions, and path; merge the
-activation before creating its worktree. Any failed control check is a stop.
-
-Only writers consume capacity. To pause safely, commit and push the work
-checkpoint, then create a dedicated
-`work/YYYY-MM-DD-delivery-pause-<slug>` branch from current `origin/main`,
-change only the ledger/baseline, record the fetched work SHA, and run:
-
-```bash
-python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent pause --fetch --require-clean
-```
-
-Merge only the control record. Paused work consumes no slot and resumes only
-through fresh activation.
-
-A reviewed candidate uses a clean grant branch:
-
-```bash
-python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent grant --fetch --require-clean
-```
-
-After grant reaches `origin/main`, keep the candidate frozen and run from a
-clean current-main verifier:
-
-```bash
-python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent merge --fetch --require-clean --candidate-worktree <ABSOLUTE-FROZEN-WORKTREE>
-```
-
-The clean candidate must share the Git directory and Azure origin. Never alter
-it or use its old validator; preserve its remote branch through close. A
-direction grant is merge-only. A code-controlled implementation profile binds
-the approval, SHA, review, PR/CI, dark boundary, and additive migration through
-`release_allowed_for`. It excludes public enablement, `app.py`, configuration,
-later work, and destructive schema. Close removes authority.
-
-| Path | Use for | Read next |
+| Path | Use for | Additional authority |
 |---|---|---|
-| Routine | Copy, isolated bug fix, test, or internal refactor with no trust, data, public-contract, or material-visual change | The relevant code and focused test. |
-| Bounded | A feature or route change within an approved package and established architecture | The package README and the directly affected contract. |
-| Protected | Identity, authorization, privacy, canonical data, migration, deletion/publication, consequential AI, shared infrastructure, or a materially revised visual direction | The package plus the named specialist standard and risk-specific evidence. |
+| Routine | Copy, isolated correction, focused test, internal refactor, documentation | Code and focused verification. |
+| Bounded | Approved feature or route inside an established package and architecture | Package and directly affected contract. |
+| Protected | Identity, authorization, privacy, canonical data, migration, deletion/publication, consequential AI, shared infrastructure, or materially revised visual direction | Package, named specialist standard, risk evidence, and independent review. |
 
-Read the current Constitution and Roadmap only when their product rule or
-sequence is relevant. Read a specialist standard only when its trigger applies.
-`docs/governance/DOCUMENT_CONTROL.md` resolves a real conflict; it is not a
-required reading assignment for ordinary work.
+## 3. Activate only a selected outcome
 
-## 3. Confirm before writing
+Pete first names the exact outcome. From current main, create a clean
+`work/YYYY-MM-DD-delivery-activation-<slug>` branch and add exactly one
+`docs/governance/lane_claims/<PACKAGE-ID>.json` file. Record:
 
-Know the task purpose, owner/writer, files or domain, current ledger state, and the one verification
-that makes the result believable. Stop and ask when an ownership, identity,
-privacy, migration, or visual-authority conflict is real. Do not stop merely
-because an unrelated historical record is long or a global checkpoint is open.
+- package, outcome, opaque writer task reference, and future work branch;
+- Routine, Bounded, or Protected path;
+- repository authority (`through_merge` by default or explicit `write_only`);
+- normalized mutable surfaces and hierarchical domains;
+- the package-reserved claim, receipt, and runtime-inert evidence paths, plus
+  review requirement;
+- `production_authority: withheld`, exact current main SHA, and owner outcome
+  reference.
 
-## 4. Finish proportionately
+Commit the one-file activation and run:
 
-Use the compact completion record in
-`docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md`. Record the branch/SHA,
-what changed, verification, release state when applicable, and an honest next
-step. Add protected-path evidence only when its risk trigger applied.
+```bash
+python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent activate --fetch --require-clean
+```
+
+Merge the control PR before creating the implementation worktree. There is no
+numeric writer, class, or production-capable-lane cap. Disjoint writers may all
+proceed. Duplicate branches, overlapping claimed paths, and hierarchical domain
+collisions fail closed. Reviewers consume no writer claim.
+
+## 4. Work through merge
+
+Implementation normally continues through accepted merge. Every merge uses one
+proof path:
+
+1. Commit and push an immutable candidate SHA.
+2. Routine/Bounded: complete self-review and issue a `self` receipt using the
+   writer reference. Protected: obtain a read-only independent review and
+   `independent` pass receipt. Correct findings and freeze again as needed.
+3. Add only `lane_claims/receipts/<PACKAGE-ID>.json` and runtime-inert
+   `lane_claims/evidence/<PACKAGE-ID>.md`, push, then run:
+
+```bash
+python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent merge --candidate-sha <REVIEWED-SHA> --fetch --require-clean
+```
+
+This admits disjoint main movement and blocks candidate tampering, collisions,
+missing review, and non-evidence edits after review. Normal claims need no
+separate grant.
+
+A claim explicitly narrowed to `write_only` may write but cannot merge. If Pete
+expands it, a `delivery-authorize` branch changes only `repository_authority`
+to `through_merge` and `owner_outcome_ref` to the new opaque decision reference:
+
+```bash
+python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent authorize --fetch --require-clean
+```
+
+Merge that control PR before implementation merge.
+
+## 5. Change claim state only when needed
+
+- Transfer: push the exact checkpoint, record opaque from/to task references
+  and explicit relinquishment in the claim, then validate on a dedicated
+  `delivery-transfer` control branch with `--intent transfer`.
+- Pause: push the exact work branch, set the claim to `paused` with that fetched
+  checkpoint on a `delivery-pause` branch, then run `--intent pause`. Do not
+  merge unfinished implementation merely to release ownership.
+- Resume: on a `delivery-resume` branch, change only `state` from `paused` to
+  `active`, then run `--intent resume`. The fetched branch must still equal the
+  preserved checkpoint, and current branch/path/domain collisions rerun.
+- Close: after the accepted repository SHA is on main, set the claim to
+  `closed` with `merged_sha` and UTC `closed_at` on a `delivery-close` branch,
+  then run `--intent close`. The check proves the reviewed candidate paths and
+  bytes were introduced by that recorded main commit. Keep the remote
+  implementation branch through close; if it was deleted, re-push the exact
+  reviewed branch before retrying.
+
+## 6. Keep deployment separate
+
+PR and automatic main runs build and test only. A production web deployment is
+allowed only in a manually queued main run with all three values:
+
+- `forceProductionDeploy=true`;
+- `manualProductionSourceVersion=<exact 40-character main SHA>`;
+- `productionAuthorizationReference=<Pete's explicit decision reference>`.
+
+Schema operations remain manual, separately gated, and cannot share a web
+deployment run. Merge, deployment, schema, enablement, rollback, and live
+verification are separate truthful states.
+
+## 7. Finish proportionately
+
+Use `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md` once. Record outcome,
+base/final SHA, changed paths, tests, review, PR/merge state, deployment state,
+honest limits, and next action. Stop for a real ownership, privacy,
+authorization, migration, deletion, or material-visual conflict - not an
+unrelated historical record.

@@ -1,52 +1,35 @@
 # PeerSlate Agent Startup Checklist
 
-Use this for a change, not for a read-only discussion.
+Use this for a change, not a read-only discussion.
 
-- [ ] Checked branch, status, remote, and current `origin/main`; preserved work
-  not owned by this task.
-- [ ] Used a clean task branch/worktree when the existing checkout is not safe
-  to touch.
-- [ ] Read `CURRENT_BASELINE.yaml` and classified the work as Routine, Bounded,
-  or Protected under `START_HERE.md`.
-- [ ] Read `CURRENT_LANES.json` and passed `scripts/delivery_preflight.py` for
-  the exact package and intended read/write/release action.
-- [ ] For a new lane, confirmed Pete selected one exact outcome and used the
-  ledger-only activation flow before implementation. Activation may start
-  from `controlled_idle`, or from `active_delivery` while capacity remains. Up
-  to four writer lanes may be active, and all four may be implementation lanes.
-  Shared-foundation and direction/authority are specialized classes, not
-  reserved slots: at most one of each and at most one production-capable lane
-  may be active. A duplicate branch, writable-path overlap, or hierarchical
-  exclusive-domain collision is a stop. When every check passes, two
-  implementation lanes are not a reason to refuse a third or fourth writer.
-  Direction/authority is restricted to initiative documentation/evidence.
-- [ ] Confirmed this package is actually writing. Read-only research and a
-  preserved pause consume no writer lane; resumption requires fresh activation.
-- [ ] For a pause, committed and pushed the intended checkpoint, then used a
-  separate control-only pause branch from current `origin/main`; did not merge
-  the unfinished package merely to update capacity.
-- [ ] Read the package and specialist contract only when the selected path
-  requires them.
-- [ ] Confirmed the writer and editable files/domain; a manager handoff is
-  required only when work actually changes hands or crosses an owned lane.
-- [ ] For an in-place writer change, confirmed the prior writer pushed and
-  relinquished the exact SHA, used a dedicated control-only transfer branch,
-  changed only the permitted lane transfer fields, and passed `--intent
-  transfer --fetch --require-clean` before the receiver wrote.
-- [ ] For a completed non-production direction/authority lane, used the
-  separate grant -> merge -> close controls: exact pushed/reviewed SHA,
-  pre-existing Pete merge decision, review evidence at that SHA,
-  non-overlapping behind-main proof, exact main tree equivalence, and removal
-  of all mutation authority at close.
-- [ ] If that candidate predates current control code, left it untouched and
-  ran merge preflight from a separate clean current-main verifier with its
-  absolute registered `--candidate-worktree` path; did not rebase, overlay,
-  detach, or run the candidate's older validator; retained its remote branch
-  through close with PR source-branch deletion disabled.
-- [ ] For Protected work, named the specific privacy, security, data, release,
-  or material-visual evidence required before release.
-- [ ] Chosen focused verification and the proportional completion record.
+- [ ] Checked branch, status, Azure origin/main, and preserved unrelated work.
+- [ ] Used a clean worktree when the existing checkout was dirty or owned.
+- [ ] Read `CURRENT_BASELINE.yaml`, `CURRENT_LANES.json`, and the exact package
+  claim; chose Routine, Bounded, or Protected.
+- [ ] For implementation edits, passed `delivery_preflight.py --package
+  <PACKAGE-ID> --intent write --fetch --require-clean` before editing.
+- [ ] For a control-only transition, ran `--intent read` before editing, changed
+  and committed only the exact claim, then ran the matching control intent with
+  `--fetch --require-clean` before PR.
+- [ ] Confirmed the branch, normalized mutable paths, and hierarchical domains
+  do not collide with another active claim. No numeric capacity check applies.
+- [ ] Confirmed the assignment: implementation normally continues through
+  accepted merge unless explicitly `write_only`; reviewers remain claim-free;
+  production authority is always withheld from repository claims.
+- [ ] Read only the package and specialist contracts triggered by the work.
+- [ ] Selected focused verification and one proportional completion record.
+- [ ] Planned an immutable candidate, generic exact-SHA receipt, and fixed
+  runtime-inert evidence file. Routine/Bounded use the writer's self-review
+  receipt; Protected uses a read-only independent-review receipt.
+- [ ] Kept deployment, schema, configuration, enablement, rollback, and live
+  proof outside repository authority unless Pete separately authorizes the
+  exact production operation.
 
-Stop when a real ownership, privacy, authorization, migration, or visual
-authority conflict cannot be resolved. Do not create a stop condition from
-unrelated documentation or a closed/historical package.
+For a new outcome, merge a one-claim activation before creating its worktree.
+For a real authority expansion, transfer, pause, resume, or close, use its
+one-claim control transition. Resume must preserve the fetched checkpoint and
+rerun collisions. Keep the remote implementation branch through close.
+Authority expansion applies only to a claim Pete explicitly narrowed to
+`write_only` and requires a new opaque owner decision reference.
+Stop on a genuine collision or trust-boundary problem, not an unrelated
+historical gate.

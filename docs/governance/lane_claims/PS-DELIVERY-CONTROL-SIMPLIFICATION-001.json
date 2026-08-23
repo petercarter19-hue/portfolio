@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-CONTROL-SIMPLIFICATION-001",
+  "state": "active",
+  "outcome": "Replace bespoke package admission with generic claims, collision checks, exact-candidate review receipts, and manual-only production operations; land and prove the repository change, then stop before deployment.",
+  "assignment": "implementation",
+  "writer_ref": "task:01a02b5c-1ac8-7960-8694-e4a288ec9cf4",
+  "branch": "work/2026-08-22-delivery-control-simplification-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "c024293d8b8dfee98bf973b25e6f33e70745e0cd",
+  "owner_outcome_ref": "task:01a02b5c-1ac8-7960-8694-e4a288ec9cf4/owner-direction:2026-08-22",
+  "surfaces": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "START_HERE.md",
+    "azure-pipelines.yml",
+    "docs/AI_WORKFLOW.md",
+    "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+    "docs/governance/CURRENT_BASELINE.yaml",
+    "docs/governance/CURRENT_LANES.json",
+    "docs/governance/MANAGER_SESSION_HANDOFF.md",
+    "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
+    "docs/governance/lane_claims/PS-DELIVERY-CONTROL-SIMPLIFICATION-001.json",
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-CONTROL-SIMPLIFICATION-001.md",
+    "docs/governance/lane_claims/receipts/PS-DELIVERY-CONTROL-SIMPLIFICATION-001.json",
+    "docs/initiatives/PS-OPS-001/README.md",
+    "docs/initiatives/PS-OPS-001/GOVERNED_SCHEMA_MIGRATION_PATH.md",
+    "scripts/delivery_preflight.py",
+    "scripts/production_operation_preflight.py",
+    "tests/test_delivery_preflight.py",
+    "tests/test_governance_pointers.py",
+    "tests/test_operational_readiness.py",
+    "tests/test_production_operation_preflight.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-CONTROL-SIMPLIFICATION-001.md"
+  ],
+  "domains": [
+    "governance:delivery-control",
+    "operations:production-deployment-orchestration",
+    "testing:delivery-control-invariants"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}

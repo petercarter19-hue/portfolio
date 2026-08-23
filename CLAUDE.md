@@ -2,57 +2,46 @@
 @docs/AI_WORKFLOW.md
 
 > **MANDATORY PRE-WORK GATE**
-> Follow [`START_HERE.md`](START_HERE.md) before a write, code change,
-> migration, deployment, or product decision. Fetch `origin/main`, read
-> `CURRENT_BASELINE.yaml`, choose the Routine, Bounded, or Protected path, and
-> read only the relevant package and specialist authority. Consult
-> `DOCUMENT_CONTROL.md` for a genuine conflict, not as a routine reading gate.
-> Before a write, read `CURRENT_LANES.json` and pass
-> `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write
-> --fetch --require-clean`. Use the bounded `START_HERE.md` activation flow
-> only after Pete selects the exact outcome. It may reserve a lane from
-> `controlled_idle` or add a writer during `active_delivery`. Up to four writer
-> lanes may be active, and all four may be implementation lanes.
-> Shared-foundation and direction/authority are specialized classes, not
-> reserved slots: at most one of each and at most one production-capable lane
-> may be active. A duplicate branch, writable-path overlap, or hierarchical
-> exclusive-domain collision is a stop. When capacity remains and every check
-> passes, two implementation lanes are not a reason to refuse a third or fourth
-> writer. Direction/authority is limited to initiative documentation and
-> evidence. Read-only work
-> and paused work consume no writer lane; a full or conflicting model remains a
-> stop. Pause only through a separate control-only branch after the working
-> branch is committed and pushed; record its exact fetched commit so freeing a
-> slot never merges or loses unfinished work.
-> A completed non-production direction/authority package uses the separate
-> grant -> merge -> close flow in `START_HERE.md`; never append owner authority
-> during a grant or infer runtime/release rights from direction-package merge.
-> For a frozen reviewed candidate, run merge preflight only from a separate
-> clean current-`origin/main` verifier using its absolute registered worktree
-> path; do not alter the candidate or run its older validator.
+> Follow [`START_HERE.md`](START_HERE.md) before a write, migration,
+> deployment, or product decision. Fetch Azure `origin/main`, read
+> `CURRENT_BASELINE.yaml` and `DOCUMENT_CONTROL.md`, choose Routine, Bounded
+> or Protected, and read the package claim. Before implementation edits, pass
+> the exact `delivery_preflight.py --intent write --fetch --require-clean`
+> command. For a control-only activation/state transition, run `--intent read`
+> before editing, commit only the exact claim on its dedicated control branch,
+> then pass the matching control intent before PR; do not edit implementation
+> surfaces in that control commit.
+
+`DOCUMENT_CONTROL.md` identifies the governing Constitution and
+Roadmap. Historical documents remain evidence, not extra gates.
 
 # Claude / Claude Code instructions
 
-Use the current authorities named in `CURRENT_BASELINE.yaml`. Constitution and
-Roadmap explain durable direction and sequencing; older Bibles, roadmaps, state
-reports, and handoffs are historical evidence.
+Claude Code may own an explicitly assigned branch and claimed surfaces. An
+implementation assignment normally continues through implementation,
+validation, review correction, Azure PR, and accepted merge. A review-only or
+narrower assignment does only what it says. Independent reviewers are
+read-only and need no writer claim.
 
-Claude Code may own an explicitly assigned branch. It preserves other writers'
-work, completes one self-review and focused validation, and records a concise
-completion report. A manager handoff is only for a real ownership transfer or
-cross-lane decision. Do not use a second model to repeat accepted work unless a
-Protected risk, package, or owner explicitly requires independent review.
+The writer validates and completes one self-review. A manager handoff occurs
+only for a real ownership transfer, conflict, risk trigger, package rule, or
+owner request.
+
+There is no fixed writer count. Proceed when branches, paths, and hierarchical
+domains are disjoint; stop on an actual collision. Preserve other work and use
+the generic claim authorize, transfer, pause, resume, and close transitions when
+state changes. Keep a paused branch and its exact checkpoint intact, and retain
+the reviewed remote implementation branch until claim close.
+Handoffs use package, task reference, branch, exact pushed SHA, and explicit
+relinquishment. They do not require a person's or account's identity.
 
 For protected data, identity, privacy, authorization, migration, deletion,
 publication, consequential AI, shared infrastructure, or materially revised
-visual direction, follow the named package and specialist standard. For material
-visual work, `OWNER_VISUAL_INTEGRITY_STANDARD.md` applies: ChatGPT is the sole
-creator of materially revised PeerSlate production-intent visual authority;
-Claude implements the locked authority and records applicable comparison,
-accessibility, truth, and reflow evidence. `OWNER_STORY_COMPOSITION_STANDARD.md`
-applies only to Story work.
+visual direction, follow the named package and specialist authority. ChatGPT
+creates materially revised production-intent visual authority; Claude
+implements the accepted authority.
 
-Azure DevOps is the release authority. Never push directly to `main`; runtime
-changes use an Azure PR. Do not call work live until the relevant pipeline and
-affected live behavior are verified. Do not stage machine-local secrets,
+Azure DevOps is repository authority. Never push directly to `main`. A merge
+does not deploy: production deployment is manual-only and requires an exact
+main SHA plus Pete's explicit authorization reference. Never stage secrets,
 credentials, `.env`, or `.claude/launch.json`.

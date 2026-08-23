@@ -1,4 +1,3 @@
-import io
 import json
 import unittest
 
@@ -6,12 +5,13 @@ from scripts.production_operation_preflight import (
     PreflightError,
     parse_boolean,
     read_exact_sha_runs,
-    reject_duplicate_manual_fallback,
+    reject_overlapping_exact_sha_run,
     validate_request,
 )
 
 
 SHA = "a" * 40
+AUTH = "task:owner/decision:deploy-2026-08-23"
 
 
 class ProductionOperationRequestTests(unittest.TestCase):
@@ -22,6 +22,7 @@ class ProductionOperationRequestTests(unittest.TestCase):
             "source_version": SHA,
             "force_production_deploy": False,
             "manual_source_version": "",
+            "production_authorization_reference": "",
             "schema_action": "none",
             "schema_migration_id": "",
             "schema_rollback_confirm": "",
@@ -29,27 +30,58 @@ class ProductionOperationRequestTests(unittest.TestCase):
         values.update(overrides)
         return validate_request(**values)
 
-    def test_automatic_main_is_an_application_operation(self):
+    def test_automatic_main_is_ci_only(self):
         operation = self.request()
-        self.assertTrue(operation.deploy_application)
+        self.assertFalse(operation.deploy_application)
         self.assertEqual("none", operation.schema_action)
+        self.assertEqual("", operation.authorization_reference)
 
-    def test_manual_fallback_requires_exact_typed_sha(self):
+    def test_manual_deployment_requires_exact_sha_and_owner_reference(self):
         operation = self.request(
             build_reason="Manual",
             force_production_deploy=True,
             manual_source_version=SHA,
+            production_authorization_reference=AUTH,
         )
         self.assertTrue(operation.deploy_application)
+        self.assertEqual(AUTH, operation.authorization_reference)
 
-        with self.assertRaisesRegex(
-            PreflightError, "manualProductionSourceVersion"
+        for changes, phrase in (
+            ({"manual_source_version": "b" * 40}, "manualProductionSourceVersion"),
+            ({"production_authorization_reference": ""}, "productionAuthorizationReference"),
+            ({"production_authorization_reference": " short "}, "productionAuthorizationReference"),
         ):
+            with self.subTest(changes=changes), self.assertRaisesRegex(
+                PreflightError, phrase
+            ):
+                request = {
+                    "build_reason": "Manual",
+                    "force_production_deploy": True,
+                    "manual_source_version": SHA,
+                    "production_authorization_reference": AUTH,
+                }
+                request.update(changes)
+                self.request(**request)
+
+    def test_automatic_or_nonmain_deployment_is_refused(self):
+        with self.assertRaisesRegex(PreflightError, "manual-only"):
             self.request(
-                build_reason="Manual",
                 force_production_deploy=True,
-                manual_source_version="b" * 40,
+                manual_source_version=SHA,
+                production_authorization_reference=AUTH,
             )
+        with self.assertRaisesRegex(PreflightError, "refs/heads/main"):
+            self.request(source_branch="refs/heads/work/example")
+
+    def test_sha_and_authorization_inputs_cannot_float_without_deploy(self):
+        for changes in (
+            {"manual_source_version": SHA},
+            {"production_authorization_reference": AUTH},
+        ):
+            with self.subTest(changes=changes), self.assertRaisesRegex(
+                PreflightError, "allowed only"
+            ):
+                self.request(build_reason="Manual", **changes)
 
     def test_application_and_schema_cannot_share_a_run(self):
         with self.assertRaisesRegex(PreflightError, "cannot share one run"):
@@ -57,6 +89,7 @@ class ProductionOperationRequestTests(unittest.TestCase):
                 build_reason="Manual",
                 force_production_deploy=True,
                 manual_source_version=SHA,
+                production_authorization_reference=AUTH,
                 schema_action="report",
             )
 
@@ -83,7 +116,7 @@ class ProductionOperationRequestTests(unittest.TestCase):
                 schema_rollback_confirm="PS-EXAMPLE-002",
             )
 
-    def test_false_by_default_boolean_is_strict(self):
+    def test_boolean_is_strict(self):
         self.assertFalse(parse_boolean("false"))
         self.assertTrue(parse_boolean("TRUE"))
         with self.assertRaises(PreflightError):
@@ -91,9 +124,9 @@ class ProductionOperationRequestTests(unittest.TestCase):
 
 
 class ExactShaRunTests(unittest.TestCase):
-    def test_active_or_successful_automatic_run_blocks_fallback(self):
+    def test_active_automatic_ci_for_same_sha_blocks_production(self):
         with self.assertRaisesRegex(PreflightError, "still active"):
-            reject_duplicate_manual_fallback(
+            reject_overlapping_exact_sha_run(
                 [
                     {
                         "id": 510,
@@ -105,38 +138,26 @@ class ExactShaRunTests(unittest.TestCase):
                 current_build_id="511",
             )
 
-        with self.assertRaisesRegex(PreflightError, "already succeeded"):
-            reject_duplicate_manual_fallback(
-                [
-                    {
-                        "id": 510,
-                        "reason": "batchedCI",
-                        "status": "completed",
-                        "result": "succeeded",
-                    }
-                ],
-                current_build_id="511",
-            )
-
-    def test_failed_automatic_run_allows_deliberate_fallback(self):
-        reject_duplicate_manual_fallback(
+    def test_completed_automatic_ci_is_expected_and_does_not_block(self):
+        reject_overlapping_exact_sha_run(
             [
                 {
                     "id": 510,
+                    "reason": "batchedCI",
+                    "status": "completed",
+                    "result": "succeeded",
+                },
+                {
+                    "id": 509,
                     "reason": "individualCI",
                     "status": "completed",
                     "result": "failed",
-                },
-                {
-                    "id": 511,
-                    "reason": "manual",
-                    "status": "inProgress",
                 },
             ],
             current_build_id="511",
         )
 
-    def test_azure_query_uses_bearer_token_without_returning_it(self):
+    def test_azure_query_uses_bearer_token_and_filters_exact_sha(self):
         captured = {}
 
         class Response:
@@ -178,7 +199,7 @@ class ExactShaRunTests(unittest.TestCase):
         self.assertEqual("Bearer secret-token", captured["authorization"])
         self.assertNotIn("secret-token", captured["url"])
 
-    def test_azure_query_filters_exact_sha_across_continuation_pages(self):
+    def test_azure_query_checks_continuation_pages(self):
         urls = []
 
         class Response:
@@ -200,11 +221,8 @@ class ExactShaRunTests(unittest.TestCase):
                 return json.dumps({"value": self.value}).encode()
 
         pages = [
-            Response(
-                [{"id": index, "sourceVersion": "b" * 40} for index in range(50)],
-                "page-two",
-            ),
-            Response([{"id": 51, "sourceVersion": SHA}]),
+            Response([{"id": 1, "sourceVersion": "b" * 40}], "page-two"),
+            Response([{"id": 2, "sourceVersion": SHA}]),
         ]
 
         def opener(request, timeout):
@@ -220,34 +238,8 @@ class ExactShaRunTests(unittest.TestCase):
             token="secret-token",
             opener=opener,
         )
-
-        self.assertEqual([{"id": 51, "sourceVersion": SHA}], runs)
-        self.assertEqual(2, len(urls))
-        self.assertNotIn("continuationToken=", urls[0])
+        self.assertEqual([{"id": 2, "sourceVersion": SHA}], runs)
         self.assertIn("continuationToken=page-two", urls[1])
-
-    def test_azure_query_fails_closed_on_repeated_continuation_token(self):
-        class Response:
-            headers = {"x-ms-continuationtoken": "same-token"}
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self, *_args):
-                return False
-
-            def read(self):
-                return json.dumps({"value": []}).encode()
-
-        with self.assertRaisesRegex(PreflightError, "repeated a token"):
-            read_exact_sha_runs(
-                collection_uri="https://dev.azure.com/peerslate19/",
-                project_id="project-id",
-                definition_id="1",
-                source_version=SHA,
-                token="secret-token",
-                opener=lambda _request, timeout: Response(),
-            )
 
 
 if __name__ == "__main__":

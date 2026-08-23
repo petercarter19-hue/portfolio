@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-MULTI-MEMBER-QA-001",
+  "candidate_sha": "7923913049450c8c5fa1871576c71ba44233de04",
+  "review_type": "independent",
+  "reviewer_ref": "agent:synthetic-qa-independent-review-2026-08-20",
+  "result": "pass",
+  "reviewed_at": "2026-08-20T00:00:00Z",
+  "findings": [],
+  "evidence_ref": "legacy-snapshot:c024293d8b8dfee98bf973b25e6f33e70745e0cd"
+}

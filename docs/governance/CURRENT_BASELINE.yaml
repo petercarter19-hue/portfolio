@@ -11,12 +11,12 @@ authority:
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "aa4a4ec6a12d334805298f81041fee49c6fdc51a"
-  deployed_pipeline: 722
-  live_release: "689d0be742c2c8d02c585827"
-  application_behavior_commit: "aa4a4ec6a12d334805298f81041fee49c6fdc51a"
-  application_behavior_pipeline: 722
-  note: "Runs 720 (eeefaa0, PR 364 three-stage pipeline) and 722 (aa4a4ec, PR 365 Ask Pete companion redesign + rule-10 refusal wording + hidden-tab scroll fix) deployed with ZERO approval checkpoints - run 720's timeline shows no Checkpoint.Approval records, the web stage succeeded, and both schema stages skipped, which is PS-AGENT-OPERATIONS-001's proof. /healthz release 689d0be742c2c8d02c585827; live resume serves the docked companion and the folded-evidence script. Owner decision 2026-08-09: risky-path Required Reviewers branch policy (id 4) DISABLED at Pete's direction - delivery default is now ship-to-live with owner review after release; the schema-environment approval check (id 11) remains. This record is not a substitute for fetching origin and verifying current pipeline/live state before a new claim."
+  deployed_main_commit: "00f73f86887d80645524626a0def44e52f79c9c9"
+  deployed_pipeline: 1453
+  live_release: "9a511ab87a776da231f56217"
+  application_behavior_commit: "00f73f86887d80645524626a0def44e52f79c9c9"
+  application_behavior_pipeline: 1453
+  note: "Production serves rollback application commit 00f73f86887d80645524626a0def44e52f79c9c9 from pipeline 1453 with /healthz release 9a511ab87a776da231f56217. After this delivery-control cutover merges, repository PR and automatic main runs are CI-only; deployment is a separate manual exact-main-SHA operation with Pete's explicit authorization reference. The schema environment approval remains. This record is not a substitute for fetching Azure and verifying live identity."
 
 manager:
   role: "package_designated_session_manager"
@@ -24,7 +24,7 @@ manager:
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."
-  current_assignments: "Active: PS-SYNTHETIC-MULTI-MEMBER-QA-001 and PS-DELIVERY-CONTROL-SIMPLIFICATION-001 on work/2026-08-22-delivery-control-simplification-001. Simplification owns its recorded controls through merge and CI-only proof. Production operations are withheld; Sign-in remains paused."
+  current_assignments: "Active ownership is defined only by active JSON claims under docs/governance/lane_claims. Production operations are withheld."
 
 governing_documents:
   bible:
@@ -42,7 +42,7 @@ governing_documents:
   model_and_role_routing:
     path: "docs/AI_MODEL_AND_ROLE_ROUTING.md"
   current_lanes:
-    version: "1"
+    version: "3"
     path: "docs/governance/CURRENT_LANES.json"
   owner_delivery_guide:
     version: "1"
@@ -59,13 +59,6 @@ governing_documents:
 
 theme: light_modern_blue_dark_theme_paused
 
-active_packages:
-  - id: PS-SYNTHETIC-MULTI-MEMBER-QA-001
-    status: active_delivery
-    scope: "Reusable two-member QA contracts, sanitized evidence, cleanup verification, tests, and review."
-  - id: PS-DELIVERY-CONTROL-SIMPLIFICATION-001
-    status: active_delivery
-    scope: "Compact generic package claims, collision and review integrity, and manual-only exact-SHA production authorization; stop before deployment."
 scoped_findings:
   - id: candidate_admission
     blocks: "Nothing: resolved by PS-OPS-CANDIDATE-ADMISSION-001, independently reviewed, merged, and proven by exact-SHA Candidate run 297. Protected releases still require their own exact package/branch/SHA admission tuple and evidence."
@@ -165,7 +158,7 @@ public_safe_slices:
   - PS-INTERVIEW-002
   - PS-FEED-002
 
-next_gate: "Continue the two disjoint active writer packages: PS-SYNTHETIC-MULTI-MEMBER-QA-001 and PS-DELIVERY-CONTROL-SIMPLIFICATION-001. The simplification package may land repository control changes and prove CI-only main behavior, but no deployment or production mutation is authorized. PS-DELIVERY-CONTROL-SIGNIN-001 remains paused."
+next_gate: "Continue any active claim whose branch, paths, and domains remain disjoint. No deployment or production mutation is authorized by this baseline."
 
 superseded_documents:
   - "docs/governance/PeerSlate_Company_and_Product_Bible_v2.9.md"
