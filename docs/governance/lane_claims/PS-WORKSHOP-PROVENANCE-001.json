@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-PROVENANCE-001",
+  "state": "active",
+  "outcome": "Restore retention of the member's own wording in Workshop per owner decision D1 (2026-08-01) and the owner outcome of 2026-08-23. Accepting an AI improve proposal overwrites the member's wording in the single session answer slot, and both the quick save and the final save pass one string to approved_wording and original_wording, so knowledge_item_versions.original_member_wording stores AI text; the quick save also records authored_via 'typed' for AI-assisted work while the final save records 'ai_assisted_approved'. Carry the pre-acceptance member wording through acceptance into both save paths, pass it as the distinct @OriginalWording the existing procedure already accepts, and make both paths derive authored_via identically. No schema change is required. Excluded: the My Information edit path (its procedure has no separate original and needs its own migration), version-history and original-wording display, visual and corner-radius work, accessibility work, public-preview and demo labelling, anonymous AI-on-load, status-filter retirement, and cross-room use disclosure. Stop before deployment, enablement, schema, or production action.",
+  "assignment": "implementation",
+  "writer_ref": "session:faacd1b7-1438-4dca-aff5-aaae1e108c46",
+  "branch": "work/2026-08-23-workshop-provenance-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "958727c54832d700f3fd1628381bc5e3b5ce7543",
+  "owner_outcome_ref": "session:faacd1b7-1438-4dca-aff5-aaae1e108c46/owner-approval:2026-08-23/workshop-provenance-package-a-through-merge",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-WORKSHOP-PROVENANCE-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-PROVENANCE-001.md",
+    "docs/governance/lane_claims/receipts/PS-WORKSHOP-PROVENANCE-001.json",
+    "docs/initiatives/PS-WORKSHOP-PROVENANCE-001",
+    "workshop_work_routes.py",
+    "services/workshop_work_session.py",
+    "services/workshop_demo_library.py",
+    "tests/test_workshop_review.py",
+    "tests/test_workshop_work_session.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-PROVENANCE-001.md"
+  ],
+  "domains": [
+    "runtime:workshop:provenance",
+    "testing:workshop:provenance"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
