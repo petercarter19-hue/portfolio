@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-INTERVIEW-AI-EXTRACT-001",
+  "candidate_sha": "0185b5fe444694a6f7fc35351d12471f670d5aca",
+  "review_type": "self",
+  "reviewer_ref": "session:0c6f769d-af20-4e98-88d2-24cc20aac919",
+  "result": "pass",
+  "reviewed_at": "2026-08-23T02:30:00Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-INTERVIEW-AI-EXTRACT-001.md"
+}

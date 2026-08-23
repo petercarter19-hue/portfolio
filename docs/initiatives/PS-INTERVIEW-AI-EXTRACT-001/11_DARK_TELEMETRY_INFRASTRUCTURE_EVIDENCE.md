@@ -294,6 +294,21 @@ with its own environment approval are still required before any
 re-apply. The Azure approval check itself was neither removed nor
 weakened.
 
+## 5b. Residual review findings N1–N6 (round-2 independent review of `8ba76255`, non-blocking, carried)
+
+- **N1** `verify()` checks that the application principal is present, not
+  that it is `EXTERNAL_USER` (the production principal was confirmed
+  `EXTERNAL_USER` by a catalogue read). Add an expected-type parameter.
+- **N2** No statement timeout on the administrator connection.
+- **N3** Two statements sit outside the content-free guards
+  (`SELECT DB_NAME()` right after connect; `rollback()` inside `except`).
+- **N4** The preserved role-isolation checks in the proof accept any
+  exception (also Grok F3); tighten to SQL error 229.
+- **N5** The GRANT-verb test regex is case-sensitive.
+- **N6** The forward-migration header sentence "the application identity
+  holds EXECUTE on the append procedure only" describes the role, not the
+  real identity (text-only; not worth a re-gate on its own).
+
 ## 6. Content-free evidence
 
 No secret, connection string, member content, model content, URL, or raw

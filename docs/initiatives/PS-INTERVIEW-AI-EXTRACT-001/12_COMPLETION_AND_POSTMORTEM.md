@@ -126,11 +126,20 @@ one was found by the deploy (section 4).
   first scheduled run's artifact is the remaining evidence.
 - Six non-blocking review residuals on the authority script remain
   (optional principal-type assertion, statement timeout, three test nits,
-  one wording nit) — recorded in `11_…EVIDENCE.md` §5a.
-- The control-ledger admissions for PRs 576/577/578 were **not** in place
-  when those PRs merged: Pete overruled the wait ("take this all the way
-  to the end", "I'm overruling you"), and the Sign-in control session is
-  recording the admissions after the fact. The Azure branch policy (build
+  one wording nit) — listed as N1–N6 in `11_…EVIDENCE.md` §5b and in
+  `13_GROK_REVIEW_RECORD.md`.
+- **Release authority (Grok F2, stated plainly).** Under Pete's explicit
+  override ("take this all the way to the end", "I'm overruling you"),
+  the schema apply (run 1448), the App Service configuration and logging
+  changes, the retention enablement, and the runtime deploy (run 1450)
+  all happened while the legacy ledger's `release_allowed_for` was `[]`
+  and its blocked actions listed production deploy and configuration
+  mutation; the PR merges likewise preceded any merge admission. No
+  admission was recorded afterwards to dress that up (the control owner
+  declined to manufacture one, correctly). The ledger could not have
+  stopped the deploy in any case: once a non-`[skip ci]` merge lands,
+  `ProductionWebDeploy` runs automatically — a design gap the new claim
+  model closes by making deployment a separate manual exact-SHA operation. The Azure branch policy (build
   must pass, squash required) was never bypassed — a bypass was attempted
   once under that direction and the platform refused it; every merge
   waited for a green validation build.
