@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-MY-OPPORTUNITIES-REGISTRY-001",
+  "state": "active",
+  "outcome": "Atomically admit the already owner-approved PS-MY-OPPORTUNITIES-001 initiative directory to docs/governance/PACKAGE_REGISTRY.json as future_finish by adding one temporary transparent anchor file, then merge and close this registry package so the original architecture claim can resume, remove the anchor, be re-reviewed, and merge. Make no architecture, runtime, provider, schema, infrastructure, UI, deployment, enablement, cutover, or production change.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a02f42-15ac-7d92-a2a9-60b7e800c388",
+  "branch": "work/2026-08-23-my-opportunities-registry-001",
+  "delivery_path": "Routine",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "bdfa608a522fb031b39f538ba763e5d7b1140bc2",
+  "owner_outcome_ref": "session:01a02f42-15ac-7d92-a2a9-60b7e800c388/owner-approval:2026-08-23/my-opportunities-p0-registry-admission",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MY-OPPORTUNITIES-REGISTRY-001.json",
+    "docs/governance/lane_claims/evidence/PS-MY-OPPORTUNITIES-REGISTRY-001.md",
+    "docs/governance/lane_claims/receipts/PS-MY-OPPORTUNITIES-REGISTRY-001.json",
+    "docs/governance/PACKAGE_REGISTRY.json",
+    "docs/initiatives/PS-MY-OPPORTUNITIES-001/REGISTRY_BOOTSTRAP.md"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MY-OPPORTUNITIES-REGISTRY-001.md"
+  ],
+  "domains": [
+    "governance:package-registry:my-opportunities"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
