@@ -11488,6 +11488,50 @@ with patch.object(
         self.assertTrue(any("Azure DevOps" in error for error in remote_errors))
 
 
+_LIFECYCLE_ONLY_KEYS = frozenset(
+    {
+        "disposition", "paused_at", "pause_reason", "resume_contract",
+        "preserved_head_sha", "closed_at", "reviewed_remote_sha",
+        "merged_main_sha", "package_merge_sha", "close_evidence_paths",
+    }
+)
+
+
+def _recorded_signin_lane(ledger: dict) -> dict:
+    """Return the recorded Sign-in lane whatever its lifecycle state.
+
+    These tests bind to the pinned profile, not to the lane being active at
+    the moment the suite runs. A pause or close preserves the lane record
+    exactly and adds only bookkeeping keys, so strip those and return the
+    original. Exactly one record must exist.
+    """
+    found = [
+        lane
+        for key in ("active_lanes", "paused_lanes", "closing_lanes")
+        for lane in ledger.get(key) or []
+        if isinstance(lane, dict) and lane.get("package") == SIGNIN_MERGE_PACKAGE
+    ]
+    if len(found) != 1:
+        raise AssertionError(
+            f"exactly one Sign-in lane record must exist, found {len(found)}"
+        )
+    return {
+        key: copy.deepcopy(value)
+        for key, value in found[0].items()
+        if key not in _LIFECYCLE_ONLY_KEYS
+    }
+
+
+def _ledger_with_signin_active(ledger: dict) -> tuple[dict, dict]:
+    """Model the merge-time ledger: the recorded Sign-in lane placed active."""
+    lane = _recorded_signin_lane(ledger)
+    ledger["active_lanes"] = [
+        item for item in ledger.get("active_lanes") or []
+        if item.get("package") != SIGNIN_MERGE_PACKAGE
+    ] + [lane]
+    return ledger, lane
+
+
 class SigninMergeAdmissionTests(unittest.TestCase):
     """PS-DELIVERY-CONTROL-SIGNIN-001: exactly one candidate, and nothing else.
 
@@ -11502,13 +11546,7 @@ class SigninMergeAdmissionTests(unittest.TestCase):
 
     def signin_lane(self):
         ledger = json.loads(self.LEDGER.read_text(encoding="utf-8"))
-        lanes = [
-            lane
-            for lane in ledger["active_lanes"]
-            if lane.get("package") == SIGNIN_MERGE_PACKAGE
-        ]
-        self.assertEqual(1, len(lanes), "exactly one Sign-in lane must be active")
-        return copy.deepcopy(lanes[0])
+        return _recorded_signin_lane(ledger)
 
     def granted_lane(self, lane=None):
         lane = copy.deepcopy(lane if lane is not None else self.signin_lane())
@@ -11670,9 +11708,7 @@ class SigninMergeGateTests(unittest.TestCase):
 
     def granted_ledger(self):
         ledger = json.loads(self.LEDGER.read_text(encoding="utf-8"))
-        lane = next(
-            l for l in ledger["active_lanes"] if l["package"] == SIGNIN_MERGE_PACKAGE
-        )
+        ledger, lane = _ledger_with_signin_active(ledger)
         lane["merge_grant"] = {
             "authorized_by": "Pete",
             "authority_decision_index": 0,
@@ -11815,9 +11851,7 @@ class SigninMainSequenceTests(unittest.TestCase):
 
     def granted_ledger(self):
         ledger = json.loads(self.LEDGER.read_text(encoding="utf-8"))
-        lane = next(
-            l for l in ledger["active_lanes"] if l["package"] == SIGNIN_MERGE_PACKAGE
-        )
+        ledger, lane = _ledger_with_signin_active(ledger)
         lane["merge_grant"] = {
             "authorized_by": "Pete",
             "authority_decision_index": 0,
@@ -11886,9 +11920,8 @@ class SigninMainSequenceTests(unittest.TestCase):
         transitional state rather than to behaviour.
         """
         ledger = json.loads(self.LEDGER.read_text(encoding="utf-8"))
-        for lane in ledger["active_lanes"]:
-            if lane.get("package") == SIGNIN_MERGE_PACKAGE:
-                lane.pop("merge_grant", None)
+        ledger, lane = _ledger_with_signin_active(ledger)
+        lane.pop("merge_grant", None)
         _, valid, _ = _direction_main_sequence_facts(
             ledger, SIGNIN_MERGE_PACKAGE, SIGNIN_REVIEWED_SHA, self.ORIGIN_MAIN
         )
@@ -11943,9 +11976,7 @@ class SigninBrokenPinTests(unittest.TestCase):
 
     def mutated_merge_errors(self, mutate):
         ledger = json.loads(self.LEDGER.read_text(encoding="utf-8"))
-        lane = next(
-            l for l in ledger["active_lanes"] if l["package"] == SIGNIN_MERGE_PACKAGE
-        )
+        ledger, lane = _ledger_with_signin_active(ledger)
         lane["merge_grant"] = {
             "authorized_by": "Pete",
             "authority_decision_index": 0,
