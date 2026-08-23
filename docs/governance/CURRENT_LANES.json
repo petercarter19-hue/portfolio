@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-23T01:45:00Z",
+  "updated_at": "2026-08-23T01:46:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -12,7 +12,8 @@
     "authorized_at": "2026-08-10",
     "read_only_work_allowed": true,
     "writes_allowed_for": [
-      "PS-SYNTHETIC-MULTI-MEMBER-QA-001"
+      "PS-SYNTHETIC-MULTI-MEMBER-QA-001",
+      "PS-DELIVERY-CONTROL-SIMPLIFICATION-001"
     ],
     "merge_allowed_for": [],
     "cleanup_allowed_for": [],
@@ -29,7 +30,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "Active writer lanes: PS-SYNTHETIC-MULTI-MEMBER-QA-001. PS-DELIVERY-CONTROL-SIGNIN-001 is paused and preserved at its exact pushed branch tip; its lane record, evidence, branches, and worktrees are retained unchanged and it may resume only through fresh activation. No paused package holds write, merge, release, deployment, configuration, identity, SQL, provider, or production authority."
+    "exit_authority": "Active writer lanes: PS-SYNTHETIC-MULTI-MEMBER-QA-001 and PS-DELIVERY-CONTROL-SIMPLIFICATION-001. The simplification lane may replace the bespoke delivery-control implementation, independently validate and review it, merge the accepted repository candidate, and prove that the resulting automatic main run is CI-only. Production deployment, schema apply, configuration mutation, enablement, rollback execution, and live production proof remain withheld pending Pete's explicit later authorization. PS-DELIVERY-CONTROL-SIGNIN-001 is paused and preserved at its exact pushed branch tip; it may resume only through fresh activation."
   },
   "activation_policy": {
     "enabled": true,
@@ -2515,6 +2516,68 @@
       ],
       "cleanup_contract": "Preserve all existing work. Merge only this control activation before creating the exact implementation worktree from resulting current origin/main. Retain no real identity inventory or session material. Preserve activation and implementation branches through exact-SHA review and any later authorized merge or close. This lane grants no cleanup authority over any other branch, worktree, stash, artifact, identity, production record, or user file.",
       "sequence": "control-only activation PR -> merge activation -> create the exact clean implementation branch/worktree from resulting origin/main -> package write preflight -> implement only the four disjoint QA-foundation surfaces while deferring the shared registry entry -> focused and relevant regression validation -> complete-diff writer self-review -> freeze and push exact candidate -> fresh independent exact-SHA Protected review -> reconcile accepted findings -> return the completed local candidate for separate registry, attended identity proof, implementation-candidate merge, deployment, and production decisions"
+    },
+    {
+      "package": "PS-DELIVERY-CONTROL-SIMPLIFICATION-001",
+      "outcome": "Replace the package-specific delivery-control system with compact generic per-package claims, collision detection, candidate and review receipts, and a separately authorized deployment boundary. Let each assigned writer implement, validate, correct review findings, open a PR, and merge accepted work within its claimed paths unless the assignment is explicitly review-only or narrower. Preserve one writer per mutable surface, fail closed on path, hierarchical-domain, and branch collisions, require an exact reviewed candidate for Protected work, and serialize production operations. Decouple normal main merges from production deployment, prove the merged automatic main run is CI-only, and stop before deployment, schema apply, configuration mutation, enablement, rollback, or live production proof.",
+      "branch": "work/2026-08-22-delivery-control-simplification-001",
+      "writer": "Codex task 01a02b5c-1ac8-7960-8694-e4a288ec9cf4 is the sole implementation writer and package manager. Independent reviewers are read-only and consume no writer claim. Coordination records identify task, package, branch, SHA, claimed surfaces, and relinquishment state only; they require no human or account identity disclosure.",
+      "delivery_path": "Protected",
+      "production_capable": true,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "governance:delivery-control",
+        "operations:production-deployment-orchestration",
+        "testing:delivery-control-invariants"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main e3ef2841b687f074ed83ac09b9b9f7a177212315 after Build 1466 passed and PR 591 merged, pausing PS-DELIVERY-CONTROL-SIGNIN-001 and releasing azure-pipelines.yml, docs/governance/CURRENT_LANES.json, scripts/delivery_preflight.py, and tests/test_delivery_preflight.py. The only active writer is the disjoint Synthetic Multi-Member QA shared-foundation lane. Pete directed Codex to wait for Claude's release, then implement the simpler system, independently review it, keep ordinary assigned writers authorized through predeployment and merge, and retain explicit owner approval for deployment.",
+      "writable_surfaces": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "START_HERE.md",
+        "azure-pipelines.yml",
+        "docs/AI_WORKFLOW.md",
+        "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+        "docs/governance/CURRENT_BASELINE.yaml",
+        "docs/governance/CURRENT_LANES.json",
+        "docs/governance/MANAGER_SESSION_HANDOFF.md",
+        "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
+        "docs/governance/lane_claims/",
+        "docs/initiatives/PS-DELIVERY-CONTROL-SIMPLIFICATION-001/",
+        "docs/initiatives/PS-OPS-001/README.md",
+        "docs/initiatives/PS-OPS-001/GOVERNED_SCHEMA_MIGRATION_PATH.md",
+        "scripts/delivery_preflight.py",
+        "scripts/production_operation_preflight.py",
+        "tests/test_delivery_preflight.py",
+        "tests/test_governance_pointers.py",
+        "tests/test_operational_readiness.py",
+        "tests/test_production_operation_preflight.py"
+      ],
+      "exclusions": [
+        "no product runtime, member behavior, visual direction, schema definition, production configuration, identity, credential, secret, private production data, or user-authored-content change",
+        "no deployment, SQL apply, environment approval, enablement, rollback execution, Azure environment mutation, or claim of live production verification",
+        "no write to Synthetic Multi-Member QA surfaces or any unrelated branch, worktree, stash, artifact, package evidence, or historical delivery record",
+        "no new package-specific exception, reviewer writer claim, fixed writer-count cap, fixed lane-class cap, fixed production-capable-lane cap, or real-world identity-disclosure requirement",
+        "no removal of one-writer collision protection, exact reviewed-candidate integrity, fail-closed Protected review, manual exact-SHA deployment authorization, or one-production-operation serialization"
+      ],
+      "completion_evidence": [
+        "a compact schema-indexed claim model replaces the monolithic active-state ledger while preserving the former ledger through a pinned Git commit, path, and blob reference rather than duplicating it",
+        "generic tests prove disjoint packages can proceed without a fixed count cap while duplicate branches, overlapping paths, hierarchical domain collisions, missing or invalid claims, and writes outside claimed surfaces fail closed",
+        "Protected tests prove candidate SHA and base integrity, read-only independent review receipts, safe evidence-only post-review changes, and rejection of moved, tampered, stale, or unreviewed candidates",
+        "pipeline and production-preflight tests prove PR and automatic main builds cannot deploy, manual deployment requires an exact full main SHA plus a bounded explicit owner authorization reference, and schema, lock, candidate, and schedule safety remains intact",
+        "focused and full relevant validation, compilation, JSON and YAML checks, complete-diff self-review, and a fresh independent exact-SHA Protected review pass",
+        "an Azure PR merges the accepted repository candidate and its resulting automatic main build succeeds without running ProductionWebDeploy or either schema mutation stage; no production operation is executed"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-22",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Wait for Claude to finish and release the shared control surfaces, then proceed with the delivery-control simplification. Assigned implementation workers may complete implementation, validation, review correction, PR, and merge within their collision-free package scope unless explicitly assigned review-only or a narrower boundary. Production deployment and other production mutations remain a separate explicit Pete decision."
+        }
+      ],
+      "cleanup_contract": "Preserve all existing work, history, branches, and worktrees. Merge only this two-file activation before creating the exact clean implementation branch from resulting current origin/main. During migration, preserve the legacy ledger by immutable Git reference. After accepted merge and CI-only proof, close only this temporary package through the new generic claim transition; do not delete another package's state or evidence.",
+      "sequence": "control-only activation PR -> merge activation without production deployment -> create exact clean implementation worktree from resulting origin/main -> package write preflight -> implement compact generic claims and manual-only exact-SHA production boundary -> focused and full validation -> complete-diff self-review -> freeze and push exact candidate -> fresh independent exact-SHA Protected review -> reconcile accepted findings with evidence-only changes -> Azure PR and merge -> verify automatic main CI-only behavior -> close the temporary migration claim -> stop before deployment"
     }
   ],
   "paused_lanes": [
