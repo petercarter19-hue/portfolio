@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MY-OPPORTUNITIES-REGISTRY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Atomically admit the already owner-approved PS-MY-OPPORTUNITIES-001 initiative directory to docs/governance/PACKAGE_REGISTRY.json as future_finish by adding one temporary transparent anchor file, then merge and close this registry package so the original architecture claim can resume, remove the anchor, be re-reviewed, and merge. Make no architecture, runtime, provider, schema, infrastructure, UI, deployment, enablement, cutover, or production change.",
   "assignment": "implementation",
   "writer_ref": "session:01a02f42-15ac-7d92-a2a9-60b7e800c388",
@@ -27,6 +27,6 @@
   "review_requirement": "self",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "729cb9ce840ebc2e4dc7cec5db4d57e3163b6fef",
+  "closed_at": "2026-08-23T22:56:55Z"
 }
