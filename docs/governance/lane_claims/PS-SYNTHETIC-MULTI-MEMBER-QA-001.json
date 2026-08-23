@@ -7,10 +7,10 @@
   "writer_ref": "task:708d6f8b-e2d9-437d-950f-52a084e41381",
   "branch": "work/2026-08-20-synthetic-multi-member-qa-001",
   "delivery_path": "Protected",
-  "repository_authority": "write_only",
+  "repository_authority": "through_merge",
   "production_authority": "withheld",
   "activated_from_main": "c024293d8b8dfee98bf973b25e6f33e70745e0cd",
-  "owner_outcome_ref": "legacy-snapshot:c024293d8b8dfee98bf973b25e6f33e70745e0cd/package:PS-SYNTHETIC-MULTI-MEMBER-QA-001",
+  "owner_outcome_ref": "session:708d6f8b-e2d9-437d-950f-52a084e41381/owner-approval:2026-08-23-through-merge",
   "surfaces": [
     "docs/governance/lane_claims/PS-SYNTHETIC-MULTI-MEMBER-QA-001.json",
     "docs/initiatives/PS-SYNTHETIC-MULTI-MEMBER-QA-001",
