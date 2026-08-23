@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SYNTHETIC-MULTI-MEMBER-QA-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Complete the reusable provider-free two-member QA foundation and its sanitized, fail-closed evidence without handling credentials, sessions, private production data, deployment, or live identity proof.",
   "assignment": "implementation",
   "writer_ref": "task:708d6f8b-e2d9-437d-950f-52a084e41381",
@@ -33,6 +33,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "2b95b0e4505ccc875c9e80624e4da3647d1ef79f",
+  "closed_at": "2026-08-23T15:31:50Z"
 }
