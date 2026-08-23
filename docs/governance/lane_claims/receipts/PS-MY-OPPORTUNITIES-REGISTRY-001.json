@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "package": "PS-MY-OPPORTUNITIES-REGISTRY-001",
+  "candidate_sha": "abd036c49abbb1c65bdeefa3d853d84dc2be6932",
+  "review_type": "self",
+  "reviewer_ref": "session:01a02f42-15ac-7d92-a2a9-60b7e800c388",
+  "result": "pass",
+  "reviewed_at": "2026-08-23T22:51:25Z",
+  "findings": [
+    {
+      "id": "SR1-registry-admission",
+      "status": "informational",
+      "summary": "The two-file candidate adds PS-MY-OPPORTUNITIES-001 once to future_finish, updates the matching category and total counts, and adds only the transparent temporary anchor reserved by this claim; no correction was required."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MY-OPPORTUNITIES-REGISTRY-001.md"
+}
