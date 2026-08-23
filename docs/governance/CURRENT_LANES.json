@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-22T18:20:00Z",
+  "updated_at": "2026-08-22T23:40:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -13,12 +13,10 @@
     "read_only_work_allowed": true,
     "writes_allowed_for": [
       "PS-SYNTHETIC-MULTI-MEMBER-QA-001",
-      "PS-INTERVIEW-AI-EXTRACT-001",
       "PS-SIGNIN-MEMBER-ARRIVAL-001",
       "PS-DELIVERY-CONTROL-SIGNIN-001"
     ],
     "merge_allowed_for": [
-      "PS-INTERVIEW-AI-EXTRACT-001",
       "PS-SIGNIN-MEMBER-ARRIVAL-001"
     ],
     "cleanup_allowed_for": [],
@@ -35,7 +33,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-SYNTHETIC-MULTI-MEMBER-QA-001, PS-INTERVIEW-AI-EXTRACT-001, PS-SIGNIN-MEMBER-ARRIVAL-001, and PS-DELIVERY-CONTROL-SIGNIN-001 retain only their recorded disjoint scopes. PS-DELIVERY-CONTROL-SIGNIN-001 may write only CURRENT_LANES.json, delivery_preflight.py, and test_delivery_preflight.py to add the exact fail-closed Sign-in admission/review-attestation profile for e1847ad0; it must preserve the Interview profile/history. It receives no Sign-in grant, merge, release, deployment, configuration, identity, private-proof, SQL, provider, evaluation, or production authority."
+    "exit_authority": "PS-SYNTHETIC-MULTI-MEMBER-QA-001, PS-SIGNIN-MEMBER-ARRIVAL-001, and PS-DELIVERY-CONTROL-SIGNIN-001 retain only their recorded disjoint scopes. PS-INTERVIEW-AI-EXTRACT-001 is paused and preserved at its exact pushed branch tip; its lane record, evidence, branches, and worktrees are retained unchanged and it may resume only through fresh activation. Pausing it releases azure-pipelines.yml and tests/test_operational_readiness.py for a future activated lane. No paused package holds write, merge, release, deployment, configuration, identity, SQL, provider, or production authority."
   },
   "activation_policy": {
     "enabled": true,
@@ -2523,151 +2521,6 @@
       "sequence": "control-only activation PR -> merge activation -> create the exact clean implementation branch/worktree from resulting origin/main -> package write preflight -> implement only the four disjoint QA-foundation surfaces while deferring the shared registry entry -> focused and relevant regression validation -> complete-diff writer self-review -> freeze and push exact candidate -> fresh independent exact-SHA Protected review -> reconcile accepted findings -> return the completed local candidate for separate registry, attended identity proof, implementation-candidate merge, deployment, and production decisions"
     },
     {
-      "package": "PS-INTERVIEW-AI-EXTRACT-001",
-      "outcome": "Create and independently review a separate dark telemetry-infrastructure candidate from the already accepted Extract implementation without changing Interview provider dispatch or any member-visible behavior. Carry only the additive migration proposal and rollback, immutable SQL gate receipt, package registration, inert application append-procedure allowlist, separately named default-off 90-day purge script and pipeline schedule/stage, operational tests, and bounded evidence needed before the runtime candidate may later be considered for release. Freeze one exact pushed candidate and stop before either implementation PR is merged or any SQL, production identity, retention, configuration, deployment, provider, spending, or production action.",
-      "branch": "work/2026-08-21-interview-ai-extract-dark-infrastructure",
-      "writer": "The dedicated Claude implementation session selected by Pete for PS-INTERVIEW-AI-EXTRACT-001 is the sole writer on work/2026-08-21-interview-ai-extract-dark-infrastructure after this activation reaches origin/main. Codex task 01a01233-d773-7ed1-9ac8-cb0d2bb8cf07 remains package manager and governs control transitions but does not co-write the implementation candidate. Fresh independent reviewers may inspect the frozen exact SHA but may not edit it. No other task may write these surfaces.",
-      "delivery_path": "Protected",
-      "production_capable": true,
-      "lane_class": "implementation",
-      "exclusive_domains": [
-        "schema:interview-ai-telemetry",
-        "operations:interview-ai-telemetry-retention",
-        "database:interview-ai-telemetry-append-admission",
-        "governance:interview-ai-extract-registration"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main 996f897b6f89d47a126faa02273941e09678f26b after independently passed control PR 565 paused and preserved the accepted Extract runtime branch at exact pushed SHA d546b525a84d62ba3eef3ef7dc3f5e2833647582. The implementation source bytes are the already accepted Extract implementation baseline dd545348939a668e4d4ff375526d689fa4174f89 plus the independently accepted release-plan correction at d546b525a84d62ba3eef3ef7dc3f5e2833647582. Pete authorized creation, testing, PR creation, and independent review of the separate dark-infrastructure candidate on 2026-08-21, while withholding both implementation merges and every SQL, identity, retention, configuration, deployment, provider, spending, and production action.",
-      "writable_surfaces": [
-        "docs/governance/PACKAGE_REGISTRY.json",
-        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/05_SQL_DISPOSABLE_PROOF.json",
-        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/10_RELEASE_PLAN.md",
-        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/11_DARK_TELEMETRY_INFRASTRUCTURE_EVIDENCE.md",
-        "services/database_service.py",
-        "tests/test_database_service.py",
-        "scripts/interview_ai/run_interview_telemetry_purge.py",
-        "scripts/interview_ai/run_interview_telemetry_sql_proof.py",
-        "tests/test_interview_ai_dark_telemetry_infrastructure.py",
-        "SQL FIles/Migrations/proposed/PS-INTERVIEW-AI-EXTRACT-001_telemetry.sql",
-        "SQL FIles/Migrations/proposed/PS-INTERVIEW-AI-EXTRACT-001_telemetry_rollback.sql",
-        "SQL FIles/Migrations/registry.json",
-        "azure-pipelines.yml",
-        "tests/test_operational_readiness.py"
-      ],
-      "exclusions": [
-        "no app.py, services/interview_ai runtime, prompts/interview bundles or release controls, provider adapter, prompt renderer, validator, response transformation, route, template, JavaScript, CSS, dependency lock, requirements, or other Interview runtime change",
-        "no runtime-lock install or vendoring hunks from the combined candidate in azure-pipelines.yml; the dark pipeline delta is limited to the independently named default-off retention schedule/stage and the schedule-name isolation needed to keep Community maintenance unchanged",
-        "no change to the accepted SQL migration or rollback bytes without invalidating the recorded gate receipt and stopping for a fresh separately authorized disposable proof; no new throwaway database is authorized by this lane",
-        "no adaptive answer length, new specialist, prompt/system-rule work, evaluation execution, Router, History, Nudge, Grounded redesign, Compare redesign, client telemetry, response identity, guardian expansion, or any other later Interview slice",
-        "no merge of PR 564 or this dark-infrastructure implementation PR; no SQL apply, migration execution, production identity or permission provisioning, retention enablement, production variable or App Service setting, deployment, provider call, paid evaluation, spend, or production operation",
-        "no reuse of the Community maintenance identity, connection, enable flag, artifact, or schedule; no edit to the active Synthetic QA lane or its four writable surfaces; no reset, overwrite, deletion, or adoption of any other branch, worktree, stash, artifact, secret, production datum, or user content"
-      ],
-      "completion_evidence": [
-        "the migration proposal, rollback, SQL registry entry, purge script, SQL proof tool, disposable-proof receipt, and release plan are byte-identical to their accepted source where carried, and their hashes agree with the existing 88-of-88 disposable proof without contacting or changing production SQL",
-        "the pipeline diff contains only the Interview retention nightly schedule, the default-off InterviewTelemetryMaintenance stage, its dedicated content-free artifact path, and exact cron-name isolation for both Interview and existing Community maintenance; no runtime install, vendoring, provider, build, deploy, or schema-apply behavior is imported from the combined candidate",
-        "the application database allowlist adds only usp_AppendInterviewAIServerCall and continues to exclude usp_PurgeInterviewAIServerCalls; focused tests prove append admission is inert until later runtime code calls it and purge authority remains out of process",
-        "operational tests prove the exact pipeline stage list, independent schedule names, default-off enablement, dedicated connection variable, bounded batch limits, wrong-database refusal, content-free reports, and absence of Interview provider-dispatch or member-visible runtime changes",
-        "complete-diff self-review proves every changed path is recorded, PACKAGE_REGISTRY adds only PS-INTERVIEW-AI-EXTRACT-001 with exact count updates, the Synthetic QA lane remains untouched, and no app.py, prompts/interview, services/interview_ai, provider, runtime-lock, configuration, secret, or production surface entered the candidate",
-        "the exact pushed candidate passes focused tests, database and operational-readiness regressions, applicable full repository CI, JSON/compile/diff checks, and receives a fresh independent exact-SHA review focused on delivery separation, SQL identity, least privilege, retention isolation, pipeline safety, no-runtime proof, rollback, and authority boundaries"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-21",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Create and independently review the separate PS-INTERVIEW-AI-EXTRACT-001 dark telemetry-infrastructure pull request. This authorizes preparing the branch, separating only the approved infrastructure files, running tests, opening the pull request, and obtaining independent review. It does not authorize merging PR 564 or the dark-infrastructure implementation PR, applying SQL, provisioning production identities, enabling retention, changing production configuration, deploying, making provider calls, spending money, or operating production."
-        },
-        {
-          "date": "2026-08-21",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "decision": "Merge independently passed control PR 565 and, after fresh verification and successful validation, merge this subsequent control-only activation. These control merges grant no authority to merge either implementation PR or perform any SQL, identity, retention, configuration, deployment, provider, spending, or production action."
-        },
-        {
-          "date": "2026-08-21",
-          "authorized_by": "Pete",
-          "status": "authorized",
-          "package": "PS-INTERVIEW-AI-EXTRACT-001",
-          "action": "merge_repository_only",
-          "branch": "work/2026-08-21-interview-ai-extract-dark-infrastructure",
-          "reviewed_remote_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
-          "pull_request": 567,
-          "validation_run": 1386,
-          "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
-          "request_turn": "01a026e1-d028-7580-8423-3529115e9c34",
-          "response_turn": "01a026e3-6576-7812-be1b-b60f28897e9f",
-          "verbatim_response": "I authorize",
-          "decision": "Authorize the governed repository-only merge of exact PR 567 source 8fa7dd82b975796f9df767a48cefb0b79214e6aa with application deployment suppressed and the Interview telemetry SQL migration unapplied."
-        }
-      ],
-      "merge_grant": {
-        "authorized_by": "Pete",
-        "authority_decision_index": 2,
-        "authority_decision_sha256": "2c2b1afa7c6593766e4cfe45b96b19020ff9c7102d6e8bbafa64992a011f154e",
-        "admission_sha256": "5bdfb69b1be793fa66719e2df2e249c5963eb49131a205a04df197edfd4a180c",
-        "review_attestations": {
-          "technical": {
-            "review_type": "technical_exact_sha",
-            "reviewer_mode": "fresh_independent_read_only_non_writer",
-            "reviewed_sha": "6680d0a95035ce79056fee2007199e056c005568",
-            "result": "pass",
-            "accepted_by": "Site Audit Manager",
-            "accepted_date": "2026-08-21",
-            "scope": "dark_telemetry_technical_corrections_and_disposable_sql_proof",
-            "proof_result": "105_of_105_pass",
-            "migration_digest": "2291c3df758b18d98cbb4e6d13ed9817d27e0b3356053679b94fcc2c09410b85",
-            "production_sql_applied": false
-          },
-          "documentation": {
-            "review_type": "documentation_exact_sha",
-            "reviewer_mode": "fresh_independent_read_only_non_writer",
-            "reviewed_sha": "df12e40535b5178ebe655249b610aa293f9132a0",
-            "technical_parent_sha": "6680d0a95035ce79056fee2007199e056c005568",
-            "result": "pass",
-            "accepted_by": "Site Audit Manager",
-            "accepted_date": "2026-08-21",
-            "scope": "one_file_dark_telemetry_evidence_truth_correction",
-            "focused_result": "44_of_44_pass",
-            "new_sql_gate_required": false
-          },
-          "fresh_target": {
-            "review_type": "fresh_target_validation",
-            "reviewer_mode": "independent_central_reconciliation",
-            "reviewed_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
-            "accepted_documentation_sha": "df12e40535b5178ebe655249b610aa293f9132a0",
-            "target_main": "068e4bcd7dc5e88ee980cabf0f1810ad46ac6f5e",
-            "pull_request": 567,
-            "validation_run": 1386,
-            "validation_result": "succeeded",
-            "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
-            "result": "pass"
-          }
-        },
-        "reviewed_remote_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
-        "granted_at": "2026-08-22T02:05:07Z",
-        "review_result": "pass",
-        "review_evidence_paths": [],
-        "release_scope": {
-          "candidate_source_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
-          "pull_request": 567,
-          "validation_run": 1386,
-          "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
-          "repository_action": "merge_exact_reviewed_dark_telemetry_infrastructure_only",
-          "application_deployment": "suppressed",
-          "sql_migration": "remains_unapplied",
-          "production_identity_or_permission_change": false,
-          "retention_enablement": false,
-          "production_configuration_change": false,
-          "provider_invocation": false,
-          "provider_spend": false,
-          "evaluation_execution": false,
-          "runtime_pr_564_merge": false,
-          "later_interview_package_authority": false
-        }
-      },
-      "cleanup_contract": "Preserve runtime branch work/2026-08-20-interview-ai-extract-001, exact runtime tip d546b525a84d62ba3eef3ef7dc3f5e2833647582, PR 564, accepted implementation baseline dd545348939a668e4d4ff375526d689fa4174f89, all rejected/correction history, SQL gate evidence, and every unrelated lane. The dark branch must be created only after this activation reaches origin/main and must remain preserved through exact-SHA review. This lane grants no branch deletion, production cleanup, SQL rollback, or other destructive authority.",
-      "sequence": "merge this control-only activation with skip-ci after validation and independent review -> create the exact clean dark-infrastructure branch/worktree from resulting origin/main -> pass package write preflight -> Claude separates only the recorded infrastructure bytes and writes the bounded evidence/tests -> focused and applicable validation -> complete-diff writer self-review -> freeze and push exact candidate -> open a separate non-auto-complete dark-infrastructure PR -> Azure/Linux CI -> fresh independent exact-SHA review -> return the reviewed candidate for a separate merge decision; do not merge PR 564 or the infrastructure PR and do not apply or enable anything"
-    },
-    {
       "package": "PS-SIGNIN-MEMBER-ARRIVAL-001",
       "outcome": "Close the two open limitations recorded in this package's own completion report and correct the stale release records of two sibling auth packages. Reconcile cross-tab sign-out on the private owner workspace: today a member who signs out in one tab is still shown a signed-in workspace in another until they navigate. Follow the existing private-path precedent in easy-auth-callback.js and reload rather than only swapping header controls, so the server re-authorizes and private content leaves the screen instead of sitting under a Sign In button. Keep the /auth/ surfaces excluded so a sign-in page cannot reconcile itself into a loop. Recapture the /app byte-lock chain with proof that the markup delta is exactly the one added script tag. Record the measured Azure session policy as evidence, since the governing lifetime lives in App Service configuration and cannot be regression-tested from source. Correct PS-SIGNIN-EXPERIENCE-001 and PS-AUTH-CALLBACK-001, whose completion records still read 'Not deployed, not pushed' and 'Pending' for gates that demonstrably shipped. Produce one exact self-reviewed candidate. Stop before merge, deployment, release, configuration change, or any production operation.",
       "branch": "work/2026-08-21-signin-member-arrival-followup",
@@ -3838,6 +3691,156 @@
       "pause_reason": "The exact repository-only Interview Extract sequence is complete: PR 573 landed the independently passed final sequence repair, real current-main merge preflight passed, fresh PR 567 validation build 1396 succeeded with every operational stage skipped, and PR 567 merged as main 28ed324486fa05b3baa9c7cf47fd9009f251061e with deployment suppressed and SQL unapplied. This temporary auxiliary child has no remaining writer work.",
       "resume_contract": "Preserved for provenance only. Do not resume or modify the Interview profile. Any future Interview control change requires a fresh owner-selected activation. The separately authorized next control outcome is a new PS-DELIVERY-CONTROL-SIGNIN-001 child; this pause grants it no authority.",
       "preserved_head_sha": "3a508aaebf10c1553c91438260f6a8431c4fd332"
+    },
+    {
+      "package": "PS-INTERVIEW-AI-EXTRACT-001",
+      "outcome": "Create and independently review a separate dark telemetry-infrastructure candidate from the already accepted Extract implementation without changing Interview provider dispatch or any member-visible behavior. Carry only the additive migration proposal and rollback, immutable SQL gate receipt, package registration, inert application append-procedure allowlist, separately named default-off 90-day purge script and pipeline schedule/stage, operational tests, and bounded evidence needed before the runtime candidate may later be considered for release. Freeze one exact pushed candidate and stop before either implementation PR is merged or any SQL, production identity, retention, configuration, deployment, provider, spending, or production action.",
+      "branch": "work/2026-08-21-interview-ai-extract-dark-infrastructure",
+      "writer": "The dedicated Claude implementation session selected by Pete for PS-INTERVIEW-AI-EXTRACT-001 is the sole writer on work/2026-08-21-interview-ai-extract-dark-infrastructure after this activation reaches origin/main. Codex task 01a01233-d773-7ed1-9ac8-cb0d2bb8cf07 remains package manager and governs control transitions but does not co-write the implementation candidate. Fresh independent reviewers may inspect the frozen exact SHA but may not edit it. No other task may write these surfaces.",
+      "delivery_path": "Protected",
+      "production_capable": true,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "schema:interview-ai-telemetry",
+        "operations:interview-ai-telemetry-retention",
+        "database:interview-ai-telemetry-append-admission",
+        "governance:interview-ai-extract-registration"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 996f897b6f89d47a126faa02273941e09678f26b after independently passed control PR 565 paused and preserved the accepted Extract runtime branch at exact pushed SHA d546b525a84d62ba3eef3ef7dc3f5e2833647582. The implementation source bytes are the already accepted Extract implementation baseline dd545348939a668e4d4ff375526d689fa4174f89 plus the independently accepted release-plan correction at d546b525a84d62ba3eef3ef7dc3f5e2833647582. Pete authorized creation, testing, PR creation, and independent review of the separate dark-infrastructure candidate on 2026-08-21, while withholding both implementation merges and every SQL, identity, retention, configuration, deployment, provider, spending, and production action.",
+      "writable_surfaces": [
+        "docs/governance/PACKAGE_REGISTRY.json",
+        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/05_SQL_DISPOSABLE_PROOF.json",
+        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/10_RELEASE_PLAN.md",
+        "docs/initiatives/PS-INTERVIEW-AI-EXTRACT-001/11_DARK_TELEMETRY_INFRASTRUCTURE_EVIDENCE.md",
+        "services/database_service.py",
+        "tests/test_database_service.py",
+        "scripts/interview_ai/run_interview_telemetry_purge.py",
+        "scripts/interview_ai/run_interview_telemetry_sql_proof.py",
+        "tests/test_interview_ai_dark_telemetry_infrastructure.py",
+        "SQL FIles/Migrations/proposed/PS-INTERVIEW-AI-EXTRACT-001_telemetry.sql",
+        "SQL FIles/Migrations/proposed/PS-INTERVIEW-AI-EXTRACT-001_telemetry_rollback.sql",
+        "SQL FIles/Migrations/registry.json",
+        "azure-pipelines.yml",
+        "tests/test_operational_readiness.py"
+      ],
+      "exclusions": [
+        "no app.py, services/interview_ai runtime, prompts/interview bundles or release controls, provider adapter, prompt renderer, validator, response transformation, route, template, JavaScript, CSS, dependency lock, requirements, or other Interview runtime change",
+        "no runtime-lock install or vendoring hunks from the combined candidate in azure-pipelines.yml; the dark pipeline delta is limited to the independently named default-off retention schedule/stage and the schedule-name isolation needed to keep Community maintenance unchanged",
+        "no change to the accepted SQL migration or rollback bytes without invalidating the recorded gate receipt and stopping for a fresh separately authorized disposable proof; no new throwaway database is authorized by this lane",
+        "no adaptive answer length, new specialist, prompt/system-rule work, evaluation execution, Router, History, Nudge, Grounded redesign, Compare redesign, client telemetry, response identity, guardian expansion, or any other later Interview slice",
+        "no merge of PR 564 or this dark-infrastructure implementation PR; no SQL apply, migration execution, production identity or permission provisioning, retention enablement, production variable or App Service setting, deployment, provider call, paid evaluation, spend, or production operation",
+        "no reuse of the Community maintenance identity, connection, enable flag, artifact, or schedule; no edit to the active Synthetic QA lane or its four writable surfaces; no reset, overwrite, deletion, or adoption of any other branch, worktree, stash, artifact, secret, production datum, or user content"
+      ],
+      "completion_evidence": [
+        "the migration proposal, rollback, SQL registry entry, purge script, SQL proof tool, disposable-proof receipt, and release plan are byte-identical to their accepted source where carried, and their hashes agree with the existing 88-of-88 disposable proof without contacting or changing production SQL",
+        "the pipeline diff contains only the Interview retention nightly schedule, the default-off InterviewTelemetryMaintenance stage, its dedicated content-free artifact path, and exact cron-name isolation for both Interview and existing Community maintenance; no runtime install, vendoring, provider, build, deploy, or schema-apply behavior is imported from the combined candidate",
+        "the application database allowlist adds only usp_AppendInterviewAIServerCall and continues to exclude usp_PurgeInterviewAIServerCalls; focused tests prove append admission is inert until later runtime code calls it and purge authority remains out of process",
+        "operational tests prove the exact pipeline stage list, independent schedule names, default-off enablement, dedicated connection variable, bounded batch limits, wrong-database refusal, content-free reports, and absence of Interview provider-dispatch or member-visible runtime changes",
+        "complete-diff self-review proves every changed path is recorded, PACKAGE_REGISTRY adds only PS-INTERVIEW-AI-EXTRACT-001 with exact count updates, the Synthetic QA lane remains untouched, and no app.py, prompts/interview, services/interview_ai, provider, runtime-lock, configuration, secret, or production surface entered the candidate",
+        "the exact pushed candidate passes focused tests, database and operational-readiness regressions, applicable full repository CI, JSON/compile/diff checks, and receives a fresh independent exact-SHA review focused on delivery separation, SQL identity, least privilege, retention isolation, pipeline safety, no-runtime proof, rollback, and authority boundaries"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-21",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Create and independently review the separate PS-INTERVIEW-AI-EXTRACT-001 dark telemetry-infrastructure pull request. This authorizes preparing the branch, separating only the approved infrastructure files, running tests, opening the pull request, and obtaining independent review. It does not authorize merging PR 564 or the dark-infrastructure implementation PR, applying SQL, provisioning production identities, enabling retention, changing production configuration, deploying, making provider calls, spending money, or operating production."
+        },
+        {
+          "date": "2026-08-21",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "decision": "Merge independently passed control PR 565 and, after fresh verification and successful validation, merge this subsequent control-only activation. These control merges grant no authority to merge either implementation PR or perform any SQL, identity, retention, configuration, deployment, provider, spending, or production action."
+        },
+        {
+          "date": "2026-08-21",
+          "authorized_by": "Pete",
+          "status": "authorized",
+          "package": "PS-INTERVIEW-AI-EXTRACT-001",
+          "action": "merge_repository_only",
+          "branch": "work/2026-08-21-interview-ai-extract-dark-infrastructure",
+          "reviewed_remote_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
+          "pull_request": 567,
+          "validation_run": 1386,
+          "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
+          "request_turn": "01a026e1-d028-7580-8423-3529115e9c34",
+          "response_turn": "01a026e3-6576-7812-be1b-b60f28897e9f",
+          "verbatim_response": "I authorize",
+          "decision": "Authorize the governed repository-only merge of exact PR 567 source 8fa7dd82b975796f9df767a48cefb0b79214e6aa with application deployment suppressed and the Interview telemetry SQL migration unapplied."
+        }
+      ],
+      "merge_grant": {
+        "authorized_by": "Pete",
+        "authority_decision_index": 2,
+        "authority_decision_sha256": "2c2b1afa7c6593766e4cfe45b96b19020ff9c7102d6e8bbafa64992a011f154e",
+        "admission_sha256": "5bdfb69b1be793fa66719e2df2e249c5963eb49131a205a04df197edfd4a180c",
+        "review_attestations": {
+          "technical": {
+            "review_type": "technical_exact_sha",
+            "reviewer_mode": "fresh_independent_read_only_non_writer",
+            "reviewed_sha": "6680d0a95035ce79056fee2007199e056c005568",
+            "result": "pass",
+            "accepted_by": "Site Audit Manager",
+            "accepted_date": "2026-08-21",
+            "scope": "dark_telemetry_technical_corrections_and_disposable_sql_proof",
+            "proof_result": "105_of_105_pass",
+            "migration_digest": "2291c3df758b18d98cbb4e6d13ed9817d27e0b3356053679b94fcc2c09410b85",
+            "production_sql_applied": false
+          },
+          "documentation": {
+            "review_type": "documentation_exact_sha",
+            "reviewer_mode": "fresh_independent_read_only_non_writer",
+            "reviewed_sha": "df12e40535b5178ebe655249b610aa293f9132a0",
+            "technical_parent_sha": "6680d0a95035ce79056fee2007199e056c005568",
+            "result": "pass",
+            "accepted_by": "Site Audit Manager",
+            "accepted_date": "2026-08-21",
+            "scope": "one_file_dark_telemetry_evidence_truth_correction",
+            "focused_result": "44_of_44_pass",
+            "new_sql_gate_required": false
+          },
+          "fresh_target": {
+            "review_type": "fresh_target_validation",
+            "reviewer_mode": "independent_central_reconciliation",
+            "reviewed_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
+            "accepted_documentation_sha": "df12e40535b5178ebe655249b610aa293f9132a0",
+            "target_main": "068e4bcd7dc5e88ee980cabf0f1810ad46ac6f5e",
+            "pull_request": 567,
+            "validation_run": 1386,
+            "validation_result": "succeeded",
+            "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
+            "result": "pass"
+          }
+        },
+        "reviewed_remote_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
+        "granted_at": "2026-08-22T02:05:07Z",
+        "review_result": "pass",
+        "review_evidence_paths": [],
+        "release_scope": {
+          "candidate_source_sha": "8fa7dd82b975796f9df767a48cefb0b79214e6aa",
+          "pull_request": 567,
+          "validation_run": 1386,
+          "speculative_merge_sha": "1a93094371b5a48d6ead62a384f0b21048863f39",
+          "repository_action": "merge_exact_reviewed_dark_telemetry_infrastructure_only",
+          "application_deployment": "suppressed",
+          "sql_migration": "remains_unapplied",
+          "production_identity_or_permission_change": false,
+          "retention_enablement": false,
+          "production_configuration_change": false,
+          "provider_invocation": false,
+          "provider_spend": false,
+          "evaluation_execution": false,
+          "runtime_pr_564_merge": false,
+          "later_interview_package_authority": false
+        }
+      },
+      "cleanup_contract": "Preserve runtime branch work/2026-08-20-interview-ai-extract-001, exact runtime tip d546b525a84d62ba3eef3ef7dc3f5e2833647582, PR 564, accepted implementation baseline dd545348939a668e4d4ff375526d689fa4174f89, all rejected/correction history, SQL gate evidence, and every unrelated lane. The dark branch must be created only after this activation reaches origin/main and must remain preserved through exact-SHA review. This lane grants no branch deletion, production cleanup, SQL rollback, or other destructive authority.",
+      "sequence": "merge this control-only activation with skip-ci after validation and independent review -> create the exact clean dark-infrastructure branch/worktree from resulting origin/main -> pass package write preflight -> Claude separates only the recorded infrastructure bytes and writes the bounded evidence/tests -> focused and applicable validation -> complete-diff writer self-review -> freeze and push exact candidate -> open a separate non-auto-complete dark-infrastructure PR -> Azure/Linux CI -> fresh independent exact-SHA review -> return the reviewed candidate for a separate merge decision; do not merge PR 564 or the infrastructure PR and do not apply or enable anything",
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-22T23:40:00Z",
+      "pause_reason": "The writer completed and explicitly relinquished the package and azure-pipelines.yml on 2026-08-22, reporting all Interview worktrees clean and every branch pushed and squash-merged. The owner directed that the shared pipeline surface be released so a waiting release lane can proceed. Paused rather than closed: the external review of the closeout SHA is still outstanding, so no completion claim is made here.",
+      "resume_contract": "Resume only through fresh activation naming this package, its exact branch, and its exact surfaces. The preserved head SHA is the only authoritative resume point; verify it against origin before any write. Re-activation must re-establish shared-surface ownership explicitly, because azure-pipelines.yml and tests/test_operational_readiness.py are released by this pause and may be held by another lane.",
+      "preserved_head_sha": "f30311be1fbd0fdde0e3dc50e3632a5f4afc6d3b"
     }
   ],
   "workspace_snapshot": {
