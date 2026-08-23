@@ -3746,19 +3746,15 @@ with patch.object(
                         for item in ledger["closing_lanes"]
                         if item.get("branch")
                     )
-                # The exact-profile packages are intentionally not generic
-                # implementation fixtures: each package name is reserved for
-                # its frozen review-bound candidate path exercised above.
-                if lane["package"] in {
-                    PROFILE_CORE_INTEGRATION_PACKAGE,
-                    CONNECT_002_PACKAGE,
-                    COMMUNITY_AUTHORING_PACKAGE,
-                    SD1_PACKAGE,
-                    SEARCH_PACKAGE,
-                    INTERVIEW_EXTRACT_TARGET_PACKAGE,
-                }:
-                    lane["package"] = "PS-GENERIC-IMPLEMENTATION-001"
-                    lane["branch"] = "work/2026-08-13-generic-implementation-001"
+                # Build an explicitly generic lane from the recorded shape.
+                # Never borrow a real package identity: any package with a
+                # code-pinned review profile is routed to its exact candidate
+                # path instead of the generic merge under test, so the fixture
+                # must not depend on which packages happen to be recorded.
+                lane["package"] = "PS-GENERIC-IMPLEMENTATION-001"
+                lane["branch"] = "work/2026-08-13-generic-implementation-001"
+                lane.pop("merge_grant", None)
+                lane.pop("owner_decisions", None)
                 lane["lane_class"] = "implementation"
                 lane["production_capable"] = True
                 package = lane["package"]
