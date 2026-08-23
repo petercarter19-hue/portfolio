@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "package": "PS-MY-OPPORTUNITIES-001",
+  "state": "active",
+  "outcome": "Produce and independently review one repository-grounded whole-system My Opportunities architecture and final child graph. The work is evidence-building for private member benefit: current-opportunity discovery and strict, source-linked qualification verification. It must remain outside a public job board, recruiter-first marketplace, public listing index, application product, and paid-relevance system. It must keep licensed-feed discovery separate from member-uploaded URL/job-description handling under Site Rules section 3; map current Opportunity Slate v2, legacy rollback, remaining stages, and continuation breakage without selecting or modifying a target; record this owner decision durably; allow the independently reviewed P0 documentation PR to proceed through merge; and stop before runtime, provider contact/selection, spending, schema, infrastructure, UI, migration, merge-to-runtime, deployment, enablement, cutover, or production action.",
+  "assignment": "implementation",
+  "writer_ref": "session:bead6626-b340-4586-85d4-7f4002a97cf6",
+  "branch": "work/2026-08-23-my-opportunities-p0-architecture",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "3d6d51da61b1a5f560e6a08ea366b9d41eb63d6b",
+  "owner_outcome_ref": "session:01a02f42-15ac-7d92-a2a9-60b7e800c388/owner-approval:2026-08-23/my-opportunities-p0-through-merge",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MY-OPPORTUNITIES-001.json",
+    "docs/governance/lane_claims/evidence/PS-MY-OPPORTUNITIES-001.md",
+    "docs/governance/lane_claims/receipts/PS-MY-OPPORTUNITIES-001.json",
+    "docs/governance/DECISIONS.md",
+    "docs/initiatives/PS-MY-OPPORTUNITIES-001"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MY-OPPORTUNITIES-001.md"
+  ],
+  "domains": [
+    "architecture:my-opportunities:p0",
+    "governance:decisions:my-opportunities"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
