@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-22T23:40:00Z",
+  "updated_at": "2026-08-23T00:35:00Z",
   "authority": {
     "remote": "origin",
     "host": "azure_devops",
@@ -13,12 +13,9 @@
     "read_only_work_allowed": true,
     "writes_allowed_for": [
       "PS-SYNTHETIC-MULTI-MEMBER-QA-001",
-      "PS-SIGNIN-MEMBER-ARRIVAL-001",
       "PS-DELIVERY-CONTROL-SIGNIN-001"
     ],
-    "merge_allowed_for": [
-      "PS-SIGNIN-MEMBER-ARRIVAL-001"
-    ],
+    "merge_allowed_for": [],
     "cleanup_allowed_for": [],
     "release_allowed_for": [],
     "blocked_actions": [
@@ -33,7 +30,7 @@
       "write to another writer's checkpoint branch",
       "unverified or non-reset branch, worktree, stash, or artifact deletion"
     ],
-    "exit_authority": "PS-SYNTHETIC-MULTI-MEMBER-QA-001, PS-SIGNIN-MEMBER-ARRIVAL-001, and PS-DELIVERY-CONTROL-SIGNIN-001 retain only their recorded disjoint scopes. PS-INTERVIEW-AI-EXTRACT-001 is paused and preserved at its exact pushed branch tip; its lane record, evidence, branches, and worktrees are retained unchanged and it may resume only through fresh activation. Pausing it releases azure-pipelines.yml and tests/test_operational_readiness.py for a future activated lane. No paused package holds write, merge, release, deployment, configuration, identity, SQL, provider, or production authority."
+    "exit_authority": "Active writer lanes: PS-SYNTHETIC-MULTI-MEMBER-QA-001, PS-DELIVERY-CONTROL-SIGNIN-001. PS-SIGNIN-MEMBER-ARRIVAL-001 is paused and preserved at its exact pushed branch tip; its lane record, evidence, branches, and worktrees are retained unchanged and it may resume only through fresh activation. No paused package holds write, merge, release, deployment, configuration, identity, SQL, provider, or production authority."
   },
   "activation_policy": {
     "enabled": true,
@@ -2521,94 +2518,6 @@
       "sequence": "control-only activation PR -> merge activation -> create the exact clean implementation branch/worktree from resulting origin/main -> package write preflight -> implement only the four disjoint QA-foundation surfaces while deferring the shared registry entry -> focused and relevant regression validation -> complete-diff writer self-review -> freeze and push exact candidate -> fresh independent exact-SHA Protected review -> reconcile accepted findings -> return the completed local candidate for separate registry, attended identity proof, implementation-candidate merge, deployment, and production decisions"
     },
     {
-      "package": "PS-SIGNIN-MEMBER-ARRIVAL-001",
-      "outcome": "Close the two open limitations recorded in this package's own completion report and correct the stale release records of two sibling auth packages. Reconcile cross-tab sign-out on the private owner workspace: today a member who signs out in one tab is still shown a signed-in workspace in another until they navigate. Follow the existing private-path precedent in easy-auth-callback.js and reload rather than only swapping header controls, so the server re-authorizes and private content leaves the screen instead of sitting under a Sign In button. Keep the /auth/ surfaces excluded so a sign-in page cannot reconcile itself into a loop. Recapture the /app byte-lock chain with proof that the markup delta is exactly the one added script tag. Record the measured Azure session policy as evidence, since the governing lifetime lives in App Service configuration and cannot be regression-tested from source. Correct PS-SIGNIN-EXPERIENCE-001 and PS-AUTH-CALLBACK-001, whose completion records still read 'Not deployed, not pushed' and 'Pending' for gates that demonstrably shipped. Produce one exact self-reviewed candidate. Stop before merge, deployment, release, configuration change, or any production operation.",
-      "branch": "work/2026-08-21-signin-member-arrival-followup",
-      "writer": "Claude Code desktop session acd9f218-d287-490f-b2d5-a185c5bceb27 on Opus 5 is the sole writer, working in clean worktree C:/Users/peter/Documents/portfolio-signin-member-arrival-followup-20260821. Pete directed this work on 2026-08-21. No other task may write these surfaces.",
-      "delivery_path": "Protected",
-      "production_capable": false,
-      "lane_class": "implementation",
-      "exclusive_domains": [
-        "product:signin-cross-tab-reconciliation",
-        "evidence:signin-package-release-record-truth"
-      ],
-      "source_checkpoint": "Authoritative Azure origin/main 8bb3339b7ada4a2419b0d71eeec92a66a55d4b6e with two active writers and capacity for a third implementation lane. Production is verified as commit 9f742614949b2a84811c7f6f20e7fbe203e09df2 via Azure build 1303 (buildNumber 20260819.44), deployed to the production slot 2026-08-19T15:14:16Z and still the active deployment; live /healthz returns HTTP 200 with release 2edbd8819968a72e74a933e5, which scripts/release_identity.py derives from exactly that commit and build. That deployment contains both PS-SIGNIN-MEMBER-ARRIVAL-001 merges (PR 514 eaed34c3, PR 516 ae40aec8), and the live safe-return behaviour was re-verified unauthenticated on 2026-08-21: all four registered destinations round trip and every hostile, malformed, or unregistered target falls back to /app.",
-      "writable_surfaces": [
-        "templates/base.html",
-        "static/js/auth-state.js",
-        "tests/auth_state.test.js",
-        "tests/test_auth.py",
-        "tests/test_owner_home.py",
-        "tests/test_signin_member_arrival.py",
-        "docs/initiatives/PS-SIGNIN-MEMBER-ARRIVAL-001/",
-        "docs/initiatives/PS-SIGNIN-EXPERIENCE-001/COMPLETION.md",
-        "docs/initiatives/PS-AUTH-CALLBACK-001/COMPLETION_REPORT.md"
-      ],
-      "exclusions": [
-        "no write to tests/test_operational_readiness.py or to the CURRENT_BASELINE.yaml release-truth block: PS-INTERVIEW-AI-EXTRACT-001 holds that test file, the two move in enforced lockstep, and the stale pair recorded there is therefore reported as evidence for that lane's owner rather than corrected here",
-        "no change to safe_return.py, auth_routes.py, community_routes.py, workshop_routes.py, opportunity_slate_v2_routes.py, or any released safe-return behaviour, which live verification shows is correct",
-        "no schema, migration, dependency, pipeline, App Service configuration, session duration, cookie policy, provider, tenant, callback, DNS, TLS, secret, or RBAC change; the measured session policy is recorded as read-only evidence only",
-        "no account state moves to the client: auth-state.js must keep asserting free of localStorage, sessionStorage, document.cookie, and innerHTML, and must continue to preserve the server-rendered controls whenever the session check is unavailable, ambiguous, or returns a state it does not recognise",
-        "no reload loop: a reload is attempted at most once per document, never on an /auth/ surface, and never when the session endpoint is unavailable",
-        "no credential, MFA code, token, cookie, raw principal, browser profile, or session state is requested, captured, stored, exported, or inspected",
-        "no material visual change: no new page, component, composition, hierarchy, dominant action, typography, colour language, or responsive interaction model",
-        "no merge, deployment, release, production mutation, or live-behaviour claim",
-        "no recapture of a byte lock or relaxation of a test merely to make it pass; every changed expectation must be proven by rendering the exact request before and after",
-        "no write outside the recorded surfaces, and no change to another writer's branch, worktree, stash, or artifact"
-      ],
-      "completion_evidence": [
-        "a member signed out in one tab no longer keeps a usable private workspace in another: on focus the workspace re-checks the session and reloads, and the server returns the sign-in redirect rather than leaving private content on screen",
-        "the /auth/ surfaces stay excluded, the reload is attempted at most once per document, and an unavailable or ambiguous session check still preserves the server-rendered UI",
-        "the /app byte-lock chain is recaptured with the documented proof step: stripping exactly the one added script tag reproduces the previous locked baseline byte for byte, and FLAG_OFF_APP_RENDER_PREVIOUS_SHA256 still matches unrecaptured",
-        "tests/auth_state.test.js and the shell's no-client-state assertions still pass, proving no browser storage, cookie, or innerHTML path was introduced",
-        "focused owner-home, auth, signin-member-arrival, navigation, and shell tests pass, and the wider suite is run because the shared shell changed",
-        "the package record states the measured Azure session policy (fixed 8-hour cookie expiration, 72-hour token refresh extension, 5-minute validated nonce) and names it as configuration evidence that source tests cannot assert",
-        "the two sibling records state their actual released state with the exact commit, build, deployment time, and derived live release identity",
-        "a complete-diff self-review and one proportional Protected completion record"
-      ],
-      "owner_decisions": [
-        {
-          "date": "2026-08-21",
-          "authorized_by": "Pete",
-          "status": "accepted",
-          "decision": "Pete authorizes Claude Code desktop session acd9f218-d287-490f-b2d5-a185c5bceb27 to manage PS-SIGNIN-MEMBER-ARRIVAL-001 end to end through implementation, correction, PR management, merge, deployment, live verification, and final package exit, continuing without repeatedly requesting owner approval and stopping only at a genuine independent-review point or a real blocker requiring Pete's participation. Grok is the named independent reviewer for the frozen implementation candidate.",
-          "provenance": "Recorded verbatim in Claude Code session acd9f218-d287-490f-b2d5-a185c5bceb27 on 2026-08-21, in the owner turn beginning 'Correction to the previous instruction: there is no fixed number of reviews.', following the earlier owner turn 'I want you to do everything.' Re-affirmed by the Site-audit manager handoff 'UNBLOCK AND COMPLETE PS-SIGNIN-MEMBER-ARRIVAL-001'."
-        }
-      ],
-      "merge_grant": {
-        "authorized_by": "Pete",
-        "authority_decision_index": 0,
-        "authority_decision_sha256": "9f9ef74c72a5ef5024c07fcffd97fc4271a20c1e3abb0ea49bec53424c7b8311",
-        "independent_review": {
-          "reviewer_task": "/root/signin_member_arrival_exact_sha_review",
-          "reviewer_mode": "independent_read_only_non_writer",
-          "reviewed_sha": "e1847ad0a884a349a7b5eed0526075cd0104dd62",
-          "reviewed_branch": "work/2026-08-21-signin-member-arrival-followup",
-          "verdict": "PASS",
-          "verdict_text": "ACCEPTED_FOR_OWNER_RELEASE_DECISION - exact-SHA independent Protected review passed for e1847ad0a884a349a7b5eed0526075cd0104dd62, branch-equal to origin/work/2026-08-21-signin-member-arrival-followup and clean, on base eb3f35ab66e01a1793d5dc3ae628270c6c64ec10.",
-          "verdict_sha256": "7bfb9d79c5e28adabd46fd0eb72690e6e636d5ab89e8558de7fc47364528313c",
-          "basis": [
-            "full_tree_at_e1847ad0a884a349a7b5eed0526075cd0104dd62",
-            "complete_diff_eb3f35ab66e01a1793d5dc3ae628270c6c64ec10_to_e1847ad0a884a349a7b5eed0526075cd0104dd62"
-          ],
-          "scope": "protected_signin_member_arrival_implementation_merge_only",
-          "exclusions": "schema_configuration_deployment_enablement_private_signed_in_proof",
-          "evidence_path": "docs/initiatives/PS-SIGNIN-MEMBER-ARRIVAL-001/INDEPENDENT_REVIEW_HANDOFF.md",
-          "evidence_git_blob_sha": "76067fcef402f1f04605926ab32af9c53e129b2e",
-          "evidence_bytes_sha256": "90d3a48a19078252241c71be26978f1683ad656418fa8410a9635a7b5d6349c1",
-          "received_by": "Claude Code PS-SIGNIN-MEMBER-ARRIVAL-001 package manager",
-          "received_date": "2026-08-22",
-          "attestation_sha256": "c6e5a826683f417ed8a07c70ceab65d254ffd5966651390178e1624786b29446"
-        },
-        "reviewed_remote_sha": "e1847ad0a884a349a7b5eed0526075cd0104dd62",
-        "granted_at": "2026-08-22T18:20:00Z",
-        "review_result": "pass",
-        "review_evidence_paths": [
-          "docs/initiatives/PS-SIGNIN-MEMBER-ARRIVAL-001/INDEPENDENT_REVIEW_HANDOFF.md"
-        ]
-      }
-    },
-    {
       "package": "PS-DELIVERY-CONTROL-SIGNIN-001",
       "outcome": "Add one exact fail-closed Sign-in merge-admission and review-attestation profile for PS-SIGNIN-MEMBER-ARRIVAL-001 candidate e1847ad0a884a349a7b5eed0526075cd0104dd62, without changing the accepted Sign-in candidate or the existing Interview Extract admission/history. Produce one frozen control candidate, obtain fresh independent Grok review of its exact SHA, and stop before any Sign-in grant, merge, release, deployment, configuration, private proof, or production action.",
       "branch": "work/2026-08-22-signin-merge-control",
@@ -3841,6 +3750,99 @@
       "pause_reason": "The writer completed and explicitly relinquished the package and azure-pipelines.yml on 2026-08-22, reporting all Interview worktrees clean and every branch pushed and squash-merged. The owner directed that the shared pipeline surface be released so a waiting release lane can proceed. Paused rather than closed: the external review of the closeout SHA is still outstanding, so no completion claim is made here.",
       "resume_contract": "Resume only through fresh activation naming this package, its exact branch, and its exact surfaces. The preserved head SHA is the only authoritative resume point; verify it against origin before any write. Re-activation must re-establish shared-surface ownership explicitly, because azure-pipelines.yml and tests/test_operational_readiness.py are released by this pause and may be held by another lane.",
       "preserved_head_sha": "f30311be1fbd0fdde0e3dc50e3632a5f4afc6d3b"
+    },
+    {
+      "package": "PS-SIGNIN-MEMBER-ARRIVAL-001",
+      "outcome": "Close the two open limitations recorded in this package's own completion report and correct the stale release records of two sibling auth packages. Reconcile cross-tab sign-out on the private owner workspace: today a member who signs out in one tab is still shown a signed-in workspace in another until they navigate. Follow the existing private-path precedent in easy-auth-callback.js and reload rather than only swapping header controls, so the server re-authorizes and private content leaves the screen instead of sitting under a Sign In button. Keep the /auth/ surfaces excluded so a sign-in page cannot reconcile itself into a loop. Recapture the /app byte-lock chain with proof that the markup delta is exactly the one added script tag. Record the measured Azure session policy as evidence, since the governing lifetime lives in App Service configuration and cannot be regression-tested from source. Correct PS-SIGNIN-EXPERIENCE-001 and PS-AUTH-CALLBACK-001, whose completion records still read 'Not deployed, not pushed' and 'Pending' for gates that demonstrably shipped. Produce one exact self-reviewed candidate. Stop before merge, deployment, release, configuration change, or any production operation.",
+      "branch": "work/2026-08-21-signin-member-arrival-followup",
+      "writer": "Claude Code desktop session acd9f218-d287-490f-b2d5-a185c5bceb27 on Opus 5 is the sole writer, working in clean worktree C:/Users/peter/Documents/portfolio-signin-member-arrival-followup-20260821. Pete directed this work on 2026-08-21. No other task may write these surfaces.",
+      "delivery_path": "Protected",
+      "production_capable": false,
+      "lane_class": "implementation",
+      "exclusive_domains": [
+        "product:signin-cross-tab-reconciliation",
+        "evidence:signin-package-release-record-truth"
+      ],
+      "source_checkpoint": "Authoritative Azure origin/main 8bb3339b7ada4a2419b0d71eeec92a66a55d4b6e with two active writers and capacity for a third implementation lane. Production is verified as commit 9f742614949b2a84811c7f6f20e7fbe203e09df2 via Azure build 1303 (buildNumber 20260819.44), deployed to the production slot 2026-08-19T15:14:16Z and still the active deployment; live /healthz returns HTTP 200 with release 2edbd8819968a72e74a933e5, which scripts/release_identity.py derives from exactly that commit and build. That deployment contains both PS-SIGNIN-MEMBER-ARRIVAL-001 merges (PR 514 eaed34c3, PR 516 ae40aec8), and the live safe-return behaviour was re-verified unauthenticated on 2026-08-21: all four registered destinations round trip and every hostile, malformed, or unregistered target falls back to /app.",
+      "writable_surfaces": [
+        "templates/base.html",
+        "static/js/auth-state.js",
+        "tests/auth_state.test.js",
+        "tests/test_auth.py",
+        "tests/test_owner_home.py",
+        "tests/test_signin_member_arrival.py",
+        "docs/initiatives/PS-SIGNIN-MEMBER-ARRIVAL-001/",
+        "docs/initiatives/PS-SIGNIN-EXPERIENCE-001/COMPLETION.md",
+        "docs/initiatives/PS-AUTH-CALLBACK-001/COMPLETION_REPORT.md"
+      ],
+      "exclusions": [
+        "no write to tests/test_operational_readiness.py or to the CURRENT_BASELINE.yaml release-truth block: PS-INTERVIEW-AI-EXTRACT-001 holds that test file, the two move in enforced lockstep, and the stale pair recorded there is therefore reported as evidence for that lane's owner rather than corrected here",
+        "no change to safe_return.py, auth_routes.py, community_routes.py, workshop_routes.py, opportunity_slate_v2_routes.py, or any released safe-return behaviour, which live verification shows is correct",
+        "no schema, migration, dependency, pipeline, App Service configuration, session duration, cookie policy, provider, tenant, callback, DNS, TLS, secret, or RBAC change; the measured session policy is recorded as read-only evidence only",
+        "no account state moves to the client: auth-state.js must keep asserting free of localStorage, sessionStorage, document.cookie, and innerHTML, and must continue to preserve the server-rendered controls whenever the session check is unavailable, ambiguous, or returns a state it does not recognise",
+        "no reload loop: a reload is attempted at most once per document, never on an /auth/ surface, and never when the session endpoint is unavailable",
+        "no credential, MFA code, token, cookie, raw principal, browser profile, or session state is requested, captured, stored, exported, or inspected",
+        "no material visual change: no new page, component, composition, hierarchy, dominant action, typography, colour language, or responsive interaction model",
+        "no merge, deployment, release, production mutation, or live-behaviour claim",
+        "no recapture of a byte lock or relaxation of a test merely to make it pass; every changed expectation must be proven by rendering the exact request before and after",
+        "no write outside the recorded surfaces, and no change to another writer's branch, worktree, stash, or artifact"
+      ],
+      "completion_evidence": [
+        "a member signed out in one tab no longer keeps a usable private workspace in another: on focus the workspace re-checks the session and reloads, and the server returns the sign-in redirect rather than leaving private content on screen",
+        "the /auth/ surfaces stay excluded, the reload is attempted at most once per document, and an unavailable or ambiguous session check still preserves the server-rendered UI",
+        "the /app byte-lock chain is recaptured with the documented proof step: stripping exactly the one added script tag reproduces the previous locked baseline byte for byte, and FLAG_OFF_APP_RENDER_PREVIOUS_SHA256 still matches unrecaptured",
+        "tests/auth_state.test.js and the shell's no-client-state assertions still pass, proving no browser storage, cookie, or innerHTML path was introduced",
+        "focused owner-home, auth, signin-member-arrival, navigation, and shell tests pass, and the wider suite is run because the shared shell changed",
+        "the package record states the measured Azure session policy (fixed 8-hour cookie expiration, 72-hour token refresh extension, 5-minute validated nonce) and names it as configuration evidence that source tests cannot assert",
+        "the two sibling records state their actual released state with the exact commit, build, deployment time, and derived live release identity",
+        "a complete-diff self-review and one proportional Protected completion record"
+      ],
+      "owner_decisions": [
+        {
+          "date": "2026-08-21",
+          "authorized_by": "Pete",
+          "status": "accepted",
+          "decision": "Pete authorizes Claude Code desktop session acd9f218-d287-490f-b2d5-a185c5bceb27 to manage PS-SIGNIN-MEMBER-ARRIVAL-001 end to end through implementation, correction, PR management, merge, deployment, live verification, and final package exit, continuing without repeatedly requesting owner approval and stopping only at a genuine independent-review point or a real blocker requiring Pete's participation. Grok is the named independent reviewer for the frozen implementation candidate.",
+          "provenance": "Recorded verbatim in Claude Code session acd9f218-d287-490f-b2d5-a185c5bceb27 on 2026-08-21, in the owner turn beginning 'Correction to the previous instruction: there is no fixed number of reviews.', following the earlier owner turn 'I want you to do everything.' Re-affirmed by the Site-audit manager handoff 'UNBLOCK AND COMPLETE PS-SIGNIN-MEMBER-ARRIVAL-001'."
+        }
+      ],
+      "merge_grant": {
+        "authorized_by": "Pete",
+        "authority_decision_index": 0,
+        "authority_decision_sha256": "9f9ef74c72a5ef5024c07fcffd97fc4271a20c1e3abb0ea49bec53424c7b8311",
+        "independent_review": {
+          "reviewer_task": "/root/signin_member_arrival_exact_sha_review",
+          "reviewer_mode": "independent_read_only_non_writer",
+          "reviewed_sha": "e1847ad0a884a349a7b5eed0526075cd0104dd62",
+          "reviewed_branch": "work/2026-08-21-signin-member-arrival-followup",
+          "verdict": "PASS",
+          "verdict_text": "ACCEPTED_FOR_OWNER_RELEASE_DECISION - exact-SHA independent Protected review passed for e1847ad0a884a349a7b5eed0526075cd0104dd62, branch-equal to origin/work/2026-08-21-signin-member-arrival-followup and clean, on base eb3f35ab66e01a1793d5dc3ae628270c6c64ec10.",
+          "verdict_sha256": "7bfb9d79c5e28adabd46fd0eb72690e6e636d5ab89e8558de7fc47364528313c",
+          "basis": [
+            "full_tree_at_e1847ad0a884a349a7b5eed0526075cd0104dd62",
+            "complete_diff_eb3f35ab66e01a1793d5dc3ae628270c6c64ec10_to_e1847ad0a884a349a7b5eed0526075cd0104dd62"
+          ],
+          "scope": "protected_signin_member_arrival_implementation_merge_only",
+          "exclusions": "schema_configuration_deployment_enablement_private_signed_in_proof",
+          "evidence_path": "docs/initiatives/PS-SIGNIN-MEMBER-ARRIVAL-001/INDEPENDENT_REVIEW_HANDOFF.md",
+          "evidence_git_blob_sha": "76067fcef402f1f04605926ab32af9c53e129b2e",
+          "evidence_bytes_sha256": "90d3a48a19078252241c71be26978f1683ad656418fa8410a9635a7b5d6349c1",
+          "received_by": "Claude Code PS-SIGNIN-MEMBER-ARRIVAL-001 package manager",
+          "received_date": "2026-08-22",
+          "attestation_sha256": "c6e5a826683f417ed8a07c70ceab65d254ffd5966651390178e1624786b29446"
+        },
+        "reviewed_remote_sha": "e1847ad0a884a349a7b5eed0526075cd0104dd62",
+        "granted_at": "2026-08-22T18:20:00Z",
+        "review_result": "pass",
+        "review_evidence_paths": [
+          "docs/initiatives/PS-SIGNIN-MEMBER-ARRIVAL-001/INDEPENDENT_REVIEW_HANDOFF.md"
+        ]
+      },
+      "disposition": "paused_preserved",
+      "paused_at": "2026-08-23T00:35:00Z",
+      "pause_reason": "The package is complete at its stated level: reviewed candidate e1847ad0 merged as 191fb238, deployed by build 1442, live-verified three times, and owner-confirmed on 2026-08-22; its release completion record merged as main 5ca8d0a1. Close was attempted first and refused by the existing close preflight because the lane branch tip moved past the reviewed SHA to carry the completion record. Paused and preserved rather than forced; no branch was rewritten.",
+      "resume_contract": "Resume only through fresh activation naming this package, its exact branch, and its exact surfaces. The preserved head SHA is the authoritative resume point; verify it against origin before any write. Any further Sign-in runtime change is new work requiring its own review, not a continuation of the accepted candidate.",
+      "preserved_head_sha": "25d3408c515501ff235a507113544af68dc782b7"
     }
   ],
   "workspace_snapshot": {
