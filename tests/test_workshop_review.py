@@ -2708,6 +2708,121 @@ class MemberAiAssistedSaveTests(WorkshopReviewRouteTestCase):
         fields = mock_save.call_args[0][2]
         self.assertEqual(fields["authored_via"], "typed")
 
+    def test_an_accepted_proposal_retains_the_members_own_pre_acceptance_wording(self):
+        """PS-WORKSHOP-PROVENANCE-001 — the package's reason to exist.
+
+        Owner decision D1 (2026-08-01) makes the approved wording canonical
+        AND requires the member's original words to be retained; doc 16
+        records retention as "required and not optional", and it is what
+        makes the deliberate absence of an AI-changed badge honest.
+
+        Before this package both save paths passed one string to
+        approved_wording and original_wording, so
+        knowledge_item_versions.original_member_wording -- the column the
+        migration header calls "retained, never overwritten" -- received AI
+        text and the member's own sentence stopped existing anywhere.
+
+        Asserting the two fields DIFFER is the whole point: an equality-only
+        assertion would have passed against the defect.
+        """
+        member_wording = "I rebuilt the intake process and it got much faster."
+        ai_wording = "I redesigned patient intake, cutting it from 40 minutes to 9."
+        test_member = member("Test Member", "member-retains-original")
+        with patch(
+            "workshop_work_routes.get_current_identity", return_value=test_member
+        ), patch(
+            "workshop_work_routes.knowledge_service.list_knowledge_items_for_owner",
+            return_value=KnowledgeItemListResult(items=[], total_count=0),
+        ), patch(
+            "workshop_work_routes.knowledge_service.save_knowledge_item_for_owner"
+        ) as mock_save, _mock_generate_review(REVIEW_JSON_1):
+            mock_save.return_value = {
+                "item_key": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+                "saved": True,
+            }
+            self._start(thought=member_wording)
+            first = self._post_review(answer=member_wording)
+            token = self._extract_token(first.data.decode("utf-8"))
+            self._post_review(
+                accept_proposal="1", proposed_wording=ai_wording, review_token=token
+            )
+            self.client.post(
+                "/app/workshop/work/session/finalize",
+                data={"answer": ai_wording},
+                headers=SAME_ORIGIN_HEADERS,
+            )
+            self.client.post(
+                "/app/workshop/work/session/save",
+                data={
+                    "title": "Intake redesign",
+                    "wording": ai_wording,
+                    "classification": "work",
+                    "save_action": "confirm",
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            )
+
+        fields = mock_save.call_args[0][2]
+        self.assertEqual(fields["approved_wording"], ai_wording)
+        self.assertEqual(fields["original_wording"], member_wording)
+        self.assertNotEqual(fields["original_wording"], fields["approved_wording"])
+        self.assertEqual(fields["authored_via"], "ai_assisted_approved")
+
+    def test_a_second_acceptance_does_not_displace_the_members_first_original(self):
+        """The first original wins. A member who accepts, keeps working, and
+        accepts again has exactly one set of own words; the intermediate
+        machine draft is not a second "original" and must never overwrite
+        the member's actual wording."""
+        member_wording = "My own first words about this piece of work."
+        first_ai = "A first AI refinement of those words."
+        second_ai = "A second AI refinement layered on top."
+        test_member = member("Test Member", "member-first-original-wins")
+        with patch(
+            "workshop_work_routes.get_current_identity", return_value=test_member
+        ), patch(
+            "workshop_work_routes.knowledge_service.list_knowledge_items_for_owner",
+            return_value=KnowledgeItemListResult(items=[], total_count=0),
+        ), patch(
+            "workshop_work_routes.knowledge_service.save_knowledge_item_for_owner"
+        ) as mock_save, _mock_generate_review(REVIEW_JSON_1):
+            mock_save.return_value = {
+                "item_key": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+                "saved": True,
+            }
+            self._start(thought=member_wording)
+            first = self._post_review(answer=member_wording)
+            self._post_review(
+                accept_proposal="1",
+                proposed_wording=first_ai,
+                review_token=self._extract_token(first.data.decode("utf-8")),
+            )
+            second = self._post_review(answer=first_ai)
+            self._post_review(
+                accept_proposal="1",
+                proposed_wording=second_ai,
+                review_token=self._extract_token(second.data.decode("utf-8")),
+            )
+            self.client.post(
+                "/app/workshop/work/session/finalize",
+                data={"answer": second_ai},
+                headers=SAME_ORIGIN_HEADERS,
+            )
+            self.client.post(
+                "/app/workshop/work/session/save",
+                data={
+                    "title": "Layered refinements",
+                    "wording": second_ai,
+                    "classification": "work",
+                    "save_action": "confirm",
+                },
+                headers=SAME_ORIGIN_HEADERS,
+            )
+
+        fields = mock_save.call_args[0][2]
+        self.assertEqual(fields["original_wording"], member_wording)
+        self.assertNotEqual(fields["original_wording"], first_ai)
+        self.assertEqual(fields["approved_wording"], second_ai)
+
 
 class OutputTokenCeilingTests(unittest.TestCase):
     """max_tokens is the only bound on what one call can cost — F2 lowered

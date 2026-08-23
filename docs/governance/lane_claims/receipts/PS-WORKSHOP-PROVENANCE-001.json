@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-PROVENANCE-001",
+  "candidate_sha": "7fb4a2e8e8df6e4af25e0a2b47392772b262f6fc",
+  "review_type": "independent",
+  "reviewer_ref": "agent:workshop-provenance-independent-review-2026-08-23",
+  "result": "pass",
+  "reviewed_at": "2026-08-23T21:44:53Z",
+  "findings": [
+    {
+      "id": "R1-BLOCKER-byte-budget",
+      "status": "resolved",
+      "severity": "blocker",
+      "summary": "Writing an empty retained-original slot on every session pushed the documented adversarial worst case to exactly the 3072-byte ceiling, so test_true_adversarial_worst_case_still_fits_the_shared_ceiling failed intermittently (reproduced 3 failures in 8 runs, then at '3072 not less than 3072'). Fixed by trimming the trailing slot when empty; re-review measured the 7-element bucket at 3062-3070 versus 3066-3072 with the slot appended, and 20/20 clean runs."
+    },
+    {
+      "id": "R2-MAJOR-refusal-docstring",
+      "status": "resolved",
+      "severity": "major",
+      "summary": "accept_ai_proposal's docstring claimed both texts survive a refusal. Only the member's does. Corrected, and recorded that discarding the proposal is pre-existing behaviour of that screen rather than introduced here."
+    },
+    {
+      "id": "R3-MAJOR-bucket-docstring-stale",
+      "status": "resolved",
+      "severity": "major",
+      "summary": "_bucket_from's docstring still opened 'The 8-element bucket' after the correction made it return 7 - the same stale-summary error class that caused the blocker. Corrected."
+    },
+    {
+      "id": "R4-MAJOR-refusal-message-dead-end",
+      "status": "resolved",
+      "severity": "major",
+      "summary": "The refusal message offered remedies that do not work from the state it appears in; the final draft's 'save what you have now' is a dead end for an anonymous visitor already at the 4-item preview cap. Reduced to the one remedy verified reachable from every such state, with both rejected drafts recorded so a third is not attempted."
+    },
+    {
+      "id": "R5-MAJOR-whitespace-guard-comment",
+      "status": "resolved",
+      "severity": "major",
+      "summary": "The whitespace-guard comment claimed the accepted text 'stands on its own', which is false on a second acceptance, and attributed the non-empty requirement to a SQL CHECK that does not trim. Both corrected."
+    },
+    {
+      "id": "R6-MINOR-test-scope-and-coverage",
+      "status": "resolved",
+      "severity": "minor",
+      "summary": "The refusal branch had no test; two were added, and the first one's docstring was corrected to state that it patches the fit check and therefore proves the refusal branch writes nothing rather than that a real over-budget session reaches it."
+    },
+    {
+      "id": "R7-INFO-spark-and-blank-answer-gaps",
+      "status": "informational",
+      "severity": "minor",
+      "summary": "Two routes by which PeerSlate-generated text can still reach original_member_wording remain open and are deliberately outside this package's declared scope: a Spark-seeded session whose answer began as generated text, and a second acceptance following a blank first one (an empty retained slot cannot be distinguished from 'never accepted' without a sentinel the cookie has no room for). Both are recorded as an explicit Known-limitation block in services/workshop_work_session.py rather than described as solved. Recommended as the first item of a follow-up package."
+    },
+    {
+      "id": "R8-INFO-anonymous-preview-cannot-retain",
+      "status": "informational",
+      "severity": "minor",
+      "summary": "The anonymous preview library row structurally holds one wording, so it cannot retain a separate original. Nothing claims it can, nothing anonymous is canonical or durable, and authored_via is now passed so an AI-assisted preview save is no longer labelled 'Your words, added directly'. Documented at the call site."
+    }
+  ],
+  "evidence_ref": "lane_claims/evidence/PS-WORKSHOP-PROVENANCE-001.md"
+}

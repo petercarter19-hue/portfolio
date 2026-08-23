@@ -1201,8 +1201,30 @@ def update_work_session():
         # Audit fix F6: named from the member's own answer, never from
         # the question PeerSlate asked.
         title = _default_title_from_wording(answer, state["question_text"])
+        # PS-WORKSHOP-PROVENANCE-001. Derived exactly as work_session_save
+        # derives them, because this quick save writes the same kind of
+        # item from the same session state. Previously this path hardcoded
+        # authored_via="typed", so accepting an AI proposal and then
+        # pressing the nearer of the two save buttons filed AI-refined text
+        # as unaided typing, while the other button filed it correctly.
+        # original_answer is non-empty only when a proposal was accepted
+        # over member-authored text; otherwise the member typed this text
+        # and source and canonical wording are identical (the W1 reasoning
+        # in usp_UpdateKnowledgeItemForOwner).
+        quick_authored_via = "ai_assisted_approved" if state["ai_assisted"] else "typed"
+        quick_original_wording = state["original_answer"] or answer
 
         if identity is None:
+            # quick_original_wording is deliberately NOT passed here: a
+            # preview item is a 6-element session row with one wording slot
+            # (services/workshop_demo_library.py), so the anonymous library
+            # structurally cannot hold a second wording. Nothing claims it
+            # can — the preview saved screen shows only a source label — and
+            # nothing anonymous is ever canonical or durable. Passing
+            # authored_via still matters and is done below, because without
+            # it an AI-assisted preview save was labelled "Your words, added
+            # directly".
+            #
             # Audit fix F1: release the work-session bucket first so the
             # answer is not counted twice against the shared cookie budget
             # (see workshop_work_session.take_session_bucket). Restored
@@ -1214,6 +1236,7 @@ def update_work_session():
                 wording=answer,
                 classification="unclassified",
                 status="confirmed",
+                authored_via=quick_authored_via,
             )
             if new_item_key is None:
                 wws.restore_session_bucket(session, released_bucket)
@@ -1235,10 +1258,10 @@ def update_work_session():
                 {
                     "title": title,
                     "approved_wording": answer,
-                    "original_wording": answer,
+                    "original_wording": quick_original_wording,
                     "body_format": "plain",
                     "classification": "unclassified",
-                    "authored_via": "typed",
+                    "authored_via": quick_authored_via,
                     "confirm": True,
                 },
             )
@@ -1519,11 +1542,19 @@ def work_session_review():
         try:
             if review is None:
                 return _render_review_screen(identity=identity, state=state, screen_state="expired")
-            ok, update_error = wws.update_session(
-                session, answer=proposed_wording, context_mask=state["context_mask"]
+            # PS-WORKSHOP-PROVENANCE-001: one atomic call that stores the
+            # proposal, flags the session AI-assisted, AND retains the
+            # member's own pre-acceptance wording (owner decision D1). It
+            # replaces an update_session + mark_ai_assisted pair that wrote
+            # the proposal over the session's only wording slot, so the
+            # member's sentence stopped existing here and
+            # original_member_wording received AI text at save time.
+            ok, update_error = wws.accept_ai_proposal(
+                session,
+                proposed_answer=proposed_wording,
+                context_mask=state["context_mask"],
             )
             if ok:
-                wws.mark_ai_assisted(session)
                 state = wws.read_state(session)
             return _render_review_screen(
                 identity=identity,
@@ -1942,8 +1973,14 @@ def work_session_save():
             idempotency_key,
             {
                 "title": title,
+                # PS-WORKSHOP-PROVENANCE-001. ``wording`` is the exact text
+                # the member approved on the final-review screen and stays
+                # canonical (D1). The retained original is their own
+                # pre-acceptance wording when an AI proposal was accepted;
+                # otherwise they authored this text directly and the two
+                # are legitimately identical.
                 "approved_wording": wording,
-                "original_wording": wording,
+                "original_wording": state["original_answer"] or wording,
                 "body_format": "plain",
                 "classification": classification,
                 "authored_via": authored_via,

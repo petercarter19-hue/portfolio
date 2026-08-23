@@ -9,6 +9,7 @@ test uses a generic fixture member key, never a Pete-specific identifier.
 """
 
 import html
+import json
 import random
 import re
 import shutil
@@ -17,6 +18,8 @@ import tempfile
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
+
+from flask import session as flask_session
 
 from app import app, limiter
 from identity import AuthenticationRequired
@@ -608,6 +611,148 @@ class SaveUnfinishedTests(WorkOnSomethingTestCase):
         fields = args[2]
         self.assertEqual(fields["approved_wording"], "member answer")
         self.assertIs(fields["confirm"], True)
+        # PS-WORKSHOP-PROVENANCE-001: no AI was involved, so the member
+        # typed this text and source and canonical wording are legitimately
+        # identical -- the same reasoning usp_UpdateKnowledgeItemForOwner
+        # states for a directly authored version. This path must NOT change.
+        self.assertEqual(fields["original_wording"], "member answer")
+        self.assertEqual(fields["authored_via"], "typed")
+
+    def _seed_accepted_proposal(self, *, member_wording, ai_wording):
+        """Put the session in the state an accepted AI proposal leaves it in.
+
+        Seeded directly rather than driven through the review routes because
+        this class tests the SAVE path; the acceptance itself is proved end
+        to end in tests/test_workshop_review.py. The shape written here is
+        exactly what wws.accept_ai_proposal produces: the AI text in the
+        answer slot, ai_assisted set, and the member's own pre-acceptance
+        wording retained in the trailing element.
+        """
+        with self.client.session_transaction() as sess:
+            raw = dict(sess.get(wdl.SESSION_KEY) or {})
+            bucket = list(raw["w"])
+            bucket[2] = ai_wording
+            bucket[5] = 1
+            while len(bucket) < 8:
+                bucket.append("")
+            bucket[7] = member_wording
+            raw["w"] = bucket
+            sess[wdl.SESSION_KEY] = raw
+
+    def test_the_quick_save_button_also_retains_the_original_and_records_ai_help(self):
+        """The second save button must agree with the first.
+
+        Two save buttons sit on the same screen. Before this package the
+        nearer one hardcoded authored_via="typed" and passed the answer as
+        both wordings, so accepting an AI rewrite and then pressing it filed
+        AI-refined text as unaided typing with the member's own words gone,
+        while the other button recorded the same text correctly.
+        """
+        member_wording = "My own account of the work I did."
+        ai_wording = "A polished AI rewrite of that account."
+        test_member = member("Test Member", "member-quick-save-provenance")
+        with patch(
+            "workshop_work_routes.get_current_identity", return_value=test_member
+        ), patch(
+            "workshop_work_routes.knowledge_service.list_knowledge_items_for_owner",
+            return_value=KnowledgeItemListResult(items=[CONFIRMED_ROW], total_count=1),
+        ), patch(
+            "workshop_work_routes.knowledge_service.save_knowledge_item_for_owner"
+        ) as mock_save:
+            mock_save.return_value = {
+                "item_key": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+                "saved": True,
+            }
+            self._start(door=wws.DOOR_SOMETHING, thought=member_wording)
+            self._seed_accepted_proposal(
+                member_wording=member_wording, ai_wording=ai_wording
+            )
+            self._update(answer=ai_wording, wk_action="save_to_library")
+
+        fields = mock_save.call_args[0][2]
+        self.assertEqual(fields["approved_wording"], ai_wording)
+        self.assertEqual(fields["original_wording"], member_wording)
+        self.assertNotEqual(fields["original_wording"], fields["approved_wording"])
+        self.assertEqual(fields["authored_via"], "ai_assisted_approved")
+
+    def test_accept_refused_when_full_leaves_the_members_own_wording_untouched(self):
+        """The refusal branch is a core guarantee of this package, so it is
+        tested rather than asserted in a docstring.
+
+        When retaining BOTH the member's wording and the AI proposal will
+        not fit the shared cookie ceiling, accept_ai_proposal must decline
+        and leave the session byte-for-byte as it was.
+
+        Scope, stated honestly: the fit check is patched, so this proves
+        the REFUSAL BRANCH writes nothing and returns the right message. It
+        does not prove that a genuinely over-budget session reaches that
+        branch — SessionByteBudgetTests covers the measurement itself.
+        """
+        member_wording = "The member's own words, which must survive a refusal."
+        with app.test_request_context():
+            flask_session[wdl.SESSION_KEY] = {
+                "w": [wws.DOOR_SOMETHING, 0, member_wording, 0, 1, 0, ""]
+            }
+            before = json.dumps(flask_session[wdl.SESSION_KEY], sort_keys=True)
+            with patch.object(wws, "_fits_after_evicting_spark_cache", return_value=False):
+                ok, message = wws.accept_ai_proposal(
+                    flask_session,
+                    proposed_answer="An AI rewrite that will not fit.",
+                    context_mask=0,
+                )
+            after = json.dumps(flask_session[wdl.SESSION_KEY], sort_keys=True)
+            still_there = wws.read_state(flask_session)["answer"]
+
+        self.assertFalse(ok)
+        self.assertEqual(message, wws.ORIGINAL_RETENTION_FULL_MESSAGE)
+        self.assertEqual(before, after, "a refused acceptance must not write anything")
+        self.assertEqual(still_there, member_wording)
+
+    def test_a_session_that_never_accepted_a_proposal_writes_no_extra_slot(self):
+        """The retained-original slot costs bytes against a ceiling this
+        module is measured to. A session with nothing to retain must write
+        the identical 7-element bucket it wrote before this package, or the
+        documented adversarial worst case moves to exactly the ceiling and
+        test_true_adversarial_worst_case_still_fits_the_shared_ceiling
+        starts failing intermittently -- which is what it did."""
+        self._start(door=wws.DOOR_SOMETHING, thought="seed")
+        with self.client.session_transaction() as sess:
+            self.assertEqual(len(sess[wdl.SESSION_KEY]["w"]), 7)
+        self._update(answer="an ordinary answer with no AI involved")
+        with self.client.session_transaction() as sess:
+            self.assertEqual(len(sess[wdl.SESSION_KEY]["w"]), 7)
+
+    def test_a_pre_provenance_seven_element_bucket_still_saves(self):
+        """A cookie written before this package has 7 elements and no
+        retained original. That is not a broken session and not a lost
+        original -- it positively means no proposal was ever accepted over
+        member text, so the answer is still wholly the member's own. It must
+        degrade to identical source/canonical wording, exactly as the 4->6
+        and 6->7 growths already degrade."""
+        test_member = member("Test Member", "member-legacy-bucket")
+        with patch(
+            "workshop_work_routes.get_current_identity", return_value=test_member
+        ), patch(
+            "workshop_work_routes.knowledge_service.list_knowledge_items_for_owner",
+            return_value=KnowledgeItemListResult(items=[CONFIRMED_ROW], total_count=1),
+        ), patch(
+            "workshop_work_routes.knowledge_service.save_knowledge_item_for_owner"
+        ) as mock_save:
+            mock_save.return_value = {
+                "item_key": "aaaaaaaa-1111-2222-3333-444444444444",
+                "saved": True,
+            }
+            self._start(door=wws.DOOR_SOMETHING, thought="legacy seed")
+            with self.client.session_transaction() as sess:
+                raw = dict(sess.get(wdl.SESSION_KEY) or {})
+                raw["w"] = list(raw["w"])[:7]
+                sess[wdl.SESSION_KEY] = raw
+            self._update(answer="legacy answer", wk_action="save_to_library")
+
+        fields = mock_save.call_args[0][2]
+        self.assertEqual(fields["approved_wording"], "legacy answer")
+        self.assertEqual(fields["original_wording"], "legacy answer")
+        self.assertEqual(fields["authored_via"], "typed")
 
     def test_member_save_unfinished_preserves_text_on_a_database_failure(self):
         test_member = member("Test Member", "member-w2a-2")

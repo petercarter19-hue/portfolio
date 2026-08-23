@@ -41,7 +41,7 @@ stale 4- or 6-element bucket gracefully rather than discarding the session —
 see its own docstring:
 
     [door_code, question_index, answer_text, context_mask, ai_call_count,
-     ai_assisted, opening_thought]
+     ai_assisted, opening_thought, original_answer]
 
 - ``door_code``: one of DOOR_CONTINUE / DOOR_BROUGHT / DOOR_SOMETHING /
   DOOR_SPARK (single-character strings; a distinct namespace from
@@ -83,10 +83,49 @@ see its own docstring:
   brief's per-session cost control). Incremented via ``increment_ai_calls``
   BEFORE each provider call is attempted, never after, so a call that
   fails mid-flight still counts.
-- ``ai_assisted``: 0/1, set true by ``mark_ai_assisted`` once an AI
-  improvement proposal has been accepted into the working answer. Read
-  back at final save (workshop_work_routes.py) to choose
-  ``authored_via='ai_assisted_approved'`` instead of ``'typed'``.
+- ``ai_assisted``: 0/1, set true by ``mark_ai_assisted`` (a Spark seed) or
+  by ``accept_ai_proposal`` once an AI improvement proposal has been
+  accepted into the working answer. Read back at final save
+  (workshop_work_routes.py) to choose ``authored_via='ai_assisted_approved'``
+  instead of ``'typed'``.
+- ``original_answer``: PS-WORKSHOP-PROVENANCE-001. The member's own wording
+  as it stood immediately before the FIRST accepted AI proposal, or ""
+  when no proposal has been accepted over member-authored text. Written
+  only by ``accept_ai_proposal``, and never overwritten by a later
+  acceptance — the member has one set of own words, and an intermediate
+  machine draft is not a second "original". Owner decision D1 (2026-08-01)
+  makes the approved wording canonical *and* requires the original be
+  retained; before this field existed the accepted proposal was written
+  over ``answer``, the only wording slot, so by save time the member's
+  sentence no longer existed and ``knowledge_item_versions``.
+  ``original_member_wording`` — the column its own migration header calls
+  "retained, never overwritten" — received AI text. "" is a positive
+  statement that ``answer`` is still wholly the member's own, so every
+  reader must treat it as ``original_answer or answer`` and never as a
+  lost original.
+
+  **Known limitation, stated plainly.** This package closes the common
+  path — a member writes their own words and accepts a rewrite — but NOT
+  every route by which PeerSlate-generated text can still reach
+  ``original_member_wording``. Two remain, and neither must be described
+  as solved:
+
+    1. A Spark-seeded session starts with the answer set to PeerSlate's own
+       generated prompt text, so there is no earlier member wording to
+       capture and this stays "" until an acceptance occurs. A member who
+       saves that text barely changed stores generated text as their
+       original.
+    2. A session whose pre-acceptance answer was blank captures nothing
+       (see ``accept_ai_proposal``), and because "" cannot be told apart
+       from "never accepted", a SECOND acceptance then captures the first
+       acceptance's AI text as the original.
+
+  In both cases ``authored_via='ai_assisted_approved'`` does record that
+  the item is AI-assisted, so the row never claims to be unaided typing —
+  but the retained "original" is not member-authored either, and nothing
+  on the row distinguishes it from one that is. Closing either needs a
+  change to the Spark entry path or a sentinel this bucket has no room
+  for; both are outside this package's declared scope.
 
 **Byte budget.** MAX_SESSION_BYTES is imported from workshop_demo_library
 (not redefined) because it is now the SHARED ceiling for the whole
@@ -322,9 +361,10 @@ def read_state(session):
     """
     raw = session.get(SESSION_KEY)
     bucket = raw.get("w") if isinstance(raw, dict) else None
-    if not isinstance(bucket, list) or len(bucket) not in (4, 6, 7):
+    if not isinstance(bucket, list) or len(bucket) not in (4, 6, 7, 8):
         return None
     opening_thought = ""
+    original_answer = ""
     if len(bucket) == 4:
         door, question_index, answer, context_mask = bucket
         ai_call_count, ai_assisted = 0, 0
@@ -333,8 +373,17 @@ def read_state(session):
         # Audit fix F2 (2026-08-04) grew the bucket to 7. A 6-element bucket
         # from a cookie written before this slice is NOT "no session" — it is
         # a member mid-answer who simply has no remembered opening thought.
-        if len(bucket) == 7 and isinstance(bucket[6], str):
+        if len(bucket) >= 7 and isinstance(bucket[6], str):
             opening_thought = bucket[6][:MAX_OPENING_THOUGHT_UNITS]
+        # PS-WORKSHOP-PROVENANCE-001 grew the bucket to 8. A 7-element
+        # bucket predates this slice and means exactly one thing: no AI
+        # proposal has been accepted over member-authored text in this
+        # session, so there is no separate original to retain and the
+        # answer is still wholly the member's own. Degrade to "" rather
+        # than to "no session" — the same discipline the 4->6 and 6->7
+        # growths already use.
+        if len(bucket) >= 8 and isinstance(bucket[7], str):
+            original_answer = bucket[7][: MAX_ANSWER_UNITS * 2]
     if door not in ALL_DOORS:
         return None
     if not isinstance(question_index, int) or question_index < 0:
@@ -359,6 +408,15 @@ def read_state(session):
         "ai_call_count": min(ai_call_count, MAX_AI_CALLS_PER_SESSION),
         "ai_assisted": bool(ai_assisted),
         "opening_thought": opening_thought,
+        # The member's own wording as it stood immediately before the FIRST
+        # accepted AI proposal of this session, or "" when no proposal has
+        # been accepted over member-authored text. Never overwritten by a
+        # later acceptance: the point is the member's words, not the
+        # previous machine draft. "" is not "missing" — it is the positive
+        # statement that ``answer`` is still entirely the member's own, and
+        # every caller must therefore read it as ``original_answer or
+        # answer`` rather than treating "" as a lost original.
+        "original_answer": original_answer,
     }
 
 
@@ -537,8 +595,17 @@ def _write_bucket(session, bucket, key="w"):
     session.modified = True
 
 
-def _bucket_from(state, *, answer=None, context_mask=None, ai_call_count=None, ai_assisted=None):
-    """The 7-element bucket for ``state``, with selected fields overridden.
+def _bucket_from(
+    state,
+    *,
+    answer=None,
+    context_mask=None,
+    ai_call_count=None,
+    ai_assisted=None,
+    original_answer=None,
+):
+    """The bucket for ``state``, with selected fields overridden: 8 elements
+    when a retained original exists, otherwise 7.
 
     Audit fix F2 (2026-08-04) added the trailing opening-thought element.
     Four separate call sites each rebuilt the bucket by hand from
@@ -549,7 +616,7 @@ def _bucket_from(state, *, answer=None, context_mask=None, ai_call_count=None, a
     builder, so a field added to the bucket is carried by every write that
     is not deliberately changing it.
     """
-    return [
+    bucket = [
         state["door"],
         state["question_index"],
         state["answer"] if answer is None else answer,
@@ -557,7 +624,30 @@ def _bucket_from(state, *, answer=None, context_mask=None, ai_call_count=None, a
         state["ai_call_count"] if ai_call_count is None else ai_call_count,
         (1 if state["ai_assisted"] else 0) if ai_assisted is None else ai_assisted,
         state["opening_thought"],
+        state["original_answer"] if original_answer is None else original_answer,
     ]
+    # PS-WORKSHOP-PROVENANCE-001: the retained-original slot is written
+    # ONLY when it holds something. An empty trailing element is pure cost
+    # against a ceiling this module is already measured to the byte
+    # against: writing it unconditionally made
+    # test_true_adversarial_worst_case_still_fits_the_shared_ceiling fail
+    # intermittently, because that case has no accepted proposal and so no
+    # original to keep. The signed cookie's size varies a few bytes run to
+    # run with the generated content, so this is a distribution rather than
+    # a number: measured over 20 runs of the documented adversarial case
+    # (4x400-char library items plus a maximal answer), the 7-element
+    # bucket lands at 3062-3070 bytes and never reaches the 3072 ceiling,
+    # while appending the empty slot lands at 3066-3072 and reaches it in
+    # roughly one run in seven. The guard admits size <= ceiling but the
+    # test asserts strictly less, so equality is a failure.
+    # Trimming means a session that has never accepted a
+    # proposal writes the identical 7-element bucket it wrote before this
+    # package existed, and only a session that genuinely has a second
+    # wording pays for one. read_state's 7-element branch already reads
+    # that as original_answer == "".
+    if not bucket[7]:
+        bucket.pop()
+    return bucket
 
 
 def start_session(session, *, door, answer, opening_thought=""):
@@ -580,6 +670,12 @@ def start_session(session, *, door, answer, opening_thought=""):
         return False, DOOR_UNAVAILABLE_MESSAGE, None
 
     echo = " ".join(str(opening_thought or "").split())[:MAX_OPENING_THOUGHT_UNITS]
+    # PS-WORKSHOP-PROVENANCE-001: deliberately still 7 elements. A session
+    # that has just begun has no accepted AI proposal, so there is no second
+    # wording to retain, and an empty trailing slot is pure cost against a
+    # ceiling measured to the byte here. _bucket_from trims the same slot
+    # for the same reason; read_state reads a 7-element bucket as
+    # original_answer == "".
     bucket = [door, question_index, answer, 0, 0, 0, echo]
     if not _fits_after_evicting_spark_cache(session, bucket):
         # Audit fix F2: the echo is the ONLY thing here that is optional, so
@@ -681,6 +777,118 @@ def mark_ai_assisted(session):
     bucket = _bucket_from(state, ai_assisted=1)
     if not _fits_after_evicting_spark_cache(session, bucket):
         return False, SESSION_FULL_MESSAGE
+
+    _write_bucket(session, bucket)
+    return True, None
+
+
+ORIGINAL_RETENTION_FULL_MESSAGE = (
+    "Your own wording is safe and still here. There is not enough room in "
+    "this session to keep both it and PeerSlate's suggestion, and PeerSlate "
+    "will not drop your words to make space. Shortening your answer will "
+    "make room."
+)
+# Why this wording, precisely. Two rounds of independent review rejected
+# earlier drafts of this message, both times for naming a remedy that does
+# not work from the state the message appears in:
+#
+#   - "start fresh"                 destroys the member's answer;
+#   - "try Improve with AI again"   costs another provider call and meets
+#                                   the identical ceiling;
+#   - "save what you have now"      looked safe, but an anonymous visitor
+#                                   already at the 4-item preview cap
+#                                   cannot save either, so in the very case
+#                                   this refusal exists for it is a dead end.
+#
+# Only shortening the answer reliably frees bytes in every state that can
+# reach this message, so it is the only remedy named. A message that sends
+# someone down a route that cannot work is worse than no message. The first
+# clause states the fact that matters most: nothing of theirs was lost.
+
+
+def accept_ai_proposal(session, *, proposed_answer, context_mask):
+    """Accept an AI improvement proposal into the working answer while
+    RETAINING the member's own pre-acceptance wording.
+
+    PS-WORKSHOP-PROVENANCE-001. This replaces the previous
+    ``update_session(answer=proposed)`` + ``mark_ai_assisted(...)`` pair at
+    the accept call site, for two reasons.
+
+    **Truth.** Owner decision D1 (2026-08-01) makes the member-approved
+    wording canonical *and* requires the member's original words to be
+    retained; doc 16 records retention as "required and not optional", and
+    it is what makes the deliberate absence of an AI-changed badge honest.
+    The old pair wrote the proposal over ``answer``, the session's only
+    wording slot, so by save time the member's own sentence no longer
+    existed anywhere and ``original_member_wording`` received AI text.
+    ``original_answer`` is captured here, at the one moment the pre-
+    acceptance text is still in hand.
+
+    **Atomicity.** Two writes could half-succeed: the first could store the
+    proposal and the second could then be refused by the byte ceiling,
+    leaving a session whose answer is AI text that is NOT flagged
+    ai_assisted and whose original was never captured — silently the exact
+    corruption this package exists to remove. One bucket, one fit check,
+    one write.
+
+    The first original wins and is never overwritten. A member who accepts,
+    edits, and accepts again has one set of own words; the intermediate
+    machine draft is not a second "original" and must not displace it.
+
+    Returns ``(ok, error_message)``. ``ok`` is ``False`` with
+    ``error_message`` ``None`` when there is no active session (the
+    caller's existing expired-session branch). A refusal never partially
+    writes and never silently drops the original: if retaining both does
+    not fit the shared cookie budget, the acceptance is declined with
+    ``ORIGINAL_RETENTION_FULL_MESSAGE`` and the session is left byte-for-
+    byte as it was, so the member's OWN wording — the thing this package
+    exists to protect — is untouched and still in the answer field.
+
+    What a refusal does cost the member: the AI's proposed text is not
+    re-rendered, so they would have to ask for the improvement again. That
+    is the pre-existing behaviour of this screen (the previous
+    ``update_session`` refusal path discarded it in exactly the same way)
+    and this function does not make it worse — but it is a real cost and
+    the message must not pretend otherwise. Do not claim here that both
+    texts survive a refusal; only the member's does.
+    """
+    state = read_state(session)
+    if state is None:
+        return False, None
+    if utf16_length(proposed_answer) > MAX_ANSWER_UNITS:
+        return False, CAP_ANSWER_MESSAGE
+
+    # "" means "answer is still wholly the member's own", so this is the
+    # first acceptance and the current answer is what must be retained.
+    #
+    # A blank or whitespace-only pre-acceptance answer is NOT an original:
+    # the member had written nothing, so there is no earlier wording of
+    # theirs to keep, and storing whitespace would both record it as their
+    # "own words" and be rejected downstream (the service's own non-empty
+    # validation runs before SQL, on a value it does not trim).
+    #
+    # What this does NOT fix, stated because the rest of this module is
+    # explicit about the same class of gap: "" is indistinguishable from
+    # "never accepted anything", so on a SECOND acceptance the expression
+    # below reads the AI text written by the first acceptance as the
+    # candidate original and retains it. A member who accepts twice from a
+    # blank start therefore still ends with PeerSlate-generated text in
+    # original_member_wording. Distinguishing the two states needs a
+    # sentinel this bucket has no room for, so it belongs with the
+    # Spark-seeded gap in the module docstring's Known-limitation block
+    # rather than being half-solved here.
+    candidate_original = state["original_answer"] or state["answer"]
+    original_answer = candidate_original if candidate_original.strip() else ""
+
+    bucket = _bucket_from(
+        state,
+        answer=proposed_answer,
+        context_mask=int(context_mask) & _context_full_mask(),
+        ai_assisted=1,
+        original_answer=original_answer,
+    )
+    if not _fits_after_evicting_spark_cache(session, bucket):
+        return False, ORIGINAL_RETENTION_FULL_MESSAGE
 
     _write_bucket(session, bucket)
     return True, None
