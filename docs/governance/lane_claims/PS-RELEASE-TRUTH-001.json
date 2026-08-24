@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-RELEASE-TRUTH-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Record the verified production release fact for the PS-WORKSHOP-PROVENANCE-001 deployment. Manual run 1512 deployed main 5436e423b928f4f3d290e840c95c6a37528ce1c9 with forceProductionDeploy=true and schemaAction=none; the live /healthz release is f21b9745e9e67d2ac958e586, which equals release_id_for_build(5436e423..., 1512), and the schema, candidate, and independently gated maintenance stages all skipped with zero Checkpoint.Approval records. CURRENT_BASELINE.yaml still records the superseded rollback commit 00f73f86887d80645524626a0def44e52f79c9c9 from pipeline 1453, so the repository asserts a production state that no longer exists. Update the baseline authority block and the pointers in tests/test_operational_readiness.py that pin it, in one commit, because they move in lockstep and a mismatch turns main red. Scope is this bookkeeping only: no runtime, schema, configuration, deployment, enablement, or Workshop product change, and no other governance record.",
   "assignment": "implementation",
   "writer_ref": "session:faacd1b7-1438-4dca-aff5-aaae1e108c46",
@@ -28,6 +28,6 @@
   "review_requirement": "self",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "ed32f23c0e86bbd6f58cbadd6d86050b379656b1",
+  "closed_at": "2026-08-24T01:18:00Z"
 }
