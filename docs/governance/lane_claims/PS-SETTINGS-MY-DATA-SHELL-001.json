@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-MY-DATA-SHELL-001",
+  "state": "active",
+  "outcome": "Deliver Slice A only: a truthful read-only Settings and My Data shell for every signed-in member. Preserve the existing Settings route, server-derived identity, unavailable fallback, visual system, components, typography, tokens, working navigation, and POST sign-out; repair the duplicate main landmark and main-content ID; replace owner-era wording; state Private only as the current product rule rather than a saved preference; and distinguish current, upcoming, unavailable, and unresolved data truth without adding schema, storage, preferences, export jobs, deletion or closure behavior, routes, navigation, JavaScript, fake controls, a second canonical store, Journal behavior, or a material visual direction. Slices B through F remain separate, inactive, just-in-time packages.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/slice_a_writer",
+  "branch": "work/2026-08-24-settings-my-data-shell-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "194b9cab2b892d6a6ffd76cee30317cda94ae39a",
+  "owner_outcome_ref": "session:01a0355e-d5e1-7ea0-8262-94afda9beff0/owner-direction:2026-08-24/settings-my-data-slice-a-through-merge",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-MY-DATA-SHELL-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-MY-DATA-SHELL-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-MY-DATA-SHELL-001.json",
+    "docs/governance/PACKAGE_REGISTRY.json",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/README.md",
+    "templates/owner_settings.html",
+    "static/css/owner-app.css",
+    "tests/test_owner_settings.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-MY-DATA-SHELL-001.md"
+  ],
+  "domains": [
+    "governance:initiative:settings-my-data-shell",
+    "governance:package-registry:settings-my-data-shell",
+    "runtime:member-settings:my-data-shell",
+    "testing:member-settings:my-data-shell"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
