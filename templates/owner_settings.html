@@ -4,18 +4,60 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}">
+<style>
+    .owner-app__panel--settings dd {
+        overflow-wrap: anywhere;
+    }
+
+    .owner-app__panel--settings .owner-app__section {
+        margin-top: 2.5rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(10, 27, 54, 0.14);
+    }
+
+    .owner-app__panel--settings .owner-app__section h2 {
+        margin: 0;
+        font: 600 clamp(1.75rem, 4vw, 2.4rem)/1.1 Newsreader, serif;
+    }
+
+    .owner-app__panel--settings .owner-app__section > p {
+        max-width: 58ch;
+        margin: 0.85rem 0 0;
+        font: 400 1rem/1.65 Inter, sans-serif;
+    }
+
+    .owner-app__panel--settings .owner-app__status--data {
+        grid-template-columns: 1fr;
+        margin-bottom: 0;
+    }
+
+    @media (max-width: 540px) {
+        .owner-app__panel--settings {
+            padding-inline: 1.25rem;
+        }
+
+        .owner-app__panel--settings .owner-app__status {
+            grid-template-columns: 1fr;
+        }
+
+        .owner-app__panel--settings .owner-app__secondary,
+        .owner-app__panel--settings .owner-app__sign-out {
+            width: 100%;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<main class="owner-app" id="main-content">
-    <section class="owner-app__panel" aria-labelledby="owner-settings-title">
-        <p class="owner-app__eyebrow">Private owner workspace</p>
-        <h1 id="owner-settings-title">Settings</h1>
+<div class="owner-app">
+    <section class="owner-app__panel owner-app__panel--settings" aria-labelledby="settings-title">
+        <p class="owner-app__eyebrow">Signed-in member settings</p>
+        <h1 id="settings-title">Settings</h1>
         <p>
             Review the account information PeerSlate currently uses to identify you.
         </p>
 
-        <dl class="owner-app__status" aria-label="Account information">
+        <dl class="owner-app__status" aria-label="Account and identity">
             <div>
                 <dt>Display name</dt>
                 <dd>{{ member.display_name or 'PeerSlate member' }}</dd>
@@ -29,17 +71,59 @@
                 <dd>Signed in</dd>
             </div>
             <div>
-                <dt>Default audience</dt>
-                <dd>Private</dd>
+                <dt>Privacy rule</dt>
+                <dd>
+                    Private by default. This is PeerSlate's current product rule,
+                    not a saved member preference.
+                </dd>
             </div>
         </dl>
 
-        <p>
-            <strong>Upcoming:</strong> Profile, privacy, and sign-in preferences
-            will appear here as each becomes available.
-        </p>
+        <section class="owner-app__section" aria-labelledby="my-data-title">
+            <h2 id="my-data-title">My Data</h2>
+            <p>
+                This read-only summary separates what PeerSlate supports today
+                from work that is upcoming, unavailable, or unresolved.
+            </p>
 
-        <div class="owner-app__actions" aria-label="Owner settings actions">
+            <dl class="owner-app__status owner-app__status--data" aria-label="My Data status">
+                <div>
+                    <dt>Account and identity</dt>
+                    <dd><strong>Current.</strong> The account facts shown above identify this signed-in member.</dd>
+                </div>
+                <div>
+                    <dt>Member-created records</dt>
+                    <dd>
+                        <strong>Current.</strong> Member-created records are managed in their
+                        existing areas using only the item-level actions already available there.
+                    </dd>
+                </div>
+                <div>
+                    <dt>Preferences and consents</dt>
+                    <dd>
+                        <strong>Upcoming.</strong> PeerSlate will not show a preference or consent
+                        control until it has real behavior behind it.
+                    </dd>
+                </div>
+                <div>
+                    <dt>Account-wide export, deletion, and closure</dt>
+                    <dd>
+                        <strong>Not available today.</strong> PeerSlate does not currently provide
+                        these account-wide actions.
+                    </dd>
+                </div>
+                <div>
+                    <dt>Retention, backups, and provider processing</dt>
+                    <dd>
+                        <strong>Not yet resolved.</strong> PeerSlate has no consolidated retention
+                        schedule or complete-erasure promise covering backups and provider
+                        processing.
+                    </dd>
+                </div>
+            </dl>
+        </section>
+
+        <div class="owner-app__actions" aria-label="Member settings actions">
             <a class="owner-app__secondary" href="{{ url_for('auth.owner_workspace') }}">Back to workspace</a>
         </div>
 
@@ -47,5 +131,5 @@
             <button class="owner-app__sign-out" type="submit">Sign out</button>
         </form>
     </section>
-</main>
+</div>
 {% endblock %}

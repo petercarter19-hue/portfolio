@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-MY-DATA-SHELL-001",
+  "candidate_sha": "ee799ff59bae63b69c895c9fa6a5be189ac702a3",
+  "review_type": "independent",
+  "reviewer_ref": "agent:grok-settings-my-data-shell-2026-08-24",
+  "result": "pass",
+  "reviewed_at": "2026-08-24T23:21:20Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-MY-DATA-SHELL-001.md"
+}

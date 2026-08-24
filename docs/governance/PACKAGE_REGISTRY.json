@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-21",
+  "updated_at": "2026-08-24",
   "classification_checkpoint": "c0450dbd675554e7363c8fc262a6d4f8bf2c6921",
   "current_checkpoint_at_creation": "fdb71c604f81d305b971775bd28aeac964231ebe",
   "authority_note": "This is a complete rationalization index, not delivery authority. CURRENT_LANES.json and CURRENT_BASELINE.yaml remain authoritative for current lifecycle and release state.",
@@ -69,6 +69,7 @@
       "PS-RULES-001",
       "PS-SEARCH-DARK-PROOF-001",
       "PS-SEC-EDGE-001",
+      "PS-SETTINGS-MY-DATA-SHELL-001",
       "PS-SHELL-001",
       "PS-SIGNIN-EXPERIENCE-001",
       "PS-SIGNIN-MEMBER-ARRIVAL-001",
@@ -146,11 +147,11 @@
     ]
   },
   "counts": {
-    "current_protect": 63,
+    "current_protect": 64,
     "future_finish": 24,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 122
+    "total": 123
   }
 }
