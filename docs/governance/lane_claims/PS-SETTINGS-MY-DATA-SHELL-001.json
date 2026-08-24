@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-MY-DATA-SHELL-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver Slice A only: a truthful read-only Settings and My Data shell for every signed-in member. Preserve the existing Settings route, server-derived identity, unavailable fallback, visual system, components, typography, tokens, working navigation, and POST sign-out; repair the duplicate main landmark and main-content ID; replace owner-era wording; state Private only as the current product rule rather than a saved preference; and distinguish current, upcoming, unavailable, and unresolved data truth without adding schema, storage, preferences, export jobs, deletion or closure behavior, routes, navigation, JavaScript, fake controls, a second canonical store, Journal behavior, or a material visual direction. Slices B through F remain separate, inactive, just-in-time packages.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/slice_a_writer",
@@ -33,6 +33,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "5cbfaf0e1cd6e8aae4e5649c75455137e21c9598",
+  "closed_at": "2026-08-24T23:41:20Z"
 }
