@@ -831,3 +831,43 @@ can push it all the way to deployment."
 - Management and architecture grant no repository, credential, merge, release,
   deployment, or production authority. Routine or simple Bounded work may
   remain self-managed when another manager would only duplicate review.
+
+## 2026-08-23 - Activate My Opportunities P0 architecture as private member-benefit evidence-building
+
+- Owner decision (Pete), recorded through the active
+  `docs/governance/lane_claims/PS-MY-OPPORTUNITIES-001.json` claim's
+  `owner_outcome_ref`
+  `session:01a02f42-15ac-7d92-a2a9-60b7e800c388/owner-approval:2026-08-23/my-opportunities-p0-through-merge`:
+  produce and independently review one repository-grounded whole-system My
+  Opportunities architecture and final child graph under parent
+  `PS-MY-OPPORTUNITIES-001`, phase `P0 — architecture`.
+- Constitutional and route interpretation: My Opportunities is evidence-building
+  for private member benefit — current-opportunity discovery and strict,
+  source-linked qualification verification. It must remain outside a public job
+  board, recruiter-first marketplace, public listing index, application
+  product, and paid-relevance system. This is recorded as consistent with
+  Constitution v3.0's "not a job board, recruiter-first marketplace" locked
+  boundary and its "member benefit before engagement" rule. P0 is
+  documentation-only evidence-building and does not move runtime Qualification
+  Alignment ahead of the Roadmap's "Later, after evidence" placement.
+- Licensed-feed discovery remains architecturally and legally separate from
+  member-uploaded URL/job-description handling. Site Rules section 3 continues
+  to govern the latter: a privately uploaded external job description may
+  support private Qualification Alignment but is never published, indexed,
+  recommended, or converted into a listing.
+- P0 maps the current Opportunity Slate v2 route, the legacy configuration
+  rollback, the remaining v2 capability stages, and the unresolved
+  continuation/current-use breakage, and recommends the integration/capability
+  target and dependency. It selects and modifies no target. The Opportunity
+  Slate target remains an open owner decision at architecture acceptance.
+- Boundary: Protected delivery path, documentation-only surfaces
+  (`docs/governance/DECISIONS.md`, `docs/initiatives/PS-MY-OPPORTUNITIES-001/`,
+  and the package's claim/receipt/evidence records), independent review
+  required, repository authority `through_merge` for the independently reviewed
+  P0 documentation PR only, production authority withheld. Work stops before
+  runtime, provider contact/selection, spending, schema, infrastructure, UI,
+  migration, merge-to-runtime, deployment, enablement, cutover, or any
+  production action.
+- This durable entry is required before architecture acceptance and before any
+  runtime child. It records the owner decision; it grants no authority beyond
+  the active claim.
