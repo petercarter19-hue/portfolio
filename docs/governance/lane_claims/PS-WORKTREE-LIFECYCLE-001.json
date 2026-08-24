@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKTREE-LIFECYCLE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement the owner-approved PeerSlate worktree-growth prevention workflow: one durable full worktree per active package; read-only review through Azure or diffs by default; one permanent, lease-guarded sparse control workspace that may also serve runnable verification when isolation is genuinely required; an atomic local creator and registry replacing ad hoc git worktree add; same-task retirement or reset for successful temporary isolation; and external custody with verified manifests for bulky generated evidence where practical. Preserve all pre-existing worktrees, branches, refs, tasks, transcripts, recovery material, and unrelated files. Do not migrate existing evidence, clean up legacy resources, deploy, mutate schema or configuration, or take production action.",
   "assignment": "implementation",
   "writer_ref": "session:01a02f59-12ea-78b2-9b64-a4f7d4796b22",
@@ -43,6 +43,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "5987e676b38ee8ad049cdcf2945e8c49a4715887",
+  "closed_at": "2026-08-24T00:37:47Z"
 }
