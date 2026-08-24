@@ -871,3 +871,49 @@ can push it all the way to deployment."
 - This durable entry is required before architecture acceptance and before any
   runtime child. It records the owner decision; it grants no authority beyond
   the active claim.
+
+## 2026-08-24 - Accept the My Opportunities P0 architecture under owner-delegated program-manager decisions
+
+- Pete directed the Codex program manager
+  (`session:01a02f42-15ac-7d92-a2a9-60b7e800c388`): "I trust your decision
+  making, so please give me a handoff to answer all these and move forward the
+  best way with this package with Claude." The dispositions below are therefore
+  **owner-delegated program-manager selections adopted by Pete**, not a claim
+  that Pete personally authored each technical clause.
+- Accepted the P0 architecture merged to `main` as
+  `09262ea819f4a9a643a142a7a28a704de3fc839f` (independently reviewed candidate
+  `e040677f69b0fabf4ca97998dfcc867f1b55eec3`, zero findings).
+- REC-01 accepted with the conservative dependency: `C7` targets Opportunity
+  Slate v2; v1 is configuration rollback only; `C7` waits for a meaningful
+  review-capable v2 workflow and resolution of the current intake/workbench
+  breakage, re-verifying the real flag and capability state at activation.
+- REC-02 accepted: Azure SQL canonical truth; Azure AI Search only as a
+  rebuildable shared discovery projection with canonical truth outside the
+  index, local fencing, and a truthful SQL fallback. Architecture selection
+  only - it asserts no existing capacity and grants no spending, provisioning,
+  configuration, migration, schema, deployment, or enablement authority, which
+  return for separate approval before any external commitment. Recorded before
+  `C2` activates.
+- REC-03, REC-04, REC-05, REC-06, REC-07 accepted as recommended.
+- REC-08: the isolated optional `C13` design is accepted; enablement is
+  deferred. `C13` remains inactive, disabled, and unauthorized; permitted
+  source classes and retention rights remain later owner decisions;
+  paste/upload in `C10` remains unconditional.
+- Accepted the strict one-active-child graph exactly as written:
+  `C1 -> C2 -> C3 -> C5 -> C4 -> C6 -> C10 -> C7 -> C8 -> C11 -> C12 -> C9`.
+  `C11` stays provider/rights-gated and mandatory before any Level 3
+  licensed-feed operation; `C12` and `C13` are genuinely skippable; `C9` may
+  run Level 1-2 after `C8` using the governed pause/resume sequence before
+  Level 3.
+- Every named deferral is preserved unresolved, including provider identity and
+  spending, evidence-strength policy, freshness and closure thresholds,
+  company-context providers, URL-fetch enablement, known-unmet treatment,
+  async/queue technology and budgets, migration/cutover/rollback and the
+  release boundary, production activation, and the corrected desktop/iPad
+  artwork. The exactly-two-row search invariant remains binding and its
+  geometry quarantine remains deferred to `C8`; Original ChatGPT creates that
+  visual authority and Pete accepts it.
+- Architecture acceptance activates no child and grants no implementation,
+  provider, spending, schema, infrastructure, visual, merge-to-runtime,
+  deployment, enablement, cutover, or production authority. The next program
+  step is a separately activated `C1` (`PS-MYOPP-SUPPLY-RIGHTS-001`).

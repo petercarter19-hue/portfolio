@@ -8,33 +8,44 @@ implementation child)
 the external R3 activation candidate and this package)
 **Architecture writer:** Claude Fable 5, session
 `bead6626-b340-4586-85d4-7f4002a97cf6` (the claim's `writer_ref`)
-**Independent reviewer (actual):** Claude Opus 5 session
-`0ce281ff-59fe-4ea3-b661-82d1111d74e1`. The model, Claude Opus 5, was
-selected by `docs/AI_MODEL_AND_ROLE_ROUTING.md`; the exact session was bound
-by the Codex program manager session
-`01a02f42-15ac-7d92-a2a9-60b7e800c388`. That session reviewed candidate
-`d3d5fc036585d08f554143fa7d48c40b6852f1f2`, returned one finite correction
-pass, and then returned an **independent pass** on the corrected candidate
-`317d4a60634bb38c59c6d716c8487ce075327cb5`. The receipt/evidence tail
-recorded that pass at branch tip
-`b5c868f63709f8f9445d73205bde0707f9060c46`; Azure PR 605 then failed
-required build 1513 solely on package-registry admission — not on the
-architecture review. After the governed pause, the separate registry repair
-package, and the resume, this branch was reconciled with current
-`origin/main` and that pre-reconciliation receipt/evidence tail was removed.
-The current synchronized candidate is **review-pending with no current
-receipt or evidence file**: renewed exact-SHA review by the same reviewer
-session is required, and its receipt will be the durable repository record.
-**Base SHA:** `958727c54832d700f3fd1628381bc5e3b5ce7543` (equal to
-`origin/main` at writing time)
-**Branch:** `work/2026-08-23-my-opportunities-p0-architecture`
-**Claim:** `docs/governance/lane_claims/PS-MY-OPPORTUNITIES-001.json`
-(`state: active`, `assignment: implementation` — documentation implementation,
-Protected path, `review_requirement: independent`,
-`repository_authority: through_merge`, `production_authority: withheld`)
-**Owner decision record:** `docs/governance/DECISIONS.md`, entry
+**Independent review and merge (complete):** Claude Opus 5 session
+`0ce281ff-59fe-4ea3-b661-82d1111d74e1` — the model selected by
+`docs/AI_MODEL_AND_ROLE_ROUTING.md`, the exact session bound by the Codex
+program manager session `01a02f42-15ac-7d92-a2a9-60b7e800c388` — reviewed
+candidate `d3d5fc036585d08f554143fa7d48c40b6852f1f2`, returned one finite
+correction pass, passed the corrected candidate
+`317d4a60634bb38c59c6d716c8487ce075327cb5` (tail `b5c868f6…`), and — after
+Azure PR 605 build 1513 failed solely on package-registry admission, the
+governed pause, the separate Routine registry-repair package, the resume,
+and the two-merge reconciliation with then-current `origin/main` — returned
+a renewed **independent pass with zero findings** on exact candidate
+`e040677f69b0fabf4ca97998dfcc867f1b55eec3`. Its receipt/evidence tail was
+recorded at branch tip `90d9d0b6e83c78ed7ae750eb91b8ff1ef808c275`, and
+Azure PR 605 squash-merged the P0 architecture to `main` as
+`09262ea819f4a9a643a142a7a28a704de3fc839f` under normal policy. The merged
+receipt is the durable repository record of that review.
+**P0 base SHA (historical):** `958727c54832d700f3fd1628381bc5e3b5ce7543`
+(`origin/main` at P0 activation)
+**P0 branch (historical; preserved for squash-byte proof):**
+`work/2026-08-23-my-opportunities-p0-architecture`
+**P0 claim:** `docs/governance/lane_claims/PS-MY-OPPORTUNITIES-001.json` —
+**closed** with `merged_sha 09262ea819f4a9a643a142a7a28a704de3fc839f`
+**Current package (this candidate):**
+`PS-MY-OPPORTUNITIES-ARCHITECTURE-ACCEPTANCE-001` — the Protected,
+documentation-only acceptance recording on branch
+`work/2026-08-24-my-opportunities-architecture-acceptance-001`, activated
+from main `f13d0fe6a408e694f7e600b065907463bf39f5f0`, same writer
+(`writer_ref session:bead6626-b340-4586-85d4-7f4002a97cf6`),
+`review_requirement: independent`, `repository_authority: through_merge`,
+`production_authority: withheld`. The acceptance decisions are recorded in
+this candidate (docs 15/18 and `DECISIONS.md`), but **this acceptance
+package itself still awaits exact-SHA independent review and merge** — it
+has no receipt or evidence file yet.
+**Owner decision records:** `docs/governance/DECISIONS.md`, entries
 `2026-08-23 - Activate My Opportunities P0 architecture as private
-member-benefit evidence-building`
+member-benefit evidence-building` and `2026-08-24 - Accept the My
+Opportunities P0 architecture under owner-delegated program-manager
+decisions`
 
 ## Authority boundaries
 
@@ -45,8 +56,11 @@ member-benefit evidence-building`
   edit. No provider research, contact, selection, licensing, or spending. No
   Azure or production access. No merge-to-runtime, deployment, enablement,
   cutover, deletion, or live claim.
-- The independently reviewed P0 documentation PR may proceed through merge
-  under the claim. Everything beyond that is withheld.
+- The independently reviewed P0 documentation PR proceeded through merge
+  under the P0 claim (Azure PR 605 → main `09262ea8…`; claim closed). The
+  acceptance package's independently reviewed documentation PR may likewise
+  proceed through merge under its own claim. Everything beyond repository
+  merge — implementation, deployment, enablement, production — is withheld.
 - Architecture acceptance never grants runtime implementation. Every
   `C1`–`C13` child requires its own later claim, activation, and review.
 - The external R3 package
@@ -126,34 +140,41 @@ into a listing.
 | 15 | 15 — Decision register | `15_DECISION_REGISTER.md` |
 | 16 | 16 — End-to-end traceability | `16_TRACEABILITY_MATRIX.md` |
 | 17 | Completion record | `17_ARCHITECTURE_COMPLETION_REPORT.md` |
+| 18 | Architecture acceptance record | `18_ARCHITECTURE_ACCEPTANCE.md` |
 
 ## Current verdict
 
-The sixteen required outputs passed independent review at candidate
-`317d4a60634bb38c59c6d716c8487ce075327cb5` — present, mutually consistent,
-repository-grounded at the exact base SHA, traceable to the required
-functional/failure/proof coverage, and explicit about owner decisions versus
-recommendations versus deferrals. After the post-CI reconciliation with
-current `origin/main` (temporary registry anchor removed; stale
-pre-reconciliation receipt/evidence removed; only this README and
-`17_ARCHITECTURE_COMPLETION_REPORT.md` status text refreshed), the
-synchronized branch tip is a **review-pending candidate**: substantive
-documents 01–16 and the durable `DECISIONS.md` entry are unchanged from the
-independently passed state, and renewed exact-SHA review is required before
-any receipt, merge admission, or PR completion. The full reasoning and honest
-limitations are in `17_ARCHITECTURE_COMPLETION_REPORT.md`.
+**P0 architecture is complete, independently reviewed, merged, and accepted.**
+
+- The sixteen required outputs passed independent review with zero findings
+  (reviewed candidate `e040677f69b0fabf4ca97998dfcc867f1b55eec3`, reviewer
+  session `0ce281ff-59fe-4ea3-b661-82d1111d74e1`).
+- The architecture merged to `main` as
+  `09262ea819f4a9a643a142a7a28a704de3fc839f` (Azure PR 605, normal squash, no
+  policy bypass, `[skip ci]` documentation closeout). Nothing was deployed and
+  production authority remains withheld.
+- The `PS-MY-OPPORTUNITIES-001` claim is **closed** with that `merged_sha`;
+  the reviewed implementation branch is preserved for squash-byte proof.
+- Architecture acceptance is recorded in `18_ARCHITECTURE_ACCEPTANCE.md`:
+  REC-01 through REC-08 are resolved in `15_DECISION_REGISTER.md` §2 and the
+  doc 14 child graph is accepted exactly as written (doc 14 unchanged).
+
+Acceptance is a decision record, not permission to build. No implementation
+child is authorized, and every named deferral in `15_DECISION_REGISTER.md`
+§3 remains open with its gate — provider identity and spending,
+evidence-strength policy, freshness and closure thresholds, company context,
+URL-fetch enablement, migration/cutover/rollback, production activation, and
+the corrected desktop/iPad artwork behind the binding two-row search
+invariant.
 
 ## Exact next step
 
-The reconciled candidate returns through the Codex program manager to the
-same independent reviewer — Claude Opus 5 session
-`0ce281ff-59fe-4ea3-b661-82d1111d74e1` (model selected by the routing
-standard; exact session bound by the manager) — for renewed read-only review
-against the exact pushed SHA of this branch. Only after that renewed pass
-does the writer re-add the review receipt (the durable repository record of
-the review) and the fixed runtime-inert evidence file, run the merge
-preflight, and complete the already-open Azure PR 605 (no new PR). PR 605
-must not be completed before the renewed independent pass and merge
-admission. Merge is documentation-only (`[skip ci]` closeout applies). No
-deployment, enablement, cutover, or production action follows from that
-merge.
+The `PS-MY-OPPORTUNITIES-ARCHITECTURE-ACCEPTANCE-001` candidate returns
+through the Codex program manager to an independent reviewer for exact-SHA
+review. Only after that pass does its writer add the review receipt and the
+fixed runtime-inert evidence file, run the merge preflight, and merge.
+
+After that package merges and closes, the next program step is a
+**separately activated** `C1` (`PS-MYOPP-SUPPLY-RIGHTS-001`) — documentation
+only, pre-REC-02-safe, with no provider contact, selection, or spending. No
+child is activated by this acceptance.

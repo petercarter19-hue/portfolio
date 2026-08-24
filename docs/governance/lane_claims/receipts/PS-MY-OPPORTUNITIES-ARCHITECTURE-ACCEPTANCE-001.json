@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-MY-OPPORTUNITIES-ARCHITECTURE-ACCEPTANCE-001",
+  "candidate_sha": "a2b444d20622abdc1ba93696379629d2ac08f263",
+  "review_type": "independent",
+  "reviewer_ref": "session:0ce281ff-59fe-4ea3-b661-82d1111d74e1",
+  "result": "pass",
+  "reviewed_at": "2026-08-24T21:25:08Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MY-OPPORTUNITIES-ARCHITECTURE-ACCEPTANCE-001.md"
+}

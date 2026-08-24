@@ -1,9 +1,11 @@
 # 15 — Decision register
 
-Four strictly separated categories. Nothing in category B is treated as
-accepted anywhere in this package; each names its evidence and alternatives.
-Status vocabulary: `accepted` (owner), `decision_pending` (recommended,
-awaiting Pete), `deferred` (safe, gated), `blocker` (none exist).
+Four strictly separated categories. Category B was authored as
+recommendations and was **resolved at the 2026-08-24 architecture
+acceptance** (§2); no `decision_pending` item remains anywhere in this
+register. Status vocabulary: `accepted` (owner or owner-delegated),
+`decision_pending` (historical: recommended, then awaiting Pete — now an
+empty state), `deferred` (safe, gated — §3), `blocker` (none exist).
 
 ## 1. Owner decisions already made (category A — recorded, binding)
 
@@ -23,13 +25,38 @@ awaiting Pete), `deferred` (safe, gated), `blocker` (none exist).
 | First credible live private-sector release requires ≥1 owner-approved licensed commercial feed | R3 (accepted release gate) |
 | Warm editorial visual character; near-black role titles; true mobile reflow | R3/V4 (accepted) |
 | Program manager: Codex session `01a02f42-15ac-7d92-a2a9-60b7e800c388` | Pete's selection (R3-1) |
+| Architecture acceptance of the merged P0 (`09262ea8…`): REC-01–REC-08 dispositions in §2 and the doc 14 child graph as written | Owner-delegated Codex PM decision adopted by Pete; `18_ARCHITECTURE_ACCEPTANCE.md`; `DECISIONS.md` 2026-08-24 entry |
 
-## 2. Architecture recommendations (category B — `decision_pending` at architecture acceptance)
+## 2. Architecture recommendations (category B — **resolved at architecture acceptance, 2026-08-24**)
+
+All eight recommendations were resolved by owner-delegated program-manager
+decision adopted by Pete, binding to the P0 architecture merged as
+`09262ea819f4a9a643a142a7a28a704de3fc839f`. None is `decision_pending` any
+longer. The full acceptance record, with every qualification, is
+`18_ARCHITECTURE_ACCEPTANCE.md`.
+
+| ID | Disposition |
+|---|---|
+| REC-01 | **accepted with the conservative dependency** — v2 lineage; v1 configuration rollback only; option (a): `C7` waits for a meaningful review-capable v2 workflow and resolution of the current intake/workbench breakage; no interim stage-two handoff; re-verify the real production flag and capability state at `C7` activation |
+| REC-02 | **accepted as recommended** — Azure SQL canonical truth; Azure AI Search only a rebuildable shared discovery projection; canonical truth outside the index, local fencing, truthful SQL fallback. Architecture selection only: asserts no existing capacity and grants no spending, provisioning, configuration, migration, schema, deployment, or enablement authority; those return for separate approval before any external commitment. Recorded before `C2` activates |
+| REC-03 | **accepted** — system re-verification re-admits to the general pool; each member's saved/result/Slate context stays `posting_changed` until that member reviews; new `requirement_version` only on material normalized-clause difference |
+| REC-04 | **accepted** — consistent route registration with per-request `before_request` flag gating. Does not turn the flag on |
+| REC-05 | **accepted** — member data never enters the shared discovery index |
+| REC-06 | **accepted** — ambiguous required/preferred defaults to required and is visibly flagged; may withhold `Fully verified`, never overclaims it |
+| REC-07 | **accepted** — `Last checked` is the last successful verification and its age; failed attempts shown separately; copy matches the real execution path and is contract-tested |
+| REC-08 | **architecture accepted; enablement deferred** — the isolated `C13` design is the only permitted shape. `C13` stays inactive, disabled, and unauthorized; permitted source classes and retention rights remain later owner decisions; `C10` paste/upload remains unconditional |
+
+The recommendation rationale, evidence, and rejected alternatives below are
+retained solely as **pre-decision history** — the durable record, as written
+before the 2026-08-24 acceptance, of how each disposition was reached.
+Nothing in the table below is a current open choice or a pending owner
+selection; where its wording reads as pending, the dispositions table above
+and `18_ARCHITECTURE_ACCEPTANCE.md` control.
 
 | ID | Recommendation | Evidence | Alternatives considered |
 |---|---|---|---|
-| REC-01 | C7 targets the v2 Slate lineage; v1 is rollback-only; C7's capability dependency resolved as doc 11 §3 (a) or (b) | Doc 11 §1 (route conditional, production flag evidence, applied schema, current service idioms) | Target v1 (couples to the surface being replaced); defer C7 entirely (weakens the product promise; Slate routing is a core approved action) |
-| REC-02 | Topology recommendation: Azure SQL canonical truth + rebuildable discovery-index candidate (Azure AI Search) with canonical-outside-index + local-fence patterns — **recommended, not selected** (the frozen R3 ledger holds final canonical-store/search-index topology open before canonical and retrieval implementation, and names neither store as selected). **Timing/gate:** P0 and C1 are decision-free (logical contracts and documentation only). Pete's REC-02 decision is required **before C2 activates** — before any physical store selection, schema, migration, projection, or provider-dependent design anywhere in the program; every later migration-bearing child inherits the gate (doc 14 §1; doc 02 §6; doc 13 §3) | Owner ledger working direction; Search 3F committed patterns; doc 04 §§9–10 degraded modes make either outcome safe | SQL-only retrieval (simpler, weaker ordering/scale headroom); index-primary (rejected: canonical truth must not live in a rebuildable projection) |
+| REC-01 | *Pre-acceptance recommendation:* C7 targets the v2 Slate lineage; v1 is rollback-only; C7's capability dependency was proposed for resolution as doc 11 §3 option (a) or (b). *The 2026-08-24 acceptance selected option (a) — the conservative dependency (§2 above)* | Doc 11 §1 (route conditional, production flag evidence, applied schema, current service idioms) | Target v1 (couples to the surface being replaced); defer C7 entirely (weakens the product promise; Slate routing is a core approved action) |
+| REC-02 | *Pre-acceptance recommendation:* Azure SQL canonical truth + rebuildable discovery-index candidate (Azure AI Search) with canonical-outside-index + local-fence patterns — at candidate time recommended and not yet selected (the frozen R3 ledger then held final canonical-store/search-index topology open and named neither store as selected). **Timing/gate:** P0 and C1 are decision-free (logical contracts and documentation only); the gate required the REC-02 decision to be durably recorded **before C2 activates** — before any physical store selection, schema, migration, projection, or provider-dependent design anywhere in the program (doc 14 §1; doc 02 §6; doc 13 §3). *The 2026-08-24 acceptance recorded that decision (§2 above): Azure SQL is canonical truth and Azure AI Search is only a rebuildable projection — architecture selection only, with no capacity, spend, provisioning, topology-provisioning, credential, migration, provider-contract, or production authority; the before-C2 gate is thereby satisfied when C2 later activates* | Owner ledger working direction; Search 3F committed patterns; doc 04 §§9–10 degraded modes make either outcome safe | SQL-only retrieval (simpler, weaker ordering/scale headroom); index-primary (rejected: canonical truth must not live in a rebuildable projection) |
 | REC-03 | Changed-posting re-admission: system re-verification re-admits to the general current pool under the then-governing requirement version (a **new** `requirement_version` only when the normalized clauses materially differ, doc 03 §10); each member's saved/result/Slate contexts stay `posting_changed` until that member reviews | Approved posting-changed state + R2 carried note ("who re-admits"); doc 03 §2 | Member-review-gates-everything (one member's inaction would hide a live role from everyone); system-clears-everything (silently rewrites member context) |
 | REC-04 | All new My Opportunities routes: register-always + blueprint `before_request` flag gate (ask-pete-direct style) | `app.py:810-816` documented rationale; sign-in report's per-test limitation of the registration-conditional style | Registration-time conditional (the existing Slate compromise; poorer testability, restart-coupled) |
 | REC-05 | Member data never enters the shared discovery index; assessments/saves/criteria live only in owner-scoped canonical storage | Doc 02 invariant 4; doc 08; Search 3F public-projection discipline | Per-member index documents (rejected: revocation/deletion cleanup risk and cross-member blast radius for zero product need) |
@@ -66,6 +93,9 @@ contract's verdict rules).
 
 ## 5. Where each pending decision lands
 
-Pete's architecture-acceptance turn should resolve: REC-01 through REC-08
-(accept/correct each) and the child graph (doc 14). Everything in §3 is
-raised only when its dependency becomes real, per the program model.
+**Resolved 2026-08-24.** REC-01 through REC-08 and the child graph (doc 14)
+were accepted by owner-delegated program-manager decision adopted by Pete, and
+are recorded in `18_ARCHITECTURE_ACCEPTANCE.md` and the `DECISIONS.md`
+2026-08-24 entry. Doc 14 is accepted exactly as written and is unchanged by
+that acceptance. Acceptance activates no child. Everything in §3 remains open
+and is raised only when its dependency becomes real, per the program model.
