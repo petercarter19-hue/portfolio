@@ -7,12 +7,15 @@ operations._
 
 1. Follow `START_HERE.md`, fetch Azure main, preserve unrelated work, and read
    the current package claim.
-2. Choose Routine, Bounded, or Protected.
+2. Choose Routine, Bounded, or Protected. On an initialized developer machine,
+   reuse the package's one registered durable worktree and pass its exact
+   writer `--task-ref` to mutating preflight.
 3. The assigned implementation writer completes the scoped repository work:
    implementation, focused validation, complete-diff self-review, review
    correction, PR, and accepted merge.
 4. Add an independent exact-SHA review only when Protected risk, the package,
-   or Pete requires it. The reviewer is read-only and consumes no writer claim.
+   or Pete requires it. The reviewer is read-only, consumes no writer claim,
+   and defaults to the Azure/pushed diff without creating a worktree.
 5. Report merge, deployment, schema, enablement, and live verification as
    separate states.
 
@@ -37,6 +40,20 @@ historical control namespace.
 A collision is a stop for the colliding packages only. Disjoint main movement
 does not expire a reviewed candidate. Movement across one of its claimed
 surfaces does.
+
+## Worktree lifecycle
+
+Ad hoc `git worktree add` is unsupported. Active packages reuse one durable
+worktree through `ensure` or exact `adopt`. Reviews create none. Claim
+transitions and necessary runnable verification share the mutex- and
+task-leased sparse `_control` singleton; the same task finalizes temporary
+resources.
+
+The local registry never grants repository authority. Once initialized, it
+blocks only an unregistered mutating workspace; CI, missing registry, and
+unrelated grandfathered worktrees remain non-blocking. `audit` is read-only.
+Retirement uses exact registered paths and ordinary non-force Git removal after
+the checks in `docs/governance/WORKTREE_LIFECYCLE.md`.
 
 ## Delivery paths
 
@@ -86,6 +103,9 @@ and merge path. This transition is not needed for normal implementation claims.
 
 Use an Azure PR. Current-target CI and unresolved comments still apply. A green
 PR or a merge is repository truth, not deployment truth.
+
+For a current claim, run merge preflight in its clean durable implementation
+worktree and pass `--task-ref <WRITER-REF>`; do not create a verifier checkout.
 
 If a frozen candidate predates generic claims, use the current-main script from
 a clean verifier with `--candidate-worktree <FROZEN-WORKTREE>`; the old branch

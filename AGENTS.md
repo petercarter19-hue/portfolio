@@ -8,7 +8,7 @@
 > [CURRENT_LANES.json](docs/governance/CURRENT_LANES.json) and this package's
 > claim under `docs/governance/lane_claims/`, then pass:
 >
-> `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --fetch --require-clean`
+> `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --task-ref <WRITER-REF> --fetch --require-clean`
 >
 > A control-only activation, authorize, transfer, pause, resume, or close is the
 > narrow exception: run `--intent read` before editing, change and commit only
@@ -71,6 +71,29 @@ handoffs are evidence, not additional gates.
 - Follow [AI model and role routing](docs/AI_MODEL_AND_ROLE_ROUTING.md). Overall
   audit manager, package manager, visual creator, architect, writer, reviewer,
   and release owner are separate assignments; no role silently inherits another.
+
+## Local worktree lifecycle
+
+- After the `PS-WORKTREE-LIFECYCLE-001` bootstrap, do not run ad hoc
+  `git worktree add`. Reuse the active package's one registered durable full
+  worktree through `scripts/worktree_lifecycle.py ensure`, or use exact
+  bookkeeping-only `adopt` when its claim branch already has a worktree.
+- Reviewers default to the immutable Azure/pushed diff and create no worktree.
+  They may share the package worktree read-only only when coordinated with its
+  writer and there is no concurrent mutation. Runnable isolation leases the
+  one sparse `_control` singleton through `verify --runtime-required`.
+- Activation, authorize, transfer, pause, resume, and close reuse the same
+  mutex- and task-leased `_control` singleton. Successful temporary work is
+  finalized in the same task; a refusal preserves the exact path and reports
+  the blocker.
+- On an initialized machine, mutating preflight requires `--task-ref` and the
+  exact registered package or control context. CI, an uninitialized machine,
+  and unrelated grandfathered worktrees do not create a global block. Run the
+  read-only `worktree_lifecycle.py audit --json` to expose post-policy growth.
+- The controlling safety and recovery contract is
+  [WORKTREE_LIFECYCLE.md](docs/governance/WORKTREE_LIFECYCLE.md). Never work
+  around its refusal with a second checkout, force removal, reset, clean,
+  prune, garbage collection, or branch/tag/ref deletion.
 
 ## Triggered authorities
 

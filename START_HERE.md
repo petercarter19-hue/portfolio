@@ -14,6 +14,13 @@ git log -1 --format='%H %s' origin/main
 - Preserve dirty or unrelated work. Use a clean worktree instead of switching,
   resetting, cleaning, or adopting somebody else's checkout.
 - Use a short-lived work branch from current `origin/main`; never push to main.
+- After the lifecycle bootstrap, never create an ad hoc worktree. Run the
+  read-only `python scripts/worktree_lifecycle.py audit --json`, then reuse the
+  active package's registered durable worktree with `ensure`, or use exact
+  bookkeeping-only `adopt` when its branch already has a worktree. Unrelated
+  grandfathered worktrees are observations, not a global stop. On a new
+  machine, initialize once through
+  `docs/governance/WORKTREE_LIFECYCLE.md`; do not improvise another checkout.
 
 ## 2. Read only what the task needs
 
@@ -22,7 +29,7 @@ Read `docs/governance/CURRENT_BASELINE.yaml`, the small
 `docs/governance/lane_claims/`. Before implementation edits, run:
 
 ```bash
-python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --fetch --require-clean
+python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --task-ref <WRITER-REF> --fetch --require-clean
 ```
 
 Use `--intent read` for read-only work; failures stop. A control-only
@@ -39,9 +46,16 @@ It may not change an implementation surface.
 
 ## 3. Activate only a selected outcome
 
-Pete first names the exact outcome. From current main, create a clean
-`work/YYYY-MM-DD-delivery-activation-<slug>` branch and add exactly one
-`docs/governance/lane_claims/<PACKAGE-ID>.json` file. Record:
+Pete first names the exact outcome. From current main, lease the permanent
+sparse control singleton for a clean
+`work/YYYY-MM-DD-delivery-activation-<slug>` branch, then add exactly one
+`docs/governance/lane_claims/<PACKAGE-ID>.json` file:
+
+```bash
+python scripts/worktree_lifecycle.py control --package <PACKAGE-ID> --task-ref <WRITER-REF> --branch work/YYYY-MM-DD-delivery-activation-<slug> --base origin/main --execute
+```
+
+Record:
 
 - package, outcome, opaque writer task reference, and future work branch;
 - Routine, Bounded, or Protected path;
@@ -55,13 +69,16 @@ Pete first names the exact outcome. From current main, create a clean
 Commit the one-file activation and run:
 
 ```bash
-python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent activate --fetch --require-clean
+python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent activate --task-ref <WRITER-REF> --fetch --require-clean
 ```
 
-Merge the control PR before creating the implementation worktree. There is no
-numeric writer, class, or production-capable-lane cap. Disjoint writers may all
-proceed. Duplicate branches, overlapping claimed paths, and hierarchical domain
-collisions fail closed. Reviewers consume no writer claim.
+Merge the control PR, then run `worktree_lifecycle.py ensure --package
+<PACKAGE-ID> --task-ref <WRITER-REF> --execute` to create or return the one
+durable implementation worktree. There is no numeric writer, class, or
+production-capable-lane cap. Disjoint writers may all proceed. Duplicate
+branches, overlapping claimed paths, and hierarchical domain collisions fail
+closed. Reviewers consume no writer claim and default to Azure or the pushed
+diff; runnable isolation uses the one leased sparse singleton.
 
 ## 4. Work through merge
 
@@ -76,7 +93,7 @@ proof path:
    `lane_claims/evidence/<PACKAGE-ID>.md`, push, then run:
 
 ```bash
-python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent merge --candidate-sha <REVIEWED-SHA> --fetch --require-clean
+python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent merge --candidate-sha <REVIEWED-SHA> --task-ref <WRITER-REF> --fetch --require-clean
 ```
 
 This admits disjoint main movement and blocks candidate tampering, collisions,
@@ -111,6 +128,13 @@ Merge that control PR before implementation merge.
   implementation branch through close; if it was deleted, re-push the exact
   reviewed branch before retrying.
 
+Every control transition above first leases `_control` with
+`worktree_lifecycle.py control --package <PACKAGE-ID> --task-ref <TASK-REF>
+--branch <CONTROL-BRANCH> --base origin/main --execute`, passes that same
+`--task-ref` to delivery preflight, and releases the clean lease with
+`worktree_lifecycle.py finalize-task --task-ref <TASK-REF> --execute` in the
+same task.
+
 ## 6. Keep deployment separate
 
 PR and automatic main runs build and test only. A production web deployment is
@@ -131,3 +155,9 @@ base/final SHA, changed paths, tests, review, PR/merge state, deployment state,
 honest limits, and next action. Stop for a real ownership, privacy,
 authorization, migration, deletion, or material-visual conflict - not an
 unrelated historical record.
+
+After claim close, retire a package worktree only through the exact registered
+path, task, and expected HEAD. The guard requires a closed fetched claim,
+pristine tracked/untracked/ignored state, an exact server-confirmed claimed-
+branch tip (never a stale local ref or local-only tag), and ordinary non-force
+Git removal. Otherwise it preserves the worktree and states the blocker.

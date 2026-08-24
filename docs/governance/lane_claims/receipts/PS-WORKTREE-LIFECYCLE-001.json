@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKTREE-LIFECYCLE-001",
+  "candidate_sha": "a0aa789877b59b5385c16a9eec0ffd20ee701856",
+  "review_type": "independent",
+  "reviewer_ref": "agent:exact-sha-review-a0aa7898",
+  "result": "pass",
+  "reviewed_at": "2026-08-24T00:18:34Z",
+  "findings": [
+    {
+      "summary": "Exact claimed-branch fetch and binding protects ensure and verification.",
+      "severity": "blocker",
+      "status": "resolved"
+    },
+    {
+      "summary": "Retired-path reuse is atomic and audit reports the active registration.",
+      "severity": "major",
+      "status": "resolved"
+    },
+    {
+      "summary": "The permanent control singleton repoints through a journaled recoverable transaction.",
+      "severity": "blocker",
+      "status": "resolved"
+    },
+    {
+      "summary": "Retirement requires exact server-branch proof and never trusts stale local refs or local-only tags.",
+      "severity": "blocker",
+      "status": "resolved"
+    },
+    {
+      "summary": "Audit reports registry drift and lock state without silently adopting unrelated worktrees.",
+      "severity": "major",
+      "status": "resolved"
+    },
+    {
+      "summary": "Ephemeral verification uses a per-invocation lease with concurrency refusal, controlled release, recovery, and redacted audit output.",
+      "severity": "blocker",
+      "status": "resolved"
+    },
+    {
+      "summary": "Runtime command, requested sparse scope, and live sparse scope are validated before lease, execution, or lifecycle mutation.",
+      "severity": "blocker",
+      "status": "resolved"
+    }
+  ],
+  "evidence_ref": "lane_claims/evidence/PS-WORKTREE-LIFECYCLE-001.md"
+}

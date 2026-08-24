@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -65,6 +66,9 @@ REVIEW_REQUIREMENTS = {"self", "independent"}
 MUTATING_INTENTS = {
     "activate", "authorize", "write", "transfer", "pause", "resume", "merge", "close"
 }
+CONTROL_INTENTS = {"activate", "authorize", "transfer", "pause", "resume", "close"}
+WORKTREE_REGISTRY_REL = Path("peerslate") / "worktree_registry.json"
+CI_ENVIRONMENT_KEYS = ("TF_BUILD", "CI", "GITHUB_ACTIONS", "BUILD_BUILDID")
 
 
 class PreflightError(RuntimeError):
@@ -122,6 +126,171 @@ def _is_ancestor(root: Path, older: str, newer: str) -> bool:
 def _git_common_dir(root: Path) -> Path:
     value = Path(_git(root, "rev-parse", "--git-common-dir"))
     return (value if value.is_absolute() else root / value).resolve()
+
+
+def _canonical_local_path(value: object) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("registry worktree path must be a non-empty string")
+    path = Path(value)
+    if not path.is_absolute():
+        raise ValueError("registry worktree path must be absolute")
+    return os.path.normcase(str(path.resolve(strict=False))).casefold()
+
+
+def _is_ci_environment() -> bool:
+    return any(os.environ.get(key) for key in CI_ENVIRONMENT_KEYS)
+
+
+def evaluate_local_worktree_context(
+    *,
+    root: Path,
+    args: argparse.Namespace,
+    claim: dict,
+    facts: RepoFacts,
+) -> tuple[dict, list[str], list[str]]:
+    """Enforce the initialized machine-local registry for this workspace only.
+
+    The registry is operational inventory, not repository authority. CI and a
+    machine that has not initialized it remain valid. Once initialized, a new
+    unregistered mutating workspace fails without making unrelated historical
+    worktrees a global blocker.
+    """
+
+    context = {
+        "enforced": False,
+        "registry": "not_checked",
+        "current_kind": None,
+    }
+    errors: list[str] = []
+    warnings: list[str] = []
+    if args.intent not in MUTATING_INTENTS:
+        return context, errors, warnings
+    if _is_ci_environment():
+        context["registry"] = "ci_skipped"
+        warnings.append("machine-local worktree registry enforcement is skipped in CI")
+        return context, errors, warnings
+
+    common_dir = _git_common_dir(root)
+    registry_path = common_dir / WORKTREE_REGISTRY_REL
+    context["path"] = str(registry_path)
+    if not registry_path.is_file():
+        context["registry"] = "not_initialized"
+        warnings.append(
+            "machine-local worktree registry is not initialized; "
+            "run worktree_lifecycle.py init on this machine"
+        )
+        return context, errors, warnings
+
+    try:
+        registry = _read_json(registry_path)
+    except PreflightError as exc:
+        context["registry"] = "invalid"
+        errors.append(str(exc))
+        return context, errors, warnings
+    if registry.get("schema_version") != 1 or not registry.get("initialized_at"):
+        context["registry"] = "invalid"
+        errors.append("machine-local worktree registry is not an initialized schema 1 registry")
+        return context, errors, warnings
+    try:
+        recorded_common = _canonical_local_path(registry.get("repository_common_dir"))
+        actual_common = _canonical_local_path(str(common_dir))
+    except ValueError as exc:
+        context["registry"] = "invalid"
+        errors.append(str(exc))
+        return context, errors, warnings
+    if recorded_common != actual_common:
+        context["registry"] = "wrong_repository"
+        errors.append("machine-local worktree registry belongs to a different Git common directory")
+        return context, errors, warnings
+
+    records = registry.get("worktrees")
+    if not isinstance(records, list):
+        context["registry"] = "invalid"
+        errors.append("machine-local worktree registry worktrees must be a list")
+        return context, errors, warnings
+    try:
+        current_path = _canonical_local_path(facts.repository)
+    except ValueError as exc:
+        errors.append(str(exc))
+        return context, errors, warnings
+
+    matches: list[dict] = []
+    grandfathered_other = 0
+    seen_paths: set[str] = set()
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            errors.append(f"machine-local worktree registry record {index} must be an object")
+            continue
+        try:
+            record_path = _canonical_local_path(record.get("path"))
+        except ValueError as exc:
+            errors.append(f"machine-local worktree registry record {index}: {exc}")
+            continue
+        if record_path in seen_paths:
+            errors.append(f"machine-local worktree registry repeats path {record.get('path')}")
+        seen_paths.add(record_path)
+        if record_path == current_path:
+            matches.append(record)
+        elif (
+            record.get("kind") == "grandfathered_observation"
+            and record.get("state") == "active"
+        ):
+            grandfathered_other += 1
+    if grandfathered_other:
+        warnings.append(
+            f"{grandfathered_other} unrelated grandfathered worktree(s) remain observational only"
+        )
+    if len(matches) != 1:
+        context["registry"] = "unregistered" if not matches else "ambiguous"
+        errors.append(
+            "current mutating workspace is not one exact active registry record; "
+            "do not create an ad hoc worktree"
+        )
+        return context, errors, warnings
+
+    record = matches[0]
+    context.update(
+        {
+            "enforced": True,
+            "registry": "initialized",
+            "current_kind": record.get("kind"),
+            "current_path": record.get("path"),
+        }
+    )
+    if record.get("state") != "active":
+        errors.append("current mutating workspace registry record is not active")
+        return context, errors, warnings
+    task_ref = getattr(args, "task_ref", "")
+    if not task_ref:
+        errors.append("initialized worktree registry requires --task-ref for mutating intents")
+        return context, errors, warnings
+    if record.get("branch") != facts.branch:
+        errors.append("current worktree branch does not match its registry record")
+
+    package = str(claim.get("package", ""))
+    if args.intent in {"write", "merge"}:
+        if record.get("kind") != "durable":
+            errors.append("write and merge require the package durable worktree")
+        if str(record.get("package", "")).casefold() != package.casefold():
+            errors.append("durable worktree registry package does not match the claim")
+        if record.get("task_ref") != task_ref or task_ref != claim.get("writer_ref"):
+            errors.append("durable worktree task context must equal the claim writer_ref")
+        if record.get("branch") != claim.get("branch"):
+            errors.append("durable worktree branch does not match the claimed implementation branch")
+    elif args.intent in CONTROL_INTENTS:
+        if record.get("kind") != "control_singleton":
+            errors.append("control transitions require the reusable sparse control singleton")
+        lease = record.get("lease")
+        if not isinstance(lease, dict):
+            errors.append("control singleton requires an active lease")
+        else:
+            if lease.get("purpose") != "control":
+                errors.append("control singleton lease purpose must be control")
+            if lease.get("task_ref") != task_ref:
+                errors.append("control singleton lease belongs to another task")
+            if str(lease.get("package", "")).casefold() != package.casefold():
+                errors.append("control singleton lease package does not match the claim")
+    return context, errors, warnings
 
 
 def normalize_path(value: str) -> str:
@@ -878,20 +1047,29 @@ def evaluate(
             "production operation preflight with an owner authorization reference"
         )
         return payload, errors, warnings
-    control_intents = {
-        "activate", "authorize", "transfer", "pause", "resume", "close"
-    }
-    if authority_claim is None and args.intent not in control_intents:
+    if authority_claim is None and args.intent not in CONTROL_INTENTS:
         errors.append(f"no claim exists for {args.package}")
         return payload, errors, warnings
 
-    claim = branch_claim if args.intent in control_intents else authority_claim
+    claim = branch_claim if args.intent in CONTROL_INTENTS else authority_claim
     if claim is None:
         errors.append(f"no branch claim exists for {args.package}")
         return payload, errors, warnings
     if args.intent in {"write", "merge"} and not bootstrap:
         if branch_claim is None or _changed_fields(authority_claim, branch_claim):
             errors.append("branch claim differs from authoritative origin/main")
+
+    registry_context, registry_errors, registry_warnings = (
+        evaluate_local_worktree_context(
+            root=work_root,
+            args=args,
+            claim=claim,
+            facts=facts,
+        )
+    )
+    payload["worktree_registry"] = registry_context
+    errors.extend(registry_errors)
+    warnings.extend(registry_warnings)
 
     if args.intent == "activate":
         if not ACTIVATION_BRANCH_RE.fullmatch(facts.branch):
@@ -1275,6 +1453,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--require-clean", action="store_true")
     parser.add_argument("--candidate-sha", default="")
     parser.add_argument("--candidate-worktree", default="")
+    parser.add_argument(
+        "--task-ref",
+        default="",
+        help="opaque task/session ref required by an initialized local worktree registry",
+    )
     return parser
 
 

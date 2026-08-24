@@ -1,6 +1,7 @@
 import copy
 import io
 import json
+import os
 import subprocess
 import tempfile
 import unittest
@@ -114,6 +115,7 @@ def args(intent, **overrides):
         "require_clean": True,
         "candidate_sha": "",
         "candidate_worktree": "",
+        "task_ref": "task:writer-1",
     }
     value.update(overrides)
     return Namespace(**value)
@@ -516,6 +518,193 @@ class ReviewReceiptTests(unittest.TestCase):
         self.assertTrue(any("UTC timestamp" in error for error in errors))
 
 
+class LocalWorktreeRegistryTests(unittest.TestCase):
+    def write_registry(self, common, records, **overrides):
+        registry = {
+            "schema_version": 1,
+            "repository_common_dir": str(common),
+            "repository_primary_root": str(common.parent / "repo"),
+            "initialized_at": "2026-08-23T00:00:00Z",
+            "initialized_by": "task:registry-init",
+            "managed_root": str(common.parent / "managed"),
+            "evidence_root": str(common.parent / "evidence"),
+            "policy_activation_worktree_count": len(records),
+            "worktrees": records,
+            "pending": None,
+            "evidence_allocations": [],
+        }
+        registry.update(overrides)
+        path = common / preflight.WORKTREE_REGISTRY_REL
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(registry), encoding="utf-8")
+        return path
+
+    def record(self, path, **overrides):
+        value = {
+            "path": str(path),
+            "kind": "durable",
+            "state": "active",
+            "package": "PS-EXAMPLE-001",
+            "branch": "work/2026-08-23-example-1",
+            "head": HEAD,
+            "task_ref": "task:writer-1",
+            "lease": None,
+            "created_at": "2026-08-23T00:00:00Z",
+            "updated_at": "2026-08-23T00:00:00Z",
+        }
+        value.update(overrides)
+        return value
+
+    def check(
+        self,
+        common,
+        worktree,
+        request=None,
+        value=None,
+        repo_facts=None,
+        *,
+        simulate_ci=False,
+    ):
+        request = request or args("write")
+        value = value or claim()
+        repo_facts = repo_facts or facts(repository=str(worktree))
+        environment = {key: "" for key in preflight.CI_ENVIRONMENT_KEYS}
+        if simulate_ci:
+            environment["TF_BUILD"] = "True"
+        with patch.dict(os.environ, environment), patch.object(
+            preflight, "_git_common_dir", return_value=common
+        ):
+            return preflight.evaluate_local_worktree_context(
+                root=worktree,
+                args=request,
+                claim=value,
+                facts=repo_facts,
+            )
+
+    def test_missing_registry_is_advisory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            context, errors, warnings = self.check(base / "common", base / "worktree")
+            self.assertEqual([], errors)
+            self.assertEqual("not_initialized", context["registry"])
+            self.assertTrue(any("not initialized" in item for item in warnings))
+
+    def test_ci_skips_machine_local_enforcement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            context, errors, warnings = self.check(
+                base / "common", base / "worktree", simulate_ci=True
+            )
+            self.assertEqual([], errors)
+            self.assertEqual("ci_skipped", context["registry"])
+            self.assertTrue(any("CI" in item for item in warnings))
+
+    def test_initialized_registry_rejects_unregistered_current_workspace(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            common = base / "common"
+            self.write_registry(common, [])
+            context, errors, _ = self.check(common, base / "new-worktree")
+            self.assertEqual("unregistered", context["registry"])
+            self.assertTrue(any("ad hoc worktree" in item for item in errors))
+
+    def test_exact_durable_context_passes_and_unrelated_legacy_only_warns(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            common = base / "common"
+            current = base / "managed" / "package"
+            records = [
+                self.record(current),
+                self.record(
+                    base / "legacy",
+                    kind="grandfathered_observation",
+                    package=None,
+                    branch=None,
+                    head=None,
+                    task_ref=None,
+                ),
+            ]
+            self.write_registry(common, records)
+            context, errors, warnings = self.check(common, current)
+            self.assertEqual([], errors)
+            self.assertTrue(context["enforced"])
+            self.assertTrue(any("grandfathered" in item for item in warnings))
+
+    def test_grandfathered_or_wrong_task_current_workspace_cannot_mutate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            common = base / "common"
+            current = base / "legacy"
+            self.write_registry(
+                common,
+                [
+                    self.record(
+                        current,
+                        kind="grandfathered_observation",
+                        package=None,
+                        branch="work/2026-08-23-example-1",
+                        task_ref=None,
+                    )
+                ],
+            )
+            _, errors, _ = self.check(common, current)
+            self.assertTrue(any("durable" in item for item in errors))
+
+            self.write_registry(common, [self.record(current)])
+            _, errors, _ = self.check(
+                common, current, request=args("write", task_ref="task:other")
+            )
+            self.assertTrue(any("writer_ref" in item for item in errors))
+
+    def test_control_transition_requires_exact_singleton_lease(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            common = base / "common"
+            current = base / "managed" / "_control"
+            control_branch = "work/2026-08-23-delivery-activation-example"
+            lease = {
+                "task_ref": "task:writer-1",
+                "purpose": "control",
+                "package": "PS-EXAMPLE-001",
+                "acquired_at": "2026-08-23T00:00:00Z",
+            }
+            self.write_registry(
+                common,
+                [
+                    self.record(
+                        current,
+                        kind="control_singleton",
+                        branch=control_branch,
+                        lease=lease,
+                    )
+                ],
+            )
+            request = args("activate", task_ref="task:writer-1")
+            repo_facts = facts(repository=str(current), branch=control_branch)
+            context, errors, _ = self.check(
+                common, current, request=request, repo_facts=repo_facts
+            )
+            self.assertEqual([], errors)
+            self.assertEqual("control_singleton", context["current_kind"])
+
+            request = args("activate", task_ref="task:other")
+            _, errors, _ = self.check(
+                common, current, request=request, repo_facts=repo_facts
+            )
+            self.assertTrue(any("another task" in item for item in errors))
+
+    def test_corrupt_initialized_registry_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            common = base / "common"
+            path = common / preflight.WORKTREE_REGISTRY_REL
+            path.parent.mkdir(parents=True)
+            path.write_text("{broken", encoding="utf-8")
+            context, errors, _ = self.check(common, base / "worktree")
+            self.assertEqual("invalid", context["registry"])
+            self.assertTrue(any("valid JSON" in item for item in errors))
+
+
 class EvaluationTests(unittest.TestCase):
     def run_evaluate(
         self, request, value, repo_facts, *, origin_claims=None,
@@ -538,6 +727,11 @@ class EvaluationTests(unittest.TestCase):
             patch.object(preflight, "load_claims_at_ref", return_value=origin_claims),
             patch.object(preflight, "collect_repo_facts", return_value=repo_facts),
             patch.object(preflight, "_verify_legacy_snapshot"),
+            patch.object(
+                preflight,
+                "evaluate_local_worktree_context",
+                return_value=({"registry": "test_stub"}, [], []),
+            ),
         ]
         patches.extend(extra_patches.values())
         entered = [item.start() for item in patches]
@@ -546,6 +740,23 @@ class EvaluationTests(unittest.TestCase):
         finally:
             for item in reversed(patches):
                 item.stop()
+
+    def test_local_registry_context_is_reported_and_enforced(self):
+        value = claim()
+        context = {"registry": "initialized", "current_kind": "durable"}
+        payload, errors, warnings = self.run_evaluate(
+            args("write"),
+            value,
+            facts(),
+            local_registry=patch.object(
+                preflight,
+                "evaluate_local_worktree_context",
+                return_value=(context, ["registry blocker"], ["legacy warning"]),
+            ),
+        )
+        self.assertEqual(context, payload["worktree_registry"])
+        self.assertIn("registry blocker", errors)
+        self.assertIn("legacy warning", warnings)
 
     def test_write_allows_disjoint_main_movement(self):
         value = claim()
