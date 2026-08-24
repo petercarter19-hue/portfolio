@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "package": "PS-RELEASE-TRUTH-001",
+  "candidate_sha": "35c967867c38bb2cad5097d4f97439135a26bd66",
+  "review_type": "self",
+  "reviewer_ref": "session:faacd1b7-1438-4dca-aff5-aaae1e108c46",
+  "result": "pass",
+  "reviewed_at": "2026-08-24T00:05:00Z",
+  "findings": [
+    {
+      "id": "S1-lockstep",
+      "status": "resolved",
+      "severity": "major",
+      "summary": "CURRENT_BASELINE.yaml and the pointers in tests/test_operational_readiness.py fail closed if they move separately. Both are changed in this one commit and the test self-computes release_id_for_build(5436e423..., 1512) and asserts the baseline note carries it."
+    },
+    {
+      "id": "S2-word-cap",
+      "status": "resolved",
+      "severity": "minor",
+      "summary": "test_governance_pointers caps the baseline under 900 words. Measured 815 after the rewritten note."
+    },
+    {
+      "id": "S3-facts-verified",
+      "status": "informational",
+      "severity": "minor",
+      "summary": "Every factual claim in the new note was verified before recording: the release identity was recomputed from the deployed SHA and build id and matched live /healthz exactly; the skipped schema, candidate and maintenance stages and the zero Checkpoint.Approval count were read from the run 1512 timeline."
+    }
+  ],
+  "evidence_ref": "lane_claims/evidence/PS-RELEASE-TRUTH-001.md"
+}

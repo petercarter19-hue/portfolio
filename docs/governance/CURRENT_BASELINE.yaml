@@ -11,12 +11,12 @@ authority:
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "00f73f86887d80645524626a0def44e52f79c9c9"
-  deployed_pipeline: 1453
-  live_release: "9a511ab87a776da231f56217"
-  application_behavior_commit: "00f73f86887d80645524626a0def44e52f79c9c9"
-  application_behavior_pipeline: 1453
-  note: "Production serves rollback application commit 00f73f86887d80645524626a0def44e52f79c9c9 from pipeline 1453 with /healthz release 9a511ab87a776da231f56217. After this delivery-control cutover merges, repository PR and automatic main runs are CI-only; deployment is a separate manual exact-main-SHA operation with Pete's explicit authorization reference. The schema environment approval remains. This record is not a substitute for fetching Azure and verifying live identity."
+  deployed_main_commit: "5436e423b928f4f3d290e840c95c6a37528ce1c9"
+  deployed_pipeline: 1512
+  live_release: "f21b9745e9e67d2ac958e586"
+  application_behavior_commit: "5436e423b928f4f3d290e840c95c6a37528ce1c9"
+  application_behavior_pipeline: 1512
+  note: "Production serves application commit 5436e423b928f4f3d290e840c95c6a37528ce1c9 from manual run 1512 with /healthz release f21b9745e9e67d2ac958e586, verified against scripts/release_identity.py. That run deployed the independently reviewed PS-WORKSHOP-PROVENANCE-001 fix with forceProductionDeploy=true and schemaAction=none; the schema, candidate, and independently gated maintenance stages all skipped and the run carries zero Checkpoint.Approval records. It supersedes rollback commit 00f73f86887d80645524626a0def44e52f79c9c9 from pipeline 1453. Repository PR and automatic main runs are CI-only; deployment is a separate manual exact-main-SHA operation with Pete's explicit authorization reference. The schema environment approval remains. This record is not a substitute for fetching Azure and verifying live identity."
 
 manager:
   role: "package_designated_session_manager"
