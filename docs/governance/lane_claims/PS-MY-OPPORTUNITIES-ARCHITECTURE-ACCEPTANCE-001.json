@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "package": "PS-MY-OPPORTUNITIES-ARCHITECTURE-ACCEPTANCE-001",
+  "state": "active",
+  "outcome": "Record the owner-delegated acceptance of the merged PS-MY-OPPORTUNITIES-001 P0 architecture (main 09262ea819f4a9a643a142a7a28a704de3fc839f): add 18_ARCHITECTURE_ACCEPTANCE.md binding REC-01 through REC-08 and the accepted thirteen-child graph to that merge, resolve those recommendations from decision_pending to their exact accepted or deferred dispositions in 15_DECISION_REGISTER.md, append one durable DECISIONS.md entry, and refresh the parent README status and next action. Documentation only. It activates no implementation child, does not edit docs 01-14, 16, or 17, does not redesign the architecture, creates no initiative directory, does not modify PACKAGE_REGISTRY.json, and stops before provider contact or selection, purchasing, spending, provisioning, schema, migration, runtime code, infrastructure, visual creation, deployment, enablement, cutover, and production action.",
+  "assignment": "implementation",
+  "writer_ref": "session:bead6626-b340-4586-85d4-7f4002a97cf6",
+  "branch": "work/2026-08-24-my-opportunities-architecture-acceptance-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "f13d0fe6a408e694f7e600b065907463bf39f5f0",
+  "owner_outcome_ref": "session:01a02f42-15ac-7d92-a2a9-60b7e800c388/owner-delegation:2026-08-24/my-opportunities-architecture-acceptance",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MY-OPPORTUNITIES-ARCHITECTURE-ACCEPTANCE-001.json",
+    "docs/governance/lane_claims/evidence/PS-MY-OPPORTUNITIES-ARCHITECTURE-ACCEPTANCE-001.md",
+    "docs/governance/lane_claims/receipts/PS-MY-OPPORTUNITIES-ARCHITECTURE-ACCEPTANCE-001.json",
+    "docs/governance/DECISIONS.md",
+    "docs/initiatives/PS-MY-OPPORTUNITIES-001/README.md",
+    "docs/initiatives/PS-MY-OPPORTUNITIES-001/15_DECISION_REGISTER.md",
+    "docs/initiatives/PS-MY-OPPORTUNITIES-001/18_ARCHITECTURE_ACCEPTANCE.md"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MY-OPPORTUNITIES-ARCHITECTURE-ACCEPTANCE-001.md"
+  ],
+  "domains": [
+    "architecture:my-opportunities:acceptance",
+    "governance:decisions:my-opportunities"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
