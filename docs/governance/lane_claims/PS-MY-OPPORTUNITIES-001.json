@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MY-OPPORTUNITIES-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Produce and independently review one repository-grounded whole-system My Opportunities architecture and final child graph. The work is evidence-building for private member benefit: current-opportunity discovery and strict, source-linked qualification verification. It must remain outside a public job board, recruiter-first marketplace, public listing index, application product, and paid-relevance system. It must keep licensed-feed discovery separate from member-uploaded URL/job-description handling under Site Rules section 3; map current Opportunity Slate v2, legacy rollback, remaining stages, and continuation breakage without selecting or modifying a target; record this owner decision durably; allow the independently reviewed P0 documentation PR to proceed through merge; and stop before runtime, provider contact/selection, spending, schema, infrastructure, UI, migration, merge-to-runtime, deployment, enablement, cutover, or production action.",
   "assignment": "implementation",
   "writer_ref": "session:bead6626-b340-4586-85d4-7f4002a97cf6",
@@ -28,6 +28,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": "b5c868f63709f8f9445d73205bde0707f9060c46",
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "09262ea819f4a9a643a142a7a28a704de3fc839f",
+  "closed_at": "2026-08-24T20:00:23Z"
 }
