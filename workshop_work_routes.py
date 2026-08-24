@@ -575,6 +575,14 @@ SPARK_NO_IDEA_NOTE = (
     "No Spark right now. Choose “Give me a spark” whenever you want a "
     "new idea grounded in the information you have confirmed."
 )
+# Built from the one persona constant rather than repeating the name, so a
+# rename cannot leave this sentence quietly stale -- the same reason
+# workshop_routes.py injects the name for templates instead of hardcoding it.
+SPARK_PREVIEW_ON_REQUEST_NOTE = (
+    "Opening this page does not generate an idea. Choose “Give me a "
+    "spark” when you want one, grounded in "
+    f"{workshop_demo_library.PERSONA_DISPLAY_NAME}’s example information."
+)
 SPARK_UNAVAILABLE_NOTE = (
     "PeerSlate could not offer a grounded suggestion just now. Everything "
     "else on this screen works as usual, and you can try again in a moment."
@@ -744,6 +752,27 @@ def _resolve_opening_spark(identity, confirmed_rows):
         # The R05/R06 first-run composition says this honestly on its own —
         # no note needed, and no AI call is made.
         return None, None
+
+    if identity is None:
+        # PS-WORKSHOP-SURFACE-TRUTH-001 scope B (owner decision 2026-08-23):
+        # an anonymous page load must never spend a provider call. Before
+        # this, a signed-out visitor merely opening this URL generated a
+        # Spark grounded in the demo library -- real billable spend, drawn
+        # from a daily ceiling shared with signed-in members, with no click.
+        #
+        # Generation is not removed, only un-automated: the "Give me a spark"
+        # door already on this screen posts to work_spark_another, which
+        # keeps the currently authorized flow with its same-origin guard,
+        # per-minute limit, and spend guard intact. The screen a visitor now
+        # gets is the already-locked R05/R06 "no Spark yet" composition, so
+        # this costs no new visual authority.
+        #
+        # Deliberately BEFORE the offered check: for an anonymous visitor the
+        # answer is the same either way -- ask and PeerSlate will generate;
+        # opening the page never will -- and SPARK_NO_IDEA_NOTE's "the
+        # information you have confirmed" is untrue of a demo library that
+        # belongs to Jordan Ellis rather than the visitor.
+        return None, SPARK_PREVIEW_ON_REQUEST_NOTE
 
     if spark_state["offered"]:
         # A Spark has already been offered this visit and is no longer on

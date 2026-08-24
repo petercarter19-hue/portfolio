@@ -15,6 +15,7 @@ from unittest.mock import patch
 from app import app, limiter
 from identity import AuthenticationRequired
 from services import workshop_demo_library
+import workshop_routes
 from services.database_service import DatabaseServiceError
 from services.knowledge_service import KnowledgeItemListResult, KnowledgeServiceError
 
@@ -142,7 +143,7 @@ class WorkshopCheckpointRouteTests(unittest.TestCase):
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
         body = response.data.decode("utf-8")
         self.assertIn("wk-status-banner--preview", body)
-        self.assertIn("example information", body)
+        self.assertIn("example library", body)
 
     def test_identity_failure_returns_a_payload_free_recovery_state(self):
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
@@ -897,7 +898,11 @@ class WorkshopLibraryFilterAndSearchTests(unittest.TestCase):
 
     def test_filters_preserved_across_area_and_status_combinations(self):
         for area_key in ("all", "work", "personal", "both"):
-            for status_key in ("all", "confirmed", "suggested", "unfinished", "archived"):
+            # PS-WORKSHOP-SURFACE-TRUTH-001 scope C retired the "suggested"
+            # and "unfinished" chips, so only the live keys have links to
+            # preserve. Their stale-URL behaviour is covered by
+            # RetiredStatusFilterTests below.
+            for status_key in ("all", "confirmed", "archived"):
                 with self.subTest(area=area_key, status=status_key):
                     response = self.client.get(
                         ROUTE + f"?area={area_key}&status={status_key}"
@@ -907,11 +912,11 @@ class WorkshopLibraryFilterAndSearchTests(unittest.TestCase):
                     self.assertIn(f"area={area_key}&amp;status={status_key}", body)
 
     def test_search_hidden_fields_preserve_area_and_status_on_submit(self):
-        response = self.client.get(ROUTE + "?area=personal&status=unfinished")
+        response = self.client.get(ROUTE + "?area=personal&status=archived")
         body = response.data.decode("utf-8")
 
         self.assertIn('name="area" value="personal"', body)
-        self.assertIn('name="status" value="unfinished"', body)
+        self.assertIn('name="status" value="archived"', body)
 
 
 class WorkshopLibraryTruncationTests(unittest.TestCase):
@@ -1103,6 +1108,222 @@ class WorkshopFlagOffNeutralityMatrixTests(unittest.TestCase):
                 identity_mock.assert_not_called()
 
 
+class PublicDemoTruthTests(unittest.TestCase):
+    """PS-WORKSHOP-SURFACE-TRUTH-001 scope B acceptance evidence.
+
+    Owner decision 2026-08-23: keep Workshop publicly open for now, but as a
+    CLEARLY LABELLED demo. Before this package the preview presented a
+    fictional member's library under wording written for someone looking at
+    their own data, the persona's name was computed server-side and then
+    never printed anywhere on the page, and nothing explained what Workshop
+    is for.
+    """
+
+    def setUp(self):
+        self.client = app.test_client()
+        self.original_flag = app.config.get("PEERSLATE_WORKSHOP_ENABLED")
+        self.original_fixture_flag = app.config.get("PEERSLATE_WORKSHOP_DEV_FIXTURE")
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        app.config["PEERSLATE_WORKSHOP_DEV_FIXTURE"] = False
+        self.identity_patch = patch(
+            "workshop_routes.get_current_identity",
+            side_effect=AuthenticationRequired("Sign in is required."),
+        )
+        self.identity_patch.start()
+
+    def tearDown(self):
+        self.identity_patch.stop()
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = self.original_flag
+        app.config["PEERSLATE_WORKSHOP_DEV_FIXTURE"] = self.original_fixture_flag
+
+    def test_the_example_member_is_named_on_the_page(self):
+        body = self.client.get(ROUTE).data.decode("utf-8")
+        self.assertIn(workshop_demo_library.PERSONA_DISPLAY_NAME, body)
+
+    def test_the_page_says_the_library_is_not_the_visitors(self):
+        body = self.client.get(ROUTE).data.decode("utf-8")
+        persona = workshop_demo_library.PERSONA_DISPLAY_NAME
+        self.assertIn(persona + "\u2019s example library", body)
+        self.assertIn("This library belongs to " + persona, body)
+        self.assertNotIn("This is your private library.", body)
+
+    def test_the_page_explains_what_workshop_is(self):
+        body = self.client.get(ROUTE).data.decode("utf-8")
+        self.assertIn(
+            "Workshop is where you build up what PeerSlate knows about you", body
+        )
+
+    def test_the_page_says_the_preview_is_temporary_and_not_a_real_save(self):
+        # Collapsed because the banner wraps across template lines, so a
+        # raw substring match would be asserting Jinja's line breaks rather
+        # than the sentence a visitor actually reads.
+        body = " ".join(self.client.get(ROUTE).data.decode("utf-8").split())
+        self.assertIn("never saved as a member record", body)
+        self.assertIn("This public preview is temporary", body)
+
+    def test_signed_in_ownership_wording_is_not_weakened(self):
+        """The preview wording must not leak into the real member page."""
+        self.identity_patch.stop()
+        try:
+            with patch(
+                "workshop_routes.get_current_identity",
+                return_value=SimpleNamespace(user_key="member-surface-truth"),
+            ), patch(
+                "workshop_routes.knowledge_service.list_knowledge_items_for_owner",
+                return_value=KnowledgeItemListResult(items=[], total_count=0),
+            ):
+                body = self.client.get(ROUTE).data.decode("utf-8")
+        finally:
+            self.identity_patch.start()
+
+        self.assertIn("This is your private library.", body)
+        self.assertNotIn(workshop_demo_library.PERSONA_DISPLAY_NAME, body)
+        self.assertNotIn("wk-status-banner--preview", body)
+
+
+class RetiredStatusFilterTests(unittest.TestCase):
+    """PS-WORKSHOP-SURFACE-TRUTH-001 scope C acceptance evidence.
+
+    Owner decision 2026-08-23: remove the Suggested and Unfinished filters
+    from the member-facing library, because since the 2026-08-06 confirmation
+    rule no production path can produce either state, while preserving every
+    stored value and every legacy record.
+    """
+
+    def setUp(self):
+        self.client = app.test_client()
+        self.original_flag = app.config.get("PEERSLATE_WORKSHOP_ENABLED")
+        self.original_fixture_flag = app.config.get("PEERSLATE_WORKSHOP_DEV_FIXTURE")
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        app.config["PEERSLATE_WORKSHOP_DEV_FIXTURE"] = False
+        self.identity_patch = patch(
+            "workshop_routes.get_current_identity",
+            side_effect=AuthenticationRequired("Sign in is required."),
+        )
+        self.identity_patch.start()
+
+    def tearDown(self):
+        self.identity_patch.stop()
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = self.original_flag
+        app.config["PEERSLATE_WORKSHOP_DEV_FIXTURE"] = self.original_fixture_flag
+
+    def test_the_retired_filter_controls_are_gone(self):
+        body = self.client.get(ROUTE).data.decode("utf-8")
+        self.assertNotIn("status=suggested", body)
+        self.assertNotIn("status=unfinished", body)
+        self.assertIn("status=confirmed", body)
+        self.assertIn("status=archived", body)
+
+    def test_all_statuses_wording_is_corrected(self):
+        body = self.client.get(ROUTE).data.decode("utf-8")
+        self.assertIn("All current", body)
+        self.assertNotIn("All statuses", body)
+
+    def test_a_stale_link_falls_back_safely_and_says_so(self):
+        for stale, label in (("suggested", "Suggested"), ("unfinished", "Unfinished")):
+            with self.subTest(status=stale):
+                response = self.client.get(ROUTE, query_string={"status": stale})
+                body = response.data.decode("utf-8")
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(_library_item_title_count(body), 15)
+                self.assertIn("\u201c" + label + "\u201d filter has been removed", body)
+
+    def test_a_malformed_status_keeps_the_silent_neutral_fallback(self):
+        """An arbitrary value was never an offered filter, so it keeps the
+        pre-existing neutral fallback with no invented explanation, and its
+        value is never echoed back into the page."""
+        response = self.client.get(ROUTE, query_string={"status": "<script>x</script>"})
+        body = response.data.decode("utf-8")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("filter has been removed", body)
+        self.assertNotIn("<script>x</script>", body)
+
+    def test_legacy_rows_keep_their_status_and_stay_visible(self):
+        """Retiring the CONTROLS must not hide or rewrite CONTENT."""
+        body = self.client.get(ROUTE).data.decode("utf-8")
+        self.assertIn("Suggested", body)
+        self.assertIn("Unfinished", body)
+        self.assertEqual(_library_item_title_count(body), 15)
+
+    def test_signed_in_reconciliation_runs_before_the_list_read(self):
+        """Independent review finding 1 (2026-08-24): the real signed-in
+        ordering, which the anonymous demo tests above cannot reach.
+
+        my_information calls confirm_authored_knowledge_backlog_for_owner
+        BEFORE list_knowledge_items_for_owner. That owner-ordered standing
+        sweep sets a member's pre-existing ``unfinished`` rows to
+        ``confirmed`` in place, so by the time the page renders, a member
+        following their own stale ?status=unfinished link can legitimately
+        see that item carrying a Confirmed chip.
+
+        The sweep is deliberate and is NOT changed by this package. What is
+        asserted here is the ordering, that the content stays visible, and
+        that the retired-filter notice makes no claim the sweep contradicts.
+        """
+        calls = []
+        self.identity_patch.stop()
+        try:
+            with patch(
+                "workshop_routes.get_current_identity",
+                return_value=SimpleNamespace(user_key="member-retired-filter"),
+            ), patch(
+                "workshop_routes.knowledge_service."
+                "confirm_authored_knowledge_backlog_for_owner",
+                side_effect=lambda *a, **k: calls.append("reconcile"),
+            ) as reconcile, patch(
+                "workshop_routes.knowledge_service.list_knowledge_items_for_owner",
+                side_effect=lambda *a, **k: (
+                    calls.append("list"),
+                    KnowledgeItemListResult(
+                        items=[
+                            service_list_row(
+                                title="A legacy unfinished entry",
+                                # What the sweep has already made true by the
+                                # time the list read happens.
+                                status="confirmed",
+                            )
+                        ],
+                        total_count=1,
+                    ),
+                )[1],
+            ), patch(
+                "workshop_routes.knowledge_service.get_knowledge_item_for_owner",
+                return_value=service_get_row(title="A legacy unfinished entry"),
+            ):
+                body = self.client.get(
+                    ROUTE, query_string={"status": "unfinished"}
+                ).data.decode("utf-8")
+        finally:
+            self.identity_patch.start()
+
+        # 1. Reconciliation ran exactly once, and it ran FIRST.
+        self.assertEqual(reconcile.call_count, 1)
+        self.assertEqual(calls, ["reconcile", "list"])
+
+        # 2. The member's content is still there.
+        self.assertIn("A legacy unfinished entry", body)
+
+        # 3. It renders as Confirmed, not Unfinished -- the sweep's doing.
+        self.assertIn("Confirmed", body)
+
+        # 4. The notice appears and makes NO label-preservation promise.
+        collapsed = " ".join(body.split())
+        self.assertIn("filter has been removed", collapsed)
+        self.assertIn("Previously saved information remains in your library", collapsed)
+        self.assertNotIn("keeps its own label", collapsed)
+
+    def test_the_stored_status_vocabulary_is_unchanged(self):
+        """No enum, code map, or chip label was rewritten by this package."""
+        self.assertEqual(
+            set(workshop_demo_library._STATUS_CODE),
+            {"confirmed", "suggested", "unfinished", "archived"},
+        )
+        self.assertEqual(
+            set(workshop_routes.STATUS_LABELS),
+            {"confirmed", "suggested", "unfinished", "archived"},
+        )
+
+
 class WorkshopPublicPreviewTests(unittest.TestCase):
     """PS-WORKSHOP-001 public preview mode (owner decision 2026-08-02, doc 20
     section 6d): "Workshop must not be behind a login wall right now."
@@ -1148,7 +1369,7 @@ class WorkshopPublicPreviewTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         body = response.data.decode("utf-8")
         self.assertIn("wk-status-banner--preview", body)
-        self.assertIn("example information", body)
+        self.assertIn("example library", body)
 
     # 2. Signed-out requests never call any owner-scoped service method.
     def test_signed_out_library_never_calls_owner_scoped_service_methods(self):
@@ -1378,12 +1599,12 @@ class WorkshopPublicPreviewTests(unittest.TestCase):
             response.data.decode("utf-8"),
         )
 
-        # Status filters: exact counts matching the content spec exactly
-        # (11 confirmed, 2 suggested, 2 unfinished, 2 archived = 17 total).
+        # Status filters: exact counts for the filters that still exist.
+        # The demo library is unchanged at 17 rows (11 confirmed, 2
+        # suggested, 2 unfinished, 2 archived); PS-WORKSHOP-SURFACE-TRUTH-001
+        # scope C retired two CONTROLS, not the underlying content.
         expected_status_counts = {
             "confirmed": 11,
-            "suggested": 2,
-            "unfinished": 2,
             "archived": 2,
         }
         for status, expected_count in expected_status_counts.items():
@@ -1391,6 +1612,14 @@ class WorkshopPublicPreviewTests(unittest.TestCase):
             self.assertEqual(resp.status_code, 200)
             count = _library_item_title_count(resp.data.decode("utf-8"))
             self.assertEqual(count, expected_count, f"status={status}")
+
+        # The default view still shows every current row -- all 15
+        # non-archived items, INCLUDING the 2 suggested and 2 unfinished
+        # ones. Retiring the filters must not hide content.
+        default_count = _library_item_title_count(
+            self.client.get(ROUTE).data.decode("utf-8")
+        )
+        self.assertEqual(default_count, 15)
 
         # Area filters, with status=all (which excludes the 2 archived
         # items, the same "hidden unless asked for" convention the real

@@ -102,6 +102,13 @@
         </div>
     </div>
 
+    {# PS-WORKSHOP-SURFACE-TRUTH-001 scope C: a stale link to a retired filter
+       lands here. It always fell back safely; this says so instead of quietly
+       showing a different list than the one that was asked for. #}
+    {% if workshop.retired_status_notice %}
+    <p class="wk-list__footer" role="status">{{ workshop.retired_status_notice }}</p>
+    {% endif %}
+
     {% if workshop.library_items %}
     <div class="wk-list-panel">
         {{ list_header(extra_class='wk-list__header--mobile') }}
@@ -137,9 +144,15 @@
             {% if workshop.list_truncated %}
             {# Recheck finding: never hardcode the shown count, and be honest
                that filters/search only cover the most-recent window. #}
-            <p class="wk-list__footer">Showing {{ workshop.library_items | length }} of {{ workshop.total_item_count }} items. Filters and search cover your 200 most recently updated items.</p>
+            <p class="wk-list__footer">Showing {{ workshop.library_items | length }} of {{ workshop.total_item_count }} items in this library. Filters and search cover your 200 most recently updated items.</p>
             {% else %}
-            <p class="wk-list__footer">Showing {{ workshop.library_items | length }} of {{ workshop.total_item_count }} item{{ 's' if workshop.total_item_count != 1 else '' }}</p>
+            {# PS-WORKSHOP-SURFACE-TRUTH-001 scope C: "in this library" makes the
+               total's scope explicit. It counts every row including archived,
+               while the shown count reflects the active filters -- so the two
+               legitimately differ, and the old bare "of 17 items" beside a chip
+               then labelled "All statuses" read as items going missing. The
+               chip is now "All current"; this says what the total counts. #}
+            <p class="wk-list__footer">Showing {{ workshop.library_items | length }} of {{ workshop.total_item_count }} item{{ 's' if workshop.total_item_count != 1 else '' }} in this library</p>
             {% endif %}
         </div>
 

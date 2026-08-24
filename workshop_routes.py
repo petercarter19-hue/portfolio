@@ -91,6 +91,7 @@ from services.knowledge_service import (
     MAX_LIST_ITEMS,
     MAX_TITLE_UNITS,
     MAX_WORDING_UNITS,
+    RETIRED_STATUS_FILTER_LABELS,
     SCHEMA_VERSION,
     STATUS_FILTERS,
     KnowledgeServiceError,
@@ -330,6 +331,48 @@ def _selected_filter_key(requested, allowed_keys):
     return requested if requested in allowed_keys else "all"
 
 
+def _retired_status_notice(requested):
+    """An honest explanation when a stale link asks for a retired filter.
+
+    PS-WORKSHOP-SURFACE-TRUTH-001 scope C. ``_selected_filter_key`` already
+    makes an unknown ``?status=`` value fall back to "all" rather than raising
+    or trusting it, so a stale bookmark was always SAFE. It was not
+    TRUTHFUL: a member who followed their own saved link to
+    ``?status=unfinished`` silently got every current item instead, with
+    nothing on the page acknowledging that they had asked for something else.
+
+    Only the two keys this package retired produce a notice. A random or
+    malformed value keeps the existing silent, neutral fallback -- inventing
+    an explanation for input the product never offered would be noise, and
+    echoing an arbitrary query value back into the page would be its own
+    small mistake.
+
+    Independent review finding 1 (2026-08-24): an earlier draft of this
+    notice ended "Anything already saved keeps its own label." That is FALSE
+    on the signed-in path and must not come back. my_information calls
+    knowledge_service.confirm_authored_knowledge_backlog_for_owner BEFORE the
+    list read, and that standing-rule sweep converts a member's pre-existing
+    ``unfinished`` rows to ``confirmed`` in place. So a member following
+    their own stale ?status=unfinished link can legitimately see that item
+    rendered with a Confirmed chip. The sweep is deliberate, owner-ordered
+    behaviour and is not changed here; the notice simply stops promising
+    something the runtime contradicts. It now claims only what is actually
+    guaranteed: the information is still in the library. (A ``suggested``
+    row is never touched by that sweep, but a blanket label promise would
+    still be wrong, so no label claim is made for either.)
+    """
+    label = RETIRED_STATUS_FILTER_LABELS.get(
+        (requested or "").strip().lower()
+    )
+    if label is None:
+        return None
+    return (
+        f"The “{label}” filter has been removed — PeerSlate no "
+        "longer creates that state. Showing all current information instead. "
+        "Previously saved information remains in your library."
+    )
+
+
 def _filter_library_rows(rows, *, area, status, search):
     """Server-side Area/Status/search filtering over one owner's already
     materialized, already owner-scoped row list — no second database round
@@ -566,6 +609,7 @@ def _build_demo_library_view(*, area, status, search, item_param):
         "detail": detail,
         "area_filters": AREA_FILTERS,
         "status_filters": STATUS_FILTERS,
+        "retired_status_notice": _retired_status_notice(status),
         "selected_area": selected_area,
         "selected_status": selected_status,
         "search_query": search_query,
@@ -715,6 +759,9 @@ def my_information():
             "detail": detail,
             "area_filters": AREA_FILTERS,
             "status_filters": STATUS_FILTERS,
+            "retired_status_notice": _retired_status_notice(
+                request.args.get("status")
+            ),
             "selected_area": selected_area,
             "selected_status": selected_status,
             "search_query": search_query,
@@ -1803,6 +1850,15 @@ def workshop_navigation_state():
         "workshop_voice_enabled": _workshop_voice_enabled()
         and _workshop_session_enabled(),
         "workshop_voice_transcribe_url": url_for("workshop.transcribe_voice"),
+        # PS-WORKSHOP-SURFACE-TRUTH-001 scope B: the demo persona's name, so
+        # every preview surface can say whose library a signed-out visitor is
+        # actually looking at. Sourced from the one constant in
+        # services/workshop_demo_library.py rather than repeated as a literal
+        # in each template, and injected globally because the shared preview
+        # banner also renders on the Work on Something screen, whose context
+        # is built by workshop_work_routes.py and carries no ``workshop`` view
+        # model to hang it on.
+        "workshop_preview_persona": workshop_demo_library.PERSONA_DISPLAY_NAME,
         # The browser stops recording at the SAME ceiling the server
         # enforces, so a long recording ends by itself instead of being
         # refused after the member has already spoken it.

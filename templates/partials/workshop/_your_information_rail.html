@@ -5,8 +5,21 @@
    dependency note and Pete's "finish this off" acceptance in doc 20
    section 6b. #}
 {% from "partials/workshop/_icons.html" import workshop_icon %}
+{# PS-WORKSHOP-SURFACE-TRUTH-001 scope B: this rail is shared by the signed-in
+   library and the public preview, and every word of it was written for a
+   member looking at their own data. Rendered unchanged over the demo library
+   it told a signed-out visitor that a fictional person's items were "your
+   information" in "your private library", directly contradicting the banner
+   immediately above it. The signed-in wording is untouched; the preview gets
+   wording that is true of what it is actually showing, and carries the plain
+   explanation of what Workshop is for -- which appeared nowhere on the page
+   before, so a first-time visitor had no way to learn it. #}
 <section class="wk-rail" aria-labelledby="wk-rail-title">
+    {% if anonymous_preview %}
+    <h2 id="wk-rail-title" class="wk-rail__title">{{ workshop_preview_persona }}’s information</h2>
+    {% else %}
     <h2 id="wk-rail-title" class="wk-rail__title">Your information</h2>
+    {% endif %}
 
     <a
         class="wk-btn wk-btn--primary wk-btn--block"
@@ -16,6 +29,18 @@
         <span>Add information</span>
     </a>
 
+    {% if anonymous_preview %}
+    <p class="wk-rail__copy">
+        Workshop is where you build up what PeerSlate knows about you, in your
+        own words, a little at a time. This example library shows how that
+        works. Try adding something to see it.
+    </p>
+
+    <p class="wk-rail__note">
+        {{ workshop_icon("shield") }}
+        <span>This library belongs to {{ workshop_preview_persona }}, an example member. Nothing here is yours, and anything you add lasts for this visit only.</span>
+    </p>
+    {% else %}
     <p class="wk-rail__copy">
         Add an experience, skill, interest, accomplishment, or anything else
         that matters to you. You control what is saved and where you choose
@@ -26,4 +51,5 @@
         {{ workshop_icon("shield") }}
         <span>This is your private library. Nothing here is public unless you choose to use it.</span>
     </p>
+    {% endif %}
 </section>

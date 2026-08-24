@@ -130,12 +130,39 @@ AREA_FILTERS = (
     MappingProxyType({"key": "personal", "label": "Personal"}),
     MappingProxyType({"key": "both", "label": "Both"}),
 )
+# PS-WORKSHOP-SURFACE-TRUTH-001 scope C (owner decision 2026-08-23).
+#
+# "Suggested" and "Unfinished" are RETIRED AS FILTER CONTROLS ONLY. They were
+# offering a member two choices that can never match anything: since the
+# owner-ordered confirmation rule of 2026-08-06 every member-authored save
+# confirms at save time, and PS-WORKSHOP-002's own header records that no
+# production code path writes item_status = N'suggested'. The slice that would
+# have created suggestions (doc 18 W3) was never built. So both chips returned
+# an empty list for a real member while the demo library -- which seeds both
+# states as fixture content -- made them look functional.
+#
+# What is deliberately NOT changed: the stored values, the SQL CHECK
+# constraints, _STATUS_CODE in services/workshop_demo_library.py, and
+# STATUS_LABELS in workshop_routes.py all keep all four states. A legacy item
+# that still carries one of them keeps its own status chip and still appears
+# under the default view, because that view excludes only archived rows. No
+# member data, status value, or enum is rewritten anywhere by this package.
+#
+# "All statuses" is renamed because it was never true: _filter_library_rows
+# excludes archived rows from every selection except "archived" itself, so the
+# default view is all CURRENT information, and the footer counting archived
+# items in its total made the gap visible without explaining it.
 STATUS_FILTERS = (
-    MappingProxyType({"key": "all", "label": "All statuses"}),
+    MappingProxyType({"key": "all", "label": "All current"}),
     MappingProxyType({"key": "confirmed", "label": "Confirmed"}),
-    MappingProxyType({"key": "suggested", "label": "Suggested"}),
-    MappingProxyType({"key": "unfinished", "label": "Unfinished"}),
     MappingProxyType({"key": "archived", "label": "Archived"}),
+)
+
+# Retired filter keys are still recognised on the way IN so a stale link,
+# bookmark, or back-button lands on an honest explanation instead of silently
+# showing something the member did not ask for.
+RETIRED_STATUS_FILTER_LABELS = MappingProxyType(
+    {"suggested": "Suggested", "unfinished": "Unfinished"}
 )
 
 # MINOR 10 correction: direct entry shipped in this slice (doc 18 W1) and

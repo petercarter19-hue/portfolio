@@ -32,14 +32,17 @@
    the banner without the link (the claim does not depend on the link).
 #}
 <div class="wk-status-banner wk-status-banner--preview" role="status">
-    Preview — this is example information, not yours.
+    Preview — this is {{ workshop_preview_persona }}’s example library, not
+    yours.
     {%- if variant == "working" %}
-    What you write here lasts for this visit only, in your browser session.
+    What you write here lasts for this visit only, in your browser session, and
+    is never saved as a member record.
     {%- else %}
     Anything you add or change lasts for this visit only, in your browser
-    session.
+    session, and is never saved as a member record.
     {%- endif %}
-    Sign in to keep it permanently in your own private library.
+    Sign in to keep it permanently in your own private library. This public
+    preview is temporary.
     {%- if sign_in_url %}
     <a href="{{ sign_in_url }}">Sign in</a>
     {%- endif %}

@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-SURFACE-TRUTH-001",
+  "candidate_sha": "86a53df367b5b547420d7e7f7a71fad1d8390d03",
+  "review_type": "independent",
+  "reviewer_ref": "agent:grok-workshop-independent-review-via-codex-manager-2026-08-24",
+  "result": "pass",
+  "reviewed_at": "2026-08-24T23:20:43Z",
+  "findings": [
+    {
+      "id": "R1-false-label-preservation-promise",
+      "status": "resolved",
+      "severity": "medium",
+      "summary": "The retired-filter notice promised 'Anything already saved keeps its own label', which is false on the signed-in path: my_information runs the owner-ordered backlog sweep (unfinished to confirmed, in place) BEFORE the list read, so a member following a stale ?status=unfinished link can see that item rendered with a Confirmed chip. The notice now claims only that previously saved information remains in the library; the sweep is unchanged; a signed-in regression test pins the real ordering (reconcile first, then list), the row's continued visibility, its Confirmed rendering, and the absence of any label claim. PASS at a565fa026f3bde424652610f8ded72563d6b5a67."
+    },
+    {
+      "id": "R2-vacuous-malformed-spark-tests",
+      "status": "resolved",
+      "severity": "medium",
+      "summary": "test_unparseable_reply and test_invalid_shape patched generate_spark and then drove an anonymous GET, which since scope B returns before generation, so the patched replies were never consumed (independently measured call_count == 0). Both now drive the explicit same-origin ask (ask_for_spark) and assert exactly one mocked generation call, so they cannot silently go vacuous again; every prior assertion is preserved. PASS at a565fa026f3bde424652610f8ded72563d6b5a67."
+    },
+    {
+      "id": "R3-deterministically-skipping-focus-anchor-test",
+      "status": "resolved",
+      "severity": "minor",
+      "summary": "test_the_spark_card_carries_a_focusable_anchor drove a plain GET and self-skipped when no Spark rendered - incidental before scope B, deterministic after it. It now drives the explicit same-origin Spark POST with generation mocked, asserts exactly one mocked generation call, and asserts id=spark and tabindex=-1 unconditionally: absence is a failure, never a skip. Proven and ACCEPTED with zero findings at 86a53df367b5b547420d7e7f7a71fad1d8390d03."
+    },
+    {
+      "id": "R4-verification-and-boundaries",
+      "status": "informational",
+      "severity": "minor",
+      "summary": "Independent Spark rerun at the accepted candidate: 79 passed, 0 skipped. Writer regression across the full 15-module suite: 788 passed, 1 skipped, the remaining skip being the deliberately unset PS-WORKSHOP-001 SQL gate. No real provider or database call was made by any run. No schema, migration, configuration, dependency, or production change is contained in this candidate. It is not deployed and not live-proven, and Package A's attended signed-in provenance proof remains owed separately."
+    }
+  ],
+  "evidence_ref": "lane_claims/evidence/PS-WORKSHOP-SURFACE-TRUTH-001.md"
+}

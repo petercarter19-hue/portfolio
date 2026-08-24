@@ -508,11 +508,38 @@ class SparkRouteTestCase(unittest.TestCase):
         }
 
     def open_with_spark(self, payload=None):
+        """Reach the opening with a Spark on screen, and return that render.
+
+        PS-WORKSHOP-SURFACE-TRUTH-001 scope B changed only the TRIGGER, not
+        the Spark contract: merely opening this page no longer generates
+        anything for a signed-out visitor, so this helper now asks
+        explicitly through the same "Give me a spark" endpoint the door on
+        that screen posts to. work_spark_another re-renders the whole
+        opening, so every body assertion in this file still reads the page
+        it always read.
+
+        The generation, grounding, citation allow-list, dismissal, spend
+        guard, and cost behaviour these tests cover are unchanged and still
+        exercised end to end -- which is the point of routing through the
+        real endpoint here rather than seeding session state directly.
+        """
         with _mock_generate_spark(payload or self.spark_payload(SPARK_JSON_1["suggestion"])):
-            return self.client.get("/app/workshop/work")
+            return self.post("/app/workshop/work/spark/another")
 
     def opening(self):
+        """A plain GET of the opening. Since PS-WORKSHOP-SURFACE-TRUTH-001
+        scope B this NEVER generates for a signed-out visitor -- it shows a
+        Spark only if one is already cached. Tests that need a Spark to be
+        generated use ask_for_spark() instead, so the distinction between
+        "opened the page" and "asked for an idea" stays visible here."""
         return self.client.get("/app/workshop/work")
+
+    def ask_for_spark(self):
+        """The explicit request the "Give me a spark" door posts. This is the
+        only path that may spend a provider call, and it re-renders the whole
+        opening, so callers can assert against the returned body exactly as
+        they did when the GET generated."""
+        return self.post("/app/workshop/work/spark/another")
 
     def post(self, path, **form):
         return self.client.post(path, data=form, headers=SAME_ORIGIN_HEADERS)
@@ -573,7 +600,7 @@ class SparkRouteTestCase(unittest.TestCase):
 class SparkGroundingTests(SparkRouteTestCase):
     def test_only_confirmed_items_are_offered_as_grounding(self):
         with _mock_generate_spark(self.spark_payload("A grounded suggestion.")) as mock_call:
-            self.opening()
+            self.ask_for_spark()
 
         context_items, _exclude = mock_call.call_args[0]
         offered_keys = {item["id"] for item in context_items}
@@ -584,7 +611,7 @@ class SparkGroundingTests(SparkRouteTestCase):
 
     def test_archived_suggested_and_unfinished_items_are_never_grounding(self):
         with _mock_generate_spark(self.spark_payload("A grounded suggestion.")) as mock_call:
-            self.opening()
+            self.ask_for_spark()
 
         context_items, _exclude = mock_call.call_args[0]
         offered_keys = {item["id"] for item in context_items}
@@ -594,7 +621,7 @@ class SparkGroundingTests(SparkRouteTestCase):
 
     def test_grounding_is_capped(self):
         with _mock_generate_spark(self.spark_payload("A grounded suggestion.")) as mock_call:
-            self.opening()
+            self.ask_for_spark()
 
         context_items, _exclude = mock_call.call_args[0]
         self.assertLessEqual(len(context_items), workshop_review_service.MAX_CONTEXT_ITEMS)
@@ -607,7 +634,7 @@ class SparkGroundingTests(SparkRouteTestCase):
             "contextIds": ["99999999-9999-9999-9999-999999999999"],
         }
         with _mock_generate_spark(payload):
-            body = self.opening().data.decode("utf-8")
+            body = self.ask_for_spark().data.decode("utf-8")
 
         self.assertNoSparkShown(body)
         self.assertNotIn("A suggestion grounded in something you cannot see.", body)
@@ -617,7 +644,7 @@ class SparkGroundingTests(SparkRouteTestCase):
     def test_rendered_chips_name_the_actual_cited_titles(self):
         items = self.confirmed_demo_items(2)
         with _mock_generate_spark(self.spark_payload("A grounded suggestion.", items)):
-            body = self.opening().data.decode("utf-8")
+            body = self.ask_for_spark().data.decode("utf-8")
 
         self.assertIn("Prompted by confirmed information", body)
         for item in items:
@@ -629,7 +656,7 @@ class SparkGroundingTests(SparkRouteTestCase):
         items = self.confirmed_demo_items(1)
         with _mock_generate_spark(self.spark_payload("A grounded suggestion.", items)):
             self.assertSparkShown(
-                self.opening().data.decode("utf-8"), "A grounded suggestion."
+                self.ask_for_spark().data.decode("utf-8"), "A grounded suggestion."
             )
 
         self.post("/app/workshop/items/%s/delete" % items[0]["item_key"], confirm_delete="delete")
@@ -691,7 +718,7 @@ class ShowAnotherIdeaTests(SparkRouteTestCase):
     def test_another_idea_excludes_the_items_already_used(self):
         first_items = self.confirmed_demo_items(2)
         with _mock_generate_spark(self.spark_payload("First idea.", first_items)):
-            self.opening()
+            self.ask_for_spark()
 
         remaining = [
             item
@@ -708,7 +735,7 @@ class ShowAnotherIdeaTests(SparkRouteTestCase):
 
     def test_another_idea_reserves_against_the_daily_spend_guard(self):
         with _mock_generate_spark(self.spark_payload("First idea.")):
-            self.opening()
+            self.ask_for_spark()
 
         with patch(
             "workshop_work_routes.workshop_spend_guard.reserve",
@@ -724,7 +751,7 @@ class ShowAnotherIdeaTests(SparkRouteTestCase):
         payload = self.spark_payload("The very same idea.")
         with _mock_generate_spark(payload):
             self.assertSparkShown(
-                self.opening().data.decode("utf-8"), "The very same idea."
+                self.ask_for_spark().data.decode("utf-8"), "The very same idea."
             )
 
         with _mock_generate_spark(payload):
@@ -736,7 +763,7 @@ class ShowAnotherIdeaTests(SparkRouteTestCase):
     def test_a_repeat_is_not_retried_at_the_provider(self):
         payload = self.spark_payload("The very same idea.")
         with _mock_generate_spark(payload):
-            self.opening()
+            self.ask_for_spark()
 
         with _mock_generate_spark(payload) as mock_call:
             self.post("/app/workshop/work/spark/another")
@@ -760,7 +787,7 @@ class ShowAnotherIdeaTests(SparkRouteTestCase):
         with identity, lister, getter:
             with _mock_generate_spark(payload):
                 self.assertSparkShown(
-                    self.opening().data.decode("utf-8"), "An idea from everything."
+                    self.ask_for_spark().data.decode("utf-8"), "An idea from everything."
                 )
 
             with _mock_generate_spark(payload) as mock_call:
@@ -776,7 +803,7 @@ class DismissalTests(SparkRouteTestCase):
     def test_dismissal_persists_across_requests_and_never_returns(self):
         payload = self.spark_payload("An idea worth dismissing.")
         with _mock_generate_spark(payload):
-            body = self.opening().data.decode("utf-8")
+            body = self.ask_for_spark().data.decode("utf-8")
         fingerprint = self.spark_fingerprint_in(body)
         self.assertIsNotNone(fingerprint)
 
@@ -786,6 +813,9 @@ class DismissalTests(SparkRouteTestCase):
         # Reload: gone, not regenerated, and honestly confirmed.
         with _mock_generate_spark(payload) as mock_call:
             confirmed = self.client.get(dismiss.headers["Location"]).data.decode("utf-8")
+            # Deliberately a plain reload, not an ask: the point is that
+            # merely returning to the page never regenerates a dismissed
+            # Spark. The explicit ask is asserted separately below.
             reloaded = self.opening().data.decode("utf-8")
         mock_call.assert_not_called()
         self.assertIn("dismissed and will not come back", confirmed)
@@ -800,7 +830,7 @@ class DismissalTests(SparkRouteTestCase):
     def test_dismissal_survives_several_unrelated_requests(self):
         payload = self.spark_payload("An idea worth dismissing.")
         with _mock_generate_spark(payload):
-            body = self.opening().data.decode("utf-8")
+            body = self.ask_for_spark().data.decode("utf-8")
         self.post(
             "/app/workshop/work/spark/dismiss",
             spark_fingerprint=self.spark_fingerprint_in(body),
@@ -817,7 +847,7 @@ class DismissalTests(SparkRouteTestCase):
     def test_dismissal_makes_no_provider_call_and_offers_no_replacement(self):
         payload = self.spark_payload("An idea worth dismissing.")
         with _mock_generate_spark(payload):
-            body = self.opening().data.decode("utf-8")
+            body = self.ask_for_spark().data.decode("utf-8")
 
         with _mock_generate_spark(payload) as mock_call:
             response = self.post(
@@ -832,7 +862,7 @@ class DismissalTests(SparkRouteTestCase):
     def test_dismissal_without_a_fingerprint_still_dismisses_what_is_on_screen(self):
         payload = self.spark_payload("An idea worth dismissing.")
         with _mock_generate_spark(payload):
-            self.opening()
+            self.ask_for_spark()
 
         self.post("/app/workshop/work/spark/dismiss")
 
@@ -861,7 +891,7 @@ class WorkOnThisTests(SparkRouteTestCase):
     def test_work_on_this_seeds_a_session_without_confirming_anything(self):
         payload = self.spark_payload("An idea to take up.", focus_seed="What changed was")
         with _mock_generate_spark(payload):
-            self.opening()
+            self.ask_for_spark()
 
         confirmed_before = len(
             [item for item in wdl.BASE_ITEMS if item["status"] == "confirmed"]
@@ -882,7 +912,7 @@ class WorkOnThisTests(SparkRouteTestCase):
     def test_work_on_this_marks_the_session_ai_assisted(self):
         payload = self.spark_payload("An idea to take up.", focus_seed="What changed was")
         with _mock_generate_spark(payload):
-            self.opening()
+            self.ask_for_spark()
         self.post("/app/workshop/work/start", door=wws.DOOR_SPARK)
 
         with self.client.session_transaction() as sess:
@@ -892,7 +922,7 @@ class WorkOnThisTests(SparkRouteTestCase):
     def test_the_taken_up_spark_leaves_the_opening_and_never_returns(self):
         payload = self.spark_payload("An idea to take up.")
         with _mock_generate_spark(payload):
-            self.opening()
+            self.ask_for_spark()
         self.post("/app/workshop/work/start", door=wws.DOOR_SPARK)
 
         with _mock_generate_spark(payload):
@@ -902,7 +932,7 @@ class WorkOnThisTests(SparkRouteTestCase):
     def test_the_form_cannot_supply_the_seed(self):
         payload = self.spark_payload("An idea to take up.", focus_seed="The real seed")
         with _mock_generate_spark(payload):
-            self.opening()
+            self.ask_for_spark()
 
         self.post(
             "/app/workshop/work/start", door=wws.DOOR_SPARK, thought="attacker supplied seed"
@@ -919,7 +949,7 @@ class SparkFailureStatesTests(SparkRouteTestCase):
 
     def test_provider_failure(self):
         with _mock_generate_spark(side_effect=RuntimeError("provider exploded")):
-            response = self.opening()
+            response = self.ask_for_spark()
         body = response.data.decode("utf-8")
 
         self.assertEqual(response.status_code, 200)
@@ -928,15 +958,22 @@ class SparkFailureStatesTests(SparkRouteTestCase):
         self.assertOpeningStillWorks(body)
 
     def test_unparseable_reply(self):
+        # Independent review finding 2 (2026-08-24): this drove an anonymous
+        # GET, which since scope B returns before _generate_spark -- so the
+        # patched reply was never consumed and the test proved nothing
+        # (measured generate_spark.call_count == 0). It now goes through the
+        # explicit ask, and asserts the patch was actually reached.
         with patch(
             "workshop_work_routes.workshop_review_service.generate_spark",
             return_value=(None, "not json at all", "end_turn"),
-        ):
-            response = self.opening()
+        ) as mock_call:
+            response = self.ask_for_spark()
         body = response.data.decode("utf-8")
 
+        self.assertEqual(mock_call.call_count, 1)
         self.assertEqual(response.status_code, 200)
         self.assertNoSparkShown(body)
+        self.assertIn("could not offer a grounded suggestion", body)
         self.assertOpeningStillWorks(body)
 
     def test_invalid_shape(self):
@@ -948,12 +985,17 @@ class SparkFailureStatesTests(SparkRouteTestCase):
         ):
             with self.subTest(payload=payload):
                 payload = dict(payload)
+                # Finding 2: was an anonymous GET, which no longer reaches
+                # _generate_spark, so every malformed payload below went
+                # unexercised. Routed through the explicit ask and pinned
+                # with a call-count assertion so it cannot go vacuous again.
                 with patch(
                     "workshop_work_routes.workshop_review_service.generate_spark",
                     return_value=(payload, json.dumps(payload), "end_turn"),
-                ):
-                    response = self.client.get("/app/workshop/work")
+                ) as mock_call:
+                    response = self.ask_for_spark()
                 body = response.data.decode("utf-8")
+                self.assertEqual(mock_call.call_count, 1)
                 self.assertEqual(response.status_code, 200)
                 self.assertNoSparkShown(body)
                 self.assertOpeningStillWorks(body)
@@ -963,7 +1005,11 @@ class SparkFailureStatesTests(SparkRouteTestCase):
             "workshop_work_routes.workshop_spend_guard.reserve",
             return_value=workshop_spend_guard.RESERVE_GLOBAL_CAPPED,
         ), _mock_generate_spark() as mock_call:
-            response = self.opening()
+            # Reached by asking, since opening the page no longer spends
+            # anything (scope B). The guarantee under test is unchanged: at
+            # the daily ceiling PeerSlate refuses BEFORE the provider call
+            # and says so honestly.
+            response = self.ask_for_spark()
         body = response.data.decode("utf-8")
 
         mock_call.assert_not_called()
@@ -977,7 +1023,7 @@ class SparkFailureStatesTests(SparkRouteTestCase):
 
     def test_a_failed_spark_does_not_block_starting_a_session(self):
         with _mock_generate_spark(side_effect=RuntimeError("provider exploded")):
-            self.opening()
+            self.ask_for_spark()
 
         response = self.post(
             "/app/workshop/work/start", door=wws.DOOR_SOMETHING, thought="My own thought."
@@ -988,19 +1034,44 @@ class SparkFailureStatesTests(SparkRouteTestCase):
 
 
 class SparkCostShapeTests(SparkRouteTestCase):
-    def test_the_opening_generates_at_most_one_spark_per_visit(self):
-        payload = self.spark_payload("The cached idea.")
+    def test_opening_the_page_never_generates_a_spark_for_a_visitor(self):
+        """PS-WORKSHOP-SURFACE-TRUTH-001 scope B, the owner requirement.
+
+        This replaces an "at most one per visit" test. One paid call per
+        anonymous page load was still one call nobody asked for, drawn from
+        a daily ceiling shared with signed-in members, and reachable by
+        anyone who opened the URL. The contract is now zero.
+        """
+        payload = self.spark_payload("An idea nobody asked for.")
         with _mock_generate_spark(payload) as mock_call:
             for _ in range(5):
                 body = self.client.get("/app/workshop/work").data.decode("utf-8")
 
+        self.assertEqual(mock_call.call_count, 0)
+        self.assertNotIn("An idea nobody asked for.", body)
+        self.assertIn("Opening this page does not generate an idea", body)
+
+    def test_asking_explicitly_generates_exactly_one_and_then_caches_it(self):
+        """The other half: un-automating generation must not remove it.
+
+        Asking through the same endpoint the "Give me a spark" door posts
+        to still generates, and re-opening the page then shows the cached
+        Spark without spending again.
+        """
+        payload = self.spark_payload("The idea I asked for.")
+        with _mock_generate_spark(payload) as mock_call:
+            asked = self.post("/app/workshop/work/spark/another")
+            for _ in range(3):
+                body = self.client.get("/app/workshop/work").data.decode("utf-8")
+
         self.assertEqual(mock_call.call_count, 1)
-        self.assertSparkShown(body, "The cached idea.")
+        self.assertSparkShown(asked.data.decode("utf-8"), "The idea I asked for.")
+        self.assertSparkShown(body, "The idea I asked for.")
 
     def test_re_rendering_the_opening_after_an_error_never_generates(self):
         payload = self.spark_payload("The cached idea.")
         with _mock_generate_spark(payload):
-            self.opening()
+            self.ask_for_spark()
 
         with _mock_generate_spark(payload) as mock_call:
             # An over-cap answer re-renders the opening with an error.
@@ -1014,7 +1085,7 @@ class SparkCostShapeTests(SparkRouteTestCase):
     def test_start_fresh_clears_the_spark_memory(self):
         payload = self.spark_payload("An idea worth dismissing.")
         with _mock_generate_spark(payload):
-            body = self.opening().data.decode("utf-8")
+            body = self.ask_for_spark().data.decode("utf-8")
         self.post(
             "/app/workshop/work/spark/dismiss",
             spark_fingerprint=self.spark_fingerprint_in(body),
@@ -1022,7 +1093,7 @@ class SparkCostShapeTests(SparkRouteTestCase):
         self.post("/app/workshop/preview/reset", confirm_reset="reset")
 
         with _mock_generate_spark(payload):
-            body = self.opening().data.decode("utf-8")
+            body = self.ask_for_spark().data.decode("utf-8")
         self.assertSparkShown(body, "An idea worth dismissing.")
 
 
@@ -1207,7 +1278,7 @@ class SparkCookieBudgetTests(SparkRouteTestCase):
             ]
         )
         with _mock_generate_spark(payload):
-            body = self.opening().data.decode("utf-8")
+            body = self.ask_for_spark().data.decode("utf-8")
 
         answer = "".join(self.rng.choices(self.alphabet, k=300))
         self.post("/app/workshop/work/start", door=wws.DOOR_SOMETHING, thought=answer)
@@ -1409,35 +1480,34 @@ class SparkFailureReasonTests(unittest.TestCase):
                 )
 
 
-class SparkResultIsWhereTheVisitorIsLookingTests(unittest.TestCase):
+class SparkResultIsWhereTheVisitorIsLookingTests(SparkRouteTestCase):
     """Owner-reported 2026-08-04: pressing "Give me a spark" appeared to do
     nothing, because the card renders below the doors and the replacement
     arrived off-screen. The response must land the visitor on the result.
+
+    Re-review closeout (2026-08-24): this test used to drive a plain GET and
+    self-skip when no Spark rendered, which made it skip incidentally before
+    scope B and DETERMINISTICALLY after it (an anonymous GET can never render
+    a fresh Spark any more). A guarantee that can silently skip guards
+    nothing. It now drives the explicit same-origin "Give me a spark" POST
+    with generation mocked, so the card always renders and the focus-anchor
+    contract is asserted unconditionally -- absence is a FAILURE, never a
+    skip. Rebasing onto SparkRouteTestCase keeps the identical flag setup it
+    had by hand and adds the limiter and private-spend-guard isolation the
+    explicit POST path needs.
     """
 
-    def setUp(self):
-        self.client = app.test_client()
-        self.flags = {
-            "PEERSLATE_WORKSHOP_ENABLED": app.config.get("PEERSLATE_WORKSHOP_ENABLED"),
-            "PEERSLATE_WORKSHOP_SESSION_ENABLED": app.config.get(
-                "PEERSLATE_WORKSHOP_SESSION_ENABLED"
-            ),
-        }
-        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
-        app.config["PEERSLATE_WORKSHOP_SESSION_ENABLED"] = True
-
-    def tearDown(self):
-        for key, value in self.flags.items():
-            app.config[key] = value
-
     def test_the_spark_card_carries_a_focusable_anchor(self):
-        response = self.client.get("/app/workshop/work")
+        with _mock_generate_spark(
+            self.spark_payload("An idea the visitor must land on.")
+        ) as mock_call:
+            response = self.ask_for_spark()
         body = response.data.decode("utf-8")
+
+        self.assertEqual(mock_call.call_count, 1)
         self.assertEqual(response.status_code, 200)
         # "wk-spark" also matches the wk-spark-note element, so key off the
-        # card's own class to avoid asserting against a Spark-less render.
-        if 'class="wk-spark"' in body:
-            self.assertIn('id="spark"', body)
-            self.assertIn('tabindex="-1"', body)
-        else:
-            self.skipTest("No Spark rendered in this environment (cap or no grounding)")
+        # card's own class -- asserted outright, not used as a skip gate.
+        self.assertIn('class="wk-spark"', body)
+        self.assertIn('id="spark"', body)
+        self.assertIn('tabindex="-1"', body)
