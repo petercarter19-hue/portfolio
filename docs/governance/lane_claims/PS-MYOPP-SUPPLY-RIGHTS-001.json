@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-SUPPLY-RIGHTS-001",
+  "state": "active",
+  "outcome": "Produce and independently review the documentation-only C1 supply-and-rights package from official public evidence: compare candidate licensed-commercial, permitted-public, direct-employer/ATS, and company-context source classes; record per-provider candidate source_policy rights for display, excerpts, descriptions, storage, AI use, caching, retention, attribution, removal, termination, exit, and survivable minimal source facts; preserve the provider-neutral connector contract; finalize private member-import isolation and source-linked company-context policy; and present citations plus explicit owner decisions. No provider contact, selection, procurement, spend, contract, trial, account/API use, schema, runtime, adapter, infrastructure, deployment, enablement, cutover, or production claim. Public terms must be cited or marked unverified; stop for counsel-required questions.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/c1_supply_rights_writer",
+  "branch": "work/2026-08-24-myopp-supply-rights-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "81b1007549da50b0854b7deb585a96a278847a20",
+  "owner_outcome_ref": "session:01a02f42-15ac-7d92-a2a9-60b7e800c388/owner-direction:2026-08-24/start-c1-supply-rights",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MYOPP-SUPPLY-RIGHTS-001.json",
+    "docs/governance/lane_claims/evidence/PS-MYOPP-SUPPLY-RIGHTS-001.md",
+    "docs/governance/lane_claims/receipts/PS-MYOPP-SUPPLY-RIGHTS-001.json",
+    "docs/governance/PACKAGE_REGISTRY.json",
+    "docs/initiatives/PS-MYOPP-SUPPLY-RIGHTS-001/README.md",
+    "docs/initiatives/PS-MYOPP-SUPPLY-RIGHTS-001/01_PROVIDER_COMPARISON.md",
+    "docs/initiatives/PS-MYOPP-SUPPLY-RIGHTS-001/02_RIGHTS_LEDGER_CANDIDATES.md",
+    "docs/initiatives/PS-MYOPP-SUPPLY-RIGHTS-001/03_PROVIDER_NEUTRAL_CONNECTOR_CONTRACT.md",
+    "docs/initiatives/PS-MYOPP-SUPPLY-RIGHTS-001/04_PRIVATE_IMPORT_AND_COMPANY_CONTEXT_POLICY.md",
+    "docs/initiatives/PS-MYOPP-SUPPLY-RIGHTS-001/05_CITATIONS_AND_OWNER_DECISIONS.md",
+    "docs/initiatives/PS-MYOPP-SUPPLY-RIGHTS-001/OWNER_TECHNICAL_COMPLETION_REPORT.md"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MYOPP-SUPPLY-RIGHTS-001.md"
+  ],
+  "domains": [
+    "architecture:my-opportunities:supply-rights",
+    "governance:initiative:my-opportunities:supply-rights",
+    "governance:package-registry:my-opportunities:supply-rights"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
