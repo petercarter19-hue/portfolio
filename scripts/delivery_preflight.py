@@ -1303,6 +1303,15 @@ def evaluate(
                         candidate_paths = _diff_paths(
                             root, f"{base}..{candidate_sha}"
                         )
+                        review_tail_paths = {
+                            *before.get("evidence_surfaces", []),
+                            receipt_relative_path(args.package),
+                        }
+                        candidate_paths = tuple(
+                            path
+                            for path in candidate_paths
+                            if path not in review_tail_paths
+                        )
                         merged_paths = _diff_paths(
                             root, f"{merged_sha}^..{merged_sha}"
                         )

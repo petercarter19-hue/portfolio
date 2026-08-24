@@ -1264,6 +1264,57 @@ class EvaluationTests(unittest.TestCase):
             _, errors, _ = self.run_evaluate(args("close"), closed, control_facts, **common)
         self.assertTrue(any("reviewed candidate bytes" in error for error in errors))
 
+    def test_close_ignores_runtime_inert_review_tail_bytes(self):
+        before = claim()
+        closed = claim(
+            state="closed", merged_sha=MAIN,
+            closed_at="2026-08-23T01:00:00Z",
+        )
+        control_facts = facts(
+            branch="work/2026-08-23-delivery-close-example",
+            branch_paths=(preflight.claim_relative_path(closed["package"]),),
+        )
+        receipt_path = preflight.receipt_relative_path(closed["package"])
+        evidence_path = closed["evidence_surfaces"][0]
+
+        def fake_git(_root, *command):
+            if command[0] == "fetch":
+                return ""
+            if command[0] == "rev-parse":
+                return HEAD
+            if command[0] == "merge-base":
+                return BASE
+            raise AssertionError(command)
+
+        def fake_diff(_root, range_spec):
+            if range_spec in (f"{BASE}..{CANDIDATE}", f"{MAIN}^..{MAIN}"):
+                return ("src/package-1/change.py", receipt_path, evidence_path)
+            raise AssertionError(range_spec)
+
+        def fake_git_result(_root, *command):
+            path = command[-1]
+            return subprocess.CompletedProcess(
+                [], 1 if path in {receipt_path, evidence_path} else 0, "", ""
+            )
+
+        with (
+            patch.object(preflight, "_origin_claim", return_value=before),
+            patch.object(
+                preflight, "load_receipt_at_ref", return_value=receipt()
+            ),
+            patch.object(preflight, "_is_ancestor", return_value=True),
+            patch.object(preflight, "_git", side_effect=fake_git),
+            patch.object(preflight, "_diff_paths", side_effect=fake_diff),
+            patch.object(preflight, "_git_result", side_effect=fake_git_result),
+        ):
+            _, errors, _ = self.run_evaluate(
+                args("close"),
+                closed,
+                control_facts,
+                origin_claims={"ps-example-001": before},
+            )
+        self.assertEqual([], errors)
+
     def test_self_reviewed_bounded_claim_can_close_after_merge(self):
         before = claim(delivery_path="Bounded", review_requirement="self")
         closed = claim(

@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-WORKTREE-LIFECYCLE-001",
-  "candidate_sha": "a0aa789877b59b5385c16a9eec0ffd20ee701856",
+  "candidate_sha": "2750c4f3ca45bd3873aba3bddfc4942c1bb59b8a",
   "review_type": "independent",
-  "reviewer_ref": "agent:exact-sha-review-a0aa7898",
+  "reviewer_ref": "agent:exact-sha-review-2750c4f3",
   "result": "pass",
-  "reviewed_at": "2026-08-24T00:18:34Z",
+  "reviewed_at": "2026-08-24T00:31:53Z",
   "findings": [
     {
       "summary": "Exact claimed-branch fetch and binding protects ensure and verification.",
@@ -39,6 +39,11 @@
     },
     {
       "summary": "Runtime command, requested sparse scope, and live sparse scope are validated before lease, execution, or lifecycle mutation.",
+      "severity": "blocker",
+      "status": "resolved"
+    },
+    {
+      "summary": "Close proof excludes only the fixed runtime-inert receipt and evidence tail while retaining exact byte checks for every reviewed implementation path.",
       "severity": "blocker",
       "status": "resolved"
     }
