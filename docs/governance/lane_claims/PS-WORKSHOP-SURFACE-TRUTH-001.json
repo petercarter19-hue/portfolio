@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-SURFACE-TRUTH-001",
+  "state": "active",
+  "outcome": "Make the member-facing Workshop surface tell the truth, as two coordinated scopes with separate acceptance evidence. Scope B, public-demo and fixture truth: identify Jordan Ellis as the example member wherever the public preview presents the demo library, explain in plain language what Workshop is, disclose that the public experience is temporary and its apparent saves are not durable member saves, and make an anonymous GET of /app/workshop/work perform zero AI or provider calls while explicit Spark activation keeps the currently authorized generation flow. Scope C, retire dead status filters: remove the Suggested and Unfinished filter controls from the member-facing library because no production path can produce either status, make stale status query values fall back safely and truthfully, and correct the All statuses wording while Archived stays excluded. Preserve owner isolation, privacy, fixture and noncanonical-truth boundaries, signed-in behavior, and archive, restore and permanent-delete behavior. No redesign, no schema change, no data or enum rewrite, and no change to stored legacy status values.",
+  "assignment": "implementation",
+  "writer_ref": "session:faacd1b7-1438-4dca-aff5-aaae1e108c46",
+  "branch": "work/2026-08-24-workshop-surface-truth-001",
+  "delivery_path": "Bounded",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "4cf258b5cfd6f06c107d45bea0fd4b23c9f547c1",
+  "owner_outcome_ref": "session:faacd1b7-1438-4dca-aff5-aaae1e108c46/owner-approval:2026-08-24/workshop-b-and-c-coordinated-delivery",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-WORKSHOP-SURFACE-TRUTH-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-SURFACE-TRUTH-001.md",
+    "docs/governance/lane_claims/receipts/PS-WORKSHOP-SURFACE-TRUTH-001.json",
+    "workshop_routes.py",
+    "workshop_work_routes.py",
+    "services/workshop_demo_library.py",
+    "services/knowledge_service.py",
+    "templates/workshop.html",
+    "templates/workshop_work.html",
+    "templates/partials/workshop",
+    "tests/test_workshop_spark.py",
+    "tests/test_workshop_checkpoint.py",
+    "tests/test_workshop_polish.py",
+    "tests/test_workshop_flows.py",
+    "tests/test_workshop_demo_library.py",
+    "tests/test_knowledge_service.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-SURFACE-TRUTH-001.md"
+  ],
+  "domains": [
+    "runtime:workshop:surface-truth",
+    "testing:workshop:surface-truth"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
