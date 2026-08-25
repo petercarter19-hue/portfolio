@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-SUPPLY-RIGHTS-001",
+  "candidate_sha": "d26b61d61523892db748353ae894f3453fd4d780",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/c1_supply_rights_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-08-25T00:26:36Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MYOPP-SUPPLY-RIGHTS-001.md"
+}

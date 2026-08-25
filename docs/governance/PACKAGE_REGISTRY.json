@@ -96,6 +96,7 @@
       "PS-JOURNAL-001",
       "PS-MESSAGING-001",
       "PS-MY-OPPORTUNITIES-001",
+      "PS-MYOPP-SUPPLY-RIGHTS-001",
       "PS-OPPORTUNITY-SLATE-CONTINUATION-001",
       "PS-OVERVIEW-001",
       "PS-PROJECTS-001",
@@ -148,10 +149,10 @@
   },
   "counts": {
     "current_protect": 64,
-    "future_finish": 24,
+    "future_finish": 25,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 123
+    "total": 124
   }
 }
