@@ -108,3 +108,36 @@ Protected Slice A Settings and My Data shell. The paired receipt is
   production authority. There is no early registry release: the claim remains
   held through merge and any separately authorized deployment/live proof until
   a separate governed close.
+
+## Production inclusion and owner-accepted closeout errata
+
+<!-- evidence-errata-authorization: session:01a0355e-d5e1-7ea0-8262-94afda9beff0/owner-authorization:2026-08-24/settings-slice-a-keep-live-closeout -->
+
+- **Production inclusion:** Azure manual run 1582 succeeded with exact source
+  `44c3e8fe3b3f4d90d8f2d099e2c3fc118a590800`,
+  `forceProductionDeploy=true`, and `schemaAction=none`. The Settings runtime
+  merge `5cbfaf0e1cd6e8aae4e5649c75455137e21c9598` and claim-close commit
+  `81b1007549da50b0854b7deb585a96a278847a20` are both ancestors of that source,
+  and its `templates/owner_settings.html` blob
+  `bf7b4f5bfc92323b80261b971ef03e061f5c1e50` is byte-identical to the accepted
+  Settings merge. The live `/healthz` release is
+  `c493f5c6c2a3e544dee6ef61`, which exactly matches the repository release
+  identity derived from source SHA plus run 1582.
+- **Authorization truth:** run 1582's recorded authorization reference did not
+  name this Settings package. Pete subsequently inspected the live Settings
+  result, explicitly accepted keeping Slice A live with no rollback, and
+  directed its final truthful closeout under the new opaque authorization
+  reference above. This records that later owner acceptance; it does not
+  retroactively change run 1582's authorization, reopen or alter the closed
+  claim, grant a new deployment, or authorize Settings packages B-F.
+- **Live behavior proof:** the manager verified anonymous `/app/settings`
+  redirects to sign-in and an authenticated member receives the server-derived
+  identity view, the accepted truthful Slice A copy and five My Data status
+  categories, one `main` landmark, one `main-content` ID, the working back link
+  and POST sign-out, no Settings-panel JavaScript, and no horizontal overflow
+  at a 320 CSS-pixel viewport.
+- **Residual limits:** live screen-reader proof and authenticated two-member
+  isolation proof were not performed. The claim's historical
+  `production_authority: withheld` field remains unchanged. This evidence-only
+  erratum changes no runtime, schema, data, configuration, dependency, receipt,
+  claim, deployment, or later-package state.
