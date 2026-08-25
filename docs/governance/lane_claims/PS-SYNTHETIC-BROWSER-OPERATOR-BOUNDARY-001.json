@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-BROWSER-OPERATOR-BOUNDARY-001",
+  "state": "active",
+  "outcome": "Correct the attended synthetic two-member browser-operator boundary. Pete retains credential, MFA, and recovery entry; QA-identity confirmation; material decisions; spending, production, and irreversible identity-deletion authorization; and genuinely physical-device-only actions. The assigned browser-capable operator owns ordinary navigation and controls, tabs, refresh, public departure and return, sign-out clicks, visible synthetic-item lifecycle actions, privacy-safe screenshots and structural observations, routine cleanup, and visible residue checks. A manager without a browser routes those actions to a browser-capable executor in the same task. The operator never inspects, exports, records, or persists passwords, MFA codes, cookies, tokens, claims, authentication headers, browser profiles, or private session files. Update central role guidance, the attended-proof runbook, and focused tests only. Do not run a live proof; create or retire identities; query or mutate production; change configuration or schema; deploy; enable; or perform a production operation.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a02fcb-e68d-7f60-9151-912bba299456",
+  "branch": "work/2026-08-25-synthetic-browser-operator-boundary-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "4214d6f32036f5ef78877f58bef47a2b2be02db8",
+  "owner_outcome_ref": "session:01a02fcb-e68d-7f60-9151-912bba299456/owner-direction:2026-08-25/browser-operator-boundary-correction",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SYNTHETIC-BROWSER-OPERATOR-BOUNDARY-001.json",
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-BROWSER-OPERATOR-BOUNDARY-001.md",
+    "docs/governance/lane_claims/receipts/PS-SYNTHETIC-BROWSER-OPERATOR-BOUNDARY-001.json",
+    "docs/AI_MODEL_AND_ROLE_ROUTING.md",
+    "qa/synthetic_member/docs/ATTENDED_PROOF_RUNBOOK.md",
+    "tests/synthetic_member_qa/test_browser_operator_boundary.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-BROWSER-OPERATOR-BOUNDARY-001.md"
+  ],
+  "domains": [
+    "governance:role-routing:browser-operator",
+    "privacy:synthetic-member:browser-operator-boundary",
+    "testing:synthetic-member:browser-operator-boundary"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
