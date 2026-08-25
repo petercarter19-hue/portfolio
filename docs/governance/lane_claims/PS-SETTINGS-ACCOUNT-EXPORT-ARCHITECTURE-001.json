@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-ARCHITECTURE-001",
+  "state": "active",
+  "outcome": "Deliver Slice C0 only: an independently reviewed documentation-only architecture and privacy boundary for a future versioned, owner-scoped account export. Define server-derived identity and isolation, domain-by-domain inclusion and explicit exclusions, deterministic manifest and schema versioning, truthful bounded-read consistency, queued/running/ready/failed/expired lifecycle, private artifact delivery and cleanup, redaction rules, package dependencies, proof requirements, rollback, and the genuine owner/professional decisions required before C1-C4. No runtime, route, UI, test behavior, schema or migration, migration registry, pipeline, configuration, dependency, provider resource, workload identity, scheduler, spend, deployment, enablement, data access, export generation, B1, D-F activation, or second canonical store.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/c0_writer",
+  "branch": "work/2026-08-25-settings-account-export-architecture-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "354bdc0b2f60182d7aae8d48a105b01c3d525f7b",
+  "owner_outcome_ref": "session:01a0355e-d5e1-7ea0-8262-94afda9beff0/owner-direction:2026-08-25/settings-account-export-discovery",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-ACCOUNT-EXPORT-ARCHITECTURE-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-ARCHITECTURE-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-ACCOUNT-EXPORT-ARCHITECTURE-001.json",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C0_ACCOUNT_EXPORT_ARCHITECTURE.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C0_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-ARCHITECTURE-001.md"
+  ],
+  "domains": [
+    "governance:settings-my-data:account-export-architecture",
+    "architecture:settings:account-export",
+    "privacy:settings:account-export-boundary",
+    "operations:settings:account-export-lifecycle"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
