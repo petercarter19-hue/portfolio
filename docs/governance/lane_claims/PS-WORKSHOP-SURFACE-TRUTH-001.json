@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKSHOP-SURFACE-TRUTH-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Make the member-facing Workshop surface tell the truth, as two coordinated scopes with separate acceptance evidence. Scope B, public-demo and fixture truth: identify Jordan Ellis as the example member wherever the public preview presents the demo library, explain in plain language what Workshop is, disclose that the public experience is temporary and its apparent saves are not durable member saves, and make an anonymous GET of /app/workshop/work perform zero AI or provider calls while explicit Spark activation keeps the currently authorized generation flow. Scope C, retire dead status filters: remove the Suggested and Unfinished filter controls from the member-facing library because no production path can produce either status, make stale status query values fall back safely and truthfully, and correct the All statuses wording while Archived stays excluded. Preserve owner isolation, privacy, fixture and noncanonical-truth boundaries, signed-in behavior, and archive, restore and permanent-delete behavior. No redesign, no schema change, no data or enum rewrite, and no change to stored legacy status values.",
   "assignment": "implementation",
   "writer_ref": "session:faacd1b7-1438-4dca-aff5-aaae1e108c46",
@@ -39,6 +39,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "7372f79dd4a865881cb494184212245807511c93",
+  "closed_at": "2026-08-25T01:29:56Z"
 }
