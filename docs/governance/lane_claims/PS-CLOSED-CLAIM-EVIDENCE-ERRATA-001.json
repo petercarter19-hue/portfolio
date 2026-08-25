@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-CLOSED-CLAIM-EVIDENCE-ERRATA-001",
+  "state": "active",
+  "outcome": "Establish one generic, fail-closed, owner-authorized delivery-preflight transition for correcting the fixed runtime-inert evidence file of an already closed claim without reopening or changing that claim. The transition must require the reusable control singleton, a fresh current-main branch, the exact closed package and evidence path, one new opaque owner authorization reference durably recorded in the amended evidence, and a one-file committed delta; it must reject claim, receipt, runtime, test, schema, configuration, provider, database, deployment, or unrelated-package changes. Document the narrow procedure and prove positive and hostile negative cases. This package does not itself amend PS-WORKSHOP-SURFACE-TRUTH-001; after this reviewed mechanism merges, that closed package may use the new transition under Pete's separate exact authorization already recorded by its Workshop manager.",
+  "assignment": "implementation",
+  "writer_ref": "session:faacd1b7-1438-4dca-aff5-aaae1e108c46",
+  "branch": "work/2026-08-24-closed-claim-evidence-errata-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "2a75dbb2d2cae4573dae80dc8bd9537aff0f1ff9",
+  "owner_outcome_ref": "session:01a03596-4c58-7762-91e8-99d4dbca3baa/owner-authorization:2026-08-24/closed-claim-evidence-errata",
+  "surfaces": [
+    "AGENTS.md",
+    "START_HERE.md",
+    "docs/AI_WORKFLOW.md",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+    "docs/governance/lane_claims/PS-CLOSED-CLAIM-EVIDENCE-ERRATA-001.json",
+    "docs/governance/lane_claims/evidence/PS-CLOSED-CLAIM-EVIDENCE-ERRATA-001.md",
+    "docs/governance/lane_claims/receipts/PS-CLOSED-CLAIM-EVIDENCE-ERRATA-001.json",
+    "scripts/delivery_preflight.py",
+    "tests/test_delivery_preflight.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-CLOSED-CLAIM-EVIDENCE-ERRATA-001.md"
+  ],
+  "domains": [
+    "governance:delivery-control:closed-claim-evidence-errata"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
