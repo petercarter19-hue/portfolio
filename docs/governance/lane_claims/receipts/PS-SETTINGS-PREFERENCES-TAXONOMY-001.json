@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-PREFERENCES-TAXONOMY-001",
+  "candidate_sha": "1b378511311d7322367fb1b72cbf32f03ce943d9",
+  "review_type": "independent",
+  "reviewer_ref": "role:indrev:ps-settings-b0:20260825T223835Z:1b378511",
+  "result": "pass",
+  "reviewed_at": "2026-08-25T22:38:35Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-PREFERENCES-TAXONOMY-001.md"
+}
