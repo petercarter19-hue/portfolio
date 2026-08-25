@@ -37,6 +37,72 @@ details:
 If any entry condition is missing, stop. Do not substitute Pete's owner account,
 another person's identity, production content, or a mocked result.
 
+## Identity creation and retirement gate
+
+Do not create either customer identity until all entry-gate checks pass, the
+identity-retirement tool is independently accepted and merged, and the
+operator is running that exact merged source. The proof application release is
+still pinned separately by the normal entry gate; this operator tool is not an
+application feature flag or runtime endpoint.
+Immediately before creation, establish a run-scoped exact UTC cutoff. Pete then
+creates exactly two same-inbox customer identities and privately retains the
+two External ID subjects only long enough to complete the attended operation.
+The package manager never sees or records an address, subject, object ID,
+credential, code, claim, token, or account-selection detail.
+
+After application-item cleanup and before Pete permanently deletes either
+External ID customer object, a separately authorized operator runs this order:
+
+1. set the current authoritative `PEERSLATE_AUTH_ISSUER` value in process memory
+   without displaying or saving it;
+2. run `plan` with the exact creation cutoff and current operation-authorization
+   reference; Pete privately enters and confirms `member_a` and `member_b`
+   subjects at the non-echoing prompts;
+3. run `retire` with the same inputs and all three retirement confirmations;
+4. run `verify-retired`; and
+5. only after verification passes, Pete permanently deletes the two External
+   ID customer objects using the previously established Entra retirement path.
+
+```powershell
+python scripts/run_synthetic_qa_identity_retirement.py plan `
+  --authorization-ref <CURRENT-OPAQUE-AUTHORIZATION> `
+  --created-after-utc <EXACT-UTC-CREATION-CUTOFF>
+
+python scripts/run_synthetic_qa_identity_retirement.py retire `
+  --authorization-ref <CURRENT-OPAQUE-AUTHORIZATION> `
+  --created-after-utc <EXACT-UTC-CREATION-CUTOFF> `
+  --confirm-exact-two-synthetic-members `
+  --confirm-workshop-cleanup-complete `
+  --confirm-retire
+
+python scripts/run_synthetic_qa_identity_retirement.py verify-retired `
+  --authorization-ref <CURRENT-OPAQUE-AUTHORIZATION> `
+  --created-after-utc <EXACT-UTC-CREATION-CUTOFF>
+```
+
+If retirement was mistaken and neither External ID object has been permanently
+deleted, the separately authorized recovery operation is:
+
+```powershell
+python scripts/run_synthetic_qa_identity_retirement.py recover `
+  --authorization-ref <CURRENT-OPAQUE-RECOVERY-AUTHORIZATION> `
+  --created-after-utc <EXACT-UTC-CREATION-CUTOFF> `
+  --confirm-exact-two-synthetic-members `
+  --confirm-external-identities-not-permanently-deleted `
+  --confirm-recover
+```
+
+Never recover after Entra permanent deletion. A refusal, nonzero residue count,
+mapping mismatch, unexpected role, missing/untrusted foreign key, or update
+count other than two is a hard stop. Do not work around it with SQL, a feature
+flag, or a production configuration change. Do not enable SQL-driver debug
+logging, ODBC tracing, a network recorder, or any other parameter capture; the
+tool refuses known mssql-python diagnostic logging.
+
+An `indeterminate` result is also a hard stop. It can mean the database commit
+succeeded but connection cleanup did not. Never repeat `retire` or `recover`
+from that result; obtain authority for a read-only state verification first.
+
 ## Client arrangement
 
 Pete prepares four independent contexts without importing a profile, cookies,

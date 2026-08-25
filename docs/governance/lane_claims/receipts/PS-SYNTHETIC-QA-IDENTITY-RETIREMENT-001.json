@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-QA-IDENTITY-RETIREMENT-001",
+  "candidate_sha": "de209cd55b8e898a81e7d90e927cbaaf274b4419",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/identity_retirement_review",
+  "result": "pass",
+  "reviewed_at": "2026-08-25T13:52:35Z",
+  "findings": [
+    {
+      "id": "R1-serializable-verification",
+      "status": "resolved",
+      "severity": "high",
+      "summary": "Plan and verify-retired hold one serializable locked assessment through transaction resolution; the controlled recovery-race regression passes."
+    },
+    {
+      "id": "R2-closed-cleanup-output",
+      "status": "resolved",
+      "severity": "medium",
+      "summary": "Rollback and close failures produce one content-free closed report, including indeterminate classification after a completed commit."
+    },
+    {
+      "id": "R3-ambiguous-commit-preservation",
+      "status": "resolved",
+      "severity": "medium",
+      "summary": "Every attempted commit remains indeterminate with exit 3 when rollback or close also fails; combined-failure regressions never downgrade to refused or Pass."
+    },
+    {
+      "id": "R4-package-registry-collision",
+      "status": "resolved",
+      "severity": "minor",
+      "summary": "The optional initiative directory was removed instead of changing the actively claimed package registry; the reduced candidate retains all required operator safety instructions."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SYNTHETIC-QA-IDENTITY-RETIREMENT-001.md"
+}
