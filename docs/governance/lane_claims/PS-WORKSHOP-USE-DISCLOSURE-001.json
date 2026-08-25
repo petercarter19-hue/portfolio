@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-USE-DISCLOSURE-001",
+  "state": "active",
+  "outcome": "Implement the accepted Workshop D architecture: truthfully disclose when a member's confirmed private Workshop information is cited by at least one explicitly saved Opportunity Slate version; use dbo.opportunity_saved_evidence as the sole durable actual-use authority; add one owner-scoped, existence-neutral read procedure and service; show actual citation state and non-blocking warnings before edit or permanent delete; preserve archive, restore, edit, and delete authority; keep anonymous Workshop database-free; and prove server-derived identity, two-member isolation, forged-key neutrality, unavailable-state truth, migration apply/verify/rollback, and no provider use. Use existing restrained Workshop composition only. Do not create or extend knowledge_item_uses, treat transient opportunity_analysis_citations as durable use, copy private bodies into a new ledger, block member actions, or alter Opportunity Slate product behavior.",
+  "assignment": "implementation",
+  "writer_ref": "session:faacd1b7-1438-4dca-aff5-aaae1e108c46",
+  "branch": "work/2026-08-25-workshop-use-disclosure-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "91bd8056045f7c3da16088f3893c6f4237e9ac0e",
+  "owner_outcome_ref": "session:01a03596-4c58-7762-91e8-99d4dbca3baa/owner-direction:2026-08-25/workshop-d-use-disclosure",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-WORKSHOP-USE-DISCLOSURE-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-USE-DISCLOSURE-001.md",
+    "docs/governance/lane_claims/receipts/PS-WORKSHOP-USE-DISCLOSURE-001.json",
+    "workshop_routes.py",
+    "templates/partials/workshop/_item_detail.html",
+    "templates/workshop_add.html",
+    "templates/workshop_delete_confirm.html",
+    "services/opportunity_use_service.py",
+    "services/database_service.py",
+    "tests/test_opportunity_use_disclosure.py",
+    "SQL FIles/Migrations/PS-OPPSLATE-USE-001_opportunity_slate_use.sql",
+    "SQL FIles/Migrations/PS-OPPSLATE-USE-001_opportunity_slate_use_rollback.sql",
+    "SQL FIles/Verification/PS-OPPSLATE-USE-001_owner_isolation_verify.sql",
+    "SQL FIles/Migrations/registry.json"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-USE-DISCLOSURE-001.md"
+  ],
+  "domains": [
+    "runtime:workshop:use-disclosure",
+    "runtime:opportunity-slate:saved-use-read",
+    "schema:opportunity-slate:saved-use-read"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
