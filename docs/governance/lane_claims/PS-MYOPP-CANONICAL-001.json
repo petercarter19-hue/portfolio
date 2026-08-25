@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MYOPP-CANONICAL-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement and independently review the fixture-only C2 canonical shared-side foundation under the accepted REC-02 topology: provider-neutral and synthetic connectors; fail-closed source-policy enforcement at registration and point of use; immutable receipts and versions; listing, application-link, freshness, closure, and outage lifecycles; canonical identity, deterministic dedupe, reversible merge/split, governing-source selection and failover, requirement versions, field attribution, aggregate eligibility, rights-bounded tombstones, and the Live Opportunity Gate; plus a reusable safe-outbound validator with adversarial proof. Add an additive PS-MYOPP-001 Azure SQL migration, verification, rollback, and registry entry using the current governed migration root. No member-side tables or data, routes or UI, search projection, ingestion scheduling, commercial/provider adapter, provider contact/account/API/credential/spend, external infrastructure provisioning, schema apply or rollback, deployment, enablement, or production claim. Any disposable external migration gate requires separate owner authority.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/c2_canonical_writer",
@@ -46,6 +46,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "3458534baf8174d662c3963fa424e92c4400ca48",
+  "closed_at": "2026-08-25T18:09:28Z"
 }
