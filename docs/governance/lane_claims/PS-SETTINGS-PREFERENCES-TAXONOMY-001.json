@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-PREFERENCES-TAXONOMY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver B0 only: an independently reviewed documentation-only Settings and My Data preferences-and-consents taxonomy and schema-fit decision. Distinguish true optional preferences from product rules/status, contextual versioned consents, permissions/audience, appearance/theme, and lifecycle/data operations; assess the existing consent, notification-preference, and connection-preference tables for future fit; and record B1 entry criteria and unresolved owner/professional decisions. No UI, runtime, route, service, test behavior, schema or migration, configuration, dependency, deployment, enablement, data/provider action, or B1-F activation.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/b0_writer",
@@ -29,6 +29,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "57b927d056f6ca764c05802fb3b678aecc1bf043",
+  "closed_at": "2026-08-25T22:48:12Z"
 }
