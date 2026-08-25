@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-CLOSED-CLAIM-EVIDENCE-ERRATA-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Establish one generic, fail-closed, owner-authorized delivery-preflight transition for correcting the fixed runtime-inert evidence file of an already closed claim without reopening or changing that claim. The transition must require the reusable control singleton, a fresh current-main branch, the exact closed package and evidence path, one new opaque owner authorization reference durably recorded in the amended evidence, and a one-file committed delta; it must reject claim, receipt, runtime, test, schema, configuration, provider, database, deployment, or unrelated-package changes. Document the narrow procedure and prove positive and hostile negative cases. This package does not itself amend PS-WORKSHOP-SURFACE-TRUTH-001; after this reviewed mechanism merges, that closed package may use the new transition under Pete's separate exact authorization already recorded by its Workshop manager.",
   "assignment": "implementation",
   "writer_ref": "session:faacd1b7-1438-4dca-aff5-aaae1e108c46",
@@ -31,6 +31,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "57f4ca19ed9fd76c4314bc59d184f47d7133b189",
+  "closed_at": "2026-08-25T03:50:10Z"
 }
