@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SYNTHETIC-BROWSER-OPERATOR-BOUNDARY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Correct the attended synthetic two-member browser-operator boundary. Pete retains credential, MFA, and recovery entry; QA-identity confirmation; material decisions; spending, production, and irreversible identity-deletion authorization; and genuinely physical-device-only actions. The assigned browser-capable operator owns ordinary navigation and controls, tabs, refresh, public departure and return, sign-out clicks, visible synthetic-item lifecycle actions, privacy-safe screenshots and structural observations, routine cleanup, and visible residue checks. A manager without a browser routes those actions to a browser-capable executor in the same task. The operator never inspects, exports, records, or persists passwords, MFA codes, cookies, tokens, claims, authentication headers, browser profiles, or private session files. Update central role guidance, the attended-proof runbook, and focused tests only. Do not run a live proof; create or retire identities; query or mutate production; change configuration or schema; deploy; enable; or perform a production operation.",
   "assignment": "implementation",
   "writer_ref": "session:01a02fcb-e68d-7f60-9151-912bba299456",
@@ -30,6 +30,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "24555b31c7e4da8fb60a06ce662f25c022f4128c",
+  "closed_at": "2026-08-25T17:46:34Z"
 }
