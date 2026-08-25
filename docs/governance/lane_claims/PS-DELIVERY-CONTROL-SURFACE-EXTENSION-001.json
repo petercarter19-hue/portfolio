@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-CONTROL-SURFACE-EXTENSION-001",
+  "state": "active",
+  "outcome": "Add one generic fail-closed active-claim control transition that lets the exact assigned task append newly required normalized repository-relative surfaces through the leased _control singleton, while preserving all other claim bytes, rerunning prospective claim-set collision validation, and keeping production and deployment withheld. Prove the positive path with Delivery Control fixtures equivalent to appending tests/test_database_service.py and prove stale, dirty, wrong-context, inactive, malformed, duplicate, broad, unrelated-change, and hierarchical collision refusals. Do not edit Workshop, database, provider, identity, schema, configuration, deployment, or production surfaces.",
+  "assignment": "implementation",
+  "writer_ref": "task:01a02b5c-1ac8-7960-8694-e4a288ec9cf4",
+  "branch": "work/2026-08-25-delivery-control-surface-extension-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "4873cd1528da8bf0706771c5e4727eb82ab09933",
+  "owner_outcome_ref": "session:01a03688-696c-7ce3-9f25-6a204763c184/owner-direction:2026-08-25/delivery-control-surface-extension",
+  "surfaces": [
+    "START_HERE.md",
+    "docs/AI_WORKFLOW.md",
+    "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+    "docs/governance/lane_claims/PS-DELIVERY-CONTROL-SURFACE-EXTENSION-001.json",
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-CONTROL-SURFACE-EXTENSION-001.md",
+    "docs/governance/lane_claims/receipts/PS-DELIVERY-CONTROL-SURFACE-EXTENSION-001.json",
+    "scripts/delivery_preflight.py",
+    "scripts/worktree_lifecycle.py",
+    "tests/test_delivery_preflight.py",
+    "tests/test_worktree_lifecycle.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-CONTROL-SURFACE-EXTENSION-001.md"
+  ],
+  "domains": [
+    "governance:delivery-control:surface-extension",
+    "operations:worktree-lifecycle:surface-extension-control",
+    "testing:delivery-control:surface-extension"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
