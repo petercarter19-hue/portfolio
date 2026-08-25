@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MYOPP-SUPPLY-RIGHTS-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Produce and independently review the documentation-only C1 supply-and-rights package from official public evidence: compare candidate licensed-commercial, permitted-public, direct-employer/ATS, and company-context source classes; record per-provider candidate source_policy rights for display, excerpts, descriptions, storage, AI use, caching, retention, attribution, removal, termination, exit, and survivable minimal source facts; preserve the provider-neutral connector contract; finalize private member-import isolation and source-linked company-context policy; and present citations plus explicit owner decisions. No provider contact, selection, procurement, spend, contract, trial, account/API use, schema, runtime, adapter, infrastructure, deployment, enablement, cutover, or production claim. Public terms must be cited or marked unverified; stop for counsel-required questions.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/c1_supply_rights_writer",
@@ -35,6 +35,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "53515abcb85e6a17ca508f372ec642d058f7fd65",
+  "closed_at": "2026-08-25T00:39:03Z"
 }
