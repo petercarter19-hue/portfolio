@@ -59,17 +59,18 @@ Each finding and its resolution is recorded individually in
 - All runs hermetic: `AZURE_SQL_CONNECTIONSTRING` and `PS_WORKSHOP_SQL_GATE`
   unset, placeholder provider key. **No real provider or database call.**
 
-## Honest limitations
+## Honest limitations (current)
 
-- **Merged is not deployed.** This record claims repository truth only.
-  Production still serves release `f21b9745e9e67d2ac958e586` (Package A's
-  deployment); until a separately authorized deployment, the live anonymous
-  Work opening still generates a Spark on page load.
-- No live/browser proof and no signed-in live proof; evidence is source and
-  hermetic tests.
-- Package A's authenticated provenance behaviour remains live but not
-  attended-proven; that proof is owed separately (preserved queue item K).
-- No schema, migration, configuration, dependency, or production change.
+- No authenticated or two-member live proof was performed; signed-in
+  behaviour rests on the exact-SHA tests accepted at review. Package A's
+  attended signed-in provenance proof remains owed under preserved queue
+  item K.
+- Live provider-call/spend telemetry was not instrumented; the
+  zero-provider-call contract for an anonymous GET rests on the exact-SHA
+  test and SDK-seam proof accepted at review, plus the deployed page's
+  observable behaviour recorded below.
+- No schema, migration, database, configuration, dependency, or provider
+  change was contained in this package.
 
 ## Deployment and live proof (2026-08-24, owner-authorized)
 
@@ -83,11 +84,14 @@ Each finding and its resolution is recorded individually in
 - Release identity proven, not observed: live `/healthz` returned
   `status: ok`, `service: peerslate`, `release: c493f5c6c2a3e544dee6ef61`,
   which equals `release_id_for_build(44c3e8fe..., "1582")` exactly.
-- Public live checks after the release was proven: one controlled anonymous
-  GET of `/app/workshop/work` loaded with Jordan Ellis named, the plain
-  explanation, the temporary/non-durable wording, no auto-rendered Spark
-  card, the ask-first note, and the explicit Spark door present but never
-  pressed. The library shows no Suggested/Unfinished controls, `All current`
+- Public live checks after the release was proven, attributed by route. On
+  `/app/workshop/work` (the Spark/public-work proof): one controlled
+  anonymous GET loaded with Jordan Ellis named in the preview banner, the
+  temporary/non-durable wording, no auto-rendered Spark card, the ask-first
+  note, and the explicit Spark door present but never pressed. On
+  `/app/workshop` (the library, plain-explanation, and status-filter proof):
+  the plain explanation of what Workshop is, no Suggested/Unfinished
+  controls, `All current`
   wording, the `in this library` footer, and legacy chips still visible in
   the default view. Stale `?status=suggested` / `?status=unfinished` links
   fell back with the truthful removal notice and no label-preservation
@@ -110,3 +114,16 @@ Single squash commit; `git revert` restores prior behaviour exactly. Nothing
 to unwind in schema, data, configuration, or flags. Last known-good
 production reference before this release: source `5436e423...`, run 1512,
 release `f21b9745e9e67d2ac958e586`.
+
+## Errata (2026-08-25, owner-authorized)
+
+Amended after claim close through the `evidence-errata` transition: the
+public live checks are now attributed to their actual routes
+(`/app/workshop/work` for the Spark/public-work proof; `/app/workshop` for
+the plain explanation and the library/status/stale-link/malformed-value
+proof), and the pre-deployment limitations that the recorded run-1582
+deployment had superseded are replaced by the current ones. No proof was
+added or invented; what was verified is unchanged, only where it is said to
+have been verified.
+
+<!-- evidence-errata-authorization: session:01a03596-4c58-7762-91e8-99d4dbca3baa/owner-authorization:2026-08-24/closed-claim-evidence-errata -->
