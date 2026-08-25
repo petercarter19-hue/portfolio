@@ -42,6 +42,9 @@ CONTROL_BRANCH_RE = re.compile(
     r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-"
     r"(?:authorize|transfer|pause|resume|close)-[a-z0-9-]+$"
 )
+EVIDENCE_ERRATA_BRANCH_RE = re.compile(
+    r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-evidence-errata-[a-z0-9-]+$"
+)
 REF_RE = re.compile(r"^(?:task|session|agent|role):[A-Za-z0-9._:/-]{3,180}$")
 DOMAIN_PART_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 ISO_UTC_RE = re.compile(
@@ -64,9 +67,16 @@ ASSIGNMENTS = {"implementation"}
 REPOSITORY_AUTHORITIES = {"through_merge", "write_only"}
 REVIEW_REQUIREMENTS = {"self", "independent"}
 MUTATING_INTENTS = {
-    "activate", "authorize", "write", "transfer", "pause", "resume", "merge", "close"
+    "activate", "authorize", "write", "transfer", "pause", "resume", "merge",
+    "close", "evidence-errata",
 }
-CONTROL_INTENTS = {"activate", "authorize", "transfer", "pause", "resume", "close"}
+# evidence-errata is a control-style transition: it runs from the leased
+# sparse _control singleton and its claim is read from the branch copy, but
+# unlike the lifecycle transitions it must leave every claim byte-identical.
+CONTROL_INTENTS = {
+    "activate", "authorize", "transfer", "pause", "resume", "close",
+    "evidence-errata",
+}
 WORKTREE_REGISTRY_REL = Path("peerslate") / "worktree_registry.json"
 CI_ENVIRONMENT_KEYS = ("TF_BUILD", "CI", "GITHUB_ACTIONS", "BUILD_BUILDID")
 
@@ -435,6 +445,23 @@ def receipt_relative_path(package: str) -> str:
 
 def evidence_relative_path(package: str) -> str:
     return f"{EVIDENCE_REL}/{package}.md"
+
+
+def _tracked_regular_blob(root: Path, ref: str, path: str) -> bool:
+    """True when ``path`` at ``ref`` is exactly one ordinary tracked blob.
+
+    Symlinks (120000), gitlinks/submodules (160000), executables (100755),
+    and missing or ambiguous entries all return False: an evidence errata
+    may amend one plain committed file and nothing else.
+    """
+    result = _git_result(root, "ls-tree", "-z", ref, "--", path)
+    if result.returncode:
+        return False
+    entries = [item for item in result.stdout.split("\0") if item]
+    if len(entries) != 1:
+        return False
+    meta = entries[0].split("\t", 1)[0].split(" ")
+    return len(meta) >= 2 and meta[0] == "100644" and meta[1] == "blob"
 
 
 def control_relative_paths(package: str) -> tuple[str, str, str]:
@@ -1032,6 +1059,11 @@ def evaluate(
         errors.append(f"{args.intent} requires --require-clean")
     if args.require_clean and not facts.clean:
         errors.append("checkout is not clean")
+    owner_authorization_ref = getattr(args, "owner_authorization_ref", "")
+    if owner_authorization_ref and args.intent != "evidence-errata":
+        errors.append(
+            "--owner-authorization-ref is valid only for the evidence-errata intent"
+        )
 
     if args.intent == "read":
         return payload, errors, warnings
@@ -1348,6 +1380,89 @@ def evaluate(
                                 + ", ".join(mismatched)
                             )
 
+    elif args.intent == "evidence-errata":
+        # PS-CLOSED-CLAIM-EVIDENCE-ERRATA-001: owner-authorized amendment of
+        # the one fixed runtime-inert evidence file of an already CLOSED
+        # package, without reopening or mutating any claim. Every gate fails
+        # closed. Admitting the evidence-only PR is ALL this intent grants:
+        # it never deploys, never changes claim state, and confers no
+        # repository or production authority beyond that single admission.
+        if not EVIDENCE_ERRATA_BRANCH_RE.fullmatch(facts.branch):
+            errors.append(
+                "evidence errata requires the delivery-evidence-errata "
+                "control branch pattern"
+            )
+        if not isinstance(owner_authorization_ref, str) or not REF_RE.fullmatch(
+            owner_authorization_ref
+        ):
+            errors.append(
+                "evidence errata requires --owner-authorization-ref as an "
+                "opaque task/session/agent/role reference"
+            )
+        if authority_claim is None:
+            errors.append(
+                f"no authoritative claim exists on origin/main for {args.package}"
+            )
+            return payload, errors, warnings
+        if authority_claim.get("state") != "closed":
+            errors.append("evidence errata applies only to a closed claim")
+        if branch_claim is None or _changed_fields(authority_claim, branch_claim):
+            errors.append(
+                "evidence errata must not reopen or mutate the closed claim"
+            )
+        added = sorted(set(candidate_claims) - set(authority_claims))
+        removed = sorted(set(authority_claims) - set(candidate_claims))
+        changed = sorted(
+            key
+            for key in set(authority_claims) & set(candidate_claims)
+            if _changed_fields(authority_claims[key], candidate_claims[key])
+        )
+        if added or removed or changed:
+            errors.append("evidence errata must not add, remove, or change any claim")
+        expected = evidence_relative_path(args.package)
+        evidence_surfaces = authority_claim.get("evidence_surfaces")
+        fixed_surface = None
+        if isinstance(evidence_surfaces, list) and len(evidence_surfaces) == 1:
+            try:
+                fixed_surface = normalize_path(str(evidence_surfaces[0]))
+            except ValueError:
+                fixed_surface = None
+        if fixed_surface != expected:
+            errors.append(
+                "evidence errata requires the claim's single fixed evidence "
+                f"surface to be exactly {expected}"
+            )
+            return payload, errors, warnings
+        if set(facts.branch_paths) != {expected}:
+            errors.append(f"evidence errata must change only {expected}")
+        if facts.ahead != 1 or facts.behind != 0:
+            errors.append(
+                "evidence errata must be exactly one commit ahead of current "
+                "origin/main and zero behind"
+            )
+        for ref, label in (
+            ("origin/main", "origin/main"),
+            (facts.head, "the candidate"),
+        ):
+            if not _tracked_regular_blob(work_root, ref, expected):
+                errors.append(
+                    f"evidence path is not one ordinary tracked file at {label}"
+                )
+        marker = (
+            f"<!-- evidence-errata-authorization: {owner_authorization_ref} -->"
+        )
+        head_show = _git_result(work_root, "show", f"{facts.head}:{expected}")
+        origin_show = _git_result(work_root, "show", f"origin/main:{expected}")
+        if head_show.returncode or marker not in head_show.stdout:
+            errors.append(
+                "amended evidence must contain the exact evidence-errata "
+                "authorization marker for the supplied owner reference"
+            )
+        if not origin_show.returncode and marker in origin_show.stdout:
+            errors.append(
+                "origin/main already contains this exact authorization marker"
+            )
+
     elif args.intent == "merge":
         if claim.get("state") != ACTIVE_STATE:
             errors.append("merge requires an active claim")
@@ -1455,6 +1570,7 @@ def build_parser() -> argparse.ArgumentParser:
             "grant",
             "merge",
             "close",
+            "evidence-errata",
             "release",
         ],
     )
@@ -1466,6 +1582,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--task-ref",
         default="",
         help="opaque task/session ref required by an initialized local worktree registry",
+    )
+    parser.add_argument(
+        "--owner-authorization-ref",
+        default="",
+        help=(
+            "opaque owner reference required by the evidence-errata intent; "
+            "invalid for every other intent"
+        ),
     )
     return parser
 

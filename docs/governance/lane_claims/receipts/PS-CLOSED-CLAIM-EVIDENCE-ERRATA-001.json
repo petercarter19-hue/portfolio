@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "package": "PS-CLOSED-CLAIM-EVIDENCE-ERRATA-001",
+  "candidate_sha": "b9405d591e02893292f2efe690b0ba61ec3b379c",
+  "review_type": "independent",
+  "reviewer_ref": "agent:cursor-grok-4.6-xhigh/session:e40fefea-9502-4710-88e3-37f323c9595a",
+  "result": "pass",
+  "reviewed_at": "2026-08-25T03:44:40Z",
+  "findings": [
+    {
+      "id": "R1-accept-zero-findings",
+      "status": "informational",
+      "severity": "minor",
+      "summary": "Independent review returned ACCEPT with zero findings at exact candidate b9405d591e02893292f2efe690b0ba61ec3b379c. The candidate adds the fail-closed evidence-errata delivery-preflight transition (closed-claim-only, zero claim mutation, _control lease bound to the closed package, dedicated branch pattern, single fixed-evidence-path delta, ahead-1/behind-0 freshness, ordinary-100644-blob-only, exact owner-reference marker with replay protection, owner reference rejected on every other intent) with 19 dedicated fail-closed tests; 173 tests passed across every affected and guardrail suite with no real provider or database call. Disclosed to the reviewer and unchallenged: docs/AI_WORKFLOW.md deliberately untouched at 1098 words under its sub-1100 cap with the operating instructions in START_HERE section 5, and one pre-existing machine-local PID-assertion failure in tests/test_worktree_lifecycle proven unrelated by failing identically with the candidate stashed and passing in CI."
+    }
+  ],
+  "evidence_ref": "lane_claims/evidence/PS-CLOSED-CLAIM-EVIDENCE-ERRATA-001.md"
+}

@@ -1435,6 +1435,223 @@ class EvaluationTests(unittest.TestCase):
         )
 
 
+class EvidenceErrataTests(unittest.TestCase):
+    """PS-CLOSED-CLAIM-EVIDENCE-ERRATA-001: the owner-authorized amendment of
+    a CLOSED package's one fixed runtime-inert evidence file, admitted without
+    reopening or mutating any claim. Every gate is exercised fail-closed, and
+    the happy path proves the full stack admits exactly the intended shape.
+
+    Borrows EvaluationTests.run_evaluate by reference rather than
+    subclassing, so the parent's own tests are not silently re-collected and
+    duplicated under this class.
+    """
+
+    run_evaluate = EvaluationTests.run_evaluate
+
+    OWNER_REF = "session:owner-errata/decision:1"
+    MARKER = f"<!-- evidence-errata-authorization: {OWNER_REF} -->"
+    EVIDENCE = preflight.evidence_relative_path("PS-EXAMPLE-001")
+
+    def closed_claim(self, **overrides):
+        return claim(
+            state="closed",
+            merged_sha=CANDIDATE,
+            closed_at="2026-08-24T00:00:00Z",
+            **overrides,
+        )
+
+    def errata_args(self, **overrides):
+        value = {"owner_authorization_ref": self.OWNER_REF}
+        value.update(overrides)
+        return args("evidence-errata", **value)
+
+    def errata_facts(self, **overrides):
+        value = {
+            "branch": "work/2026-08-25-delivery-evidence-errata-example",
+            "branch_paths": (self.EVIDENCE,),
+            "ahead": 1,
+            "behind": 0,
+        }
+        value.update(overrides)
+        return facts(**value)
+
+    def file_patches(self, *, head_has_marker=True, origin_has_marker=False,
+                     ordinary=True):
+        """Patch the two file inspections the intent performs.
+
+        ``_tracked_regular_blob`` answers requirement 7 and the two
+        ``_git_result(... "show" ...)`` calls answer requirement 8, so the
+        evaluation tests can drive both without a fixture repository.
+        """
+        head_text = "Evidence body.\n" + (self.MARKER if head_has_marker else "")
+        origin_text = "Evidence body.\n" + (self.MARKER if origin_has_marker else "")
+
+        def fake_git_result(root, *git_args):
+            if git_args and git_args[0] == "show":
+                ref = git_args[1]
+                text = origin_text if ref.startswith("origin/main:") else head_text
+                return subprocess.CompletedProcess([], 0, text, "")
+            return subprocess.CompletedProcess([], 0, "", "")
+
+        return {
+            "blob": patch.object(
+                preflight, "_tracked_regular_blob", return_value=ordinary
+            ),
+            "git_result": patch.object(
+                preflight, "_git_result", side_effect=fake_git_result
+            ),
+        }
+
+    def run_errata(self, *, request=None, value=None, repo_facts=None,
+                   origin_claims=None, candidate_claims=None, **file_kwargs):
+        value = value if value is not None else self.closed_claim()
+        return self.run_evaluate(
+            request or self.errata_args(),
+            value,
+            repo_facts or self.errata_facts(),
+            origin_claims=origin_claims,
+            candidate_claims=candidate_claims,
+            **self.file_patches(**file_kwargs),
+        )
+
+    def test_the_exact_intended_shape_is_admitted(self):
+        _, errors, _ = self.run_errata()
+        self.assertEqual([], errors)
+
+    def test_an_active_claim_is_refused(self):
+        value = claim()
+        _, errors, _ = self.run_errata(value=value)
+        self.assertTrue(any("only to a closed claim" in e for e in errors))
+
+    def test_a_paused_claim_is_refused(self):
+        value = claim(state="paused", checkpoint_sha=CANDIDATE)
+        _, errors, _ = self.run_errata(value=value)
+        self.assertTrue(any("only to a closed claim" in e for e in errors))
+
+    def test_a_reopened_or_mutated_branch_claim_is_refused(self):
+        authority = self.closed_claim()
+        mutated = self.closed_claim(outcome="A quietly rewritten outcome.")
+        _, errors, _ = self.run_errata(
+            value=mutated,
+            origin_claims={"ps-example-001": authority},
+        )
+        self.assertTrue(any("reopen or mutate" in e for e in errors))
+
+    def test_any_other_claim_change_is_refused(self):
+        authority = self.closed_claim()
+        stray = claim(package="PS-STRAY-001", number=2,
+                      surfaces=["src/package-2"], domains=["product:stray"])
+        _, errors, _ = self.run_errata(
+            value=authority,
+            origin_claims={"ps-example-001": copy.deepcopy(authority)},
+            candidate_claims={
+                "ps-example-001": authority,
+                "ps-stray-001": stray,
+            },
+        )
+        self.assertTrue(any("add, remove, or change any claim" in e for e in errors))
+
+    def test_a_missing_authoritative_claim_is_refused(self):
+        value = self.closed_claim()
+        _, errors, _ = self.run_errata(
+            value=value,
+            origin_claims={},
+            candidate_claims={"ps-example-001": value},
+        )
+        self.assertTrue(
+            any("no authoritative claim exists on origin/main" in e for e in errors)
+        )
+
+    def test_the_control_branch_pattern_is_required(self):
+        _, errors, _ = self.run_errata(
+            repo_facts=self.errata_facts(
+                branch="work/2026-08-25-delivery-close-example"
+            ),
+        )
+        self.assertTrue(
+            any("delivery-evidence-errata" in e for e in errors)
+        )
+
+    def test_a_missing_owner_reference_is_refused(self):
+        _, errors, _ = self.run_errata(
+            request=self.errata_args(owner_authorization_ref=""),
+        )
+        self.assertTrue(
+            any("--owner-authorization-ref" in e for e in errors)
+        )
+
+    def test_a_malformed_owner_reference_is_refused(self):
+        _, errors, _ = self.run_errata(
+            request=self.errata_args(owner_authorization_ref="not an opaque ref"),
+        )
+        self.assertTrue(
+            any("--owner-authorization-ref" in e for e in errors)
+        )
+
+    def test_the_owner_reference_is_rejected_on_every_other_intent(self):
+        value = claim()
+        _, errors, _ = self.run_evaluate(
+            args("write", owner_authorization_ref=self.OWNER_REF),
+            value,
+            facts(),
+        )
+        self.assertTrue(
+            any("valid only for the evidence-errata intent" in e for e in errors)
+        )
+
+    def test_a_second_path_riding_along_is_refused(self):
+        _, errors, _ = self.run_errata(
+            repo_facts=self.errata_facts(
+                branch_paths=(self.EVIDENCE, "workshop_routes.py"),
+            ),
+        )
+        self.assertTrue(any("must change only" in e for e in errors))
+
+    def test_a_wrong_single_path_is_refused(self):
+        _, errors, _ = self.run_errata(
+            repo_facts=self.errata_facts(branch_paths=("workshop_routes.py",)),
+        )
+        self.assertTrue(any("must change only" in e for e in errors))
+
+    def test_more_than_one_commit_is_refused(self):
+        _, errors, _ = self.run_errata(repo_facts=self.errata_facts(ahead=2))
+        self.assertTrue(any("exactly one commit ahead" in e for e in errors))
+
+    def test_a_stale_branch_behind_main_is_refused(self):
+        _, errors, _ = self.run_errata(
+            repo_facts=self.errata_facts(ahead=1, behind=1)
+        )
+        self.assertTrue(any("zero behind" in e for e in errors))
+
+    def test_a_missing_marker_in_the_amendment_is_refused(self):
+        _, errors, _ = self.run_errata(head_has_marker=False)
+        self.assertTrue(any("authorization marker" in e for e in errors))
+
+    def test_a_marker_already_on_main_is_refused(self):
+        _, errors, _ = self.run_errata(origin_has_marker=True)
+        self.assertTrue(any("already contains this exact" in e for e in errors))
+
+    def test_a_non_ordinary_file_is_refused(self):
+        _, errors, _ = self.run_errata(ordinary=False)
+        self.assertTrue(any("ordinary tracked file" in e for e in errors))
+
+    def test_a_claim_without_the_single_fixed_evidence_surface_is_refused(self):
+        value = self.closed_claim(
+            evidence_surfaces=[self.EVIDENCE, "docs/extra.md"]
+        )
+        _, errors, _ = self.run_errata(value=value)
+        self.assertTrue(
+            any("single fixed evidence surface" in e for e in errors)
+        )
+
+    def test_the_mechanism_requires_fetch_and_clean(self):
+        _, errors, _ = self.run_errata(
+            request=self.errata_args(fetch=False, require_clean=False),
+        )
+        self.assertTrue(any("requires --fetch" in e for e in errors))
+        self.assertTrue(any("requires --require-clean" in e for e in errors))
+
+
 class CurrentRepositoryTests(unittest.TestCase):
     def test_current_index_claims_and_legacy_snapshot_are_valid(self):
         current_index = preflight.load_index(ROOT)

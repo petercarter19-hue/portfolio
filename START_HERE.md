@@ -127,6 +127,17 @@ Merge that control PR before implementation merge.
   bytes were introduced by that recorded main commit. Keep the remote
   implementation branch through close; if it was deleted, re-push the exact
   reviewed branch before retrying.
+- Evidence errata: the only way to amend a CLOSED package's one fixed
+  `lane_claims/evidence` file. With Pete's authorization, lease the `_control`
+  singleton for that closed package, branch
+  `work/YYYY-MM-DD-delivery-evidence-errata-<slug>` from current main, and
+  commit exactly that one file, containing
+  `<!-- evidence-errata-authorization: <owner-ref> -->` for the supplied
+  reference. Change no claim. Validate with
+  `--intent evidence-errata --owner-authorization-ref <owner-ref>`; it fails
+  closed on any other path, any claim delta, a non-closed claim, a reused
+  marker, or a stale branch, and it admits only that evidence-only PR —
+  never a deployment or a claim change.
 
 Every control transition above first leases `_control` with
 `worktree_lifecycle.py control --package <PACKAGE-ID> --task-ref <TASK-REF>

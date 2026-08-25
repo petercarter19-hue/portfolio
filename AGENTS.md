@@ -64,6 +64,9 @@ handoffs are evidence, not additional gates.
   the exact fetched checkpoint and reruns collisions. Preserve the remote
   implementation branch through claim close so reviewed squash bytes remain
   provable.
+- A closed package's fixed evidence file may be amended only through the
+  owner-authorized `evidence-errata` control transition in `START_HERE.md`;
+  the closed claim itself is never reopened or changed.
 - Production deployment, schema mutation, configuration, enablement, rollback,
   and destructive operations are separate. A repository claim never grants
   them. Production deployment requires a manually queued exact main SHA and an
