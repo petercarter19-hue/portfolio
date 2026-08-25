@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-QA-IDENTITY-RETIREMENT-001",
+  "state": "active",
+  "outcome": "Implement and independently review a fail-closed operator-only repository path that can plan, atomically retire, verify, and recover exactly two recent ordinary synthetic QA member mappings after their Workshop items are permanently deleted. Accept both External ID subjects only through non-echoing interactive input; pin the approved production server and database; require an exact recent-creation cutoff, two distinct active customer identity mappings, ordinary user roles, active profiles, zero remaining Workshop items, and explicit operation confirmations; atomically revoke the two user identities, close and deactivate the two app users, and deactivate the two member profiles; return content-free structural counts and closed outcome codes only; and permit recovery only before External ID permanent deletion. Update the attended-proof runbook and add focused tests. Do not create identities, inspect or retain addresses or object IDs, contact Entra, query or mutate production, change schema or migration state, alter application runtime or feature flags, deploy, enable, or execute a production retirement or recovery operation under this repository authorization.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a02fcb-e68d-7f60-9151-912bba299456",
+  "branch": "work/2026-08-25-synthetic-qa-identity-retirement-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "3e7c1879c566863aec212c3bde42ac068cbbee26",
+  "owner_outcome_ref": "session:01a02fcb-e68d-7f60-9151-912bba299456/owner-authorization:2026-08-25/prepare-protected-qa-identity-retirement",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SYNTHETIC-QA-IDENTITY-RETIREMENT-001.json",
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-QA-IDENTITY-RETIREMENT-001.md",
+    "docs/governance/lane_claims/receipts/PS-SYNTHETIC-QA-IDENTITY-RETIREMENT-001.json",
+    "docs/initiatives/PS-SYNTHETIC-QA-IDENTITY-RETIREMENT-001/README.md",
+    "docs/initiatives/PS-SYNTHETIC-QA-IDENTITY-RETIREMENT-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "qa/synthetic_member/identity_retirement.py",
+    "qa/synthetic_member/docs/ATTENDED_PROOF_RUNBOOK.md",
+    "scripts/run_synthetic_qa_identity_retirement.py",
+    "tests/synthetic_member_qa/test_identity_retirement.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-QA-IDENTITY-RETIREMENT-001.md"
+  ],
+  "domains": [
+    "identity:synthetic-qa-retirement",
+    "privacy:synthetic-qa-retirement",
+    "operations:production-data:synthetic-qa-retirement",
+    "testing:synthetic-member:retirement"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
