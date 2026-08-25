@@ -6,17 +6,43 @@ does not grant that authority.
 
 ## Roles
 
-- **Pete:** provisions or retires both QA identities; controls every login,
-  sign-out, MFA, and account-selection action; visually checks identity context.
+- **Pete:** enters passwords, email or other login identifiers, verification or
+  MFA codes, recovery information, and other credentials; confirms which QA
+  identity is in use; makes material owner decisions; authorizes spending,
+  production actions, and irreversible identity deletion; and performs only
+  genuinely physical-device-only actions.
 - **Package manager:** prepares the neutral plan, calls out each structural
   observation, records only closed outcome codes, validates cleanup, and stops
-  on a safety concern.
+  on a safety concern. If the manager lacks a browser tool, the manager assigns
+  ordinary browser work to a browser-capable executor within this same task.
+- **Browser-capable operator:** opens pages, navigates, clicks ordinary controls,
+  manages tabs and refreshes, departs to and returns from public pages, clicks
+  ordinary sign-out controls, performs the authorized visible item lifecycle,
+  makes privacy-safe structural observations, and performs routine cleanup and
+  visible residue checks.
 - **Harness:** generates and validates local JSON only. It never opens or drives
   a browser and never reads identity or session material.
 
-The package manager must not ask Pete to disclose a password, address, MFA code,
-recovery code, claim, header, cookie, token, account key, browser profile, or
-session file.
+Pete's retained actions do not make him the routine browser operator. Neither
+the package manager nor the browser-capable operator asks Pete to disclose a
+password, address, MFA code, recovery code, claim, header, cookie, token,
+account key, browser profile, or session file.
+
+### Browser observation boundary
+
+The operator may observe the rendered application and closed structural
+outcomes. Screenshots are optional, never the default retained proof, and must
+be minimized to public UI or an approved synthetic structural state. They must
+exclude credentials, MFA or recovery values, account identifiers, sentinel or
+private item content, unrelated private data, and session material. Destroy any
+transient privacy-safe screenshot before final validation unless separate
+evidence authority explicitly permits retention. Never photograph, copy, or
+export a suspected private exposure.
+
+The operator never inspects, exports, records, or persists passwords, MFA codes,
+cookies, tokens, claims, authentication headers, browser profiles, or private
+session files. The operator never exports, records, or persists browser storage,
+private network traces, or DOM/page content.
 
 ## Entry gate
 
@@ -30,7 +56,8 @@ details:
 4. the approved cleanup action exists for any item the journey will create;
 5. a run-scoped, non-semantic synthetic sentinel is ready but will not be copied
    into retained evidence;
-6. no private-member screenshot or broad database query is planned; and
+6. no private-member screenshot or broad database query is planned, and any
+   optional structural screenshot meets the browser observation boundary; and
 7. the evidence file is outside the repository and begins from a newly generated
    manifest.
 
@@ -44,24 +71,41 @@ identity-retirement tool is independently accepted and merged, and the
 operator is running that exact merged source. The proof application release is
 still pinned separately by the normal entry gate; this operator tool is not an
 application feature flag or runtime endpoint.
-Immediately before creation, establish a run-scoped exact UTC cutoff. Pete then
-creates exactly two same-inbox customer identities and privately retains the
-two External ID subjects only long enough to complete the attended operation.
-The package manager never sees or records an address, subject, object ID,
-credential, code, claim, token, or account-selection detail.
+Immediately before creation, establish a run-scoped exact UTC cutoff. The
+browser-capable operator opens the identity flow and uses its ordinary controls.
+Before Pete enters a login identifier or credential, the operator stops issuing
+browser commands and suspends all capture and observation. Pete controls the
+visible input and says only `ready` when ordinary browser operation may resume;
+he does not disclose the entered value. Pete confirms which QA identity is in
+use. Exactly two same-inbox customer identities are created, and Pete privately
+retains the two External ID subjects only long enough to complete the attended
+operation.
 
-After application-item cleanup and before Pete permanently deletes either
-External ID customer object, a separately authorized operator runs this order:
+After operator control resumes, ordinary UI may unavoidably render a login
+identifier or account label. Incidental visibility is not evidence and is not
+an identity mismatch. The operator must not intentionally inspect, transcribe,
+export, capture, record, or retain that detail and refers to the identities only
+as `member_a` and `member_b`. Passwords, verification or MFA values, recovery
+information, External ID subjects, object IDs, claims, and tokens remain outside
+operator observation. If any secret, code, or credential is rendered unmasked,
+stop without capture. The package manager receives only the aliases and closed
+structural outcomes when not also serving as the browser-capable operator. The
+proof record always receives only aliases and closed structural outcomes.
+
+After application-item cleanup and before either External ID customer object is
+permanently deleted, a separately authorized operator runs this order:
 
 1. set the current authoritative `PEERSLATE_AUTH_ISSUER` value in process memory
    without displaying or saving it;
 2. run `plan` with the exact creation cutoff and current operation-authorization
    reference; Pete privately enters and confirms `member_a` and `member_b`
-   subjects at the non-echoing prompts;
+   subjects at the non-echoing prompts so the operator never inspects a claim;
 3. run `retire` with the same inputs and all three retirement confirmations;
 4. run `verify-retired`; and
-5. only after verification passes, Pete permanently deletes the two External
-   ID customer objects using the previously established Entra retirement path.
+5. only after verification passes and Pete gives action-time authorization for
+   irreversible identity deletion, the browser-capable operator carries out the
+   previously established Entra retirement path; Pete enters any credential or
+   MFA value and confirms each QA identity if prompted.
 
 ```powershell
 python scripts/run_synthetic_qa_identity_retirement.py plan `
@@ -105,14 +149,15 @@ from that result; obtain authority for a read-only state verification first.
 
 ## Client arrangement
 
-Pete prepares four independent contexts without importing a profile, cookies,
-storage, cache, extensions, or saved sessions:
+The browser-capable operator prepares four independent contexts without
+importing a profile, cookies, storage, cache, extensions, or saved sessions:
 
 - **Client A:** dedicated to `member_a`;
 - **Client B:** dedicated to `member_b`;
 - **Signed-out control:** never signed in;
-- **Switch client:** used first by one member, signed out by Pete, then used by
-  the other member without copying or inspecting browser storage.
+- **Switch client:** used first by one member, signed out through an ordinary
+  control by the browser-capable operator, then used by the other member without
+  copying or inspecting browser storage.
 
 Clients A and B stay open simultaneously for the paired isolation checks. The
 switch client tests ordinary product account switching before its final
@@ -124,34 +169,45 @@ baseline. The harness does not create, reset, or inspect any context.
 1. Generate the canonical plan with `plan --json` and initialize the sanitized
    manifest outside the repository with the exact deployed source, release, and
    browser version. Initialization refuses an existing destination.
-2. In the signed-out control, verify that protected navigation discloses no
-   private payload.
-3. Pete signs `member_a` into Client A and `member_b` into Client B. Record only
-   whether both arrive privately and whether the application visibly treats
-   them as distinct. Do not record how the identities are named or mapped.
-4. Establish an owner-scoped pre-run item count for both aliases through the
-   separately authorized member surface. Retain counts only.
-5. Use the minimal approved synthetic sentinel to create an item for each
-   member. Keep any returned handles only in the ephemeral cleanup ledger.
-6. With both clients open, prove owner-only visibility and run list, read,
-   update, delete, export, and forged-reference checks from A toward B and from B
-   toward A. A safe neutral denial is required; no private peer content may be
-   used as evidence.
-7. Verify that browser-local state is isolated. The package manager may observe
-   the rendered application result but must not inspect or export browser
-   storage, cookies, claims, or session files.
-8. Pete performs A-to-B and B-to-A switch journeys in the switch client. After
-   each sign-out and next sign-in, verify that the previous member's private or
-   browser-local state is absent.
-9. Pete performs refresh, second-tab, public-return, sign-out, cross-tab
-   sign-out, and—only when the environment makes it controllable—expired-session
-   journeys for each alias. Report uncontrollable expiry or unreconciled
-   cross-tab behavior as Conditional using the approved note code.
-10. Delete or archive every created item through the same authorized application
-    contract. Verify zero active residue for both aliases. Record only created
-    and residue counts plus the truthful soft-delete or retention classification.
-11. Pete signs out. Pete destroys Clients A, B, signed-out control, and switch
-    client. Record only the destruction status.
+2. The browser-capable operator uses the signed-out control to verify that
+   protected navigation discloses no private payload.
+3. The browser-capable operator opens each sign-in flow and handles ordinary
+   controls. Pete confirms the intended QA identity and enters only login
+   identifiers, passwords, verification or MFA values, recovery information,
+   and other credentials. Record only whether both members arrive privately and
+   whether the application visibly treats them as distinct. Do not record how
+   the identities are named or mapped.
+4. The browser-capable operator establishes an owner-scoped pre-run item count
+   for both aliases through the separately authorized member surface. Retain
+   counts only.
+5. The browser-capable operator uses the minimal approved synthetic sentinel to
+   create an item for each member. Keep any returned handles only in the
+   ephemeral cleanup ledger.
+6. With both clients open, the browser-capable operator proves owner-only
+   visibility and runs list, read, update, delete, export, and forged-reference
+   checks from A toward B and from B toward A. A safe neutral denial is required;
+   no private peer content may be used as evidence.
+7. The browser-capable operator verifies that browser-local state is isolated
+   by observing the rendered application result, without inspecting or exporting
+   browser storage, cookies, claims, or session files.
+8. The browser-capable operator performs A-to-B and B-to-A switch journeys in
+   the switch client. Pete confirms the intended QA identity and enters any
+   required credential or MFA values. After each operator-clicked sign-out and
+   next sign-in, verify that the previous member's private or browser-local state
+   is absent.
+9. The browser-capable operator performs refresh, second-tab, public-return,
+   sign-out, cross-tab sign-out, and—only when the environment makes it
+   controllable—expired-session journeys for each alias. Report uncontrollable
+   expiry or unreconciled cross-tab behavior as Conditional using the approved
+   note code.
+10. The browser-capable operator deletes or archives every created item through
+    the same authorized application contract and verifies zero active residue
+    for both aliases. Record only created and residue counts plus the truthful
+    soft-delete or retention classification.
+11. The browser-capable operator signs out and destroys Clients A, B, the
+    signed-out control, and the switch client. Pete participates only if a
+    credential, MFA, identity-confirmation, or physical-device action is
+    genuinely required. Record only the destruction status.
 12. Repeat the clean-start check. Run final validation. Pending steps, fewer
     than one created item for either alias, active residue, or failed client
     destruction prevent Pass.
@@ -203,9 +259,11 @@ The approved safety codes cannot be recorded as Conditional; the validator
 requires Fail. Conditional is reserved for bounded proof limitations that did
 not expose private state or invalidate account isolation.
 
-Do not capture the exposed information. Close the affected view, preserve only
-the safe failure code, ask Pete to sign out and destroy the affected contexts,
-and return the defect to the package manager as an identity/privacy blocker.
+Do not capture the exposed information. The browser-capable operator closes the
+affected view, preserves only the safe failure code, signs out through ordinary
+controls, destroys the affected contexts, and returns the defect to the package
+manager as an identity/privacy blocker. Pete participates only for a required
+credential, MFA, identity-confirmation, authorization, or physical-device action.
 
 If application deletion succeeds but retention cannot be established, record
 Conditional. Do not claim permanent deletion. If cleanup itself fails, stop
@@ -216,5 +274,9 @@ further runs until the residue is contained under separate authority.
 The retained bundle is limited to the final validated JSON, the exact source and
 release labels already present in it, and a package-level summary of Pass,
 Conditional, or Fail. Do not retain the ephemeral cleanup ledger, sentinel text,
-browser history, screenshots, network traces, database rows, identity inventory,
-or login/session material.
+DOM/page content, browser history, screenshots, network traces, database rows,
+identity inventory or identifiers, credentials, tokens, session material,
+cookies, claims, authentication headers, browser profiles, or private session
+files. Any transient privacy-safe screenshot is destroyed before this retained
+bundle is finalized unless separate evidence authority explicitly changes that
+boundary.

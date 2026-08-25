@@ -98,10 +98,30 @@ evidence to the package manager. The package manager returns one package-exit
 record to the overall site-audit manager; only a genuine cross-package or
 authority conflict bypasses that normal return path.
 
-For authenticated work, Pete completes sign-in, MFA, recovery, and credential
-entry himself. An agent may use an already signed-in visible session within the
-package scope, but it never requests, records, exports, or persists passwords,
-session cookies, access tokens, recovery codes, or private session files.
+For authenticated work, Pete alone enters passwords, MFA and verification
+codes, recovery information, and other credentials; confirms which QA identity
+is in use; makes material owner decisions; authorizes spending, production
+actions, and irreversible identity deletion; and performs genuinely
+physical-device-only actions. Those retained responsibilities do not make Pete
+the routine browser operator.
+
+The assigned browser-capable operator opens pages, navigates, clicks ordinary
+controls, manages tabs and refreshes, departs to and returns from public pages,
+clicks ordinary sign-out controls, performs authorized visible item creation,
+editing, archive or restore, and deletion, makes privacy-safe structural
+observations, and carries out routine cleanup and visible residue checks. If the
+package manager lacks a browser tool, the manager routes that work to a
+browser-capable executor within the same task instead of assigning it to Pete.
+After Pete gives any required action-time authorization or credential input,
+the operator may carry out the separately authorized action; the decision and
+authorization remain Pete's.
+
+A privacy-safe screenshot is minimized to public UI or an approved synthetic
+structural state and excludes credentials, MFA or recovery values, account
+identifiers, sentinel or private item content, unrelated private data, and
+session material. The operator never inspects, exports, records, or persists
+passwords, MFA codes, cookies, tokens, claims, authentication headers, browser
+profiles, or private session files.
 
 ## Mandatory independent-review triggers
 

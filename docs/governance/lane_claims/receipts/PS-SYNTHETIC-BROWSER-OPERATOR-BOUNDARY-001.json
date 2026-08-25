@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-BROWSER-OPERATOR-BOUNDARY-001",
+  "candidate_sha": "a6ad37788c0b55e108f3665d87de4d4f0b1ea97f",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/browser_operator_boundary_r2_review",
+  "result": "pass",
+  "reviewed_at": "2026-08-25T17:41:12Z",
+  "findings": [
+    {
+      "id": "R1-truthful-identity-visibility",
+      "status": "resolved",
+      "severity": "high",
+      "summary": "Credential entry suspends operator commands, capture, and observation; unavoidable rendered identifier visibility is treated as incidental private data and never inspected or retained."
+    },
+    {
+      "id": "R2-sensitive-retention-coverage",
+      "status": "resolved",
+      "severity": "medium",
+      "summary": "Focused tests enforce the DOM/page recording prohibition and every required sentinel, identity, credential, token, session, cookie, claim, browser-profile, and private-session retention exclusion."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SYNTHETIC-BROWSER-OPERATOR-BOUNDARY-001.md"
+}
