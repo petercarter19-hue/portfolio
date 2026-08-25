@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SYNTHETIC-QA-IDENTITY-RETIREMENT-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement and independently review a fail-closed operator-only repository path that can plan, atomically retire, verify, and recover exactly two recent ordinary synthetic QA member mappings after their Workshop items are permanently deleted. Accept both External ID subjects only through non-echoing interactive input; pin the approved production server and database; require an exact recent-creation cutoff, two distinct active customer identity mappings, ordinary user roles, active profiles, zero remaining Workshop items, and explicit operation confirmations; atomically revoke the two user identities, close and deactivate the two app users, and deactivate the two member profiles; return content-free structural counts and closed outcome codes only; and permit recovery only before External ID permanent deletion. Update the attended-proof runbook and add focused tests. Do not create identities, inspect or retain addresses or object IDs, contact Entra, query or mutate production, change schema or migration state, alter application runtime or feature flags, deploy, enable, or execute a production retirement or recovery operation under this repository authorization.",
   "assignment": "implementation",
   "writer_ref": "session:01a02fcb-e68d-7f60-9151-912bba299456",
@@ -34,6 +34,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "a062ac7d960d5303bc9d55bcb4d5ac75b580bd94",
+  "closed_at": "2026-08-25T14:00:46Z"
 }
