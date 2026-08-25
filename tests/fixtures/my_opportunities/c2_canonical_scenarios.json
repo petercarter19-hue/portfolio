@@ -1,0 +1,13 @@
+{
+  "data_class": "fixture",
+  "scenarios": [
+    "immutable-receipts-and-source-versions",
+    "changed-posting-re-admission",
+    "closure-is-not-outage",
+    "merge-split-is-reversible",
+    "governing-source-failover-equivalent-requirements",
+    "governing-source-failover-material-requirements",
+    "application-link-valid-invalid-unknown-recovery",
+    "rights-bounded-tombstone"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-CANONICAL-001",
+  "candidate_sha": "0c5f1f70fdc9b2ca3e4d523bff3174c6afa98d7d",
+  "review_type": "independent",
+  "reviewer_ref": "session:8f7b703c-9a6e-4d5f-95f7-6d113138b09b",
+  "result": "pass",
+  "reviewed_at": "2026-08-25T17:50:16Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MYOPP-CANONICAL-001.md"
+}

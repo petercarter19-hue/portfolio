@@ -1,0 +1,27 @@
+{
+  "descriptor": {
+    "source_id": "fixture-direct-ats",
+    "source_class": "direct_employer",
+    "policy_key": "fixture-direct-ats-policy",
+    "policy_version": 1,
+    "capabilities": ["pull", "closure_signal", "change_signal"],
+    "schedule_hints": ["fixture-only"],
+    "territory": "US",
+    "product": "synthetic",
+    "data_class": "fixture"
+  },
+  "rows": [
+    {
+      "external_reference": "astraeus-platform-1",
+      "employer": "Astraeus",
+      "title": "Platform Engineer",
+      "locations": ["Chicago, IL"],
+      "arrangement": "hybrid",
+      "application_url": "https://careers.astraeus.example/jobs/1",
+      "expected_application_hosts": ["careers.astraeus.example"],
+      "description": "Build reliable evidence-first platform systems.",
+      "requirement_clauses": ["Required: Python", "Required: distributed systems"],
+      "fields": {"employment_type": "full-time", "level": "senior"}
+    }
+  ]
+}
