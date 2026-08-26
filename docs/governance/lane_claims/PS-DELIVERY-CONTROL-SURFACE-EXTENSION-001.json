@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-CONTROL-SURFACE-EXTENSION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Add one generic fail-closed active-claim control transition that lets the exact assigned task append newly required normalized repository-relative surfaces through the leased _control singleton, while preserving all other claim bytes, rerunning prospective claim-set collision validation, and keeping production and deployment withheld. Prove the positive path with Delivery Control fixtures equivalent to appending tests/test_database_service.py and prove stale, dirty, wrong-context, inactive, malformed, duplicate, broad, unrelated-change, and hierarchical collision refusals. Do not edit Workshop, database, provider, identity, schema, configuration, deployment, or production surfaces.",
   "assignment": "implementation",
   "writer_ref": "task:01a02b5c-1ac8-7960-8694-e4a288ec9cf4",
@@ -35,6 +35,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "cdd226a1086cf36f572b5b78875541d8c18a8125",
+  "closed_at": "2026-08-26T00:18:32Z"
 }
