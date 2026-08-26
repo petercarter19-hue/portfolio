@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-CONTROL-SURFACE-EXTENSION-001",
+  "candidate_sha": "59ea3a79ee1bde367bb33baec3c30fcbd7b3850c",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/surface_extension_review",
+  "result": "pass",
+  "reviewed_at": "2026-08-26T00:11:31Z",
+  "findings": [
+    {
+      "id": "R1-key-presence-aware-claim-delta",
+      "status": "resolved",
+      "severity": "high",
+      "summary": "A missing key and a present null key were originally indistinguishable. The final candidate compares key presence with a sentinel and permits only the synthetic _relative_path helper outside governed JSON fields; tests reject deleting a null lifecycle key or adding an unknown null key."
+    },
+    {
+      "id": "R2-same-claim-surface-overlap",
+      "status": "resolved",
+      "severity": "high",
+      "summary": "The final candidate rejects appended paths that overlap the target claim's existing surfaces or one another, including case-insensitive exact, parent, and child overlap, while retaining full prospective cross-package validation."
+    },
+    {
+      "id": "R3-authoritative-file-proof",
+      "status": "resolved",
+      "severity": "high",
+      "summary": "The final candidate requires every appended path to resolve as an ordinary Git blob on current origin/main, so directories and unproved future paths fail closed; tests/test_database_service.py is a proven representative blob."
+    },
+    {
+      "id": "R4-mandatory-control-lease-and-structured-malformed-refusal",
+      "status": "resolved",
+      "severity": "high",
+      "summary": "The final candidate requires initialized, enforced control-singleton context plus the existing exact lease package/task checks. Missing-registry and CI-skipped contexts cannot admit the transition, and non-string additions produce structured refusals."
+    },
+    {
+      "id": "R5-lean-workflow-cap",
+      "status": "resolved",
+      "severity": "minor",
+      "summary": "PR build 1644 ran 4,084 tests and found one failure: duplicated AI workflow guidance raised that document from 1,098 to 1,226 words against its existing 1,100-word lean gate. The duplicate block was removed; START_HERE retains the exact command and control sequence, AI_WORKFLOW is restored to 1,098 words, and the final exact SHA received a fresh independent PASS."
+    },
+    {
+      "id": "R6-final-verification-boundary",
+      "status": "informational",
+      "severity": "minor",
+      "summary": "Independent static exact-SHA review passed 59ea3a79ee1bde367bb33baec3c30fcbd7b3850c. The writer ran 122 focused Delivery Control and lifecycle tests successfully on the same implementation and test bytes. The five candidate paths are claimed Delivery Control implementation, documentation, and tests only; no Workshop path or production-class state was changed."
+    }
+  ],
+  "evidence_ref": "lane_claims/evidence/PS-DELIVERY-CONTROL-SURFACE-EXTENSION-001.md"
+}

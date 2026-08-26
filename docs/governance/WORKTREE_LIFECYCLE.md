@@ -113,7 +113,8 @@ python scripts/worktree_lifecycle.py ensure --package "PS-EXAMPLE-001" --task-re
 
 ### Lease `_control` for a claim transition
 
-Activation, authorize, transfer, pause, resume, close, and the
+Activation, authorize, active-claim surface extension, transfer, pause, resume,
+close, and the
 owner-authorized evidence-errata amendment of a closed package's fixed
 evidence file all reuse `_control`; for evidence-errata the lease names the
 closed package and the claim itself is never edited.

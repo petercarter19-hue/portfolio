@@ -15,7 +15,10 @@ Use this for a change, not a read-only discussion.
 - [ ] For a control-only transition, ran `--intent read` before editing, changed
   and committed only the exact claim in the leased sparse `_control` singleton,
   then ran the matching control intent with the same `--task-ref` plus
-  `--fetch --require-clean` before PR.
+  `--fetch --require-clean` before PR. An active-claim surface extension uses
+  `--intent extend-surfaces` on a dedicated `delivery-extend-surfaces` branch;
+  the assigned writer appends exact current-main tracked-file paths at the end
+  of `surfaces` and changes nothing else.
 - [ ] Confirmed the branch, normalized mutable paths, and hierarchical domains
   do not collide with another active claim. No numeric capacity check applies.
 - [ ] Confirmed the assignment: implementation normally continues through

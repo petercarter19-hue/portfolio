@@ -33,10 +33,10 @@ python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --tas
 ```
 
 Use `--intent read` for read-only work; failures stop. A control-only
-activation, authorize, transfer, pause, resume, or close uses `read` before the
-edit, changes and commits only the exact claim on its dedicated control branch,
-then runs the matching control intent with `--fetch --require-clean` before PR.
-It may not change an implementation surface.
+activation, authorize, surface extension, transfer, pause, resume, or close
+uses `read` before the edit, changes and commits only the exact claim on its
+dedicated control branch, then runs the matching control intent with `--fetch
+--require-clean` before PR. It may not change an implementation surface.
 
 | Path | Use for | Additional authority |
 |---|---|---|
@@ -112,6 +112,22 @@ Merge that control PR before implementation merge.
 
 ## 5. Change claim state only when needed
 
+- Extend surfaces: when an active package discovers one or more exact files it
+  must also change, its assigned writer leases `_control` from current main on
+  `work/YYYY-MM-DD-delivery-extend-surfaces-<slug>`, appends only those
+  normalized paths already proved as tracked file blobs on current main to the
+  end of `surfaces`, and commits only that claim. The same task reference must
+  equal the claim's `writer_ref`:
+
+  ```bash
+  python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent extend-surfaces --task-ref <WRITER-REF> --fetch --require-clean
+  ```
+
+  The transition refuses a stale or dirty control checkout, another task or
+  package, an inactive claim, a non-dedicated branch, malformed, duplicate, or
+  unproved or directory-like additions, any removal/replacement/reorder or
+  other field/file change, same-claim overlap, and exact/parent/child collisions
+  in the full current claim set.
 - Transfer: push the exact checkpoint, record opaque from/to task references
   and explicit relinquishment in the claim, then validate on a dedicated
   `delivery-transfer` control branch with `--intent transfer`.

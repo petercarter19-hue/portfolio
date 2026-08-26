@@ -40,7 +40,7 @@ ACTIVATION_BRANCH_RE = re.compile(
 )
 CONTROL_BRANCH_RE = re.compile(
     r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-"
-    r"(?:authorize|transfer|pause|resume|close)-[a-z0-9-]+$"
+    r"(?:authorize|extend-surfaces|transfer|pause|resume|close)-[a-z0-9-]+$"
 )
 EVIDENCE_ERRATA_BRANCH_RE = re.compile(
     r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-evidence-errata-[a-z0-9-]+$"
@@ -67,15 +67,15 @@ ASSIGNMENTS = {"implementation"}
 REPOSITORY_AUTHORITIES = {"through_merge", "write_only"}
 REVIEW_REQUIREMENTS = {"self", "independent"}
 MUTATING_INTENTS = {
-    "activate", "authorize", "write", "transfer", "pause", "resume", "merge",
-    "close", "evidence-errata",
+    "activate", "authorize", "extend-surfaces", "write", "transfer", "pause",
+    "resume", "merge", "close", "evidence-errata",
 }
 # evidence-errata is a control-style transition: it runs from the leased
 # sparse _control singleton and its claim is read from the branch copy, but
 # unlike the lifecycle transitions it must leave every claim byte-identical.
 CONTROL_INTENTS = {
-    "activate", "authorize", "transfer", "pause", "resume", "close",
-    "evidence-errata",
+    "activate", "authorize", "extend-surfaces", "transfer", "pause", "resume",
+    "close", "evidence-errata",
 }
 WORKTREE_REGISTRY_REL = Path("peerslate") / "worktree_registry.json"
 CI_ENVIRONMENT_KEYS = ("TF_BUILD", "CI", "GITHUB_ACTIONS", "BUILD_BUILDID")
@@ -331,6 +331,22 @@ def paths_overlap(left: str, right: str) -> bool:
     a = normalize_path(left).casefold()
     b = normalize_path(right).casefold()
     return a == b or a.startswith(b + "/") or b.startswith(a + "/")
+
+
+def extension_surface_is_broad(root: Path, ref: str, path: str) -> bool:
+    """Return whether an appended surface is a directory-like reservation.
+
+    Surface extension is for a newly discovered exact tracked file, not a late
+    claim over a directory or an unproved future path. The authoritative ref
+    must therefore identify the addition as a Git blob.
+    """
+
+    try:
+        normalized = normalize_path(path)
+    except ValueError:
+        return True
+    result = _git_result(root, "cat-file", "-t", f"{ref}:{normalized}")
+    return result.returncode != 0 or result.stdout.strip() != "blob"
 
 
 def path_is_claimed(path: str, surfaces: Iterable[str]) -> bool:
@@ -927,10 +943,12 @@ def collect_repo_facts(root: Path, *, fetch: bool) -> RepoFacts:
 
 def _changed_fields(before: dict, after: dict) -> set[str]:
     keys = set(before) | set(after)
+    missing = object()
     return {
         key
         for key in keys
-        if not key.startswith("_") and before.get(key) != after.get(key)
+        if key != "_relative_path"
+        and before.get(key, missing) != after.get(key, missing)
     }
 
 
@@ -1102,6 +1120,12 @@ def evaluate(
     payload["worktree_registry"] = registry_context
     errors.extend(registry_errors)
     warnings.extend(registry_warnings)
+    if args.intent == "extend-surfaces" and (
+        registry_context.get("registry") != "initialized"
+        or registry_context.get("enforced") is not True
+        or registry_context.get("current_kind") != "control_singleton"
+    ):
+        errors.append("surface extension requires a proved leased _control singleton")
 
     if args.intent == "activate":
         if not ACTIVATION_BRANCH_RE.fullmatch(facts.branch):
@@ -1163,6 +1187,82 @@ def evaluate(
                 "authority transition owner_outcome_ref must be an opaque "
                 "task/session/agent/role reference"
             )
+
+    elif args.intent == "extend-surfaces":
+        if (
+            not CONTROL_BRANCH_RE.fullmatch(facts.branch)
+            or "-extend-surfaces-" not in facts.branch
+        ):
+            errors.append(
+                "surface extension requires a delivery-extend-surfaces control branch"
+            )
+        before = _require_control_delta(
+            root=root,
+            claim=claim,
+            facts=facts,
+            allowed_fields={"surfaces"},
+            errors=errors,
+        )
+        if facts.behind:
+            errors.append("surface extension requires a branch from current origin/main")
+        if before and before.get("state") != "active":
+            errors.append("surface extension requires an active origin claim")
+        if before and (
+            not args.task_ref
+            or args.task_ref != before.get("writer_ref")
+            or claim.get("writer_ref") != before.get("writer_ref")
+        ):
+            errors.append(
+                "surface extension task context must equal the target claim writer_ref"
+            )
+
+        before_surfaces = before.get("surfaces") if before else None
+        after_surfaces = claim.get("surfaces")
+        additions: list[str] = []
+        if not isinstance(before_surfaces, list) or not isinstance(after_surfaces, list):
+            errors.append("surface extension requires valid surface lists")
+        elif (
+            len(after_surfaces) <= len(before_surfaces)
+            or after_surfaces[: len(before_surfaces)] != before_surfaces
+        ):
+            errors.append(
+                "surface extension must append to surfaces without removal, replacement, or reorder"
+            )
+        else:
+            additions = after_surfaces[len(before_surfaces) :]
+
+        broad = [
+            path
+            for path in additions
+            if extension_surface_is_broad(root, "origin/main", path)
+        ]
+        if broad:
+            errors.append(
+                "surface extension additions must be exact file paths, not broad paths: "
+                + ", ".join(repr(path) for path in broad)
+            )
+
+        same_claim_collisions: list[tuple[str, str]] = []
+        for index, addition in enumerate(additions):
+            for existing in [*before_surfaces, *additions[:index]]:
+                try:
+                    overlaps = paths_overlap(addition, existing)
+                except ValueError:
+                    continue
+                if overlaps:
+                    same_claim_collisions.append((addition, existing))
+        if same_claim_collisions:
+            errors.append(
+                "surface extension additions overlap the target claim: "
+                + repr(same_claim_collisions)
+            )
+
+        prospective_claims = dict(authority_claims)
+        prospective_claims[package_key] = claim
+        errors.extend(
+            "surface extension prospective state: " + error
+            for error in validate_claim_set(prospective_claims)
+        )
 
     elif args.intent == "write":
         if claim.get("state") != ACTIVE_STATE:
@@ -1563,6 +1663,7 @@ def build_parser() -> argparse.ArgumentParser:
             "read",
             "activate",
             "authorize",
+            "extend-surfaces",
             "write",
             "transfer",
             "pause",

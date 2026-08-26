@@ -137,6 +137,37 @@ class NormalizationTests(unittest.TestCase):
         self.assertTrue(preflight.paths_overlap("SRC/Auth", "src/auth"))
         self.assertFalse(preflight.paths_overlap("src/auth", "src/authoring"))
 
+    def test_surface_extension_accepts_file_targets_and_refuses_broad_targets(self):
+        blob = subprocess.CompletedProcess([], 0, stdout="blob\n", stderr="")
+        tree = subprocess.CompletedProcess([], 0, stdout="tree\n", stderr="")
+        missing = subprocess.CompletedProcess([], 128, stdout="", stderr="missing")
+        with patch.object(preflight, "_git_result", return_value=blob):
+            self.assertFalse(
+                preflight.extension_surface_is_broad(
+                    ROOT, "origin/main", "tests/test_database_service.py"
+                )
+            )
+        with patch.object(preflight, "_git_result", return_value=tree):
+            self.assertTrue(
+                preflight.extension_surface_is_broad(ROOT, "origin/main", "tests")
+            )
+        with patch.object(preflight, "_git_result", return_value=missing):
+            self.assertTrue(
+                preflight.extension_surface_is_broad(
+                    ROOT, "origin/main", "tests/test_future_service.py"
+                )
+            )
+            self.assertTrue(
+                preflight.extension_surface_is_broad(
+                    ROOT, "origin/main", "tests/future-service"
+                )
+            )
+            self.assertTrue(
+                preflight.extension_surface_is_broad(
+                    ROOT, "origin/main", "tests\\unsafe.py"
+                )
+            )
+
     def test_hierarchical_domains_collide_but_siblings_do_not(self):
         self.assertTrue(
             preflight.domains_overlap("shared:auth", "shared:auth:callback")
@@ -679,7 +710,7 @@ class LocalWorktreeRegistryTests(unittest.TestCase):
                     )
                 ],
             )
-            request = args("activate", task_ref="task:writer-1")
+            request = args("extend-surfaces", task_ref="task:writer-1")
             repo_facts = facts(repository=str(current), branch=control_branch)
             context, errors, _ = self.check(
                 common, current, request=request, repo_facts=repo_facts
@@ -687,7 +718,7 @@ class LocalWorktreeRegistryTests(unittest.TestCase):
             self.assertEqual([], errors)
             self.assertEqual("control_singleton", context["current_kind"])
 
-            request = args("activate", task_ref="task:other")
+            request = args("extend-surfaces", task_ref="task:other")
             _, errors, _ = self.check(
                 common, current, request=request, repo_facts=repo_facts
             )
@@ -740,6 +771,61 @@ class EvaluationTests(unittest.TestCase):
         finally:
             for item in reversed(patches):
                 item.stop()
+
+    def surface_extension_evaluation(
+        self,
+        *,
+        before=None,
+        after=None,
+        request=None,
+        repo_facts=None,
+        origin_claims=None,
+        candidate_claims=None,
+        broad=False,
+        registry_context=None,
+        registry_errors=None,
+    ):
+        before = before or claim(
+            surfaces=claimed_surfaces(
+                "PS-EXAMPLE-001", "services/database_service.py"
+            )
+        )
+        if after is None:
+            after = copy.deepcopy(before)
+            after["surfaces"].append("tests/test_database_service.py")
+        request = request or args("extend-surfaces")
+        repo_facts = repo_facts or facts(
+            branch="work/2026-08-25-delivery-extend-surfaces-example",
+            branch_paths=(preflight.claim_relative_path(after["package"]),),
+        )
+        return self.run_evaluate(
+            request,
+            after,
+            repo_facts,
+            origin_claims=origin_claims
+            or {before["package"].casefold(): before},
+            candidate_claims=candidate_claims,
+            origin_claim=patch.object(
+                preflight, "_origin_claim", return_value=before
+            ),
+            broad=patch.object(
+                preflight, "extension_surface_is_broad", return_value=broad
+            ),
+            local_registry=patch.object(
+                preflight,
+                "evaluate_local_worktree_context",
+                return_value=(
+                    registry_context
+                    or {
+                        "registry": "initialized",
+                        "enforced": True,
+                        "current_kind": "control_singleton",
+                    },
+                    registry_errors or [],
+                    [],
+                ),
+            ),
+        )
 
     def test_local_registry_context_is_reported_and_enforced(self):
         value = claim()
@@ -870,6 +956,242 @@ class EvaluationTests(unittest.TestCase):
         )
         self.assertTrue(any("write_only" in error for error in errors))
         self.assertTrue(any("new owner_outcome_ref" in error for error in errors))
+
+    def test_surface_extension_appends_representative_exact_file(self):
+        _, errors, _ = self.surface_extension_evaluation()
+        self.assertEqual([], errors)
+
+    def test_surface_extension_refuses_removal_replacement_reorder_or_other_field(self):
+        before = claim(
+            surfaces=claimed_surfaces(
+                "PS-EXAMPLE-001", "services/database_service.py"
+            )
+        )
+        variants = {}
+
+        removed = copy.deepcopy(before)
+        removed["surfaces"].pop()
+        variants["removal"] = removed
+
+        replaced = copy.deepcopy(before)
+        replaced["surfaces"][-1] = "tests/test_database_service.py"
+        variants["replacement"] = replaced
+
+        reordered = copy.deepcopy(before)
+        reordered["surfaces"][0], reordered["surfaces"][1] = (
+            reordered["surfaces"][1],
+            reordered["surfaces"][0],
+        )
+        variants["reorder"] = reordered
+
+        for label, after in variants.items():
+            with self.subTest(label=label):
+                _, errors, _ = self.surface_extension_evaluation(
+                    before=before, after=after
+                )
+                self.assertTrue(any("must append" in error for error in errors))
+
+        other_field = copy.deepcopy(before)
+        other_field["surfaces"].append("tests/test_database_service.py")
+        other_field["outcome"] = "Quietly expanded outcome."
+        _, errors, _ = self.surface_extension_evaluation(
+            before=before, after=other_field
+        )
+        self.assertTrue(any("changed fields outside" in error for error in errors))
+
+        deleted_null = copy.deepcopy(before)
+        deleted_null["surfaces"].append("tests/test_database_service.py")
+        deleted_null.pop("closed_at")
+        _, errors, _ = self.surface_extension_evaluation(
+            before=before, after=deleted_null
+        )
+        self.assertTrue(any("changed fields outside" in error for error in errors))
+
+        unknown_null = copy.deepcopy(before)
+        unknown_null["surfaces"].append("tests/test_database_service.py")
+        unknown_null["unknown"] = None
+        _, errors, _ = self.surface_extension_evaluation(
+            before=before, after=unknown_null
+        )
+        self.assertTrue(any("changed fields outside" in error for error in errors))
+
+    def test_surface_extension_refuses_wrong_context_inactive_stale_dirty_or_extra_path(self):
+        before = claim(
+            surfaces=claimed_surfaces(
+                "PS-EXAMPLE-001", "services/database_service.py"
+            )
+        )
+        after = copy.deepcopy(before)
+        after["surfaces"].append("tests/test_database_service.py")
+        claim_path = preflight.claim_relative_path(after["package"])
+
+        cases = (
+            (
+                "wrong branch",
+                args("extend-surfaces"),
+                facts(branch="work/2026-08-25-example-1", branch_paths=(claim_path,)),
+                "delivery-extend-surfaces",
+            ),
+            (
+                "wrong task",
+                args("extend-surfaces", task_ref="task:other"),
+                facts(
+                    branch="work/2026-08-25-delivery-extend-surfaces-example",
+                    branch_paths=(claim_path,),
+                ),
+                "task context",
+            ),
+            (
+                "stale main",
+                args("extend-surfaces"),
+                facts(
+                    branch="work/2026-08-25-delivery-extend-surfaces-example",
+                    branch_paths=(claim_path,),
+                    behind=1,
+                ),
+                "current origin/main",
+            ),
+            (
+                "dirty",
+                args("extend-surfaces"),
+                facts(
+                    branch="work/2026-08-25-delivery-extend-surfaces-example",
+                    branch_paths=(claim_path,),
+                    clean=False,
+                ),
+                "not clean",
+            ),
+            (
+                "unrelated path",
+                args("extend-surfaces"),
+                facts(
+                    branch="work/2026-08-25-delivery-extend-surfaces-example",
+                    branch_paths=(claim_path, "docs/unrelated.md"),
+                ),
+                "change only",
+            ),
+        )
+        for label, request, repo_facts, expected in cases:
+            with self.subTest(label=label):
+                _, errors, _ = self.surface_extension_evaluation(
+                    before=before,
+                    after=after,
+                    request=request,
+                    repo_facts=repo_facts,
+                )
+                self.assertTrue(any(expected in error for error in errors), errors)
+
+        paused_before = copy.deepcopy(before)
+        paused_before["state"] = "paused"
+        paused_before["checkpoint_sha"] = HEAD
+        paused_after = copy.deepcopy(paused_before)
+        paused_after["surfaces"].append("tests/test_database_service.py")
+        _, errors, _ = self.surface_extension_evaluation(
+            before=paused_before, after=paused_after
+        )
+        self.assertTrue(any("active origin claim" in error for error in errors))
+
+        _, errors, _ = self.surface_extension_evaluation(
+            before=before,
+            after=after,
+            request=args("extend-surfaces", package="PS-WRONG-001"),
+        )
+        self.assertTrue(any("no branch claim" in error for error in errors))
+
+        _, errors, _ = self.surface_extension_evaluation(
+            before=before,
+            after=after,
+            registry_context={
+                "registry": "not_initialized",
+                "enforced": False,
+                "current_kind": None,
+            },
+        )
+        self.assertTrue(any("proved leased _control" in error for error in errors))
+
+    def test_surface_extension_refuses_malformed_duplicate_broad_and_control_paths(self):
+        before = claim(
+            surfaces=claimed_surfaces(
+                "PS-EXAMPLE-001", "services/database_service.py"
+            )
+        )
+        variants = (
+            ("malformed", "tests\\test_database_service.py", False, "normalized"),
+            ("non-string", 7, False, "path must be a string"),
+            ("duplicate", before["surfaces"][0], False, "duplicate"),
+            ("broad", "tests", True, "broad paths"),
+            (
+                "cross-package control",
+                preflight.claim_relative_path("PS-OTHER-001"),
+                False,
+                "cross-package control path",
+            ),
+        )
+        for label, addition, broad, expected in variants:
+            after = copy.deepcopy(before)
+            after["surfaces"].append(addition)
+            with self.subTest(label=label):
+                _, errors, _ = self.surface_extension_evaluation(
+                    before=before, after=after, broad=broad
+                )
+                self.assertTrue(any(expected in error for error in errors), errors)
+
+    def test_surface_extension_refuses_overlaps_inside_the_target_claim(self):
+        before = claim(
+            surfaces=claimed_surfaces(
+                "PS-EXAMPLE-001", "services/database_service.py"
+            )
+        )
+        additions = (
+            ["SERVICES/database_service.py"],
+            ["services/database_service.py/child.py"],
+            [
+                "tests/test_database_service.py",
+                "tests/test_database_service.py/child.py",
+            ],
+        )
+        for appended in additions:
+            after = copy.deepcopy(before)
+            after["surfaces"].extend(appended)
+            with self.subTest(appended=appended):
+                _, errors, _ = self.surface_extension_evaluation(
+                    before=before, after=after
+                )
+                self.assertTrue(
+                    any("overlap the target claim" in error for error in errors),
+                    errors,
+                )
+
+    def test_surface_extension_reruns_exact_parent_and_child_collisions_from_main(self):
+        collision_paths = (
+            "tests/test_database_service.py",
+            "tests",
+            "tests/test_database_service.py/case",
+        )
+        for collision_path in collision_paths:
+            before = claim(
+                surfaces=claimed_surfaces(
+                    "PS-EXAMPLE-001", "services/database_service.py"
+                )
+            )
+            after = copy.deepcopy(before)
+            after["surfaces"].append("tests/test_database_service.py")
+            other = claim(
+                package="PS-OTHER-001",
+                number=2,
+                surfaces=claimed_surfaces("PS-OTHER-001", collision_path),
+            )
+            with self.subTest(collision_path=collision_path):
+                _, errors, _ = self.surface_extension_evaluation(
+                    before=before,
+                    after=after,
+                    origin_claims={
+                        before["package"].casefold(): before,
+                        other["package"].casefold(): other,
+                    },
+                    candidate_claims={before["package"].casefold(): after},
+                )
+                self.assertTrue(any("path collision" in error for error in errors), errors)
 
     def test_release_and_legacy_grant_are_not_repository_permissions(self):
         value = claim()
