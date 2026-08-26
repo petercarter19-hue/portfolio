@@ -25,7 +25,8 @@
     "SQL FIles/Migrations/PS-OPPSLATE-USE-001_opportunity_slate_use.sql",
     "SQL FIles/Migrations/PS-OPPSLATE-USE-001_opportunity_slate_use_rollback.sql",
     "SQL FIles/Verification/PS-OPPSLATE-USE-001_owner_isolation_verify.sql",
-    "SQL FIles/Migrations/registry.json"
+    "SQL FIles/Migrations/registry.json",
+    "tests/test_database_service.py"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-WORKSHOP-USE-DISCLOSURE-001.md"
