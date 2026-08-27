@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-OWNER-REASSIGNMENT-001",
+  "state": "active",
+  "outcome": "Add a fail-closed owner-reassignment recovery for an active package whose prior writer cannot explicitly relinquish: record owner_reassignment truthfully and distinctly from voluntary transfer; bind the exact fetched old checkpoint; require a normalized absent and unclaimed successor branch; create that successor non-force at the checkpoint and immediately prove its server tip; preserve the old branch and worktree; change only the target claim's writer_ref, branch, and handoff; preserve every outcome, scope, authority, and review field; refuse races, collisions, and ambiguity; prevent the receiver from writing until the recovery control PR merges; and preserve reassignment provenance through pause and close. Do not perform the later PS-WORKSHOP-USE-DISCLOSURE-001 reassignment in this package.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/workshop_implementer",
+  "branch": "work/2026-08-27-delivery-owner-reassignment-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "670eaf30bcd884443ad4a84f4521583b125c2460",
+  "owner_outcome_ref": "session:01a04348-7e3e-7a11-a443-752498be91b5/owner-direction:2026-08-27/PS-DELIVERY-OWNER-REASSIGNMENT-001",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-DELIVERY-OWNER-REASSIGNMENT-001.json",
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-OWNER-REASSIGNMENT-001.md",
+    "docs/governance/lane_claims/receipts/PS-DELIVERY-OWNER-REASSIGNMENT-001.json",
+    "AGENTS.md",
+    "START_HERE.md",
+    "docs/AI_WORKFLOW.md",
+    "docs/governance/AGENT_STARTUP_CHECKLIST.md",
+    "docs/governance/MANAGER_SESSION_HANDOFF.md",
+    "docs/governance/PEERSLATE_OWNER_DELIVERY_GUIDE.md",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+    "scripts/delivery_preflight.py",
+    "scripts/worktree_lifecycle.py",
+    "tests/test_delivery_preflight.py",
+    "tests/test_worktree_lifecycle.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-OWNER-REASSIGNMENT-001.md"
+  ],
+  "domains": [
+    "governance:delivery:owner-reassignment",
+    "tooling:delivery-preflight:owner-reassignment",
+    "tooling:worktree-lifecycle:owner-reassignment"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
