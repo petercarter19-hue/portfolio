@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-OWNER-REASSIGNMENT-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Add a fail-closed owner-reassignment recovery for an active package whose prior writer cannot explicitly relinquish: record owner_reassignment truthfully and distinctly from voluntary transfer; bind the exact fetched old checkpoint; require a normalized absent and unclaimed successor branch; create that successor non-force at the checkpoint and immediately prove its server tip; preserve the old branch and worktree; change only the target claim's writer_ref, branch, and handoff; preserve every outcome, scope, authority, and review field; refuse races, collisions, and ambiguity; prevent the receiver from writing until the recovery control PR merges; and preserve reassignment provenance through pause and close. Do not perform the later PS-WORKSHOP-USE-DISCLOSURE-001 reassignment in this package.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_implementer",
@@ -38,6 +38,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "76161e1ff5a3f488dbb265b68de2c5e9bce76bea",
+  "closed_at": "2026-08-27T19:37:12Z"
 }
