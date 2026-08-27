@@ -2187,6 +2187,80 @@ class WorktreeLifecycleTests(unittest.TestCase):
         self.assertEqual(second["status"], "reused")
         self.assertEqual(second["path"], first["path"])
 
+    def test_finalize_and_control_repoint_preserve_completed_preparation_bytes(self):
+        (
+            fixture,
+            receiver,
+            successor,
+            owner_ref,
+            _source_path,
+            control_path,
+        ) = self.owner_reassignment_setup("continuity-custody")
+        code, prepared = self.run_owner_reassignment_prepare(
+            fixture, receiver, successor, owner_ref, control_path
+        )
+        self.assertEqual(code, 0, prepared)
+        registry_before = json.loads(
+            fixture.registry_path.read_text(encoding="utf-8")
+        )
+        preparation_before = next(
+            item
+            for item in registry_before["owner_reassignment_preparations"]
+            if item["preparation_id"] == prepared["preparation_id"]
+        )
+        canonical_before = json.dumps(
+            preparation_before,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+        self.assertEqual(preparation_before["status"], "completed")
+        self.assertIsNone(registry_before["pending"])
+
+        code, released = fixture.run(
+            "finalize-task", "--task-ref", receiver, "--execute"
+        )
+        self.assertEqual(code, 0, released)
+        (fixture.repo / "unrelated.txt").write_text(
+            "strict descendant main movement\n", encoding="utf-8"
+        )
+        git(fixture.repo, "add", "unrelated.txt")
+        git(fixture.repo, "commit", "-m", "unrelated main movement")
+        git(fixture.repo, "push", "origin", "main")
+
+        code, repointed = fixture.run(
+            "control",
+            "--task-ref",
+            "task:continuity-follow-up",
+            "--purpose",
+            "control",
+            "--package",
+            "PS-CONTINUITY-FOLLOW-UP-001",
+            "--base",
+            "origin/main",
+            "--branch",
+            "work/2026-08-27-delivery-owner-reassignment-continuity-follow-up",
+            "--execute",
+        )
+        self.assertEqual(code, 0, repointed)
+        registry_after = json.loads(
+            fixture.registry_path.read_text(encoding="utf-8")
+        )
+        preparation_after = next(
+            item
+            for item in registry_after["owner_reassignment_preparations"]
+            if item["preparation_id"] == prepared["preparation_id"]
+        )
+        canonical_after = json.dumps(
+            preparation_after,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+        self.assertEqual(canonical_after, canonical_before)
+        self.assertEqual(preparation_after["status"], "completed")
+        self.assertIsNone(registry_after["pending"])
+
     def test_owner_reassignment_prepares_exact_successor_then_ensure_preserves_source(self):
         fixture = self.fixture()
         receiver = "agent:replacement-writer"

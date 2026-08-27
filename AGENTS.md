@@ -20,6 +20,13 @@
 > A failed preflight is a stop, not permission to make another branch or
 > worktree. New work requires Pete's explicit outcome and the one-claim
 > activation flow in `START_HERE.md`.
+> The unrevoked standing bounded Workshop decision recorded in
+> `docs/governance/DECISIONS.md` may satisfy that outcome-selection gate only
+> for a concrete minimum repository follow-up needed to complete its already
+> accepted outcome while the parent claim is active or paused. The child claim
+> must cite the standing reference and failed gate; expiry and excluded
+> production, schema, destructive, identity/privacy-policy, credential,
+> spending, external-operation, and material-visual authorities remain exact.
 
 ## Authority
 

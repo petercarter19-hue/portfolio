@@ -314,16 +314,117 @@ def _parse_live_worktrees(root: Path) -> list[dict]:
 
 
 def _optional_local_branch_sha(root: Path, branch: str) -> str | None:
-    result = _git_result(root, "show-ref", "--verify", f"refs/heads/{branch}")
-    if result.returncode == 1 and not result.stdout.strip():
-        return None
+    expected_ref = f"refs/heads/{branch}"
+    result = _git_result(
+        root,
+        "for-each-ref",
+        "--format=%(objectname)%00%(objecttype)%00%(refname)",
+        expected_ref,
+    )
     if result.returncode:
-        detail = result.stderr.strip() or result.stdout.strip() or "show-ref failed"
+        detail = (
+            result.stderr.strip()
+            or result.stdout.strip()
+            or "for-each-ref failed"
+        )
         raise PreflightError(f"could not inspect local source branch: {detail}")
-    parts = result.stdout.split()
-    if len(parts) != 2 or parts[1] != f"refs/heads/{branch}" or not SHA_RE.fullmatch(parts[0]):
+
+    exact_matches: list[tuple[str, str]] = []
+    for line in result.stdout.splitlines():
+        parts = line.split("\0")
+        if len(parts) != 3:
+            raise PreflightError("local source branch proof is malformed")
+        object_name, object_type, refname = parts
+        if refname != expected_ref:
+            if not refname.startswith(expected_ref + "/"):
+                raise PreflightError("local source branch proof is ambiguous")
+            continue
+        exact_matches.append((object_name.casefold(), object_type))
+    if not exact_matches:
+        return None
+    if len(exact_matches) != 1:
         raise PreflightError("local source branch proof is ambiguous")
-    return parts[0]
+    object_name, object_type = exact_matches[0]
+    if not SHA_RE.fullmatch(object_name) or object_type != "commit":
+        raise PreflightError("local source branch does not name one commit")
+    return object_name
+
+
+def _claim_blob_at_commit(root: Path, commit: str, package: object) -> str:
+    if not isinstance(commit, str) or not SHA_RE.fullmatch(commit):
+        raise PreflightError("owner-reassignment claim proof has an invalid commit")
+    if not isinstance(package, str) or not PACKAGE_RE.fullmatch(package):
+        raise PreflightError("owner-reassignment claim proof has an invalid package")
+    path = claim_relative_path(package)
+    result = _git_result(root, "ls-tree", "-z", commit, "--", path)
+    if result.returncode:
+        detail = result.stderr.strip() or result.stdout.strip() or "claim blob missing"
+        raise PreflightError(
+            f"could not inspect authoritative claim at {commit}: {detail}"
+        )
+    rows = [row for row in result.stdout.split("\0") if row]
+    if len(rows) != 1:
+        raise PreflightError("authoritative claim blob proof is missing or ambiguous")
+    metadata, separator, observed_path = rows[0].partition("\t")
+    columns = metadata.split()
+    if (
+        not separator
+        or observed_path != path
+        or len(columns) != 3
+        or columns[0] != "100644"
+        or columns[1] != "blob"
+        or not SHA_RE.fullmatch(columns[2].casefold())
+    ):
+        raise PreflightError("authoritative claim blob proof is malformed")
+    blob = columns[2].casefold()
+    return blob
+
+
+def _owner_reassignment_continuity_errors(
+    *, root: Path, claim: dict, facts: RepoFacts, preparation: dict
+) -> list[str]:
+    prepared_main = preparation.get("prepared_from_main")
+    prepared_control = preparation.get("control_branch")
+    if prepared_main == facts.origin_main and prepared_control == facts.branch:
+        return []
+
+    errors: list[str] = []
+    if prepared_control == facts.branch:
+        errors.append(
+            "owner-reassignment continuity requires a distinct fresh control branch"
+        )
+    if not OWNER_REASSIGNMENT_CONTROL_BRANCH_RE.fullmatch(facts.branch):
+        errors.append(
+            "owner-reassignment continuity requires an exact owner-reassignment control branch"
+        )
+    if facts.behind:
+        errors.append(
+            "owner-reassignment continuity requires a control branch from current main"
+        )
+    if (
+        not isinstance(prepared_main, str)
+        or not SHA_RE.fullmatch(prepared_main)
+        or prepared_main == facts.origin_main
+        or not _is_ancestor(root, prepared_main, facts.origin_main)
+    ):
+        errors.append(
+            "owner-reassignment continuity requires current main to be a strict descendant of prepared main"
+        )
+        return errors
+
+    try:
+        prepared_blob = _claim_blob_at_commit(root, prepared_main, claim.get("package"))
+        current_blob = _claim_blob_at_commit(
+            root, facts.origin_main, claim.get("package")
+        )
+    except PreflightError as exc:
+        errors.append("owner-reassignment continuity claim proof failed: " + str(exc))
+    else:
+        if prepared_blob != current_blob:
+            errors.append(
+                "owner-reassignment continuity requires a byte-identical authoritative target claim"
+            )
+    return errors
 
 
 def _path_is_pristine(path: Path) -> bool:
@@ -502,8 +603,6 @@ def _owner_reassignment_preparation_errors(
         "from_branch": handoff.get("from_branch"),
         "to_branch": handoff.get("to_branch"),
         "checkpoint_sha": handoff.get("checkpoint_sha"),
-        "control_branch": facts.branch,
-        "prepared_from_main": facts.origin_main,
     }
     preparations = registry.get("owner_reassignment_preparations")
     try:
@@ -546,6 +645,14 @@ def _owner_reassignment_preparation_errors(
             "owner reassignment requires one exact, unconsumed completed preparation tuple",
         ]
     preparation = matches[0]
+    errors.extend(
+        _owner_reassignment_continuity_errors(
+            root=root,
+            claim=claim,
+            facts=facts,
+            preparation=preparation,
+        )
+    )
     source_handoff = dict(handoff)
     source_handoff["package"] = claim.get("package")
     try:

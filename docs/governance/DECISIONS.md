@@ -917,3 +917,22 @@ can push it all the way to deployment."
   provider, spending, schema, infrastructure, visual, merge-to-runtime,
   deployment, enablement, cutover, or production authority. The next program
   step is a separately activated `C1` (`PS-MYOPP-SUPPLY-RIGHTS-001`).
+
+## 2026-08-27 - Standing bounded authority to complete Workshop use disclosure
+
+- Pete's standing decision reference is
+  `session:01a04348-7e3e-7a11-a443-752498be91b5/owner-direction:2026-08-27/workshop-use-disclosure-standing-completion`.
+  While `PS-WORKSHOP-USE-DISCLOSURE-001` remains active or paused, it permits
+  selecting, activating, implementing, reviewing, merging, and closing only a
+  concrete minimum repository follow-up needed to complete that already
+  accepted outcome.
+- Every follow-up claim must cite that exact reference and identify the failed
+  gate or defect it corrects. Delivery-path selection, branch/path/domain
+  collision checks, lifecycle custody, claimed surfaces, exact-SHA review, and
+  Azure PR policy remain mandatory. The authority expires when the parent claim
+  closes or Pete revokes it.
+- This decision grants no expansion of the Workshop outcome and no production
+  deployment, schema application or rollback, destructive action,
+  identity/privacy-policy change, credential access, spending, external
+  operation, or materially revised visual direction. Those future-fact gates
+  still require their own explicit authority.

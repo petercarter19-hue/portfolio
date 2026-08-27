@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-DELIVERY-CONTINUITY-001",
+  "candidate_sha": "cd4569f3689f1ef92a2e9dbe88dc453be31c187b",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/continuity_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-08-27T20:49:32Z",
+  "findings": [],
+  "evidence_ref": "lane_claims/evidence/PS-WORKSHOP-DELIVERY-CONTINUITY-001.md"
+}

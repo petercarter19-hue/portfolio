@@ -225,6 +225,18 @@ state, preparation history, live source, namespace, main, claims, old-branch,
 and successor proofs before its final reread and mutex release. A mutation
 after an earlier proof therefore fails closed.
 
+Finalizing a lease or repointing `_control` leaves every completed preparation
+field unchanged. If main later advances, preflight may reuse that preparation
+only from a distinct fresh owner-reassignment control branch based on current
+main, only when prepared main is its strict ancestor and the target claim's
+exact ordinary Git blob is byte-identical at both commits. The preparation
+digest, exact `[new branch]` response, source snapshot, lease, namespace,
+claims, and remote tuple proofs remain mandatory and repeat under the terminal
+mutex. Local source-head discovery uses exact `for-each-ref` enumeration: no
+exact entry means absent, while command failure, malformed or duplicate output,
+or an exact non-commit ref refuses. This continuity path never edits the
+preparation, creates or moves a ref, or relaxes post-merge consumption.
+
 The receiving writer cannot use `ensure` or write preflight until that control
 PR merges to `origin/main`. On the first post-merge `ensure`, the tool rechecks
 the exact preparation and source state, preserves the old durable checkout as

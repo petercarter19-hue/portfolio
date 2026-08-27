@@ -123,6 +123,117 @@ def args(intent, **overrides):
 
 
 class NormalizationTests(unittest.TestCase):
+    def test_optional_local_head_enumeration_is_exact_and_git_portable(self):
+        def run_git(cwd, *arguments):
+            result = subprocess.run(
+                ["git", *arguments],
+                cwd=cwd,
+                text=True,
+                encoding="utf-8",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
+            return result.stdout.strip()
+
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            run_git(repo, "init", "--initial-branch=main")
+            run_git(repo, "config", "user.email", "preflight@peerslate.invalid")
+            run_git(repo, "config", "user.name", "Preflight Test")
+            (repo / "README.md").write_text("main\n", encoding="utf-8")
+            run_git(repo, "add", "README.md")
+            run_git(repo, "commit", "-m", "seed main")
+            expected = run_git(repo, "rev-parse", "HEAD")
+            run_git(
+                repo,
+                "branch",
+                "work/2026-08-27-source/descendant",
+                expected,
+            )
+
+            self.assertIsNone(
+                preflight._optional_local_branch_sha(
+                    repo, "work/2026-08-27-source"
+                )
+            )
+            self.assertEqual(
+                preflight._optional_local_branch_sha(repo, "main"), expected
+            )
+
+    def test_optional_local_head_enumeration_refuses_ambiguous_or_invalid_proof(self):
+        exact_ref = "refs/heads/work/2026-08-27-source"
+        valid = f"{HEAD}\0commit\0{exact_ref}\n"
+        cases = {
+            "command_failure": subprocess.CompletedProcess(
+                [], 128, stdout="", stderr="enumeration failed"
+            ),
+            "malformed": subprocess.CompletedProcess(
+                [], 0, stdout=f"{HEAD}\0{exact_ref}\n", stderr=""
+            ),
+            "duplicate": subprocess.CompletedProcess(
+                [], 0, stdout=valid + valid, stderr=""
+            ),
+            "invalid_sha": subprocess.CompletedProcess(
+                [], 0, stdout=f"invalid\0commit\0{exact_ref}\n", stderr=""
+            ),
+            "non_commit": subprocess.CompletedProcess(
+                [], 0, stdout=f"{HEAD}\0blob\0{exact_ref}\n", stderr=""
+            ),
+            "unexpected_ref": subprocess.CompletedProcess(
+                [],
+                0,
+                stdout=f"{HEAD}\0commit\0refs/heads/work/unexpected\n",
+                stderr="",
+            ),
+        }
+        for case, result in cases.items():
+            with self.subTest(case=case), patch.object(
+                preflight, "_git_result", return_value=result
+            ), self.assertRaises(preflight.PreflightError):
+                preflight._optional_local_branch_sha(
+                    ROOT, "work/2026-08-27-source"
+                )
+
+    def test_authoritative_claim_blob_proof_requires_one_exact_ordinary_blob(self):
+        path = preflight.claim_relative_path("PS-EXAMPLE-001")
+        valid = subprocess.CompletedProcess(
+            [], 0, stdout=f"100644 blob {HEAD}\t{path}\0", stderr=""
+        )
+        with patch.object(preflight, "_git_result", return_value=valid):
+            self.assertEqual(
+                preflight._claim_blob_at_commit(ROOT, MAIN, "PS-EXAMPLE-001"),
+                HEAD,
+            )
+
+        invalid = {
+            "missing": subprocess.CompletedProcess([], 0, stdout="", stderr=""),
+            "duplicate": subprocess.CompletedProcess(
+                [],
+                0,
+                stdout=(
+                    f"100644 blob {HEAD}\t{path}\0"
+                    f"100644 blob {HEAD}\t{path}\0"
+                ),
+                stderr="",
+            ),
+            "symlink": subprocess.CompletedProcess(
+                [], 0, stdout=f"120000 blob {HEAD}\t{path}\0", stderr=""
+            ),
+            "wrong_path": subprocess.CompletedProcess(
+                [], 0, stdout=f"100644 blob {HEAD}\tother.json\0", stderr=""
+            ),
+            "command_failure": subprocess.CompletedProcess(
+                [], 128, stdout="", stderr="tree lookup failed"
+            ),
+        }
+        for case, result in invalid.items():
+            with self.subTest(case=case), patch.object(
+                preflight, "_git_result", return_value=result
+            ), self.assertRaises(preflight.PreflightError):
+                preflight._claim_blob_at_commit(ROOT, MAIN, "PS-EXAMPLE-001")
+
     def test_exact_main_fetch_uses_real_remote(self):
         def run_git(cwd, *arguments):
             result = subprocess.run(
@@ -1022,6 +1133,110 @@ class LocalWorktreeRegistryTests(unittest.TestCase):
                         }
                         else "completed preparation tuple"
                     )
+                    self.assertTrue(any(expected in item for item in errors), errors)
+
+    def test_owner_reassignment_continuity_is_descendant_and_claim_blob_bound(self):
+        value, owner_ref = self.owner_reassignment_claim()
+        request = args(
+            "owner-reassignment",
+            task_ref=value["writer_ref"],
+            owner_authorization_ref=owner_ref,
+        )
+        prepared_control = (
+            "work/2026-08-27-delivery-owner-reassignment-prepared"
+        )
+        fresh_control = (
+            "work/2026-08-27-delivery-owner-reassignment-continuity"
+        )
+        descendant_main = "f" * 40
+        source_snapshot = {
+            "local_branch_sha": HEAD,
+            "worktrees": [],
+            "durable_records": [],
+        }
+        cases = {
+            "valid": (fresh_control, descendant_main, 0, True, "same"),
+            "equal_main": (fresh_control, MAIN, 0, True, "same"),
+            "non_descendant": (fresh_control, descendant_main, 0, False, "same"),
+            "reused_control": (prepared_control, descendant_main, 0, True, "same"),
+            "changed_claim": (fresh_control, descendant_main, 0, True, "changed"),
+            "missing_claim": (fresh_control, descendant_main, 0, True, "missing"),
+            "stale_control": (fresh_control, descendant_main, 1, True, "same"),
+        }
+        for case, (
+            current_control,
+            current_main,
+            behind,
+            is_descendant,
+            claim_state,
+        ) in cases.items():
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                base = Path(directory)
+                common = base / "common"
+                current = base / "managed" / "_control"
+                preparation = self.owner_reassignment_preparation(
+                    value, prepared_control, source_snapshot
+                )
+                self.write_registry(
+                    common,
+                    [
+                        self.owner_reassignment_registry_record(
+                            current, current_control
+                        )
+                    ],
+                    owner_reassignment_preparations=[preparation],
+                )
+                repo_facts = facts(
+                    repository=str(current),
+                    branch=current_control,
+                    origin_main=current_main,
+                    behind=behind,
+                )
+
+                def claim_blob(_root, commit, _package):
+                    if claim_state == "missing":
+                        raise preflight.PreflightError("claim missing")
+                    if claim_state == "changed" and commit == current_main:
+                        return CANDIDATE
+                    return HEAD
+
+                with patch.object(
+                    preflight,
+                    "_live_preparation_source_snapshot",
+                    return_value=source_snapshot,
+                ), patch.object(
+                    preflight,
+                    "_owner_reassignment_namespace_errors",
+                    return_value=[],
+                ), patch.object(
+                    preflight, "_is_ancestor", return_value=is_descendant
+                ), patch.object(
+                    preflight, "_claim_blob_at_commit", side_effect=claim_blob
+                ):
+                    context, errors, _ = self.check(
+                        common,
+                        current,
+                        request=request,
+                        value=value,
+                        repo_facts=repo_facts,
+                    )
+                if case == "valid":
+                    self.assertEqual([], errors)
+                    self.assertTrue(
+                        context["owner_reassignment_preparation_valid"]
+                    )
+                else:
+                    self.assertFalse(
+                        context["owner_reassignment_preparation_valid"]
+                    )
+                    expected = {
+                        "equal_main": "strict descendant",
+                        "non_descendant": "strict descendant",
+                        "reused_control": "distinct fresh control branch",
+                        "changed_claim": "byte-identical authoritative target claim",
+                        "missing_claim": "continuity claim proof failed",
+                        "stale_control": "control branch from current main",
+                    }[case]
                     self.assertTrue(any(expected in item for item in errors), errors)
 
     def test_registry_preparation_field_defaults_for_existing_schema_one_state(self):
@@ -3540,6 +3755,45 @@ class CurrentRepositoryTests(unittest.TestCase):
         self.assertNotIn("max_production_capable_lanes", script)
         self.assertNotIn("PS-INTERVIEW", script)
         self.assertNotIn("PS-SIGNIN", script)
+
+    def test_standing_workshop_authority_and_continuity_are_narrowly_routed(self):
+        standing_ref = (
+            "session:01a04348-7e3e-7a11-a443-752498be91b5/"
+            "owner-direction:2026-08-27/workshop-use-disclosure-standing-completion"
+        )
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        start = (ROOT / "START_HERE.md").read_text(encoding="utf-8")
+        decisions = (
+            ROOT / "docs" / "governance" / "DECISIONS.md"
+        ).read_text(encoding="utf-8")
+        decisions_normalized = " ".join(decisions.split())
+        lifecycle = (
+            ROOT / "docs" / "governance" / "WORKTREE_LIFECYCLE.md"
+        ).read_text(encoding="utf-8")
+        lifecycle_normalized = " ".join(lifecycle.split())
+
+        self.assertIn("standing bounded Workshop", agents)
+        self.assertIn("standing bounded Workshop", start)
+        self.assertIn(standing_ref, decisions_normalized)
+        for boundary in (
+            "active or paused",
+            "failed gate or defect",
+            "expires",
+            "production deployment",
+            "schema application or rollback",
+            "destructive action",
+            "credential access",
+            "spending",
+            "materially revised visual direction",
+        ):
+            self.assertIn(boundary, decisions_normalized)
+        for proof in (
+            "strict ancestor",
+            "byte-identical",
+            "for-each-ref",
+            "never edits the preparation",
+        ):
+            self.assertIn(proof, lifecycle_normalized)
 
     def test_read_preflight_passes_in_the_current_worktree(self):
         output = io.StringIO()

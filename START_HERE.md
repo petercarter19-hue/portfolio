@@ -52,6 +52,15 @@ sparse control singleton for a clean
 `work/YYYY-MM-DD-delivery-activation-<slug>` branch, then add exactly one
 `docs/governance/lane_claims/<PACKAGE-ID>.json` file:
 
+The unrevoked standing bounded Workshop completion decision in
+`docs/governance/DECISIONS.md` also satisfies this selection gate for only a
+concrete minimum repository follow-up needed to complete the already accepted
+Workshop use-disclosure outcome while its parent claim is active or paused.
+Each child claim must cite the exact standing reference and failed gate. The
+decision expires at parent close or Pete's revocation and grants none of the
+separately gated production, schema, destructive, identity/privacy-policy,
+credential, spending, external-operation, or material-visual authorities.
+
 ```bash
 python scripts/worktree_lifecycle.py control --package <PACKAGE-ID> --task-ref <WRITER-REF> --branch work/YYYY-MM-DD-delivery-activation-<slug> --base origin/main --execute
 ```
