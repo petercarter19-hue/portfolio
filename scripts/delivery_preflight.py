@@ -23,6 +23,11 @@ from pathlib import Path, PurePosixPath
 from typing import Iterable
 from urllib.parse import urlparse
 
+try:
+    from scripts import worktree_lifecycle as lifecycle_registry
+except ModuleNotFoundError:  # Direct ``python scripts/delivery_preflight.py`` use.
+    import worktree_lifecycle as lifecycle_registry
+
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX_REL = "docs/governance/CURRENT_LANES.json"
@@ -40,7 +45,10 @@ ACTIVATION_BRANCH_RE = re.compile(
 )
 CONTROL_BRANCH_RE = re.compile(
     r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-"
-    r"(?:authorize|extend-surfaces|transfer|pause|resume|close)-[a-z0-9-]+$"
+    r"(?:authorize|extend-surfaces|transfer|owner-reassignment|pause|resume|close)-[a-z0-9-]+$"
+)
+OWNER_REASSIGNMENT_CONTROL_BRANCH_RE = re.compile(
+    r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-owner-reassignment-[a-z0-9-]+$"
 )
 EVIDENCE_ERRATA_BRANCH_RE = re.compile(
     r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-evidence-errata-[a-z0-9-]+$"
@@ -67,17 +75,31 @@ ASSIGNMENTS = {"implementation"}
 REPOSITORY_AUTHORITIES = {"through_merge", "write_only"}
 REVIEW_REQUIREMENTS = {"self", "independent"}
 MUTATING_INTENTS = {
-    "activate", "authorize", "extend-surfaces", "write", "transfer", "pause",
-    "resume", "merge", "close", "evidence-errata",
+    "activate", "authorize", "extend-surfaces", "write", "transfer",
+    "owner-reassignment", "pause", "resume", "merge", "close",
+    "evidence-errata",
 }
 # evidence-errata is a control-style transition: it runs from the leased
 # sparse _control singleton and its claim is read from the branch copy, but
 # unlike the lifecycle transitions it must leave every claim byte-identical.
 CONTROL_INTENTS = {
-    "activate", "authorize", "extend-surfaces", "transfer", "pause", "resume",
-    "close", "evidence-errata",
+    "activate", "authorize", "extend-surfaces", "transfer",
+    "owner-reassignment", "pause", "resume", "close", "evidence-errata",
+}
+VOLUNTARY_HANDOFF_FIELDS = {
+    "from_ref", "to_ref", "checkpoint_sha", "relinquished"
+}
+OWNER_REASSIGNMENT_FIELDS = {
+    "type",
+    "from_ref",
+    "to_ref",
+    "from_branch",
+    "to_branch",
+    "checkpoint_sha",
+    "owner_authorization_ref",
 }
 WORKTREE_REGISTRY_REL = Path("peerslate") / "worktree_registry.json"
+WORKTREE_LOCK_DIRECTORY_NAME = "worktree_registry.lock"
 CI_ENVIRONMENT_KEYS = ("TF_BUILD", "CI", "GITHUB_ACTIONS", "BUILD_BUILDID")
 
 
@@ -129,6 +151,112 @@ def _git_nul(root: Path, *args: str) -> list[str]:
     return [item for item in result.stdout.split("\0") if item]
 
 
+def _is_normalized_work_branch(branch: object) -> bool:
+    if not isinstance(branch, str) or not BRANCH_RE.fullmatch(branch):
+        return False
+    components = branch.split("/")
+    return bool(
+        len(components) >= 2
+        and all(
+            component not in {"", ".", ".."}
+            and not component.endswith((".", ".lock"))
+            and ".." not in component
+            for component in components
+        )
+    )
+
+
+def _remote_branch_tip(root: Path, branch: str) -> str | None:
+    """Return one exact server-side branch tip, or confirmed absence.
+
+    ``ls-remote`` is used instead of trusting a remote-tracking ref.  Exit 2
+    with no output is Git's explicit no-match result; every other failure or
+    ambiguous response is a hard error.
+    """
+
+    if branch != "main" and not _is_normalized_work_branch(branch):
+        raise PreflightError(f"invalid work branch: {branch!r}")
+    result = _git_result(
+        root,
+        "ls-remote",
+        "--exit-code",
+        "--heads",
+        "origin",
+        f"refs/heads/{branch}",
+    )
+    if result.returncode == 2 and not result.stdout.strip():
+        return None
+    if result.returncode:
+        detail = result.stderr.strip() or result.stdout.strip() or "git ls-remote failed"
+        raise PreflightError(f"could not confirm remote branch {branch!r}: {detail}")
+    matches = [line.split() for line in result.stdout.splitlines() if line.strip()]
+    expected_ref = f"refs/heads/{branch}"
+    if len(matches) != 1 or len(matches[0]) != 2 or matches[0][1] != expected_ref:
+        raise PreflightError(f"remote branch lookup was ambiguous: {branch!r}")
+    sha = matches[0][0].casefold()
+    if not SHA_RE.fullmatch(sha):
+        raise PreflightError(f"remote branch returned an invalid commit: {branch!r}")
+    return sha
+
+
+def _remote_branch_tuple(root: Path, branches: Iterable[str]) -> dict[str, str]:
+    """Read one exact server advertisement for a complete branch tuple."""
+
+    normalized = list(branches)
+    if any(
+        branch != "main" and not _is_normalized_work_branch(branch)
+        for branch in normalized
+    ) or len(normalized) != len(set(normalized)):
+        raise PreflightError("remote branch tuple contains invalid or duplicate names")
+    result = _git_result(
+        root,
+        "ls-remote",
+        "--heads",
+        "origin",
+        *(f"refs/heads/{branch}" for branch in normalized),
+    )
+    if result.returncode:
+        detail = result.stderr.strip() or result.stdout.strip() or "git ls-remote failed"
+        raise PreflightError("could not confirm remote branch tuple: " + detail)
+    expected_refs = {f"refs/heads/{branch}": branch for branch in normalized}
+    observed: dict[str, str] = {}
+    for line in result.stdout.splitlines():
+        columns = line.split()
+        if len(columns) != 2 or columns[1] not in expected_refs:
+            raise PreflightError("remote branch tuple lookup was ambiguous")
+        branch = expected_refs[columns[1]]
+        sha = columns[0].casefold()
+        if branch in observed or not SHA_RE.fullmatch(sha):
+            raise PreflightError("remote branch tuple lookup was ambiguous")
+        observed[branch] = sha
+    if set(observed) != set(normalized):
+        raise PreflightError("remote branch tuple is incomplete")
+    return observed
+
+
+def _exact_fetch_origin_branch(root: Path, branch: str) -> str | None:
+    """Fetch one branch without pruning and prove it did not move mid-fetch."""
+
+    observed_tip = _remote_branch_tip(root, branch)
+    if observed_tip is None:
+        return None
+    _git(
+        root,
+        "fetch",
+        "--no-prune",
+        "--no-tags",
+        "origin",
+        f"+refs/heads/{branch}:refs/remotes/origin/{branch}",
+    )
+    fetched_tip = _git(root, "rev-parse", f"refs/remotes/origin/{branch}").casefold()
+    confirmed_tip = _remote_branch_tip(root, branch)
+    if fetched_tip != observed_tip or confirmed_tip != observed_tip:
+        raise PreflightError(
+            f"remote branch moved during exact fetch; retry from a stable tip: {branch!r}"
+        )
+    return fetched_tip
+
+
 def _is_ancestor(root: Path, older: str, newer: str) -> bool:
     return _git_result(root, "merge-base", "--is-ancestor", older, newer).returncode == 0
 
@@ -151,6 +279,291 @@ def _is_ci_environment() -> bool:
     return any(os.environ.get(key) for key in CI_ENVIRONMENT_KEYS)
 
 
+def _parse_live_worktrees(root: Path) -> list[dict]:
+    payload = _git(root, "worktree", "list", "--porcelain", "-z")
+    records: list[dict] = []
+    current: dict = {}
+    for field in payload.split("\0"):
+        if not field:
+            if current:
+                records.append(current)
+                current = {}
+            continue
+        key, separator, value = field.partition(" ")
+        if key == "HEAD":
+            key = "head"
+        if key in {"bare", "detached", "locked", "prunable"} and not separator:
+            current[key] = True
+        elif key == "branch":
+            current[key] = (
+                value[len("refs/heads/") :]
+                if value.startswith("refs/heads/")
+                else value
+            )
+        else:
+            current[key] = value if separator else True
+    if current:
+        records.append(current)
+    for record in records:
+        record.setdefault("branch", None)
+        record.setdefault("head", None)
+        record["detached"] = bool(record.get("detached"))
+        if "worktree" in record:
+            record["worktree"] = str(Path(record["worktree"]).resolve(strict=False))
+    return records
+
+
+def _optional_local_branch_sha(root: Path, branch: str) -> str | None:
+    result = _git_result(root, "show-ref", "--verify", f"refs/heads/{branch}")
+    if result.returncode == 1 and not result.stdout.strip():
+        return None
+    if result.returncode:
+        detail = result.stderr.strip() or result.stdout.strip() or "show-ref failed"
+        raise PreflightError(f"could not inspect local source branch: {detail}")
+    parts = result.stdout.split()
+    if len(parts) != 2 or parts[1] != f"refs/heads/{branch}" or not SHA_RE.fullmatch(parts[0]):
+        raise PreflightError("local source branch proof is ambiguous")
+    return parts[0]
+
+
+def _path_is_pristine(path: Path) -> bool:
+    payload = _git(
+        path,
+        "status",
+        "--porcelain=v1",
+        "-z",
+        "--untracked-files=all",
+        "--ignored=matching",
+    )
+    return not payload
+
+
+def _live_preparation_source_snapshot(
+    root: Path, registry: dict, handoff: dict
+) -> dict:
+    package = str(handoff.get("package", ""))
+    from_ref = str(handoff.get("from_ref", ""))
+    from_branch = str(handoff.get("from_branch", ""))
+    checkpoint = str(handoff.get("checkpoint_sha", ""))
+    worktrees = _parse_live_worktrees(root)
+    snapshots: list[dict] = []
+    for entry in worktrees:
+        if entry.get("branch") != from_branch:
+            continue
+        path = Path(str(entry.get("worktree", ""))).resolve(strict=False)
+        if entry.get("detached") or entry.get("head") != checkpoint:
+            raise PreflightError(
+                "prepared source worktree is detached, switched, or moved"
+            )
+        if not _path_is_pristine(path):
+            raise PreflightError("prepared source worktree is no longer pristine")
+        snapshots.append(
+            {"path": str(path), "branch": from_branch, "head": checkpoint}
+        )
+    snapshots.sort(key=lambda item: os.path.normcase(item["path"]).casefold())
+
+    durable = [
+        record
+        for record in registry.get("worktrees", [])
+        if isinstance(record, dict)
+        and record.get("state") == "active"
+        and record.get("kind") == "durable"
+        and (
+            str(record.get("package", "")).casefold() == package.casefold()
+            or record.get("branch") == from_branch
+        )
+    ]
+    path_keys = [
+        _canonical_local_path(record.get("path")) for record in durable
+    ]
+    if len(durable) > 1 or len(path_keys) != len(set(path_keys)):
+        raise PreflightError("prepared source durable registry custody is ambiguous")
+    durable_snapshots: list[dict] = []
+    for record in durable:
+        if (
+            record.get("package") != package
+            or record.get("task_ref") != from_ref
+            or record.get("branch") != from_branch
+            or record.get("head") != checkpoint
+        ):
+            raise PreflightError("prepared source durable registry identity changed")
+        path = Path(str(record.get("path"))).resolve(strict=False)
+        matches = [
+            entry
+            for entry in worktrees
+            if os.path.normcase(str(entry.get("worktree", ""))).casefold()
+            == os.path.normcase(str(path)).casefold()
+        ]
+        if len(matches) != 1:
+            raise PreflightError("prepared source durable worktree is missing or ambiguous")
+        live = matches[0]
+        if (
+            live.get("detached")
+            or live.get("branch") != from_branch
+            or live.get("head") != checkpoint
+            or not _path_is_pristine(path)
+        ):
+            raise PreflightError("prepared source durable worktree identity changed")
+        durable_snapshots.append(
+            {
+                "path": str(path),
+                "package": package,
+                "task_ref": from_ref,
+                "branch": from_branch,
+                "head": checkpoint,
+            }
+        )
+    return {
+        "local_branch_sha": _optional_local_branch_sha(root, from_branch),
+        "worktrees": snapshots,
+        "durable_records": durable_snapshots,
+    }
+
+
+def _branch_names_at_ref_prefix(root: Path, prefix: str) -> list[str]:
+    names = _git(root, "for-each-ref", "--format=%(refname)", prefix)
+    result: list[str] = []
+    for refname in names.splitlines():
+        if not refname.startswith(prefix + "/"):
+            raise PreflightError(f"ambiguous Git ref namespace entry: {refname}")
+        result.append(refname[len(prefix) + 1 :])
+    return result
+
+
+def _branches_namespace_collide(left: str, right: str) -> bool:
+    return left == right or left.startswith(right + "/") or right.startswith(left + "/")
+
+
+def _owner_reassignment_namespace_errors(
+    root: Path, registry: dict, claim: dict
+) -> list[str]:
+    handoff = claim.get("handoff")
+    if not isinstance(handoff, dict) or not isinstance(handoff.get("to_branch"), str):
+        return ["owner-reassignment successor namespace cannot be proved"]
+    successor = handoff["to_branch"]
+    collisions: list[str] = []
+    for branch in _branch_names_at_ref_prefix(root, "refs/heads"):
+        if _branches_namespace_collide(successor, branch):
+            collisions.append(f"local head:{branch}")
+    for branch in _branch_names_at_ref_prefix(root, "refs/remotes/origin"):
+        if branch == "HEAD" or branch == successor:
+            continue
+        if _branches_namespace_collide(successor, branch):
+            collisions.append(f"origin tracking ref:{branch}")
+    for entry in _parse_live_worktrees(root):
+        branch = entry.get("branch")
+        if isinstance(branch, str) and _branches_namespace_collide(
+            successor, branch
+        ):
+            collisions.append(f"worktree:{entry.get('worktree')}:{branch}")
+    for record in registry.get("worktrees", []):
+        if not isinstance(record, dict) or record.get("state") != "active":
+            continue
+        for field in ("branch", "source_branch"):
+            branch = record.get(field)
+            if isinstance(branch, str) and _branches_namespace_collide(
+                successor, branch
+            ):
+                collisions.append(f"registry:{record.get('path')}:{field}:{branch}")
+    for live_claim in load_claims_at_ref(root, "origin/main").values():
+        if live_claim.get("state") not in {"active", "paused"}:
+            continue
+        branch = live_claim.get("branch")
+        if isinstance(branch, str) and _branches_namespace_collide(
+            successor, branch
+        ):
+            collisions.append(f"live claim:{live_claim.get('package')}:{branch}")
+    return (
+        [
+            "owner-reassignment successor namespace changed after preparation: "
+            + repr(sorted(set(collisions)))
+        ]
+        if collisions
+        else []
+    )
+
+
+def _owner_reassignment_preparation_errors(
+    *,
+    root: Path,
+    registry: dict,
+    claim: dict,
+    facts: RepoFacts,
+) -> list[str]:
+    errors: list[str] = []
+    handoff = claim.get("handoff")
+    if not isinstance(handoff, dict):
+        return ["owner reassignment requires preparation matching its handoff"]
+    expected = {
+        "package": claim.get("package"),
+        "owner_authorization_ref": handoff.get("owner_authorization_ref"),
+        "from_ref": handoff.get("from_ref"),
+        "to_ref": handoff.get("to_ref"),
+        "from_branch": handoff.get("from_branch"),
+        "to_branch": handoff.get("to_branch"),
+        "checkpoint_sha": handoff.get("checkpoint_sha"),
+        "control_branch": facts.branch,
+        "prepared_from_main": facts.origin_main,
+    }
+    preparations = registry.get("owner_reassignment_preparations")
+    try:
+        lifecycle_registry.validate_owner_reassignment_registry(registry)
+    except lifecycle_registry.Refusal as exc:
+        return ["registry owner-reassignment preparation history is invalid: " + str(exc)]
+    assert isinstance(preparations, list)
+    package_completed = [
+        item
+        for item in preparations
+        if isinstance(item, dict)
+        and str(item.get("package", "")).casefold()
+        == str(claim.get("package", "")).casefold()
+        and item.get("status") == "completed"
+    ]
+    matches = [
+        item
+        for item in package_completed
+        if all(item.get(field) == value for field, value in expected.items())
+    ]
+    tuple_matches = [
+        item
+        for item in preparations
+        if isinstance(item, dict)
+        and str(item.get("package", "")).casefold()
+        == str(expected["package"]).casefold()
+        and all(
+            item.get(field) == value
+            for field, value in expected.items()
+            if field != "package"
+        )
+    ]
+    if (
+        len(package_completed) != 1
+        or len(matches) != 1
+        or len(tuple_matches) != 1
+    ):
+        return [
+            *errors,
+            "owner reassignment requires one exact, unconsumed completed preparation tuple",
+        ]
+    preparation = matches[0]
+    source_handoff = dict(handoff)
+    source_handoff["package"] = claim.get("package")
+    try:
+        current_snapshot = _live_preparation_source_snapshot(
+            root, registry, source_handoff
+        )
+    except (PreflightError, ValueError) as exc:
+        errors.append("owner-reassignment preparation source proof failed: " + str(exc))
+    else:
+        if preparation.get("source_snapshot") != current_snapshot:
+            errors.append("owner-reassignment preparation source snapshot no longer matches")
+    try:
+        errors.extend(_owner_reassignment_namespace_errors(root, registry, claim))
+    except (PreflightError, ValueError) as exc:
+        errors.append("owner-reassignment successor namespace proof failed: " + str(exc))
+    return errors
+
+
 def evaluate_local_worktree_context(
     *,
     root: Path,
@@ -160,7 +573,8 @@ def evaluate_local_worktree_context(
 ) -> tuple[dict, list[str], list[str]]:
     """Enforce the initialized machine-local registry for this workspace only.
 
-    The registry is operational inventory, not repository authority. CI and a
+    The registry is operational inventory, not repository authority. Except
+    for owner reassignment's mandatory local preparation proof, CI and a
     machine that has not initialized it remain valid. Once initialized, a new
     unregistered mutating workspace fails without making unrelated historical
     worktrees a global blocker.
@@ -170,6 +584,7 @@ def evaluate_local_worktree_context(
         "enforced": False,
         "registry": "not_checked",
         "current_kind": None,
+        "owner_reassignment_preparation_valid": False,
     }
     errors: list[str] = []
     warnings: list[str] = []
@@ -177,18 +592,32 @@ def evaluate_local_worktree_context(
         return context, errors, warnings
     if _is_ci_environment():
         context["registry"] = "ci_skipped"
-        warnings.append("machine-local worktree registry enforcement is skipped in CI")
+        if args.intent == "owner-reassignment":
+            errors.append(
+                "owner reassignment cannot bypass local preparation proof in CI"
+            )
+        else:
+            warnings.append("machine-local worktree registry enforcement is skipped in CI")
         return context, errors, warnings
 
     common_dir = _git_common_dir(root)
     registry_path = common_dir / WORKTREE_REGISTRY_REL
+    lock_path = registry_path.parent / WORKTREE_LOCK_DIRECTORY_NAME
     context["path"] = str(registry_path)
     if not registry_path.is_file():
         context["registry"] = "not_initialized"
-        warnings.append(
+        message = (
             "machine-local worktree registry is not initialized; "
             "run worktree_lifecycle.py init on this machine"
         )
+        if args.intent == "owner-reassignment":
+            errors.append("owner reassignment requires an initialized registry")
+        else:
+            warnings.append(message)
+        return context, errors, warnings
+    if args.intent == "owner-reassignment" and os.path.lexists(lock_path):
+        context["registry"] = "locked"
+        errors.append("owner reassignment refuses an active registry lock")
         return context, errors, warnings
 
     try:
@@ -197,9 +626,20 @@ def evaluate_local_worktree_context(
         context["registry"] = "invalid"
         errors.append(str(exc))
         return context, errors, warnings
+    if args.intent == "owner-reassignment":
+        # Kept private and removed by the terminal owner-reassignment boundary.
+        # It binds the earlier source/preparation proof to the later claim and
+        # remote proof without exposing machine-local registry data in output.
+        context["_owner_reassignment_registry_snapshot"] = registry
     if registry.get("schema_version") != 1 or not registry.get("initialized_at"):
         context["registry"] = "invalid"
         errors.append("machine-local worktree registry is not an initialized schema 1 registry")
+        return context, errors, warnings
+    if args.intent == "owner-reassignment" and (
+        "pending" not in registry or registry.get("pending") is not None
+    ):
+        context["registry"] = "pending"
+        errors.append("owner reassignment refuses pending registry ambiguity")
         return context, errors, warnings
     try:
         recorded_common = _canonical_local_path(registry.get("repository_common_dir"))
@@ -270,6 +710,33 @@ def evaluate_local_worktree_context(
     if record.get("state") != "active":
         errors.append("current mutating workspace registry record is not active")
         return context, errors, warnings
+    if args.intent == "owner-reassignment":
+        control_records = [
+            item
+            for item in records
+            if isinstance(item, dict)
+            and item.get("kind") == "control_singleton"
+        ]
+        try:
+            managed_root_value = registry.get("managed_root")
+            _canonical_local_path(managed_root_value)
+            assert isinstance(managed_root_value, str)
+            expected_control_path = _canonical_local_path(
+                str(Path(managed_root_value) / "_control")
+            )
+        except ValueError as exc:
+            errors.append(str(exc))
+        else:
+            if (
+                len(control_records) != 1
+                or control_records[0] is not record
+                or control_records[0].get("state") != "active"
+                or current_path != expected_control_path
+            ):
+                errors.append(
+                    "owner reassignment requires one exact deterministic active "
+                    "control singleton"
+                )
     task_ref = getattr(args, "task_ref", "")
     if not task_ref:
         errors.append("initialized worktree registry requires --task-ref for mutating intents")
@@ -291,7 +758,14 @@ def evaluate_local_worktree_context(
         if record.get("kind") != "control_singleton":
             errors.append("control transitions require the reusable sparse control singleton")
         lease = record.get("lease")
-        if not isinstance(lease, dict):
+        if args.intent == "owner-reassignment":
+            try:
+                lifecycle_registry.validate_owner_reassignment_control_lease(
+                    lease, task_ref=task_ref, package=package
+                )
+            except lifecycle_registry.Refusal as exc:
+                errors.append("owner-reassignment control lease is invalid: " + str(exc))
+        elif not isinstance(lease, dict):
             errors.append("control singleton requires an active lease")
         else:
             if lease.get("purpose") != "control":
@@ -300,7 +774,347 @@ def evaluate_local_worktree_context(
                 errors.append("control singleton lease belongs to another task")
             if str(lease.get("package", "")).casefold() != package.casefold():
                 errors.append("control singleton lease package does not match the claim")
+    if args.intent == "owner-reassignment":
+        preparation_errors = _owner_reassignment_preparation_errors(
+            root=root,
+            registry=registry,
+            claim=claim,
+            facts=facts,
+        )
+        errors.extend(preparation_errors)
+        registry_after: dict | None = None
+        try:
+            registry_after = _read_json(registry_path)
+        except PreflightError as exc:
+            errors.append(str(exc))
+        else:
+            if registry_after != registry:
+                errors.append("owner-reassignment registry changed during preparation proof")
+        if os.path.lexists(lock_path):
+            errors.append("owner-reassignment registry lock appeared during proof")
+        if (
+            not preparation_errors
+            and registry_after is not None
+            and registry_after == registry
+        ):
+            final_preparation_errors = _owner_reassignment_preparation_errors(
+                root=root,
+                registry=registry_after,
+                claim=claim,
+                facts=facts,
+            )
+            errors.extend(
+                "owner-reassignment final preparation proof: " + item
+                for item in final_preparation_errors
+            )
+        final_registry: dict | None = None
+        final_lock_acquired = False
+        try:
+            os.mkdir(lock_path)
+            final_lock_acquired = True
+        except FileExistsError:
+            errors.append(
+                "owner-reassignment registry lock appeared during final live proof"
+            )
+        except OSError as exc:
+            errors.append(
+                "owner-reassignment final registry lock could not be acquired: "
+                + str(exc)
+            )
+        if final_lock_acquired:
+            try:
+                try:
+                    final_registry = _read_json(registry_path)
+                except PreflightError as exc:
+                    errors.append(
+                        "owner-reassignment final registry snapshot failed: "
+                        + str(exc)
+                    )
+                if final_registry is not None and final_registry != registry:
+                    errors.append(
+                        "owner-reassignment registry changed during final live proof"
+                    )
+                if final_registry is not None and (
+                    "pending" not in final_registry
+                    or final_registry.get("pending") is not None
+                ):
+                    errors.append(
+                        "owner-reassignment final registry snapshot has pending ambiguity"
+                    )
+                final_records = (
+                    final_registry.get("worktrees")
+                    if final_registry is not None
+                    else None
+                )
+                final_matches: list[dict] = []
+                final_controls: list[dict] = []
+                if isinstance(final_records, list):
+                    for final_record in final_records:
+                        if not isinstance(final_record, dict):
+                            continue
+                        try:
+                            final_record_path = _canonical_local_path(
+                                final_record.get("path")
+                            )
+                        except ValueError:
+                            continue
+                        if final_record_path == current_path:
+                            final_matches.append(final_record)
+                        if final_record.get("kind") == "control_singleton":
+                            final_controls.append(final_record)
+                final_lease = (
+                    final_matches[0].get("lease")
+                    if len(final_matches) == 1
+                    else None
+                )
+                final_lease_valid = False
+                try:
+                    lifecycle_registry.validate_owner_reassignment_control_lease(
+                        final_lease, task_ref=task_ref, package=package
+                    )
+                    final_lease_valid = True
+                except lifecycle_registry.Refusal as exc:
+                    errors.append(
+                        "owner-reassignment final control lease is invalid: "
+                        + str(exc)
+                    )
+                if (
+                    len(final_matches) != 1
+                    or len(final_controls) != 1
+                    or final_controls[0] != final_matches[0]
+                    or final_matches[0].get("state") != "active"
+                    or final_matches[0] != record
+                    or not final_lease_valid
+                ):
+                    errors.append(
+                        "owner-reassignment final registry snapshot lost its exact "
+                        "active leased control singleton"
+                    )
+                context["owner_reassignment_preparation_valid"] = not errors
+            finally:
+                try:
+                    os.rmdir(lock_path)
+                except OSError as exc:
+                    errors.append(
+                        "owner-reassignment final registry lock could not be released: "
+                        + str(exc)
+                    )
+                    context["owner_reassignment_preparation_valid"] = False
+        else:
+            context["owner_reassignment_preparation_valid"] = False
     return context, errors, warnings
+
+
+def _final_owner_reassignment_boundary_errors(
+    *,
+    root: Path,
+    args: argparse.Namespace,
+    claim: dict,
+    facts: RepoFacts,
+    authority_claims: dict[str, dict],
+    registry_context: dict,
+) -> list[str]:
+    """Reprove the complete owner transition under the lifecycle mutex."""
+
+    errors: list[str] = []
+    expected_registry = registry_context.pop(
+        "_owner_reassignment_registry_snapshot", None
+    )
+    if not isinstance(expected_registry, dict):
+        registry_context["owner_reassignment_preparation_valid"] = False
+        return ["owner-reassignment terminal registry snapshot is unavailable"]
+    registry_path = Path(str(registry_context.get("path", "")))
+    lock_path = registry_path.parent / WORKTREE_LOCK_DIRECTORY_NAME
+    acquired = False
+    try:
+        try:
+            os.mkdir(lock_path)
+            acquired = True
+        except FileExistsError:
+            return ["owner-reassignment registry lock appeared before terminal proof"]
+        except OSError as exc:
+            return [
+                "owner-reassignment terminal registry lock could not be acquired: "
+                + str(exc)
+            ]
+
+        try:
+            locked_registry = _read_json(registry_path)
+        except PreflightError as exc:
+            return ["owner-reassignment terminal registry read failed: " + str(exc)]
+        if locked_registry != expected_registry:
+            errors.append(
+                "owner-reassignment registry changed before terminal owner proof"
+            )
+        try:
+            lifecycle_registry.validate_owner_reassignment_registry(locked_registry)
+        except lifecycle_registry.Refusal as exc:
+            errors.append(
+                "owner-reassignment terminal registry schema is invalid: " + str(exc)
+            )
+        if locked_registry.get("pending") is not None:
+            errors.append("owner-reassignment terminal registry has pending ambiguity")
+
+        records = locked_registry.get("worktrees")
+        controls = (
+            [
+                record
+                for record in records
+                if isinstance(record, dict)
+                and record.get("kind") == "control_singleton"
+            ]
+            if isinstance(records, list)
+            else []
+        )
+        current_path = _canonical_local_path(facts.repository)
+        matching_controls: list[dict] = []
+        for control in controls:
+            try:
+                control_path = _canonical_local_path(control.get("path"))
+            except ValueError:
+                continue
+            if control_path == current_path:
+                matching_controls.append(control)
+        lease = matching_controls[0].get("lease") if len(matching_controls) == 1 else None
+        terminal_lease_valid = False
+        try:
+            lifecycle_registry.validate_owner_reassignment_control_lease(
+                lease,
+                task_ref=args.task_ref,
+                package=claim.get("package"),
+            )
+            terminal_lease_valid = True
+        except lifecycle_registry.Refusal as exc:
+            errors.append(
+                "owner-reassignment terminal control lease is invalid: " + str(exc)
+            )
+        if (
+            len(controls) != 1
+            or len(matching_controls) != 1
+            or matching_controls[0].get("state") != "active"
+            or matching_controls[0].get("branch") != facts.branch
+            or not terminal_lease_valid
+        ):
+            errors.append(
+                "owner-reassignment terminal registry lost exact leased control custody"
+            )
+
+        handoff = claim.get("handoff")
+        if not isinstance(handoff, dict):
+            errors.append("owner-reassignment terminal handoff is invalid")
+        else:
+            checkpoint = handoff.get("checkpoint_sha")
+            from_branch = handoff.get("from_branch")
+            to_branch = handoff.get("to_branch")
+            try:
+                main_tip = _exact_fetch_origin_branch(root, "main")
+                old_tip = _exact_fetch_origin_branch(root, str(from_branch))
+                successor_tip = _exact_fetch_origin_branch(root, str(to_branch))
+            except PreflightError as exc:
+                errors.append(
+                    "owner-reassignment terminal remote proof failed: " + str(exc)
+                )
+            else:
+                if main_tip != facts.origin_main:
+                    errors.append(
+                        "origin/main moved before owner-reassignment terminal proof"
+                    )
+                if old_tip != checkpoint or successor_tip != checkpoint:
+                    errors.append(
+                        "owner-reassignment terminal branch tuple changed"
+                    )
+                final_authority_claims = load_claims_at_ref(root, "origin/main")
+                if final_authority_claims != authority_claims:
+                    errors.append(
+                        "authoritative claims changed during owner-reassignment proof"
+                    )
+                final_branch_claim = load_claims(root).get(
+                    str(claim.get("package", "")).casefold()
+                )
+                if final_branch_claim != claim:
+                    errors.append(
+                        "owner-reassignment branch claim changed during terminal proof"
+                    )
+
+        errors.extend(
+            "owner-reassignment terminal preparation proof: " + item
+            for item in _owner_reassignment_preparation_errors(
+                root=root,
+                registry=locked_registry,
+                claim=claim,
+                facts=facts,
+            )
+        )
+
+        # The final reads occur after the source/pristine/namespace proof while
+        # the lifecycle mutex is still held. Claims are read first, then one
+        # server advertisement binds the complete remote tuple without a
+        # sequential main/source/successor race.
+        final_authority_claims = load_claims_at_ref(root, "origin/main")
+        if final_authority_claims != authority_claims:
+            errors.append(
+                "authoritative claims changed at terminal boundary"
+            )
+        final_branch_claim = load_claims(root).get(
+            str(claim.get("package", "")).casefold()
+        )
+        if final_branch_claim != claim:
+            errors.append(
+                "owner-reassignment branch claim changed at terminal boundary"
+            )
+        try:
+            from_branch = str(
+                claim.get("handoff", {}).get("from_branch", "")
+            )
+            to_branch = str(claim.get("handoff", {}).get("to_branch", ""))
+            final_remote_tuple = _remote_branch_tuple(
+                root, ("main", from_branch, to_branch)
+            )
+        except PreflightError as exc:
+            errors.append(
+                "owner-reassignment final coherent remote proof failed: " + str(exc)
+            )
+        else:
+            checkpoint = claim.get("handoff", {}).get("checkpoint_sha")
+            if final_remote_tuple != {
+                "main": facts.origin_main,
+                from_branch: checkpoint,
+                to_branch: checkpoint,
+            }:
+                errors.append(
+                    "owner-reassignment remote or claim state changed at terminal boundary"
+                )
+        try:
+            registry_after = _read_json(registry_path)
+        except PreflightError as exc:
+            errors.append(
+                "owner-reassignment terminal registry reread failed: " + str(exc)
+            )
+        else:
+            if registry_after != locked_registry:
+                errors.append(
+                    "owner-reassignment registry changed during terminal owner proof"
+                )
+            try:
+                lifecycle_registry.validate_owner_reassignment_registry(registry_after)
+            except lifecycle_registry.Refusal as exc:
+                errors.append(
+                    "owner-reassignment final registry schema is invalid: " + str(exc)
+                )
+    finally:
+        if acquired:
+            try:
+                os.rmdir(lock_path)
+            except OSError as exc:
+                errors.append(
+                    "owner-reassignment terminal registry lock could not be released: "
+                    + str(exc)
+                )
+        registry_context["owner_reassignment_preparation_valid"] = (
+            registry_context.get("owner_reassignment_preparation_valid") is True
+            and not errors
+        )
+    return errors
 
 
 def normalize_path(value: str) -> str:
@@ -633,6 +1447,64 @@ def _normalized_string_list(
     return normalized
 
 
+def _validate_handoff(handoff: object) -> list[str]:
+    """Validate durable transfer or owner-reassignment provenance.
+
+    Voluntary transfer and owner-directed recovery are intentionally different
+    record shapes.  In particular, an owner reassignment has no
+    ``relinquished`` field and can never be mistaken for consent from the prior
+    writer.
+    """
+
+    if handoff is None:
+        return []
+    if not isinstance(handoff, dict):
+        return ["claim handoff must be null or an object"]
+
+    errors: list[str] = []
+    if set(handoff) == VOLUNTARY_HANDOFF_FIELDS:
+        refs = (handoff.get("from_ref"), handoff.get("to_ref"))
+        if handoff.get("relinquished") is not True:
+            errors.append("voluntary handoff requires explicit relinquishment")
+        if not all(isinstance(ref, str) and REF_RE.fullmatch(ref) for ref in refs):
+            errors.append("voluntary handoff references must be opaque task/session/agent/role refs")
+        if refs[0] == refs[1]:
+            errors.append("voluntary handoff must change the writer reference")
+        if not SHA_RE.fullmatch(str(handoff.get("checkpoint_sha", ""))):
+            errors.append("voluntary handoff checkpoint_sha must be a full SHA")
+        return errors
+
+    if set(handoff) != OWNER_REASSIGNMENT_FIELDS:
+        return [
+            "claim handoff must be either the exact voluntary-transfer shape "
+            "or the exact owner_reassignment shape"
+        ]
+    if handoff.get("type") != "owner_reassignment":
+        errors.append("owner reassignment handoff type must be owner_reassignment")
+    refs = (handoff.get("from_ref"), handoff.get("to_ref"))
+    if not all(isinstance(ref, str) and REF_RE.fullmatch(ref) for ref in refs):
+        errors.append("owner reassignment references must be opaque task/session/agent/role refs")
+    if refs[0] == refs[1]:
+        errors.append("owner reassignment must change the writer reference")
+    for field in ("from_branch", "to_branch"):
+        branch = handoff.get(field)
+        if not _is_normalized_work_branch(branch):
+            errors.append(f"owner reassignment {field} must be a normalized work branch")
+    if handoff.get("from_branch") == handoff.get("to_branch"):
+        errors.append("owner reassignment must use a distinct successor branch")
+    if not SHA_RE.fullmatch(str(handoff.get("checkpoint_sha", ""))):
+        errors.append("owner reassignment checkpoint_sha must be a full SHA")
+    owner_ref = handoff.get("owner_authorization_ref")
+    if not isinstance(owner_ref, str) or not REF_RE.fullmatch(owner_ref):
+        errors.append(
+            "owner reassignment owner_authorization_ref must be an opaque "
+            "task/session/agent/role reference"
+        )
+    if "relinquished" in handoff:
+        errors.append("owner reassignment may not assert relinquishment")
+    return errors
+
+
 def validate_claim(claim: dict, *, expected_package: str | None = None) -> list[str]:
     errors: list[str] = []
     if claim.get("schema_version") != 1:
@@ -653,7 +1525,9 @@ def validate_claim(claim: dict, *, expected_package: str | None = None) -> list[
     if writer_ref and not REF_RE.fullmatch(writer_ref):
         errors.append("writer_ref must be an opaque task/session/agent/role reference")
     branch = _string_field(claim, "branch", errors, maximum=200)
-    if branch and (not BRANCH_RE.fullmatch(branch) or branch.endswith("/main")):
+    if branch and (
+        not _is_normalized_work_branch(branch) or branch.endswith("/main")
+    ):
         errors.append("claim branch must be a non-main work/ or codex/ branch")
     if claim.get("delivery_path") not in DELIVERY_PATHS:
         errors.append("claim delivery_path must be Routine, Bounded, or Protected")
@@ -706,8 +1580,17 @@ def validate_claim(claim: dict, *, expected_package: str | None = None) -> list[
         if not is_valid_utc_timestamp(claim.get("closed_at")):
             errors.append("closed claims require a UTC closed_at timestamp")
     handoff = claim.get("handoff")
-    if handoff is not None and not isinstance(handoff, dict):
-        errors.append("claim handoff must be null or an object")
+    errors.extend(_validate_handoff(handoff))
+    if isinstance(handoff, dict):
+        if handoff.get("to_ref") != claim.get("writer_ref"):
+            errors.append("claim handoff to_ref must equal the current writer_ref")
+        if (
+            handoff.get("type") == "owner_reassignment"
+            and handoff.get("to_branch") != claim.get("branch")
+        ):
+            errors.append(
+                "owner reassignment handoff to_branch must equal the current claim branch"
+            )
     return errors
 
 
@@ -1078,9 +1961,13 @@ def evaluate(
     if args.require_clean and not facts.clean:
         errors.append("checkout is not clean")
     owner_authorization_ref = getattr(args, "owner_authorization_ref", "")
-    if owner_authorization_ref and args.intent != "evidence-errata":
+    if owner_authorization_ref and args.intent not in {
+        "evidence-errata",
+        "owner-reassignment",
+    }:
         errors.append(
-            "--owner-authorization-ref is valid only for the evidence-errata intent"
+            "--owner-authorization-ref is valid only for evidence-errata or "
+            "owner-reassignment"
         )
 
     if args.intent == "read":
@@ -1126,6 +2013,16 @@ def evaluate(
         or registry_context.get("current_kind") != "control_singleton"
     ):
         errors.append("surface extension requires a proved leased _control singleton")
+    if args.intent == "owner-reassignment" and (
+        registry_context.get("registry") != "initialized"
+        or registry_context.get("enforced") is not True
+        or registry_context.get("current_kind") != "control_singleton"
+        or registry_context.get("owner_reassignment_preparation_valid") is not True
+    ):
+        errors.append(
+            "owner reassignment requires an initialized leased control singleton "
+            "and exact completed preparation proof"
+        )
 
     if args.intent == "activate":
         if not ACTIVATION_BRANCH_RE.fullmatch(facts.branch):
@@ -1316,6 +2213,112 @@ def evaluate(
             remote_tip = _git(root, "rev-parse", f"refs/remotes/origin/{branch}")
             if handoff.get("checkpoint_sha") != remote_tip:
                 errors.append("transfer checkpoint_sha must equal the fetched branch tip")
+
+    elif args.intent == "owner-reassignment":
+        if not OWNER_REASSIGNMENT_CONTROL_BRANCH_RE.fullmatch(facts.branch):
+            errors.append(
+                "owner reassignment requires a delivery-owner-reassignment control branch"
+            )
+        before = _require_control_delta(
+            root=root,
+            claim=claim,
+            facts=facts,
+            allowed_fields={"writer_ref", "branch", "handoff"},
+            errors=errors,
+        )
+        if facts.behind:
+            errors.append("owner reassignment requires a branch from current origin/main")
+        if before and before.get("state") != "active":
+            errors.append("owner reassignment requires an active origin claim")
+        if before and _changed_fields(before, claim) != {
+            "writer_ref",
+            "branch",
+            "handoff",
+        }:
+            errors.append(
+                "owner reassignment must change exactly writer_ref, branch, and handoff"
+            )
+
+        handoff = claim.get("handoff")
+        if not isinstance(handoff, dict) or set(handoff) != OWNER_REASSIGNMENT_FIELDS:
+            errors.append("owner reassignment requires the exact owner_reassignment handoff")
+        elif before:
+            from_ref = handoff.get("from_ref")
+            to_ref = handoff.get("to_ref")
+            from_branch = handoff.get("from_branch")
+            to_branch = handoff.get("to_branch")
+            checkpoint = str(handoff.get("checkpoint_sha", ""))
+            owner_ref = handoff.get("owner_authorization_ref")
+
+            if handoff.get("type") != "owner_reassignment":
+                errors.append("owner reassignment handoff type must be owner_reassignment")
+            if "relinquished" in handoff:
+                errors.append("owner reassignment may not assert relinquishment")
+            if from_ref != before.get("writer_ref") or to_ref != claim.get("writer_ref"):
+                errors.append(
+                    "owner reassignment from_ref/to_ref must match the writer transition"
+                )
+            if from_ref == to_ref:
+                errors.append("owner reassignment must change the writer_ref")
+            if from_branch != before.get("branch") or to_branch != claim.get("branch"):
+                errors.append(
+                    "owner reassignment from_branch/to_branch must match the branch transition"
+                )
+            if from_branch == to_branch:
+                errors.append("owner reassignment requires a distinct successor branch")
+            if not args.task_ref or args.task_ref != to_ref:
+                errors.append(
+                    "owner reassignment task context must equal the receiving writer_ref"
+                )
+            if not owner_authorization_ref or owner_authorization_ref != owner_ref:
+                errors.append(
+                    "owner reassignment requires the exact recorded owner authorization reference"
+                )
+
+            old_tip: str | None = None
+            successor_tip: str | None = None
+            try:
+                old_tip = _exact_fetch_origin_branch(root, str(from_branch))
+            except PreflightError as exc:
+                errors.append("owner reassignment old-branch proof failed: " + str(exc))
+            if old_tip is None:
+                errors.append("owner reassignment requires the preserved old remote branch")
+            elif old_tip != checkpoint:
+                errors.append(
+                    "owner reassignment checkpoint_sha must equal the exact fetched old branch tip"
+                )
+
+            try:
+                successor_tip = _exact_fetch_origin_branch(root, str(to_branch))
+            except PreflightError as exc:
+                errors.append("owner reassignment successor-branch proof failed: " + str(exc))
+            if successor_tip is None:
+                errors.append(
+                    "owner reassignment requires the prepared successor remote branch"
+                )
+            elif successor_tip != checkpoint:
+                errors.append(
+                    "owner reassignment successor branch must equal the recorded checkpoint"
+                )
+
+            try:
+                final_old_tip = _exact_fetch_origin_branch(root, str(from_branch))
+            except PreflightError as exc:
+                errors.append(
+                    "owner reassignment final old-branch proof failed: " + str(exc)
+                )
+            else:
+                if final_old_tip != checkpoint:
+                    errors.append(
+                        "owner reassignment old branch moved during successor proof"
+                    )
+
+        prospective_claims = dict(authority_claims)
+        prospective_claims[package_key] = claim
+        errors.extend(
+            "owner reassignment prospective state: " + error
+            for error in validate_claim_set(prospective_claims)
+        )
 
     elif args.intent == "pause":
         if not CONTROL_BRANCH_RE.fullmatch(facts.branch) or "-pause-" not in facts.branch:
@@ -1650,6 +2653,24 @@ def evaluate(
     else:
         errors.append(f"unsupported intent {args.intent}")
 
+    if args.intent == "owner-reassignment" and (
+        "_owner_reassignment_registry_snapshot" in registry_context
+    ):
+        terminal_errors = _final_owner_reassignment_boundary_errors(
+            root=work_root,
+            args=args,
+            claim=claim,
+            facts=facts,
+            authority_claims=authority_claims,
+            registry_context=registry_context,
+        )
+        errors.extend(terminal_errors)
+        if registry_context.get("owner_reassignment_preparation_valid") is not True:
+            errors.append(
+                "owner reassignment requires a coherent terminal registry, lease, "
+                "preparation, claim, and remote proof"
+            )
+
     return payload, errors, warnings
 
 
@@ -1666,6 +2687,7 @@ def build_parser() -> argparse.ArgumentParser:
             "extend-surfaces",
             "write",
             "transfer",
+            "owner-reassignment",
             "pause",
             "resume",
             "grant",
@@ -1688,8 +2710,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--owner-authorization-ref",
         default="",
         help=(
-            "opaque owner reference required by the evidence-errata intent; "
-            "invalid for every other intent"
+            "opaque owner reference required by evidence-errata and "
+            "owner-reassignment; invalid for every other intent"
         ),
     )
     return parser

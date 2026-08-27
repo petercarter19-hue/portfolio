@@ -107,14 +107,22 @@ paused, closed, missing, mismatched, colliding, or already-present branch. If a
 grandfathered checkout already carries the branch, use exact `adopt`; do not
 make a duplicate.
 
+After a merged owner-reassignment claim, `ensure` additionally proves both
+preserved remote branches at the recorded checkpoint. If the old durable
+worktree exists and is pristine at that checkpoint, the registry preserves it
+as a non-writable `reassignment_source` and creates the receiver's durable
+checkout at a deterministic recovery path. It does not switch, reset, remove,
+or otherwise mutate the source checkout. A missing merge, malformed handoff,
+moved branch, or dirty source is a refusal.
+
 ```powershell
 python scripts/worktree_lifecycle.py ensure --package "PS-EXAMPLE-001" --task-ref "session:<writer-task-id>" --execute
 ```
 
 ### Lease `_control` for a claim transition
 
-Activation, authorize, active-claim surface extension, transfer, pause, resume,
-close, and the
+Activation, authorize, active-claim surface extension, transfer, owner
+reassignment, pause, resume, close, and the
 owner-authorized evidence-errata amendment of a closed package's fixed
 evidence file all reuse `_control`; for evidence-errata the lease names the
 closed package and the claim itself is never edited.
@@ -132,6 +140,111 @@ pristine at its current branch/SHA for the next guarded repoint, and retires
 only that task's clean managed ephemeral verifiers. It reports and preserves
 any residue, mismatch, or ambiguity. It never retires a durable package
 worktree or another task's resource.
+
+### Prepare an owner-reassignment successor
+
+Owner reassignment is a Protected recovery distinct from voluntary transfer.
+It requires Pete's exact opaque authorization reference and a leased pristine
+`_control` singleton on a current-main
+`work/YYYY-MM-DD-delivery-owner-reassignment-<slug>` branch. Run this before
+editing the claim:
+
+```powershell
+python scripts/worktree_lifecycle.py prepare-owner-reassignment --package "PS-EXAMPLE-001" --task-ref "agent:<receiving-writer>" --successor-branch "work/2026-08-27-example-recovery" --expected-checkpoint "<40-character-old-remote-sha>" --owner-authorization-ref "session:<owner-decision>" --execute
+```
+
+The command requires a complete initialized registry with exactly one
+`control_singleton` record: that record must be active, receiver-leased,
+current-main, pristine, and at the deterministic `_control` path, with no
+competing lock or unresolved pending operation. Every preparation record and
+legal transient state is schema-validated before recovery, journaling, or
+remote mutation; a duplicate control, poisoned history, or orphan transition
+stops. A registry worktree marked `pending` must have one exact matching create
+journal; every create, retire, control-repoint, and branch-create journal must
+also have its exact field set, timestamp, canonical path where applicable, and
+registry-record/control custody before reconciliation. Invalid journals and
+orphan or ambiguous pending records stop without changing the registry. The control branch must
+fully match the owner-reassignment intent and
+must differ from the old branch. It exact-fetches and rechecks the old remote
+branch. Before writing its journal or pushing, it reconciles every
+active durable record selected by the target package or source branch against
+one exact canonical absolute path in live Git, the old task reference, old
+branch, checkpoint HEAD, and pristine tracked/untracked/ignored state. Missing,
+detached, switched, moved, dirty, duplicate, or ambiguous records refuse before
+remote creation.
+
+The successor must be normalized and distinct, unclaimed and server-absent,
+with no exact or ancestor/descendant namespace collision across local heads,
+origin-tracking refs, live claims, live worktrees, or active registry branch/
+source-branch custody. The tool journals the operation before mutation, uses an
+empty-expectation lease as an absent-ref compare-and-set, requires Git's exact
+`[new branch]` response, and immediately fetches and proves the successor at
+the same SHA. Its final proof rechecks the old branch, source worktrees, current
+server main, strict live claims, and branch namespaces. Normal completion and
+crash recovery share one final helper that repeats the exact server successor,
+old branch, main, and claim proof immediately before appending `completed` and
+clearing the journal. This is creation-only:
+the lease cannot overwrite an existing ref, and the command creates no local
+successor branch and never mutates the old branch or worktree.
+
+If the process stops before server creation, reconciliation first proves the
+successor remains absent and clears the unproven pending record without letting
+later old-tip movement turn a never-started push into ambiguity. If creation is
+proven, reconciliation completes only when both remote refs, prepared main,
+strict live claims, every recorded source checkout, and every source durable
+record still have their exact identities. A successor ref without a recorded
+exact `[new branch]` response is ambiguous and remains fail-closed for
+investigation; the tool never guesses ownership, deletes the ref, or retries
+with force.
+
+Successful completion atomically clears the pending journal and appends one
+`completed` preparation tuple. Its digest-bound immutable fields are package,
+owner authorization, old/new task refs and branches, checkpoint, control
+branch, prepared main, proof timestamp, the exact new-branch response, and the
+source snapshot (local source ref, source worktrees, and reconciled durable
+records). Schema-1 registries created before this field existed load it as an
+empty list and persist it on the next lifecycle mutation; no registry reset or
+re-initialization is required. Once present, every record must have the exact
+`completed`, linked `consuming`, or terminal `consumed` field set, type-exact
+references and SHAs, unique digest and handoff identity, normalized source
+snapshot, and legal package state. Malformed, duplicated, replayed, or incompatible history is never
+silently discarded.
+
+After preparation, change only the claim's `writer_ref`, `branch`, and exact
+`owner_reassignment` handoff and validate with the matching delivery intent.
+That intent requires this machine's initialized registry, one exact active
+receiver-leased `_control` singleton, no lock or pending ambiguity, and one
+digest-valid `completed` tuple matching the claim, control branch, current
+main, exact server response, and a twice-stable live source snapshot. It rejects
+CI/uninitialized bypass, successor namespace changes, mismatches, source
+mutation, duplicates, and a tuple already marked `consumed`. Immediately before
+admission—after all owner-specific claim, source, namespace, and remote
+work—it acquires the lifecycle registry mutex, requires the registry to equal
+its earlier validated snapshot, and repeats the exact lease, absent pending
+state, preparation history, live source, namespace, main, claims, old-branch,
+and successor proofs before its final reread and mutex release. A mutation
+after an earlier proof therefore fails closed.
+
+The receiving writer cannot use `ensure` or write preflight until that control
+PR merges to `origin/main`. On the first post-merge `ensure`, the tool rechecks
+the exact preparation and source state, preserves the old durable checkout as
+`reassignment_source`, creates the distinct receiver durable worktree, and
+changes the tuple to `consumed` in the same registry commit as that creation.
+Its transient `consuming` state is valid only inside that pending create
+journal: reconciliation restores `completed` when no receiver worktree exists,
+or atomically finishes `consumed` only for the exact created worktree and
+unchanged source snapshot. The receiver worktree must also be pristine,
+including tracked, untracked, and ignored files. Any residue retains both the
+`consuming` proof and pending journal for investigation; it never activates the
+receiver or marks the proof consumed.
+Consumed proof cannot authorize another control transition; later `ensure`
+calls revalidate the consumed proof and exact preserved source custody, then
+may reuse and normally advance the successor branch while leaving the old
+source and immutable reassignment provenance intact. The old branch and
+preserved source worktree remain outside receiver cleanup authority.
+A later authorized reassignment keeps all older `reassignment_source` records
+and consumed tuples under their own preparation handoffs, while matching and
+preserving only the current preparation's durable source for the new receiver.
 
 ### Run isolated verification only when necessary
 
@@ -217,15 +330,18 @@ preserved on the next mutation.
 
 On an initialized developer machine, mutating delivery preflights require the
 exact managed context: `write` and `merge` use the package's durable worktree;
-control intents use the leased `_control` singleton. A post-policy
+control intents, including owner reassignment, use the leased `_control`
+singleton. A post-policy
 unregistered mutating workspace fails. An unrelated grandfathered worktree
 never becomes a global blocker; only an exact branch, path, domain, lease, or
 safety collision blocks the colliding work.
 
-CI and a machine with no initialized registry remain valid and receive a
-warning rather than a local-registry failure. `read` remains read-only and
-worktree-free. These local checks supplement claim and Azure authority; they
-do not replace either.
+CI and a machine with no initialized registry normally remain valid and receive
+a warning rather than a local-registry failure. Owner reassignment is the
+narrow exception because its exact server-creation/source proof exists only in
+the machine-local registry: that control intent rejects CI or uninitialized
+execution. `read` remains read-only and worktree-free. These local checks
+supplement claim and Azure authority; they do not replace either.
 
 ## Bootstrap, transition, and honest limit
 

@@ -10,7 +10,8 @@
 >
 > `python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --task-ref <WRITER-REF> --fetch --require-clean`
 >
-> A control-only activation, authorize, transfer, pause, resume, or close is the
+> A control-only activation, authorize, transfer, owner reassignment, pause,
+> resume, or close is the
 > narrow exception: run `--intent read` before editing, change and commit only
 > the exact package claim on its dedicated control branch, then run the matching
 > control intent with `--fetch --require-clean` before PR. Do not change an
@@ -85,13 +86,41 @@ handoffs are evidence, not additional gates.
   They may share the package worktree read-only only when coordinated with its
   writer and there is no concurrent mutation. Runnable isolation leases the
   one sparse `_control` singleton through `verify --runtime-required`.
-- Activation, authorize, transfer, pause, resume, and close reuse the same
+- Activation, authorize, transfer, owner reassignment, pause, resume, and close
+  reuse the same
   mutex- and task-leased `_control` singleton. Successful temporary work is
   finalized in the same task; a refusal preserves the exact path and reports
   the blocker.
+- Owner reassignment is a fail-closed recovery, not a voluntary transfer. It
+  requires Pete's exact opaque authorization reference, preserves the old
+  branch and old-writer worktrees, creates a distinct absent successor branch
+  at the exact fetched checkpoint, and records `owner_reassignment` provenance
+  without `relinquished`. Preparation requires a complete initialized registry
+  with exactly one exclusively leased `_control` record, no lock or unresolved
+  pending operation, and no malformed/orphaned preparation state. Every
+  pending create, retire, control-repoint, or branch-create journal must have
+  its exact schema and registry-record custody before reconciliation; recovery
+  otherwise leaves the registry unchanged. Preparation reconciles
+  every active target/source durable record against its exact pristine live
+  Git path, task, branch, and checkpoint; and refuses exact or namespace
+  ancestor/descendant branch collisions. It persists one exact completed
+  preparation tuple, including Git's `[new branch]` response and source
+  snapshot. Owner-reassignment preflight re-proves that tuple and source state;
+  post-merge `ensure` consumes it once only while creating a pristine receiver
+  worktree; residue retains the pending journal and proof. Preflight performs a
+  terminal mutex-held registry/lease/pending validation after all claim and
+  remote proofs, and repeats the source, namespace, main, claim, old-branch,
+  and successor proofs before releasing that mutex.
+  A missing, changed, consumed, duplicated, locked, pending, CI-only, or
+  uninitialized proof is a stop. The receiver cannot ensure or write its
+  successor worktree until the one-claim recovery PR merges.
+  Successive legitimate reassignments retain each older source and preparation
+  under its own handoff while binding the new transition only to its current
+  source.
 - On an initialized machine, mutating preflight requires `--task-ref` and the
-  exact registered package or control context. CI, an uninitialized machine,
-  and unrelated grandfathered worktrees do not create a global block. Run the
+  exact registered package or control context. Except for owner reassignment's
+  mandatory local preparation proof, CI and an uninitialized machine do not
+  create a global block; unrelated grandfathered worktrees never do. Run the
   read-only `worktree_lifecycle.py audit --json` to expose post-policy growth.
 - The controlling safety and recovery contract is
   [WORKTREE_LIFECYCLE.md](docs/governance/WORKTREE_LIFECYCLE.md). Never work

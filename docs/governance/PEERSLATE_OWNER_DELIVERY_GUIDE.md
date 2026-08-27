@@ -100,6 +100,29 @@ package's claim, receipt, and evidence paths remain permanently package-owned.
 > from task reference [from] to [to], preserving branch and scope. Do not record
 > or request a person's account identity or credentials.
 
+### Recover ownership without relinquishment
+
+> I authorize owner-reassignment recovery for [PACKAGE] from opaque writer
+> reference [from] to [to], with authorization reference [owner reference].
+> Preserve old branch [old branch] and all old-writer worktrees. Create only
+> absent successor branch [new branch] at exact fetched old checkpoint [SHA],
+> after reconciling every active source durable record and all branch-namespace
+> custody. Persist and revalidate the exact completed server/source preparation
+> tuple on a complete initialized registry with exactly one unlocked,
+> receiver-leased control record; reject malformed/orphaned preparation state,
+> any pending operation without exact schema and record custody, namespace
+> collisions, and terminal mutex-held registry/lease/pending/source/remote
+> races after all owner proofs. Do not
+> allow CI/uninitialized bypass or replay it after its one post-merge consume,
+> and do not consume it if the receiver worktree has any residue.
+> Then change only claim `writer_ref`, `branch`, and the truthful
+> `owner_reassignment` handoff. Never assert relinquishment, force-move or
+> delete a ref, or let the receiver write before the control PR merges. Stop on
+> any collision, race, dirty/moved/ambiguous source, pending registry state, or
+> ambiguous server proof.
+> For a later authorized reassignment, retain every older source and consumed
+> tuple under its own handoff and bind only the current source to the new tuple.
+
 ### Resume preserved work
 
 > Resume [PACKAGE] from its recorded pushed checkpoint. Change only paused to

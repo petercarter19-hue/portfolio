@@ -19,6 +19,23 @@ Use this for a change, not a read-only discussion.
   `--intent extend-surfaces` on a dedicated `delivery-extend-surfaces` branch;
   the assigned writer appends exact current-main tracked-file paths at the end
   of `surfaces` and changes nothing else.
+- [ ] For owner reassignment, obtained Pete's exact opaque authorization,
+  leased `_control` to the receiver on a dedicated owner-reassignment branch,
+  confirmed the complete initialized registry has exactly one control record,
+  no lock/pending ambiguity, and no malformed, duplicate, incompatible, or
+  orphaned preparation state or inexact create/retire/control-repoint/
+  branch-create journal custody, then ran
+  `prepare-owner-reassignment` before editing the claim. Confirmed every active
+  target/source durable record matched its exact pristine live Git path/task/
+  branch/checkpoint, no exact or ancestor/descendant branch namespace collided,
+  and the registry retained one completed tuple with the exact `[new branch]`
+  response and source snapshot. Changed only `writer_ref`, `branch`, and the
+  exact non-relinquishment handoff; passed local owner-reassignment preflight
+  without CI/uninitialized bypass and with its terminal mutex-held registry,
+  lease, pending, source, namespace, main, claims, old-branch, and successor
+  reproof; and waited for the control PR to merge before the
+  one-time consuming receiver `ensure` or write preflight. Confirmed receiver
+  residue leaves proof and pending state unconsumed.
 - [ ] Confirmed the branch, normalized mutable paths, and hierarchical domains
   do not collide with another active claim. No numeric capacity check applies.
 - [ ] Confirmed the assignment: implementation normally continues through
@@ -39,7 +56,8 @@ Use this for a change, not a read-only discussion.
   non-force Git removal only; a refusal preserves the worktree.
 
 For a new outcome, merge a one-claim activation before creating its worktree.
-For a real authority expansion, transfer, pause, resume, or close, use its
+For a real authority expansion, transfer, owner reassignment, pause, resume, or
+close, use its
 one-claim control transition. Resume must preserve the fetched checkpoint and
 rerun collisions. Keep the remote implementation branch through close.
 Authority expansion applies only to a claim Pete explicitly narrowed to

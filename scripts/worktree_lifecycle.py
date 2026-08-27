@@ -36,6 +36,10 @@ PACKAGE_RE = re.compile(r"^PS-[A-Z0-9]+(?:-[A-Z0-9]+)*$")
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,79}$")
 WORK_BRANCH_RE = re.compile(r"^(?:work|codex)/[a-z0-9][a-z0-9._/-]*$")
+DELIVERY_REF_RE = re.compile(r"^(?:task|session|agent|role):[A-Za-z0-9._:/-]{3,180}$")
+OWNER_REASSIGNMENT_CONTROL_BRANCH_RE = re.compile(
+    r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-owner-reassignment-[a-z0-9-]+$"
+)
 REPARSE_POINT = 0x400
 
 CONTROL_SPARSE_PATHS = (
@@ -55,6 +59,44 @@ STORAGE_CLASSES = {
     "azure_artifact",
     "x_maintenance",
     "ephemeral_same_task",
+}
+OWNER_REASSIGNMENT_HANDOFF_FIELDS = {
+    "type",
+    "from_ref",
+    "to_ref",
+    "from_branch",
+    "to_branch",
+    "checkpoint_sha",
+    "owner_authorization_ref",
+}
+OWNER_REASSIGNMENT_PREPARATION_IMMUTABLE_FIELDS = {
+    "schema_version",
+    "package",
+    "owner_authorization_ref",
+    "from_ref",
+    "to_ref",
+    "from_branch",
+    "to_branch",
+    "checkpoint_sha",
+    "control_branch",
+    "prepared_from_main",
+    "new_branch_response",
+    "source_snapshot",
+    "prepared_at",
+}
+OWNER_REASSIGNMENT_PREPARATION_STATE_FIELDS = {
+    "completed": set(),
+    "consuming": {
+        "consuming_at",
+        "consuming_on_main",
+        "consuming_receiver_path",
+    },
+    "consumed": {"consumed_at", "consumed_on_main"},
+}
+OWNER_REASSIGNMENT_SOURCE_SNAPSHOT_FIELDS = {
+    "local_branch_sha",
+    "worktrees",
+    "durable_records",
 }
 
 
@@ -206,6 +248,43 @@ def _remote_branch_tip(context: RepoContext, branch: str) -> str | None:
     return sha
 
 
+def _remote_branch_tuple(
+    context: RepoContext, branches: Sequence[str]
+) -> dict[str, str]:
+    """Read one exact server advertisement for a complete branch tuple."""
+
+    normalized = [
+        branch if branch == "main" else _validate_work_branch(branch)
+        for branch in branches
+    ]
+    if len(normalized) != len(set(normalized)):
+        raise Refusal("remote branch tuple contains duplicate names")
+    result = _git_result(
+        context.root,
+        "ls-remote",
+        "--heads",
+        "origin",
+        *(f"refs/heads/{branch}" for branch in normalized),
+    )
+    if result.returncode:
+        detail = result.stderr.strip() or result.stdout.strip() or "git ls-remote failed"
+        raise Refusal("could not confirm remote branch tuple: " + detail)
+    expected_refs = {f"refs/heads/{branch}": branch for branch in normalized}
+    observed: dict[str, str] = {}
+    for line in result.stdout.splitlines():
+        columns = line.split()
+        if len(columns) != 2 or columns[1] not in expected_refs:
+            raise Refusal("remote branch tuple lookup was ambiguous")
+        branch = expected_refs[columns[1]]
+        sha = columns[0].casefold()
+        if branch in observed or not SHA_RE.fullmatch(sha):
+            raise Refusal("remote branch tuple lookup was ambiguous")
+        observed[branch] = sha
+    if set(observed) != set(normalized):
+        raise Refusal("remote branch tuple is incomplete")
+    return observed
+
+
 def _fetch_origin_branch(context: RepoContext, branch: str) -> str | None:
     """Non-pruning exact-fetch of one branch, or confirmed server-side absence."""
 
@@ -224,7 +303,8 @@ def _fetch_origin_branch(context: RepoContext, branch: str) -> str | None:
         detail = result.stderr.strip() or result.stdout.strip() or "git fetch failed"
         raise Refusal(f"could not exact-fetch remote branch {branch!r}: {detail}")
     fetched_tip = _ref_sha(context, f"refs/remotes/origin/{branch}")
-    if fetched_tip != observed_tip:
+    confirmed_tip = _remote_branch_tip(context, branch)
+    if fetched_tip != observed_tip or confirmed_tip != observed_tip:
         raise Refusal(
             f"remote branch moved during exact fetch; retry from a stable tip: {branch!r}"
         )
@@ -298,15 +378,16 @@ def _worktree_at(root: Path, path: Path) -> dict[str, Any] | None:
     )
 
 
-def _validate_package(package: str) -> str:
-    if not PACKAGE_RE.fullmatch(package):
+def _validate_package(package: Any) -> str:
+    if not isinstance(package, str) or not PACKAGE_RE.fullmatch(package):
         raise Refusal(f"invalid package identifier: {package!r}")
     return package
 
 
-def _validate_task_ref(task_ref: str) -> str:
+def _validate_task_ref(task_ref: Any) -> str:
     if (
-        not task_ref
+        not isinstance(task_ref, str)
+        or not task_ref
         or task_ref != task_ref.strip()
         or len(task_ref) > 240
         or ":" not in task_ref
@@ -316,11 +397,38 @@ def _validate_task_ref(task_ref: str) -> str:
     return task_ref
 
 
+def _validate_delivery_ref(value: str) -> str:
+    if not isinstance(value, str) or not DELIVERY_REF_RE.fullmatch(value):
+        raise Refusal(
+            "owner-reassignment references must be normalized opaque "
+            "task/session/agent/role references"
+        )
+    return value
+
+
 def _validate_sha(sha: str) -> str:
     normalized = sha.casefold()
     if not SHA_RE.fullmatch(normalized):
         raise Refusal("expected an exact 40-character commit SHA")
     return normalized
+
+
+def _validate_work_branch(branch: str) -> str:
+    components = branch.split("/") if isinstance(branch, str) else []
+    if (
+        not isinstance(branch, str)
+        or branch != branch.strip()
+        or not WORK_BRANCH_RE.fullmatch(branch)
+        or branch.endswith("/main")
+        or any(
+            component in {"", ".", ".."}
+            or component.endswith((".", ".lock"))
+            or ".." in component
+            for component in components
+        )
+    ):
+        raise Refusal(f"branch must be a normalized non-main work branch: {branch!r}")
+    return branch
 
 
 def _normalize_include(value: str) -> str:
@@ -338,6 +446,926 @@ def _require_execute(execute: bool) -> None:
         raise Refusal("mutation requires explicit --execute")
 
 
+def _validate_utc_timestamp(value: Any, *, field: str) -> str:
+    if not isinstance(value, str):
+        raise Refusal(f"owner-reassignment {field} must be an exact UTC timestamp")
+    try:
+        parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError as error:
+        raise Refusal(
+            f"owner-reassignment {field} must be an exact UTC timestamp"
+        ) from error
+    if parsed.strftime("%Y-%m-%dT%H:%M:%SZ") != value:
+        raise Refusal(f"owner-reassignment {field} must be an exact UTC timestamp")
+    return value
+
+
+def validate_owner_reassignment_control_lease(
+    lease: Any, *, task_ref: Any, package: Any
+) -> None:
+    """Require the exact control lease shape issued by this lifecycle tool."""
+
+    expected_task_ref = _validate_delivery_ref(_validate_task_ref(task_ref))
+    expected_package = _validate_package(package)
+    if (
+        not isinstance(lease, dict)
+        or set(lease) != {"task_ref", "purpose", "package", "acquired_at"}
+        or (
+            lease.get("task_ref"),
+            lease.get("purpose"),
+            lease.get("package"),
+        )
+        != (expected_task_ref, "control", expected_package)
+    ):
+        raise Refusal("owner reassignment requires an exact lifecycle control lease")
+    _validate_utc_timestamp(lease.get("acquired_at"), field="control acquired_at")
+
+
+def _validate_preparation_sha(value: Any, *, field: str) -> str:
+    if not isinstance(value, str):
+        raise Refusal(f"owner-reassignment {field} must be an exact SHA string")
+    try:
+        return _validate_sha(value)
+    except Refusal as error:
+        raise Refusal(
+            f"owner-reassignment {field} must be an exact SHA string"
+        ) from error
+
+
+def _validate_preparation_path(value: Any, *, field: str) -> str:
+    if not isinstance(value, str) or not Path(value).is_absolute():
+        raise Refusal(f"owner-reassignment {field} must be an absolute path")
+    canonical = str(_canonical(value))
+    if value != canonical:
+        raise Refusal(f"owner-reassignment {field} must be canonical")
+    return canonical
+
+
+def _validate_owner_reassignment_source_snapshot(
+    preparation: dict[str, Any],
+) -> None:
+    snapshot = preparation.get("source_snapshot")
+    if not isinstance(snapshot, dict) or set(snapshot) != (
+        OWNER_REASSIGNMENT_SOURCE_SNAPSHOT_FIELDS
+    ):
+        raise Refusal("owner-reassignment preparation source snapshot is inexact")
+
+    checkpoint = preparation["checkpoint_sha"]
+    from_branch = preparation["from_branch"]
+    local_branch_sha = snapshot.get("local_branch_sha")
+    if local_branch_sha is not None and _validate_preparation_sha(
+        local_branch_sha, field="source local branch SHA"
+    ) != checkpoint:
+        raise Refusal(
+            "owner-reassignment source local branch differs from the checkpoint"
+        )
+
+    worktrees = snapshot.get("worktrees")
+    if not isinstance(worktrees, list):
+        raise Refusal("owner-reassignment source worktree snapshots must be a list")
+    worktree_paths: list[str] = []
+    for item in worktrees:
+        if not isinstance(item, dict) or set(item) != {"path", "branch", "head"}:
+            raise Refusal("owner-reassignment source worktree snapshot is inexact")
+        path = _validate_preparation_path(item.get("path"), field="source path")
+        head = _validate_preparation_sha(
+            item.get("head"), field="source worktree HEAD"
+        )
+        if item.get("branch") != from_branch or head != checkpoint:
+            raise Refusal(
+                "owner-reassignment source worktree snapshot changed identity"
+            )
+        worktree_paths.append(path)
+    if worktree_paths and local_branch_sha != checkpoint:
+        raise Refusal(
+            "owner-reassignment source worktrees require the checkpoint local ref"
+        )
+    if len(worktree_paths) != len(
+        set(map(_path_key, worktree_paths))
+    ) or worktrees != sorted(
+        worktrees,
+        key=lambda item: _path_key(item["path"]),
+    ):
+        raise Refusal(
+            "owner-reassignment source worktree snapshots are duplicate or unsorted"
+        )
+
+    durable_records = snapshot.get("durable_records")
+    if not isinstance(durable_records, list) or len(durable_records) > 1:
+        raise Refusal(
+            "owner-reassignment durable source snapshot is duplicate or ambiguous"
+        )
+    durable_paths: list[str] = []
+    for item in durable_records:
+        expected_fields = {"path", "package", "task_ref", "branch", "head"}
+        if not isinstance(item, dict) or set(item) != expected_fields:
+            raise Refusal("owner-reassignment durable source snapshot is inexact")
+        path = _validate_preparation_path(
+            item.get("path"), field="durable source path"
+        )
+        head = _validate_preparation_sha(
+            item.get("head"), field="durable source HEAD"
+        )
+        if (
+            item.get("package") != preparation["package"]
+            or item.get("task_ref") != preparation["from_ref"]
+            or item.get("branch") != from_branch
+            or head != checkpoint
+        ):
+            raise Refusal(
+                "owner-reassignment durable source snapshot changed identity"
+            )
+        if _path_key(path) not in {_path_key(candidate) for candidate in worktree_paths}:
+            raise Refusal(
+                "owner-reassignment durable source is absent from its worktree snapshot"
+            )
+        durable_paths.append(path)
+    if len(durable_paths) != len(set(map(_path_key, durable_paths))):
+        raise Refusal("owner-reassignment durable source snapshot is duplicated")
+
+
+def _expected_owner_reassignment_handoff(
+    preparation: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "type": "owner_reassignment",
+        "from_ref": preparation["from_ref"],
+        "to_ref": preparation["to_ref"],
+        "from_branch": preparation["from_branch"],
+        "to_branch": preparation["to_branch"],
+        "checkpoint_sha": preparation["checkpoint_sha"],
+        "owner_authorization_ref": preparation["owner_authorization_ref"],
+    }
+
+
+def _validate_consuming_preparation_transition(
+    registry: dict[str, Any], preparation: dict[str, Any]
+) -> None:
+    pending = registry.get("pending")
+    if not isinstance(pending, dict) or pending.get("operation") != "create":
+        raise Refusal(
+            "owner-reassignment consuming preparation has no pending receiver creation"
+        )
+    if set(pending) != {
+        "operation",
+        "path",
+        "record",
+        "started_at",
+        "owner_reassignment",
+    }:
+        raise Refusal(
+            "owner-reassignment pending receiver creation has an inexact field set"
+        )
+    _validate_utc_timestamp(pending.get("started_at"), field="pending started_at")
+    transition = pending.get("owner_reassignment")
+    expected_transition_fields = {
+        "preparation_id",
+        "receiver_path",
+        "origin_main",
+        "source_before",
+        "handoff",
+    }
+    if not isinstance(transition, dict) or set(transition) != expected_transition_fields:
+        raise Refusal(
+            "owner-reassignment consuming preparation has an inexact pending transition"
+        )
+    receiver_path = _validate_preparation_path(
+        transition.get("receiver_path"), field="receiver path"
+    )
+    if (
+        transition.get("preparation_id") != preparation["preparation_id"]
+        or transition.get("origin_main") != preparation["consuming_on_main"]
+        or receiver_path != preparation["consuming_receiver_path"]
+        or _path_key(str(pending.get("path", ""))) != _path_key(receiver_path)
+        or transition.get("handoff")
+        != _expected_owner_reassignment_handoff(preparation)
+    ):
+        raise Refusal(
+            "owner-reassignment pending receiver transition does not match its preparation"
+        )
+
+    pending_record = pending.get("record")
+    if not isinstance(pending_record, dict):
+        raise Refusal("owner-reassignment pending receiver record is missing")
+    matching_targets = [
+        record
+        for record in registry["worktrees"]
+        if isinstance(record, dict)
+        and _path_key(str(record.get("path", ""))) == _path_key(receiver_path)
+    ]
+    if len(matching_targets) != 1 or matching_targets[0] != pending_record:
+        raise Refusal(
+            "owner-reassignment pending receiver registry custody is ambiguous"
+        )
+    target = matching_targets[0]
+    if (
+        target.get("kind") != "durable"
+        or target.get("state") != "pending"
+        or target.get("package") != preparation["package"]
+        or target.get("task_ref") != preparation["to_ref"]
+        or target.get("branch") != preparation["to_branch"]
+        or target.get("head") != preparation["checkpoint_sha"]
+        or target.get("owner_reassignment_preparation_id")
+        != preparation["preparation_id"]
+    ):
+        raise Refusal(
+            "owner-reassignment pending receiver record changed identity"
+        )
+
+    durable_snapshots = preparation["source_snapshot"]["durable_records"]
+    source_before = transition.get("source_before")
+    if not durable_snapshots:
+        if source_before is not None:
+            raise Refusal(
+                "owner-reassignment pending source exists without prepared custody"
+            )
+        return
+    if not isinstance(source_before, dict):
+        raise Refusal("owner-reassignment pending source record is missing")
+    durable_snapshot = durable_snapshots[0]
+    if (
+        any(
+            source_before.get(field) != durable_snapshot[field]
+            for field in ("path", "package", "task_ref", "branch", "head")
+        )
+        or source_before.get("kind") != "durable"
+        or source_before.get("state") != "active"
+    ):
+        raise Refusal(
+            "owner-reassignment pending source differs from prepared custody"
+        )
+    matching_sources = [
+        record
+        for record in registry["worktrees"]
+        if isinstance(record, dict)
+        and _path_key(str(record.get("path", "")))
+        == _path_key(durable_snapshot["path"])
+    ]
+    if len(matching_sources) != 1 or matching_sources[0] != source_before:
+        raise Refusal(
+            "owner-reassignment pending source registry custody is ambiguous"
+        )
+
+
+def _validate_owner_reassignment_preparations(registry: dict[str, Any]) -> None:
+    preparations = registry.get("owner_reassignment_preparations")
+    if not isinstance(preparations, list):
+        raise Refusal("registry owner-reassignment preparations must be a list")
+
+    preparation_ids: set[str] = set()
+    immutable_tuples: set[str] = set()
+    handoff_tuples: set[tuple[Any, ...]] = set()
+    successor_branches: set[str] = set()
+    nonterminal_packages: set[str] = set()
+    consuming: list[dict[str, Any]] = []
+    by_status: dict[str, list[dict[str, Any]]] = {
+        status: [] for status in OWNER_REASSIGNMENT_PREPARATION_STATE_FIELDS
+    }
+    package_positions: dict[str, list[int]] = {}
+    for index, preparation in enumerate(preparations):
+        if not isinstance(preparation, dict):
+            raise Refusal("owner-reassignment preparation must be an object")
+        status = preparation.get("status")
+        if (
+            not isinstance(status, str)
+            or status not in OWNER_REASSIGNMENT_PREPARATION_STATE_FIELDS
+        ):
+            raise Refusal("owner-reassignment preparation state is invalid")
+        expected_fields = (
+            OWNER_REASSIGNMENT_PREPARATION_IMMUTABLE_FIELDS
+            | {"status", "preparation_id"}
+            | OWNER_REASSIGNMENT_PREPARATION_STATE_FIELDS[status]
+        )
+        if set(preparation) != expected_fields:
+            raise Refusal("owner-reassignment preparation has an inexact field set")
+        if type(preparation.get("schema_version")) is not int or preparation.get(
+            "schema_version"
+        ) != 1:
+            raise Refusal("owner-reassignment preparation schema is unsupported")
+
+        required_string_fields = {
+            "package",
+            "owner_authorization_ref",
+            "from_ref",
+            "to_ref",
+            "from_branch",
+            "to_branch",
+            "control_branch",
+            "new_branch_response",
+        }
+        if any(
+            not isinstance(preparation.get(field), str)
+            for field in required_string_fields
+        ):
+            raise Refusal(
+                "owner-reassignment preparation string field has an invalid type"
+            )
+        package = _validate_package(preparation["package"])
+        from_ref = _validate_delivery_ref(preparation["from_ref"])
+        to_ref = _validate_delivery_ref(preparation["to_ref"])
+        owner_ref = _validate_delivery_ref(preparation["owner_authorization_ref"])
+        from_branch = _validate_work_branch(preparation["from_branch"])
+        to_branch = _validate_work_branch(preparation["to_branch"])
+        control_branch = _validate_work_branch(preparation["control_branch"])
+        if not OWNER_REASSIGNMENT_CONTROL_BRANCH_RE.fullmatch(control_branch):
+            raise Refusal(
+                "owner-reassignment preparation control branch is invalid"
+            )
+        if from_ref == to_ref or len({from_branch, to_branch, control_branch}) != 3:
+            raise Refusal(
+                "owner-reassignment preparation must change writer and use distinct branches"
+            )
+        checkpoint = _validate_preparation_sha(
+            preparation.get("checkpoint_sha"), field="checkpoint_sha"
+        )
+        _validate_preparation_sha(
+            preparation.get("prepared_from_main"), field="prepared_from_main"
+        )
+        _validate_utc_timestamp(preparation.get("prepared_at"), field="prepared_at")
+        response = preparation.get("new_branch_response")
+        if response != f"*\t{checkpoint}:refs/heads/{to_branch}\t[new branch]":
+            raise Refusal(
+                "owner-reassignment preparation lacks the exact new-branch response"
+            )
+        _validate_owner_reassignment_source_snapshot(preparation)
+
+        preparation_id = preparation.get("preparation_id")
+        if (
+            not isinstance(preparation_id, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", preparation_id)
+            or preparation_id != _preparation_digest(preparation)
+        ):
+            raise Refusal("owner-reassignment preparation identity digest is invalid")
+        immutable_key = json.dumps(
+            {
+                field: preparation[field]
+                for field in sorted(
+                    OWNER_REASSIGNMENT_PREPARATION_IMMUTABLE_FIELDS
+                )
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        if preparation_id in preparation_ids or immutable_key in immutable_tuples:
+            raise Refusal("owner-reassignment preparation is duplicated")
+        preparation_ids.add(preparation_id)
+        immutable_tuples.add(immutable_key)
+        handoff_key = (
+            package.casefold(),
+            owner_ref,
+            from_ref,
+            to_ref,
+            from_branch,
+            to_branch,
+            checkpoint,
+        )
+        if handoff_key in handoff_tuples:
+            raise Refusal("owner-reassignment handoff tuple is replayed")
+        handoff_tuples.add(handoff_key)
+        if to_branch in successor_branches:
+            raise Refusal("owner-reassignment successor branch proof is reused")
+        successor_branches.add(to_branch)
+        package_positions.setdefault(package.casefold(), []).append(index)
+        by_status[status].append(preparation)
+
+        if status in {"completed", "consuming"}:
+            package_key = package.casefold()
+            if package_key in nonterminal_packages:
+                raise Refusal(
+                    "package has incompatible nonterminal owner-reassignment preparations"
+                )
+            nonterminal_packages.add(package_key)
+        if status == "consuming":
+            _validate_utc_timestamp(
+                preparation.get("consuming_at"), field="consuming_at"
+            )
+            consuming_on_main = _validate_preparation_sha(
+                preparation.get("consuming_on_main"), field="consuming_on_main"
+            )
+            receiver_path = _validate_preparation_path(
+                preparation.get("consuming_receiver_path"),
+                field="consuming receiver path",
+            )
+            if not consuming_on_main or not receiver_path:
+                raise Refusal("owner-reassignment consuming state is invalid")
+            consuming.append(preparation)
+        elif status == "consumed":
+            _validate_utc_timestamp(
+                preparation.get("consumed_at"), field="consumed_at"
+            )
+            _validate_preparation_sha(
+                preparation.get("consumed_on_main"), field="consumed_on_main"
+            )
+
+    for positions in package_positions.values():
+        package_history = [preparations[index] for index in positions]
+        for previous, current in zip(package_history, package_history[1:]):
+            if (
+                current["from_ref"] != previous["to_ref"]
+                or current["from_branch"] != previous["to_branch"]
+            ):
+                raise Refusal(
+                    "package owner-reassignment preparation history is incompatible"
+                )
+        nonterminal_positions = [
+            index
+            for index in positions
+            if preparations[index]["status"] in {"completed", "consuming"}
+        ]
+        if nonterminal_positions and nonterminal_positions[0] != positions[-1]:
+            raise Refusal(
+                "package nonterminal owner-reassignment preparation is not final"
+            )
+
+    pending = registry.get("pending")
+    pending_transition = (
+        pending.get("owner_reassignment") if isinstance(pending, dict) else None
+    )
+    if len(consuming) > 1:
+        raise Refusal("registry has ambiguous consuming owner-reassignment custody")
+    if consuming:
+        _validate_consuming_preparation_transition(registry, consuming[0])
+    elif pending_transition is not None:
+        raise Refusal(
+            "pending owner-reassignment receiver transition has no consuming preparation"
+        )
+    if isinstance(pending, dict) and pending.get("operation") == (
+        "owner_reassignment_branch_create"
+    ):
+        pending_package = str(pending.get("package", "")).casefold()
+        if pending_package in nonterminal_packages:
+            raise Refusal(
+                "pending owner-reassignment branch creation conflicts with prepared state"
+            )
+
+    for preparation in by_status["completed"]:
+        preparation_id = preparation["preparation_id"]
+        if any(
+            isinstance(record, dict)
+            and record.get("owner_reassignment_preparation_id") == preparation_id
+            for record in registry["worktrees"]
+        ):
+            raise Refusal(
+                "completed owner-reassignment preparation already has receiver custody"
+            )
+    for preparation in by_status["consumed"]:
+        preparation_id = preparation["preparation_id"]
+        receivers = [
+            record
+            for record in registry["worktrees"]
+            if isinstance(record, dict)
+            and record.get("owner_reassignment_preparation_id") == preparation_id
+        ]
+        if len(receivers) != 1:
+            raise Refusal(
+                "consumed owner-reassignment preparation has ambiguous receiver custody"
+            )
+        receiver = receivers[0]
+        if (
+            receiver.get("kind") not in {"durable", "reassignment_source"}
+            or receiver.get("state") not in {"active", "retired"}
+            or receiver.get("package") != preparation["package"]
+            or receiver.get("task_ref") != preparation["to_ref"]
+            or receiver.get("branch") != preparation["to_branch"]
+            or not isinstance(receiver.get("head"), str)
+            or not SHA_RE.fullmatch(receiver["head"])
+        ):
+            raise Refusal(
+                "consumed owner-reassignment receiver custody changed identity"
+            )
+        durable_snapshots = preparation["source_snapshot"]["durable_records"]
+        if durable_snapshots:
+            source_snapshot = durable_snapshots[0]
+            preserved_sources = [
+                record
+                for record in registry["worktrees"]
+                if isinstance(record, dict)
+                and _path_key(str(record.get("path", "")))
+                == _path_key(source_snapshot["path"])
+            ]
+            if len(preserved_sources) != 1:
+                raise Refusal(
+                    "consumed owner-reassignment source custody is ambiguous"
+                )
+            source = preserved_sources[0]
+            if (
+                source.get("kind") != "reassignment_source"
+                or source.get("state") not in {"active", "retired"}
+                or any(
+                    source.get(field) != source_snapshot[field]
+                    for field in ("package", "task_ref", "branch", "head")
+                )
+                or source.get("preserved_by_owner_reassignment")
+                != _expected_owner_reassignment_handoff(preparation)
+            ):
+                raise Refusal(
+                    "consumed owner-reassignment source custody changed identity"
+                )
+
+
+def _pending_record_custody(
+    registry: dict[str, Any],
+    pending: dict[str, Any],
+    *,
+    expected_state: str,
+    allowed_kinds: set[str] | None = None,
+) -> dict[str, Any]:
+    path = _validate_preparation_path(pending.get("path"), field="pending path")
+    pending_record = pending.get("record")
+    if not isinstance(pending_record, dict):
+        raise Refusal("pending lifecycle operation has no exact record snapshot")
+    matches = [
+        record
+        for record in registry.get("worktrees", [])
+        if isinstance(record, dict)
+        and _path_key(str(record.get("path", ""))) == _path_key(path)
+    ]
+    if len(matches) != 1 or matches[0] != pending_record:
+        raise Refusal("pending lifecycle operation has ambiguous registry custody")
+    record = matches[0]
+    if record.get("state") != expected_state:
+        raise Refusal("pending lifecycle record has an incompatible state")
+    if allowed_kinds is not None and record.get("kind") not in allowed_kinds:
+        raise Refusal("pending lifecycle record has an incompatible kind")
+    return record
+
+
+def _validate_pending_create(registry: dict[str, Any], pending: dict[str, Any]) -> None:
+    expected_fields = {"operation", "path", "record", "started_at"}
+    if "owner_reassignment" in pending:
+        expected_fields.add("owner_reassignment")
+    if set(pending) != expected_fields:
+        raise Refusal("pending create has an inexact field set")
+    record = _pending_record_custody(
+        registry,
+        pending,
+        expected_state="pending",
+        allowed_kinds={"control_singleton", "durable", "ephemeral"},
+    )
+    pending_records = [
+        item
+        for item in registry["worktrees"]
+        if isinstance(item, dict) and item.get("state") == "pending"
+    ]
+    if pending_records != [record]:
+        raise Refusal("pending create does not have one exact pending record")
+    if "owner_reassignment" in pending:
+        transition = pending.get("owner_reassignment")
+        if not isinstance(transition, dict):
+            raise Refusal("pending owner-reassignment create transition is invalid")
+
+
+def _validate_pending_retire(registry: dict[str, Any], pending: dict[str, Any]) -> None:
+    if set(pending) != {"operation", "path", "record", "started_at"}:
+        raise Refusal("pending retirement has an inexact field set")
+    _pending_record_custody(
+        registry,
+        pending,
+        expected_state="active",
+        allowed_kinds={"durable", "ephemeral"},
+    )
+
+
+def _validate_optional_control_identity(
+    value: Any, *, field: str
+) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise Refusal(f"pending control {field} has an invalid type")
+    if field == "package":
+        return _validate_package(value)
+    if field == "task_ref":
+        return _validate_task_ref(value)
+    if field == "branch":
+        return _validate_work_branch(value)
+    raise AssertionError(field)
+
+
+def _validate_pending_control_repoint(
+    registry: dict[str, Any], pending: dict[str, Any]
+) -> None:
+    if set(pending) != {
+        "operation",
+        "path",
+        "record",
+        "before",
+        "target",
+        "started_at",
+    }:
+        raise Refusal("pending control repoint has an inexact field set")
+    path = _validate_preparation_path(pending.get("path"), field="pending path")
+    matches = [
+        record
+        for record in registry["worktrees"]
+        if isinstance(record, dict)
+        and _path_key(str(record.get("path", ""))) == _path_key(path)
+    ]
+    if len(matches) != 1:
+        raise Refusal("pending control repoint has ambiguous registry custody")
+    record = matches[0]
+    projection = {
+        "kind": record.get("kind"),
+        "state": record.get("state"),
+        "package": record.get("package"),
+        "task_ref": record.get("task_ref"),
+    }
+    if (
+        record.get("kind") != "control_singleton"
+        or record.get("state") != "active"
+        or pending.get("record") != projection
+    ):
+        raise Refusal("pending control repoint does not own the active singleton")
+    before = pending.get("before")
+    target = pending.get("target")
+    if not isinstance(before, dict) or set(before) != {
+        "package",
+        "branch",
+        "head",
+        "task_ref",
+        "lease",
+        "sparse_paths",
+    }:
+        raise Refusal("pending control repoint before-state is inexact")
+    if not isinstance(target, dict) or set(target) != {
+        "package",
+        "branch",
+        "head",
+        "task_ref",
+        "lease",
+        "sparse_paths",
+        "base",
+        "allow_current_moved",
+    }:
+        raise Refusal("pending control repoint target-state is inexact")
+    if any(
+        before.get(field) != record.get(field)
+        for field in ("package", "branch", "head", "task_ref", "lease", "sparse_paths")
+    ):
+        raise Refusal("pending control repoint before-state lost registry custody")
+    _validate_optional_control_identity(before.get("package"), field="package")
+    _validate_optional_control_identity(before.get("branch"), field="branch")
+    _validate_optional_control_identity(before.get("task_ref"), field="task_ref")
+    _validate_preparation_sha(before.get("head"), field="pending control before HEAD")
+    if before.get("lease") is not None and not isinstance(before.get("lease"), dict):
+        raise Refusal("pending control repoint before-lease is invalid")
+    if not isinstance(before.get("sparse_paths"), list) or not all(
+        isinstance(item, str) for item in before["sparse_paths"]
+    ):
+        raise Refusal("pending control repoint before sparse paths are invalid")
+
+    package = _validate_optional_control_identity(target.get("package"), field="package")
+    branch = _validate_optional_control_identity(target.get("branch"), field="branch")
+    task_ref = _validate_optional_control_identity(target.get("task_ref"), field="task_ref")
+    head = _validate_preparation_sha(target.get("head"), field="pending control target HEAD")
+    if target.get("base") != head or type(target.get("allow_current_moved")) is not bool:
+        raise Refusal("pending control repoint target commit metadata is invalid")
+    sparse_paths = target.get("sparse_paths")
+    if not isinstance(sparse_paths, list) or sparse_paths != sorted(set(sparse_paths)):
+        raise Refusal("pending control repoint target sparse paths are invalid")
+    lease = target.get("lease")
+    if not isinstance(lease, dict) or set(lease) != {
+        "task_ref",
+        "purpose",
+        "package",
+        "acquired_at",
+    }:
+        raise Refusal("pending control repoint target lease is inexact")
+    if (
+        lease.get("task_ref") != task_ref
+        or lease.get("package") != package
+        or not isinstance(lease.get("purpose"), str)
+        or not lease.get("purpose")
+    ):
+        raise Refusal("pending control repoint target lease changed identity")
+    _validate_utc_timestamp(lease.get("acquired_at"), field="control acquired_at")
+    if branch is None and target.get("branch") is not None:
+        raise Refusal("pending control repoint target branch is invalid")
+
+
+def _validate_pending_branch_source_snapshots(
+    registry: dict[str, Any], pending: dict[str, Any]
+) -> None:
+    checkpoint = pending["checkpoint_sha"]
+    from_branch = pending["from_branch"]
+    source_worktrees = pending.get("source_worktrees")
+    if not isinstance(source_worktrees, list):
+        raise Refusal("pending owner-reassignment source worktrees are invalid")
+    paths: list[str] = []
+    for item in source_worktrees:
+        if not isinstance(item, dict) or set(item) != {"path", "branch", "head"}:
+            raise Refusal("pending owner-reassignment source worktree is inexact")
+        item_path = _validate_preparation_path(
+            item.get("path"), field="pending source worktree path"
+        )
+        if (
+            item.get("branch") != from_branch
+            or _validate_preparation_sha(
+                item.get("head"), field="pending source worktree HEAD"
+            )
+            != checkpoint
+        ):
+            raise Refusal("pending owner-reassignment source worktree changed identity")
+        paths.append(item_path)
+    if len(paths) != len(set(map(_path_key, paths))) or source_worktrees != sorted(
+        source_worktrees, key=lambda item: _path_key(item["path"])
+    ):
+        raise Refusal("pending owner-reassignment source worktrees are ambiguous")
+
+    durable = pending.get("source_durable_records")
+    if not isinstance(durable, list) or len(durable) > 1:
+        raise Refusal("pending owner-reassignment durable source is ambiguous")
+    registry_candidates = [
+        record
+        for record in registry["worktrees"]
+        if isinstance(record, dict)
+        and record.get("state") == "active"
+        and record.get("kind") == "durable"
+        and (
+            str(record.get("package", "")).casefold()
+            == pending["package"].casefold()
+            or record.get("branch") == from_branch
+        )
+    ]
+    registry_snapshots = [
+        {
+            "path": record.get("path"),
+            "package": record.get("package"),
+            "task_ref": record.get("task_ref"),
+            "branch": record.get("branch"),
+            "head": record.get("head"),
+        }
+        for record in registry_candidates
+    ]
+    if len(registry_candidates) > 1 or durable != registry_snapshots:
+        raise Refusal("pending owner-reassignment durable source lost registry custody")
+    for item in durable:
+        if not isinstance(item, dict) or set(item) != {
+            "path",
+            "package",
+            "task_ref",
+            "branch",
+            "head",
+        }:
+            raise Refusal("pending owner-reassignment durable source is inexact")
+        item_path = _validate_preparation_path(
+            item.get("path"), field="pending durable source path"
+        )
+        if (
+            item_path not in paths
+            or item.get("package") != pending["package"]
+            or item.get("task_ref") != pending["from_ref"]
+            or item.get("branch") != from_branch
+            or _validate_preparation_sha(
+                item.get("head"), field="pending durable source HEAD"
+            )
+            != checkpoint
+        ):
+            raise Refusal("pending owner-reassignment durable source changed identity")
+
+
+def _validate_pending_owner_reassignment_branch_create(
+    registry: dict[str, Any], pending: dict[str, Any]
+) -> None:
+    base_fields = {
+        "operation",
+        "package",
+        "task_ref",
+        "from_ref",
+        "from_branch",
+        "successor_branch",
+        "checkpoint_sha",
+        "owner_authorization_ref",
+        "old_local_ref",
+        "source_worktrees",
+        "source_durable_records",
+        "control_branch",
+        "prepared_from_main",
+        "live_claims_snapshot",
+        "push_proven_new",
+        "started_at",
+    }
+    push_proven = pending.get("push_proven_new")
+    expected_fields = set(base_fields)
+    if push_proven is True:
+        expected_fields |= {"new_branch_response", "push_proven_at"}
+    if type(push_proven) is not bool or set(pending) != expected_fields:
+        raise Refusal("pending owner-reassignment branch creation is inexact")
+    package = _validate_package(pending.get("package"))
+    task_ref = _validate_delivery_ref(pending.get("task_ref"))
+    from_ref = _validate_delivery_ref(pending.get("from_ref"))
+    owner_ref = _validate_delivery_ref(pending.get("owner_authorization_ref"))
+    from_branch = _validate_work_branch(pending.get("from_branch"))
+    successor = _validate_work_branch(pending.get("successor_branch"))
+    control_branch = _validate_work_branch(pending.get("control_branch"))
+    checkpoint = _validate_preparation_sha(
+        pending.get("checkpoint_sha"), field="pending checkpoint_sha"
+    )
+    _validate_preparation_sha(
+        pending.get("prepared_from_main"), field="pending prepared_from_main"
+    )
+    _validate_utc_timestamp(pending.get("started_at"), field="pending started_at")
+    if (
+        task_ref == from_ref
+        or len({from_branch, successor, control_branch}) != 3
+        or not OWNER_REASSIGNMENT_CONTROL_BRANCH_RE.fullmatch(control_branch)
+        or not owner_ref
+        or not package
+    ):
+        raise Refusal("pending owner-reassignment branch identity is invalid")
+    old_local_ref = pending.get("old_local_ref")
+    if old_local_ref is not None and _validate_preparation_sha(
+        old_local_ref, field="pending source local ref"
+    ) != checkpoint:
+        raise Refusal("pending owner-reassignment local source ref changed")
+    _validate_pending_branch_source_snapshots(registry, pending)
+    claims = pending.get("live_claims_snapshot")
+    if not isinstance(claims, list) or not all(isinstance(item, dict) for item in claims):
+        raise Refusal("pending owner-reassignment live claims snapshot is invalid")
+    claim_packages: list[str] = []
+    for claim in claims:
+        claim_package = _validate_package(claim.get("package"))
+        if claim.get("state") not in {"active", "paused"}:
+            raise Refusal("pending owner-reassignment live claim state is invalid")
+        _validate_work_branch(claim.get("branch"))
+        claim_packages.append(claim_package.casefold())
+    if len(claim_packages) != len(set(claim_packages)):
+        raise Refusal("pending owner-reassignment live claims are duplicated")
+    controls = [
+        record
+        for record in registry["worktrees"]
+        if isinstance(record, dict) and record.get("kind") == "control_singleton"
+    ]
+    if len(controls) != 1:
+        raise Refusal("pending owner reassignment lost its control singleton")
+    control = controls[0]
+    lease = control.get("lease")
+    if (
+        control.get("state") != "active"
+        or control.get("package") != package
+        or control.get("task_ref") != task_ref
+        or control.get("branch") != control_branch
+        or not isinstance(lease, dict)
+        or (
+            lease.get("task_ref"),
+            lease.get("purpose"),
+            lease.get("package"),
+        )
+        != (task_ref, "control", package)
+    ):
+        raise Refusal("pending owner reassignment lost exact control custody")
+    if push_proven:
+        response = pending.get("new_branch_response")
+        if response != f"*\t{checkpoint}:refs/heads/{successor}\t[new branch]":
+            raise Refusal("pending owner reassignment has an invalid new-branch proof")
+        _validate_utc_timestamp(
+            pending.get("push_proven_at"), field="pending push_proven_at"
+        )
+
+
+def _validate_pending_operation(registry: dict[str, Any]) -> None:
+    pending = registry.get("pending")
+    pending_records = [
+        record
+        for record in registry.get("worktrees", [])
+        if isinstance(record, dict) and record.get("state") == "pending"
+    ]
+    if pending is None:
+        if pending_records:
+            raise Refusal("registry has a pending record without an operation journal")
+        return
+    if not isinstance(pending, dict):
+        raise Refusal("registry pending operation must be an object or null")
+    operation = pending.get("operation")
+    validators = {
+        "create": _validate_pending_create,
+        "retire": _validate_pending_retire,
+        "control_repoint": _validate_pending_control_repoint,
+        "owner_reassignment_branch_create": (
+            _validate_pending_owner_reassignment_branch_create
+        ),
+    }
+    validator = validators.get(operation)
+    if validator is None:
+        raise Refusal("registry contains an unknown pending operation")
+    if operation != "create" and pending_records:
+        raise Refusal("non-create journal has an orphan pending worktree record")
+    if operation != "owner_reassignment_branch_create":
+        _validate_utc_timestamp(pending.get("started_at"), field="pending started_at")
+    validator(registry, pending)
+
+
+def validate_owner_reassignment_registry(registry: dict[str, Any]) -> None:
+    """Validate preparation history and every transient registry operation.
+
+    Delivery admission imports this exact validator so the lifecycle writer and
+    its read-only gate cannot drift on JSON types, history, replay, or custody.
+    """
+
+    _validate_owner_reassignment_preparations(registry)
+    _validate_pending_operation(registry)
+
+
 def _load_registry(path: Path, *, required: bool = True) -> dict[str, Any] | None:
     if not path.exists():
         if required:
@@ -349,7 +1377,11 @@ def _load_registry(path: Path, *, required: bool = True) -> dict[str, Any] | Non
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise Refusal(f"registry is unreadable or corrupt: {error}") from error
-    if not isinstance(data, dict) or data.get("schema_version") != SCHEMA_VERSION:
+    if (
+        not isinstance(data, dict)
+        or type(data.get("schema_version")) is not int
+        or data.get("schema_version") != SCHEMA_VERSION
+    ):
         raise Refusal("registry schema is missing or unsupported")
     required_keys = {
         "initialized_at",
@@ -361,10 +1393,17 @@ def _load_registry(path: Path, *, required: bool = True) -> dict[str, Any] | Non
         raise Refusal("registry is structurally incomplete")
     data.setdefault("pending", None)
     data.setdefault("evidence_allocations", [])
+    data.setdefault("owner_reassignment_preparations", [])
+    validate_owner_reassignment_registry(data)
     return data
 
 
 def _atomic_write(path: Path, payload: dict[str, Any]) -> None:
+    if payload.get("schema_version") == SCHEMA_VERSION and isinstance(
+        payload.get("worktrees"), list
+    ):
+        payload.setdefault("owner_reassignment_preparations", [])
+        validate_owner_reassignment_registry(payload)
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=path.name + ".", suffix=".tmp", dir=path.parent
@@ -645,6 +1684,35 @@ def _active_claim(
     return claim
 
 
+def _owner_reassignment_handoff(
+    claim: dict[str, Any], *, receiving_ref: str, receiving_branch: str
+) -> dict[str, Any] | None:
+    """Return an exact merged owner-reassignment record, if present."""
+
+    handoff = claim.get("handoff")
+    if not isinstance(handoff, dict) or handoff.get("type") != "owner_reassignment":
+        return None
+    if set(handoff) != OWNER_REASSIGNMENT_HANDOFF_FIELDS:
+        raise Refusal("owner reassignment handoff has an inexact field set")
+    if "relinquished" in handoff:
+        raise Refusal("owner reassignment may not assert prior-writer relinquishment")
+    from_ref = _validate_delivery_ref(str(handoff.get("from_ref", "")))
+    to_ref = _validate_delivery_ref(str(handoff.get("to_ref", "")))
+    from_branch = _validate_work_branch(str(handoff.get("from_branch", "")))
+    to_branch = _validate_work_branch(str(handoff.get("to_branch", "")))
+    checkpoint = _validate_sha(str(handoff.get("checkpoint_sha", "")))
+    _validate_delivery_ref(str(handoff.get("owner_authorization_ref", "")))
+    if from_ref == to_ref or from_branch == to_branch:
+        raise Refusal("owner reassignment must change both writer and branch")
+    if to_ref != receiving_ref or to_branch != receiving_branch:
+        raise Refusal("owner reassignment does not match the receiving claim identity")
+    if claim.get("writer_ref") != to_ref or claim.get("branch") != to_branch:
+        raise Refusal("merged claim identity differs from its owner reassignment record")
+    if not checkpoint:
+        raise Refusal("owner reassignment is missing its exact checkpoint")
+    return handoff
+
+
 def _claim_branch_proof(
     context: RepoContext,
     package: str,
@@ -738,13 +1806,23 @@ def _write_pending(
     operation: str,
     path: Path,
     record: dict[str, Any],
+    metadata: dict[str, Any] | None = None,
 ) -> None:
-    registry["pending"] = {
+    pending = {
         "operation": operation,
         "path": str(_canonical(path)),
         "record": record,
         "started_at": _utc_now(),
     }
+    if metadata:
+        overlap = set(pending) & set(metadata)
+        if overlap:
+            raise Refusal(
+                "pending operation metadata overlaps reserved fields: "
+                + ", ".join(sorted(overlap))
+            )
+        pending.update(metadata)
+    registry["pending"] = pending
     _atomic_write(context.registry_path, registry)
 
 
@@ -856,9 +1934,156 @@ def _reconcile_control_repoint(
     }
 
 
+def _reprove_owner_reassignment_branch_completion(
+    context: RepoContext,
+    registry: dict[str, Any],
+    pending: dict[str, Any],
+) -> None:
+    """Reprove the complete remote/local tuple at the commit boundary."""
+
+    _validate_pending_owner_reassignment_branch_create(registry, pending)
+    if pending.get("push_proven_new") is not True:
+        raise Refusal("owner-reassignment successor creation is not push-proven")
+    package = pending["package"]
+    from_branch = pending["from_branch"]
+    successor_branch = pending["successor_branch"]
+    checkpoint = pending["checkpoint_sha"]
+    prepared_from_main = pending["prepared_from_main"]
+    live_claims_snapshot = pending["live_claims_snapshot"]
+
+    if _remote_branch_tip(context, "main") != prepared_from_main:
+        raise Refusal("origin/main moved during successor final proof")
+    if _strict_live_claims(context) != live_claims_snapshot:
+        raise Refusal("live claims changed during successor final proof")
+    if _fetch_origin_branch(context, from_branch) != checkpoint:
+        raise Refusal("source branch moved during owner-reassignment final proof")
+    if _fetch_origin_branch(context, successor_branch) != checkpoint:
+        raise Refusal("successor branch moved during owner-reassignment final proof")
+    if _ref_sha(context, f"refs/heads/{from_branch}") != pending.get(
+        "old_local_ref"
+    ):
+        raise Refusal("local source branch changed during owner-reassignment final proof")
+    if _snapshot_branch_worktrees(context, from_branch, checkpoint) != pending.get(
+        "source_worktrees"
+    ):
+        raise Refusal("source worktree identity changed during final proof")
+    if _source_durable_registry_snapshot(
+        context,
+        registry,
+        package=package,
+        from_ref=pending["from_ref"],
+        from_branch=from_branch,
+        checkpoint=checkpoint,
+    ) != pending.get("source_durable_records"):
+        raise Refusal("durable source identity changed during final proof")
+    if _ref_sha(context, f"refs/heads/{successor_branch}") is not None:
+        raise Refusal("successor creation unexpectedly created a local branch")
+    _assert_successor_namespace_available(
+        context,
+        registry,
+        successor_branch,
+        live_claims_snapshot,
+        allow_exact_successor_remote=True,
+    )
+
+    # Reconfirm the server tuple after every other slow proof.  Only local
+    # preparation persistence follows these reads.
+    if _strict_live_claims(context) != live_claims_snapshot:
+        raise Refusal("live claims changed at owner-reassignment commit boundary")
+    # One server advertisement avoids a symmetric race between sequential
+    # main/source/successor reads.  No further remote or claim operation may
+    # occur before the preparation is persisted.
+    remote_tuple = _remote_branch_tuple(
+        context, ("main", from_branch, successor_branch)
+    )
+    if remote_tuple != {
+        "main": prepared_from_main,
+        from_branch: checkpoint,
+        successor_branch: checkpoint,
+    }:
+        raise Refusal("remote branch tuple moved at owner-reassignment commit boundary")
+
+
+def _reconcile_owner_reassignment_branch_create(
+    context: RepoContext,
+    registry: dict[str, Any],
+    pending: dict[str, Any],
+) -> dict[str, Any]:
+    """Reconcile only a provably new successor-branch creation.
+
+    If a process died before it recorded Git's ``[new branch]`` response, an
+    exact remote ref is still ambiguous: another actor could have won the
+    race.  The pending record is preserved for explicit investigation rather
+    than converting ambiguity into authority.
+    """
+
+    validate_owner_reassignment_registry(registry)
+    package = _validate_package(str(pending.get("package", "")))
+    task_ref = _validate_task_ref(str(pending.get("task_ref", "")))
+    from_branch = _validate_work_branch(str(pending.get("from_branch", "")))
+    successor_branch = _validate_work_branch(
+        str(pending.get("successor_branch", ""))
+    )
+    checkpoint = _validate_sha(str(pending.get("checkpoint_sha", "")))
+    _validate_delivery_ref(str(pending.get("from_ref", "")))
+    _validate_delivery_ref(task_ref)
+    _validate_delivery_ref(str(pending.get("owner_authorization_ref", "")))
+    if pending.get("push_proven_new") not in {True, False}:
+        raise Refusal("pending owner reassignment has an invalid push-proof state")
+    if from_branch == successor_branch:
+        raise Refusal("pending owner reassignment reuses the old branch")
+
+    successor_tip = _fetch_origin_branch(context, successor_branch)
+    if successor_tip is None:
+        if pending.get("push_proven_new"):
+            raise Refusal(
+                "proven successor branch disappeared; pending recovery is preserved"
+            )
+        registry["pending"] = None
+        _atomic_write(context.registry_path, registry)
+        return {
+            "operation": "owner_reassignment_branch_create",
+            "outcome": "rolled_back",
+            "package": package,
+            "task_ref": task_ref,
+            "successor_branch": successor_branch,
+        }
+    old_tip = _fetch_origin_branch(context, from_branch)
+    if old_tip != checkpoint:
+        raise Refusal(
+            "pending owner reassignment old branch no longer equals its checkpoint"
+        )
+    if successor_tip != checkpoint:
+        raise Refusal(
+            "pending owner reassignment successor branch has an unexpected tip"
+        )
+    if pending.get("push_proven_new") is not True:
+        raise Refusal(
+            "successor branch exists without a recorded new-branch response; "
+            "creation provenance is ambiguous and pending recovery is preserved"
+        )
+    _reprove_owner_reassignment_branch_completion(context, registry, pending)
+    _append_completed_preparation(registry, pending)
+    registry["pending"] = None
+    _atomic_write(context.registry_path, registry)
+    return {
+        "operation": "owner_reassignment_branch_create",
+        "outcome": "completed",
+        "package": package,
+        "task_ref": task_ref,
+        "from_branch": from_branch,
+        "successor_branch": successor_branch,
+        "checkpoint_sha": checkpoint,
+    }
+
+
 def _reconcile_pending(
     context: RepoContext, registry: dict[str, Any]
 ) -> dict[str, Any] | None:
+    # Reconciliation is itself a mutation boundary.  Validate the complete
+    # journal/record/preparation graph even when an internal caller supplied a
+    # dictionary without going through ``_load_registry``.
+    validate_owner_reassignment_registry(registry)
     pending = registry.get("pending")
     if not pending:
         return None
@@ -866,8 +2091,13 @@ def _reconcile_pending(
         "create",
         "retire",
         "control_repoint",
+        "owner_reassignment_branch_create",
     }:
         raise Refusal("registry contains an unknown pending operation")
+    if pending.get("operation") == "owner_reassignment_branch_create":
+        return _reconcile_owner_reassignment_branch_create(
+            context, registry, pending
+        )
     path = _canonical(str(pending.get("path", "")))
     on_disk = path.exists()
     listed = _worktree_at(context.root, path) is not None
@@ -888,6 +2118,9 @@ def _reconcile_pending(
         if not on_disk:
             if record and record.get("state") == "pending":
                 registry["worktrees"].remove(record)
+            _finalize_owner_reassignment_worktree_create(
+                context, registry, pending, completed=False
+            )
             registry["pending"] = None
             _atomic_write(context.registry_path, registry)
             return {"operation": operation, "outcome": "rolled_back", "path": str(path)}
@@ -907,6 +2140,9 @@ def _reconcile_pending(
             record["sparse_paths"] = _configure_sparse(
                 path, record.get("sparse_paths", ())
             )
+        _finalize_owner_reassignment_worktree_create(
+            context, registry, pending, completed=True
+        )
         record["state"] = "active"
         record["updated_at"] = _utc_now()
         registry["pending"] = None
@@ -936,6 +2172,7 @@ def _create_registered_worktree(
     record: dict[str, Any],
     git_arguments: Sequence[str],
     sparse_paths: Sequence[str] = (),
+    owner_reassignment: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     path = _canonical(record["path"])
     if path.exists() or _worktree_at(context.root, path):
@@ -952,8 +2189,35 @@ def _create_registered_worktree(
         registry["worktrees"].append(record)
     elif len(path_records) != 1 or path_records[0] is not record:
         raise Refusal("deterministic managed path has conflicting registry history")
+    pending_metadata: dict[str, Any] | None = None
+    if owner_reassignment is not None:
+        preparation = owner_reassignment.get("preparation")
+        source_record = owner_reassignment.get("source_record")
+        handoff = owner_reassignment.get("handoff")
+        origin_main = owner_reassignment.get("origin_main")
+        if (
+            not isinstance(preparation, dict)
+            or source_record is not None and not isinstance(source_record, dict)
+            or not isinstance(handoff, dict)
+            or not isinstance(origin_main, str)
+        ):
+            raise Refusal("owner-reassignment worktree transition is invalid")
+        transition = _begin_owner_reassignment_worktree_create(
+            preparation=preparation,
+            source_record=source_record,
+            handoff=handoff,
+            receiver_path=path,
+            origin_main=origin_main,
+        )
+        record["owner_reassignment_preparation_id"] = transition["preparation_id"]
+        pending_metadata = {"owner_reassignment": transition}
     _write_pending(
-        context, registry, operation="create", path=path, record=record.copy()
+        context,
+        registry,
+        operation="create",
+        path=path,
+        record=record.copy(),
+        metadata=pending_metadata,
     )
     arguments = list(git_arguments)
     if arguments[:1] == ["-b"] and len(arguments) == 3:
@@ -980,6 +2244,12 @@ def _create_registered_worktree(
             "created worktree branch differs from the journaled expected branch; "
             "pending state was preserved"
         )
+    pending = registry.get("pending")
+    if not isinstance(pending, dict):
+        raise Refusal("registered worktree creation lost its pending journal")
+    _finalize_owner_reassignment_worktree_create(
+        context, registry, pending, completed=True
+    )
     record["state"] = "active"
     record["updated_at"] = _utc_now()
     registry["pending"] = None
@@ -1051,6 +2321,7 @@ def command_init(context: RepoContext, args: argparse.Namespace) -> dict[str, An
             "worktrees": records,
             "pending": None,
             "evidence_allocations": [],
+            "owner_reassignment_preparations": [],
         }
         _atomic_write(context.registry_path, registry)
     return {
@@ -1170,7 +2441,23 @@ def command_ensure(context: RepoContext, args: argparse.Namespace) -> dict[str, 
     _fetch_origin_main(context)
     claim = _active_claim(context, package, task_ref)
     branch = claim["branch"]
+    reassignment = _owner_reassignment_handoff(
+        claim, receiving_ref=task_ref, receiving_branch=branch
+    )
     fetched_branch_tip = _fetch_origin_branch(context, branch)
+    reassignment_checkpoint: str | None = None
+    if reassignment is not None:
+        reassignment_checkpoint = _validate_sha(reassignment["checkpoint_sha"])
+        if fetched_branch_tip is None:
+            raise Refusal(
+                "owner-reassignment successor branch is absent from origin"
+            )
+        old_tip = _fetch_origin_branch(context, reassignment["from_branch"])
+        if old_tip != reassignment_checkpoint:
+            raise Refusal(
+                "owner-reassignment source branch is absent or moved from its "
+                "authorized checkpoint"
+            )
     with _registry_lock(context.registry_path):
         registry = _load_registry(context.registry_path)
         assert registry is not None
@@ -1179,45 +2466,241 @@ def command_ensure(context: RepoContext, args: argparse.Namespace) -> dict[str, 
         durable = _existing_durable(registry, package)
         if len(durable) > 1:
             raise Refusal("registry has duplicate durable worktrees for the package")
+        receiver_durable_exists = bool(
+            durable
+            and durable[0].get("task_ref") == task_ref
+            and durable[0].get("branch") == claim["branch"]
+        )
+        preparation: dict[str, Any] | None = None
+        source_record_to_preserve: dict[str, Any] | None = None
+        if reassignment is not None:
+            preparation = _matching_owner_reassignment_preparation(
+                registry, claim, reassignment
+            )
+            expected_preparation_status = (
+                "consumed" if receiver_durable_exists else "completed"
+            )
+            if preparation.get("status") != expected_preparation_status:
+                raise Refusal(
+                    "owner-reassignment preparation is not in the exact expected state"
+                )
+            if _fetch_origin_branch(
+                context, reassignment["from_branch"]
+            ) != reassignment_checkpoint:
+                raise Refusal(
+                    "owner-reassignment source branch moved during durable-worktree proof"
+                )
+            if not receiver_durable_exists and (
+                fetched_branch_tip != reassignment_checkpoint
+                or _fetch_origin_branch(context, branch) != reassignment_checkpoint
+            ):
+                raise Refusal(
+                    "owner-reassignment successor branch moved before its first "
+                    "durable worktree was created"
+                )
+            old_local_ref = _ref_sha(
+                context, f"refs/heads/{reassignment['from_branch']}"
+            )
+            if old_local_ref not in {None, reassignment_checkpoint}:
+                raise Refusal(
+                    "owner-reassignment source local branch differs from its checkpoint"
+                )
+            current_source_worktrees = _snapshot_branch_worktrees(
+                context, reassignment["from_branch"], reassignment_checkpoint
+            )
+            source_snapshot = preparation.get("source_snapshot")
+            if not isinstance(source_snapshot, dict):
+                raise Refusal("owner-reassignment preparation source snapshot is invalid")
+            if not receiver_durable_exists:
+                current_source_durable = _source_durable_registry_snapshot(
+                    context,
+                    registry,
+                    package=package,
+                    from_ref=reassignment["from_ref"],
+                    from_branch=reassignment["from_branch"],
+                    checkpoint=reassignment_checkpoint,
+                )
+                if source_snapshot != {
+                    "local_branch_sha": old_local_ref,
+                    "worktrees": current_source_worktrees,
+                    "durable_records": current_source_durable,
+                }:
+                    raise Refusal(
+                        "owner-reassignment preparation source snapshot changed before use"
+                    )
+            else:
+                if (
+                    source_snapshot.get("local_branch_sha") != old_local_ref
+                    or source_snapshot.get("worktrees") != current_source_worktrees
+                ):
+                    raise Refusal(
+                        "consumed owner-reassignment source Git identity changed"
+                    )
+                prepared_durable = source_snapshot.get("durable_records")
+                if not isinstance(prepared_durable, list) or len(prepared_durable) > 1:
+                    raise Refusal(
+                        "consumed owner-reassignment durable source proof is invalid"
+                    )
+                preserved_sources = [
+                    source
+                    for source in registry["worktrees"]
+                    if source.get("state") == "active"
+                    and source.get("kind") == "reassignment_source"
+                    and source.get("package") == package
+                    and source.get("preserved_by_owner_reassignment") == reassignment
+                ]
+                if len(preserved_sources) != len(prepared_durable):
+                    raise Refusal(
+                        "consumed owner-reassignment source registry custody changed"
+                    )
+                for expected_source, preserved_source in zip(
+                    prepared_durable, preserved_sources, strict=True
+                ):
+                    if not isinstance(expected_source, dict) or (
+                        _path_key(str(preserved_source.get("path", "")))
+                        != _path_key(str(expected_source.get("path", "")))
+                        or preserved_source.get("task_ref")
+                        != expected_source.get("task_ref")
+                        or preserved_source.get("branch")
+                        != expected_source.get("branch")
+                        or preserved_source.get("head")
+                        != expected_source.get("head")
+                    ):
+                        raise Refusal(
+                            "consumed owner-reassignment preserved source changed"
+                        )
         if durable:
             record = durable[0]
             if record.get("task_ref") != task_ref or record.get("branch") != claim["branch"]:
-                raise Refusal("registered durable worktree identity does not match claim")
-            path = _canonical(record["path"])
-            if record.get("outside_managed_root"):
-                if _is_strictly_within(path, registry["managed_root"]):
-                    raise Refusal("legacy containment marker no longer matches its path")
-                if _has_reparse_component(path):
-                    raise Refusal("grandfathered durable path crosses a reparse point")
+                if reassignment is None:
+                    raise Refusal("registered durable worktree identity does not match claim")
+                if (
+                    record.get("task_ref") != reassignment["from_ref"]
+                    or record.get("branch") != reassignment["from_branch"]
+                ):
+                    raise Refusal(
+                        "registered durable worktree does not match the preserved "
+                        "owner-reassignment source"
+                    )
+                source_path = _canonical(record["path"])
+                source_entry = _worktree_at(context.root, source_path)
+                if source_entry is None:
+                    raise Refusal(
+                        "owner-reassignment source worktree is no longer registered in Git"
+                    )
+                if record.get("outside_managed_root"):
+                    if _is_strictly_within(source_path, registry["managed_root"]):
+                        raise Refusal(
+                            "legacy containment marker no longer matches its path"
+                        )
+                    if _has_reparse_component(source_path):
+                        raise Refusal("reassignment source path crosses a reparse point")
+                else:
+                    _assert_managed_target(registry, source_path)
+                source_pristine, source_residue = _is_pristine(source_path)
+                if (
+                    source_entry.get("branch") != reassignment["from_branch"]
+                    or source_entry.get("head") != reassignment_checkpoint
+                    or not source_pristine
+                ):
+                    raise Refusal(
+                        "owner-reassignment source worktree is not pristine at the "
+                        "authorized checkpoint",
+                        blockers=source_residue,
+                    )
+                source_record_to_preserve = record
+                durable = []
             else:
-                _assert_managed_target(registry, path)
-            entry = _worktree_at(context.root, path)
-            if entry is None or entry.get("branch") != claim["branch"]:
-                raise Refusal("registered durable worktree is missing or mismatched")
-            live_head = entry.get("head")
-            if fetched_branch_tip and live_head != fetched_branch_tip:
-                if _is_ancestor(context, str(live_head), fetched_branch_tip):
-                    raise Refusal(
-                        "registered durable branch is behind its exact fetched remote tip"
-                    )
-                if not _is_ancestor(context, fetched_branch_tip, str(live_head)):
-                    raise Refusal(
-                        "registered durable branch diverges from its exact fetched remote tip"
-                    )
-            record["head"] = entry.get("head")
-            record["remote_branch_tip"] = fetched_branch_tip
-            record["remote_branch_status"] = (
-                "fetched" if fetched_branch_tip else "confirmed_absent"
+                path = _canonical(record["path"])
+                if record.get("outside_managed_root"):
+                    if _is_strictly_within(path, registry["managed_root"]):
+                        raise Refusal("legacy containment marker no longer matches its path")
+                    if _has_reparse_component(path):
+                        raise Refusal("grandfathered durable path crosses a reparse point")
+                else:
+                    _assert_managed_target(registry, path)
+                entry = _worktree_at(context.root, path)
+                if entry is None or entry.get("branch") != claim["branch"]:
+                    raise Refusal("registered durable worktree is missing or mismatched")
+                live_head = entry.get("head")
+                if fetched_branch_tip and live_head != fetched_branch_tip:
+                    if _is_ancestor(context, str(live_head), fetched_branch_tip):
+                        raise Refusal(
+                            "registered durable branch is behind its exact fetched remote tip"
+                        )
+                    if not _is_ancestor(context, fetched_branch_tip, str(live_head)):
+                        raise Refusal(
+                            "registered durable branch diverges from its exact fetched remote tip"
+                        )
+                record["head"] = entry.get("head")
+                record["remote_branch_tip"] = fetched_branch_tip
+                record["remote_branch_status"] = (
+                    "fetched" if fetched_branch_tip else "confirmed_absent"
+                )
+                record["updated_at"] = _utc_now()
+                _atomic_write(context.registry_path, registry)
+                return {
+                    "status": "reused",
+                    "package": package,
+                    "path": str(path),
+                    "head": record["head"],
+                    "recovered_pending": recovered,
+                }
+
+        sources = [
+            record
+            for record in registry["worktrees"]
+            if record.get("state") == "active"
+            and record.get("kind") == "reassignment_source"
+            and record.get("package") == package
+        ]
+        if sources:
+            if reassignment is None:
+                raise Refusal("preserved reassignment source has no merged claim provenance")
+            # During a successive reassignment the current source is still the
+            # active durable record until receiver creation commits.  Older
+            # reassignment_source records belong to earlier consumed
+            # preparations and must remain intact, not masquerade as the
+            # current source.  Once the current preparation is consumed, bind
+            # only its own durable snapshot path and handoff.
+            prepared_sources = (
+                preparation.get("source_snapshot", {}).get("durable_records", [])
+                if isinstance(preparation, dict)
+                else []
             )
-            record["updated_at"] = _utc_now()
-            _atomic_write(context.registry_path, registry)
-            return {
-                "status": "reused",
-                "package": package,
-                "path": str(path),
-                "head": record["head"],
-                "recovered_pending": recovered,
-            }
+            if receiver_durable_exists and prepared_sources:
+                current_source_path = _path_key(prepared_sources[0]["path"])
+                matching_sources = [
+                    source
+                    for source in sources
+                    if _path_key(str(source.get("path", ""))) == current_source_path
+                    and source.get("task_ref") == reassignment["from_ref"]
+                    and source.get("branch") == reassignment["from_branch"]
+                    and source.get("head") == reassignment_checkpoint
+                    and source.get("preserved_by_owner_reassignment") == reassignment
+                ]
+                if len(matching_sources) != 1:
+                    raise Refusal(
+                        "registry does not have the current preparation's exact "
+                        "preserved reassignment source"
+                    )
+                source = matching_sources[0]
+                source_path = _canonical(source["path"])
+                source_entry = _worktree_at(context.root, source_path)
+                if source_entry is None:
+                    raise Refusal(
+                        "preserved owner-reassignment source is no longer registered in Git"
+                    )
+                source_pristine, source_residue = _is_pristine(source_path)
+                if (
+                    source_entry.get("branch") != reassignment["from_branch"]
+                    or source_entry.get("head") != reassignment_checkpoint
+                    or not source_pristine
+                ):
+                    raise Refusal(
+                        "preserved owner-reassignment source no longer has its exact identity",
+                        blockers=source_residue,
+                    )
 
         branch_users = [
             entry for entry in _worktrees(context.root) if entry.get("branch") == branch
@@ -1228,7 +2711,12 @@ def command_ensure(context: RepoContext, args: argparse.Namespace) -> dict[str, 
                 + branch_users[0]["worktree"]
             )
         managed_root = _canonical(registry["managed_root"])
-        path = managed_root / package
+        path = (
+            managed_root
+            / f"{package}--recovery-{hashlib.sha256(branch.encode('utf-8')).hexdigest()[:12]}"
+            if reassignment is not None
+            else managed_root / package
+        )
         _assert_managed_target(registry, path)
         existing_path_record = _record_by_path(registry, path)
         if existing_path_record:
@@ -1310,6 +2798,16 @@ def command_ensure(context: RepoContext, args: argparse.Namespace) -> dict[str, 
             registry,
             record=record,
             git_arguments=git_arguments,
+            owner_reassignment=(
+                {
+                    "preparation": preparation,
+                    "source_record": source_record_to_preserve,
+                    "handoff": reassignment,
+                    "origin_main": origin_main,
+                }
+                if preparation is not None and reassignment is not None
+                else None
+            ),
         )
     return {
         "status": "created",
@@ -1331,6 +2829,207 @@ def _control_record(
             raise Refusal("deterministic control path has another registry role")
         return record
     return None
+
+
+def _owner_reassignment_control_admission(
+    context: RepoContext,
+    registry: dict[str, Any],
+    *,
+    task_ref: str,
+    package: str,
+    require_no_pending: bool,
+) -> dict[str, Any]:
+    """Validate the complete initialized registry before branch preparation."""
+
+    required_registry_fields = {
+        "schema_version",
+        "repository_common_dir",
+        "repository_primary_root",
+        "initialized_at",
+        "initialized_by",
+        "managed_root",
+        "evidence_root",
+        "policy_activation_worktree_count",
+        "worktrees",
+        "pending",
+        "evidence_allocations",
+        "owner_reassignment_preparations",
+    }
+    if not required_registry_fields.issubset(registry):
+        raise Refusal(
+            "owner reassignment requires a complete initialized lifecycle registry"
+        )
+    if type(registry.get("schema_version")) is not int or registry.get(
+        "schema_version"
+    ) != SCHEMA_VERSION:
+        raise Refusal("owner reassignment requires exact registry schema 1")
+    _validate_utc_timestamp(registry.get("initialized_at"), field="initialized_at")
+    initialized_by = registry.get("initialized_by")
+    if not isinstance(initialized_by, str):
+        raise Refusal("owner-reassignment registry initializer reference is invalid")
+    _validate_task_ref(initialized_by)
+    if (
+        type(registry.get("policy_activation_worktree_count")) is not int
+        or registry["policy_activation_worktree_count"] < 0
+        or not isinstance(registry.get("evidence_allocations"), list)
+        or (
+            registry.get("pending") is not None
+            and not isinstance(registry.get("pending"), dict)
+        )
+    ):
+        raise Refusal(
+            "owner reassignment requires a structurally complete lifecycle registry"
+        )
+    if require_no_pending and registry.get("pending") is not None:
+        raise Refusal("owner reassignment requires no pending lifecycle operation")
+
+    identity_fields = {
+        "repository_common_dir": context.common_dir,
+        "repository_primary_root": context.primary_root,
+    }
+    for field, expected_path in identity_fields.items():
+        raw_path = registry.get(field)
+        if (
+            not isinstance(raw_path, str)
+            or not Path(raw_path).is_absolute()
+            or raw_path != str(_canonical(raw_path))
+            or _path_key(raw_path) != _path_key(expected_path)
+        ):
+            raise Refusal(
+                "owner-reassignment registry repository identity is incomplete or changed"
+            )
+    roots: dict[str, Path] = {}
+    for field in ("managed_root", "evidence_root"):
+        raw_path = registry.get(field)
+        if not isinstance(raw_path, str) or not Path(raw_path).is_absolute():
+            raise Refusal(f"owner-reassignment registry {field} is not absolute")
+        canonical = _canonical(raw_path)
+        if raw_path != str(canonical) or not canonical.is_dir():
+            raise Refusal(
+                f"owner-reassignment registry {field} is missing or noncanonical"
+            )
+        roots[field] = canonical
+    if _is_within(roots["managed_root"], roots["evidence_root"]) or _is_within(
+        roots["evidence_root"], roots["managed_root"]
+    ):
+        raise Refusal("owner-reassignment registry roots overlap")
+
+    records = registry.get("worktrees")
+    if not isinstance(records, list):
+        raise Refusal("owner-reassignment registry worktrees must be a list")
+    known_kinds = {
+        "control_singleton",
+        "durable",
+        "ephemeral",
+        "grandfathered_observation",
+        "reassignment_source",
+    }
+    known_states = {"active", "pending", "retired"}
+    path_keys: set[str] = set()
+    controls: list[dict[str, Any]] = []
+    pending_records: list[dict[str, Any]] = []
+    for record in records:
+        required_record_fields = {
+            "path",
+            "kind",
+            "state",
+            "package",
+            "branch",
+            "head",
+            "task_ref",
+            "lease",
+        }
+        if not isinstance(record, dict) or not required_record_fields.issubset(record):
+            raise Refusal("owner-reassignment registry worktree record is incomplete")
+        path = _validate_preparation_path(
+            record.get("path"), field="registry worktree path"
+        )
+        key = _path_key(path)
+        if key in path_keys:
+            raise Refusal("owner-reassignment registry has duplicate worktree paths")
+        path_keys.add(key)
+        kind = record.get("kind")
+        state = record.get("state")
+        if (
+            not isinstance(kind, str)
+            or kind not in known_kinds
+            or not isinstance(state, str)
+            or state not in known_states
+        ):
+            raise Refusal("owner-reassignment registry worktree role is invalid")
+        record_package = record.get("package")
+        if record_package is not None:
+            if not isinstance(record_package, str):
+                raise Refusal(
+                    "owner-reassignment registry worktree package is invalid"
+                )
+            _validate_package(record_package)
+        record_task = record.get("task_ref")
+        if record_task is not None:
+            if not isinstance(record_task, str):
+                raise Refusal(
+                    "owner-reassignment registry worktree task reference is invalid"
+                )
+            _validate_task_ref(record_task)
+        branch = record.get("branch")
+        if branch is not None and (
+            not isinstance(branch, str)
+            or branch != branch.strip()
+            or not branch
+            or branch.startswith("refs/")
+            or any(ord(character) < 32 for character in branch)
+        ):
+            raise Refusal("owner-reassignment registry worktree branch is invalid")
+        head = record.get("head")
+        if head is not None and (
+            not isinstance(head, str) or not SHA_RE.fullmatch(head)
+        ):
+            raise Refusal("owner-reassignment registry worktree HEAD is invalid")
+        if record.get("lease") is not None and not isinstance(record.get("lease"), dict):
+            raise Refusal("owner-reassignment registry worktree lease is invalid")
+        if kind == "control_singleton":
+            controls.append(record)
+        if state == "pending":
+            pending_records.append(record)
+
+    pending = registry.get("pending")
+    if pending_records:
+        if (
+            not isinstance(pending, dict)
+            or pending.get("operation") != "create"
+            or len(pending_records) != 1
+            or pending.get("record") != pending_records[0]
+            or _path_key(str(pending.get("path", "")))
+            != _path_key(pending_records[0]["path"])
+        ):
+            raise Refusal(
+                "owner-reassignment registry has orphan or ambiguous pending worktree records"
+            )
+    elif isinstance(pending, dict) and pending.get("operation") == "create":
+        raise Refusal(
+            "owner-reassignment registry pending create has no pending worktree record"
+        )
+
+    if len(controls) != 1:
+        raise Refusal(
+            "owner reassignment requires exactly one initialized control_singleton record"
+        )
+    control = controls[0]
+    expected_control_path = roots["managed_root"] / "_control"
+    if (
+        control.get("state") != "active"
+        or _path_key(control["path"]) != _path_key(expected_control_path)
+        or control["path"] != str(expected_control_path)
+        or control.get("package") != package
+        or control.get("task_ref") != task_ref
+    ):
+        raise Refusal(
+            "owner reassignment requires the exact active leased control singleton"
+        )
+    validate_owner_reassignment_control_lease(
+        control.get("lease"), task_ref=task_ref, package=package
+    )
+    return control
 
 
 def _switch_control(
@@ -1607,6 +3306,775 @@ def command_control(context: RepoContext, args: argparse.Namespace) -> dict[str,
         "head": record["head"],
         "lease": record["lease"],
         "recovered_pending": recovered,
+    }
+
+
+def _snapshot_branch_worktrees(
+    context: RepoContext, branch: str, checkpoint: str
+) -> list[dict[str, Any]]:
+    """Prove and snapshot every checkout of the preserved source branch."""
+
+    snapshots: list[dict[str, Any]] = []
+    for entry in _worktrees(context.root):
+        if entry.get("branch") != branch:
+            continue
+        path = _canonical(entry["worktree"])
+        pristine, residue = _is_pristine(path)
+        if entry.get("head") != checkpoint or not pristine:
+            raise Refusal(
+                "source-branch worktree is not pristine at the authorized checkpoint",
+                blockers=[str(path), *residue],
+            )
+        snapshots.append(
+            {
+                "path": str(path),
+                "branch": branch,
+                "head": checkpoint,
+            }
+        )
+    return sorted(snapshots, key=lambda item: _path_key(item["path"]))
+
+
+def _branches_namespace_collide(left: str, right: str) -> bool:
+    return left == right or left.startswith(right + "/") or right.startswith(left + "/")
+
+
+def _ref_branch_names(context: RepoContext, prefix: str) -> list[str]:
+    names = _git(
+        context.root,
+        "for-each-ref",
+        "--format=%(refname)",
+        prefix,
+    )
+    normalized: list[str] = []
+    for refname in names.splitlines():
+        if not refname:
+            continue
+        if not refname.startswith(prefix + "/"):
+            raise Refusal(f"Git returned an ambiguous ref namespace entry: {refname}")
+        normalized.append(refname[len(prefix) + 1 :])
+    return normalized
+
+
+def _assert_successor_namespace_available(
+    context: RepoContext,
+    registry: dict[str, Any],
+    successor_branch: str,
+    live_claims: Sequence[dict[str, Any]],
+    *,
+    allow_exact_successor_remote: bool = False,
+) -> None:
+    collisions: list[str] = []
+    for branch in _ref_branch_names(context, "refs/heads"):
+        if _branches_namespace_collide(successor_branch, branch):
+            collisions.append(f"local head:{branch}")
+    for branch in _ref_branch_names(context, "refs/remotes/origin"):
+        if branch == "HEAD":
+            continue
+        if allow_exact_successor_remote and branch == successor_branch:
+            continue
+        if _branches_namespace_collide(successor_branch, branch):
+            collisions.append(f"origin tracking ref:{branch}")
+    for claim in live_claims:
+        branch = str(claim.get("branch", ""))
+        if _branches_namespace_collide(successor_branch, branch):
+            collisions.append(f"live claim:{claim.get('package')}:{branch}")
+    for entry in _worktrees(context.root):
+        branch = entry.get("branch")
+        if isinstance(branch, str) and _branches_namespace_collide(
+            successor_branch, branch
+        ):
+            collisions.append(f"worktree:{entry.get('worktree')}:{branch}")
+    for record in registry["worktrees"]:
+        if record.get("state") != "active":
+            continue
+        for field in ("branch", "source_branch"):
+            branch = record.get(field)
+            if isinstance(branch, str) and _branches_namespace_collide(
+                successor_branch, branch
+            ):
+                collisions.append(
+                    f"registry:{record.get('path')}:{field}:{branch}"
+                )
+    if collisions:
+        raise Refusal(
+            "successor branch has an exact or namespace ancestor/descendant collision",
+            blockers=sorted(set(collisions)),
+        )
+
+
+def _source_durable_registry_snapshot(
+    context: RepoContext,
+    registry: dict[str, Any],
+    *,
+    package: str,
+    from_ref: str,
+    from_branch: str,
+    checkpoint: str,
+) -> list[dict[str, Any]]:
+    candidates = [
+        record
+        for record in registry["worktrees"]
+        if record.get("state") == "active"
+        and record.get("kind") == "durable"
+        and (
+            str(record.get("package", "")).casefold() == package.casefold()
+            or record.get("branch") == from_branch
+        )
+    ]
+    path_keys = [_path_key(str(record.get("path", ""))) for record in candidates]
+    if len(candidates) > 1 or len(path_keys) != len(set(path_keys)):
+        raise Refusal(
+            "owner reassignment has duplicate or ambiguous target/source durable records"
+        )
+    snapshots: list[dict[str, Any]] = []
+    for record in candidates:
+        raw_path = record.get("path")
+        if not isinstance(raw_path, str) or not Path(raw_path).is_absolute():
+            raise Refusal(
+                "target/source durable registry path is not exact and absolute"
+            )
+        path = _canonical(raw_path)
+        if raw_path != str(path):
+            raise Refusal(
+                "target/source durable registry path is not its exact canonical path"
+            )
+        if (
+            record.get("package") != package
+            or record.get("task_ref") != from_ref
+            or record.get("branch") != from_branch
+            or record.get("head") != checkpoint
+        ):
+            raise Refusal(
+                "target/source durable registry record does not match the exact "
+                "source package, task, branch, and checkpoint"
+            )
+        live = _worktree_at(context.root, path)
+        if live is None:
+            raise Refusal("target/source durable worktree is missing from Git")
+        if live.get("detached") or live.get("branch") != from_branch:
+            raise Refusal("target/source durable worktree is detached or switched")
+        if live.get("head") != checkpoint:
+            raise Refusal("target/source durable worktree HEAD differs from checkpoint")
+        pristine, residue = _is_pristine(path)
+        if not pristine:
+            raise Refusal(
+                "target/source durable worktree is not pristine",
+                blockers=[str(path), *residue],
+            )
+        snapshots.append(
+            {
+                "path": str(path),
+                "package": package,
+                "task_ref": from_ref,
+                "branch": from_branch,
+                "head": checkpoint,
+            }
+        )
+    return snapshots
+
+
+def _preparation_digest(record: dict[str, Any]) -> str:
+    immutable = {
+        field: record.get(field)
+        for field in sorted(OWNER_REASSIGNMENT_PREPARATION_IMMUTABLE_FIELDS)
+    }
+    payload = json.dumps(
+        immutable, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _completed_preparation_from_pending(pending: dict[str, Any]) -> dict[str, Any]:
+    source_snapshot = {
+        "local_branch_sha": pending.get("old_local_ref"),
+        "worktrees": pending.get("source_worktrees"),
+        "durable_records": pending.get("source_durable_records"),
+    }
+    record = {
+        "schema_version": 1,
+        "status": "completed",
+        "package": pending.get("package"),
+        "owner_authorization_ref": pending.get("owner_authorization_ref"),
+        "from_ref": pending.get("from_ref"),
+        "to_ref": pending.get("task_ref"),
+        "from_branch": pending.get("from_branch"),
+        "to_branch": pending.get("successor_branch"),
+        "checkpoint_sha": pending.get("checkpoint_sha"),
+        "control_branch": pending.get("control_branch"),
+        "prepared_from_main": pending.get("prepared_from_main"),
+        "new_branch_response": pending.get("new_branch_response"),
+        "source_snapshot": source_snapshot,
+        "prepared_at": pending.get("push_proven_at"),
+    }
+    response = record["new_branch_response"]
+    columns = response.split("\t") if isinstance(response, str) else []
+    if (
+        len(columns) != 3
+        or columns[0] != "*"
+        or columns[1].rpartition(":")[0] != record["checkpoint_sha"]
+        or columns[1].rpartition(":")[2] != f"refs/heads/{record['to_branch']}"
+        or columns[2] != "[new branch]"
+    ):
+        raise Refusal("completed preparation lacks the exact new-branch response")
+    if not isinstance(record["prepared_at"], str) or not record["prepared_at"]:
+        raise Refusal("completed preparation lacks its proof timestamp")
+    record["preparation_id"] = _preparation_digest(record)
+    return record
+
+
+def _append_completed_preparation(
+    registry: dict[str, Any], pending: dict[str, Any]
+) -> dict[str, Any]:
+    preparation = _completed_preparation_from_pending(pending)
+    completed = [
+        item
+        for item in registry["owner_reassignment_preparations"]
+        if isinstance(item, dict)
+        and str(item.get("package", "")).casefold()
+        == str(preparation["package"]).casefold()
+        and item.get("status") == "completed"
+    ]
+    if completed:
+        raise Refusal(
+            "package already has an unconsumed owner-reassignment preparation"
+        )
+    registry["owner_reassignment_preparations"].append(preparation)
+    return preparation
+
+
+def _matching_owner_reassignment_preparation(
+    registry: dict[str, Any], claim: dict[str, Any], handoff: dict[str, Any]
+) -> dict[str, Any]:
+    expected = {
+        "package": claim.get("package"),
+        "owner_authorization_ref": handoff.get("owner_authorization_ref"),
+        "from_ref": handoff.get("from_ref"),
+        "to_ref": handoff.get("to_ref"),
+        "from_branch": handoff.get("from_branch"),
+        "to_branch": handoff.get("to_branch"),
+        "checkpoint_sha": handoff.get("checkpoint_sha"),
+    }
+    matches = [
+        item
+        for item in registry["owner_reassignment_preparations"]
+        if isinstance(item, dict)
+        and str(item.get("package", "")).casefold()
+        == str(expected["package"]).casefold()
+        and all(
+            item.get(field) == value
+            for field, value in expected.items()
+            if field != "package"
+        )
+    ]
+    if len(matches) != 1:
+        raise Refusal("claim does not have one exact owner-reassignment preparation")
+    preparation = matches[0]
+    expected_fields = (
+        OWNER_REASSIGNMENT_PREPARATION_IMMUTABLE_FIELDS
+        | {"status", "preparation_id"}
+    )
+    if preparation.get("status") == "consumed":
+        expected_fields |= {"consumed_at", "consumed_on_main"}
+    if set(preparation) != expected_fields:
+        raise Refusal("owner-reassignment preparation has an inexact field set")
+    if preparation.get("preparation_id") != _preparation_digest(preparation):
+        raise Refusal("owner-reassignment preparation identity digest is invalid")
+    if preparation.get("schema_version") != 1 or preparation.get("status") not in {
+        "completed",
+        "consumed",
+    }:
+        raise Refusal("owner-reassignment preparation state is invalid")
+    if (
+        not isinstance(preparation.get("prepared_at"), str)
+        or not preparation["prepared_at"]
+        or not OWNER_REASSIGNMENT_CONTROL_BRANCH_RE.fullmatch(
+            str(preparation.get("control_branch", ""))
+        )
+    ):
+        raise Refusal("owner-reassignment preparation provenance is invalid")
+    _validate_sha(str(preparation.get("prepared_from_main", "")))
+    response = preparation.get("new_branch_response")
+    if not isinstance(response, str):
+        raise Refusal("owner-reassignment preparation lacks a new-branch response")
+    columns = response.split("\t")
+    if (
+        len(columns) != 3
+        or columns[0] != "*"
+        or columns[1].rpartition(":")[0] != handoff.get("checkpoint_sha")
+        or columns[1].rpartition(":")[2] != f"refs/heads/{handoff.get('to_branch')}"
+        or columns[2] != "[new branch]"
+    ):
+        raise Refusal("owner-reassignment preparation new-branch response is invalid")
+    return preparation
+
+
+def _begin_owner_reassignment_worktree_create(
+    *,
+    preparation: dict[str, Any],
+    source_record: dict[str, Any] | None,
+    handoff: dict[str, Any],
+    receiver_path: Path,
+    origin_main: str,
+) -> dict[str, Any]:
+    if preparation.get("status") != "completed":
+        raise Refusal("owner-reassignment preparation is not available to consume")
+    if preparation.get("preparation_id") != _preparation_digest(preparation):
+        raise Refusal("owner-reassignment preparation identity digest is invalid")
+    origin_main = _validate_sha(origin_main)
+    canonical_receiver = _canonical(receiver_path)
+    source_before = (
+        json.loads(json.dumps(source_record, sort_keys=True))
+        if source_record is not None
+        else None
+    )
+    transition = {
+        "preparation_id": preparation["preparation_id"],
+        "receiver_path": str(canonical_receiver),
+        "origin_main": origin_main,
+        "source_before": source_before,
+        "handoff": dict(handoff),
+    }
+    preparation["status"] = "consuming"
+    preparation["consuming_at"] = _utc_now()
+    preparation["consuming_on_main"] = origin_main
+    preparation["consuming_receiver_path"] = str(canonical_receiver)
+    return transition
+
+
+def _require_pristine_owner_reassignment_receiver(receiver_path: Path) -> None:
+    pristine, residue = _is_pristine(receiver_path)
+    if not pristine:
+        raise Refusal(
+            "owner-reassignment receiver worktree is not pristine; "
+            "preparation consumption remains pending",
+            blockers=[str(receiver_path), *residue],
+        )
+
+
+def _finalize_owner_reassignment_worktree_create(
+    context: RepoContext,
+    registry: dict[str, Any],
+    pending: dict[str, Any],
+    *,
+    completed: bool,
+) -> None:
+    transition = pending.get("owner_reassignment")
+    if transition is None:
+        return
+    expected_transition_fields = {
+        "preparation_id",
+        "receiver_path",
+        "origin_main",
+        "source_before",
+        "handoff",
+    }
+    if not isinstance(transition, dict) or set(transition) != expected_transition_fields:
+        raise Refusal("pending owner-reassignment worktree transition is invalid")
+    preparation_id = transition.get("preparation_id")
+    preparations = [
+        item
+        for item in registry["owner_reassignment_preparations"]
+        if isinstance(item, dict)
+        and item.get("preparation_id") == preparation_id
+    ]
+    if len(preparations) != 1:
+        raise Refusal("pending worktree creation has ambiguous preparation custody")
+    preparation = preparations[0]
+    receiver_path = _canonical(str(transition.get("receiver_path", "")))
+    if (
+        preparation.get("status") != "consuming"
+        or preparation.get("preparation_id") != _preparation_digest(preparation)
+        or preparation.get("consuming_on_main") != transition.get("origin_main")
+        or preparation.get("consuming_receiver_path") != str(receiver_path)
+        or not isinstance(preparation.get("consuming_at"), str)
+    ):
+        raise Refusal("pending owner-reassignment preparation consumption changed")
+    if _path_key(str(pending.get("path", ""))) != _path_key(receiver_path):
+        raise Refusal("pending receiver path differs from preparation consumption")
+    if completed:
+        _require_pristine_owner_reassignment_receiver(receiver_path)
+    handoff = transition.get("handoff")
+    if not isinstance(handoff, dict) or set(handoff) != OWNER_REASSIGNMENT_HANDOFF_FIELDS:
+        raise Refusal("pending owner-reassignment handoff is invalid")
+    expected_handoff = {
+        "type": "owner_reassignment",
+        "from_ref": preparation.get("from_ref"),
+        "to_ref": preparation.get("to_ref"),
+        "from_branch": preparation.get("from_branch"),
+        "to_branch": preparation.get("to_branch"),
+        "checkpoint_sha": preparation.get("checkpoint_sha"),
+        "owner_authorization_ref": preparation.get("owner_authorization_ref"),
+    }
+    if handoff != expected_handoff:
+        raise Refusal("pending owner-reassignment handoff changed")
+
+    source_before = transition.get("source_before")
+    if source_before is not None:
+        if not isinstance(source_before, dict):
+            raise Refusal("pending owner-reassignment source record is invalid")
+        source_path = _canonical(str(source_before.get("path", "")))
+        matching_sources = [
+            record
+            for record in registry["worktrees"]
+            if _path_key(str(record.get("path", ""))) == _path_key(source_path)
+        ]
+        if len(matching_sources) != 1 or matching_sources[0] != source_before:
+            raise Refusal("pending owner-reassignment source registry record changed")
+        source_record = matching_sources[0]
+    else:
+        source_record = None
+
+    checkpoint = _validate_sha(str(preparation.get("checkpoint_sha", "")))
+    old_local_ref = _ref_sha(
+        context, f"refs/heads/{preparation.get('from_branch')}"
+    )
+    current_source_snapshot = {
+        "local_branch_sha": old_local_ref,
+        "worktrees": _snapshot_branch_worktrees(
+            context, str(preparation.get("from_branch")), checkpoint
+        ),
+        "durable_records": _source_durable_registry_snapshot(
+            context,
+            registry,
+            package=str(preparation.get("package")),
+            from_ref=str(preparation.get("from_ref")),
+            from_branch=str(preparation.get("from_branch")),
+            checkpoint=checkpoint,
+        ),
+    }
+    if current_source_snapshot != preparation.get("source_snapshot"):
+        raise Refusal("pending owner-reassignment source snapshot changed")
+
+    if completed:
+        if (
+            _fetch_origin_branch(context, str(preparation.get("from_branch")))
+            != checkpoint
+            or _fetch_origin_branch(context, str(preparation.get("to_branch")))
+            != checkpoint
+        ):
+            raise Refusal(
+                "pending owner-reassignment remote branches changed before consume"
+            )
+        _fetch_origin_main(context)
+        if _ref_sha(context, "refs/remotes/origin/main") != transition["origin_main"]:
+            raise Refusal(
+                "origin/main moved during owner-reassignment receiver creation"
+            )
+        matching_claims = [
+            claim
+            for claim in _strict_live_claims(context)
+            if claim.get("package") == preparation.get("package")
+        ]
+        if len(matching_claims) != 1:
+            raise Refusal(
+                "pending owner-reassignment claim custody is missing or ambiguous"
+            )
+        live_claim = matching_claims[0]
+        if (
+            live_claim.get("state") != "active"
+            or live_claim.get("writer_ref") != preparation.get("to_ref")
+            or live_claim.get("branch") != preparation.get("to_branch")
+            or live_claim.get("handoff") != handoff
+        ):
+            raise Refusal(
+                "pending owner-reassignment claim no longer authorizes receiver creation"
+            )
+        _require_pristine_owner_reassignment_receiver(receiver_path)
+
+    preparation.pop("consuming_at", None)
+    preparation.pop("consuming_on_main", None)
+    preparation.pop("consuming_receiver_path", None)
+    if not completed:
+        preparation["status"] = "completed"
+        return
+
+    if source_record is not None:
+        source_record.update(
+            {
+                "kind": "reassignment_source",
+                "head": checkpoint,
+                "lease": None,
+                "preserved_at": _utc_now(),
+                "preserved_by_owner_reassignment": dict(handoff),
+                "updated_at": _utc_now(),
+            }
+        )
+    preparation["status"] = "consumed"
+    preparation["consumed_at"] = _utc_now()
+    preparation["consumed_on_main"] = transition["origin_main"]
+
+
+def _strict_live_claims(context: RepoContext) -> list[dict[str, Any]]:
+    names = _git_optional(
+        context.root,
+        "ls-tree",
+        "-r",
+        "--name-only",
+        "origin/main",
+        "docs/governance/lane_claims",
+    )
+    if names is None:
+        raise Refusal("could not enumerate authoritative lane claims")
+    claims: list[dict[str, Any]] = []
+    prefix = "docs/governance/lane_claims/"
+    for name in names.splitlines():
+        if not name.startswith(prefix) or "/" in name[len(prefix) :] or not name.endswith(
+            ".json"
+        ):
+            continue
+        raw = _git_optional(context.root, "show", f"origin/main:{name}")
+        if raw is None:
+            raise Refusal(f"could not read authoritative claim: {name}")
+        try:
+            claim = json.loads(raw)
+        except json.JSONDecodeError as error:
+            raise Refusal(f"authoritative claim is invalid JSON: {name}") from error
+        if not isinstance(claim, dict):
+            raise Refusal(f"authoritative claim is not an object: {name}")
+        package = claim.get("package")
+        state = claim.get("state")
+        if not isinstance(package, str) or not PACKAGE_RE.fullmatch(package):
+            raise Refusal(f"authoritative claim has an invalid package: {name}")
+        if state not in {"active", "paused", "closed"}:
+            raise Refusal(f"authoritative claim has an invalid state: {name}")
+        if state in {"active", "paused"}:
+            _validate_work_branch(str(claim.get("branch", "")))
+            claims.append(claim)
+    return claims
+
+
+def command_prepare_owner_reassignment(
+    context: RepoContext, args: argparse.Namespace
+) -> dict[str, Any]:
+    """Create one absent successor branch without adopting old-writer authority."""
+
+    _require_execute(args.execute)
+    package = _validate_package(args.package)
+    task_ref = _validate_task_ref(args.task_ref)
+    _validate_delivery_ref(task_ref)
+    successor_branch = _validate_work_branch(args.successor_branch)
+    checkpoint = _validate_sha(args.expected_checkpoint)
+    owner_authorization_ref = _validate_delivery_ref(args.owner_authorization_ref)
+
+    _fetch_origin_main(context)
+    claim = _claim_from_origin_main(context, package)
+    if claim.get("state") != "active":
+        raise Refusal("owner reassignment requires an active authoritative claim")
+    from_ref = _validate_delivery_ref(str(claim.get("writer_ref", "")))
+    from_branch = _validate_work_branch(str(claim.get("branch", "")))
+    if from_ref == task_ref:
+        raise Refusal("owner reassignment must change the writer reference")
+    if from_branch == successor_branch:
+        raise Refusal("owner reassignment requires a distinct successor branch")
+
+    old_tip = _fetch_origin_branch(context, from_branch)
+    if old_tip != checkpoint:
+        raise Refusal(
+            "expected checkpoint must equal the exact fetched source-branch tip"
+        )
+    if _fetch_origin_branch(context, successor_branch) is not None:
+        raise Refusal("successor branch already exists on origin")
+    if _ref_sha(context, f"refs/heads/{successor_branch}") is not None:
+        raise Refusal("successor branch already exists as a local branch")
+    if _ref_sha(context, f"refs/remotes/origin/{successor_branch}") is not None:
+        raise Refusal("successor branch has a stale or ambiguous remote-tracking ref")
+    live_claims_snapshot = _strict_live_claims(context)
+    for other_claim in live_claims_snapshot:
+        if (
+            other_claim.get("package") != package
+            and other_claim.get("branch") == successor_branch
+        ):
+            raise Refusal(
+                "successor branch is already claimed by another live package"
+            )
+
+    with _registry_lock(context.registry_path):
+        registry = _load_registry(context.registry_path)
+        assert registry is not None
+        control = _owner_reassignment_control_admission(
+            context,
+            registry,
+            task_ref=task_ref,
+            package=package,
+            require_no_pending=False,
+        )
+        recovered = _reconcile_pending(context, registry)
+        if recovered is not None:
+            raise Refusal(
+                "a prior pending operation was reconciled; rerun from freshly verified state"
+            )
+        control = _owner_reassignment_control_admission(
+            context,
+            registry,
+            task_ref=task_ref,
+            package=package,
+            require_no_pending=True,
+        )
+        control_path = _canonical(control["path"])
+        lease = control.get("lease")
+        live_control = _worktree_at(context.root, control_path)
+        pristine_control, control_residue = _is_pristine(control_path)
+        origin_main = _ref_sha(context, "refs/remotes/origin/main")
+        control_branch = _current_branch(control_path)
+        if _path_key(Path.cwd()) != _path_key(control_path):
+            raise Refusal("prepare-owner-reassignment must run from the leased _control path")
+        if not isinstance(lease, dict) or (
+            lease.get("task_ref"), lease.get("purpose"), lease.get("package")
+        ) != (task_ref, "control", package):
+            raise Refusal("control lease does not match the receiving task and package")
+        if control_branch == from_branch:
+            raise Refusal("owner-reassignment control branch cannot be the source branch")
+        if (
+            live_control is None
+            or control_branch is None
+            or not OWNER_REASSIGNMENT_CONTROL_BRANCH_RE.fullmatch(control_branch)
+            or control.get("branch") != control_branch
+            or live_control.get("branch") != control_branch
+            or origin_main is None
+            or live_control.get("head") != origin_main
+            or control.get("head") != origin_main
+            or not pristine_control
+        ):
+            raise Refusal(
+                "control singleton must be pristine on an exact current-main "
+                "delivery-owner-reassignment branch",
+                blockers=control_residue,
+            )
+
+        _assert_successor_namespace_available(
+            context, registry, successor_branch, live_claims_snapshot
+        )
+
+        existing_completed = [
+            item
+            for item in registry["owner_reassignment_preparations"]
+            if isinstance(item, dict)
+            and str(item.get("package", "")).casefold() == package.casefold()
+            and item.get("status") == "completed"
+        ]
+        if existing_completed:
+            raise Refusal(
+                "package already has an unconsumed owner-reassignment preparation"
+            )
+
+        if _remote_branch_tip(context, "main") != origin_main:
+            raise Refusal("origin/main moved during owner-reassignment preparation")
+        if _fetch_origin_branch(context, from_branch) != checkpoint:
+            raise Refusal("source branch moved before successor creation")
+        if _remote_branch_tip(context, successor_branch) is not None:
+            raise Refusal("successor branch appeared before guarded creation")
+
+        old_local_ref = _ref_sha(context, f"refs/heads/{from_branch}")
+        if old_local_ref not in {None, checkpoint}:
+            raise Refusal(
+                "local source branch differs from the authorized remote checkpoint"
+            )
+        source_worktrees = _snapshot_branch_worktrees(
+            context, from_branch, checkpoint
+        )
+        source_durable_records = _source_durable_registry_snapshot(
+            context,
+            registry,
+            package=package,
+            from_ref=from_ref,
+            from_branch=from_branch,
+            checkpoint=checkpoint,
+        )
+        pending = {
+            "operation": "owner_reassignment_branch_create",
+            "package": package,
+            "task_ref": task_ref,
+            "from_ref": from_ref,
+            "from_branch": from_branch,
+            "successor_branch": successor_branch,
+            "checkpoint_sha": checkpoint,
+            "owner_authorization_ref": owner_authorization_ref,
+            "old_local_ref": old_local_ref,
+            "source_worktrees": source_worktrees,
+            "source_durable_records": source_durable_records,
+            "control_branch": control_branch,
+            "prepared_from_main": origin_main,
+            "live_claims_snapshot": live_claims_snapshot,
+            "push_proven_new": False,
+            "started_at": _utc_now(),
+        }
+        registry["pending"] = pending
+        _atomic_write(context.registry_path, registry)
+
+        # The empty expected value is an absent-ref compare-and-set.  Although
+        # Git exposes that guard through force-with-lease, no existing ref can
+        # satisfy it, the refspec has no leading '+', and no force update is
+        # possible: this invocation can only create a previously absent ref.
+        push = _git_result(
+            context.root,
+            "push",
+            "--porcelain",
+            f"--force-with-lease=refs/heads/{successor_branch}:",
+            "origin",
+            f"{checkpoint}:refs/heads/{successor_branch}",
+        )
+        if push.returncode:
+            if _remote_branch_tip(context, successor_branch) is None:
+                registry["pending"] = None
+                _atomic_write(context.registry_path, registry)
+            detail = push.stderr.strip() or push.stdout.strip() or "git push failed"
+            raise Refusal(
+                "guarded absent-ref successor creation failed; old branch was preserved: "
+                + detail
+            )
+        expected_target = f"refs/heads/{successor_branch}"
+        new_branch_proofs = []
+        for line in push.stdout.splitlines():
+            columns = line.split("\t")
+            if len(columns) != 3:
+                continue
+            status, mapping, summary = columns
+            source, separator, target = mapping.rpartition(":")
+            if (
+                status == "*"
+                and separator
+                and source == checkpoint
+                and target == expected_target
+                and summary == "[new branch]"
+            ):
+                new_branch_proofs.append(line)
+        if len(new_branch_proofs) != 1:
+            raise Refusal(
+                "push succeeded without an exact new-branch proof; pending state is preserved"
+            )
+        pending["new_branch_response"] = new_branch_proofs[0]
+        pending["push_proven_new"] = True
+        pending["push_proven_at"] = _utc_now()
+        _atomic_write(context.registry_path, registry)
+
+        expected_preparation_id = _completed_preparation_from_pending(pending)[
+            "preparation_id"
+        ]
+        # Normal completion deliberately uses the same final-boundary recovery
+        # path.  This keeps exact server reproof and crash behavior identical.
+        _reconcile_owner_reassignment_branch_create(context, registry, pending)
+        matches = [
+            item
+            for item in registry["owner_reassignment_preparations"]
+            if item.get("preparation_id") == expected_preparation_id
+        ]
+        if len(matches) != 1:
+            raise Refusal("completed preparation lost its exact registry identity")
+        preparation = matches[0]
+    return {
+        "status": "successor_prepared",
+        "package": package,
+        "from_ref": from_ref,
+        "to_ref": task_ref,
+        "from_branch": from_branch,
+        "successor_branch": successor_branch,
+        "checkpoint_sha": checkpoint,
+        "owner_authorization_ref": owner_authorization_ref,
+        "preparation_id": preparation["preparation_id"],
+        "old_branch_preserved": True,
+        "old_worktrees_preserved": [item["path"] for item in source_worktrees],
+        "local_successor_created": False,
     }
 
 
@@ -2650,7 +5118,8 @@ def command_evidence_path(
         if _has_reparse_component(path, floor=evidence_root):
             raise Refusal("evidence allocation path crosses a reparse point")
         active_full_count = sum(
-            entry.get("kind") in {"durable", "grandfathered_observation"}
+            entry.get("kind")
+            in {"durable", "grandfathered_observation", "reassignment_source"}
             and entry.get("state") == "active"
             for entry in registry["worktrees"]
         )
@@ -2735,6 +5204,17 @@ def _parser() -> argparse.ArgumentParser:
     control.add_argument("--release", action="store_true")
     control.add_argument("--execute", action="store_true")
 
+    owner_reassignment = subparsers.add_parser(
+        "prepare-owner-reassignment",
+        help="guard and create one exact owner-authorized successor branch",
+    )
+    owner_reassignment.add_argument("--package", required=True)
+    owner_reassignment.add_argument("--task-ref", required=True)
+    owner_reassignment.add_argument("--successor-branch", required=True)
+    owner_reassignment.add_argument("--expected-checkpoint", required=True)
+    owner_reassignment.add_argument("--owner-authorization-ref", required=True)
+    owner_reassignment.add_argument("--execute", action="store_true")
+
     verify = subparsers.add_parser("verify", help="diff-only or runnable exact-SHA verification")
     verify.add_argument("--package", required=True)
     verify.add_argument("--candidate-sha", required=True)
@@ -2781,6 +5261,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             payload, code = command_ensure(context, args), 0
         elif args.subcommand == "control":
             payload, code = command_control(context, args), 0
+        elif args.subcommand == "prepare-owner-reassignment":
+            payload, code = command_prepare_owner_reassignment(context, args), 0
         elif args.subcommand == "verify":
             payload, code = command_verify(context, args)
         elif args.subcommand == "retire":

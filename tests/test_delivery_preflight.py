@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts import delivery_preflight as preflight
+from scripts import worktree_lifecycle as lifecycle_registry
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -122,6 +123,76 @@ def args(intent, **overrides):
 
 
 class NormalizationTests(unittest.TestCase):
+    def test_exact_main_fetch_uses_real_remote(self):
+        def run_git(cwd, *arguments):
+            result = subprocess.run(
+                ["git", *arguments],
+                cwd=cwd,
+                text=True,
+                encoding="utf-8",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
+            return result.stdout.strip()
+
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            remote = base / "origin.git"
+            repo = base / "repo"
+            run_git(base, "init", "--bare", str(remote))
+            repo.mkdir()
+            run_git(repo, "init", "--initial-branch=main")
+            run_git(repo, "config", "user.email", "preflight@peerslate.invalid")
+            run_git(repo, "config", "user.name", "Preflight Test")
+            (repo / "README.md").write_text("main\n", encoding="utf-8")
+            run_git(repo, "add", "README.md")
+            run_git(repo, "commit", "-m", "seed main")
+            expected = run_git(repo, "rev-parse", "HEAD")
+            run_git(repo, "remote", "add", "origin", str(remote))
+            run_git(repo, "push", "-u", "origin", "main")
+            old_branch = "work/2026-08-25-real-terminal-old"
+            successor = "work/2026-08-27-real-terminal-recovery"
+            run_git(
+                repo,
+                "push",
+                "origin",
+                f"{expected}:refs/heads/{old_branch}",
+                f"{expected}:refs/heads/{successor}",
+            )
+
+            self.assertEqual(
+                preflight._exact_fetch_origin_branch(repo, "main"), expected
+            )
+            self.assertEqual(
+                preflight._remote_branch_tuple(
+                    repo, ("main", old_branch, successor)
+                ),
+                {
+                    "main": expected,
+                    old_branch: expected,
+                    successor: expected,
+                },
+            )
+
+    def test_exact_branch_fetch_refuses_a_tip_that_moves_during_proof(self):
+        def fake_git(_root, *command):
+            if command[0] == "fetch":
+                return ""
+            if command[0] == "rev-parse":
+                return HEAD
+            raise AssertionError(command)
+
+        with patch.object(
+            preflight, "_remote_branch_tip", side_effect=[HEAD, CANDIDATE]
+        ), patch.object(preflight, "_git", side_effect=fake_git), self.assertRaises(
+            preflight.PreflightError
+        ):
+            preflight._exact_fetch_origin_branch(
+                ROOT, "work/2026-08-27-moving-branch"
+            )
+
     def test_paths_are_repository_relative_and_normalized(self):
         self.assertEqual("docs/example", preflight.normalize_path("docs/example"))
         for unsafe in (
@@ -256,6 +327,24 @@ class ClaimValidationTests(unittest.TestCase):
     def test_writer_reference_is_opaque_not_a_person_identity(self):
         errors = preflight.validate_claim(claim(writer_ref="Peter Carter"))
         self.assertTrue(any("opaque" in error for error in errors))
+
+    def test_handoff_destination_must_remain_bound_to_claim_identity(self):
+        value = claim(
+            writer_ref="agent:replacement-writer",
+            branch="work/2026-08-27-example-recovery",
+            handoff={
+                "type": "owner_reassignment",
+                "from_ref": "session:prior-writer",
+                "to_ref": "agent:different-writer",
+                "from_branch": "work/2026-08-25-example-old",
+                "to_branch": "work/2026-08-27-different-recovery",
+                "checkpoint_sha": HEAD,
+                "owner_authorization_ref": "session:owner/decision:1",
+            },
+        )
+        errors = preflight.validate_claim(value)
+        self.assertTrue(any("current writer_ref" in error for error in errors))
+        self.assertTrue(any("current claim branch" in error for error in errors))
 
     def test_protected_claim_requires_independent_review(self):
         errors = preflight.validate_claim(claim(review_requirement="self"))
@@ -563,6 +652,7 @@ class LocalWorktreeRegistryTests(unittest.TestCase):
             "worktrees": records,
             "pending": None,
             "evidence_allocations": [],
+            "owner_reassignment_preparations": [],
         }
         registry.update(overrides)
         path = common / preflight.WORKTREE_REGISTRY_REL
@@ -585,6 +675,64 @@ class LocalWorktreeRegistryTests(unittest.TestCase):
         }
         value.update(overrides)
         return value
+
+    def owner_reassignment_claim(self):
+        successor = "work/2026-08-27-example-recovery"
+        owner_ref = "session:owner/decision:owner-reassignment"
+        value = claim(
+            writer_ref="agent:replacement-writer",
+            branch=successor,
+            handoff={
+                "type": "owner_reassignment",
+                "from_ref": "session:prior-writer",
+                "to_ref": "agent:replacement-writer",
+                "from_branch": "work/2026-08-25-example-old",
+                "to_branch": successor,
+                "checkpoint_sha": HEAD,
+                "owner_authorization_ref": owner_ref,
+            },
+        )
+        return value, owner_ref
+
+    def owner_reassignment_registry_record(self, path, control_branch):
+        return self.record(
+            path,
+            kind="control_singleton",
+            package="PS-EXAMPLE-001",
+            branch=control_branch,
+            task_ref="agent:replacement-writer",
+            lease={
+                "task_ref": "agent:replacement-writer",
+                "purpose": "control",
+                "package": "PS-EXAMPLE-001",
+                "acquired_at": "2026-08-27T00:00:00Z",
+            },
+        )
+
+    def owner_reassignment_preparation(self, value, control_branch, source_snapshot):
+        handoff = value["handoff"]
+        preparation = {
+            "schema_version": 1,
+            "status": "completed",
+            "package": value["package"],
+            "owner_authorization_ref": handoff["owner_authorization_ref"],
+            "from_ref": handoff["from_ref"],
+            "to_ref": handoff["to_ref"],
+            "from_branch": handoff["from_branch"],
+            "to_branch": handoff["to_branch"],
+            "checkpoint_sha": handoff["checkpoint_sha"],
+            "control_branch": control_branch,
+            "prepared_from_main": MAIN,
+            "new_branch_response": (
+                f"*\t{HEAD}:refs/heads/{handoff['to_branch']}\t[new branch]"
+            ),
+            "source_snapshot": source_snapshot,
+            "prepared_at": "2026-08-27T00:00:00Z",
+        }
+        preparation["preparation_id"] = lifecycle_registry._preparation_digest(
+            preparation
+        )
+        return preparation
 
     def check(
         self,
@@ -629,6 +777,728 @@ class LocalWorktreeRegistryTests(unittest.TestCase):
             self.assertEqual([], errors)
             self.assertEqual("ci_skipped", context["registry"])
             self.assertTrue(any("CI" in item for item in warnings))
+
+    def test_owner_reassignment_rejects_ci_and_uninitialized_registry_bypass(self):
+        value, owner_ref = self.owner_reassignment_claim()
+        request = args(
+            "owner-reassignment",
+            task_ref=value["writer_ref"],
+            owner_authorization_ref=owner_ref,
+        )
+        control_branch = (
+            "work/2026-08-27-delivery-owner-reassignment-example"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            repo_facts = facts(
+                repository=str(base / "managed" / "_control"),
+                branch=control_branch,
+            )
+            context, errors, warnings = self.check(
+                base / "common",
+                base / "managed" / "_control",
+                request=request,
+                value=value,
+                repo_facts=repo_facts,
+                simulate_ci=True,
+            )
+            self.assertEqual("ci_skipped", context["registry"])
+            self.assertTrue(any("cannot bypass" in item for item in errors))
+            self.assertEqual([], warnings)
+
+            context, errors, warnings = self.check(
+                base / "common",
+                base / "managed" / "_control",
+                request=request,
+                value=value,
+                repo_facts=repo_facts,
+            )
+            self.assertEqual("not_initialized", context["registry"])
+            self.assertTrue(any("initialized registry" in item for item in errors))
+            self.assertEqual([], warnings)
+
+    def test_owner_reassignment_requires_no_lock_pending_or_missing_preparation(self):
+        value, owner_ref = self.owner_reassignment_claim()
+        request = args(
+            "owner-reassignment",
+            task_ref=value["writer_ref"],
+            owner_authorization_ref=owner_ref,
+        )
+        control_branch = (
+            "work/2026-08-27-delivery-owner-reassignment-example"
+        )
+        for state in (
+            "missing_preparation",
+            "missing_pending_field",
+            "pending",
+            "locked",
+            "duplicate_control",
+            "duplicate_control_retired",
+        ):
+            with self.subTest(state=state), tempfile.TemporaryDirectory() as directory:
+                base = Path(directory)
+                common = base / "common"
+                current = base / "managed" / "_control"
+                overrides = {}
+                if state == "pending":
+                    overrides["pending"] = {
+                        "operation": "owner_reassignment_branch_create"
+                    }
+                records = [
+                    self.owner_reassignment_registry_record(
+                        current, control_branch
+                    )
+                ]
+                if state in {"duplicate_control", "duplicate_control_retired"}:
+                    duplicate_control = self.owner_reassignment_registry_record(
+                        base / "managed" / "other-control", control_branch
+                    )
+                    if state == "duplicate_control_retired":
+                        duplicate_control["state"] = "retired"
+                        duplicate_control["lease"] = None
+                    records.append(duplicate_control)
+                registry_path = self.write_registry(
+                    common,
+                    records,
+                    **overrides,
+                )
+                if state == "missing_pending_field":
+                    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+                    registry.pop("pending")
+                    registry_path.write_text(json.dumps(registry), encoding="utf-8")
+                if state == "locked":
+                    (
+                        common
+                        / preflight.WORKTREE_REGISTRY_REL.parent
+                        / preflight.WORKTREE_LOCK_DIRECTORY_NAME
+                    ).mkdir()
+                repo_facts = facts(repository=str(current), branch=control_branch)
+                context, errors, _ = self.check(
+                    common,
+                    current,
+                    request=request,
+                    value=value,
+                    repo_facts=repo_facts,
+                )
+                self.assertFalse(
+                    context["owner_reassignment_preparation_valid"]
+                )
+                expected = {
+                    "missing_preparation": "completed preparation tuple",
+                    "missing_pending_field": "pending registry ambiguity",
+                    "pending": "pending registry ambiguity",
+                    "locked": "active registry lock",
+                    "duplicate_control": "one exact deterministic active",
+                    "duplicate_control_retired": "one exact deterministic active",
+                }[state]
+                self.assertTrue(any(expected in item for item in errors), errors)
+
+    def test_owner_reassignment_preparation_is_exact_mutation_bound_and_single_use(self):
+        value, owner_ref = self.owner_reassignment_claim()
+        request = args(
+            "owner-reassignment",
+            task_ref=value["writer_ref"],
+            owner_authorization_ref=owner_ref,
+        )
+        control_branch = (
+            "work/2026-08-27-delivery-owner-reassignment-example"
+        )
+        source_snapshot = {
+            "local_branch_sha": HEAD,
+            "worktrees": [],
+            "durable_records": [],
+        }
+        variants = (
+            "valid",
+            "mismatched_tuple",
+            "source_mutated",
+            "source_raced",
+            "namespace_mutated",
+            "duplicate_completed",
+            "replayed_tuple",
+            "consumed",
+        )
+        for variant in variants:
+            with self.subTest(variant=variant), tempfile.TemporaryDirectory() as directory:
+                base = Path(directory)
+                common = base / "common"
+                current = base / "managed" / "_control"
+                preparation = self.owner_reassignment_preparation(
+                    value, control_branch, source_snapshot
+                )
+                if variant == "mismatched_tuple":
+                    preparation["checkpoint_sha"] = "f" * 40
+                    preparation["preparation_id"] = lifecycle_registry._preparation_digest(
+                        preparation
+                    )
+                elif variant == "consumed":
+                    preparation["status"] = "consumed"
+                    preparation["consumed_at"] = "2026-08-27T00:01:00Z"
+                    preparation["consumed_on_main"] = MAIN
+                preparations = [preparation]
+                if variant == "duplicate_completed":
+                    preparations.append(copy.deepcopy(preparation))
+                elif variant == "replayed_tuple":
+                    consumed = copy.deepcopy(preparation)
+                    consumed["status"] = "consumed"
+                    consumed["consumed_at"] = "2026-08-27T00:01:00Z"
+                    consumed["consumed_on_main"] = MAIN
+                    preparations.append(consumed)
+                self.write_registry(
+                    common,
+                    [
+                        self.owner_reassignment_registry_record(
+                            current, control_branch
+                        )
+                    ],
+                    owner_reassignment_preparations=preparations,
+                )
+                repo_facts = facts(repository=str(current), branch=control_branch)
+                current_snapshot = (
+                    {
+                        **source_snapshot,
+                        "local_branch_sha": "e" * 40,
+                    }
+                    if variant == "source_mutated"
+                    else source_snapshot
+                )
+                snapshot_patch = (
+                    patch.object(
+                        preflight,
+                        "_live_preparation_source_snapshot",
+                        side_effect=[
+                            source_snapshot,
+                            {
+                                **source_snapshot,
+                                "local_branch_sha": "e" * 40,
+                            },
+                        ],
+                    )
+                    if variant == "source_raced"
+                    else patch.object(
+                        preflight,
+                        "_live_preparation_source_snapshot",
+                        return_value=current_snapshot,
+                    )
+                )
+                namespace_errors = (
+                    ["owner-reassignment successor namespace changed after preparation"]
+                    if variant == "namespace_mutated"
+                    else []
+                )
+                with snapshot_patch, patch.object(
+                    preflight,
+                    "_owner_reassignment_namespace_errors",
+                    return_value=namespace_errors,
+                ):
+                    context, errors, _ = self.check(
+                        common,
+                        current,
+                        request=request,
+                        value=value,
+                        repo_facts=repo_facts,
+                    )
+                if variant == "valid":
+                    self.assertEqual([], errors)
+                    self.assertTrue(
+                        context["owner_reassignment_preparation_valid"]
+                    )
+                else:
+                    self.assertFalse(
+                        context["owner_reassignment_preparation_valid"]
+                    )
+                    expected = (
+                        "source snapshot no longer matches"
+                        if variant in {"source_mutated", "source_raced"}
+                        else "successor namespace changed"
+                        if variant == "namespace_mutated"
+                        else "preparation history is invalid"
+                        if variant
+                        in {
+                            "mismatched_tuple",
+                            "duplicate_completed",
+                            "replayed_tuple",
+                            "consumed",
+                        }
+                        else "completed preparation tuple"
+                    )
+                    self.assertTrue(any(expected in item for item in errors), errors)
+
+    def test_registry_preparation_field_defaults_for_existing_schema_one_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            common = base / "common"
+            current = base / "managed" / "package"
+            path = self.write_registry(common, [self.record(current)])
+            registry = json.loads(path.read_text(encoding="utf-8"))
+            registry.pop("owner_reassignment_preparations")
+            path.write_text(json.dumps(registry), encoding="utf-8")
+            context, errors, _ = self.check(common, current)
+            self.assertEqual([], errors)
+            self.assertTrue(context["enforced"])
+
+    def test_owner_reassignment_preflight_reuses_strict_history_validator(self):
+        value, _owner_ref = self.owner_reassignment_claim()
+        control_branch = (
+            "work/2026-08-27-delivery-owner-reassignment-schema-reuse"
+        )
+        source_snapshot = {
+            "local_branch_sha": HEAD,
+            "worktrees": [],
+            "durable_records": [],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            control = self.owner_reassignment_registry_record(
+                base / "managed" / "_control", control_branch
+            )
+            baseline = self.owner_reassignment_preparation(
+                value, control_branch, source_snapshot
+            )
+
+            def consumed(preparation, *, receiver=True):
+                preparation["status"] = "consumed"
+                preparation["consumed_at"] = "2026-08-27T00:01:00Z"
+                preparation["consumed_on_main"] = MAIN
+                records = [control]
+                if receiver:
+                    receiver_record = self.record(
+                        base / "managed" / "receiver",
+                        package=value["package"],
+                        branch=value["handoff"]["to_branch"],
+                        head=HEAD,
+                        task_ref=value["handoff"]["to_ref"],
+                        owner_reassignment_preparation_id=preparation[
+                            "preparation_id"
+                        ],
+                    )
+                    records.append(receiver_record)
+                return records
+
+            cases = {}
+            poisoned = copy.deepcopy(baseline)
+            poisoned["schema_version"] = True
+            poisoned["preparation_id"] = lifecycle_registry._preparation_digest(poisoned)
+            cases["boolean_schema"] = (poisoned, [control])
+
+            poisoned = copy.deepcopy(baseline)
+            poisoned["from_ref"] = {"spoof": "session:prior-writer"}
+            poisoned["preparation_id"] = lifecycle_registry._preparation_digest(poisoned)
+            cases["object_reference"] = (poisoned, [control])
+
+            poisoned = copy.deepcopy(baseline)
+            poisoned["checkpoint_sha"] = int("1" * 40)
+            poisoned["preparation_id"] = lifecycle_registry._preparation_digest(poisoned)
+            cases["numeric_sha"] = (poisoned, [control])
+
+            poisoned = copy.deepcopy(baseline)
+            poisoned["source_snapshot"]["local_branch_sha"] = int("2" * 40)
+            poisoned["preparation_id"] = lifecycle_registry._preparation_digest(poisoned)
+            cases["invalid_snapshot"] = (poisoned, [control])
+
+            poisoned = copy.deepcopy(baseline)
+            poisoned["prepared_at"] = "2026-08-27 00:00:00"
+            poisoned["preparation_id"] = lifecycle_registry._preparation_digest(poisoned)
+            cases["invalid_timestamp"] = (poisoned, [control])
+
+            poisoned = copy.deepcopy(baseline)
+            poisoned_records = consumed(poisoned)
+            poisoned["consumed_on_main"] = True
+            cases["poisoned_consumed_history"] = (poisoned, poisoned_records)
+
+            poisoned = copy.deepcopy(baseline)
+            orphan_records = consumed(poisoned, receiver=False)
+            cases["orphan_consumed"] = (poisoned, orphan_records)
+
+            for name, (preparation, records) in cases.items():
+                with self.subTest(name=name):
+                    registry = {
+                        "schema_version": 1,
+                        "worktrees": copy.deepcopy(records),
+                        "pending": None,
+                        "owner_reassignment_preparations": [preparation],
+                    }
+                    errors = preflight._owner_reassignment_preparation_errors(
+                        root=base,
+                        registry=registry,
+                        claim=value,
+                        facts=facts(
+                            repository=str(base / "managed" / "_control"),
+                            branch=control_branch,
+                        ),
+                    )
+                    self.assertTrue(
+                        any("preparation history is invalid" in item for item in errors),
+                        errors,
+                    )
+
+    def test_owner_reassignment_local_check_rejects_type_confused_control_lease(self):
+        value, owner_ref = self.owner_reassignment_claim()
+        request = args(
+            "owner-reassignment",
+            task_ref=value["writer_ref"],
+            owner_authorization_ref=owner_ref,
+        )
+        control_branch = (
+            "work/2026-08-27-delivery-owner-reassignment-lease-type"
+        )
+        source_snapshot = {
+            "local_branch_sha": HEAD,
+            "worktrees": [],
+            "durable_records": [],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            common = base / "common"
+            current = base / "managed" / "_control"
+            control = self.owner_reassignment_registry_record(
+                current, control_branch
+            )
+            control["lease"]["acquired_at"] = {"spoof": "2026-08-27T00:00:00Z"}
+            self.write_registry(
+                common,
+                [control],
+                owner_reassignment_preparations=[
+                    self.owner_reassignment_preparation(
+                        value, control_branch, source_snapshot
+                    )
+                ],
+            )
+            with patch.object(
+                preflight,
+                "_live_preparation_source_snapshot",
+                return_value=source_snapshot,
+            ), patch.object(
+                preflight,
+                "_owner_reassignment_namespace_errors",
+                return_value=[],
+            ):
+                context, errors, _ = self.check(
+                    common,
+                    current,
+                    request=request,
+                    value=value,
+                    repo_facts=facts(
+                        repository=str(current), branch=control_branch
+                    ),
+                )
+            self.assertFalse(context["owner_reassignment_preparation_valid"])
+            self.assertTrue(
+                any("control acquired_at" in item for item in errors), errors
+            )
+
+    def test_owner_reassignment_final_snapshot_rejects_lease_lock_pending_race(self):
+        value, owner_ref = self.owner_reassignment_claim()
+        request = args(
+            "owner-reassignment",
+            task_ref=value["writer_ref"],
+            owner_authorization_ref=owner_ref,
+        )
+        control_branch = (
+            "work/2026-08-27-delivery-owner-reassignment-final-race"
+        )
+        source_snapshot = {
+            "local_branch_sha": HEAD,
+            "worktrees": [],
+            "durable_records": [],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            common = base / "common"
+            current = base / "managed" / "_control"
+            registry_path = self.write_registry(
+                common,
+                [
+                    self.owner_reassignment_registry_record(
+                        current, control_branch
+                    )
+                ],
+                owner_reassignment_preparations=[
+                    self.owner_reassignment_preparation(
+                        value, control_branch, source_snapshot
+                    )
+                ],
+            )
+            source_proof_calls = 0
+
+            def racing_source_proof(_root, _registry, _handoff):
+                nonlocal source_proof_calls
+                source_proof_calls += 1
+                if source_proof_calls == 2:
+                    live_registry = json.loads(
+                        registry_path.read_text(encoding="utf-8")
+                    )
+                    live_registry["worktrees"][0]["lease"] = None
+                    live_registry["pending"] = {
+                        "operation": "create",
+                        "path": str(base / "racing-path"),
+                    }
+                    registry_path.write_text(
+                        json.dumps(live_registry), encoding="utf-8"
+                    )
+                    (
+                        registry_path.parent
+                        / preflight.WORKTREE_LOCK_DIRECTORY_NAME
+                    ).mkdir()
+                return source_snapshot
+
+            repo_facts = facts(repository=str(current), branch=control_branch)
+            with patch.object(
+                preflight,
+                "_live_preparation_source_snapshot",
+                side_effect=racing_source_proof,
+            ), patch.object(
+                preflight,
+                "_owner_reassignment_namespace_errors",
+                return_value=[],
+            ):
+                context, errors, _ = self.check(
+                    common,
+                    current,
+                    request=request,
+                    value=value,
+                    repo_facts=repo_facts,
+                )
+            self.assertEqual(source_proof_calls, 2, errors)
+            self.assertFalse(context["owner_reassignment_preparation_valid"])
+            self.assertTrue(
+                any("lock appeared during final live proof" in item for item in errors),
+                errors,
+            )
+
+    def test_owner_reassignment_final_mutex_catches_post_proof_prelock_race(self):
+        value, owner_ref = self.owner_reassignment_claim()
+        request = args(
+            "owner-reassignment",
+            task_ref=value["writer_ref"],
+            owner_authorization_ref=owner_ref,
+        )
+        control_branch = (
+            "work/2026-08-27-delivery-owner-reassignment-prelock-race"
+        )
+        source_snapshot = {
+            "local_branch_sha": HEAD,
+            "worktrees": [],
+            "durable_records": [],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            common = base / "common"
+            current = base / "managed" / "_control"
+            registry_path = self.write_registry(
+                common,
+                [self.owner_reassignment_registry_record(current, control_branch)],
+                owner_reassignment_preparations=[
+                    self.owner_reassignment_preparation(
+                        value, control_branch, source_snapshot
+                    )
+                ],
+            )
+            lock_path = (
+                registry_path.parent / preflight.WORKTREE_LOCK_DIRECTORY_NAME
+            )
+            real_mkdir = os.mkdir
+            race_injected = False
+
+            def racing_mkdir(path, *arguments, **keywords):
+                nonlocal race_injected
+                if Path(path) == lock_path:
+                    live_registry = json.loads(
+                        registry_path.read_text(encoding="utf-8")
+                    )
+                    live_registry["worktrees"][0]["lease"] = None
+                    live_registry["pending"] = {
+                        "operation": "create",
+                        "path": str(base / "racing-path"),
+                    }
+                    registry_path.write_text(
+                        json.dumps(live_registry), encoding="utf-8"
+                    )
+                    race_injected = True
+                return real_mkdir(path, *arguments, **keywords)
+
+            repo_facts = facts(repository=str(current), branch=control_branch)
+            with patch.object(
+                preflight,
+                "_live_preparation_source_snapshot",
+                return_value=source_snapshot,
+            ), patch.object(
+                preflight,
+                "_owner_reassignment_namespace_errors",
+                return_value=[],
+            ), patch.object(
+                preflight.os,
+                "mkdir",
+                side_effect=racing_mkdir,
+            ):
+                context, errors, _ = self.check(
+                    common,
+                    current,
+                    request=request,
+                    value=value,
+                    repo_facts=repo_facts,
+                )
+            self.assertTrue(race_injected)
+            self.assertFalse(context["owner_reassignment_preparation_valid"])
+            self.assertTrue(
+                any("registry changed during final live proof" in item for item in errors),
+                errors,
+            )
+            self.assertTrue(any("pending ambiguity" in item for item in errors), errors)
+            self.assertTrue(
+                any("lost its exact active leased" in item for item in errors), errors
+            )
+            self.assertFalse(lock_path.exists())
+
+    def test_real_git_owner_reassignment_final_snapshot_rejects_registry_race(self):
+        value, owner_ref = self.owner_reassignment_claim()
+        request = args(
+            "owner-reassignment",
+            task_ref=value["writer_ref"],
+            owner_authorization_ref=owner_ref,
+        )
+        control_branch = (
+            "work/2026-08-27-delivery-owner-reassignment-real-git-race"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            remote = base / "origin.git"
+            repo = base / "repo"
+            repo.mkdir()
+            preflight._git(base, "init", "--bare", str(remote))
+            preflight._git(repo, "init", "--initial-branch=main")
+            preflight._git(repo, "config", "user.email", "tests@peerslate.invalid")
+            preflight._git(repo, "config", "user.name", "PeerSlate Tests")
+            claim_path = (
+                repo
+                / "docs"
+                / "governance"
+                / "lane_claims"
+                / f"{value['package']}.json"
+            )
+            claim_path.parent.mkdir(parents=True)
+            claim_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "package": value["package"],
+                        "state": "active",
+                        "writer_ref": value["handoff"]["from_ref"],
+                        "branch": value["handoff"]["from_branch"],
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            preflight._git(repo, "add", ".")
+            preflight._git(repo, "commit", "-m", "initialize real Git race fixture")
+            preflight._git(repo, "remote", "add", "origin", str(remote))
+            preflight._git(repo, "push", "-u", "origin", "main")
+            main_sha = preflight._git(repo, "rev-parse", "HEAD")
+            old_branch = value["handoff"]["from_branch"]
+            successor = value["handoff"]["to_branch"]
+            preflight._git(repo, "branch", old_branch, main_sha)
+            preflight._git(
+                repo, "push", "origin", f"{old_branch}:refs/heads/{old_branch}"
+            )
+            preflight._git(
+                repo, "push", "origin", f"{main_sha}:refs/heads/{successor}"
+            )
+            control_path = base / "managed" / "_control"
+            control_path.parent.mkdir()
+            preflight._git(
+                repo,
+                "worktree",
+                "add",
+                "-b",
+                control_branch,
+                str(control_path),
+                "origin/main",
+            )
+            common = preflight._git_common_dir(control_path)
+
+            value["handoff"]["checkpoint_sha"] = main_sha
+            source_snapshot = {
+                "local_branch_sha": main_sha,
+                "worktrees": [],
+                "durable_records": [],
+            }
+            record = self.owner_reassignment_registry_record(
+                control_path, control_branch
+            )
+            record["head"] = main_sha
+            preparation = self.owner_reassignment_preparation(
+                value, control_branch, source_snapshot
+            )
+            preparation.update(
+                {
+                    "checkpoint_sha": main_sha,
+                    "prepared_from_main": main_sha,
+                    "new_branch_response": (
+                        f"*\t{main_sha}:refs/heads/{successor}\t[new branch]"
+                    ),
+                }
+            )
+            preparation["preparation_id"] = lifecycle_registry._preparation_digest(
+                preparation
+            )
+            registry_path = self.write_registry(
+                common,
+                [record],
+                repository_primary_root=str(repo),
+                managed_root=str(control_path.parent),
+                evidence_root=str(base / "evidence"),
+                owner_reassignment_preparations=[preparation],
+            )
+            repo_facts = facts(
+                repository=str(control_path),
+                branch=control_branch,
+                head=main_sha,
+                origin_main=main_sha,
+            )
+            real_source_proof = preflight._live_preparation_source_snapshot
+            source_proof_calls = 0
+
+            def racing_source_proof(root, registry, handoff):
+                nonlocal source_proof_calls
+                snapshot = real_source_proof(root, registry, handoff)
+                source_proof_calls += 1
+                if source_proof_calls == 2:
+                    live_registry = json.loads(
+                        registry_path.read_text(encoding="utf-8")
+                    )
+                    live_registry["worktrees"][0]["lease"] = None
+                    live_registry["pending"] = {
+                        "operation": "create",
+                        "path": str(base / "racing-path"),
+                    }
+                    registry_path.write_text(
+                        json.dumps(live_registry), encoding="utf-8"
+                    )
+                    (
+                        registry_path.parent
+                        / preflight.WORKTREE_LOCK_DIRECTORY_NAME
+                    ).mkdir()
+                return snapshot
+
+            environment = {key: "" for key in preflight.CI_ENVIRONMENT_KEYS}
+            with patch.dict(os.environ, environment), patch.object(
+                preflight,
+                "_live_preparation_source_snapshot",
+                side_effect=racing_source_proof,
+            ):
+                context, errors, _ = preflight.evaluate_local_worktree_context(
+                    root=control_path,
+                    args=request,
+                    claim=value,
+                    facts=repo_facts,
+                )
+            self.assertEqual(source_proof_calls, 2, errors)
+            self.assertFalse(context["owner_reassignment_preparation_valid"])
+            self.assertTrue(
+                any("lock appeared during final live proof" in item for item in errors),
+                errors,
+            )
 
     def test_initialized_registry_rejects_unregistered_current_workspace(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -761,7 +1631,26 @@ class EvaluationTests(unittest.TestCase):
             patch.object(
                 preflight,
                 "evaluate_local_worktree_context",
-                return_value=({"registry": "test_stub"}, [], []),
+                return_value=(
+                    {
+                        "registry": (
+                            "initialized"
+                            if request.intent == "owner-reassignment"
+                            else "test_stub"
+                        ),
+                        "enforced": request.intent == "owner-reassignment",
+                        "current_kind": (
+                            "control_singleton"
+                            if request.intent == "owner-reassignment"
+                            else None
+                        ),
+                        "owner_reassignment_preparation_valid": (
+                            request.intent == "owner-reassignment"
+                        ),
+                    },
+                    [],
+                    [],
+                ),
             ),
         ]
         patches.extend(extra_patches.values())
@@ -1290,6 +2179,595 @@ class EvaluationTests(unittest.TestCase):
         )
         self.assertTrue(any("fetched branch tip" in error for error in errors))
 
+    def test_owner_reassignment_binds_distinct_provenance_and_both_remote_branches(self):
+        before = claim(
+            writer_ref="session:prior-writer",
+            branch="work/2026-08-25-example-old",
+        )
+        successor = "work/2026-08-27-example-recovery"
+        owner_ref = "session:owner/decision:owner-reassignment"
+        handoff = {
+            "type": "owner_reassignment",
+            "from_ref": before["writer_ref"],
+            "to_ref": "agent:replacement-writer",
+            "from_branch": before["branch"],
+            "to_branch": successor,
+            "checkpoint_sha": HEAD,
+            "owner_authorization_ref": owner_ref,
+        }
+        after = claim(
+            writer_ref=handoff["to_ref"],
+            branch=successor,
+            handoff=handoff,
+        )
+        control_facts = facts(
+            branch="work/2026-08-27-delivery-owner-reassignment-example",
+            branch_paths=(preflight.claim_relative_path(after["package"]),),
+        )
+
+        with patch.object(
+            preflight, "_exact_fetch_origin_branch", return_value=HEAD
+        ) as exact_fetch:
+            _, errors, _ = self.run_evaluate(
+                args(
+                    "owner-reassignment",
+                    task_ref=handoff["to_ref"],
+                    owner_authorization_ref=owner_ref,
+                ),
+                after,
+                control_facts,
+                origin_claims={"ps-example-001": before},
+                origin_claim=patch.object(
+                    preflight, "_origin_claim", return_value=before
+                ),
+            )
+        self.assertEqual([], errors)
+        self.assertEqual(
+            [before["branch"], successor, before["branch"]],
+            [call.args[1] for call in exact_fetch.call_args_list],
+        )
+
+        malformed = copy.deepcopy(after)
+        malformed["handoff"]["relinquished"] = True
+        self.assertTrue(
+            any(
+                "exact owner_reassignment" in error
+                or "exact owner_reassignment shape" in error
+                for error in preflight.validate_claim(malformed)
+            )
+        )
+
+        widened = copy.deepcopy(after)
+        widened["outcome"] = "Silently replace the governed outcome."
+        with patch.object(
+            preflight, "_exact_fetch_origin_branch", return_value=HEAD
+        ):
+            _, widened_errors, _ = self.run_evaluate(
+                args(
+                    "owner-reassignment",
+                    task_ref=handoff["to_ref"],
+                    owner_authorization_ref=owner_ref,
+                ),
+                widened,
+                control_facts,
+                origin_claims={"ps-example-001": before},
+                origin_claim=patch.object(
+                    preflight, "_origin_claim", return_value=before
+                ),
+            )
+        self.assertTrue(
+            any("changed fields outside" in error for error in widened_errors)
+        )
+
+    def test_owner_reassignment_terminal_mutex_rejects_post_context_mutation(self):
+        before = claim(
+            writer_ref="session:prior-writer",
+            branch="work/2026-08-25-terminal-old",
+        )
+        successor = "work/2026-08-27-terminal-recovery"
+        owner_ref = "session:owner/decision:terminal-race"
+        handoff = {
+            "type": "owner_reassignment",
+            "from_ref": before["writer_ref"],
+            "to_ref": "agent:terminal-receiver",
+            "from_branch": before["branch"],
+            "to_branch": successor,
+            "checkpoint_sha": HEAD,
+            "owner_authorization_ref": owner_ref,
+        }
+        after = claim(
+            writer_ref=handoff["to_ref"], branch=successor, handoff=handoff
+        )
+        control_branch = (
+            "work/2026-08-27-delivery-owner-reassignment-terminal-race"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            current = base / "managed" / "_control"
+            registry_path = base / "common" / preflight.WORKTREE_REGISTRY_REL
+            registry_path.parent.mkdir(parents=True)
+            registry = {
+                "schema_version": 1,
+                "worktrees": [
+                    {
+                        "path": str(current),
+                        "kind": "control_singleton",
+                        "state": "active",
+                        "package": after["package"],
+                        "branch": control_branch,
+                        "head": MAIN,
+                        "task_ref": handoff["to_ref"],
+                        "lease": {
+                            "task_ref": handoff["to_ref"],
+                            "purpose": "control",
+                            "package": after["package"],
+                            "acquired_at": "2026-08-27T00:00:00Z",
+                        },
+                    }
+                ],
+                "pending": None,
+                "owner_reassignment_preparations": [],
+            }
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            registry_context = {
+                "registry": "initialized",
+                "enforced": True,
+                "current_kind": "control_singleton",
+                "path": str(registry_path),
+                "owner_reassignment_preparation_valid": True,
+                "_owner_reassignment_registry_snapshot": copy.deepcopy(registry),
+            }
+            mutation_injected = False
+
+            def racing_fetch(_root, branch):
+                nonlocal mutation_injected
+                if not mutation_injected:
+                    changed = json.loads(registry_path.read_text(encoding="utf-8"))
+                    changed["worktrees"][0]["lease"] = None
+                    registry_path.write_text(json.dumps(changed), encoding="utf-8")
+                    mutation_injected = True
+                return MAIN if branch == "main" else HEAD
+
+            control_facts = facts(
+                repository=str(current),
+                branch=control_branch,
+                branch_paths=(preflight.claim_relative_path(after["package"]),),
+            )
+            payload, errors, _ = self.run_evaluate(
+                args(
+                    "owner-reassignment",
+                    task_ref=handoff["to_ref"],
+                    owner_authorization_ref=owner_ref,
+                ),
+                after,
+                control_facts,
+                origin_claims={after["package"].casefold(): before},
+                origin_claim=patch.object(
+                    preflight, "_origin_claim", return_value=before
+                ),
+                registry=patch.object(
+                    preflight,
+                    "evaluate_local_worktree_context",
+                    return_value=(registry_context, [], []),
+                ),
+                preparation=patch.object(
+                    preflight,
+                    "_owner_reassignment_preparation_errors",
+                    return_value=[],
+                ),
+                remote=patch.object(
+                    preflight, "_exact_fetch_origin_branch", side_effect=racing_fetch
+                ),
+                remote_tuple=patch.object(
+                    preflight,
+                    "_remote_branch_tuple",
+                    return_value={
+                        "main": MAIN,
+                        handoff["from_branch"]: HEAD,
+                        handoff["to_branch"]: HEAD,
+                    },
+                ),
+            )
+            self.assertTrue(mutation_injected)
+            self.assertFalse(
+                payload["worktree_registry"][
+                    "owner_reassignment_preparation_valid"
+                ]
+            )
+            self.assertTrue(
+                any("changed before terminal owner proof" in item for item in errors),
+                errors,
+            )
+            self.assertFalse(
+                (
+                    registry_path.parent
+                    / preflight.WORKTREE_LOCK_DIRECTORY_NAME
+                ).exists()
+            )
+
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            final_registry_context = {
+                "registry": "initialized",
+                "enforced": True,
+                "current_kind": "control_singleton",
+                "path": str(registry_path),
+                "owner_reassignment_preparation_valid": True,
+                "_owner_reassignment_registry_snapshot": copy.deepcopy(registry),
+            }
+            changed_claim = copy.deepcopy(after)
+            changed_claim["branch"] += "-raced"
+            claim_read_count = 0
+
+            def racing_branch_claims(_root=ROOT):
+                nonlocal claim_read_count
+                claim_read_count += 1
+                selected = changed_claim if claim_read_count >= 3 else after
+                return {after["package"].casefold(): selected}
+
+            payload, errors, _ = self.run_evaluate(
+                args(
+                    "owner-reassignment",
+                    task_ref=handoff["to_ref"],
+                    owner_authorization_ref=owner_ref,
+                ),
+                after,
+                control_facts,
+                origin_claims={after["package"].casefold(): before},
+                origin_claim=patch.object(
+                    preflight, "_origin_claim", return_value=before
+                ),
+                registry=patch.object(
+                    preflight,
+                    "evaluate_local_worktree_context",
+                    return_value=(final_registry_context, [], []),
+                ),
+                preparation=patch.object(
+                    preflight,
+                    "_owner_reassignment_preparation_errors",
+                    return_value=[],
+                ),
+                remote=patch.object(
+                    preflight,
+                    "_exact_fetch_origin_branch",
+                    side_effect=lambda _root, branch: MAIN if branch == "main" else HEAD,
+                ),
+                branch_claims=patch.object(
+                    preflight, "load_claims", side_effect=racing_branch_claims
+                ),
+                remote_tuple=patch.object(
+                    preflight,
+                    "_remote_branch_tuple",
+                    return_value={
+                        "main": MAIN,
+                        handoff["from_branch"]: HEAD,
+                        handoff["to_branch"]: HEAD,
+                    },
+                ),
+            )
+            self.assertGreaterEqual(claim_read_count, 3)
+            self.assertFalse(
+                payload["worktree_registry"][
+                    "owner_reassignment_preparation_valid"
+                ]
+            )
+            self.assertTrue(
+                any("branch claim changed at terminal boundary" in item for item in errors),
+                errors,
+            )
+            self.assertFalse(
+                (
+                    registry_path.parent
+                    / preflight.WORKTREE_LOCK_DIRECTORY_NAME
+                ).exists()
+            )
+
+            tuple_registry_context = {
+                "registry": "initialized",
+                "enforced": True,
+                "current_kind": "control_singleton",
+                "path": str(registry_path),
+                "owner_reassignment_preparation_valid": True,
+                "_owner_reassignment_registry_snapshot": copy.deepcopy(registry),
+            }
+            payload, errors, _ = self.run_evaluate(
+                args(
+                    "owner-reassignment",
+                    task_ref=handoff["to_ref"],
+                    owner_authorization_ref=owner_ref,
+                ),
+                after,
+                control_facts,
+                origin_claims={after["package"].casefold(): before},
+                origin_claim=patch.object(
+                    preflight, "_origin_claim", return_value=before
+                ),
+                registry=patch.object(
+                    preflight,
+                    "evaluate_local_worktree_context",
+                    return_value=(tuple_registry_context, [], []),
+                ),
+                preparation=patch.object(
+                    preflight,
+                    "_owner_reassignment_preparation_errors",
+                    return_value=[],
+                ),
+                remote=patch.object(
+                    preflight,
+                    "_exact_fetch_origin_branch",
+                    side_effect=lambda _root, branch: MAIN if branch == "main" else HEAD,
+                ),
+                remote_tuple=patch.object(
+                    preflight,
+                    "_remote_branch_tuple",
+                    return_value={
+                        "main": CANDIDATE,
+                        handoff["from_branch"]: HEAD,
+                        handoff["to_branch"]: HEAD,
+                    },
+                ),
+            )
+            self.assertFalse(
+                payload["worktree_registry"][
+                    "owner_reassignment_preparation_valid"
+                ]
+            )
+            self.assertTrue(
+                any("remote or claim state changed" in item for item in errors),
+                errors,
+            )
+
+    def test_owner_reassignment_terminal_rejects_type_confused_control_lease(self):
+        before = claim(
+            writer_ref="session:prior-writer",
+            branch="work/2026-08-25-terminal-lease-old",
+        )
+        successor = "work/2026-08-27-terminal-lease-recovery"
+        owner_ref = "session:owner/decision:terminal-lease-type"
+        handoff = {
+            "type": "owner_reassignment",
+            "from_ref": before["writer_ref"],
+            "to_ref": "agent:terminal-lease-receiver",
+            "from_branch": before["branch"],
+            "to_branch": successor,
+            "checkpoint_sha": HEAD,
+            "owner_authorization_ref": owner_ref,
+        }
+        after = claim(
+            writer_ref=handoff["to_ref"], branch=successor, handoff=handoff
+        )
+        control_branch = (
+            "work/2026-08-27-delivery-owner-reassignment-terminal-lease"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            current = base / "managed" / "_control"
+            registry_path = base / "common" / preflight.WORKTREE_REGISTRY_REL
+            registry_path.parent.mkdir(parents=True)
+            registry = {
+                "schema_version": 1,
+                "worktrees": [
+                    {
+                        "path": str(current),
+                        "kind": "control_singleton",
+                        "state": "active",
+                        "package": after["package"],
+                        "branch": control_branch,
+                        "head": MAIN,
+                        "task_ref": handoff["to_ref"],
+                        "lease": {
+                            "task_ref": handoff["to_ref"],
+                            "purpose": "control",
+                            "package": after["package"],
+                            "acquired_at": {
+                                "spoof": "2026-08-27T00:00:00Z"
+                            },
+                        },
+                    }
+                ],
+                "pending": None,
+                "owner_reassignment_preparations": [],
+            }
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            registry_context = {
+                "registry": "initialized",
+                "enforced": True,
+                "current_kind": "control_singleton",
+                "path": str(registry_path),
+                "owner_reassignment_preparation_valid": True,
+                "_owner_reassignment_registry_snapshot": copy.deepcopy(registry),
+            }
+            control_facts = facts(
+                repository=str(current), branch=control_branch
+            )
+            authority_claims = {after["package"].casefold(): before}
+            with patch.object(
+                preflight,
+                "_owner_reassignment_preparation_errors",
+                return_value=[],
+            ), patch.object(
+                preflight,
+                "_exact_fetch_origin_branch",
+                side_effect=lambda _root, branch: MAIN if branch == "main" else HEAD,
+            ), patch.object(
+                preflight,
+                "_remote_branch_tuple",
+                return_value={
+                    "main": MAIN,
+                    handoff["from_branch"]: HEAD,
+                    handoff["to_branch"]: HEAD,
+                },
+            ), patch.object(
+                preflight, "load_claims_at_ref", return_value=authority_claims
+            ), patch.object(
+                preflight,
+                "load_claims",
+                return_value={after["package"].casefold(): after},
+            ):
+                errors = preflight._final_owner_reassignment_boundary_errors(
+                    root=base,
+                    args=args(
+                        "owner-reassignment",
+                        task_ref=handoff["to_ref"],
+                        owner_authorization_ref=owner_ref,
+                    ),
+                    claim=after,
+                    facts=control_facts,
+                    authority_claims=authority_claims,
+                    registry_context=registry_context,
+                )
+            self.assertFalse(
+                registry_context["owner_reassignment_preparation_valid"]
+            )
+            self.assertTrue(
+                any("control acquired_at" in item for item in errors), errors
+            )
+
+    def test_owner_reassignment_rejects_control_intent_substring_spoofing(self):
+        before = claim(
+            writer_ref="session:prior-writer",
+            branch="work/2026-08-25-example-old",
+        )
+        successor = "work/2026-08-27-example-recovery"
+        owner_ref = "session:owner/decision:owner-reassignment"
+        after = claim(
+            writer_ref="agent:replacement-writer",
+            branch=successor,
+            handoff={
+                "type": "owner_reassignment",
+                "from_ref": before["writer_ref"],
+                "to_ref": "agent:replacement-writer",
+                "from_branch": before["branch"],
+                "to_branch": successor,
+                "checkpoint_sha": HEAD,
+                "owner_authorization_ref": owner_ref,
+            },
+        )
+        spoofed_facts = facts(
+            branch=(
+                "work/2026-08-27-delivery-transfer-owner-reassignment-spoof"
+            ),
+            branch_paths=(preflight.claim_relative_path(after["package"]),),
+        )
+        with patch.object(
+            preflight, "_exact_fetch_origin_branch", return_value=HEAD
+        ):
+            _, errors, _ = self.run_evaluate(
+                args(
+                    "owner-reassignment",
+                    task_ref=after["writer_ref"],
+                    owner_authorization_ref=owner_ref,
+                ),
+                after,
+                spoofed_facts,
+                origin_claims={"ps-example-001": before},
+                origin_claim=patch.object(
+                    preflight, "_origin_claim", return_value=before
+                ),
+            )
+        self.assertTrue(
+            any(
+                "delivery-owner-reassignment control branch" in error
+                for error in errors
+            ),
+            errors,
+        )
+
+    def test_owner_reassignment_fails_closed_on_checkpoint_authority_and_collision(self):
+        before = claim(
+            writer_ref="session:prior-writer",
+            branch="work/2026-08-25-example-old",
+        )
+        successor = "work/2026-08-27-example-recovery"
+        owner_ref = "session:owner/decision:owner-reassignment"
+        handoff = {
+            "type": "owner_reassignment",
+            "from_ref": before["writer_ref"],
+            "to_ref": "agent:replacement-writer",
+            "from_branch": before["branch"],
+            "to_branch": successor,
+            "checkpoint_sha": HEAD,
+            "owner_authorization_ref": owner_ref,
+        }
+        after = claim(
+            writer_ref=handoff["to_ref"],
+            branch=successor,
+            handoff=handoff,
+        )
+        collision = claim(
+            package="PS-COLLISION-001",
+            number=2,
+            branch=successor,
+            surfaces=claimed_surfaces("PS-COLLISION-001", "src/collision"),
+            domains=["product:collision"],
+        )
+        control_facts = facts(
+            branch="work/2026-08-27-delivery-owner-reassignment-example",
+            branch_paths=(preflight.claim_relative_path(after["package"]),),
+        )
+        authority = {
+            "ps-example-001": before,
+            "ps-collision-001": collision,
+        }
+        candidate = {
+            "ps-example-001": after,
+            "ps-collision-001": collision,
+        }
+        with patch.object(
+            preflight,
+            "_exact_fetch_origin_branch",
+            side_effect=[HEAD, CANDIDATE, HEAD],
+        ):
+            _, errors, _ = self.run_evaluate(
+                args(
+                    "owner-reassignment",
+                    task_ref=handoff["to_ref"],
+                    owner_authorization_ref="session:owner/wrong:ref",
+                ),
+                after,
+                control_facts,
+                origin_claims=authority,
+                candidate_claims=candidate,
+                origin_claim=patch.object(
+                    preflight, "_origin_claim", return_value=before
+                ),
+            )
+        self.assertTrue(any("owner authorization" in error for error in errors))
+        self.assertTrue(any("successor branch" in error for error in errors))
+        self.assertTrue(any("branch collision" in error for error in errors))
+
+    def test_receiver_write_is_refused_until_owner_reassignment_merges(self):
+        before = claim(
+            writer_ref="session:prior-writer",
+            branch="work/2026-08-25-example-old",
+        )
+        successor = "work/2026-08-27-example-recovery"
+        after = copy.deepcopy(before)
+        after.update(
+            {
+                "writer_ref": "agent:replacement-writer",
+                "branch": successor,
+                "handoff": {
+                    "type": "owner_reassignment",
+                    "from_ref": before["writer_ref"],
+                    "to_ref": "agent:replacement-writer",
+                    "from_branch": before["branch"],
+                    "to_branch": successor,
+                    "checkpoint_sha": HEAD,
+                    "owner_authorization_ref": "session:owner/decision:1",
+                },
+            }
+        )
+        _, errors, _ = self.run_evaluate(
+            args("write", task_ref=after["writer_ref"]),
+            after,
+            facts(branch=successor),
+            origin_claims={"ps-example-001": before},
+            candidate_claims={"ps-example-001": after},
+        )
+        self.assertTrue(
+            any("differs from authoritative origin/main" in error for error in errors)
+        )
+
     def test_pause_and_close_cannot_rewrite_transfer_provenance(self):
         handoff = {
             "from_ref": "task:writer-before",
@@ -1348,6 +2826,70 @@ class EvaluationTests(unittest.TestCase):
         self.assertTrue(
             any("changed fields outside" in error for error in close_errors)
         )
+
+    def test_pause_and_close_cannot_rewrite_owner_reassignment_provenance(self):
+        successor = "work/2026-08-27-example-recovery"
+        handoff = {
+            "type": "owner_reassignment",
+            "from_ref": "session:prior-writer",
+            "to_ref": "task:writer-1",
+            "from_branch": "work/2026-08-25-example-old",
+            "to_branch": successor,
+            "checkpoint_sha": HEAD,
+            "owner_authorization_ref": "session:owner/decision:1",
+        }
+        before = claim(branch=successor, handoff=handoff)
+        paused = claim(
+            branch=successor,
+            state="paused",
+            checkpoint_sha=HEAD,
+            handoff=None,
+        )
+        pause_facts = facts(
+            branch="work/2026-08-27-delivery-pause-example",
+            branch_paths=(preflight.claim_relative_path(paused["package"]),),
+        )
+
+        def pause_git(_root, *command):
+            if command[0] == "fetch":
+                return ""
+            if command[0] == "rev-parse":
+                return HEAD
+            raise AssertionError(command)
+
+        _, pause_errors, _ = self.run_evaluate(
+            args("pause"),
+            paused,
+            pause_facts,
+            origin_claims={"ps-example-001": before},
+            origin_claim=patch.object(preflight, "_origin_claim", return_value=before),
+            git=patch.object(preflight, "_git", side_effect=pause_git),
+        )
+        self.assertTrue(any("changed fields outside" in e for e in pause_errors))
+
+        closed = claim(
+            branch=successor,
+            state="closed",
+            merged_sha=MAIN,
+            closed_at="2026-08-27T01:00:00Z",
+            handoff=None,
+        )
+        close_facts = facts(
+            branch="work/2026-08-27-delivery-close-example",
+            branch_paths=(preflight.claim_relative_path(closed["package"]),),
+        )
+        _, close_errors, _ = self.run_evaluate(
+            args("close"),
+            closed,
+            close_facts,
+            origin_claims={"ps-example-001": before},
+            origin_claim=patch.object(preflight, "_origin_claim", return_value=before),
+            origin_receipt=patch.object(
+                preflight, "load_receipt_at_ref", return_value=None
+            ),
+            ancestor=patch.object(preflight, "_is_ancestor", return_value=True),
+        )
+        self.assertTrue(any("changed fields outside" in e for e in close_errors))
 
     def test_resume_reactivates_the_exact_preserved_checkpoint(self):
         before = claim(state="paused", checkpoint_sha=HEAD)
@@ -1910,7 +3452,7 @@ class EvidenceErrataTests(unittest.TestCase):
             any("--owner-authorization-ref" in e for e in errors)
         )
 
-    def test_the_owner_reference_is_rejected_on_every_other_intent(self):
+    def test_the_owner_reference_is_rejected_on_unrelated_intents(self):
         value = claim()
         _, errors, _ = self.run_evaluate(
             args("write", owner_authorization_ref=self.OWNER_REF),
@@ -1918,7 +3460,7 @@ class EvidenceErrataTests(unittest.TestCase):
             facts(),
         )
         self.assertTrue(
-            any("valid only for the evidence-errata intent" in e for e in errors)
+            any("valid only for evidence-errata or owner-reassignment" in e for e in errors)
         )
 
     def test_a_second_path_riding_along_is_refused(self):

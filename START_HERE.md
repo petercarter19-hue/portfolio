@@ -33,7 +33,8 @@ python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --tas
 ```
 
 Use `--intent read` for read-only work; failures stop. A control-only
-activation, authorize, surface extension, transfer, pause, resume, or close
+activation, authorize, surface extension, transfer, owner reassignment, pause,
+resume, or close
 uses `read` before the edit, changes and commits only the exact claim on its
 dedicated control branch, then runs the matching control intent with `--fetch
 --require-clean` before PR. It may not change an implementation surface.
@@ -131,6 +132,67 @@ Merge that control PR before implementation merge.
 - Transfer: push the exact checkpoint, record opaque from/to task references
   and explicit relinquishment in the claim, then validate on a dedicated
   `delivery-transfer` control branch with `--intent transfer`.
+- Owner reassignment: use only when Pete explicitly replaces a writer without
+  voluntary relinquishment. Lease `_control` for the receiving task on a
+  current-main `work/YYYY-MM-DD-delivery-owner-reassignment-<slug>` branch.
+  Before editing the claim, prepare one distinct, normalized, unclaimed and
+  server-absent successor branch at the exact fetched old-branch checkpoint:
+
+  ```bash
+  python scripts/worktree_lifecycle.py prepare-owner-reassignment --package <PACKAGE-ID> --task-ref <RECEIVER-REF> --successor-branch <NEW-WORK-BRANCH> --expected-checkpoint <OLD-REMOTE-SHA> --owner-authorization-ref <OWNER-REF> --execute
+  ```
+
+  This command requires a complete initialized registry, exactly one total
+  `control_singleton` record, and that exact active leased control singleton
+  with no registry lock or unresolved pending operation. It schema-validates
+  every completed/consuming/consumed preparation and rejects malformed,
+  duplicate, type-confused, orphan, or incompatible state, including a pending
+  worktree record without its exact create journal and any create, retire,
+  control-repoint, or branch-create journal without its exact record linkage,
+  before remote mutation. Before
+  journaling or pushing, it reconciles every active target-package/source-branch
+  durable record against one exact absolute live Git path, old task, old
+  branch, checkpoint HEAD, and pristine state, and rejects duplicates. It also rejects
+  exact and ancestor/descendant namespace collisions across local heads,
+  origin-tracking refs, live claims, worktrees, and active registry custody.
+  The guarded absent-ref create never force-moves a ref and immediately proves
+  both remote branches still equal the checkpoint, then rechecks current main
+  and the strict live-claim snapshot. Normal and crash recovery use the same
+  final server reproof immediately before completing the preparation. It
+  creates no local branch, changes no
+  old branch or worktree, and refuses dirty/unpushed old-writer state,
+  collisions, races, or ambiguous push recovery.
+
+  Successful preparation persists one completed tuple binding the package,
+  owner reference, old/new refs and branches, checkpoint, control branch,
+  prepared main, Git's exact `[new branch]` response, and the source snapshot.
+  Then change only the claim's `writer_ref`, `branch`, and `handoff`. The exact handoff is
+  `type: owner_reassignment`, opaque `from_ref`/`to_ref`, old/new branch names,
+  `checkpoint_sha`, and `owner_authorization_ref`; never assert
+  `relinquished`. Commit and run:
+
+  ```bash
+  python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent owner-reassignment --task-ref <RECEIVER-REF> --owner-authorization-ref <OWNER-REF> --fetch --require-clean
+  ```
+
+  This intent is the local-registry exception to ordinary CI/uninitialized
+  tolerance: it requires the same exclusively leased `_control`, no lock or
+  pending ambiguity, and one unconsumed completed tuple whose digest and live
+  source snapshot still match, while rechecking that the successor namespace
+  remains collision-free. A terminal mutex-held registry/lease/pending
+  validation closes admission after all owner-specific proofs and repeats the
+  source, namespace, main, claims, old-branch, and successor checks while the
+  mutex remains held. Missing, mismatched, mutated,
+  duplicated, or consumed proof fails closed. Merge that one-claim PR before
+  the receiver runs `ensure` or any write preflight. Post-merge `ensure`
+  atomically consumes the tuple once, preserves a registered old-writer
+  checkout as a non-writable reassignment source, and creates a distinct
+  successor durable worktree. A
+  dirty or residue-bearing receiver remains pending with its proof unconsumed.
+  Replayed consumed proof is refused; the successor may advance normally after
+  its first ensure. A later legitimate reassignment preserves older sources and
+  history under their own handoffs while consuming only the current source.
+  Recovery never deletes or force-moves the old branch or worktree.
 - Pause: push the exact work branch, set the claim to `paused` with that fetched
   checkpoint on a `delivery-pause` branch, then run `--intent pause`. Do not
   merge unfinished implementation merely to release ownership.

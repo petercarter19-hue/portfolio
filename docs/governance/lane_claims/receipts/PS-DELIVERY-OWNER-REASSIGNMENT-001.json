@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-OWNER-REASSIGNMENT-001",
+  "candidate_sha": "22bd41a4d5b3eba69d6a50109d0527e3bca6c8cc",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/recovery_ci_fix_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-08-27T19:19:44Z",
+  "findings": [],
+  "evidence_ref": "lane_claims/evidence/PS-DELIVERY-OWNER-REASSIGNMENT-001.md"
+}
