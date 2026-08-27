@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKSHOP-USE-DISCLOSURE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement the accepted Workshop D architecture: truthfully disclose when a member's confirmed private Workshop information is cited by at least one explicitly saved Opportunity Slate version; use dbo.opportunity_saved_evidence as the sole durable actual-use authority; add one owner-scoped, existence-neutral read procedure and service; show actual citation state and non-blocking warnings before edit or permanent delete; preserve archive, restore, edit, and delete authority; keep anonymous Workshop database-free; and prove server-derived identity, two-member isolation, forged-key neutrality, unavailable-state truth, migration apply/verify/rollback, and no provider use. Use existing restrained Workshop composition only. Do not create or extend knowledge_item_uses, treat transient opportunity_analysis_citations as durable use, copy private bodies into a new ledger, block member actions, or alter Opportunity Slate product behavior.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_implementer",
@@ -47,6 +47,6 @@
     "owner_authorization_ref": "session:01a04348-7e3e-7a11-a443-752498be91b5/owner-direction:2026-08-27/PS-WORKSHOP-USE-DISCLOSURE-001-owner-reassignment"
   },
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "9e40993dce28fff7fc6697353c31a0352f775d5e",
+  "closed_at": "2026-08-27T23:21:25Z"
 }
