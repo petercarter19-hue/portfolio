@@ -4,8 +4,8 @@
   "state": "active",
   "outcome": "Implement the accepted Workshop D architecture: truthfully disclose when a member's confirmed private Workshop information is cited by at least one explicitly saved Opportunity Slate version; use dbo.opportunity_saved_evidence as the sole durable actual-use authority; add one owner-scoped, existence-neutral read procedure and service; show actual citation state and non-blocking warnings before edit or permanent delete; preserve archive, restore, edit, and delete authority; keep anonymous Workshop database-free; and prove server-derived identity, two-member isolation, forged-key neutrality, unavailable-state truth, migration apply/verify/rollback, and no provider use. Use existing restrained Workshop composition only. Do not create or extend knowledge_item_uses, treat transient opportunity_analysis_citations as durable use, copy private bodies into a new ledger, block member actions, or alter Opportunity Slate product behavior.",
   "assignment": "implementation",
-  "writer_ref": "session:faacd1b7-1438-4dca-aff5-aaae1e108c46",
-  "branch": "work/2026-08-25-workshop-use-disclosure-001",
+  "writer_ref": "agent:/root/workshop_implementer",
+  "branch": "work/2026-08-27-workshop-use-disclosure-001-recovery",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
   "production_authority": "withheld",
@@ -37,7 +37,15 @@
     "schema:opportunity-slate:saved-use-read"
   ],
   "review_requirement": "independent",
-  "handoff": null,
+  "handoff": {
+    "type": "owner_reassignment",
+    "from_ref": "session:faacd1b7-1438-4dca-aff5-aaae1e108c46",
+    "to_ref": "agent:/root/workshop_implementer",
+    "from_branch": "work/2026-08-25-workshop-use-disclosure-001",
+    "to_branch": "work/2026-08-27-workshop-use-disclosure-001-recovery",
+    "checkpoint_sha": "debe35cea69e0b8e78992a054fcf4766ea06e67a",
+    "owner_authorization_ref": "session:01a04348-7e3e-7a11-a443-752498be91b5/owner-direction:2026-08-27/PS-WORKSHOP-USE-DISCLOSURE-001-owner-reassignment"
+  },
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null
