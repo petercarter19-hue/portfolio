@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKSHOP-DELIVERY-CONTINUITY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Repair the Git-portable optional-local-head proof and narrowly admit the existing digest- and new-branch-response-bound Workshop owner-reassignment preparation across strict-descendant main movement only when the authoritative Workshop claim blob is byte-identical, while preserving every existing source, namespace, remote, terminal, custody, and replay boundary. Record the current owner session as standing bounded authority for only the minimum repository follow-ups needed to complete the accepted Workshop outcome. Do not recreate, delete, or force-move refs; mutate preparation creation provenance; edit Workshop runtime or schema; or grant production, schema, identity, destructive, visual, credential, or spending authority.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_implementer",
@@ -34,6 +34,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "274f9bcdb5f04149bd7b4304e9db4fb64857a46b",
+  "closed_at": "2026-08-27T21:06:22Z"
 }
