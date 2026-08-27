@@ -99,6 +99,10 @@ from services.knowledge_service import (
     utf16_length,
     validate_knowledge_item_input,
 )
+from services.opportunity_use_service import (
+    OpportunityUseServiceError,
+    opportunity_use_service,
+)
 
 
 workshop = Blueprint("workshop", __name__)
@@ -126,10 +130,23 @@ SOURCE_LABELS = {
     "spoken": "Your words, spoken and reviewed",
     "ai_assisted_approved": "Your words, refined with AI assistance",
 }
-# W1 has no knowledge_item_uses table (architecture doc 17 section 5.4/5.5;
-# doc 18 slice W4). Every real item is honestly "not used elsewhere" until
-# that slice exists.
+# Workshop D (PS-WORKSHOP-USE-DISCLOSURE-001): the durable "used elsewhere"
+# authority is the member's explicitly saved Opportunity Slate
+# (opportunity_saved_evidence, read owner-scoped through
+# services/opportunity_use_service.py). Only the item DETAIL card renders
+# this label (templates/partials/workshop/_item_detail.html); list rows
+# carry it unrendered for shape stability. On the signed-in detail a real
+# item says "Not used elsewhere" ONLY after that read succeeded with zero
+# rows; a cited item gets the disclosure label from _slate_use_label; a
+# failed read renders neither label (never a definite negative the system
+# could not verify — see _slate_use_state). The anonymous demo library keeps
+# this static label: session-only sample items genuinely have no saved
+# Opportunity Slate. W4's knowledge_item_uses ledger (architecture doc 17
+# section 5.4/5.5) remains a future slice and is a different mechanism.
 NOT_USED_ELSEWHERE = "Not used elsewhere"
+# The short mobile-badge form of the cited state; the meta row carries the
+# full _slate_use_label sentence, which is too long for a chip.
+USED_BY_OPPORTUNITY_SLATE_BADGE = "Used by Opportunity Slate"
 
 # MINOR 7 correction: the composer/review classification control is four
 # radio-style chips, including an explicit "Not set" option for
@@ -495,6 +512,88 @@ def _real_detail_view(row):
     }
 
 
+# ---------------------------------------------------------------------------
+# Workshop D — saved-slate use disclosure (PS-WORKSHOP-USE-DISCLOSURE-001).
+# Signed-in routes only: the anonymous demo branches never call these, so the
+# module's promise that the anonymous path never reaches the database holds.
+# ---------------------------------------------------------------------------
+
+
+def _slate_use_state(user_key, item_key):
+    """Best-effort citation lookup: ("cited", SlateUse) | ("none", None) |
+    ("unavailable", None).
+
+    Best-effort in exactly the backlog-confirmation sense (see
+    my_information's degrade-safe wrapper): a failure here (including "the
+    procedure does not exist yet" before the PS-OPPSLATE-USE-001 apply)
+    must never deny the member their page. The
+    caller renders "unavailable" as omission — or, on the delete-confirm
+    screen only, as an explicit could-not-check sentence — and NEVER as
+    "Not used elsewhere", which is a definite negative this state cannot
+    support. No member text or item key is logged.
+    """
+    try:
+        use = opportunity_use_service.get_slate_use_for_owner(user_key, item_key)
+    except (OpportunityUseServiceError, DatabaseServiceError):
+        current_app.logger.info(
+            "PeerSlate Workshop slate-use check unavailable; continuing "
+            "without the disclosure."
+        )
+        return "unavailable", None
+    if use is None:
+        return "none", None
+    return "cited", use
+
+
+def _slate_use_version_phrase(count):
+    return "1 saved version" if count == 1 else f"{count} saved versions"
+
+
+def _slate_use_label(use):
+    """The full detail meta-row sentence for a cited item.
+
+    Record-level and screen-agnostic by design (the saved slate is the
+    record; no promise about any particular Opportunity Slate screen or
+    control), and version-scoped: only the citing saved versions are
+    claimed, never the whole slate.
+    """
+    label = (
+        "Used by Opportunity Slate — cited in "
+        f"{_slate_use_version_phrase(use.citing_version_count)}"
+    )
+    if use.cites_latest_saved_version:
+        label += ", including your latest save"
+    return label
+
+
+def _slate_use_view(use):
+    """The template-facing dict for the edit card and delete paragraph.
+
+    Counts and a phrase only — no titles, bodies, excerpts, or dates, so no
+    member or employer content rides into a template through this."""
+    return {
+        "citing_version_count": use.citing_version_count,
+        "version_phrase": _slate_use_version_phrase(use.citing_version_count),
+        "cites_latest_saved_version": use.cites_latest_saved_version,
+    }
+
+
+def _attach_slate_use_to_detail(detail, user_key):
+    """Overlay the real citation state onto a signed-in detail view.
+
+    "cited" replaces the label and adds the short badge; "none" keeps the
+    truthful NOT_USED_ELSEWHERE the builder already set; "unavailable"
+    clears the label so the template omits the row and badge entirely.
+    """
+    state, use = _slate_use_state(user_key, detail["item_key"])
+    if state == "cited":
+        detail["downstream_use_label"] = _slate_use_label(use)
+        detail["downstream_use_badge"] = USED_BY_OPPORTUNITY_SLATE_BADGE
+    elif state == "unavailable":
+        detail["downstream_use_label"] = None
+    return detail
+
+
 def _fixture_item_view(fixture_item):
     # Fixture rows have no backing database item, so there is nothing to
     # navigate into — select_url stays None and the template renders an
@@ -741,6 +840,10 @@ def my_information():
             except DatabaseServiceError:
                 current_app.logger.error("PeerSlate Workshop item detail is unavailable.")
                 return _render_workshop_unavailable()
+            if detail is not None:
+                # Workshop D: real per-item citation state, archived items
+                # included — their state matters most at restore/delete time.
+                _attach_slate_use_to_detail(detail, identity.user_key)
 
         view = {
             "schema_version": SCHEMA_VERSION,
@@ -842,6 +945,7 @@ def _composer_response(
     form_action,
     status_code=200,
     anonymous_preview=False,
+    slate_use=None,
 ):
     wording_limit = (
         workshop_demo_library.MAX_PREVIEW_WORDING_UNITS
@@ -876,6 +980,11 @@ def _composer_response(
             max_wording_units=wording_limit,
             classification_choices=CLASSIFICATION_CHOICES,
             anonymous_preview=anonymous_preview,
+            # Workshop D: present only when the signed-in edit target is
+            # actually cited by the member's saved Opportunity Slate; the
+            # template renders nothing otherwise, so the default composer
+            # screen is unchanged. Anonymous callers never set this.
+            slate_use=slate_use,
         ),
         status_code,
     )
@@ -1311,6 +1420,12 @@ def edit_information(item_key):
         current_app.logger.error("PeerSlate Workshop item edit lookup failed.")
         return _render_workshop_unavailable()
 
+    # Workshop D: a restrained informational note when the edit target is
+    # actually cited. "none" and "unavailable" both render nothing here —
+    # the note exists only for a member about to edit a genuinely cited
+    # item, and an unavailable check must not claim anything either way.
+    use_state, use = _slate_use_state(identity.user_key, normalized_item_key)
+
     return _composer_response(
         mode="edit",
         values={
@@ -1327,6 +1442,7 @@ def edit_information(item_key):
         expected_version_token=item["version_token"],
         error_message=None,
         form_action=url_for("workshop.review_edit", item_key=normalized_item_key),
+        slate_use=_slate_use_view(use) if use_state == "cited" else None,
     )
 
 
@@ -1738,6 +1854,15 @@ def delete_confirm(item_key):
         current_app.logger.error("PeerSlate Workshop delete lookup failed.")
         return _render_workshop_unavailable()
 
+    # Workshop D: this screen is where the member is shown affected uses
+    # before deleting (the application-layer answer to the W1 delete
+    # procedure's standing header note). Three honest states: "cited" names
+    # the citation and what deletion means for it; "unavailable" says
+    # plainly the check could not be completed (omission here would silently
+    # remove the guard at the one moment it matters); "none" adds nothing.
+    # Whatever the state, the POST below is unchanged — the member decides.
+    use_state, use = _slate_use_state(identity.user_key, normalized_item_key)
+
     return render_template(
         "workshop_delete_confirm.html",
         page_title="Delete information — Workshop",
@@ -1747,6 +1872,8 @@ def delete_confirm(item_key):
         cancel_url=url_for("workshop.my_information", item=normalized_item_key),
         delete_url=url_for("workshop.delete_item", item_key=normalized_item_key),
         error_message=WORKSHOP_VALIDATION_MESSAGES.get(request.args.get("error")),
+        slate_use_state=use_state,
+        slate_use=_slate_use_view(use) if use_state == "cited" else None,
     )
 
 

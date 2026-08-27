@@ -196,6 +196,17 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_GetOpportunitySourceIdentityForOwner",
             "usp_SaveOpportunitySourceIdentityForOwner",
         }
+        # PS-WORKSHOP-USE-DISCLOSURE-001 (Workshop D): the owner-scoped
+        # saved-slate use disclosure read over the OS-4 snapshot. Schema
+        # PS-OPPSLATE-USE-001 is registered with a disposable-database gate
+        # proof but is not applied by this package; the one name is
+        # allowlisted at the application layer ahead of any separately
+        # authorized apply, degrade-safe (workshop_routes.py's
+        # _slate_use_state renders omission or an explicit could-not-check
+        # sentence on failure, never a definite negative).
+        oppslate_use = {
+            "usp_GetOpportunitySlateUseForOwner",
+        }
         # Capture, Moment, Placement, Voice, Photo, Journal, Board, Slate
         # Space, Challenges, and account bootstrap — everything else the
         # non-Community, non-Opportunity-Slate product surface calls.
@@ -342,6 +353,7 @@ class DatabaseServiceTests(unittest.TestCase):
             | oppslate_os3
             | oppslate_os4
             | oppslate_r1
+            | oppslate_use
             | general
             | ask_pete_direct
             | community
@@ -357,13 +369,14 @@ class DatabaseServiceTests(unittest.TestCase):
             oppslate_os3,
             oppslate_os4,
             oppslate_r1,
+            oppslate_use,
             general,
             ask_pete_direct,
             community,
             interview_ai_telemetry,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 137)
+        self.assertEqual(len(expected), 138)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_photo_procedures_are_explicitly_allowlisted(self):

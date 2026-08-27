@@ -24,7 +24,18 @@
    Edit / Archive / Restore / Delete are real, wired actions for a real
    item (workshop.detail.edit_url etc. are set); a dev-fixture item has no
    backing record to act on, so its actions render inert (href="#",
-   aria-disabled="true") exactly as the checkpoint did. #}
+   aria-disabled="true") exactly as the checkpoint did.
+
+   Workshop D (PS-WORKSHOP-USE-DISCLOSURE-001): the downstream-use badge and
+   meta row are now conditional. A signed-in real item carries the actual
+   saved-Opportunity-Slate citation state (downstream_use_label, plus the
+   short downstream_use_badge for the chip); when the citation check is
+   unavailable the route clears downstream_use_label and BOTH renderings are
+   omitted — never a definite "Not used elsewhere" the system could not
+   verify. Fixture and anonymous-demo items keep their static label and
+   never set the badge, so those paths render exactly as before. This row
+   sits beside the Archive button on purpose: it is the archive-time
+   disclosure surface too. #}
 {% from "partials/workshop/_icons.html" import workshop_icon %}
 {% set item = workshop.detail %}
 {% if item %}
@@ -47,7 +58,11 @@
             {{ workshop_icon("lock") }}<span>Private</span>
         </span>
         <span class="wk-badge wk-badge--accent wk-badge--mobile-only">{{ item.classification_label }}</span>
+        {% if item.downstream_use_badge %}
+        <span class="wk-badge wk-badge--neutral wk-badge--mobile-only">{{ item.downstream_use_badge }}</span>
+        {% elif item.downstream_use_label %}
         <span class="wk-badge wk-badge--neutral wk-badge--mobile-only">{{ item.downstream_use_label }}</span>
+        {% endif %}
     </div>
 
     <div class="wk-detail__body-box">
@@ -67,10 +82,12 @@
             <dt>{{ workshop_icon("briefcase") }}<span>Classification</span></dt>
             <dd>{{ item.classification_label }}</dd>
         </div>
+        {% if item.downstream_use_label %}
         <div class="wk-detail__meta-row">
             <dt>{{ workshop_icon("circle-arrow") }}<span>Downstream use</span></dt>
             <dd>{{ item.downstream_use_label }}</dd>
         </div>
+        {% endif %}
         <div class="wk-detail__meta-row">
             <dt>{{ workshop_icon("circle-arrow") }}<span>Source</span></dt>
             <dd>{{ item.source_label }}</dd>

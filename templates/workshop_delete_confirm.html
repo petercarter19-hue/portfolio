@@ -33,6 +33,33 @@
             affected.
         </p>
 
+        {# Workshop D (PS-WORKSHOP-USE-DISCLOSURE-001): the member is shown
+           actual saved-Opportunity-Slate uses before deleting. Three honest
+           states from the route: "cited" names the citation and what
+           survives deletion; "unavailable" says plainly the check could not
+           be completed — never a claim either way; "none" (and every
+           anonymous request, where slate_use_state is not set) renders
+           nothing. Whatever renders, the form below is unchanged — the
+           member decides. #}
+        {% if slate_use_state == "cited" %}
+        <p>
+            Your saved Opportunity Slate cites this item in
+            {{ slate_use.version_phrase }}{% if slate_use.cites_latest_saved_version %}, including your latest save{% endif %}.
+            The slate keeps its own copy of the title and short excerpt it
+            cited, so those saved versions stay readable &mdash; but after
+            deletion they will show this input as changed rather than
+            current.
+        </p>
+        {% elif slate_use_state == "unavailable" %}
+        <p>
+            PeerSlate could not check just now whether your saved Opportunity
+            Slate cites this item. If it does, the slate keeps its own copy
+            of the title and short excerpt it cited, and after deletion those
+            saved versions would show this input as changed rather than
+            current.
+        </p>
+        {% endif %}
+
         {% if error_message %}
         <div class="wk-form-error" role="alert">{{ error_message }}</div>
         {% endif %}

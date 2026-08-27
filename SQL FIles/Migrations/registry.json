@@ -1729,6 +1729,42 @@
         "verification": "PS-MYOPP-001_canonical_foundation_verify.sql returned verified = 1",
         "operator": "agent:/root/c2_canonical_writer"
       }
+    },
+    {
+      "id": "PS-OPPSLATE-USE-001",
+      "forward": "SQL FIles/Migrations/PS-OPPSLATE-USE-001_opportunity_slate_use.sql",
+      "rollback": "SQL FIles/Migrations/PS-OPPSLATE-USE-001_opportunity_slate_use_rollback.sql",
+      "requires": [
+        "PS-OPPSLATE-003"
+      ],
+      "summary": "Workshop D saved-slate use disclosure (PS-WORKSHOP-USE-DISCLOSURE-001): one owner-scoped read-only procedure (usp_GetOpportunitySlateUseForOwner) answering whether any version of the member's own explicitly saved Opportunity Slate cites one knowledge item, plus one supporting nonclustered index on opportunity_saved_evidence. Additive only; no table, column, row, or existing-procedure change; returns counts, a version number, and a timestamp only.",
+      "gate": {
+        "executable_sha256": "fe7e929fa12a32d9b0d4a78be04330b6e144ddf8c3ea8aff9fcf06016353374e",
+        "gated_at_utc": "2026-08-27T22:20:06Z",
+        "gate_database": "ps-oppslate-use-001-gate-20260828-r2",
+        "gate_server": "peerslate",
+        "prerequisites": [
+          "PS-PLAT-000",
+          "PS-PLAT-001",
+          "PS-PLAT-002",
+          "PS-PLAT-003",
+          "PS-PLAT-004",
+          "PS-PLAT-005",
+          "PS-PLAT-006",
+          "PS-PLAT-007",
+          "PS-AUTH-001",
+          "PS-WORKSHOP-001",
+          "PS-OPPSLATE-001",
+          "PS-OPPSLATE-002",
+          "PS-OPPSLATE-003"
+        ],
+        "objects": [
+          "SQL_STORED_PROCEDURE:dbo.usp_GetOpportunitySlateUseForOwner"
+        ],
+        "verification": "PS-OPPSLATE-USE-001_owner_isolation_verify.sql returned verified = 1",
+        "operator": "agent:/root/workshop_implementer",
+        "notes": "Disposable Azure SQL gate; apply, no-op reapply, owner-isolation verify, rollback, and post-rollback reapply passed; no production database contacted or schema applied."
+      }
     }
   ]
 }

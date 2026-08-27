@@ -56,6 +56,13 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_DeleteOpportunitySavedSlateForOwner",
         "usp_GetOpportunitySavedSlateForOwner",
         "usp_SaveOpportunitySlateForOwner",
+        # PS-WORKSHOP-USE-DISCLOSURE-001 (Workshop D): the owner-scoped
+        # saved-slate use disclosure read. Schema PS-OPPSLATE-USE-001 is
+        # registered with a disposable-database gate proof but not applied by
+        # this package; allowlisted at the application layer ahead of any
+        # separately authorized apply, degrade-safe — see
+        # workshop_routes.py's _slate_use_state.
+        "usp_GetOpportunitySlateUseForOwner",
         "usp_CorrectCapture",
         "usp_CreateCapture",
         "usp_CreateVoiceDraft",

@@ -139,6 +139,29 @@
         </div>
 
         <div class="wk-aside">
+            {# Workshop D (PS-WORKSHOP-USE-DISCLOSURE-001): rendered ONLY
+               when the signed-in edit target is actually cited by this
+               member's own saved Opportunity Slate — slate_use is None on
+               every add, every uncited edit, every unavailable check, and
+               every anonymous request, so the default composer screen is
+               byte-identical to before. Informational only: nothing here
+               gates, alters, or intercepts the form. Deliberately NOT a new
+               entry in _use_elsewhere_card.html, whose destination list
+               renders the W4 target_kind enumeration and must not grow. #}
+            {% if slate_use %}
+            <section class="wk-card wk-side-card" aria-labelledby="wk-slate-use-title">
+                <div class="wk-side-card__head">
+                    {{ workshop_icon("circle-arrow") }}
+                    <span id="wk-slate-use-title">Used by Opportunity Slate</span>
+                </div>
+                <ul class="wk-side-card__list">
+                    <li>{{ workshop_icon("check") }}<span>Your saved Opportunity Slate cites this item in {{ slate_use.version_phrase }}{% if slate_use.cites_latest_saved_version %}, including your latest save{% endif %}.</span></li>
+                    <li>{{ workshop_icon("check") }}<span>The slate keeps its own copy of the title and short excerpt it cited, so editing here never rewrites it.</span></li>
+                    <li>{{ workshop_icon("check") }}<span>After you save changes, the saved versions that cite this item will show this input as changed rather than current.</span></li>
+                </ul>
+                <p class="wk-side-card__note">You can still edit freely — this is information, not a restriction.</p>
+            </section>
+            {% endif %}
             {# Owner instruction 2026-08-02 (doc 20 section 6e): an
                anonymous visitor's own add/edit now really persists to
                their session, but never "privately" in the permanent

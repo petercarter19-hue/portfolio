@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-USE-DISCLOSURE-001",
+  "candidate_sha": "852e2bccd918e952b753e0008632d3f4a879484c",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/workshop_final_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-08-27T23:04:54Z",
+  "findings": [],
+  "evidence_ref": "lane_claims/evidence/PS-WORKSHOP-USE-DISCLOSURE-001.md"
+}
