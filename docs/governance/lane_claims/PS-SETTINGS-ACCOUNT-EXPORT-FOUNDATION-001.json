@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-FOUNDATION-001",
+  "state": "active",
+  "outcome": "Deliver C1 only: the additive, owner-scoped account-export foundation defined by the accepted C0 architecture (main 8cb633895c6df5b9b09e0e9f46922fdc60550e49) - the account_export_jobs and account_export_job_domains ledgers, guarded owner request/status/download-metadata procedures with server-derived identity, lease-fenced worker claim/complete/fail/expire/cleanup procedures, enforcement of the owner-approved provisional limits (one active job per owner, one request per 24 hours, three bounded attempts), least-privilege grants, one additive registered migration with matching rollback and gate proof, and focused migration/isolation tests. Domain-reader procedures land only for domains whose field allowlist and redaction contract are separately approved; unapproved domains stay out of C1. No container, workload identity, scheduler, worker runtime, member UI, route, dependency, pipeline, configuration, deployment, enablement, or production schema apply; production application is deferred to the C4 release sequence unless Pete separately directs an earlier apply. The ledgers store no exported member content and create no second canonical store.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/settings-c1-writer",
+  "branch": "work/2026-08-28-settings-account-export-foundation-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "920b4dd38317487409532bc002478232c5b0b715",
+  "owner_outcome_ref": "session:01a03e17-a645-7ae0-8da3-164eef90a333/owner-direction:2026-08-28/PS-SETTINGS-ACCOUNT-EXPORT-C1-C4-END-TO-END",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-ACCOUNT-EXPORT-FOUNDATION-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-FOUNDATION-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-ACCOUNT-EXPORT-FOUNDATION-001.json",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C1_ACCOUNT_EXPORT_FOUNDATION.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C1_OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-001_account_export_foundation.sql",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-001_account_export_foundation_rollback.sql",
+    "SQL FIles/Migrations/registry.json",
+    "tests/test_settings_account_export_migration.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-FOUNDATION-001.md"
+  ],
+  "domains": [
+    "governance:settings-my-data:account-export-foundation",
+    "schema:settings:account-export-foundation",
+    "testing:settings:account-export-foundation"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
