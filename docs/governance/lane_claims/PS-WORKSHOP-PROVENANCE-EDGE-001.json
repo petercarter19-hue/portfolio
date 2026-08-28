@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-PROVENANCE-EDGE-001",
+  "state": "active",
+  "outcome": "Close the two remaining generated-source provenance gaps without schema change. Taking up a Spark must keep PeerSlate's focus seed visibly and structurally separate from the member's answer so generated text can never become original_member_wording. AI proposal acceptance must require nonblank member wording, preventing a blank first acceptance followed by another acceptance from recording AI text as original. Preserve first-member-wording retention, ai_assisted_approved, cookie compatibility and byte limits, refusal atomicity, anonymous database-free behavior, existing provider/spend controls, and Workshop D behavior. Excluded: history display, edit provenance, schema, visual redesign, deployment, and production action.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/workshop_e_implementer",
+  "branch": "work/2026-08-28-workshop-provenance-edge-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "90b3611681d2fc58fa4c5891a486851b74bb8483",
+  "owner_outcome_ref": "session:01a04348-7e3e-7a11-a443-752498be91b5/owner-direction:2026-08-28/workshop-e-provenance-edge",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-WORKSHOP-PROVENANCE-EDGE-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-PROVENANCE-EDGE-001.md",
+    "docs/governance/lane_claims/receipts/PS-WORKSHOP-PROVENANCE-EDGE-001.json",
+    "services/workshop_work_session.py",
+    "workshop_work_routes.py",
+    "templates/workshop_work_session.html",
+    "tests/test_workshop_work_session.py",
+    "tests/test_workshop_review.py",
+    "tests/test_workshop_spark.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-PROVENANCE-EDGE-001.md"
+  ],
+  "domains": [
+    "runtime:workshop:provenance:session-source",
+    "runtime:workshop:ai:proposal-acceptance",
+    "testing:workshop:provenance-edge"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
