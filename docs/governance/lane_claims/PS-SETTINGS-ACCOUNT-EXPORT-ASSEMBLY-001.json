@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-ASSEMBLY-001",
+  "state": "active",
+  "outcome": "Build C2 private-artifact assembly per the accepted C0 architecture on the closed, gate-proven C1 foundation: a storage adapter for a dedicated private export container (public access disabled, no SAS or direct URLs) with job/attempt-scoped staging; deterministic streaming ZIP assembly of the versioned manifest contract, counters failing safely at the approved 100/250 MiB caps; promotion only after recomputed SHA-256/sizes are ledger-committed with the C1 ready transition; expiry-blocked content-free idempotent cleanup that never redelivers; a worker claiming jobs solely via the C1 lease procedures, enforcing owner-active status before storing any artifact; fixture-only assembly, zero real member domain readers; and the transferred owner-isolation verification script paired with a fresh PS-SETTINGS-EXPORT-001 gate run. Azure container/worker-identity/grant actions proceed only under the owner's recorded 2026-08-28 program authorization with fresh action-time references, recorded in the C2 documents; no schedule. Stop before UI (C3), real domain readers, production apply/deploy (C4), enablement, or any live claim.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/settings-c2-writer",
+  "branch": "work/2026-08-28-settings-account-export-assembly-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "54c6a2fcd2be155c7698baddd81efef11aada6dd",
+  "owner_outcome_ref": "session:01a03e17-a645-7ae0-8da3-164eef90a333/owner-direction:2026-08-28/PS-SETTINGS-ACCOUNT-EXPORT-C1-C4-END-TO-END",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-ACCOUNT-EXPORT-ASSEMBLY-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-ASSEMBLY-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-ACCOUNT-EXPORT-ASSEMBLY-001.json",
+    "services/account_export_storage_service.py",
+    "services/account_export_assembly_service.py",
+    "scripts/run_account_export_worker.py",
+    "tests/test_account_export_storage.py",
+    "tests/test_account_export_assembly.py",
+    "SQL FIles/Verification/PS-SETTINGS-EXPORT-001_owner_isolation_verify.sql",
+    "SQL FIles/Migrations/registry.json",
+    ".env.example",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C2_ACCOUNT_EXPORT_ASSEMBLY.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C2_OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C1_ACCOUNT_EXPORT_FOUNDATION.md"
+  ],
+  "domains": [
+    "runtime:settings:account-export-assembly",
+    "storage:settings:account-export-container",
+    "identity:settings:account-export-worker",
+    "testing:settings:account-export-assembly",
+    "schema-verification:settings:account-export"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-ASSEMBLY-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
