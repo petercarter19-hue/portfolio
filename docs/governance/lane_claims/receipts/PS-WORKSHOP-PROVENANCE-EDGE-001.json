@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-PROVENANCE-EDGE-001",
+  "candidate_sha": "20144f00831197e53a8bd83a679e6b37327cfb76",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/workshop_e_implementer/workshop_e_exact_sha_reviewer_r2",
+  "result": "pass",
+  "reviewed_at": "2026-08-28T02:40:16Z",
+  "findings": [
+    {
+      "id": "R1-BLOCKER-legacy-assisted-source-ambiguity",
+      "status": "resolved",
+      "severity": "blocker",
+      "summary": "Initial candidate 2a0905679f339ce3f6240b023272ee6599b57a72 treated stale AI-assisted 6/7-element cookies with no retained original as member-authored. Exact-base stale Spark and blank-first forms could therefore promote generated text on acceptance or durable save. Corrected candidate 20144f00831197e53a8bd83a679e6b37327cfb76 explicitly classifies those states as provenance-ambiguous and refuses acceptance, quick save, and final save atomically; a fresh independent review confirmed the blocker closed."
+    }
+  ],
+  "evidence_ref": "lane_claims/evidence/PS-WORKSHOP-PROVENANCE-EDGE-001.md"
+}

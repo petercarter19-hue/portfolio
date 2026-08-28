@@ -924,6 +924,7 @@ def start_work_session():
     door = request.form.get("door") or wws.DOOR_SOMETHING
     thought = request.form.get("thought", "")
 
+    opening_thought = ""
     if door == wws.DOOR_CONTINUE:
         normalized = _normalize_item_key(request.form.get("resume_item", ""))
         row = None
@@ -940,6 +941,7 @@ def start_work_session():
         seed = row["approved_wording"]
     elif door == wws.DOOR_SOMETHING:
         seed = thought
+        opening_thought = thought
     elif door == wws.DOOR_SPARK:
         # "Work on this". The seed comes from the Spark THIS PROCESS
         # generated and validated, read back from the session — never from
@@ -952,7 +954,12 @@ def start_work_session():
             # Neutral fallback, matching the resume path above: never
             # confirms or denies why a Spark is not there.
             return redirect(url_for("workshop.work_opening"))
-        seed = spark_state["current"]["focus_seed"]
+        # Keep PeerSlate's generated focus seed out of the member's answer.
+        # ``opening_thought`` is already the compact, capped session slot for
+        # opening context; the render path attributes it by door, so no new
+        # cookie field or byte-budget expansion is needed.
+        seed = ""
+        opening_thought = spark_state["current"]["focus_seed"]
     else:
         try:
             return _render_opening(
@@ -974,7 +981,7 @@ def start_work_session():
         session,
         door=door,
         answer=seed,
-        opening_thought=thought if door == wws.DOOR_SOMETHING else "",
+        opening_thought=opening_thought,
     )
     if not ok:
         try:
@@ -992,12 +999,11 @@ def start_work_session():
         # The Spark has been taken up, so it leaves the opening — while
         # staying in the offered list, so it is never suggested again.
         wws.clear_current_spark(session)
-        # The working answer starts as PeerSlate's words, not the member's.
-        # Marking the session AI-assisted now means that if they save it
-        # barely changed, it is labelled honestly ("Your words, refined with
-        # AI assistance") rather than as something they typed unaided. A
-        # Spark seed is a starting thought and never confirmed information:
-        # nothing has been written to any library by this point.
+        # The working answer starts empty; PeerSlate's focus seed remains
+        # separate opening context. Marking the session AI-assisted records
+        # that the member used generated context even though their eventual
+        # answer remains their own wording. A Spark seed is never confirmed
+        # information: nothing has been written to any library by this point.
         wws.mark_ai_assisted(session)
 
     return redirect(url_for("workshop.work_session_screen"))
@@ -1112,10 +1118,15 @@ def _render_session_screen(
             anonymous_preview=(identity is None),
             question_text=state["question_text"],
             # Audit fix F2: what the visitor typed to get here, shown back to
-            # them as theirs. Empty for a resumed item or a Spark seed, and
-            # empty when the cookie was too tight to remember it — the
-            # template renders nothing at all rather than an empty quote.
-            opening_thought=state["opening_thought"],
+            # them as theirs. A Spark uses the same compact storage slot but
+            # is passed through the separately attributed variable below;
+            # resumed work and a dropped optional echo render no quote.
+            opening_thought=(
+                state["opening_thought"] if state["door"] != wws.DOOR_SPARK else ""
+            ),
+            spark_focus_seed=(
+                state["opening_thought"] if state["door"] == wws.DOOR_SPARK else ""
+            ),
             answer_value=answer_override if answer_override is not None else state["answer"],
             max_answer_units=wws.MAX_ANSWER_UNITS,
             # Audit fix F1 (2026-08-04): the answer field is the only thing
@@ -1201,6 +1212,26 @@ def update_work_session():
     valid_selected_ids = [item_id for item_id in submitted_ids if item_id in visible_ids]
     context_mask = wws.context_mask_from_ids(valid_selected_ids, visible_ids)
     wk_action = request.form.get("wk_action")
+
+    # Pre-retained-original AI-assisted cookies can be structurally valid
+    # while carrying a generated answer with no trustworthy member source.
+    # Never treat newly submitted client text as proof that the old source
+    # was member-authored; refuse before mutating the session or calling an
+    # owner save. Anonymous preview rows have no original-wording field and
+    # remain browser-only, so this durable provenance gate is member-only.
+    if (
+        identity is not None
+        and wk_action in {"save_to_library", "save_unfinished"}
+        and state["member_source_ambiguous"]
+    ):
+        return _render_session_screen(
+            identity=identity,
+            state=state,
+            answer_override=answer,
+            selected_ids_override=set(valid_selected_ids),
+            error_message=wws.SOURCE_PROVENANCE_UNCLEAR_MESSAGE,
+            status_code=400,
+        )
 
     ok, error_message = wws.update_session(session, answer=answer, context_mask=context_mask)
     if not ok:
@@ -1995,6 +2026,9 @@ def work_session_save():
             classification=classification,
             authored_via=authored_via,
         )
+
+    if state["member_source_ambiguous"]:
+        return _rerender(wws.SOURCE_PROVENANCE_UNCLEAR_MESSAGE)
 
     try:
         result = knowledge_service.save_knowledge_item_for_owner(

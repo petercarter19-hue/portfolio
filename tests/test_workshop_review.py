@@ -952,6 +952,53 @@ class AcceptDiscardProposalTests(WorkshopReviewRouteTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("This review has expired", response.data.decode("utf-8"))
 
+    def test_accepting_from_a_blank_answer_is_refused_without_mutating_the_session(self):
+        token = self._start_and_review()
+        self._start(thought="   ")
+        before = list(self._bucket())
+
+        response = self._post_review(
+            accept_proposal="1",
+            proposed_wording="PeerSlate's generated first draft.",
+            review_token=token,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            wws.MEMBER_WORDING_REQUIRED_MESSAGE,
+            html.unescape(response.data.decode("utf-8")),
+        )
+        self.assertEqual(self._bucket(), before)
+        self.assertEqual(self._bucket()[2], "   ")
+        self.assertEqual(self._bucket()[5], 0)
+
+    def test_stale_assisted_cookie_acceptance_fails_closed_atomically(self):
+        token = self._start_and_review()
+        stale_buckets = (
+            [wws.DOOR_SPARK, 0, "PeerSlate generated seed", 0, 1, 1, ""],
+            [wws.DOOR_SOMETHING, 0, "First AI draft", 0, 1, 1],
+            [wws.DOOR_SOMETHING, 0, "First AI draft", 0, 1, 1, ""],
+        )
+
+        for bucket in stale_buckets:
+            with self.subTest(shape=len(bucket), door=bucket[0]):
+                with self.client.session_transaction() as sess:
+                    sess[wdl.SESSION_KEY] = {"w": list(bucket)}
+                before = list(self._bucket())
+
+                response = self._post_review(
+                    accept_proposal="1",
+                    proposed_wording="A later AI draft",
+                    review_token=token,
+                )
+
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(
+                    wws.SOURCE_PROVENANCE_UNCLEAR_MESSAGE,
+                    html.unescape(response.data.decode("utf-8")),
+                )
+                self.assertEqual(self._bucket(), before)
+
     def test_accepting_a_proposal_relabels_the_wording_as_current_not_original(self):
         """F1 correction (independent Opus review): after Accept, the
         working answer is AI-authored text the member accepted, generated
@@ -2707,6 +2754,44 @@ class MemberAiAssistedSaveTests(WorkshopReviewRouteTestCase):
 
         fields = mock_save.call_args[0][2]
         self.assertEqual(fields["authored_via"], "typed")
+
+    def test_stale_assisted_cookies_never_reach_the_final_owner_save(self):
+        stale_buckets = (
+            [wws.DOOR_SPARK, 0, "PeerSlate generated seed", 0, 1, 1, ""],
+            [wws.DOOR_SOMETHING, 0, "First AI draft", 0, 1, 1],
+            [wws.DOOR_SOMETHING, 0, "First AI draft", 0, 1, 1, ""],
+        )
+
+        for bucket in stale_buckets:
+            with self.subTest(shape=len(bucket), door=bucket[0]):
+                with self.client.session_transaction() as sess:
+                    sess[wdl.SESSION_KEY] = {"w": list(bucket)}
+                before = list(self._bucket())
+
+                with patch(
+                    "workshop_work_routes.get_current_identity",
+                    return_value=member("Test Member", "member-stale-final"),
+                ), patch(
+                    "workshop_work_routes.knowledge_service.save_knowledge_item_for_owner"
+                ) as mock_save:
+                    response = self.client.post(
+                        "/app/workshop/work/session/save",
+                        data={
+                            "title": "A stale assisted session",
+                            "wording": bucket[2],
+                            "classification": "work",
+                            "save_action": "confirm",
+                        },
+                        headers=SAME_ORIGIN_HEADERS,
+                    )
+
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(
+                    wws.SOURCE_PROVENANCE_UNCLEAR_MESSAGE,
+                    html.unescape(response.data.decode("utf-8")),
+                )
+                mock_save.assert_not_called()
+                self.assertEqual(self._bucket(), before)
 
     def test_an_accepted_proposal_retains_the_members_own_pre_acceptance_wording(self):
         """PS-WORKSHOP-PROVENANCE-001 — the package's reason to exist.

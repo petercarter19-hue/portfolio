@@ -121,6 +121,78 @@ class WorkOnSomethingTestCase(unittest.TestCase):
         )
 
 
+class SessionShapeCompatibilityTests(unittest.TestCase):
+    def test_four_six_seven_and_eight_element_cookie_shapes_still_read(self):
+        cases = (
+            ("typed-four", [wws.DOOR_SOMETHING, 0, "four", 1], 0, False, "", "", False),
+            (
+                "assisted-six",
+                [wws.DOOR_SOMETHING, 0, "six", 1, 2, 1],
+                2,
+                True,
+                "",
+                "",
+                True,
+            ),
+            (
+                "typed-seven",
+                [wws.DOOR_SOMETHING, 0, "seven", 1, 3, 0, "opening"],
+                3,
+                False,
+                "opening",
+                "",
+                False,
+            ),
+            (
+                "retained-eight",
+                [
+                    wws.DOOR_SOMETHING,
+                    0,
+                    "approved",
+                    1,
+                    4,
+                    1,
+                    "opening",
+                    "member original",
+                ],
+                4,
+                True,
+                "opening",
+                "member original",
+                False,
+            ),
+            (
+                "stale-spark-seven",
+                [wws.DOOR_SPARK, 0, "generated seed", 0, 1, 1, ""],
+                1,
+                True,
+                "",
+                "",
+                True,
+            ),
+            (
+                "new-spark-seven",
+                [wws.DOOR_SPARK, 0, "member answer", 0, 1, 1, "generated seed"],
+                1,
+                True,
+                "generated seed",
+                "",
+                False,
+            ),
+        )
+
+        for label, bucket, calls, assisted, opening, original, ambiguous in cases:
+            with self.subTest(label=label, shape=len(bucket)):
+                state = wws.read_state({wdl.SESSION_KEY: {"w": bucket}})
+                self.assertIsNotNone(state)
+                self.assertEqual(state["answer"], bucket[2])
+                self.assertEqual(state["ai_call_count"], calls)
+                self.assertIs(state["ai_assisted"], assisted)
+                self.assertEqual(state["opening_thought"], opening)
+                self.assertEqual(state["original_answer"], original)
+                self.assertIs(state["member_source_ambiguous"], ambiguous)
+
+
 # ---------------------------------------------------------------------------
 # Flag-off: every /work/* route 404s neutrally, before any identity
 # resolution, and the mode tab stays "Coming later" everywhere.
@@ -707,6 +779,90 @@ class SaveUnfinishedTests(WorkOnSomethingTestCase):
         self.assertEqual(message, wws.ORIGINAL_RETENTION_FULL_MESSAGE)
         self.assertEqual(before, after, "a refused acceptance must not write anything")
         self.assertEqual(still_there, member_wording)
+
+    def test_repeated_blank_acceptance_cannot_turn_ai_text_into_an_original(self):
+        with app.test_request_context():
+            flask_session[wdl.SESSION_KEY] = {
+                "w": [wws.DOOR_SOMETHING, 0, "   ", 0, 1, 0, ""]
+            }
+            before = json.dumps(flask_session[wdl.SESSION_KEY], sort_keys=True)
+
+            for proposal in ("First AI draft.", "Second AI draft."):
+                ok, message = wws.accept_ai_proposal(
+                    flask_session,
+                    proposed_answer=proposal,
+                    context_mask=0,
+                )
+                self.assertFalse(ok)
+                self.assertEqual(message, wws.MEMBER_WORDING_REQUIRED_MESSAGE)
+
+            after = json.dumps(flask_session[wdl.SESSION_KEY], sort_keys=True)
+            state = wws.read_state(flask_session)
+
+        self.assertEqual(after, before)
+        self.assertEqual(state["answer"], "   ")
+        self.assertEqual(state["original_answer"], "")
+        self.assertFalse(state["ai_assisted"])
+
+    def test_stale_assisted_cookies_refuse_acceptance_without_any_write(self):
+        stale_buckets = (
+            [wws.DOOR_SPARK, 0, "PeerSlate generated seed", 0, 1, 1, ""],
+            [wws.DOOR_SOMETHING, 0, "First AI draft", 0, 1, 1],
+            [wws.DOOR_SOMETHING, 0, "First AI draft", 0, 1, 1, ""],
+        )
+
+        for bucket in stale_buckets:
+            with self.subTest(shape=len(bucket), door=bucket[0]):
+                with app.test_request_context():
+                    flask_session[wdl.SESSION_KEY] = {"w": list(bucket)}
+                    before = json.dumps(flask_session[wdl.SESSION_KEY], sort_keys=True)
+                    ok, message = wws.accept_ai_proposal(
+                        flask_session,
+                        proposed_answer="A later AI draft",
+                        context_mask=0,
+                    )
+                    after = json.dumps(flask_session[wdl.SESSION_KEY], sort_keys=True)
+
+                self.assertFalse(ok)
+                self.assertEqual(message, wws.SOURCE_PROVENANCE_UNCLEAR_MESSAGE)
+                self.assertEqual(after, before)
+
+    def test_stale_assisted_cookies_never_reach_the_quick_owner_save(self):
+        stale_buckets = (
+            [wws.DOOR_SPARK, 0, "PeerSlate generated seed", 0, 1, 1, ""],
+            [wws.DOOR_SOMETHING, 0, "First AI draft", 0, 1, 1],
+            [wws.DOOR_SOMETHING, 0, "First AI draft", 0, 1, 1, ""],
+        )
+
+        for bucket in stale_buckets:
+            with self.subTest(shape=len(bucket), door=bucket[0]):
+                with self.client.session_transaction() as sess:
+                    sess[wdl.SESSION_KEY] = {"w": list(bucket)}
+                with self.client.session_transaction() as sess:
+                    before = json.dumps(sess[wdl.SESSION_KEY], sort_keys=True)
+
+                with patch(
+                    "workshop_work_routes.get_current_identity",
+                    return_value=member("Test Member", "member-stale-quick"),
+                ), patch(
+                    "workshop_work_routes.knowledge_service.list_knowledge_items_for_owner",
+                    return_value=KnowledgeItemListResult(items=[], total_count=0),
+                ), patch(
+                    "workshop_work_routes.knowledge_service.save_knowledge_item_for_owner"
+                ) as mock_save:
+                    response = self._update(
+                        answer=bucket[2], wk_action="save_to_library"
+                    )
+
+                with self.client.session_transaction() as sess:
+                    after = json.dumps(sess[wdl.SESSION_KEY], sort_keys=True)
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(
+                    wws.SOURCE_PROVENANCE_UNCLEAR_MESSAGE,
+                    html.unescape(response.data.decode("utf-8")),
+                )
+                mock_save.assert_not_called()
+                self.assertEqual(after, before)
 
     def test_a_session_that_never_accepted_a_proposal_writes_no_extra_slot(self):
         """The retained-original slot costs bytes against a ceiling this

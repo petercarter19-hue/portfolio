@@ -901,6 +901,18 @@ class WorkOnThisTests(SparkRouteTestCase):
 
         session_body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
         self.assertIn("What changed was", session_body)
+        self.assertIn("PeerSlate suggested this starting point", session_body)
+        self.assertNotIn("You started with your own words", session_body)
+        answer = re.search(
+            r'id="wk-session-answer".*?>(.*?)</textarea>', session_body, re.DOTALL
+        )
+        self.assertIsNotNone(answer)
+        self.assertEqual(answer.group(1), "")
+
+        with self.client.session_transaction() as sess:
+            state = wws.read_state(sess)
+        self.assertEqual(state["answer"], "")
+        self.assertEqual(state["opening_thought"], "What changed was")
 
         library = self.client.get("/app/workshop/items").data.decode("utf-8")
         self.assertNotIn("An idea to take up.", library)
@@ -940,6 +952,43 @@ class WorkOnThisTests(SparkRouteTestCase):
         session_body = self.client.get("/app/workshop/work/session").data.decode("utf-8")
         self.assertIn("The real seed", session_body)
         self.assertNotIn("attacker supplied seed", session_body)
+
+    def test_member_answer_from_a_spark_never_saves_the_generated_seed_as_original(self):
+        row = _confirmed_row(
+            "key-spark-source",
+            "A confirmed source",
+            "The member's already confirmed context.",
+        )
+        payload = self.spark_payload(
+            "An idea to take up.",
+            items=[row],
+            focus_seed="PeerSlate generated this focus seed",
+        )
+        member_wording = "I changed the intake path and reduced the wait."
+        identity, lister, getter = self.member_with_items([row])
+
+        with identity, lister, getter, patch(
+            "workshop_work_routes.knowledge_service.save_knowledge_item_for_owner"
+        ) as mock_save:
+            mock_save.return_value = {
+                "item_key": "99999999-aaaa-bbbb-cccc-999999999999",
+                "saved": True,
+            }
+            with _mock_generate_spark(payload):
+                self.ask_for_spark()
+            self.post("/app/workshop/work/start", door=wws.DOOR_SPARK)
+            response = self.post(
+                "/app/workshop/work/session",
+                answer=member_wording,
+                wk_action="save_to_library",
+            )
+
+        self.assertEqual(response.status_code, 302)
+        fields = mock_save.call_args.args[2]
+        self.assertEqual(fields["approved_wording"], member_wording)
+        self.assertEqual(fields["original_wording"], member_wording)
+        self.assertEqual(fields["authored_via"], "ai_assisted_approved")
+        self.assertNotIn("PeerSlate generated this focus seed", fields.values())
 
 
 class SparkFailureStatesTests(SparkRouteTestCase):

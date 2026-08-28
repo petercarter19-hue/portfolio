@@ -54,13 +54,19 @@ see its own docstring:
   rather than re-derived so the choice cannot change under the member on a
   re-render — see question_for_door. It was hardcoded to 0, which made
   every curated question but the first unreachable.
-- ``opening_thought``: up to MAX_OPENING_THOUGHT_UNITS characters of what
-  the visitor actually typed to begin, echoed back on the session screen as
-  their own words. Optional by design: it is dropped rather than allowed to
-  cost the member their session when the cookie is tight.
-- ``answer_text``: the member's in-progress answer, seeded from an open
-  thought at session start and updated on "Save unfinished" / "Stop for
-  now" / "Review what I shared" (every one of the session screen's submit
+- ``opening_thought``: up to MAX_OPENING_THOUGHT_UNITS characters of the
+  session's opening context. For ``DOOR_SOMETHING`` this is what the visitor
+  typed and is echoed as their own words. For ``DOOR_SPARK`` it is
+  PeerSlate's focus seed and is rendered with explicit PeerSlate attribution,
+  structurally separate from the member's initially empty answer. Optional by
+  design for the member-authored door: that echo is dropped rather than
+  allowed to cost the member their session when the cookie is tight. A Spark
+  focus seed is provenance-bearing context and is never dropped; taking up
+  the Spark is refused if the separated state cannot fit.
+- ``answer_text``: the member's in-progress answer, seeded from their open
+  thought or resumed wording but deliberately empty for a Spark, and updated
+  on "Save unfinished" / "Stop for now" / "Review what I shared" (every one
+  of the session screen's submit
   actions carries the current textarea value forward in the same POST, so
   no separate autosave-on-keystroke route exists in this slice). Capped at
   MAX_ANSWER_UNITS (1000) UTF-16 code units — the brief's explicit cap.
@@ -90,42 +96,30 @@ see its own docstring:
   instead of ``'typed'``.
 - ``original_answer``: PS-WORKSHOP-PROVENANCE-001. The member's own wording
   as it stood immediately before the FIRST accepted AI proposal, or ""
-  when no proposal has been accepted over member-authored text. Written
-  only by ``accept_ai_proposal``, and never overwritten by a later
-  acceptance — the member has one set of own words, and an intermediate
-  machine draft is not a second "original". Owner decision D1 (2026-08-01)
+  when no proposal has been accepted over member-authored text. Legacy
+  AI-assisted 6/7-element cookies with no retained original are explicitly
+  marked provenance-ambiguous on read and fail closed before acceptance or
+  durable save. Written only by ``accept_ai_proposal``, and never overwritten
+  by a later acceptance — the member has one set of own words, and an
+  intermediate machine draft is not a second "original". Owner decision D1 (2026-08-01)
   makes the approved wording canonical *and* requires the original be
   retained; before this field existed the accepted proposal was written
   over ``answer``, the only wording slot, so by save time the member's
   sentence no longer existed and ``knowledge_item_versions``.
   ``original_member_wording`` — the column its own migration header calls
-  "retained, never overwritten" — received AI text. "" is a positive
-  statement that ``answer`` is still wholly the member's own, so every
-  reader must treat it as ``original_answer or answer`` and never as a
-  lost original.
+  "retained, never overwritten" — received AI text. For non-ambiguous
+  states, "" positively means that ``answer`` is still wholly the member's
+  own; an ambiguous legacy state must never use that fallback.
 
-  **Known limitation, stated plainly.** This package closes the common
-  path — a member writes their own words and accepts a rewrite — but NOT
-  every route by which PeerSlate-generated text can still reach
-  ``original_member_wording``. Two remain, and neither must be described
-  as solved:
-
-    1. A Spark-seeded session starts with the answer set to PeerSlate's own
-       generated prompt text, so there is no earlier member wording to
-       capture and this stays "" until an acceptance occurs. A member who
-       saves that text barely changed stores generated text as their
-       original.
-    2. A session whose pre-acceptance answer was blank captures nothing
-       (see ``accept_ai_proposal``), and because "" cannot be told apart
-       from "never accepted", a SECOND acceptance then captures the first
-       acceptance's AI text as the original.
-
-  In both cases ``authored_via='ai_assisted_approved'`` does record that
-  the item is AI-assisted, so the row never claims to be unaided typing —
-  but the retained "original" is not member-authored either, and nothing
-  on the row distinguishes it from one that is. Closing either needs a
-  change to the Spark entry path or a sentinel this bucket has no room
-  for; both are outside this package's declared scope.
+  PS-WORKSHOP-PROVENANCE-EDGE-001 closes the two generated-source gaps left
+  by the first provenance package without adding a ninth cookie field. A
+  Spark now stores its focus seed in ``opening_thought`` and starts with an
+  empty answer, while proposal acceptance refuses until either a retained
+  original or the current answer contains nonblank member wording. In newly
+  written states the empty retained slot therefore continues to mean "no
+  proposal accepted"; older assisted states without that proof fail closed,
+  and PeerSlate-generated text is never promoted into
+  ``original_member_wording`` by either path.
 
 **Byte budget.** MAX_SESSION_BYTES is imported from workshop_demo_library
 (not redefined) because it is now the SHARED ceiling for the whole
@@ -376,12 +370,10 @@ def read_state(session):
         if len(bucket) >= 7 and isinstance(bucket[6], str):
             opening_thought = bucket[6][:MAX_OPENING_THOUGHT_UNITS]
         # PS-WORKSHOP-PROVENANCE-001 grew the bucket to 8. A 7-element
-        # bucket predates this slice and means exactly one thing: no AI
-        # proposal has been accepted over member-authored text in this
-        # session, so there is no separate original to retain and the
-        # answer is still wholly the member's own. Degrade to "" rather
-        # than to "no session" — the same discipline the 4->6 and 6->7
-        # growths already use.
+        # bucket still degrades as a readable session, but an AI-assisted
+        # pre-8 bucket cannot prove whether ``answer`` is member text or a
+        # generated draft. That ambiguity is classified below rather than
+        # silently treating the answer as a member original.
         if len(bucket) >= 8 and isinstance(bucket[7], str):
             original_answer = bucket[7][: MAX_ANSWER_UNITS * 2]
     if door not in ALL_DOORS:
@@ -399,6 +391,15 @@ def read_state(session):
         context_mask = 0
     if not isinstance(ai_call_count, int) or ai_call_count < 0:
         ai_call_count = 0
+    ai_assisted = bool(ai_assisted)
+    member_source_ambiguous = bool(
+        ai_assisted
+        and not original_answer.strip()
+        and not (
+            door == DOOR_SPARK
+            and bool(opening_thought.strip())
+        )
+    )
     return {
         "door": door,
         "question_index": question_index,
@@ -406,7 +407,7 @@ def read_state(session):
         "answer": answer,
         "context_mask": context_mask & _context_full_mask(),
         "ai_call_count": min(ai_call_count, MAX_AI_CALLS_PER_SESSION),
-        "ai_assisted": bool(ai_assisted),
+        "ai_assisted": ai_assisted,
         "opening_thought": opening_thought,
         # The member's own wording as it stood immediately before the FIRST
         # accepted AI proposal of this session, or "" when no proposal has
@@ -415,8 +416,19 @@ def read_state(session):
         # previous machine draft. "" is not "missing" — it is the positive
         # statement that ``answer`` is still entirely the member's own, and
         # every caller must therefore read it as ``original_answer or
-        # answer`` rather than treating "" as a lost original.
+        # answer`` rather than treating "" as a lost original — except when
+        # ``member_source_ambiguous`` is true, in which case no caller may
+        # infer provenance from the answer.
         "original_answer": original_answer,
+        # A signed cookie from before retained originals existed can be
+        # perfectly well-formed yet still have ``ai_assisted=1``, generated
+        # text in ``answer``, and no way to prove a member source. New Spark
+        # sessions are distinguishable without another cookie field: they
+        # carry the nonblank PeerSlate seed in ``opening_thought`` and start
+        # with an empty answer, so a later answer came through the member's
+        # own form. Everything else in the ambiguous legacy shape fails
+        # closed before a second acceptance or durable owner save.
+        "member_source_ambiguous": member_source_ambiguous,
     }
 
 
@@ -678,6 +690,8 @@ def start_session(session, *, door, answer, opening_thought=""):
     # original_answer == "".
     bucket = [door, question_index, answer, 0, 0, 0, echo]
     if not _fits_after_evicting_spark_cache(session, bucket):
+        if door == DOOR_SPARK:
+            return False, SESSION_FULL_MESSAGE, None
         # Audit fix F2: the echo is the ONLY thing here that is optional, so
         # it is also the only thing dropped. Retry without it before
         # refusing, so remembering a convenience can never be the reason a
@@ -805,6 +819,16 @@ ORIGINAL_RETENTION_FULL_MESSAGE = (
 # someone down a route that cannot work is worse than no message. The first
 # clause states the fact that matters most: nothing of theirs was lost.
 
+MEMBER_WORDING_REQUIRED_MESSAGE = (
+    "Add your own words before accepting PeerSlate's suggestion. "
+    "Your answer is still here and nothing has been replaced."
+)
+SOURCE_PROVENANCE_UNCLEAR_MESSAGE = (
+    "PeerSlate cannot safely separate your words from an older AI-assisted "
+    "draft in this session. Copy any wording you want to keep, start fresh, "
+    "and paste your own words before saving or accepting a suggestion."
+)
+
 
 def accept_ai_proposal(session, *, proposed_answer, context_mask):
     """Accept an AI improvement proposal into the working answer while
@@ -837,9 +861,11 @@ def accept_ai_proposal(session, *, proposed_answer, context_mask):
 
     Returns ``(ok, error_message)``. ``ok`` is ``False`` with
     ``error_message`` ``None`` when there is no active session (the
-    caller's existing expired-session branch). A refusal never partially
-    writes and never silently drops the original: if retaining both does
-    not fit the shared cookie budget, the acceptance is declined with
+    caller's existing expired-session branch). A blank member original is
+    declined with ``MEMBER_WORDING_REQUIRED_MESSAGE`` before any bucket is
+    built. A refusal never partially writes and never silently drops the
+    original: if retaining both does not fit the shared cookie budget, the
+    acceptance is declined with
     ``ORIGINAL_RETENTION_FULL_MESSAGE`` and the session is left byte-for-
     byte as it was, so the member's OWN wording — the thing this package
     exists to protect — is untouched and still in the answer field.
@@ -857,28 +883,21 @@ def accept_ai_proposal(session, *, proposed_answer, context_mask):
         return False, None
     if utf16_length(proposed_answer) > MAX_ANSWER_UNITS:
         return False, CAP_ANSWER_MESSAGE
+    if state["member_source_ambiguous"]:
+        return False, SOURCE_PROVENANCE_UNCLEAR_MESSAGE
 
-    # "" means "answer is still wholly the member's own", so this is the
-    # first acceptance and the current answer is what must be retained.
-    #
-    # A blank or whitespace-only pre-acceptance answer is NOT an original:
-    # the member had written nothing, so there is no earlier wording of
-    # theirs to keep, and storing whitespace would both record it as their
-    # "own words" and be rejected downstream (the service's own non-empty
-    # validation runs before SQL, on a value it does not trim).
-    #
-    # What this does NOT fix, stated because the rest of this module is
-    # explicit about the same class of gap: "" is indistinguishable from
-    # "never accepted anything", so on a SECOND acceptance the expression
-    # below reads the AI text written by the first acceptance as the
-    # candidate original and retains it. A member who accepts twice from a
-    # blank start therefore still ends with PeerSlate-generated text in
-    # original_member_wording. Distinguishing the two states needs a
-    # sentinel this bucket has no room for, so it belongs with the
-    # Spark-seeded gap in the module docstring's Known-limitation block
-    # rather than being half-solved here.
+    # "" means "no proposal has been accepted yet", so the first
+    # acceptance must retain the current answer. A later acceptance reuses
+    # the already-retained first member wording. Refuse before building or
+    # writing a bucket when neither contains nonblank member text: otherwise
+    # a blank first acceptance could place AI text in ``answer`` and a
+    # second acceptance could misclassify that machine draft as the
+    # original. This early return preserves refusal atomicity and needs no
+    # ninth cookie field.
     candidate_original = state["original_answer"] or state["answer"]
-    original_answer = candidate_original if candidate_original.strip() else ""
+    if not candidate_original.strip():
+        return False, MEMBER_WORDING_REQUIRED_MESSAGE
+    original_answer = candidate_original
 
     bucket = _bucket_from(
         state,
