@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-ARCHITECTURE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver Slice C0 only: an independently reviewed documentation-only architecture and privacy boundary for a future versioned, owner-scoped account export. Define server-derived identity and isolation, domain-by-domain inclusion and explicit exclusions, deterministic manifest and schema versioning, truthful bounded-read consistency, queued/running/ready/failed/expired lifecycle, private artifact delivery and cleanup, redaction rules, package dependencies, proof requirements, rollback, and the genuine owner/professional decisions required before C1-C4. No runtime, route, UI, test behavior, schema or migration, migration registry, pipeline, configuration, dependency, provider resource, workload identity, scheduler, spend, deployment, enablement, data access, export generation, B1, D-F activation, or second canonical store.",
   "assignment": "implementation",
   "writer_ref": "session:afb6e763-01c4-49a8-ab89-b96304ea6615",
@@ -35,6 +35,6 @@
     "relinquished": true
   },
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "8cb633895c6df5b9b09e0e9f46922fdc60550e49",
+  "closed_at": "2026-08-28T15:48:41Z"
 }
