@@ -4,19 +4,19 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-23"
+updated_at: "2026-08-28"
 
 authority:
   remote: origin
   host: azure_devops
   branch: main
   production_url: "https://peerslate.com"
-  deployed_main_commit: "5436e423b928f4f3d290e840c95c6a37528ce1c9"
-  deployed_pipeline: 1512
-  live_release: "f21b9745e9e67d2ac958e586"
-  application_behavior_commit: "5436e423b928f4f3d290e840c95c6a37528ce1c9"
-  application_behavior_pipeline: 1512
-  note: "Production serves application commit 5436e423b928f4f3d290e840c95c6a37528ce1c9 from manual run 1512 with /healthz release f21b9745e9e67d2ac958e586, verified against scripts/release_identity.py. That run deployed the independently reviewed PS-WORKSHOP-PROVENANCE-001 fix with forceProductionDeploy=true and schemaAction=none; the schema, candidate, and independently gated maintenance stages all skipped and the run carries zero Checkpoint.Approval records. It supersedes rollback commit 00f73f86887d80645524626a0def44e52f79c9c9 from pipeline 1453. Repository PR and automatic main runs are CI-only; deployment is a separate manual exact-main-SHA operation with Pete's explicit authorization reference. The schema environment approval remains. This record is not a substitute for fetching Azure and verifying live identity."
+  deployed_main_commit: "9e40993dce28fff7fc6697353c31a0352f775d5e"
+  deployed_pipeline: 1720
+  live_release: "039c8e24ad92c1e62ee883f2"
+  application_behavior_commit: "9e40993dce28fff7fc6697353c31a0352f775d5e"
+  application_behavior_pipeline: 1720
+  note: "Production serves application commit 9e40993dce28fff7fc6697353c31a0352f775d5e from manual run 1720 with /healthz release 039c8e24ad92c1e62ee883f2, verified against scripts/release_identity.py. That run used forceProductionDeploy=true, the exact manual source and Pete authorization reference, and schemaAction=none; Build, deployment, and public smoke succeeded, while schema, candidate, and independently gated maintenance stages skipped. It released the independently reviewed PS-WORKSHOP-USE-DISCLOSURE-001 behavior. No authenticated private live proof was performed. Run 1719 separately applied its additive schema through approval check 11; docs/governance/PRODUCTION_SCHEMA_STATE.md is the generated live-ledger record. Repository PR and automatic main runs are CI-only; deployment remains a separate manual exact-main-SHA operation. This record is not a substitute for fetching Azure and verifying live identity."
 
 manager:
   role: "package_designated_session_manager"
@@ -67,11 +67,11 @@ scoped_findings:
   - id: interview_followup_mode_provenance
     blocks: "Only release or expansion of the affected Interview follow-up path until signed mode binding and generic-context isolation pass."
   - id: opportunity_slate_schema_revision
-    blocks: "Nothing since 2026-08-05: resolved. Run 528 applied PS-OPPSLATE-002 at digest 2af25b7d4f04984d88a30b7d65bc1948bc4bba810ab048963b4cd85a8d471dd0 with the preflight plan exactly that one migration, ledger 21->22 rows, zero removed or mutated rows, and the applied PS-OPPSLATE-001 row untouched. Opus 5 independent review approved candidate 07348e1. docs/governance/PRODUCTION_SCHEMA_STATE.md is the derived record. Kept for provenance; any future Opportunity Slate schema change still requires its own additive ID, gate proof, and verified plan."
+    blocks: "Nothing since 2026-08-28: run 1719 applied only PS-OPPSLATE-USE-001 to peerslate-database at gated executable digest fe7e929fa12a32d9b0d4a78be04330b6e144ddf8c3ea8aff9fcf06016353374e. The same-run preflight computed exactly [PS-OPPSLATE-USE-001] with no blockers, confirmed PS-OPPSLATE-003 already ledgered, and the governed apply advanced the ledger 28->29. Its generated SchemaMigrationEvidence is copied byte-for-byte to docs/governance/PRODUCTION_SCHEMA_STATE.md. No other migration ran; any future Opportunity Slate schema change still requires its own additive ID, gate proof, and verified plan."
   - id: schema_environment_approver_identity
-    blocks: "Only a future claim that schema approval is independent separation of duties. The peerslate-database-schema environment's only approver is peerslate19@gmail.com, and the agent credential authenticates as that same identity, with requesterCannotBeApprover unset. Under Pete's explicit no-per-step-click delegation, the writer approved exact governed run 565 after verifying its SHA, migration ID, gate digest, verifier, rollback rehearsal, and expected ledger transition. Destructive or rollback actions still require Pete's break-glass decision; a distinct agent identity plus requesterCannotBeApprover is required before calling this an enforced independent approval."
+    blocks: "Only a future claim that schema approval is independent separation of duties. The peerslate-database-schema environment's only approver is peerslate19@gmail.com, and the agent credential authenticates as that same identity, with requesterCannotBeApprover unset. Under Pete's explicit delegated authorization, the release owner approved exact governed run 1719 after verifying its source SHA, migration ID, gate digest, one-item preflight plan, and expected ledger transition; the approval comment records the same-identity limitation. Destructive or rollback actions still require Pete's break-glass decision; a distinct agent identity plus requesterCannotBeApprover is required before calling this an enforced independent approval."
   - id: pipeline_schema_checkpoint_order
-    blocks: "Nothing since 2026-08-09: resolved by PS-AGENT-OPERATIONS-001. The production stage is split (web deploy without approval, read-only schema preflight before any checkpoint, schema apply behind the untouched approval check id 11 with cross-run serialization preserved). Proof: merge run 720 (schemaAction=none) completed with zero Checkpoint.Approval records, web stage succeeded, both schema stages skipped; run 722 repeated the behavior. Kept for provenance; the schema approval path itself is exercised by the next real schema operation."
+    blocks: "Nothing since 2026-08-28: run 1719 exercised the split path with read-only schema preflight before untouched approval check 11 and the exact apply only after approval. Separate web run 1720 used schemaAction=none; its schema read/apply stages skipped while deployment succeeded. Cross-run production serialization remained intact."
   - id: community_reenablement
     blocks: "Nothing since 2026-08-07: resolved by the singular Community recovery lane, request-path maintenance removal, bounded waits, additive schema proof/apply, exact-source deployment, staged maintenance and pilot enablement, and live public-demo verification. Kept for provenance; broader member authoring still requires its own package."
 

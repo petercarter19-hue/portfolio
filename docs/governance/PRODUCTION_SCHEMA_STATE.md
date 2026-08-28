@@ -6,9 +6,11 @@ This file is the repository's record of which schema migrations the named databa
 
 - Database: `peerslate-database`
 - Server: `peerslate`
-- Read at: `2026-08-22T22:31:10Z` UTC
+- Read at: `2026-08-28T01:44:09Z` UTC
+- Pipeline source version: `9e40993dce28fff7fc6697353c31a0352f775d5e`
+- Pipeline build: `1719`
 
-## Applied (28)
+## Applied (29)
 
 In registry order.
 
@@ -42,8 +44,9 @@ In registry order.
 | 26 | `PS-ASK-PETE-DIRECT-001` | 2026-08-09T02:53:06.6949801 | yes |
 | 27 | `PS-OPPSLATE-004` | 2026-08-12T14:44:53.0420853 | yes |
 | 28 | `PS-INTERVIEW-AI-EXTRACT-001` | 2026-08-22T22:27:00.0344489 | yes |
+| 29 | `PS-OPPSLATE-USE-001` | 2026-08-28T01:44:09.3219369 | yes |
 
-## Registered but not applied (4)
+## Registered but not applied (5)
 
 | Migration | Gate proof | Summary |
 | --- | --- | --- |
@@ -51,6 +54,7 @@ In registry order.
 | `PS-PLAT-008` | **none or stale** | People and Interests feed domain. Never approved for any database; see the file header. |
 | `PS-PROFILE-002` | **none or stale** | Dark additive governed Profile publication foundation: normalized Profile-native versions, exact source projection references, private draft placements, immutable audience revision manifests, idempotent command records, and reserved slug history. Connections activation remains gated on the future PS-CONNECT-002 relationship hardening and is not enabled by this candidate. |
 | `PS-CONNECT-002` | matches file | Non-production additive relationship foundation for future Profile audience authorization: preserves PS-PLAT-004 request, connection, and block truth while adding pair-scoped lifecycle state, append-only event/epoch evidence, binary exact idempotent commands, and actor-scoped snapshots. It is not wired, applied, released, or enabled by this candidate. |
+| `PS-MYOPP-001` | matches file | Additive My Opportunities C2 shared-side canonical source-policy, receipt, version, lifecycle, dedupe, attribution, requirement, event, and rights-tombstone foundation. No member-side objects. |
 
 ## Machine-readable record
 
@@ -138,6 +142,11 @@ In registry order.
       "registered": true
     },
     {
+      "applied_at_utc": "2026-08-28T01:44:09.3219369",
+      "id": "PS-OPPSLATE-USE-001",
+      "registered": true
+    },
+    {
       "applied_at_utc": "2026-07-19T00:29:34.8508893",
       "id": "PS-PLACEMENT-001",
       "registered": true
@@ -199,15 +208,16 @@ In registry order.
     }
   ],
   "database": "peerslate-database",
-  "generated_at_utc": "2026-08-22T22:31:10Z",
+  "generated_at_utc": "2026-08-28T01:44:09Z",
   "pending": [
     "PS-JOURNAL-001",
     "PS-PLAT-008",
     "PS-PROFILE-002",
-    "PS-CONNECT-002"
+    "PS-CONNECT-002",
+    "PS-MYOPP-001"
   ],
-  "pipeline_build_id": "",
-  "pipeline_source_version": "",
+  "pipeline_build_id": "1719",
+  "pipeline_source_version": "9e40993dce28fff7fc6697353c31a0352f775d5e",
   "registry_version": 1,
   "server": "peerslate",
   "unregistered_in_ledger": []

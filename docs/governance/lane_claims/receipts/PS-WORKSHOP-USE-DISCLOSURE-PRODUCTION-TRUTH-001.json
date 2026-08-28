@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-USE-DISCLOSURE-PRODUCTION-TRUTH-001",
+  "candidate_sha": "3d1d81939f3bba8d45e4853006ed996521f44e8c",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/production_truth_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-08-28T06:21:14Z",
+  "findings": [],
+  "evidence_ref": "lane_claims/evidence/PS-WORKSHOP-USE-DISCLOSURE-PRODUCTION-TRUTH-001.md"
+}
