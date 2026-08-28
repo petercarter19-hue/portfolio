@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKSHOP-PROVENANCE-EDGE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Close the two remaining generated-source provenance gaps without schema change. Taking up a Spark must keep PeerSlate's focus seed visibly and structurally separate from the member's answer so generated text can never become original_member_wording. AI proposal acceptance must require nonblank member wording, preventing a blank first acceptance followed by another acceptance from recording AI text as original. Preserve first-member-wording retention, ai_assisted_approved, cookie compatibility and byte limits, refusal atomicity, anonymous database-free behavior, existing provider/spend controls, and Workshop D behavior. Excluded: history display, edit provenance, schema, visual redesign, deployment, and production action.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_e_implementer",
@@ -33,6 +33,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "0836493686b3e62bce7b44d5691d0a63cbf8a8fb",
+  "closed_at": "2026-08-28T05:34:17Z"
 }
