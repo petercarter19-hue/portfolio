@@ -17,7 +17,8 @@
     "docs/governance/lane_claims/receipts/PS-WORKSHOP-FG-PRODUCTION-TRUTH-001.json",
     "docs/governance/PRODUCTION_SCHEMA_STATE.md",
     "docs/governance/CURRENT_BASELINE.yaml",
-    "tests/test_operational_readiness.py"
+    "tests/test_operational_readiness.py",
+    "tests/test_workshop_provenance_visibility_migration.py"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-WORKSHOP-FG-PRODUCTION-TRUTH-001.md"
