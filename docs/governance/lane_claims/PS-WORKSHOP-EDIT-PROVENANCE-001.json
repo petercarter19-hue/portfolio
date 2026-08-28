@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-EDIT-PROVENANCE-001",
+  "state": "active",
+  "outcome": "Add schema-only migration PS-WORKSHOP-004, requiring PS-WORKSHOP-003, to replace dbo.usp_UpdateKnowledgeItemForOwner without changing its signature or result shape. Inside the existing server-derived owner/private/non-archived, expected-rowversion, UPDLOCK/HOLDLOCK transaction fence, copy the exact stored original_member_wording from the owned current version into each appended edit version while approved_wording remains the member's edited input and authored_via remains typed. Preserve neutral unknown, foreign, forged, archived, and stale behavior; atomic version insert, parent advance, and audit; Workshop D use behavior; Workshop F history; anonymous behavior; and all Python, routes, templates, CSS, and allowlist bytes. Include guarded fingerprinted forward/reapply/rollback, static contracts, and disposable governed SQL proof. Exclude production schema apply, deployment, private live proof, inference/backfill, old-row mutation, visual change, and any application-runtime change.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/workshop_g_implementer",
+  "branch": "work/2026-08-28-workshop-edit-provenance-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "4baaf2d3af1b19fac481ab4f32a0687688c79ddf",
+  "owner_outcome_ref": "session:01a04348-7e3e-7a11-a443-752498be91b5/owner-direction:2026-08-28/workshop-g-edit-provenance",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-WORKSHOP-EDIT-PROVENANCE-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-EDIT-PROVENANCE-001.md",
+    "docs/governance/lane_claims/receipts/PS-WORKSHOP-EDIT-PROVENANCE-001.json",
+    "SQL FIles/Migrations/PS-WORKSHOP-004_knowledge_edit_provenance.sql",
+    "SQL FIles/Migrations/PS-WORKSHOP-004_knowledge_edit_provenance_rollback.sql",
+    "SQL FIles/Verification/PS-WORKSHOP-004_owner_isolation_verify.sql",
+    "SQL FIles/Migrations/registry.json",
+    "tests/test_workshop_edit_provenance_migration.py",
+    "tests/test_workshop_provenance_visibility_migration.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-EDIT-PROVENANCE-001.md"
+  ],
+  "domains": [
+    "runtime:workshop:provenance:edit-source",
+    "schema:workshop:knowledge-edit-provenance",
+    "testing:workshop:edit-provenance"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
