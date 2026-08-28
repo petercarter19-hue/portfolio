@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKSHOP-FG-PRODUCTION-TRUTH-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Record only the already-completed production truth for Workshops F and G. Copy the generated production schema state byte-for-byte from Azure run 1759, after governed runs 1758 and 1759 applied only PS-WORKSHOP-003 at executable digest 18e764fbc15cdfe3f00c54d318e48067dad97430afcf8df2fe685fc396708736 and PS-WORKSHOP-004 at executable digest 53561ce3275599cd7d4f34c234a8455313ac82d1d967194f449d9e25e7c2fcba, advancing the production ledger from 29 to 30 and then 30 to 31 rows. Update the current baseline and its lockstep operational-readiness pointers to the separately deployed application source ebc702870abbc0b56240cb43a7f34fa06d251fcd, manual run 1761, and live release de34c238cb406a6b8c5d4c08. Record the anonymous Workshop boundary check and leave authenticated two-member private proof pending. This package is repository bookkeeping only: no runtime, SQL, migration registry, schema, deployment, configuration, identity, provider, or live operation.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_fg_release",
@@ -30,6 +30,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "3c9a1dae7b91036e40c2b38f25526b8105938d38",
+  "closed_at": "2026-08-28T15:12:24Z"
 }
