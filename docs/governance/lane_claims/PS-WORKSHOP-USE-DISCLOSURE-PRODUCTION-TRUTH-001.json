@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKSHOP-USE-DISCLOSURE-PRODUCTION-TRUTH-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Record only the already-completed production truth for Workshop D. Copy the generated production schema state byte-for-byte from Azure run 1719, which applied only PS-OPPSLATE-USE-001 at executable digest fe7e929fa12a32d9b0d4a78be04330b6e144ddf8c3ea8aff9fcf06016353374e and advanced the production ledger from 28 to 29 rows. Update the current baseline and its lockstep operational-readiness pointers to the separately deployed application source 9e40993dce28fff7fc6697353c31a0352f775d5e, manual run 1720, and live release 039c8e24ad92c1e62ee883f2. Record release evidence without claiming authenticated private live proof. This package is repository bookkeeping only: no runtime, SQL, migration registry, schema, deployment, configuration, identity, provider, or live operation.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_sql_gate_release",
@@ -29,6 +29,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "cf5f3b3f5d1c8f4e458478da5ef59ad2cf288fb7",
+  "closed_at": "2026-08-28T06:37:10Z"
 }
