@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-FOUNDATION-001",
+  "candidate_sha": "4f67faf8e63138c53cd02fc3c8cbdd095c833810",
+  "review_type": "independent",
+  "reviewer_ref": "role:indrev:ps-settings-c1-foundation:20260828T192240Z:4f67faf8",
+  "result": "pass",
+  "reviewed_at": "2026-08-28T19:22:40Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-FOUNDATION-001.md"
+}
