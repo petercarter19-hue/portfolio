@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-FG-PRODUCTION-TRUTH-001",
+  "candidate_sha": "6787d9d3fcb769daf6ff715e44f25afd017a9282",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/workshop_fg_truth_reviewer_r2",
+  "result": "pass",
+  "reviewed_at": "2026-08-28T14:46:42Z",
+  "findings": [],
+  "evidence_ref": "lane_claims/evidence/PS-WORKSHOP-FG-PRODUCTION-TRUTH-001.md"
+}

@@ -109,7 +109,7 @@ class WorkshopProvenanceVisibilityMigrationTests(unittest.TestCase):
             procedure_literal.count("FROM @VersionSnapshot AS snapshot"), 2
         )
 
-    def test_current_production_ledger_plus_workshop_003_selects_w3_for_rollback(self):
+    def test_w4_production_tip_and_prior_ledger_selects_w3_for_rollback(self):
         registry_document = json.loads(read(REGISTRY))
         registry_ids = [entry["id"] for entry in registry_document["migrations"]]
         state_text = read(ROOT / "docs" / "governance" / "PRODUCTION_SCHEMA_STATE.md")
@@ -118,12 +118,19 @@ class WorkshopProvenanceVisibilityMigrationTests(unittest.TestCase):
         )
         current_ledger = {entry["id"] for entry in state_document["applied"]}
 
-        self.assertIn("PS-OPPSLATE-USE-001", current_ledger)
-        current_ledger.add("PS-WORKSHOP-003")
-        applied_in_registry_order = [
+        production_in_registry_order = [
             migration_id
             for migration_id in registry_ids
             if migration_id in current_ledger
+        ]
+        self.assertEqual(production_in_registry_order[-1], "PS-WORKSHOP-004")
+
+        prior_ledger = current_ledger - {"PS-WORKSHOP-004"}
+        prior_ledger.add("PS-WORKSHOP-003")
+        applied_in_registry_order = [
+            migration_id
+            for migration_id in registry_ids
+            if migration_id in prior_ledger
         ]
         self.assertEqual(applied_in_registry_order[-1], "PS-WORKSHOP-003")
 

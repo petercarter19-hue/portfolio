@@ -6,11 +6,11 @@ This file is the repository's record of which schema migrations the named databa
 
 - Database: `peerslate-database`
 - Server: `peerslate`
-- Read at: `2026-08-28T01:44:09Z` UTC
-- Pipeline source version: `9e40993dce28fff7fc6697353c31a0352f775d5e`
-- Pipeline build: `1719`
+- Read at: `2026-08-28T13:23:55Z` UTC
+- Pipeline source version: `a2938987f8998e3bc770b4c9a3eab99583f95fdc`
+- Pipeline build: `1759`
 
-## Applied (29)
+## Applied (31)
 
 In registry order.
 
@@ -45,6 +45,8 @@ In registry order.
 | 27 | `PS-OPPSLATE-004` | 2026-08-12T14:44:53.0420853 | yes |
 | 28 | `PS-INTERVIEW-AI-EXTRACT-001` | 2026-08-22T22:27:00.0344489 | yes |
 | 29 | `PS-OPPSLATE-USE-001` | 2026-08-28T01:44:09.3219369 | yes |
+| 30 | `PS-WORKSHOP-003` | 2026-08-28T13:11:47.1226908 | yes |
+| 31 | `PS-WORKSHOP-004` | 2026-08-28T13:23:55.2607176 | yes |
 
 ## Registered but not applied (5)
 
@@ -205,10 +207,20 @@ In registry order.
       "applied_at_utc": "2026-08-06T12:09:39.9479194",
       "id": "PS-WORKSHOP-002",
       "registered": true
+    },
+    {
+      "applied_at_utc": "2026-08-28T13:11:47.1226908",
+      "id": "PS-WORKSHOP-003",
+      "registered": true
+    },
+    {
+      "applied_at_utc": "2026-08-28T13:23:55.2607176",
+      "id": "PS-WORKSHOP-004",
+      "registered": true
     }
   ],
   "database": "peerslate-database",
-  "generated_at_utc": "2026-08-28T01:44:09Z",
+  "generated_at_utc": "2026-08-28T13:23:55Z",
   "pending": [
     "PS-JOURNAL-001",
     "PS-PLAT-008",
@@ -216,8 +228,8 @@ In registry order.
     "PS-CONNECT-002",
     "PS-MYOPP-001"
   ],
-  "pipeline_build_id": "1719",
-  "pipeline_source_version": "9e40993dce28fff7fc6697353c31a0352f775d5e",
+  "pipeline_build_id": "1759",
+  "pipeline_source_version": "a2938987f8998e3bc770b4c9a3eab99583f95fdc",
   "registry_version": 1,
   "server": "peerslate",
   "unregistered_in_ledger": []
