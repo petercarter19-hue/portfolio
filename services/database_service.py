@@ -78,6 +78,10 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_GetVoiceDraftForOwner",
         "usp_GetVoiceMediaForOwner",
         "usp_GetKnowledgeItemForOwner",
+        # PS-WORKSHOP-003: additive, owner-scoped read-only wording history.
+        # The schema apply remains separately governed; Workshop degrades by
+        # omitting this disclosure until the procedure is available.
+        "usp_ListKnowledgeItemVersionsForOwner",
         "usp_GetMomentForOwner",
         "usp_GetOwnerHomeForOwner",
         "usp_GetPeerSlateUserDashboard",

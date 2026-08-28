@@ -90,6 +90,29 @@ class RelatedInformationHonestyTests(unittest.TestCase):
         self.assertIn("id-based", routes)
 
 
+class WordingHistoryDisclosurePolishTests(unittest.TestCase):
+    """Workshop F stays a compact, closed-by-default detail disclosure."""
+
+    def setUp(self):
+        self.detail = read_source("templates/partials/workshop/_item_detail.html")
+        self.css = read_source("static/css/workshop.css")
+
+    def test_native_disclosure_is_closed_by_default(self):
+        self.assertIn('<details class="wk-wording-history">', self.detail)
+        self.assertNotIn('<details class="wk-wording-history" open', self.detail)
+        self.assertIn("<summary", self.detail)
+
+    def test_source_label_and_uncertainty_explanation_are_exact_and_honest(self):
+        self.assertIn("Source wording on record", self.detail)
+        self.assertIn("older AI-assisted versions", self.detail)
+        self.assertIn("original wording was not", self.detail)
+        self.assertIn("does not infer or backfill wording", self.detail)
+
+    def test_exact_stored_whitespace_and_long_content_remain_readable(self):
+        self.assertIn("white-space: pre-wrap;", self.css)
+        self.assertIn("overflow-wrap: anywhere;", self.css)
+
+
 PREVIEW_BANNER_SCREENS = [
     "templates/workshop.html",
     "templates/workshop_work.html",

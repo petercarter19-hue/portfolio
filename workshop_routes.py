@@ -509,6 +509,21 @@ def _real_detail_view(row):
         "archive_url": url_for("workshop.archive_item", item_key=item_key),
         "restore_url": url_for("workshop.restore_item", item_key=item_key),
         "delete_url": url_for("workshop.delete_confirm", item_key=item_key),
+        # Populated only for a signed-in real item after the independent,
+        # owner-scoped PS-WORKSHOP-003 read succeeds. Fixture and anonymous
+        # detail views never carry it and never call that read.
+        "wording_history": None,
+    }
+
+
+def _attach_wording_history_to_detail(detail, history_result):
+    """Attach only the already-validated, exact stored wording projection."""
+    if not history_result.versions:
+        return
+    detail["wording_history"] = {
+        "versions": history_result.versions,
+        "total_count": history_result.total_count,
+        "is_truncated": history_result.is_truncated,
     }
 
 
@@ -824,12 +839,12 @@ def my_information():
         selected_key = _resolve_selected_item_key(request.args.get("item"), filtered_rows)
         detail = None
         if selected_key:
+            detail_row = None
             try:
-                detail = _real_detail_view(
-                    knowledge_service.get_knowledge_item_for_owner(
-                        identity.user_key, selected_key
-                    )
+                detail_row = knowledge_service.get_knowledge_item_for_owner(
+                    identity.user_key, selected_key
                 )
+                detail = _real_detail_view(detail_row)
             except KnowledgeServiceError as error:
                 if error.code != "not_found":
                     current_app.logger.error("PeerSlate Workshop item detail is unavailable.")
@@ -841,6 +856,27 @@ def my_information():
                 current_app.logger.error("PeerSlate Workshop item detail is unavailable.")
                 return _render_workshop_unavailable()
             if detail is not None:
+                # PS-WORKSHOP-003: every real Get row necessarily has at
+                # least one W1 history row (the current version is joined by
+                # Get itself). The truthy check keeps legacy test/fixture
+                # doubles with an impossible empty history from reaching a
+                # database and, more importantly, keeps anonymous/demo paths
+                # DB-free. Before the separately governed schema apply, a
+                # missing procedure degrades by omitting this disclosure;
+                # it never guesses or reconstructs wording.
+                if detail_row["history"]:
+                    try:
+                        _attach_wording_history_to_detail(
+                            detail,
+                            knowledge_service.list_knowledge_item_versions_for_owner(
+                                identity.user_key, selected_key
+                            ),
+                        )
+                    except (KnowledgeServiceError, DatabaseServiceError):
+                        current_app.logger.info(
+                            "PeerSlate Workshop wording history unavailable; "
+                            "continuing without the disclosure."
+                        )
                 # Workshop D: real per-item citation state, archived items
                 # included — their state matters most at restore/delete time.
                 _attach_slate_use_to_detail(detail, identity.user_key)

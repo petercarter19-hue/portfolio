@@ -17,7 +17,11 @@ from identity import AuthenticationRequired
 from services import workshop_demo_library
 import workshop_routes
 from services.database_service import DatabaseServiceError
-from services.knowledge_service import KnowledgeItemListResult, KnowledgeServiceError
+from services.knowledge_service import (
+    KnowledgeItemListResult,
+    KnowledgeItemVersionHistoryResult,
+    KnowledgeServiceError,
+)
 
 
 ROUTE = "/app/workshop"
@@ -84,6 +88,27 @@ def service_get_row(**overrides):
     }
     row.update(overrides)
     return row
+
+
+def wording_history_result(*, total_count=2, is_truncated=False):
+    return KnowledgeItemVersionHistoryResult(
+        versions=[
+            {
+                "version": 2,
+                "approved_wording": "  Approved <script>alert('approved')</script>  ",
+                "original_member_wording": "  Source <img src=x onerror=alert('source')>  ",
+                "saved_at": "2026-07-11T00:00:00Z",
+            },
+            {
+                "version": 1,
+                "approved_wording": "Earlier approved wording.",
+                "original_member_wording": "Earlier source wording.",
+                "saved_at": "2026-07-10T00:00:00Z",
+            },
+        ],
+        total_count=total_count,
+        is_truncated=is_truncated,
+    )
 
 
 def _demo_item_key(title):
@@ -204,6 +229,99 @@ class WorkshopCheckpointRouteTests(unittest.TestCase):
         self.assertNotIn("Change permission", body)
         self.assertNotIn("Use as context", body)
         self.assertNotIn("ai_use", body.lower().replace(" ", ""))
+
+    def test_signed_in_owner_can_open_exact_retained_wording_history(self):
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        detail_row = service_get_row(
+            history=[
+                {
+                    "version": 2,
+                    "title": "Systems Engineering Leadership",
+                    "body_format": "plain",
+                    "authored_via": "ai_assisted_approved",
+                    "saved_at": "2026-07-11T00:00:00Z",
+                }
+            ]
+        )
+        history = wording_history_result()
+        with patch(
+            "workshop_routes.get_current_identity",
+            return_value=member("Checkpoint Member", "member-checkpoint-1"),
+        ), patch(
+            "workshop_routes.knowledge_service.confirm_authored_knowledge_backlog_for_owner"
+        ), patch(
+            "workshop_routes.knowledge_service.list_knowledge_items_for_owner",
+            return_value=list_result([service_list_row()]),
+        ), patch(
+            "workshop_routes.knowledge_service.get_knowledge_item_for_owner",
+            return_value=detail_row,
+        ), patch(
+            "workshop_routes.knowledge_service.list_knowledge_item_versions_for_owner",
+            return_value=history,
+        ) as history_mock, patch(
+            "workshop_routes._attach_slate_use_to_detail"
+        ):
+            response = self.client.get(ROUTE)
+
+        body = response.data.decode("utf-8")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+        self.assertIn('<details class="wk-wording-history">', body)
+        self.assertNotIn('<details class="wk-wording-history" open', body)
+        self.assertIn("Wording history", body)
+        self.assertIn("Source wording on record", body)
+        self.assertIn("does not infer or backfill wording", body)
+        self.assertIn("Version 2", body)
+        self.assertIn("2026-07-11T00:00:00Z", body)
+        self.assertIn("&lt;script&gt;alert(&#39;approved&#39;)&lt;/script&gt;", body)
+        self.assertIn("&lt;img src=x onerror=alert(&#39;source&#39;)&gt;", body)
+        self.assertNotIn("<script>alert('approved')</script>", body)
+        self.assertNotIn("<img src=x onerror=alert('source')>", body)
+        history_mock.assert_called_once_with("member-checkpoint-1", ITEM_KEY)
+
+    def test_wording_history_unavailable_omits_only_that_disclosure(self):
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        detail_row = service_get_row(history=[{"version": 1}])
+        with patch(
+            "workshop_routes.get_current_identity",
+            return_value=member("Checkpoint Member", "member-checkpoint-1"),
+        ), patch(
+            "workshop_routes.knowledge_service.confirm_authored_knowledge_backlog_for_owner"
+        ), patch(
+            "workshop_routes.knowledge_service.list_knowledge_items_for_owner",
+            return_value=list_result([service_list_row()]),
+        ), patch(
+            "workshop_routes.knowledge_service.get_knowledge_item_for_owner",
+            return_value=detail_row,
+        ), patch(
+            "workshop_routes.knowledge_service.list_knowledge_item_versions_for_owner",
+            side_effect=DatabaseServiceError("procedure not applied yet"),
+        ), patch(
+            "workshop_routes._attach_slate_use_to_detail"
+        ):
+            response = self.client.get(ROUTE)
+
+        body = response.data.decode("utf-8")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Systems Engineering Leadership", body)
+        self.assertIn(">Edit<", body)
+        self.assertIn(">Archive<", body)
+        self.assertIn(">Delete<", body)
+        self.assertNotIn("Source wording on record", body)
+
+    def test_anonymous_preview_never_calls_wording_history_database_read(self):
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        with patch(
+            "workshop_routes.get_current_identity",
+            side_effect=AuthenticationRequired("Sign in is required."),
+        ), patch(
+            "workshop_routes.knowledge_service.list_knowledge_item_versions_for_owner"
+        ) as history_mock:
+            response = self.client.get(ROUTE)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+        history_mock.assert_not_called()
 
     def test_first_run_empty_state_is_honest_and_has_no_suggestion_card(self):
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True

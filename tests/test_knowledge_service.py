@@ -66,6 +66,21 @@ def history_row(**overrides):
     return row
 
 
+def wording_history_row(**overrides):
+    row = {
+        "version_number": 2,
+        "approved_wording": "  Refined wording <strong>kept as text</strong>.  ",
+        "original_member_wording": "  Source wording & exact spacing.  ",
+        "saved_at_utc": "2026-07-11T00:00:00+00:00",
+    }
+    row.update(overrides)
+    return row
+
+
+def wording_history_metadata(total_count, is_truncated):
+    return [{"total_count": total_count, "is_truncated": is_truncated}]
+
+
 def valid_fields(**overrides):
     fields = {
         "title": "Systems Engineering",
@@ -386,6 +401,200 @@ class KnowledgeServiceGetTests(unittest.TestCase):
         self.assertEqual(context.exception.code, "no_identity")
         self.database.execute_procedure.assert_not_called()
 
+
+class KnowledgeServiceWordingHistoryTests(unittest.TestCase):
+    def setUp(self):
+        self.database = Mock()
+        self.service = KnowledgeService(database=self.database)
+
+    def test_shapes_exact_wording_and_metadata_without_normalizing_text(self):
+        row = wording_history_row()
+        self.database.execute_procedure.return_value = [
+            [row],
+            wording_history_metadata(1, False),
+        ]
+
+        result = self.service.list_knowledge_item_versions_for_owner(
+            "member-a", ITEM_KEY
+        )
+
+        self.assertEqual(result.total_count, 1)
+        self.assertFalse(result.is_truncated)
+        self.assertEqual(len(result.versions), 1)
+        self.assertEqual(
+            set(result.versions[0]),
+            {
+                "version",
+                "approved_wording",
+                "original_member_wording",
+                "saved_at",
+            },
+        )
+        self.assertEqual(
+            result.versions[0]["approved_wording"], row["approved_wording"]
+        )
+        self.assertEqual(
+            result.versions[0]["original_member_wording"],
+            row["original_member_wording"],
+        )
+        self.assertEqual(result.versions[0]["saved_at"], "2026-07-11T00:00:00Z")
+
+    def test_threads_exact_server_derived_owner_and_item_parameters(self):
+        self.database.execute_procedure.return_value = [
+            [],
+            wording_history_metadata(0, 0),
+        ]
+
+        self.service.list_knowledge_item_versions_for_owner("member-a", ITEM_KEY)
+
+        self.database.execute_procedure.assert_called_once_with(
+            "usp_ListKnowledgeItemVersionsForOwner",
+            [("@UserKey", "member-a"), ("@KnowledgeItemKey", ITEM_KEY)],
+        )
+
+    def test_forged_or_unknown_neutral_empty_shape_is_accepted(self):
+        self.database.execute_procedure.return_value = [
+            [],
+            wording_history_metadata(0, False),
+        ]
+
+        result = self.service.list_knowledge_item_versions_for_owner(
+            "forged-user-key-does-not-exist", ITEM_KEY
+        )
+
+        self.assertEqual(result.versions, [])
+        self.assertEqual(result.total_count, 0)
+        self.assertFalse(result.is_truncated)
+
+    def test_newest_50_of_55_is_accepted_with_truthful_metadata(self):
+        self.database.execute_procedure.return_value = [
+            [
+                wording_history_row(version_number=version)
+                for version in range(55, 5, -1)
+            ],
+            wording_history_metadata(55, 1),
+        ]
+
+        result = self.service.list_knowledge_item_versions_for_owner(
+            "member-a", ITEM_KEY
+        )
+
+        self.assertEqual(len(result.versions), 50)
+        self.assertEqual(result.versions[0]["version"], 55)
+        self.assertEqual(result.versions[-1]["version"], 6)
+        self.assertEqual(result.total_count, 55)
+        self.assertTrue(result.is_truncated)
+
+    def test_more_than_50_rows_is_rejected(self):
+        self.database.execute_procedure.return_value = [
+            [
+                wording_history_row(version_number=version)
+                for version in range(56, 5, -1)
+            ],
+            wording_history_metadata(51, True),
+        ]
+
+        with self.assertRaises(KnowledgeServiceError) as context:
+            self.service.list_knowledge_item_versions_for_owner("member-a", ITEM_KEY)
+        self.assertEqual(context.exception.code, "invalid")
+
+    def test_superset_version_or_metadata_row_is_rejected(self):
+        cases = (
+            (
+                [[wording_history_row(unexpected="nope")]],
+                wording_history_metadata(1, False),
+            ),
+            (
+                [[wording_history_row()]],
+                [
+                    {
+                        "total_count": 1,
+                        "is_truncated": False,
+                        "unexpected": "nope",
+                    }
+                ],
+            ),
+        )
+        for version_sets, metadata in cases:
+            with self.subTest(metadata=metadata):
+                self.database.execute_procedure.return_value = [version_sets[0], metadata]
+                with self.assertRaises(KnowledgeServiceError) as context:
+                    self.service.list_knowledge_item_versions_for_owner(
+                        "member-a", ITEM_KEY
+                    )
+                self.assertEqual(context.exception.code, "invalid")
+
+    def test_inconsistent_total_truncation_or_order_is_rejected(self):
+        cases = (
+            (
+                [wording_history_row(version_number=1)],
+                wording_history_metadata(2, False),
+            ),
+            (
+                [wording_history_row(version_number=2)],
+                wording_history_metadata(1, True),
+            ),
+            (
+                [
+                    wording_history_row(version_number=1),
+                    wording_history_row(version_number=2),
+                ],
+                wording_history_metadata(2, False),
+            ),
+        )
+        for rows, metadata in cases:
+            with self.subTest(rows=rows, metadata=metadata):
+                self.database.execute_procedure.return_value = [rows, metadata]
+                with self.assertRaises(KnowledgeServiceError) as context:
+                    self.service.list_knowledge_item_versions_for_owner(
+                        "member-a", ITEM_KEY
+                    )
+                self.assertEqual(context.exception.code, "invalid")
+
+    def test_float_string_and_boolean_integer_fields_are_rejected(self):
+        cases = (
+            (
+                [wording_history_row(version_number=1.9)],
+                wording_history_metadata(1, False),
+            ),
+            (
+                [wording_history_row(version_number="1")],
+                wording_history_metadata(1, False),
+            ),
+            (
+                [wording_history_row(version_number=True)],
+                wording_history_metadata(1, False),
+            ),
+            (
+                [wording_history_row(version_number=1)],
+                wording_history_metadata(1.9, False),
+            ),
+            (
+                [wording_history_row(version_number=1)],
+                wording_history_metadata("1", False),
+            ),
+            (
+                [wording_history_row(version_number=1)],
+                wording_history_metadata(True, False),
+            ),
+        )
+        for rows, metadata in cases:
+            with self.subTest(rows=rows, metadata=metadata):
+                self.database.execute_procedure.return_value = [rows, metadata]
+                with self.assertRaises(KnowledgeServiceError) as context:
+                    self.service.list_knowledge_item_versions_for_owner(
+                        "member-a", ITEM_KEY
+                    )
+                self.assertEqual(context.exception.code, "invalid")
+
+    def test_invalid_item_or_missing_owner_never_calls_database(self):
+        for user_key, item_key in (("member-a", "not-a-uuid"), ("", ITEM_KEY)):
+            with self.subTest(user_key=user_key, item_key=item_key):
+                with self.assertRaises(KnowledgeServiceError):
+                    self.service.list_knowledge_item_versions_for_owner(
+                        user_key, item_key
+                    )
+        self.database.execute_procedure.assert_not_called()
 
 class KnowledgeServiceSaveTests(unittest.TestCase):
     def setUp(self):

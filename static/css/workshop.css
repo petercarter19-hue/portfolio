@@ -882,6 +882,97 @@ body.workshop-page .site-sky {
 .wk-detail__meta-row dd.wk-status-pill--unfinished,
 .wk-detail__meta-row dd.wk-status-pill--archived { color: var(--wk-muted); }
 
+.wk-wording-history {
+    margin: 0 0 1.1rem;
+    border: 1px solid var(--wk-line);
+    border-radius: var(--wk-radius-sm);
+    background: var(--wk-surface);
+}
+
+.wk-wording-history__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    color: var(--wk-ink);
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.wk-wording-history__count {
+    color: var(--wk-muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.wk-wording-history__content {
+    border-top: 1px solid var(--wk-line-soft);
+    padding: 1rem;
+}
+
+.wk-wording-history__note,
+.wk-wording-history__window {
+    margin: 0 0 0.9rem;
+    color: var(--wk-muted);
+    font-size: 0.84rem;
+    line-height: 1.55;
+}
+
+.wk-wording-history__versions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.wk-wording-history__version {
+    padding-top: 1rem;
+    border-top: 1px solid var(--wk-line-soft);
+}
+
+.wk-wording-history__version:first-child {
+    padding-top: 0;
+    border-top: 0;
+}
+
+.wk-wording-history__version-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.84rem;
+}
+
+.wk-wording-history__version-head time {
+    color: var(--wk-muted);
+    font-size: 0.78rem;
+    text-align: right;
+}
+
+.wk-wording-history__version h4 {
+    margin: 0 0 0.35rem;
+    color: var(--wk-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.wk-wording-history__wording {
+    margin: 0 0 0.85rem;
+    color: var(--wk-ink);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.wk-wording-history__wording:last-child { margin-bottom: 0; }
+
 .wk-detail__actions {
     display: flex;
     flex-wrap: wrap;

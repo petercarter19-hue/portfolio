@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-PROVENANCE-VISIBILITY-001",
+  "candidate_sha": "ec7519a9feee41b7850d2d29a6cc7e94f55d2fff",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/workshop_f_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-08-28T07:34:33Z",
+  "findings": [],
+  "evidence_ref": "lane_claims/evidence/PS-WORKSHOP-PROVENANCE-VISIBILITY-001.md"
+}

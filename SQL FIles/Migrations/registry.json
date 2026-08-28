@@ -1765,6 +1765,40 @@
         "operator": "agent:/root/workshop_implementer",
         "notes": "Disposable Azure SQL gate; apply, no-op reapply, owner-isolation verify, rollback, and post-rollback reapply passed; no production database contacted or schema applied."
       }
+    },
+    {
+      "id": "PS-WORKSHOP-003",
+      "forward": "SQL FIles/Migrations/PS-WORKSHOP-003_knowledge_version_history_read.sql",
+      "rollback": "SQL FIles/Migrations/PS-WORKSHOP-003_knowledge_version_history_read_rollback.sql",
+      "requires": [
+        "PS-WORKSHOP-002"
+      ],
+      "summary": "Additive owner-scoped read-only Workshop wording-history procedure: newest 50 retained versions with exact approved wording, exact stored original-member wording, save timestamp, and true total/truncation metadata. No inference, backfill, content mutation, or production apply.",
+      "gate": {
+        "executable_sha256": "18e764fbc15cdfe3f00c54d318e48067dad97430afcf8df2fe685fc396708736",
+        "gated_at_utc": "2026-08-28T07:28:18Z",
+        "gate_database": "ps-workshop-003-gate-20260828-r2",
+        "gate_server": "peerslate",
+        "prerequisites": [
+          "PS-PLAT-000",
+          "PS-PLAT-001",
+          "PS-PLAT-002",
+          "PS-PLAT-003",
+          "PS-PLAT-004",
+          "PS-PLAT-005",
+          "PS-PLAT-006",
+          "PS-PLAT-007",
+          "PS-AUTH-001",
+          "PS-WORKSHOP-001",
+          "PS-WORKSHOP-002"
+        ],
+        "objects": [
+          "SQL_STORED_PROCEDURE:dbo.usp_ListKnowledgeItemVersionsForOwner"
+        ],
+        "verification": "PS-WORKSHOP-003_owner_isolation_verify.sql returned verified = 1",
+        "operator": "agent:/root/workshop_f_implementer",
+        "notes": "Disposable Azure SQL r2 gate after exact-SHA review corrections; dependency chain, one-statement row/metadata consistency, deterministic newest-50 contents, two-owner/foreign/forged/unknown neutrality, exact-byte canaries, guarded rollback, and reapply. No production database contacted or schema applied."
+      }
     }
   ]
 }

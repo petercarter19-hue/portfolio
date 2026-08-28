@@ -94,6 +94,45 @@
         </div>
     </dl>
 
+    {% if item.wording_history %}
+    <details class="wk-wording-history">
+        <summary class="wk-wording-history__summary">
+            <span>Wording history</span>
+            <span class="wk-wording-history__count">
+                {{ item.wording_history.total_count }} retained
+            </span>
+        </summary>
+        <div class="wk-wording-history__content">
+            <p class="wk-wording-history__note">
+                Some older AI-assisted versions may show refined wording under
+                “Source wording on record” because the original wording was not
+                retained at the time. PeerSlate does not infer or backfill wording
+                it cannot prove.
+            </p>
+            {% if item.wording_history.is_truncated %}
+            <p class="wk-wording-history__window">
+                Showing the newest {{ item.wording_history.versions|length }} of
+                {{ item.wording_history.total_count }} retained versions.
+            </p>
+            {% endif %}
+            <ol class="wk-wording-history__versions">
+                {% for version in item.wording_history.versions %}
+                <li class="wk-wording-history__version">
+                    <div class="wk-wording-history__version-head">
+                        <strong>Version {{ version.version }}</strong>
+                        <time datetime="{{ version.saved_at }}">{{ version.saved_at }}</time>
+                    </div>
+                    <h4>Approved wording</h4>
+                    <p class="wk-wording-history__wording">{{ version.approved_wording }}</p>
+                    <h4>Source wording on record</h4>
+                    <p class="wk-wording-history__wording">{{ version.original_member_wording }}</p>
+                </li>
+                {% endfor %}
+            </ol>
+        </div>
+    </details>
+    {% endif %}
+
     <div class="wk-detail__actions">
         {% if item.edit_url %}
         <a class="wk-btn wk-btn--outline" href="{{ item.edit_url }}">

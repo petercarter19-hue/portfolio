@@ -226,6 +226,7 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_GetVoiceDraftForOwner",
             "usp_GetVoiceMediaForOwner",
             "usp_GetKnowledgeItemForOwner",
+            "usp_ListKnowledgeItemVersionsForOwner",
             "usp_GetMomentForOwner",
             "usp_GetOwnerHomeForOwner",
             "usp_GetPeerSlateUserDashboard",
@@ -376,7 +377,7 @@ class DatabaseServiceTests(unittest.TestCase):
             interview_ai_telemetry,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 138)
+        self.assertEqual(len(expected), 139)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_photo_procedures_are_explicitly_allowlisted(self):

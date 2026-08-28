@@ -111,6 +111,15 @@ GET_ROW_FIELDS = frozenset(
 HISTORY_ROW_FIELDS = frozenset(
     {"version_number", "title", "body_format", "authored_via", "saved_at_utc"}
 )
+WORDING_HISTORY_ROW_FIELDS = frozenset(
+    {
+        "version_number",
+        "approved_wording",
+        "original_member_wording",
+        "saved_at_utc",
+    }
+)
+WORDING_HISTORY_METADATA_FIELDS = frozenset({"total_count", "is_truncated"})
 COUNT_ROW_FIELDS = frozenset({"total_count"})
 SAVE_ROW_FIELDS = frozenset(
     {"outcome", "knowledge_item_key", "item_status", "row_version"}
@@ -290,6 +299,29 @@ def _non_negative_int(value, label):
     return parsed
 
 
+def _exact_positive_int(value, label):
+    """Accept only the exact Python shape SQL Server returns for an int."""
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise KnowledgeServiceError(f"Invalid {label}.", code="invalid")
+    return value
+
+
+def _exact_non_negative_int(value, label):
+    """Accept only the exact Python shape SQL Server returns for a bigint."""
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise KnowledgeServiceError(f"Invalid {label}.", code="invalid")
+    return value
+
+
+def _boolean(value, label):
+    """Normalize a SQL Server bit without accepting general truthiness."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int) and not isinstance(value, bool) and value in {0, 1}:
+        return bool(value)
+    raise KnowledgeServiceError(f"Invalid {label}.", code="invalid")
+
+
 def _optional_positive_int(value, label):
     if value is None:
         return None
@@ -427,6 +459,35 @@ def _serialize_history_row(row):
     }
 
 
+def _serialize_wording_history_row(row):
+    """Preserve both stored wording fields byte-for-byte as Python strings.
+
+    Validation checks type and UTF-16 bounds only. It deliberately does not
+    strip, normalize, infer, or fall back from one wording field to the other.
+    """
+    _require_exact_fields(
+        row, WORDING_HISTORY_ROW_FIELDS, "knowledge item wording history row"
+    )
+    return {
+        "version": _exact_positive_int(
+            row["version_number"], "wording history version"
+        ),
+        "approved_wording": _bounded_text(
+            row["approved_wording"],
+            "wording history approved wording",
+            MAX_WORDING_UNITS,
+        ),
+        "original_member_wording": _bounded_text(
+            row["original_member_wording"],
+            "wording history original wording",
+            MAX_WORDING_UNITS,
+        ),
+        "saved_at": _utc_timestamp(
+            row["saved_at_utc"], "wording history saved time"
+        ),
+    }
+
+
 def _serialize_get_row(row, history_rows):
     _require_exact_fields(row, GET_ROW_FIELDS, "knowledge item")
     if len(history_rows) > MAX_HISTORY_VERSIONS:
@@ -510,6 +571,15 @@ class KnowledgeItemListResult:
 
     items: list
     total_count: int
+
+
+@dataclass(frozen=True)
+class KnowledgeItemVersionHistoryResult:
+    """Bounded exact-wording history plus truthful window metadata."""
+
+    versions: list
+    total_count: int
+    is_truncated: bool
 
 
 @dataclass(frozen=True)
@@ -788,6 +858,65 @@ class KnowledgeService:
             )
 
         return _serialize_get_row(item_rows[0], history_rows or [])
+
+    def list_knowledge_item_versions_for_owner(self, user_key, item_key):
+        """Read one owner's exact retained wording history, newest first.
+
+        The procedure returns at most 50 version rows plus exactly one
+        metadata row. Foreign, forged, and unknown keys all have the same
+        neutral shape: zero versions, total_count 0, not truncated.
+        """
+        self._require_user_key(user_key)
+        clean_item_key = self._require_item_key(item_key)
+
+        result_sets = self.database.execute_procedure(
+            "usp_ListKnowledgeItemVersionsForOwner",
+            [("@UserKey", user_key), ("@KnowledgeItemKey", clean_item_key)],
+        )
+        if len(result_sets) != 2:
+            raise KnowledgeServiceError(
+                "Unexpected knowledge item wording history result.", code="invalid"
+            )
+        version_rows, metadata_rows = result_sets
+        if len(version_rows) > MAX_HISTORY_VERSIONS or len(metadata_rows) != 1:
+            raise KnowledgeServiceError(
+                "Unexpected knowledge item wording history result.", code="invalid"
+            )
+
+        _require_exact_fields(
+            metadata_rows[0],
+            WORDING_HISTORY_METADATA_FIELDS,
+            "knowledge item wording history metadata row",
+        )
+        total_count = _exact_non_negative_int(
+            metadata_rows[0]["total_count"], "wording history total count"
+        )
+        is_truncated = _boolean(
+            metadata_rows[0]["is_truncated"], "wording history truncation flag"
+        )
+        versions = [_serialize_wording_history_row(row) for row in version_rows]
+        version_numbers = [version["version"] for version in versions]
+
+        if version_numbers != sorted(version_numbers, reverse=True) or len(
+            version_numbers
+        ) != len(set(version_numbers)):
+            raise KnowledgeServiceError(
+                "Knowledge item wording history order is invalid.", code="invalid"
+            )
+        expected_window_count = min(total_count, MAX_HISTORY_VERSIONS)
+        if len(versions) != expected_window_count or is_truncated != (
+            total_count > MAX_HISTORY_VERSIONS
+        ):
+            raise KnowledgeServiceError(
+                "Knowledge item wording history metadata is inconsistent.",
+                code="invalid",
+            )
+
+        return KnowledgeItemVersionHistoryResult(
+            versions=versions,
+            total_count=total_count,
+            is_truncated=is_truncated,
+        )
 
     def save_knowledge_item_for_owner(self, user_key, idempotency_key, fields):
         """Idempotent create (usp_SaveKnowledgeItemForOwner).
