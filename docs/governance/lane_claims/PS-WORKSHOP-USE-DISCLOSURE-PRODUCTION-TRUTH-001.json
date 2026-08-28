@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-USE-DISCLOSURE-PRODUCTION-TRUTH-001",
+  "state": "active",
+  "outcome": "Record only the already-completed production truth for Workshop D. Copy the generated production schema state byte-for-byte from Azure run 1719, which applied only PS-OPPSLATE-USE-001 at executable digest fe7e929fa12a32d9b0d4a78be04330b6e144ddf8c3ea8aff9fcf06016353374e and advanced the production ledger from 28 to 29 rows. Update the current baseline and its lockstep operational-readiness pointers to the separately deployed application source 9e40993dce28fff7fc6697353c31a0352f775d5e, manual run 1720, and live release 039c8e24ad92c1e62ee883f2. Record release evidence without claiming authenticated private live proof. This package is repository bookkeeping only: no runtime, SQL, migration registry, schema, deployment, configuration, identity, provider, or live operation.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/workshop_sql_gate_release",
+  "branch": "work/2026-08-28-workshop-use-disclosure-production-truth-001",
+  "delivery_path": "Bounded",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "48d814e13362f7d55b0152e66ae2b0a30fdb9625",
+  "owner_outcome_ref": "session:01a04348-7e3e-7a11-a443-752498be91b5/owner-direction:2026-08-28/workshop-d-release-9e40993d",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-WORKSHOP-USE-DISCLOSURE-PRODUCTION-TRUTH-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-USE-DISCLOSURE-PRODUCTION-TRUTH-001.md",
+    "docs/governance/lane_claims/receipts/PS-WORKSHOP-USE-DISCLOSURE-PRODUCTION-TRUTH-001.json",
+    "docs/governance/PRODUCTION_SCHEMA_STATE.md",
+    "docs/governance/CURRENT_BASELINE.yaml",
+    "tests/test_operational_readiness.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-USE-DISCLOSURE-PRODUCTION-TRUTH-001.md"
+  ],
+  "domains": [
+    "governance:workshop-use-disclosure-production-truth",
+    "testing:release-truth-pointers"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
