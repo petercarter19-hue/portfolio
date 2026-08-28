@@ -1,8 +1,8 @@
 # Attended two-member proof runbook
 
 This runbook is inert until Pete separately authorizes a deployed proof and
-confirms that two suitable QA identities are available. The local candidate
-does not grant that authority.
+the broker's bounded identity operation. The local candidate does not grant
+that authority, create identities, or prove the deployed application.
 
 ## Roles
 
@@ -24,18 +24,24 @@ does not grant that authority.
 - **Harness:** generates and validates local JSON only. It never opens or drives
   a browser and never reads identity or session material.
 - **Sealed credential broker:** only when
-  `PS-SYNTHETIC-SEALED-CREDENTIAL-BROKER-001` and a separate attended operation
-  authorize it, runs as one local worker for exactly two run-scoped ordinary QA
-  customer identities. It receives the operation authorization reference,
-  approved PeerSlate auth issuer, controlled QA-mailbox seed, and External ID
-  tenant issuer through non-echoing local prompts; derives the two login
-  identifiers; generates passwords; obtains the active Graph token without
-  passing any prompted value to Azure CLI; verifies the token tenant and Graph
-  verified domain before any customer POST;
-  creates the two customer objects; and drives the fixed sign-in and account
-  switch flow in disposable no-capture contexts. The worker may never print,
-  persist, return, or expose those values to Codex, a browser operator, the
-  package manager, a terminal log, a manifest, or repository evidence.
+  `PS-SYNTHETIC-SEALED-CREDENTIAL-BROKER-ATTENDED-HANDOFF-001` and a separate
+  attended operation authorize it, runs as one local worker for exactly two
+  run-scoped ordinary QA customer identities. Before any Graph mutation it
+  launches and verifies the actual no-capture browser runtime, creates four
+  fresh non-persistent contexts, and confirms the signed-out private baseline.
+  It derives the public authentication route and its one initial verified
+  External ID issuer inside worker memory; it derives the two identifiers from
+  the safe run ID and that issuer and generates the passwords in worker memory.
+  It obtains only the active pre-authorized Graph token, verifies the JWT tenant
+  and authenticated Graph organization/verified domain before every customer
+  POST, completes all 38 canonical journeys plus item cleanup and clean-start
+  validation, destroys every context and temporary root, and only then calls
+  the accepted exact-two retirement core. Pete enters no identifier, password,
+  MFA/recovery value, issuer, tenant, mailbox, or subject in this normal broker
+  path. The worker may never print, persist, return, or expose any identity,
+  credential, routing value, token, subject, session, sentinel, or private
+  content to Codex, a browser operator, the package manager, a terminal log, a
+  manifest, or repository evidence.
 
 Pete's retained actions do not make him the routine browser operator. Neither
 the package manager nor the browser-capable operator asks Pete to disclose a
@@ -86,30 +92,34 @@ operator is running that exact merged source. The proof application release is
 still pinned separately by the normal entry gate; this operator tool is not an
 application feature flag or runtime endpoint.
 Immediately before creation, establish a run-scoped exact UTC cutoff. The
-normal path remains Pete's direct credential input. The sealed-broker exception
-is available only when the exact broker candidate is independently accepted and
-the attended operation separately authorizes its execution. The local worker
-first validates all confirmations and then accepts the controlled mailbox seed
-and tenant issuer through non-echoing local prompts. It derives exactly two
-same-inbox identifiers and creates exactly two ordinary customer objects through
-the fixed Microsoft Graph endpoint only after a token tenant plus Graph
-organization/verified-domain check matches the prompted External ID issuer. Its
-Graph token, generated credentials, and External ID object IDs remain only in
-worker memory.
+sealed-broker path is available only when the exact broker candidate is
+independently accepted and the attended operation separately authorizes its
+execution. Before it obtains a Graph token, the worker proves the installed
+Playwright module and browser executable usable in a no-capture configuration,
+creates Client A, Client B, the signed-out control, and the switch client, and
+proves the signed-out Workshop private baseline. It derives its public auth
+origin from that signed-out login route and derives the one initial
+`.onmicrosoft.com` issuer only from the active Graph token plus that token's
+authenticated Graph organization. It then derives exactly two login identifiers
+and creates exactly two ordinary customer objects through the fixed Microsoft
+Graph endpoint. No mailbox, tenant, issuer, authorization reference, identity,
+credential, MFA/recovery value, or subject is prompted, supplied in argv, or
+inherited by a child environment.
 
-The sealed worker uses three disposable, no-capture contexts: one for each
-member arrival plus one switch context that completes A-to-B and B-to-A. It
-never enables screenshots, trace/video, downloads, browser-profile persistence,
-storage-state export, DOM/page capture, or network capture. Browser engines may
-create unavoidable non-persistent cache/profile files only in one explicit,
-run-scoped temporary root with no inherited sensitive worker environment. The
-worker refuses pre-existing broker residue; it closes every context, destroys
-that root, and verifies removal before it reports success. Any root or context
-cleanup failure is indeterminate. If the Graph creation is partial or ambiguous,
-a browser operation cannot establish the required exact pair, or a context
-cannot be destroyed, it returns only an indeterminate closed code and does not
-delete, retry blindly, search for unrelated identities, or start the retirement
-path.
+The sealed worker uses exactly four disposable, no-capture contexts: one for
+each member arrival, one never-authenticated signed-out control, and one switch
+context that completes A-to-B and B-to-A. It never enables screenshots,
+trace/video, downloads, browser-profile persistence, storage-state export,
+DOM/page capture, or network capture. Browser engines may create unavoidable
+non-persistent cache/profile files only in one explicit run-scoped temporary
+root with a scrubbed child environment. The worker refuses pre-existing broker
+residue; it closes every context, destroys that root, and verifies removal
+before retirement. Any root or context cleanup failure is indeterminate. If
+Graph creation is partial or ambiguous, the browser runtime/baseline fails, a
+canonical journey cannot reach its contractually permitted closed outcome,
+cleanup is not exact, or final validation fails, it returns only a closed
+refusal or indeterminate result and does not
+delete, retry blindly, search for unrelated identities, or start retirement.
 
 For the normal manual-credential path, the browser-capable operator opens the
 identity flow and uses its ordinary controls. Before Pete enters a login
@@ -131,9 +141,11 @@ and closed structural outcomes when not also serving as the browser-capable
 operator. The proof record always receives only aliases and closed structural
 outcomes.
 
-After application-item cleanup and before either External ID customer object is
-permanently deleted, the normal path is a separately authorized operator running
-this order:
+For that separate non-broker fallback only, the operator opens each sign-in flow and handles ordinary controls; the operator performs A-to-B and B-to-A switch journeys. After each operator-clicked sign-out, the operator performs refresh, second-tab, public-return, sign-out, cross-tab sign-out, and the controllable expired-session check. The operator deletes or archives every created item, then the operator signs out and destroys Clients A, B, the signed-out control, and the switch client. These manual actions do not apply to the normal sealed-broker path above, which performs the bounded sequence without Pete entering identity material.
+
+For the separate non-broker manual retirement path, after application-item
+cleanup and before either External ID customer object is permanently deleted,
+the separately authorized operator runs this order:
 
 1. set the current authoritative `PEERSLATE_AUTH_ISSUER` value in process memory
    without displaying or saving it;
@@ -187,15 +199,17 @@ An `indeterminate` result is also a hard stop. It can mean the database commit
 succeeded but connection cleanup did not. Never repeat `retire` or `recover`
 from that result; obtain authority for a read-only state verification first.
 
-The sealed broker uses the same accepted retirement core programmatically rather
-than repeating the two subjects at a prompt. It passes the two in-memory Graph
-object IDs only after both customer objects were provisioned, both arrival and
-switch checks completed, and the attended action supplied all broker
-confirmations. The core retains its existing serializable exact-two checks,
-ordinary-role/private-profile requirements, residue refusal, and closed output.
-The broker reports `retired_pending_external_deletion` only after that core
-commits. It never performs External ID permanent deletion; that remains Pete's
-separate action-time decision and is not evidence of a successful broker run.
+The normal sealed-broker path never runs those commands or prompts. It uses the
+same accepted retirement core programmatically and passes the two in-memory
+Graph object IDs only after both customer objects were provisioned, all 38
+journeys and the synthetic item lifecycle completed, count-only residue was
+zero, the signed-out clean-start repeat and final validation passed, and all
+four contexts plus the temporary root were destroyed and verified. The core
+retains its existing serializable exact-two checks, ordinary-role/private-profile
+requirements, residue refusal, and closed output. The broker reports
+`retired_pending_external_deletion` only after that core commits. It never
+performs External ID permanent deletion; that remains Pete's separate
+action-time decision and is not evidence of a successful broker run.
 
 The broker command contains only safe run metadata. It never accepts an
 authorization reference, identity, mailbox, password, token, subject, issuer,
@@ -217,83 +231,106 @@ python scripts/run_synthetic_sealed_credential_broker.py run `
   --confirm-retirement-handoff
 ```
 
-The worker prompts only locally and without echo for its operation authorization
-reference, approved PeerSlate auth issuer, External ID tenant issuer, and
-controlled mailbox seed. It passes no authorization reference, credential,
-member identity, issuer, or PeerSlate auth issuer in Azure CLI or Chromium child
-environments, command arguments, or output. Azure CLI provides only its active
-pre-authorized Graph token; the worker rejects it before mutation unless its JWT
-tenant and authenticated Graph organization/verified domain match the sealed
-issuer. A missing pre-existing Graph grant, tenant-binding mismatch,
-capture/debug environment, noninteractive terminal, malformed pair, duplicate
-Graph object ID, stale engine-root residue, or any partial state returns a
-closed refusal or indeterminate result; neither code authorizes a retry,
-recovery, or deletion.
+The worker presents no secret, mailbox, issuer, tenant, subject, or
+authorization-reference prompt. It passes no authorization reference,
+credential, member identity, issuer, or public auth route in Azure CLI or
+Chromium child environments, command arguments, or output. Azure CLI provides
+only its active pre-authorized Graph token; the worker rejects it before
+mutation unless its JWT tenant, authenticated Graph organization/verified
+initial domain, and normalized signed-out browser authority name the same
+sealed External ID tenant. A missing pre-existing Graph grant,
+tenant-binding mismatch, unavailable browser module/executable, failed
+signed-out baseline, capture/debug environment, malformed pair, duplicate Graph
+object ID, stale engine-root residue, partial state, missing journey, nonzero
+residue, or cleanup failure returns a closed refusal or indeterminate result;
+neither code authorizes a retry, recovery, or deletion.
 
 ## Client arrangement
 
-The browser-capable operator prepares four independent contexts without
-importing a profile, cookies, storage, cache, extensions, or saved sessions:
+Before the first Graph POST, the sealed worker prepares four independent
+contexts without importing a profile, cookies, storage, cache, extensions, or
+saved sessions:
 
 - **Client A:** dedicated to `member_a`;
 - **Client B:** dedicated to `member_b`;
 - **Signed-out control:** never signed in;
 - **Switch client:** used first by one member, signed out through an ordinary
-  control by the browser-capable operator, then used by the other member without
-  copying or inspecting browser storage.
+  control by the worker, then used by the other member without copying or
+  inspecting browser storage.
 
 Clients A and B stay open simultaneously for the paired isolation checks. The
 switch client tests ordinary product account switching before its final
-destruction. A fresh replacement switch context may then confirm the clean
-baseline. The harness does not create, reset, or inspect any context.
+destruction. The never-authenticated signed-out control performs both the
+pre-mutation baseline and the clean-start repeat. The harness does not create,
+reset, or inspect any context.
 
 ## Run sequence
 
 1. Generate the canonical plan with `plan --json` and initialize the sanitized
    manifest outside the repository with the exact deployed source, release, and
    browser version. Initialization refuses an existing destination.
-2. The browser-capable operator uses the signed-out control to verify that
-   protected navigation discloses no private payload.
-3. The browser-capable operator opens each sign-in flow and handles ordinary
-   controls. Pete confirms the intended QA identity and enters only login
-   identifiers, passwords, verification or MFA values, recovery information,
-   and other credentials. Record only whether both members arrive privately and
-   whether the application visibly treats them as distinct. Do not record how
-   the identities are named or mapped.
-4. The browser-capable operator establishes an owner-scoped pre-run item count
-   for both aliases through the separately authorized member surface. Retain
-   counts only.
-5. The browser-capable operator uses the minimal approved synthetic sentinel to
-   create an item for each member. Keep any returned handles only in the
-   ephemeral cleanup ledger.
-6. With both clients open, the browser-capable operator proves owner-only
-   visibility and runs list, read, update, delete, export, and forged-reference
-   checks from A toward B and from B toward A. A safe neutral denial is required;
-   no private peer content may be used as evidence.
-7. The browser-capable operator verifies that browser-local state is isolated
-   by observing the rendered application result, without inspecting or exporting
-   browser storage, cookies, claims, or session files.
-8. The browser-capable operator performs A-to-B and B-to-A switch journeys in
-   the switch client. Pete confirms the intended QA identity and enters any
-   required credential or MFA values. After each operator-clicked sign-out and
-   next sign-in, verify that the previous member's private or browser-local state
-   is absent.
-9. The browser-capable operator performs refresh, second-tab, public-return,
-   sign-out, cross-tab sign-out, and—only when the environment makes it
-   controllable—expired-session journeys for each alias. Report uncontrollable
-   expiry or unreconciled cross-tab behavior as Conditional using the approved
-   note code.
-10. The browser-capable operator deletes or archives every created item through
-    the same authorized application contract and verifies zero active residue
-    for both aliases. Record only created and residue counts plus the truthful
-    soft-delete or retention classification.
-11. The browser-capable operator signs out and destroys Clients A, B, the
-    signed-out control, and the switch client. Pete participates only if a
-    credential, MFA, identity-confirmation, or physical-device action is
-    genuinely required. Record only the destruction status.
-12. Repeat the clean-start check. Run final validation. Pending steps, fewer
-    than one created item for either alias, active residue, or failed client
-    destruction prevent Pass.
+2. The sealed worker launches the actual browser module/executable with no
+   capture, creates all four contexts, and uses the signed-out control to verify
+   protected navigation discloses no private payload. This is a hard pre-Graph
+   gate.
+3. The sealed worker derives public auth and tenant routing in memory, derives
+   the pair of credentials in memory, verifies the active Graph binding, and
+   creates exactly two ordinary customer objects. Pete enters nothing.
+4. Each sign-in arrives first at the configured `/app` return. The worker then
+   explicitly navigates to `/app/workshop` and confirms a distinct private
+   Workshop arrival for each member, then
+   creates the minimal run-scoped synthetic item for each, and keeps returned
+   handles only in its ephemeral cleanup ledger.
+5. With both clients open, the worker completes each list, read, update, delete,
+   and forged-reference journey from A toward B and from B toward A. The peer
+   update/delete
+   checks make the actual same-origin mutation request with exact
+   `Origin: https://peerslate.com` and `Sec-Fetch-Site: same-origin` proof,
+   with redirects disabled. Each request must return only its route-defined
+   neutral foreign-owner denial; authentication/origin failures, conflicts,
+   server failures, and any unexpected redirect or location are indeterminate.
+   The current update route's safe `200` with no `Location` is not structurally
+   distinguishable from a benign no-op: after the required unchanged-owner
+   reproof, both update journeys are recorded only as `Conditional` with
+   `neutral_denial_not_distinguishable`, never Pass. The delete route retains
+   its exact neutral changed redirect requirement.
+   Before and after every peer check, the worker proves an authenticated private
+   Workshop shell through stable account controls and absence of the preview
+   banner, without reading page content. It then re-proves the known owner item
+   and version are unchanged. The current Workshop surface has no distinct safe
+   forged-reference contract, so the two forged-reference journeys are recorded
+   only as `Conditional` with `feature_surface_unavailable`; no peer handle or
+   version is put into a URL, history, or probe.
+   The current Workshop contract has no export operation, so the two canonical
+   export journeys are recorded only as `Conditional` with
+   `feature_surface_unavailable`; the worker never invents or probes an export
+   route. No private peer content is retained.
+6. The worker completes browser-state isolation, A-to-B and B-to-A switching,
+   refresh, second-tab, public-return, sign-out, and cross-tab sign-out for
+   both aliases. It does not misrepresent ordinary sign-out or cookie clearing
+   as session expiry: because expiry cannot be safely induced by this broker,
+   each expiry journey is recorded only as `Conditional` with
+   `session_expiry_not_controllable`. It emits only closed outcomes and count
+   totals.
+7. The worker deletes every synthetic item through the same application contract
+   and independently observes zero active and archived residue for both aliases.
+   Each observation first proves the owner is still authenticated in a private
+   Workshop shell; signed-out preview or a session-lost state is indeterminate,
+   never zero residue. It retains only created and residue counts.
+8. The worker repeats the signed-out clean-start check, validates all 38
+   canonical outcomes, destroys and verifies all four contexts and the temporary
+   root, and then invokes the accepted retirement core. Any pending journey,
+   fewer than one created item for either alias, active residue, cleanup failure,
+   or final-validation failure prevents retirement. The bounded update,
+   forged-reference, export, and expiry limitations above make the structural
+   result `Conditional`, not Pass; retirement may follow that valid Conditional
+   result only after the required item/context cleanup and final validation.
+   The valid Conditional map is exact: both updates use
+   `neutral_denial_not_distinguishable`; both forged-reference and export
+   journeys use `feature_surface_unavailable`; and both expiry journeys use
+   `session_expiry_not_controllable`. A missing, substituted, or extra
+   Conditional (including a cross-tab Conditional) is indeterminate and never
+   reaches retirement.
 
 ## Recording commands
 
