@@ -37,7 +37,6 @@ class WorkshopProvenanceVisibilityMigrationTests(unittest.TestCase):
 
         self.assertEqual(entry["requires"], ["PS-WORKSHOP-002"])
         self.assertLess(ids.index("PS-WORKSHOP-002"), ids.index("PS-WORKSHOP-003"))
-        self.assertEqual(ids[-1], "PS-WORKSHOP-003")
         self.assertEqual(
             entry["forward"],
             "SQL FIles/Migrations/PS-WORKSHOP-003_knowledge_version_history_read.sql",

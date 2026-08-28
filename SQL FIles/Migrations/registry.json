@@ -1799,6 +1799,39 @@
         "operator": "agent:/root/workshop_f_implementer",
         "notes": "Disposable Azure SQL r2 gate after exact-SHA review corrections; dependency chain, one-statement row/metadata consistency, deterministic newest-50 contents, two-owner/foreign/forged/unknown neutrality, exact-byte canaries, guarded rollback, and reapply. No production database contacted or schema applied."
       }
+    },
+    {
+      "id": "PS-WORKSHOP-004",
+      "forward": "SQL FIles/Migrations/PS-WORKSHOP-004_knowledge_edit_provenance.sql",
+      "rollback": "SQL FIles/Migrations/PS-WORKSHOP-004_knowledge_edit_provenance_rollback.sql",
+      "requires": [
+        "PS-WORKSHOP-003"
+      ],
+      "summary": "Workshop owner edits append the edited approved wording while retaining the exact stored original-member wording from the owned current version. Replaces only usp_UpdateKnowledgeItemForOwner with unchanged input/output contract; no caller original, inference, backfill, old-version mutation, or application change.",
+      "gate": {
+        "executable_sha256": "53561ce3275599cd7d4f34c234a8455313ac82d1d967194f449d9e25e7c2fcba",
+        "gated_at_utc": "2026-08-28T08:38:02Z",
+        "gate_database": "ps-workshop-004-gate-20260828-r1",
+        "gate_server": "peerslate",
+        "prerequisites": [
+          "PS-PLAT-000",
+          "PS-PLAT-001",
+          "PS-PLAT-002",
+          "PS-PLAT-003",
+          "PS-PLAT-004",
+          "PS-PLAT-005",
+          "PS-PLAT-006",
+          "PS-PLAT-007",
+          "PS-AUTH-001",
+          "PS-WORKSHOP-001",
+          "PS-WORKSHOP-002",
+          "PS-WORKSHOP-003"
+        ],
+        "objects": [],
+        "verification": "PS-WORKSHOP-004_owner_isolation_verify.sql returned verified = 1",
+        "operator": "agent:/root/workshop_g_implementer",
+        "notes": "Disposable Azure SQL gate: exact prerequisite chain through PS-WORKSHOP-003; forward, hash-validated no-op reapply, owner/current-version byte provenance verifier, guarded rollback restoring exact W1 body/hash, and post-rollback reapply. A real two-connection proof held A's owner/current-row lock, observed B's bounded lock timeout, committed A, then proved B's old token returns changed with exactly one appended version and update audit. Production database not contacted; schema not applied to production."
+      }
     }
   ]
 }

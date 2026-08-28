@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-EDIT-PROVENANCE-001",
+  "candidate_sha": "2b9bffbec4a1a88f9406ef0ffe85662adda8f111",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/workshop_g_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-08-28T08:59:49Z",
+  "findings": [],
+  "evidence_ref": "lane_claims/evidence/PS-WORKSHOP-EDIT-PROVENANCE-001.md"
+}
