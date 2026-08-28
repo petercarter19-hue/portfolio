@@ -105,6 +105,38 @@ actions, and irreversible identity deletion; and performs genuinely
 physical-device-only actions. Those retained responsibilities do not make Pete
 the routine browser operator.
 
+### Sealed synthetic-QA credential-broker exception
+
+`PS-SYNTHETIC-SEALED-CREDENTIAL-BROKER-001` is the narrow exception for exactly
+two run-scoped ordinary QA customer identities. Once a separately authorized
+attended operation starts, its local sealed worker may generate the two login
+credentials, provision the two identities through Microsoft Graph, enter those
+credentials, and drive the bounded A-to-B and B-to-A switch flow. The worker
+receives identity material only through non-echoing local input. It holds login
+identifiers, passwords, Graph access tokens, External ID subjects, and the
+operation authorization only in worker memory, and returns only allowlisted
+structural counts and closed result codes. Its non-persistent browser contexts
+may create unavoidable engine/cache/profile files only beneath one explicit
+run-scoped temporary root with a scrubbed child environment; it verifies that
+root is empty before start and removed on every exit. Stale residue is a refusal
+and failed removal is indeterminate, never Pass. Codex, Claude, the package
+manager, the browser operator, repository evidence, logs, command-line
+arguments, and environment files receive none of the identity or credential
+material.
+
+This is not a general credential delegation. The worker cannot change tenant
+roles, Graph permissions, configuration, licensing, billing, application code,
+or the fixed production target; absent pre-existing Graph authority is a closed
+refusal. It never captures a screenshot, trace, download, DOM, browser profile,
+storage state, cookie, token, claim, or network record, and it never retains
+browser engine state after successful root cleanup. It obtains only the active
+pre-authorized Graph token without passing a prompted issuer to Azure CLI, then
+verifies the token tenant plus that tenant's exact verified issuer before any
+customer POST. After the bounded flow, it sends only the two in-memory Graph
+object IDs into the already accepted exact-two application-retirement core.
+Permanent External ID deletion remains outside the worker and still requires
+Pete's separate action-time authorization.
+
 The assigned browser-capable operator opens pages, navigates, clicks ordinary
 controls, manages tabs and refreshes, departs to and returns from public pages,
 clicks ordinary sign-out controls, performs authorized visible item creation,

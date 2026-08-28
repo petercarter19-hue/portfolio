@@ -6,11 +6,12 @@ does not grant that authority.
 
 ## Roles
 
-- **Pete:** enters passwords, email or other login identifiers, verification or
-  MFA codes, recovery information, and other credentials; confirms which QA
-  identity is in use; makes material owner decisions; authorizes spending,
-  production actions, and irreversible identity deletion; and performs only
-  genuinely physical-device-only actions.
+- **Pete:** makes material owner decisions; authorizes spending, production
+  actions, and irreversible identity deletion; and performs only genuinely
+  physical-device-only actions. Except for the bounded sealed-broker exception
+  below, Pete enters passwords, email or other login identifiers, verification
+  or MFA codes, recovery information, and other credentials; and confirms
+  which QA identity is in use.
 - **Package manager:** prepares the neutral plan, calls out each structural
   observation, records only closed outcome codes, validates cleanup, and stops
   on a safety concern. If the manager lacks a browser tool, the manager assigns
@@ -22,6 +23,19 @@ does not grant that authority.
   visible residue checks.
 - **Harness:** generates and validates local JSON only. It never opens or drives
   a browser and never reads identity or session material.
+- **Sealed credential broker:** only when
+  `PS-SYNTHETIC-SEALED-CREDENTIAL-BROKER-001` and a separate attended operation
+  authorize it, runs as one local worker for exactly two run-scoped ordinary QA
+  customer identities. It receives the operation authorization reference,
+  approved PeerSlate auth issuer, controlled QA-mailbox seed, and External ID
+  tenant issuer through non-echoing local prompts; derives the two login
+  identifiers; generates passwords; obtains the active Graph token without
+  passing any prompted value to Azure CLI; verifies the token tenant and Graph
+  verified domain before any customer POST;
+  creates the two customer objects; and drives the fixed sign-in and account
+  switch flow in disposable no-capture contexts. The worker may never print,
+  persist, return, or expose those values to Codex, a browser operator, the
+  package manager, a terminal log, a manifest, or repository evidence.
 
 Pete's retained actions do not make him the routine browser operator. Neither
 the package manager nor the browser-capable operator asks Pete to disclose a
@@ -72,8 +86,34 @@ operator is running that exact merged source. The proof application release is
 still pinned separately by the normal entry gate; this operator tool is not an
 application feature flag or runtime endpoint.
 Immediately before creation, establish a run-scoped exact UTC cutoff. The
-browser-capable operator opens the identity flow and uses its ordinary controls.
-Before Pete enters a login identifier or credential, the operator stops issuing
+normal path remains Pete's direct credential input. The sealed-broker exception
+is available only when the exact broker candidate is independently accepted and
+the attended operation separately authorizes its execution. The local worker
+first validates all confirmations and then accepts the controlled mailbox seed
+and tenant issuer through non-echoing local prompts. It derives exactly two
+same-inbox identifiers and creates exactly two ordinary customer objects through
+the fixed Microsoft Graph endpoint only after a token tenant plus Graph
+organization/verified-domain check matches the prompted External ID issuer. Its
+Graph token, generated credentials, and External ID object IDs remain only in
+worker memory.
+
+The sealed worker uses three disposable, no-capture contexts: one for each
+member arrival plus one switch context that completes A-to-B and B-to-A. It
+never enables screenshots, trace/video, downloads, browser-profile persistence,
+storage-state export, DOM/page capture, or network capture. Browser engines may
+create unavoidable non-persistent cache/profile files only in one explicit,
+run-scoped temporary root with no inherited sensitive worker environment. The
+worker refuses pre-existing broker residue; it closes every context, destroys
+that root, and verifies removal before it reports success. Any root or context
+cleanup failure is indeterminate. If the Graph creation is partial or ambiguous,
+a browser operation cannot establish the required exact pair, or a context
+cannot be destroyed, it returns only an indeterminate closed code and does not
+delete, retry blindly, search for unrelated identities, or start the retirement
+path.
+
+For the normal manual-credential path, the browser-capable operator opens the
+identity flow and uses its ordinary controls. Before Pete enters a login
+identifier or credential, the operator stops issuing
 browser commands and suspends all capture and observation. Pete controls the
 visible input and says only `ready` when ordinary browser operation may resume;
 he does not disclose the entered value. Pete confirms which QA identity is in
@@ -85,15 +125,15 @@ After operator control resumes, ordinary UI may unavoidably render a login
 identifier or account label. Incidental visibility is not evidence and is not
 an identity mismatch. The operator must not intentionally inspect, transcribe,
 export, capture, record, or retain that detail and refers to the identities only
-as `member_a` and `member_b`. Passwords, verification or MFA values, recovery
-information, External ID subjects, object IDs, claims, and tokens remain outside
-operator observation. If any secret, code, or credential is rendered unmasked,
-stop without capture. The package manager receives only the aliases and closed
-structural outcomes when not also serving as the browser-capable operator. The
-proof record always receives only aliases and closed structural outcomes.
+as `member_a` and `member_b`. If any secret, code, or credential is rendered unmasked,
+stop without capture. The package manager receives only the aliases
+and closed structural outcomes when not also serving as the browser-capable
+operator. The proof record always receives only aliases and closed structural
+outcomes.
 
 After application-item cleanup and before either External ID customer object is
-permanently deleted, a separately authorized operator runs this order:
+permanently deleted, the normal path is a separately authorized operator running
+this order:
 
 1. set the current authoritative `PEERSLATE_AUTH_ISSUER` value in process memory
    without displaying or saving it;
@@ -146,6 +186,49 @@ tool refuses known mssql-python diagnostic logging.
 An `indeterminate` result is also a hard stop. It can mean the database commit
 succeeded but connection cleanup did not. Never repeat `retire` or `recover`
 from that result; obtain authority for a read-only state verification first.
+
+The sealed broker uses the same accepted retirement core programmatically rather
+than repeating the two subjects at a prompt. It passes the two in-memory Graph
+object IDs only after both customer objects were provisioned, both arrival and
+switch checks completed, and the attended action supplied all broker
+confirmations. The core retains its existing serializable exact-two checks,
+ordinary-role/private-profile requirements, residue refusal, and closed output.
+The broker reports `retired_pending_external_deletion` only after that core
+commits. It never performs External ID permanent deletion; that remains Pete's
+separate action-time decision and is not evidence of a successful broker run.
+
+The broker command contains only safe run metadata. It never accepts an
+authorization reference, identity, mailbox, password, token, subject, issuer,
+or browser-profile path as an argument. Its normal structural plan is:
+
+```powershell
+python scripts/run_synthetic_sealed_credential_broker.py plan
+```
+
+Only within a separately authorized attended operation may the local worker run:
+
+```powershell
+python scripts/run_synthetic_sealed_credential_broker.py run `
+  --run-id <SAFE-RUN-ID> `
+  --created-after-utc <EXACT-UTC-CREATION-CUTOFF> `
+  --execute `
+  --confirm-exact-two-synthetic-members `
+  --confirm-no-production-proof `
+  --confirm-retirement-handoff
+```
+
+The worker prompts only locally and without echo for its operation authorization
+reference, approved PeerSlate auth issuer, External ID tenant issuer, and
+controlled mailbox seed. It passes no authorization reference, credential,
+member identity, issuer, or PeerSlate auth issuer in Azure CLI or Chromium child
+environments, command arguments, or output. Azure CLI provides only its active
+pre-authorized Graph token; the worker rejects it before mutation unless its JWT
+tenant and authenticated Graph organization/verified domain match the sealed
+issuer. A missing pre-existing Graph grant, tenant-binding mismatch,
+capture/debug environment, noninteractive terminal, malformed pair, duplicate
+Graph object ID, stale engine-root residue, or any partial state returns a
+closed refusal or indeterminate result; neither code authorizes a retry,
+recovery, or deletion.
 
 ## Client arrangement
 
