@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-PROVENANCE-VISIBILITY-001",
+  "state": "active",
+  "outcome": "Make Workshop's already-retained wording/version history inspectable by the signed-in owner. Add owner-scoped read-only dbo.usp_ListKnowledgeItemVersionsForOwner through additive migration PS-WORKSHOP-003 requiring PS-WORKSHOP-002; return the newest 50 versions at most with each exact approved_wording, exact stored original_member_wording, saved timestamp, and truthful total/truncation metadata. Render that history closed by default inside the selected My Information detail, label the retained field 'Source wording on record', and explain that some older AI-assisted rows may contain refined wording because the original was not retained then; never infer or backfill certainty. Preserve server-derived identity, private/no-store responses, forged/foreign/unknown neutrality, anonymous database-free behavior, escaping, existing edit/archive/restore/delete actions, and Workshop D use disclosure. Excluded: edit provenance (reserved for Workshop G), any inference or backfill, schema application, production deployment, private live proof, redesign, and any material visual change.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/workshop_f_implementer",
+  "branch": "work/2026-08-28-workshop-provenance-visibility-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "420da2631f9469de617723a5c42e5ab681a7298d",
+  "owner_outcome_ref": "session:01a04348-7e3e-7a11-a443-752498be91b5/owner-direction:2026-08-28/workshop-f-provenance-visibility",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-WORKSHOP-PROVENANCE-VISIBILITY-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-PROVENANCE-VISIBILITY-001.md",
+    "docs/governance/lane_claims/receipts/PS-WORKSHOP-PROVENANCE-VISIBILITY-001.json",
+    "SQL FIles/Migrations/PS-WORKSHOP-003_knowledge_version_history_read.sql",
+    "SQL FIles/Migrations/PS-WORKSHOP-003_knowledge_version_history_read_rollback.sql",
+    "SQL FIles/Verification/PS-WORKSHOP-003_owner_isolation_verify.sql",
+    "SQL FIles/Migrations/registry.json",
+    "services/database_service.py",
+    "services/knowledge_service.py",
+    "workshop_routes.py",
+    "templates/partials/workshop/_item_detail.html",
+    "static/css/workshop.css",
+    "tests/test_database_service.py",
+    "tests/test_knowledge_service.py",
+    "tests/test_workshop_checkpoint.py",
+    "tests/test_workshop_polish.py",
+    "tests/test_workshop_provenance_visibility_migration.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-PROVENANCE-VISIBILITY-001.md"
+  ],
+  "domains": [
+    "runtime:workshop:provenance:visibility",
+    "schema:workshop:knowledge-version-history-read",
+    "testing:workshop:provenance-visibility"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
