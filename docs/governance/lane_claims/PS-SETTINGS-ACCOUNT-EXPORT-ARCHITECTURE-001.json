@@ -4,7 +4,7 @@
   "state": "active",
   "outcome": "Deliver Slice C0 only: an independently reviewed documentation-only architecture and privacy boundary for a future versioned, owner-scoped account export. Define server-derived identity and isolation, domain-by-domain inclusion and explicit exclusions, deterministic manifest and schema versioning, truthful bounded-read consistency, queued/running/ready/failed/expired lifecycle, private artifact delivery and cleanup, redaction rules, package dependencies, proof requirements, rollback, and the genuine owner/professional decisions required before C1-C4. No runtime, route, UI, test behavior, schema or migration, migration registry, pipeline, configuration, dependency, provider resource, workload identity, scheduler, spend, deployment, enablement, data access, export generation, B1, D-F activation, or second canonical store.",
   "assignment": "implementation",
-  "writer_ref": "agent:/root/c0_writer",
+  "writer_ref": "session:afb6e763-01c4-49a8-ab89-b96304ea6615",
   "branch": "work/2026-08-25-settings-account-export-architecture-001",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
@@ -28,7 +28,12 @@
     "operations:settings:account-export-lifecycle"
   ],
   "review_requirement": "independent",
-  "handoff": null,
+  "handoff": {
+    "from_ref": "agent:/root/c0_writer",
+    "to_ref": "session:afb6e763-01c4-49a8-ab89-b96304ea6615",
+    "checkpoint_sha": "aa80d8402d2ad3213e36ad60362f8802c9888b92",
+    "relinquished": true
+  },
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null
