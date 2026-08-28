@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKSHOP-PROVENANCE-VISIBILITY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Make Workshop's already-retained wording/version history inspectable by the signed-in owner. Add owner-scoped read-only dbo.usp_ListKnowledgeItemVersionsForOwner through additive migration PS-WORKSHOP-003 requiring PS-WORKSHOP-002; return the newest 50 versions at most with each exact approved_wording, exact stored original_member_wording, saved timestamp, and truthful total/truncation metadata. Render that history closed by default inside the selected My Information detail, label the retained field 'Source wording on record', and explain that some older AI-assisted rows may contain refined wording because the original was not retained then; never infer or backfill certainty. Preserve server-derived identity, private/no-store responses, forged/foreign/unknown neutrality, anonymous database-free behavior, escaping, existing edit/archive/restore/delete actions, and Workshop D use disclosure. Excluded: edit provenance (reserved for Workshop G), any inference or backfill, schema application, production deployment, private live proof, redesign, and any material visual change.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_f_implementer",
@@ -41,6 +41,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "ca381870117c59252fc39f311e92c85d031ef098",
+  "closed_at": "2026-08-28T07:51:20Z"
 }
