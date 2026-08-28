@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-ARCHITECTURE-001",
+  "candidate_sha": "2ba108e3a72c07da07621c55f5ff8914cf0e5f80",
+  "review_type": "independent",
+  "reviewer_ref": "role:indrev:ps-settings-c0-export:20260828T154146Z:2ba108e3",
+  "result": "pass",
+  "reviewed_at": "2026-08-28T15:41:46Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-ARCHITECTURE-001.md"
+}
