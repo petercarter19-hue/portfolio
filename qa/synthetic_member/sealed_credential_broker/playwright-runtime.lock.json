@@ -1,13 +1,37 @@
 {
   "schema_version": 1,
-  "target": {
-    "system": "Darwin",
-    "machine": "arm64",
-    "python": "3.14"
-  },
+  "targets": [
+    {
+      "system": "Darwin",
+      "machine": "arm64",
+      "python": "3.14",
+      "venv_python": [
+        "bin",
+        "python"
+      ],
+      "site_packages": [
+        "lib",
+        "python3.14",
+        "site-packages"
+      ]
+    },
+    {
+      "system": "Windows",
+      "machine": "AMD64",
+      "python": "3.13",
+      "venv_python": [
+        "Scripts",
+        "python.exe"
+      ],
+      "site_packages": [
+        "Lib",
+        "site-packages"
+      ]
+    }
+  ],
   "requirements": {
     "path": "playwright-requirements.lock",
-    "sha256": "0fa262752498ba2287cc619cd43af2b415aa6cef60bc0da59f4cf2a9d352ce9c",
+    "sha256": "284b9106be2e0098477084631b9f177bcd064406f6a4c3698c01ce80dc038d04",
     "packages": {
       "greenlet": "3.5.5",
       "playwright": "1.62.0",

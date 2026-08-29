@@ -462,6 +462,55 @@ def _azure_child_environment(
     return child
 
 
+@dataclass(frozen=True)
+class AzureCliRuntime:
+    """One validated Azure CLI Python runtime; the discovered .cmd is never run."""
+
+    python_executable: Path
+
+    def command(self, arguments: Sequence[str]) -> tuple[str, ...]:
+        return (
+            str(self.python_executable),
+            "-I",
+            "-B",
+            "-m",
+            "azure.cli",
+            *arguments,
+        )
+
+
+def _resolve_azure_cli_runtime(
+    resolver: Callable[[str], str | None],
+) -> AzureCliRuntime:
+    """Bind the installed CLI2 Python executable before any Azure child starts."""
+
+    try:
+        discovered = resolver("az")
+        if not isinstance(discovered, str) or not discovered:
+            raise ValueError("Azure CLI discovery unavailable")
+        az_command = Path(discovered).resolve(strict=True)
+        if (
+            not az_command.is_file()
+            or az_command.name.lower() != "az.cmd"
+            or az_command.parent.name.lower() != "wbin"
+        ):
+            raise ValueError("unexpected Azure CLI launcher")
+        runtime_root = az_command.parent.parent.resolve(strict=True)
+        expected_launcher = (runtime_root / "wbin" / "az.cmd").resolve(strict=True)
+        if runtime_root.name.lower() != "cli2" or expected_launcher != az_command:
+            raise ValueError("unexpected Azure CLI layout")
+        python_executable = (runtime_root / "python.exe").resolve(strict=True)
+        if (
+            not python_executable.is_file()
+            or python_executable.name.lower() != "python.exe"
+        ):
+            raise ValueError("Azure CLI Python unavailable")
+        python_executable.relative_to(runtime_root)
+    except (OSError, TypeError, ValueError):
+        raise BrokerRefusal("production_authority_unavailable") from None
+    return AzureCliRuntime(python_executable=python_executable)
+
+
 def _run_azure_json(
     runner: Callable[..., object],
     command: Sequence[str],
@@ -533,7 +582,6 @@ class AzureAppAuthorityResolver:
     """Read and bind only the fixed production App Service authentication authority."""
 
     auth_command = (
-        "az",
         "webapp",
         "auth",
         "show",
@@ -554,7 +602,6 @@ class AzureAppAuthorityResolver:
         "--only-show-errors",
     )
     settings_command = (
-        "az",
         "webapp",
         "config",
         "appsettings",
@@ -578,10 +625,12 @@ class AzureAppAuthorityResolver:
         opener: Callable[..., object] | None = None,
         *,
         environment: Mapping[str, str] | None = None,
+        launcher_resolver: Callable[[str], str | None] | None = None,
     ):
         self._runner = runner or subprocess.run
         self._opener = opener or _open_without_redirect
         self._environment = environment
+        self._launcher_resolver = launcher_resolver or shutil.which
 
     @staticmethod
     def _metadata_endpoint(open_id_issuer: str) -> str:
@@ -647,9 +696,10 @@ class AzureAppAuthorityResolver:
             "owner-authorization:2026-08-28/workshop-fg-sealed-private-proof-complete-lifecycle"
         ):
             raise BrokerRefusal("owner_authorization_mismatch")
+        cli_runtime = _resolve_azure_cli_runtime(self._launcher_resolver)
         auth_settings = _run_azure_json(
             self._runner,
-            self.auth_command,
+            cli_runtime.command(self.auth_command),
             environment=self._environment,
         )
         if (
@@ -687,7 +737,7 @@ class AzureAppAuthorityResolver:
         )
         settings = _run_azure_json(
             self._runner,
-            self.settings_command,
+            cli_runtime.command(self.settings_command),
             environment=self._environment,
         )
         if (
@@ -1687,16 +1737,28 @@ class PinnedPlaywrightRuntime:
             raise BrokerRefusal("sealed_browser_lock_invalid") from None
         if not isinstance(payload, Mapping) or payload.get("schema_version") != 1:
             raise BrokerRefusal("sealed_browser_lock_invalid")
-        target = payload.get("target")
+        targets = payload.get("targets")
         requirements = payload.get("requirements")
         chromium = payload.get("chromium")
+        expected_targets = [
+            {
+                "system": "Darwin",
+                "machine": "arm64",
+                "python": "3.14",
+                "venv_python": ["bin", "python"],
+                "site_packages": ["lib", "python3.14", "site-packages"],
+            },
+            {
+                "system": "Windows",
+                "machine": "AMD64",
+                "python": "3.13",
+                "venv_python": ["Scripts", "python.exe"],
+                "site_packages": ["Lib", "site-packages"],
+            },
+        ]
         if (
-            not isinstance(target, Mapping)
-            or target
-            != {"system": "Darwin", "machine": "arm64", "python": "3.14"}
-            or platform.system() != target["system"]
-            or platform.machine() != target["machine"]
-            or f"{sys.version_info.major}.{sys.version_info.minor}" != target["python"]
+            not isinstance(targets, list)
+            or targets != expected_targets
             or not isinstance(requirements, Mapping)
             or requirements.get("path") != requirements_path.name
             or requirements.get("sha256")
@@ -1719,8 +1781,23 @@ class PinnedPlaywrightRuntime:
             }
         ):
             raise BrokerRefusal("sealed_browser_lock_invalid")
+        active_target = next(
+            (
+                target
+                for target in expected_targets
+                if (
+                    platform.system() == target["system"]
+                    and platform.machine() == target["machine"]
+                    and f"{sys.version_info.major}.{sys.version_info.minor}"
+                    == target["python"]
+                )
+            ),
+            None,
+        )
+        if active_target is None:
+            raise BrokerRefusal("sealed_browser_lock_invalid")
         self.expected_browser_version = str(chromium["browser_version"])
-        return payload
+        return {**payload, "active_target": active_target}
 
     def _run(self, command: Sequence[str], *, environment: Mapping[str, str], timeout: int) -> None:
         try:
@@ -1861,8 +1938,20 @@ class PinnedPlaywrightRuntime:
             environment=runtime_environment,
             timeout=120,
         )
-        venv_python = venv_root / "bin" / "python"
-        site_packages = venv_root / "lib" / "python3.14" / "site-packages"
+        target = lock["active_target"]
+        if not isinstance(target, Mapping):
+            raise BrokerRefusal("sealed_browser_lock_invalid")
+        venv_python_parts = target.get("venv_python")
+        site_packages_parts = target.get("site_packages")
+        if (
+            not isinstance(venv_python_parts, list)
+            or not isinstance(site_packages_parts, list)
+            or not all(isinstance(part, str) and part for part in venv_python_parts)
+            or not all(isinstance(part, str) and part for part in site_packages_parts)
+        ):
+            raise BrokerRefusal("sealed_browser_lock_invalid")
+        venv_python = venv_root.joinpath(*venv_python_parts)
+        site_packages = venv_root.joinpath(*site_packages_parts)
         self._run(
             (
                 str(venv_python),

@@ -30,6 +30,41 @@ AUTHORIZATION_ENDPOINT = (
 )
 
 
+class FakeAzureCliLayout:
+    """Filesystem-only stand-in for the installed Windows Azure CLI layout."""
+
+    def __init__(
+        self,
+        root: Path,
+        *,
+        runtime_name: str = "CLI2",
+        launcher_directory: str = "wbin",
+        include_python: bool = True,
+    ):
+        self.runtime_root = root / runtime_name
+        self.launcher = self.runtime_root / launcher_directory / "az.cmd"
+        self.launcher.parent.mkdir(parents=True)
+        self.launcher.write_text("fake", encoding="utf-8")
+        self.python_executable = self.runtime_root / "python.exe"
+        if include_python:
+            self.python_executable.write_text("fake", encoding="utf-8")
+
+    def discover(self, command: str) -> str:
+        if command != "az":
+            raise AssertionError("unexpected Azure CLI discovery")
+        return str(self.launcher)
+
+    @property
+    def command_prefix(self) -> tuple[str, ...]:
+        return (
+            str(self.python_executable.resolve()),
+            "-I",
+            "-B",
+            "-m",
+            "azure.cli",
+        )
+
+
 def _forbid_live(*_args, **_kwargs):
     raise AssertionError("focused broker tests must use fake-only dependencies")
 
@@ -470,15 +505,19 @@ class FakeHttpResponse:
 
 class AzureAuthorityResolverTests(unittest.TestCase):
     @staticmethod
-    def _runner(calls, *, settings_issuer=OIDC_ISSUER):
+    def _runner(calls, cli_layout, *, settings_issuer=OIDC_ISSUER):
         def run(command, **kwargs):
             calls.append((tuple(command), kwargs))
-            if tuple(command) == broker.AzureAppAuthorityResolver.auth_command:
+            if tuple(command[len(cli_layout.command_prefix) :]) == (
+                broker.AzureAppAuthorityResolver.auth_command
+            ):
                 payload = {
                     "platformEnabled": True,
                     "openIdIssuer": DISCOVERY_ISSUER,
                 }
-            elif tuple(command) == broker.AzureAppAuthorityResolver.settings_command:
+            elif tuple(command[len(cli_layout.command_prefix) :]) == (
+                broker.AzureAppAuthorityResolver.settings_command
+            ):
                 payload = [
                     {"name": "PEERSLATE_AUTH_ISSUER", "value": settings_issuer}
                 ]
@@ -503,18 +542,24 @@ class AzureAuthorityResolverTests(unittest.TestCase):
             self.assertEqual(request.full_url, endpoint)
             return FakeHttpResponse(url=endpoint, payload=self._metadata())
 
-        binding = broker.AzureAppAuthorityResolver(
-            self._runner(calls),
-            opener,
-            environment={"PATH": "/safe", "UNRELATED_SECRET": "not-forwarded"},
-        ).resolve()
+        with tempfile.TemporaryDirectory() as root:
+            cli_layout = FakeAzureCliLayout(Path(root))
+            binding = broker.AzureAppAuthorityResolver(
+                self._runner(calls, cli_layout),
+                opener,
+                environment={"PATH": "/safe", "UNRELATED_SECRET": "not-forwarded"},
+                launcher_resolver=cli_layout.discover,
+            ).resolve()
         self.assertEqual(binding.oidc_issuer.reveal(), OIDC_ISSUER)
         self.assertEqual(binding.authorization_origin.reveal(), AUTHORIZATION_ORIGIN)
         self.assertEqual(binding.tenant_id.reveal(), TENANT_ID)
         self.assertEqual(binding.tenant_label.reveal(), "synthetic-tenant")
         self.assertEqual(
-            calls[0][0], broker.AzureAppAuthorityResolver.auth_command
+            calls[0][0][len(cli_layout.command_prefix) :],
+            broker.AzureAppAuthorityResolver.auth_command,
         )
+        self.assertEqual(calls[0][0][:5], cli_layout.command_prefix)
+        self.assertEqual(calls[1][0][:5], cli_layout.command_prefix)
         self.assertIn(
             "openIdIssuer:properties.identityProviders.azureActiveDirectory.registration.openIdIssuer",
             calls[0][0][calls[0][0].index("--query") + 1],
@@ -579,17 +624,86 @@ class AzureAuthorityResolverTests(unittest.TestCase):
             "status": (self._metadata(), endpoint, 503, OIDC_ISSUER),
             "setting": (self._metadata(), endpoint, 200, "https://wrong.example"),
         }
-        for name, (metadata, final_url, status, setting) in scenarios.items():
-            with self.subTest(name=name):
-                resolver = broker.AzureAppAuthorityResolver(
-                    self._runner([], settings_issuer=setting),
-                    lambda _request, timeout: FakeHttpResponse(
-                        url=final_url, payload=metadata, status=status
-                    ),
-                    environment={"PATH": "/safe"},
+        with tempfile.TemporaryDirectory() as root:
+            cli_layout = FakeAzureCliLayout(Path(root))
+            for name, (metadata, final_url, status, setting) in scenarios.items():
+                with self.subTest(name=name):
+                    resolver = broker.AzureAppAuthorityResolver(
+                        self._runner([], cli_layout, settings_issuer=setting),
+                        lambda _request, timeout: FakeHttpResponse(
+                            url=final_url, payload=metadata, status=status
+                        ),
+                        environment={"PATH": "/safe"},
+                        launcher_resolver=cli_layout.discover,
+                    )
+                    with self.assertRaises(broker.BrokerRefusal):
+                        resolver.resolve()
+
+    def _assert_invalid_runtime_refuses_before_azure_or_graph(self, discovery):
+        calls = []
+        events = []
+        graph = FakeGraph(events)
+        resolver = broker.AzureAppAuthorityResolver(
+            lambda *_args, **_kwargs: calls.append("azure"),
+            lambda *_args, **_kwargs: calls.append("metadata"),
+            environment={"PATH": "/safe"},
+            launcher_resolver=lambda _command: discovery,
+        )
+        with self.assertRaisesRegex(
+            broker.BrokerRefusal, "production_authority_unavailable"
+        ):
+            broker.run_broker(
+                run_id="qa-20260829-0001",
+                cutoff=NOW,
+                authority_adapter=resolver,
+                graph=graph,
+                browser=FakeBrowser(events),
+                retirement_adapter=FakeRetirement(events),
+            )
+        self.assertEqual(calls, [])
+        self.assertEqual(graph.create_calls, 0)
+        self.assertNotIn("graph_prepare", events)
+
+    def test_invalid_cli_layout_refuses_before_any_azure_or_graph_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            scenarios = {
+                "unrelated_source": str(Path(broker.__file__).resolve()),
+                "missing_sibling_python": FakeAzureCliLayout(
+                    root_path / "missing-python", include_python=False
+                ).discover("az"),
+                "wrong_wbin_adjacency": FakeAzureCliLayout(
+                    root_path / "wrong-wbin", launcher_directory="bin"
+                ).discover("az"),
+                "wrong_cli2_runtime_root": FakeAzureCliLayout(
+                    root_path / "wrong-root", runtime_name="OtherRuntime"
+                ).discover("az"),
+                "missing_discovery": None,
+            }
+            for name, discovery in scenarios.items():
+                with self.subTest(name=name):
+                    self._assert_invalid_runtime_refuses_before_azure_or_graph(
+                        discovery
+                    )
+
+    def test_escaped_cli_python_refuses_before_any_azure_or_graph_call(self):
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            cli_layout = FakeAzureCliLayout(root_path / "runtime")
+            escaped = root_path / "escaped" / "python.exe"
+            escaped.parent.mkdir()
+            escaped.write_text("fake", encoding="utf-8")
+            original_resolve = Path.resolve
+
+            def escaped_python_resolve(path, strict=False):
+                if path == cli_layout.python_executable:
+                    return original_resolve(escaped, strict=True)
+                return original_resolve(path, strict=strict)
+
+            with patch.object(broker.Path, "resolve", escaped_python_resolve):
+                self._assert_invalid_runtime_refuses_before_azure_or_graph(
+                    cli_layout.discover("az")
                 )
-                with self.assertRaises(broker.BrokerRefusal):
-                    resolver.resolve()
 
 
 def fake_graph_token(*, operator=OPERATOR_ID, scopes=None, roles=None):
@@ -676,7 +790,8 @@ class MicrosoftGraphCreationTests(unittest.TestCase):
 
         graph = broker.MicrosoftGraphAdapter(
             broker.AzureCliGraphTokenProvider(
-                runner, environment={"PATH": "/safe", "SECRET": "not-forwarded"}
+                runner,
+                environment={"PATH": "/safe", "SECRET": "not-forwarded"},
             ),
             opener,
             clock=lambda: NOW,
@@ -747,7 +862,7 @@ class MicrosoftGraphCreationTests(unittest.TestCase):
                 provider = broker.AzureCliGraphTokenProvider(
                     lambda *_args, **_kwargs: type(
                         "Result", (), {"returncode": 0, "stdout": token}
-                    )()
+                    )(),
                 )
                 with self.assertRaisesRegex(
                     broker.BrokerRefusal, "graph_delegated_authority_unverified"
@@ -755,7 +870,6 @@ class MicrosoftGraphCreationTests(unittest.TestCase):
                     broker.MicrosoftGraphAdapter(
                         provider, org_opener, clock=lambda: NOW
                     ).prepare(authority_binding())
-
 
 class FakeProbePage:
     def __init__(self, *, signed_out=False):
@@ -873,6 +987,7 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
             lock = runtime._lock()
         self.assertEqual(lock["chromium"]["revision"], "1234")
         self.assertEqual(lock["chromium"]["browser_version"], "151.0.7922.34")
+        self.assertEqual(lock["active_target"]["venv_python"], ["bin", "python"])
 
         provider = FakeRuntimeProvider()
         with tempfile.TemporaryDirectory() as root:
@@ -909,6 +1024,110 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
             )
             self.assertTrue(provider.released and provider.playwright.stopped)
             self.assertEqual(list(Path(root).iterdir()), [])
+
+    def test_windows_target_uses_native_venv_paths_with_the_locked_browser(self):
+        commands = []
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+
+            def runner(command, **_kwargs):
+                command = tuple(command)
+                commands.append(command)
+                if "--copies" in command:
+                    venv_root = Path(command[-1])
+                    site_packages = venv_root / "Lib" / "site-packages"
+                    browser_package = site_packages / "playwright" / "driver" / "package"
+                    browser_package.mkdir(parents=True)
+                    (browser_package / "browsers.json").write_text(
+                        json.dumps(
+                            {
+                                "browsers": [
+                                    {
+                                        "name": "chromium",
+                                        "revision": "1234",
+                                        "browserVersion": "151.0.7922.34",
+                                        "title": "Chrome for Testing",
+                                    }
+                                ]
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+                return type("Result", (), {"returncode": 0})()
+
+            runtime = broker.PinnedPlaywrightRuntime(runner=runner)
+            expected = broker.StartedPlaywrightRuntime(
+                playwright=object(),
+                chromium_executable=root_path / "runtime" / "browsers" / "chrome.exe",
+            )
+            with (
+                patch.object(broker.platform, "system", return_value="Windows"),
+                patch.object(broker.platform, "machine", return_value="AMD64"),
+                patch.object(
+                    broker.sys,
+                    "version_info",
+                    SimpleNamespace(major=3, minor=13),
+                ),
+                patch.object(
+                    runtime,
+                    "_distribution_versions",
+                    return_value={
+                        "greenlet": "3.5.5",
+                        "playwright": "1.62.0",
+                        "pyee": "13.0.1",
+                        "typing-extensions": "4.16.0",
+                    },
+                ),
+                patch.object(
+                    runtime, "_load_started_playwright", return_value=expected
+                ) as load_started,
+            ):
+                self.assertIs(
+                    runtime.start(root_path, {"PATH": "/safe"}), expected
+                )
+
+            venv_python = root_path / "runtime" / "venv" / "Scripts" / "python.exe"
+            site_packages = root_path / "runtime" / "venv" / "Lib" / "site-packages"
+            self.assertEqual(commands[1][0], str(venv_python))
+            self.assertEqual(commands[2][0], str(venv_python))
+            load_args, _ = load_started.call_args
+            self.assertEqual(load_args[0], site_packages)
+            self.assertEqual(load_args[1], root_path / "runtime" / "browsers")
+
+    def test_unapproved_runtime_host_refuses_before_graph_mutation(self):
+        events = []
+        graph = FakeGraph(events)
+        with tempfile.TemporaryDirectory() as root:
+            adapter = broker.PlaywrightBrowserAdapter(
+                environment={"SystemRoot": "/safe"},
+                workspace_root=root,
+                runtime_provider_factory=lambda: broker.PinnedPlaywrightRuntime(
+                    runner=_forbid_live
+                ),
+            )
+
+            class RuntimeBoundBrowser:
+                def prepare_attended_session(self, authority):
+                    return adapter.prepare_attended_session(authority)
+
+            with (
+                patch.object(broker.platform, "system", return_value="Linux"),
+                patch.object(broker.platform, "machine", return_value="x86_64"),
+                self.assertRaisesRegex(
+                    broker.BrokerRefusal, "sealed_browser_lock_invalid"
+                ),
+            ):
+                broker.run_broker(
+                    run_id="qa-20260829-0001",
+                    cutoff=NOW,
+                    authority_adapter=FakeAuthority(events),
+                    graph=graph,
+                    browser=RuntimeBoundBrowser(),
+                    retirement_adapter=FakeRetirement(events),
+                )
+
+        self.assertEqual(graph.create_calls, 0)
+        self.assertNotIn("graph_prepare", events)
 
     def test_missing_runtime_executable_refuses_before_launch_or_graph_mutation(self):
         events = []

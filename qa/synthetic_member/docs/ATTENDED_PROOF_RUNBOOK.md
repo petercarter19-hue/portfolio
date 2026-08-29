@@ -117,16 +117,24 @@ Before any Graph token or browser credential entry, the worker reads the fixed
 App Service authentication configuration and binds two deliberately different
 authorities:
 
-1. `az webapp auth show` must report enabled App Service authentication and one
+1. It uses `az` only for discovery, then requires the installed
+   `<CLI2>/wbin/az.cmd` layout and its sibling `<CLI2>/python.exe`. The
+   `.cmd` file is never executed. Before starting a shell-free child, the
+   worker resolves and confines that `python.exe` to the same `CLI2` runtime,
+   then runs it only as `-I -B -m azure.cli` for the two bounded read-only App
+   Service commands (`webapp auth show` and `webapp config appsettings list`).
+   Neither path is taken from an operator argument. A missing, escaped, or
+   unusable runtime refuses before Azure, Graph, or browser work.
+2. `az webapp auth show` must report enabled App Service authentication and one
    no-trailing-slash OIDC discovery authority of the form
    `https://<tenant-label>.ciamlogin.com/<tenant-uuid>/v2.0`.
-2. The exact discovery document must return HTTP 200 from the requested URL,
+3. The exact discovery document must return HTTP 200 from the requested URL,
    without redirect and within the bounded response size.
-3. Its `authorization_endpoint` must use the same discovery host and exact
+4. Its `authorization_endpoint` must use the same discovery host and exact
    tenant UUID. The browser is allowed to reach only that authorization origin.
-4. Its metadata `issuer` must be the no-trailing-slash principal issuer
+5. Its metadata `issuer` must be the no-trailing-slash principal issuer
    `https://<tenant-uuid>.ciamlogin.com/<tenant-uuid>/v2.0`.
-5. The fixed App Service `PEERSLATE_AUTH_ISSUER` setting must equal that metadata
+6. The fixed App Service `PEERSLATE_AUTH_ISSUER` setting must equal that metadata
    principal issuer byte for byte.
 
 The custom tenant-label discovery/authorization host and UUID-hosted principal
@@ -163,9 +171,12 @@ stops the operation.
 
 ## Pinned disposable browser gate
 
-The browser gate completes before the first Graph POST. On the approved Darwin
-arm64 / Python 3.14 host, the worker verifies the reviewed lock and provisions
-one operation-scoped runtime using hash-required binary packages:
+The browser gate completes before the first Graph POST. On either approved
+Darwin arm64 / Python 3.14 or Windows AMD64 / Python 3.13 host, the worker
+verifies the reviewed lock and provisions one operation-scoped runtime using
+hash-required binary packages. The Windows target uses its native
+`Scripts/python.exe` and `Lib/site-packages` venv layout; the Darwin target
+uses `bin/python` and `lib/python3.14/site-packages`:
 
 - Playwright `1.62.0`;
 - greenlet `3.5.5`;
