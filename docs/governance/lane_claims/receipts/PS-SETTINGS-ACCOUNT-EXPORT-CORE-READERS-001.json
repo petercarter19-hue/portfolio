@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-CORE-READERS-001",
+  "candidate_sha": "bc8dd2db1aedcd04228ceded0ff0643bbd5e8089",
+  "review_type": "independent",
+  "reviewer_ref": "role:indrev:ps-settings-core-readers:20260829T120418Z:bc8dd2db",
+  "result": "pass",
+  "reviewed_at": "2026-08-29T12:04:18Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-CORE-READERS-001.md"
+}

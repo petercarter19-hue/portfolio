@@ -1912,6 +1912,47 @@
         "verification": "PS-SETTINGS-EXPORT-001_owner_isolation_verify.sql returned verified = 1",
         "operator": "Claude Fable 5 / work-2026-08-28-settings-account-export-assembly-001 (C2 verification pairing)"
       }
+    },
+    {
+      "id": "PS-SETTINGS-EXPORT-003",
+      "forward": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-003_core_readers.sql",
+      "rollback": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-003_core_readers_rollback.sql",
+      "requires": [
+        "PS-PLAT-006",
+        "PS-AUTH-001"
+      ],
+      "summary": "Read-only owner-scoped account-export core readers (replacement package 1 of the 2026-08-29 reader topology, after PS-SETTINGS-ACCOUNT-EXPORT-DOMAIN-READERS-001 failed independent pre-activation review): usp_ReadAccountExportAccountForOwner, usp_ReadAccountExportProfileForOwner, and one reader per PS-PLAT-006 Living Resume table (career_chapters/_experiences/_education/_credentials/_projects/_achievements/_skills/_timeline_events) -- ten procedures total, each accepting only @UserKey, resolving identity internally, and returning a read window as trailing columns on its single INSERT-EXEC-safe result set. career_skill_links is deliberately excluded pending an evidence-disclosure decision. No table, trigger, index, container, worker, route, or UI change.",
+      "gate": {
+        "executable_sha256": "28678016f02b4a0abb072504e7f1fe6f3ed16f11ac7d1de3ad758fbc9f326b2e",
+        "gated_at_utc": "2026-08-29T11:50:14Z",
+        "gate_database": "ps-migration-path-20260829-cr2",
+        "gate_server": "peerslate",
+        "prerequisites": [
+          "PS-PLAT-000",
+          "PS-PLAT-001",
+          "PS-PLAT-002",
+          "PS-PLAT-003",
+          "PS-PLAT-004",
+          "PS-PLAT-005",
+          "PS-PLAT-006",
+          "PS-PLAT-007",
+          "PS-AUTH-001"
+        ],
+        "objects": [
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportAccountForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportCareerAchievementForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportCareerChapterForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportCareerCredentialForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportCareerEducationForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportCareerExperienceForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportCareerProjectForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportCareerSkillForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportCareerTimelineEventForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportProfileForOwner"
+        ],
+        "verification": "PS-SETTINGS-EXPORT-003_core_reader_isolation_verify.sql returned verified = 1",
+        "operator": "Claude Fable 5 / work-2026-08-29-settings-account-export-core-readers-001 (post-review header fix re-proof)"
+      }
     }
   ]
 }
