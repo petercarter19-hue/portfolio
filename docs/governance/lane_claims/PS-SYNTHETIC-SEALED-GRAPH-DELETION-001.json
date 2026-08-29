@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SYNTHETIC-SEALED-GRAPH-DELETION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Complete the merged sealed Workshop F/G broker by binding live OIDC and Graph tenant authority, preflighting pinned disposable Playwright before identity creation, proving two edits and three-version retained source history for each of two temporary ordinary members, enforcing privacy and zero-residue cleanup, retiring their application mappings, then soft- and permanently deleting only those exact two Graph users with final absence proof. Emit structural outcomes only and stop indeterminate on ambiguity. Repository build only; no live run.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
@@ -37,6 +37,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "8661e089d876ccf56d958fc4165ec88ad03ade27",
+  "closed_at": "2026-08-29T13:34:20Z"
 }
