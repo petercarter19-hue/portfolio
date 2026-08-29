@@ -107,35 +107,90 @@ the routine browser operator.
 
 ### Sealed synthetic-QA credential-broker exception
 
-`PS-SYNTHETIC-SEALED-CREDENTIAL-BROKER-001` is the narrow exception for exactly
-two run-scoped ordinary QA customer identities. Once a separately authorized
-attended operation starts, its local sealed worker may generate the two login
-credentials, provision the two identities through Microsoft Graph, enter those
-credentials, and drive the bounded A-to-B and B-to-A switch flow. The worker
-receives identity material only through non-echoing local input. It holds login
-identifiers, passwords, Graph access tokens, External ID subjects, and the
-operation authorization only in worker memory, and returns only allowlisted
-structural counts and closed result codes. Its non-persistent browser contexts
-may create unavoidable engine/cache/profile files only beneath one explicit
-run-scoped temporary root with a scrubbed child environment; it verifies that
-root is empty before start and removed on every exit. Stale residue is a refusal
-and failed removal is indeterminate, never Pass. Codex, Claude, the package
-manager, the browser operator, repository evidence, logs, command-line
-arguments, and environment files receive none of the identity or credential
-material.
+`PS-SYNTHETIC-SEALED-GRAPH-DELETION-001` is the complete-lifecycle form of the
+narrow exception established by the two preceding sealed-broker packages. It
+applies to exactly two newly generated, run-scoped, ordinary QA customer
+identities under the fixed owner reference
+`session:01a04348-7e3e-7a11-a443-752498be91b5/owner-authorization:2026-08-28/workshop-fg-sealed-private-proof-complete-lifecycle`.
+Once a separately authorized attended operation starts, its local worker may
+derive the exact live App Service/OIDC/Graph authority, generate and provision
+the pair, enter the credentials, execute the 38-journey private Workshop proof,
+retire both application mappings, then soft- and permanently delete those exact
+two Graph users with final absence proof. The reference is compiled in; there
+is no authorization, identity, credential, issuer, tenant, subject, or deletion
+target prompt or argument. The command carries only safe run metadata and exact
+structural confirmations.
 
-This is not a general credential delegation. The worker cannot change tenant
-roles, Graph permissions, configuration, licensing, billing, application code,
-or the fixed production target; absent pre-existing Graph authority is a closed
-refusal. It never captures a screenshot, trace, download, DOM, browser profile,
-storage state, cookie, token, claim, or network record, and it never retains
-browser engine state after successful root cleanup. It obtains only the active
-pre-authorized Graph token without passing a prompted issuer to Azure CLI, then
-verifies the token tenant plus that tenant's exact verified issuer before any
-customer POST. After the bounded flow, it sends only the two in-memory Graph
-object IDs into the already accepted exact-two application-retirement core.
-Permanent External ID deletion remains outside the worker and still requires
-Pete's separate action-time authorization.
+This is not general credential or production delegation. The worker targets
+only the fixed production App Service and cannot change roles, Graph grants,
+configuration, licensing, billing, schema, application code, or the target. It
+binds the App Service custom-domain OIDC discovery/authorization authority to
+the metadata UUID-hosted principal issuer and exact `PEERSLATE_AUTH_ISSUER`
+setting, with no trailing-slash tolerance. It then binds the exact tenant UUID,
+Graph organization, initial `.onmicrosoft.com` tenant label, delegated
+`User.Read`, `User.ReadWrite.All`, and `User.DeleteRestore.All` scopes, the
+`User Administrator` role, and one unchanged token caller `oid`. Missing or
+mismatched pre-existing authority is a closed refusal.
+
+After email submission, sealed sign-in resolves a document-bound password input
+handle without passing a secret, then proves the exact top-level CIAM origin.
+Only then does one synchronous browser-side callback recheck that same document
+and origin and write the generated password. A redirect during locator waiting
+detaches or changes the handle before any secret crosses the boundary, so the
+redirected page receives zero password material. The worker revalidates the
+exact origin immediately before password submission; any later redirect stops
+without submitting the password.
+
+Before either Graph POST, the worker verifies the hash-pinned disposable
+Playwright closure, launches and removes a separate headed probe root, prepares
+four no-capture contexts, proves the signed-out private baseline, and completes
+four exact active/deleted collision reads for the generated pair. It creates
+each customer once, binds every 201 subject to an operation-local time window,
+random mail marker, exact identity, and ordinary-customer shape, and never
+blindly retries an ambiguous mutation. A definitive rejected 4xx never enters
+reconciliation for that alias. Each alias
+creates one item, makes exactly two edits, proves three newest-first retained
+versions and byte-exact original v1 source in all three history rows, and proves
+Workshop D says `Not used elsewhere`. The journey map contains exactly eight
+approved Conditionals; any missing, extra, substituted, or differently placed
+Conditional prevents an accepted structural result. After archive and restore,
+the worker re-reads each restored active item and re-proves the same exact three
+versions newest first and byte-stable original v1 source in all three rows
+before deletion or an accepted result. Once both exact customers exist, a
+browser-proof failure with proven browser/runtime/root cleanup still enters
+bounded exact-pair retirement and Graph-deletion containment, then returns
+`indeterminate`; unproved cleanup blocks exact-pair SQL retirement and purge.
+
+The partial-create path is a separate recoverable exception: before browser
+cleanup it may perform one bounded reconciliation and soft-delete only exact
+proven active subjects if safely needed, including an earlier independently
+bound subject, while an exact subject already found in deleted items remains
+unpurged. It attempts bounded direct state probes and session cleanup
+independently; ambiguity remains indeterminate. It never repeats a POST, lists
+unrelated identities, or purges a deleted item. Irreversible purge is forbidden
+until browser/runtime/root cleanup is proven and exact-two SQL retirement has
+committed.
+
+For an accepted result, only after the post-restore history reproof, exact item
+deletion, zero active and archived item residue, repeat clean-start proof,
+destruction of all four contexts, disposable runtime/module release, and root
+removal does the worker call the accepted exact-two SQL retirement core. A
+browser-proof failure may independently attempt exact known application-item
+cleanup and, after that same proven cleanup boundary, enter exact-pair SQL and
+Graph containment without becoming accepted. The full Graph path soft-deletes
+both exact objects, proves active `404` plus deleted-item `200` for both, and
+only after committed exact-two SQL retirement permanently deletes both exact
+deleted objects and proves four final `404` responses across the active and
+deleted endpoints. Any unexpected or partial state after mutation is
+`indeterminate`; the worker does not authorize blind replay. It returns only
+allowlisted structural counts and closed result codes and clears its direct
+sealed token, caller, routing, identity, item, and subject references. It never
+retains a screenshot, trace, download, DOM, browser profile, storage state,
+cookie, token, claim, network record, database row, Graph response, identity
+inventory, or mutation ledger. Repository implementation and review authorize
+no live run. This package's Protected control explicitly requires a fresh
+GPT-5.6 Sol, Ultra exact-SHA reviewer, overriding the general High-effort
+independent-review default below for this package only.
 
 The assigned browser-capable operator opens pages, navigates, clicks ordinary
 controls, manages tabs and refreshes, departs to and returns from public pages,

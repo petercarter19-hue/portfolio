@@ -1,143 +1,26 @@
-"""Fake-only ordering and completion checks for the attended broker handoff."""
+"""Strict fake-only Workshop F/G journey and residue checks."""
 
 from __future__ import annotations
 
 import unittest
-from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import patch
 from urllib.parse import parse_qs, urlparse
 
 from qa.synthetic_member import sealed_credential_broker as broker
 from qa.synthetic_member.contracts import JOURNEY_BY_ID
 
 
-NOW = datetime(2026, 8, 28, 18, 0, tzinfo=timezone.utc)
 ISSUER = "synthetic-tenant.onmicrosoft.com"
-AUTH_ISSUER = "https://synthetic-tenant.ciamlogin.com"
-EXACT_SAME_ORIGIN_HEADERS = {
+AUTHORIZATION_ORIGIN = "https://synthetic-tenant.ciamlogin.com"
+SAME_ORIGIN_HEADERS = {
     "Origin": "https://peerslate.com",
     "Sec-Fetch-Site": "same-origin",
 }
-SUBJECTS = (
-    "11111111-1111-1111-1111-111111111111",
-    "22222222-2222-2222-2222-222222222222",
-)
-
-
-def _forbid_live_outbound(*_args, **_kwargs):
-    raise AssertionError("attended broker tests must use fake-only adapters")
-
-
-def setUpModule():
-    global _OUTBOUND_GUARDS
-    _OUTBOUND_GUARDS = (
-        patch.object(broker.subprocess, "run", side_effect=_forbid_live_outbound),
-        patch.object(broker, "urlopen", side_effect=_forbid_live_outbound),
-        patch.object(broker, "_start_playwright", side_effect=_forbid_live_outbound),
-        patch.object(
-            broker.retirement,
-            "open_production_connection",
-            side_effect=_forbid_live_outbound,
-        ),
-    )
-    for guard in _OUTBOUND_GUARDS:
-        guard.start()
-
-
-def tearDownModule():
-    for guard in reversed(_OUTBOUND_GUARDS):
-        guard.stop()
-
-
-def complete_outcome(*, residue=0):
-    observations = {
-        journey_id: broker.JourneyObservation(
-            status="pass", observed_outcome=journey.expected_outcome, note_code="none"
-        )
-        for journey_id, journey in JOURNEY_BY_ID.items()
-    }
-    for journey_id, note_code in broker.REQUIRED_CONDITIONAL_OUTCOMES.items():
-        observations[journey_id] = broker.JourneyObservation(
-            status="conditional", observed_outcome="limitation_recorded", note_code=note_code
-        )
-    return broker.BrowserOutcome(
-        journey_outcomes=observations,
-        created_item_counts={"member_a": 1, "member_b": 1},
-        active_residue_counts={"member_a": residue, "member_b": 0},
-        archived_residue_counts={"member_a": 0, "member_b": 0},
-        clean_start_confirmed=True,
-    )
-
-
-class RecordingSession:
-    def __init__(self, events, outcome):
-        self.events = events
-        self.outcome = outcome
-        self.cleaned = False
-
-    def auth_issuer(self):
-        self.events.append("public_auth_route_derived")
-        return broker.SealedValue(AUTH_ISSUER)
-
-    def exercise_canonical_journeys(self, identities):
-        self.events.append("all_38_journeys_complete")
-        self.aliases = tuple(identity.alias for identity in identities)
-        return self.outcome
-
-    def destroy_and_verify(self):
-        if self.cleaned:
-            return broker.BrowserCleanup(4, True)
-        self.events.append("four_contexts_and_root_destroyed")
-        self.cleaned = True
-        return broker.BrowserCleanup(4, True)
-
-
-class RecordingBrowser:
-    def __init__(self, events, outcome):
-        self.events = events
-        self.session = RecordingSession(events, outcome)
-
-    def prepare_attended_session(self):
-        self.events.extend(("browser_module_executable_preflight", "signed_out_baseline"))
-        return self.session
-
-
-class RecordingGraph:
-    def __init__(self, events):
-        self.events = events
-        self.post_calls = 0
-
-    def resolve_graph_issuer(self):
-        self.events.append("tenant_binding_verified")
-        if self.events[:2] != ["browser_module_executable_preflight", "signed_out_baseline"]:
-            raise AssertionError("Graph routing was derived before browser preflight")
-        return broker.SealedValue(ISSUER)
-
-    def create_customer(self, identity, *, graph_issuer):
-        del graph_issuer
-        self.post_calls += 1
-        self.events.append(f"post_{identity.alias}")
-        return SUBJECTS[self.post_calls - 1]
-
-
-class RecordingRetirement:
-    def __init__(self, events):
-        self.events = events
-        self.calls = 0
-
-    def retire(self, _subjects, *, auth_issuer, cutoff):
-        del auth_issuer, cutoff
-        self.calls += 1
-        if not self.events or self.events[-1] != "four_contexts_and_root_destroyed":
-            raise AssertionError("retirement ran before final browser cleanup")
-        self.events.append("retirement")
-        return {"result": "pass", "state": "retired", "counts": {"retired_members": 2}}
 
 
 class StrictResponse:
-    def __init__(self, status=302, headers=None):
+    def __init__(self, status, headers=None):
         self.status = status
         self.headers = dict(headers or {})
         self.disposed = False
@@ -147,136 +30,318 @@ class StrictResponse:
 
 
 class StrictWorkshopStore:
-    def __init__(self):
-        self.items = {}
-        self.request_log = []
-        self._next = 0
-        self.foreign_response = None
+    """Model saved history separately from row-version concurrency."""
 
-    def create(self, owner, marker):
+    def __init__(self, *, fault=None, foreign_status=None, delete_fault=None):
+        self.items = {}
+        self.fault = fault
+        self.foreign_status = foreign_status
+        self.delete_fault = delete_fault
+        self.request_log = []
+        self.delete_attempts = []
+        self.deleted_history_lengths = []
+        self.version_appends = 0
+        self.concurrency_only_bumps = 0
+        self._next = 0
+
+    def create(self, owner, marker, wording):
         self._next += 1
         key = f"opaque-{self._next}"
-        self.items[key] = {"owner": owner, "marker": marker, "version": f"v{self._next}", "status": "active"}
+        self.items[key] = {
+            "owner": owner,
+            "marker": marker,
+            "versions": [wording],
+            "row_version": 1,
+            "status": "active",
+        }
         return key
 
-    def version(self, key):
-        return self.items[key]["version"]
+    def row_version(self, key):
+        return f"rv-{self.items[key]['row_version']}"
 
-    def bump_version(self, key):
-        self.items[key]["version"] = f"{self.items[key]['version']}-next"
+    def append_version(self, key, wording):
+        self.items[key]["versions"].append(wording)
+        self.items[key]["row_version"] += 1
+        self.version_appends += 1
+
+    def bump_concurrency(self, key):
+        self.items[key]["row_version"] += 1
+        self.concurrency_only_bumps += 1
+
+    def selected_key(self, owner, page_url):
+        parsed = urlparse(page_url)
+        query = parse_qs(parsed.query)
+        candidates = query.get("item", [])
+        status = query.get("status", ["active"])[0]
+        path = parsed.path.split("/")
+        direct_action = False
+        if not candidates and len(path) >= 6 and path[1:4] == ["app", "workshop", "items"]:
+            candidates = [path[4]]
+            direct_action = True
+        if len(candidates) != 1:
+            return None
+        key = candidates[0]
+        item = self.items.get(key)
+        if item is None or item["owner"] != owner:
+            return None
+        if not direct_action and item["status"] != status:
+            return None
+        return key
 
     def visible_markers(self, owner, page_url):
         parsed = urlparse(page_url)
-        if parsed.path != "/app/workshop" or owner is None:
+        if owner is None or parsed.path != "/app/workshop":
             return set()
         query = parse_qs(parsed.query)
         requested = query.get("item", [])
         status = query.get("status", ["active"])[0]
         candidates = self.items.items()
         if requested:
-            candidates = ((key, self.items[key]) for key in requested if key in self.items)
+            candidates = (
+                (key, self.items[key]) for key in requested if key in self.items
+            )
         return {
             item["marker"]
             for _key, item in candidates
             if item["owner"] == owner and item["status"] == status
         }
 
-    def selected_owned_item(self, owner, page_url):
-        parsed = urlparse(page_url)
-        query = parse_qs(parsed.query)
-        keys = query.get("item", [])
-        if len(keys) == 1 and keys[0] in self.items and self.items[keys[0]]["owner"] == owner:
-            return keys[0]
-        path_parts = parsed.path.split("/")
-        if len(path_parts) >= 5 and path_parts[-2] == "items":
-            key = path_parts[-1]
-            if key in self.items and self.items[key]["owner"] == owner:
-                return key
-        if len(path_parts) >= 6 and path_parts[-3] == "items":
-            key = path_parts[-2]
-            if key in self.items and self.items[key]["owner"] == owner:
-                return key
-        return None
-
 
 class StrictLocator:
-    def __init__(self, page, selector=None, *, role=None, name=None):
+    def __init__(
+        self,
+        page,
+        kind="unknown",
+        *,
+        selector=None,
+        text=None,
+        exact=True,
+        row=None,
+        slot=None,
+    ):
         self.page = page
+        self.kind = kind
         self.selector = selector
-        self.role = role
-        self.name = name
+        self.text = text
+        self.exact = exact
+        self.row = row
+        self.slot = slot
+
+    def _selected_item(self):
+        key = self.page.store.selected_key(self.page.context.owner, self.page.url)
+        return self.page.store.items.get(key) if key else None
+
+    def _history_rows(self):
+        item = self._selected_item()
+        if item is None:
+            return []
+        rows = list(item["versions"])
+        if self.page.store.fault != "history_order":
+            rows.reverse()
+        if self.page.store.fault == "missing_version":
+            rows = rows[:-1]
+        return rows
 
     def count(self):
-        if self.selector == ".wk-status-banner--preview":
-            return int(self.page.context.owner is None and urlparse(self.page.url).path == "/app/workshop")
-        if self.selector == "input[name='expected_row_version']":
-            return int(self.page.store.selected_owned_item(self.page.context.owner, self.page.url) is not None)
-        if self.selector == broker.AUTHENTICATED_WORKSHOP_CONTROL:
-            return int(self.page.context.owner is not None)
-        if self.selector == ".wk-detail":
+        parsed = urlparse(self.page.url)
+        if self.kind == "preview":
             return int(
-                self.page.store.selected_owned_item(self.page.context.owner, self.page.url)
-                is not None
+                self.page.context.owner is None
+                and parsed.path == "/app/workshop"
             )
-        if self.role == "text":
-            return int(self.name in self.page.store.visible_markers(self.page.context.owner, self.page.url))
-        return 1
+        if self.kind in {"email", "password", "submit"}:
+            return int(self.page.url.startswith(AUTHORIZATION_ORIGIN))
+        if self.kind == "authenticated":
+            return int(
+                self.page.context.owner is not None
+                and parsed.path == "/app/workshop"
+            )
+        if self.kind == "row_version":
+            return int(self._selected_item() is not None)
+        if self.kind == "marker_text":
+            markers = self.page.store.visible_markers(
+                self.page.context.owner, self.page.url
+            )
+            if self.exact:
+                return int(self.text in markers)
+            return int(any(self.text in marker for marker in markers))
+        if self.kind == "deletion_text":
+            selected = self._selected_item() is not None
+            if self.text == "Permanent deletion":
+                return int(selected)
+            if self.text == "could not check just now":
+                return int(selected and self.page.store.fault == "delete_unavailable")
+            if self.text == "Your saved Opportunity Slate cites this item":
+                return int(selected and self.page.store.fault == "delete_cited")
+            return 0
+        if self.kind == "article_detail":
+            return int(self._selected_item() is not None)
+        if self.kind == "history":
+            return int(self._selected_item() is not None)
+        if self.kind == "history_window":
+            return int(self.page.store.fault == "history_window")
+        if self.kind == "history_versions":
+            return len(self._history_rows())
+        if self.kind == "history_wordings":
+            return 2 if self.row is not None else 0
+        if self.kind == "version_label":
+            rows = self._history_rows()
+            expected = f"Version {len(rows) - self.row}" if self.row is not None else ""
+            return int(self.text == expected)
+        if self.kind == "downstream_row":
+            return int(self._selected_item() is not None)
+        if self.kind == "downstream_dd":
+            return int(self._selected_item() is not None)
+        # Unknown selectors are never optimistic. This is the regression gate
+        # against the former fake that returned one for every new selector.
+        return 0
 
     def fill(self, value):
+        if self.kind not in {"field", "email", "password"}:
+            raise AssertionError(f"unmodelled fill: {self.selector}")
         self.page.fields[self.selector] = value
 
+    def element_handle(self):
+        if self.kind != "password":
+            raise AssertionError(f"unmodelled element_handle: {self.selector}")
+        return self
+
+    def evaluate(self, expression, payload):
+        del expression
+        if self.kind != "password":
+            raise AssertionError(f"unmodelled evaluate: {self.selector}")
+        parsed = urlparse(self.page.url)
+        actual = f"{parsed.scheme}://{parsed.hostname}"
+        if actual != payload.get("expectedOrigin"):
+            raise RuntimeError("atomic origin refusal")
+        secret = payload.get("secret")
+        if not isinstance(secret, str) or not secret:
+            raise AssertionError("missing sealed password")
+        self.page.fields[self.selector] = secret
+
+    def dispose(self):
+        if self.kind != "password":
+            raise AssertionError(f"unmodelled dispose: {self.selector}")
+
     def check(self):
+        if self.kind not in {"classification", "confirm_delete"}:
+            raise AssertionError(f"unmodelled check: {self.selector}")
         self.page.checked.add(self.selector)
 
+    def click(self):
+        if self.kind == "submit":
+            return
+        if self.kind == "save_confirm":
+            self.page.save_current()
+            return
+        if self.kind == "button":
+            self.page.click_button(self.text)
+            return
+        raise AssertionError(f"unmodelled click: {self.kind}")
+
     def input_value(self):
-        key = self.page.store.selected_owned_item(self.page.context.owner, self.page.url)
+        if self.kind != "row_version":
+            raise AssertionError("unmodelled input_value")
+        key = self.page.store.selected_key(self.page.context.owner, self.page.url)
         if key is None:
-            raise AssertionError("version was requested outside an owned item")
-        return self.page.store.version(key)
+            raise AssertionError("row version requested outside owned item")
+        return self.page.store.row_version(key)
 
     def get_attribute(self, name):
-        if self.role == "link" and self.name == "View in My Information" and name == "href":
+        if self.kind == "saved_link" and name == "href" and self.page.saved_key:
             return f"/app/workshop?item={self.page.saved_key}"
         return None
 
-    def click(self):
-        if self.role == "button":
-            self.page.click_button(self.name)
-        elif self.selector == "button[name='save_action'][value='confirm']":
-            self.page.save_current()
+    def locator(self, selector):
+        if self.kind == "history":
+            mapping = {
+                ".wk-wording-history__count": "history_count",
+                ".wk-wording-history__note": "history_note",
+                ".wk-wording-history__window": "history_window",
+                ".wk-wording-history__version": "history_versions",
+            }
+            return StrictLocator(self.page, mapping.get(selector, "unknown"))
+        if self.kind == "history_row" and selector == ".wk-wording-history__wording":
+            return StrictLocator(self.page, "history_wordings", row=self.row)
+        if self.kind == "downstream_row" and selector == "dd":
+            return StrictLocator(self.page, "downstream_dd")
+        return StrictLocator(self.page)
+
+    def get_by_text(self, text, *, exact):
+        if self.kind == "history_row":
+            return StrictLocator(
+                self.page,
+                "version_label",
+                text=text,
+                exact=exact,
+                row=self.row,
+            )
+        return StrictLocator(self.page)
+
+    def filter(self, *, has_text):
+        if self.kind == "downstream_rows" and has_text == "Downstream use":
+            return StrictLocator(self.page, "downstream_row")
+        return StrictLocator(self.page)
+
+    def nth(self, index):
+        if self.kind == "history_versions":
+            return StrictLocator(self.page, "history_row", row=index)
+        if self.kind == "history_wordings":
+            return StrictLocator(
+                self.page, "history_wording", row=self.row, slot=index
+            )
+        return StrictLocator(self.page)
+
+    def text_content(self):
+        item = self._selected_item()
+        if self.kind == "history_count":
+            return f"{len(item['versions'])} retained" if item else ""
+        if self.kind == "history_note":
+            if self.page.store.fault == "history_note":
+                return "unverified history note"
+            return broker.WORKSHOP_HISTORY_NOTE
+        if self.kind == "history_wording" and item is not None:
+            rows = self._history_rows()
+            if self.row is None or self.row >= len(rows):
+                return ""
+            if self.slot == 0:
+                return rows[self.row]
+            source = item["versions"][0]
+            if self.page.store.fault == "source_changed":
+                source += " altered"
+            return source
+        if self.kind == "downstream_dd":
+            if self.page.store.fault == "downstream_unavailable":
+                return "could not check just now"
+            return "Not used elsewhere"
+        return ""
 
 
 class StrictRequest:
-    def __init__(self, page):
-        self.page = page
+    def __init__(self, context):
+        self.context = context
 
     def post(self, endpoint, *, form, headers, fail_on_status_code, max_redirects):
-        assert fail_on_status_code is False
-        assert max_redirects == 0
+        if fail_on_status_code is not False or max_redirects != 0:
+            raise AssertionError("foreign probe must not follow or hide status")
         parsed = urlparse(endpoint)
-        assert parsed.scheme == "https" and parsed.hostname == "peerslate.com"
+        if parsed.scheme != "https" or parsed.hostname != "peerslate.com":
+            raise AssertionError("unexpected foreign endpoint")
         parts = parsed.path.split("/")
-        assert parts[:4] == ["", "app", "workshop", "items"]
+        if parts[1:4] != ["app", "workshop", "items"] or len(parts) not in {5, 6}:
+            raise AssertionError("unexpected foreign path")
         key = parts[4]
-        item = self.page.store.items[key]
-        assert item["owner"] != self.page.context.owner
-        if len(parts) == 5:
-            assert form["save_action"] == "confirm"
-            assert form["expected_row_version"] == item["version"]
-            kind = "update"
-        else:
-            assert parts[5] == "delete"
-            assert form["confirm_delete"] == "delete"
-            assert form["expected_row_version"] == item["version"]
-            kind = "delete"
-        self.page.store.request_log.append(("POST", kind, parsed.path, key, dict(headers)))
-        if headers != EXACT_SAME_ORIGIN_HEADERS:
+        item = self.context.store.items[key]
+        if item["owner"] == self.context.owner:
+            raise AssertionError("foreign probe targeted actor item")
+        kind = "delete" if len(parts) == 6 else "update"
+        if form["expected_row_version"] != self.context.store.row_version(key):
+            raise AssertionError("foreign probe used a stale row version")
+        self.context.store.request_log.append((kind, key, dict(headers)))
+        if headers != SAME_ORIGIN_HEADERS:
             return StrictResponse(403)
-        fault = self.page.store.foreign_response
-        if fault is not None:
-            if fault.get("session_lost"):
-                self.page.context.owner = None
-            return StrictResponse(fault["status"], fault.get("headers"))
+        if self.context.store.foreign_status is not None:
+            return StrictResponse(self.context.store.foreign_status)
         if kind == "update":
             return StrictResponse(200)
         return StrictResponse(
@@ -293,7 +358,7 @@ class StrictContext:
 
     @property
     def request(self):
-        return StrictRequest(self.pages[-1])
+        return StrictRequest(self)
 
     def new_page(self):
         page = StrictPage(self, self.store)
@@ -315,81 +380,120 @@ class StrictPage:
         self.fields = {}
         self.checked = set()
         self.saved_key = None
-        self.visited = []
-        self.sign_in_arrivals = 0
-        self.explicit_workshop_arrivals = 0
-        self._requires_explicit_workshop_arrival = False
+        self.closed = False
 
     def goto(self, url, *, wait_until):
-        del wait_until
-        self.visited.append(("GET", url))
+        if wait_until != "domcontentloaded":
+            raise AssertionError("unexpected navigation wait")
         if "/.auth/login/" in url:
-            self.url = f"{AUTH_ISSUER}/authorize"
+            self.url = f"{AUTHORIZATION_ORIGIN}/authorize"
         elif "/.auth/logout" in url:
             self.context.owner = None
             self.url = "https://peerslate.com/"
         else:
-            if self._requires_explicit_workshop_arrival:
-                assert url == "https://peerslate.com/app/workshop"
-                self.explicit_workshop_arrivals += 1
-                self._requires_explicit_workshop_arrival = False
             self.url = url
 
+    def wait_for_url(self, pattern, *, timeout):
+        if timeout != 60000 or not pattern.search("https://peerslate.com/app"):
+            raise AssertionError("unexpected member arrival wait")
+        login = self.fields.get("input[type='email']", "")
+        if "-member_a@" in login:
+            self.context.owner = "member_a"
+        elif "-member_b@" in login:
+            self.context.owner = "member_b"
+        else:
+            raise AssertionError("unexpected synthetic login")
+        self.url = "https://peerslate.com/app"
+
     def locator(self, selector):
-        return StrictLocator(self, selector)
+        mapping = {
+            ".wk-status-banner--preview": "preview",
+            broker.AUTHENTICATED_WORKSHOP_CONTROL: "authenticated",
+            "input[name='expected_row_version']": "row_version",
+            "#wk-title": "field",
+            "#wk-wording": "field",
+            "input[name='classification'][value='unclassified']": "classification",
+            "button[name='save_action'][value='confirm']": "save_confirm",
+            "input[name='confirm_delete']": "confirm_delete",
+            "input[type='email']": "email",
+            "input[type='password']": "password",
+            "input[type='submit']": "submit",
+            "details.wk-wording-history": "history",
+            ".wk-detail__meta-row": "downstream_rows",
+            "article.wk-detail": "article_detail",
+        }
+        return StrictLocator(
+            self, mapping.get(selector, "unknown"), selector=selector
+        )
 
     def get_by_text(self, text, *, exact):
-        assert exact is True
-        return StrictLocator(self, role="text", name=text)
+        deletion_texts = {
+            "Permanent deletion",
+            "could not check just now",
+            "Your saved Opportunity Slate cites this item",
+        }
+        kind = "deletion_text" if text in deletion_texts else "marker_text"
+        return StrictLocator(self, kind, text=text, exact=exact)
 
     def get_by_role(self, role, *, name):
-        return StrictLocator(self, role=role, name=name)
+        if role == "button":
+            return StrictLocator(self, "button", text=name)
+        if role == "link" and name == "View in My Information":
+            return StrictLocator(self, "saved_link")
+        return StrictLocator(self)
 
-    def wait_for_url(self, _pattern, *, timeout):
-        del timeout
-        arrival_url = "https://peerslate.com/app"
-        assert _pattern.search(arrival_url)
-        email = self.fields["input[type='email']"]
-        self.context.owner = "member_a" if email.endswith("member_a@synthetic-tenant.onmicrosoft.com") else "member_b"
-        self.url = arrival_url
-        self.sign_in_arrivals += 1
-        self._requires_explicit_workshop_arrival = True
-
-    def reload(self, *, wait_until):
-        del wait_until
-
-    def close(self):
-        return None
+    def save_current(self):
+        key = self.store.selected_key(self.context.owner, self.url)
+        wording = self.fields.get("#wk-wording")
+        if not isinstance(wording, str):
+            raise AssertionError("missing wording")
+        if key is None:
+            marker = self.fields.get("#wk-title")
+            key = self.store.create(self.context.owner, marker, wording)
+        else:
+            self.store.append_version(key, wording)
+        self.saved_key = key
+        self.url = f"https://peerslate.com/app/workshop/items/{key}/saved"
 
     def click_button(self, name):
         if name == "Continue":
-            return None
-        key = self.store.selected_owned_item(self.context.owner, self.url)
-        if name == "Archive":
-            assert key is not None
+            return
+        key = self.store.selected_key(self.context.owner, self.url)
+        if name == "Archive" and key:
             self.store.items[key]["status"] = "archived"
-            self.store.bump_version(key)
+            self.store.bump_concurrency(key)
             return
-        if name == "Restore":
-            assert key is not None
+        if name == "Restore" and key:
             self.store.items[key]["status"] = "active"
-            self.store.bump_version(key)
+            if self.store.fault == "restore_appends_version":
+                self.store.append_version(
+                    key,
+                    f"{self.store.items[key]['versions'][-1]}-restore-appended",
+                )
+            else:
+                self.store.bump_concurrency(key)
             return
-        if name == "Delete permanently":
-            assert key is not None and "input[name='confirm_delete']" in self.checked
+        if name == "Delete permanently" and key:
+            if "input[name='confirm_delete']" not in self.checked:
+                raise AssertionError("delete was not confirmed")
+            alias = self.store.items[key]["owner"]
+            self.store.delete_attempts.append(alias)
+            if self.store.delete_fault == alias:
+                raise RuntimeError("synthetic deletion failure")
+            self.store.deleted_history_lengths.append(
+                len(self.store.items[key]["versions"])
+            )
             del self.store.items[key]
             self.url = "https://peerslate.com/app/workshop"
             return
-        raise AssertionError(f"unexpected button {name}")
+        raise AssertionError(f"unmodelled button: {name}")
 
-    def save_current(self):
-        key = self.store.selected_owned_item(self.context.owner, self.url)
-        if key is None:
-            key = self.store.create(self.context.owner, self.fields["#wk-title"])
-        else:
-            self.store.bump_version(key)
-        self.saved_key = key
-        self.url = f"https://peerslate.com/app/workshop/items/{key}/saved"
+    def reload(self, *, wait_until):
+        if wait_until != "domcontentloaded":
+            raise AssertionError("unexpected reload wait")
+
+    def close(self):
+        self.closed = True
 
 
 class StrictBrowser:
@@ -408,372 +512,190 @@ class StrictPlaywright:
         self.stopped = True
 
 
-class StrictBrowserAdapter:
-    def __init__(self, session):
-        self.session = session
+class StrictRuntime:
+    expected_browser_version = "151.0.7922.34"
 
-    def prepare_attended_session(self):
-        return self.session
-
-
-class StrictGraph:
     def __init__(self):
-        self.calls = 0
+        self.released = False
 
-    def resolve_graph_issuer(self):
-        return broker.SealedValue(ISSUER)
-
-    def create_customer(self, _identity, *, graph_issuer):
-        del graph_issuer
-        subject = SUBJECTS[self.calls]
-        self.calls += 1
-        return subject
+    def release(self):
+        self.released = True
 
 
-class NoRetirement:
-    def __init__(self):
-        self.calls = 0
-
-    def retire(self, *_args, **_kwargs):
-        self.calls += 1
-        raise AssertionError("retirement must not run after an adverse browser result")
-
-
-class StrictRetirement:
-    """Accept only a structurally complete, already-cleaned fake lifecycle."""
-
-    def __init__(self, contexts, browser_process, playwright, temporary_root):
-        self.contexts = contexts
-        self.browser_process = browser_process
-        self.playwright = playwright
-        self.temporary_root = Path(temporary_root)
-        self.calls = 0
-        self.cleanup_verified = False
-
-    def retire(self, _subjects, *, auth_issuer, cutoff):
-        del auth_issuer, cutoff
-        self.calls += 1
-        assert all(context.closed for context in self.contexts.values())
-        assert self.browser_process.closed and self.playwright.stopped
-        assert not self.temporary_root.exists()
-        self.cleanup_verified = True
-        return {"result": "pass", "state": "retired", "counts": {"retired_members": 2}}
+def identities():
+    return broker._generate_identities(
+        broker.SealedValue(ISSUER),
+        run_id="qa-20260829-0001",
+        choice=lambda _alphabet: "z",
+    )
 
 
-class AttendedHandoffTests(unittest.TestCase):
-    @staticmethod
-    def _preflight_outcomes():
-        return {
-            "clean_client_a_start": broker._pass_observation("clean_client_a_start"),
-            "clean_client_b_start": broker._pass_observation("clean_client_b_start"),
-            "clean_signed_out_control_start": broker._pass_observation(
-                "clean_signed_out_control_start"
-            ),
-            "signed_out_private_baseline": broker._pass_observation(
-                "signed_out_private_baseline"
-            ),
-        }
-
-    def _strict_session(self, temporary_root, *, store=None):
+class AttendedJourneyTests(unittest.TestCase):
+    def session(self, outer, *, store=None):
         store = store or StrictWorkshopStore()
         contexts = {
             name: StrictContext(store)
             for name in ("member_a", "member_b", "signed_out", "switch")
         }
-        browser_process = StrictBrowser()
+        browser = StrictBrowser()
         playwright = StrictPlaywright()
-        session = broker._PlaywrightAttendedSession(
-            adapter=broker.PlaywrightBrowserAdapter(playwright_factory=lambda: None),
+        runtime = StrictRuntime()
+        workspace = Path(outer) / "operation"
+        workspace.mkdir()
+        adapter = broker.PlaywrightBrowserAdapter(
+            environment={}, workspace_root=Path(outer)
+        )
+        attended = broker._PlaywrightAttendedSession(
+            adapter=adapter,
             contexts=contexts,
-            browser=browser_process,
+            browser=browser,
             playwright=playwright,
-            workspace=Path(temporary_root),
-            auth_issuer=broker.SealedValue(AUTH_ISSUER),
+            runtime_provider=runtime,
+            workspace=workspace,
+            authorization_origin=broker.SealedValue(AUTHORIZATION_ORIGIN),
             signed_out_page=contexts["signed_out"].new_page(),
-            preflight_outcomes=self._preflight_outcomes(),
+            preflight=broker.BrowserPreflight(True, True, True, 4, True),
+            preflight_outcomes={
+                journey_id: broker._pass_observation(journey_id)
+                for journey_id in (
+                    "clean_client_a_start",
+                    "clean_client_b_start",
+                    "clean_signed_out_control_start",
+                    "signed_out_private_baseline",
+                )
+            },
         )
-        return store, contexts, browser_process, playwright, session
+        return store, contexts, browser, playwright, runtime, workspace, attended
 
-    @staticmethod
-    def _strict_identities():
-        return broker._generate_identities(
-            broker.SealedValue(ISSUER),
-            run_id="qa-20260828-0001",
-            choice=lambda _alphabet: "z",
-        )
-
-    def test_strict_fake_exercises_every_journey_with_real_route_and_mutation_contracts(self):
-        with TemporaryDirectory() as temporary_root:
-            store, contexts, browser_process, playwright, session = self._strict_session(
-                temporary_root
+    def test_exact_journeys_history_disclosure_and_zero_residue(self):
+        with TemporaryDirectory() as outer:
+            (
+                store,
+                contexts,
+                browser,
+                playwright,
+                runtime,
+                workspace,
+                attended,
+            ) = self.session(outer)
+            self.assertEqual(
+                attended.pre_graph_proof(),
+                broker.BrowserPreflight(True, True, True, 4, True),
             )
-            retirement = StrictRetirement(
-                contexts, browser_process, playwright, temporary_root
-            )
-            captured = {}
-            original_exercise = session.exercise_canonical_journeys
 
-            def capture_outcome(run_identities):
-                captured["outcome"] = original_exercise(run_identities)
-                return captured["outcome"]
-
-            session.exercise_canonical_journeys = capture_outcome
-            report = broker.run_broker(
-                run_id="qa-20260828-0001",
-                cutoff=NOW,
-                graph=StrictGraph(),
-                browser=StrictBrowserAdapter(session),
-                retirement_adapter=retirement,
-                choice=lambda _alphabet: "z",
-            )
-            outcome = captured["outcome"]
-            # The only report fields are structural outcomes/counts; it contains
-            # no fake identifiers, secrets, private page state, or item handles.
-            self.assertEqual(set(report), {"result", "state", "counts"})
-            self.assertEqual(report["result"], "conditional")
-            self.assertEqual(report["counts"]["canonical_journeys"], len(JOURNEY_BY_ID))
-            self.assertEqual(report["counts"]["conditional_journeys"], 8)
-            cleanup = session.destroy_and_verify()
+            outcome = attended.exercise_canonical_journeys(identities())
 
             self.assertEqual(set(outcome.journey_outcomes), set(JOURNEY_BY_ID))
-            conditionals = {
-                "member_a_cannot_update_member_b": "neutral_denial_not_distinguishable",
-                "member_b_cannot_update_member_a": "neutral_denial_not_distinguishable",
-                "member_a_cannot_export_member_b": "feature_surface_unavailable",
-                "member_b_cannot_export_member_a": "feature_surface_unavailable",
-                "member_a_forged_reference_denied": "feature_surface_unavailable",
-                "member_b_forged_reference_denied": "feature_surface_unavailable",
-                "member_a_expired_session_safe": "session_expiry_not_controllable",
-                "member_b_expired_session_safe": "session_expiry_not_controllable",
-            }
             self.assertEqual(
                 {
                     journey_id: observation.note_code
                     for journey_id, observation in outcome.journey_outcomes.items()
                     if observation.status == "conditional"
                 },
-                conditionals,
+                broker.REQUIRED_CONDITIONAL_OUTCOMES,
+            )
+            self.assertEqual(outcome.edit_counts, {"member_a": 2, "member_b": 2})
+            self.assertEqual(
+                outcome.retained_version_counts,
+                {"member_a": 3, "member_b": 3},
+            )
+            self.assertEqual(
+                outcome.retained_source_proof_counts,
+                {"member_a": 3, "member_b": 3},
+            )
+            self.assertEqual(
+                outcome.downstream_disclosure_counts,
+                {"member_a": 1, "member_b": 1},
             )
             self.assertEqual(outcome.active_residue_counts, {"member_a": 0, "member_b": 0})
             self.assertEqual(outcome.archived_residue_counts, {"member_a": 0, "member_b": 0})
             self.assertEqual(store.items, {})
+            self.assertEqual(store.version_appends, 4)
+            self.assertEqual(store.concurrency_only_bumps, 4)
+            self.assertEqual(store.deleted_history_lengths, [3, 3])
+            self.assertEqual(store.delete_attempts, ["member_a", "member_b"])
             self.assertEqual(
-                [(method, kind) for method, kind, _path, _key, _headers in store.request_log],
-                [("POST", "update"), ("POST", "delete"), ("POST", "update"), ("POST", "delete")],
-            )
-            self.assertEqual(
-                {key for _method, _kind, _path, key, _headers in store.request_log},
-                {"opaque-1", "opaque-2"},
+                [(kind, key) for kind, key, _headers in store.request_log],
+                [
+                    ("update", "opaque-2"),
+                    ("delete", "opaque-2"),
+                    ("update", "opaque-1"),
+                    ("delete", "opaque-1"),
+                ],
             )
             self.assertTrue(
-                all(
-                    headers == EXACT_SAME_ORIGIN_HEADERS
-                    for _method, _kind, _path, _key, headers in store.request_log
-                )
+                all(headers == SAME_ORIGIN_HEADERS for *_rest, headers in store.request_log)
             )
-            all_gets = [url for context in contexts.values() for page in context.pages for method, url in page.visited if method == "GET"]
-            self.assertEqual(
-                sum(page.sign_in_arrivals for context in contexts.values() for page in context.pages),
-                5,
-            )
-            self.assertEqual(
-                sum(page.explicit_workshop_arrivals for context in contexts.values() for page in context.pages),
-                5,
-            )
-            self.assertFalse(any("export" in url for url in all_gets))
-            self.assertIn("https://peerslate.com/app/workshop?status=archived", all_gets)
-            self.assertFalse(
-                any("reference" in parse_qs(urlparse(url).query) for url in all_gets)
-            )
-            self.assertFalse(any(version in url for url in all_gets for version in ("v1", "v2")))
+            # An unmodelled selector cannot false-pass a newly added proof.
+            self.assertEqual(contexts["member_a"].pages[0].locator(".unknown").count(), 0)
+
+            cleanup = attended.destroy_and_verify()
             self.assertEqual(cleanup, broker.BrowserCleanup(4, True))
-            self.assertEqual(retirement.calls, 1)
-            self.assertTrue(retirement.cleanup_verified)
-            self.assertTrue(browser_process.closed and playwright.stopped)
+            self.assertFalse(workspace.exists())
             self.assertTrue(all(context.closed for context in contexts.values()))
+            self.assertTrue(browser.closed and playwright.stopped and runtime.released)
 
-    def test_strict_same_origin_gate_refuses_a_missing_signal(self):
-        store = StrictWorkshopStore()
-        actor = StrictContext(store)
-        actor.owner = "member_a"
-        peer_key = store.create("member_b", "safe-peer")
-        page = actor.new_page()
-        response = actor.request.post(
-            f"https://peerslate.com/app/workshop/items/{peer_key}",
-            form={
-                "title": "safe-actor",
-                "wording": "safe-actor-foreign-update",
-                "classification": "unclassified",
-                "save_action": "confirm",
-                "expected_row_version": store.version(peer_key),
-            },
-            headers={"Origin": "https://peerslate.com"},
-            fail_on_status_code=False,
-            max_redirects=0,
-        )
-        self.assertEqual(response.status, 403)
-        self.assertEqual(store.items[peer_key]["owner"], "member_b")
-
-    def test_adverse_foreign_mutation_responses_are_indeterminate_and_never_retire(self):
-        scenarios = (
-            (
-                "missing_header_rejected",
-                None,
-                {"Origin": "https://peerslate.com"},
-            ),
-            ("unauthenticated", {"status": 401}, None),
-            ("forbidden", {"status": 403}, None),
-            ("conflict", {"status": 409}, None),
-            ("server_failure", {"status": 500}, None),
-            ("unexpected_redirect", {"status": 302, "headers": {"location": "/unexpected"}}, None),
-            ("session_lost", {"status": 200, "session_lost": True}, None),
-        )
-        for scenario, response, mutation_headers in scenarios:
-            with self.subTest(scenario=scenario), TemporaryDirectory() as temporary_root:
-                store, contexts, _browser_process, _playwright, session = self._strict_session(
-                    temporary_root
-                )
-                store.foreign_response = response
-                retirement = NoRetirement()
-                mutation_headers = mutation_headers or broker.SAME_ORIGIN_MUTATION_HEADERS
-                with patch.object(broker, "SAME_ORIGIN_MUTATION_HEADERS", mutation_headers):
-                    with self.assertRaisesRegex(
-                        broker.BrokerIndeterminate, "sealed_browser_operation_indeterminate"
-                    ):
-                        broker.run_broker(
-                            run_id="qa-20260828-0001",
-                            cutoff=NOW,
-                            graph=StrictGraph(),
-                            browser=StrictBrowserAdapter(session),
-                            retirement_adapter=retirement,
-                            choice=lambda _alphabet: "z",
-                        )
-                self.assertEqual(retirement.calls, 0)
-                self.assertTrue(all(context.closed for context in contexts.values()))
-
-    def test_signed_out_residue_cannot_be_reported_as_zero_or_retired(self):
-        with TemporaryDirectory() as temporary_root:
-            store, contexts, _browser_process, _playwright, session = self._strict_session(
-                temporary_root
-            )
-            marker = "safe-owned-item"
-            store.create("member_a", marker)
-            residue_page = contexts["member_a"].new_page()
-            contexts["member_a"].owner = None
-
-            with self.assertRaisesRegex(
-                broker.BrokerIndeterminate, "sealed_browser_operation_indeterminate"
-            ):
-                session._observe_item_residue(residue_page, marker)
-            self.assertEqual(len(store.items), 1)
-
-            retirement = NoRetirement()
-            session.exercise_canonical_journeys = lambda _identities: session._observe_item_residue(
-                residue_page, marker
-            )
-            with self.assertRaisesRegex(
-                broker.BrokerIndeterminate, "sealed_browser_operation_indeterminate"
-            ):
-                broker.run_broker(
-                    run_id="qa-20260828-0001",
-                    cutoff=NOW,
-                    graph=StrictGraph(),
-                    browser=StrictBrowserAdapter(session),
-                    retirement_adapter=retirement,
-                    choice=lambda _alphabet: "z",
-                )
-            self.assertEqual(retirement.calls, 0)
-            self.assertTrue(all(context.closed for context in contexts.values()))
-
-    def test_exact_attended_order_and_pair_coverage(self):
-        events = []
-        browser_adapter = RecordingBrowser(events, complete_outcome())
-        graph = RecordingGraph(events)
-        retirement = RecordingRetirement(events)
-
-        report = broker.run_broker(
-            run_id="qa-20260828-0001",
-            cutoff=NOW,
-            graph=graph,
-            browser=browser_adapter,
-            retirement_adapter=retirement,
-        )
-
-        self.assertEqual(browser_adapter.session.aliases, ("member_a", "member_b"))
-        self.assertEqual(graph.post_calls, 2)
-        self.assertEqual(retirement.calls, 1)
-        self.assertEqual(report["counts"]["canonical_journeys"], len(JOURNEY_BY_ID))
-        self.assertEqual(events, [
-            "browser_module_executable_preflight",
-            "signed_out_baseline",
-            "public_auth_route_derived",
-            "tenant_binding_verified",
-            "post_member_a",
-            "post_member_b",
-            "all_38_journeys_complete",
-            "four_contexts_and_root_destroyed",
-            "retirement",
-        ])
-
-    def test_active_residue_blocks_retirement_after_graph_mutation(self):
-        events = []
-        retirement = RecordingRetirement(events)
-        with self.assertRaisesRegex(broker.BrokerIndeterminate, "sealed_browser_operation_indeterminate"):
-            broker.run_broker(
-                run_id="qa-20260828-0001",
-                cutoff=NOW,
-                graph=RecordingGraph(events),
-                browser=RecordingBrowser(events, complete_outcome(residue=1)),
-                retirement_adapter=retirement,
-            )
-        self.assertEqual(retirement.calls, 0)
-
-    def test_pre_graph_refusal_does_not_hide_browser_cleanup_failure(self):
-        events = []
-        browser_adapter = RecordingBrowser(events, complete_outcome())
-
-        def cleanup_failure():
-            raise broker.BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
-
-        browser_adapter.session.destroy_and_verify = cleanup_failure
-
-        class RefusingGraph:
-            def resolve_graph_issuer(self):
-                events.append("tenant_binding_refused")
-                raise broker.BrokerRefusal("graph_tenant_issuer_mismatch")
-
-            def create_customer(self, *_args, **_kwargs):
-                raise AssertionError("Graph customer POST must not run")
-
-        with self.assertRaisesRegex(
-            broker.BrokerIndeterminate, "sealed_browser_cleanup_indeterminate"
+    def test_history_and_downstream_tampering_fail_and_still_delete_both_items_once(self):
+        for fault in (
+            "history_order",
+            "source_changed",
+            "history_window",
+            "missing_version",
+            "history_note",
+            "downstream_unavailable",
         ):
-            broker.run_broker(
-                run_id="qa-20260828-0001",
-                cutoff=NOW,
-                graph=RefusingGraph(),
-                browser=browser_adapter,
-                retirement_adapter=RecordingRetirement(events),
-            )
+            with self.subTest(fault=fault), TemporaryDirectory() as outer:
+                store = StrictWorkshopStore(fault=fault)
+                *_, workspace, attended = self.session(outer, store=store)
+                with self.assertRaisesRegex(
+                    broker.BrokerIndeterminate,
+                    "sealed_browser_operation_indeterminate",
+                ):
+                    attended.exercise_canonical_journeys(identities())
+                self.assertEqual(store.items, {})
+                self.assertEqual(store.delete_attempts, ["member_a", "member_b"])
+                attended.destroy_and_verify()
+                self.assertFalse(workspace.exists())
 
-    def test_default_live_backends_are_not_reached_from_fake_attended_test(self):
-        def blocked(*_args, **_kwargs):
-            raise AssertionError("outbound backend reached")
+    def test_restore_appended_fourth_version_is_rejected_and_cleaned(self):
+        with TemporaryDirectory() as outer:
+            store = StrictWorkshopStore(fault="restore_appends_version")
+            *_, workspace, attended = self.session(outer, store=store)
+            with self.assertRaisesRegex(
+                broker.BrokerIndeterminate,
+                "sealed_browser_operation_indeterminate",
+            ):
+                attended.exercise_canonical_journeys(identities())
+            self.assertEqual(store.items, {})
+            self.assertEqual(store.delete_attempts, ["member_a", "member_b"])
+            self.assertEqual(store.deleted_history_lengths, [4, 4])
+            attended.destroy_and_verify()
+            self.assertFalse(workspace.exists())
 
-        with patch.object(broker.subprocess, "run", side_effect=blocked), patch.object(
-            broker, "urlopen", side_effect=blocked
-        ), patch.object(broker, "_start_playwright", side_effect=blocked), patch.object(
-            broker.retirement, "open_production_connection", side_effect=blocked
-        ):
-            events = []
-            result = broker.run_broker(
-                run_id="qa-20260828-0001",
-                cutoff=NOW,
-                graph=RecordingGraph(events),
-                browser=RecordingBrowser(events, complete_outcome()),
-                retirement_adapter=RecordingRetirement(events),
+    def test_one_item_cleanup_failure_does_not_skip_the_other_item(self):
+        with TemporaryDirectory() as outer:
+            store = StrictWorkshopStore(
+                fault="source_changed", delete_fault="member_a"
             )
-        self.assertEqual(result["result"], "conditional")
+            *_, attended = self.session(outer, store=store)
+            with self.assertRaises(broker.BrokerIndeterminate):
+                attended.exercise_canonical_journeys(identities())
+            self.assertEqual(store.delete_attempts, ["member_a", "member_b"])
+            self.assertEqual(
+                {item["owner"] for item in store.items.values()}, {"member_a"}
+            )
+            attended.destroy_and_verify()
+
+    def test_adverse_peer_response_is_indeterminate_and_cleanup_is_bounded(self):
+        with TemporaryDirectory() as outer:
+            store = StrictWorkshopStore(foreign_status=500)
+            *_, attended = self.session(outer, store=store)
+            with self.assertRaises(broker.BrokerIndeterminate):
+                attended.exercise_canonical_journeys(identities())
+            self.assertEqual(store.items, {})
+            self.assertEqual(store.delete_attempts, ["member_a", "member_b"])
+            self.assertEqual(len(store.request_log), 1)
+            attended.destroy_and_verify()
 
 
 if __name__ == "__main__":

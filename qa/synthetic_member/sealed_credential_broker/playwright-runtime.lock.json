@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "target": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "python": "3.14"
+  },
+  "requirements": {
+    "path": "playwright-requirements.lock",
+    "sha256": "0fa262752498ba2287cc619cd43af2b415aa6cef60bc0da59f4cf2a9d352ce9c",
+    "packages": {
+      "greenlet": "3.5.5",
+      "playwright": "1.62.0",
+      "pyee": "13.0.1",
+      "typing-extensions": "4.16.0"
+    }
+  },
+  "chromium": {
+    "name": "chromium",
+    "revision": "1234",
+    "browser_version": "151.0.7922.34",
+    "title": "Chrome for Testing",
+    "install_args": [
+      "chromium",
+      "--no-shell"
+    ]
+  }
+}

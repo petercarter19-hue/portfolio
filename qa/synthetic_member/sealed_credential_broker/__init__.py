@@ -14,20 +14,24 @@ import base64
 import binascii
 from contextlib import contextmanager
 import hashlib
+import importlib
+import importlib.metadata
 import json
 import os
+import platform
 import re
 import secrets
 import shutil
 import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Mapping, Protocol, Sequence
-from urllib.parse import parse_qs, quote, urlparse
+from urllib.parse import parse_qs, quote, urlencode, urlparse
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 from uuid import UUID
 
 from qa.synthetic_member import identity_retirement as retirement
@@ -38,9 +42,23 @@ ALLOWED_SITE_ORIGIN = "https://peerslate.com"
 ALLOWED_SIGN_IN_ENDPOINT = (
     f"{ALLOWED_SITE_ORIGIN}/.auth/login/aad?post_login_redirect_uri=%2Fapp"
 )
+OWNER_AUTHORIZATION_REF = (
+    "session:01a04348-7e3e-7a11-a443-752498be91b5/"
+    "owner-authorization:2026-08-28/workshop-fg-sealed-private-proof-complete-lifecycle"
+)
+AZURE_SUBSCRIPTION_ID = "bd0ecf48-6940-4fd3-9687-3eaf72469d67"
+AZURE_RESOURCE_GROUP = "peerslate"
+AZURE_WEBAPP_NAME = "peerslate-pete"
 ALLOWED_GRAPH_ENDPOINT = "https://graph.microsoft.com/v1.0/users"
 ALLOWED_GRAPH_ORGANIZATION_ENDPOINT = (
     "https://graph.microsoft.com/v1.0/organization?$select=id,verifiedDomains"
+)
+ALLOWED_GRAPH_DELETED_ITEMS_ENDPOINT = (
+    "https://graph.microsoft.com/v1.0/directory/deletedItems"
+)
+GRAPH_CUSTOMER_SHAPE_SELECT = (
+    "id,accountEnabled,userType,creationType,displayName,mailNickname,"
+    "identities,createdDateTime,passwordPolicies"
 )
 ALLOWED_ALIASES = ("member_a", "member_b")
 REQUIRED_CONDITIONAL_OUTCOMES = {
@@ -55,8 +73,10 @@ REQUIRED_CONDITIONAL_OUTCOMES = {
 }
 SAFE_RUN_ID = re.compile(r"^[a-z0-9][a-z0-9-]{7,63}$")
 SAFE_GRAPH_ISSUER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.-]{2,253}$")
+SAFE_GRAPH_MAIL_NICKNAME = re.compile(r"^[a-z0-9-]{1,64}$")
 MAX_SECRET_LENGTH = 512
-ALLOWED_AUTH_HOST_SUFFIXES = (".ciamlogin.com", ".b2clogin.com")
+MAX_TOKEN_LENGTH = 32768
+ALLOWED_AUTH_HOST_SUFFIXES = (".ciamlogin.com",)
 SAFE_TENANT_LABEL = re.compile(r"^[a-z0-9][a-z0-9-]{1,62}$")
 AUTHENTICATED_WORKSHOP_CONTROL = (
     "div.platform-account[data-ps-auth-control='authenticated']:not([hidden])"
@@ -70,7 +90,24 @@ GRAPH_AUDIENCES = {
     "https://graph.microsoft.com",
     "https://graph.microsoft.com/",
 }
+REQUIRED_GRAPH_SCOPES = frozenset(
+    {"User.Read", "User.ReadWrite.All", "User.DeleteRestore.All"}
+)
+ELIGIBLE_GRAPH_ROLE_TEMPLATE_IDS = frozenset(
+    {
+        # User Administrator is the least role with the complete
+        # create + active-delete + deleted-item-purge action intersection.
+        "fe930be7-5e62-47db-91af-98c3a49a38b1",
+    }
+)
 BROWSER_TEMP_PREFIX = "peerslate-sealed-browser-"
+BROWSER_PROBE_PREFIX = "peerslate-sealed-browser-probe-"
+PLAYWRIGHT_LOCK_PATH = Path(__file__).with_name("playwright-runtime.lock.json")
+WORKSHOP_HISTORY_NOTE = (
+    "Some older AI-assisted versions may show refined wording under "
+    "\u201cSource wording on record\u201d because the original wording was not "
+    "retained at the time. PeerSlate does not infer or backfill wording it cannot prove."
+)
 REJECTED_BROWSER_ENV_NAMES = frozenset(
     {
         "PWDEBUG",
@@ -111,8 +148,14 @@ class SealedValue:
 
     __slots__ = ("_value",)
 
-    def __init__(self, value: str):
-        if not isinstance(value, str) or not value or len(value) > MAX_SECRET_LENGTH:
+    def __init__(self, value: str, *, max_length: int = MAX_SECRET_LENGTH):
+        if (
+            not isinstance(value, str)
+            or not value
+            or not isinstance(max_length, int)
+            or max_length < 1
+            or len(value) > max_length
+        ):
             raise BrokerRefusal("sealed_input_invalid")
         self._value: str | None = value
 
@@ -151,6 +194,25 @@ class SealedIdentity:
         return f"SealedIdentity(alias={self.alias!r}, material=<sealed>)"
 
 
+@dataclass
+class AuthorityBinding:
+    """Validated production routing values held only in worker memory."""
+
+    oidc_issuer: SealedValue
+    authorization_origin: SealedValue
+    tenant_id: SealedValue
+    tenant_label: SealedValue
+
+    def clear(self) -> None:
+        self.oidc_issuer.clear()
+        self.authorization_origin.clear()
+        self.tenant_id.clear()
+        self.tenant_label.clear()
+
+    def __repr__(self) -> str:
+        return "AuthorityBinding(material=<sealed>)"
+
+
 @dataclass(frozen=True)
 class JourneyObservation:
     """One contract-shaped, non-reflective result held only in worker memory."""
@@ -164,15 +226,87 @@ class JourneyObservation:
 class BrowserOutcome:
     journey_outcomes: Mapping[str, JourneyObservation]
     created_item_counts: Mapping[str, int]
+    edit_counts: Mapping[str, int]
+    retained_version_counts: Mapping[str, int]
+    retained_source_proof_counts: Mapping[str, int]
+    downstream_disclosure_counts: Mapping[str, int]
     active_residue_counts: Mapping[str, int]
     archived_residue_counts: Mapping[str, int]
     clean_start_confirmed: bool
 
 
 @dataclass(frozen=True)
+class BrowserPreflight:
+    locked_runtime: bool
+    probe_launch_closed: bool
+    probe_root_removed: bool
+    prepared_contexts: int
+    signed_out_private_baseline: bool
+
+
+@dataclass(frozen=True)
 class BrowserCleanup:
     destroyed_contexts: int
     temporary_root_removed: bool
+
+
+@dataclass(frozen=True)
+class GraphDeletionOutcome:
+    soft_deleted: int
+    soft_state_proofs: int
+    permanently_deleted: int
+    final_absence_proofs: int
+
+
+@dataclass
+class GraphCreationOutcome:
+    """Finite, non-reflective result of one and only one customer POST."""
+
+    state: str
+    attempted_after: datetime
+    subject: SealedValue | None = None
+
+    def __post_init__(self) -> None:
+        if self.state not in {
+            "known_created",
+            "ambiguous_maybe_created",
+            "known_not_created",
+        }:
+            raise BrokerRefusal("graph_creation_outcome_invalid")
+        if (
+            not isinstance(self.attempted_after, datetime)
+            or self.attempted_after.tzinfo is None
+            or self.attempted_after.utcoffset() is None
+        ):
+            raise BrokerRefusal("graph_creation_outcome_invalid")
+        if (self.state == "known_created") != (self.subject is not None):
+            raise BrokerRefusal("graph_creation_outcome_invalid")
+        if self.subject is not None and not isinstance(self.subject, SealedValue):
+            raise BrokerRefusal("graph_creation_outcome_invalid")
+
+    def clear(self) -> None:
+        if self.subject is not None:
+            self.subject.clear()
+
+    def __repr__(self) -> str:
+        return (
+            "GraphCreationOutcome("
+            f"state={self.state!r}, attempted_after=<structural>, subject=<sealed>)"
+        )
+
+
+@dataclass
+class _GraphLifecycleLedgerEntry:
+    """Finite, worker-local mutation ledger for one exact generated alias."""
+
+    alias: str
+    create: str = "not_attempted"
+    soft: str = "not_attempted"
+    active_probe: str = "not_attempted"
+    deleted_probe: str = "not_attempted"
+    purge: str = "not_attempted"
+    final_active_probe: str = "not_attempted"
+    final_deleted_probe: str = "not_attempted"
 
 
 @dataclass
@@ -203,17 +337,60 @@ def _conditional_observation(journey_id: str, note_code: str) -> JourneyObservat
     )
 
 
-class GraphAdapter(Protocol):
-    def resolve_graph_issuer(self) -> SealedValue:
-        """Derive the one verified External ID issuer from active Graph authority."""
+class AuthorityAdapter(Protocol):
+    def resolve(self) -> AuthorityBinding:
+        """Bind the fixed App Service, live OIDC metadata, and exact tenant."""
 
-    def create_customer(self, identity: SealedIdentity, *, graph_issuer: SealedValue) -> str:
-        """Create one customer and return only its opaque Graph id to the worker."""
+
+class GraphAdapter(Protocol):
+    def prepare(self, authority: AuthorityBinding) -> SealedValue:
+        """Preflight exact tenant, delegated privileges, role, organization, and domain."""
+
+    def create_customer(
+        self,
+        identity: SealedIdentity,
+        *,
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+    ) -> GraphCreationOutcome:
+        """Attempt one customer POST and return its finite sealed ledger state."""
+
+    def prove_customer_absence(
+        self,
+        identities: Sequence[SealedIdentity],
+        *,
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+    ) -> int:
+        """Run four bounded exact-filter zero-result reads before either POST."""
+
+    def contain_partial_creation(
+        self,
+        identities: Sequence[SealedIdentity],
+        *,
+        creation_states: Mapping[str, str],
+        attempted_after: Mapping[str, datetime],
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+    ) -> None:
+        """Best-effort one-pass containment after an ambiguous create attempt."""
+
+    def delete_exact_pair(
+        self,
+        subjects: Sequence[SealedValue],
+        *,
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+    ) -> GraphDeletionOutcome:
+        """Soft-delete, prove, permanently delete, and prove exact-pair absence."""
+
+    def clear(self) -> None:
+        """Clear any worker-local delegated caller binding."""
 
 
 class AttendedBrowserSession(Protocol):
-    def auth_issuer(self) -> SealedValue:
-        """Return the derived, verified public authentication origin in worker memory."""
+    def pre_graph_proof(self) -> BrowserPreflight:
+        """Return the closed structural runtime/baseline proof."""
 
     def exercise_canonical_journeys(
         self, identities: Sequence[SealedIdentity]
@@ -225,7 +402,7 @@ class AttendedBrowserSession(Protocol):
 
 
 class BrowserAdapter(Protocol):
-    def prepare_attended_session(self) -> AttendedBrowserSession:
+    def prepare_attended_session(self, authority: AuthorityBinding) -> AttendedBrowserSession:
         """Launch and prove the no-capture browser baseline before Graph mutation."""
 
 
@@ -234,10 +411,299 @@ class RetirementAdapter(Protocol):
         self,
         subjects: Sequence[SealedValue],
         *,
-        auth_issuer: SealedValue,
+        oidc_issuer: SealedValue,
         cutoff: datetime,
     ) -> Mapping[str, object]:
         """Run the accepted exact-two retirement core without echoing subjects."""
+
+
+class _NoRedirectHandler(HTTPRedirectHandler):
+    """Refuse every redirect, including redirects on nominally read-only calls."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        del req, fp, code, msg, headers, newurl
+        return None
+
+
+def _open_without_redirect(request: Request, *, timeout: int):
+    return build_opener(_NoRedirectHandler()).open(request, timeout=timeout)
+
+
+def _azure_child_environment(
+    environment: Mapping[str, str] | None,
+) -> dict[str, str]:
+    source = environment if environment is not None else os.environ
+    allowed = (
+        "SystemRoot",
+        "WINDIR",
+        "COMSPEC",
+        "PATH",
+        "USERPROFILE",
+        "APPDATA",
+        "LOCALAPPDATA",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "SSL_CERT_FILE",
+        "SSL_CERT_DIR",
+    )
+    child = {name: str(source[name]) for name in allowed if source.get(name)}
+    azure_config = source.get("AZURE_CONFIG_DIR")
+    if not azure_config and environment is None:
+        azure_config = str(Path.home() / ".azure")
+    if azure_config:
+        child["AZURE_CONFIG_DIR"] = str(azure_config)
+    child.update(
+        {
+            "AZURE_CORE_COLLECT_TELEMETRY": "false",
+            "AZURE_CORE_ONLY_SHOW_ERRORS": "true",
+            "AZURE_EXTENSION_USE_DYNAMIC_INSTALL": "no",
+        }
+    )
+    return child
+
+
+def _run_azure_json(
+    runner: Callable[..., object],
+    command: Sequence[str],
+    *,
+    environment: Mapping[str, str] | None,
+) -> object:
+    try:
+        result = runner(
+            tuple(command),
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            stdin=subprocess.DEVNULL,
+            env=_azure_child_environment(environment),
+        )
+    except (OSError, subprocess.SubprocessError):
+        raise BrokerRefusal("production_authority_unavailable") from None
+    raw = str(getattr(result, "stdout", "") or "")
+    if getattr(result, "returncode", 1) != 0 or not raw or len(raw) > 65536:
+        raise BrokerRefusal("production_authority_unavailable")
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        raise BrokerRefusal("production_authority_unavailable") from None
+
+
+def _validated_https_url(value: object, *, code: str) -> str:
+    if not isinstance(value, str) or not value or len(value) > MAX_SECRET_LENGTH:
+        raise BrokerRefusal(code)
+    try:
+        parsed = urlparse(value)
+        host = (parsed.hostname or "").lower()
+        if (
+            parsed.scheme != "https"
+            or not host
+            or parsed.port is not None
+            or parsed.username
+            or parsed.password
+            or parsed.netloc != host
+            or parsed.query
+            or parsed.fragment
+            or not any(host.endswith(suffix) for suffix in ALLOWED_AUTH_HOST_SUFFIXES)
+        ):
+            raise ValueError("unapproved authority")
+    except (TypeError, ValueError):
+        raise BrokerRefusal(code) from None
+    return value
+
+
+def _tenant_from_oidc_authority(value: str, *, require_uuid_host: bool) -> str:
+    parsed = urlparse(value)
+    parts = [part for part in parsed.path.split("/") if part]
+    if len(parts) != 2 or parts[1] != "v2.0":
+        raise BrokerRefusal("production_oidc_authority_mismatch")
+    try:
+        tenant_id = str(UUID(parts[0]))
+    except (TypeError, ValueError, AttributeError):
+        raise BrokerRefusal("production_oidc_authority_mismatch") from None
+    if parts[0] != tenant_id or parsed.path != f"/{tenant_id}/v2.0":
+        raise BrokerRefusal("production_oidc_authority_mismatch")
+    host = (parsed.hostname or "").lower()
+    if require_uuid_host and host != f"{tenant_id}.ciamlogin.com":
+        raise BrokerRefusal("production_oidc_authority_mismatch")
+    return tenant_id
+
+
+class AzureAppAuthorityResolver:
+    """Read and bind only the fixed production App Service authentication authority."""
+
+    auth_command = (
+        "az",
+        "webapp",
+        "auth",
+        "show",
+        "--subscription",
+        AZURE_SUBSCRIPTION_ID,
+        "--resource-group",
+        AZURE_RESOURCE_GROUP,
+        "--name",
+        AZURE_WEBAPP_NAME,
+        "--query",
+        (
+            "{platformEnabled:properties.platform.enabled,"
+            "openIdIssuer:properties.identityProviders.azureActiveDirectory."
+            "registration.openIdIssuer}"
+        ),
+        "--output",
+        "json",
+        "--only-show-errors",
+    )
+    settings_command = (
+        "az",
+        "webapp",
+        "config",
+        "appsettings",
+        "list",
+        "--subscription",
+        AZURE_SUBSCRIPTION_ID,
+        "--resource-group",
+        AZURE_RESOURCE_GROUP,
+        "--name",
+        AZURE_WEBAPP_NAME,
+        "--query",
+        "[?name=='PEERSLATE_AUTH_ISSUER'].{name:name,value:value}",
+        "--output",
+        "json",
+        "--only-show-errors",
+    )
+
+    def __init__(
+        self,
+        runner: Callable[..., object] | None = None,
+        opener: Callable[..., object] | None = None,
+        *,
+        environment: Mapping[str, str] | None = None,
+    ):
+        self._runner = runner or subprocess.run
+        self._opener = opener or _open_without_redirect
+        self._environment = environment
+
+    @staticmethod
+    def _metadata_endpoint(open_id_issuer: str) -> str:
+        _validated_https_url(
+            open_id_issuer, code="production_oidc_authority_mismatch"
+        )
+        _tenant_from_oidc_authority(open_id_issuer, require_uuid_host=False)
+        if open_id_issuer.endswith("/"):
+            raise BrokerRefusal("production_oidc_authority_mismatch")
+        return f"{open_id_issuer}/.well-known/openid-configuration"
+
+    def _metadata(self, endpoint: str) -> Mapping[str, object]:
+        request = Request(endpoint, headers={"Accept": "application/json"}, method="GET")
+        try:
+            with self._opener(request, timeout=60) as response:
+                final_url = str(response.geturl())
+                status = getattr(response, "status", None)
+                if status is None and hasattr(response, "getcode"):
+                    status = response.getcode()
+                raw = response.read(65537)
+        except HTTPError as error:
+            error.close()
+            raise BrokerRefusal("production_oidc_metadata_unavailable") from None
+        except (URLError, OSError, ValueError, AttributeError):
+            raise BrokerRefusal("production_oidc_metadata_unavailable") from None
+        if (
+            status != 200
+            or final_url != endpoint
+            or not isinstance(raw, bytes)
+            or len(raw) > 65536
+        ):
+            raise BrokerRefusal("production_oidc_metadata_unavailable")
+        try:
+            payload = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            raise BrokerRefusal("production_oidc_metadata_unavailable") from None
+        if not isinstance(payload, Mapping):
+            raise BrokerRefusal("production_oidc_metadata_unavailable")
+        return payload
+
+    @staticmethod
+    def _authorization_origin(
+        endpoint: object, tenant_id: str, discovery_issuer: str
+    ) -> str:
+        value = _validated_https_url(
+            endpoint, code="production_oidc_authority_mismatch"
+        )
+        parsed = urlparse(value)
+        parts = [part for part in parsed.path.split("/") if part]
+        if (
+            len(parts) != 4
+            or parts[0] != tenant_id
+            or parts[1:] != ["oauth2", "v2.0", "authorize"]
+            or parsed.path != f"/{tenant_id}/oauth2/v2.0/authorize"
+            or parsed.hostname != urlparse(discovery_issuer).hostname
+        ):
+            raise BrokerRefusal("production_oidc_authority_mismatch")
+        return f"https://{parsed.hostname.lower()}"
+
+    def resolve(self) -> AuthorityBinding:
+        if OWNER_AUTHORIZATION_REF != (
+            "session:01a04348-7e3e-7a11-a443-752498be91b5/"
+            "owner-authorization:2026-08-28/workshop-fg-sealed-private-proof-complete-lifecycle"
+        ):
+            raise BrokerRefusal("owner_authorization_mismatch")
+        auth_settings = _run_azure_json(
+            self._runner,
+            self.auth_command,
+            environment=self._environment,
+        )
+        if (
+            not isinstance(auth_settings, Mapping)
+            or set(auth_settings) != {"platformEnabled", "openIdIssuer"}
+            or auth_settings.get("platformEnabled") is not True
+        ):
+            raise BrokerRefusal("production_oidc_authority_mismatch")
+        open_id_issuer = auth_settings["openIdIssuer"]
+        endpoint = self._metadata_endpoint(str(open_id_issuer or ""))
+        discovery_tenant = _tenant_from_oidc_authority(
+            str(open_id_issuer), require_uuid_host=False
+        )
+        metadata = self._metadata(endpoint)
+        oidc_issuer = _validated_https_url(
+            metadata.get("issuer"), code="production_oidc_authority_mismatch"
+        )
+        if oidc_issuer.endswith("/"):
+            raise BrokerRefusal("production_oidc_authority_mismatch")
+        tenant_id = _tenant_from_oidc_authority(
+            oidc_issuer, require_uuid_host=True
+        )
+        if tenant_id != discovery_tenant:
+            raise BrokerRefusal("production_oidc_authority_mismatch")
+        discovery_host = (urlparse(str(open_id_issuer)).hostname or "").lower()
+        tenant_label = ""
+        for suffix in ALLOWED_AUTH_HOST_SUFFIXES:
+            if discovery_host.endswith(suffix):
+                tenant_label = discovery_host[: -len(suffix)]
+                break
+        if not SAFE_TENANT_LABEL.fullmatch(tenant_label):
+            raise BrokerRefusal("production_oidc_authority_mismatch")
+        authorization_origin = self._authorization_origin(
+            metadata.get("authorization_endpoint"), tenant_id, str(open_id_issuer)
+        )
+        settings = _run_azure_json(
+            self._runner,
+            self.settings_command,
+            environment=self._environment,
+        )
+        if (
+            not isinstance(settings, list)
+            or len(settings) != 1
+            or not isinstance(settings[0], Mapping)
+            or settings[0].get("name") != "PEERSLATE_AUTH_ISSUER"
+            or settings[0].get("value") != oidc_issuer
+        ):
+            raise BrokerRefusal("production_oidc_setting_mismatch")
+        return AuthorityBinding(
+            oidc_issuer=SealedValue(oidc_issuer),
+            authorization_origin=SealedValue(authorization_origin),
+            tenant_id=SealedValue(tenant_id),
+            tenant_label=SealedValue(tenant_label),
+        )
 
 
 class AzureCliGraphTokenProvider:
@@ -264,69 +730,76 @@ class AzureCliGraphTokenProvider:
         self._runner = runner or subprocess.run
         self._environment = environment
 
-    def _child_environment(self) -> dict[str, str]:
-        source = self._environment if self._environment is not None else os.environ
-        allowed = (
-            "SystemRoot",
-            "WINDIR",
-            "COMSPEC",
-            "PATH",
-            "USERPROFILE",
-            "APPDATA",
-            "LOCALAPPDATA",
-            "HOMEDRIVE",
-            "HOMEPATH",
-        )
-        return {
-            name: str(source[name])
-            for name in allowed
-            if source.get(name)
-        }
-
-    def acquire(self) -> SealedValue:
+    def acquire(self, tenant_id: SealedValue) -> SealedValue:
+        try:
+            exact_tenant = str(UUID(tenant_id.reveal()))
+        except (TypeError, ValueError, AttributeError):
+            raise BrokerRefusal("graph_token_tenant_unverified") from None
+        command = (*self.command_prefix, "--tenant", exact_tenant)
         try:
             result = self._runner(
-                self.command_prefix,
+                command,
                 check=False,
                 capture_output=True,
                 text=True,
                 timeout=60,
                 stdin=subprocess.DEVNULL,
-                env=self._child_environment(),
+                env=_azure_child_environment(self._environment),
             )
         except (OSError, subprocess.SubprocessError):
             raise BrokerRefusal("graph_authorization_unavailable") from None
         if getattr(result, "returncode", 1) != 0:
             raise BrokerRefusal("graph_authorization_unavailable")
         token = str(getattr(result, "stdout", "") or "").strip()
-        if len(token) < 16:
+        if len(token) < 16 or len(token) > MAX_TOKEN_LENGTH:
             raise BrokerRefusal("graph_authorization_unavailable")
-        return SealedValue(token)
+        return SealedValue(token, max_length=MAX_TOKEN_LENGTH)
 
 
 class MicrosoftGraphAdapter:
-    """Narrow Microsoft Graph user creator with no diagnostic output."""
+    """Exact-tenant Graph lifecycle with closed, non-reflective outcomes."""
 
     def __init__(
         self,
         token_provider: AzureCliGraphTokenProvider | None = None,
         opener: Callable[..., object] | None = None,
+        *,
+        clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
     ):
         self._token_provider = token_provider or AzureCliGraphTokenProvider()
-        self._opener = opener or urlopen
+        self._opener = opener or _open_without_redirect
+        self._clock = clock
+        self._operator_id: SealedValue | None = None
 
-    @staticmethod
-    def _token_tenant_id(token: SealedValue) -> str:
+    def _token_claims(self, token: SealedValue) -> Mapping[str, object]:
         try:
-            _header, encoded_payload, _signature = token.reveal().split(".")
+            header, encoded_payload, signature = token.reveal().split(".")
+            if not header or not signature:
+                raise ValueError("incomplete token")
             padding = "=" * (-len(encoded_payload) % 4)
             payload = json.loads(
                 base64.urlsafe_b64decode((encoded_payload + padding).encode("ascii"))
             )
+            if not isinstance(payload, Mapping):
+                raise ValueError("unexpected token payload")
             tenant_id = str(UUID(str(payload.get("tid") or "")))
+            operator_id = str(UUID(str(payload.get("oid") or "")))
             if payload.get("aud") not in GRAPH_AUDIENCES:
                 raise ValueError("unexpected audience")
-            return tenant_id
+            scopes = set(str(payload.get("scp") or "").split())
+            if not REQUIRED_GRAPH_SCOPES.issubset(scopes):
+                raise ValueError("missing delegated scope")
+            raw_roles = payload.get("wids")
+            if not isinstance(raw_roles, list):
+                raise ValueError("missing directory role")
+            roles = {str(UUID(str(role))) for role in raw_roles}
+            if not roles.intersection(ELIGIBLE_GRAPH_ROLE_TEMPLATE_IDS):
+                raise ValueError("ineligible directory role")
+            expires = payload.get("exp")
+            now = int(self._clock().timestamp())
+            if isinstance(expires, bool) or not isinstance(expires, int) or expires <= now + 120:
+                raise ValueError("token lifetime unavailable")
+            return {"tenant_id": tenant_id, "operator_id": operator_id}
         except (
             AttributeError,
             TypeError,
@@ -335,10 +808,49 @@ class MicrosoftGraphAdapter:
             binascii.Error,
             json.JSONDecodeError,
         ):
-            raise BrokerRefusal("graph_token_tenant_unverified") from None
+            raise BrokerRefusal("graph_delegated_authority_unverified") from None
 
-    def _verified_organization(self, token: SealedValue) -> Mapping[str, object]:
+    def _token_tenant_id(self, token: SealedValue) -> str:
+        return str(self._token_claims(token)["tenant_id"])
+
+    @staticmethod
+    def _response_status(response: object) -> int:
+        value = getattr(response, "status", None)
+        if value is None and hasattr(response, "getcode"):
+            value = response.getcode()
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueError("missing status")
+        return value
+
+    @staticmethod
+    def _read_json_response(
+        response: object,
+        *,
+        expected_url: str,
+        expected_status: int,
+    ) -> Mapping[str, object]:
+        if (
+            MicrosoftGraphAdapter._response_status(response) != expected_status
+            or str(response.geturl()) != expected_url
+        ):
+            raise ValueError("unexpected response")
+        raw = response.read(65537)
+        if not isinstance(raw, bytes) or len(raw) > 65536:
+            raise ValueError("unexpected response")
+        payload = json.loads(raw.decode("utf-8"))
+        if not isinstance(payload, Mapping):
+            raise ValueError("unexpected response")
+        return payload
+
+    def _verified_organization(
+        self,
+        token: SealedValue,
+        *,
+        authority: AuthorityBinding,
+    ) -> Mapping[str, object]:
         tenant_id = self._token_tenant_id(token)
+        if tenant_id != authority.tenant_id.reveal():
+            raise BrokerRefusal("graph_tenant_issuer_mismatch")
         request = Request(
             ALLOWED_GRAPH_ORGANIZATION_ENDPOINT,
             headers={
@@ -349,8 +861,21 @@ class MicrosoftGraphAdapter:
         )
         try:
             with self._opener(request, timeout=60) as response:
-                payload = json.loads(response.read().decode("utf-8"))
-        except (HTTPError, URLError, OSError, ValueError, UnicodeDecodeError):
+                payload = self._read_json_response(
+                    response,
+                    expected_url=ALLOWED_GRAPH_ORGANIZATION_ENDPOINT,
+                    expected_status=200,
+                )
+        except HTTPError as error:
+            error.close()
+            raise BrokerRefusal("graph_tenant_verification_unavailable") from None
+        except (
+            URLError,
+            OSError,
+            ValueError,
+            UnicodeDecodeError,
+            json.JSONDecodeError,
+        ):
             raise BrokerRefusal("graph_tenant_verification_unavailable") from None
         if not isinstance(payload, Mapping):
             raise BrokerRefusal("graph_tenant_issuer_mismatch")
@@ -377,38 +902,356 @@ class MicrosoftGraphAdapter:
             raise BrokerRefusal("graph_tenant_issuer_mismatch")
         return SealedValue(candidates[0])
 
-    def resolve_graph_issuer(self) -> SealedValue:
-        """Derive the active tenant's exact initial verified issuer in memory.
+    def prepare(self, authority: AuthorityBinding) -> SealedValue:
+        """Perform the complete delegated authority preflight before mutation."""
 
-        This is deliberately a pre-mutation read.  It trusts neither an
-        ambient Azure CLI tenant name nor user-provided routing material: the
-        active Graph JWT tenant and Graph organization must agree first.
-        """
-
-        token = self._token_provider.acquire()
+        token = self._token_provider.acquire(authority.tenant_id)
         try:
-            return self._initial_verified_issuer(self._verified_organization(token))
+            if self._operator_id is not None:
+                raise BrokerRefusal("graph_delegated_authority_unverified")
+            claims = self._token_claims(token)
+            graph_issuer = self._initial_verified_issuer(
+                self._verified_organization(token, authority=authority)
+            )
+            if graph_issuer.reveal().lower() != (
+                f"{authority.tenant_label.reveal().lower()}.onmicrosoft.com"
+            ):
+                graph_issuer.clear()
+                raise BrokerRefusal("graph_tenant_issuer_mismatch")
+            self._operator_id = SealedValue(str(claims["operator_id"]))
+            return graph_issuer
         finally:
             token.clear()
 
-    def _verify_tenant_binding(self, token: SealedValue, graph_issuer: SealedValue) -> None:
-        organization = self._verified_organization(token)
-        verified_domains = organization.get("verifiedDomains")
-        if not isinstance(verified_domains, list) or not any(
-            isinstance(domain, Mapping)
-            and str(domain.get("name") or "").lower() == graph_issuer.reveal().lower()
-            for domain in verified_domains
-        ):
-            raise BrokerRefusal("graph_tenant_issuer_mismatch")
-
-    def create_customer(self, identity: SealedIdentity, *, graph_issuer: SealedValue) -> str:
-        _validate_graph_issuer(graph_issuer)
-        token = self._token_provider.acquire()
+    def _bound_token(
+        self,
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+    ) -> SealedValue:
+        token = self._token_provider.acquire(authority.tenant_id)
         try:
-            self._verify_tenant_binding(token, graph_issuer)
+            claims = self._token_claims(token)
+            if (
+                self._operator_id is None
+                or str(claims["operator_id"]) != self._operator_id.reveal()
+            ):
+                raise BrokerRefusal("graph_delegated_authority_unverified")
+            organization = self._verified_organization(token, authority=authority)
+        except Exception:
+            token.clear()
+            raise
+        verified_domains = organization.get("verifiedDomains")
+        try:
+            initial = self._initial_verified_issuer(organization)
+            matches = initial.reveal() == graph_issuer.reveal()
+            initial.clear()
+        except Exception:
+            token.clear()
+            raise
+        if not isinstance(verified_domains, list) or not matches:
+            token.clear()
+            raise BrokerRefusal("graph_tenant_issuer_mismatch")
+        return token
+
+    def prove_customer_absence(
+        self,
+        identities: Sequence[SealedIdentity],
+        *,
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+    ) -> int:
+        if (
+            len(identities) != 2
+            or tuple(identity.alias for identity in identities) != ALLOWED_ALIASES
+        ):
+            raise BrokerRefusal("exact_alias_pair_required")
+        _validate_graph_issuer(graph_issuer)
+        observed: set[str] = set()
+        proofs = 0
+        for identity in identities:
+            login = identity.login_identifier.reveal()
+            if (
+                len(login) > 64
+                or login in observed
+                or not login.lower().endswith(
+                    f"@{graph_issuer.reveal().lower()}"
+                )
+            ):
+                raise BrokerRefusal("generated_identity_invalid")
+            observed.add(login)
+            try:
+                active, deleted = self._exact_identity_matches(
+                    identity,
+                    authority=authority,
+                    graph_issuer=graph_issuer,
+                )
+                if active or deleted:
+                    raise ValueError("pre-existing exact identity")
+            except (
+                BrokerRefusal,
+                HTTPError,
+                URLError,
+                OSError,
+                ValueError,
+                AttributeError,
+                UnicodeDecodeError,
+                json.JSONDecodeError,
+            ):
+                raise BrokerRefusal("graph_customer_absence_unverified") from None
+            proofs += 2
+        return proofs
+
+    @staticmethod
+    def _odata_literal(value: str) -> str:
+        return value.replace("'", "''")
+
+    def _exact_identity_endpoints(
+        self,
+        identity: SealedIdentity,
+        graph_issuer: SealedValue,
+    ) -> tuple[str, str]:
+        login = identity.login_identifier.reveal()
+        issuer = graph_issuer.reveal()
+        if (
+            len(login) > 64
+            or not login.lower().endswith(f"@{issuer.lower()}")
+        ):
+            raise BrokerRefusal("generated_identity_invalid")
+        exact_filter = (
+            "identities/any(c:c/issuerAssignedId eq "
+            f"'{self._odata_literal(login)}' and c/issuer eq "
+            f"'{self._odata_literal(issuer)}')"
+        )
+        query = urlencode(
+            {
+                "$select": "id,identities,createdDateTime",
+                "$top": "2",
+                "$filter": exact_filter,
+            },
+            quote_via=quote,
+        )
+        return (
+            f"{ALLOWED_GRAPH_ENDPOINT}?{query}",
+            f"{ALLOWED_GRAPH_DELETED_ITEMS_ENDPOINT}/microsoft.graph.user?{query}",
+        )
+
+    def _exact_identity_matches(
+        self,
+        identity: SealedIdentity,
+        *,
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+    ) -> tuple[list[object], list[object]]:
+        results: list[list[object]] = []
+        for endpoint in self._exact_identity_endpoints(identity, graph_issuer):
+            token: SealedValue | None = None
+            try:
+                token = self._bound_token(authority, graph_issuer)
+                request = Request(
+                    endpoint,
+                    headers={
+                        "Authorization": f"Bearer {token.reveal()}",
+                        "Accept": "application/json",
+                    },
+                    method="GET",
+                )
+                with self._opener(request, timeout=60) as response:
+                    payload = self._read_json_response(
+                        response, expected_url=endpoint, expected_status=200
+                    )
+                values = payload.get("value")
+                if (
+                    not isinstance(values, list)
+                    or len(values) > 2
+                    or "@odata.nextLink" in payload
+                ):
+                    raise ValueError("unbounded exact identity lookup")
+                results.append(values)
+            except HTTPError as error:
+                error.close()
+                raise
+            finally:
+                if token is not None:
+                    token.clear()
+        return results[0], results[1]
+
+    @staticmethod
+    def _parse_graph_datetime(value: object) -> datetime:
+        if not isinstance(value, str) or not value:
+            raise ValueError("missing Graph creation time")
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            raise ValueError("unbounded Graph creation time")
+        return parsed.astimezone(timezone.utc)
+
+    def _clock_utc(self) -> datetime:
+        try:
+            observed = self._clock()
+            if (
+                not isinstance(observed, datetime)
+                or observed.tzinfo is None
+                or observed.utcoffset() is None
+            ):
+                raise ValueError("unbounded operation clock")
+            return observed.astimezone(timezone.utc)
+        except (TypeError, ValueError, AttributeError, OverflowError):
+            raise BrokerRefusal("graph_operation_clock_unavailable") from None
+
+    @staticmethod
+    def _customer_display_name(identity: SealedIdentity) -> str:
+        return f"PeerSlate synthetic QA {identity.alias}"
+
+    @staticmethod
+    def _customer_shape_endpoint(subject: str, *, deleted: bool) -> str:
+        exact_subject = str(UUID(subject))
+        base = (
+            ALLOWED_GRAPH_DELETED_ITEMS_ENDPOINT
+            if deleted
+            else ALLOWED_GRAPH_ENDPOINT
+        )
+        return f"{base}/{exact_subject}?$select={GRAPH_CUSTOMER_SHAPE_SELECT}"
+
+    def _read_exact_customer_shape(
+        self,
+        identity: SealedIdentity,
+        subject: str,
+        *,
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+        attempted_after: datetime,
+        deleted: bool,
+        token: SealedValue | None = None,
+    ) -> None:
+        try:
+            bounded_attempt = attempted_after.astimezone(timezone.utc)
+            if attempted_after.tzinfo is None or bounded_attempt.microsecond != 0:
+                raise ValueError("unbounded creation attempt")
+            endpoint = self._customer_shape_endpoint(subject, deleted=deleted)
+        except (TypeError, ValueError, AttributeError, OverflowError):
+            raise BrokerIndeterminate("graph_creation_indeterminate") from None
+        owned_token = token is None
+        exact_token = token
+        try:
+            if exact_token is None:
+                exact_token = self._bound_token(authority, graph_issuer)
+            request = Request(
+                endpoint,
+                headers={
+                    "Authorization": f"Bearer {exact_token.reveal()}",
+                    "Accept": "application/json",
+                },
+                method="GET",
+            )
+            try:
+                with self._opener(request, timeout=60) as response:
+                    payload = self._read_json_response(
+                        response, expected_url=endpoint, expected_status=200
+                    )
+            except HTTPError as error:
+                error.close()
+                raise
+            created = self._parse_graph_datetime(payload.get("createdDateTime"))
+            observed_at = self._clock_utc()
+            expected_identity = {
+                "signInType": "emailAddress",
+                "issuer": graph_issuer.reveal(),
+                "issuerAssignedId": identity.login_identifier.reveal(),
+            }
+            if (
+                str(payload.get("id") or "") != subject
+                or payload.get("accountEnabled") is not True
+                or payload.get("userType") != "Member"
+                or payload.get("creationType") != "LocalAccount"
+                or payload.get("displayName") != self._customer_display_name(identity)
+                or payload.get("mailNickname") != identity.mail_nickname.reveal()
+                or payload.get("identities") != [expected_identity]
+                or payload.get("passwordPolicies") != "DisablePasswordExpiration"
+                or created < bounded_attempt
+                or created > observed_at + timedelta(minutes=2)
+            ):
+                raise ValueError("unbound customer shape")
+        finally:
+            if owned_token and exact_token is not None:
+                exact_token.clear()
+
+    def _reconcile_attempted_creation(
+        self,
+        identity: SealedIdentity,
+        *,
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+        attempted_after: datetime,
+    ) -> str:
+        active, deleted = self._exact_identity_matches(
+            identity, authority=authority, graph_issuer=graph_issuer
+        )
+        if len(active) + len(deleted) != 1:
+            raise BrokerIndeterminate("graph_creation_indeterminate")
+        result = (active + deleted)[0]
+        if not isinstance(result, Mapping):
+            raise BrokerIndeterminate("graph_creation_indeterminate")
+        try:
+            bounded_attempt = attempted_after.astimezone(timezone.utc)
+            if attempted_after.tzinfo is None or bounded_attempt.microsecond != 0:
+                raise ValueError("unbounded creation attempt")
+            subject = str(UUID(str(result.get("id") or "")))
+            created = self._parse_graph_datetime(result.get("createdDateTime"))
+            observed_at = self._clock_utc()
+            raw_identities = result.get("identities")
+            exact_identity = any(
+                isinstance(candidate, Mapping)
+                and candidate.get("signInType") == "emailAddress"
+                and candidate.get("issuer") == graph_issuer.reveal()
+                and candidate.get("issuerAssignedId")
+                == identity.login_identifier.reveal()
+                for candidate in raw_identities or []
+            )
+            if (
+                not isinstance(raw_identities, list)
+                or not exact_identity
+                or created < bounded_attempt
+                or created > observed_at + timedelta(minutes=2)
+            ):
+                raise ValueError("unbounded Graph identity")
+            if identity.subject is not None and identity.subject.reveal() != subject:
+                raise ValueError("subject changed during reconciliation")
+            self._read_exact_customer_shape(
+                identity,
+                subject,
+                authority=authority,
+                graph_issuer=graph_issuer,
+                attempted_after=bounded_attempt,
+                deleted=bool(deleted),
+            )
+        except (TypeError, ValueError, AttributeError, OverflowError):
+            raise BrokerIndeterminate("graph_creation_indeterminate") from None
+        if identity.subject is None:
+            identity.subject = SealedValue(subject)
+        return "active_known" if active else "deleted_known"
+
+    def create_customer(
+        self,
+        identity: SealedIdentity,
+        *,
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+    ) -> GraphCreationOutcome:
+        _validate_graph_issuer(graph_issuer)
+        if (
+            identity.alias not in ALLOWED_ALIASES
+            or len(identity.login_identifier.reveal()) > 64
+            or not identity.login_identifier.reveal().lower().endswith(
+                f"@{graph_issuer.reveal().lower()}"
+            )
+        ):
+            raise BrokerRefusal("generated_identity_invalid")
+        token = self._bound_token(authority, graph_issuer)
+        try:
             body = {
                 "accountEnabled": True,
-                "displayName": f"PeerSlate synthetic QA {identity.alias}",
+                "userType": "Member",
+                "creationType": "LocalAccount",
+                "displayName": self._customer_display_name(identity),
                 "mailNickname": identity.mail_nickname.reveal(),
                 "identities": [
                     {
@@ -433,26 +1276,649 @@ class MicrosoftGraphAdapter:
                 },
                 method="POST",
             )
+            attempted_after = self._clock_utc().replace(microsecond=0)
             try:
                 with self._opener(request, timeout=60) as response:
-                    payload = json.loads(response.read().decode("utf-8"))
-            except (HTTPError, URLError, OSError, ValueError, UnicodeDecodeError):
-                raise BrokerIndeterminate("graph_creation_indeterminate") from None
-            subject = str(payload.get("id") or "")
+                    payload = self._read_json_response(
+                        response,
+                        expected_url=ALLOWED_GRAPH_ENDPOINT,
+                        expected_status=201,
+                    )
+            except HTTPError as error:
+                try:
+                    status = error.code
+                finally:
+                    error.close()
+                state = (
+                    "known_not_created"
+                    if isinstance(status, int)
+                    and not isinstance(status, bool)
+                    and 400 <= status < 500
+                    and status != 408
+                    else "ambiguous_maybe_created"
+                )
+                return GraphCreationOutcome(state, attempted_after)
+            except (
+                URLError,
+                OSError,
+                ValueError,
+                UnicodeDecodeError,
+                json.JSONDecodeError,
+            ):
+                return GraphCreationOutcome(
+                    "ambiguous_maybe_created", attempted_after
+                )
             try:
-                return str(UUID(subject))
-            except (ValueError, AttributeError, TypeError):
-                raise BrokerIndeterminate("graph_creation_indeterminate") from None
+                subject = str(UUID(str(payload.get("id") or "")))
+                self._read_exact_customer_shape(
+                    identity,
+                    subject,
+                    authority=authority,
+                    graph_issuer=graph_issuer,
+                    attempted_after=attempted_after,
+                    deleted=False,
+                    token=token,
+                )
+            except Exception:
+                return GraphCreationOutcome(
+                    "ambiguous_maybe_created", attempted_after
+                )
+            return GraphCreationOutcome(
+                "known_created", attempted_after, SealedValue(subject)
+            )
         finally:
             token.clear()
 
+    def _expect_status(
+        self,
+        *,
+        method: str,
+        endpoint: str,
+        expected_status: int,
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+    ) -> None:
+        token: SealedValue | None = None
+        try:
+            token = self._bound_token(authority, graph_issuer)
+            request = Request(
+                endpoint,
+                headers={
+                    "Authorization": f"Bearer {token.reveal()}",
+                    "Accept": "application/json",
+                },
+                method=method,
+            )
+            with self._opener(request, timeout=60) as response:
+                if (
+                    self._response_status(response) != expected_status
+                    or str(response.geturl()) != endpoint
+                    or response.read(1) != b""
+                ):
+                    raise ValueError("unexpected status")
+        except HTTPError as error:
+            error.close()
+            raise BrokerIndeterminate("graph_deletion_indeterminate") from None
+        except (URLError, OSError, ValueError, AttributeError):
+            raise BrokerIndeterminate("graph_deletion_indeterminate") from None
+        finally:
+            if token is not None:
+                token.clear()
 
-def _start_playwright():
-    try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        raise BrokerRefusal("sealed_browser_runtime_unavailable") from None
-    return sync_playwright().start()
+    def _direct_probe(
+        self,
+        endpoint: str,
+        *,
+        subject: str,
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+    ) -> str:
+        token: SealedValue | None = None
+        try:
+            token = self._bound_token(authority, graph_issuer)
+            request = Request(
+                endpoint,
+                headers={
+                    "Authorization": f"Bearer {token.reveal()}",
+                    "Accept": "application/json",
+                },
+                method="GET",
+            )
+            try:
+                with self._opener(request, timeout=60) as response:
+                    payload = self._read_json_response(
+                        response, expected_url=endpoint, expected_status=200
+                    )
+                if str(payload.get("id") or "") != subject:
+                    raise ValueError("unexpected Graph object")
+                return "present"
+            except HTTPError as error:
+                try:
+                    if error.code != 404 or str(error.geturl()) != endpoint:
+                        raise ValueError("unexpected Graph probe response")
+                    return "absent"
+                finally:
+                    error.close()
+        except (
+            BrokerRefusal,
+            URLError,
+            OSError,
+            ValueError,
+            AttributeError,
+            UnicodeDecodeError,
+            json.JSONDecodeError,
+        ):
+            raise BrokerIndeterminate("graph_deletion_indeterminate") from None
+        finally:
+            if token is not None:
+                token.clear()
+
+    @staticmethod
+    def _probe_endpoints(subject: str) -> tuple[str, str]:
+        return (
+            f"{ALLOWED_GRAPH_ENDPOINT}/{subject}?$select=id",
+            f"{ALLOWED_GRAPH_DELETED_ITEMS_ENDPOINT}/{subject}?$select=id",
+        )
+
+    def _capture_direct_state(
+        self,
+        ledger: _GraphLifecycleLedgerEntry,
+        subject: str,
+        *,
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+        final: bool = False,
+    ) -> None:
+        active_endpoint, deleted_endpoint = self._probe_endpoints(subject)
+        active_field = "final_active_probe" if final else "active_probe"
+        deleted_field = "final_deleted_probe" if final else "deleted_probe"
+        try:
+            setattr(
+                ledger,
+                active_field,
+                self._direct_probe(
+                    active_endpoint,
+                    subject=subject,
+                    authority=authority,
+                    graph_issuer=graph_issuer,
+                ),
+            )
+        except Exception:
+            setattr(ledger, active_field, "unknown")
+        try:
+            setattr(
+                ledger,
+                deleted_field,
+                self._direct_probe(
+                    deleted_endpoint,
+                    subject=subject,
+                    authority=authority,
+                    graph_issuer=graph_issuer,
+                ),
+            )
+        except Exception:
+            setattr(ledger, deleted_field, "unknown")
+
+    def contain_partial_creation(
+        self,
+        identities: Sequence[SealedIdentity],
+        *,
+        creation_states: Mapping[str, str],
+        attempted_after: Mapping[str, datetime],
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+    ) -> None:
+        """One bounded reconciliation and containment pass; never retry POST."""
+
+        allowed_states = {
+            "not_attempted",
+            "known_created",
+            "ambiguous_maybe_created",
+            "known_not_created",
+        }
+        attempted = {
+            alias
+            for alias, state in creation_states.items()
+            if state != "not_attempted"
+        }
+        if (
+            len(identities) != 2
+            or tuple(identity.alias for identity in identities) != ALLOWED_ALIASES
+            or set(creation_states) != set(ALLOWED_ALIASES)
+            or any(state not in allowed_states for state in creation_states.values())
+            or set(attempted_after) != attempted
+        ):
+            return
+        ledgers = {
+            identity.alias: _GraphLifecycleLedgerEntry(identity.alias)
+            for identity in identities
+        }
+        known: dict[str, tuple[SealedIdentity, str]] = {}
+        for identity in identities:
+            ledger = ledgers[identity.alias]
+            ledger.create = creation_states[identity.alias]
+            if ledger.create in {"not_attempted", "known_not_created"}:
+                continue
+            try:
+                ledger.create = self._reconcile_attempted_creation(
+                    identity,
+                    authority=authority,
+                    graph_issuer=graph_issuer,
+                    attempted_after=attempted_after[identity.alias],
+                )
+            except Exception:
+                continue
+            known[identity.alias] = (identity, ledger.create)
+
+        for alias, (identity, create_state) in known.items():
+            ledger = ledgers[alias]
+            if identity.subject is None:
+                continue
+            try:
+                subject = str(UUID(identity.subject.reveal()))
+            except (TypeError, ValueError, AttributeError):
+                continue
+            if create_state == "active_known":
+                ledger.soft = "attempted_unknown"
+                try:
+                    self._expect_status(
+                        method="DELETE",
+                        endpoint=f"{ALLOWED_GRAPH_ENDPOINT}/{subject}",
+                        expected_status=204,
+                        authority=authority,
+                        graph_issuer=graph_issuer,
+                    )
+                    ledger.soft = "exact_204"
+                except Exception:
+                    pass
+                self._capture_direct_state(
+                    ledger,
+                    subject,
+                    authority=authority,
+                    graph_issuer=graph_issuer,
+                )
+                # Partial creation occurs before browser journeys and the
+                # exact-two SQL retirement gate. Soft deletion is the
+                # recoverable containment boundary; irreversible purge is
+                # forbidden here even for an exactly reconciled subject.
+            elif create_state == "deleted_known":
+                ledger.active_probe = "absent"
+                ledger.deleted_probe = "present"
+
+    def delete_exact_pair(
+        self,
+        subjects: Sequence[SealedValue],
+        *,
+        authority: AuthorityBinding,
+        graph_issuer: SealedValue,
+    ) -> GraphDeletionOutcome:
+        if len(subjects) != 2:
+            raise BrokerRefusal("exact_subject_pair_required")
+        try:
+            exact = tuple(str(UUID(subject.reveal())) for subject in subjects)
+        except (TypeError, ValueError, AttributeError):
+            raise BrokerRefusal("exact_subject_pair_required") from None
+        if len(set(exact)) != 2:
+            raise BrokerRefusal("exact_subject_pair_required")
+        ledgers = [
+            _GraphLifecycleLedgerEntry(alias)
+            for alias in ALLOWED_ALIASES
+        ]
+        for ledger, subject in zip(ledgers, exact, strict=True):
+            ledger.soft = "attempted_unknown"
+            try:
+                self._expect_status(
+                    method="DELETE",
+                    endpoint=f"{ALLOWED_GRAPH_ENDPOINT}/{subject}",
+                    expected_status=204,
+                    authority=authority,
+                    graph_issuer=graph_issuer,
+                )
+                ledger.soft = "exact_204"
+            except Exception:
+                pass
+        for ledger, subject in zip(ledgers, exact, strict=True):
+            self._capture_direct_state(
+                ledger,
+                subject,
+                authority=authority,
+                graph_issuer=graph_issuer,
+            )
+        if not all(
+            ledger.soft == "exact_204"
+            and ledger.active_probe == "absent"
+            and ledger.deleted_probe == "present"
+            for ledger in ledgers
+        ):
+            raise BrokerIndeterminate("graph_deletion_indeterminate")
+
+        for ledger, subject in zip(ledgers, exact, strict=True):
+            ledger.purge = "attempted_unknown"
+            try:
+                self._expect_status(
+                    method="DELETE",
+                    endpoint=f"{ALLOWED_GRAPH_DELETED_ITEMS_ENDPOINT}/{subject}",
+                    expected_status=204,
+                    authority=authority,
+                    graph_issuer=graph_issuer,
+                )
+                ledger.purge = "exact_204"
+            except Exception:
+                pass
+        for ledger, subject in zip(ledgers, exact, strict=True):
+            self._capture_direct_state(
+                ledger,
+                subject,
+                authority=authority,
+                graph_issuer=graph_issuer,
+                final=True,
+            )
+        if not all(
+            ledger.purge == "exact_204"
+            and ledger.final_active_probe == "absent"
+            and ledger.final_deleted_probe == "absent"
+            for ledger in ledgers
+        ):
+            raise BrokerIndeterminate("graph_deletion_indeterminate")
+        return GraphDeletionOutcome(
+            soft_deleted=2,
+            soft_state_proofs=4,
+            permanently_deleted=2,
+            final_absence_proofs=4,
+        )
+
+    def clear(self) -> None:
+        if self._operator_id is not None:
+            self._operator_id.clear()
+            self._operator_id = None
+
+
+class PlaywrightRuntimeProvider(Protocol):
+    expected_browser_version: str
+
+    def start(self, workspace: Path, environment: Mapping[str, str]) -> object:
+        """Provision, validate, and start the exact locked runtime."""
+
+    def release(self) -> None:
+        """Release worker-local import routing before root removal."""
+
+
+class PinnedPlaywrightRuntime:
+    """Provision the reviewed Playwright closure into one disposable operation root."""
+
+    requirements_path = PLAYWRIGHT_LOCK_PATH.with_name("playwright-requirements.lock")
+
+    def __init__(
+        self,
+        runner: Callable[..., object] | None = None,
+        *,
+        lock_path: Path = PLAYWRIGHT_LOCK_PATH,
+    ):
+        self._runner = runner or subprocess.run
+        self._lock_path = lock_path
+        self._site_packages: Path | None = None
+        self._runtime_module_names: set[str] = set()
+        self.expected_browser_version = ""
+
+    def _lock(self) -> Mapping[str, object]:
+        try:
+            lock_path = self._lock_path.resolve(strict=True)
+            requirements_path = self.requirements_path.resolve(strict=True)
+            if (
+                not lock_path.is_file()
+                or not requirements_path.is_file()
+                or lock_path.parent != Path(__file__).resolve().parent
+                or requirements_path.parent != lock_path.parent
+            ):
+                raise ValueError("unapproved lock path")
+            payload = json.loads(lock_path.read_text(encoding="utf-8"))
+            requirement_bytes = requirements_path.read_bytes()
+        except (OSError, ValueError, UnicodeDecodeError, json.JSONDecodeError):
+            raise BrokerRefusal("sealed_browser_lock_invalid") from None
+        if not isinstance(payload, Mapping) or payload.get("schema_version") != 1:
+            raise BrokerRefusal("sealed_browser_lock_invalid")
+        target = payload.get("target")
+        requirements = payload.get("requirements")
+        chromium = payload.get("chromium")
+        if (
+            not isinstance(target, Mapping)
+            or target
+            != {"system": "Darwin", "machine": "arm64", "python": "3.14"}
+            or platform.system() != target["system"]
+            or platform.machine() != target["machine"]
+            or f"{sys.version_info.major}.{sys.version_info.minor}" != target["python"]
+            or not isinstance(requirements, Mapping)
+            or requirements.get("path") != requirements_path.name
+            or requirements.get("sha256")
+            != hashlib.sha256(requirement_bytes).hexdigest()
+            or requirements.get("packages")
+            != {
+                "greenlet": "3.5.5",
+                "playwright": "1.62.0",
+                "pyee": "13.0.1",
+                "typing-extensions": "4.16.0",
+            }
+            or not isinstance(chromium, Mapping)
+            or chromium
+            != {
+                "name": "chromium",
+                "revision": "1234",
+                "browser_version": "151.0.7922.34",
+                "title": "Chrome for Testing",
+                "install_args": ["chromium", "--no-shell"],
+            }
+        ):
+            raise BrokerRefusal("sealed_browser_lock_invalid")
+        self.expected_browser_version = str(chromium["browser_version"])
+        return payload
+
+    def _run(self, command: Sequence[str], *, environment: Mapping[str, str], timeout: int) -> None:
+        try:
+            result = self._runner(
+                tuple(command),
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                stdin=subprocess.DEVNULL,
+                env=dict(environment),
+            )
+        except (OSError, subprocess.SubprocessError):
+            raise BrokerRefusal("sealed_browser_runtime_unavailable") from None
+        if getattr(result, "returncode", 1) != 0:
+            raise BrokerRefusal("sealed_browser_runtime_unavailable")
+
+    @staticmethod
+    def _runtime_environment(
+        workspace: Path, source: Mapping[str, str], browsers: Path
+    ) -> dict[str, str]:
+        environment = {
+            "HOME": str(workspace),
+            "USERPROFILE": str(workspace),
+            "APPDATA": str(workspace),
+            "LOCALAPPDATA": str(workspace),
+            "TEMP": str(workspace),
+            "TMP": str(workspace),
+            "TMPDIR": str(workspace),
+            "PLAYWRIGHT_BROWSERS_PATH": str(browsers),
+            "PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT": "120000",
+            "PIP_CONFIG_FILE": os.devnull,
+            "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+            "PIP_NO_INPUT": "1",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONNOUSERSITE": "1",
+        }
+        for name in (
+            "SystemRoot",
+            "WINDIR",
+            "COMSPEC",
+            "PATH",
+            "SSL_CERT_FILE",
+            "SSL_CERT_DIR",
+        ):
+            if source.get(name):
+                environment[name] = str(source[name])
+        return environment
+
+    @staticmethod
+    def _distribution_versions(site_packages: Path) -> Mapping[str, str]:
+        versions: dict[str, str] = {}
+        for distribution in importlib.metadata.distributions(path=[str(site_packages)]):
+            name = (
+                str(distribution.metadata.get("Name") or "")
+                .lower()
+                .replace("_", "-")
+                .replace(".", "-")
+            )
+            if name:
+                versions[name] = distribution.version
+        return versions
+
+    def _capture_runtime_modules(self, site_packages: Path) -> None:
+        for name, module in tuple(sys.modules.items()):
+            module_file = getattr(module, "__file__", None)
+            if not module_file:
+                continue
+            try:
+                Path(module_file).resolve().relative_to(site_packages.resolve())
+            except (OSError, ValueError):
+                continue
+            self._runtime_module_names.add(name)
+
+    def _load_started_playwright(
+        self,
+        site_packages: Path,
+        browsers: Path,
+        runtime_environment: Mapping[str, str],
+    ) -> object:
+        if any(
+            name == "playwright" or name.startswith("playwright.")
+            for name in sys.modules
+        ):
+            raise BrokerRefusal("sealed_browser_runtime_contaminated")
+        sys.path.insert(0, str(site_packages))
+        self._site_packages = site_packages
+        playwright = None
+        try:
+            with _isolated_child_environment(runtime_environment):
+                sync_api = importlib.import_module("playwright.sync_api")
+                playwright = sync_api.sync_playwright().start()
+            executable = Path(playwright.chromium.executable_path).resolve(strict=True)
+            executable.relative_to(browsers.resolve(strict=True))
+            self._capture_runtime_modules(site_packages)
+            return playwright
+        except Exception:
+            cleanup_failed = False
+            if playwright is not None:
+                try:
+                    playwright.stop()
+                except Exception:
+                    cleanup_failed = True
+            try:
+                self._capture_runtime_modules(site_packages)
+            except Exception:
+                cleanup_failed = True
+            try:
+                self.release()
+            except Exception:
+                cleanup_failed = True
+            if cleanup_failed:
+                raise BrokerIndeterminate(
+                    "sealed_browser_cleanup_indeterminate"
+                ) from None
+            raise BrokerRefusal("sealed_browser_runtime_unavailable") from None
+
+    def start(self, workspace: Path, environment: Mapping[str, str]) -> object:
+        lock = self._lock()
+        runtime_root = workspace / "runtime"
+        venv_root = runtime_root / "venv"
+        browsers = runtime_root / "browsers"
+        try:
+            runtime_root.mkdir(mode=0o700)
+            browsers.mkdir(mode=0o700)
+        except OSError:
+            raise BrokerRefusal("sealed_browser_runtime_unavailable") from None
+        runtime_environment = self._runtime_environment(workspace, environment, browsers)
+        self._run(
+            (sys.executable, "-I", "-m", "venv", "--copies", str(venv_root)),
+            environment=runtime_environment,
+            timeout=120,
+        )
+        venv_python = venv_root / "bin" / "python"
+        site_packages = venv_root / "lib" / "python3.14" / "site-packages"
+        self._run(
+            (
+                str(venv_python),
+                "-I",
+                "-m",
+                "pip",
+                "install",
+                "--isolated",
+                "--no-input",
+                "--disable-pip-version-check",
+                "--no-cache-dir",
+                "--only-binary=:all:",
+                "--require-hashes",
+                "-r",
+                str(self.requirements_path),
+            ),
+            environment=runtime_environment,
+            timeout=300,
+        )
+        expected_packages = lock["requirements"]["packages"]
+        installed_packages = self._distribution_versions(site_packages)
+        runtime_packages = {
+            name: installed_packages.get(name) for name in expected_packages
+        }
+        unexpected = set(installed_packages).difference(
+            set(expected_packages), {"pip", "setuptools", "wheel"}
+        )
+        if runtime_packages != expected_packages or unexpected:
+            raise BrokerRefusal("sealed_browser_lock_invalid")
+        browsers_json = site_packages / "playwright" / "driver" / "package" / "browsers.json"
+        try:
+            browser_payload = json.loads(browsers_json.read_text(encoding="utf-8"))
+            entries = [
+                entry
+                for entry in browser_payload.get("browsers", [])
+                if isinstance(entry, Mapping) and entry.get("name") == "chromium"
+            ]
+        except (OSError, ValueError, UnicodeDecodeError, json.JSONDecodeError):
+            raise BrokerRefusal("sealed_browser_lock_invalid") from None
+        chromium = lock["chromium"]
+        if (
+            len(entries) != 1
+            or entries[0].get("revision") != chromium["revision"]
+            or entries[0].get("browserVersion") != chromium["browser_version"]
+            or entries[0].get("title") != chromium["title"]
+        ):
+            raise BrokerRefusal("sealed_browser_lock_invalid")
+        self._run(
+            (
+                str(venv_python),
+                "-I",
+                "-m",
+                "playwright",
+                *chromium["install_args"],
+            ),
+            environment=runtime_environment,
+            timeout=900,
+        )
+        return self._load_started_playwright(
+            site_packages, browsers, runtime_environment
+        )
+
+    def release(self) -> None:
+        if self._site_packages is None:
+            return
+        try:
+            sys.path.remove(str(self._site_packages))
+        except ValueError:
+            pass
+        for name in sorted(self._runtime_module_names, reverse=True):
+            sys.modules.pop(name, None)
+        self._runtime_module_names.clear()
+        self._site_packages = None
 
 
 @contextmanager
@@ -484,18 +1950,20 @@ class PlaywrightBrowserAdapter:
         *,
         environment: Mapping[str, str] | None = None,
         workspace_root: str | Path | None = None,
-        playwright_factory: Callable[[], object] | None = None,
+        runtime_provider_factory: Callable[[], PlaywrightRuntimeProvider] | None = None,
     ):
         self._environment = environment
         self._workspace_root = (
             Path(workspace_root) if workspace_root is not None else Path(tempfile.gettempdir())
         )
-        self._playwright_factory = playwright_factory or _start_playwright
+        self._runtime_provider_factory = runtime_provider_factory or PinnedPlaywrightRuntime
 
     def _source_environment(self) -> Mapping[str, str]:
         return self._environment if self._environment is not None else os.environ
 
-    def _browser_environment(self, workspace: Path) -> dict[str, str]:
+    def _browser_environment(
+        self, workspace: Path, *, browsers: Path | None = None
+    ) -> dict[str, str]:
         source = self._source_environment()
         child_environment = {
             "HOME": str(workspace),
@@ -509,6 +1977,8 @@ class PlaywrightBrowserAdapter:
         for name in ("SystemRoot", "WINDIR", "COMSPEC"):
             if source.get(name):
                 child_environment[name] = str(source[name])
+        if browsers is not None:
+            child_environment["PLAYWRIGHT_BROWSERS_PATH"] = str(browsers)
         return child_environment
 
     def preflight(self) -> None:
@@ -517,59 +1987,13 @@ class PlaywrightBrowserAdapter:
             raise BrokerRefusal("sealed_browser_environment_refused")
         try:
             workspace_root = self._workspace_root.resolve(strict=True)
-            has_residue = any(workspace_root.glob(f"{BROWSER_TEMP_PREFIX}*"))
+            has_residue = any(workspace_root.glob(f"{BROWSER_TEMP_PREFIX}*")) or any(
+                workspace_root.glob(f"{BROWSER_PROBE_PREFIX}*")
+            )
         except OSError:
             raise BrokerRefusal("sealed_browser_workspace_unavailable") from None
         if not workspace_root.is_dir() or has_residue:
             raise BrokerRefusal("sealed_browser_workspace_residue")
-
-    @staticmethod
-    def _auth_issuer_from_page(page) -> SealedValue:
-        try:
-            parsed = urlparse(str(page.url))
-            host = (parsed.hostname or "").lower()
-            allowed_host = any(host.endswith(suffix) for suffix in ALLOWED_AUTH_HOST_SUFFIXES)
-            if (
-                parsed.scheme != "https"
-                or not host
-                or not allowed_host
-                or parsed.port is not None
-                or parsed.username
-                or parsed.password
-            ):
-                raise ValueError("unapproved auth origin")
-            return SealedValue(f"https://{parsed.netloc}")
-        except (TypeError, ValueError):
-            raise BrokerRefusal("approved_auth_issuer_unavailable") from None
-
-    @staticmethod
-    def _auth_tenant_label(auth_issuer: SealedValue) -> str:
-        host = (urlparse(auth_issuer.reveal()).hostname or "").lower()
-        for suffix in ALLOWED_AUTH_HOST_SUFFIXES:
-            if host.endswith(suffix):
-                label = host[: -len(suffix)]
-                if SAFE_TENANT_LABEL.fullmatch(label):
-                    return label
-        raise BrokerRefusal("auth_graph_tenant_mismatch")
-
-    @classmethod
-    def verify_auth_graph_tenant_binding(
-        cls, auth_issuer: SealedValue, graph_issuer: SealedValue
-    ) -> None:
-        """Refuse unless the browser authority and Graph initial domain name one tenant.
-
-        External ID's public authority is ``<tenant>.ciamlogin.com`` (or the
-        equivalent b2clogin host) while the Graph organization reports the
-        authoritative initial ``<tenant>.onmicrosoft.com`` domain.  The
-        normalized tenant labels must match before either customer POST.
-        """
-
-        _validate_graph_issuer(graph_issuer)
-        graph_label = graph_issuer.reveal().lower().removesuffix(".onmicrosoft.com")
-        if not SAFE_TENANT_LABEL.fullmatch(graph_label) or cls._auth_tenant_label(
-            auth_issuer
-        ) != graph_label:
-            raise BrokerRefusal("auth_graph_tenant_mismatch")
 
     @staticmethod
     def _assert_site_page(page) -> None:
@@ -590,6 +2014,7 @@ class PlaywrightBrowserAdapter:
         contexts: Sequence[object],
         browser: object | None,
         playwright: object | None,
+        runtime_provider: PlaywrightRuntimeProvider | None,
         workspace: Path | None,
         *,
         expected_contexts: int,
@@ -612,6 +2037,11 @@ class PlaywrightBrowserAdapter:
                 playwright.stop()
             except Exception:
                 cleanup_failed = True
+        if runtime_provider is not None:
+            try:
+                runtime_provider.release()
+            except Exception:
+                cleanup_failed = True
         root_removed = workspace is None
         if workspace is not None:
             try:
@@ -625,36 +2055,223 @@ class PlaywrightBrowserAdapter:
             raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
         return BrowserCleanup(destroyed_contexts=destroyed, temporary_root_removed=root_removed)
 
-    def prepare_attended_session(self) -> AttendedBrowserSession:
+    @staticmethod
+    def _close_probe(
+        page: object | None,
+        context: object | None,
+        browser: object | None,
+        root: Path | None,
+    ) -> None:
+        cleanup_failed = False
+        for resource in (page, context, browser):
+            if resource is not None:
+                try:
+                    resource.close()
+                except Exception:
+                    cleanup_failed = True
+        if root is not None:
+            try:
+                shutil.rmtree(root)
+                if root.exists():
+                    cleanup_failed = True
+            except OSError:
+                cleanup_failed = True
+        if cleanup_failed:
+            raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
+
+    @classmethod
+    def _cleanup_partial_session(
+        cls,
+        *,
+        probe_page: object | None,
+        probe_context: object | None,
+        probe_browser: object | None,
+        probe_root: Path | None,
+        contexts: Sequence[object],
+        browser: object | None,
+        playwright: object | None,
+        runtime_provider: PlaywrightRuntimeProvider | None,
+        workspace: Path | None,
+    ) -> None:
+        cleanup_failed = False
+        try:
+            cls._close_probe(probe_page, probe_context, probe_browser, probe_root)
+        except BrokerIndeterminate:
+            cleanup_failed = True
+        try:
+            cls._close_resources(
+                contexts,
+                browser,
+                playwright,
+                runtime_provider,
+                workspace,
+                expected_contexts=len(contexts),
+            )
+        except BrokerIndeterminate:
+            cleanup_failed = True
+        if cleanup_failed:
+            raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
+
+    @staticmethod
+    def _assert_expected_identity_origin(page, authorization_origin: SealedValue) -> None:
+        try:
+            parsed = urlparse(str(page.url))
+            actual = f"{parsed.scheme}://{parsed.hostname.lower()}"
+            if (
+                parsed.scheme != "https"
+                or parsed.port is not None
+                or parsed.username
+                or parsed.password
+                or actual != authorization_origin.reveal()
+            ):
+                raise ValueError("unexpected identity origin")
+        except (TypeError, ValueError, AttributeError):
+            raise BrokerRefusal("unexpected_identity_host") from None
+
+    @staticmethod
+    def _fill_password_at_expected_identity_origin(
+        page, identity: SealedIdentity, authorization_origin: SealedValue
+    ) -> None:
+        """Bind one element handle, then origin-check and write in one task."""
+
+        password_handle = None
+        try:
+            password_handle = page.locator(
+                "input[type='password']"
+            ).element_handle()
+            if password_handle is None:
+                raise ValueError("credential target unavailable")
+            # Locator waiting and navigation happen before any secret crosses
+            # this boundary. A handle is document-bound, so later navigation
+            # detaches it instead of resolving the secret against a new page.
+            PlaywrightBrowserAdapter._assert_expected_identity_origin(
+                page, authorization_origin
+            )
+            password_handle.evaluate(
+                """
+                (element, payload) => {
+                    if (
+                        window.location.origin !== payload.expectedOrigin ||
+                        !(element instanceof window.HTMLInputElement) ||
+                        element.type !== "password" ||
+                        !element.isConnected ||
+                        element.ownerDocument.defaultView !== window
+                    ) {
+                        throw new Error("credential target refused");
+                    }
+                    const descriptor = Object.getOwnPropertyDescriptor(
+                        window.HTMLInputElement.prototype,
+                        "value"
+                    );
+                    if (!descriptor || typeof descriptor.set !== "function") {
+                        throw new Error("credential target refused");
+                    }
+                    descriptor.set.call(element, payload.secret);
+                    element.dispatchEvent(
+                        new window.Event("input", { bubbles: true })
+                    );
+                    element.dispatchEvent(
+                        new window.Event("change", { bubbles: true })
+                    );
+                }
+                """,
+                {
+                    "expectedOrigin": authorization_origin.reveal(),
+                    "secret": identity.password.reveal(),
+                },
+            )
+        except Exception:
+            raise BrokerRefusal("unexpected_identity_host") from None
+        finally:
+            if password_handle is not None:
+                try:
+                    password_handle.dispose()
+                except Exception:
+                    raise BrokerIndeterminate(
+                        "sealed_browser_cleanup_indeterminate"
+                    ) from None
+        PlaywrightBrowserAdapter._assert_expected_identity_origin(
+            page, authorization_origin
+        )
+
+    def prepare_attended_session(
+        self, authority: AuthorityBinding
+    ) -> AttendedBrowserSession:
         self.preflight()
         workspace: Path | None = None
+        probe_root: Path | None = None
+        probe_browser = None
+        probe_context = None
+        probe_page = None
         browser = None
         playwright = None
+        runtime_provider: PlaywrightRuntimeProvider | None = None
         contexts: dict[str, object] = {}
         try:
             workspace = Path(tempfile.mkdtemp(prefix=BROWSER_TEMP_PREFIX, dir=str(self._workspace_root)))
-            child_environment = self._browser_environment(workspace)
+            runtime_provider = self._runtime_provider_factory()
+            playwright = runtime_provider.start(workspace, self._source_environment())
+            browser_root = workspace / "runtime" / "browsers"
+            probe_root = Path(
+                tempfile.mkdtemp(prefix=BROWSER_PROBE_PREFIX, dir=str(self._workspace_root))
+            )
+            probe_environment = self._browser_environment(
+                probe_root, browsers=browser_root
+            )
+            with _isolated_child_environment(probe_environment):
+                probe_browser = playwright.chromium.launch(
+                    headless=False,
+                    downloads_path=str(probe_root),
+                    env=probe_environment,
+                )
+            if probe_browser.version != runtime_provider.expected_browser_version:
+                raise BrokerRefusal("sealed_browser_lock_invalid")
+            probe_context = probe_browser.new_context(accept_downloads=False)
+            probe_page = probe_context.new_page()
+            probe_page.goto("about:blank", wait_until="domcontentloaded")
+            self._close_probe(probe_page, probe_context, probe_browser, probe_root)
+            probe_page = probe_context = probe_browser = None
+            probe_root = None
+
+            child_environment = self._browser_environment(
+                workspace, browsers=browser_root
+            )
             with _isolated_child_environment(child_environment):
-                playwright = self._playwright_factory()
                 browser = playwright.chromium.launch(
                     headless=False,
                     downloads_path=str(workspace),
                     env=child_environment,
                 )
+            if browser.version != runtime_provider.expected_browser_version:
+                raise BrokerRefusal("sealed_browser_lock_invalid")
             for name in ("member_a", "member_b", "signed_out", "switch"):
                 contexts[name] = browser.new_context(accept_downloads=False)
             signed_out_page = contexts["signed_out"].new_page()
             self._assert_signed_out_private_baseline(signed_out_page)
             signed_out_page.goto(ALLOWED_SIGN_IN_ENDPOINT, wait_until="domcontentloaded")
-            auth_issuer = self._auth_issuer_from_page(signed_out_page)
+            self._assert_expected_identity_origin(
+                signed_out_page, authority.authorization_origin
+            )
+            if signed_out_page.locator("input[type='email']").count() != 1:
+                raise BrokerRefusal("unexpected_identity_host")
             return _PlaywrightAttendedSession(
                 adapter=self,
                 contexts=contexts,
                 browser=browser,
                 playwright=playwright,
+                runtime_provider=runtime_provider,
                 workspace=workspace,
-                auth_issuer=auth_issuer,
+                authorization_origin=SealedValue(
+                    authority.authorization_origin.reveal()
+                ),
                 signed_out_page=signed_out_page,
+                preflight=BrowserPreflight(
+                    locked_runtime=True,
+                    probe_launch_closed=True,
+                    probe_root_removed=True,
+                    prepared_contexts=4,
+                    signed_out_private_baseline=True,
+                ),
                 preflight_outcomes={
                     "clean_client_a_start": _pass_observation("clean_client_a_start"),
                     "clean_client_b_start": _pass_observation("clean_client_b_start"),
@@ -667,27 +2284,46 @@ class PlaywrightBrowserAdapter:
                 },
             )
         except BrokerIndeterminate:
+            self._cleanup_partial_session(
+                probe_page=probe_page,
+                probe_context=probe_context,
+                probe_browser=probe_browser,
+                probe_root=probe_root,
+                contexts=tuple(contexts.values()),
+                browser=browser,
+                playwright=playwright,
+                runtime_provider=runtime_provider,
+                workspace=workspace,
+            )
             raise
         except BrokerRefusal:
             try:
-                self._close_resources(
-                    tuple(contexts.values()),
-                    browser,
-                    playwright,
-                    workspace,
-                    expected_contexts=len(contexts),
+                self._cleanup_partial_session(
+                    probe_page=probe_page,
+                    probe_context=probe_context,
+                    probe_browser=probe_browser,
+                    probe_root=probe_root,
+                    contexts=tuple(contexts.values()),
+                    browser=browser,
+                    playwright=playwright,
+                    runtime_provider=runtime_provider,
+                    workspace=workspace,
                 )
             except BrokerIndeterminate:
                 raise
             raise
         except Exception:
             try:
-                self._close_resources(
-                    tuple(contexts.values()),
-                    browser,
-                    playwright,
-                    workspace,
-                    expected_contexts=len(contexts),
+                self._cleanup_partial_session(
+                    probe_page=probe_page,
+                    probe_context=probe_context,
+                    probe_browser=probe_browser,
+                    probe_root=probe_root,
+                    contexts=tuple(contexts.values()),
+                    browser=browser,
+                    playwright=playwright,
+                    runtime_provider=runtime_provider,
+                    workspace=workspace,
                 )
             except BrokerIndeterminate:
                 raise
@@ -696,19 +2332,17 @@ class PlaywrightBrowserAdapter:
     def _wait_for_member_arrival(self, page) -> None:
         page.wait_for_url(re.compile(r"^https://peerslate\.com/app(?:[/?#]|$)"), timeout=60000)
 
-    @staticmethod
-    def _assert_expected_identity_host(page, auth_issuer: SealedValue) -> None:
-        expected_host = urlparse(auth_issuer.reveal()).hostname
-        actual_host = urlparse(str(page.url)).hostname
-        if not expected_host or actual_host != expected_host:
-            raise BrokerRefusal("unexpected_identity_host")
-
-    def _sign_in(self, page, identity: SealedIdentity, auth_issuer: SealedValue) -> None:
+    def _sign_in(
+        self, page, identity: SealedIdentity, authorization_origin: SealedValue
+    ) -> None:
         page.goto(ALLOWED_SIGN_IN_ENDPOINT, wait_until="domcontentloaded")
-        self._assert_expected_identity_host(page, auth_issuer)
+        self._assert_expected_identity_origin(page, authorization_origin)
         page.locator("input[type='email']").fill(identity.login_identifier.reveal())
         page.locator("input[type='submit']").click()
-        page.locator("input[type='password']").fill(identity.password.reveal())
+        self._assert_expected_identity_origin(page, authorization_origin)
+        self._fill_password_at_expected_identity_origin(
+            page, identity, authorization_origin
+        )
         page.locator("input[type='submit']").click()
         self._wait_for_member_arrival(page)
         # The configured sign-in return is the generic /app landing.  Move to
@@ -741,25 +2375,29 @@ class _PlaywrightAttendedSession:
         contexts: Mapping[str, object],
         browser: object,
         playwright: object,
+        runtime_provider: PlaywrightRuntimeProvider,
         workspace: Path,
-        auth_issuer: SealedValue,
+        authorization_origin: SealedValue,
         signed_out_page: object,
+        preflight: BrowserPreflight,
         preflight_outcomes: Mapping[str, JourneyObservation],
     ):
         self._adapter = adapter
         self._contexts = dict(contexts)
         self._browser = browser
         self._playwright = playwright
+        self._runtime_provider = runtime_provider
         self._workspace = workspace
-        self._auth_issuer = auth_issuer
+        self._authorization_origin = authorization_origin
         self._signed_out_page = signed_out_page
+        self._preflight = preflight
         self._preflight_outcomes = dict(preflight_outcomes)
         self._cleanup: BrowserCleanup | None = None
 
-    def auth_issuer(self) -> SealedValue:
+    def pre_graph_proof(self) -> BrowserPreflight:
         if self._cleanup is not None:
             raise BrokerRefusal("sealed_browser_session_closed")
-        return SealedValue(self._auth_issuer.reveal())
+        return self._preflight
 
     @staticmethod
     def _item_url(item_key: str) -> str:
@@ -835,7 +2473,7 @@ class _PlaywrightAttendedSession:
     def _create_item(self, page, *, marker: str) -> _SealedItemHandle:
         page.goto(f"{ALLOWED_SITE_ORIGIN}/app/workshop/add", wait_until="domcontentloaded")
         page.locator("#wk-title").fill(marker)
-        page.locator("#wk-wording").fill(f"{marker}-item")
+        page.locator("#wk-wording").fill(self._wordings(marker)[0])
         page.locator("input[name='classification'][value='unclassified']").check()
         page.get_by_role("button", name="Continue").click()
         page.locator("button[name='save_action'][value='confirm']").click()
@@ -846,6 +2484,14 @@ class _PlaywrightAttendedSession:
         handle = _SealedItemHandle(key=SealedValue(item_values[0]), version=SealedValue("pending"))
         self._assert_owner_item(page, handle, marker)
         return handle
+
+    @staticmethod
+    def _wordings(marker: str) -> tuple[str, str, str]:
+        return (
+            f"{marker}-source  byte & stable",
+            f"{marker}-edit-one",
+            f"{marker}-edit-two",
+        )
 
     def _post_foreign_mutation(
         self,
@@ -983,16 +2629,73 @@ class _PlaywrightAttendedSession:
             "feature_surface_unavailable",
         )
 
-    def _update_item(self, page, handle: _SealedItemHandle, marker: str) -> None:
+    def _update_item(
+        self,
+        page,
+        handle: _SealedItemHandle,
+        marker: str,
+        wording: str,
+    ) -> None:
         item_key = handle.key.reveal()
         page.goto(
             f"{ALLOWED_SITE_ORIGIN}/app/workshop/items/{quote(item_key, safe='')}/edit",
             wait_until="domcontentloaded",
         )
-        page.locator("#wk-wording").fill(f"{marker}-updated")
+        page.locator("#wk-wording").fill(wording)
         page.get_by_role("button", name="Continue").click()
         page.locator("button[name='save_action'][value='confirm']").click()
         self._assert_owner_item(page, handle, marker)
+
+    def _assert_history_and_disclosure(
+        self, page, handle: _SealedItemHandle, marker: str
+    ) -> tuple[int, int, int]:
+        self._assert_owner_item(page, handle, marker)
+        history = page.locator("details.wk-wording-history")
+        if history.count() != 1:
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+        count_text = history.locator(".wk-wording-history__count").text_content()
+        note_text = history.locator(".wk-wording-history__note").text_content()
+        versions = history.locator(".wk-wording-history__version")
+        if (
+            " ".join(str(count_text or "").split()) != "3 retained"
+            or " ".join(str(note_text or "").split()) != WORKSHOP_HISTORY_NOTE
+            or history.locator(".wk-wording-history__window").count() != 0
+            or versions.count() != 3
+        ):
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+        expected = tuple(reversed(self._wordings(marker)))
+        source = self._wordings(marker)[0].encode("utf-8")
+        source_proofs = 0
+        for index, approved in enumerate(expected):
+            row = versions.nth(index)
+            if row.get_by_text(f"Version {3 - index}", exact=True).count() != 1:
+                raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+            wording = row.locator(".wk-wording-history__wording")
+            if wording.count() != 2:
+                raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+            approved_text = wording.nth(0).text_content()
+            source_text = wording.nth(1).text_content()
+            if (
+                not isinstance(approved_text, str)
+                or not isinstance(source_text, str)
+                or approved_text.encode("utf-8") != approved.encode("utf-8")
+                or source_text.encode("utf-8") != source
+            ):
+                raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+            source_proofs += 1
+        downstream_rows = page.locator(".wk-detail__meta-row").filter(
+            has_text="Downstream use"
+        )
+        if (
+            downstream_rows.count() != 1
+            or downstream_rows.locator("dd").count() != 1
+            or " ".join(
+                str(downstream_rows.locator("dd").text_content() or "").split()
+            )
+            != "Not used elsewhere"
+        ):
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+        return 3, source_proofs, 1
 
     def _archive_and_restore_item(self, page, handle: _SealedItemHandle, marker: str) -> None:
         item_key = handle.key.reveal()
@@ -1025,16 +2728,34 @@ class _PlaywrightAttendedSession:
             f"{ALLOWED_SITE_ORIGIN}/app/workshop/items/{quote(item_key, safe='')}/delete",
             wait_until="domcontentloaded",
         )
+        if (
+            page.get_by_text("Permanent deletion", exact=True).count() != 1
+            or page.get_by_text("could not check just now", exact=False).count() != 0
+            or page.get_by_text(
+                "Your saved Opportunity Slate cites this item", exact=False
+            ).count()
+            != 0
+        ):
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
         page.locator("input[name='confirm_delete']").check()
         page.get_by_role("button", name="Delete permanently").click()
 
-    def _observe_item_residue(self, page, marker: str) -> tuple[int, int]:
-        page.goto(f"{ALLOWED_SITE_ORIGIN}/app/workshop", wait_until="domcontentloaded")
+    def _observe_item_residue(
+        self, page, handle: _SealedItemHandle, marker: str
+    ) -> tuple[int, int]:
+        page.goto(self._item_url(handle.key.reveal()), wait_until="domcontentloaded")
         self._assert_authenticated_private_workshop(page)
         active = page.get_by_text(marker, exact=True).count()
-        page.goto(f"{ALLOWED_SITE_ORIGIN}/app/workshop?status=archived", wait_until="domcontentloaded")
+        active_detail = page.locator("article.wk-detail").count()
+        page.goto(
+            self._archived_item_url(handle.key.reveal()),
+            wait_until="domcontentloaded",
+        )
         self._assert_authenticated_private_workshop(page)
         archived = page.get_by_text(marker, exact=True).count()
+        archived_detail = page.locator("article.wk-detail").count()
+        if active_detail != 0 or archived_detail != 0:
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
         return active, archived
 
     def _sign_out_safely(self, context, page) -> None:
@@ -1061,6 +2782,12 @@ class _PlaywrightAttendedSession:
         }
         outcomes = dict(self._preflight_outcomes)
         handles: dict[str, _SealedItemHandle] = {}
+        markers: dict[str, str] = {}
+        delete_attempted: set[str] = set()
+        edit_counts: dict[str, int] = {}
+        retained_version_counts: dict[str, int] = {}
+        retained_source_proof_counts: dict[str, int] = {}
+        downstream_disclosure_counts: dict[str, int] = {}
         try:
             if set(outcomes) != {
                 "clean_client_a_start",
@@ -1069,15 +2796,22 @@ class _PlaywrightAttendedSession:
                 "signed_out_private_baseline",
             }:
                 raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
-            self._adapter._sign_in(pages["member_a"], member_a, self._auth_issuer)
+            self._adapter._sign_in(
+                pages["member_a"], member_a, self._authorization_origin
+            )
             self._assert_authenticated_private_workshop(pages["member_a"])
             self._record_pass(outcomes, "member_a_first_arrival")
-            self._adapter._sign_in(pages["member_b"], member_b, self._auth_issuer)
+            self._adapter._sign_in(
+                pages["member_b"], member_b, self._authorization_origin
+            )
             self._assert_authenticated_private_workshop(pages["member_b"])
             self._record_pass(outcomes, "member_b_first_arrival")
 
             member_a_marker = member_a.mail_nickname.reveal()
             member_b_marker = member_b.mail_nickname.reveal()
+            markers.update(
+                {"member_a": member_a_marker, "member_b": member_b_marker}
+            )
             handles["member_a"] = self._create_item(pages["member_a"], marker=member_a_marker)
             handles["member_b"] = self._create_item(pages["member_b"], marker=member_b_marker)
             if handles["member_a"].key.reveal() == handles["member_b"].key.reveal():
@@ -1099,26 +2833,61 @@ class _PlaywrightAttendedSession:
                 peer="member_a", peer_handle=handles["member_a"], peer_marker=member_a_marker, outcomes=outcomes,
             )
 
-            self._adapter._sign_in(pages["switch"], member_a, self._auth_issuer)
+            self._adapter._sign_in(
+                pages["switch"], member_a, self._authorization_origin
+            )
             self._assert_authenticated_private_workshop(pages["switch"])
             self._assert_marker_present(pages["switch"], member_a_marker)
             self._adapter._sign_out(pages["switch"])
-            self._adapter._sign_in(pages["switch"], member_b, self._auth_issuer)
+            self._adapter._sign_in(
+                pages["switch"], member_b, self._authorization_origin
+            )
             self._assert_authenticated_private_workshop(pages["switch"])
             self._assert_marker_present(pages["switch"], member_b_marker)
             self._assert_marker_absent(pages["switch"], member_a_marker)
             self._record_pass(outcomes, "account_switch_member_a_to_member_b")
             self._adapter._sign_out(pages["switch"])
-            self._adapter._sign_in(pages["switch"], member_a, self._auth_issuer)
+            self._adapter._sign_in(
+                pages["switch"], member_a, self._authorization_origin
+            )
             self._assert_authenticated_private_workshop(pages["switch"])
             self._assert_marker_present(pages["switch"], member_a_marker)
             self._assert_marker_absent(pages["switch"], member_b_marker)
             self._record_pass(outcomes, "account_switch_member_b_to_member_a")
 
-            self._update_item(pages["member_a"], handles["member_a"], member_a_marker)
-            self._update_item(pages["member_b"], handles["member_b"], member_b_marker)
+            for alias, marker in (
+                ("member_a", member_a_marker),
+                ("member_b", member_b_marker),
+            ):
+                for wording in self._wordings(marker)[1:]:
+                    self._update_item(
+                        pages[alias], handles[alias], marker, wording
+                    )
+                edit_counts[alias] = 2
+                (
+                    retained_version_counts[alias],
+                    retained_source_proof_counts[alias],
+                    downstream_disclosure_counts[alias],
+                ) = self._assert_history_and_disclosure(
+                    pages[alias], handles[alias], marker
+                )
             self._archive_and_restore_item(pages["member_a"], handles["member_a"], member_a_marker)
             self._archive_and_restore_item(pages["member_b"], handles["member_b"], member_b_marker)
+            for alias, marker in (
+                ("member_a", member_a_marker),
+                ("member_b", member_b_marker),
+            ):
+                restored_proof = self._assert_history_and_disclosure(
+                    pages[alias], handles[alias], marker
+                )
+                if restored_proof != (
+                    retained_version_counts[alias],
+                    retained_source_proof_counts[alias],
+                    downstream_disclosure_counts[alias],
+                ):
+                    raise BrokerIndeterminate(
+                        "sealed_browser_operation_indeterminate"
+                    )
             self._exercise_session_continuity(self._contexts["member_a"], pages["member_a"], marker=member_a_marker)
             self._record_pass(outcomes, "member_a_refresh_owner_only")
             self._record_pass(outcomes, "member_a_second_tab_owner_only")
@@ -1128,10 +2897,16 @@ class _PlaywrightAttendedSession:
             self._record_pass(outcomes, "member_b_second_tab_owner_only")
             self._record_pass(outcomes, "member_b_public_return_owner_only")
 
+            delete_attempted.add("member_a")
             self._delete_item(pages["member_a"], handles["member_a"])
+            delete_attempted.add("member_b")
             self._delete_item(pages["member_b"], handles["member_b"])
-            active_a, archived_a = self._observe_item_residue(pages["member_a"], member_a_marker)
-            active_b, archived_b = self._observe_item_residue(pages["member_b"], member_b_marker)
+            active_a, archived_a = self._observe_item_residue(
+                pages["member_a"], handles["member_a"], member_a_marker
+            )
+            active_b, archived_b = self._observe_item_residue(
+                pages["member_b"], handles["member_b"], member_b_marker
+            )
 
             self._sign_out_safely(self._contexts["member_a"], pages["member_a"])
             self._record_pass(outcomes, "member_a_sign_out_private_absent")
@@ -1148,13 +2923,38 @@ class _PlaywrightAttendedSession:
             return BrowserOutcome(
                 journey_outcomes=outcomes,
                 created_item_counts={"member_a": 1, "member_b": 1},
+                edit_counts=edit_counts,
+                retained_version_counts=retained_version_counts,
+                retained_source_proof_counts=retained_source_proof_counts,
+                downstream_disclosure_counts=downstream_disclosure_counts,
                 active_residue_counts={"member_a": active_a, "member_b": active_b},
                 archived_residue_counts={"member_a": archived_a, "member_b": archived_b},
                 clean_start_confirmed=True,
             )
-        except (BrokerRefusal, BrokerIndeterminate):
-            raise
-        except Exception:
+        except Exception as error:
+            # Once an exact item handle exists, attempt its permanent removal
+            # at most once even if a later history, disclosure, peer, or
+            # session proof fails.  Process both aliases independently; never
+            # let one cleanup error strand the other item or trigger a retry.
+            for alias in ALLOWED_ALIASES:
+                if alias not in handles or alias in delete_attempted:
+                    continue
+                delete_attempted.add(alias)
+                try:
+                    self._delete_item(pages[alias], handles[alias])
+                except Exception:
+                    pass
+            for alias in ALLOWED_ALIASES:
+                if alias not in handles or alias not in markers:
+                    continue
+                try:
+                    self._observe_item_residue(
+                        pages[alias], handles[alias], markers[alias]
+                    )
+                except Exception:
+                    pass
+            if isinstance(error, (BrokerRefusal, BrokerIndeterminate)):
+                raise error
             raise BrokerIndeterminate("sealed_browser_operation_indeterminate") from None
         finally:
             for handle in handles.values():
@@ -1167,13 +2967,15 @@ class _PlaywrightAttendedSession:
             tuple(self._contexts.values()),
             self._browser,
             self._playwright,
+            self._runtime_provider,
             self._workspace,
             expected_contexts=4,
         )
         self._contexts.clear()
         self._browser = None
         self._playwright = None
-        self._auth_issuer.clear()
+        self._runtime_provider = None
+        self._authorization_origin.clear()
         self._cleanup = cleanup
         return cleanup
 
@@ -1188,7 +2990,7 @@ class DirectRetirementAdapter:
         self,
         subjects: Sequence[SealedValue],
         *,
-        auth_issuer: SealedValue,
+        oidc_issuer: SealedValue,
         cutoff: datetime,
     ) -> Mapping[str, object]:
         if len(subjects) != 2:
@@ -1204,7 +3006,7 @@ class DirectRetirementAdapter:
                 retirement.SqlRetirementStore(connection),
                 mode="retire",
                 subjects=[subject.reveal() for subject in subjects],
-                issuer=auth_issuer.reveal(),
+                issuer=oidc_issuer.reveal(),
                 cutoff=cutoff,
             )
             if core_report.get("result") != "pass" or core_report.get("state") != "retired":
@@ -1259,7 +3061,7 @@ def _require_confirmations(args: argparse.Namespace) -> None:
         args.execute
         and args.confirm_exact_two_synthetic_members
         and args.confirm_no_production_proof
-        and args.confirm_retirement_handoff
+        and args.confirm_permanent_exact_two_deletion
     ):
         raise BrokerRefusal("sealed_broker_confirmations_required")
 
@@ -1290,19 +3092,27 @@ def _generate_identities(
     # Login local parts and Graph mail nicknames have bounded provider limits.
     # This deterministic run-scoped fingerprint never leaves worker memory and
     # keeps both identifiers well below those limits even for a maximum run ID.
-    run_fingerprint = hashlib.sha256(run_id.encode("ascii")).hexdigest()[:24]
+    run_fingerprint = hashlib.sha256(run_id.encode("ascii")).hexdigest()[:16]
     generated = []
     for alias in ALLOWED_ALIASES:
         local_part = f"psqa-{run_fingerprint}-{alias}"
-        # Keep the outward-facing alias stable while using a conservative
-        # mail-nickname character set for the provider-side ordinary customer.
-        mail_nickname = local_part.replace("_", "-")
+        # The cryptographically random, Graph-valid marker makes an ambiguous
+        # exact-identity reconciliation attributable to this POST attempt rather
+        # than merely to the public run id. It is never emitted or retained.
+        creation_marker = "".join(
+            choice("abcdefghijkmnopqrstuvwxyz23456789") for _ in range(12)
+        )
+        mail_nickname = f"{local_part.replace('_', '-')}-{creation_marker}"
+        login_identifier = f"{local_part}@{graph_issuer.reveal().lower()}"
+        if (
+            len(login_identifier) > 64
+            or not SAFE_GRAPH_MAIL_NICKNAME.fullmatch(mail_nickname)
+        ):
+            raise BrokerRefusal("generated_identity_invalid")
         generated.append(
             SealedIdentity(
                 alias=alias,
-                login_identifier=SealedValue(
-                    f"{local_part}@{graph_issuer.reveal().lower()}"
-                ),
+                login_identifier=SealedValue(login_identifier),
                 password=_generate_password(choice),
                 mail_nickname=SealedValue(mail_nickname),
             )
@@ -1337,6 +3147,10 @@ def _validate_browser_outcome(outcome: BrowserOutcome, cleanup: BrowserCleanup) 
         raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
     if (
         outcome.created_item_counts != {"member_a": 1, "member_b": 1}
+        or outcome.edit_counts != {"member_a": 2, "member_b": 2}
+        or outcome.retained_version_counts != {"member_a": 3, "member_b": 3}
+        or outcome.retained_source_proof_counts != {"member_a": 3, "member_b": 3}
+        or outcome.downstream_disclosure_counts != {"member_a": 1, "member_b": 1}
         or outcome.active_residue_counts != {"member_a": 0, "member_b": 0}
         or outcome.archived_residue_counts != {"member_a": 0, "member_b": 0}
         or not outcome.clean_start_confirmed
@@ -1345,51 +3159,144 @@ def _validate_browser_outcome(outcome: BrowserOutcome, cleanup: BrowserCleanup) 
         raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
 
 
+def _validate_browser_preflight(preflight: BrowserPreflight) -> None:
+    if preflight != BrowserPreflight(
+        locked_runtime=True,
+        probe_launch_closed=True,
+        probe_root_removed=True,
+        prepared_contexts=4,
+        signed_out_private_baseline=True,
+    ):
+        raise BrokerRefusal("sealed_browser_preflight_failed")
+
+
 def run_broker(
     *,
     run_id: str,
     cutoff: datetime,
+    authority_adapter: AuthorityAdapter,
     graph: GraphAdapter,
     browser: BrowserAdapter,
     retirement_adapter: RetirementAdapter,
     choice: Callable[[str], str] = secrets.choice,
+    owner_authorization_ref: str = OWNER_AUTHORIZATION_REF,
 ) -> Mapping[str, object]:
     """Execute one exact-two sealed lifecycle and return an allowlisted report."""
 
     _require_run_id(run_id)
+    if owner_authorization_ref != OWNER_AUTHORIZATION_REF:
+        raise BrokerRefusal("owner_authorization_mismatch")
     identities: tuple[SealedIdentity, SealedIdentity] = ()
+    authority: AuthorityBinding | None = None
     graph_issuer: SealedValue | None = None
-    auth_issuer: SealedValue | None = None
     session: AttendedBrowserSession | None = None
     created = 0
-    phase = "browser_preflight"
+    creation_states = {alias: "not_attempted" for alias in ALLOWED_ALIASES}
+    attempted_after: dict[str, datetime] = {}
+    mutation_started = False
+    phase = "production_authority"
     try:
-        session = browser.prepare_attended_session()
-        auth_issuer = session.auth_issuer()
-        graph_issuer = graph.resolve_graph_issuer()
-        PlaywrightBrowserAdapter.verify_auth_graph_tenant_binding(auth_issuer, graph_issuer)
+        authority = authority_adapter.resolve()
+        phase = "browser_preflight"
+        session = browser.prepare_attended_session(authority)
+        _validate_browser_preflight(session.pre_graph_proof())
+        phase = "graph_preflight"
+        graph_issuer = graph.prepare(authority)
         identities = _generate_identities(graph_issuer, run_id=run_id, choice=choice)
-        phase = "graph"
-        for identity in identities:
-            subject = graph.create_customer(identity, graph_issuer=graph_issuer)
+        absence_proofs = graph.prove_customer_absence(
+            identities,
+            authority=authority,
+            graph_issuer=graph_issuer,
+        )
+        if absence_proofs != 4:
+            raise BrokerRefusal("graph_customer_absence_unverified")
+        phase = "graph_creation"
+        try:
+            for identity in identities:
+                mutation_started = True
+                creation_outcome = graph.create_customer(
+                    identity,
+                    authority=authority,
+                    graph_issuer=graph_issuer,
+                )
+                try:
+                    if not isinstance(creation_outcome, GraphCreationOutcome):
+                        raise ValueError("untyped creation outcome")
+                    creation_states[identity.alias] = creation_outcome.state
+                    attempted_after[identity.alias] = (
+                        creation_outcome.attempted_after.astimezone(timezone.utc)
+                    )
+                    if (
+                        creation_outcome.state != "known_created"
+                        or creation_outcome.subject is None
+                        or attempted_after[identity.alias].microsecond != 0
+                    ):
+                        raise BrokerIndeterminate("graph_creation_indeterminate")
+                    identity.subject = SealedValue(
+                        str(UUID(creation_outcome.subject.reveal()))
+                    )
+                except (TypeError, ValueError, AttributeError, OverflowError):
+                    raise BrokerIndeterminate("graph_creation_indeterminate") from None
+                finally:
+                    if isinstance(creation_outcome, GraphCreationOutcome):
+                        creation_outcome.clear()
+                created += 1
+        except Exception:
             try:
-                identity.subject = SealedValue(str(UUID(subject)))
-            except (TypeError, ValueError, AttributeError):
-                raise BrokerIndeterminate("graph_creation_indeterminate") from None
-            created += 1
+                graph.contain_partial_creation(
+                    identities,
+                    creation_states=creation_states,
+                    attempted_after=attempted_after,
+                    authority=authority,
+                    graph_issuer=graph_issuer,
+                )
+            except Exception:
+                pass
+            raise BrokerIndeterminate("graph_creation_indeterminate") from None
         if created != 2 or identities[0].subject is None or identities[1].subject is None:
             raise BrokerIndeterminate("graph_creation_indeterminate")
         if identities[0].subject.reveal() == identities[1].subject.reveal():
             raise BrokerIndeterminate("graph_creation_indeterminate")
+        browser_failure: BrokerIndeterminate | None = None
+        browser_cleanup_failed = False
+        browser_outcome: BrowserOutcome | None = None
+        browser_cleanup: BrowserCleanup | None = None
         phase = "browser_journeys"
-        browser_outcome = session.exercise_canonical_journeys(identities)
+        try:
+            browser_outcome = session.exercise_canonical_journeys(identities)
+        except Exception:
+            browser_failure = BrokerIndeterminate(
+                "sealed_browser_operation_indeterminate"
+            )
         phase = "browser_cleanup"
-        browser_cleanup = session.destroy_and_verify()
-        _validate_browser_outcome(browser_outcome, browser_cleanup)
+        try:
+            browser_cleanup = session.destroy_and_verify()
+        except Exception:
+            browser_cleanup_failed = True
+            browser_failure = BrokerIndeterminate(
+                "sealed_browser_cleanup_indeterminate"
+            )
+        if browser_failure is None:
+            try:
+                if browser_outcome is None or browser_cleanup is None:
+                    raise BrokerIndeterminate(
+                        "sealed_browser_operation_indeterminate"
+                    )
+                _validate_browser_outcome(browser_outcome, browser_cleanup)
+            except Exception:
+                browser_failure = BrokerIndeterminate(
+                    "sealed_browser_operation_indeterminate"
+                )
+        # SQL retirement is gated on a structurally exact closed browser and
+        # removed runtime root. A failed journey with successful cleanup may
+        # still enter exact containment; an unproved cleanup may not bypass
+        # this boundary merely to make later residue look smaller.
+        if browser_cleanup_failed:
+            raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
         phase = "retirement"
         retirement_report = retirement_adapter.retire(
             [identities[0].subject, identities[1].subject],
-            auth_issuer=auth_issuer,
+            oidc_issuer=authority.oidc_issuer,
             cutoff=cutoff,
         )
         if (
@@ -1398,48 +3305,106 @@ def run_broker(
             or retirement_report.get("counts") != {"retired_members": 2}
         ):
             raise BrokerIndeterminate("retirement_indeterminate")
+        phase = "graph_deletion"
+        deletion_outcome = graph.delete_exact_pair(
+            [identities[0].subject, identities[1].subject],
+            authority=authority,
+            graph_issuer=graph_issuer,
+        )
+        if deletion_outcome != GraphDeletionOutcome(
+            soft_deleted=2,
+            soft_state_proofs=4,
+            permanently_deleted=2,
+            final_absence_proofs=4,
+        ):
+            raise BrokerIndeterminate("graph_deletion_indeterminate")
+        if browser_failure is not None:
+            raise browser_failure
+        if browser_outcome is None or browser_cleanup is None:
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
         return {
             "result": "conditional",
-            "state": "retired_pending_external_deletion",
+            "state": "retired_and_permanently_deleted",
             "counts": {
                 "requested_identities": 2,
+                "precreation_absence_proofs": absence_proofs,
                 "provisioned_identities": 2,
                 "member_arrivals": 2,
                 "account_switches": 2,
                 "canonical_journeys": len(browser_outcome.journey_outcomes),
                 "conditional_journeys": len(REQUIRED_CONDITIONAL_OUTCOMES),
                 "created_items": sum(browser_outcome.created_item_counts.values()),
+                "item_edits": sum(browser_outcome.edit_counts.values()),
+                "retained_versions": sum(
+                    browser_outcome.retained_version_counts.values()
+                ),
+                "retained_source_proofs": sum(
+                    browser_outcome.retained_source_proof_counts.values()
+                ),
+                "downstream_disclosures": sum(
+                    browser_outcome.downstream_disclosure_counts.values()
+                ),
                 "active_residue": sum(browser_outcome.active_residue_counts.values()),
+                "archived_residue": sum(
+                    browser_outcome.archived_residue_counts.values()
+                ),
                 "destroyed_contexts": browser_cleanup.destroyed_contexts,
                 "retired_members": 2,
+                "soft_deleted_identities": deletion_outcome.soft_deleted,
+                "soft_state_proofs": deletion_outcome.soft_state_proofs,
+                "permanently_deleted_identities": deletion_outcome.permanently_deleted,
+                "final_absence_proofs": deletion_outcome.final_absence_proofs,
             },
         }
     except BrokerRefusal as error:
-        if phase in {"browser_preflight", "graph"} and not created:
+        if not mutation_started:
             raise error
-        if phase == "graph":
+        if phase == "graph_creation":
             raise BrokerIndeterminate("graph_creation_indeterminate") from None
         if phase.startswith("browser"):
             raise BrokerIndeterminate("sealed_browser_operation_indeterminate") from None
-        raise BrokerIndeterminate("retirement_indeterminate") from None
+        if phase == "retirement":
+            raise BrokerIndeterminate("retirement_indeterminate") from None
+        raise BrokerIndeterminate("graph_deletion_indeterminate") from None
     except BrokerIndeterminate:
         raise
     except Exception:
-        raise BrokerIndeterminate(
-            "graph_creation_indeterminate" if created else "sealed_broker_operation_failed"
-        ) from None
+        if not mutation_started:
+            raise BrokerRefusal("sealed_broker_operation_failed") from None
+        reason = {
+            "graph_creation": "graph_creation_indeterminate",
+            "browser_journeys": "sealed_browser_operation_indeterminate",
+            "browser_cleanup": "sealed_browser_cleanup_indeterminate",
+            "retirement": "retirement_indeterminate",
+            "graph_deletion": "graph_deletion_indeterminate",
+        }.get(phase, "sealed_broker_operation_indeterminate")
+        raise BrokerIndeterminate(reason) from None
     finally:
+        cleanup_error: BrokerIndeterminate | BrokerRefusal | None = None
         if session is not None:
             try:
                 session.destroy_and_verify()
-            except BrokerIndeterminate:
-                raise
+            except Exception:
+                cleanup_error = BrokerIndeterminate(
+                    "sealed_browser_cleanup_indeterminate"
+                )
         for identity in identities:
             identity.clear()
         if graph_issuer is not None:
             graph_issuer.clear()
-        if auth_issuer is not None:
-            auth_issuer.clear()
+        try:
+            graph.clear()
+        except Exception:
+            if mutation_started:
+                cleanup_error = BrokerIndeterminate(
+                    "sealed_broker_cleanup_indeterminate"
+                )
+            else:
+                cleanup_error = BrokerRefusal("sealed_broker_cleanup_failed")
+        if authority is not None:
+            authority.clear()
+        if cleanup_error is not None:
+            raise cleanup_error
 
 
 class _SafeArgumentParser(argparse.ArgumentParser):
@@ -1460,7 +3425,7 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--execute", action="store_true")
     run.add_argument("--confirm-exact-two-synthetic-members", action="store_true")
     run.add_argument("--confirm-no-production-proof", action="store_true")
-    run.add_argument("--confirm-retirement-handoff", action="store_true")
+    run.add_argument("--confirm-permanent-exact-two-deletion", action="store_true")
     return parser
 
 
@@ -1472,6 +3437,7 @@ def main(
     argv: Sequence[str] | None = None,
     *,
     clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
+    authority_factory: Callable[[], AuthorityAdapter] = AzureAppAuthorityResolver,
     graph_factory: Callable[[], GraphAdapter] = MicrosoftGraphAdapter,
     browser_factory: Callable[[], BrowserAdapter] = PlaywrightBrowserAdapter,
     retirement_factory: Callable[[], RetirementAdapter] = DirectRetirementAdapter,
@@ -1481,8 +3447,17 @@ def main(
         _emit(
             {
                 "result": "planned",
-                "counts": {"customer_identities": 2, "contexts": 4, "journeys": len(JOURNEYS)},
-                "external_deletion": "withheld",
+                "counts": {
+                    "customer_identities": 2,
+                    "precreation_collision_reads": 4,
+                    "contexts": 4,
+                    "journeys": len(JOURNEYS),
+                    "item_edits": 4,
+                    "retained_versions": 6,
+                },
+                "graph_deletion": (
+                    "soft_and_permanent_exact_two_after_verified_retirement"
+                ),
             }
         )
         return 0
@@ -1497,6 +3472,7 @@ def main(
         report = run_broker(
             run_id=args.run_id,
             cutoff=cutoff,
+            authority_adapter=authority_factory(),
             graph=graph_factory(),
             browser=browser_factory(),
             retirement_adapter=retirement_factory(),
@@ -1526,14 +3502,20 @@ __all__ = [
     "ALLOWED_ALIASES",
     "ALLOWED_GRAPH_ENDPOINT",
     "ALLOWED_SITE_ORIGIN",
+    "AuthorityBinding",
+    "AzureAppAuthorityResolver",
     "AzureCliGraphTokenProvider",
     "BrokerIndeterminate",
     "BrokerRefusal",
     "BrowserCleanup",
     "BrowserOutcome",
+    "BrowserPreflight",
     "DirectRetirementAdapter",
+    "GraphCreationOutcome",
+    "GraphDeletionOutcome",
     "MicrosoftGraphAdapter",
     "PlaywrightBrowserAdapter",
+    "PinnedPlaywrightRuntime",
     "REQUIRED_CONDITIONAL_OUTCOMES",
     "SealedIdentity",
     "SealedValue",
