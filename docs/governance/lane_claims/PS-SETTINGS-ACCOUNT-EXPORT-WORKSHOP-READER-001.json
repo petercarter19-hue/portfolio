@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-WORKSHOP-READER-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver replacement package 3 of the accepted 2026-08-29 reader topology: a read-only owner-scoped account-export Workshop knowledge reader over the applied PS-WORKSHOP-001/002 knowledge tables (re-validated against the schema files at write time per C0's own caveat), as one additive migration PS-SETTINGS-EXPORT-005 with rollback, a registry entry whose requires covers both the readers' and the verification's dependencies, an isolation verification with constraint-complete fixtures, offline allowlist-pinning tests with a forbidden-field canary, DOMAINS registry updates, and contract records. Exact documented field allowlists of member-authored knowledge text truth only: no provenance internals beyond the member's own facts, no confirmation-machinery fields the Workshop truth program owns, no media or blob linkage, no internal ids, no other member's data. Procedures accept only a trusted server-derived user key, order deterministically, and exclude soft-deleted rows. Coordinate with, never touch, any active Workshop lane's surfaces. No UI, worker, or integration change; no real export run; no schema apply outside the disposable gate; no production authority.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-wk-reader-writer",
@@ -35,6 +35,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "7d6b0ea125db9fb56053553cf347889c548ca561",
+  "closed_at": "2026-08-29T16:39:39Z"
 }
