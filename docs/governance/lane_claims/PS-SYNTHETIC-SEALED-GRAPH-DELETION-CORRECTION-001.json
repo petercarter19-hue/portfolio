@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SYNTHETIC-SEALED-GRAPH-DELETION-CORRECTION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Correct only the merged sealed Graph-deletion tool so every SQL retirement or irreversible Graph purge requires BrowserCleanup(4,true), every Workshop private/generated DOM read, write, check, click, and navigation is atomically bound to canonical https://peerslate.com with ports, userinfo, hostile owner documents, and redirect races refused, unsafe foreign mutations are replaced by an honest fail-closed Conditional without mutation unless endpoint and document authority can be proven atomically, and Workshop D requires the exact same-row direct dt and dd values. Execute the actual production evaluator and guard logic in fake-only tests, including nested-row and relevant redirect races. Preserve all prior R1 and Windows-runtime fixes. Repository correction only; no live operation.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
@@ -35,6 +35,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "f41cf64e1c47523f518d26a826cc475ab1d5a604",
+  "closed_at": "2026-08-29T17:57:00Z"
 }
