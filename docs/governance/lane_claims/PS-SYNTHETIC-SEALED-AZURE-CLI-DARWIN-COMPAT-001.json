@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-SEALED-AZURE-CLI-DARWIN-COMPAT-001",
+  "state": "active",
+  "outcome": "Restore fail-closed Darwin arm64/Python 3.14 support for the installed Homebrew Azure CLI by binding the exact discovered /opt/homebrew/bin/az launcher to its confined Homebrew libexec Python interpreter before any Azure or Graph child starts, while preserving the reviewed Windows AMD64/Python 3.13 az.cmd-to-CLI2/python.exe binding, isolated -I -B -m azure.cli execution, and all broker authority and safety checks. Use no broad PATH fallback. Add fake-only regression and adversarial coverage plus one local read-only resolver proof. No Azure, Graph, browser, SQL, identity, production, schema, configuration, permission, role, licensing, billing, deployment, or deletion operation.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
+  "branch": "work/2026-08-29-synthetic-sealed-azure-cli-darwin-compat-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "55e848eca697194920a46f9f0ec496d7e4a73e32",
+  "owner_outcome_ref": "session:01a04348-7e3e-7a11-a443-752498be91b5/owner-authorization:2026-08-28/workshop-fg-sealed-private-proof-complete-lifecycle",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SYNTHETIC-SEALED-AZURE-CLI-DARWIN-COMPAT-001.json",
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-AZURE-CLI-DARWIN-COMPAT-001.md",
+    "docs/governance/lane_claims/receipts/PS-SYNTHETIC-SEALED-AZURE-CLI-DARWIN-COMPAT-001.json",
+    "qa/synthetic_member/sealed_credential_broker/__init__.py",
+    "qa/synthetic_member/docs/ATTENDED_PROOF_RUNBOOK.md",
+    "tests/synthetic_member_qa/test_sealed_credential_broker.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-AZURE-CLI-DARWIN-COMPAT-001.md"
+  ],
+  "domains": [
+    "identity:synthetic-qa-sealed-broker-azure-cli-darwin-compat",
+    "privacy:synthetic-qa-azure-cli-darwin-runtime",
+    "testing:synthetic-member:sealed-broker-azure-cli-darwin-compat"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
