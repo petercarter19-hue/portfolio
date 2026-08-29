@@ -528,16 +528,23 @@ class FakeHttpResponse:
 
 class AzureAuthorityResolverTests(unittest.TestCase):
     @staticmethod
-    def _runner(calls, cli_layout, *, settings_issuer=OIDC_ISSUER):
+    def _runner(
+        calls,
+        cli_layout,
+        *,
+        settings_issuer=OIDC_ISSUER,
+        auth_payload=None,
+    ):
         def run(command, **kwargs):
             calls.append((tuple(command), kwargs))
             if tuple(command[len(cli_layout.command_prefix) :]) == (
                 broker.AzureAppAuthorityResolver.auth_command
             ):
-                payload = {
-                    "platformEnabled": True,
-                    "openIdIssuer": DISCOVERY_ISSUER,
-                }
+                payload = (
+                    {"enabled": True, "issuer": DISCOVERY_ISSUER}
+                    if auth_payload is None
+                    else auth_payload
+                )
             elif tuple(command[len(cli_layout.command_prefix) :]) == (
                 broker.AzureAppAuthorityResolver.settings_command
             ):
@@ -583,9 +590,9 @@ class AzureAuthorityResolverTests(unittest.TestCase):
         )
         self.assertEqual(calls[0][0][:5], cli_layout.command_prefix)
         self.assertEqual(calls[1][0][:5], cli_layout.command_prefix)
-        self.assertIn(
-            "openIdIssuer:properties.identityProviders.azureActiveDirectory.registration.openIdIssuer",
+        self.assertEqual(
             calls[0][0][calls[0][0].index("--query") + 1],
+            "{enabled:enabled,issuer:issuer}",
         )
         for _command, kwargs in calls:
             self.assertNotIn("UNRELATED_SECRET", kwargs["env"])
@@ -661,6 +668,52 @@ class AzureAuthorityResolverTests(unittest.TestCase):
                     )
                     with self.assertRaises(broker.BrokerRefusal):
                         resolver.resolve()
+
+    def test_malformed_top_level_auth_shape_refuses_before_browser_or_graph(self):
+        scenarios = {
+            "missing_issuer": {"enabled": True},
+            "wrong_enabled_type": {"enabled": "true", "issuer": DISCOVERY_ISSUER},
+            "extra_field": {
+                "enabled": True,
+                "issuer": DISCOVERY_ISSUER,
+                "unexpected": "value",
+            },
+            "legacy_shape": {
+                "platformEnabled": True,
+                "openIdIssuer": DISCOVERY_ISSUER,
+            },
+        }
+        with tempfile.TemporaryDirectory() as root:
+            cli_layout = FakeAzureCliLayout(Path(root))
+            for name, auth_payload in scenarios.items():
+                with self.subTest(name=name):
+                    calls = []
+                    events = []
+                    graph = FakeGraph(events)
+                    resolver = broker.AzureAppAuthorityResolver(
+                        self._runner(
+                            calls, cli_layout, auth_payload=auth_payload
+                        ),
+                        lambda *_args, **_kwargs: self.fail(
+                            "malformed auth shape must stop before metadata"
+                        ),
+                        environment={"PATH": "/safe"},
+                        launcher_resolver=cli_layout.discover,
+                    )
+                    with self.assertRaisesRegex(
+                        broker.BrokerRefusal, "production_oidc_authority_mismatch"
+                    ):
+                        broker.run_broker(
+                            run_id="qa-20260829-0001",
+                            cutoff=NOW,
+                            authority_adapter=resolver,
+                            graph=graph,
+                            browser=FakeBrowser(events),
+                            retirement_adapter=FakeRetirement(events),
+                        )
+                    self.assertEqual(len(calls), 1)
+                    self.assertEqual(graph.create_calls, 0)
+                    self.assertEqual(events, ["graph_clear"])
 
     def _assert_invalid_runtime_refuses_before_azure_or_graph(self, discovery):
         calls = []
@@ -746,6 +799,9 @@ def fake_graph_token(*, operator=OPERATOR_ID, scopes=None, roles=None):
 class MicrosoftGraphCreationTests(unittest.TestCase):
     def test_token_is_tenant_pinned_and_creation_requires_bound_authority(self):
         commands = []
+        cli_root = tempfile.TemporaryDirectory()
+        self.addCleanup(cli_root.cleanup)
+        cli_layout = FakeAzureCliLayout(Path(cli_root.name))
 
         def runner(command, **kwargs):
             commands.append((tuple(command), kwargs))
@@ -815,6 +871,7 @@ class MicrosoftGraphCreationTests(unittest.TestCase):
             broker.AzureCliGraphTokenProvider(
                 runner,
                 environment={"PATH": "/safe", "SECRET": "not-forwarded"},
+                launcher_resolver=cli_layout.discover,
             ),
             opener,
             clock=lambda: NOW,
@@ -850,12 +907,25 @@ class MicrosoftGraphCreationTests(unittest.TestCase):
         self.assertEqual(posted["creationType"], "LocalAccount")
         self.assertEqual(posted["mailNickname"], identity.mail_nickname.reveal())
         for command, kwargs in commands:
+            self.assertEqual(command[:5], cli_layout.command_prefix)
             tenant_index = command.index("--tenant")
             self.assertEqual(command[tenant_index + 1], TENANT_ID)
+            self.assertEqual(
+                command,
+                (
+                    *cli_layout.command_prefix,
+                    *broker.AzureCliGraphTokenProvider.command_arguments,
+                    "--tenant",
+                    TENANT_ID,
+                ),
+            )
             self.assertNotIn("SECRET", kwargs["env"])
         graph.clear()
 
     def test_missing_scope_role_or_operator_switch_refuses(self):
+        cli_root = tempfile.TemporaryDirectory()
+        self.addCleanup(cli_root.cleanup)
+        cli_layout = FakeAzureCliLayout(Path(cli_root.name))
         organization = {
             "value": [
                 {
@@ -886,6 +956,7 @@ class MicrosoftGraphCreationTests(unittest.TestCase):
                     lambda *_args, **_kwargs: type(
                         "Result", (), {"returncode": 0, "stdout": token}
                     )(),
+                    launcher_resolver=cli_layout.discover,
                 )
                 with self.assertRaisesRegex(
                     broker.BrokerRefusal, "graph_delegated_authority_unverified"
@@ -893,6 +964,112 @@ class MicrosoftGraphCreationTests(unittest.TestCase):
                     broker.MicrosoftGraphAdapter(
                         provider, org_opener, clock=lambda: NOW
                     ).prepare(authority_binding())
+
+
+class AzureCliGraphTokenRuntimeTests(unittest.TestCase):
+    def _assert_runtime_refusal_before_graph_http(self, discovery):
+        runner_calls = []
+        graph_requests = []
+
+        def runner(*_args, **_kwargs):
+            runner_calls.append("azure")
+            self.fail("invalid runtime must stop before the Azure child starts")
+
+        def opener(request, _timeout):
+            graph_requests.append(request)
+            self.fail("invalid runtime must stop before Graph HTTP")
+
+        graph = broker.MicrosoftGraphAdapter(
+            broker.AzureCliGraphTokenProvider(
+                runner,
+                environment={"PATH": "/safe", "SECRET": "not-forwarded"},
+                launcher_resolver=lambda _command: discovery,
+            ),
+            opener,
+            clock=lambda: NOW,
+        )
+        with self.assertRaisesRegex(
+            broker.BrokerRefusal, "production_authority_unavailable"
+        ) as refusal:
+            graph.prepare(authority_binding())
+        self.assertEqual(runner_calls, [])
+        self.assertEqual(graph_requests, [])
+        self.assertNotIn(TENANT_ID, str(refusal.exception))
+        self.assertNotIn("SECRET", str(refusal.exception))
+
+    def test_invalid_cli_runtime_refuses_before_graph_http(self):
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            scenarios = {
+                "unrelated_source": str(Path(broker.__file__).resolve()),
+                "missing_sibling_python": FakeAzureCliLayout(
+                    root_path / "missing-python", include_python=False
+                ).discover("az"),
+                "wrong_wbin_adjacency": FakeAzureCliLayout(
+                    root_path / "wrong-wbin", launcher_directory="bin"
+                ).discover("az"),
+                "wrong_cli2_runtime_root": FakeAzureCliLayout(
+                    root_path / "wrong-root", runtime_name="OtherRuntime"
+                ).discover("az"),
+                "missing_discovery": None,
+            }
+            for name, discovery in scenarios.items():
+                with self.subTest(name=name):
+                    self._assert_runtime_refusal_before_graph_http(discovery)
+
+    def test_escaped_cli_python_refuses_before_graph_http(self):
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            cli_layout = FakeAzureCliLayout(root_path / "runtime")
+            escaped = root_path / "escaped" / "python.exe"
+            escaped.parent.mkdir()
+            escaped.write_text("fake", encoding="utf-8")
+            original_resolve = Path.resolve
+
+            def escaped_python_resolve(path, strict=False):
+                if path == cli_layout.python_executable:
+                    return original_resolve(escaped, strict=True)
+                return original_resolve(path, strict=strict)
+
+            with patch.object(broker.Path, "resolve", escaped_python_resolve):
+                self._assert_runtime_refusal_before_graph_http(
+                    cli_layout.discover("az")
+                )
+
+    def test_token_launcher_failure_refuses_before_graph_http_or_creation(self):
+        with tempfile.TemporaryDirectory() as root:
+            cli_layout = FakeAzureCliLayout(Path(root))
+            commands = []
+            graph_requests = []
+
+            def runner(command, **kwargs):
+                commands.append((tuple(command), kwargs))
+                return type(
+                    "Result", (), {"returncode": 1, "stdout": "untrusted-token"}
+                )()
+
+            def opener(request, _timeout):
+                graph_requests.append(request)
+                self.fail("token-launcher failure must stop before Graph HTTP")
+
+            graph = broker.MicrosoftGraphAdapter(
+                broker.AzureCliGraphTokenProvider(
+                    runner,
+                    environment={"PATH": "/safe", "SECRET": "not-forwarded"},
+                    launcher_resolver=cli_layout.discover,
+                ),
+                opener,
+                clock=lambda: NOW,
+            )
+            with self.assertRaisesRegex(
+                broker.BrokerRefusal, "graph_authorization_unavailable"
+            ) as refusal:
+                graph.prepare(authority_binding())
+        self.assertEqual(len(commands), 1)
+        self.assertEqual(commands[0][0][:5], cli_layout.command_prefix)
+        self.assertNotIn("SECRET", commands[0][1]["env"])
+        self.assertEqual(graph_requests, [])
+        self.assertNotIn("untrusted-token", str(refusal.exception))
 
 class FakeProbePage:
     def __init__(self, *, signed_out=False):

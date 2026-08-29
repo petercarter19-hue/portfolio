@@ -122,10 +122,15 @@ authorities:
    `.cmd` file is never executed. Before starting a shell-free child, the
    worker resolves and confines that `python.exe` to the same `CLI2` runtime,
    then runs it only as `-I -B -m azure.cli` for the two bounded read-only App
-   Service commands (`webapp auth show` and `webapp config appsettings list`).
-   Neither path is taken from an operator argument. A missing, escaped, or
-   unusable runtime refuses before Azure, Graph, or browser work.
-2. `az webapp auth show` must report enabled App Service authentication and one
+   Service commands (`webapp auth show` and `webapp config appsettings list`)
+   and for the bounded Microsoft Graph token read (`account get-access-token`).
+   Neither path is taken from an operator argument, and the worker never runs
+   bare `az`, `az.cmd`, or a shell. A missing, escaped, or unusable runtime
+   refuses before Azure, Graph, or browser work.
+2. `az webapp auth show` selects only its current top-level `enabled` and
+   `issuer` fields. The worker requires exactly that shape, maps it only inside
+   the worker to its closed `platformEnabled` and `openIdIssuer` fields, and
+   requires enabled App Service authentication and one
    no-trailing-slash OIDC discovery authority of the form
    `https://<tenant-label>.ciamlogin.com/<tenant-uuid>/v2.0`.
 3. The exact discovery document must return HTTP 200 from the requested URL,
@@ -151,8 +156,8 @@ page receives zero password material. The exact origin is checked again
 immediately before password submission; a later redirect stops without
 submitting the password.
 
-Every Graph token is requested for the exact bound tenant UUID. Before use, its
-claims must prove:
+Every Graph token is requested through that same confined CLI2 Python runtime
+for the exact bound tenant UUID. Before use, its claims must prove:
 
 - the bound tenant (`tid`) and Microsoft Graph audience;
 - delegated scopes `User.Read`, `User.ReadWrite.All`, and

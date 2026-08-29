@@ -596,11 +596,7 @@ class AzureAppAuthorityResolver:
         "--name",
         AZURE_WEBAPP_NAME,
         "--query",
-        (
-            "{platformEnabled:properties.platform.enabled,"
-            "openIdIssuer:properties.identityProviders.azureActiveDirectory."
-            "registration.openIdIssuer}"
-        ),
+        "{enabled:enabled,issuer:issuer}",
         "--output",
         "json",
         "--only-show-errors",
@@ -701,17 +697,21 @@ class AzureAppAuthorityResolver:
         ):
             raise BrokerRefusal("owner_authorization_mismatch")
         cli_runtime = _resolve_azure_cli_runtime(self._launcher_resolver)
-        auth_settings = _run_azure_json(
+        raw_auth_settings = _run_azure_json(
             self._runner,
             cli_runtime.command(self.auth_command),
             environment=self._environment,
         )
         if (
-            not isinstance(auth_settings, Mapping)
-            or set(auth_settings) != {"platformEnabled", "openIdIssuer"}
-            or auth_settings.get("platformEnabled") is not True
+            not isinstance(raw_auth_settings, Mapping)
+            or set(raw_auth_settings) != {"enabled", "issuer"}
+            or raw_auth_settings.get("enabled") is not True
         ):
             raise BrokerRefusal("production_oidc_authority_mismatch")
+        auth_settings = {
+            "platformEnabled": raw_auth_settings["enabled"],
+            "openIdIssuer": raw_auth_settings["issuer"],
+        }
         open_id_issuer = auth_settings["openIdIssuer"]
         endpoint = self._metadata_endpoint(str(open_id_issuer or ""))
         discovery_tenant = _tenant_from_oidc_authority(
@@ -763,8 +763,7 @@ class AzureAppAuthorityResolver:
 class AzureCliGraphTokenProvider:
     """Acquire the active pre-authorized Graph token inside the local worker."""
 
-    command_prefix = (
-        "az",
+    command_arguments = (
         "account",
         "get-access-token",
         "--resource-type",
@@ -780,16 +779,21 @@ class AzureCliGraphTokenProvider:
         runner: Callable[..., object] | None = None,
         *,
         environment: Mapping[str, str] | None = None,
+        launcher_resolver: Callable[[str], str | None] | None = None,
     ):
         self._runner = runner or subprocess.run
         self._environment = environment
+        self._launcher_resolver = launcher_resolver or shutil.which
 
     def acquire(self, tenant_id: SealedValue) -> SealedValue:
         try:
             exact_tenant = str(UUID(tenant_id.reveal()))
         except (TypeError, ValueError, AttributeError):
             raise BrokerRefusal("graph_token_tenant_unverified") from None
-        command = (*self.command_prefix, "--tenant", exact_tenant)
+        cli_runtime = _resolve_azure_cli_runtime(self._launcher_resolver)
+        command = cli_runtime.command(
+            (*self.command_arguments, "--tenant", exact_tenant)
+        )
         try:
             result = self._runner(
                 command,
