@@ -187,8 +187,9 @@ uses `bin/python` and `lib/python3.14/site-packages`:
 - greenlet `3.5.5`;
 - pyee `13.0.1`;
 - typing-extensions `4.16.0`; and
-- Chromium revision `1234`, browser version `151.0.7922.34`, installed with
-  `chromium --no-shell`.
+- Chromium revision `1234`, browser version `151.0.7922.34`, installed only
+  through the locked shell-free venv command
+  `python -I -m playwright install chromium --no-shell`.
 
 It then launches a separate headed probe in a second disposable root, verifies
 the exact browser version, opens `about:blank`, closes the page, context, and

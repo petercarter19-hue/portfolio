@@ -1312,6 +1312,18 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
             site_packages = root_path / "runtime" / "venv" / "Lib" / "site-packages"
             self.assertEqual(commands[1][0], str(venv_python))
             self.assertEqual(commands[2][0], str(venv_python))
+            self.assertEqual(
+                commands[2],
+                (
+                    str(venv_python),
+                    "-I",
+                    "-m",
+                    "playwright",
+                    "install",
+                    "chromium",
+                    "--no-shell",
+                ),
+            )
             load_args, _ = load_started.call_args
             self.assertEqual(load_args[0], site_packages)
             self.assertEqual(load_args[1], root_path / "runtime" / "browsers")

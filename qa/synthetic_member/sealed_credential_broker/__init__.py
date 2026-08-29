@@ -2013,6 +2013,7 @@ class PinnedPlaywrightRuntime:
                 "-I",
                 "-m",
                 "playwright",
+                "install",
                 *chromium["install_args"],
             ),
             environment=runtime_environment,
