@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SYNTHETIC-SEALED-AZURE-CLI-DARWIN-COMPAT-001",
-  "state": "active",
+  "state": "paused",
   "outcome": "Restore fail-closed Darwin arm64/Python 3.14 support for the installed Homebrew Azure CLI by binding the exact discovered /opt/homebrew/bin/az launcher to its confined Homebrew libexec Python interpreter before any Azure or Graph child starts, while preserving the reviewed Windows AMD64/Python 3.13 az.cmd-to-CLI2/python.exe binding, isolated -I -B -m azure.cli execution, and all broker authority and safety checks. Use no broad PATH fallback. Add fake-only regression and adversarial coverage plus one local read-only resolver proof. No Azure, Graph, browser, SQL, identity, production, schema, configuration, permission, role, licensing, billing, deployment, or deletion operation.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
@@ -29,7 +29,7 @@
   ],
   "review_requirement": "independent",
   "handoff": null,
-  "checkpoint_sha": null,
+  "checkpoint_sha": "4fad984e22d0d53d29398c3a0e60cbb92fca10cf",
   "merged_sha": null,
   "closed_at": null
 }
