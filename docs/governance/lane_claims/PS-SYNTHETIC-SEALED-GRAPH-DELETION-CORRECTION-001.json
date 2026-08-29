@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-SEALED-GRAPH-DELETION-CORRECTION-001",
+  "state": "active",
+  "outcome": "Correct only the merged sealed Graph-deletion tool so every SQL retirement or irreversible Graph purge requires BrowserCleanup(4,true), every Workshop private/generated DOM read, write, check, click, and navigation is atomically bound to canonical https://peerslate.com with ports, userinfo, hostile owner documents, and redirect races refused, unsafe foreign mutations are replaced by an honest fail-closed Conditional without mutation unless endpoint and document authority can be proven atomically, and Workshop D requires the exact same-row direct dt and dd values. Execute the actual production evaluator and guard logic in fake-only tests, including nested-row and relevant redirect races. Preserve all prior R1 and Windows-runtime fixes. Repository correction only; no live operation.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
+  "branch": "work/2026-08-29-synthetic-sealed-graph-deletion-correction-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "cb70c4a0f080fae8b395c6c0efe557d0461dac23",
+  "owner_outcome_ref": "session:01a04348-7e3e-7a11-a443-752498be91b5/owner-authorization:2026-08-28/workshop-fg-sealed-private-proof-complete-lifecycle",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SYNTHETIC-SEALED-GRAPH-DELETION-CORRECTION-001.json",
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-GRAPH-DELETION-CORRECTION-001.md",
+    "docs/governance/lane_claims/receipts/PS-SYNTHETIC-SEALED-GRAPH-DELETION-CORRECTION-001.json",
+    "qa/synthetic_member/sealed_credential_broker/__init__.py",
+    "qa/synthetic_member/docs/ATTENDED_PROOF_RUNBOOK.md",
+    "docs/AI_MODEL_AND_ROLE_ROUTING.md",
+    "tests/synthetic_member_qa/test_sealed_credential_broker.py",
+    "tests/synthetic_member_qa/test_sealed_credential_broker_attended.py",
+    "tests/synthetic_member_qa/test_sealed_workshop_evaluator.py",
+    "docs/initiatives/PS-SYNTHETIC-SEALED-GRAPH-DELETION-CORRECTION-001",
+    "docs/governance/PACKAGE_REGISTRY.json"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-GRAPH-DELETION-CORRECTION-001.md"
+  ],
+  "domains": [
+    "identity:synthetic-qa-sealed-graph-deletion-correction",
+    "privacy:synthetic-qa-workshop-document-authority",
+    "testing:synthetic-member:sealed-workshop-evaluator-correction"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
