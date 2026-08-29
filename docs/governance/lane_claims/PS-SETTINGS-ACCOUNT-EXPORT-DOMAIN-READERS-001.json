@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-DOMAIN-READERS-001",
+  "state": "active",
+  "outcome": "Deliver the Protected real-content contract the owner directed before C3: for every domain C0 marks included-by-allowlist, an owner-scoped read-only domain-reader procedure with an exact field allowlist and a redaction contract that excludes other-member, joint, secret, and provider-internal data by construction; one additive migration (PS-SETTINGS-EXPORT-002) with governed gate proof and an extended owner-isolation verification; a thin read-only python adapter exposing the readers to future slices without touching the C2 worker; offline tests pinning every allowlist and forbidden-field set; and contract records giving each domain a truthful disposition with stable safe reasons. Dormant or unavailable domains (Journal, publication foundation, joint/connection records, notifications inbox, audit, telemetry, browser-local history, third-party content) are recorded as excluded/unavailable with reasons, not implemented. No UI, no worker/container/schedule change, no real export run, no schema apply outside the disposable gate database, no production authority. Acceptance of this package's contract ends the C3 visual design's provisional status per the owner's 2026-08-29 directive.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/settings-readers-writer",
+  "branch": "work/2026-08-29-settings-account-export-domain-readers-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "03c9051bcbe06b0d585d9dccd091e13d234b79dd",
+  "owner_outcome_ref": "pete-chat-2026-08-29/codex-directive:pre-C3-domain-reader-allowlist-redaction-package",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-ACCOUNT-EXPORT-DOMAIN-READERS-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-DOMAIN-READERS-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-ACCOUNT-EXPORT-DOMAIN-READERS-001.json",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-002_domain_readers.sql",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-002_domain_readers_rollback.sql",
+    "SQL FIles/Migrations/registry.json",
+    "SQL FIles/Verification/PS-SETTINGS-EXPORT-002_domain_reader_isolation_verify.sql",
+    "services/account_export_domain_readers.py",
+    "tests/test_settings_export_domain_readers.py",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C2R_ACCOUNT_EXPORT_DOMAIN_READERS.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C2R_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+  ],
+  "domains": [
+    "schema:settings:account-export-domain-readers",
+    "privacy:settings:export-field-allowlists",
+    "testing:settings:account-export-domain-readers"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-DOMAIN-READERS-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
