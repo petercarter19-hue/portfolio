@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-OPPSLATE-READER-001",
+  "state": "active",
+  "outcome": "Deliver replacement package 4 of the accepted 2026-08-29 reader topology: read-only owner-scoped account-export readers for the member's durable Opportunity Slate records (exact tables derived from the applied PS-OPPSLATE-001..004 migrations; durable saved-slate data only, no ephemeral working-session tables) as one additive migration PS-SETTINGS-EXPORT-006 with rollback, a registry entry whose requires covers both the readers' and the verification's dependencies, an isolation verification with constraint-complete fixtures, offline allowlist-pinning tests with a forbidden-field canary, DOMAINS registry updates, and contract records. HARD EXCLUSIONS per the owner's directive, pending separate review: third-party posting text, evidence links, responses, and every AI/model provenance field (model names, prompts, scores, generation metadata). What remains is the member's own saved facts. Procedures accept only a trusted server-derived user key, order deterministically, exclude soft-deleted rows, and never select internal ids or another member's data. No UI, worker, or integration change; no real export run; no schema apply outside the disposable gate; no production authority.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/settings-os-reader-writer",
+  "branch": "work/2026-08-29-settings-account-export-oppslate-reader-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "5d433cc39c6b36123fb6dc23c0222725555fe5db",
+  "owner_outcome_ref": "pete-chat-2026-08-29/replacement-topology-package-4-sequence",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-ACCOUNT-EXPORT-OPPSLATE-READER-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-OPPSLATE-READER-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-ACCOUNT-EXPORT-OPPSLATE-READER-001.json",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-006_oppslate_reader.sql",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-006_oppslate_reader_rollback.sql",
+    "SQL FIles/Migrations/registry.json",
+    "SQL FIles/Verification/PS-SETTINGS-EXPORT-006_oppslate_reader_isolation_verify.sql",
+    "services/account_export_domain_readers.py",
+    "tests/test_settings_export_oppslate_reader.py",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR4_ACCOUNT_EXPORT_OPPSLATE_READER.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR4_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+  ],
+  "domains": [
+    "schema:settings:account-export-oppslate-reader",
+    "privacy:settings:export-oppslate-allowlists",
+    "testing:settings:account-export-oppslate-reader"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-OPPSLATE-READER-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
