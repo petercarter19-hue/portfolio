@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-OPPSLATE-READER-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver replacement package 4 of the accepted 2026-08-29 reader topology: read-only owner-scoped account-export readers for the member's durable Opportunity Slate records (exact tables derived from the applied PS-OPPSLATE-001..004 migrations; durable saved-slate data only, no ephemeral working-session tables) as one additive migration PS-SETTINGS-EXPORT-006 with rollback, a registry entry whose requires covers both the readers' and the verification's dependencies, an isolation verification with constraint-complete fixtures, offline allowlist-pinning tests with a forbidden-field canary, DOMAINS registry updates, and contract records. HARD EXCLUSIONS per the owner's directive, pending separate review: third-party posting text, evidence links, responses, and every AI/model provenance field (model names, prompts, scores, generation metadata). What remains is the member's own saved facts. Procedures accept only a trusted server-derived user key, order deterministically, exclude soft-deleted rows, and never select internal ids or another member's data. No UI, worker, or integration change; no real export run; no schema apply outside the disposable gate; no production authority.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-os-reader-writer",
@@ -35,6 +35,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "5a1b66b1c5887aaf30106d078cbf958727d4da08",
+  "closed_at": "2026-08-29T18:43:33Z"
 }
