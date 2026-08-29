@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-CAPTURE-MOMENT-READERS-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver replacement package 2 of the accepted 2026-08-29 reader topology: read-only owner-scoped account-export readers for the Capture and Moment domains (dbo.captures, dbo.capture_revisions, dbo.moments, dbo.moment_versions, dbo.moment_sources, dbo.moment_placements) as one additive migration PS-SETTINGS-EXPORT-004 with rollback, a registry entry whose requires covers both the readers' and the verification's dependencies, an isolation verification with constraint-complete fixtures, offline allowlist-pinning tests with a forbidden-field canary, DOMAINS registry updates, and contract records. Media transcripts, content hashes, binary and blob references, and media-source linkage columns are excluded from every allowlist in this package; text truth only. Procedures accept only a trusted server-derived user key, order deterministically, exclude soft-deleted rows, and never select internal ids or another member's data. No UI, worker, or integration change; no real export run; no schema apply outside the disposable gate; no production authority.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-cm-readers-writer",
@@ -36,6 +36,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "1f701263c9c1ad2a06e13de71e17dfef7cf9a761",
+  "closed_at": "2026-08-29T14:08:58Z"
 }
