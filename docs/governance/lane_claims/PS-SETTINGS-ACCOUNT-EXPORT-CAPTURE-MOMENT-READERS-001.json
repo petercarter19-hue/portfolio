@@ -22,7 +22,8 @@
     "services/account_export_domain_readers.py",
     "tests/test_settings_export_capture_moment_readers.py",
     "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR2_ACCOUNT_EXPORT_CAPTURE_MOMENT_READERS.md",
-    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR2_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR2_OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "tests/test_settings_export_core_readers.py"
   ],
   "domains": [
     "schema:settings:account-export-capture-moment-readers",
