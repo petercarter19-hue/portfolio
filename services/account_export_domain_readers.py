@@ -61,20 +61,19 @@ from what the database really returns.
 
 Scope: PS-SETTINGS-EXPORT-003 (replacement package 1) built account,
 profile, and Living Resume (one reader per PS-PLAT-006 table).
-PS-SETTINGS-EXPORT-004 (replacement package 2, this update) adds two
-more: capture (dbo.captures, dbo.capture_revisions) and moment
-(dbo.moments, dbo.moment_versions, dbo.moment_sources,
-dbo.moment_placements) -- text truth only. Every content hash,
-checksum, media/photo/voice/blob/file reference, transcript linkage,
-storage locator, and URL to stored media is excluded from both new
-domains' field lists (neither dbo.captures/dbo.capture_revisions nor
-any of the four Moment tables has such a column, so no row is
-incomplete for lack of one); dbo.moment_placements' target_entity_id
-(a foreign key to dbo.slate_entities, the Opportunity Slate
-destination) is also excluded -- Opportunity Slate is a separate C0
-matrix row with its own future, separately claimed reader, and
-dbo.slate_entities is not one of PS-SETTINGS-EXPORT-004's six claimed
-tables.
+PS-SETTINGS-EXPORT-004 (replacement package 2) added capture
+(dbo.captures, dbo.capture_revisions) and moment (dbo.moments,
+dbo.moment_versions, dbo.moment_sources, dbo.moment_placements) --
+text truth only. Every content hash, checksum, media/photo/voice/blob/
+file reference, transcript linkage, storage locator, and URL to stored
+media is excluded from both domains' field lists (neither
+dbo.captures/dbo.capture_revisions nor any of the four Moment tables
+has such a column, so no row is incomplete for lack of one);
+dbo.moment_placements' target_entity_id (a foreign key to
+dbo.slate_entities, the Opportunity Slate destination) is also
+excluded -- Opportunity Slate is a separate C0 matrix row with its own
+future, separately claimed reader, and dbo.slate_entities is not one
+of PS-SETTINGS-EXPORT-004's six claimed tables.
 
 dbo.career_skill_links is deliberately excluded: its rows reference
 evidence_item_id, whose disclosure rules are undecided, so it is
@@ -96,6 +95,54 @@ what a real database carries -- so "not yet gated" must not be read as
 "not yet applied"). The corrected reason states this package's actual
 boundary: every media/transcript/hash column is out of scope pending a
 dedicated future reader.
+
+PS-SETTINGS-EXPORT-005 (replacement package 3, this update) adds
+workshop_my_knowledge: dbo.knowledge_items and
+dbo.knowledge_item_versions, re-validated against the applied
+PS-WORKSHOP-001/PS-WORKSHOP-002 schema files at write time per C0's
+own caveat for this row ("current schema, owner reads, and
+use-disclosure dependencies must be rechecked"). Text truth only, the
+same boundary as every prior package: neither table has a media/hash/
+transcript column, and neither has a deleted_at_utc column of any kind
+(PS-WORKSHOP-001's own deletion path is a plain hard DELETE, never a
+soft-delete flag) -- dbo.knowledge_items' own archived_at_utc records a
+real, undeleted item state and is exported as content, the same
+"archived is not deleted" treatment PS-SETTINGS-EXPORT-004 already gave
+dbo.captures.status = 'archived'. dbo.knowledge_item_versions is the
+one table in this program whose version-history reader needed a
+different owner-predicate shape than its siblings: unlike
+dbo.capture_revisions/dbo.moment_versions, it independently carries its
+own owner_profile_id column (required by its own composite foreign key
+to dbo.knowledge_items), so its reader asserts the owner predicate on
+BOTH sides of the parent join, the same defense in depth
+PS-SETTINGS-EXPORT-004 applied to dbo.moment_sources/
+dbo.moment_placements. dbo.knowledge_item_versions also has no opaque
+key column of its own (unlike dbo.capture_revisions.revision_key or
+dbo.moment_versions.moment_version_key); its exported identifying
+tuple is (knowledge_item_key, version_number), already unique per
+UQ_knowledge_item_versions_number, and no surrogate key is manufactured
+for it.
+
+dbo.knowledge_item_save_requests (PS-WORKSHOP-001's idempotency ledger
+for one-step Save) is deliberately excluded, for the identical reason
+dbo.career_skill_links is: it is recorded as its own named, excluded
+DOMAINS entry ("workshop_knowledge_save_requests") rather than silently
+folded into "workshop_my_knowledge" or omitted, so a future reader of
+this dict never has to guess whether the omission was deliberate. It
+carries only an owner-scoped replay key and the resulting
+knowledge_item_id -- no title, wording, status, or other
+member-authored fact -- so it is machinery, not knowledge content.
+PS-WORKSHOP-002 added no table of its own (only a new procedure and a
+revised admission predicate on an existing one), so there is no
+PS-WORKSHOP-002 "confirmation-machinery table" to exclude here; the
+confirmation facts this package exports (item_status,
+confirmed_version_number, confirmed_at_utc) are dbo.knowledge_items
+columns PS-WORKSHOP-001 itself created, in the same shape
+PS-SETTINGS-EXPORT-004 already exported for dbo.moments. PS-WORKSHOP-003
+and PS-WORKSHOP-004 were re-read before this package was written and
+confirmed to add only procedures, never a column or table on either
+claimed table, so the field lists below remain the accurate current
+schema.
 
 Nothing in this module is wired to any route, worker, or scheduler.
 There is still no live export, no populated dbo.account_export_job_domains
@@ -206,6 +253,9 @@ read_moment = _make_reader("usp_ReadAccountExportMomentForOwner")
 read_moment_version = _make_reader("usp_ReadAccountExportMomentVersionForOwner")
 read_moment_source = _make_reader("usp_ReadAccountExportMomentSourceForOwner")
 read_moment_placement = _make_reader("usp_ReadAccountExportMomentPlacementForOwner")
+
+read_knowledge_item = _make_reader("usp_ReadAccountExportKnowledgeItemForOwner")
+read_knowledge_item_version = _make_reader("usp_ReadAccountExportKnowledgeItemVersionForOwner")
 
 
 def _reader_entry(function, schema_id, fields):
@@ -468,8 +518,50 @@ DOMAINS = {
         "readers": (),
     },
     "workshop_my_knowledge": {
+        "disposition": "included",
+        "reason": None,
+        "readers": (
+            _reader_entry(
+                read_knowledge_item,
+                "peerslate.account_export.workshop_my_knowledge.knowledge_item.v1",
+                (
+                    "knowledge_item_key", "item_status", "classification", "visibility",
+                    "current_version_number", "confirmed_version_number", "confirmed_at_utc",
+                    "archived_at_utc", "created_at_utc", "updated_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+            _reader_entry(
+                read_knowledge_item_version,
+                "peerslate.account_export.workshop_my_knowledge.knowledge_item_version.v1",
+                (
+                    "knowledge_item_key", "version_number", "title", "approved_wording",
+                    "original_member_wording", "body_format", "authored_via", "saved_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+        ),
+    },
+    # -------------------------------------------------------------
+    # knowledge_item_save_requests (PS-WORKSHOP-001): a Workshop table
+    # this package deliberately does NOT read, for the identical reason
+    # career_skill_links (PS-SETTINGS-EXPORT-003) and target_entity_id/
+    # dbo.slate_entities (PS-SETTINGS-EXPORT-004) are recorded as their
+    # own named entries -- an idempotency ledger (an owner-scoped replay
+    # key and the resulting knowledge_item_id only), not member-authored
+    # knowledge content. Recorded here as its own entry (not silently
+    # folded into "workshop_my_knowledge") so a future reader of this
+    # dict never has to guess whether the omission was deliberate.
+    # -------------------------------------------------------------
+    "workshop_knowledge_save_requests": {
         "disposition": "excluded",
-        "reason": "C0 marks Workshop/My Knowledge includable only after current schema, owner-read, and use-disclosure dependencies are rechecked; this package builds no reader for it.",
+        "reason": (
+            "dbo.knowledge_item_save_requests is PS-WORKSHOP-001's idempotency ledger "
+            "for one-step Save: an owner-scoped replay key and the resulting "
+            "knowledge_item_id only, no title, wording, status, or other "
+            "member-authored fact. It is machinery, not knowledge content; this "
+            "package builds no reader for it."
+        ),
         "readers": (),
     },
     "opportunity_slate": {

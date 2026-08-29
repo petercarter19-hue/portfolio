@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-WORKSHOP-READER-001",
+  "candidate_sha": "71f69a14f512f144a1aa807dde1bc5d5c57724ce",
+  "review_type": "independent",
+  "reviewer_ref": "role:indrev:ps-settings-wk-reader:20260829T154100Z:71f69a14",
+  "result": "pass",
+  "reviewed_at": "2026-08-29T15:41:00Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-WORKSHOP-READER-001.md"
+}
