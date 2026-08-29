@@ -1633,11 +1633,21 @@ class MicrosoftGraphAdapter:
             self._operator_id = None
 
 
+@dataclass(frozen=True)
+class StartedPlaywrightRuntime:
+    """One started pinned driver and its already-validated Chromium executable."""
+
+    playwright: object
+    chromium_executable: Path
+
+
 class PlaywrightRuntimeProvider(Protocol):
     expected_browser_version: str
 
-    def start(self, workspace: Path, environment: Mapping[str, str]) -> object:
-        """Provision, validate, and start the exact locked runtime."""
+    def start(
+        self, workspace: Path, environment: Mapping[str, str]
+    ) -> StartedPlaywrightRuntime:
+        """Provision, validate, and start the exact locked runtime binding."""
 
     def release(self) -> None:
         """Release worker-local import routing before root removal."""
@@ -1790,7 +1800,7 @@ class PinnedPlaywrightRuntime:
         site_packages: Path,
         browsers: Path,
         runtime_environment: Mapping[str, str],
-    ) -> object:
+    ) -> StartedPlaywrightRuntime:
         if any(
             name == "playwright" or name.startswith("playwright.")
             for name in sys.modules
@@ -1805,8 +1815,13 @@ class PinnedPlaywrightRuntime:
                 playwright = sync_api.sync_playwright().start()
             executable = Path(playwright.chromium.executable_path).resolve(strict=True)
             executable.relative_to(browsers.resolve(strict=True))
+            if not executable.is_file():
+                raise ValueError("Chromium executable is not a file")
             self._capture_runtime_modules(site_packages)
-            return playwright
+            return StartedPlaywrightRuntime(
+                playwright=playwright,
+                chromium_executable=executable,
+            )
         except Exception:
             cleanup_failed = False
             if playwright is not None:
@@ -1828,7 +1843,9 @@ class PinnedPlaywrightRuntime:
                 ) from None
             raise BrokerRefusal("sealed_browser_runtime_unavailable") from None
 
-    def start(self, workspace: Path, environment: Mapping[str, str]) -> object:
+    def start(
+        self, workspace: Path, environment: Mapping[str, str]
+    ) -> StartedPlaywrightRuntime:
         lock = self._lock()
         runtime_root = workspace / "runtime"
         venv_root = runtime_root / "venv"
@@ -2008,6 +2025,22 @@ class PlaywrightBrowserAdapter:
         # user text nor browser storage and is never emitted from the worker.
         if page.locator(".wk-status-banner--preview").count() != 1:
             raise BrokerRefusal("signed_out_private_baseline_failed")
+
+    @staticmethod
+    def _validated_chromium_executable(
+        runtime: StartedPlaywrightRuntime, workspace: Path
+    ) -> Path:
+        """Bind launch to the provider-validated file before child-env entry."""
+
+        try:
+            executable = Path(runtime.chromium_executable).resolve(strict=True)
+            browsers = (workspace / "runtime" / "browsers").resolve(strict=True)
+            if not executable.is_file():
+                raise ValueError("Chromium executable is not a file")
+            executable.relative_to(browsers)
+        except (AttributeError, OSError, TypeError, ValueError):
+            raise BrokerRefusal("sealed_browser_runtime_unavailable") from None
+        return executable
 
     @staticmethod
     def _close_resources(
@@ -2205,12 +2238,15 @@ class PlaywrightBrowserAdapter:
         probe_page = None
         browser = None
         playwright = None
+        chromium_executable: Path | None = None
         runtime_provider: PlaywrightRuntimeProvider | None = None
         contexts: dict[str, object] = {}
         try:
             workspace = Path(tempfile.mkdtemp(prefix=BROWSER_TEMP_PREFIX, dir=str(self._workspace_root)))
             runtime_provider = self._runtime_provider_factory()
-            playwright = runtime_provider.start(workspace, self._source_environment())
+            runtime = runtime_provider.start(workspace, self._source_environment())
+            playwright = runtime.playwright
+            chromium_executable = self._validated_chromium_executable(runtime, workspace)
             browser_root = workspace / "runtime" / "browsers"
             probe_root = Path(
                 tempfile.mkdtemp(prefix=BROWSER_PROBE_PREFIX, dir=str(self._workspace_root))
@@ -2221,6 +2257,7 @@ class PlaywrightBrowserAdapter:
             with _isolated_child_environment(probe_environment):
                 probe_browser = playwright.chromium.launch(
                     headless=False,
+                    executable_path=str(chromium_executable),
                     downloads_path=str(probe_root),
                     env=probe_environment,
                 )
@@ -2239,6 +2276,7 @@ class PlaywrightBrowserAdapter:
             with _isolated_child_environment(child_environment):
                 browser = playwright.chromium.launch(
                     headless=False,
+                    executable_path=str(chromium_executable),
                     downloads_path=str(workspace),
                     env=child_environment,
                 )

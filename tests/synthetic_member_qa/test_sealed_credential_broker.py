@@ -835,14 +835,24 @@ class FakeRuntimePlaywright:
 class FakeRuntimeProvider:
     expected_browser_version = "151.0.7922.34"
 
-    def __init__(self):
+    def __init__(self, *, executable_present=True):
         self.playwright = FakeRuntimePlaywright()
         self.released = False
+        self.executable_present = executable_present
+        self.chromium_executable = None
 
     def start(self, workspace, environment):
         del environment
-        (workspace / "runtime" / "browsers").mkdir(parents=True)
-        return self.playwright
+        browsers = workspace / "runtime" / "browsers"
+        browsers.mkdir(parents=True)
+        self.chromium_executable = browsers / "chromium-1234" / "chrome"
+        if self.executable_present:
+            self.chromium_executable.parent.mkdir()
+            self.chromium_executable.write_text("fake", encoding="utf-8")
+        return broker.StartedPlaywrightRuntime(
+            playwright=self.playwright,
+            chromium_executable=self.chromium_executable,
+        )
 
     def release(self):
         self.released = True
@@ -886,6 +896,9 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
             self.assertEqual(len(provider.playwright.browsers[1].contexts), 4)
             for launch in provider.playwright.launches:
                 self.assertFalse(launch["headless"])
+                self.assertEqual(
+                    launch["executable_path"], str(provider.chromium_executable)
+                )
                 self.assertNotIn("PEERSLATE_AUTH_ISSUER", launch["env"])
                 self.assertNotIn("AUTHORIZATION_REF", launch["env"])
             self.assertFalse(
@@ -896,6 +909,87 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
             )
             self.assertTrue(provider.released and provider.playwright.stopped)
             self.assertEqual(list(Path(root).iterdir()), [])
+
+    def test_missing_runtime_executable_refuses_before_launch_or_graph_mutation(self):
+        events = []
+        provider = FakeRuntimeProvider(executable_present=False)
+
+        with tempfile.TemporaryDirectory() as root:
+            adapter = broker.PlaywrightBrowserAdapter(
+                environment={"SystemRoot": "/safe"},
+                workspace_root=root,
+                runtime_provider_factory=lambda: provider,
+            )
+
+            class RuntimeBoundBrowser:
+                def prepare_attended_session(self, authority):
+                    return adapter.prepare_attended_session(authority)
+
+            graph = FakeGraph(events)
+            with self.assertRaisesRegex(
+                broker.BrokerRefusal, "sealed_browser_runtime_unavailable"
+            ):
+                broker.run_broker(
+                    run_id="qa-20260829-0001",
+                    cutoff=NOW,
+                    authority_adapter=FakeAuthority(events),
+                    graph=graph,
+                    browser=RuntimeBoundBrowser(),
+                    retirement_adapter=FakeRetirement(events),
+                )
+
+            self.assertEqual(provider.playwright.launches, [])
+            self.assertEqual(graph.create_calls, 0)
+            self.assertNotIn("graph_prepare", events)
+            self.assertTrue(provider.released)
+            self.assertEqual(list(Path(root).iterdir()), [])
+
+    def test_pinned_runtime_returns_the_validated_executable_binding(self):
+        class Chromium:
+            def __init__(self, executable_path):
+                self.executable_path = str(executable_path)
+
+        class StartedPlaywright:
+            def __init__(self, executable_path):
+                self.chromium = Chromium(executable_path)
+                self.stopped = False
+
+            def stop(self):
+                self.stopped = True
+
+        class Starter:
+            def __init__(self, started):
+                self.started = started
+
+            def start(self):
+                return self.started
+
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            site_packages = root_path / "site-packages"
+            executable = root_path / "browsers" / "chromium-1234" / "chrome"
+            site_packages.mkdir()
+            executable.parent.mkdir(parents=True)
+            executable.write_text("fake", encoding="utf-8")
+            started = StartedPlaywright(executable)
+            fake_sync_api = type(
+                "SyncApi",
+                (),
+                {"sync_playwright": staticmethod(lambda: Starter(started))},
+            )()
+            runtime = broker.PinnedPlaywrightRuntime()
+
+            with patch.object(
+                broker.importlib, "import_module", return_value=fake_sync_api
+            ):
+                binding = runtime._load_started_playwright(
+                    site_packages, executable.parents[1], {}
+                )
+
+            self.assertIs(binding.playwright, started)
+            self.assertEqual(binding.chromium_executable, executable.resolve())
+            started.stop()
+            runtime.release()
 
     def test_partial_runtime_start_stops_local_playwright_before_release(self):
         class Chromium:
