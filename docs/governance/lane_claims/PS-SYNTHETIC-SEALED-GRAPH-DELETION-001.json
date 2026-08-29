@@ -21,7 +21,8 @@
     "docs/AI_MODEL_AND_ROLE_ROUTING.md",
     "tests/synthetic_member_qa/test_sealed_credential_broker.py",
     "tests/synthetic_member_qa/test_sealed_credential_broker_attended.py",
-    "tests/synthetic_member_qa/test_sealed_credential_broker_deletion.py"
+    "tests/synthetic_member_qa/test_sealed_credential_broker_deletion.py",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-GRAPH-DELETION-001.md"
