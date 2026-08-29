@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-CORE-READERS-001",
+  "state": "active",
+  "outcome": "Deliver replacement package 1 of the accepted 2026-08-29 reader topology: read-only owner-scoped account-export core readers for exactly three domains (own account row, active member profile, the eight Living Resume tables) as one additive migration PS-SETTINGS-EXPORT-003 with rollback, registry entry (gate null until the manager's governed run), an isolation verification whose fixtures satisfy every NOT NULL and CHECK constraint derived from the schema files, offline allowlist-pinning tests with a forbidden-field canary, the adapter module, and contract records. Procedures accept only a trusted server-derived user key, select exact documented allowlists with deterministic ordering and read windows, exclude soft-deleted rows, and never select internal ids, user_key, auth_subject, row_version, or another member's data; career_skill_links defers to the evidence decision package. No UI, worker, or integration change; no real export run; no schema apply outside the disposable gate; no production authority. The paused DOMAIN-READERS-001 branch is research only.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/settings-core-readers-writer",
+  "branch": "work/2026-08-29-settings-account-export-core-readers-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "7cc5789922a82b96fbcc3007ae7a48a6f84f6fce",
+  "owner_outcome_ref": "pete-chat-2026-08-29/replacement-topology-package-1-go",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-ACCOUNT-EXPORT-CORE-READERS-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-CORE-READERS-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-ACCOUNT-EXPORT-CORE-READERS-001.json",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-003_core_readers.sql",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-003_core_readers_rollback.sql",
+    "SQL FIles/Migrations/registry.json",
+    "SQL FIles/Verification/PS-SETTINGS-EXPORT-003_core_reader_isolation_verify.sql",
+    "services/account_export_domain_readers.py",
+    "tests/test_settings_export_core_readers.py",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR1_ACCOUNT_EXPORT_CORE_READERS.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR1_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+  ],
+  "domains": [
+    "schema:settings:account-export-core-readers",
+    "privacy:settings:export-core-allowlists",
+    "testing:settings:account-export-core-readers"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-CORE-READERS-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
