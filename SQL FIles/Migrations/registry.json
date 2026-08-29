@@ -1953,6 +1953,50 @@
         "verification": "PS-SETTINGS-EXPORT-003_core_reader_isolation_verify.sql returned verified = 1",
         "operator": "Claude Fable 5 / work-2026-08-29-settings-account-export-core-readers-001 (post-review header fix re-proof)"
       }
+    },
+    {
+      "id": "PS-SETTINGS-EXPORT-004",
+      "forward": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-004_capture_moment_readers.sql",
+      "rollback": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-004_capture_moment_readers_rollback.sql",
+      "requires": [
+        "PS-AUTH-001",
+        "PS-CAPTURE-001",
+        "PS-CAPTURE-002",
+        "PS-MOMENT-001",
+        "PS-PLACEMENT-001"
+      ],
+      "summary": "Read-only owner-scoped account-export Capture/Moment readers (replacement package 2, 2026-08-29 topology): six @UserKey-only procedures over captures, capture_revisions, moments, moment_versions, moment_sources, and moment_placements, each with an exact text-truth allowlist, owner predicate, deterministic order, and trailing read-window columns. target_entity_id/dbo.slate_entities (Opportunity Slate) deliberately excluded; no table, trigger, index, container, worker, route, or UI change.",
+      "gate": {
+        "executable_sha256": "679af4674478db72933ffea49311d000d95b1a9113791cb461dc9671dfb721c3",
+        "gated_at_utc": "2026-08-29T13:33:56Z",
+        "gate_database": "ps-migration-path-20260829-cm",
+        "gate_server": "peerslate",
+        "prerequisites": [
+          "PS-PLAT-000",
+          "PS-PLAT-001",
+          "PS-PLAT-002",
+          "PS-PLAT-003",
+          "PS-PLAT-004",
+          "PS-PLAT-005",
+          "PS-PLAT-006",
+          "PS-PLAT-007",
+          "PS-AUTH-001",
+          "PS-CAPTURE-001",
+          "PS-CAPTURE-002",
+          "PS-MOMENT-001",
+          "PS-PLACEMENT-001"
+        ],
+        "objects": [
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportCaptureForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportCaptureRevisionForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportMomentForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportMomentPlacementForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportMomentSourceForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportMomentVersionForOwner"
+        ],
+        "verification": "PS-SETTINGS-EXPORT-004_capture_moment_reader_isolation_verify.sql returned verified = 1",
+        "operator": "Claude Fable 5 / work-2026-08-29-settings-account-export-capture-moment-readers-001"
+      }
     }
   ]
 }

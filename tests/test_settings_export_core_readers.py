@@ -426,8 +426,14 @@ class SettingsExportCoreReadersMigrationTests(unittest.TestCase):
                 self.assertFalse(overlap, msg=f"{name} selects forbidden column(s) {overlap}")
 
     def test_domains_field_allowlist_matches_the_actual_sql_output_exactly_in_order(self):
+        # domain_field_map() walks the entire (shared, module-global) DOMAINS
+        # dict, not merely this package's own ten procedures -- a later
+        # package (PS-SETTINGS-EXPORT-004 added "capture"/"moment") legitimately
+        # extends the same dict with its own included readers. This test only
+        # owns and checks this package's own ten; it asserts they are present
+        # (a subset), never that nothing else has been added since.
         expected_by_procedure = domain_field_map()
-        self.assertEqual(set(expected_by_procedure), set(READER_PROCEDURES))
+        self.assertTrue(set(READER_PROCEDURES).issubset(set(expected_by_procedure)))
         for name in READER_PROCEDURES:
             with self.subTest(procedure=name):
                 actual = content_select_columns(self.procedures[name])
@@ -729,8 +735,20 @@ class DomainsRegistryTests(unittest.TestCase):
     """Offline shape tests for the DOMAINS registry itself."""
 
     def test_exactly_three_domains_are_included_with_ten_total_readers(self):
-        included = {code: d for code, d in DOMAINS.items() if d["disposition"] == "included"}
-        self.assertEqual(set(included), {"account", "profile", "living_resume"})
+        # Scoped to this package's own three named domains, not "whatever the
+        # whole DOMAINS dict's included set happens to be" -- a later package
+        # (PS-SETTINGS-EXPORT-004) legitimately adds its own included domains
+        # ("capture", "moment") to the same shared dict. Restricting the
+        # dict comprehension to this package's three names preserves the
+        # original guarantee (exactly ten readers across exactly these three
+        # domains, matching exactly this package's ten procedures) without
+        # being disturbed by growth elsewhere.
+        this_packages_domains = {"account", "profile", "living_resume"}
+        included = {code: d for code, d in DOMAINS.items() if code in this_packages_domains}
+        self.assertEqual(set(included), this_packages_domains)
+        for code, domain in included.items():
+            with self.subTest(domain=code):
+                self.assertEqual(domain["disposition"], "included")
         total_readers = sum(len(d["readers"]) for d in included.values())
         self.assertEqual(total_readers, 10)
         procedures = {r["procedure"] for d in included.values() for r in d["readers"]}

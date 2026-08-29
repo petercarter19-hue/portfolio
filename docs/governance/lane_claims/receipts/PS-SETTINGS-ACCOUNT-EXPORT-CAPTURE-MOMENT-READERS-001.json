@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-CAPTURE-MOMENT-READERS-001",
+  "candidate_sha": "9e0cb6334c2c331028f91a3d442aedd0326964ac",
+  "review_type": "independent",
+  "reviewer_ref": "role:indrev:ps-settings-cm-readers:20260829T140122Z:9e0cb633",
+  "result": "pass",
+  "reviewed_at": "2026-08-29T14:01:22Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-CAPTURE-MOMENT-READERS-001.md"
+}

@@ -1,5 +1,7 @@
 """Thin read-only adapter over the account-export core-reader procedures
-(SQL FIles/Migrations/PS-SETTINGS-EXPORT-003_core_readers.sql).
+(SQL FIles/Migrations/PS-SETTINGS-EXPORT-003_core_readers.sql) and the
+Capture/Moment reader procedures
+(SQL FIles/Migrations/PS-SETTINGS-EXPORT-004_capture_moment_readers.sql).
 
 This module does no connection management, holds no configuration, and
 is not coupled to services/database_service.py's shared-application-
@@ -57,8 +59,23 @@ actually returns -- the same list tests/test_settings_export_core_readers.py
 pins against the actual SQL text, so this file can never silently drift
 from what the database really returns.
 
-Scope: this package builds exactly three of the C0 matrix's domains --
-account, profile, and Living Resume (one reader per PS-PLAT-006 table).
+Scope: PS-SETTINGS-EXPORT-003 (replacement package 1) built account,
+profile, and Living Resume (one reader per PS-PLAT-006 table).
+PS-SETTINGS-EXPORT-004 (replacement package 2, this update) adds two
+more: capture (dbo.captures, dbo.capture_revisions) and moment
+(dbo.moments, dbo.moment_versions, dbo.moment_sources,
+dbo.moment_placements) -- text truth only. Every content hash,
+checksum, media/photo/voice/blob/file reference, transcript linkage,
+storage locator, and URL to stored media is excluded from both new
+domains' field lists (neither dbo.captures/dbo.capture_revisions nor
+any of the four Moment tables has such a column, so no row is
+incomplete for lack of one); dbo.moment_placements' target_entity_id
+(a foreign key to dbo.slate_entities, the Opportunity Slate
+destination) is also excluded -- Opportunity Slate is a separate C0
+matrix row with its own future, separately claimed reader, and
+dbo.slate_entities is not one of PS-SETTINGS-EXPORT-004's six claimed
+tables.
+
 dbo.career_skill_links is deliberately excluded: its rows reference
 evidence_item_id, whose disclosure rules are undecided, so it is
 recorded here as its own excluded entry rather than silently folded
@@ -69,7 +86,16 @@ C0_ACCOUNT_EXPORT_ARCHITECTURE.md's own "V1 domain matrix" and
 separately claimed reader this package does not build) and a smaller
 set as "unavailable" (the source schema itself is not yet applied, or
 the domain is structurally unavailable to a server-side export), never
-guessed.
+guessed. "voice_photo" was corrected from "unavailable" to "excluded"
+by PS-SETTINGS-EXPORT-004: its prior reason claimed
+PS-VOICE-001/PS-CAPTURE-MEDIA-001 were "not gated/applied," but
+docs/governance/PRODUCTION_SCHEMA_STATE.md shows both applied in
+production (like dbo.captures/dbo.moments, they are gated: null in the
+registry -- a disposable-database rehearsal proof, never a claim about
+what a real database carries -- so "not yet gated" must not be read as
+"not yet applied"). The corrected reason states this package's actual
+boundary: every media/transcript/hash column is out of scope pending a
+dedicated future reader.
 
 Nothing in this module is wired to any route, worker, or scheduler.
 There is still no live export, no populated dbo.account_export_job_domains
@@ -172,6 +198,14 @@ read_career_project = _make_reader("usp_ReadAccountExportCareerProjectForOwner")
 read_career_achievement = _make_reader("usp_ReadAccountExportCareerAchievementForOwner")
 read_career_skill = _make_reader("usp_ReadAccountExportCareerSkillForOwner")
 read_career_timeline_event = _make_reader("usp_ReadAccountExportCareerTimelineEventForOwner")
+
+read_capture = _make_reader("usp_ReadAccountExportCaptureForOwner")
+read_capture_revision = _make_reader("usp_ReadAccountExportCaptureRevisionForOwner")
+
+read_moment = _make_reader("usp_ReadAccountExportMomentForOwner")
+read_moment_version = _make_reader("usp_ReadAccountExportMomentVersionForOwner")
+read_moment_source = _make_reader("usp_ReadAccountExportMomentSourceForOwner")
+read_moment_placement = _make_reader("usp_ReadAccountExportMomentPlacementForOwner")
 
 
 def _reader_entry(function, schema_id, fields):
@@ -345,19 +379,88 @@ DOMAINS = {
         "readers": (),
     },
     "capture": {
-        "disposition": "unavailable",
-        "reason": "PS-CAPTURE-001/PS-CAPTURE-002 are registered but not gated/applied; no Capture source table exists in an applied schema yet.",
-        "readers": (),
+        "disposition": "included",
+        "reason": None,
+        "readers": (
+            _reader_entry(
+                read_capture,
+                "peerslate.account_export.capture.capture.v1",
+                (
+                    "capture_key", "capture_type", "body", "visibility", "status",
+                    "created_at_utc", "updated_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+            _reader_entry(
+                read_capture_revision,
+                "peerslate.account_export.capture.capture_revision.v1",
+                (
+                    "revision_key", "capture_key", "revision_number", "body",
+                    "correction_note", "corrected_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+        ),
     },
     "voice_photo": {
-        "disposition": "unavailable",
-        "reason": "PS-VOICE-001/PS-CAPTURE-MEDIA-001 are registered but not gated/applied; no Voice/Photo source table exists in an applied schema yet.",
+        "disposition": "excluded",
+        "reason": (
+            "PS-VOICE-001/PS-CAPTURE-MEDIA-001 are applied in production "
+            "(docs/governance/PRODUCTION_SCHEMA_STATE.md), but every "
+            "media/transcript/hash/blob column is PS-SETTINGS-EXPORT-004's "
+            "defining boundary and is excluded from every domain that "
+            "package built (capture, moment). Voice/photo metadata and "
+            "transcripts are deferred to a future, separately claimed "
+            "media/evidence-decision reader package; this package builds "
+            "no reader for them."
+        ),
         "readers": (),
     },
     "moment": {
-        "disposition": "unavailable",
-        "reason": "PS-MOMENT-001/PS-PLACEMENT-001 are registered but not gated/applied; no Moment/placement source table exists in an applied schema yet.",
-        "readers": (),
+        "disposition": "included",
+        "reason": None,
+        "readers": (
+            _reader_entry(
+                read_moment,
+                "peerslate.account_export.moment.moment.v1",
+                (
+                    "moment_key", "visibility", "status", "current_version_number",
+                    "confirmed_version_number", "confirmed_at_utc", "created_at_utc",
+                    "updated_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+            _reader_entry(
+                read_moment_version,
+                "peerslate.account_export.moment.moment_version.v1",
+                (
+                    "moment_version_key", "moment_key", "version_number", "moment_kind",
+                    "title", "occurred_on", "occurred_precision", "narrative",
+                    "why_it_matters", "saved_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+            _reader_entry(
+                read_moment_source,
+                "peerslate.account_export.moment.moment_source.v1",
+                (
+                    "moment_source_key", "moment_key", "source_capture_key",
+                    "source_revision_key", "source_revision_number", "source_state",
+                    "source_deleted_at_utc", "created_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+            _reader_entry(
+                read_moment_placement,
+                "peerslate.account_export.moment.moment_placement.v1",
+                (
+                    "placement_key", "moment_key", "moment_version_number",
+                    "placement_status", "created_at_utc", "reactivated_at_utc",
+                    "removed_at_utc", "updated_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+        ),
     },
     "journal": {
         "disposition": "unavailable",
