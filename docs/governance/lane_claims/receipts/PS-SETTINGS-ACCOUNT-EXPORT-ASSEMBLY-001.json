@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-ASSEMBLY-001",
+  "candidate_sha": "cdaaa1a538040d40bb887b344fa224e0f2be2d00",
+  "review_type": "independent",
+  "reviewer_ref": "role:indrev:ps-settings-c2-assembly:20260829T083741Z:cdaaa1a5",
+  "result": "pass",
+  "reviewed_at": "2026-08-29T08:37:41Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-ASSEMBLY-001.md"
+}

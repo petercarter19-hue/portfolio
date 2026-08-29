@@ -283,6 +283,7 @@ This migration follows that exact house pattern:
   (which filters `queued`/`running`) leaves the race unresolved and the
   raw 2627 surfaces. Vanishingly rare; a later slice may widen the CATCH
   lookup to ready-before-expiry.
+
 **Not executed:**
 
 - **No two-member isolation proof, no lease-recovery/lock-timeout proof, no
@@ -292,7 +293,8 @@ This migration follows that exact house pattern:
   proof plan" items 1–2 were not written or exercised — no verification
   script exists in this candidate (it is outside the frozen claim
   surfaces) — not because the disposable-database infrastructure was
-  unreachable; it was reached for the gate.
+  unreachable; it was reached for the gate. (fulfilled by C2: see
+  C2_ACCOUNT_EXPORT_ASSEMBLY.md)
 - **No grant apply, no role creation, no worker identity.** This is a
   deviation from the claim's own outcome wording, not an exclusion the
   claim specifies — the C1 lane claim's `outcome` text names
