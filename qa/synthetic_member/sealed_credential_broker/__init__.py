@@ -64,6 +64,8 @@ ALLOWED_ALIASES = ("member_a", "member_b")
 REQUIRED_CONDITIONAL_OUTCOMES = {
     "member_a_cannot_update_member_b": "neutral_denial_not_distinguishable",
     "member_b_cannot_update_member_a": "neutral_denial_not_distinguishable",
+    "member_a_cannot_delete_member_b": "neutral_denial_not_distinguishable",
+    "member_b_cannot_delete_member_a": "neutral_denial_not_distinguishable",
     "member_a_forged_reference_denied": "feature_surface_unavailable",
     "member_b_forged_reference_denied": "feature_surface_unavailable",
     "member_a_cannot_export_member_b": "feature_surface_unavailable",
@@ -81,10 +83,6 @@ SAFE_TENANT_LABEL = re.compile(r"^[a-z0-9][a-z0-9-]{1,62}$")
 AUTHENTICATED_WORKSHOP_CONTROL = (
     "div.platform-account[data-ps-auth-control='authenticated']:not([hidden])"
 )
-SAME_ORIGIN_MUTATION_HEADERS = {
-    "Origin": ALLOWED_SITE_ORIGIN,
-    "Sec-Fetch-Site": "same-origin",
-}
 GRAPH_AUDIENCES = {
     "00000003-0000-0000-c000-000000000000",
     "https://graph.microsoft.com",
@@ -248,6 +246,12 @@ class BrowserPreflight:
 class BrowserCleanup:
     destroyed_contexts: int
     temporary_root_removed: bool
+
+
+EXPECTED_BROWSER_CLEANUP = BrowserCleanup(
+    destroyed_contexts=4,
+    temporary_root_removed=True,
+)
 
 
 @dataclass(frozen=True)
@@ -2027,6 +2031,351 @@ class PinnedPlaywrightRuntime:
         self._site_packages = None
 
 
+WORKSHOP_EXACT_DESCRIPTION_EVALUATOR = r"""
+(rows, payload) => {
+    const location = new URL(window.location.href);
+    const rawHref = String(window.location.href);
+    const authority = rawHref
+        .slice("https://".length)
+        .split(/[/?#]/, 1)[0];
+    if (
+        window.top !== window ||
+        document.defaultView !== window ||
+        location.protocol !== "https:" ||
+        location.origin !== payload.expectedOrigin ||
+        location.hostname !== "peerslate.com" ||
+        location.port !== "" ||
+        location.username !== "" ||
+        location.password !== "" ||
+        location.host !== "peerslate.com" ||
+        authority !== "peerslate.com"
+    ) {
+        throw new Error("Workshop disclosure refused");
+    }
+    const matchingRows = [];
+    for (const row of rows) {
+        if (
+            !row.isConnected ||
+            row.ownerDocument !== document ||
+            row.ownerDocument.defaultView !== window
+        ) {
+            throw new Error("Workshop disclosure refused");
+        }
+        const terms = Array.from(row.children).filter(
+            (child) => child.tagName === "DT"
+        );
+        if (
+            terms.length === 1 &&
+            terms[0].textContent.trim() === payload.term
+        ) {
+            matchingRows.push(row);
+        }
+    }
+    if (matchingRows.length !== 1) {
+        throw new Error("Workshop disclosure refused");
+    }
+    const descriptions = Array.from(matchingRows[0].children).filter(
+        (child) => child.tagName === "DD"
+    );
+    if (
+        descriptions.length !== 1 ||
+        descriptions[0].textContent.trim() !== payload.description
+    ) {
+        throw new Error("Workshop disclosure refused");
+    }
+    return true;
+}
+"""
+
+
+class WorkshopEvaluator:
+    """Bind every private Workshop interaction to one canonical document.
+
+    Playwright locators may resolve after a navigation.  This evaluator keeps
+    the locator operation and its document/origin proof in the same browser
+    task, so a page from a hostile owner document, a non-canonical authority,
+    or a redirect race cannot be credited as a Workshop proof or receive a
+    generated value.
+    """
+
+    def __init__(self, page: object):
+        self._page = page
+
+    @staticmethod
+    def _canonical_url(value: object) -> bool:
+        try:
+            parsed = urlparse(str(value))
+            return (
+                parsed.scheme == "https"
+                and parsed.netloc == "peerslate.com"
+                and parsed.hostname == "peerslate.com"
+                and parsed.port is None
+                and parsed.username is None
+                and parsed.password is None
+            )
+        except (TypeError, ValueError):
+            return False
+
+    @classmethod
+    def _require_canonical_target(cls, value: object) -> str:
+        if not cls._canonical_url(value):
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+        return str(value)
+
+    def _assert_document(self) -> None:
+        if not self._canonical_url(getattr(self._page, "url", "")):
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+        try:
+            result = self._page.evaluate(
+                """
+                (payload) => {
+                    const location = new URL(window.location.href);
+                    if (
+                        window.top !== window ||
+                        document.defaultView !== window ||
+                        location.href !== window.location.href ||
+                        location.protocol !== "https:" ||
+                        location.origin !== payload.expectedOrigin ||
+                        location.hostname !== "peerslate.com" ||
+                        location.port !== "" ||
+                        location.username !== "" ||
+                        location.password !== "" ||
+                        location.host !== "peerslate.com"
+                    ) {
+                        throw new Error("Workshop document refused");
+                    }
+                    return true;
+                }
+                """,
+                {"expectedOrigin": ALLOWED_SITE_ORIGIN},
+            )
+        except Exception:
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate") from None
+        if result is not True:
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+
+    def navigate(self, target: object) -> None:
+        target_url = self._require_canonical_target(target)
+        try:
+            self._page.goto(target_url, wait_until="domcontentloaded")
+        except Exception:
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate") from None
+        self._assert_document()
+
+    def reload(self) -> None:
+        self._assert_document()
+        try:
+            self._page.reload(wait_until="domcontentloaded")
+        except Exception:
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate") from None
+        self._assert_document()
+
+    def _read(self, locator: object, operation: str, **extra: object) -> object:
+        payload = {
+            "operation": operation,
+            "expectedOrigin": ALLOWED_SITE_ORIGIN,
+            **extra,
+        }
+        try:
+            return locator.evaluate_all(
+                """
+                (elements, payload) => {
+                    const location = new URL(window.location.href);
+                    if (
+                        window.top !== window ||
+                        document.defaultView !== window ||
+                        location.protocol !== "https:" ||
+                        location.origin !== payload.expectedOrigin ||
+                        location.hostname !== "peerslate.com" ||
+                        location.port !== "" ||
+                        location.username !== "" ||
+                        location.password !== "" ||
+                        location.host !== "peerslate.com" ||
+                        !elements.every(
+                            (element) =>
+                                element.isConnected &&
+                                element.ownerDocument === document &&
+                                element.ownerDocument.defaultView === window
+                        )
+                    ) {
+                        throw new Error("Workshop document refused");
+                    }
+                    if (payload.operation === "count") {
+                        return elements.length;
+                    }
+                    if (elements.length !== 1) {
+                        throw new Error("Workshop target cardinality refused");
+                    }
+                    const element = elements[0];
+                    if (payload.operation === "text") {
+                        return element.textContent;
+                    }
+                    if (payload.operation === "input_value") {
+                        if (!(element instanceof window.HTMLInputElement)) {
+                            throw new Error("Workshop input refused");
+                        }
+                        return element.value;
+                    }
+                    if (payload.operation === "attribute") {
+                        return element.getAttribute(payload.name);
+                    }
+                    throw new Error("Workshop read refused");
+                }
+                """,
+                payload,
+            )
+        except Exception:
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate") from None
+
+    def count(self, locator: object) -> int:
+        result = self._read(locator, "count")
+        if isinstance(result, bool) or not isinstance(result, int) or result < 0:
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+        return result
+
+    def text(self, locator: object) -> str:
+        result = self._read(locator, "text")
+        if not isinstance(result, str):
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+        return result
+
+    def input_value(self, locator: object) -> str:
+        result = self._read(locator, "input_value")
+        if not isinstance(result, str):
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+        return result
+
+    def attribute(self, locator: object, name: str) -> str | None:
+        result = self._read(locator, "attribute", name=name)
+        if result is not None and not isinstance(result, str):
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+        return result
+
+    def _write(self, locator: object, operation: str, **extra: object) -> None:
+        payload = {
+            "operation": operation,
+            "expectedOrigin": ALLOWED_SITE_ORIGIN,
+            **extra,
+        }
+        handle = None
+        try:
+            handle = locator.element_handle()
+            if handle is None:
+                raise ValueError("Workshop target unavailable")
+            result = handle.evaluate(
+                """
+                (element, payload) => {
+                    const location = new URL(window.location.href);
+                    if (
+                        window.top !== window ||
+                        document.defaultView !== window ||
+                        location.protocol !== "https:" ||
+                        location.origin !== payload.expectedOrigin ||
+                        location.hostname !== "peerslate.com" ||
+                        location.port !== "" ||
+                        location.username !== "" ||
+                        location.password !== "" ||
+                        location.host !== "peerslate.com" ||
+                        !element.isConnected ||
+                        element.ownerDocument !== document ||
+                        element.ownerDocument.defaultView !== window
+                    ) {
+                        throw new Error("Workshop target refused");
+                    }
+                    if (payload.operation === "fill") {
+                        if (
+                            !(
+                                element instanceof window.HTMLInputElement ||
+                                element instanceof window.HTMLTextAreaElement
+                            ) ||
+                            typeof payload.value !== "string"
+                        ) {
+                            throw new Error("Workshop field refused");
+                        }
+                        const prototype =
+                            element instanceof window.HTMLInputElement
+                                ? window.HTMLInputElement.prototype
+                                : window.HTMLTextAreaElement.prototype;
+                        const descriptor = Object.getOwnPropertyDescriptor(
+                            prototype,
+                            "value"
+                        );
+                        if (!descriptor || typeof descriptor.set !== "function") {
+                            throw new Error("Workshop field refused");
+                        }
+                        descriptor.set.call(element, payload.value);
+                        element.dispatchEvent(
+                            new window.Event("input", { bubbles: true })
+                        );
+                        element.dispatchEvent(
+                            new window.Event("change", { bubbles: true })
+                        );
+                    } else if (payload.operation === "check") {
+                        if (
+                            !(element instanceof window.HTMLInputElement) ||
+                            !["checkbox", "radio"].includes(element.type)
+                        ) {
+                            throw new Error("Workshop check refused");
+                        }
+                        if (!element.checked) {
+                            element.click();
+                        }
+                    } else if (payload.operation === "click") {
+                        if (!(element instanceof window.HTMLElement)) {
+                            throw new Error("Workshop click refused");
+                        }
+                        element.click();
+                    } else {
+                        throw new Error("Workshop write refused");
+                    }
+                    return true;
+                }
+                """,
+                payload,
+            )
+            if result is not True:
+                raise ValueError("Workshop write refused")
+        except Exception:
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate") from None
+        finally:
+            if handle is not None:
+                try:
+                    handle.dispose()
+                except Exception:
+                    raise BrokerIndeterminate(
+                        "sealed_browser_cleanup_indeterminate"
+                    ) from None
+        # A click may initiate navigation after the in-document operation.
+        # Rebind the resulting page before any later proof can use it.
+        self._assert_document()
+
+    def fill(self, locator: object, value: str) -> None:
+        self._write(locator, "fill", value=value)
+
+    def check(self, locator: object) -> None:
+        self._write(locator, "check")
+
+    def click(self, locator: object) -> None:
+        self._write(locator, "click")
+
+    def exact_description(
+        self, locator: object, *, term: str, description: str
+    ) -> None:
+        try:
+            result = locator.evaluate_all(
+                WORKSHOP_EXACT_DESCRIPTION_EVALUATOR,
+                {
+                    "expectedOrigin": ALLOWED_SITE_ORIGIN,
+                    "term": term,
+                    "description": description,
+                },
+            )
+        except Exception:
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate") from None
+        if result is not True:
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+
+
 @contextmanager
 def _isolated_child_environment(environment: Mapping[str, str]):
     """Start Playwright children without the worker's ambient environment."""
@@ -2103,16 +2452,18 @@ class PlaywrightBrowserAdapter:
 
     @staticmethod
     def _assert_site_page(page) -> None:
-        parsed = urlparse(str(page.url))
-        if parsed.scheme != "https" or parsed.hostname != "peerslate.com":
+        if not WorkshopEvaluator._canonical_url(getattr(page, "url", "")):
             raise BrokerRefusal("signed_out_private_baseline_failed")
 
     def _assert_signed_out_private_baseline(self, page) -> None:
-        page.goto(f"{ALLOWED_SITE_ORIGIN}/app/workshop", wait_until="domcontentloaded")
-        self._assert_site_page(page)
+        evaluator = WorkshopEvaluator(page)
+        try:
+            evaluator.navigate(f"{ALLOWED_SITE_ORIGIN}/app/workshop")
+        except BrokerIndeterminate:
+            raise BrokerRefusal("signed_out_private_baseline_failed") from None
         # A structural selector is permitted; it intentionally reads neither
         # user text nor browser storage and is never emitted from the worker.
-        if page.locator(".wk-status-banner--preview").count() != 1:
+        if evaluator.count(page.locator(".wk-status-banner--preview")) != 1:
             raise BrokerRefusal("signed_out_private_baseline_failed")
 
     @staticmethod
@@ -2478,17 +2829,20 @@ class PlaywrightBrowserAdapter:
         arrival = urlparse(str(page.url))
         if (
             arrival.scheme != "https"
-            or arrival.netloc != urlparse(ALLOWED_SITE_ORIGIN).netloc
+            or arrival.netloc != "peerslate.com"
+            or arrival.hostname != "peerslate.com"
+            or arrival.port is not None
+            or arrival.username is not None
+            or arrival.password is not None
             or arrival.path != "/app"
         ):
             raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
-        page.goto(f"{ALLOWED_SITE_ORIGIN}/app/workshop", wait_until="domcontentloaded")
+        WorkshopEvaluator(page).navigate(f"{ALLOWED_SITE_ORIGIN}/app/workshop")
 
     @staticmethod
     def _sign_out(page) -> None:
-        page.goto(
+        WorkshopEvaluator(page).navigate(
             f"{ALLOWED_SITE_ORIGIN}/.auth/logout?post_logout_redirect_uri=%2F",
-            wait_until="domcontentloaded",
         )
 
 
@@ -2527,6 +2881,10 @@ class _PlaywrightAttendedSession:
         return self._preflight
 
     @staticmethod
+    def _workshop(page) -> WorkshopEvaluator:
+        return WorkshopEvaluator(page)
+
+    @staticmethod
     def _item_url(item_key: str) -> str:
         return f"{ALLOWED_SITE_ORIGIN}/app/workshop?item={quote(item_key, safe='')}"
 
@@ -2538,12 +2896,14 @@ class _PlaywrightAttendedSession:
 
     @staticmethod
     def _assert_marker_absent(page, marker: str) -> None:
-        if page.get_by_text(marker, exact=True).count() != 0:
+        evaluator = WorkshopEvaluator(page)
+        if evaluator.count(page.get_by_text(marker, exact=True)) != 0:
             raise BrokerRefusal("private_peer_content_exposed")
 
     @staticmethod
     def _assert_marker_present(page, marker: str) -> None:
-        if page.get_by_text(marker, exact=True).count() < 1:
+        evaluator = WorkshopEvaluator(page)
+        if evaluator.count(page.get_by_text(marker, exact=True)) < 1:
             raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
 
     @staticmethod
@@ -2564,20 +2924,22 @@ class _PlaywrightAttendedSession:
     def _assert_authenticated_private_workshop(page) -> None:
         """Prove a private Workshop shell without observing member content."""
 
-        PlaywrightBrowserAdapter._assert_site_page(page)
+        evaluator = WorkshopEvaluator(page)
+        evaluator._assert_document()
         if (
             urlparse(str(page.url)).path != "/app/workshop"
-            or page.locator(".wk-status-banner--preview").count() != 0
-            or page.locator(AUTHENTICATED_WORKSHOP_CONTROL).count() != 1
+            or evaluator.count(page.locator(".wk-status-banner--preview")) != 0
+            or evaluator.count(page.locator(AUTHENTICATED_WORKSHOP_CONTROL)) != 1
         ):
             raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
 
     @staticmethod
     def _version_from_current_item(page) -> SealedValue:
+        evaluator = WorkshopEvaluator(page)
         locator = page.locator("input[name='expected_row_version']")
-        if locator.count() != 1:
+        if evaluator.count(locator) != 1:
             raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
-        return SealedValue(locator.input_value())
+        return SealedValue(evaluator.input_value(locator))
 
     def _assert_owner_item(
         self,
@@ -2587,7 +2949,7 @@ class _PlaywrightAttendedSession:
         *,
         require_unchanged: bool = False,
     ) -> None:
-        page.goto(self._item_url(handle.key.reveal()), wait_until="domcontentloaded")
+        self._workshop(page).navigate(self._item_url(handle.key.reveal()))
         self._assert_authenticated_private_workshop(page)
         self._assert_marker_present(page, marker)
         refreshed = self._version_from_current_item(page)
@@ -2598,13 +2960,18 @@ class _PlaywrightAttendedSession:
         handle.version = refreshed
 
     def _create_item(self, page, *, marker: str) -> _SealedItemHandle:
-        page.goto(f"{ALLOWED_SITE_ORIGIN}/app/workshop/add", wait_until="domcontentloaded")
-        page.locator("#wk-title").fill(marker)
-        page.locator("#wk-wording").fill(self._wordings(marker)[0])
-        page.locator("input[name='classification'][value='unclassified']").check()
-        page.get_by_role("button", name="Continue").click()
-        page.locator("button[name='save_action'][value='confirm']").click()
-        href = page.get_by_role("link", name="View in My Information").get_attribute("href")
+        evaluator = self._workshop(page)
+        evaluator.navigate(f"{ALLOWED_SITE_ORIGIN}/app/workshop/add")
+        evaluator.fill(page.locator("#wk-title"), marker)
+        evaluator.fill(page.locator("#wk-wording"), self._wordings(marker)[0])
+        evaluator.check(
+            page.locator("input[name='classification'][value='unclassified']")
+        )
+        evaluator.click(page.get_by_role("button", name="Continue"))
+        evaluator.click(page.locator("button[name='save_action'][value='confirm']"))
+        href = evaluator.attribute(
+            page.get_by_role("link", name="View in My Information"), "href"
+        )
         item_values = parse_qs(urlparse(str(href or "")).query).get("item", [])
         if len(item_values) != 1 or not item_values[0]:
             raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
@@ -2620,53 +2987,22 @@ class _PlaywrightAttendedSession:
             f"{marker}-edit-two",
         )
 
-    def _post_foreign_mutation(
+    def _record_foreign_mutation_conditional(
         self,
         page,
         owner_page,
         *,
-        endpoint: str,
-        form: Mapping[str, str],
         peer_handle: _SealedItemHandle,
         peer_marker: str,
-        expected_denial: str,
     ) -> None:
-        self._assert_authenticated_private_workshop(page)
-        response = page.context.request.post(
-            endpoint,
-            form=dict(form),
-            headers=SAME_ORIGIN_MUTATION_HEADERS,
-            fail_on_status_code=False,
-            max_redirects=0,
-        )
-        try:
-            headers = response.headers
-            if not isinstance(headers, Mapping):
-                raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
-            location = headers.get("location") or headers.get("Location")
-            if expected_denial == "update":
-                # ``update_item`` returns its neutral, version-fenced conflict
-                # form (200, no redirect) for a foreign owner reference.
-                expected_status = 200
-                expected_location = None
-            elif expected_denial == "delete":
-                # ``delete_item`` redirects only to the actor's neutral library
-                # surface with the standard changed outcome; redirects remain
-                # disabled so this worker never follows a foreign reference.
-                expected_status = 302
-                expected_location = (
-                    f"/app/workshop?item={quote(peer_handle.key.reveal(), safe='')}&error=changed"
-                )
-            else:
-                raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
-            if response.status != expected_status or location != expected_location:
-                raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
-        finally:
-            response.dispose()
-        # A request-context response does not refresh this page. Revisit the
-        # private shell before crediting the denial so a server-side session
-        # loss cannot be mistaken for a still-authenticated actor.
-        page.goto(f"{ALLOWED_SITE_ORIGIN}/app/workshop", wait_until="domcontentloaded")
+        """Do not send a foreign write without one atomic owner binding.
+
+        ``APIRequestContext`` is not tied to the visible page document: a
+        redirect or hostile document can make an otherwise same-origin URL
+        appear trustworthy while a mutation is in flight.  Workshop currently
+        has no atomically provable foreign-owner form control, so retain the
+        honest Conditional rather than manufacture an update or delete probe.
+        """
         self._assert_authenticated_private_workshop(page)
         self._assert_marker_absent(page, peer_marker)
         self._assert_owner_item(
@@ -2679,67 +3015,51 @@ class _PlaywrightAttendedSession:
         owner_page,
         *,
         actor: str,
-        actor_marker: str,
         peer: str,
         peer_handle: _SealedItemHandle,
         peer_marker: str,
         outcomes: dict[str, JourneyObservation],
     ) -> None:
         peer_key = peer_handle.key.reveal()
-        page.goto(f"{ALLOWED_SITE_ORIGIN}/app/workshop", wait_until="domcontentloaded")
+        self._workshop(page).navigate(f"{ALLOWED_SITE_ORIGIN}/app/workshop")
         self._assert_authenticated_private_workshop(page)
         self._assert_marker_absent(page, peer_marker)
         self._assert_authenticated_private_workshop(page)
         self._record_pass(outcomes, f"{actor}_cannot_list_{peer}")
 
-        page.goto(self._item_url(peer_key), wait_until="domcontentloaded")
+        self._workshop(page).navigate(self._item_url(peer_key))
         self._assert_authenticated_private_workshop(page)
         self._assert_marker_absent(page, peer_marker)
         self._assert_authenticated_private_workshop(page)
         self._record_pass(outcomes, f"{actor}_cannot_read_{peer}")
 
-        page.goto(f"{ALLOWED_SITE_ORIGIN}/app/workshop", wait_until="domcontentloaded")
+        self._workshop(page).navigate(f"{ALLOWED_SITE_ORIGIN}/app/workshop")
         self._assert_authenticated_private_workshop(page)
-        self._post_foreign_mutation(
+        self._record_foreign_mutation_conditional(
             page,
             owner_page,
-            endpoint=f"{ALLOWED_SITE_ORIGIN}/app/workshop/items/{quote(peer_key, safe='')}",
-            form={
-                "title": actor_marker,
-                "wording": f"{actor_marker}-foreign-update",
-                "classification": "unclassified",
-                "save_action": "confirm",
-                "expected_row_version": peer_handle.version.reveal(),
-            },
             peer_handle=peer_handle,
             peer_marker=peer_marker,
-            expected_denial="update",
         )
-        # Workshop's neutral foreign update response is a safe 200 with no
-        # structural owner-denial signal.  The independent owner reproof above
-        # prevents a false access claim, but cannot distinguish that route from
-        # an otherwise identical no-op, so record the approved limitation.
         self._record_conditional(
             outcomes,
             f"{actor}_cannot_update_{peer}",
             "neutral_denial_not_distinguishable",
         )
 
-        page.goto(f"{ALLOWED_SITE_ORIGIN}/app/workshop", wait_until="domcontentloaded")
+        self._workshop(page).navigate(f"{ALLOWED_SITE_ORIGIN}/app/workshop")
         self._assert_authenticated_private_workshop(page)
-        self._post_foreign_mutation(
+        self._record_foreign_mutation_conditional(
             page,
             owner_page,
-            endpoint=f"{ALLOWED_SITE_ORIGIN}/app/workshop/items/{quote(peer_key, safe='')}/delete",
-            form={
-                "confirm_delete": "delete",
-                "expected_row_version": peer_handle.version.reveal(),
-            },
             peer_handle=peer_handle,
             peer_marker=peer_marker,
-            expected_denial="delete",
         )
-        self._record_pass(outcomes, f"{actor}_cannot_delete_{peer}")
+        self._record_conditional(
+            outcomes,
+            f"{actor}_cannot_delete_{peer}",
+            "neutral_denial_not_distinguishable",
+        )
 
         # Workshop supplies no export control or route.  Do not invent a URL:
         # the canonical export check is an explicit closed limitation instead.
@@ -2764,30 +3084,31 @@ class _PlaywrightAttendedSession:
         wording: str,
     ) -> None:
         item_key = handle.key.reveal()
-        page.goto(
-            f"{ALLOWED_SITE_ORIGIN}/app/workshop/items/{quote(item_key, safe='')}/edit",
-            wait_until="domcontentloaded",
+        evaluator = self._workshop(page)
+        evaluator.navigate(
+            f"{ALLOWED_SITE_ORIGIN}/app/workshop/items/{quote(item_key, safe='')}/edit"
         )
-        page.locator("#wk-wording").fill(wording)
-        page.get_by_role("button", name="Continue").click()
-        page.locator("button[name='save_action'][value='confirm']").click()
+        evaluator.fill(page.locator("#wk-wording"), wording)
+        evaluator.click(page.get_by_role("button", name="Continue"))
+        evaluator.click(page.locator("button[name='save_action'][value='confirm']"))
         self._assert_owner_item(page, handle, marker)
 
     def _assert_history_and_disclosure(
         self, page, handle: _SealedItemHandle, marker: str
     ) -> tuple[int, int, int]:
         self._assert_owner_item(page, handle, marker)
+        evaluator = self._workshop(page)
         history = page.locator("details.wk-wording-history")
-        if history.count() != 1:
+        if evaluator.count(history) != 1:
             raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
-        count_text = history.locator(".wk-wording-history__count").text_content()
-        note_text = history.locator(".wk-wording-history__note").text_content()
+        count_text = evaluator.text(history.locator(".wk-wording-history__count"))
+        note_text = evaluator.text(history.locator(".wk-wording-history__note"))
         versions = history.locator(".wk-wording-history__version")
         if (
             " ".join(str(count_text or "").split()) != "3 retained"
             or " ".join(str(note_text or "").split()) != WORKSHOP_HISTORY_NOTE
-            or history.locator(".wk-wording-history__window").count() != 0
-            or versions.count() != 3
+            or evaluator.count(history.locator(".wk-wording-history__window")) != 0
+            or evaluator.count(versions) != 3
         ):
             raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
         expected = tuple(reversed(self._wordings(marker)))
@@ -2795,13 +3116,13 @@ class _PlaywrightAttendedSession:
         source_proofs = 0
         for index, approved in enumerate(expected):
             row = versions.nth(index)
-            if row.get_by_text(f"Version {3 - index}", exact=True).count() != 1:
+            if evaluator.count(row.get_by_text(f"Version {3 - index}", exact=True)) != 1:
                 raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
             wording = row.locator(".wk-wording-history__wording")
-            if wording.count() != 2:
+            if evaluator.count(wording) != 2:
                 raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
-            approved_text = wording.nth(0).text_content()
-            source_text = wording.nth(1).text_content()
+            approved_text = evaluator.text(wording.nth(0))
+            source_text = evaluator.text(wording.nth(1))
             if (
                 not isinstance(approved_text, str)
                 or not isinstance(source_text, str)
@@ -2810,77 +3131,74 @@ class _PlaywrightAttendedSession:
             ):
                 raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
             source_proofs += 1
-        downstream_rows = page.locator(".wk-detail__meta-row").filter(
-            has_text="Downstream use"
+        evaluator.exact_description(
+            page.locator(".wk-detail__meta-row"),
+            term="Downstream use",
+            description="Not used elsewhere",
         )
-        if (
-            downstream_rows.count() != 1
-            or downstream_rows.locator("dd").count() != 1
-            or " ".join(
-                str(downstream_rows.locator("dd").text_content() or "").split()
-            )
-            != "Not used elsewhere"
-        ):
-            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
         return 3, source_proofs, 1
 
     def _archive_and_restore_item(self, page, handle: _SealedItemHandle, marker: str) -> None:
         item_key = handle.key.reveal()
-        page.goto(self._item_url(item_key), wait_until="domcontentloaded")
-        page.get_by_role("button", name="Archive").click()
-        page.goto(self._archived_item_url(item_key), wait_until="domcontentloaded")
+        evaluator = self._workshop(page)
+        evaluator.navigate(self._item_url(item_key))
+        evaluator.click(page.get_by_role("button", name="Archive"))
+        evaluator.navigate(self._archived_item_url(item_key))
         self._assert_marker_present(page, marker)
         refreshed = self._version_from_current_item(page)
         handle.version.clear()
         handle.version = refreshed
-        page.get_by_role("button", name="Restore").click()
+        evaluator.click(page.get_by_role("button", name="Restore"))
         self._assert_owner_item(page, handle, marker)
 
     def _exercise_session_continuity(self, context, page, *, marker: str) -> None:
-        page.reload(wait_until="domcontentloaded")
+        evaluator = self._workshop(page)
+        evaluator.reload()
         self._assert_marker_present(page, marker)
         second_tab = context.new_page()
         try:
-            second_tab.goto(f"{ALLOWED_SITE_ORIGIN}/app/workshop", wait_until="domcontentloaded")
+            self._workshop(second_tab).navigate(f"{ALLOWED_SITE_ORIGIN}/app/workshop")
             self._assert_marker_present(second_tab, marker)
         finally:
             second_tab.close()
-        page.goto(ALLOWED_SITE_ORIGIN, wait_until="domcontentloaded")
-        page.goto(f"{ALLOWED_SITE_ORIGIN}/app/workshop", wait_until="domcontentloaded")
+        evaluator.navigate(ALLOWED_SITE_ORIGIN)
+        evaluator.navigate(f"{ALLOWED_SITE_ORIGIN}/app/workshop")
         self._assert_marker_present(page, marker)
 
     def _delete_item(self, page, handle: _SealedItemHandle) -> None:
         item_key = handle.key.reveal()
-        page.goto(
-            f"{ALLOWED_SITE_ORIGIN}/app/workshop/items/{quote(item_key, safe='')}/delete",
-            wait_until="domcontentloaded",
+        evaluator = self._workshop(page)
+        evaluator.navigate(
+            f"{ALLOWED_SITE_ORIGIN}/app/workshop/items/{quote(item_key, safe='')}/delete"
         )
         if (
-            page.get_by_text("Permanent deletion", exact=True).count() != 1
-            or page.get_by_text("could not check just now", exact=False).count() != 0
-            or page.get_by_text(
-                "Your saved Opportunity Slate cites this item", exact=False
-            ).count()
+            evaluator.count(page.get_by_text("Permanent deletion", exact=True)) != 1
+            or evaluator.count(
+                page.get_by_text("could not check just now", exact=False)
+            ) != 0
+            or evaluator.count(
+                page.get_by_text(
+                    "Your saved Opportunity Slate cites this item", exact=False
+                )
+            )
             != 0
         ):
             raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
-        page.locator("input[name='confirm_delete']").check()
-        page.get_by_role("button", name="Delete permanently").click()
+        evaluator.check(page.locator("input[name='confirm_delete']"))
+        evaluator.click(page.get_by_role("button", name="Delete permanently"))
 
     def _observe_item_residue(
         self, page, handle: _SealedItemHandle, marker: str
     ) -> tuple[int, int]:
-        page.goto(self._item_url(handle.key.reveal()), wait_until="domcontentloaded")
+        evaluator = self._workshop(page)
+        evaluator.navigate(self._item_url(handle.key.reveal()))
         self._assert_authenticated_private_workshop(page)
-        active = page.get_by_text(marker, exact=True).count()
-        active_detail = page.locator("article.wk-detail").count()
-        page.goto(
-            self._archived_item_url(handle.key.reveal()),
-            wait_until="domcontentloaded",
-        )
+        active = evaluator.count(page.get_by_text(marker, exact=True))
+        active_detail = evaluator.count(page.locator("article.wk-detail"))
+        evaluator.navigate(self._archived_item_url(handle.key.reveal()))
         self._assert_authenticated_private_workshop(page)
-        archived = page.get_by_text(marker, exact=True).count()
-        archived_detail = page.locator("article.wk-detail").count()
+        archived = evaluator.count(page.get_by_text(marker, exact=True))
+        archived_detail = evaluator.count(page.locator("article.wk-detail"))
         if active_detail != 0 or archived_detail != 0:
             raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
         return active, archived
@@ -2888,7 +3206,7 @@ class _PlaywrightAttendedSession:
     def _sign_out_safely(self, context, page) -> None:
         second_tab = context.new_page()
         try:
-            second_tab.goto(f"{ALLOWED_SITE_ORIGIN}/app/workshop", wait_until="domcontentloaded")
+            self._workshop(second_tab).navigate(f"{ALLOWED_SITE_ORIGIN}/app/workshop")
             self._adapter._sign_out(page)
             self._adapter._assert_signed_out_private_baseline(second_tab)
             context.clear_cookies()
@@ -2952,11 +3270,11 @@ class _PlaywrightAttendedSession:
             self._record_pass(outcomes, "browser_state_member_b_isolated")
 
             self._exercise_peer_denials(
-                pages["member_a"], pages["member_b"], actor="member_a", actor_marker=member_a_marker,
+                pages["member_a"], pages["member_b"], actor="member_a",
                 peer="member_b", peer_handle=handles["member_b"], peer_marker=member_b_marker, outcomes=outcomes,
             )
             self._exercise_peer_denials(
-                pages["member_b"], pages["member_a"], actor="member_b", actor_marker=member_b_marker,
+                pages["member_b"], pages["member_a"], actor="member_b",
                 peer="member_a", peer_handle=handles["member_a"], peer_marker=member_a_marker, outcomes=outcomes,
             )
 
@@ -3281,9 +3599,14 @@ def _validate_browser_outcome(outcome: BrowserOutcome, cleanup: BrowserCleanup) 
         or outcome.active_residue_counts != {"member_a": 0, "member_b": 0}
         or outcome.archived_residue_counts != {"member_a": 0, "member_b": 0}
         or not outcome.clean_start_confirmed
-        or cleanup != BrowserCleanup(destroyed_contexts=4, temporary_root_removed=True)
+        or cleanup != EXPECTED_BROWSER_CLEANUP
     ):
         raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+
+
+def _require_exact_browser_cleanup(cleanup: BrowserCleanup | None) -> None:
+    if cleanup != EXPECTED_BROWSER_CLEANUP:
+        raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
 
 
 def _validate_browser_preflight(preflight: BrowserPreflight) -> None:
@@ -3420,6 +3743,7 @@ def run_broker(
         # this boundary merely to make later residue look smaller.
         if browser_cleanup_failed:
             raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
+        _require_exact_browser_cleanup(browser_cleanup)
         phase = "retirement"
         retirement_report = retirement_adapter.retire(
             [identities[0].subject, identities[1].subject],

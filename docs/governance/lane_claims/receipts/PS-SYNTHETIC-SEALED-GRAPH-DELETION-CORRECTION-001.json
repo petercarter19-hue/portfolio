@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-SEALED-GRAPH-DELETION-CORRECTION-001",
+  "candidate_sha": "9460179df08e34167adac5dfd9c22cb00232b82b",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/graph_deletion_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-08-29T17:44:36Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-GRAPH-DELETION-CORRECTION-001.md"
+}

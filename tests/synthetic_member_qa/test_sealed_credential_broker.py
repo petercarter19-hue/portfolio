@@ -288,7 +288,7 @@ class SealedLifecycleTests(unittest.TestCase):
                 "member_arrivals": 2,
                 "account_switches": 2,
                 "canonical_journeys": 38,
-                "conditional_journeys": 8,
+                "conditional_journeys": 10,
                 "created_items": 2,
                 "item_edits": 4,
                 "retained_versions": 6,
@@ -403,6 +403,29 @@ class SealedLifecycleTests(unittest.TestCase):
             events.index("graph_contain_partial_creation"),
             events.index("browser_cleanup"),
         )
+
+        events = []
+        retirement = FakeRetirement(events)
+        graph = FakeGraph(events)
+        with self.assertRaisesRegex(
+            broker.BrokerIndeterminate, "sealed_browser_cleanup_indeterminate"
+        ):
+            broker.run_broker(
+                run_id="qa-20260829-0001",
+                cutoff=NOW,
+                authority_adapter=FakeAuthority(events),
+                graph=graph,
+                browser=FakeBrowser(
+                    events,
+                    cleanup=broker.BrowserCleanup(
+                        destroyed_contexts=3,
+                        temporary_root_removed=True,
+                    ),
+                ),
+                retirement_adapter=retirement,
+        )
+        self.assertEqual(retirement.calls, 0)
+        self.assertEqual(graph.delete_calls, 0)
 
         events = []
         retirement = FakeRetirement(events)
@@ -892,7 +915,29 @@ class FakeProbePage:
             AUTHORIZATION_ORIGIN
         ):
             count = 1
-        return type("Locator", (), {"count": lambda _self: count})()
+        return type(
+            "Locator",
+            (),
+            {
+                "count": lambda _self: count,
+                "evaluate_all": lambda _self, _expression, payload: (
+                    count if payload["operation"] == "count" else None
+                )
+            },
+        )()
+
+    def evaluate(self, _expression, payload):
+        parsed = urlparse(self.url)
+        if (
+            payload.get("expectedOrigin") != broker.ALLOWED_SITE_ORIGIN
+            or parsed.scheme != "https"
+            or parsed.netloc != "peerslate.com"
+            or parsed.port is not None
+            or parsed.username is not None
+            or parsed.password is not None
+        ):
+            raise RuntimeError("Workshop document refused")
+        return True
 
     def close(self):
         self.closed = True

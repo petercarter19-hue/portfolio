@@ -107,10 +107,11 @@ the routine browser operator.
 
 ### Sealed synthetic-QA credential-broker exception
 
-`PS-SYNTHETIC-SEALED-GRAPH-DELETION-001` is the complete-lifecycle form of the
-narrow exception established by the two preceding sealed-broker packages. It
-applies to exactly two newly generated, run-scoped, ordinary QA customer
-identities under the fixed owner reference
+`PS-SYNTHETIC-SEALED-GRAPH-DELETION-001`, as narrowly corrected by
+`PS-SYNTHETIC-SEALED-GRAPH-DELETION-CORRECTION-001`, is the complete-lifecycle
+form of the narrow exception established by the two preceding sealed-broker
+packages. It applies to exactly two newly generated, run-scoped, ordinary QA
+customer identities under the fixed owner reference
 `session:01a04348-7e3e-7a11-a443-752498be91b5/owner-authorization:2026-08-28/workshop-fg-sealed-private-proof-complete-lifecycle`.
 Once a separately authorized attended operation starts, its local worker may
 derive the exact live App Service/OIDC/Graph authority, generate and provision
@@ -141,6 +142,15 @@ redirected page receives zero password material. The worker revalidates the
 exact origin immediately before password submission; any later redirect stops
 without submitting the password.
 
+Every Workshop private/generated DOM read, write, check, click, and navigation
+uses the same fail-closed principle against the exact canonical origin
+`https://peerslate.com`. The evaluator binds each locator or element operation
+to a current top-level document with exact HTTPS origin and no port or userinfo;
+it refuses hostile owner documents, detached elements, wrong cardinality, and
+redirect races. Navigation targets are checked before browser use and the
+resulting page is checked afterward. Writes are performed only through a
+document-bound element handle and recheck the current document after handlers.
+
 Before either Graph POST, the worker verifies the hash-pinned disposable
 Playwright closure, launches and removes a separate headed probe root, prepares
 four no-capture contexts, proves the signed-out private baseline, and completes
@@ -151,15 +161,21 @@ blindly retries an ambiguous mutation. A definitive rejected 4xx never enters
 reconciliation for that alias. Each alias
 creates one item, makes exactly two edits, proves three newest-first retained
 versions and byte-exact original v1 source in all three history rows, and proves
-Workshop D says `Not used elsewhere`. The journey map contains exactly eight
-approved Conditionals; any missing, extra, substituted, or differently placed
-Conditional prevents an accepted structural result. After archive and restore,
-the worker re-reads each restored active item and re-proves the same exact three
-versions newest first and byte-stable original v1 source in all three rows
-before deletion or an accepted result. Once both exact customers exist, a
-browser-proof failure with proven browser/runtime/root cleanup still enters
-bounded exact-pair retirement and Graph-deletion containment, then returns
-`indeterminate`; unproved cleanup blocks exact-pair SQL retirement and purge.
+Workshop D has the exact same-row direct `dt` value `Downstream use` and direct
+`dd` value `Not used elsewhere`; a nested row cannot supply either value. The
+journey map contains exactly ten approved Conditionals. Foreign update and
+delete probes are among them with `neutral_denial_not_distinguishable`: the
+request context cannot atomically bind its endpoint to the actor page's
+canonical owner document, so the worker sends no such mutation and never treats
+synthetic same-origin headers as authority. Any missing, extra, substituted,
+or differently placed Conditional prevents an accepted structural result. After
+archive and restore, the worker re-reads each restored active item and re-proves
+the same exact three versions newest first and byte-stable original v1 source
+in all three rows before deletion or an accepted result. Once both exact
+customers exist, a browser-proof failure may enter bounded exact-pair
+retirement and Graph-deletion containment only when cleanup equals
+`BrowserCleanup(4, true)` exactly; an exception or any other returned value
+blocks exact-pair SQL retirement and purge.
 
 The partial-create path is a separate recoverable exception: before browser
 cleanup it may perform one bounded reconciliation and soft-delete only exact
@@ -168,16 +184,17 @@ bound subject, while an exact subject already found in deleted items remains
 unpurged. It attempts bounded direct state probes and session cleanup
 independently; ambiguity remains indeterminate. It never repeats a POST, lists
 unrelated identities, or purges a deleted item. Irreversible purge is forbidden
-until browser/runtime/root cleanup is proven and exact-two SQL retirement has
-committed.
+until cleanup equals `BrowserCleanup(4, true)` exactly and exact-two SQL
+retirement has committed.
 
 For an accepted result, only after the post-restore history reproof, exact item
 deletion, zero active and archived item residue, repeat clean-start proof,
-destruction of all four contexts, disposable runtime/module release, and root
-removal does the worker call the accepted exact-two SQL retirement core. A
-browser-proof failure may independently attempt exact known application-item
-cleanup and, after that same proven cleanup boundary, enter exact-pair SQL and
-Graph containment without becoming accepted. The full Graph path soft-deletes
+destruction of all four contexts, disposable runtime/module release, root
+removal, and the exact `BrowserCleanup(4, true)` result does the worker call the
+accepted exact-two SQL retirement core. A browser-proof failure may
+independently attempt exact known application-item cleanup and, after that same
+exact cleanup boundary, enter exact-pair SQL and Graph containment without
+becoming accepted. The full Graph path soft-deletes
 both exact objects, proves active `404` plus deleted-item `200` for both, and
 only after committed exact-two SQL retirement permanently deletes both exact
 deleted objects and proves four final `404` responses across the active and

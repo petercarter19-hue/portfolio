@@ -193,7 +193,10 @@ contexts (`member_a`, `member_b`, never-authenticated signed-out control, and
 switch), and prove the signed-out Workshop private baseline.
 
 The actual browser, imported runtime modules, four contexts, and complete
-operation root must be released and removed before SQL retirement. Probe
+operation root must be released and removed before SQL retirement. The cleanup
+result must be exactly `BrowserCleanup(destroyed_contexts=4,
+temporary_root_removed=True)` before the SQL retirement core or an irreversible
+Graph purge can begin. Probe
 cleanup and actual-session cleanup are independent and aggregated: one cleanup
 failure must not suppress attempts to clean the other resources. If Playwright
 starts but executable validation fails before the provider returns, that local
@@ -236,24 +239,35 @@ skip or reorder a gate:
    count as zero residue.
 9. Repeat the signed-out clean-start proof, close all four contexts and the
    browser, unload the disposable runtime, remove the operation root, and prove
-   cleanup.
+   the exact `BrowserCleanup(4, true)` result. Any other cleanup result blocks
+   both SQL retirement and irreversible Graph purge.
 10. Pass only the two in-memory object IDs and the metadata principal issuer to
     the accepted exact-two SQL retirement core. Require exactly two eligible
     private ordinary mappings retired, commit success, and closed structural
-    output.
+    output. This step is forbidden on every path unless step 9 returned that
+    exact cleanup proof.
 11. Soft-delete exactly those two Graph users, prove both soft states, purge
     exactly those two deleted objects, and prove final active-and-deleted
-    absence for both.
+    absence for both. Irreversible purge remains bound to the same exact cleanup
+    proof as well as committed exact-two SQL retirement.
 12. Clear the caller binding and all remaining direct sealed references and
     emit only the allowlisted structural report.
 
 ## Workshop proof contract
 
 Each alias creates exactly one minimal run-scoped private item. Both member
-contexts stay open for bidirectional list/read/update/delete isolation checks,
-browser-state isolation, and distinct mapping. The switch context proves both
-A-to-B and B-to-A switching. Refresh, second-tab, public-return, ordinary
-sign-out, and cross-tab sign-out are exercised for each alias.
+contexts stay open for bidirectional list/read isolation checks, browser-state
+isolation, and distinct mapping. The switch context proves both A-to-B and
+B-to-A switching. Refresh, second-tab, public-return, ordinary sign-out, and
+cross-tab sign-out are exercised for each alias.
+
+The browser request-context API cannot atomically bind a foreign mutation
+endpoint to the actor page's canonical owner document. Supplying synthetic
+`Origin` or `Sec-Fetch-Site` headers is not such proof. The worker therefore
+sends no foreign update or delete request, passes no peer row version into an
+out-of-band form, and truthfully records both journey pairs as unavailable
+`Conditional` outcomes. This is fail-closed evidence, not a successful denial
+claim and not permission to mutate.
 
 Each item is edited exactly twice. Its history must prove exactly three retained
 versions, newest first. The wording sequence is exactly
@@ -271,7 +285,11 @@ versions, newest first. The wording sequence is exactly
 > PeerSlate does not infer or backfill wording it cannot prove.
 
 Workshop D must contain exactly one `Downstream use` disclosure whose value is
-`Not used elsewhere`. A generic history note, missing row, reordered version,
+`Not used elsewhere`; its direct `dt` and direct `dd` must be children of that
+same row. Every private or generated Workshop DOM read, write, check, click,
+and navigation is bound in the browser task to canonical
+`https://peerslate.com`; a port, userinfo, hostile owner document, or redirect
+race is indeterminate. A generic history note, missing row, reordered version,
 normalized v1 bytes, unavailable/cited deletion state, or different disclosure
 is indeterminate. Archive and restore are exercised without creating another
 wording version. After restore, the worker must re-read the active item and
@@ -280,10 +298,11 @@ before deletion or an accepted result. This is a revalidation of the same three
 rows, not an additional version or retained-source count. Application deletion
 must expose the exact uncited permanent delete confirmation before use.
 
-The 38-journey result has exactly eight `Conditional` outcomes:
+The 38-journey result has exactly ten `Conditional` outcomes:
 
-- `member_a_cannot_update_member_b` and
-  `member_b_cannot_update_member_a` use
+- `member_a_cannot_update_member_b`, `member_b_cannot_update_member_a`,
+  `member_a_cannot_delete_member_b`, and
+  `member_b_cannot_delete_member_a` use
   `neutral_denial_not_distinguishable`;
 - `member_a_forged_reference_denied`,
   `member_b_forged_reference_denied`,
@@ -292,21 +311,26 @@ The 38-journey result has exactly eight `Conditional` outcomes:
 - `member_a_expired_session_safe` and `member_b_expired_session_safe` use
   `session_expiry_not_controllable`.
 
+The foreign update/delete checks do not issue an API request against a peer
+item: Workshop has no atomically provable page-document and endpoint authority
+for that mutation. The worker records the closed limitation without mutation.
 Every other canonical journey must pass its exact structural outcome. A missing,
 extra, substituted, or differently placed Conditional, including a cross-tab
 Conditional, is indeterminate and cannot yield the accepted structural result.
 After both customers exist, that browser-proof failure still enters bounded
-identity containment when browser/runtime/root cleanup is exact: independently
-attempt application-item deletion, retire only the exact two mappings, and
-delete only the exact two bound Graph subjects before returning
-`indeterminate`. Unproved browser cleanup blocks that containment boundary.
+identity containment only when cleanup equals `BrowserCleanup(4, true)`
+exactly: independently attempt application-item deletion, retire only the exact
+two mappings, and delete only the exact two bound Graph subjects before
+returning `indeterminate`. An exception, absent proof, or non-exact returned
+cleanup value blocks that containment boundary.
 
 ## Exact Graph deletion state machine
 
-Irreversible Graph purge begins only after proven browser/runtime/root cleanup
-and committed exact-two SQL retirement. The full exact-pair path then follows
-the state machine below. The worker maintains a finite in-memory ledger and
-never emits it.
+Irreversible Graph purge begins only after cleanup equals
+`BrowserCleanup(4, true)` exactly and exact-two SQL retirement has committed.
+That gate applies regardless of whether the Workshop journey path succeeded or
+failed. The full exact-pair path then follows the state machine below. The
+worker maintains a finite in-memory ledger and never emits it.
 
 1. Issue one active-user DELETE for each exact object ID. Each must return 204
    with an empty body.
@@ -336,8 +360,9 @@ proven subjects if safely needed, including an earlier independently bound
 broker subject, then attempt bounded direct state probes. Probe ambiguity stays
 indeterminate. An exact subject already found in deleted items remains
 unpurged. The path attempts session cleanup independently and never purges a
-deleted item. Purge remains forbidden until browser/runtime/root cleanup is
-proven and exact-two SQL retirement has committed.
+deleted item. Purge remains forbidden until the exact
+`BrowserCleanup(4, true)` proof exists and exact-two SQL retirement has
+committed.
 
 ## Commands
 
@@ -366,13 +391,13 @@ target or replace the fixed owner authorization.
 
 ## Structural output
 
-A complete valid run reports `result: conditional` because of the exact eight
+A complete valid run reports `result: conditional` because of the exact ten
 bounded journey limitations, and
 `state: retired_and_permanently_deleted`. Its count-only report proves:
 
 - 2 requested and provisioned identities;
 - 4 precreation absence proofs;
-- 2 arrivals, 2 switches, 38 journeys, and 8 Conditionals;
+- 2 arrivals, 2 switches, 38 journeys, and 10 Conditionals;
 - 2 created items, 4 edits, 6 retained versions, 6 exact retained-source
   proofs, and 2 downstream disclosures;
 - 0 active and 0 archived item residue;

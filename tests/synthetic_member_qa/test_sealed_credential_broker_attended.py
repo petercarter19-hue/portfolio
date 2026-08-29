@@ -13,31 +13,13 @@ from qa.synthetic_member.contracts import JOURNEY_BY_ID
 
 ISSUER = "synthetic-tenant.onmicrosoft.com"
 AUTHORIZATION_ORIGIN = "https://synthetic-tenant.ciamlogin.com"
-SAME_ORIGIN_HEADERS = {
-    "Origin": "https://peerslate.com",
-    "Sec-Fetch-Site": "same-origin",
-}
-
-
-class StrictResponse:
-    def __init__(self, status, headers=None):
-        self.status = status
-        self.headers = dict(headers or {})
-        self.disposed = False
-
-    def dispose(self):
-        self.disposed = True
-
-
 class StrictWorkshopStore:
     """Model saved history separately from row-version concurrency."""
 
-    def __init__(self, *, fault=None, foreign_status=None, delete_fault=None):
+    def __init__(self, *, fault=None, delete_fault=None):
         self.items = {}
         self.fault = fault
-        self.foreign_status = foreign_status
         self.delete_fault = delete_fault
-        self.request_log = []
         self.delete_attempts = []
         self.deleted_history_lengths = []
         self.version_appends = 0
@@ -158,6 +140,8 @@ class StrictLocator:
             )
         if self.kind == "row_version":
             return int(self._selected_item() is not None)
+        if self.kind == "saved_link":
+            return int(self.page.saved_key is not None)
         if self.kind == "marker_text":
             markers = self.page.store.visible_markers(
                 self.page.context.owner, self.page.url
@@ -178,18 +162,28 @@ class StrictLocator:
             return int(self._selected_item() is not None)
         if self.kind == "history":
             return int(self._selected_item() is not None)
+        if self.kind in {"history_count", "history_note"}:
+            return int(self._selected_item() is not None)
         if self.kind == "history_window":
             return int(self.page.store.fault == "history_window")
         if self.kind == "history_versions":
             return len(self._history_rows())
         if self.kind == "history_wordings":
             return 2 if self.row is not None else 0
+        if self.kind == "history_wording":
+            return int(
+                self.row is not None
+                and self.slot in {0, 1}
+                and self.row < len(self._history_rows())
+            )
         if self.kind == "version_label":
             rows = self._history_rows()
             expected = f"Version {len(rows) - self.row}" if self.row is not None else ""
             return int(self.text == expected)
         if self.kind == "downstream_row":
             return int(self._selected_item() is not None)
+        if self.kind == "downstream_rows":
+            return 5 if self._selected_item() is not None else 0
         if self.kind == "downstream_dd":
             return int(self._selected_item() is not None)
         # Unknown selectors are never optimistic. This is the regression gate
@@ -202,12 +196,31 @@ class StrictLocator:
         self.page.fields[self.selector] = value
 
     def element_handle(self):
-        if self.kind != "password":
+        if self.kind not in {
+            "password",
+            "field",
+            "classification",
+            "confirm_delete",
+            "save_confirm",
+            "button",
+        }:
             raise AssertionError(f"unmodelled element_handle: {self.selector}")
         return self
 
     def evaluate(self, expression, payload):
         del expression
+        operation = payload.get("operation") if isinstance(payload, dict) else None
+        if operation is not None:
+            self.page.assert_canonical_document(payload)
+            if operation == "fill":
+                self.fill(payload["value"])
+            elif operation == "check":
+                self.check()
+            elif operation == "click":
+                self.click()
+            else:
+                raise AssertionError(f"unmodelled evaluator operation: {operation}")
+            return True
         if self.kind != "password":
             raise AssertionError(f"unmodelled evaluate: {self.selector}")
         parsed = urlparse(self.page.url)
@@ -220,8 +233,44 @@ class StrictLocator:
         self.page.fields[self.selector] = secret
 
     def dispose(self):
-        if self.kind != "password":
+        if self.kind not in {
+            "password",
+            "field",
+            "classification",
+            "confirm_delete",
+            "save_confirm",
+            "button",
+        }:
             raise AssertionError(f"unmodelled dispose: {self.selector}")
+
+    def evaluate_all(self, expression, payload):
+        self.page.assert_canonical_document(payload)
+        operation = payload.get("operation")
+        if operation is None and self.kind == "downstream_rows":
+            if expression != broker.WORKSHOP_EXACT_DESCRIPTION_EVALUATOR:
+                raise AssertionError("unexpected production disclosure evaluator")
+            return (
+                self.count() == 5
+                and self.page.store.fault
+                not in {
+                    "downstream_unavailable",
+                    "downstream_nested_row",
+                    "downstream_split_row",
+                }
+                and payload.get("term") == "Downstream use"
+                and payload.get("description") == "Not used elsewhere"
+            )
+        if operation == "count":
+            return self.count()
+        if self.count() != 1:
+            raise RuntimeError("Workshop target cardinality refused")
+        if operation == "text":
+            return self.text_content()
+        if operation == "input_value":
+            return self.input_value()
+        if operation == "attribute":
+            return self.get_attribute(payload["name"])
+        raise AssertionError(f"unmodelled evaluator read: {operation}")
 
     def check(self):
         if self.kind not in {"classification", "confirm_delete"}:
@@ -317,48 +366,12 @@ class StrictLocator:
         return ""
 
 
-class StrictRequest:
-    def __init__(self, context):
-        self.context = context
-
-    def post(self, endpoint, *, form, headers, fail_on_status_code, max_redirects):
-        if fail_on_status_code is not False or max_redirects != 0:
-            raise AssertionError("foreign probe must not follow or hide status")
-        parsed = urlparse(endpoint)
-        if parsed.scheme != "https" or parsed.hostname != "peerslate.com":
-            raise AssertionError("unexpected foreign endpoint")
-        parts = parsed.path.split("/")
-        if parts[1:4] != ["app", "workshop", "items"] or len(parts) not in {5, 6}:
-            raise AssertionError("unexpected foreign path")
-        key = parts[4]
-        item = self.context.store.items[key]
-        if item["owner"] == self.context.owner:
-            raise AssertionError("foreign probe targeted actor item")
-        kind = "delete" if len(parts) == 6 else "update"
-        if form["expected_row_version"] != self.context.store.row_version(key):
-            raise AssertionError("foreign probe used a stale row version")
-        self.context.store.request_log.append((kind, key, dict(headers)))
-        if headers != SAME_ORIGIN_HEADERS:
-            return StrictResponse(403)
-        if self.context.store.foreign_status is not None:
-            return StrictResponse(self.context.store.foreign_status)
-        if kind == "update":
-            return StrictResponse(200)
-        return StrictResponse(
-            302, {"location": f"/app/workshop?item={key}&error=changed"}
-        )
-
-
 class StrictContext:
     def __init__(self, store):
         self.store = store
         self.owner = None
         self.closed = False
         self.pages = []
-
-    @property
-    def request(self):
-        return StrictRequest(self)
 
     def new_page(self):
         page = StrictPage(self, self.store)
@@ -392,6 +405,24 @@ class StrictPage:
             self.url = "https://peerslate.com/"
         else:
             self.url = url
+
+    def assert_canonical_document(self, payload):
+        parsed = urlparse(self.url)
+        if (
+            payload.get("expectedOrigin") != broker.ALLOWED_SITE_ORIGIN
+            or parsed.scheme != "https"
+            or parsed.netloc != "peerslate.com"
+            or parsed.hostname != "peerslate.com"
+            or parsed.port is not None
+            or parsed.username is not None
+            or parsed.password is not None
+        ):
+            raise RuntimeError("Workshop document refused")
+
+    def evaluate(self, expression, payload):
+        del expression
+        self.assert_canonical_document(payload)
+        return True
 
     def wait_for_url(self, pattern, *, timeout):
         if timeout != 60000 or not pattern.search("https://peerslate.com/app"):
@@ -614,18 +645,6 @@ class AttendedJourneyTests(unittest.TestCase):
             self.assertEqual(store.concurrency_only_bumps, 4)
             self.assertEqual(store.deleted_history_lengths, [3, 3])
             self.assertEqual(store.delete_attempts, ["member_a", "member_b"])
-            self.assertEqual(
-                [(kind, key) for kind, key, _headers in store.request_log],
-                [
-                    ("update", "opaque-2"),
-                    ("delete", "opaque-2"),
-                    ("update", "opaque-1"),
-                    ("delete", "opaque-1"),
-                ],
-            )
-            self.assertTrue(
-                all(headers == SAME_ORIGIN_HEADERS for *_rest, headers in store.request_log)
-            )
             # An unmodelled selector cannot false-pass a newly added proof.
             self.assertEqual(contexts["member_a"].pages[0].locator(".unknown").count(), 0)
 
@@ -643,6 +662,8 @@ class AttendedJourneyTests(unittest.TestCase):
             "missing_version",
             "history_note",
             "downstream_unavailable",
+            "downstream_nested_row",
+            "downstream_split_row",
         ):
             with self.subTest(fault=fault), TemporaryDirectory() as outer:
                 store = StrictWorkshopStore(fault=fault)
@@ -686,15 +707,21 @@ class AttendedJourneyTests(unittest.TestCase):
             )
             attended.destroy_and_verify()
 
-    def test_adverse_peer_response_is_indeterminate_and_cleanup_is_bounded(self):
+    def test_foreign_checks_are_conditionals_without_a_mutation_api(self):
         with TemporaryDirectory() as outer:
-            store = StrictWorkshopStore(foreign_status=500)
-            *_, attended = self.session(outer, store=store)
-            with self.assertRaises(broker.BrokerIndeterminate):
-                attended.exercise_canonical_journeys(identities())
+            store, contexts, *_, attended = self.session(outer)
+            self.assertFalse(hasattr(contexts["member_a"], "request"))
+            outcome = attended.exercise_canonical_journeys(identities())
+            self.assertEqual(
+                {
+                    journey_id: observation.note_code
+                    for journey_id, observation in outcome.journey_outcomes.items()
+                    if observation.status == "conditional"
+                },
+                broker.REQUIRED_CONDITIONAL_OUTCOMES,
+            )
             self.assertEqual(store.items, {})
             self.assertEqual(store.delete_attempts, ["member_a", "member_b"])
-            self.assertEqual(len(store.request_log), 1)
             attended.destroy_and_verify()
 
 

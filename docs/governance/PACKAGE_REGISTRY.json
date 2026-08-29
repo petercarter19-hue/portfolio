@@ -74,6 +74,7 @@
       "PS-SIGNIN-EXPERIENCE-001",
       "PS-SIGNIN-MEMBER-ARRIVAL-001",
       "PS-SYNTHETIC-SEALED-GRAPH-DELETION-001",
+      "PS-SYNTHETIC-SEALED-GRAPH-DELETION-CORRECTION-001",
       "PS-VISUAL-INTEGRITY-GOV-001",
       "PS-VISUAL-MATERIALITY-001",
       "PS-VOICE-001",
@@ -150,11 +151,11 @@
     ]
   },
   "counts": {
-    "current_protect": 65,
+    "current_protect": 66,
     "future_finish": 26,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 126
+    "total": 127
   }
 }
