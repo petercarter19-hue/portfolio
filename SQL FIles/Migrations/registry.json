@@ -2033,6 +2033,48 @@
         "verification": "PS-SETTINGS-EXPORT-005_workshop_reader_isolation_verify.sql returned verified = 1",
         "operator": "Claude Fable 5 / work-2026-08-29-settings-account-export-workshop-reader-001"
       }
+    },
+    {
+      "id": "PS-SETTINGS-EXPORT-006",
+      "forward": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-006_oppslate_reader.sql",
+      "rollback": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-006_oppslate_reader_rollback.sql",
+      "requires": [
+        "PS-AUTH-001",
+        "PS-OPPSLATE-001",
+        "PS-OPPSLATE-002",
+        "PS-OPPSLATE-003"
+      ],
+      "summary": "Read-only owner-scoped account-export Opportunity Slate readers (replacement package 4, the FINAL content reader of the 2026-08-29 topology): four @UserKey-only procedures over the durable saved slate only (opportunity_slates, opportunity_saved_results, opportunity_saved_qualifications, opportunity_saved_evidence). Directive-trimmed: hard-excludes third-party posting text, evidence links, responses, and every AI/model provenance field. Every OS-1/OS-2/OS-3 working-session table and all three PS-OPPSLATE-004 tables are ephemeral (cascade-purged with the working session) and deliberately not read.",
+      "gate": {
+        "executable_sha256": "3db5eff29654109f35e3c5a8ef1df0d442a316258d82b41fe1fff1868be2ed80",
+        "gated_at_utc": "2026-08-29T18:21:30Z",
+        "gate_database": "ps-migration-path-20260829-os2",
+        "gate_server": "peerslate",
+        "prerequisites": [
+          "PS-PLAT-000",
+          "PS-PLAT-001",
+          "PS-PLAT-002",
+          "PS-PLAT-003",
+          "PS-PLAT-004",
+          "PS-PLAT-005",
+          "PS-PLAT-006",
+          "PS-PLAT-007",
+          "PS-AUTH-001",
+          "PS-WORKSHOP-001",
+          "PS-OPPSLATE-001",
+          "PS-OPPSLATE-002",
+          "PS-OPPSLATE-003"
+        ],
+        "objects": [
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportOpportunitySavedEvidenceForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportOpportunitySavedQualificationForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportOpportunitySavedResultForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportOpportunitySlateForOwner"
+        ],
+        "verification": "PS-SETTINGS-EXPORT-006_oppslate_reader_isolation_verify.sql returned verified = 1",
+        "operator": "Claude Fable 5 / work-2026-08-29-settings-account-export-oppslate-reader-001",
+        "notes": "Independent-review correction round: saved_analysis_key excluded (AI_MODEL_PROVENANCE); re-gate of the amended forward file"
+      }
     }
   ]
 }

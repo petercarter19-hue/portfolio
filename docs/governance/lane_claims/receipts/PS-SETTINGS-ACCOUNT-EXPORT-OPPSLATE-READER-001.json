@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-OPPSLATE-READER-001",
+  "candidate_sha": "9f1e4bdc309b1bb7aeed2c152c1438bbff0af254",
+  "review_type": "independent",
+  "reviewer_ref": "role:indrev:ps-settings-os-reader:20260829T183415Z:9f1e4bdc",
+  "result": "pass",
+  "reviewed_at": "2026-08-29T18:34:15Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-OPPSLATE-READER-001.md"
+}

@@ -144,6 +144,66 @@ confirmed to add only procedures, never a column or table on either
 claimed table, so the field lists below remain the accurate current
 schema.
 
+PS-SETTINGS-EXPORT-006 (replacement package 4, the FINAL content reader
+of the 2026-08-29 topology, this update) flips opportunity_slate from
+excluded to included: dbo.opportunity_slates, dbo.opportunity_saved_results,
+dbo.opportunity_saved_qualifications, and dbo.opportunity_saved_evidence --
+the four PS-OPPSLATE-003 (OS-4) tables that are the ONLY durable
+Opportunity Slate records in this schema. All four of PS-OPPSLATE-001's
+(OS-1/OS-2) tables, all four of PS-OPPSLATE-002's (OS-3) tables, and all
+three of PS-OPPSLATE-004's ("the replacement" R1 shell) new tables were
+read in full and confirmed EPHEMERAL -- cascade-deleted by the same
+usp_PurgeExpiredOpportunityWorkingData/usp_DeleteOpportunityWorkingSessionForOwner
+calls that purge working-session infrastructure -- and are therefore not
+read by this package; see PS-SETTINGS-EXPORT-006_oppslate_reader.sql's own
+header for the exact proof (the literal DELETE statements PS-OPPSLATE-004
+issues against its own three new tables, joined back to the same
+@ExpiredSessions table as every OS-1/OS-2/OS-3 table). This directly
+overturned this package's own "expect" framing at write time -- the two
+tables PS-OPPSLATE-004 was expected to make durable turned out to be
+ephemeral once the schema was actually read, rather than assumed.
+
+Directive-trimmed per the owner's later 2026-08-29 ruling, which SUPERSEDES
+C0's "Included with provenance" disposition for this row: AI/model
+provenance (model_name, prompt_contract_version, and -- a reversal
+recorded by the independent review round -- saved_analysis_key, a
+generation-run identifier squarely inside the directive category's
+"Model names/ids" definition, whose member-readable export value is nil
+because the run it names is ephemeral and already purged) is excluded
+pending a separate review, alongside third-party posting/job text
+(source_text, employer_text, covered_text -- every column carrying the
+employer's own wording verbatim) and every response/evidence-linkage
+column (response_kind, response_text, authored_via,
+connected_evidence_title, connected_evidence_version, evidence_kind,
+evidence_key, evidence_version, evidence_title, excerpt). What remains is
+the member's own saved facts: opaque keys, ordinals, timestamps, the
+member's own classification decisions, the application-computed (never
+model-opinion) derived_status/citation_count accounting, and the plain
+counts/hash the member's own save carries (evidence_considered_count,
+qualification_count, input_fingerprint -- none of which is a name, id,
+prompt, score, or evidence reference).
+opportunity_saved_results.idempotency_key is also
+excluded: the migration's own header calls it "the idempotency ledger,"
+extending this program's established machinery-not-content precedent to a
+column rather than a whole table. dbo.opportunity_saved_qualifications and
+dbo.opportunity_saved_evidence carry no soft-delete column of any kind
+(PS-OPPSLATE-003's own delete path, usp_DeleteOpportunitySavedSlateForOwner,
+is a member-triggered hard delete of the whole slate).
+dbo.opportunity_saved_evidence loses nearly all of its payload to the
+third-party-text and evidence-link exclusions -- only ordinal and
+clause_ordinal survive -- and this package still builds its reader for it
+rather than reclassifying the whole domain as excluded, per the writer
+brief's explicit instruction for a half-member-fact-half-excluded table;
+recorded as an honest limitation, not hidden.
+
+my_opportunities remains unavailable/excluded, re-verified rather than
+assumed still correct: PS-MYOPP-001 (the only My Opportunities migration
+applied) is its own "C2 shared-side canonical" foundation with, by its own
+registry summary, "No member-side objects" -- there is no owner-scoped My
+Opportunities table this or any future account-export reader could read,
+so the existing reason (do not conflate with Opportunity Slate) remains
+factual and is unchanged in substance.
+
 Nothing in this module is wired to any route, worker, or scheduler.
 There is still no live export, no populated dbo.account_export_job_domains
 row, and no production authority here or anywhere else in this package.
@@ -256,6 +316,11 @@ read_moment_placement = _make_reader("usp_ReadAccountExportMomentPlacementForOwn
 
 read_knowledge_item = _make_reader("usp_ReadAccountExportKnowledgeItemForOwner")
 read_knowledge_item_version = _make_reader("usp_ReadAccountExportKnowledgeItemVersionForOwner")
+
+read_opportunity_slate = _make_reader("usp_ReadAccountExportOpportunitySlateForOwner")
+read_opportunity_saved_result = _make_reader("usp_ReadAccountExportOpportunitySavedResultForOwner")
+read_opportunity_saved_qualification = _make_reader("usp_ReadAccountExportOpportunitySavedQualificationForOwner")
+read_opportunity_saved_evidence = _make_reader("usp_ReadAccountExportOpportunitySavedEvidenceForOwner")
 
 
 def _reader_entry(function, schema_id, fields):
@@ -565,13 +630,57 @@ DOMAINS = {
         "readers": (),
     },
     "opportunity_slate": {
-        "disposition": "excluded",
-        "reason": "C0 marks Opportunity Slate includable with provenance for durable member records; this package builds no reader for it.",
-        "readers": (),
+        "disposition": "included",
+        "reason": None,
+        "readers": (
+            _reader_entry(
+                read_opportunity_slate,
+                "peerslate.account_export.opportunity_slate.opportunity_slate.v1",
+                (
+                    "slate_key", "visibility", "current_save_version_number",
+                    "created_at_utc", "updated_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+            _reader_entry(
+                read_opportunity_saved_result,
+                "peerslate.account_export.opportunity_slate.opportunity_saved_result.v1",
+                (
+                    "slate_key", "saved_result_key", "save_version_number",
+                    "source_version_number", "requirement_version_number",
+                    "evidence_considered_count", "qualification_count", "input_fingerprint",
+                    "saved_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+            _reader_entry(
+                read_opportunity_saved_qualification,
+                "peerslate.account_export.opportunity_slate.opportunity_saved_qualification.v1",
+                (
+                    "saved_result_key", "ordinal", "statement_class", "derived_status",
+                    "citation_count",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+            _reader_entry(
+                read_opportunity_saved_evidence,
+                "peerslate.account_export.opportunity_slate.opportunity_saved_evidence.v1",
+                (
+                    "saved_result_key", "saved_qualification_ordinal", "ordinal",
+                    "clause_ordinal",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+        ),
     },
     "my_opportunities": {
         "disposition": "unavailable",
-        "reason": "No current canonical export contract; do not conflate with Opportunity Slate.",
+        "reason": (
+            "No current canonical export contract; do not conflate with Opportunity Slate. "
+            "Re-verified for this package: PS-MYOPP-001 (the only applied My Opportunities "
+            "migration) is its own shared-side canonical foundation with no member-owned "
+            "table -- there is nothing owner-scoped here a reader could target."
+        ),
         "readers": (),
     },
     "community_authored_content": {
