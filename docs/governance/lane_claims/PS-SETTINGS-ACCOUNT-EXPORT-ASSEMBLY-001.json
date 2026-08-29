@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-ASSEMBLY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Build C2 private-artifact assembly per the accepted C0 architecture on the closed, gate-proven C1 foundation: a storage adapter for a dedicated private export container (public access disabled, no SAS or direct URLs) with job/attempt-scoped staging; deterministic streaming ZIP assembly of the versioned manifest contract, counters failing safely at the approved 100/250 MiB caps; promotion only after recomputed SHA-256/sizes are ledger-committed with the C1 ready transition; expiry-blocked content-free idempotent cleanup that never redelivers; a worker claiming jobs solely via the C1 lease procedures, enforcing owner-active status before storing any artifact; fixture-only assembly, zero real member domain readers; and the transferred owner-isolation verification script paired with a fresh PS-SETTINGS-EXPORT-001 gate run. Azure container/worker-identity/grant actions proceed only under the owner's recorded 2026-08-28 program authorization with fresh action-time references, recorded in the C2 documents; no schedule. Stop before UI (C3), real domain readers, production apply/deploy (C4), enablement, or any live claim.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-c2-writer",
@@ -40,6 +40,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "51344ce144d7854c90d7495e7674ede6f86b1497",
+  "closed_at": "2026-08-29T08:45:36Z"
 }
