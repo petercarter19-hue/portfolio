@@ -936,3 +936,34 @@ can push it all the way to deployment."
   identity/privacy-policy change, credential access, spending, external
   operation, or materially revised visual direction. Those future-fact gates
   still require their own explicit authority.
+
+## 2026-08-29 - Bootstrap delivery-preflight collision recovery without a deadlock
+
+- Pete's explicit current decision reference is
+  `pete-chat-2026-08-29/full-package-blocker-recovery-and-rules-must-not-deadlock`.
+  Under the authority order in `DOCUMENT_CONTROL.md`, it directs the minimum
+  Protected correction needed to prevent existing claim collisions from
+  blocking the read-only diagnosis and exact collision-removing control
+  transition that can resolve them.
+- The ordinary activation-first route is impossible on authoritative
+  `origin/main` `dc3ea244377b7e00acf48897a641c0380a024fe9`. The Darwin package's
+  mandatory pre-edit command
+  `python scripts/delivery_preflight.py --package PS-SYNTHETIC-SEALED-AZURE-CLI-DARWIN-COMPAT-001 --intent read --task-ref agent:/root/workshop_fg_sealed_proof_writer --fetch --require-clean`
+  failed solely because its already-active claim collides with the Windows
+  child-runtime claim on three broker paths. The disjoint recovery package's
+  clean claim-only commit `b7fc04d5dc8006e1f2edf18fd36b8b8e72f84b03`
+  then failed
+  `python scripts/delivery_preflight.py --package PS-DELIVERY-PREFLIGHT-CONTROL-COLLISION-RECOVERY-001 --intent activate --task-ref agent:/root/preflight_collision_writer --fetch --require-clean`
+  solely on those same pre-existing collisions.
+- Therefore this exact package may use one combined activation-and-
+  implementation PR on
+  `work/2026-08-29-delivery-activation-preflight-control-collision-recovery-001`.
+  It remains limited to its claimed governance, preflight, and focused-test
+  files, requires an independent exact-SHA review, and grants no production,
+  schema, identity, credential, broker, deployment, external-operation, or
+  live-operation authority.
+- This is a one-time bootstrap, not a reusable preflight bypass and not a claim
+  that the failed activation passed. After it merges, ordinary packages and
+  transitions must use the normal activation, durable-worktree, control,
+  review, and merge gates. Read remains non-authorizing; malformed claims and
+  every collision-preserving or collision-creating mutation remain fail-closed.

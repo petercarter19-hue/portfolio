@@ -1701,8 +1701,11 @@ def validate_claim(claim: dict, *, expected_package: str | None = None) -> list[
     return errors
 
 
-def validate_claim_set(claims: dict[str, dict]) -> list[str]:
+def _claim_set_error_components(
+    claims: dict[str, dict],
+) -> tuple[list[str], list[str]]:
     errors: list[str] = []
+    collisions: list[str] = []
     active: list[dict] = []
     unresolved: list[dict] = []
     for claim in claims.values():
@@ -1731,18 +1734,92 @@ def validate_claim_set(claims: dict[str, dict]) -> list[str]:
             for a, b in colliding_paths(
                 left.get("surfaces", []), right.get("surfaces", [])
             ):
-                errors.append(
+                collisions.append(
                     f"path collision: {left.get('package')}:{a} and "
                     f"{right.get('package')}:{b}"
                 )
             for a, b in colliding_domains(
                 left.get("domains", []), right.get("domains", [])
             ):
-                errors.append(
+                collisions.append(
                     f"domain collision: {left.get('package')}:{a} and "
                     f"{right.get('package')}:{b}"
                 )
-    return errors
+    return errors, collisions
+
+
+def validate_claim_set(claims: dict[str, dict]) -> list[str]:
+    errors, collisions = _claim_set_error_components(claims)
+    return [*errors, *collisions]
+
+
+def split_claim_set_errors(
+    claims: dict[str, dict],
+) -> tuple[list[str], list[str]]:
+    """Separate active path/domain collisions from every other claim defect.
+
+    A read may report an already-existing active ownership collision without
+    authorizing work.  All structural claim defects and unresolved-branch
+    collisions remain fatal, so the split is intentionally limited to the two
+    collision classes that pausing or closing an active claim can remove.
+    """
+
+    return _claim_set_error_components(claims)
+
+
+def validate_claim_set_admission(
+    *,
+    intent: str,
+    candidate_claims: dict[str, dict],
+    authority_claims: dict[str, dict] | None = None,
+) -> tuple[list[str], list[str], dict[str, object]]:
+    """Apply the non-authorizing read and collision-removal admission rules."""
+
+    errors, candidate_collisions = split_claim_set_errors(candidate_claims)
+    warnings: list[str] = []
+    diagnostics: dict[str, object] = {}
+
+    if intent == "read":
+        if candidate_collisions:
+            diagnostics["claim_collisions"] = candidate_collisions
+            warnings.extend(
+                "read-only diagnostic (non-authorizing): " + collision
+                for collision in candidate_collisions
+            )
+        return errors, warnings, diagnostics
+
+    if candidate_collisions:
+        diagnostics["candidate_claim_collisions"] = candidate_collisions
+        errors.extend(candidate_collisions)
+
+    if authority_claims is None:
+        return errors, warnings, diagnostics
+
+    authority_errors, authority_collisions = split_claim_set_errors(
+        authority_claims
+    )
+    errors.extend(authority_errors)
+    if not authority_collisions:
+        return errors, warnings, diagnostics
+
+    diagnostics["authority_claim_collisions"] = authority_collisions
+    exact_candidate_set_removes_collisions = (
+        set(candidate_claims) == set(authority_claims)
+        and not candidate_collisions
+    )
+    if exact_candidate_set_removes_collisions:
+        warnings.extend(
+            "pre-transition collision removed by exact candidate claim set: "
+            + collision
+            for collision in authority_collisions
+        )
+    else:
+        errors.extend(
+            collision
+            for collision in authority_collisions
+            if collision not in candidate_collisions
+        )
+    return errors, warnings, diagnostics
 
 
 def validate_legacy_bootstrap(
@@ -2012,11 +2089,11 @@ def evaluate(
     candidate_index = load_index(control_root)
     candidate_claims = load_claims(control_root)
     errors.extend(validate_index(candidate_index))
-    errors.extend(validate_claim_set(candidate_claims))
     _verify_legacy_snapshot(control_root, candidate_index, errors)
     package_key = args.package.casefold()
     branch_claim = candidate_claims.get(package_key)
     bootstrap = False
+    authority_claims_for_validation: dict[str, dict] | None = None
     if args.intent == "read":
         authority_claims = candidate_claims
     else:
@@ -2024,7 +2101,7 @@ def evaluate(
         if origin_index.get("schema_version") == 3:
             errors.extend(validate_index(origin_index))
             authority_claims = load_claims_at_ref(control_root, "origin/main")
-            errors.extend(validate_claim_set(authority_claims))
+            authority_claims_for_validation = authority_claims
             _verify_legacy_snapshot(control_root, origin_index, errors)
         else:
             bootstrap = True
@@ -2049,6 +2126,16 @@ def evaluate(
     payload["changed_paths"] = sorted(
         set(facts.branch_paths) | set(facts.worktree_paths)
     )
+    claim_set_errors, claim_set_warnings, claim_set_diagnostics = (
+        validate_claim_set_admission(
+            intent=args.intent,
+            candidate_claims=candidate_claims,
+            authority_claims=authority_claims_for_validation,
+        )
+    )
+    errors.extend(claim_set_errors)
+    warnings.extend(claim_set_warnings)
+    payload.update(claim_set_diagnostics)
 
     parsed_origin = urlparse(facts.origin_url)
     if not (

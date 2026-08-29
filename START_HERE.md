@@ -32,9 +32,16 @@ Read `docs/governance/CURRENT_BASELINE.yaml`, the small
 python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent write --task-ref <WRITER-REF> --fetch --require-clean
 ```
 
-Use `--intent read` for read-only work; failures stop. A control-only
-activation, authorize, surface extension, transfer, owner reassignment, pause,
-resume, or close
+Use `--intent read` for read-only work; failures stop. Existing active
+cross-claim path or hierarchical-domain collisions are the narrow exception:
+`read` reports them as explicit warnings/facts and may pass because it grants
+no repository authority. Malformed claims, branch collisions, and every other
+claim-set defect remain fatal. Every mutating intent still fails when its
+candidate claim set contains any path/domain collision; a pre-transition
+authority collision becomes nonfatal only when the exact complete candidate
+claim set removes it and all ordinary intent-specific gates also pass. A
+control-only activation, authorize, surface extension, transfer, owner
+reassignment, pause, resume, or close
 uses `read` before the edit, changes and commits only the exact claim on its
 dedicated control branch, then runs the matching control intent with `--fetch
 --require-clean` before PR. It may not change an implementation surface.

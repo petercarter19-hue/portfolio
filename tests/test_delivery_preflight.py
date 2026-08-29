@@ -580,6 +580,144 @@ class ConcurrencyTests(unittest.TestCase):
         )
         self.assertTrue(any("domain collision" in error for error in errors))
 
+    def test_read_reports_active_path_and_domain_collisions_without_authorizing(self):
+        first = claim(
+            package="PS-FIRST-001",
+            number=1,
+            surfaces=claimed_surfaces("PS-FIRST-001", "src/shared"),
+            domains=["shared:auth"],
+        )
+        second = claim(
+            package="PS-SECOND-001",
+            number=2,
+            surfaces=claimed_surfaces("PS-SECOND-001", "src/shared/child"),
+            domains=["shared:auth:callback"],
+        )
+        claims = {"ps-first-001": first, "ps-second-001": second}
+
+        errors, warnings, diagnostics = preflight.validate_claim_set_admission(
+            intent="read",
+            candidate_claims=claims,
+        )
+
+        self.assertEqual([], errors)
+        self.assertEqual(2, len(warnings))
+        self.assertTrue(all("non-authorizing" in warning for warning in warnings))
+        self.assertTrue(
+            any("path collision" in item for item in diagnostics["claim_collisions"])
+        )
+        self.assertTrue(
+            any("domain collision" in item for item in diagnostics["claim_collisions"])
+        )
+
+    def test_read_keeps_non_scope_claim_defects_fatal(self):
+        first = claim(package="PS-FIRST-001", number=1)
+        second = claim(
+            package="PS-SECOND-001",
+            number=2,
+            branch=first["branch"],
+        )
+
+        errors, _, _ = preflight.validate_claim_set_admission(
+            intent="read",
+            candidate_claims={"ps-first-001": first, "ps-second-001": second},
+        )
+
+        self.assertTrue(any("branch collision" in error for error in errors))
+
+    def test_collision_prefix_package_labels_cannot_spoof_read_warnings(self):
+        for package_label in ("path collision", "domain collision"):
+            malformed = claim(package=package_label)
+            malformed["_relative_path"] = "docs/governance/lane_claims/wrong.json"
+
+            errors, warnings, diagnostics = (
+                preflight.validate_claim_set_admission(
+                    intent="read",
+                    candidate_claims={package_label: malformed},
+                )
+            )
+
+            with self.subTest(package_label=package_label):
+                self.assertTrue(
+                    any("claim package must be" in error for error in errors), errors
+                )
+                self.assertTrue(
+                    any("claim path must be" in error for error in errors), errors
+                )
+                self.assertEqual([], warnings)
+                self.assertNotIn("claim_collisions", diagnostics)
+
+    def test_every_mutating_intent_keeps_a_candidate_collision_fatal(self):
+        first = claim(
+            package="PS-FIRST-001",
+            number=1,
+            surfaces=claimed_surfaces("PS-FIRST-001", "src/shared"),
+            domains=["shared:auth"],
+        )
+        second = claim(
+            package="PS-SECOND-001",
+            number=2,
+            surfaces=claimed_surfaces("PS-SECOND-001", "src/shared/child"),
+            domains=["shared:auth:callback"],
+        )
+        claims = {"ps-first-001": first, "ps-second-001": second}
+
+        for intent in sorted(preflight.MUTATING_INTENTS):
+            with self.subTest(intent=intent):
+                errors, _, diagnostics = preflight.validate_claim_set_admission(
+                    intent=intent,
+                    candidate_claims=claims,
+                    authority_claims=claims,
+                )
+                self.assertTrue(
+                    any("path collision" in error for error in errors), errors
+                )
+                self.assertTrue(
+                    any("domain collision" in error for error in errors), errors
+                )
+                self.assertIn("candidate_claim_collisions", diagnostics)
+
+    def test_exact_candidate_state_may_remove_authority_scope_collisions(self):
+        first = claim(
+            package="PS-FIRST-001",
+            number=1,
+            surfaces=claimed_surfaces("PS-FIRST-001", "src/shared"),
+            domains=["shared:auth"],
+        )
+        second = claim(
+            package="PS-SECOND-001",
+            number=2,
+            surfaces=claimed_surfaces("PS-SECOND-001", "src/shared/child"),
+            domains=["shared:auth:callback"],
+        )
+        authority = {"ps-first-001": first, "ps-second-001": second}
+        paused = copy.deepcopy(first)
+        paused["state"] = "paused"
+        paused["checkpoint_sha"] = HEAD
+        candidate = {"ps-first-001": paused, "ps-second-001": second}
+
+        errors, warnings, diagnostics = preflight.validate_claim_set_admission(
+            intent="pause",
+            candidate_claims=candidate,
+            authority_claims=authority,
+        )
+
+        self.assertEqual([], errors)
+        self.assertEqual(2, len(warnings))
+        self.assertTrue(
+            all("removed by exact candidate" in warning for warning in warnings)
+        )
+        self.assertIn("authority_claim_collisions", diagnostics)
+
+        incomplete_candidate = {"ps-first-001": paused}
+        errors, _, _ = preflight.validate_claim_set_admission(
+            intent="pause",
+            candidate_claims=incomplete_candidate,
+            authority_claims=authority,
+        )
+        self.assertTrue(any("path collision" in error for error in errors))
+        self.assertTrue(any("domain collision" in error for error in errors))
+
     def test_paused_product_scope_and_closed_branch_do_not_block_new_work(self):
         paused = claim(
             package="PS-PAUSED-001",
@@ -2315,6 +2453,41 @@ class EvaluationTests(unittest.TestCase):
         )
         self.assertEqual([], errors)
 
+    def test_disjoint_activation_cannot_ignore_an_existing_authority_collision(self):
+        existing = claim(
+            package="PS-EXISTING-001",
+            number=2,
+            surfaces=claimed_surfaces("PS-EXISTING-001", "src/shared"),
+            domains=["product:shared"],
+        )
+        colliding = claim(
+            package="PS-COLLIDING-001",
+            number=3,
+            surfaces=claimed_surfaces("PS-COLLIDING-001", "src/shared/child"),
+            domains=["product:shared:child"],
+        )
+        new_claim = claim(activated_from_main=MAIN)
+        repo_facts = facts(
+            branch="work/2026-08-23-delivery-activation-example",
+            branch_paths=(preflight.claim_relative_path(new_claim["package"]),),
+        )
+        authority = {
+            "ps-existing-001": existing,
+            "ps-colliding-001": colliding,
+        }
+        candidate = {**authority, "ps-example-001": new_claim}
+
+        _, errors, _ = self.run_evaluate(
+            args("activate"),
+            new_claim,
+            repo_facts,
+            origin_claims=authority,
+            candidate_claims=candidate,
+        )
+
+        self.assertTrue(any("path collision" in error for error in errors))
+        self.assertTrue(any("domain collision" in error for error in errors))
+
     def test_activation_rejects_existing_claim_mutation(self):
         value = claim(activated_from_main=MAIN)
         before = copy.deepcopy(value)
@@ -3106,6 +3279,48 @@ class EvaluationTests(unittest.TestCase):
         )
         self.assertTrue(any("changed fields outside" in e for e in close_errors))
 
+    def test_pause_passes_only_when_its_exact_candidate_removes_the_collision(self):
+        before = claim(
+            surfaces=claimed_surfaces("PS-EXAMPLE-001", "src/shared"),
+            domains=["product:shared"],
+        )
+        other = claim(
+            package="PS-OTHER-001",
+            number=2,
+            surfaces=claimed_surfaces("PS-OTHER-001", "src/shared/child"),
+            domains=["product:shared:child"],
+        )
+        after = copy.deepcopy(before)
+        after["state"] = "paused"
+        after["checkpoint_sha"] = HEAD
+        control_facts = facts(
+            branch="work/2026-08-23-delivery-pause-example",
+            branch_paths=(preflight.claim_relative_path(after["package"]),),
+        )
+
+        def fake_git(_root, *command):
+            if command[0] == "fetch":
+                return ""
+            if command[0] == "rev-parse":
+                return HEAD
+            raise AssertionError(command)
+
+        payload, errors, warnings = self.run_evaluate(
+            args("pause"),
+            after,
+            control_facts,
+            origin_claims={"ps-example-001": before, "ps-other-001": other},
+            candidate_claims={"ps-example-001": after, "ps-other-001": other},
+            origin_claim=patch.object(
+                preflight, "_origin_claim", return_value=before
+            ),
+            git=patch.object(preflight, "_git", side_effect=fake_git),
+        )
+
+        self.assertEqual([], errors)
+        self.assertEqual(2, len(warnings))
+        self.assertIn("authority_claim_collisions", payload)
+
     def test_resume_reactivates_the_exact_preserved_checkpoint(self):
         before = claim(state="paused", checkpoint_sha=HEAD)
         after = claim(state="active", checkpoint_sha=HEAD)
@@ -3736,7 +3951,8 @@ class CurrentRepositoryTests(unittest.TestCase):
         current_index = preflight.load_index(ROOT)
         current_claims = preflight.load_claims(ROOT)
         self.assertEqual([], preflight.validate_index(current_index))
-        self.assertEqual([], preflight.validate_claim_set(current_claims))
+        claim_errors, _ = preflight.split_claim_set_errors(current_claims)
+        self.assertEqual([], claim_errors)
         legacy = current_index["legacy_snapshot"]
         blob = subprocess.check_output(
             ["git", "rev-parse", f"{legacy['commit']}:{legacy['path']}"],

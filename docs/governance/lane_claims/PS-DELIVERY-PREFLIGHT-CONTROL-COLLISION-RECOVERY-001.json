@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-PREFLIGHT-CONTROL-COLLISION-RECOVERY-001",
+  "state": "active",
+  "outcome": "Correct the shared delivery preflight so read-only diagnostics report existing active cross-claim path and hierarchical-domain collisions clearly without treating those already-existing collisions as read authorization failures, while every mutating admission remains fail-closed except when a valid control transition itself removes the collision from active ownership. Prove that an active colliding claim can pass its pre-edit read with warnings and then pass pause only after its exact pushed checkpoint is recorded and the transition removes the active collision; prove write, activate, authorize, transfer, owner reassignment, resume, merge, close, and other collision-preserving or collision-creating mutation paths remain blocked. Document the narrow non-authorizing read boundary. Do not change broker, identity, privacy, production, schema, configuration, credential, deployment, external-operation, or live-operation behavior.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/preflight_collision_writer",
+  "branch": "work/2026-08-29-delivery-activation-preflight-control-collision-recovery-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "dc3ea244377b7e00acf48897a641c0380a024fe9",
+  "owner_outcome_ref": "pete-chat-2026-08-29/full-package-blocker-recovery-and-rules-must-not-deadlock",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-DELIVERY-PREFLIGHT-CONTROL-COLLISION-RECOVERY-001.json",
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-PREFLIGHT-CONTROL-COLLISION-RECOVERY-001.md",
+    "docs/governance/lane_claims/receipts/PS-DELIVERY-PREFLIGHT-CONTROL-COLLISION-RECOVERY-001.json",
+    "START_HERE.md",
+    "docs/governance/DECISIONS.md",
+    "scripts/delivery_preflight.py",
+    "tests/test_delivery_preflight.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-PREFLIGHT-CONTROL-COLLISION-RECOVERY-001.md"
+  ],
+  "domains": [
+    "governance:delivery-control:collision-recovery",
+    "tooling:delivery-preflight:claim-collision-diagnostics",
+    "testing:delivery-preflight:claim-collision-admission"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}

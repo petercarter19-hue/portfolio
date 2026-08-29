@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-PREFLIGHT-CONTROL-COLLISION-RECOVERY-001",
+  "candidate_sha": "4499b99b121f1241dcae129ad3c519f545c7cc47",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/preflight_collision_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-08-29T22:13:40Z",
+  "findings": [],
+  "evidence_ref": "agent:/root/preflight_collision_reviewer/review:4499b99b121f1241dcae129ad3c519f545c7cc47"
+}
