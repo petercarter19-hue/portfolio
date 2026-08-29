@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-CAPTURE-MOMENT-READERS-001",
+  "state": "active",
+  "outcome": "Deliver replacement package 2 of the accepted 2026-08-29 reader topology: read-only owner-scoped account-export readers for the Capture and Moment domains (dbo.captures, dbo.capture_revisions, dbo.moments, dbo.moment_versions, dbo.moment_sources, dbo.moment_placements) as one additive migration PS-SETTINGS-EXPORT-004 with rollback, a registry entry whose requires covers both the readers' and the verification's dependencies, an isolation verification with constraint-complete fixtures, offline allowlist-pinning tests with a forbidden-field canary, DOMAINS registry updates, and contract records. Media transcripts, content hashes, binary and blob references, and media-source linkage columns are excluded from every allowlist in this package; text truth only. Procedures accept only a trusted server-derived user key, order deterministically, exclude soft-deleted rows, and never select internal ids or another member's data. No UI, worker, or integration change; no real export run; no schema apply outside the disposable gate; no production authority.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/settings-cm-readers-writer",
+  "branch": "work/2026-08-29-settings-account-export-capture-moment-readers-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "8d0ec313e76e9a60b52a4fe72003cd9936318251",
+  "owner_outcome_ref": "pete-chat-2026-08-29/replacement-topology-package-2-sequence",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-ACCOUNT-EXPORT-CAPTURE-MOMENT-READERS-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-CAPTURE-MOMENT-READERS-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-ACCOUNT-EXPORT-CAPTURE-MOMENT-READERS-001.json",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-004_capture_moment_readers.sql",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-004_capture_moment_readers_rollback.sql",
+    "SQL FIles/Migrations/registry.json",
+    "SQL FIles/Verification/PS-SETTINGS-EXPORT-004_capture_moment_reader_isolation_verify.sql",
+    "services/account_export_domain_readers.py",
+    "tests/test_settings_export_capture_moment_readers.py",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR2_ACCOUNT_EXPORT_CAPTURE_MOMENT_READERS.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR2_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+  ],
+  "domains": [
+    "schema:settings:account-export-capture-moment-readers",
+    "privacy:settings:export-capture-moment-allowlists",
+    "testing:settings:account-export-capture-moment-readers"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-CAPTURE-MOMENT-READERS-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
