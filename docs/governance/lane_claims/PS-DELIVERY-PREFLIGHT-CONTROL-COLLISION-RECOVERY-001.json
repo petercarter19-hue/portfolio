@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-PREFLIGHT-CONTROL-COLLISION-RECOVERY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Correct the shared delivery preflight so read-only diagnostics report existing active cross-claim path and hierarchical-domain collisions clearly without treating those already-existing collisions as read authorization failures, while every mutating admission remains fail-closed except when a valid control transition itself removes the collision from active ownership. Prove that an active colliding claim can pass its pre-edit read with warnings and then pass pause only after its exact pushed checkpoint is recorded and the transition removes the active collision; prove write, activate, authorize, transfer, owner reassignment, resume, merge, close, and other collision-preserving or collision-creating mutation paths remain blocked. Document the narrow non-authorizing read boundary. Do not change broker, identity, privacy, production, schema, configuration, credential, deployment, external-operation, or live-operation behavior.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/preflight_collision_writer",
@@ -31,6 +31,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "ffed90480db1974d2cb0240ed8bd709e03b9b1c6",
+  "closed_at": "2026-08-29T22:37:21Z"
 }
