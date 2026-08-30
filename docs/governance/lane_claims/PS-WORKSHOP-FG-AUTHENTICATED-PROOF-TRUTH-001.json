@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-001",
+  "state": "active",
+  "outcome": "Record only the separately owner-authorized exact sealed authenticated Workshop F/G production proof lifecycle against already deployed release de34c238cb406a6b8c5d4c08: exactly two operation-scoped synthetic ordinary members, broker-gated External ID, Graph, SQL, and browser journey, with structural outcomes only and no secret, token, subject, or private-content recording; record pending or failure honestly; on completion, failure, or stop retire the exact mappings, soft-delete and purge the exact two users, clear memory and temporary material, remove the User Administrator assignment, and delete the dedicated no-secret public client; update the current baseline from pending only if exact evidence proves it. This repository package itself performs no deployment, schema, runtime, configuration, identity, or live operation and does not authorize them.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
+  "branch": "work/2026-08-30-workshop-fg-authenticated-proof-truth-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "17ca74ad02eb5780f038ba8016258b82404a0e94",
+  "owner_outcome_ref": "session:01a04348-7e3e-7a11-a443-752498be91b5/owner-authorization:2026-08-28/workshop-fg-sealed-private-proof-complete-lifecycle; pete-chat-2026-08-30/continue-workshop-fg-proof-after-disconnection-and-ensure-lane",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-001.md",
+    "docs/governance/lane_claims/receipts/PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-001.json",
+    "docs/governance/CURRENT_BASELINE.yaml",
+    "tests/test_operational_readiness.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-001.md"
+  ],
+  "domains": [
+    "governance:workshop-fg-authenticated-proof-truth",
+    "operations:workshop-fg-authenticated-two-member-proof",
+    "identity:synthetic-qa-proof-lifecycle",
+    "privacy:workshop-private-two-member-proof"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
