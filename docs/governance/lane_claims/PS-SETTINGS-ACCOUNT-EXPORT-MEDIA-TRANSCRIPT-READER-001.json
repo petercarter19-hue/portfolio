@@ -22,7 +22,9 @@
     "services/account_export_domain_readers.py",
     "tests/test_settings_export_media_transcript_reader.py",
     "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR6_ACCOUNT_EXPORT_MEDIA_TRANSCRIPT_READER.md",
-    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR6_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR6_OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "tests/test_settings_export_capture_moment_readers.py",
+    "tests/test_account_export_integration.py"
   ],
   "domains": [
     "schema:settings:account-export-media-transcript-reader",
