@@ -254,6 +254,50 @@ five-table scope, the identical boundary PS-SETTINGS-EXPORT-004's own
 header drew for dbo.moment_placements.target_entity_id/
 dbo.slate_entities.
 
+PS-SETTINGS-EXPORT-008 (this update) flips connection_preferences,
+notification_preferences, and consent_history from excluded to
+included, executing the owner's accepted 2026-08-30 "Paper 2" and
+"Paper 3" rulings over three PS-PLAT-004 tables: dbo.
+connection_preferences, dbo.notification_preferences, dbo.user_consents.
+These are the FIRST tables this reader program has read whose OWN claimed
+table carries an explicit user_id foreign-key column (every prior table
+either keys on owner_profile_id or, for usp_ReadAccountExportAccountForOwner
+alone, IS dbo.app_users itself, matched on its own primary key rather
+than a separate user_id column); each reader still resolves the full,
+byte-identical identity header (including the otherwise-unused
+@ProfileId) and then filters on user_id = @UserId instead -- the same
+@UserId-filtering PATTERN usp_ReadAccountExportAccountForOwner
+(PS-SETTINGS-EXPORT-003) already established, extended here to a second,
+third, and fourth reader. Paper 2: both preference
+tables are included with an explicit dormant-feature disclosure column
+(feature_status = 'dormant_not_yet_enforced') on every row, because
+neither table has any enforcement path anywhere in this codebase today
+(confirmed by a repository-wide grep for a writer: dbo.
+notification_preferences has none at all -- a real export legitimately
+returns zero rows for it; dbo.connection_preferences is auto-seeded,
+all-defaults, by PS-PLAT-004's own backfill and PS-AUTH-001's own
+per-signup usp_UpsertAppUserFromAuth call, with no writer beyond that
+seed). The label is a projection-truth statement about the FEATURE, not
+stored member data -- disclosed here as a dict-level fact but explained
+in full, including its exact wording rationale, in
+CR7_ACCOUNT_EXPORT_PREFERENCES_CONSENT_READER.md, per this program's own
+practice of keeping a flipped domain's historical reasoning in its
+contract document rather than the dict. Paper 3: dbo.user_consents'
+full history is included -- consent_code, policy_version, consent_status
+(accepted/declined/withdrawn -- genuine history semantics, and a
+withdrawal is its own later row, never an update or deletion of the
+earlier one), and recorded_at_utc -- so a member's export shows every
+consent event they have, including any withdrawal. evidence_json is
+excluded whole (a schema-free nvarchar(max) column that could hold
+anything up to network addresses or device details, per the owner's
+ruling); source_context is also excluded, for a distinct, disclosed
+reason: no procedure anywhere writes dbo.user_consents today, so its
+real-world population cannot be verified as a bounded, non-PII label
+against any actual procedure body (this program's own "trace actual
+writes" discipline, extended here to a column with zero current
+writers). No third-party consent is read: dbo.recruiter_questions is
+untouched by this package's migration, readers, and verification script.
+
 Nothing in this module is wired to any route, worker, or scheduler.
 There is still no live export, no populated dbo.account_export_job_domains
 row, and no production authority here or anywhere else in this package.
@@ -377,6 +421,10 @@ read_voice_transcription_attempt = _make_reader("usp_ReadAccountExportVoiceTrans
 read_voice_capture_link = _make_reader("usp_ReadAccountExportVoiceCaptureLinkForOwner")
 read_capture_media_source = _make_reader("usp_ReadAccountExportCaptureMediaSourceForOwner")
 read_capture_media_link = _make_reader("usp_ReadAccountExportCaptureMediaLinkForOwner")
+
+read_connection_preference = _make_reader("usp_ReadAccountExportConnectionPreferenceForOwner")
+read_notification_preference = _make_reader("usp_ReadAccountExportNotificationPreferenceForOwner")
+read_user_consent = _make_reader("usp_ReadAccountExportUserConsentForOwner")
 
 
 def _reader_entry(function, schema_id, fields):
@@ -780,9 +828,19 @@ DOMAINS = {
         "readers": (),
     },
     "connection_preferences": {
-        "disposition": "excluded",
-        "reason": "C0 marks this includable with truthful dormant-behavior labeling; this package builds no reader for it.",
-        "readers": (),
+        "disposition": "included",
+        "reason": None,
+        "readers": (
+            _reader_entry(
+                read_connection_preference,
+                "peerslate.account_export.connection_preferences.connection_preference.v1",
+                (
+                    "discovery_opt_in", "goal_matching_opt_in", "recruiter_discovery_opt_in",
+                    "discoverable_audience", "updated_at_utc", "feature_status",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+        ),
     },
     "connection_records": {
         "disposition": "excluded",
@@ -795,14 +853,31 @@ DOMAINS = {
         "readers": (),
     },
     "notification_preferences": {
-        "disposition": "excluded",
-        "reason": "C0 marks this includable after an owner-scoped/dormant field allowlist and truthful behavior labeling; this package builds no reader for it. Distinct from the excluded notifications inbox.",
-        "readers": (),
+        "disposition": "included",
+        "reason": None,
+        "readers": (
+            _reader_entry(
+                read_notification_preference,
+                "peerslate.account_export.notification_preferences.notification_preference.v1",
+                (
+                    "notification_type", "in_app_enabled", "email_enabled",
+                    "quiet_hours_start", "quiet_hours_end", "updated_at_utc", "feature_status",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+        ),
     },
     "consent_history": {
-        "disposition": "excluded",
-        "reason": "C0 marks this includable in evidence-minimized form (excluding raw claims/excessive evidence); this package builds no reader for it.",
-        "readers": (),
+        "disposition": "included",
+        "reason": None,
+        "readers": (
+            _reader_entry(
+                read_user_consent,
+                "peerslate.account_export.consent_history.user_consent.v1",
+                ("consent_code", "policy_version", "consent_status", "recorded_at_utc")
+                + _READ_WINDOW_FIELDS,
+            ),
+        ),
     },
     "audit_events": {
         "disposition": "excluded",

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-PREFERENCES-CONSENT-READER-001",
+  "candidate_sha": "723b6a327a52aa13f8039e0644b5d04b5612197d",
+  "review_type": "independent",
+  "reviewer_ref": "role:indrev:ps-settings-pc-reader:20260830T100942Z:723b6a32",
+  "result": "pass",
+  "reviewed_at": "2026-08-30T10:09:42Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-PREFERENCES-CONSENT-READER-001.md"
+}

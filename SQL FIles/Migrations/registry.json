@@ -2216,6 +2216,40 @@
         "operator": "Claude Fable 5 / work-2026-08-30-settings-account-export-media-transcript-reader-001",
         "notes": "Run 2 after the gate-caught DEFAULT-vs-NULL fixture fix on the two deleted-state photo rows"
       }
+    },
+    {
+      "id": "PS-SETTINGS-EXPORT-008",
+      "forward": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-008_preferences_consent_reader.sql",
+      "rollback": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-008_preferences_consent_reader_rollback.sql",
+      "requires": [
+        "PS-AUTH-001",
+        "PS-PLAT-004"
+      ],
+      "summary": "Read-only owner-scoped account-export preference/consent readers: three @UserKey-only procedures over connection_preferences, notification_preferences, user_consents. Both preference readers add a dormant-feature disclosure column since neither is enforced today. The consent reader returns the member's full history including withdrawn; evidence_json and source_context are excluded. No third-party consent (recruiter_questions) is read.",
+      "gate": {
+        "executable_sha256": "b92a301e0d3616b3baedb1236eedea4d45a74430c84ad5e2e9b3adfde5eccd94",
+        "gated_at_utc": "2026-08-30T09:36:34Z",
+        "gate_database": "ps-migration-path-20260830-pc",
+        "gate_server": "peerslate",
+        "prerequisites": [
+          "PS-PLAT-000",
+          "PS-PLAT-001",
+          "PS-PLAT-002",
+          "PS-PLAT-003",
+          "PS-PLAT-004",
+          "PS-PLAT-005",
+          "PS-PLAT-006",
+          "PS-PLAT-007",
+          "PS-AUTH-001"
+        ],
+        "objects": [
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportConnectionPreferenceForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportNotificationPreferenceForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportUserConsentForOwner"
+        ],
+        "verification": "PS-SETTINGS-EXPORT-008_preferences_consent_reader_isolation_verify.sql returned verified = 1",
+        "operator": "Claude Fable 5 / work-2026-08-30-settings-account-export-preferences-consent-reader-001"
+      }
     }
   ]
 }
