@@ -1514,6 +1514,60 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
         self.assertIn('Use this only when another task will continue', handoff)
         self.assertLess(len(handoff.split()), 300)
 
+    def test_authenticated_workshop_fg_refusal_remains_pending_and_pre_mutation(self):
+        baseline = self.read('docs/governance/CURRENT_BASELINE.yaml')
+        marker = 'authenticated_workshop_fg_proof:\n'
+        self.assertIn('updated_at: "2026-08-30"', baseline)
+        self.assertIn(
+            'authenticated private two-member live proof remains pending',
+            baseline,
+        )
+        self.assertEqual(1, baseline.count(marker))
+        proof = baseline.split(marker, 1)[1].split('\nmanager:', 1)[0]
+
+        for expected in (
+            'state: "pending"',
+            'conclusion: "not_done"',
+            'deployed_release=de34c238cb406a6b8c5d4c08',
+            'run_id=qa-20260830-01a04348',
+            'created_after_utc=2026-08-30T10:57:34Z',
+            'broker_invocations=1',
+            'broker_exit_code=2',
+            'result=refused',
+            'reason_code=production_oidc_authority_mismatch',
+            'retry_performed=false',
+            'msal_or_system_browser_started=false',
+            'graph_calls=0',
+            'graph_mutations=0',
+            'synthetic_identities_created=0',
+            'sql_mappings_created=0',
+            'workshop_items_created=0',
+            'private_data_work_started=false',
+            'user_administrator_assignment=removed_verified_absent',
+            'global_administrator=remained',
+            'dedicated_public_client_name=peerslate-synthetic-qa-graph-operator',
+            'dedicated_public_client_id=d28e3e11-8cfa-465c-bc77-1811caf902b5',
+            'active_application_registration=deleted_verified_absent',
+            'deleted_application=permanently_deleted_verified_absent',
+            'disposable_pinned_msal_runtime=moved_to_trash',
+            'peerslate_sealed_browser_temp_roots=0',
+            'record_shape=structural_only',
+            'secrets=false',
+            'tokens=false',
+            'subjects=false',
+            'private_content=false',
+            'personal_access_token_used=false',
+        ):
+            self.assertIn(expected, proof)
+
+        for disallowed in (
+            'state: "complete"',
+            'conclusion: "done"',
+            'result=pass',
+            'retry_performed=true',
+        ):
+            self.assertNotIn(disallowed, proof)
+
 
 if __name__ == '__main__':
     unittest.main()

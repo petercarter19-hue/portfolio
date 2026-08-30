@@ -4,7 +4,7 @@
 # Fetch origin before relying on any recorded SHA.
 
 schema_version: 5
-updated_at: "2026-08-28"
+updated_at: "2026-08-30"
 
 authority:
   remote: origin
@@ -17,6 +17,14 @@ authority:
   application_behavior_commit: "ebc702870abbc0b56240cb43a7f34fa06d251fcd"
   application_behavior_pipeline: 1761
   note: "Production serves application commit ebc702870abbc0b56240cb43a7f34fa06d251fcd from manual run 1761 with /healthz release de34c238cb406a6b8c5d4c08, verified against scripts/release_identity.py. That run used forceProductionDeploy=true, the exact manual source and Pete authorization reference, and schemaAction=none; Build, exact-operation guard, Community schema prerequisite, deployment, and public smoke succeeded, while schema, candidate, and independently gated maintenance stages skipped. It released the independently reviewed Workshop F and G behavior. An anonymous /app/workshop check returned 200 with no-store/private headers and clearly labeled temporary example content; authenticated private two-member live proof remains pending. Runs 1758 and 1759 separately applied PS-WORKSHOP-003 and PS-WORKSHOP-004 through approval check 11, advancing the ledger 29->30->31; docs/governance/PRODUCTION_SCHEMA_STATE.md is run 1759's generated live-ledger record. Repository PR and automatic main runs are CI-only; deployment remains a separate manual exact-main-SHA operation. This record is not a substitute for fetching Azure and verifying live identity."
+
+authenticated_workshop_fg_proof:
+  state: "pending"
+  conclusion: "not_done"
+  attempt: "deployed_release=de34c238cb406a6b8c5d4c08;run_id=qa-20260830-01a04348;created_after_utc=2026-08-30T10:57:34Z;broker_invocations=1;broker_exit_code=2;result=refused;reason_code=production_oidc_authority_mismatch;retry_performed=false"
+  pre_mutation_boundary: "msal_or_system_browser_started=false;graph_calls=0;graph_mutations=0;synthetic_identities_created=0;sql_mappings_created=0;workshop_items_created=0;private_data_work_started=false"
+  cleanup: "user_administrator_assignment=removed_verified_absent;global_administrator=remained;dedicated_public_client_name=peerslate-synthetic-qa-graph-operator;dedicated_public_client_id=d28e3e11-8cfa-465c-bc77-1811caf902b5;active_application_registration=deleted_verified_absent;deleted_application=permanently_deleted_verified_absent;disposable_pinned_msal_runtime=moved_to_trash;peerslate_sealed_browser_temp_roots=0"
+  retained_material: "record_shape=structural_only;secrets=false;tokens=false;subjects=false;private_content=false;personal_access_token_used=false"
 
 manager:
   role: "package_designated_session_manager"
