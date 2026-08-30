@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MYOPP-CRITERIA-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement and independently review the owner-scoped C3 criteria foundation: a bounded interpretation seam where AI only proposes a visible draft; deterministic create, edit, clarify, dismiss, refine, keep-current, discard, and explicit-Apply commands; complete idempotency and stale/terminal token precedence; immutable applied snapshots and terminal receipts; manual parity and AI-unavailable behavior; cross-member not-found isolation; and the additive governed PS-MYOPP-002 criteria-state migration with verification and rollback. Apply may allocate and return an execution key but C3 performs no retrieval or search execution. No route or UI work, C4 retrieval, C5 qualification, provider or external-service work, infrastructure, deployment, enablement, production schema action, or production claim. Any disposable migration-gate database requires separate bounded owner authorization.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/c3_criteria_writer",
@@ -40,6 +40,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "ab7d32b8199fb617706ed0017974f7637d8d21ee",
+  "closed_at": "2026-08-30T05:07:11Z"
 }
