@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-001",
+  "state": "active",
+  "outcome": "Correct only sealed synthetic-QA Microsoft Graph authorization by replacing Azure CLI Graph-token acquisition with a separately provisioned dedicated single-tenant External ID public client, statically bound to tenant b6cac548-9b4b-43da-b366-e95be960ec2f and its exact non-secret client ID; use MSAL system-browser authorization-code plus PKCE with an in-memory-only cache and no secret, WAM, broker, persistent cache, token output, or configurable authority; require the exact delegated scopes User.Read, User.ReadWrite.All, and User.DeleteRestore.All plus matching appid/azp, tid, Microsoft Graph audience, scp, User Administrator wids, expiry, unchanged oid, and the existing live /organization proof before mutation; retain Azure CLI only for two read-only App Service authority reads; and add fake-only adversarial tests and truthful runbook/dependency guidance. Exclude reuse or change of peerslate-pete, Entra configuration, consent, authentication, live Graph, identity creation or deletion, attended proof, deployment, schema, configuration, roles, licensing, billing, and production operations.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
+  "branch": "work/2026-08-30-synthetic-sealed-graph-public-client-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "89de34da8e3648e72e6586642a3ed9afd1b7b984",
+  "owner_outcome_ref": "session:01a04348-7e3e-7a11-a443-752498be91b5/owner-authorization:2026-08-28/workshop-fg-sealed-private-proof-complete-lifecycle",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-001.json",
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-001.md",
+    "docs/governance/lane_claims/receipts/PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-001.json",
+    "qa/synthetic_member/sealed_credential_broker/__init__.py",
+    "qa/synthetic_member/sealed_credential_broker/msal-requirements.lock",
+    "qa/synthetic_member/docs/ATTENDED_PROOF_RUNBOOK.md",
+    "tests/synthetic_member_qa/test_sealed_credential_broker.py",
+    "tests/synthetic_member_qa/test_sealed_credential_broker_deletion.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-001.md"
+  ],
+  "domains": [
+    "identity:synthetic-qa-sealed-graph-public-client",
+    "privacy:synthetic-qa-graph-token-memory-containment",
+    "operations:synthetic-qa-delegated-graph-authorization",
+    "dependency:synthetic-qa-msal-public-client",
+    "testing:synthetic-member:sealed-graph-public-client"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
