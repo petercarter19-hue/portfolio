@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SYNTHETIC-SEALED-AZURE-AUTH-SHAPE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Correct only the sealed synthetic-QA broker's Azure App Service authsettingsV2 response projection for Azure CLI 2.87 by reading properties.platform.enabled and properties.identityProviders.azureActiveDirectory.registration.openIdIssuer while preserving the broker's exact closed {enabled,issuer} projection and all existing issuer, tenant, metadata, and live app-setting validations. Pin the exact command and projection in focused fake-only tests and align the attended runbook. Repository build only; no production or live operation, identity or UI work, public-client provisioning, role change, deployment, or retry.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
@@ -30,6 +30,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "b7eca9581dfb71e8490719e268b2242b905a5850",
+  "closed_at": "2026-08-30T12:22:01Z"
 }
