@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-002",
+  "candidate_sha": "81a7918d41824bf01b720a81c40adb1385bd14d6",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/sealed_broker_writer/child_runtime_protocol_review",
+  "result": "pass",
+  "reviewed_at": "2026-08-30T14:05:28Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-002.md"
+}

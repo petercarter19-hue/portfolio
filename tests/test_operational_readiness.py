@@ -1514,7 +1514,7 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
         self.assertIn('Use this only when another task will continue', handoff)
         self.assertLess(len(handoff.split()), 300)
 
-    def test_authenticated_workshop_fg_refusal_remains_pending_and_pre_mutation(self):
+    def test_authenticated_workshop_fg_final_refusal_remains_pending_and_pre_mutation(self):
         baseline = self.read('docs/governance/CURRENT_BASELINE.yaml')
         marker = 'authenticated_workshop_fg_proof:\n'
         self.assertIn('updated_at: "2026-08-30"', baseline)
@@ -1528,25 +1528,44 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
         for expected in (
             'state: "pending"',
             'conclusion: "not_done"',
+            'attempt_ordinal=2',
+            'final_attempt=true',
             'deployed_release=de34c238cb406a6b8c5d4c08',
-            'run_id=qa-20260830-01a04348',
-            'created_after_utc=2026-08-30T10:57:34Z',
+            'broker_source=295242f7e29c51f9e5a6922396a9ee82e5391231',
+            'run_id=qa-20260830-01a04348b',
+            'cutoff_utc=2026-08-30T13:49:50Z',
             'broker_invocations=1',
             'broker_exit_code=2',
             'result=refused',
-            'reason_code=production_oidc_authority_mismatch',
+            'reason_code=production_oidc_metadata_unavailable',
             'retry_performed=false',
             'msal_or_system_browser_started=false',
+            'browser_runtime_started=false',
             'graph_calls=0',
             'graph_mutations=0',
             'synthetic_identities_created=0',
             'sql_mappings_created=0',
             'workshop_items_created=0',
             'private_data_work_started=false',
-            'user_administrator_assignment=removed_verified_absent',
+            'probe=header_only',
+            'header_probe_endpoint=exact_ciam_openid_configuration',
+            'header_probe_http_status=200',
+            'header_probe_effective_url=same_as_requested',
+            'header_probe_redirected=false',
+            'broker_python_runtime=3.14',
+            'broker_http_client=stdlib_urllib',
+            'broker_failure=URLError',
+            'broker_tls_error=SSLCertVerificationError',
+            'broker_ssl_reason=CERTIFICATE_VERIFY_FAILED',
+            'broker_tls_detail=unable_to_get_local_issuer_certificate',
+            'root_cause=local_python_tls_trust_store_refusal',
+            'microsoft_metadata_outage=false',
+            'identity_mapping_item_residue=0',
+            'residue_basis=mutation_never_began',
+            'user_administrator_assignment=removed_server_refreshed_absent',
             'global_administrator=remained',
             'dedicated_public_client_name=peerslate-synthetic-qa-graph-operator',
-            'dedicated_public_client_id=d28e3e11-8cfa-465c-bc77-1811caf902b5',
+            'dedicated_public_client_id=4e5fd52b-5c0b-4f7c-8266-f571284a31f1',
             'active_application_registration=deleted_verified_absent',
             'deleted_application=permanently_deleted_verified_absent',
             'disposable_pinned_msal_runtime=moved_to_trash',
@@ -1556,7 +1575,6 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
             'tokens=false',
             'subjects=false',
             'private_content=false',
-            'personal_access_token_used=false',
         ):
             self.assertIn(expected, proof)
 
@@ -1565,6 +1583,10 @@ class ProfessionalReadinessGovernanceTests(unittest.TestCase):
             'conclusion: "done"',
             'result=pass',
             'retry_performed=true',
+            'root_cause=microsoft_metadata_outage',
+            'microsoft_metadata_outage=true',
+            'reason_code=production_oidc_authority_mismatch',
+            'dedicated_public_client_id=d28e3e11-8cfa-465c-bc77-1811caf902b5',
         ):
             self.assertNotIn(disallowed, proof)
 
