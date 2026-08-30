@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-CRITERIA-001",
+  "candidate_sha": "41af22defb479834f5758b7ddd31a819b0dd2545",
+  "review_type": "independent",
+  "reviewer_ref": "session:8f7b703c-9a6e-4d5f-95f7-6d113138b09b",
+  "result": "pass",
+  "reviewed_at": "2026-08-30T04:55:33Z",
+  "findings": [
+    {
+      "summary": "Two minor future observations were explicitly nonblocking and require no C3 candidate change.",
+      "status": "informational"
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MYOPP-CRITERIA-001.md"
+}
