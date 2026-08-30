@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-EVIDENCE-RULE-READER-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver the owner's accepted 2026-08-30 Papers 4-7 rulings as the topology's closing reader package: adopt the safe-references-only evidence rule (titles, types, statuses, dates; never storage locators, object keys, URLs, hashes, or verifier identity) and apply it now by building the career_skill_links reader it unblocks, as one additive migration PS-SETTINGS-EXPORT-009 with rollback, a registry entry covering the readers' and verification's dependencies, isolation verification with constraint-complete fixtures, allowlist-pinning tests with canaries, DOMAINS updates, and contract records; and record the accepted rulings durably in the export's own domain reasons: AI proposals closed (nothing additional today), publication deferred with the ship-its-own-reader rule, Community honestly omitted with a future own-words-only package queued, and the evidence rule binding whichever package first builds evidence readers. Procedures accept only a trusted server-derived user key, order deterministically, and never select another member's data or internal ids. No UI, worker, or integration change; no real export; no schema apply outside the disposable gate; no production authority.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-er-reader-writer",
@@ -37,6 +37,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "8554efe1f653cf48e3236347460ec87d695a27ce",
+  "closed_at": "2026-08-30T21:40:41Z"
 }
