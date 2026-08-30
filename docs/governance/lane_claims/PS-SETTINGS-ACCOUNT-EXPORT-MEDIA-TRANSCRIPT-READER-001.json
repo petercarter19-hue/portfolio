@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-MEDIA-TRANSCRIPT-READER-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver the owner's accepted 2026-08-30 Paper 1 ruling: read-only owner-scoped account-export readers for the member's voice/photo capture facts and own transcripts over voice_media_sources, voice_transcription_attempts, voice_capture_links, capture_media_sources, and capture_media_links, as one additive migration PS-SETTINGS-EXPORT-007 with rollback, a registry entry whose requires covers the readers' and the verification's dependencies, isolation verification with constraint-complete fixtures, allowlist-pinning tests with canaries, DOMAINS updates, and contract records. HARD EXCLUSIONS: every blob locator/name, content hash/digest/etag, vendor/provider identifier, raw media bytes, and payload-nulled deleted rows. Transcript text is INCLUDED as member content. Procedures accept only a trusted server-derived user key, order deterministically, and never select another member's data or internal ids. No UI, worker, or integration change; no real export; no schema apply outside the disposable gate; no production authority.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-mt-reader-writer",
@@ -37,6 +37,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "ef7a55b235b596c91f5f0e6faac5fd43e5ff317a",
+  "closed_at": "2026-08-30T08:27:59Z"
 }
