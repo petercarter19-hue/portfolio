@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-002",
+  "state": "active",
+  "outcome": "Record exactly one second and final sealed authenticated Workshop F/G attempt against deployed release de34c238cb406a6b8c5d4c08 using broker code now on main, exactly two new ordinary synthetic members, structural outcomes only, and no retry. On completion, failure, or stop, record cleanup of the exact mappings, items, users, temporary and in-memory material, temporary User Administrator removal, and replacement public-client deletion from both active and deleted applications. Advance the current baseline from pending and not_done to done only if exact evidence proves the complete F/G journey; otherwise retain pending and not_done and record the result honestly. Repository truth package only; it performs and authorizes no live operation.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
+  "branch": "work/2026-08-30-workshop-fg-authenticated-proof-truth-002",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "d1a45abd1a518e8a0494e2f5b2f0352a3216ab2c",
+  "owner_outcome_ref": "pete-chat-2026-08-30/proof-2-approved",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-002.json",
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-002.md",
+    "docs/governance/lane_claims/receipts/PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-002.json",
+    "docs/governance/CURRENT_BASELINE.yaml",
+    "tests/test_operational_readiness.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-002.md"
+  ],
+  "domains": [
+    "governance:workshop-fg-authenticated-proof-truth",
+    "operations:workshop-fg-authenticated-two-member-proof",
+    "identity:synthetic-qa-proof-lifecycle",
+    "privacy:workshop-private-two-member-proof"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
