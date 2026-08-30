@@ -122,29 +122,44 @@ Before any Graph token or browser credential entry, the worker reads the fixed
 App Service authentication configuration and binds two deliberately different
 authorities:
 
-1. It uses `az` only for discovery, then requires the installed
-   `<CLI2>/wbin/az.cmd` layout and its sibling `<CLI2>/python.exe`. The
-   `.cmd` file is never executed. Before starting a shell-free child, the
-   worker resolves and confines that `python.exe` to the same `CLI2` runtime,
-   then runs it only as `-I -B -m azure.cli` for the two bounded read-only App
-   Service commands (`webapp auth show` and `webapp config appsettings list`)
-   and for the bounded Microsoft Graph token read (`account get-access-token`).
-   Neither path is taken from an operator argument, and the worker never runs
-   bare `az`, `az.cmd`, or a shell. A missing, escaped, or unusable runtime
-   refuses before Azure, Graph, or browser work.
-2. `az webapp auth show` selects only its current top-level `enabled` and
+1. It uses `az` only for discovery and accepts one host-specific installed
+   runtime. Windows AMD64 requires the reviewed `<CLI2>/wbin/az.cmd` layout and
+   its sibling `<CLI2>/python.exe`; the `.cmd` file is never executed. Darwin
+   arm64 requires discovery to return exactly `/opt/homebrew/bin/az`, requires
+   that alias to point directly to one safe versioned
+   `/opt/homebrew/Cellar/azure-cli/<version>/bin/az` keg, and requires the
+   launcher bytes to name that same keg's `libexec/bin/python` with Homebrew's
+   exact `-Im azure.cli "$@"` form. The worker does not run that shell launcher.
+   It instead validates the keg's exact virtual-environment link chain, confines
+   the resolved interpreter to an allowed Homebrew Python 3.13 or 3.14 formula,
+   and requires an executable Darwin arm64 Mach-O target. This supports the
+   pinned Darwin arm64/Python 3.14 broker even while the installed Azure CLI keg
+   currently owns its separately pinned Homebrew Python interpreter.
+2. Immediately before each shell-free Azure child is constructed, the worker
+   re-resolves the selected interpreter and requires the same validated target
+   and executable shape. It then runs only the lexical CLI-owned interpreter as
+   `-I -B -m azure.cli` for the two bounded read-only App Service commands
+   (`webapp auth show` and `webapp config appsettings list`) and for the bounded
+   Microsoft Graph token read (`account get-access-token`). Neither launcher nor
+   interpreter is taken from an operator argument, there is no alternate PATH
+   fallback, and the worker never runs bare `az`, `az.cmd`, the Homebrew `az`
+   script, or a shell. A wrong host, missing link, changed launcher, escaped
+   interpreter, wrong architecture, or structurally unusable interpreter target
+   refuses before Azure, Graph, or browser work. A child-level import or command
+   failure remains a non-reflective refusal before Graph or browser work.
+3. `az webapp auth show` selects only its current top-level `enabled` and
    `issuer` fields. The worker requires exactly that shape, maps it only inside
    the worker to its closed `platformEnabled` and `openIdIssuer` fields, and
    requires enabled App Service authentication and one
    no-trailing-slash OIDC discovery authority of the form
    `https://<tenant-label>.ciamlogin.com/<tenant-uuid>/v2.0`.
-3. The exact discovery document must return HTTP 200 from the requested URL,
+4. The exact discovery document must return HTTP 200 from the requested URL,
    without redirect and within the bounded response size.
-4. Its `authorization_endpoint` must use the same discovery host and exact
+5. Its `authorization_endpoint` must use the same discovery host and exact
    tenant UUID. The browser is allowed to reach only that authorization origin.
-5. Its metadata `issuer` must be the no-trailing-slash principal issuer
+6. Its metadata `issuer` must be the no-trailing-slash principal issuer
    `https://<tenant-uuid>.ciamlogin.com/<tenant-uuid>/v2.0`.
-6. The fixed App Service `PEERSLATE_AUTH_ISSUER` setting must equal that metadata
+7. The fixed App Service `PEERSLATE_AUTH_ISSUER` setting must equal that metadata
    principal issuer byte for byte.
 
 The custom tenant-label discovery/authorization host and UUID-hosted principal

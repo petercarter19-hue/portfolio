@@ -91,6 +91,12 @@ MAX_SECRET_LENGTH = 512
 MAX_TOKEN_LENGTH = 32768
 ALLOWED_AUTH_HOST_SUFFIXES = (".ciamlogin.com",)
 SAFE_TENANT_LABEL = re.compile(r"^[a-z0-9][a-z0-9-]{1,62}$")
+DARWIN_HOMEBREW_PREFIX = Path("/opt/homebrew")
+SAFE_HOMEBREW_FORMULA_VERSION = re.compile(
+    r"^[0-9]+(?:\.[0-9]+){2}(?:_[0-9]+)?$"
+)
+ALLOWED_HOMEBREW_PYTHON_SERIES = frozenset({"3.13", "3.14"})
+DARWIN_ARM64_MACHO_PREFIX = b"\xcf\xfa\xed\xfe\x0c\x00\x00\x01"
 AUTHENTICATED_WORKSHOP_CONTROL = (
     "div.platform-account[data-ps-auth-control='authenticated']:not([hidden])"
 )
@@ -554,11 +560,29 @@ def _azure_child_environment(
 
 @dataclass(frozen=True)
 class AzureCliRuntime:
-    """One validated Azure CLI Python runtime; the discovered .cmd is never run."""
+    """One validated Azure CLI Python runtime; the discovered launcher is never run."""
 
     python_executable: Path
+    resolved_python_executable: Path
+    executable_prefix: bytes | None = None
 
     def command(self, arguments: Sequence[str]) -> tuple[str, ...]:
+        try:
+            current_python = self.python_executable.resolve(strict=True)
+            if (
+                current_python != self.resolved_python_executable
+                or not current_python.is_file()
+            ):
+                raise ValueError("Azure CLI Python binding changed")
+            if self.executable_prefix is not None:
+                if not os.access(self.python_executable, os.X_OK):
+                    raise ValueError("Azure CLI Python is not executable")
+                with current_python.open("rb") as stream:
+                    prefix = stream.read(len(self.executable_prefix))
+                    if prefix != self.executable_prefix:
+                        raise ValueError("Azure CLI Python executable changed")
+        except (OSError, TypeError, ValueError):
+            raise BrokerRefusal("production_authority_unavailable") from None
         return (
             str(self.python_executable),
             "-I",
@@ -569,36 +593,139 @@ class AzureCliRuntime:
         )
 
 
+def _resolve_windows_azure_cli_runtime(discovered: str) -> AzureCliRuntime:
+    """Bind the reviewed Windows CLI2 runtime without executing ``az.cmd``."""
+
+    az_command = Path(discovered).resolve(strict=True)
+    if (
+        not az_command.is_file()
+        or az_command.name.lower() != "az.cmd"
+        or az_command.parent.name.lower() != "wbin"
+    ):
+        raise ValueError("unexpected Azure CLI launcher")
+    runtime_root = az_command.parent.parent.resolve(strict=True)
+    expected_launcher = (runtime_root / "wbin" / "az.cmd").resolve(strict=True)
+    if runtime_root.name.lower() != "cli2" or expected_launcher != az_command:
+        raise ValueError("unexpected Azure CLI layout")
+    python_executable = (runtime_root / "python.exe").resolve(strict=True)
+    if (
+        not python_executable.is_file()
+        or python_executable.name.lower() != "python.exe"
+    ):
+        raise ValueError("Azure CLI Python unavailable")
+    python_executable.relative_to(runtime_root)
+    return AzureCliRuntime(
+        python_executable=python_executable,
+        resolved_python_executable=python_executable,
+    )
+
+
+def _resolve_homebrew_azure_cli_runtime(discovered: str) -> AzureCliRuntime:
+    """Bind the exact Darwin arm64 Homebrew launcher and venv interpreter."""
+
+    if platform.system() != "Darwin" or platform.machine() != "arm64":
+        raise ValueError("unexpected Homebrew host")
+    homebrew_prefix = DARWIN_HOMEBREW_PREFIX
+    canonical_prefix = homebrew_prefix.resolve(strict=True)
+    if canonical_prefix != homebrew_prefix or not canonical_prefix.is_dir():
+        raise ValueError("unexpected Homebrew prefix")
+    discovered_link = canonical_prefix / "bin" / "az"
+    if discovered != str(discovered_link) or not discovered_link.is_symlink():
+        raise ValueError("unexpected Homebrew discovery")
+
+    az_command = discovered_link.resolve(strict=True)
+    try:
+        launcher_parts = az_command.relative_to(canonical_prefix).parts
+    except ValueError:
+        raise ValueError("escaped Homebrew launcher") from None
+    if (
+        len(launcher_parts) != 5
+        or launcher_parts[:2] != ("Cellar", "azure-cli")
+        or launcher_parts[3:] != ("bin", "az")
+        or not SAFE_HOMEBREW_FORMULA_VERSION.fullmatch(launcher_parts[2])
+        or not az_command.is_file()
+        or not os.access(az_command, os.X_OK)
+    ):
+        raise ValueError("unexpected Homebrew launcher")
+    cli_version = launcher_parts[2]
+    expected_link_target = (
+        Path("..") / "Cellar" / "azure-cli" / cli_version / "bin" / "az"
+    )
+    if discovered_link.readlink() != expected_link_target:
+        raise ValueError("unexpected Homebrew launcher link")
+
+    runtime_root = canonical_prefix / "Cellar" / "azure-cli" / cli_version
+    if runtime_root.resolve(strict=True) != runtime_root:
+        raise ValueError("unexpected Homebrew runtime root")
+    python_executable = runtime_root / "libexec" / "bin" / "python"
+    if not python_executable.is_symlink():
+        raise ValueError("unexpected Homebrew Python link")
+    resolved_python = python_executable.resolve(strict=True)
+    try:
+        python_parts = resolved_python.relative_to(canonical_prefix).parts
+    except ValueError:
+        raise ValueError("escaped Homebrew Python") from None
+    if len(python_parts) != 9 or python_parts[0] != "Cellar":
+        raise ValueError("unexpected Homebrew Python")
+    formula_match = re.fullmatch(r"python@(3\.[0-9]{2})", python_parts[1])
+    python_series = formula_match.group(1) if formula_match else ""
+    if (
+        python_series not in ALLOWED_HOMEBREW_PYTHON_SERIES
+        or not SAFE_HOMEBREW_FORMULA_VERSION.fullmatch(python_parts[2])
+        or not python_parts[2].startswith(f"{python_series}.")
+        or python_parts[3:6] != ("Frameworks", "Python.framework", "Versions")
+        or python_parts[6:] != (python_series, "bin", f"python{python_series}")
+        or not resolved_python.is_file()
+        or not os.access(python_executable, os.X_OK)
+    ):
+        raise ValueError("unexpected Homebrew Python")
+    versioned_python = python_executable.with_name(f"python{python_series}")
+    expected_python_target = Path(
+        f"../../../../../opt/python@{python_series}/bin/python{python_series}"
+    )
+    if (
+        python_executable.readlink() != Path(f"python{python_series}")
+        or not versioned_python.is_symlink()
+        or versioned_python.readlink() != expected_python_target
+        or versioned_python.resolve(strict=True) != resolved_python
+    ):
+        raise ValueError("unexpected Homebrew Python link")
+    with resolved_python.open("rb") as stream:
+        if stream.read(len(DARWIN_ARM64_MACHO_PREFIX)) != DARWIN_ARM64_MACHO_PREFIX:
+            raise ValueError("unexpected Homebrew Python executable")
+
+    expected_launcher = (
+        "#!/usr/bin/env bash\n"
+        f'AZ_INSTALLER=HOMEBREW {python_executable} -Im azure.cli "$@"\n'
+    ).encode("ascii")
+    if az_command.stat().st_size != len(expected_launcher):
+        raise ValueError("unexpected Homebrew launcher size")
+    if az_command.read_bytes() != expected_launcher:
+        raise ValueError("unexpected Homebrew launcher content")
+    return AzureCliRuntime(
+        python_executable=python_executable,
+        resolved_python_executable=resolved_python,
+        executable_prefix=DARWIN_ARM64_MACHO_PREFIX,
+    )
+
+
 def _resolve_azure_cli_runtime(
     resolver: Callable[[str], str | None],
 ) -> AzureCliRuntime:
-    """Bind the installed CLI2 Python executable before any Azure child starts."""
+    """Bind one reviewed Azure CLI interpreter before any Azure child starts."""
 
     try:
         discovered = resolver("az")
         if not isinstance(discovered, str) or not discovered:
             raise ValueError("Azure CLI discovery unavailable")
-        az_command = Path(discovered).resolve(strict=True)
-        if (
-            not az_command.is_file()
-            or az_command.name.lower() != "az.cmd"
-            or az_command.parent.name.lower() != "wbin"
-        ):
-            raise ValueError("unexpected Azure CLI launcher")
-        runtime_root = az_command.parent.parent.resolve(strict=True)
-        expected_launcher = (runtime_root / "wbin" / "az.cmd").resolve(strict=True)
-        if runtime_root.name.lower() != "cli2" or expected_launcher != az_command:
-            raise ValueError("unexpected Azure CLI layout")
-        python_executable = (runtime_root / "python.exe").resolve(strict=True)
-        if (
-            not python_executable.is_file()
-            or python_executable.name.lower() != "python.exe"
-        ):
-            raise ValueError("Azure CLI Python unavailable")
-        python_executable.relative_to(runtime_root)
+        host = (platform.system(), platform.machine())
+        if host == ("Windows", "AMD64"):
+            return _resolve_windows_azure_cli_runtime(discovered)
+        if host == ("Darwin", "arm64"):
+            return _resolve_homebrew_azure_cli_runtime(discovered)
+        raise ValueError("unsupported Azure CLI host")
     except (OSError, TypeError, ValueError):
         raise BrokerRefusal("production_authority_unavailable") from None
-    return AzureCliRuntime(python_executable=python_executable)
 
 
 def _run_azure_json(

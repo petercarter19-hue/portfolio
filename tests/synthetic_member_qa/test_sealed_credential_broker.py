@@ -43,7 +43,7 @@ class FakeAzureCliLayout:
         launcher_directory: str = "wbin",
         include_python: bool = True,
     ):
-        self.runtime_root = root / runtime_name
+        self.runtime_root = (root / runtime_name).resolve()
         self.launcher = self.runtime_root / launcher_directory / "az.cmd"
         self.launcher.parent.mkdir(parents=True)
         self.launcher.write_text("fake", encoding="utf-8")
@@ -60,6 +60,105 @@ class FakeAzureCliLayout:
     def command_prefix(self) -> tuple[str, ...]:
         return (
             str(self.python_executable.resolve()),
+            "-I",
+            "-B",
+            "-m",
+            "azure.cli",
+        )
+
+
+class FakeHomebrewAzureCliLayout:
+    """Filesystem-only stand-in for the Darwin arm64 Homebrew CLI layout."""
+
+    def __init__(
+        self,
+        root: Path,
+        *,
+        cli_version: str = "2.87.0",
+        python_series: str = "3.13",
+        python_formula_version: str = "3.13.14",
+        launcher_contents: bytes | None = None,
+        python_prefix: bytes = broker.DARWIN_ARM64_MACHO_PREFIX,
+    ):
+        self.prefix = (root / "homebrew").resolve()
+        self.runtime_root = (
+            self.prefix / "Cellar" / "azure-cli" / cli_version
+        )
+        self.launcher = self.runtime_root / "bin" / "az"
+        self.launcher.parent.mkdir(parents=True)
+        self.python_executable = self.runtime_root / "libexec" / "bin" / "python"
+        self.python_executable.parent.mkdir(parents=True)
+
+        python_formula_root = (
+            self.prefix
+            / "Cellar"
+            / f"python@{python_series}"
+            / python_formula_version
+        )
+        self.resolved_python = (
+            python_formula_root
+            / "Frameworks"
+            / "Python.framework"
+            / "Versions"
+            / python_series
+            / "bin"
+            / f"python{python_series}"
+        )
+        self.resolved_python.parent.mkdir(parents=True)
+        self.resolved_python.write_bytes(python_prefix + b"fake")
+        self.resolved_python.chmod(0o755)
+
+        formula_bin = python_formula_root / "bin"
+        formula_bin.mkdir()
+        (formula_bin / f"python{python_series}").symlink_to(
+            Path("..")
+            / "Frameworks"
+            / "Python.framework"
+            / "Versions"
+            / python_series
+            / "bin"
+            / f"python{python_series}"
+        )
+        opt_root = self.prefix / "opt"
+        opt_root.mkdir()
+        (opt_root / f"python@{python_series}").symlink_to(
+            Path("..")
+            / "Cellar"
+            / f"python@{python_series}"
+            / python_formula_version
+        )
+        versioned_python = self.python_executable.with_name(
+            f"python{python_series}"
+        )
+        versioned_python.symlink_to(
+            f"../../../../../opt/python@{python_series}/bin/python{python_series}"
+        )
+        self.python_executable.symlink_to(f"python{python_series}")
+
+        expected_launcher = (
+            "#!/usr/bin/env bash\n"
+            f'AZ_INSTALLER=HOMEBREW {self.python_executable} '
+            '-Im azure.cli "$@"\n'
+        ).encode("ascii")
+        self.launcher.write_bytes(
+            expected_launcher if launcher_contents is None else launcher_contents
+        )
+        self.launcher.chmod(0o555)
+        self.discovery_link = self.prefix / "bin" / "az"
+        self.discovery_link.parent.mkdir()
+        self.discovery_link.symlink_to(
+            Path("..") / "Cellar" / "azure-cli" / cli_version / "bin" / "az"
+        )
+
+    def discover(self, command: str) -> str:
+        if command != "az":
+            raise AssertionError("unexpected Azure CLI discovery")
+        return str(self.discovery_link)
+
+    @property
+    def command_prefix(self) -> tuple[str, ...]:
+        return (
+            str(self.python_executable),
             "-I",
             "-B",
             "-m",
@@ -529,7 +628,212 @@ class FakeHttpResponse:
         return False
 
 
-class AzureAuthorityResolverTests(unittest.TestCase):
+class WindowsAzureCliTestCase(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        system = patch.object(broker.platform, "system", return_value="Windows")
+        machine = patch.object(broker.platform, "machine", return_value="AMD64")
+        system.start()
+        machine.start()
+        self.addCleanup(machine.stop)
+        self.addCleanup(system.stop)
+
+
+class AzureCliDarwinRuntimeTests(unittest.TestCase):
+    def _resolve(self, layout, *, resolver=None):
+        with (
+            patch.object(broker, "DARWIN_HOMEBREW_PREFIX", layout.prefix),
+            patch.object(broker.platform, "system", return_value="Darwin"),
+            patch.object(broker.platform, "machine", return_value="arm64"),
+        ):
+            return broker._resolve_azure_cli_runtime(resolver or layout.discover)
+
+    def _assert_refusal(self, layout, *, discovery=None):
+        with self.assertRaisesRegex(
+            broker.BrokerRefusal, "production_authority_unavailable"
+        ):
+            self._resolve(
+                layout,
+                resolver=(
+                    None if discovery is None else lambda _command: discovery
+                ),
+            )
+
+    def test_exact_homebrew_launcher_binds_same_version_arm64_interpreter(self):
+        with tempfile.TemporaryDirectory() as root:
+            layout = FakeHomebrewAzureCliLayout(Path(root))
+            runtime = self._resolve(layout)
+            self.assertEqual(runtime.python_executable, layout.python_executable)
+            self.assertEqual(
+                runtime.command(("account", "show")),
+                (*layout.command_prefix, "account", "show"),
+            )
+
+    def test_homebrew_runtime_is_shared_by_authority_and_graph_token_calls(self):
+        with tempfile.TemporaryDirectory() as root:
+            layout = FakeHomebrewAzureCliLayout(Path(root))
+            azure_calls = []
+
+            def runner(command, **kwargs):
+                azure_calls.append((tuple(command), kwargs))
+                arguments = tuple(command[len(layout.command_prefix) :])
+                if arguments == broker.AzureAppAuthorityResolver.auth_command:
+                    payload = {"enabled": True, "issuer": DISCOVERY_ISSUER}
+                elif arguments == broker.AzureAppAuthorityResolver.settings_command:
+                    payload = [
+                        {"name": "PEERSLATE_AUTH_ISSUER", "value": OIDC_ISSUER}
+                    ]
+                elif arguments == (
+                    *broker.AzureCliGraphTokenProvider.command_arguments,
+                    "--tenant",
+                    TENANT_ID,
+                ):
+                    return type(
+                        "Result",
+                        (),
+                        {"returncode": 0, "stdout": fake_graph_token()},
+                    )()
+                else:
+                    raise AssertionError("unexpected Azure command")
+                return type(
+                    "Result",
+                    (),
+                    {"returncode": 0, "stdout": json.dumps(payload)},
+                )()
+
+            endpoint = f"{DISCOVERY_ISSUER}/.well-known/openid-configuration"
+            opener = lambda _request, timeout: FakeHttpResponse(
+                url=endpoint,
+                payload={
+                    "issuer": OIDC_ISSUER,
+                    "authorization_endpoint": AUTHORIZATION_ENDPOINT,
+                },
+            )
+            with (
+                patch.object(broker, "DARWIN_HOMEBREW_PREFIX", layout.prefix),
+                patch.object(broker.platform, "system", return_value="Darwin"),
+                patch.object(broker.platform, "machine", return_value="arm64"),
+            ):
+                binding = broker.AzureAppAuthorityResolver(
+                    runner,
+                    opener,
+                    environment={"PATH": "/safe"},
+                    launcher_resolver=layout.discover,
+                ).resolve()
+                token = broker.AzureCliGraphTokenProvider(
+                    runner,
+                    environment={"PATH": "/safe"},
+                    launcher_resolver=layout.discover,
+                ).acquire(binding.tenant_id)
+            self.assertEqual(len(azure_calls), 3)
+            self.assertTrue(
+                all(call[0][:5] == layout.command_prefix for call in azure_calls)
+            )
+            self.assertEqual(token.reveal(), fake_graph_token())
+            token.clear()
+            binding.clear()
+
+    def test_darwin_refuses_windows_shaped_path_injection(self):
+        with tempfile.TemporaryDirectory() as root:
+            windows_layout = FakeAzureCliLayout(Path(root))
+            with (
+                patch.object(broker.platform, "system", return_value="Darwin"),
+                patch.object(broker.platform, "machine", return_value="arm64"),
+                self.assertRaisesRegex(
+                    broker.BrokerRefusal, "production_authority_unavailable"
+                ),
+            ):
+                broker._resolve_azure_cli_runtime(windows_layout.discover)
+
+    def test_runtime_revalidates_interpreter_before_each_child(self):
+        with tempfile.TemporaryDirectory() as root:
+            layout = FakeHomebrewAzureCliLayout(Path(root))
+            runtime = self._resolve(layout)
+            versioned_python = layout.python_executable.with_name("python3.13")
+            escaped = layout.prefix.parent / "late-escaped-python"
+            escaped.write_bytes(broker.DARWIN_ARM64_MACHO_PREFIX + b"fake")
+            escaped.chmod(0o755)
+            versioned_python.unlink()
+            versioned_python.symlink_to(escaped)
+            with self.assertRaisesRegex(
+                broker.BrokerRefusal, "production_authority_unavailable"
+            ):
+                runtime.command(("account", "show"))
+
+    def test_homebrew_binding_refuses_malformed_or_escaped_layouts(self):
+        with tempfile.TemporaryDirectory() as root:
+            malformed = FakeHomebrewAzureCliLayout(
+                Path(root), launcher_contents=b"#!/bin/sh\nexit 0\n"
+            )
+            self._assert_refusal(malformed)
+
+        with tempfile.TemporaryDirectory() as root:
+            wrong_arch = FakeHomebrewAzureCliLayout(
+                Path(root), python_prefix=b"not-macho"
+            )
+            self._assert_refusal(wrong_arch)
+
+        with tempfile.TemporaryDirectory() as root:
+            escaped = FakeHomebrewAzureCliLayout(Path(root))
+            outside = escaped.prefix.parent / "escaped-python"
+            outside.write_bytes(broker.DARWIN_ARM64_MACHO_PREFIX + b"fake")
+            outside.chmod(0o755)
+            versioned_python = escaped.python_executable.with_name("python3.13")
+            versioned_python.unlink()
+            versioned_python.symlink_to(outside)
+            self._assert_refusal(escaped)
+
+        with tempfile.TemporaryDirectory() as root:
+            direct_cellar = FakeHomebrewAzureCliLayout(Path(root))
+            self._assert_refusal(
+                direct_cellar, discovery=str(direct_cellar.launcher)
+            )
+
+        with tempfile.TemporaryDirectory() as root:
+            indirect_alias = FakeHomebrewAzureCliLayout(Path(root))
+            indirect_alias.discovery_link.unlink()
+            indirect_alias.discovery_link.symlink_to(indirect_alias.launcher)
+            self._assert_refusal(indirect_alias)
+
+        with tempfile.TemporaryDirectory() as root:
+            wrong_keg = FakeHomebrewAzureCliLayout(
+                Path(root), cli_version="2.87"
+            )
+            self._assert_refusal(wrong_keg)
+
+        with tempfile.TemporaryDirectory() as root:
+            changed_chain = FakeHomebrewAzureCliLayout(Path(root))
+            versioned_python = changed_chain.python_executable.with_name(
+                "python3.13"
+            )
+            versioned_python.unlink()
+            versioned_python.symlink_to(changed_chain.resolved_python)
+            self._assert_refusal(changed_chain)
+
+    def test_homebrew_binding_refuses_non_darwin_or_non_arm64_host(self):
+        with tempfile.TemporaryDirectory() as root:
+            layout = FakeHomebrewAzureCliLayout(Path(root))
+            for system, machine in (("Linux", "arm64"), ("Darwin", "x86_64")):
+                with self.subTest(system=system, machine=machine):
+                    with (
+                        patch.object(
+                            broker, "DARWIN_HOMEBREW_PREFIX", layout.prefix
+                        ),
+                        patch.object(
+                            broker.platform, "system", return_value=system
+                        ),
+                        patch.object(
+                            broker.platform, "machine", return_value=machine
+                        ),
+                        self.assertRaisesRegex(
+                            broker.BrokerRefusal,
+                            "production_authority_unavailable",
+                        ),
+                    ):
+                        broker._resolve_azure_cli_runtime(layout.discover)
+
+
+class AzureAuthorityResolverTests(WindowsAzureCliTestCase):
     @staticmethod
     def _runner(
         calls,
@@ -801,7 +1105,7 @@ def fake_graph_token(*, operator=OPERATOR_ID, scopes=None, roles=None):
     return f"header.{encoded}.signature"
 
 
-class MicrosoftGraphCreationTests(unittest.TestCase):
+class MicrosoftGraphCreationTests(WindowsAzureCliTestCase):
     def test_token_is_tenant_pinned_and_creation_requires_bound_authority(self):
         commands = []
         cli_root = tempfile.TemporaryDirectory()
@@ -971,7 +1275,7 @@ class MicrosoftGraphCreationTests(unittest.TestCase):
                     ).prepare(authority_binding())
 
 
-class AzureCliGraphTokenRuntimeTests(unittest.TestCase):
+class AzureCliGraphTokenRuntimeTests(WindowsAzureCliTestCase):
     def _assert_runtime_refusal_before_graph_http(self, discovery):
         runner_calls = []
         graph_requests = []

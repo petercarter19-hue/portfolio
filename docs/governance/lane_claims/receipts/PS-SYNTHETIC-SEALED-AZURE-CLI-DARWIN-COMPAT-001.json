@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-SEALED-AZURE-CLI-DARWIN-COMPAT-001",
+  "candidate_sha": "2c22451b017d8bb4056aa691d07648bf03baa008",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/darwin_broker_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-08-30T01:06:47Z",
+  "findings": [],
+  "evidence_ref": "lane_claims/evidence/PS-SYNTHETIC-SEALED-AZURE-CLI-DARWIN-COMPAT-001.md"
+}
