@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Record only the separately owner-authorized exact sealed authenticated Workshop F/G production proof lifecycle against already deployed release de34c238cb406a6b8c5d4c08: exactly two operation-scoped synthetic ordinary members, broker-gated External ID, Graph, SQL, and browser journey, with structural outcomes only and no secret, token, subject, or private-content recording; record pending or failure honestly; on completion, failure, or stop retire the exact mappings, soft-delete and purge the exact two users, clear memory and temporary material, remove the User Administrator assignment, and delete the dedicated no-secret public client; update the current baseline from pending only if exact evidence proves it. This repository package itself performs no deployment, schema, runtime, configuration, identity, or live operation and does not authorize them.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
@@ -30,6 +30,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "c6718e9a76783a8997a2de4677ab7aca1a698010",
+  "closed_at": "2026-08-30T11:37:17Z"
 }
