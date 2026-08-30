@@ -139,14 +139,13 @@ authorities:
    re-resolves the selected interpreter and requires the same validated target
    and executable shape. It then runs only the lexical CLI-owned interpreter as
    `-I -B -m azure.cli` for the two bounded read-only App Service commands
-   (`webapp auth show` and `webapp config appsettings list`) and for the bounded
-   Microsoft Graph token read (`account get-access-token`). Neither launcher nor
+   (`webapp auth show` and `webapp config appsettings list`). Neither launcher nor
    interpreter is taken from an operator argument, there is no alternate PATH
    fallback, and the worker never runs bare `az`, `az.cmd`, the Homebrew `az`
    script, or a shell. A wrong host, missing link, changed launcher, escaped
    interpreter, wrong architecture, or structurally unusable interpreter target
-   refuses before Azure, Graph, or browser work. A child-level import or command
-   failure remains a non-reflective refusal before Graph or browser work.
+   refuses before Azure, Graph, or browser work. A child-level command failure
+   remains a non-reflective refusal before Graph or browser work.
 3. `az webapp auth show` selects only its current top-level `enabled` and
    `issuer` fields. The worker requires exactly that shape, maps it only inside
    the worker to its closed `platformEnabled` and `openIdIssuer` fields, and
@@ -176,13 +175,31 @@ page receives zero password material. The exact origin is checked again
 immediately before password submission; a later redirect stops without
 submitting the password.
 
-Every Graph token is requested through that same confined CLI2 Python runtime
-for the exact bound tenant UUID. Before use, its claims must prove:
+Every Graph token instead comes from the compiled-in, separately provisioned
+single-tenant External ID public client
+`d28e3e11-8cfa-465c-bc77-1811caf902b5` for tenant
+`b6cac548-9b4b-43da-b366-e95be960ec2f`. The broker constructs MSAL's public
+client only with that exact tenant authority and the registered
+`http://localhost` redirect. It uses `acquire_token_interactive`, the
+system-browser authorization-code flow with PKCE, and passes exactly the three
+Graph delegated scopes. MSAL necessarily adds the OIDC sign-in scopes `openid`
+and `profile`; the broker explicitly excludes `offline_access`, so it does not
+request refresh-token material. Its cache is a new in-memory object for each
+bounded acquisition and the version-bound MSAL `TokenCache._cache` mapping is
+cleared before the token can be used. It supplies no client secret, broker/WAM
+option, persistent cache, credential input, configurable authority, token
+output, or Azure CLI Graph command. `msal-requirements.lock` pins and hashes
+MSAL plus its complete runtime dependency closure; absent, unhashed,
+version-mismatched, or unproven local packages refuse before Graph HTTP.
 
-- the bound tenant (`tid`) and Microsoft Graph audience;
-- delegated scopes `User.Read`, `User.ReadWrite.All`, and
+Before use, every returned Graph token must prove:
+
+- exactly that public client in both `appid` and `azp`, the compiled-in tenant
+  in `tid`, and the Microsoft Graph application audience
+  `00000003-0000-0000-c000-000000000000`;
+- exactly the delegated `scp` set `User.Read`, `User.ReadWrite.All`, and
   `User.DeleteRestore.All`;
-- the `User Administrator` directory role only for this lifecycle
+- exactly the `User Administrator` `wids` value for this lifecycle
   (`fe930be7-5e62-47db-91af-98c3a49a38b1`);
 - a usable expiry; and
 - one caller object ID (`oid`) that stays identical across all token

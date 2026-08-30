@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-001",
+  "candidate_sha": "4644e494cbdbf34a193eab67c05bbfdc2e404f37",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/graph_public_client_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-08-30T06:33:26Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-001.md"
+}

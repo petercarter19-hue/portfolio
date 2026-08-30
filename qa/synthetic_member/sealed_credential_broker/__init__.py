@@ -100,13 +100,19 @@ DARWIN_ARM64_MACHO_PREFIX = b"\xcf\xfa\xed\xfe\x0c\x00\x00\x01"
 AUTHENTICATED_WORKSHOP_CONTROL = (
     "div.platform-account[data-ps-auth-control='authenticated']:not([hidden])"
 )
-GRAPH_AUDIENCES = {
-    "00000003-0000-0000-c000-000000000000",
-    "https://graph.microsoft.com",
-    "https://graph.microsoft.com/",
-}
+GRAPH_PUBLIC_CLIENT_TENANT_ID = "b6cac548-9b4b-43da-b366-e95be960ec2f"
+GRAPH_PUBLIC_CLIENT_ID = "d28e3e11-8cfa-465c-bc77-1811caf902b5"
+GRAPH_PUBLIC_CLIENT_AUTHORITY = (
+    f"https://login.microsoftonline.com/{GRAPH_PUBLIC_CLIENT_TENANT_ID}"
+)
+MICROSOFT_GRAPH_AUDIENCE = "00000003-0000-0000-c000-000000000000"
 REQUIRED_GRAPH_SCOPES = frozenset(
     {"User.Read", "User.ReadWrite.All", "User.DeleteRestore.All"}
+)
+MSAL_GRAPH_SCOPES = (
+    "User.Read",
+    "User.ReadWrite.All",
+    "User.DeleteRestore.All",
 )
 ELIGIBLE_GRAPH_ROLE_TEMPLATE_IDS = frozenset(
     {
@@ -118,6 +124,32 @@ ELIGIBLE_GRAPH_ROLE_TEMPLATE_IDS = frozenset(
 BROWSER_TEMP_PREFIX = "peerslate-sealed-browser-"
 BROWSER_PROBE_PREFIX = "peerslate-sealed-browser-probe-"
 PLAYWRIGHT_LOCK_PATH = Path(__file__).with_name("playwright-runtime.lock.json")
+MSAL_REQUIREMENTS_LOCK_PATH = Path(__file__).with_name("msal-requirements.lock")
+MSAL_LOCKED_DISTRIBUTIONS = {
+    "certifi": "2026.7.22",
+    "cffi": "2.1.1",
+    "charset-normalizer": "3.5.1",
+    "cryptography": "45.0.7",
+    "idna": "3.19",
+    "msal": "1.31.1",
+    "pycparser": "3.0",
+    "pyjwt": "2.13.0",
+    "requests": "2.34.2",
+    "urllib3": "2.7.0",
+}
+MSAL_REQUIREMENTS_LOCK_CONTENT = (
+    "certifi==2026.7.22 --hash=sha256:62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775\n"
+    "cffi==2.1.1 --hash=sha256:1aa5645c30469b09530c4ebca77ebf8f17618293c58f8549cb1a543a50236e7d --hash=sha256:661c298b4821edebead0c91edd2b00374d67ad7c5a1f7a91d4442633b79d6a72\n"
+    "charset-normalizer==3.5.1 --hash=sha256:aea996a6aba25260827c9ea511d1addfde2da9eb686ac961838509086188b7e6 --hash=sha256:c428c6c31eb5f4277d7f8eccaf767fbd548ddd5ce3c8b4f4cbbfab3d96b5904c\n"
+    "cryptography==45.0.7 --hash=sha256:3808e6b2e5f0b46d981c24d79648e5c25c35e59902ea4391a0dcb3e667bf7443 --hash=sha256:3be4f21c6245930688bd9e162829480de027f8bf962ede33d4f8ba7d67a00cee\n"
+    "idna==3.19 --hash=sha256:815e7be7a7806d54abb586dc943addc79e8b2ee16915059658cbeff4b1b43bf4\n"
+    "msal==1.31.1 --hash=sha256:29d9882de247e96db01386496d59f29035e5e841bcac892e6d7bf4390bf6bd17\n"
+    "pycparser==3.0 --hash=sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992\n"
+    "pyjwt==2.13.0 --hash=sha256:66adcc2aff09b3f1bbd95fc1e1577df8ac8723c978552fd43304c8a290ac5728\n"
+    "requests==2.34.2 --hash=sha256:2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0\n"
+    "urllib3==2.7.0 --hash=sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897\n"
+)
+MSAL_VERSION = MSAL_LOCKED_DISTRIBUTIONS["msal"]
 CHILD_WORKER_PATH = Path(__file__).with_name("child_worker.py")
 BROWSER_CHILD_PROTOCOL_SCHEMA = 1
 BROWSER_CHILD_MESSAGE_LIMIT = 262_144
@@ -973,58 +1005,137 @@ class AzureAppAuthorityResolver:
         )
 
 
-class AzureCliGraphTokenProvider:
-    """Acquire the active pre-authorized Graph token inside the local worker."""
+class MsalSystemBrowserGraphTokenProvider:
+    """Acquire one Graph token through the fixed public-client PKCE flow.
 
-    command_arguments = (
-        "account",
-        "get-access-token",
-        "--resource-type",
-        "ms-graph",
-        "--query",
-        "accessToken",
-        "--output",
-        "tsv",
-    )
+    The provider deliberately constructs a new MSAL public application and
+    in-memory cache for each bounded token acquisition.  It accepts no tenant,
+    client, authority, cache path, broker, or credential configuration.
+    """
 
-    def __init__(
-        self,
-        runner: Callable[..., object] | None = None,
-        *,
-        environment: Mapping[str, str] | None = None,
-        launcher_resolver: Callable[[str], str | None] | None = None,
-    ):
-        self._runner = runner or subprocess.run
-        self._environment = environment
-        self._launcher_resolver = launcher_resolver or shutil.which
+    @staticmethod
+    def _parse_locked_requirements(lock_content: str) -> Mapping[str, str]:
+        try:
+            if not isinstance(lock_content, str) or not lock_content:
+                raise ValueError("MSAL lock content unavailable")
+            entries: dict[str, str] = {}
+            for line in lock_content.splitlines():
+                parts = line.split()
+                if len(parts) < 2 or "==" not in parts[0]:
+                    raise ValueError("MSAL lock entry is incomplete")
+                raw_name, version = parts[0].split("==", 1)
+                name = re.sub(r"[-_.]+", "-", raw_name).lower()
+                if (
+                    not name
+                    or not version
+                    or name in entries
+                    or any(
+                        re.fullmatch(r"--hash=sha256:[0-9a-f]{64}", item) is None
+                        for item in parts[1:]
+                    )
+                ):
+                    raise ValueError("MSAL lock entry is invalid")
+                entries[name] = version
+            if entries != MSAL_LOCKED_DISTRIBUTIONS:
+                raise ValueError("MSAL lock provenance mismatch")
+            return entries
+        except (TypeError, ValueError):
+            raise BrokerRefusal("graph_authorization_unavailable") from None
+
+    @classmethod
+    def _locked_distributions(cls) -> Mapping[str, str]:
+        try:
+            lock_path = MSAL_REQUIREMENTS_LOCK_PATH.resolve(strict=True)
+            if (
+                not lock_path.is_file()
+                or lock_path.parent != Path(__file__).resolve().parent
+            ):
+                raise ValueError("MSAL lock mismatch")
+            lock_content = lock_path.read_text(encoding="utf-8")
+            if lock_content != MSAL_REQUIREMENTS_LOCK_CONTENT:
+                raise ValueError("MSAL lock provenance mismatch")
+        except (OSError, TypeError, ValueError):
+            raise BrokerRefusal("graph_authorization_unavailable") from None
+        return cls._parse_locked_requirements(lock_content)
+
+    @classmethod
+    def _msal_module(cls) -> object:
+        try:
+            expected_distributions = cls._locked_distributions()
+            distribution_roots: dict[str, Path] = {}
+            for package_name, expected_version in expected_distributions.items():
+                distribution = importlib.metadata.distribution(package_name)
+                if distribution.version != expected_version:
+                    raise ValueError("MSAL package version mismatch")
+                root = Path(distribution.locate_file("")).resolve(strict=True)
+                if not root.is_dir():
+                    raise ValueError("MSAL package root unavailable")
+                distribution_roots[package_name] = root
+            module = importlib.import_module("msal")
+            module_path = Path(str(getattr(module, "__file__", ""))).resolve(strict=True)
+            module_path.relative_to(distribution_roots["msal"])
+            if not callable(getattr(module, "TokenCache", None)) or not callable(
+                getattr(module, "PublicClientApplication", None)
+            ):
+                raise ValueError("MSAL public client unavailable")
+            return module
+        except (ImportError, OSError, TypeError, ValueError):
+            raise BrokerRefusal("graph_authorization_unavailable") from None
+
+    @staticmethod
+    def _dispose_memory_cache(cache: object) -> bool:
+        """Clear MSAL 1.31.1's operation-local TokenCache backing mapping."""
+
+        try:
+            backing = getattr(cache, "_cache")
+            if type(backing) is not dict:
+                return False
+            backing.clear()
+            return not backing
+        except (AttributeError, TypeError, ValueError):
+            return False
 
     def acquire(self, tenant_id: SealedValue) -> SealedValue:
         try:
             exact_tenant = str(UUID(tenant_id.reveal()))
+            if exact_tenant != GRAPH_PUBLIC_CLIENT_TENANT_ID:
+                raise ValueError("unexpected tenant")
         except (TypeError, ValueError, AttributeError):
             raise BrokerRefusal("graph_token_tenant_unverified") from None
-        cli_runtime = _resolve_azure_cli_runtime(self._launcher_resolver)
-        command = cli_runtime.command(
-            (*self.command_arguments, "--tenant", exact_tenant)
-        )
+
+        msal = self._msal_module()
+        cache = None
+        application = None
+        result: object = None
+        sealed_token: SealedValue | None = None
         try:
-            result = self._runner(
-                command,
-                check=False,
-                capture_output=True,
-                text=True,
-                timeout=60,
-                stdin=subprocess.DEVNULL,
-                env=_azure_child_environment(self._environment),
+            cache = msal.TokenCache()
+            application = msal.PublicClientApplication(
+                GRAPH_PUBLIC_CLIENT_ID,
+                authority=GRAPH_PUBLIC_CLIENT_AUTHORITY,
+                token_cache=cache,
+                exclude_scopes=["offline_access"],
+                enable_broker_on_windows=False,
+                enable_broker_on_mac=False,
             )
-        except (OSError, subprocess.SubprocessError):
-            raise BrokerRefusal("graph_authorization_unavailable") from None
-        if getattr(result, "returncode", 1) != 0:
+            result = application.acquire_token_interactive(
+                scopes=list(MSAL_GRAPH_SCOPES),
+            )
+            token = result.get("access_token") if isinstance(result, Mapping) else None
+            if not isinstance(token, str) or not 16 <= len(token) <= MAX_TOKEN_LENGTH:
+                raise ValueError("interactive token unavailable")
+            sealed_token = SealedValue(token, max_length=MAX_TOKEN_LENGTH)
+        except Exception:
+            sealed_token = None
+        finally:
+            result = None
+            application = None
+        if not self._dispose_memory_cache(cache) or sealed_token is None:
+            if sealed_token is not None:
+                sealed_token.clear()
             raise BrokerRefusal("graph_authorization_unavailable")
-        token = str(getattr(result, "stdout", "") or "").strip()
-        if len(token) < 16 or len(token) > MAX_TOKEN_LENGTH:
-            raise BrokerRefusal("graph_authorization_unavailable")
-        return SealedValue(token, max_length=MAX_TOKEN_LENGTH)
+        cache = None
+        return sealed_token
 
 
 class MicrosoftGraphAdapter:
@@ -1032,12 +1143,12 @@ class MicrosoftGraphAdapter:
 
     def __init__(
         self,
-        token_provider: AzureCliGraphTokenProvider | None = None,
+        token_provider: MsalSystemBrowserGraphTokenProvider | None = None,
         opener: Callable[..., object] | None = None,
         *,
         clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
     ):
-        self._token_provider = token_provider or AzureCliGraphTokenProvider()
+        self._token_provider = token_provider or MsalSystemBrowserGraphTokenProvider()
         self._opener = opener or _open_without_redirect
         self._clock = clock
         self._operator_id: SealedValue | None = None
@@ -1055,16 +1166,24 @@ class MicrosoftGraphAdapter:
                 raise ValueError("unexpected token payload")
             tenant_id = str(UUID(str(payload.get("tid") or "")))
             operator_id = str(UUID(str(payload.get("oid") or "")))
-            if payload.get("aud") not in GRAPH_AUDIENCES:
+            app_id = str(UUID(str(payload.get("appid") or "")))
+            authorized_party = str(UUID(str(payload.get("azp") or "")))
+            if (
+                tenant_id != GRAPH_PUBLIC_CLIENT_TENANT_ID
+                or app_id != GRAPH_PUBLIC_CLIENT_ID
+                or authorized_party != GRAPH_PUBLIC_CLIENT_ID
+                or payload.get("aud") != MICROSOFT_GRAPH_AUDIENCE
+            ):
                 raise ValueError("unexpected audience")
-            scopes = set(str(payload.get("scp") or "").split())
-            if not REQUIRED_GRAPH_SCOPES.issubset(scopes):
+            raw_scopes = str(payload.get("scp") or "").split()
+            scopes = frozenset(raw_scopes)
+            if len(raw_scopes) != len(REQUIRED_GRAPH_SCOPES) or scopes != REQUIRED_GRAPH_SCOPES:
                 raise ValueError("missing delegated scope")
             raw_roles = payload.get("wids")
             if not isinstance(raw_roles, list):
                 raise ValueError("missing directory role")
-            roles = {str(UUID(str(role))) for role in raw_roles}
-            if not roles.intersection(ELIGIBLE_GRAPH_ROLE_TEMPLATE_IDS):
+            roles = frozenset(str(UUID(str(role))) for role in raw_roles)
+            if len(raw_roles) != len(ELIGIBLE_GRAPH_ROLE_TEMPLATE_IDS) or roles != ELIGIBLE_GRAPH_ROLE_TEMPLATE_IDS:
                 raise ValueError("ineligible directory role")
             expires = payload.get("exp")
             now = int(self._clock().timestamp())
@@ -5294,7 +5413,6 @@ __all__ = [
     "ALLOWED_SITE_ORIGIN",
     "AuthorityBinding",
     "AzureAppAuthorityResolver",
-    "AzureCliGraphTokenProvider",
     "BrokerIndeterminate",
     "BrokerRefusal",
     "BrowserCleanup",
@@ -5304,6 +5422,7 @@ __all__ = [
     "GraphCreationOutcome",
     "GraphDeletionOutcome",
     "MicrosoftGraphAdapter",
+    "MsalSystemBrowserGraphTokenProvider",
     "PlaywrightBrowserAdapter",
     "PinnedPlaywrightRuntime",
     "REQUIRED_CONDITIONAL_OUTCOMES",

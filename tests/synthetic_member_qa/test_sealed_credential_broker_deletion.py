@@ -15,7 +15,7 @@ from qa.synthetic_member import sealed_credential_broker as broker
 
 NOW = datetime(2026, 8, 29, 10, 0, tzinfo=timezone.utc)
 CUTOFF = datetime(2026, 8, 29, 9, 0, tzinfo=timezone.utc)
-TENANT_ID = "33333333-3333-3333-3333-333333333333"
+TENANT_ID = broker.GRAPH_PUBLIC_CLIENT_TENANT_ID
 OPERATOR_ID = "44444444-4444-4444-4444-444444444444"
 OTHER_OPERATOR_ID = "55555555-5555-5555-5555-555555555555"
 SUBJECT_A = "11111111-1111-1111-1111-111111111111"
@@ -29,7 +29,9 @@ def graph_token(operator: str = OPERATOR_ID) -> str:
     claims = {
         "tid": TENANT_ID,
         "oid": operator,
-        "aud": "https://graph.microsoft.com",
+        "appid": broker.GRAPH_PUBLIC_CLIENT_ID,
+        "azp": broker.GRAPH_PUBLIC_CLIENT_ID,
+        "aud": broker.MICROSOFT_GRAPH_AUDIENCE,
         "scp": "User.Read User.ReadWrite.All User.DeleteRestore.All",
         "wids": ["fe930be7-5e62-47db-91af-98c3a49a38b1"],
         "exp": int((NOW + timedelta(hours=1)).timestamp()),

@@ -21,7 +21,7 @@ from qa.synthetic_member.contracts import JOURNEY_BY_ID
 NOW = datetime(2026, 8, 29, 10, 0, tzinfo=timezone.utc)
 SUBJECT_A = "11111111-1111-1111-1111-111111111111"
 SUBJECT_B = "22222222-2222-2222-2222-222222222222"
-TENANT_ID = "33333333-3333-3333-3333-333333333333"
+TENANT_ID = broker.GRAPH_PUBLIC_CLIENT_TENANT_ID
 OPERATOR_ID = "44444444-4444-4444-4444-444444444444"
 GRAPH_ISSUER = "synthetic-tenant.onmicrosoft.com"
 DISCOVERY_ISSUER = f"https://synthetic-tenant.ciamlogin.com/{TENANT_ID}/v2.0"
@@ -669,7 +669,7 @@ class AzureCliDarwinRuntimeTests(unittest.TestCase):
                 (*layout.command_prefix, "account", "show"),
             )
 
-    def test_homebrew_runtime_is_shared_by_authority_and_graph_token_calls(self):
+    def test_homebrew_runtime_is_used_only_for_two_authority_reads(self):
         with tempfile.TemporaryDirectory() as root:
             layout = FakeHomebrewAzureCliLayout(Path(root))
             azure_calls = []
@@ -683,16 +683,6 @@ class AzureCliDarwinRuntimeTests(unittest.TestCase):
                     payload = [
                         {"name": "PEERSLATE_AUTH_ISSUER", "value": OIDC_ISSUER}
                     ]
-                elif arguments == (
-                    *broker.AzureCliGraphTokenProvider.command_arguments,
-                    "--tenant",
-                    TENANT_ID,
-                ):
-                    return type(
-                        "Result",
-                        (),
-                        {"returncode": 0, "stdout": fake_graph_token()},
-                    )()
                 else:
                     raise AssertionError("unexpected Azure command")
                 return type(
@@ -720,17 +710,20 @@ class AzureCliDarwinRuntimeTests(unittest.TestCase):
                     environment={"PATH": "/safe"},
                     launcher_resolver=layout.discover,
                 ).resolve()
-                token = broker.AzureCliGraphTokenProvider(
-                    runner,
-                    environment={"PATH": "/safe"},
-                    launcher_resolver=layout.discover,
-                ).acquire(binding.tenant_id)
-            self.assertEqual(len(azure_calls), 3)
+            self.assertEqual(len(azure_calls), 2)
             self.assertTrue(
                 all(call[0][:5] == layout.command_prefix for call in azure_calls)
             )
-            self.assertEqual(token.reveal(), fake_graph_token())
-            token.clear()
+            self.assertEqual(
+                [
+                    call[0][len(layout.command_prefix) :]
+                    for call in azure_calls
+                ],
+                [
+                    broker.AzureAppAuthorityResolver.auth_command,
+                    broker.AzureAppAuthorityResolver.settings_command,
+                ],
+            )
             binding.clear()
 
     def test_darwin_refuses_windows_shaped_path_injection(self):
@@ -1091,33 +1084,112 @@ class AzureAuthorityResolverTests(WindowsAzureCliTestCase):
                 )
 
 
-def fake_graph_token(*, operator=OPERATOR_ID, scopes=None, roles=None):
+def fake_graph_token(
+    *,
+    operator=OPERATOR_ID,
+    tenant_id=TENANT_ID,
+    client_id=broker.GRAPH_PUBLIC_CLIENT_ID,
+    authorized_party=None,
+    audience=broker.MICROSOFT_GRAPH_AUDIENCE,
+    scopes=None,
+    roles=None,
+    expires=None,
+):
     payload = {
-        "tid": TENANT_ID,
+        "tid": tenant_id,
         "oid": operator,
-        "aud": "https://graph.microsoft.com",
-        "scp": " ".join(scopes or sorted(broker.REQUIRED_GRAPH_SCOPES)),
-        "wids": roles
-        or ["fe930be7-5e62-47db-91af-98c3a49a38b1"],
-        "exp": int((NOW + timedelta(hours=1)).timestamp()),
+        "appid": client_id,
+        "azp": client_id if authorized_party is None else authorized_party,
+        "aud": audience,
+        "scp": " ".join(
+            sorted(broker.REQUIRED_GRAPH_SCOPES) if scopes is None else scopes
+        ),
+        "wids": (
+            ["fe930be7-5e62-47db-91af-98c3a49a38b1"]
+            if roles is None
+            else roles
+        ),
+        "exp": int(
+            (NOW + timedelta(hours=1) if expires is None else expires).timestamp()
+        ),
     }
     encoded = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
     return f"header.{encoded}.signature"
 
 
+class StaticGraphTokenProvider:
+    """Fake Graph-token source used only to exercise production claim checks."""
+
+    def __init__(self, token):
+        self.token = token
+        self.calls = []
+
+    def acquire(self, tenant_id):
+        self.calls.append(tenant_id.reveal())
+        return broker.SealedValue(self.token, max_length=broker.MAX_TOKEN_LENGTH)
+
+
+class FakeMsalTokenCache:
+    def __init__(self):
+        # MSAL 1.31.1 TokenCache has a private mutable backing mapping, not a
+        # public clear() method.  The fake deliberately mirrors that shape.
+        self._cache = {}
+
+
+class FakeMsalPublicClientApplication:
+    def __init__(self, module, client_id, **kwargs):
+        self._module = module
+        self.client_id = client_id
+        self.kwargs = kwargs
+        self.interactive_calls = []
+        module.applications.append(self)
+
+    def acquire_token_interactive(self, *, scopes):
+        decorated_scopes = set(scopes)
+        decorated_scopes.update({"openid", "profile", "offline_access"})
+        decorated_scopes.difference_update(self.kwargs["exclude_scopes"])
+        self.interactive_calls.append(frozenset(decorated_scopes))
+        self.kwargs["token_cache"]._cache = {
+            "AccessToken": {"operation": "fake"},
+            "IdToken": {"operation": "fake"},
+        }
+        return self._module.result
+
+
+class FakeMsalModule:
+    def __init__(self, result):
+        self.result = result
+        self.__file__ = broker.__file__
+        self.caches = []
+        self.applications = []
+
+    def TokenCache(self):
+        cache = FakeMsalTokenCache()
+        self.caches.append(cache)
+        return cache
+
+    def PublicClientApplication(self, client_id, **kwargs):
+        return FakeMsalPublicClientApplication(self, client_id, **kwargs)
+
+
+def fake_msal_distribution(package_name, *, version_overrides=None):
+    package_name = str(package_name).lower()
+    versions = dict(broker.MSAL_LOCKED_DISTRIBUTIONS)
+    versions.update(version_overrides or {})
+    if package_name not in versions:
+        raise broker.importlib.metadata.PackageNotFoundError(package_name)
+    root = Path(broker.__file__).resolve().parent.parent
+    return SimpleNamespace(
+        version=versions[package_name],
+        locate_file=lambda _relative: root,
+    )
+
+
 class MicrosoftGraphCreationTests(WindowsAzureCliTestCase):
     def test_token_is_tenant_pinned_and_creation_requires_bound_authority(self):
-        commands = []
-        cli_root = tempfile.TemporaryDirectory()
-        self.addCleanup(cli_root.cleanup)
-        cli_layout = FakeAzureCliLayout(Path(cli_root.name))
-
-        def runner(command, **kwargs):
-            commands.append((tuple(command), kwargs))
-            return type("Result", (), {"returncode": 0, "stdout": fake_graph_token()})()
-
         requests = []
         created_identity = []
+        fake_msal = FakeMsalModule({"access_token": fake_graph_token()})
 
         def opener(request, timeout):
             del timeout
@@ -1176,37 +1248,44 @@ class MicrosoftGraphCreationTests(WindowsAzureCliTestCase):
                 payload={"id": SUBJECT_A},
             )
 
-        graph = broker.MicrosoftGraphAdapter(
-            broker.AzureCliGraphTokenProvider(
-                runner,
-                environment={"PATH": "/safe", "SECRET": "not-forwarded"},
-                launcher_resolver=cli_layout.discover,
+        with (
+            patch.object(
+                broker.importlib.metadata,
+                "distribution",
+                side_effect=fake_msal_distribution,
             ),
-            opener,
-            clock=lambda: NOW,
-        )
-        authority = authority_binding()
-        issuer = graph.prepare(authority)
-        identity = broker._generate_identities(
-            issuer, run_id="qa-20260829-0001", choice=lambda _alphabet: "z"
-        )[0]
-        created_identity.append(identity)
-        identities = broker._generate_identities(
-            issuer, run_id="qa-20260829-0001", choice=lambda _alphabet: "z"
-        )
-        self.assertTrue(all(len(item.login_identifier.reveal()) <= 64 for item in identities))
-        self.assertEqual(
-            graph.prove_customer_absence(
-                identities, authority=authority, graph_issuer=issuer
-            ),
-            4,
-        )
-        outcome = graph.create_customer(
-            identity, authority=authority, graph_issuer=issuer
-        )
-        self.assertEqual(outcome.state, "known_created")
-        self.assertEqual(outcome.subject.reveal(), SUBJECT_A)
-        outcome.clear()
+            patch.object(broker.importlib, "import_module", return_value=fake_msal),
+        ):
+            graph = broker.MicrosoftGraphAdapter(
+                broker.MsalSystemBrowserGraphTokenProvider(),
+                opener,
+                clock=lambda: NOW,
+            )
+            authority = authority_binding()
+            issuer = graph.prepare(authority)
+            identity = broker._generate_identities(
+                issuer, run_id="qa-20260829-0001", choice=lambda _alphabet: "z"
+            )[0]
+            created_identity.append(identity)
+            identities = broker._generate_identities(
+                issuer, run_id="qa-20260829-0001", choice=lambda _alphabet: "z"
+            )
+            self.assertTrue(
+                all(len(item.login_identifier.reveal()) <= 64 for item in identities)
+            )
+            self.assertEqual(
+                graph.prove_customer_absence(
+                    identities, authority=authority, graph_issuer=issuer
+                ),
+                4,
+            )
+            outcome = graph.create_customer(
+                identity, authority=authority, graph_issuer=issuer
+            )
+            self.assertEqual(outcome.state, "known_created")
+            self.assertEqual(outcome.subject.reveal(), SUBJECT_A)
+            outcome.clear()
+            graph.clear()
         self.assertEqual(
             [request.get_method() for request in requests],
             ["GET"] * 10 + ["POST", "GET"],
@@ -1215,26 +1294,26 @@ class MicrosoftGraphCreationTests(WindowsAzureCliTestCase):
         self.assertEqual(posted["userType"], "Member")
         self.assertEqual(posted["creationType"], "LocalAccount")
         self.assertEqual(posted["mailNickname"], identity.mail_nickname.reveal())
-        for command, kwargs in commands:
-            self.assertEqual(command[:5], cli_layout.command_prefix)
-            tenant_index = command.index("--tenant")
-            self.assertEqual(command[tenant_index + 1], TENANT_ID)
+        self.assertTrue(fake_msal.applications)
+        self.assertTrue(all(cache._cache == {} for cache in fake_msal.caches))
+        for application in fake_msal.applications:
+            self.assertEqual(application.client_id, broker.GRAPH_PUBLIC_CLIENT_ID)
             self.assertEqual(
-                command,
-                (
-                    *cli_layout.command_prefix,
-                    *broker.AzureCliGraphTokenProvider.command_arguments,
-                    "--tenant",
-                    TENANT_ID,
-                ),
+                application.kwargs,
+                {
+                    "authority": broker.GRAPH_PUBLIC_CLIENT_AUTHORITY,
+                    "token_cache": application.kwargs["token_cache"],
+                    "exclude_scopes": ["offline_access"],
+                    "enable_broker_on_windows": False,
+                    "enable_broker_on_mac": False,
+                },
             )
-            self.assertNotIn("SECRET", kwargs["env"])
-        graph.clear()
+            self.assertEqual(
+                application.interactive_calls,
+                [frozenset({*broker.MSAL_GRAPH_SCOPES, "openid", "profile"})],
+            )
 
     def test_missing_scope_role_or_operator_switch_refuses(self):
-        cli_root = tempfile.TemporaryDirectory()
-        self.addCleanup(cli_root.cleanup)
-        cli_layout = FakeAzureCliLayout(Path(cli_root.name))
         organization = {
             "value": [
                 {
@@ -1252,21 +1331,59 @@ class MicrosoftGraphCreationTests(WindowsAzureCliTestCase):
 
         for name, token in (
             ("scope", fake_graph_token(scopes=["User.Read"])),
-            ("role", fake_graph_token(roles=["00000000-0000-0000-0000-000000000000"])),
+            (
+                "extra_scope",
+                fake_graph_token(
+                    scopes=[*broker.MSAL_GRAPH_SCOPES, "Directory.Read.All"]
+                ),
+            ),
+            (
+                "duplicated_scope",
+                fake_graph_token(scopes=[*broker.MSAL_GRAPH_SCOPES, "User.Read"]),
+            ),
+            (
+                "role",
+                fake_graph_token(roles=["00000000-0000-0000-0000-000000000000"]),
+            ),
+            (
+                "extra_role",
+                fake_graph_token(
+                    roles=[
+                        "fe930be7-5e62-47db-91af-98c3a49a38b1",
+                        "00000000-0000-0000-0000-000000000000",
+                    ]
+                ),
+            ),
             (
                 "privileged_authentication_administrator_is_not_create_capable",
                 fake_graph_token(
                     roles=["7be44c8a-adaf-4e2a-84d6-ab2649e08a13"]
                 ),
             ),
+            (
+                "appid",
+                fake_graph_token(client_id="55555555-5555-5555-5555-555555555555"),
+            ),
+            (
+                "azp",
+                fake_graph_token(
+                    authorized_party="55555555-5555-5555-5555-555555555555"
+                ),
+            ),
+            (
+                "tenant",
+                fake_graph_token(
+                    tenant_id="33333333-3333-3333-3333-333333333333"
+                ),
+            ),
+            (
+                "graph_url_audience",
+                fake_graph_token(audience="https://graph.microsoft.com"),
+            ),
+            ("expiry", fake_graph_token(expires=NOW + timedelta(seconds=120))),
         ):
             with self.subTest(name=name):
-                provider = broker.AzureCliGraphTokenProvider(
-                    lambda *_args, **_kwargs: type(
-                        "Result", (), {"returncode": 0, "stdout": token}
-                    )(),
-                    launcher_resolver=cli_layout.discover,
-                )
+                provider = StaticGraphTokenProvider(token)
                 with self.assertRaisesRegex(
                     broker.BrokerRefusal, "graph_delegated_authority_unverified"
                 ):
@@ -1274,101 +1391,141 @@ class MicrosoftGraphCreationTests(WindowsAzureCliTestCase):
                         provider, org_opener, clock=lambda: NOW
                     ).prepare(authority_binding())
 
+class MsalSystemBrowserGraphTokenTests(unittest.TestCase):
+    def test_fixed_public_client_uses_exact_memory_only_system_browser_flow(self):
+        fake_msal = FakeMsalModule({"access_token": fake_graph_token()})
+        provider = broker.MsalSystemBrowserGraphTokenProvider()
+        with (
+            patch.object(
+                broker.importlib.metadata,
+                "distribution",
+                side_effect=fake_msal_distribution,
+            ),
+            patch.object(broker.importlib, "import_module", return_value=fake_msal),
+        ):
+            token = provider.acquire(broker.SealedValue(TENANT_ID))
+        self.assertEqual(token.reveal(), fake_graph_token())
+        self.assertEqual(len(fake_msal.applications), 1)
+        application = fake_msal.applications[0]
+        self.assertEqual(application.client_id, broker.GRAPH_PUBLIC_CLIENT_ID)
+        self.assertEqual(application.kwargs["authority"], broker.GRAPH_PUBLIC_CLIENT_AUTHORITY)
+        self.assertIs(application.kwargs["token_cache"], fake_msal.caches[0])
+        self.assertEqual(application.kwargs["exclude_scopes"], ["offline_access"])
+        self.assertFalse(application.kwargs["enable_broker_on_windows"])
+        self.assertFalse(application.kwargs["enable_broker_on_mac"])
+        self.assertEqual(
+            application.interactive_calls,
+            [frozenset({*broker.MSAL_GRAPH_SCOPES, "openid", "profile"})],
+        )
+        self.assertEqual(fake_msal.caches[0]._cache, {})
+        token.clear()
 
-class AzureCliGraphTokenRuntimeTests(WindowsAzureCliTestCase):
-    def _assert_runtime_refusal_before_graph_http(self, discovery):
-        runner_calls = []
+    def test_tenant_or_locked_runtime_mismatch_refuses_before_import(self):
+        provider = broker.MsalSystemBrowserGraphTokenProvider()
+        with patch.object(broker.importlib, "import_module") as module_import:
+            with self.assertRaisesRegex(
+                broker.BrokerRefusal, "graph_token_tenant_unverified"
+            ):
+                provider.acquire(broker.SealedValue("33333333-3333-3333-3333-333333333333"))
+        module_import.assert_not_called()
+
+        with (
+            patch.object(
+                broker.importlib.metadata,
+                "distribution",
+                side_effect=lambda name: fake_msal_distribution(
+                    name, version_overrides={"requests": "0.0.0"}
+                ),
+            ),
+            patch.object(broker.importlib, "import_module") as module_import,
+            self.assertRaisesRegex(
+                broker.BrokerRefusal, "graph_authorization_unavailable"
+            ),
+        ):
+            provider.acquire(broker.SealedValue(TENANT_ID))
+        module_import.assert_not_called()
+
+    def test_complete_hashed_lock_and_imported_module_provenance_are_required(self):
+        lock_content = broker.MSAL_REQUIREMENTS_LOCK_PATH.read_text(encoding="utf-8")
+        self.assertEqual(
+            broker.MsalSystemBrowserGraphTokenProvider._parse_locked_requirements(
+                lock_content
+            ),
+            broker.MSAL_LOCKED_DISTRIBUTIONS,
+        )
+        missing_transitive = lock_content.replace(
+            "pycparser==3.0 "
+            "--hash=sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992\n",
+            "",
+        )
+        unhashed_transitive = lock_content.replace(
+            "certifi==2026.7.22 "
+            "--hash=sha256:62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775\n",
+            "certifi==2026.7.22\n",
+        )
+        for malformed_lock in (missing_transitive, unhashed_transitive):
+            with self.subTest(malformed_lock=malformed_lock):
+                with self.assertRaisesRegex(
+                    broker.BrokerRefusal, "graph_authorization_unavailable"
+                ):
+                    broker.MsalSystemBrowserGraphTokenProvider._parse_locked_requirements(
+                        malformed_lock
+                    )
+
+        fake_msal = FakeMsalModule({"access_token": fake_graph_token()})
+        fake_msal.__file__ = str(Path(__file__).resolve())
+        with (
+            patch.object(
+                broker.importlib.metadata,
+                "distribution",
+                side_effect=fake_msal_distribution,
+            ),
+            patch.object(broker.importlib, "import_module", return_value=fake_msal),
+            self.assertRaisesRegex(
+                broker.BrokerRefusal, "graph_authorization_unavailable"
+            ),
+        ):
+            broker.MsalSystemBrowserGraphTokenProvider().acquire(
+                broker.SealedValue(TENANT_ID)
+            )
+        self.assertEqual(fake_msal.applications, [])
+
+    def test_memory_cache_requires_the_bound_msal_backing_mapping(self):
+        cache = FakeMsalTokenCache()
+        cache._cache = {"RefreshToken": {"operation": "must-not-survive"}}
+        self.assertTrue(
+            broker.MsalSystemBrowserGraphTokenProvider._dispose_memory_cache(cache)
+        )
+        self.assertEqual(cache._cache, {})
+
+        class ClearOnlyCache:
+            def clear(self):
+                self.called = True
+
+        self.assertFalse(
+            broker.MsalSystemBrowserGraphTokenProvider._dispose_memory_cache(
+                ClearOnlyCache()
+            )
+        )
+
+    def test_interactive_failure_refuses_before_graph_http_without_token_output(self):
+        fake_msal = FakeMsalModule({"error": "interaction_required"})
         graph_requests = []
-
-        def runner(*_args, **_kwargs):
-            runner_calls.append("azure")
-            self.fail("invalid runtime must stop before the Azure child starts")
 
         def opener(request, _timeout):
             graph_requests.append(request)
-            self.fail("invalid runtime must stop before Graph HTTP")
+            self.fail("interactive failure must stop before Graph HTTP")
 
-        graph = broker.MicrosoftGraphAdapter(
-            broker.AzureCliGraphTokenProvider(
-                runner,
-                environment={"PATH": "/safe", "SECRET": "not-forwarded"},
-                launcher_resolver=lambda _command: discovery,
+        with (
+            patch.object(
+                broker.importlib.metadata,
+                "distribution",
+                side_effect=fake_msal_distribution,
             ),
-            opener,
-            clock=lambda: NOW,
-        )
-        with self.assertRaisesRegex(
-            broker.BrokerRefusal, "production_authority_unavailable"
-        ) as refusal:
-            graph.prepare(authority_binding())
-        self.assertEqual(runner_calls, [])
-        self.assertEqual(graph_requests, [])
-        self.assertNotIn(TENANT_ID, str(refusal.exception))
-        self.assertNotIn("SECRET", str(refusal.exception))
-
-    def test_invalid_cli_runtime_refuses_before_graph_http(self):
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
-            scenarios = {
-                "unrelated_source": str(Path(broker.__file__).resolve()),
-                "missing_sibling_python": FakeAzureCliLayout(
-                    root_path / "missing-python", include_python=False
-                ).discover("az"),
-                "wrong_wbin_adjacency": FakeAzureCliLayout(
-                    root_path / "wrong-wbin", launcher_directory="bin"
-                ).discover("az"),
-                "wrong_cli2_runtime_root": FakeAzureCliLayout(
-                    root_path / "wrong-root", runtime_name="OtherRuntime"
-                ).discover("az"),
-                "missing_discovery": None,
-            }
-            for name, discovery in scenarios.items():
-                with self.subTest(name=name):
-                    self._assert_runtime_refusal_before_graph_http(discovery)
-
-    def test_escaped_cli_python_refuses_before_graph_http(self):
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
-            cli_layout = FakeAzureCliLayout(root_path / "runtime")
-            escaped = root_path / "escaped" / "python.exe"
-            escaped.parent.mkdir()
-            escaped.write_text("fake", encoding="utf-8")
-            original_resolve = Path.resolve
-
-            def escaped_python_resolve(path, strict=False):
-                if original_resolve(path) == original_resolve(
-                    cli_layout.python_executable
-                ):
-                    return original_resolve(escaped, strict=True)
-                return original_resolve(path, strict=strict)
-
-            with patch.object(broker.Path, "resolve", escaped_python_resolve):
-                self._assert_runtime_refusal_before_graph_http(
-                    cli_layout.discover("az")
-                )
-
-    def test_token_launcher_failure_refuses_before_graph_http_or_creation(self):
-        with tempfile.TemporaryDirectory() as root:
-            cli_layout = FakeAzureCliLayout(Path(root))
-            commands = []
-            graph_requests = []
-
-            def runner(command, **kwargs):
-                commands.append((tuple(command), kwargs))
-                return type(
-                    "Result", (), {"returncode": 1, "stdout": "untrusted-token"}
-                )()
-
-            def opener(request, _timeout):
-                graph_requests.append(request)
-                self.fail("token-launcher failure must stop before Graph HTTP")
-
+            patch.object(broker.importlib, "import_module", return_value=fake_msal),
+        ):
             graph = broker.MicrosoftGraphAdapter(
-                broker.AzureCliGraphTokenProvider(
-                    runner,
-                    environment={"PATH": "/safe", "SECRET": "not-forwarded"},
-                    launcher_resolver=cli_layout.discover,
-                ),
+                broker.MsalSystemBrowserGraphTokenProvider(),
                 opener,
                 clock=lambda: NOW,
             )
@@ -1376,11 +1533,8 @@ class AzureCliGraphTokenRuntimeTests(WindowsAzureCliTestCase):
                 broker.BrokerRefusal, "graph_authorization_unavailable"
             ) as refusal:
                 graph.prepare(authority_binding())
-        self.assertEqual(len(commands), 1)
-        self.assertEqual(commands[0][0][:5], cli_layout.command_prefix)
-        self.assertNotIn("SECRET", commands[0][1]["env"])
         self.assertEqual(graph_requests, [])
-        self.assertNotIn("untrusted-token", str(refusal.exception))
+        self.assertNotIn("interaction_required", str(refusal.exception))
 
 class FakeProbePage:
     def __init__(self, *, signed_out=False):
@@ -1817,6 +1971,9 @@ class IsolatedBrowserChildProtocolTests(unittest.TestCase):
         retirement = FakeRetirement(events)
         real_rmtree = broker.shutil.rmtree
         with tempfile.TemporaryDirectory() as root:
+            system_root = Path(root) / "deterministic-windows-root"
+            system_root.mkdir()
+            canonical_system_root = str(system_root.resolve())
             adapter, provider, launched = self._adapter(
                 root, events, [_ready_frame(), _complete_frame()]
             )
@@ -1834,6 +1991,11 @@ class IsolatedBrowserChildProtocolTests(unittest.TestCase):
                     ),
                 ),
                 patch.object(broker.shutil, "rmtree", side_effect=recording_rmtree),
+                patch.object(
+                    broker,
+                    "_canonical_windows_system_root",
+                    return_value=system_root.resolve(),
+                ),
             ):
                 report = broker.run_broker(
                     run_id="qa-20260829-0001",
@@ -1897,14 +2059,14 @@ class IsolatedBrowserChildProtocolTests(unittest.TestCase):
             "AUTHORIZATION_REF",
             "PEERSLATE_AUTH_ISSUER",
             "PYTHONPATH",
-            "SYSTEMROOT",
-            "WINDIR",
             "PATH",
             "COMSPEC",
             "SSL_CERT_FILE",
             "SSL_CERT_DIR",
         ):
             self.assertNotIn(secret_name, options["env"])
+        self.assertEqual(options["env"]["SYSTEMROOT"], canonical_system_root)
+        self.assertEqual(options["env"]["WINDIR"], canonical_system_root)
 
         process = launched["process"]
         self.assertTrue(process.stdin.closed_by_parent)
