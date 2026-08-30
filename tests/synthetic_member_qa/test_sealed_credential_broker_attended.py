@@ -135,7 +135,7 @@ class StrictLocator:
                 self.page.context.owner is None
                 and parsed.path == "/app/workshop"
             )
-        if self.kind in {"email", "password", "submit"}:
+        if self.kind in {"username", "password", "submit"}:
             return int(self.page.url.startswith(AUTHORIZATION_ORIGIN))
         if self.kind == "authenticated":
             return int(
@@ -195,12 +195,22 @@ class StrictLocator:
         return 0
 
     def fill(self, value):
-        if self.kind not in {"field", "email", "password"}:
+        if self.kind not in {"field", "username", "password"}:
             raise AssertionError(f"unmodelled fill: {self.selector}")
         self.page.fields[self.selector] = value
 
+    def wait_for(self, *, state, timeout):
+        if (
+            self.kind != "username"
+            or state != "visible"
+            or timeout != broker.IDENTITY_USERNAME_WAIT_TIMEOUT_MS
+            or self.count() != 1
+        ):
+            raise AssertionError("unmodelled username control wait")
+
     def element_handle(self):
         if self.kind not in {
+            "username",
             "password",
             "field",
             "classification",
@@ -225,12 +235,20 @@ class StrictLocator:
             else:
                 raise AssertionError(f"unmodelled evaluator operation: {operation}")
             return True
-        if self.kind != "password":
+        if self.kind not in {"username", "password"}:
             raise AssertionError(f"unmodelled evaluate: {self.selector}")
         parsed = urlparse(self.page.url)
         actual = f"{parsed.scheme}://{parsed.hostname}"
         if actual != payload.get("expectedOrigin"):
             raise RuntimeError("atomic origin refusal")
+        if self.kind == "username":
+            if payload.get("selector") != broker.IDENTITY_USERNAME_SELECTOR:
+                raise AssertionError("unexpected sealed username selector")
+            identifier = payload.get("identifier")
+            if not isinstance(identifier, str) or not identifier:
+                raise AssertionError("missing sealed username")
+            self.page.fields[self.selector] = identifier
+            return
         secret = payload.get("secret")
         if not isinstance(secret, str) or not secret:
             raise AssertionError("missing sealed password")
@@ -238,6 +256,7 @@ class StrictLocator:
 
     def dispose(self):
         if self.kind not in {
+            "username",
             "password",
             "field",
             "classification",
@@ -431,7 +450,7 @@ class StrictPage:
     def wait_for_url(self, pattern, *, timeout):
         if timeout != 60000 or not pattern.search("https://peerslate.com/app"):
             raise AssertionError("unexpected member arrival wait")
-        login = self.fields.get("input[type='email']", "")
+        login = self.fields.get(broker.IDENTITY_USERNAME_SELECTOR, "")
         if "-member_a@" in login:
             self.context.owner = "member_a"
         elif "-member_b@" in login:
@@ -450,7 +469,7 @@ class StrictPage:
             "input[name='classification'][value='unclassified']": "classification",
             "button[name='save_action'][value='confirm']": "save_confirm",
             "input[name='confirm_delete']": "confirm_delete",
-            "input[type='email']": "email",
+            broker.IDENTITY_USERNAME_SELECTOR: "username",
             "input[type='password']": "password",
             "input[type='submit']": "submit",
             "details.wk-wording-history": "history",

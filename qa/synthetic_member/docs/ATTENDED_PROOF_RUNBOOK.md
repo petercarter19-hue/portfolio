@@ -165,9 +165,22 @@ The custom tenant-label discovery/authorization host and UUID-hosted principal
 issuer are not interchangeable. A host, tenant, slash, metadata, redirect,
 setting, or cross-label mismatch is a pre-mutation refusal.
 
-After email submission, each sealed sign-in resolves a document-bound password
-input handle without passing a secret, then proves that the top-level page
-origin exactly equals the bound authorization origin. Only then does one
+Before Graph can create either identity, the signed-out preflight navigates to
+the bound authorization origin and waits for at most 15 seconds for exactly one
+visible `input[type='text']` username control. Each sealed sign-in repeats that
+same bounded wait, then resolves a document-bound text-input handle. One
+synchronous browser-side callback rechecks the top-level exact origin, input
+type, visibility, connectivity, and the exact-one cardinality before writing
+its generated login identifier. A navigation while a locator or handle is
+resolving detaches or changes that handle before the identifier crosses into a
+document; the handle is disposed after each attempt. No `input[type='email']`
+control is assumed. A missing, hidden, ambiguous, redirected, or cleanup-failed
+username control is a pre-mutation refusal or closed indeterminate outcome and
+receives no generated identifier.
+
+After username submission, each sealed sign-in resolves a document-bound
+password input handle without passing a secret, then proves that the top-level
+page origin exactly equals the bound authorization origin. Only then does one
 synchronous browser-side callback recheck that same document and origin and
 write the generated password. A redirect during locator waiting detaches or
 changes the handle before any secret crosses the boundary, so the redirected

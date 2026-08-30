@@ -1537,9 +1537,19 @@ class MsalSystemBrowserGraphTokenTests(unittest.TestCase):
         self.assertNotIn("interaction_required", str(refusal.exception))
 
 class FakeProbePage:
-    def __init__(self, *, signed_out=False):
+    def __init__(
+        self,
+        *,
+        signed_out=False,
+        username_control_count=1,
+        username_control_visible=True,
+    ):
         self.url = "about:blank"
         self.signed_out = signed_out
+        self.username_control_count = username_control_count
+        self.username_control_visible = username_control_visible
+        self.username_waits = []
+        self.locator_selectors = []
         self.closed = False
 
     def goto(self, url, *, wait_until):
@@ -1550,23 +1560,33 @@ class FakeProbePage:
             self.url = url
 
     def locator(self, selector):
+        self.locator_selectors.append(selector)
         count = 0
         if selector == ".wk-status-banner--preview" and self.signed_out:
             count = 1
-        if selector == "input[type='email']" and self.url.startswith(
+        if selector == broker.IDENTITY_USERNAME_SELECTOR and self.url.startswith(
             AUTHORIZATION_ORIGIN
         ):
-            count = 1
-        return type(
-            "Locator",
-            (),
-            {
-                "count": lambda _self: count,
-                "evaluate_all": lambda _self, _expression, payload: (
-                    count if payload["operation"] == "count" else None
-                )
-            },
-        )()
+            count = self.username_control_count
+        page = self
+
+        class Locator:
+            def count(self):
+                return count
+
+            def wait_for(self, *, state, timeout):
+                page.username_waits.append((selector, state, timeout))
+                if (
+                    selector != broker.IDENTITY_USERNAME_SELECTOR
+                    or count != 1
+                    or not page.username_control_visible
+                ):
+                    raise RuntimeError("username control unavailable")
+
+            def evaluate_all(self, _expression, payload):
+                return count if payload["operation"] == "count" else None
+
+        return Locator()
 
     def evaluate(self, _expression, payload):
         parsed = urlparse(self.url)
@@ -1586,8 +1606,18 @@ class FakeProbePage:
 
 
 class FakeRuntimeContext:
-    def __init__(self, *, signed_out=False):
-        self.page = FakeProbePage(signed_out=signed_out)
+    def __init__(
+        self,
+        *,
+        signed_out=False,
+        username_control_count=1,
+        username_control_visible=True,
+    ):
+        self.page = FakeProbePage(
+            signed_out=signed_out,
+            username_control_count=username_control_count,
+            username_control_visible=username_control_visible,
+        )
         self.closed = False
 
     def new_page(self):
@@ -1600,14 +1630,26 @@ class FakeRuntimeContext:
 class FakeRuntimeBrowser:
     version = "151.0.7922.34"
 
-    def __init__(self, *, actual=False):
+    def __init__(
+        self,
+        *,
+        actual=False,
+        username_control_count=1,
+        username_control_visible=True,
+    ):
         self.actual = actual
+        self.username_control_count = username_control_count
+        self.username_control_visible = username_control_visible
         self.contexts = []
         self.closed = False
 
     def new_context(self, **options):
         signed_out = self.actual and len(self.contexts) == 2
-        context = FakeRuntimeContext(signed_out=signed_out)
+        context = FakeRuntimeContext(
+            signed_out=signed_out,
+            username_control_count=self.username_control_count,
+            username_control_visible=self.username_control_visible,
+        )
         context.options = options
         self.contexts.append(context)
         return context
@@ -1617,15 +1659,21 @@ class FakeRuntimeBrowser:
 
 
 class FakeRuntimePlaywright:
-    def __init__(self):
+    def __init__(self, *, username_control_count=1, username_control_visible=True):
         self.chromium = self
+        self.username_control_count = username_control_count
+        self.username_control_visible = username_control_visible
         self.browsers = []
         self.launches = []
         self.stopped = False
 
     def launch(self, **options):
         self.launches.append(options)
-        browser = FakeRuntimeBrowser(actual=bool(self.browsers))
+        browser = FakeRuntimeBrowser(
+            actual=bool(self.browsers),
+            username_control_count=self.username_control_count,
+            username_control_visible=self.username_control_visible,
+        )
         self.browsers.append(browser)
         return browser
 
@@ -1636,8 +1684,17 @@ class FakeRuntimePlaywright:
 class FakeRuntimeProvider:
     expected_browser_version = "151.0.7922.34"
 
-    def __init__(self, *, executable_present=True):
-        self.playwright = FakeRuntimePlaywright()
+    def __init__(
+        self,
+        *,
+        executable_present=True,
+        username_control_count=1,
+        username_control_visible=True,
+    ):
+        self.playwright = FakeRuntimePlaywright(
+            username_control_count=username_control_count,
+            username_control_visible=username_control_visible,
+        )
         self.released = False
         self.executable_present = executable_present
         self.chromium_executable = None
@@ -2602,6 +2659,18 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
             self.assertTrue(provider.playwright.browsers[0].closed)
             self.assertTrue(provider.playwright.browsers[0].contexts[0].closed)
             self.assertEqual(len(provider.playwright.browsers[1].contexts), 4)
+            signed_out_page = provider.playwright.browsers[1].contexts[2].page
+            self.assertEqual(
+                signed_out_page.username_waits,
+                [
+                    (
+                        broker.IDENTITY_USERNAME_SELECTOR,
+                        "visible",
+                        broker.IDENTITY_USERNAME_WAIT_TIMEOUT_MS,
+                    )
+                ],
+            )
+            self.assertNotIn("input[type='email']", signed_out_page.locator_selectors)
             for launch in provider.playwright.launches:
                 self.assertFalse(launch["headless"])
                 self.assertEqual(
@@ -2618,6 +2687,78 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
             )
             self.assertTrue(provider.released and provider.playwright.stopped)
             self.assertEqual(list(Path(root).iterdir()), [])
+
+    def test_username_preflight_refuses_before_graph_for_missing_ambiguous_or_hidden_control(self):
+        cases = (
+            ("missing", 0, True),
+            ("ambiguous", 2, True),
+            ("hidden", 1, False),
+        )
+        for label, count, visible in cases:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as root:
+                events = []
+                graph = FakeGraph(events)
+                retirement = FakeRetirement(events)
+                provider = FakeRuntimeProvider(
+                    username_control_count=count,
+                    username_control_visible=visible,
+                )
+                adapter = broker._NativePlaywrightBrowserAdapter(
+                    environment={"SystemRoot": "/safe"},
+                    workspace_root=root,
+                    runtime_provider_factory=lambda: provider,
+                )
+
+                with self.assertRaisesRegex(
+                    broker.BrokerRefusal, "unexpected_identity_host"
+                ):
+                    broker.run_broker(
+                        run_id="qa-20260830-0001",
+                        cutoff=NOW,
+                        authority_adapter=FakeAuthority(events),
+                        graph=graph,
+                        browser=adapter,
+                        retirement_adapter=retirement,
+                        choice=lambda _alphabet: "z",
+                    )
+
+                self.assertEqual(graph.create_calls, 0)
+                self.assertNotIn("graph_prepare", events)
+                self.assertEqual(retirement.calls, 0)
+                self.assertTrue(provider.released)
+                self.assertEqual(list(Path(root).iterdir()), [])
+
+    def test_username_preflight_rechecks_expected_origin_after_visible_wait(self):
+        class Locator:
+            def __init__(self, page):
+                self.page = page
+
+            def wait_for(self, *, state, timeout):
+                self.page.waits.append((state, timeout))
+                self.page.url = "https://unapproved.example/authorize"
+
+            def count(self):
+                return 1
+
+        class Page:
+            def __init__(self):
+                self.url = f"{AUTHORIZATION_ORIGIN}/authorize"
+                self.waits = []
+                self.selectors = []
+
+            def locator(self, selector):
+                self.selectors.append(selector)
+                return Locator(self)
+
+        page = Page()
+        with self.assertRaisesRegex(broker.BrokerRefusal, "unexpected_identity_host"):
+            broker._NativePlaywrightBrowserAdapter._wait_for_exact_visible_username_control(
+                page, broker.SealedValue(AUTHORIZATION_ORIGIN)
+            )
+        self.assertEqual(page.selectors, [broker.IDENTITY_USERNAME_SELECTOR])
+        self.assertEqual(
+            page.waits, [("visible", broker.IDENTITY_USERNAME_WAIT_TIMEOUT_MS)]
+        )
 
     def test_windows_target_uses_native_venv_paths_with_the_locked_browser(self):
         commands = []
@@ -2876,7 +3017,7 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
             self.assertIsNone(runtime._site_packages)
             self.assertNotIn(str(site_packages), broker.sys.path)
 
-    def test_password_resolution_and_write_are_atomic_to_expected_origin(self):
+    def test_identity_writes_are_atomic_to_expected_origin(self):
         class Locator:
             def __init__(self, page, selector):
                 self.page = page
@@ -2884,18 +3025,64 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
 
             def fill(self, value):
                 del value
+                # A live Locator can re-resolve after navigation.  This fake
+                # represents the old unsafe path: its fill would disclose to a
+                # newly navigated document.  The bound-handle path must never
+                # invoke it.
+                self.page.live_locator_fill_called = True
+                self.page.url = "https://unapproved.example/username"
+                self.page.identifier_leaked_to_unapproved = True
+                raise AssertionError("live locator fill must not be used")
+
+            def wait_for(self, *, state, timeout):
+                if self.selector != broker.IDENTITY_USERNAME_SELECTOR:
+                    raise AssertionError("unexpected visible wait")
+                self.page.username_waits.append((state, timeout))
+
+            def count(self):
+                if self.selector != broker.IDENTITY_USERNAME_SELECTOR:
+                    raise AssertionError("unexpected cardinality check")
+                return 1
 
             def element_handle(self):
-                if self.selector != "input[type='password']":
+                if self.selector not in {
+                    broker.IDENTITY_USERNAME_SELECTOR,
+                    "input[type='password']",
+                }:
                     raise AssertionError("unexpected element handle")
+                if self.page.redirect_stage == "username_resolution":
+                    # Model locator re-resolution navigation at the former
+                    # fill boundary.  The identifier must not enter evaluate.
+                    self.page.url = "https://unapproved.example/username"
                 if self.page.redirect_stage == "password_resolution":
                     # Model navigation while Playwright waits for the locator;
                     # no password has crossed the element-handle boundary.
-                    self.page.url = "https://unapproved.example/password"
+                    if self.selector == "input[type='password']":
+                        self.page.url = "https://unapproved.example/password"
                 return self
 
             def evaluate(self, expression, payload):
-                del expression
+                if self.selector == broker.IDENTITY_USERNAME_SELECTOR:
+                    required_guards = (
+                        "window.location.origin !== payload.expectedOrigin",
+                        "element.type !== \"text\"",
+                        "!element.isConnected",
+                        "element.ownerDocument !== document",
+                        "document.querySelectorAll(payload.selector).length !== 1",
+                        "element.getClientRects().length === 0",
+                    )
+                    if not all(guard in expression for guard in required_guards):
+                        raise AssertionError("username atomic guards omitted")
+                    self.page.username_evaluate_called = True
+                    parsed = urlparse(self.page.url)
+                    actual = f"{parsed.scheme}://{parsed.hostname}"
+                    if actual != payload["expectedOrigin"]:
+                        raise RuntimeError("atomic origin refusal")
+                    if payload["selector"] != broker.IDENTITY_USERNAME_SELECTOR:
+                        raise AssertionError("username selector changed")
+                    del payload["identifier"]
+                    self.page.username_filled = True
+                    return
                 if self.selector != "input[type='password']":
                     raise AssertionError("unexpected evaluated locator")
                 self.page.password_evaluate_called = True
@@ -2907,14 +3094,17 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
                 self.page.password_filled = True
 
             def dispose(self):
-                self.page.password_handle_disposed = True
+                if self.selector == broker.IDENTITY_USERNAME_SELECTOR:
+                    self.page.username_handle_disposed = True
+                else:
+                    self.page.password_handle_disposed = True
 
             def click(self):
                 if self.selector == "input[type='submit']":
                     self.page.submit_clicks += 1
                     if (
                         self.page.submit_clicks == 1
-                        and self.page.redirect_stage == "email_submit"
+                        and self.page.redirect_stage == "username_submit"
                     ):
                         self.page.url = "https://unapproved.example/password"
 
@@ -2926,12 +3116,20 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
                 self.password_filled = False
                 self.password_handle_disposed = False
                 self.password_evaluate_called = False
+                self.username_filled = False
+                self.username_handle_disposed = False
+                self.username_evaluate_called = False
+                self.live_locator_fill_called = False
+                self.identifier_leaked_to_unapproved = False
+                self.username_waits = []
+                self.selectors = []
 
             def goto(self, url, *, wait_until):
                 del url, wait_until
                 self.url = f"{AUTHORIZATION_ORIGIN}/authorize"
 
             def locator(self, selector):
+                self.selectors.append(selector)
                 return Locator(self, selector)
 
         identity = broker._generate_identities(
@@ -2939,7 +3137,11 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
             run_id="qa-20260829-0001",
             choice=lambda _alphabet: "z",
         )[0]
-        for stage in ("email_submit", "password_resolution"):
+        for stage in (
+            "username_resolution",
+            "username_submit",
+            "password_resolution",
+        ):
             with self.subTest(stage=stage):
                 page = RedirectingPage(stage)
                 with self.assertRaisesRegex(
@@ -2949,12 +3151,155 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
                         page, identity, broker.SealedValue(AUTHORIZATION_ORIGIN)
                     )
                 self.assertFalse(page.password_filled)
-                self.assertEqual(page.submit_clicks, 1)
+                self.assertEqual(
+                    page.submit_clicks,
+                    0 if stage == "username_resolution" else 1,
+                )
+                self.assertIs(
+                    page.username_filled, stage != "username_resolution"
+                )
+                self.assertTrue(page.username_handle_disposed)
+                self.assertIs(
+                    page.username_evaluate_called,
+                    stage != "username_resolution",
+                )
+                self.assertFalse(page.live_locator_fill_called)
+                self.assertFalse(page.identifier_leaked_to_unapproved)
+                self.assertEqual(
+                    page.username_waits,
+                    [("visible", broker.IDENTITY_USERNAME_WAIT_TIMEOUT_MS)],
+                )
+                self.assertIn(broker.IDENTITY_USERNAME_SELECTOR, page.selectors)
+                self.assertNotIn("input[type='email']", page.selectors)
                 self.assertFalse(page.password_evaluate_called)
                 self.assertIs(
                     page.password_handle_disposed,
                     stage == "password_resolution",
                 )
+
+    def test_username_entry_uses_one_visible_text_control_without_email_fallback(self):
+        class Locator:
+            def __init__(self, page, selector):
+                self.page = page
+                self.selector = selector
+
+            def wait_for(self, *, state, timeout):
+                if self.selector != broker.IDENTITY_USERNAME_SELECTOR:
+                    raise AssertionError("unexpected visible wait")
+                self.page.username_waits.append((state, timeout))
+
+            def count(self):
+                if self.selector != broker.IDENTITY_USERNAME_SELECTOR:
+                    raise AssertionError("unexpected cardinality check")
+                return 1
+
+            def fill(self, value):
+                del value
+                self.page.live_locator_fill_calls += 1
+                raise AssertionError("live username locator fill is unsafe")
+
+            def click(self):
+                if self.selector != "input[type='submit']":
+                    raise AssertionError("unexpected click")
+                self.page.submit_clicks += 1
+                if self.page.submit_clicks == 2:
+                    self.page.url = f"{broker.ALLOWED_SITE_ORIGIN}/app"
+
+            def element_handle(self):
+                if self.selector not in {
+                    broker.IDENTITY_USERNAME_SELECTOR,
+                    "input[type='password']",
+                }:
+                    raise AssertionError("unexpected element handle")
+                return self
+
+            def evaluate(self, expression, payload):
+                if self.selector == broker.IDENTITY_USERNAME_SELECTOR:
+                    required_guards = (
+                        "window.location.origin !== payload.expectedOrigin",
+                        "element.type !== \"text\"",
+                        "!element.isConnected",
+                        "element.ownerDocument !== document",
+                        "document.querySelectorAll(payload.selector).length !== 1",
+                        "element.getClientRects().length === 0",
+                    )
+                    if not all(guard in expression for guard in required_guards):
+                        raise AssertionError("username atomic guards omitted")
+                    if payload["expectedOrigin"] != AUTHORIZATION_ORIGIN:
+                        raise AssertionError("username origin changed")
+                    if payload["selector"] != broker.IDENTITY_USERNAME_SELECTOR:
+                        raise AssertionError("username selector changed")
+                    del payload["identifier"]
+                    self.page.username_write_count += 1
+                    return
+                del expression
+                if self.selector != "input[type='password']":
+                    raise AssertionError("unexpected password write")
+                if payload["expectedOrigin"] != AUTHORIZATION_ORIGIN:
+                    raise AssertionError("password origin changed")
+                del payload["secret"]
+                self.page.password_write_count += 1
+
+            def dispose(self):
+                if self.selector == broker.IDENTITY_USERNAME_SELECTOR:
+                    self.page.username_handle_disposed = True
+                else:
+                    self.page.password_handle_disposed = True
+
+        class Page:
+            def __init__(self):
+                self.url = "about:blank"
+                self.selectors = []
+                self.username_waits = []
+                self.username_write_count = 0
+                self.username_handle_disposed = False
+                self.live_locator_fill_calls = 0
+                self.password_write_count = 0
+                self.password_handle_disposed = False
+                self.submit_clicks = 0
+
+            def goto(self, url, *, wait_until):
+                if wait_until != "domcontentloaded":
+                    raise AssertionError("unexpected navigation wait")
+                if "/.auth/login/" in url:
+                    self.url = f"{AUTHORIZATION_ORIGIN}/authorize"
+                else:
+                    self.url = url
+
+            def locator(self, selector):
+                self.selectors.append(selector)
+                return Locator(self, selector)
+
+            def wait_for_url(self, pattern, *, timeout):
+                if timeout != 60000 or not pattern.search(self.url):
+                    raise AssertionError("unexpected member arrival wait")
+
+            def evaluate(self, _expression, payload):
+                if payload["expectedOrigin"] != broker.ALLOWED_SITE_ORIGIN:
+                    raise AssertionError("unexpected Workshop origin")
+                return True
+
+        identity = broker._generate_identities(
+            broker.SealedValue(GRAPH_ISSUER),
+            run_id="qa-20260830-0001",
+            choice=lambda _alphabet: "z",
+        )[0]
+        page = Page()
+        broker.PlaywrightBrowserAdapter()._sign_in(
+            page, identity, broker.SealedValue(AUTHORIZATION_ORIGIN)
+        )
+
+        self.assertEqual(
+            page.username_waits,
+            [("visible", broker.IDENTITY_USERNAME_WAIT_TIMEOUT_MS)],
+        )
+        self.assertEqual(page.username_write_count, 1)
+        self.assertTrue(page.username_handle_disposed)
+        self.assertEqual(page.live_locator_fill_calls, 0)
+        self.assertEqual(page.password_write_count, 1)
+        self.assertTrue(page.password_handle_disposed)
+        self.assertNotIn("input[type='email']", page.selectors)
+        self.assertEqual(page.url, f"{broker.ALLOWED_SITE_ORIGIN}/app/workshop")
 
 
 class DirectRetirementAdapterTests(unittest.TestCase):

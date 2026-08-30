@@ -100,6 +100,8 @@ DARWIN_ARM64_MACHO_PREFIX = b"\xcf\xfa\xed\xfe\x0c\x00\x00\x01"
 AUTHENTICATED_WORKSHOP_CONTROL = (
     "div.platform-account[data-ps-auth-control='authenticated']:not([hidden])"
 )
+IDENTITY_USERNAME_SELECTOR = "input[type='text']"
+IDENTITY_USERNAME_WAIT_TIMEOUT_MS = 15_000
 GRAPH_PUBLIC_CLIENT_TENANT_ID = "b6cac548-9b4b-43da-b366-e95be960ec2f"
 GRAPH_PUBLIC_CLIENT_ID = "d28e3e11-8cfa-465c-bc77-1811caf902b5"
 GRAPH_PUBLIC_CLIENT_AUTHORITY = (
@@ -2993,6 +2995,110 @@ class _NativePlaywrightBrowserAdapter:
             raise BrokerRefusal("unexpected_identity_host") from None
 
     @staticmethod
+    def _wait_for_exact_visible_username_control(
+        page, authorization_origin: SealedValue
+    ) -> None:
+        """Require one visible username control before its bound write."""
+
+        try:
+            _NativePlaywrightBrowserAdapter._assert_expected_identity_origin(
+                page, authorization_origin
+            )
+            username_control = page.locator(IDENTITY_USERNAME_SELECTOR)
+            username_control.wait_for(
+                state="visible", timeout=IDENTITY_USERNAME_WAIT_TIMEOUT_MS
+            )
+            _NativePlaywrightBrowserAdapter._assert_expected_identity_origin(
+                page, authorization_origin
+            )
+            if username_control.count() != 1:
+                raise ValueError("username control cardinality refused")
+            _NativePlaywrightBrowserAdapter._assert_expected_identity_origin(
+                page, authorization_origin
+            )
+        except Exception:
+            raise BrokerRefusal("unexpected_identity_host") from None
+
+    @staticmethod
+    def _fill_username_at_expected_identity_origin(
+        page, identity: SealedIdentity, authorization_origin: SealedValue
+    ) -> None:
+        """Write the identifier only through a document-bound, checked handle."""
+
+        username_handle = None
+        try:
+            _NativePlaywrightBrowserAdapter._wait_for_exact_visible_username_control(
+                page, authorization_origin
+            )
+            # A Locator can re-resolve after navigation.  Bind an element handle
+            # first, so a navigation detaches this handle rather than resolving
+            # the identifier against a replacement document.
+            username_handle = page.locator(
+                IDENTITY_USERNAME_SELECTOR
+            ).element_handle()
+            if username_handle is None:
+                raise ValueError("username target unavailable")
+            _NativePlaywrightBrowserAdapter._assert_expected_identity_origin(
+                page, authorization_origin
+            )
+            username_handle.evaluate(
+                """
+                (element, payload) => {
+                    const style = window.getComputedStyle(element);
+                    if (
+                        window.top !== window ||
+                        document.defaultView !== window ||
+                        window.location.origin !== payload.expectedOrigin ||
+                        !(element instanceof window.HTMLInputElement) ||
+                        element.type !== "text" ||
+                        !element.isConnected ||
+                        element.ownerDocument !== document ||
+                        element.ownerDocument.defaultView !== window ||
+                        document.querySelectorAll(payload.selector).length !== 1 ||
+                        style === null ||
+                        style.visibility === "hidden" ||
+                        style.display === "none" ||
+                        element.getClientRects().length === 0
+                    ) {
+                        throw new Error("username target refused");
+                    }
+                    const descriptor = Object.getOwnPropertyDescriptor(
+                        window.HTMLInputElement.prototype,
+                        "value"
+                    );
+                    if (!descriptor || typeof descriptor.set !== "function") {
+                        throw new Error("username target refused");
+                    }
+                    descriptor.set.call(element, payload.identifier);
+                    element.dispatchEvent(
+                        new window.Event("input", { bubbles: true })
+                    );
+                    element.dispatchEvent(
+                        new window.Event("change", { bubbles: true })
+                    );
+                }
+                """,
+                {
+                    "expectedOrigin": authorization_origin.reveal(),
+                    "identifier": identity.login_identifier.reveal(),
+                    "selector": IDENTITY_USERNAME_SELECTOR,
+                },
+            )
+        except Exception:
+            raise BrokerRefusal("unexpected_identity_host") from None
+        finally:
+            if username_handle is not None:
+                try:
+                    username_handle.dispose()
+                except Exception:
+                    raise BrokerIndeterminate(
+                        "sealed_browser_cleanup_indeterminate"
+                    ) from None
+        _NativePlaywrightBrowserAdapter._assert_expected_identity_origin(
+            page, authorization_origin
+        )
+
+    @staticmethod
     def _fill_password_at_expected_identity_origin(
         page, identity: SealedIdentity, authorization_origin: SealedValue
     ) -> None:
@@ -3129,11 +3235,9 @@ class _NativePlaywrightBrowserAdapter:
             signed_out_page = contexts["signed_out"].new_page()
             self._assert_signed_out_private_baseline(signed_out_page)
             signed_out_page.goto(ALLOWED_SIGN_IN_ENDPOINT, wait_until="domcontentloaded")
-            self._assert_expected_identity_origin(
+            self._wait_for_exact_visible_username_control(
                 signed_out_page, authority.authorization_origin
             )
-            if signed_out_page.locator("input[type='email']").count() != 1:
-                raise BrokerRefusal("unexpected_identity_host")
             return _PlaywrightAttendedSession(
                 adapter=self,
                 contexts=contexts,
@@ -3220,8 +3324,9 @@ class _NativePlaywrightBrowserAdapter:
         self, page, identity: SealedIdentity, authorization_origin: SealedValue
     ) -> None:
         page.goto(ALLOWED_SIGN_IN_ENDPOINT, wait_until="domcontentloaded")
-        self._assert_expected_identity_origin(page, authorization_origin)
-        page.locator("input[type='email']").fill(identity.login_identifier.reveal())
+        self._fill_username_at_expected_identity_origin(
+            page, identity, authorization_origin
+        )
         page.locator("input[type='submit']").click()
         self._assert_expected_identity_origin(page, authorization_origin)
         self._fill_password_at_expected_identity_origin(
