@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-SEALED-AZURE-AUTH-SHAPE-001",
+  "state": "active",
+  "outcome": "Correct only the sealed synthetic-QA broker's Azure App Service authsettingsV2 response projection for Azure CLI 2.87 by reading properties.platform.enabled and properties.identityProviders.azureActiveDirectory.registration.openIdIssuer while preserving the broker's exact closed {enabled,issuer} projection and all existing issuer, tenant, metadata, and live app-setting validations. Pin the exact command and projection in focused fake-only tests and align the attended runbook. Repository build only; no production or live operation, identity or UI work, public-client provisioning, role change, deployment, or retry.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
+  "branch": "work/2026-08-30-synthetic-sealed-azure-auth-shape-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "af3dd80ce4092f3c760d9edaab08e15c79621794",
+  "owner_outcome_ref": "session:01a04348-7e3e-7a11-a443-752498be91b5/owner-authorization:2026-08-28/workshop-fg-sealed-private-proof-complete-lifecycle; pete-chat-2026-08-30/continue-workshop-fg-proof-after-disconnection-and-ensure-lane",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SYNTHETIC-SEALED-AZURE-AUTH-SHAPE-001.json",
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-AZURE-AUTH-SHAPE-001.md",
+    "docs/governance/lane_claims/receipts/PS-SYNTHETIC-SEALED-AZURE-AUTH-SHAPE-001.json",
+    "qa/synthetic_member/sealed_credential_broker/__init__.py",
+    "qa/synthetic_member/docs/ATTENDED_PROOF_RUNBOOK.md",
+    "tests/synthetic_member_qa/test_sealed_credential_broker.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-AZURE-AUTH-SHAPE-001.md"
+  ],
+  "domains": [
+    "identity:synthetic-qa-azure-app-authority-resolution",
+    "operations:synthetic-qa-azure-auth-response-shape",
+    "testing:synthetic-member:sealed-azure-auth-response-shape"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
