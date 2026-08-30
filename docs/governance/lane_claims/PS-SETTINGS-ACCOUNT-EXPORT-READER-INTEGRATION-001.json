@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-READER-INTEGRATION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver replacement package 6 of the accepted 2026-08-29 reader topology: replace the C2 assembly's fixture-only content source with the real, closed reader program (services/account_export_domain_readers.py DOMAINS, consumed read-only and never modified here), so a claimed export job assembles the member's actual allowlisted domains through the C1 lease procedures under the owner-active check, with the versioned manifest, per-domain counts, and the C1 ledger provably agreeing, deterministic output, and the approved caps and expiry behavior unchanged. Retire the C2 fixture tripwire in the same motion it becomes false, replacing it with tests that pin the real-reader path. Offline tests only with fake cursors and connections; no live database, no real member data, no container writes, no schedule, no UI; production authority withheld.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-int-writer",
@@ -34,6 +34,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "8964fa9a1717cfa03a179286006e1ca36d2c9d0a",
+  "closed_at": "2026-08-30T04:48:30Z"
 }
