@@ -2172,6 +2172,50 @@
         "operator": "agent:/root/c3_criteria_writer",
         "notes": "Owner-authorized C3 disposable proof envelope session:01a02f42-15ac-7d92-a2a9-60b7e800c388/authorization:2026-08-29/c3-disposable-proof-envelope; attempt a1; no production or staging action."
       }
+    },
+    {
+      "id": "PS-SETTINGS-EXPORT-007",
+      "forward": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-007_media_transcript_reader.sql",
+      "rollback": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-007_media_transcript_reader_rollback.sql",
+      "requires": [
+        "PS-AUTH-001",
+        "PS-VOICE-001",
+        "PS-CAPTURE-MEDIA-001"
+      ],
+      "summary": "Read-only owner-scoped account-export Voice/Photo media and transcript readers: five @UserKey-only procedures over voice_media_sources, voice_transcription_attempts, voice_capture_links, capture_media_sources, and capture_media_links. Excludes every blob locator, content digest, storage etag, provider reference, and payload-nulled deleted row; includes the member's own concluded transcription attempts (provider_transcript).",
+      "gate": {
+        "executable_sha256": "14d21bd2f4e1d88829d75cedb76b3c39ad63d80e104468c159dff3e1222c35a5",
+        "gated_at_utc": "2026-08-30T07:49:34Z",
+        "gate_database": "ps-migration-path-20260830-mt2",
+        "gate_server": "peerslate",
+        "prerequisites": [
+          "PS-PLAT-000",
+          "PS-PLAT-001",
+          "PS-PLAT-002",
+          "PS-PLAT-003",
+          "PS-PLAT-004",
+          "PS-PLAT-005",
+          "PS-PLAT-006",
+          "PS-PLAT-007",
+          "PS-AUTH-001",
+          "PS-CAPTURE-001",
+          "PS-CAPTURE-002",
+          "PS-MOMENT-001",
+          "PS-PLACEMENT-001",
+          "PS-VOICE-001",
+          "PS-CAPTURE-MEDIA-001"
+        ],
+        "objects": [
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportCaptureMediaLinkForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportCaptureMediaSourceForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportVoiceCaptureLinkForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportVoiceMediaSourceForOwner",
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportVoiceTranscriptionAttemptForOwner"
+        ],
+        "verification": "PS-SETTINGS-EXPORT-007_media_transcript_reader_isolation_verify.sql returned verified = 1",
+        "operator": "Claude Fable 5 / work-2026-08-30-settings-account-export-media-transcript-reader-001",
+        "notes": "Run 2 after the gate-caught DEFAULT-vs-NULL fixture fix on the two deleted-state photo rows"
+      }
     }
   ]
 }

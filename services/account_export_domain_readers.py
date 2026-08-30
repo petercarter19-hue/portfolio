@@ -204,6 +204,56 @@ Opportunities table this or any future account-export reader could read,
 so the existing reason (do not conflate with Opportunity Slate) remains
 factual and is unchanged in substance.
 
+PS-SETTINGS-EXPORT-007 (this update) flips voice_photo from excluded to
+included: dbo.voice_media_sources, dbo.voice_transcription_attempts, and
+dbo.voice_capture_links (PS-VOICE-001), plus dbo.capture_media_sources and
+dbo.capture_media_links (PS-CAPTURE-MEDIA-001) -- the member's own Voice/
+Photo capture facts and the member's own transcripts, executing the
+owner's accepted "Paper 1" ruling. voice_photo's prior "excluded" reason
+(recorded by PS-SETTINGS-EXPORT-004, preserved here for history rather
+than silently deleted) was: "every media/transcript/hash/blob column is
+PS-SETTINGS-EXPORT-004's defining boundary and is excluded from every
+domain that package built (capture, moment). Voice/photo metadata and
+transcripts are deferred to a future, separately claimed media/
+evidence-decision reader package; this package builds no reader for
+them." This package is that future package. Every blob locator (blob_name,
+original_blob_name, derivative_blob_name), content digest (sha256_digest,
+original_sha256_digest, derivative_sha256_digest), storage etag
+(original_blob_etag, derivative_blob_etag), and provider reference
+(provider_request_id) is hard-excluded, canaried by the paired
+verification script; raw media bytes never live in SQL at all (both
+source migrations' own headers: audio/photo bytes live only in private
+Blob Storage). Disclosed machinery columns (not a directive category, an
+extension of this program's existing idempotency-ledger precedent):
+safe_error_code, scan_result, scan_completed_at_utc, and
+deletion_capture_row_version (a cleanup claim token PS-CAPTURE-MEDIA-001's
+own usp_DeleteCapture writes and usp_FinalizePhotoCaptureDeletion later
+checks). Both source tables payload-null every content column when
+state = 'deleted' (CK_voice_media_sources_live_payload,
+CK_capture_media_sources_original_payload); every reader here filters
+state <> 'deleted' accordingly, including the two link readers through
+their own joined source. dbo.voice_transcription_attempts reads only
+CONCLUDED attempts (state IN ('succeeded', 'failed'), equivalently
+completed_at_utc IS NOT NULL) -- an in-flight (queued/processing) attempt
+carries no content column at all per
+CK_voice_transcription_attempts_result and is transient operational
+status, not yet a durable member fact; a failed attempt still appears
+(its lifecycle truth), only its safe_error_code is withheld. Every
+concluded attempt is exported, not merely the one linked to a confirmed
+capture: this is deliberately non-overlapping with
+PS-SETTINGS-EXPORT-004's own capture.body (the member's confirmed,
+possibly-edited final text), since provider_transcript is the member's
+raw spoken words at the moment of that specific attempt.
+dbo.voice_capture_links and dbo.capture_media_links both carry no opaque
+key of their own; their exported identifying tuple is the joined
+source's own source_key alone, already unique per
+UQ_voice_capture_links_source/UQ_capture_media_links_source. Both link
+tables' own capture_id is excluded outright, never resolved to
+dbo.captures.capture_key: dbo.captures sits outside this package's
+five-table scope, the identical boundary PS-SETTINGS-EXPORT-004's own
+header drew for dbo.moment_placements.target_entity_id/
+dbo.slate_entities.
+
 Nothing in this module is wired to any route, worker, or scheduler.
 There is still no live export, no populated dbo.account_export_job_domains
 row, and no production authority here or anywhere else in this package.
@@ -321,6 +371,12 @@ read_opportunity_slate = _make_reader("usp_ReadAccountExportOpportunitySlateForO
 read_opportunity_saved_result = _make_reader("usp_ReadAccountExportOpportunitySavedResultForOwner")
 read_opportunity_saved_qualification = _make_reader("usp_ReadAccountExportOpportunitySavedQualificationForOwner")
 read_opportunity_saved_evidence = _make_reader("usp_ReadAccountExportOpportunitySavedEvidenceForOwner")
+
+read_voice_media_source = _make_reader("usp_ReadAccountExportVoiceMediaSourceForOwner")
+read_voice_transcription_attempt = _make_reader("usp_ReadAccountExportVoiceTranscriptionAttemptForOwner")
+read_voice_capture_link = _make_reader("usp_ReadAccountExportVoiceCaptureLinkForOwner")
+read_capture_media_source = _make_reader("usp_ReadAccountExportCaptureMediaSourceForOwner")
+read_capture_media_link = _make_reader("usp_ReadAccountExportCaptureMediaLinkForOwner")
 
 
 def _reader_entry(function, schema_id, fields):
@@ -518,18 +574,53 @@ DOMAINS = {
         ),
     },
     "voice_photo": {
-        "disposition": "excluded",
-        "reason": (
-            "PS-VOICE-001/PS-CAPTURE-MEDIA-001 are applied in production "
-            "(docs/governance/PRODUCTION_SCHEMA_STATE.md), but every "
-            "media/transcript/hash/blob column is PS-SETTINGS-EXPORT-004's "
-            "defining boundary and is excluded from every domain that "
-            "package built (capture, moment). Voice/photo metadata and "
-            "transcripts are deferred to a future, separately claimed "
-            "media/evidence-decision reader package; this package builds "
-            "no reader for them."
+        "disposition": "included",
+        "reason": None,
+        "readers": (
+            _reader_entry(
+                read_voice_media_source,
+                "peerslate.account_export.voice_photo.voice_media_source.v1",
+                (
+                    "source_key", "content_type", "byte_length", "locale",
+                    "client_duration_milliseconds", "verified_duration_milliseconds",
+                    "state", "created_at_utc", "updated_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+            _reader_entry(
+                read_voice_transcription_attempt,
+                "peerslate.account_export.voice_photo.voice_transcription_attempt.v1",
+                (
+                    "source_key", "attempt_key", "attempt_number", "state",
+                    "provider_transcript", "queued_at_utc", "started_at_utc",
+                    "completed_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+            _reader_entry(
+                read_voice_capture_link,
+                "peerslate.account_export.voice_photo.voice_capture_link.v1",
+                ("source_key", "attempt_key", "confirmed_at_utc")
+                + _READ_WINDOW_FIELDS,
+            ),
+            _reader_entry(
+                read_capture_media_source,
+                "peerslate.account_export.voice_photo.capture_media_source.v1",
+                (
+                    "source_key", "source_type", "original_content_type",
+                    "original_byte_length", "derivative_content_type",
+                    "derivative_byte_length", "pixel_width", "pixel_height",
+                    "state", "created_at_utc", "updated_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
+            _reader_entry(
+                read_capture_media_link,
+                "peerslate.account_export.voice_photo.capture_media_link.v1",
+                ("source_key", "confirmed_at_utc")
+                + _READ_WINDOW_FIELDS,
+            ),
         ),
-        "readers": (),
     },
     "moment": {
         "disposition": "included",

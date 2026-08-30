@@ -876,18 +876,21 @@ class DomainsRegistryTests(unittest.TestCase):
             ],
         )
 
-    def test_voice_photo_is_excluded_with_a_stable_corrected_reason(self):
-        # Corrected by this package from "unavailable" to "excluded": the
-        # prior reason claimed the underlying schema was not applied, which
-        # docs/governance/PRODUCTION_SCHEMA_STATE.md contradicts (PS-VOICE-001/
-        # PS-CAPTURE-MEDIA-001 are both applied, exactly like this
-        # package's own dbo.captures/dbo.moments).
+    def test_voice_photo_is_included_by_the_media_transcript_package(self):
+        # History of this pin: EXPORT-004 corrected the entry from
+        # "unavailable" to "excluded" (the prior reason wrongly claimed
+        # the schema was unapplied); PS-SETTINGS-ACCOUNT-EXPORT-
+        # MEDIA-TRANSCRIPT-READER-001 then flipped it to "included" under
+        # the owner's accepted 2026-08-30 Paper 1 ruling, and this pin --
+        # which correctly failed on that flip, exactly as a cross-package
+        # tripwire should -- was repointed to the new truth under that
+        # package's extended claim. It keeps pinning voice_photo
+        # SPECIFICALLY so any future disposition change fails a test
+        # again.
         entry = DOMAINS["voice_photo"]
-        self.assertEqual(entry["disposition"], "excluded")
-        self.assertEqual(entry["readers"], ())
-        self.assertIsInstance(entry["reason"], str)
-        self.assertTrue(entry["reason"].strip())
-        self.assertNotIn("not gated/applied", entry["reason"])
+        self.assertEqual(entry["disposition"], "included")
+        self.assertIsNone(entry["reason"])
+        self.assertEqual(len(entry["readers"]), 5)
 
     def test_included_domains_have_no_reason_others_have_a_stable_reason(self):
         for code, domain in DOMAINS.items():

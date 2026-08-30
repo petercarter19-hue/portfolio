@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-MEDIA-TRANSCRIPT-READER-001",
+  "candidate_sha": "1618374bd4d6ad18da82d819542e797d8c01d729",
+  "review_type": "independent",
+  "reviewer_ref": "role:indrev:ps-settings-mt-reader:20260830T082034Z:1618374b",
+  "result": "pass",
+  "reviewed_at": "2026-08-30T08:20:34Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-MEDIA-TRANSCRIPT-READER-001.md"
+}
