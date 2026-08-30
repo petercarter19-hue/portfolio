@@ -21,7 +21,8 @@
     "tests/test_account_export_integration.py",
     "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR5_ACCOUNT_EXPORT_READER_INTEGRATION.md",
     "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR5_OWNER_TECHNICAL_COMPLETION_REPORT.md",
-    ".env.example"
+    ".env.example",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C2_ACCOUNT_EXPORT_ASSEMBLY.md"
   ],
   "domains": [
     "runtime:settings:account-export-reader-integration",
