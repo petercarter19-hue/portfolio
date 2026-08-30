@@ -1,13 +1,22 @@
-"""Deterministic fixture-domain ZIP assembly for the account export archive.
+"""Deterministic ZIP assembly for the account export archive.
 
 Implements C0's archive and consistency contract
 (docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C0_ACCOUNT_EXPORT_ARCHITECTURE.md,
 "Archive and consistency contract") against an injected iterable of
-already-shaped fixture domain files only. No domain reader exists yet
-(C0's V1 domain matrix records every real domain as, at best, a future
-allowlisted reader): every domain file this service ever sees comes
-from the caller, never from a live table. This module never imports a
-database or storage module and never performs I/O of its own.
+already-shaped domain files. This service is, and remains, completely
+agnostic to where those files came from: it never imports a database or
+storage module, performs no I/O of its own, and holds no state. Every
+domain file it has ever been exercised against in this package's own
+tests (tests/test_account_export_assembly.py) is a hand-built, obvious
+fixture; PS-SETTINGS-ACCOUNT-EXPORT-READER-INTEGRATION-001 separately
+wired scripts/run_account_export_worker.py's real content source
+(services/account_export_domain_readers.py's DOMAINS registry) as one
+possible caller of this exact, unchanged assemble() contract -- this
+module itself did not need to start reading a live table to support
+that; it only needed to accept one legitimate shape its caller now also
+produces: an "included" file whose content is empty bytes, for a real
+domain a real member genuinely has zero rows in (see
+_validate_domain_file's own comment below).
 
 Determinism: two calls with identical input always produce a
 byte-identical archive. That requires pinning everything a naive ZIP
@@ -100,7 +109,17 @@ def _validate_domain_file(entry):
     failure_reason = entry.get("failure_reason")
 
     if disposition == "included":
-        if not isinstance(content, bytes) or not content:
+        # Empty bytes ARE valid: a real domain reader can truthfully
+        # find zero rows for a genuine member (e.g. a member who never
+        # created a Capture) -- that is an honest "included, 0 records"
+        # fact, not an error. services/account_export_domain_readers.py's
+        # own module docstring already anticipates this exact case (its
+        # "genuinely empty domain for a real owner" read-window
+        # fallback). Only the TYPE is enforced here; emptiness is not.
+        # PS-SETTINGS-ACCOUNT-EXPORT-READER-INTEGRATION-001 relaxed this
+        # from an earlier `or not content` check, which rejected exactly
+        # this legitimate, now-reachable case.
+        if not isinstance(content, bytes):
             raise AccountExportAssemblyError("invalid_domain_input")
         if (
             not isinstance(record_count, int)
@@ -145,7 +164,8 @@ def _validate_domain_file(entry):
 
 def _write_fixed_entry(archive, path, data):
     """Write one ZIP member with every incidental, non-content field
-    pinned so the archive is reproducible across runs and hosts."""
+    pinned so that identical input produces a byte-identical archive
+    across runs and hosts."""
 
     info = zipfile.ZipInfo(filename=path, date_time=_FIXED_DATE_TIME)
     info.compress_type = zipfile.ZIP_DEFLATED
@@ -185,8 +205,8 @@ def _sum_uncompressed(archive_bytes):
 
 
 class AccountExportAssemblyService:
-    """Build the deterministic v1 account-export archive from fixture
-    domain input only. Holds no state and performs no I/O."""
+    """Build the deterministic v1 account-export archive from a caller-
+    supplied domain_files iterable. Holds no state and performs no I/O."""
 
     def assemble(
         self,
@@ -203,7 +223,7 @@ class AccountExportAssemblyService:
     ):
         """Return ``{"archive_bytes", "manifest", "sha256",
         "compressed_size_bytes", "uncompressed_size_bytes"}`` for the
-        given fixture ``domain_files`` iterable, or raise
+        given ``domain_files`` iterable, or raise
         ``AccountExportAssemblyError`` before any bytes are returned.
 
         SHA-256 and both size facts are always derived here from the

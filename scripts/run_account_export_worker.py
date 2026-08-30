@@ -1,4 +1,4 @@
-"""Bounded worker entry for one Settings account-export job (C2).
+"""Bounded worker entry for one Settings account-export job (C2/CR5).
 
 Claims exactly one job via dbo.usp_ClaimAccountExportJob under a
 DEDICATED worker SQL identity -- never the application's own
@@ -20,37 +20,92 @@ Sequence: claim -> enforce owner-active (a direct, parameterized SELECT
 -- usp_ClaimAccountExportJob itself has no owner-active predicate, a
 recorded C1->C2 obligation, and no new procedure is possible under this
 claim's frozen surfaces, so this is the sanctioned interim mechanism; a
-later slice may formalize it as a procedure) -> assemble a FIXTURE-ONLY
-archive (no domain reader exists yet; every domain file this worker
-ever sees is synthetic, never real member content) -> stage and
-promote it through the private Blob adapter -> complete or fail the
+later slice may formalize it as a procedure) -> resolve the owner's own
+@UserKey (fetch_owner_user_key -- a second sanctioned interim read, not
+a second identity-resolution path: see its own docstring) -> read every
+DOMAINS-included reader for that owner through
+services/account_export_domain_readers.py, plus one honest,
+reason-carrying excluded/unavailable entry for every other DOMAINS row
+(build_domain_files_from_readers) -> assemble the real archive -> stage
+and promote it through the private Blob adapter -> complete or fail the
 job through the C1 lease-fenced procedures. Every log line is
 content-free: job_key, state, and bounded counts only.
 
-FIXTURE WARNING: this worker completes every job it claims with
-SYNTHETIC placeholder content, because no real domain-reader slice
-exists yet (see docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/
-C2_ACCOUNT_EXPORT_ASSEMBLY.md, "What is fixture-proven vs unproven").
-Running it against a database that might hold a REAL member's queued
-export request would complete that request with fake content -- a
-genuine trust violation. main() refuses to run at all unless
-ACCOUNT_EXPORT_WORKER_FIXTURE_MODE_CONFIRMED is explicitly set, on top
-of the existing --expect-database guard.
+PS-SETTINGS-ACCOUNT-EXPORT-READER-INTEGRATION-001 (this package)
+retired the C2 fixture-only worker: build_fixture_domain_files and the
+ACCOUNT_EXPORT_WORKER_FIXTURE_MODE_CONFIRMED tripwire it required are
+both gone, in this same change, replaced by
+build_domain_files_from_readers and the tests that pin the real-reader
+path (tests/test_account_export_integration.py -- every DOMAINS
+included reader invoked exactly once per job; no fixture source left in
+this module). This worker now reads and exports REAL member content
+for every domain services/account_export_domain_readers.py's DOMAINS
+registry marks "included" (7 domains, 22 readers today); every other
+domain still appears in the manifest as an honest, reasoned
+"excluded"/"unavailable" entry, never silently dropped. Still not wired
+to any scheduler, route, or UI -- run by hand from an operator shell
+only -- and production authority remains withheld: nothing in this
+package deploys, schedules, or exposes this worker, and no migration or
+gate is part of this claim.
 
-Not wired to any scheduler, route, or UI. Run by hand from an operator
-shell only.
+Determinism. services/account_export_assembly_service.py's own
+assemble() call remains a pure function: identical input (including
+identical read-window timestamps) always produces byte-identical
+output -- unit-tested directly and unchanged by this package. What
+changes is what now FEEDS that function during a live run:
+build_domain_files_from_readers embeds each reader's own real,
+wall-clock read-window timestamps into every included file. Because a
+fresh reader call captures a fresh timestamp, two SEPARATE ATTEMPTS at
+the SAME job will generally produce DIFFERENT archive bytes and a
+different sha256 even when every underlying row is unchanged --
+byte-identical reproducibility ACROSS ATTEMPTS was never literally true
+once real read windows entered the picture, and this package states
+that explicitly rather than letting the older, narrower pure-function
+claim be misread as a live-run guarantee. What remains invariant across
+attempts: every emitted byte is fully accounted for in the manifest,
+every count/hash is independently recomputed from real content, and
+the domain set/dispositions/reasons are stable for a given owner
+(DOMAINS is a static registry) -- exactly what C0 itself requires
+("this is a bounded assembly window, not an atomic request-time
+snapshot").
+
+Manifest/ledger agreement -- this package's central proof. C1's child
+ledger (dbo.account_export_job_domains) has no writer procedure at all
+(C1_ACCOUNT_EXPORT_FOUNDATION.md: "No procedure in this migration
+writes to this table... population is deferred to a future, separately
+claimed domain-reader slice"), and this package's frozen surfaces
+include no SQL file, so nothing here can INSERT a real ledger row.
+summarize_domain_ledger and domain_ledger_row_matches_check_shape below
+instead compute, offline, the EXACT row a future writer would need --
+shaped and validated against C1's own
+CK_account_export_job_domains_shape CHECK text -- and prove (in
+tests/test_account_export_integration.py) that it agrees, file by file
+and domain by domain, with the manifest and with the bytes actually
+serialized into the ZIP. run_once also runs this same shape check live,
+as a defensive backstop that refuses to complete a job whose own
+manifest could not satisfy that CHECK. The AGGREGATE facts that DO
+reach a real, live ledger row today (compressed_size_bytes,
+uncompressed_size_bytes, final_artifact_sha256, via
+usp_CompleteAccountExportJob) are unchanged by this package and still
+come from AccountExportStorageService.promote()'s own independent
+readback, never from a pre-upload estimate. Actually persisting a
+per-domain row remains a disclosed, out-of-scope gap: it needs a new
+procedure and migration this claim cannot author (see
+CR5_ACCOUNT_EXPORT_READER_INTEGRATION.md, "Manifest/ledger agreement").
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
 from pathlib import Path
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+from decimal import Decimal
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,13 +119,12 @@ from services.account_export_storage_service import (  # noqa: E402
     AccountExportStorageError,
     account_export_storage_service,
 )
+from services.account_export_domain_readers import DOMAINS  # noqa: E402
 
 
 LOGGER = logging.getLogger("account_export_worker")
 
 CONNECTION_ENV = "ACCOUNT_EXPORT_WORKER_SQL_CONNECTIONSTRING"
-FIXTURE_MODE_ENV = "ACCOUNT_EXPORT_WORKER_FIXTURE_MODE_CONFIRMED"
-_TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
 
 # The exact closed vocabulary usp_FailAccountExportJob accepts (SQL
 # FIles/Migrations/PS-SETTINGS-EXPORT-001_account_export_foundation.sql,
@@ -222,6 +276,43 @@ def is_owner_active(cursor, owner_user_id, owner_profile_id):
     return cursor.fetchone() is not None
 
 
+def fetch_owner_user_key(cursor, owner_user_id, owner_profile_id):
+    """The one sanctioned identity-translation read this package adds.
+
+    The claimed job row (usp_ClaimAccountExportJob) resolves and
+    returns owner_user_id/owner_profile_id -- internal identity -- but
+    every domain-reader procedure in services/account_export_domain_
+    readers.py takes only the member's own external @UserKey (the same
+    shape usp_RequestAccountExportForOwner itself accepts). This is NOT
+    a second identity-resolution path: it is a single, direct,
+    parameterized lookup of the SAME already-resolved row's own
+    user_key column, scoped by the exact ids the claim procedure itself
+    just returned -- never a caller-supplied value, never a fresh
+    credential/session check. It is the same "sanctioned interim read"
+    shape is_owner_active and fetch_requested_at_utc already use. The
+    active = 1 predicate is repeated here even though is_owner_active
+    already confirmed it immediately before this call in run_once, so
+    this function's own SQL text remains independently correct even if
+    a future caller ever invoked it without that ordering guarantee.
+
+    Returns the member's own user_key string, or None if no row matches
+    both ids together (unreachable today given run_once's own ordering,
+    guarded defensively there exactly like fetch_requested_at_utc's own
+    NULL handling).
+    """
+
+    cursor.execute(
+        "SELECT TOP (1) app_user.user_key "
+        "FROM dbo.app_users AS app_user "
+        "JOIN dbo.member_profiles AS profile ON profile.user_id = app_user.id "
+        "WHERE app_user.id = ? AND profile.profile_id = ? "
+        "AND app_user.active = 1 AND profile.active = 1;",
+        (owner_user_id, owner_profile_id),
+    )
+    row = cursor.fetchone()
+    return row[0] if row else None
+
+
 def fetch_requested_at_utc(cursor, job_key):
     """usp_ClaimAccountExportJob's own SELECT list does not include
     requested_at_utc (see its result columns in the migration: job_key,
@@ -328,67 +419,277 @@ def _now_utc():
 
 
 def _iso_z(value):
-    return value.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+    # timespec="microseconds" forces a FIXED six-digit fractional-second
+    # field even when it is exactly zero. Without it,
+    # datetime.isoformat() silently varies the string's WIDTH (the
+    # fractional part is omitted entirely when microsecond == 0), which
+    # would make plain lexical comparison of two _iso_z() outputs
+    # disagree with true chronological order -- exactly the property
+    # summarize_domain_ledger's min()/max() over read-window strings
+    # depends on below.
+    return (
+        value.replace(tzinfo=timezone.utc)
+        .isoformat(timespec="microseconds")
+        .replace("+00:00", "Z")
+    )
 
 
-def build_fixture_domain_files(read_window_started_at_utc, read_window_ended_at_utc):
-    """The worker's OWN hardcoded fixture set -- an injected iterable
-    of already-shaped domain files, per this claim's frozen scope. No
-    domain reader may be written under this claim, and no domain
-    file's content here may resemble real member data: every string is
-    an obvious, labeled placeholder.
+def _iso_z_or_none(value):
+    return _iso_z(value) if value is not None else None
 
-    One entry per disposition, so a real assembly run always exercises
-    all three shapes end to end, not only the happy path.
+
+def _json_safe(value):
+    """Coerce one driver-returned column value into a JSON-encodable
+    Python primitive, losslessly: date/datetime -> ISO-8601 string
+    (matching _iso_z's own formatting convention elsewhere in this
+    file); Decimal -> str (never float, which would silently lose or
+    distort precision); bytes/bytearray -> hex string; uuid.UUID ->
+    str. Every other type (str, int, float, bool, None) passes through
+    unchanged -- json.dumps already handles those natively.
     """
 
-    return [
-        {
-            "path": "domains/account_profile.ndjson",
-            "domain_code": "account_profile",
-            "schema_id": "peerslate.account_profile.v1",
-            "schema_version": 1,
-            "disposition": "included",
-            "content": (
-                b'{"note":"SYNTHETIC ACCOUNT EXPORT FIXTURE - NOT REAL MEMBER '
-                b'DATA","profile_display_name":"Synthetic Fixture Member"}\n'
-            ),
-            "record_count": 1,
-            "provenance": {
-                "source": "fixture",
-                "domain_reader": "not_yet_implemented",
-            },
-            "read_window": {
-                "started_at_utc": read_window_started_at_utc,
-                "ended_at_utc": read_window_ended_at_utc,
-            },
-        },
-        {
-            "path": "domains/community_authored_content.ndjson",
-            "domain_code": "community_authored_content",
-            "schema_id": "peerslate.community_authored_content.v1",
-            "schema_version": 1,
-            "disposition": "excluded",
-            "omission_reason": (
-                "C0 V1 domain matrix: no domain-reader slice is claimed yet "
-                "for Community authored content."
-            ),
-        },
-        {
-            "path": "domains/journal.ndjson",
-            "domain_code": "journal",
-            "schema_id": "peerslate.journal.v1",
-            "schema_version": 1,
-            "disposition": "unavailable",
-            "failure_reason": (
-                "PS-JOURNAL-001 is unapplied; no legal source table exists yet "
-                "(C0 V1 domain matrix)."
-            ),
-        },
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    if isinstance(value, Decimal):
+        return str(value)
+    if isinstance(value, (bytes, bytearray)):
+        return value.hex()
+    if isinstance(value, uuid.UUID):
+        return str(value)
+    return value
+
+
+def _serialize_ndjson_rows(rows):
+    """Encode a reader's content rows (each an ordered dict of plain
+    column-name -> value, exactly as services/account_export_domain_
+    readers.py returns them -- the two read-window columns already
+    stripped) as UTF-8 NDJSON bytes: one compact JSON object per line,
+    in the rows' own order, with each row's own key order preserved
+    (the procedure's own SELECT list order -- never sorted or
+    alphabetized). Zero rows encodes to ``b""`` -- a legitimate,
+    empty-but-included file; see
+    services/account_export_assembly_service.py's own relaxed
+    "included may be empty" rule this depends on.
+    """
+
+    lines = [
+        json.dumps(
+            {key: _json_safe(value) for key, value in row.items()},
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        for row in rows
     ]
+    if not lines:
+        return b""
+    return ("\n".join(lines) + "\n").encode("utf-8")
 
 
-def run_once(connection, *, fixture_domain_files):
+def build_domain_files_from_readers(connection, user_key):
+    """The real content source, replacing the retired fixture builder:
+    one manifest file per reader for every services/account_export_
+    domain_readers.py DOMAINS entry whose disposition is "included" (22
+    readers across 7 domains today; see iter_included_readers()), plus
+    exactly one file for every other DOMAINS entry, carrying that
+    domain's own disposition and reason string VERBATIM -- never
+    dropped, never reworded (C0's manifest contract: "Every domain has
+    an explicit included, excluded, or unavailable manifest disposition
+    with a stable safe reason").
+
+    Every reader is called with the SAME user_key, exactly once, over
+    the SAME caller-supplied connection. This function opens no
+    connection of its own and manages no transaction; every domain-
+    reader function it calls already guarantees that on its own (see
+    that module's own docstring and tests). It iterates DOMAINS.items()
+    in that dict's own fixed order; the assembly service re-sorts
+    entries by path before writing, so this function's own emission
+    order is not itself load-bearing.
+
+    A reader that raises propagates unchanged: this function makes no
+    attempt to catch or partially tolerate a single failing reader. A
+    partial export assembled from some-but-not-all domains would be a
+    truth violation (a manifest that looks complete but is not); the
+    correct, and already-existing, response to any reader failure is
+    the caller's own generic exception handling in run_once: fail the
+    whole attempt, requeue while attempts remain.
+    """
+
+    domain_files = []
+    for domain_code, domain in DOMAINS.items():
+        disposition = domain["disposition"]
+        if disposition == "included":
+            for reader_entry in domain["readers"]:
+                result = reader_entry["function"](connection, user_key)
+                rows = result["rows"]
+                schema_tail = reader_entry["schema_id"].split(".")[-2]
+                domain_files.append(
+                    {
+                        "path": "domains/%s/%s.ndjson" % (domain_code, schema_tail),
+                        "domain_code": domain_code,
+                        "schema_id": reader_entry["schema_id"],
+                        "schema_version": 1,
+                        "disposition": "included",
+                        "content": _serialize_ndjson_rows(rows),
+                        "record_count": len(rows),
+                        "provenance": {"reader_procedure": reader_entry["procedure"]},
+                        "read_window": {
+                            "started_at_utc": _iso_z_or_none(result["read_started_at_utc"]),
+                            "ended_at_utc": _iso_z_or_none(result["read_ended_at_utc"]),
+                        },
+                    }
+                )
+        else:
+            domain_files.append(
+                {
+                    "path": "domains/%s.omitted.json" % domain_code,
+                    "domain_code": domain_code,
+                    "schema_id": "peerslate.account_export.%s.v1" % domain_code,
+                    "schema_version": 1,
+                    "disposition": disposition,
+                    "omission_reason": domain["reason"] if disposition == "excluded" else None,
+                    "failure_reason": domain["reason"] if disposition == "unavailable" else None,
+                }
+            )
+    return domain_files
+
+
+def summarize_domain_ledger(manifest):
+    """Group ``manifest["files"]`` entries by domain_code into one
+    ledger-shaped row per domain -- the exact row a future
+    domain-ledger-writing slice would need to INSERT into C1's
+    ``dbo.account_export_job_domains`` (currently unpopulated -- see
+    this module's own docstring). This package writes no such row
+    anywhere: that table has no writer procedure at all in the current
+    schema, and this claim's frozen surfaces include no SQL file, so
+    nothing here can create one. This function only PROVES, offline,
+    that the manifest's own per-file facts already sum to exactly what
+    such a future writer would need, so the manifest and any eventual
+    ledger population can never silently disagree.
+
+    An INCLUDED domain combines every one of its manifest files: summed
+    record_count/byte_count (matching CK_account_export_job_domains_
+    counts' non-negativity, which a sum of non-negative parts always
+    satisfies), the domain's overall
+    [min(read_started_at_utc), max(read_ended_at_utc)] read window
+    across every one of its readers, and one content_sha256 computed
+    over the sorted, concatenated per-file hashes -- never a single
+    file's own hash standing in for the whole domain, since C1's own
+    ``UQ_account_export_job_domains_job_domain`` allows only one row per
+    (job, domain_code). EXCLUDED/UNAVAILABLE domains carry the domain's
+    own reason and nothing else, matching
+    ``CK_account_export_job_domains_shape``'s other two shapes exactly.
+
+    Two real foreign-key columns a genuine INSERT would also need
+    (``account_export_job_id``, ``owner_profile_id``) are DB-internal
+    identity values with no Python-side equivalent visible to this
+    function (it only ever sees a manifest); they are not fabricated
+    here.
+    """
+
+    files_by_domain = {}
+    domain_order = []
+    for file_entry in manifest["files"]:
+        domain_code = file_entry["domain_code"]
+        if domain_code not in files_by_domain:
+            files_by_domain[domain_code] = []
+            domain_order.append(domain_code)
+        files_by_domain[domain_code].append(file_entry)
+
+    summary = {}
+    for domain_code in domain_order:
+        files = files_by_domain[domain_code]
+        dispositions = {file_entry["disposition"] for file_entry in files}
+        if len(dispositions) != 1:
+            raise ValueError(
+                "Mixed disposition within one domain_code: " + domain_code
+            )
+        disposition = dispositions.pop()
+
+        if disposition == "included":
+            started_values = [file_entry["read_window"]["started_at_utc"] for file_entry in files]
+            ended_values = [file_entry["read_window"]["ended_at_utc"] for file_entry in files]
+            combined_hash_input = "".join(
+                sorted(file_entry["sha256"] for file_entry in files)
+            ).encode("ascii")
+            summary[domain_code] = {
+                "domain_code": domain_code,
+                "disposition": disposition,
+                "file_count": len(files),
+                "record_count": sum(file_entry["record_count"] for file_entry in files),
+                "byte_count": sum(file_entry["byte_length"] for file_entry in files),
+                "content_sha256": hashlib.sha256(combined_hash_input).hexdigest(),
+                "read_started_at_utc": min(started_values),
+                "read_ended_at_utc": max(ended_values),
+                "omission_reason": None,
+                "failure_reason": None,
+            }
+        else:
+            if len(files) != 1:
+                raise ValueError(
+                    "A non-included domain must have exactly one manifest "
+                    "file: " + domain_code
+                )
+            only = files[0]
+            summary[domain_code] = {
+                "domain_code": domain_code,
+                "disposition": disposition,
+                "file_count": 1,
+                "record_count": None,
+                "byte_count": None,
+                "content_sha256": None,
+                "read_started_at_utc": None,
+                "read_ended_at_utc": None,
+                "omission_reason": only["omission_reason"],
+                "failure_reason": only["failure_reason"],
+            }
+    return summary
+
+
+def domain_ledger_row_matches_check_shape(row):
+    """A pure re-implementation, for offline testing only, of
+    ``CK_account_export_job_domains_shape``'s exact boolean logic (see
+    SQL FIles/Migrations/PS-SETTINGS-EXPORT-001_account_export_foundation.sql).
+    Never touches a database. Returns True when the given
+    summarize_domain_ledger() row is shaped exactly as that real CHECK
+    constraint would require of a genuine INSERT.
+    """
+
+    if row["disposition"] == "included":
+        return (
+            row["read_started_at_utc"] is not None
+            and row["read_ended_at_utc"] is not None
+            and row["record_count"] is not None
+            and row["byte_count"] is not None
+            and row["content_sha256"] is not None
+            and row["omission_reason"] is None
+            and row["failure_reason"] is None
+        )
+    if row["disposition"] == "excluded":
+        return (
+            row["read_started_at_utc"] is None
+            and row["read_ended_at_utc"] is None
+            and row["record_count"] is None
+            and row["byte_count"] is None
+            and row["content_sha256"] is None
+            and row["omission_reason"] is not None
+            and row["failure_reason"] is None
+        )
+    if row["disposition"] == "unavailable":
+        has_omission = row["omission_reason"] is not None
+        has_failure = row["failure_reason"] is not None
+        return (
+            row["read_started_at_utc"] is None
+            and row["read_ended_at_utc"] is None
+            and row["record_count"] is None
+            and row["byte_count"] is None
+            and row["content_sha256"] is None
+            and (has_omission or has_failure)
+            and not (has_omission and has_failure)
+        )
+    return False
+
+
+def run_once(connection, *, domain_files_builder):
     """Claim and process exactly one job on the given connection.
 
     Returns a content-free outcome dict. Only an unexpected, defensive
@@ -435,14 +736,27 @@ def run_once(connection, *, fixture_domain_files):
         }
 
     try:
+        owner_user_key = fetch_owner_user_key(cursor, owner_user_id, owner_profile_id)
+        if owner_user_key is None:
+            # Unreachable today -- is_owner_active just confirmed this
+            # exact (owner_user_id, owner_profile_id) pair is active --
+            # but fetch_owner_user_key's own SQL is independently
+            # correct on its own terms, so a defensive, loud failure
+            # here (never a silently-invented identity) matches the
+            # same "no false promise" posture requested_at_utc's own
+            # NULL handling below already uses.
+            raise RuntimeError("Owner user_key could not be resolved for the claimed job.")
+
+        # The assembly window brackets the REAL domain reads below, per
+        # C0's "assembly start and cutoff" / "@@DBTS at both" contract
+        # -- unlike the old fixture worker, real work now actually
+        # happens between these two marker reads.
         assembly_started_at_utc = _now_utc()
         consistency_marker_start = read_consistency_marker(cursor)
+        domain_files = domain_files_builder(connection, owner_user_key)
         assembly_cutoff_at_utc = _now_utc()
         consistency_marker_cutoff = read_consistency_marker(cursor)
 
-        domain_files = fixture_domain_files(
-            _iso_z(assembly_started_at_utc), _iso_z(assembly_cutoff_at_utc)
-        )
         requested_at_utc = fetch_requested_at_utc(cursor, job_key)
         if requested_at_utc is None:
             # Unreachable today -- requested_at_utc is NOT NULL in
@@ -466,6 +780,19 @@ def run_once(connection, *, fixture_domain_files):
                 consistency_marker_cutoff.hex() if consistency_marker_cutoff else None
             ),
         )
+
+        # Defensive backstop, not merely a test-time exercise: refuse to
+        # complete a job whose own manifest could not satisfy C1's real
+        # CK_account_export_job_domains_shape CHECK, even though
+        # nothing in this claim's frozen surfaces can write that row
+        # today (see summarize_domain_ledger's own docstring above).
+        domain_ledger_summary = summarize_domain_ledger(assembled["manifest"])
+        for summarized_domain_code, ledger_row in domain_ledger_summary.items():
+            if not domain_ledger_row_matches_check_shape(ledger_row):
+                raise RuntimeError(
+                    "Domain ledger summary shape mismatch for " + summarized_domain_code
+                )
+
         _log(
             "assembled",
             job_key=job_key,
@@ -558,15 +885,6 @@ def main(argv=None):
     parser.add_argument("--expect-database", required=True)
     arguments = parser.parse_args(argv)
 
-    if str(os.environ.get(FIXTURE_MODE_ENV, "")).strip().lower() not in _TRUE_VALUES:
-        LOGGER.error(
-            "Refusing to run: %s is not confirmed. This worker has no real "
-            "domain reader yet and completes every job with SYNTHETIC "
-            "fixture content only.",
-            FIXTURE_MODE_ENV,
-        )
-        return 1
-
     connection_string = os.environ.get(CONNECTION_ENV)
     if not connection_string:
         LOGGER.error("%s is not configured.", CONNECTION_ENV)
@@ -589,7 +907,7 @@ def main(argv=None):
             LOGGER.error("Account export worker refused an unexpected database target.")
             return 1
 
-        result = run_once(connection, fixture_domain_files=build_fixture_domain_files)
+        result = run_once(connection, domain_files_builder=build_domain_files_from_readers)
         print(json.dumps(result, sort_keys=True))
         return 0 if result["outcome"] in ("idle", "completed") else 1
     finally:

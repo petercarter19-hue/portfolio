@@ -318,7 +318,14 @@ fixture-only archive → stage and promote it → complete or fail the job.
   `failure_code`, `error_type`, `stage`) and silently drops anything else —
   so a future call site cannot leak a new field into a log line merely by
   forgetting to widen the allowlist first.
-- **FIXTURE WARNING.** No domain-reader slice exists. `build_fixture_domain_files()`
+- **FIXTURE WARNING — SUPERSEDED.** Everything in this bullet and the
+  `ACCOUNT_EXPORT_WORKER_FIXTURE_MODE_CONFIRMED` row below describes the
+  C2-era worker and is no longer current: the real domain readers were
+  wired in and the fixture path (including that environment variable)
+  was retired by `PS-SETTINGS-ACCOUNT-EXPORT-READER-INTEGRATION-001` —
+  see `CR5_ACCOUNT_EXPORT_READER_INTEGRATION.md`. Preserved verbatim
+  below as the historical record of what C2 shipped.
+  No domain-reader slice exists. `build_fixture_domain_files()`
   is the worker's own hardcoded, obviously-synthetic fixture set (one
   `included`, one `excluded`, one `unavailable` entry, exercising all three
   disposition shapes). Running this worker against a database that might

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-READER-INTEGRATION-001",
+  "candidate_sha": "11dc3c034ad6b65d325764bc067d926ee433b16a",
+  "review_type": "independent",
+  "reviewer_ref": "role:indrev:ps-settings-int:20260830T044045Z:11dc3c03",
+  "result": "pass",
+  "reviewed_at": "2026-08-30T04:40:46Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-READER-INTEGRATION-001.md"
+}

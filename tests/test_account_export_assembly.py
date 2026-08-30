@@ -342,6 +342,36 @@ class AccountExportAssemblyValidationTests(unittest.TestCase):
         with zipfile.ZipFile(io.BytesIO(result["archive_bytes"])) as archive:
             self.assertEqual(archive.namelist(), [MANIFEST_PATH])
 
+    def test_included_allows_empty_content_when_record_count_is_zero(self):
+        # PS-SETTINGS-ACCOUNT-EXPORT-READER-INTEGRATION-001: a real
+        # domain reader can truthfully find zero rows for a genuine
+        # member (e.g. no Captures ever made). That is an honest
+        # "included, 0 records" fact, not an error -- this was
+        # previously rejected by an `or not content` check that assumed
+        # every included file would always have at least one row,
+        # which was true only because the old fixture always did.
+        entry = _included("domains/empty.ndjson", "empty", b"", record_count=0)
+        result = self.service.assemble([entry], **ASSEMBLE_KWARGS)
+
+        files = result["manifest"]["files"]
+        self.assertEqual(len(files), 1)
+        self.assertEqual(files[0]["disposition"], "included")
+        self.assertEqual(files[0]["record_count"], 0)
+        self.assertEqual(files[0]["byte_length"], 0)
+        self.assertEqual(files[0]["sha256"], hashlib.sha256(b"").hexdigest())
+        with zipfile.ZipFile(io.BytesIO(result["archive_bytes"])) as archive:
+            self.assertEqual(archive.read("domains/empty.ndjson"), b"")
+        self.assertEqual(result["uncompressed_size_bytes"], 0)
+
+    def test_included_still_requires_content_to_be_bytes(self):
+        # The relaxation only drops the non-emptiness requirement, not
+        # the type check: None/str/etc. must still be refused.
+        for bad_content in (None, "", "not bytes", 0):
+            with self.subTest(content=bad_content):
+                entry = _included("domains/x.ndjson", "x", b"{}\n")
+                entry["content"] = bad_content
+                self._assert_invalid([entry])
+
 
 if __name__ == "__main__":
     unittest.main()
