@@ -55,21 +55,24 @@ FAKE_DBTS_MARKER_CUTOFF = b"\x00\x00\x00\x00\x00\x00\x07\xd2"
 
 # Snapshot facts about today's services/account_export_domain_readers.py
 # DOMAINS registry, confirmed by direct inspection at the time this
-# package was written (11 included domains / 30 readers / 19
+# package was written (12 included domains / 31 readers / 18
 # non-included domains / 30 domains total). A future reader package
 # legitimately changes these numbers -- exactly as CR2/CR3/CR4 each did
-# for their own package's own count in their own test files, and CR6
+# for their own package's own count in their own test files, CR6
 # (PS-SETTINGS-EXPORT-007, which flips voice_photo from excluded to
 # included, +1 included domain / +5 readers / -1 non-included domain,
 # total domain count unchanged) and CR7 (PS-SETTINGS-EXPORT-008, which
 # flips connection_preferences/notification_preferences/consent_history
 # from excluded to included, +3 included domains / +3 readers / -3
 # non-included domains, total domain count unchanged) each did for this
-# file specifically -- and would need to revisit this snapshot, not
+# file specifically, and CR8 (PS-SETTINGS-EXPORT-009, which flips the
+# EXISTING career_skill_links key from excluded to included, +1
+# included domain / +1 reader / -1 non-included domain, total domain
+# count unchanged) -- and would need to revisit this snapshot, not
 # treat it as permanently frozen.
-EXPECTED_INCLUDED_DOMAIN_COUNT = 11
-EXPECTED_READER_COUNT = 30
-EXPECTED_NON_INCLUDED_DOMAIN_COUNT = 19
+EXPECTED_INCLUDED_DOMAIN_COUNT = 12
+EXPECTED_READER_COUNT = 31
+EXPECTED_NON_INCLUDED_DOMAIN_COUNT = 18
 EXPECTED_TOTAL_DOMAIN_COUNT = 30
 
 

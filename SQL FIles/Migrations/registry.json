@@ -2250,6 +2250,40 @@
         "verification": "PS-SETTINGS-EXPORT-008_preferences_consent_reader_isolation_verify.sql returned verified = 1",
         "operator": "Claude Fable 5 / work-2026-08-30-settings-account-export-preferences-consent-reader-001"
       }
+    },
+    {
+      "id": "PS-SETTINGS-EXPORT-009",
+      "forward": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-009_evidence_rule_reader.sql",
+      "rollback": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-009_evidence_rule_reader_rollback.sql",
+      "requires": [
+        "PS-AUTH-001",
+        "PS-PLAT-003",
+        "PS-PLAT-006"
+      ],
+      "summary": "Read-only owner-scoped account-export reader for dbo.career_skill_links, applying the safe-references-only evidence rule (titles/types/statuses/dates; never locators, object keys, URLs, hashes, or verifier identity): one @UserKey-only procedure resolving skill_id to career_skills' skill_key and disclosing a derived evidence_linked flag; source_entity_id and evidence_item_id are excluded outright. No evidence_items content is read.",
+      "gate": {
+        "executable_sha256": "09c900119191c2379007aae85eeee06523675351437fca868d35b880bdbdd678",
+        "gated_at_utc": "2026-08-30T11:37:04Z",
+        "gate_database": "ps-migration-path-20260830-er2",
+        "gate_server": "peerslate",
+        "prerequisites": [
+          "PS-PLAT-000",
+          "PS-PLAT-001",
+          "PS-PLAT-002",
+          "PS-PLAT-003",
+          "PS-PLAT-004",
+          "PS-PLAT-005",
+          "PS-PLAT-006",
+          "PS-PLAT-007",
+          "PS-AUTH-001"
+        ],
+        "objects": [
+          "SQL_STORED_PROCEDURE:dbo.usp_ReadAccountExportCareerSkillLinkForOwner"
+        ],
+        "verification": "PS-SETTINGS-EXPORT-009_evidence_rule_reader_isolation_verify.sql returned verified = 1",
+        "operator": "Claude Fable 5 / work-2026-08-30-settings-account-export-evidence-rule-reader-001",
+        "notes": "Run 2 after sanctioning the evidence_linked derivation in the verify scan; run 1's refusal was the scan contradicting the reader's disclosed design"
+      }
     }
   ]
 }

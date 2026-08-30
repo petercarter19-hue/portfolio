@@ -298,6 +298,55 @@ writes" discipline, extended here to a column with zero current
 writers). No third-party consent is read: dbo.recruiter_questions is
 untouched by this package's migration, readers, and verification script.
 
+PS-SETTINGS-EXPORT-009 (this update) flips career_skill_links from
+excluded to included, executing the owner's accepted 2026-08-30 Papers
+4-7 rulings. THE SAFE-REFERENCES-ONLY EVIDENCE RULE: titles, types,
+statuses, and dates may export; storage locators, container names,
+object keys, URLs, hashes/digests, and verifier identity may NEVER
+export, from this table or any evidence-adjacent table anywhere in
+this program, until a dedicated future package performs the
+field-by-field review that rule requires. This package applies the
+rule now to the one reader it unblocks: dbo.career_skill_links, a
+Living Resume link table PS-SETTINGS-EXPORT-003 left excluded solely
+because this rule was undecided ("Its rows reference evidence_item_id,
+whose disclosure rules are undecided"). The reader exports the
+member's own link facts (relationship_type, approval_status,
+strength_rank, created_at_utc) and resolves skill_id to
+dbo.career_skills' own skill_key (career_skills is already included
+via "living_resume"; this mirrors that domain's own
+chapter_id -> chapter_key intra-export-linkage idiom and never
+re-selects skill content already exported there). source_entity_id (a
+dbo.slate_entities reference) is excluded outright and never resolved,
+the same boundary this program has drawn for every entity_id reference
+since PS-SETTINGS-EXPORT-003's own header. evidence_item_id (a
+dbo.evidence_items reference) is excluded outright too --
+dbo.evidence_items is not one of this package's claimed tables, so
+resolving it to anything, even an opaque key, is out of scope -- but a
+derived evidence_linked bit is disclosed instead, computed entirely
+from career_skill_links' own nullable column (no join, no
+evidence_items read): a member-authored fact about whether they backed
+the skill claim with evidence, not a locator, key, hash, URL, or any
+evidence_items content. dbo.career_skill_links carries no
+deleted_at_utc or row_version of its own; the joined dbo.career_skills
+row does, and this reader filters skill.deleted_at_utc IS NULL so a
+soft-deleted skill's link cannot surface through this back door. The
+table is practically empty today (no writer populates
+dbo.evidence_items anywhere in this codebase, so most members export
+zero rows here); this is disclosed, not hidden.
+
+This package also records four durable rulings the owner made
+2026-08-30 alongside the evidence rule, in the DOMAINS reasons below
+rather than only in this module's own history: ai_proposals is closed
+with nothing additional to export today; both publication-adjacent
+domains (profile_publication_foundation, own_publication_versions) are
+recorded as having nothing to export today, with the future publishing
+package required to ship its own export reader; community_authored_content
+is honestly omitted from v1 with a future "own words only" package
+queued; and file_evidence_metadata's own reason now names the
+safe-references-only rule as the binding standard for whichever package
+first builds it. None of those four domains gets a reader in this
+package.
+
 Nothing in this module is wired to any route, worker, or scheduler.
 There is still no live export, no populated dbo.account_export_job_domains
 row, and no production authority here or anywhere else in this package.
@@ -399,6 +448,7 @@ read_career_project = _make_reader("usp_ReadAccountExportCareerProjectForOwner")
 read_career_achievement = _make_reader("usp_ReadAccountExportCareerAchievementForOwner")
 read_career_skill = _make_reader("usp_ReadAccountExportCareerSkillForOwner")
 read_career_timeline_event = _make_reader("usp_ReadAccountExportCareerTimelineEventForOwner")
+read_career_skill_link = _make_reader("usp_ReadAccountExportCareerSkillLinkForOwner")
 
 read_capture = _make_reader("usp_ReadAccountExportCaptureForOwner")
 read_capture_revision = _make_reader("usp_ReadAccountExportCaptureRevisionForOwner")
@@ -558,22 +608,20 @@ DOMAINS = {
             ),
         ),
     },
-    # -------------------------------------------------------------
-    # career_skill_links (PS-PLAT-006): a Living Resume table this
-    # package deliberately does NOT read. Rows reference
-    # evidence_item_id, whose disclosure rules are undecided; recorded
-    # here as its own entry (not silently folded into "living_resume")
-    # so a future reader of this dict never has to guess whether the
-    # omission was deliberate.
-    # -------------------------------------------------------------
     "career_skill_links": {
-        "disposition": "excluded",
-        "reason": (
-            "Deferred to a future evidence-decision package: rows reference "
-            "evidence_item_id, whose disclosure rules (which evidence_items fields, "
-            "if any, are safe to export) are undecided. Not read by this package."
+        "disposition": "included",
+        "reason": None,
+        "readers": (
+            _reader_entry(
+                read_career_skill_link,
+                "peerslate.account_export.career_skill_links.career_skill_link.v1",
+                (
+                    "skill_key", "relationship_type", "approval_status", "strength_rank",
+                    "evidence_linked", "created_at_utc",
+                )
+                + _READ_WINDOW_FIELDS,
+            ),
         ),
-        "readers": (),
     },
     # -------------------------------------------------------------
     # Every other C0 V1 domain-matrix row. This package builds no
@@ -589,12 +637,25 @@ DOMAINS = {
     # -------------------------------------------------------------
     "profile_publication_foundation": {
         "disposition": "unavailable",
-        "reason": "PS-PROFILE-002 is registered but unapplied in the generated production-schema record; no Profile-native publication source table exists yet.",
+        "reason": (
+            "The owner ruled 2026-08-30 that nothing exists to export here: "
+            "PS-PROFILE-002 is registered but unapplied, so no Profile-native "
+            "publication source table exists at all. The future publishing package "
+            "must ship its own export reader in the same body of work that ships "
+            "publication itself."
+        ),
         "readers": (),
     },
     "own_publication_versions": {
         "disposition": "excluded",
-        "reason": "C0 marks the owner's own entity_publication_versions rows includable only after contract revalidation; this package builds no reader for it. Joint entity_access_grants context is excluded outright per C0.",
+        "reason": (
+            "The owner ruled 2026-08-30 that nothing exists to export here today: a "
+            "repository-wide check found no writer anywhere for "
+            "dbo.entity_publication_versions or dbo.entity_access_grants, so no member "
+            "has ever published anything through this schema. The future publishing "
+            "package must ship its own export reader in the same body of work that "
+            "ships publication itself."
+        ),
         "readers": (),
     },
     "capture": {
@@ -748,10 +809,12 @@ DOMAINS = {
     },
     # -------------------------------------------------------------
     # knowledge_item_save_requests (PS-WORKSHOP-001): a Workshop table
-    # this package deliberately does NOT read, for the identical reason
-    # career_skill_links (PS-SETTINGS-EXPORT-003) and target_entity_id/
-    # dbo.slate_entities (PS-SETTINGS-EXPORT-004) are recorded as their
-    # own named entries -- an idempotency ledger (an owner-scoped replay
+    # this package deliberately does NOT read, the same "record it as
+    # its own named entry rather than silently fold it in" discipline
+    # dbo.career_skill_links' own entry demonstrated before
+    # PS-SETTINGS-EXPORT-009 flipped it to included, and
+    # target_entity_id/dbo.slate_entities (PS-SETTINGS-EXPORT-004) still
+    # demonstrate today -- an idempotency ledger (an owner-scoped replay
     # key and the resulting knowledge_item_id only), not member-authored
     # knowledge content. Recorded here as its own entry (not silently
     # folded into "workshop_my_knowledge") so a future reader of this
@@ -824,7 +887,14 @@ DOMAINS = {
     },
     "community_authored_content": {
         "disposition": "excluded",
-        "reason": "C0 requires strict redaction of other-member bodies, identities, media, reactions, lists, and relationship context before this domain can be included; this package builds no reader for it.",
+        "reason": (
+            "The owner ruled 2026-08-30 that this domain is honestly omitted from v1: "
+            "the redaction C0 requires (removing every other member's body, identity, "
+            "media, reaction, and relationship context) is not yet built. A future, "
+            "dedicated \"own words only\" package is queued: the member's own authored "
+            "text alone, with no thread context and nothing belonging to any other "
+            "member."
+        ),
         "readers": (),
     },
     "connection_preferences": {
@@ -896,7 +966,14 @@ DOMAINS = {
     },
     "ai_proposals": {
         "disposition": "excluded",
-        "reason": "C0 marks this includable only by allowlist and noncanonical, excluding prompts/system instructions/raw telemetry/cache/provider-retained data; this package builds no reader for it.",
+        "reason": (
+            "The owner ruled 2026-08-30 that there is nothing additional to export "
+            "today: a member's own durable decisions arising from an AI proposal are "
+            "already exported through the domain that stores the finished result (for "
+            "example, an approved career chapter or skill), and the proposal record "
+            "itself is provider-facing process, not canonical member content. Revisit "
+            "only if a live, member-facing AI proposal feature ships."
+        ),
         "readers": (),
     },
     "ask_pete_public": {
@@ -921,7 +998,14 @@ DOMAINS = {
     },
     "file_evidence_metadata": {
         "disposition": "excluded",
-        "reason": "C0 marks this includable as safe references only (excluding provider locators, raw bytes, Blob names, object keys, direct URLs, and credentials); this package builds no reader for it.",
+        "reason": (
+            "The owner's 2026-08-30 safe-references-only evidence rule (titles, types, "
+            "statuses, and dates only; never storage locators, container names, object "
+            "keys, URLs, hashes/digests, or verifier identity) now binds whichever "
+            "package first builds a reader for this domain. PS-SETTINGS-EXPORT-009 "
+            "adopts that rule and applies it to dbo.career_skill_links; "
+            "dbo.file_evidence_metadata itself still has no reader here."
+        ),
         "readers": (),
     },
     "indexes_caches_provider_backups": {

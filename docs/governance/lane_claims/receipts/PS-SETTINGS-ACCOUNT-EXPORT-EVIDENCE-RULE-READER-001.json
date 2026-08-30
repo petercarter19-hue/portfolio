@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-EVIDENCE-RULE-READER-001",
+  "candidate_sha": "e2a5069463fd0b98ef9937da7e18df55c680c6a2",
+  "review_type": "independent",
+  "reviewer_ref": "role:indrev:ps-settings-er-reader:20260830T121502Z:e2a50694",
+  "result": "pass",
+  "reviewed_at": "2026-08-30T12:15:02Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-EVIDENCE-RULE-READER-001.md"
+}

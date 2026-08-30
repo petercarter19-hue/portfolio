@@ -312,7 +312,10 @@ class SettingsExportCoreReadersMigrationTests(unittest.TestCase):
         # check would false-positive on that; the real guarantee --
         # exactly ten procedures, none reading career_skill_links -- is
         # covered by test_forward_creates_exactly_the_claimed_procedures_and_nothing_else
-        # and DomainsRegistryTests.test_career_skill_links_is_excluded_with_the_evidence_item_reason).
+        # and DomainsRegistryTests.test_career_skill_links_is_included_by_the_evidence_rule_reader_package,
+        # which now pins the domain's later-flipped "included" truth --
+        # its own reader lives in PS-SETTINGS-EXPORT-009's separate
+        # migration, never in this package's own ten).
         for name in READER_PROCEDURES:
             self.assertNotIn("career_skill_links", self.procedures[name])
 
@@ -766,12 +769,23 @@ class DomainsRegistryTests(unittest.TestCase):
                     self.assertTrue(domain["reason"].strip())
                     self.assertEqual(domain["readers"], ())
 
-    def test_career_skill_links_is_excluded_with_the_evidence_item_reason(self):
+    def test_career_skill_links_is_included_by_the_evidence_rule_reader_package(self):
+        # History of this pin: this package (PS-SETTINGS-EXPORT-003)
+        # recorded career_skill_links as "excluded" because its rows
+        # reference evidence_item_id, whose disclosure rules were
+        # undecided. PS-SETTINGS-ACCOUNT-EXPORT-EVIDENCE-RULE-READER-001
+        # then flipped it to "included" under the owner's accepted
+        # 2026-08-30 safe-references-only evidence rule, and this pin --
+        # which correctly failed on that flip, exactly as a
+        # cross-package tripwire should -- was repointed to the new
+        # truth under that package's extended claim. It keeps pinning
+        # career_skill_links SPECIFICALLY so any future disposition
+        # change fails a test again.
         self.assertIn("career_skill_links", DOMAINS)
         entry = DOMAINS["career_skill_links"]
-        self.assertEqual(entry["disposition"], "excluded")
-        self.assertIn("evidence_item_id", entry["reason"])
-        self.assertEqual(entry["readers"], ())
+        self.assertEqual(entry["disposition"], "included")
+        self.assertIsNone(entry["reason"])
+        self.assertEqual(len(entry["readers"]), 1)
 
     def test_no_domain_reason_leaks_a_forbidden_field_name(self):
         # Reasons are safe architecture-level prose; none should ever
