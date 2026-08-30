@@ -1,10 +1,11 @@
 """Sealed local lifecycle for a pair of synthetic QA customer identities.
 
 The broker is deliberately an operator tool, not PeerSlate application runtime.
-It keeps generated login identifiers, passwords, Graph access tokens, and
-External ID subjects inside one local worker process.  Its public output is an
-allowlisted structural report only.  Importing this module never opens a
-browser, contacts Microsoft Graph, obtains a token, or opens SQL.
+It keeps generated login identifiers and passwords inside an isolated parent
+and one-shot browser child; Graph access tokens and External ID subjects remain
+parent-only. Its public output is an allowlisted structural report only.
+Importing this module never opens a browser, contacts Microsoft Graph, obtains
+a token, or opens SQL.
 """
 
 from __future__ import annotations
@@ -16,19 +17,23 @@ from contextlib import contextmanager
 import hashlib
 import importlib
 import importlib.metadata
+import io
 import json
 import os
 import platform
+import queue
 import re
 import secrets
 import shutil
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Callable, Mapping, Protocol, Sequence
+from typing import BinaryIO, Callable, Mapping, Protocol, Sequence
 from urllib.parse import parse_qs, quote, urlencode, urlparse
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
@@ -76,6 +81,12 @@ REQUIRED_CONDITIONAL_OUTCOMES = {
 SAFE_RUN_ID = re.compile(r"^[a-z0-9][a-z0-9-]{7,63}$")
 SAFE_GRAPH_ISSUER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.-]{2,253}$")
 SAFE_GRAPH_MAIL_NICKNAME = re.compile(r"^[a-z0-9-]{1,64}$")
+SAFE_CHILD_LOGIN_IDENTIFIER = re.compile(
+    r"^psqa-[0-9a-f]{16}-member_[ab]@[a-z0-9][a-z0-9.-]{1,252}\.onmicrosoft\.com$"
+)
+CHILD_PASSWORD_ALPHABET = frozenset(
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*"
+)
 MAX_SECRET_LENGTH = 512
 MAX_TOKEN_LENGTH = 32768
 ALLOWED_AUTH_HOST_SUFFIXES = (".ciamlogin.com",)
@@ -101,6 +112,14 @@ ELIGIBLE_GRAPH_ROLE_TEMPLATE_IDS = frozenset(
 BROWSER_TEMP_PREFIX = "peerslate-sealed-browser-"
 BROWSER_PROBE_PREFIX = "peerslate-sealed-browser-probe-"
 PLAYWRIGHT_LOCK_PATH = Path(__file__).with_name("playwright-runtime.lock.json")
+CHILD_WORKER_PATH = Path(__file__).with_name("child_worker.py")
+BROWSER_CHILD_PROTOCOL_SCHEMA = 1
+BROWSER_CHILD_MESSAGE_LIMIT = 262_144
+BROWSER_CHILD_READY_TIMEOUT_SECONDS = 300
+BROWSER_CHILD_RESULT_TIMEOUT_SECONDS = 3_600
+BROWSER_CHILD_ABORT_TIMEOUT_SECONDS = 120
+BROWSER_CHILD_EXIT_TIMEOUT_SECONDS = 30
+BROWSER_CHILD_EOF_TIMEOUT_SECONDS = 5
 WORKSHOP_HISTORY_NOTE = (
     "Some older AI-assisted versions may show refined wording under "
     "\u201cSource wording on record\u201d because the original wording was not "
@@ -117,6 +136,73 @@ REJECTED_BROWSER_ENV_NAMES = frozenset(
         "CHROME_REMOTE_DEBUGGING_PORT",
     }
 )
+ALLOWED_BROWSER_CHILD_ENV_NAMES = frozenset(
+    {
+        "APPDATA",
+        "HOME",
+        "LOCALAPPDATA",
+        "LC_CTYPE",
+        "PIP_CONFIG_FILE",
+        "PIP_DISABLE_PIP_VERSION_CHECK",
+        "PIP_NO_INPUT",
+        "PLAYWRIGHT_BROWSERS_PATH",
+        "PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT",
+        "PYTHONDONTWRITEBYTECODE",
+        "PYTHONNOUSERSITE",
+        "SYSTEMROOT",
+        "TEMP",
+        "TMP",
+        "TMPDIR",
+        "USERPROFILE",
+        "WINDIR",
+        "__CF_USER_TEXT_ENCODING",
+    }
+)
+
+
+def _canonical_windows_system_root() -> Path | None:
+    """Return the OS-reported Windows directory, never an ambient value."""
+
+    if platform.system() != "Windows":
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        get_windows_directory = kernel32.GetWindowsDirectoryW
+        get_windows_directory.argtypes = (wintypes.LPWSTR, wintypes.UINT)
+        get_windows_directory.restype = wintypes.UINT
+        buffer = ctypes.create_unicode_buffer(32_768)
+        length = int(get_windows_directory(buffer, len(buffer)))
+        if length < 1 or length >= len(buffer):
+            raise OSError("GetWindowsDirectoryW failed")
+        system_root = Path(buffer.value)
+        if not system_root.is_absolute():
+            raise OSError("Windows directory is not absolute")
+        system_root = system_root.resolve(strict=True)
+        if not system_root.is_dir():
+            raise OSError("Windows directory is not a directory")
+        return system_root
+    except Exception:
+        raise BrokerRefusal("sealed_browser_environment_refused") from None
+
+
+def _canonical_windows_environment_is_exact(
+    environment: Mapping[str, str],
+) -> bool:
+    """Prove SYSTEMROOT/WINDIR against the Windows API or require omission."""
+
+    expected = _canonical_windows_system_root()
+    if expected is None:
+        return "SYSTEMROOT" not in environment and "WINDIR" not in environment
+    try:
+        return all(
+            Path(environment[name]).resolve(strict=True) == expected
+            for name in ("SYSTEMROOT", "WINDIR")
+        )
+    except (KeyError, OSError, TypeError, ValueError):
+        return False
 
 
 class BrokerRefusal(RuntimeError):
@@ -1699,8 +1785,24 @@ class StartedPlaywrightRuntime:
     chromium_executable: Path
 
 
+@dataclass(frozen=True)
+class ProvisionedPlaywrightRuntime:
+    """Exact locked venv and browser closure prepared by the parent process."""
+
+    venv_python: Path
+    site_packages: Path
+    browsers: Path
+    environment: Mapping[str, str]
+    expected_browser_version: str
+
+
 class PlaywrightRuntimeProvider(Protocol):
     expected_browser_version: str
+
+    def provision(
+        self, workspace: Path, environment: Mapping[str, str]
+    ) -> ProvisionedPlaywrightRuntime:
+        """Install and validate the closure without importing Playwright."""
 
     def start(
         self, workspace: Path, environment: Mapping[str, str]
@@ -1827,6 +1929,7 @@ class PinnedPlaywrightRuntime:
     def _runtime_environment(
         workspace: Path, source: Mapping[str, str], browsers: Path
     ) -> dict[str, str]:
+        del source
         environment = {
             "HOME": str(workspace),
             "USERPROFILE": str(workspace),
@@ -1843,16 +1946,10 @@ class PinnedPlaywrightRuntime:
             "PYTHONDONTWRITEBYTECODE": "1",
             "PYTHONNOUSERSITE": "1",
         }
-        for name in (
-            "SystemRoot",
-            "WINDIR",
-            "COMSPEC",
-            "PATH",
-            "SSL_CERT_FILE",
-            "SSL_CERT_DIR",
-        ):
-            if source.get(name):
-                environment[name] = str(source[name])
+        system_root = _canonical_windows_system_root()
+        if system_root:
+            environment["SYSTEMROOT"] = str(system_root)
+            environment["WINDIR"] = str(system_root)
         return environment
 
     @staticmethod
@@ -1928,9 +2025,9 @@ class PinnedPlaywrightRuntime:
                 ) from None
             raise BrokerRefusal("sealed_browser_runtime_unavailable") from None
 
-    def start(
+    def provision(
         self, workspace: Path, environment: Mapping[str, str]
-    ) -> StartedPlaywrightRuntime:
+    ) -> ProvisionedPlaywrightRuntime:
         lock = self._lock()
         runtime_root = workspace / "runtime"
         venv_root = runtime_root / "venv"
@@ -2019,8 +2116,38 @@ class PinnedPlaywrightRuntime:
             environment=runtime_environment,
             timeout=900,
         )
+        try:
+            resolved_venv_root = venv_root.resolve(strict=True)
+            resolved_python = venv_python.resolve(strict=True)
+            resolved_site_packages = site_packages.resolve(strict=True)
+            resolved_browsers = browsers.resolve(strict=True)
+            resolved_python.relative_to(resolved_venv_root)
+            resolved_site_packages.relative_to(resolved_venv_root)
+            resolved_browsers.relative_to(runtime_root.resolve(strict=True))
+            if (
+                not resolved_python.is_file()
+                or not resolved_site_packages.is_dir()
+                or not resolved_browsers.is_dir()
+            ):
+                raise ValueError("invalid provisioned runtime")
+        except (OSError, ValueError):
+            raise BrokerRefusal("sealed_browser_runtime_unavailable") from None
+        return ProvisionedPlaywrightRuntime(
+            venv_python=resolved_python,
+            site_packages=resolved_site_packages,
+            browsers=resolved_browsers,
+            environment=dict(runtime_environment),
+            expected_browser_version=self.expected_browser_version,
+        )
+
+    def start(
+        self, workspace: Path, environment: Mapping[str, str]
+    ) -> StartedPlaywrightRuntime:
+        provisioned = self.provision(workspace, environment)
         return self._load_started_playwright(
-            site_packages, browsers, runtime_environment
+            provisioned.site_packages,
+            provisioned.browsers,
+            provisioned.environment,
         )
 
     def release(self) -> None:
@@ -2395,8 +2522,8 @@ def _isolated_child_environment(environment: Mapping[str, str]):
         os.environ.update(original)
 
 
-class PlaywrightBrowserAdapter:
-    """No-capture browser launcher for one sealed attended operation.
+class _NativePlaywrightBrowserAdapter:
+    """Child-only native Playwright browser implementation.
 
     ``prepare_attended_session`` deliberately launches the actual browser
     module and executable, creates all four non-persistent contexts, verifies
@@ -2411,12 +2538,18 @@ class PlaywrightBrowserAdapter:
         environment: Mapping[str, str] | None = None,
         workspace_root: str | Path | None = None,
         runtime_provider_factory: Callable[[], PlaywrightRuntimeProvider] | None = None,
+        fixed_workspace: str | Path | None = None,
+        remove_workspace_on_cleanup: bool = True,
     ):
         self._environment = environment
         self._workspace_root = (
             Path(workspace_root) if workspace_root is not None else Path(tempfile.gettempdir())
         )
         self._runtime_provider_factory = runtime_provider_factory or PinnedPlaywrightRuntime
+        self._fixed_workspace = (
+            Path(fixed_workspace) if fixed_workspace is not None else None
+        )
+        self._remove_workspace_on_cleanup = remove_workspace_on_cleanup
 
     def _source_environment(self) -> Mapping[str, str]:
         return self._environment if self._environment is not None else os.environ
@@ -2424,7 +2557,6 @@ class PlaywrightBrowserAdapter:
     def _browser_environment(
         self, workspace: Path, *, browsers: Path | None = None
     ) -> dict[str, str]:
-        source = self._source_environment()
         child_environment = {
             "HOME": str(workspace),
             "USERPROFILE": str(workspace),
@@ -2434,9 +2566,10 @@ class PlaywrightBrowserAdapter:
             "TMP": str(workspace),
             "TMPDIR": str(workspace),
         }
-        for name in ("SystemRoot", "WINDIR", "COMSPEC"):
-            if source.get(name):
-                child_environment[name] = str(source[name])
+        system_root = _canonical_windows_system_root()
+        if system_root:
+            child_environment["SYSTEMROOT"] = str(system_root)
+            child_environment["WINDIR"] = str(system_root)
         if browsers is not None:
             child_environment["PLAYWRIGHT_BROWSERS_PATH"] = str(browsers)
         return child_environment
@@ -2447,9 +2580,11 @@ class PlaywrightBrowserAdapter:
             raise BrokerRefusal("sealed_browser_environment_refused")
         try:
             workspace_root = self._workspace_root.resolve(strict=True)
-            has_residue = any(workspace_root.glob(f"{BROWSER_TEMP_PREFIX}*")) or any(
+            residue = tuple(workspace_root.glob(f"{BROWSER_TEMP_PREFIX}*")) + tuple(
                 workspace_root.glob(f"{BROWSER_PROBE_PREFIX}*")
             )
+            fixed = self._fixed_workspace.resolve(strict=True) if self._fixed_workspace else None
+            has_residue = any(path.resolve(strict=True) != fixed for path in residue)
         except OSError:
             raise BrokerRefusal("sealed_browser_workspace_unavailable") from None
         if not workspace_root.is_dir() or has_residue:
@@ -2496,6 +2631,7 @@ class PlaywrightBrowserAdapter:
         workspace: Path | None,
         *,
         expected_contexts: int,
+        root_removal_required: bool = True,
     ) -> BrowserCleanup:
         destroyed = 0
         cleanup_failed = False
@@ -2520,14 +2656,16 @@ class PlaywrightBrowserAdapter:
                 runtime_provider.release()
             except Exception:
                 cleanup_failed = True
-        root_removed = workspace is None
+        root_removed = False
         if workspace is not None:
             try:
                 shutil.rmtree(workspace)
                 root_removed = not workspace.exists()
             except OSError:
                 cleanup_failed = True
-        if destroyed != expected_contexts or not root_removed:
+        if destroyed != expected_contexts or (
+            root_removal_required and not root_removed
+        ):
             cleanup_failed = True
         if cleanup_failed:
             raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
@@ -2570,6 +2708,7 @@ class PlaywrightBrowserAdapter:
         playwright: object | None,
         runtime_provider: PlaywrightRuntimeProvider | None,
         workspace: Path | None,
+        root_removal_required: bool = True,
     ) -> None:
         cleanup_failed = False
         try:
@@ -2584,6 +2723,7 @@ class PlaywrightBrowserAdapter:
                 runtime_provider,
                 workspace,
                 expected_contexts=len(contexts),
+                root_removal_required=root_removal_required,
             )
         except BrokerIndeterminate:
             cleanup_failed = True
@@ -2622,7 +2762,7 @@ class PlaywrightBrowserAdapter:
             # Locator waiting and navigation happen before any secret crosses
             # this boundary. A handle is document-bound, so later navigation
             # detaches it instead of resolving the secret against a new page.
-            PlaywrightBrowserAdapter._assert_expected_identity_origin(
+            _NativePlaywrightBrowserAdapter._assert_expected_identity_origin(
                 page, authorization_origin
             )
             password_handle.evaluate(
@@ -2668,7 +2808,7 @@ class PlaywrightBrowserAdapter:
                     raise BrokerIndeterminate(
                         "sealed_browser_cleanup_indeterminate"
                     ) from None
-        PlaywrightBrowserAdapter._assert_expected_identity_origin(
+        _NativePlaywrightBrowserAdapter._assert_expected_identity_origin(
             page, authorization_origin
         )
 
@@ -2687,7 +2827,18 @@ class PlaywrightBrowserAdapter:
         runtime_provider: PlaywrightRuntimeProvider | None = None
         contexts: dict[str, object] = {}
         try:
-            workspace = Path(tempfile.mkdtemp(prefix=BROWSER_TEMP_PREFIX, dir=str(self._workspace_root)))
+            if self._fixed_workspace is None:
+                workspace = Path(
+                    tempfile.mkdtemp(
+                        prefix=BROWSER_TEMP_PREFIX, dir=str(self._workspace_root)
+                    )
+                )
+            else:
+                workspace = self._fixed_workspace.resolve(strict=True)
+                if not workspace.is_dir() or workspace.parent != self._workspace_root.resolve(
+                    strict=True
+                ):
+                    raise BrokerRefusal("sealed_browser_workspace_unavailable")
             runtime_provider = self._runtime_provider_factory()
             runtime = runtime_provider.start(workspace, self._source_environment())
             playwright = runtime.playwright
@@ -2743,7 +2894,7 @@ class PlaywrightBrowserAdapter:
                 browser=browser,
                 playwright=playwright,
                 runtime_provider=runtime_provider,
-                workspace=workspace,
+                workspace=(workspace if self._remove_workspace_on_cleanup else None),
                 authorization_origin=SealedValue(
                     authority.authorization_origin.reveal()
                 ),
@@ -2765,6 +2916,7 @@ class PlaywrightBrowserAdapter:
                         "signed_out_private_baseline"
                     ),
                 },
+                root_removal_required=self._remove_workspace_on_cleanup,
             )
         except BrokerIndeterminate:
             self._cleanup_partial_session(
@@ -2776,7 +2928,8 @@ class PlaywrightBrowserAdapter:
                 browser=browser,
                 playwright=playwright,
                 runtime_provider=runtime_provider,
-                workspace=workspace,
+                workspace=(workspace if self._remove_workspace_on_cleanup else None),
+                root_removal_required=self._remove_workspace_on_cleanup,
             )
             raise
         except BrokerRefusal:
@@ -2790,7 +2943,8 @@ class PlaywrightBrowserAdapter:
                     browser=browser,
                     playwright=playwright,
                     runtime_provider=runtime_provider,
-                    workspace=workspace,
+                    workspace=(workspace if self._remove_workspace_on_cleanup else None),
+                    root_removal_required=self._remove_workspace_on_cleanup,
                 )
             except BrokerIndeterminate:
                 raise
@@ -2806,7 +2960,8 @@ class PlaywrightBrowserAdapter:
                     browser=browser,
                     playwright=playwright,
                     runtime_provider=runtime_provider,
-                    workspace=workspace,
+                    workspace=(workspace if self._remove_workspace_on_cleanup else None),
+                    root_removal_required=self._remove_workspace_on_cleanup,
                 )
             except BrokerIndeterminate:
                 raise
@@ -2857,7 +3012,7 @@ class _PlaywrightAttendedSession:
     def __init__(
         self,
         *,
-        adapter: PlaywrightBrowserAdapter,
+        adapter: _NativePlaywrightBrowserAdapter,
         contexts: Mapping[str, object],
         browser: object,
         playwright: object,
@@ -2867,6 +3022,7 @@ class _PlaywrightAttendedSession:
         signed_out_page: object,
         preflight: BrowserPreflight,
         preflight_outcomes: Mapping[str, JourneyObservation],
+        root_removal_required: bool = True,
     ):
         self._adapter = adapter
         self._contexts = dict(contexts)
@@ -2878,6 +3034,7 @@ class _PlaywrightAttendedSession:
         self._signed_out_page = signed_out_page
         self._preflight = preflight
         self._preflight_outcomes = dict(preflight_outcomes)
+        self._root_removal_required = root_removal_required
         self._cleanup: BrowserCleanup | None = None
 
     def pre_graph_proof(self) -> BrowserPreflight:
@@ -3413,13 +3570,14 @@ class _PlaywrightAttendedSession:
     def destroy_and_verify(self) -> BrowserCleanup:
         if self._cleanup is not None:
             return self._cleanup
-        cleanup = PlaywrightBrowserAdapter._close_resources(
+        cleanup = _NativePlaywrightBrowserAdapter._close_resources(
             tuple(self._contexts.values()),
             self._browser,
             self._playwright,
             self._runtime_provider,
             self._workspace,
             expected_contexts=4,
+            root_removal_required=self._root_removal_required,
         )
         self._contexts.clear()
         self._browser = None
@@ -3429,6 +3587,1055 @@ class _PlaywrightAttendedSession:
         self._cleanup = cleanup
         return cleanup
 
+
+def _exact_protocol_mapping(value: object, keys: set[str]) -> dict[str, object]:
+    if type(value) is not dict or set(value) != keys:
+        raise BrokerRefusal("sealed_browser_protocol_refused")
+    return value
+
+
+def _write_child_message(stream: BinaryIO, payload: Mapping[str, object]) -> None:
+    encoded: bytearray | None = None
+    try:
+        encoded = bytearray(
+            json.dumps(
+                payload,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("utf-8")
+        )
+        encoded.append(0x0A)
+        if len(encoded) > BROWSER_CHILD_MESSAGE_LIMIT:
+            raise ValueError("protocol message too large")
+        written = stream.write(encoded)
+        if written is not None and written != len(encoded):
+            raise OSError("short protocol write")
+        stream.flush()
+    except (OSError, TypeError, ValueError):
+        raise BrokerIndeterminate("sealed_browser_protocol_indeterminate") from None
+    finally:
+        if encoded is not None:
+            for index in range(len(encoded)):
+                encoded[index] = 0
+
+
+def _reject_duplicate_json_keys(pairs: Sequence[tuple[str, object]]) -> dict[str, object]:
+    payload: dict[str, object] = {}
+    for key, value in pairs:
+        if key in payload:
+            raise ValueError("duplicate protocol key")
+        payload[key] = value
+    return payload
+
+
+def _reject_json_constant(_value: str) -> object:
+    raise ValueError("non-finite protocol number")
+
+
+def _read_child_message(stream: BinaryIO) -> dict[str, object]:
+    try:
+        encoded = stream.readline(BROWSER_CHILD_MESSAGE_LIMIT + 1)
+        if (
+            not isinstance(encoded, bytes)
+            or not encoded
+            or len(encoded) > BROWSER_CHILD_MESSAGE_LIMIT
+            or not encoded.endswith(b"\n")
+        ):
+            raise ValueError("invalid protocol frame")
+        payload = json.loads(
+            encoded.decode("utf-8", errors="strict"),
+            object_pairs_hook=_reject_duplicate_json_keys,
+            parse_constant=_reject_json_constant,
+        )
+    except (OSError, UnicodeDecodeError, ValueError, json.JSONDecodeError):
+        raise BrokerIndeterminate("sealed_browser_protocol_indeterminate") from None
+    if type(payload) is not dict:
+        raise BrokerIndeterminate("sealed_browser_protocol_indeterminate")
+    return payload
+
+
+def _parse_browser_preflight_payload(value: object) -> BrowserPreflight:
+    payload = _exact_protocol_mapping(
+        value,
+        {
+            "locked_runtime",
+            "probe_launch_closed",
+            "probe_root_removed",
+            "prepared_contexts",
+            "signed_out_private_baseline",
+        },
+    )
+    if (
+        type(payload["locked_runtime"]) is not bool
+        or type(payload["probe_launch_closed"]) is not bool
+        or type(payload["probe_root_removed"]) is not bool
+        or type(payload["prepared_contexts"]) is not int
+        or type(payload["signed_out_private_baseline"]) is not bool
+    ):
+        raise BrokerRefusal("sealed_browser_protocol_refused")
+    preflight = BrowserPreflight(
+        locked_runtime=payload["locked_runtime"],
+        probe_launch_closed=payload["probe_launch_closed"],
+        probe_root_removed=payload["probe_root_removed"],
+        prepared_contexts=payload["prepared_contexts"],
+        signed_out_private_baseline=payload["signed_out_private_baseline"],
+    )
+    _validate_browser_preflight(preflight)
+    return preflight
+
+
+_BROWSER_OUTCOME_COUNT_FIELDS = (
+    "created_item_counts",
+    "edit_counts",
+    "retained_version_counts",
+    "retained_source_proof_counts",
+    "downstream_disclosure_counts",
+    "active_residue_counts",
+    "archived_residue_counts",
+)
+
+
+def _parse_alias_counts(value: object) -> Mapping[str, int]:
+    payload = _exact_protocol_mapping(value, set(ALLOWED_ALIASES))
+    if any(
+        type(payload[alias]) is not int or not 0 <= payload[alias] <= 100
+        for alias in ALLOWED_ALIASES
+    ):
+        raise BrokerRefusal("sealed_browser_protocol_refused")
+    return {alias: payload[alias] for alias in ALLOWED_ALIASES}
+
+
+def _parse_browser_outcome_payload(value: object) -> BrowserOutcome:
+    payload = _exact_protocol_mapping(
+        value,
+        {"journey_outcomes", "clean_start_confirmed", *_BROWSER_OUTCOME_COUNT_FIELDS},
+    )
+    raw_journeys = _exact_protocol_mapping(
+        payload["journey_outcomes"], set(JOURNEY_BY_ID)
+    )
+    journeys: dict[str, JourneyObservation] = {}
+    for journey_id in JOURNEY_BY_ID:
+        raw = _exact_protocol_mapping(
+            raw_journeys[journey_id],
+            {"status", "observed_outcome", "note_code"},
+        )
+        if (
+            not isinstance(raw["status"], str)
+            or not isinstance(raw["observed_outcome"], str)
+            or not isinstance(raw["note_code"], str)
+            or raw["status"] not in {"pass", "conditional"}
+            or raw["note_code"] not in NOTE_CODES
+        ):
+            raise BrokerRefusal("sealed_browser_protocol_refused")
+        journeys[journey_id] = JourneyObservation(
+            status=raw["status"],
+            observed_outcome=raw["observed_outcome"],
+            note_code=raw["note_code"],
+        )
+    if type(payload["clean_start_confirmed"]) is not bool:
+        raise BrokerRefusal("sealed_browser_protocol_refused")
+    counts = {
+        field: _parse_alias_counts(payload[field])
+        for field in _BROWSER_OUTCOME_COUNT_FIELDS
+    }
+    return BrowserOutcome(
+        journey_outcomes=journeys,
+        clean_start_confirmed=payload["clean_start_confirmed"],
+        **counts,
+    )
+
+
+def _parse_cleanup_payload(value: object) -> tuple[int, bool]:
+    payload = _exact_protocol_mapping(value, {"destroyed_contexts", "complete"})
+    if (
+        type(payload["destroyed_contexts"]) is not int
+        or not 0 <= payload["destroyed_contexts"] <= 4
+        or type(payload["complete"]) is not bool
+    ):
+        raise BrokerRefusal("sealed_browser_protocol_refused")
+    return payload["destroyed_contexts"], payload["complete"]
+
+
+def _authorization_origin_for_child(value: str) -> str:
+    try:
+        parsed = urlparse(value)
+        hostname = parsed.hostname.lower()
+        origin = f"https://{hostname}"
+        host_parts = hostname.split(".")
+        if (
+            parsed.scheme != "https"
+            or parsed.netloc != hostname
+            or parsed.port is not None
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.path not in {"", "/"}
+            or parsed.params
+            or parsed.query
+            or parsed.fragment
+            or len(host_parts) != 3
+            or host_parts[1:] != ["ciamlogin", "com"]
+            or not SAFE_TENANT_LABEL.fullmatch(host_parts[0])
+            or value.rstrip("/") != origin
+        ):
+            raise ValueError("invalid authorization origin")
+    except (AttributeError, TypeError, ValueError):
+        raise BrokerRefusal("sealed_browser_protocol_refused") from None
+    return origin
+
+
+class _NoopChildProcessContainment:
+    """Non-Windows boundary that makes no descendant-process claim."""
+
+    def terminate_tree(self) -> bool:
+        return False
+
+    def release_after_exit(self, *, exited: bool) -> bool:
+        del exited
+        return False
+
+
+class _WindowsKillOnCloseJob:
+    """Bind the not-yet-commanded child to a kill-on-close Windows Job Object."""
+
+    _KILL_ON_JOB_CLOSE = 0x00002000
+    _BASIC_ACCOUNTING_INFORMATION = 1
+    _EXTENDED_LIMIT_INFORMATION = 9
+
+    def __init__(self, process: object):
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            class _IoCounters(ctypes.Structure):
+                _fields_ = [
+                    ("ReadOperationCount", ctypes.c_ulonglong),
+                    ("WriteOperationCount", ctypes.c_ulonglong),
+                    ("OtherOperationCount", ctypes.c_ulonglong),
+                    ("ReadTransferCount", ctypes.c_ulonglong),
+                    ("WriteTransferCount", ctypes.c_ulonglong),
+                    ("OtherTransferCount", ctypes.c_ulonglong),
+                ]
+
+            class _BasicLimitInformation(ctypes.Structure):
+                _fields_ = [
+                    ("PerProcessUserTimeLimit", ctypes.c_longlong),
+                    ("PerJobUserTimeLimit", ctypes.c_longlong),
+                    ("LimitFlags", wintypes.DWORD),
+                    ("MinimumWorkingSetSize", ctypes.c_size_t),
+                    ("MaximumWorkingSetSize", ctypes.c_size_t),
+                    ("ActiveProcessLimit", wintypes.DWORD),
+                    ("Affinity", ctypes.c_size_t),
+                    ("PriorityClass", wintypes.DWORD),
+                    ("SchedulingClass", wintypes.DWORD),
+                ]
+
+            class _BasicAccountingInformation(ctypes.Structure):
+                _fields_ = [
+                    ("TotalUserTime", ctypes.c_longlong),
+                    ("TotalKernelTime", ctypes.c_longlong),
+                    ("ThisPeriodTotalUserTime", ctypes.c_longlong),
+                    ("ThisPeriodTotalKernelTime", ctypes.c_longlong),
+                    ("TotalPageFaultCount", wintypes.DWORD),
+                    ("TotalProcesses", wintypes.DWORD),
+                    ("ActiveProcesses", wintypes.DWORD),
+                    ("TotalTerminatedProcesses", wintypes.DWORD),
+                ]
+
+            class _ExtendedLimitInformation(ctypes.Structure):
+                _fields_ = [
+                    ("BasicLimitInformation", _BasicLimitInformation),
+                    ("IoInfo", _IoCounters),
+                    ("ProcessMemoryLimit", ctypes.c_size_t),
+                    ("JobMemoryLimit", ctypes.c_size_t),
+                    ("PeakProcessMemoryUsed", ctypes.c_size_t),
+                    ("PeakJobMemoryUsed", ctypes.c_size_t),
+                ]
+
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            kernel32.CreateJobObjectW.argtypes = (wintypes.LPVOID, wintypes.LPCWSTR)
+            kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+            kernel32.SetInformationJobObject.argtypes = (
+                wintypes.HANDLE,
+                ctypes.c_int,
+                wintypes.LPVOID,
+                wintypes.DWORD,
+            )
+            kernel32.SetInformationJobObject.restype = wintypes.BOOL
+            kernel32.AssignProcessToJobObject.argtypes = (
+                wintypes.HANDLE,
+                wintypes.HANDLE,
+            )
+            kernel32.AssignProcessToJobObject.restype = wintypes.BOOL
+            kernel32.TerminateJobObject.argtypes = (
+                wintypes.HANDLE,
+                wintypes.UINT,
+            )
+            kernel32.TerminateJobObject.restype = wintypes.BOOL
+            kernel32.QueryInformationJobObject.argtypes = (
+                wintypes.HANDLE,
+                ctypes.c_int,
+                wintypes.LPVOID,
+                wintypes.DWORD,
+                ctypes.POINTER(wintypes.DWORD),
+            )
+            kernel32.QueryInformationJobObject.restype = wintypes.BOOL
+            kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+            kernel32.CloseHandle.restype = wintypes.BOOL
+
+            handle = kernel32.CreateJobObjectW(None, None)
+            if not handle:
+                raise OSError("CreateJobObjectW failed")
+            information = _ExtendedLimitInformation()
+            information.BasicLimitInformation.LimitFlags = self._KILL_ON_JOB_CLOSE
+            if not kernel32.SetInformationJobObject(
+                handle,
+                self._EXTENDED_LIMIT_INFORMATION,
+                ctypes.byref(information),
+                ctypes.sizeof(information),
+            ):
+                raise OSError("SetInformationJobObject failed")
+            process_handle = int(getattr(process, "_handle"))
+            if not kernel32.AssignProcessToJobObject(handle, process_handle):
+                raise OSError("AssignProcessToJobObject failed")
+        except Exception:
+            if "handle" in locals() and handle:
+                try:
+                    kernel32.CloseHandle(handle)
+                except Exception:
+                    pass
+            raise BrokerRefusal("sealed_browser_runtime_unavailable") from None
+        self._kernel32 = kernel32
+        self._handle = handle
+        self._forced = False
+        self._ctypes = ctypes
+        self._dword_type = wintypes.DWORD
+        self._basic_accounting_type = _BasicAccountingInformation
+
+    def _active_processes(self) -> int | None:
+        information = self._basic_accounting_type()
+        returned_length = self._dword_type()
+        try:
+            queried = self._kernel32.QueryInformationJobObject(
+                self._handle,
+                self._BASIC_ACCOUNTING_INFORMATION,
+                self._ctypes.byref(information),
+                self._ctypes.sizeof(information),
+                self._ctypes.byref(returned_length),
+            )
+        except Exception:
+            return None
+        if (
+            not queried
+            or returned_length.value != self._ctypes.sizeof(information)
+        ):
+            return None
+        return int(information.ActiveProcesses)
+
+    def _wait_empty(self, milliseconds: int) -> bool:
+        deadline = time.monotonic() + max(0, milliseconds) / 1_000
+        while True:
+            active_processes = self._active_processes()
+            if active_processes == 0:
+                return True
+            if active_processes is None:
+                return False
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return False
+            time.sleep(min(0.01, remaining))
+
+    def terminate_tree(self) -> bool:
+        if self._handle is None:
+            return False
+        self._forced = True
+        terminated = bool(self._kernel32.TerminateJobObject(self._handle, 3))
+        return terminated and self._wait_empty(5_000)
+
+    def release_after_exit(self, *, exited: bool) -> bool:
+        if self._handle is None:
+            return False
+        exact = exited and not self._forced and self._wait_empty(5_000)
+        contained = exact
+        if not exact:
+            contained = self.terminate_tree()
+        closed = bool(self._kernel32.CloseHandle(self._handle))
+        self._handle = None
+        return exact and contained and closed
+
+
+def _bind_child_process_containment(process: object) -> object:
+    if platform.system() == "Windows":
+        return _WindowsKillOnCloseJob(process)
+    return _NoopChildProcessContainment()
+
+
+class _BrowserChildSession:
+    """Parent-side owner of one anonymous-pipe browser child."""
+
+    def __init__(
+        self,
+        *,
+        process: object,
+        workspace: Path,
+        runtime_provider: PlaywrightRuntimeProvider,
+        containment: object,
+    ):
+        self._process = process
+        self._workspace = workspace
+        self._runtime_provider = runtime_provider
+        self._containment = containment
+        self._preflight: BrowserPreflight | None = None
+        self._cleanup: BrowserCleanup | None = None
+        self._finished = False
+        self._stdout_events: queue.Queue[tuple[str, object]] = queue.Queue()
+        self._stdout_read_requests = threading.Semaphore(0)
+        self._stdout_read_pending = False
+        self._stdout_terminal = False
+        self._stdout_eof = False
+        self._stdout_stop = False
+        self._stdout_reader = threading.Thread(
+            target=self._read_stdout_frames,
+            name="sealed-browser-child-stdout",
+            daemon=True,
+        )
+        self._stdout_reader.start()
+
+    @staticmethod
+    def _pipe(process: object, name: str) -> BinaryIO:
+        stream = getattr(process, name, None)
+        if stream is None or not hasattr(stream, "read") and name == "stdout":
+            raise BrokerIndeterminate("sealed_browser_protocol_indeterminate")
+        if stream is None or not hasattr(stream, "write") and name == "stdin":
+            raise BrokerIndeterminate("sealed_browser_protocol_indeterminate")
+        return stream
+
+    def _send(self, payload: Mapping[str, object]) -> None:
+        _write_child_message(self._pipe(self._process, "stdin"), payload)
+
+    def _read_stdout_frames(self) -> None:
+        stdout = getattr(self._process, "stdout", None)
+        while True:
+            self._stdout_read_requests.acquire()
+            if self._stdout_stop:
+                return
+            try:
+                frame = stdout.readline(BROWSER_CHILD_MESSAGE_LIMIT + 1)
+            except Exception as error:
+                self._stdout_events.put(("error", error))
+                return
+            if frame == b"":
+                self._stdout_events.put(("eof", None))
+                return
+            self._stdout_events.put(("frame", frame))
+
+    def _receive(self, *, timeout_seconds: float) -> dict[str, object]:
+        if self._finished or self._stdout_read_pending or self._stdout_terminal:
+            raise BrokerIndeterminate("sealed_browser_protocol_indeterminate")
+        self._stdout_read_pending = True
+        self._stdout_read_requests.release()
+        try:
+            kind, value = self._stdout_events.get(timeout=timeout_seconds)
+        except queue.Empty:
+            try:
+                self._finish(
+                    None,
+                    require_four_contexts=self._preflight is not None,
+                )
+            except BrokerIndeterminate:
+                pass
+            raise BrokerIndeterminate(
+                "sealed_browser_cleanup_indeterminate"
+            ) from None
+        self._stdout_read_pending = False
+        if kind != "frame" or not isinstance(value, bytes):
+            self._stdout_terminal = True
+            self._stdout_eof = kind == "eof"
+            try:
+                self._finish(
+                    None,
+                    require_four_contexts=self._preflight is not None,
+                )
+            except BrokerIndeterminate:
+                pass
+            raise BrokerIndeterminate(
+                "sealed_browser_cleanup_indeterminate"
+            ) from None
+        return _read_child_message(io.BytesIO(value))
+
+    def _prove_stdout_closed(self, *, exited: bool) -> bool:
+        if not exited:
+            return False
+        if self._stdout_terminal:
+            return self._stdout_eof
+        if not self._stdout_read_pending:
+            self._stdout_read_pending = True
+            self._stdout_read_requests.release()
+        try:
+            kind, _value = self._stdout_events.get(
+                timeout=BROWSER_CHILD_EOF_TIMEOUT_SECONDS
+            )
+        except queue.Empty:
+            return False
+        finally:
+            self._stdout_read_pending = False
+        self._stdout_terminal = kind == "eof"
+        self._stdout_eof = self._stdout_terminal
+        return self._stdout_eof
+
+    def _close_stdin(self) -> None:
+        stream = getattr(self._process, "stdin", None)
+        if stream is not None:
+            try:
+                stream.close()
+            except OSError:
+                pass
+
+    def _force_exit(self) -> tuple[bool, int | None, bool]:
+        try:
+            return (
+                True,
+                self._process.wait(timeout=BROWSER_CHILD_EXIT_TIMEOUT_SECONDS),
+                True,
+            )
+        except subprocess.TimeoutExpired:
+            pass
+        except Exception:
+            return False, None, False
+        try:
+            if self._containment.terminate_tree():
+                return True, self._process.wait(timeout=5), False
+        except subprocess.TimeoutExpired:
+            pass
+        except Exception:
+            pass
+        for method_name in ("terminate", "kill"):
+            try:
+                getattr(self._process, method_name)()
+            except Exception:
+                continue
+            try:
+                return True, self._process.wait(timeout=5), False
+            except subprocess.TimeoutExpired:
+                continue
+            except Exception:
+                return False, None, False
+        return False, None, False
+
+    def _finish(
+        self,
+        cleanup_value: object | None,
+        *,
+        require_four_contexts: bool,
+    ) -> BrowserCleanup | None:
+        if self._finished:
+            if require_four_contexts and self._cleanup is None:
+                raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
+            return self._cleanup
+        self._finished = True
+        destroyed = -1
+        child_cleanup_complete = False
+        try:
+            if cleanup_value is not None:
+                destroyed, child_cleanup_complete = _parse_cleanup_payload(
+                    cleanup_value
+                )
+        except BrokerRefusal:
+            pass
+        self._close_stdin()
+        exited, return_code, unforced_exit = self._force_exit()
+        try:
+            process_tree_closed = self._containment.release_after_exit(
+                exited=exited
+            )
+        except Exception:
+            process_tree_closed = False
+        trailing_is_empty = self._prove_stdout_closed(exited=exited)
+        self._stdout_stop = True
+        self._stdout_read_requests.release()
+        stdout = getattr(self._process, "stdout", None)
+        if stdout is not None:
+            try:
+                stdout.close()
+            except OSError:
+                pass
+        if self._stdout_reader.is_alive():
+            self._stdout_reader.join(timeout=1)
+        try:
+            self._runtime_provider.release()
+        except Exception:
+            child_cleanup_complete = False
+        exact_child_cleanup = (
+            child_cleanup_complete
+            and 0 <= destroyed <= 4
+            and (not require_four_contexts or destroyed == 4)
+        )
+        exact_protocol_exit = (
+            exact_child_cleanup
+            and exited
+            and unforced_exit
+            and return_code == 0
+            and trailing_is_empty
+        )
+        root_removal_admitted = process_tree_closed or (
+            isinstance(self._containment, _NoopChildProcessContainment)
+            and exact_protocol_exit
+        )
+        root_removed = False
+        if root_removal_admitted:
+            try:
+                shutil.rmtree(self._workspace)
+                root_removed = not self._workspace.exists()
+            except OSError:
+                root_removed = False
+        if not (
+            exact_protocol_exit
+            and root_removal_admitted
+            and root_removed
+        ):
+            raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
+        if destroyed == 4:
+            self._cleanup = BrowserCleanup(
+                destroyed_contexts=4,
+                temporary_root_removed=True,
+            )
+        return self._cleanup
+
+    def await_ready(self, authorization_origin: SealedValue) -> None:
+        self._send(
+            {
+                "schema_version": BROWSER_CHILD_PROTOCOL_SCHEMA,
+                "type": "prepare",
+                "authorization_origin": _authorization_origin_for_child(
+                    authorization_origin.reveal()
+                ),
+            }
+        )
+        message = self._receive(
+            timeout_seconds=BROWSER_CHILD_READY_TIMEOUT_SECONDS
+        )
+        if message.get("type") == "ready":
+            payload = _exact_protocol_mapping(
+                message, {"schema_version", "type", "preflight"}
+            )
+            if (
+                type(payload["schema_version"]) is not int
+                or payload["schema_version"] != BROWSER_CHILD_PROTOCOL_SCHEMA
+                or payload["type"] != "ready"
+            ):
+                raise BrokerIndeterminate("sealed_browser_protocol_indeterminate")
+            self._preflight = _parse_browser_preflight_payload(
+                payload["preflight"]
+            )
+            try:
+                if self._process.poll() is not None:
+                    raise BrokerIndeterminate(
+                        "sealed_browser_protocol_indeterminate"
+                    )
+            except AttributeError:
+                raise BrokerIndeterminate(
+                    "sealed_browser_protocol_indeterminate"
+                ) from None
+            return
+        if message.get("type") == "ready_error":
+            payload = _exact_protocol_mapping(
+                message,
+                {
+                    "schema_version",
+                    "type",
+                    "result",
+                    "reason_code",
+                    "cleanup",
+                },
+            )
+            if (
+                type(payload["schema_version"]) is not int
+                or payload["schema_version"] != BROWSER_CHILD_PROTOCOL_SCHEMA
+                or payload["type"] != "ready_error"
+                or payload["result"] not in {"refused", "indeterminate"}
+                or payload["reason_code"]
+                not in {
+                    "sealed_browser_preflight_failed",
+                    "sealed_browser_runtime_unavailable",
+                    "sealed_browser_cleanup_indeterminate",
+                    "sealed_browser_protocol_refused",
+                }
+            ):
+                raise BrokerIndeterminate("sealed_browser_protocol_indeterminate")
+            self._finish(payload["cleanup"], require_four_contexts=False)
+            if payload["result"] == "refused":
+                raise BrokerRefusal(payload["reason_code"])
+            raise BrokerIndeterminate(payload["reason_code"])
+        raise BrokerIndeterminate("sealed_browser_protocol_indeterminate")
+
+    def pre_graph_proof(self) -> BrowserPreflight:
+        if self._preflight is None or self._finished:
+            raise BrokerRefusal("sealed_browser_preflight_failed")
+        return self._preflight
+
+    @staticmethod
+    def _identity_payload(identity: SealedIdentity) -> Mapping[str, object]:
+        return {
+            "alias": identity.alias,
+            "login_identifier": identity.login_identifier.reveal(),
+            "password": identity.password.reveal(),
+            "mail_nickname": identity.mail_nickname.reveal(),
+        }
+
+    def exercise_canonical_journeys(
+        self, identities: Sequence[SealedIdentity]
+    ) -> BrowserOutcome:
+        if self._preflight is None or self._finished:
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+        if (
+            len(identities) != 2
+            or tuple(identity.alias for identity in identities) != ALLOWED_ALIASES
+        ):
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+        self._send(
+            {
+                "schema_version": BROWSER_CHILD_PROTOCOL_SCHEMA,
+                "type": "identities",
+                "identities": [
+                    self._identity_payload(identity) for identity in identities
+                ],
+            }
+        )
+        self._close_stdin()
+        message = self._receive(
+            timeout_seconds=BROWSER_CHILD_RESULT_TIMEOUT_SECONDS
+        )
+        if message.get("type") != "complete":
+            self._finish(None, require_four_contexts=True)
+            raise BrokerIndeterminate("sealed_browser_protocol_indeterminate")
+        result = message.get("result")
+        if result == "ok":
+            payload = _exact_protocol_mapping(
+                message,
+                {"schema_version", "type", "result", "outcome", "cleanup"},
+            )
+            if (
+                type(payload["schema_version"]) is not int
+                or payload["schema_version"] != BROWSER_CHILD_PROTOCOL_SCHEMA
+            ):
+                self._finish(None, require_four_contexts=True)
+                raise BrokerIndeterminate("sealed_browser_protocol_indeterminate")
+            outcome = _parse_browser_outcome_payload(payload["outcome"])
+            cleanup = self._finish(
+                payload["cleanup"], require_four_contexts=True
+            )
+            if cleanup is None:
+                raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
+            return outcome
+        if result in {"refused", "indeterminate"}:
+            payload = _exact_protocol_mapping(
+                message,
+                {
+                    "schema_version",
+                    "type",
+                    "result",
+                    "reason_code",
+                    "cleanup",
+                },
+            )
+            if (
+                type(payload["schema_version"]) is not int
+                or payload["schema_version"] != BROWSER_CHILD_PROTOCOL_SCHEMA
+                or payload["reason_code"]
+                not in {
+                    "sealed_browser_operation_indeterminate",
+                    "sealed_browser_cleanup_indeterminate",
+                    "sealed_browser_protocol_refused",
+                }
+            ):
+                self._finish(None, require_four_contexts=True)
+                raise BrokerIndeterminate("sealed_browser_protocol_indeterminate")
+            if payload["reason_code"] == "sealed_browser_cleanup_indeterminate":
+                self._finish(None, require_four_contexts=True)
+                raise BrokerIndeterminate(
+                    "sealed_browser_cleanup_indeterminate"
+                )
+            self._finish(payload["cleanup"], require_four_contexts=True)
+            raise BrokerIndeterminate("sealed_browser_operation_indeterminate")
+        self._finish(None, require_four_contexts=True)
+        raise BrokerIndeterminate("sealed_browser_protocol_indeterminate")
+
+    def destroy_and_verify(self) -> BrowserCleanup:
+        if self._cleanup is not None:
+            return self._cleanup
+        if self._finished:
+            raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
+        try:
+            self._send(
+                {
+                    "schema_version": BROWSER_CHILD_PROTOCOL_SCHEMA,
+                    "type": "abort",
+                }
+            )
+            self._close_stdin()
+            message = self._receive(
+                timeout_seconds=BROWSER_CHILD_ABORT_TIMEOUT_SECONDS
+            )
+            payload = _exact_protocol_mapping(
+                message,
+                {"schema_version", "type", "result", "cleanup"},
+            )
+            if (
+                type(payload["schema_version"]) is not int
+                or payload["schema_version"] != BROWSER_CHILD_PROTOCOL_SCHEMA
+                or payload["type"] != "complete"
+                or payload["result"] != "aborted"
+            ):
+                raise BrokerIndeterminate(
+                    "sealed_browser_protocol_indeterminate"
+                )
+            cleanup = self._finish(
+                payload["cleanup"], require_four_contexts=True
+            )
+        except BrokerIndeterminate:
+            if not self._finished:
+                self._finish(None, require_four_contexts=True)
+            raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate") from None
+        if cleanup is None:
+            raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
+        return cleanup
+
+
+class PlaywrightBrowserAdapter(_NativePlaywrightBrowserAdapter):
+    """Parent-side provisioner for one isolated, child-owned browser session."""
+
+    def __init__(
+        self,
+        *,
+        environment: Mapping[str, str] | None = None,
+        workspace_root: str | Path | None = None,
+        runtime_provider_factory: Callable[[], PlaywrightRuntimeProvider] | None = None,
+        process_factory: Callable[..., object] | None = None,
+        containment_factory: Callable[[object], object] | None = None,
+    ):
+        super().__init__(
+            environment=environment,
+            workspace_root=workspace_root,
+            runtime_provider_factory=runtime_provider_factory,
+        )
+        self._process_factory = process_factory or subprocess.Popen
+        self._containment_factory = (
+            containment_factory or _bind_child_process_containment
+        )
+
+    @staticmethod
+    def _remove_unstarted_workspace(
+        workspace: Path | None,
+        runtime_provider: PlaywrightRuntimeProvider | None,
+        process: object | None,
+        containment: object | None,
+    ) -> None:
+        cleanup_failed = False
+        process_exited = process is None
+        process_tree_closed = process is None
+        if process is not None:
+            stdin = getattr(process, "stdin", None)
+            if stdin is not None:
+                try:
+                    stdin.close()
+                except OSError:
+                    cleanup_failed = True
+            try:
+                process_exited = process.wait(timeout=5) is not None
+            except subprocess.TimeoutExpired:
+                tree_terminated = False
+                try:
+                    if containment is not None:
+                        tree_terminated = containment.terminate_tree()
+                except Exception:
+                    cleanup_failed = True
+                if tree_terminated:
+                    try:
+                        process.wait(timeout=5)
+                        process_exited = True
+                    except Exception:
+                        cleanup_failed = True
+                if not process_exited:
+                    for method_name in ("terminate", "kill"):
+                        try:
+                            getattr(process, method_name)()
+                            process.wait(timeout=5)
+                            process_exited = True
+                            break
+                        except Exception:
+                            continue
+            except Exception:
+                cleanup_failed = True
+            if containment is not None:
+                try:
+                    process_tree_closed = containment.release_after_exit(
+                        exited=process_exited
+                    )
+                    if not process_tree_closed:
+                        cleanup_failed = True
+                except Exception:
+                    cleanup_failed = True
+            else:
+                cleanup_failed = True
+            stdout = getattr(process, "stdout", None)
+            if stdout is not None:
+                try:
+                    stdout.close()
+                except OSError:
+                    cleanup_failed = True
+            if not process_exited:
+                cleanup_failed = True
+        if runtime_provider is not None:
+            try:
+                runtime_provider.release()
+            except Exception:
+                cleanup_failed = True
+        if workspace is not None and process_exited and process_tree_closed:
+            try:
+                shutil.rmtree(workspace)
+                if workspace.exists():
+                    cleanup_failed = True
+            except OSError:
+                cleanup_failed = True
+        if cleanup_failed:
+            raise BrokerIndeterminate("sealed_browser_cleanup_indeterminate")
+
+    def prepare_attended_session(
+        self, authority: AuthorityBinding
+    ) -> AttendedBrowserSession:
+        self.preflight()
+        workspace: Path | None = None
+        runtime_provider: PlaywrightRuntimeProvider | None = None
+        process: object | None = None
+        containment: object | None = None
+        session: _BrowserChildSession | None = None
+        try:
+            workspace = Path(
+                tempfile.mkdtemp(
+                    prefix=BROWSER_TEMP_PREFIX,
+                    dir=str(self._workspace_root.resolve(strict=True)),
+                )
+            )
+            runtime_provider = self._runtime_provider_factory()
+            provisioned = runtime_provider.provision(
+                workspace, self._source_environment()
+            )
+            try:
+                expected_runtime_root = (workspace / "runtime").resolve(strict=True)
+                expected_venv_root = (expected_runtime_root / "venv").resolve(
+                    strict=True
+                )
+                venv_python = provisioned.venv_python.resolve(strict=True)
+                site_packages = provisioned.site_packages.resolve(strict=True)
+                browsers = provisioned.browsers.resolve(strict=True)
+                venv_python.relative_to(expected_venv_root)
+                site_packages.relative_to(expected_venv_root)
+                if browsers != (expected_runtime_root / "browsers").resolve(
+                    strict=True
+                ):
+                    raise ValueError("escaped browsers path")
+                if (
+                    not venv_python.is_file()
+                    or not site_packages.is_dir()
+                    or not browsers.is_dir()
+                    or provisioned.expected_browser_version != "151.0.7922.34"
+                ):
+                    raise ValueError("invalid provisioned runtime")
+            except (AttributeError, OSError, TypeError, ValueError):
+                raise BrokerRefusal("sealed_browser_runtime_unavailable") from None
+            worker_path = CHILD_WORKER_PATH.resolve(strict=True)
+            if (
+                not worker_path.is_file()
+                or worker_path.parent != Path(__file__).resolve().parent
+                or worker_path.name != "child_worker.py"
+            ):
+                raise BrokerRefusal("sealed_browser_runtime_unavailable")
+            command = (
+                str(venv_python),
+                "-I",
+                "-B",
+                str(worker_path),
+            )
+            environment = dict(provisioned.environment)
+            if (
+                set(environment).difference(ALLOWED_BROWSER_CHILD_ENV_NAMES)
+                or any(environment.get(name) for name in REJECTED_BROWSER_ENV_NAMES)
+                or any(
+                    name in environment
+                    for name in (
+                        "AUTHORIZATION_REF",
+                        "PEERSLATE_AUTH_ISSUER",
+                        "PYTHONPATH",
+                    )
+                )
+                or any(
+                    environment.get(name) != str(workspace)
+                    for name in (
+                        "HOME",
+                        "USERPROFILE",
+                        "APPDATA",
+                        "LOCALAPPDATA",
+                        "TEMP",
+                        "TMP",
+                        "TMPDIR",
+                    )
+                )
+                or environment.get("PLAYWRIGHT_BROWSERS_PATH") != str(browsers)
+                or not _canonical_windows_environment_is_exact(environment)
+            ):
+                raise BrokerRefusal("sealed_browser_environment_refused")
+            process = self._process_factory(
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                shell=False,
+                cwd=str(workspace),
+                env=environment,
+                close_fds=True,
+                bufsize=0,
+            )
+            containment = self._containment_factory(process)
+            session = _BrowserChildSession(
+                process=process,
+                workspace=workspace,
+                runtime_provider=runtime_provider,
+                containment=containment,
+            )
+            session.await_ready(authority.authorization_origin)
+            return session
+        except (BrokerRefusal, BrokerIndeterminate):
+            if session is None:
+                self._remove_unstarted_workspace(
+                    workspace,
+                    runtime_provider,
+                    process,
+                    containment,
+                )
+            elif not session._finished:
+                try:
+                    session.destroy_and_verify()
+                except BrokerIndeterminate:
+                    raise BrokerIndeterminate(
+                        "sealed_browser_cleanup_indeterminate"
+                    ) from None
+            raise
+        except Exception:
+            if session is None:
+                self._remove_unstarted_workspace(
+                    workspace,
+                    runtime_provider,
+                    process,
+                    containment,
+                )
+            elif not session._finished:
+                try:
+                    session.destroy_and_verify()
+                except BrokerIndeterminate:
+                    raise BrokerIndeterminate(
+                        "sealed_browser_cleanup_indeterminate"
+                    ) from None
+            raise BrokerRefusal("sealed_browser_runtime_unavailable") from None
 
 class DirectRetirementAdapter:
     """Adapter over the existing independently accepted retirement core."""

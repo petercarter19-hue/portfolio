@@ -33,21 +33,26 @@ command includes only safe run metadata and explicit structural confirmations.
 
 ## Sealed and retained boundaries
 
-The worker holds generated login identifiers, passwords, Graph tokens, caller
-object ID, tenant routing, customer object IDs, private item handles, versions,
-and synthetic wording only in its process. It clears its direct references on
-exit. Python cannot promise physical zeroization of immutable strings, so the
-enforced guarantee is no file, argument, environment, report, log, exception,
-manifest, screenshot, trace, browser profile, storage-state export, or retained
-evidence path for those values.
+The parent broker and its one-shot browser child hold generated login
+identifiers, passwords, Graph tokens, caller object ID, tenant routing,
+customer object IDs, private item handles, versions, and synthetic wording only
+in their isolated process memory. Graph tokens and customer object IDs remain
+in the parent; the child receives only the exact two browser identity tuples.
+Both processes clear their direct references before exit. Python cannot promise
+physical zeroization of immutable strings, so the enforced guarantee is no
+file, argument, environment, report, log, exception, manifest, screenshot,
+trace, browser profile, storage-state export, or retained evidence path for
+those values.
 
-Only allowlisted structural result codes and counts may leave the process. The
-worker never retains DOM or page content, private network traffic, downloads,
-cookies, browser storage, claims, authorization headers, Graph responses,
-database rows, identity inventories, item handles, or its finite mutation
-ledger. Do not enable Playwright tracing, video, screenshots, downloads, remote
-debugging, ODBC tracing, SQL-driver diagnostics, Azure CLI telemetry, or verbose
-credential output.
+Only allowlisted structural result codes and counts may flow child-to-parent or
+leave the broker. The exact two browser identity tuples are the sole
+parent-to-child material exception and travel only through anonymous stdin;
+they are never external output. Neither process retains DOM or page content,
+private network traffic, downloads, cookies, browser storage, claims,
+authorization headers, Graph responses, database rows, identity inventories,
+item handles, or the finite mutation ledger. Do not enable Playwright tracing,
+video, screenshots, downloads, remote debugging, ODBC tracing, SQL-driver
+diagnostics, Azure CLI telemetry, or verbose credential output.
 
 ## Separate manual browser-operator boundary
 
@@ -177,9 +182,10 @@ stops the operation.
 ## Pinned disposable browser gate
 
 The browser gate completes before the first Graph POST. On either approved
-Darwin arm64 / Python 3.14 or Windows AMD64 / Python 3.13 host, the worker
-verifies the reviewed lock and provisions one operation-scoped runtime using
-hash-required binary packages. The Windows target uses its native
+Darwin arm64 / Python 3.14 or Windows AMD64 / Python 3.13 host, the parent
+broker verifies the reviewed lock and provisions one operation-scoped runtime
+using hash-required binary packages. Provisioning does not import or start
+Playwright in the parent. The Windows target uses its native
 `Scripts/python.exe` and `Lib/site-packages` venv layout; the Darwin target
 uses `bin/python` and `lib/python3.14/site-packages`:
 
@@ -191,17 +197,63 @@ uses `bin/python` and `lib/python3.14/site-packages`:
   through the locked shell-free venv command
   `python -I -m playwright install chromium --no-shell`.
 
-It then launches a separate headed probe in a second disposable root, verifies
-the exact browser version, opens `about:blank`, closes the page, context, and
-browser, and proves the probe root removed. Only after that closed probe does it
-launch the actual headed browser, create exactly four fresh non-persistent
-contexts (`member_a`, `member_b`, never-authenticated signed-out control, and
-switch), and prove the signed-out Workshop private baseline.
+The parent starts one exact locked-venv child with the fixed no-argument tuple
+`(<venv-python>, -I, -B, <reviewed-child-worker>)`. The launch is shell-free,
+uses no capture helper, sends stderr to the null device, connects only anonymous
+stdin/stdout pipes, and supplies an allowlisted environment. Home, profile,
+application-data, temporary, and browser roots are bound to the disposable
+operation directory. Only the OS-verified Windows system root, fixed
+pip/Playwright switches, the null device, and interpreter-added locale keys may
+remain outside it. On Windows, `SYSTEMROOT` and `WINDIR` are bound to the
+canonical directory returned by `GetWindowsDirectoryW`; ambient `PATH`,
+`COMSPEC`, and TLS certificate overrides are omitted. Authorization references,
+issuer settings, Python import paths, capture/debug variables, credentials,
+tokens, and subjects are not present in the command or environment.
 
-The actual browser, imported runtime modules, four contexts, and complete
-operation root must be released and removed before SQL retirement. The cleanup
-result must be exactly `BrowserCleanup(destroyed_contexts=4,
-temporary_root_removed=True)` before the SQL retirement core or an irreversible
+On Windows, the parent assigns the newly started but not-yet-commanded child to
+a private Job Object with kill-on-close before sending the prepare frame. A
+child cannot start Playwright before that frame. Every native Playwright driver
+and Chromium descendant therefore joins the same process-tree containment. A
+timeout or abnormal exit terminates and reaps that tree; it is never treated as
+successful cleanup. Tree emptiness is proven by querying the Job Object's basic
+accounting information until `ActiveProcesses` is zero; Job-handle signaling is
+not treated as that proof.
+
+That one-shot child alone imports Playwright and owns the probe, browser,
+driver, pages, and contexts. It launches a separate headed probe in a second
+disposable root, verifies the exact browser version, opens `about:blank`, closes
+the page, context, and browser, and proves the probe root removed. Only after
+that closed probe does it launch the actual headed browser, create exactly four
+fresh non-persistent contexts (`member_a`, `member_b`, never-authenticated
+signed-out control, and switch), and prove the signed-out Workshop private
+baseline. Only then may it return the closed structural `ready` frame that
+unlocks the parent's Graph preflight.
+
+After Graph creates exactly the two operation-scoped identities, the parent
+sends exactly two alias, login-identifier, password, and mail-nickname records
+through the child's anonymous stdin pipe, then closes its endpoint. Customer
+object IDs, Graph tokens, authority references, and other parent material never
+cross that pipe. The child returns only the closed journey structure and
+cleanup count; it never returns identity or page/session material.
+
+The child must close all four contexts, the browser, and its native Playwright
+driver, release its imported runtime, emit the final structural frame, and exit
+successfully with no trailing output. Parent pipe reads are bounded. On Windows,
+a missing ready, result, abort, or EOF frame closes stdin and terminates the
+contained Job Object; only an `ActiveProcesses == 0` accounting result proves
+that tree empty. The non-Windows fallback cannot infer descendant exit from the
+direct child's exit and never reports descendants reaped. It admits root
+removal only after the exact cleanup frame, an unforced zero exit, and EOF with
+no trailing output. A timeout, missing or malformed frame, trailing output,
+nonzero or forced exit, or cleanup failure retains the complete operation root
+and blocks retirement; a direct-child terminate or kill is not rewritten as a
+descendant-tree proof. This fail-closed distinction also prevents Windows-held
+native handles from making root removal indeterminate. A permitted post-exit
+removal failure remains cleanup-indeterminate and blocks retirement. The parent
+may synthesize the exact result `BrowserCleanup(destroyed_contexts=4,
+temporary_root_removed=True)` only after the applicable Windows tree proof or
+the narrower exact non-Windows protocol exit, plus its own root-removal proof.
+That result is required before the SQL retirement core or an irreversible
 Graph purge can begin. Probe
 cleanup and actual-session cleanup are independent and aggregated: one cleanup
 failure must not suppress attempts to clean the other resources. If Playwright
@@ -219,8 +271,9 @@ skip or reorder a gate:
 1. Bind the fixed owner reference, production App Service discovery authority,
    metadata principal issuer, authorization origin, tenant UUID, and tenant
    label.
-2. Provision and close the pinned Playwright probe; launch the actual runtime,
-   prepare four contexts, and prove the signed-out private baseline.
+2. In the parent, provision the pinned runtime without importing Playwright;
+   launch the exact isolated child, then require its closed probe, four-context,
+   and signed-out-private-baseline `ready` proof.
 3. Prove the Graph tenant, initial domain, delegated scopes, User Administrator
    role, usable expiry, and stable caller OID.
 4. Derive exactly two run-scoped identifiers, random per-alias creation markers,
@@ -235,18 +288,22 @@ skip or reorder a gate:
    operation-local creation window, enabled `Member` / `LocalAccount` customer
    shape, random mail marker, single generated email identity, and distinct
    object IDs. No response data may enter output.
-7. Complete all 38 canonical journeys and the initial exact Workshop
-   history/disclosure proof below.
+7. Send only the exact two browser identity tuples through anonymous stdin,
+   close the pipe, and have the child complete all 38 canonical journeys and
+   the initial exact Workshop history/disclosure proof below. Accept only the
+   closed structural outcome.
 8. After archive and restore, re-read each restored active item and re-prove
    exactly three retained versions newest first, with byte-exact original v1
    source in all three rows. Only then permanently delete each synthetic
    Workshop item through the application and prove zero active and zero
    archived item residue for each alias. A signed-out or preview page can never
    count as zero residue.
-9. Repeat the signed-out clean-start proof, close all four contexts and the
-   browser, unload the disposable runtime, remove the operation root, and prove
-   the exact `BrowserCleanup(4, true)` result. Any other cleanup result blocks
-   both SQL retirement and irreversible Graph purge.
+9. Repeat the signed-out clean-start proof. In the child, close all four
+   contexts and the browser and unload the disposable runtime. Require the
+   child's final structural cleanup frame and successful exit with no trailing
+   output; only then may the parent remove the operation root and prove the
+   exact `BrowserCleanup(4, true)` result. Any other cleanup result blocks both
+   SQL retirement and irreversible Graph purge.
 10. Pass only the two in-memory object IDs and the metadata principal issuer to
     the accepted exact-two SQL retirement core. Require exactly two eligible
     private ordinary mappings retired, commit success, and closed structural

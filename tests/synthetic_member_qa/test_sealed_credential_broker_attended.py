@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import io
+import json
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 from urllib.parse import parse_qs, urlparse
 
 from qa.synthetic_member import sealed_credential_broker as broker
+from qa.synthetic_member.sealed_credential_broker import child_worker
 from qa.synthetic_member.contracts import JOURNEY_BY_ID
 
 
@@ -559,6 +563,392 @@ def identities():
         run_id="qa-20260829-0001",
         choice=lambda _alphabet: "z",
     )
+
+
+def complete_browser_outcome():
+    observations = {
+        journey_id: broker.JourneyObservation(
+            status="pass",
+            observed_outcome=journey.expected_outcome,
+            note_code="none",
+        )
+        for journey_id, journey in JOURNEY_BY_ID.items()
+    }
+    for journey_id, note_code in broker.REQUIRED_CONDITIONAL_OUTCOMES.items():
+        observations[journey_id] = broker.JourneyObservation(
+            status="conditional",
+            observed_outcome="limitation_recorded",
+            note_code=note_code,
+        )
+    return broker.BrowserOutcome(
+        journey_outcomes=observations,
+        created_item_counts={"member_a": 1, "member_b": 1},
+        edit_counts={"member_a": 2, "member_b": 2},
+        retained_version_counts={"member_a": 3, "member_b": 3},
+        retained_source_proof_counts={"member_a": 3, "member_b": 3},
+        downstream_disclosure_counts={"member_a": 1, "member_b": 1},
+        active_residue_counts={"member_a": 0, "member_b": 0},
+        archived_residue_counts={"member_a": 0, "member_b": 0},
+        clean_start_confirmed=True,
+    )
+
+
+def child_frame(payload):
+    return (
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        + b"\n"
+    )
+
+
+def child_identity_payload(source_identities):
+    return [
+        {
+            "alias": identity.alias,
+            "login_identifier": identity.login_identifier.reveal(),
+            "password": identity.password.reveal(),
+            "mail_nickname": identity.mail_nickname.reveal(),
+        }
+        for identity in source_identities
+    ]
+
+
+class RecordingChildOutput(io.BytesIO):
+    def __init__(self, events):
+        super().__init__()
+        self.events = events
+
+    def write(self, data):
+        payload = json.loads(bytes(data))
+        self.events.append(
+            "write_" + payload["type"] + "_" + str(payload.get("result", ""))
+        )
+        return super().write(data)
+
+
+class FakeChildOwnedSession:
+    def __init__(self, events, *, cleanup=None, outcome=None):
+        self.events = events
+        self.identities = ()
+        self.cleanup = cleanup or broker.BrowserCleanup(4, False)
+        self.outcome = outcome or complete_browser_outcome()
+
+    def pre_graph_proof(self):
+        self.events.append("child_preflight")
+        return broker.BrowserPreflight(True, True, True, 4, True)
+
+    def exercise_canonical_journeys(self, parsed_identities):
+        self.events.append("child_journeys")
+        self.identities = tuple(parsed_identities)
+        return self.outcome
+
+    def destroy_and_verify(self):
+        self.events.append("child_cleanup")
+        if isinstance(self.cleanup, Exception):
+            raise self.cleanup
+        return self.cleanup
+
+
+class IsolatedChildWorkerTests(unittest.TestCase):
+    def test_child_accepts_only_canonical_windows_and_interpreter_env_keys(self):
+        with TemporaryDirectory() as outer:
+            workspace = Path(outer) / f"{broker.BROWSER_TEMP_PREFIX}fake"
+            system_root = Path(outer) / "trusted-windows"
+            venv_python = workspace / "runtime" / "venv" / "Scripts" / "python.exe"
+            site_packages = workspace / "runtime" / "venv" / "Lib" / "site-packages"
+            browsers = workspace / "runtime" / "browsers"
+            venv_python.parent.mkdir(parents=True)
+            venv_python.write_text("fake", encoding="utf-8")
+            site_packages.mkdir(parents=True)
+            browsers.mkdir(parents=True)
+            system_root.mkdir()
+            environment = {
+                name: str(workspace)
+                for name in (
+                    "HOME",
+                    "USERPROFILE",
+                    "APPDATA",
+                    "LOCALAPPDATA",
+                    "TEMP",
+                    "TMP",
+                    "TMPDIR",
+                )
+            }
+            environment.update(
+                {
+                    "PLAYWRIGHT_BROWSERS_PATH": str(browsers),
+                    "SYSTEMROOT": str(system_root),
+                    "WINDIR": str(system_root),
+                    # CPython may synthesize these keys from an otherwise
+                    # scrubbed environment before child code runs.
+                    "LC_CTYPE": "UTF-8",
+                    "__CF_USER_TEXT_ENCODING": "0x1F5:0x0:0x0",
+                }
+            )
+            lock = {
+                "active_target": {
+                    "venv_python": ["Scripts", "python.exe"],
+                    "site_packages": ["Lib", "site-packages"],
+                },
+                "chromium": {"browser_version": "151.0.7922.34"},
+            }
+            with (
+                patch.object(child_worker.os, "environ", environment),
+                patch.object(child_worker.sys, "executable", str(venv_python)),
+                patch.object(
+                    child_worker.PinnedPlaywrightRuntime,
+                    "_lock",
+                    return_value=lock,
+                ),
+                patch.object(
+                    broker,
+                    "_canonical_windows_system_root",
+                    return_value=system_root.resolve(),
+                ),
+            ):
+                resolved_workspace, runtime = (
+                    child_worker._native_child_runtime_provider()
+                )
+
+            self.assertEqual(resolved_workspace, workspace.resolve())
+            self.assertEqual(runtime.expected_browser_version, "151.0.7922.34")
+            self.assertNotIn("SystemRoot", environment)
+            self.assertLessEqual(
+                set(environment), broker.ALLOWED_BROWSER_CHILD_ENV_NAMES
+            )
+
+            environment["SYSTEMROOT"] = str(workspace)
+            with (
+                patch.object(child_worker.os, "environ", environment),
+                patch.object(
+                    broker,
+                    "_canonical_windows_system_root",
+                    return_value=system_root.resolve(),
+                ),
+                self.assertRaisesRegex(
+                    broker.BrokerRefusal, "sealed_browser_environment_refused"
+                ),
+            ):
+                child_worker._native_child_runtime_provider()
+
+    def test_exact_two_identity_input_yields_structural_output_after_cleanup(self):
+        events = []
+        source_identities = identities()
+        raw_identities = child_identity_payload(source_identities)
+        secrets = [
+            raw[key]
+            for raw in raw_identities
+            for key in ("login_identifier", "password", "mail_nickname")
+        ]
+        input_stream = io.BytesIO(
+            child_frame(
+                {
+                    "schema_version": 1,
+                    "type": "prepare",
+                    "authorization_origin": AUTHORIZATION_ORIGIN,
+                }
+            )
+            + child_frame(
+                {
+                    "schema_version": 1,
+                    "type": "identities",
+                    "identities": raw_identities,
+                }
+            )
+        )
+        output_stream = RecordingChildOutput(events)
+        session = FakeChildOwnedSession(events)
+
+        def session_factory(origin):
+            events.append("child_session_prepare")
+            self.assertEqual(origin.reveal(), AUTHORIZATION_ORIGIN)
+            return session
+
+        try:
+            self.assertEqual(
+                child_worker._browser_child_main(
+                    input_stream,
+                    output_stream,
+                    session_factory=session_factory,
+                ),
+                0,
+            )
+        finally:
+            for identity in source_identities:
+                identity.clear()
+
+        self.assertEqual(
+            events,
+            [
+                "child_session_prepare",
+                "child_preflight",
+                "write_ready_",
+                "child_journeys",
+                "child_cleanup",
+                "write_complete_ok",
+            ],
+        )
+        frames = [
+            json.loads(line) for line in output_stream.getvalue().splitlines()
+        ]
+        self.assertEqual([frame["type"] for frame in frames], ["ready", "complete"])
+        self.assertEqual(frames[1]["result"], "ok")
+        self.assertEqual(
+            frames[1]["cleanup"], {"destroyed_contexts": 4, "complete": True}
+        )
+        output_text = output_stream.getvalue().decode("utf-8")
+        for secret in secrets:
+            self.assertNotIn(secret, output_text)
+        for identity in session.identities:
+            with self.assertRaisesRegex(broker.BrokerRefusal, "sealed_value_cleared"):
+                identity.password.reveal()
+
+    def test_abort_closes_child_resources_before_the_final_frame(self):
+        events = []
+        input_stream = io.BytesIO(
+            child_frame(
+                {
+                    "schema_version": 1,
+                    "type": "prepare",
+                    "authorization_origin": AUTHORIZATION_ORIGIN,
+                }
+            )
+            + child_frame({"schema_version": 1, "type": "abort"})
+        )
+        output_stream = RecordingChildOutput(events)
+        session = FakeChildOwnedSession(events)
+
+        self.assertEqual(
+            child_worker._browser_child_main(
+                input_stream,
+                output_stream,
+                session_factory=lambda _origin: session,
+            ),
+            0,
+        )
+
+        self.assertLess(events.index("child_cleanup"), events.index("write_complete_aborted"))
+        final = json.loads(output_stream.getvalue().splitlines()[-1])
+        self.assertEqual(
+            final,
+            {
+                "schema_version": 1,
+                "type": "complete",
+                "result": "aborted",
+                "cleanup": {"destroyed_contexts": 4, "complete": True},
+            },
+        )
+
+    def test_identity_coherence_and_child_only_cleanup_semantics_fail_closed(self):
+        source_identities = identities()
+        try:
+            raw_identities = child_identity_payload(source_identities)
+        finally:
+            for identity in source_identities:
+                identity.clear()
+        raw_identities[1]["login_identifier"] = raw_identities[1][
+            "login_identifier"
+        ].replace(raw_identities[1]["login_identifier"][5:21], "f" * 16)
+        with self.assertRaisesRegex(
+            broker.BrokerRefusal, "sealed_browser_protocol_refused"
+        ):
+            child_worker._parse_child_identities(
+                raw_identities, tenant_label="synthetic-tenant"
+            )
+
+        events = []
+        input_stream = io.BytesIO(
+            child_frame(
+                {
+                    "schema_version": 1,
+                    "type": "prepare",
+                    "authorization_origin": AUTHORIZATION_ORIGIN,
+                }
+            )
+            + child_frame({"schema_version": 1, "type": "abort"})
+        )
+        output_stream = RecordingChildOutput(events)
+        session = FakeChildOwnedSession(
+            events, cleanup=broker.BrowserCleanup(4, True)
+        )
+        self.assertEqual(
+            child_worker._browser_child_main(
+                input_stream,
+                output_stream,
+                session_factory=lambda _origin: session,
+            ),
+            0,
+        )
+        final = json.loads(output_stream.getvalue().splitlines()[-1])
+        self.assertEqual(final["result"], "indeterminate")
+        self.assertEqual(
+            final["reason_code"], "sealed_browser_cleanup_indeterminate"
+        )
+        self.assertEqual(
+            final["cleanup"], {"destroyed_contexts": 0, "complete": False}
+        )
+
+    def test_unvalidated_journey_material_never_reaches_child_stdout(self):
+        sentinel = "SENTINEL_PRIVATE_VALUE"
+        outcome = complete_browser_outcome()
+        journey_outcomes = dict(outcome.journey_outcomes)
+        journey_id = next(iter(journey_outcomes))
+        journey_outcomes[journey_id] = broker.JourneyObservation(
+            status="pass",
+            observed_outcome=sentinel,
+            note_code="none",
+        )
+        outcome = broker.BrowserOutcome(
+            journey_outcomes=journey_outcomes,
+            created_item_counts=outcome.created_item_counts,
+            edit_counts=outcome.edit_counts,
+            retained_version_counts=outcome.retained_version_counts,
+            retained_source_proof_counts=outcome.retained_source_proof_counts,
+            downstream_disclosure_counts=outcome.downstream_disclosure_counts,
+            active_residue_counts=outcome.active_residue_counts,
+            archived_residue_counts=outcome.archived_residue_counts,
+            clean_start_confirmed=outcome.clean_start_confirmed,
+        )
+        source_identities = identities()
+        try:
+            raw_identities = child_identity_payload(source_identities)
+        finally:
+            for identity in source_identities:
+                identity.clear()
+        input_stream = io.BytesIO(
+            child_frame(
+                {
+                    "schema_version": 1,
+                    "type": "prepare",
+                    "authorization_origin": AUTHORIZATION_ORIGIN,
+                }
+            )
+            + child_frame(
+                {
+                    "schema_version": 1,
+                    "type": "identities",
+                    "identities": raw_identities,
+                }
+            )
+        )
+        output_stream = RecordingChildOutput([])
+        session = FakeChildOwnedSession([], outcome=outcome)
+
+        self.assertEqual(
+            child_worker._browser_child_main(
+                input_stream,
+                output_stream,
+                session_factory=lambda _origin: session,
+            ),
+            0,
+        )
+
+        output_text = output_stream.getvalue().decode("utf-8")
+        self.assertNotIn(sentinel, output_text)
+        final = json.loads(output_stream.getvalue().splitlines()[-1])
+        self.assertEqual(final["result"], "indeterminate")
+        self.assertEqual(
+            final["reason_code"], "sealed_browser_operation_indeterminate"
+        )
 
 
 class AttendedJourneyTests(unittest.TestCase):

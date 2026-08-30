@@ -5,6 +5,7 @@ import contextlib
 import io
 import json
 import tempfile
+import threading
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -13,6 +14,7 @@ from unittest.mock import patch
 from urllib.parse import urlparse
 
 from qa.synthetic_member import sealed_credential_broker as broker
+from qa.synthetic_member.sealed_credential_broker import child_worker
 from qa.synthetic_member.contracts import JOURNEY_BY_ID
 
 
@@ -73,6 +75,7 @@ def setUpModule():
     global _OUTBOUND_GUARDS
     _OUTBOUND_GUARDS = (
         patch.object(broker.subprocess, "run", side_effect=_forbid_live),
+        patch.object(broker.subprocess, "Popen", side_effect=_forbid_live),
         patch.object(broker, "_open_without_redirect", side_effect=_forbid_live),
         patch.object(
             broker.retirement,
@@ -772,7 +775,9 @@ class AzureAuthorityResolverTests(unittest.TestCase):
             original_resolve = Path.resolve
 
             def escaped_python_resolve(path, strict=False):
-                if path == cli_layout.python_executable:
+                if original_resolve(path) == original_resolve(
+                    cli_layout.python_executable
+                ):
                     return original_resolve(escaped, strict=True)
                 return original_resolve(path, strict=strict)
 
@@ -1027,7 +1032,9 @@ class AzureCliGraphTokenRuntimeTests(unittest.TestCase):
             original_resolve = Path.resolve
 
             def escaped_python_resolve(path, strict=False):
-                if path == cli_layout.python_executable:
+                if original_resolve(path) == original_resolve(
+                    cli_layout.python_executable
+                ):
                     return original_resolve(escaped, strict=True)
                 return original_resolve(path, strict=strict)
 
@@ -1194,7 +1201,905 @@ class FakeRuntimeProvider:
         self.released = True
 
 
+def _protocol_frame(payload):
+    return (
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        + b"\n"
+    )
+
+
+def _ready_frame():
+    return _protocol_frame(
+        {
+            "schema_version": broker.BROWSER_CHILD_PROTOCOL_SCHEMA,
+            "type": "ready",
+            "preflight": {
+                "locked_runtime": True,
+                "probe_launch_closed": True,
+                "probe_root_removed": True,
+                "prepared_contexts": 4,
+                "signed_out_private_baseline": True,
+            },
+        }
+    )
+
+
+def _complete_frame(*, result="ok", cleanup_complete=True):
+    payload = {
+        "schema_version": broker.BROWSER_CHILD_PROTOCOL_SCHEMA,
+        "type": "complete",
+        "result": result,
+        "cleanup": {
+            "destroyed_contexts": 4,
+            "complete": cleanup_complete,
+        },
+    }
+    if result == "ok":
+        payload["outcome"] = child_worker._browser_outcome_payload(
+            complete_outcome()
+        )
+    elif result == "indeterminate":
+        payload["reason_code"] = "sealed_browser_cleanup_indeterminate"
+    return _protocol_frame(payload)
+
+
+class RetainedProtocolInput(io.BytesIO):
+    def __init__(self):
+        super().__init__()
+        self.closed_by_parent = False
+
+    def close(self):
+        # Keep the fake frame bytes inspectable after the parent closes its
+        # anonymous-pipe endpoint.
+        self.closed_by_parent = True
+
+
+class RecordingProtocolOutput(io.BytesIO):
+    def __init__(self, frames, events):
+        super().__init__(b"".join(frames))
+        self._events = events
+
+    def readline(self, size=-1):
+        frame = super().readline(size)
+        if frame:
+            self._events.append(f"child_{json.loads(frame)['type']}")
+        return frame
+
+
+class FakeChildProcess:
+    def __init__(self, *, frames, events, workspace, final_return_code=0):
+        self.stdin = RetainedProtocolInput()
+        self.stdout = RecordingProtocolOutput(frames, events)
+        self._events = events
+        self._workspace = workspace
+        self._final_return_code = final_return_code
+        self.returncode = None
+
+    def poll(self):
+        return self.returncode
+
+    def wait(self, *, timeout):
+        self._events.append("child_exit")
+        if not self._workspace.is_dir():
+            raise AssertionError("parent removed the root before child exit")
+        self.returncode = self._final_return_code
+        return self.returncode
+
+    def terminate(self):
+        raise AssertionError("healthy fake child must not be terminated")
+
+    def kill(self):
+        raise AssertionError("healthy fake child must not be killed")
+
+
+class FakeExactTreeContainment:
+    def __init__(self, events):
+        self.events = events
+        self.events.append("process_tree_bound")
+
+    def terminate_tree(self):
+        raise AssertionError("healthy fake child tree must not be terminated")
+
+    def release_after_exit(self, *, exited):
+        self.events.append("process_tree_closed")
+        return exited
+
+
+class HangingAfterReadyOutput:
+    def __init__(self, events):
+        self.events = events
+        self.release = threading.Event()
+        self.ready_sent = False
+
+    def readline(self, _size=-1):
+        if not self.ready_sent:
+            self.ready_sent = True
+            self.events.append("child_ready")
+            return _ready_frame()
+        self.events.append("child_stdout_hang")
+        self.release.wait(timeout=5)
+        return b""
+
+    def close(self):
+        self.release.set()
+
+
+class HangingChildProcess:
+    def __init__(self, events, workspace):
+        self.events = events
+        self.workspace = workspace
+        self.stdin = RetainedProtocolInput()
+        self.stdout = HangingAfterReadyOutput(events)
+        self.returncode = None
+        self.tree_terminated = False
+
+    def poll(self):
+        return self.returncode
+
+    def wait(self, *, timeout):
+        self.events.append("child_wait")
+        if not self.tree_terminated:
+            raise broker.subprocess.TimeoutExpired("fake-child", timeout)
+        self.returncode = 3
+        return self.returncode
+
+    def terminate(self):
+        self.events.append("child_terminate")
+
+    def kill(self):
+        self.events.append("child_kill")
+
+
+class DirectOnlyTerminatedChildProcess(HangingChildProcess):
+    def terminate(self):
+        self.events.append("direct_child_terminate")
+        self.tree_terminated = True
+        self.stdout.release.set()
+
+
+class FakeForcedTreeContainment:
+    def __init__(self, process, events):
+        self.process = process
+        self.events = events
+
+    def terminate_tree(self):
+        self.events.append("process_tree_terminate")
+        self.process.tree_terminated = True
+        self.process.stdout.release.set()
+        return True
+
+    def release_after_exit(self, *, exited):
+        self.events.append("process_tree_reaped")
+        return False if exited else False
+
+
+class FakeProvisioningProvider:
+    expected_browser_version = "151.0.7922.34"
+
+    def __init__(self, events):
+        self.events = events
+        self.workspace = None
+        self.venv_python = None
+
+    def provision(self, workspace, environment):
+        self.events.append("runtime_provision")
+        self.workspace = workspace
+        runtime_root = workspace / "runtime"
+        venv_root = runtime_root / "venv"
+        self.venv_python = venv_root / "bin" / "python"
+        site_packages = venv_root / "lib" / "python3.13" / "site-packages"
+        browsers = runtime_root / "browsers"
+        self.venv_python.parent.mkdir(parents=True)
+        self.venv_python.write_text("fake", encoding="utf-8")
+        site_packages.mkdir(parents=True)
+        browsers.mkdir(parents=True)
+        return broker.ProvisionedPlaywrightRuntime(
+            venv_python=self.venv_python.resolve(),
+            site_packages=site_packages.resolve(),
+            browsers=browsers.resolve(),
+            environment=broker.PinnedPlaywrightRuntime._runtime_environment(
+                workspace, environment, browsers
+            ),
+            expected_browser_version=self.expected_browser_version,
+        )
+
+    def start(self, workspace, environment):
+        del workspace, environment
+        raise AssertionError("the parent must not start or import Playwright")
+
+    def release(self):
+        self.events.append("runtime_release")
+        if self.workspace is not None and not self.workspace.is_dir():
+            raise AssertionError("runtime released after parent root removal")
+
+
+class WindowsJobContainmentTests(unittest.TestCase):
+    def test_accounting_query_returns_active_process_count(self):
+        import ctypes
+
+        class Accounting(ctypes.Structure):
+            _fields_ = [("ActiveProcesses", ctypes.c_uint32)]
+
+        class Kernel32:
+            def __init__(self):
+                self.calls = []
+
+            def QueryInformationJobObject(
+                self, handle, information_class, output, output_size, returned
+            ):
+                self.calls.append((handle, information_class, output_size))
+                ctypes.cast(output, ctypes.POINTER(Accounting)).contents.ActiveProcesses = 3
+                ctypes.cast(
+                    returned, ctypes.POINTER(ctypes.c_uint32)
+                ).contents.value = ctypes.sizeof(Accounting)
+                return 1
+
+        job = object.__new__(broker._WindowsKillOnCloseJob)
+        job._handle = 41
+        job._kernel32 = Kernel32()
+        job._ctypes = ctypes
+        job._dword_type = ctypes.c_uint32
+        job._basic_accounting_type = Accounting
+
+        self.assertEqual(job._active_processes(), 3)
+        self.assertEqual(
+            job._kernel32.calls,
+            [(41, broker._WindowsKillOnCloseJob._BASIC_ACCOUNTING_INFORMATION, 4)],
+        )
+
+    def test_empty_job_requires_active_processes_to_reach_zero(self):
+        job = object.__new__(broker._WindowsKillOnCloseJob)
+        with (
+            patch.object(job, "_active_processes", side_effect=[2, 1, 0]) as query,
+            patch.object(broker.time, "sleep", return_value=None),
+        ):
+            self.assertTrue(job._wait_empty(1_000))
+        self.assertEqual(query.call_count, 3)
+
+        with patch.object(job, "_active_processes", return_value=1):
+            self.assertFalse(job._wait_empty(0))
+        with patch.object(job, "_active_processes", return_value=None):
+            self.assertFalse(job._wait_empty(5_000))
+
+
+class IsolatedBrowserChildProtocolTests(unittest.TestCase):
+    def _adapter(
+        self,
+        root,
+        events,
+        frames,
+        *,
+        containment_factory=None,
+        final_return_code=0,
+    ):
+        provider = FakeProvisioningProvider(events)
+        launched = {}
+
+        def process_factory(command, **options):
+            events.append("child_launch")
+            process = FakeChildProcess(
+                frames=frames,
+                events=events,
+                workspace=Path(options["cwd"]),
+                final_return_code=final_return_code,
+            )
+            launched.update(command=command, options=options, process=process)
+            return process
+
+        adapter = broker.PlaywrightBrowserAdapter(
+            environment={
+                "SystemRoot": r"C:\Windows",
+                "PATH": r"C:\Windows\System32",
+                "COMSPEC": r"C:\Windows\System32\cmd.exe",
+                "SSL_CERT_FILE": r"C:\attacker\root.pem",
+                "SSL_CERT_DIR": r"C:\attacker\roots",
+                "AUTHORIZATION_REF": "must-not-reach-child",
+                "PEERSLATE_AUTH_ISSUER": "must-not-reach-child",
+                "PYTHONPATH": "must-not-reach-child",
+            },
+            workspace_root=root,
+            runtime_provider_factory=lambda: provider,
+            process_factory=process_factory,
+            containment_factory=(
+                containment_factory
+                or (lambda _process: FakeExactTreeContainment(events))
+            ),
+        )
+        return adapter, provider, launched
+
+    def test_fake_child_is_exact_shell_free_pipe_and_exits_before_retirement(self):
+        events = []
+        graph = FakeGraph(events)
+        retirement = FakeRetirement(events)
+        real_rmtree = broker.shutil.rmtree
+        with tempfile.TemporaryDirectory() as root:
+            adapter, provider, launched = self._adapter(
+                root, events, [_ready_frame(), _complete_frame()]
+            )
+
+            def recording_rmtree(path, *args, **kwargs):
+                events.append("parent_root_remove")
+                return real_rmtree(path, *args, **kwargs)
+
+            with (
+                patch.object(
+                    broker.importlib,
+                    "import_module",
+                    side_effect=AssertionError(
+                        "the parent must not import native Playwright"
+                    ),
+                ),
+                patch.object(broker.shutil, "rmtree", side_effect=recording_rmtree),
+            ):
+                report = broker.run_broker(
+                    run_id="qa-20260829-0001",
+                    cutoff=NOW,
+                    authority_adapter=FakeAuthority(events),
+                    graph=graph,
+                    browser=adapter,
+                    retirement_adapter=retirement,
+                    choice=lambda _alphabet: "z",
+                )
+
+            self.assertEqual(report["result"], "conditional")
+            self.assertLess(
+                events.index("process_tree_bound"), events.index("child_ready")
+            )
+            self.assertLess(events.index("child_ready"), events.index("graph_prepare"))
+            self.assertLess(events.index("child_complete"), events.index("child_exit"))
+            self.assertLess(
+                events.index("child_exit"), events.index("process_tree_closed")
+            )
+            self.assertLess(
+                events.index("process_tree_closed"), events.index("runtime_release")
+            )
+            self.assertLess(
+                events.index("runtime_release"), events.index("parent_root_remove")
+            )
+            self.assertLess(events.index("parent_root_remove"), events.index("retirement"))
+            self.assertFalse(provider.workspace.exists())
+
+        command = launched["command"]
+        options = launched["options"]
+        self.assertEqual(
+            command,
+            (
+                str(provider.venv_python.resolve()),
+                "-I",
+                "-B",
+                str(broker.CHILD_WORKER_PATH.resolve()),
+            ),
+        )
+        self.assertEqual(
+            {
+                "stdin": options["stdin"],
+                "stdout": options["stdout"],
+                "stderr": options["stderr"],
+                "shell": options["shell"],
+                "close_fds": options["close_fds"],
+                "bufsize": options["bufsize"],
+            },
+            {
+                "stdin": broker.subprocess.PIPE,
+                "stdout": broker.subprocess.PIPE,
+                "stderr": broker.subprocess.DEVNULL,
+                "shell": False,
+                "close_fds": True,
+                "bufsize": 0,
+            },
+        )
+        self.assertNotIn("capture_output", options)
+        for secret_name in (
+            "AUTHORIZATION_REF",
+            "PEERSLATE_AUTH_ISSUER",
+            "PYTHONPATH",
+            "SYSTEMROOT",
+            "WINDIR",
+            "PATH",
+            "COMSPEC",
+            "SSL_CERT_FILE",
+            "SSL_CERT_DIR",
+        ):
+            self.assertNotIn(secret_name, options["env"])
+
+        process = launched["process"]
+        self.assertTrue(process.stdin.closed_by_parent)
+        frames = [json.loads(line) for line in process.stdin.getvalue().splitlines()]
+        self.assertEqual([frame["type"] for frame in frames], ["prepare", "identities"])
+        self.assertEqual(
+            set(frames[0]), {"schema_version", "type", "authorization_origin"}
+        )
+        identities_payload = frames[1]["identities"]
+        self.assertEqual(
+            [identity["alias"] for identity in identities_payload],
+            ["member_a", "member_b"],
+        )
+        self.assertTrue(
+            all(
+                set(identity)
+                == {"alias", "login_identifier", "password", "mail_nickname"}
+                for identity in identities_payload
+            )
+        )
+        wire_text = json.dumps(frames)
+        self.assertNotIn(SUBJECT_A, wire_text)
+        self.assertNotIn(SUBJECT_B, wire_text)
+        for identity in identities_payload:
+            self.assertNotIn(identity["password"], json.dumps(command))
+            self.assertNotIn(identity["password"], json.dumps(options["env"]))
+
+    def test_graph_refusal_sends_abort_without_identities_or_retirement(self):
+        events = []
+
+        class RefusingGraph(FakeGraph):
+            def prepare(self, authority):
+                del authority
+                self.events.append("graph_prepare")
+                raise broker.BrokerRefusal("graph_authorization_unavailable")
+
+        graph = RefusingGraph(events)
+        retirement = FakeRetirement(events)
+        with tempfile.TemporaryDirectory() as root:
+            adapter, provider, launched = self._adapter(
+                root, events, [_ready_frame(), _complete_frame(result="aborted")]
+            )
+            with self.assertRaisesRegex(
+                broker.BrokerRefusal, "graph_authorization_unavailable"
+            ):
+                broker.run_broker(
+                    run_id="qa-20260829-0001",
+                    cutoff=NOW,
+                    authority_adapter=FakeAuthority(events),
+                    graph=graph,
+                    browser=adapter,
+                    retirement_adapter=retirement,
+                )
+            self.assertFalse(provider.workspace.exists())
+
+        frames = [
+            json.loads(line)
+            for line in launched["process"].stdin.getvalue().splitlines()
+        ]
+        self.assertEqual([frame["type"] for frame in frames], ["prepare", "abort"])
+        self.assertEqual(frames[1], {"schema_version": 1, "type": "abort"})
+        self.assertEqual(retirement.calls, 0)
+        self.assertEqual(graph.create_calls, 0)
+
+    def test_claimed_cleanup_after_indeterminate_child_result_cannot_retire(self):
+        events = []
+        graph = FakeGraph(events)
+        retirement = FakeRetirement(events)
+        with tempfile.TemporaryDirectory() as root:
+            adapter, provider, _launched = self._adapter(
+                root,
+                events,
+                [_ready_frame(), _complete_frame(result="indeterminate")],
+            )
+            with self.assertRaisesRegex(
+                broker.BrokerIndeterminate, "sealed_browser_cleanup_indeterminate"
+            ):
+                broker.run_broker(
+                    run_id="qa-20260829-0001",
+                    cutoff=NOW,
+                    authority_adapter=FakeAuthority(events),
+                    graph=graph,
+                    browser=adapter,
+                    retirement_adapter=retirement,
+                    choice=lambda _alphabet: "z",
+                )
+            self.assertFalse(provider.workspace.exists())
+        self.assertEqual(retirement.calls, 0)
+        self.assertNotIn("retirement", events)
+
+    def test_production_noop_exact_protocol_exit_is_narrow_root_admission(self):
+        events = []
+        retirement = FakeRetirement(events)
+        real_rmtree = broker.shutil.rmtree
+        with tempfile.TemporaryDirectory() as root:
+            adapter, provider, _launched = self._adapter(
+                root,
+                events,
+                [_ready_frame(), _complete_frame()],
+                containment_factory=(
+                    lambda _process: broker._NoopChildProcessContainment()
+                ),
+            )
+
+            def recording_rmtree(path, *args, **kwargs):
+                events.append("parent_root_remove")
+                return real_rmtree(path, *args, **kwargs)
+
+            with patch.object(
+                broker.shutil, "rmtree", side_effect=recording_rmtree
+            ):
+                report = broker.run_broker(
+                    run_id="qa-20260829-0001",
+                    cutoff=NOW,
+                    authority_adapter=FakeAuthority(events),
+                    graph=FakeGraph(events),
+                    browser=adapter,
+                    retirement_adapter=retirement,
+                    choice=lambda _alphabet: "z",
+                )
+
+            self.assertEqual(report["result"], "conditional")
+            self.assertFalse(provider.workspace.exists())
+        self.assertNotIn("process_tree_closed", events)
+        self.assertLess(events.index("parent_root_remove"), events.index("retirement"))
+
+    def test_production_noop_abnormal_exit_retains_root_and_blocks_retirement(self):
+        cases = (
+            ("missing_ready", [], 0),
+            ("malformed_ready", [b"{malformed\n"], 0),
+            ("missing_result", [_ready_frame()], 0),
+            ("malformed_result", [_ready_frame(), b"{malformed\n"], 0),
+            (
+                "trailing_output",
+                [
+                    _ready_frame(),
+                    _complete_frame(),
+                    _protocol_frame({"schema_version": 1, "type": "trailing"}),
+                ],
+                0,
+            ),
+            (
+                "nonzero_return",
+                [_ready_frame(), _complete_frame()],
+                7,
+            ),
+            (
+                "cleanup_failed",
+                [_ready_frame(), _complete_frame(cleanup_complete=False)],
+                0,
+            ),
+        )
+        for label, frames, return_code in cases:
+            with self.subTest(label=label):
+                events = []
+                retirement = FakeRetirement(events)
+                real_rmtree = broker.shutil.rmtree
+                with tempfile.TemporaryDirectory() as root:
+                    adapter, provider, _launched = self._adapter(
+                        root,
+                        events,
+                        frames,
+                        containment_factory=(
+                            lambda _process: broker._NoopChildProcessContainment()
+                        ),
+                        final_return_code=return_code,
+                    )
+
+                    def recording_rmtree(path, *args, **kwargs):
+                        events.append("parent_root_remove")
+                        return real_rmtree(path, *args, **kwargs)
+
+                    with (
+                        patch.object(
+                            broker.shutil,
+                            "rmtree",
+                            side_effect=recording_rmtree,
+                        ),
+                        self.assertRaisesRegex(
+                            broker.BrokerIndeterminate,
+                            "sealed_browser_cleanup_indeterminate",
+                        ),
+                    ):
+                        broker.run_broker(
+                            run_id="qa-20260829-0001",
+                            cutoff=NOW,
+                            authority_adapter=FakeAuthority(events),
+                            graph=FakeGraph(events),
+                            browser=adapter,
+                            retirement_adapter=retirement,
+                            choice=lambda _alphabet: "z",
+                        )
+
+                    self.assertTrue(provider.workspace.exists())
+                    self.assertNotIn("parent_root_remove", events)
+                self.assertEqual(retirement.calls, 0)
+                self.assertNotIn("retirement", events)
+                self.assertFalse(
+                    any(event.startswith("process_tree_") for event in events)
+                )
+
+    def test_production_noop_timeout_kills_only_direct_child_and_retains_root(self):
+        events = []
+        retirement = FakeRetirement(events)
+        provider = FakeProvisioningProvider(events)
+        launched = {}
+
+        def process_factory(_command, **options):
+            process = DirectOnlyTerminatedChildProcess(
+                events, Path(options["cwd"])
+            )
+            launched["process"] = process
+            return process
+
+        real_rmtree = broker.shutil.rmtree
+        with tempfile.TemporaryDirectory() as root:
+            adapter = broker.PlaywrightBrowserAdapter(
+                environment={},
+                workspace_root=root,
+                runtime_provider_factory=lambda: provider,
+                process_factory=process_factory,
+                containment_factory=(
+                    lambda _process: broker._NoopChildProcessContainment()
+                ),
+            )
+
+            def recording_rmtree(path, *args, **kwargs):
+                events.append("parent_root_remove")
+                return real_rmtree(path, *args, **kwargs)
+
+            with (
+                patch.object(
+                    broker, "BROWSER_CHILD_RESULT_TIMEOUT_SECONDS", 0.01
+                ),
+                patch.object(broker.shutil, "rmtree", side_effect=recording_rmtree),
+                self.assertRaisesRegex(
+                    broker.BrokerIndeterminate,
+                    "sealed_browser_cleanup_indeterminate",
+                ),
+            ):
+                broker.run_broker(
+                    run_id="qa-20260829-0001",
+                    cutoff=NOW,
+                    authority_adapter=FakeAuthority(events),
+                    graph=FakeGraph(events),
+                    browser=adapter,
+                    retirement_adapter=retirement,
+                    choice=lambda _alphabet: "z",
+                )
+
+            self.assertTrue(provider.workspace.exists())
+        self.assertIn("direct_child_terminate", events)
+        self.assertNotIn("parent_root_remove", events)
+        self.assertEqual(retirement.calls, 0)
+        self.assertNotIn("retirement", events)
+        self.assertFalse(any(event.startswith("process_tree_") for event in events))
+        self.assertTrue(launched["process"].stdin.closed_by_parent)
+
+    def test_protocol_rejects_duplicate_keys_and_non_finite_numbers(self):
+        for frame in (
+            b'{"type":"ready","type":"complete"}\n',
+            b'{"schema_version":NaN}\n',
+        ):
+            with self.subTest(frame=frame), self.assertRaisesRegex(
+                broker.BrokerIndeterminate, "sealed_browser_protocol_indeterminate"
+            ):
+                broker._read_child_message(io.BytesIO(frame))
+
+    def test_result_pipe_timeout_reaps_tree_and_blocks_retirement(self):
+        events = []
+        graph = FakeGraph(events)
+        retirement = FakeRetirement(events)
+        provider = FakeProvisioningProvider(events)
+        launched = {}
+
+        def process_factory(_command, **options):
+            events.append("child_launch")
+            process = HangingChildProcess(events, Path(options["cwd"]))
+            launched["process"] = process
+            return process
+
+        def containment_factory(process):
+            return FakeForcedTreeContainment(process, events)
+
+        real_rmtree = broker.shutil.rmtree
+        with tempfile.TemporaryDirectory() as root:
+            adapter = broker.PlaywrightBrowserAdapter(
+                environment={"SYSTEMROOT": r"C:\Windows"},
+                workspace_root=root,
+                runtime_provider_factory=lambda: provider,
+                process_factory=process_factory,
+                containment_factory=containment_factory,
+            )
+
+            def recording_rmtree(path, *args, **kwargs):
+                events.append("parent_root_remove")
+                return real_rmtree(path, *args, **kwargs)
+
+            with (
+                patch.object(
+                    broker,
+                    "BROWSER_CHILD_RESULT_TIMEOUT_SECONDS",
+                    0.01,
+                ),
+                patch.object(broker.shutil, "rmtree", side_effect=recording_rmtree),
+                self.assertRaisesRegex(
+                    broker.BrokerIndeterminate,
+                    "sealed_browser_cleanup_indeterminate",
+                ),
+            ):
+                broker.run_broker(
+                    run_id="qa-20260829-0001",
+                    cutoff=NOW,
+                    authority_adapter=FakeAuthority(events),
+                    graph=graph,
+                    browser=adapter,
+                    retirement_adapter=retirement,
+                    choice=lambda _alphabet: "z",
+                )
+
+            self.assertTrue(provider.workspace.exists())
+
+        process = launched["process"]
+        self.assertTrue(process.stdin.closed_by_parent)
+        self.assertLess(
+            events.index("process_tree_terminate"),
+            events.index("process_tree_reaped"),
+        )
+        self.assertNotIn("parent_root_remove", events)
+        self.assertFalse(provider.workspace.exists())
+        self.assertEqual(retirement.calls, 0)
+        self.assertEqual(graph.delete_calls, 0)
+        self.assertNotIn("retirement", events)
+        frames = [
+            json.loads(line) for line in process.stdin.getvalue().splitlines()
+        ]
+        self.assertEqual([frame["type"] for frame in frames], ["prepare", "identities"])
+
+    def test_reader_start_failure_reaps_raw_child_before_root_removal(self):
+        events = []
+        real_rmtree = broker.shutil.rmtree
+        with tempfile.TemporaryDirectory() as root:
+            adapter, provider, launched = self._adapter(root, events, [_ready_frame()])
+
+            def recording_rmtree(path, *args, **kwargs):
+                events.append("parent_root_remove")
+                return real_rmtree(path, *args, **kwargs)
+
+            with (
+                patch.object(
+                    broker.threading.Thread,
+                    "start",
+                    side_effect=RuntimeError("fake thread refusal"),
+                ),
+                patch.object(broker.shutil, "rmtree", side_effect=recording_rmtree),
+                self.assertRaisesRegex(
+                    broker.BrokerRefusal, "sealed_browser_runtime_unavailable"
+                ),
+            ):
+                adapter.prepare_attended_session(authority_binding())
+
+            self.assertFalse(provider.workspace.exists())
+
+        process = launched["process"]
+        self.assertTrue(process.stdin.closed_by_parent)
+        self.assertLess(events.index("child_exit"), events.index("process_tree_closed"))
+        self.assertLess(
+            events.index("process_tree_closed"), events.index("runtime_release")
+        )
+        self.assertLess(
+            events.index("runtime_release"), events.index("parent_root_remove")
+        )
+
+    def test_unstarted_cleanup_retains_root_without_tree_empty_proof(self):
+        events = []
+
+        class UnprovedContainment:
+            def release_after_exit(self, *, exited):
+                events.append("process_tree_unproved")
+                self.exited = exited
+                return False
+
+            def terminate_tree(self):
+                raise AssertionError("the directly exited child is not terminated")
+
+        for label, containment in (
+            ("uncontained", None),
+            ("unproved", UnprovedContainment()),
+        ):
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as root:
+                workspace = Path(root) / f"{broker.BROWSER_TEMP_PREFIX}retained"
+                workspace.mkdir()
+                process = FakeChildProcess(
+                    frames=[], events=events, workspace=workspace
+                )
+                provider = FakeProvisioningProvider(events)
+                provider.workspace = workspace
+                with (
+                    patch.object(broker.shutil, "rmtree") as remove,
+                    self.assertRaisesRegex(
+                        broker.BrokerIndeterminate,
+                        "sealed_browser_cleanup_indeterminate",
+                    ),
+                ):
+                    broker.PlaywrightBrowserAdapter._remove_unstarted_workspace(
+                        workspace,
+                        provider,
+                        process,
+                        containment,
+                    )
+                remove.assert_not_called()
+                self.assertTrue(workspace.exists())
+        self.assertIn("process_tree_unproved", events)
+
+
 class PinnedBrowserPreflightTests(unittest.TestCase):
+    def test_windows_environment_uses_only_os_reported_system_root(self):
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            workspace = root_path / "operation"
+            browsers = workspace / "runtime" / "browsers"
+            trusted = root_path / "trusted-windows"
+            attacker = root_path / "attacker-windows"
+            browsers.mkdir(parents=True)
+            trusted.mkdir()
+            attacker.mkdir()
+            source = {
+                "SYSTEMROOT": str(attacker),
+                "SystemRoot": str(attacker),
+                "WINDIR": str(attacker),
+                "PATH": str(attacker),
+                "COMSPEC": str(attacker / "cmd.exe"),
+                "SSL_CERT_FILE": str(attacker / "root.pem"),
+                "SSL_CERT_DIR": str(attacker),
+            }
+            with patch.object(
+                broker,
+                "_canonical_windows_system_root",
+                return_value=trusted.resolve(),
+            ):
+                environment = broker.PinnedPlaywrightRuntime._runtime_environment(
+                    workspace, source, browsers
+                )
+
+            self.assertEqual(environment["SYSTEMROOT"], str(trusted.resolve()))
+            self.assertEqual(environment["WINDIR"], str(trusted.resolve()))
+            for name in (
+                "PATH",
+                "COMSPEC",
+                "SSL_CERT_FILE",
+                "SSL_CERT_DIR",
+            ):
+                self.assertNotIn(name, environment)
+
+    def test_parent_rejects_provider_substitution_of_windows_system_root(self):
+        events = []
+
+        class SubstitutingProvider(FakeProvisioningProvider):
+            def provision(self, workspace, environment):
+                provisioned = super().provision(workspace, environment)
+                changed = dict(provisioned.environment)
+                changed["SYSTEMROOT"] = str(attacker.resolve())
+                changed["WINDIR"] = str(attacker.resolve())
+                return broker.ProvisionedPlaywrightRuntime(
+                    venv_python=provisioned.venv_python,
+                    site_packages=provisioned.site_packages,
+                    browsers=provisioned.browsers,
+                    environment=changed,
+                    expected_browser_version=provisioned.expected_browser_version,
+                )
+
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            trusted = root_path / "trusted-windows"
+            attacker = root_path / "attacker-windows"
+            trusted.mkdir()
+            attacker.mkdir()
+            provider = SubstitutingProvider(events)
+            adapter = broker.PlaywrightBrowserAdapter(
+                environment={"SYSTEMROOT": str(attacker), "PATH": str(attacker)},
+                workspace_root=root_path,
+                runtime_provider_factory=lambda: provider,
+                process_factory=_forbid_live,
+            )
+            with (
+                patch.object(
+                    broker,
+                    "_canonical_windows_system_root",
+                    return_value=trusted.resolve(),
+                ),
+                self.assertRaisesRegex(
+                    broker.BrokerRefusal, "sealed_browser_environment_refused"
+                ),
+            ):
+                adapter.prepare_attended_session(authority_binding())
+
+            self.assertNotIn("child_launch", events)
+            self.assertFalse(provider.workspace.exists())
+
     def test_lock_is_exact_and_fake_probe_is_closed_removed_before_session(self):
         runtime = broker.PinnedPlaywrightRuntime()
         with (
@@ -1213,7 +2118,7 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
 
         provider = FakeRuntimeProvider()
         with tempfile.TemporaryDirectory() as root:
-            adapter = broker.PlaywrightBrowserAdapter(
+            adapter = broker._NativePlaywrightBrowserAdapter(
                 environment={
                     "SystemRoot": "/safe",
                     "PEERSLATE_AUTH_ISSUER": OIDC_ISSUER,
@@ -1234,7 +2139,8 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
             for launch in provider.playwright.launches:
                 self.assertFalse(launch["headless"])
                 self.assertEqual(
-                    launch["executable_path"], str(provider.chromium_executable)
+                    launch["executable_path"],
+                    str(provider.chromium_executable.resolve()),
                 )
                 self.assertNotIn("PEERSLATE_AUTH_ISSUER", launch["env"])
                 self.assertNotIn("AUTHORIZATION_REF", launch["env"])
@@ -1251,12 +2157,17 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
         commands = []
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
+            trusted_windows = root_path / "trusted-windows"
+            trusted_windows.mkdir()
 
             def runner(command, **_kwargs):
                 command = tuple(command)
                 commands.append(command)
                 if "--copies" in command:
                     venv_root = Path(command[-1])
+                    venv_python = venv_root / "Scripts" / "python.exe"
+                    venv_python.parent.mkdir(parents=True)
+                    venv_python.write_text("fake", encoding="utf-8")
                     site_packages = venv_root / "Lib" / "site-packages"
                     browser_package = site_packages / "playwright" / "driver" / "package"
                     browser_package.mkdir(parents=True)
@@ -1289,6 +2200,11 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
                     broker.sys,
                     "version_info",
                     SimpleNamespace(major=3, minor=13),
+                ),
+                patch.object(
+                    broker,
+                    "_canonical_windows_system_root",
+                    return_value=trusted_windows.resolve(),
                 ),
                 patch.object(
                     runtime,
@@ -1325,8 +2241,10 @@ class PinnedBrowserPreflightTests(unittest.TestCase):
                 ),
             )
             load_args, _ = load_started.call_args
-            self.assertEqual(load_args[0], site_packages)
-            self.assertEqual(load_args[1], root_path / "runtime" / "browsers")
+            self.assertEqual(load_args[0], site_packages.resolve())
+            self.assertEqual(
+                load_args[1], (root_path / "runtime" / "browsers").resolve()
+            )
 
     def test_unapproved_runtime_host_refuses_before_graph_mutation(self):
         events = []
