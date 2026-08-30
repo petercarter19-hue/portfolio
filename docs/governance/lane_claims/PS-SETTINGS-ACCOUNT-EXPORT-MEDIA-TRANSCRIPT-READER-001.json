@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-MEDIA-TRANSCRIPT-READER-001",
+  "state": "active",
+  "outcome": "Deliver the owner's accepted 2026-08-30 Paper 1 ruling: read-only owner-scoped account-export readers for the member's voice/photo capture facts and own transcripts over voice_media_sources, voice_transcription_attempts, voice_capture_links, capture_media_sources, and capture_media_links, as one additive migration PS-SETTINGS-EXPORT-007 with rollback, a registry entry whose requires covers the readers' and the verification's dependencies, isolation verification with constraint-complete fixtures, allowlist-pinning tests with canaries, DOMAINS updates, and contract records. HARD EXCLUSIONS: every blob locator/name, content hash/digest/etag, vendor/provider identifier, raw media bytes, and payload-nulled deleted rows. Transcript text is INCLUDED as member content. Procedures accept only a trusted server-derived user key, order deterministically, and never select another member's data or internal ids. No UI, worker, or integration change; no real export; no schema apply outside the disposable gate; no production authority.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/settings-mt-reader-writer",
+  "branch": "work/2026-08-30-settings-account-export-media-transcript-reader-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "663b73e7735a4fad0220c02094714ecfd98d8a28",
+  "owner_outcome_ref": "pete-chat-2026-08-30/seven-export-decisions-accepted",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-ACCOUNT-EXPORT-MEDIA-TRANSCRIPT-READER-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-MEDIA-TRANSCRIPT-READER-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-ACCOUNT-EXPORT-MEDIA-TRANSCRIPT-READER-001.json",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-007_media_transcript_reader.sql",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-007_media_transcript_reader_rollback.sql",
+    "SQL FIles/Migrations/registry.json",
+    "SQL FIles/Verification/PS-SETTINGS-EXPORT-007_media_transcript_reader_isolation_verify.sql",
+    "services/account_export_domain_readers.py",
+    "tests/test_settings_export_media_transcript_reader.py",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR6_ACCOUNT_EXPORT_MEDIA_TRANSCRIPT_READER.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR6_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+  ],
+  "domains": [
+    "schema:settings:account-export-media-transcript-reader",
+    "privacy:settings:export-media-transcript-allowlists",
+    "testing:settings:account-export-media-transcript-reader"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-MEDIA-TRANSCRIPT-READER-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
