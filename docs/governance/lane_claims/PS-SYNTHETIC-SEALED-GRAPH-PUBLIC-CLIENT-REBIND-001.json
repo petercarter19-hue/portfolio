@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-REBIND-001",
+  "state": "active",
+  "outcome": "After a separately owner-authorized replacement single-tenant External ID public client is provisioned with no secret, exact http://localhost public-client redirect, and exact delegated User.Read, User.ReadWrite.All, and User.DeleteRestore.All consent, pin only its exact new non-secret client ID into the already reviewed sealed broker contract and update directly required focused tests and runbook truth. Preserve the exact tenant, scopes, memory-only cache, token validations, and absence of runtime configurability. Repository build only; no live provisioning, permission, role, proof, cleanup, deployment, or production operation.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
+  "branch": "work/2026-08-30-synthetic-sealed-graph-public-client-rebind-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "c718fb64e13e8aa62eb7bdd951ff95a0a9d657a3",
+  "owner_outcome_ref": "session:01a04348-7e3e-7a11-a443-752498be91b5/owner-authorization:2026-08-28/workshop-fg-sealed-private-proof-complete-lifecycle; pete-chat-2026-08-30/continue-workshop-fg-proof-after-disconnection-and-ensure-lane",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-REBIND-001.json",
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-REBIND-001.md",
+    "docs/governance/lane_claims/receipts/PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-REBIND-001.json",
+    "qa/synthetic_member/sealed_credential_broker/__init__.py",
+    "qa/synthetic_member/docs/ATTENDED_PROOF_RUNBOOK.md",
+    "tests/synthetic_member_qa/test_sealed_credential_broker.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-REBIND-001.md"
+  ],
+  "domains": [
+    "identity:synthetic-qa-sealed-graph-public-client-rebind",
+    "operations:synthetic-qa-delegated-graph-authorization-rebind",
+    "testing:synthetic-member:sealed-graph-public-client-rebind"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
