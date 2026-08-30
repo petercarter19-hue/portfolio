@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-PREFERENCES-CONSENT-READER-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver the owner's accepted 2026-08-30 Paper 2 and Paper 3 rulings: read-only owner-scoped account-export readers for the member's preference and consent records over connection_preferences, notification_preferences, and user_consents, as one additive migration PS-SETTINGS-EXPORT-008 with rollback, a registry entry whose requires covers the readers' and verification's dependencies, isolation verification with constraint-complete fixtures, allowlist-pinning tests with canaries, DOMAINS updates, and contract records. Paper 2: both preference tables INCLUDED with truthful dormant-behavior labeling in the export output. Paper 3: the member's own consent history INCLUDED (code, policy version, status incl. withdrawn, timestamps); evidence_json EXCLUDED whole; no third-party consent read (recruiter_questions untouched). The tables key on the member's user id; the program's single identity contract is preserved. Procedures accept only a trusted server-derived user key, order deterministically, and never select another member's data or internal ids. No UI, worker, or integration change; no real export; no schema apply outside the disposable gate; no production authority.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-pc-reader-writer",
@@ -36,6 +36,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "154507a2ceb57ba88708f497f27cf5a3bb394378",
+  "closed_at": "2026-08-30T10:17:05Z"
 }
