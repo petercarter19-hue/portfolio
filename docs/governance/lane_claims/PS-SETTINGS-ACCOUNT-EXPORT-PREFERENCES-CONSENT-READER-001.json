@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-PREFERENCES-CONSENT-READER-001",
+  "state": "active",
+  "outcome": "Deliver the owner's accepted 2026-08-30 Paper 2 and Paper 3 rulings: read-only owner-scoped account-export readers for the member's preference and consent records over connection_preferences, notification_preferences, and user_consents, as one additive migration PS-SETTINGS-EXPORT-008 with rollback, a registry entry whose requires covers the readers' and verification's dependencies, isolation verification with constraint-complete fixtures, allowlist-pinning tests with canaries, DOMAINS updates, and contract records. Paper 2: both preference tables INCLUDED with truthful dormant-behavior labeling in the export output. Paper 3: the member's own consent history INCLUDED (code, policy version, status incl. withdrawn, timestamps); evidence_json EXCLUDED whole; no third-party consent read (recruiter_questions untouched). The tables key on the member's user id; the program's single identity contract is preserved. Procedures accept only a trusted server-derived user key, order deterministically, and never select another member's data or internal ids. No UI, worker, or integration change; no real export; no schema apply outside the disposable gate; no production authority.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/settings-pc-reader-writer",
+  "branch": "work/2026-08-30-settings-account-export-preferences-consent-reader-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "a0685c032a4a705f2e7be7702cb6f83fcbe3fc52",
+  "owner_outcome_ref": "pete-chat-2026-08-30/seven-export-decisions-accepted",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-ACCOUNT-EXPORT-PREFERENCES-CONSENT-READER-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-PREFERENCES-CONSENT-READER-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-ACCOUNT-EXPORT-PREFERENCES-CONSENT-READER-001.json",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-008_preferences_consent_reader.sql",
+    "SQL FIles/Migrations/PS-SETTINGS-EXPORT-008_preferences_consent_reader_rollback.sql",
+    "SQL FIles/Migrations/registry.json",
+    "SQL FIles/Verification/PS-SETTINGS-EXPORT-008_preferences_consent_reader_isolation_verify.sql",
+    "services/account_export_domain_readers.py",
+    "tests/test_settings_export_preferences_consent_reader.py",
+    "tests/test_account_export_integration.py",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR7_ACCOUNT_EXPORT_PREFERENCES_CONSENT_READER.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR7_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+  ],
+  "domains": [
+    "schema:settings:account-export-preferences-consent-reader",
+    "privacy:settings:export-preferences-consent-allowlists",
+    "testing:settings:account-export-preferences-consent-reader"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-PREFERENCES-CONSENT-READER-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
