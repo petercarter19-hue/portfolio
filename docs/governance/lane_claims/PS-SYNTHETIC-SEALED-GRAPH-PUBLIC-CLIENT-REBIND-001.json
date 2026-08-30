@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-REBIND-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "After a separately owner-authorized replacement single-tenant External ID public client is provisioned with no secret, exact http://localhost public-client redirect, and exact delegated User.Read, User.ReadWrite.All, and User.DeleteRestore.All consent, pin only its exact new non-secret client ID into the already reviewed sealed broker contract and update directly required focused tests and runbook truth. Preserve the exact tenant, scopes, memory-only cache, token validations, and absence of runtime configurability. Repository build only; no live provisioning, permission, role, proof, cleanup, deployment, or production operation.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
@@ -30,6 +30,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "6662aa4fc6db03cb25fb0f8026c111096d427238",
+  "closed_at": "2026-08-30T13:21:14Z"
 }
