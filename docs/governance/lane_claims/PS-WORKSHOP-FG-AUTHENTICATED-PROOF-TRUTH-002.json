@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-002",
-  "state": "active",
+  "state": "closed",
   "outcome": "Record exactly one second and final sealed authenticated Workshop F/G attempt against deployed release de34c238cb406a6b8c5d4c08 using broker code now on main, exactly two new ordinary synthetic members, structural outcomes only, and no retry. On completion, failure, or stop, record cleanup of the exact mappings, items, users, temporary and in-memory material, temporary User Administrator removal, and replacement public-client deletion from both active and deleted applications. Advance the current baseline from pending and not_done to done only if exact evidence proves the complete F/G journey; otherwise retain pending and not_done and record the result honestly. Repository truth package only; it performs and authorizes no live operation.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_fg_sealed_proof_writer",
@@ -30,6 +30,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "57ae0ce190a3433cd80aab1d8f03db2d3e5ef67d",
+  "closed_at": "2026-08-30T14:16:30Z"
 }
