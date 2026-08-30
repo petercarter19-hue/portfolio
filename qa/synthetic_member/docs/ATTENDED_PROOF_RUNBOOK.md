@@ -146,10 +146,13 @@ authorities:
    interpreter, wrong architecture, or structurally unusable interpreter target
    refuses before Azure, Graph, or browser work. A child-level command failure
    remains a non-reflective refusal before Graph or browser work.
-3. `az webapp auth show` selects only its current top-level `enabled` and
-   `issuer` fields. The worker requires exactly that shape, maps it only inside
-   the worker to its closed `platformEnabled` and `openIdIssuer` fields, and
-   requires enabled App Service authentication and one
+3. Azure CLI 2.87 `az webapp auth show` projects only
+   `properties.platform.enabled` and
+   `properties.identityProviders.azureActiveDirectory.registration.openIdIssuer`
+   into the closed top-level `{enabled,issuer}` result. The worker requires
+   exactly that projected shape, maps it only inside the worker to its closed
+   `platformEnabled` and `openIdIssuer` fields, and requires enabled App Service
+   authentication and one
    no-trailing-slash OIDC discovery authority of the form
    `https://<tenant-label>.ciamlogin.com/<tenant-uuid>/v2.0`.
 4. The exact discovery document must return HTTP 200 from the requested URL,

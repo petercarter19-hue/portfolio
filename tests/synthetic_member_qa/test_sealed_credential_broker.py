@@ -892,7 +892,11 @@ class AzureAuthorityResolverTests(WindowsAzureCliTestCase):
         self.assertEqual(calls[1][0][:5], cli_layout.command_prefix)
         self.assertEqual(
             calls[0][0][calls[0][0].index("--query") + 1],
-            "{enabled:enabled,issuer:issuer}",
+            (
+                "{enabled:properties.platform.enabled,"
+                "issuer:properties.identityProviders.azureActiveDirectory."
+                "registration.openIdIssuer}"
+            ),
         )
         for _command, kwargs in calls:
             self.assertNotIn("UNRELATED_SECRET", kwargs["env"])
@@ -981,6 +985,16 @@ class AzureAuthorityResolverTests(WindowsAzureCliTestCase):
             "legacy_shape": {
                 "platformEnabled": True,
                 "openIdIssuer": DISCOVERY_ISSUER,
+            },
+            "unprojected_arm_shape": {
+                "properties": {
+                    "platform": {"enabled": True},
+                    "identityProviders": {
+                        "azureActiveDirectory": {
+                            "registration": {"openIdIssuer": DISCOVERY_ISSUER}
+                        }
+                    },
+                }
             },
         }
         with tempfile.TemporaryDirectory() as root:

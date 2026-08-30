@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-SEALED-AZURE-AUTH-SHAPE-001",
+  "candidate_sha": "176c1756fe47ae0d3df5812ba1b279c2533dd7ae",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/sealed_broker_writer/child_runtime_protocol_review",
+  "result": "pass",
+  "reviewed_at": "2026-08-30T12:12:20Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-AZURE-AUTH-SHAPE-001.md"
+}

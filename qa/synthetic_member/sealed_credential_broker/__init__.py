@@ -843,7 +843,11 @@ class AzureAppAuthorityResolver:
         "--name",
         AZURE_WEBAPP_NAME,
         "--query",
-        "{enabled:enabled,issuer:issuer}",
+        (
+            "{enabled:properties.platform.enabled,"
+            "issuer:properties.identityProviders.azureActiveDirectory."
+            "registration.openIdIssuer}"
+        ),
         "--output",
         "json",
         "--only-show-errors",
