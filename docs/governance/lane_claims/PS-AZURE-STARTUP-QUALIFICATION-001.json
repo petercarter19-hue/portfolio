@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "package": "PS-AZURE-STARTUP-QUALIFICATION-001",
+  "state": "active",
+  "outcome": "Build and merge only the production-inert Azure startup qualification automation foundation: a privacy-safe Cost Management reader and five-workload continuity report, a Microsoft Foundry GPT-5.6 Luna evaluation adapter and synthetic/public evaluation runner with an explicit price schedule and fail-closed per-run cost ceiling, and a disabled-by-default Azure DevOps schedule definition. The implementation must use fakes for tests, retain no prompts, model output, credentials, tokens, or private member content, and keep activation visibly separate. No Azure resource, budget, role, grant, credential, provider deployment, DNS, product AI routing, app runtime, schema, pipeline registration, paid call, spending, deployment, production operation, or start of the 60-day clock is authorized; those remain withheld until the $5,000 credit is visible and Pete separately authorizes the exact activation and spend.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a046b3-74fc-7903-a336-3f1647f81d1c/azure-startup-qualification-manager-writer",
+  "branch": "work/2026-08-30-azure-startup-qualification-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "408ef5163e9e926c1ba4897f56ae772606ab2616",
+  "owner_outcome_ref": "session:01a046b3-74fc-7903-a336-3f1647f81d1c/owner-direction:2026-08-30/codex-take-over-azure-startup-qualification-setup-with-paid-activation-withheld",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-AZURE-STARTUP-QUALIFICATION-001.json",
+    "docs/governance/lane_claims/evidence/PS-AZURE-STARTUP-QUALIFICATION-001.md",
+    "docs/governance/lane_claims/receipts/PS-AZURE-STARTUP-QUALIFICATION-001.json",
+    "docs/initiatives/PS-AZURE-STARTUP-QUALIFICATION-001/README.md",
+    "docs/initiatives/PS-AZURE-STARTUP-QUALIFICATION-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "services/azure_startup_qualification.py",
+    "services/ai_foundation/azure_foundry.py",
+    "services/ai_foundation/observability.py",
+    "services/ai_foundation/__init__.py",
+    "scripts/azure_startup_qualification_status.py",
+    "scripts/run_foundry_luna_evaluations.py",
+    "pipelines/azure-startup-qualification.yml",
+    "tests/test_azure_startup_qualification.py",
+    "tests/ai_foundation/test_azure_foundry_provider.py",
+    "tests/fixtures/azure_startup_qualification/luna_eval_cases.json"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-AZURE-STARTUP-QUALIFICATION-001.md"
+  ],
+  "domains": [
+    "ai:foundry-luna-evaluation",
+    "operations:azure-startup-qualification-observation",
+    "finance:azure-startup-credit-continuity",
+    "testing:azure-startup-qualification"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
