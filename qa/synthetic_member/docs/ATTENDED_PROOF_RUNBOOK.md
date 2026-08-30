@@ -193,7 +193,7 @@ submitting the password.
 
 Every Graph token instead comes from the compiled-in, separately provisioned
 single-tenant External ID public client
-`d28e3e11-8cfa-465c-bc77-1811caf902b5` for tenant
+`4e5fd52b-5c0b-4f7c-8266-f571284a31f1` for tenant
 `b6cac548-9b4b-43da-b366-e95be960ec2f`. The broker constructs MSAL's public
 client only with that exact tenant authority and the registered
 `http://localhost` redirect. It uses `acquire_token_interactive`, the

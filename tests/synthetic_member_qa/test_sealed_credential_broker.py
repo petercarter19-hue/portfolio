@@ -1407,6 +1407,10 @@ class MicrosoftGraphCreationTests(WindowsAzureCliTestCase):
 
 class MsalSystemBrowserGraphTokenTests(unittest.TestCase):
     def test_fixed_public_client_uses_exact_memory_only_system_browser_flow(self):
+        self.assertEqual(
+            broker.GRAPH_PUBLIC_CLIENT_ID,
+            "4e5fd52b-5c0b-4f7c-8266-f571284a31f1",
+        )
         fake_msal = FakeMsalModule({"access_token": fake_graph_token()})
         provider = broker.MsalSystemBrowserGraphTokenProvider()
         with (

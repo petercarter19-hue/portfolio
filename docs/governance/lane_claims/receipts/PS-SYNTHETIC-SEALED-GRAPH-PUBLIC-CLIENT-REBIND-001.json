@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-REBIND-001",
+  "candidate_sha": "8cbeae0fc1d853de0d8f063c3bad02d2c362e8e8",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/sealed_broker_writer/child_runtime_protocol_review",
+  "result": "pass",
+  "reviewed_at": "2026-08-30T13:07:08Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-REBIND-001.md"
+}
