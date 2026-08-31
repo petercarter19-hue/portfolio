@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-EXPERIENCE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver C3 of the account-export program: the signed-in member's own request, status, and authenticated proxy download experience over the merged C1 foundation and C2 assembly. Add three owner-scoped routes to owner_routes.py (same-origin POST request, GET status, GET proxy download), allowlist only the three member-facing procedures in database_service.py, add a route-layer experience service and an owner-scoped private readback on the storage adapter, and replace the 'Not available today' My Data copy with a real control that plainly states journal and projects are not included, per Pete's 2026-08-31 decision. Identity is always server-derived; client-supplied owner ids are ignored. Status and download re-derive ownership and answer unknown or foreign jobs with one neutral 404. Download is an application proxy with application/zip, private no-store and nosniff headers, never a SAS or direct Blob URL. All of it stays behind a default-off PEERSLATE_ACCOUNT_EXPORT_ENABLED flag registered in app.py. No migration, schema apply, worker change, deployment, or production authority.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-export-experience-writer",
@@ -39,6 +39,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "705cb1c2812e92327e97309d195921b52db53678",
+  "closed_at": "2026-08-31T15:05:00Z"
 }
