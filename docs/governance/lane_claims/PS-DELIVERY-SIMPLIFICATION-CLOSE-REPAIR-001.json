@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-SIMPLIFICATION-CLOSE-REPAIR-001",
+  "state": "active",
+  "outcome": "Make the already-reviewed, already-merged PS-DELIVERY-CONTROL-SIMPLIFICATION-001 close representable without weakening delivery governance for any other package. The simplification bootstrap's reviewed candidate ff3959815f3e4a9ca4dc5dd404a42a5e11ec462a necessarily carried two legacy bootstrap records outside its own claim (docs/governance/lane_claims/PS-SYNTHETIC-MULTI-MEMBER-QA-001.json and docs/governance/lane_claims/receipts/PS-SYNTHETIC-MULTI-MEMBER-QA-001.json) because it created the per-package claim model itself. Add one exact historical-tuple recognition, keyed on that exact package, reviewed candidate, and implementation merge 1b6b5d4905af32edfee43c02d6e2bdb58d31898c, tolerating only those two exact paths during close scope validation. Byte identity, merged-path introduction, receipt verification, branch preservation, and strict scope behavior for every other package, candidate, merge, and path remain unchanged, proven by focused positive and adversarial negative tests. No generic bypass, waiver, or widening mechanism.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/central-cleanup-manager",
+  "branch": "work/2026-09-01-simplification-close-repair-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "4cb567a541f152f72623099a6529b2d5a12b3915",
+  "owner_outcome_ref": "pete-chat-2026-08-31/central-five-item-cleanup-handoff",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-DELIVERY-SIMPLIFICATION-CLOSE-REPAIR-001.json",
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-SIMPLIFICATION-CLOSE-REPAIR-001.md",
+    "docs/governance/lane_claims/receipts/PS-DELIVERY-SIMPLIFICATION-CLOSE-REPAIR-001.json",
+    "scripts/delivery_preflight.py",
+    "tests/test_delivery_preflight.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-SIMPLIFICATION-CLOSE-REPAIR-001.md"
+  ],
+  "domains": [
+    "governance:delivery-control:historical-close-repair"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
