@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-RETRIEVAL-001",
+  "candidate_sha": "aa00c0e1da924cfe10113ca0d5543ee9e7e594b9",
+  "review_type": "independent",
+  "reviewer_ref": "agent:4b21c2ac-0236-4dc0-af54-2c15e6f126ce/myopp-retrieval-independent-reviewer-a1",
+  "result": "pass",
+  "reviewed_at": "2026-08-31T20:06:27Z",
+  "findings": [
+    {
+      "summary": "Round 1 (2270a5b1) returned REVISE: a cancel racing the snapshot persist could serve results for a cancelled search and escape as a repository exception; two further unguarded terminal-write windows; a README overclaim; a regression test structurally unable to reach the race; and a gate-proof authorization citation looser than the claim's bounded-envelope wording. All fixed; the reviewer reran its two-thread reproductions and full probe battery against aa00c0e1 with no regressions.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Forward obligations recorded in the package README (items 13-15: cross-owner execution_key existence signal; doc-04-mandated stale-version fence drops as a member-invisible recall gap; non-terminal stranding on unexpected provider exceptions bounded by TTL) plus, in the claim evidence file, the residual microseconds-wide post-persist cancel window inherent to the mandated snapshot-last write ordering (graceful, truthful, contract-level fix deferred to an owner cancellable-flag decision).",
+      "status": "informational"
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MYOPP-RETRIEVAL-001.md"
+}
