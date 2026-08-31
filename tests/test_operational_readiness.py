@@ -55,7 +55,19 @@ class GitleaksConfigurationTests(unittest.TestCase):
         # history, deleting the files (they are already gone from main) could
         # not clear it. Both entries are scoped by path and exact line and are
         # not commit-pinned, so they survive the required squash merge.
-        self.assertEqual(6, len(allowlists))
+        #
+        # 2026-08-31 added two more, for the same reason and in the same
+        # shape. Two unmerged work branches carried fixture lines matching
+        # generic-api-key on the SHAPE of a key-suffixed field: Azure
+        # startup-qualification Luna eval labels, and My Opportunities
+        # qualification call fixtures. No credential is involved in either.
+        # The gate was failing on every branch INCLUDING main, so nothing
+        # could merge at all until these landed. The second entry's trailing
+        # `now=` value excludes quote characters: independent review proved
+        # that ending it `.*$` would admit a real quoted credential appended
+        # after now=, which is exactly the smuggling this regression exists
+        # to prevent.
+        self.assertEqual(8, len(allowlists))
         self.assertEqual(
             {
                 'description': (
@@ -114,6 +126,39 @@ class GitleaksConfigurationTests(unittest.TestCase):
             )
         )
 
+        azure_eval_path = ''.join(
+            (
+                r'^tests/fixtures/',
+                'azure_startup_qualification/',
+                r'luna_eval_cases\.json$',
+            )
+        )
+        azure_eval_line = ''.join(
+            (
+                r'^\s*"source_version_',
+                r'[k]ey": "synthetic-',
+                r'(?:accessibility|delivery|product)-v1",\s*$',
+            )
+        )
+        myopp_qualification_path = ''.join(
+            (
+                r'^tests/',
+                r'test_my_opportunities_qualification\.py$',
+            )
+        )
+        myopp_qualification_line = ''.join(
+            (
+                r'^\s*(?:service\.[a-z_]+\()?"member-[ab]", ',
+                r'(?:grant|observation)_',
+                r'[k]ey=[A-Za-z_][A-Za-z0-9_.]*, ',
+                r'idempotency_',
+                r'[k]ey="[a-z0-9-]+", ',
+                r'now=[^"',
+                "'",
+                r']*$',
+            )
+        )
+
         # These were pinned to three branch commit SHAs until 2026-08-04. The
         # Community pull request was squash-merged, which rewrites every branch
         # commit into one new SHA, so all three pins stopped matching at once,
@@ -163,6 +208,8 @@ class GitleaksConfigurationTests(unittest.TestCase):
                 search_revision_line,
                 search_projection_line,
             ],
+            azure_eval_path: [azure_eval_line],
+            myopp_qualification_path: [myopp_qualification_line],
         }
 
         scoped = [

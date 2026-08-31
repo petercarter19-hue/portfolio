@@ -93,3 +93,41 @@ regexes = [
   '''^\s*"publication_revision_[k]ey": "rev_(?:alder-quist|ben-okafor|mira-ostrand)_001",\s*$''',
   '''^\s*"projection_[k]ey": "proj_(?:alder-quist|ben-okafor|mira-ostrand)_(?:experience|skill)_[0-9]{3}",\s*$''',
 ]
+
+[[allowlists]]
+description = """Known non-secret Azure startup-qualification Luna evaluation \
+fixtures. Each value is a deterministic synthetic evaluation-case revision \
+label, not a credential: generic-api-key matches the SHAPE of a key-suffixed \
+JSON field, exactly as it does for the Profile and Search fixtures above. \
+These lines entered history on the package work branch and the pipeline runs \
+`gitleaks git .` over every fetched ref, so editing or deleting the fixture \
+cannot clear the finding -- only this allowlist can, and until it exists the \
+gate fails on every branch including main."""
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^tests/fixtures/azure_startup_qualification/luna_eval_cases\.json$''']
+regexTarget = "line"
+regexes = [
+  '''^\s*"source_version_[k]ey": "synthetic-(?:accessibility|delivery|product)-v1",\s*$''',
+]
+
+[[allowlists]]
+description = """Known non-secret My Opportunities qualification test \
+fixtures: literal idempotency and entity keys passed as keyword arguments in \
+service-call assertions. generic-api-key matches the SHAPE of a `..._key=` \
+assignment, not any credential -- the values are fixture labels such as \
+member ids and retry tokens. These lines entered history on the package work \
+branch, and because the pipeline scans every fetched ref they cannot be \
+cleared by editing or reverting the file; only this allowlist clears them. \
+Scoped to this one path and this one call shape, so any other line in the \
+file, or this shape in another file, still fails the scan. The trailing \
+`now=` value deliberately excludes quote characters: an earlier draft ended \
+`now=.*$`, which independent review proved would admit a real quoted \
+credential appended after now=, or supplied as the now= value itself."""
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^tests/test_my_opportunities_qualification\.py$''']
+regexTarget = "line"
+regexes = [
+  '''^\s*(?:service\.[a-z_]+\()?"member-[ab]", (?:grant|observation)_[k]ey=[A-Za-z_][A-Za-z0-9_.]*, idempotency_[k]ey="[a-z0-9-]+", now=[^"']*$''',
+]
