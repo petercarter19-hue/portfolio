@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-EXPERIENCE-001",
+  "state": "active",
+  "outcome": "Deliver C3 of the account-export program: the signed-in member's own request, status, and authenticated proxy download experience over the merged C1 foundation and C2 assembly. Add three owner-scoped routes to owner_routes.py (same-origin POST request, GET status, GET proxy download), allowlist only the three member-facing procedures in database_service.py, add a route-layer experience service and an owner-scoped private readback on the storage adapter, and replace the 'Not available today' My Data copy with a real control that plainly states journal and projects are not included, per Pete's 2026-08-31 decision. Identity is always server-derived; client-supplied owner ids are ignored. Status and download re-derive ownership and answer unknown or foreign jobs with one neutral 404. Download is an application proxy with application/zip, private no-store and nosniff headers, never a SAS or direct Blob URL. All of it stays behind a default-off PEERSLATE_ACCOUNT_EXPORT_ENABLED flag registered in app.py. No migration, schema apply, worker change, deployment, or production authority.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/settings-export-experience-writer",
+  "branch": "work/2026-08-31-settings-account-export-experience-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "3c43269f57e29c77af834387bc88c59c531ed7b0",
+  "owner_outcome_ref": "pete-chat-2026-08-31/export-step-one-through-five",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-ACCOUNT-EXPORT-EXPERIENCE-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-EXPERIENCE-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-ACCOUNT-EXPORT-EXPERIENCE-001.json",
+    "owner_routes.py",
+    "app.py",
+    "services/account_export_experience_service.py",
+    "services/account_export_storage_service.py",
+    "services/database_service.py",
+    "templates/owner_settings.html",
+    "templates/owner_account_export.html",
+    "tests/test_account_export_experience.py",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C3_ACCOUNT_EXPORT_EXPERIENCE.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C3_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+  ],
+  "domains": [
+    "runtime:settings:account-export-experience",
+    "privacy:settings:account-export-experience",
+    "testing:settings:account-export-experience"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-EXPERIENCE-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
