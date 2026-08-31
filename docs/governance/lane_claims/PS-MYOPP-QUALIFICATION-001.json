@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MYOPP-QUALIFICATION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement and independently review the owner-scoped C5 qualification foundation: an evidence port reading only the member's confirmed, unarchived, version-pinned Workshop knowledge records; explicit, revocable, expiring grants fixed to the qualification_verification purpose with scope enforcement; the four canonical assessment states under Pete's approved policy (firm confirmed source-linked evidence only; aggregated dated duration; named credentials; posting-window recency only; absence never negative; unmet needs affirmative contradiction); one current assessment per member x item x requirement version with idempotent evaluation, append-only history, and correction/revocation/version recompute; the deterministic Fully verified gate over required items only, excluding preferred, practical fit, and AI; a canary-proven AI seam that never persists or decides; honest Review unavailable and persistence-failure behavior; and the additive governed PS-MYOPP-003 migration with verification and rollback. No route/UI, C4 retrieval, provider, Workshop, deployment, enablement, or production/staging schema work. A disposable migration-gate database needs separate bounded owner authorization.",
   "assignment": "implementation",
   "writer_ref": "session:4b21c2ac-0236-4dc0-af54-2c15e6f126ce/myopp-qualification-writer",
@@ -40,6 +40,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "372116726b64e506d5b1a5c2fe706f2f71654fdf",
+  "closed_at": "2026-08-31T11:06:11Z"
 }
