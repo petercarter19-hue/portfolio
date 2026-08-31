@@ -131,3 +131,18 @@ regexTarget = "line"
 regexes = [
   '''^\s*(?:service\.[a-z_]+\()?"member-[ab]", (?:grant|observation)_[k]ey=[A-Za-z_][A-Za-z0-9_.]*, idempotency_[k]ey="[a-z0-9-]+", now=[^"']*$''',
 ]
+
+[[allowlists]]
+description = """Known non-secret My Opportunities retrieval test fixtures: \
+the same key-shaped service-call idiom as the qualification suite above, in \
+the retrieval suite's own file with its own actor literals. The value is a \
+fixture retry token, not a credential. Same reasoning as the entry above: \
+the line lives in branch history, the pipeline scans every fetched ref, and \
+only this allowlist can clear it."""
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^tests/test_my_opportunities_retrieval\.py$''']
+regexTarget = "line"
+regexes = [
+  '''^\s*(?:service\.[a-z_]+\()?"(?:alice|bob)", (?:grant|observation)_[k]ey=[A-Za-z_][A-Za-z0-9_.]*, idempotency_[k]ey="[a-z0-9-]+", now=[^"']*$''',
+]

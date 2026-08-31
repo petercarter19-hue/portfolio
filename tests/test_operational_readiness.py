@@ -67,7 +67,12 @@ class GitleaksConfigurationTests(unittest.TestCase):
         # that ending it `.*$` would admit a real quoted credential appended
         # after now=, which is exactly the smuggling this regression exists
         # to prevent.
-        self.assertEqual(8, len(allowlists))
+        #
+        # Later on 2026-08-31, a third of the same class: the retrieval
+        # suite reused the qualification suite's call idiom with its own
+        # actor literals, which the deliberately narrow member-[ab] class
+        # does not cover. Same shape, own file, own actor class.
+        self.assertEqual(9, len(allowlists))
         self.assertEqual(
             {
                 'description': (
@@ -159,6 +164,25 @@ class GitleaksConfigurationTests(unittest.TestCase):
             )
         )
 
+        myopp_retrieval_path = ''.join(
+            (
+                r'^tests/',
+                r'test_my_opportunities_retrieval\.py$',
+            )
+        )
+        myopp_retrieval_line = ''.join(
+            (
+                r'^\s*(?:service\.[a-z_]+\()?"(?:alice|bob)", ',
+                r'(?:grant|observation)_',
+                r'[k]ey=[A-Za-z_][A-Za-z0-9_.]*, ',
+                r'idempotency_',
+                r'[k]ey="[a-z0-9-]+", ',
+                r'now=[^"',
+                "'",
+                r']*$',
+            )
+        )
+
         # These were pinned to three branch commit SHAs until 2026-08-04. The
         # Community pull request was squash-merged, which rewrites every branch
         # commit into one new SHA, so all three pins stopped matching at once,
@@ -210,6 +234,7 @@ class GitleaksConfigurationTests(unittest.TestCase):
             ],
             azure_eval_path: [azure_eval_line],
             myopp_qualification_path: [myopp_qualification_line],
+            myopp_retrieval_path: [myopp_retrieval_line],
         }
 
         scoped = [

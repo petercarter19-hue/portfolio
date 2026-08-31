@@ -96,3 +96,28 @@ secret-scan build gate. Paired receipt:
 
 - **Not deployed.** Repository merge only. No deployment, schema, or
   production operation is claimed or performed here.
+
+## Round 3 addendum (2026-08-31, candidate fd5d2748)
+
+A third outbreak of the same class: `tests/test_my_opportunities_retrieval.py`
+reused the qualification suite's key-shaped call idiom with its own actor
+literals, outside the deliberately narrow `member-[ab]` class. One line took
+the repo-wide gate red again — including the owner-authorized production
+schema run. Third allowlist entry, same house pattern, hardened tail carried
+over; readiness pin 8 → 9.
+
+The file's sixteen other quoted `*_key="..."` literals are deliberately not
+allowlisted: that low-entropy quoted class is scanner-quiet by behaviour, not
+by suppression, proven empirically by this candidate's clean full-history
+scan (2221 commits, no leaks).
+
+**Owner authorization for the third entry**, required by review because it
+exceeds the claim's recorded "exactly one" and the prior two-entry ack:
+`pete-chat-2026-08-31/third-outbreak-path-of-least-resistance` — the owner's
+direct reply in the writer's terminal, "Whatever works best. The path of
+least resistance.", given in response to the message describing this exact
+outbreak, the frozen fix, and the systemic alternative.
+
+Recorded root cause for future writers: under the current pipeline design,
+test fixture idioms are scanner-visible repo-wide; new suites should prefer
+non-key-shaped fixture kwargs over growing this allowlist indefinitely.
