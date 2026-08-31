@@ -24,6 +24,7 @@
       "PS-AUTH-PRODUCTION-RECOVERY-001",
       "PS-AUTH-SQL-WAKE-001",
       "PS-AZURE-RELEASE-RELIABILITY-001",
+      "PS-AZURE-STARTUP-QUALIFICATION-001",
       "PS-BASELINE-001",
       "PS-CAPTURE-001",
       "PS-CAPTURE-002",
@@ -153,11 +154,11 @@
     ]
   },
   "counts": {
-    "current_protect": 66,
+    "current_protect": 67,
     "future_finish": 28,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 129
+    "total": 130
   }
 }

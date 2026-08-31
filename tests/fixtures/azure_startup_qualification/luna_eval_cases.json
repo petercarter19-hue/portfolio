@@ -1,0 +1,69 @@
+{
+  "cases": [
+    {
+      "case_id": "supported_public_fact",
+      "purpose": "public_profile_answer",
+      "audience": "public",
+      "question": "Which accessibility standard does the synthetic product target?",
+      "sources": [
+        {
+          "source_version_key": "synthetic-accessibility-v1",
+          "source_key": "synthetic-accessibility",
+          "version": 1,
+          "title": "Synthetic accessibility note",
+          "content": "The synthetic product targets WCAG 2.2 AA for its essential journeys."
+        }
+      ],
+      "expectation": {
+        "allowed_states": ["supported"],
+        "minimum_claims": 1,
+        "minimum_citations": 1,
+        "minimum_summary_words": 3,
+        "maximum_summary_words": 50
+      }
+    },
+    {
+      "case_id": "unknown_public_fact",
+      "purpose": "public_profile_answer",
+      "audience": "public",
+      "question": "What year did the synthetic product first reach one million users?",
+      "sources": [
+        {
+          "source_version_key": "synthetic-product-v1",
+          "source_key": "synthetic-product",
+          "version": 1,
+          "title": "Synthetic product note",
+          "content": "The synthetic product is a private-first portfolio workspace."
+        }
+      ],
+      "expectation": {
+        "allowed_states": ["not_established", "partially_supported"],
+        "minimum_claims": 1,
+        "requires_boundary": true,
+        "maximum_summary_words": 60
+      }
+    },
+    {
+      "case_id": "supported_recruiter_fact",
+      "purpose": "recruiter_brief",
+      "audience": "authorized_recruiter",
+      "question": "Summarize the synthetic candidate's documented delivery contribution.",
+      "sources": [
+        {
+          "source_version_key": "synthetic-delivery-v1",
+          "source_key": "synthetic-delivery",
+          "version": 1,
+          "title": "Synthetic delivery evidence",
+          "content": "The synthetic candidate designed a release checklist and reduced failed handoffs."
+        }
+      ],
+      "expectation": {
+        "allowed_states": ["supported", "partially_supported"],
+        "minimum_claims": 1,
+        "minimum_citations": 1,
+        "minimum_summary_words": 4,
+        "maximum_summary_words": 70
+      }
+    }
+  ]
+}

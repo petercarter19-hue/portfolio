@@ -1,4 +1,14 @@
-"""Shared, product-neutral contracts for PeerSlate AI experiences."""
+"""Shared, product-neutral contracts for PeerSlate AI experiences.
+
+The paid, spend-capable Azure Foundry adapter is deliberately NOT re-exported
+here.  Product modules import this package at web-app startup, and a paid
+adapter should not be loaded into the running site just to reach the shared
+contracts.  Callers that genuinely need it import it explicitly:
+
+    from services.ai_foundation.azure_foundry import (
+        AzureFoundryResponsesProvider, SpendLedger,
+    )
+"""
 
 from .citation_validator import validate_grounded_answer
 from .codec import parse_grounded_answer

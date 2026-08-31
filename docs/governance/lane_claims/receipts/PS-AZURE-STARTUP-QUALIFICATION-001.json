@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "package": "PS-AZURE-STARTUP-QUALIFICATION-001",
+  "candidate_sha": "e11f0b85ce7390fb2f2db41c09741bc0e38ee1c1",
+  "review_type": "independent",
+  "reviewer_ref": "session:5a019673-76c9-4242-b978-eebd027d8393/azure-startup-qualification-independent-review-agents",
+  "result": "pass",
+  "reviewed_at": "2026-08-31T14:05:00Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "BLOCKING round 1: pipelines/azure-startup-qualification.yml hardcoded service connection 3ee022e1-c929-4693-95bd-211db6076ff0, the same connection azure-pipelines.yml uses for AzureWebApp@1 production deploys and governed schema migrations. A nightly cost read would have run unattended holding deploy and migration authority, and the package's own activation step told the operator to add further grants to that principal. Fixed: replaced with fail-closed empty qualificationServiceConnectionId, required non-empty by both operative stage conditions and consumed by both AzureCLI@2 tasks; activation now requires creating a new least-privilege connection. Confirmed fixed by round 2."
+    },
+    {
+      "status": "resolved",
+      "summary": "BLOCKING round 1: the inert definition carried a live daily schedule (cron '17 3 * * *' with always: true), so registering the file would have started a nightly run, while the header comment claimed premature registration was safe and undercounted the gates as three when there are five. Fixed: schedules block removed entirely so activation must add it; header corrected to five values and to state that inertness also depends on remaining unregistered and on the project restricting queue-time variable overrides. Confirmed fixed by round 2."
+    },
+    {
+      "status": "resolved",
+      "summary": "BLOCKING round 1: LunaPriceSchedule asserted rates 'observed on the current Azure deployment' with schedule_ref azure-observed-2026-08-30, and README described a 'measured sample' of 99 calls, while the completion report stated 'Paid Foundry call: not run' -- an unresolved contradiction about whether real money had been spent, under a plan committing roughly $250/month. Resolved with evidence: a read-only Cost Management query on 2026-08-31 shows $0.00 Foundry spend 2026-08-20..2026-08-30, so no paid call was made by this package and the report was correct; the subscription's $3.21 of Foundry Models usage is all July 2026 and predates this package. The reviewer's hypothesis that the schedule might under-state cost was refuted: the published Azure retail maxima for GPT-5.6 Luna are $0.44/M input and $2.64/M output, so the $1.00/$6.00 defaults over-state by about 2.3x and the ceiling binds early. Constants kept; labels corrected to a bounded over-estimate with the retail source cited. Confirmed fixed by round 2."
+    },
+    {
+      "status": "resolved",
+      "summary": "BLOCKING round 1: UrllibTransport used the default global opener, so urllib would carry the Authorization header across a 3xx to an unvalidated host with no same-origin check; the endpoint allowlist validates only the first hop and provider error bodies are discarded, so a leak would produce no signal. Fixed: the transport builds its own opener with a redirect-refusing handler and sets the Entra token via add_unredirected_header, so any 3xx becomes ProviderUnavailableError. Round 2 traced the mechanism end to end through the CPython handler chain and confirmed it."
+    },
+    {
+      "status": "resolved",
+      "summary": "Round 1 non-blocking, all corrected and confirmed: early-stop reports emitted no spend evidence at all and could not distinguish which bound fired; a single non-conforming model answer aborted the whole run; the daily test used >= $1 where the milestone rule is above $1; billing-currency meters (PreTaxCost/Cost) could be scored against a dollar threshold with no Currency column; and the spend-capable Foundry adapter was re-exported from services/ai_foundation/__init__.py, which the running website imports. Round 2 grepped the whole tree and confirmed the __init__ removal broke no import."
+    },
+    {
+      "status": "resolved",
+      "summary": "BLOCKING round 2 (defect in the round-1 correction): _spend_fields reported calls_billed from the provider usage sink while taking estimated_cost_usd from the spend ledger. A call charged after a failed reservation is settled in full but never reaches the sink, so an early-stop report could show fewer calls than the money accounted for -- on exactly the path the correction was added for. Fixed per the reviewer's own recommendation: calls_billed now comes from ledger.snapshot()['calls'], with calls_with_usage reported alongside for reconciliation, pinned by a direct unit test that fails against the previous code."
+    },
+    {
+      "status": "resolved",
+      "summary": "Round 3 informational, applied verbatim: the completion report quoted a 4,935-passed full-suite run immediately above the follow-up fix, which adds one test. Each count is now attributed to its exact candidate (4,935 on f0f4537c before the follow-up; 4,936 on the final candidate)."
+    },
+    {
+      "status": "informational",
+      "summary": "Reviewer independence disclosure. The review was performed by read-only agent sessions orchestrated by the writer, across three rounds (7 risk dimensions plus adversarial verification and a completeness critic; a re-run of a dimension whose agent crashed; a 4-angle delta re-review; and a 2-angle confirmation of the final delta). The reviewers wrote no code, held no writer claim, read the immutable pushed candidate, and were prompted to refute rather than defend -- they produced 3 blocking findings against the original build and 1 against the writer's own correction. They are NOT a separate human reviewer or a separately owner-assigned session. This was disclosed to the owner before merge so a stronger review could be requested instead."
+    },
+    {
+      "status": "informational",
+      "summary": "Limits recorded rather than closed. No reviewer executed any test; all suite runs are the writer's, on a throwaway virtualenv built from requirements.txt because the repository has no committed environment. The Azure evidence (zero recent Foundry spend, the July history, the published retail rates) is the writer's read-only queries, not independently reproduced. Whether the new service connection actually holds least privilege is an Azure configuration question that cannot be settled from the repository; the pipeline cannot run until one is supplied. The true meter rate, the real cost of an authorized run, and whether the project restricts queue-time variable overrides can only be settled at attended activation."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-AZURE-STARTUP-QUALIFICATION-001.md"
+}

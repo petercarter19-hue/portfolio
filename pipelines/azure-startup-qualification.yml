@@ -1,0 +1,124 @@
+# Production-inert definition for PS-AZURE-STARTUP-QUALIFICATION-001.
+#
+# This file is not registered as an Azure Pipeline by the package that created
+# it, and it deliberately defines NO schedule.  A later reviewed activation
+# change must add the schedule block, so this file cannot start itself even if
+# it is registered early.
+#
+# Every operative stage stays off until that activation supplies all five
+# fail-closed values below, including a dedicated least-privilege service
+# connection.  Two conditions are NOT enforced by this file and must be checked
+# at activation: that the pipeline remains unregistered until then, and that the
+# project restricts queue-time variable overrides -- otherwise the gate
+# variables and the spend ceiling below can be replaced when a run is queued.
+trigger: none
+pr: none
+
+variables:
+  vmImageName: 'ubuntu-latest'
+  pythonVersion: '3.12'
+  # Least-privilege connection, supplied only at activation.  It must grant
+  # Cost Management read and Foundry inference and nothing else.  It is
+  # deliberately NOT the production deploy/migration connection used by
+  # azure-pipelines.yml: a nightly cost read must never hold authority to
+  # deploy the site or apply a schema migration.  Empty is fail-closed.
+  qualificationServiceConnectionId: ''
+  qualificationActivationEnabled: 'false'
+  qualificationCreditConfirmed: 'false'
+  qualificationSpendAuthorizationRef: ''
+  qualificationSubscriptionId: ''
+  qualificationFoundryEndpoint: ''
+  qualificationFoundryDeployment: 'gpt-5.6-luna'
+  qualificationEvaluationRepeats: '96'
+  qualificationFoundryHardCapUsd: '1.25'
+
+stages:
+  - stage: Inactive
+    displayName: Confirm qualification automation is inactive
+    condition: ne(variables['qualificationActivationEnabled'], 'true')
+    jobs:
+      - job: InactiveByDesign
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: none
+          - script: |
+              echo "Azure startup qualification automation is inactive by design."
+              echo "No Azure query or paid model call was made."
+            displayName: Report inactive state
+
+  - stage: QualificationStatus
+    displayName: Read five-workload continuity
+    condition: >-
+      and(
+        eq(variables['qualificationActivationEnabled'], 'true'),
+        eq(variables['qualificationCreditConfirmed'], 'true'),
+        ne(variables['qualificationSpendAuthorizationRef'], ''),
+        ne(variables['qualificationSubscriptionId'], ''),
+        ne(variables['qualificationServiceConnectionId'], '')
+      )
+    jobs:
+      - job: ReadOnlyCostStatus
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: self
+            fetchDepth: 1
+            persistCredentials: false
+            clean: true
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: $(pythonVersion)
+          - task: AzureCLI@2
+            displayName: Query privacy-safe Cost Management status
+            inputs:
+              azureSubscription: $(qualificationServiceConnectionId)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                python scripts/azure_startup_qualification_status.py \
+                  --subscription-id "$(qualificationSubscriptionId)"
+
+  - stage: FoundryEvaluation
+    displayName: Run bounded Luna evaluations
+    dependsOn: QualificationStatus
+    condition: >-
+      and(
+        succeeded(),
+        eq(variables['qualificationActivationEnabled'], 'true'),
+        eq(variables['qualificationCreditConfirmed'], 'true'),
+        ne(variables['qualificationSpendAuthorizationRef'], ''),
+        ne(variables['qualificationFoundryEndpoint'], ''),
+        ne(variables['qualificationServiceConnectionId'], '')
+      )
+    jobs:
+      - job: BoundedFoundryEvaluation
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: self
+            fetchDepth: 1
+            persistCredentials: false
+            clean: true
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: $(pythonVersion)
+          - task: AzureCLI@2
+            displayName: Run structural evaluations under the hard dollar cap
+            inputs:
+              azureSubscription: $(qualificationServiceConnectionId)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                python scripts/run_foundry_luna_evaluations.py \
+                  --execute \
+                  --endpoint "$(qualificationFoundryEndpoint)" \
+                  --deployment "$(qualificationFoundryDeployment)" \
+                  --repeat "$(qualificationEvaluationRepeats)" \
+                  --hard-cap-usd "$(qualificationFoundryHardCapUsd)"
+            env:
+              PEERSLATE_AZURE_QUALIFICATION_ACTIVATED: $(qualificationActivationEnabled)
+              PEERSLATE_AZURE_CREDIT_CONFIRMED: $(qualificationCreditConfirmed)
+              PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF: $(qualificationSpendAuthorizationRef)
