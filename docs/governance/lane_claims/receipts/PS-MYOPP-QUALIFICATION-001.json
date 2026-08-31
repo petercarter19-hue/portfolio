@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-QUALIFICATION-001",
+  "candidate_sha": "9adff9cb90db1fb1c05aee58a178691f8c46a0c3",
+  "review_type": "independent",
+  "reviewer_ref": "agent:opus-fresh/c5-qual-indep-20260831-9adff9cb",
+  "result": "pass",
+  "reviewed_at": "2026-08-31T10:52:43Z",
+  "findings": [
+    {
+      "summary": "Round 1 (b819b6cf) returned REVISE on one documentation-only finding: the README described the pre-proof candidate state. Fixed in a doc-only re-freeze; the reviewer confirmed all other claimed paths byte-identical and passed 9adff9cb.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Five forward obligations recorded in the package README (member-data erasure path before real data; evidence_key structural fence before further write paths; verifier attests schema shape; deliberately pessimistic recoverable revocation as C8 UX note; head/revision equality hardening). None is in this claim's outcome or the C5 completion rule.",
+      "status": "informational"
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MYOPP-QUALIFICATION-001.md"
+}
