@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-MEMBER-REASONS-001",
+  "state": "active",
+  "outcome": "Give members plain-language explanations for the 18 export domains that are excluded or unavailable, replacing verbatim internal reason strings (package ids, table names, governance references) that currently reach the export screen. Mechanism: a presentation-only _DOMAIN_REASONS map in services/account_export_experience_service.py keyed by domain, following the existing _DOMAIN_LABELS precedent; DOMAINS in the reader module stays the single source of truth for what an export contains, is not edited, and any unmapped domain falls back to the ledger's verbatim reason so truth is never hidden. Every sentence must claim no more than the internal reason does. Tests pin: full coverage of every current non-included domain (a future domain without a plain sentence fails the suite), verbatim fallback, a jargon canary (no PS-* ids, no dbo., no 'per C0' in mapped values), and no orphan keys. Also retires the corresponding 'Recorded but not fixed here' bullet in the C3 contract document. No route, template, flag, schema, worker, or deployment change; production authority withheld.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/settings-export-member-reasons-writer",
+  "branch": "work/2026-09-01-settings-export-member-reasons-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "7ace3b6f3c052f61a1e061703718a89b7c4b8cd9",
+  "owner_outcome_ref": "pete-chat-2026-08-31/plain-language-reasons-adopted-under-delegation",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-ACCOUNT-EXPORT-MEMBER-REASONS-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-MEMBER-REASONS-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-ACCOUNT-EXPORT-MEMBER-REASONS-001.json",
+    "services/account_export_experience_service.py",
+    "tests/test_account_export_experience.py",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C3_ACCOUNT_EXPORT_EXPERIENCE.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR9_MEMBER_EXPORT_REASONS.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR9_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+  ],
+  "domains": [
+    "privacy:settings:account-export-member-reasons",
+    "testing:settings:account-export-member-reasons"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-MEMBER-REASONS-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
