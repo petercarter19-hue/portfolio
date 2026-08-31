@@ -25,7 +25,8 @@
     "SQL FIles/Migrations/PS-MYOPP-004_search_execution_results.sql",
     "SQL FIles/Migrations/PS-MYOPP-004_search_execution_results_rollback.sql",
     "SQL FIles/Verification/PS-MYOPP-004_search_execution_results_verify.sql",
-    "SQL FIles/Migrations/registry.json"
+    "SQL FIles/Migrations/registry.json",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-MYOPP-RETRIEVAL-001.md"
