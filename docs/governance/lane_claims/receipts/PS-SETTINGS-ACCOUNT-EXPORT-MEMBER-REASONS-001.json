@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-MEMBER-REASONS-001",
+  "candidate_sha": "9069ce5040c1dfe3d072be465a8a630d397017f5",
+  "review_type": "independent",
+  "reviewer_ref": "agent:claude-code/settings-export-member-reasons-independent-review",
+  "result": "pass",
+  "reviewed_at": "2026-08-31T22:46:55Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "F1 (blocking): no drift guard bound a sentence to the ledger reason it paraphrases -- review PROVED it by mutating a ledger reason to an opposite ruling while every guard stayed green. Fixed: each sentence digest-pinned to sha256 of its exact ledger reason; the mutation probe now breaks the suite (verified on three domains)."
+    },
+    {
+      "status": "resolved",
+      "summary": "F2-F4, F6 (blocking + recommended): four sentences overclaimed against source -- Home's unconditional inclusion, connection_records presupposing inclusion, ai_proposals' closed enumeration omitting real destinations, community 'will include'. All corrected and re-verified truthful."
+    },
+    {
+      "status": "resolved",
+      "summary": "F5 (blocking): domain_summary's docstring asserted verbatim-only reasons above the mapping that softens them. Rewritten honestly."
+    },
+    {
+      "status": "resolved",
+      "summary": "F7: jargon canary widened -- underscore package forms, usp_ names, internal vocabulary, snake_case identifiers, V-numbers, 'domain matrix', 'reader'. All 18 final sentences pass; six of the reviewer's seven leak examples are caught."
+    },
+    {
+      "status": "resolved",
+      "summary": "F8: the frozen completion report asserted independent review in the past tense before any review existed -- in the truthfulness package. Corrected with the correction itself recorded, not silently rewritten."
+    },
+    {
+      "status": "resolved",
+      "summary": "F9/F10: three wording notes taken (drop invented 'search'; 'this part of PeerSlate'; 'operational data about how the service runs') plus the cosmetic dash fix; included-domain-with-leftover-mapping now fails the suite."
+    },
+    {
+      "status": "informational",
+      "summary": "Final verdict on the wording: 18 truthful, 0 overclaims, 0 underclaims, per the reviewer's per-sentence verdict table recorded verbatim in the package evidence as the owner's veto-reading artifact. The owner has not personally read all 18; his veto stands."
+    },
+    {
+      "status": "informational",
+      "summary": "Honest limit: the digest pin detects LEDGER drift, not SENTENCE drift -- a future sentence edit passes the pin silently. Acceptable because any sentence edit is a Protected-surface change that gets its own review, but recorded aloud."
+    },
+    {
+      "status": "informational",
+      "summary": "Honest limit: the canary still passes some internal vocabulary ('V1 domain matrix' patterns are now caught; other terms may exist). It is a tripwire, not a proof of plain language."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-MEMBER-REASONS-001.md"
+}

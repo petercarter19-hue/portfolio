@@ -291,6 +291,125 @@ _DOMAIN_LABELS = {
 }
 
 
+# Plain-language explanations for the domains an export does NOT include.
+# Presentation only, exactly like _DOMAIN_LABELS above: DOMAINS remains the
+# single source of truth for what an export contains and why, and nothing
+# here can add, remove, or recategorise a domain. Each sentence must claim
+# no more than the ledger's own reason does. A domain absent from this map
+# still renders -- with the ledger's verbatim reason -- so an unmapped
+# domain shows the truth rather than hiding it, and a coverage test turns
+# a missing mapping into a loud failure instead of quiet jargon.
+_DOMAIN_REASONS = {
+    "profile_publication_foundation": (
+        "Profile publishing isn't built yet, so there's nothing here to include."
+    ),
+    "own_publication_versions": (
+        "Nothing has ever been published through this part of PeerSlate, so "
+        "there's "
+        "nothing here to include."
+    ),
+    "journal": (
+        "Journal isn't in place yet, and older journal-like records can't "
+        "safely be treated as Moments, so nothing is included here."
+    ),
+    "workshop_knowledge_save_requests": (
+        "This is an internal bookkeeping record that holds no title, wording, "
+        "or anything else you wrote, so it isn't part of your export."
+    ),
+    "my_opportunities": (
+        "My Opportunities holds nothing that belongs specifically to you yet, "
+        "so there's nothing here to include."
+    ),
+    "community_authored_content": (
+        "Your community posts aren't included yet because we can't yet "
+        "separate your words from other members' words and context; we plan "
+        "a future update that includes your own words only."
+    ),
+    "connection_records": (
+        "Your connections, blocks and reports involve other members too, so "
+        "they're on hold until we've decided whether and how they can be "
+        "included without exposing anyone else."
+    ),
+    "notifications_inbox": (
+        "Your notifications can mention other members and other content, so "
+        "they're on hold until we've reviewed exactly which parts are safe "
+        "to include."
+    ),
+    "audit_events": (
+        "Security and audit history needs a separate review before it can be "
+        "shared, so it isn't included yet."
+    ),
+    "browser_local_interview_history": (
+        "This history is kept only in your own browser, so a download built "
+        "on our servers can't reach it."
+    ),
+    "interview_telemetry": (
+        "This is operational data about how the service runs, rather than "
+        "something you created, so it isn't part of your export."
+    ),
+    "ai_proposals": (
+        "Anything you actually kept from an AI suggestion is already included "
+        "with whatever it became, such as a chapter, a skill, a Workshop "
+        "item, or another record of yours, so the suggestion record itself "
+        "would add nothing."
+    ),
+    "ask_pete_public": (
+        "Public Ask Pete content isn't private account data, so it isn't "
+        "part of your export."
+    ),
+    "ask_pete_direct": (
+        "These messages hold questions and contact details belonging to "
+        "other people, so they're never included in a member download."
+    ),
+    "projects": (
+        "Projects on your career timeline are already included with your "
+        "living resume, and there's no separate Projects area to export."
+    ),
+    "home": (
+        "Home is a view built from your other data, so your export includes "
+        "the original records, where they're included, instead of a copy of "
+        "the Home screen."
+    ),
+    "file_evidence_metadata": (
+        "File evidence details aren't included yet; a rule now sets exactly "
+        "what may be shared here, and it will apply when this is built."
+    ),
+    "indexes_caches_provider_backups": (
+        "These are internal indexes, caches and backups rather than "
+        "your own files, so they need separate decisions before anything "
+        "could be shared."
+    ),
+}
+
+# F1 drift guard: each mapped sentence is pinned to the EXACT ledger reason
+# it paraphrases, by digest. If a ledger reason changes -- an owner ruling
+# shifts, a domain's status hardens -- the pin breaks the suite and forces
+# the member sentence to be re-worded against the new truth, instead of the
+# old paraphrase silently outliving the reason it described. This is the
+# second copy the single-source rule worries about, reduced to a hash: it
+# can drift-DETECT but never drift-say anything to a member.
+_DOMAIN_REASON_SOURCE_DIGESTS = {
+    "ai_proposals": "45f32a640f68ee2e11ef5fca3d9471e5e428a531be4c7e5dfe19c30fd4262167",
+    "ask_pete_direct": "f8dcc1bc533413a3beeadedc58d90748f08ec66bcb750dd5afed854c7a9e9d9a",
+    "ask_pete_public": "88497f626c1dd274403b98b78c5f1bf0c1b1d4fd0aee587def9ed8954255dfbc",
+    "audit_events": "c17d5433c13c88da97830bd5ce3e5867e7dabd9934e6f7eb99ee1b458a512dfc",
+    "browser_local_interview_history": "2ed8c4f0af645d0e05a5d526f086dee9e3665f7a0f26c430a0dd8d8bef4c763e",
+    "community_authored_content": "b9536d2052ac0324213e0729db57a7903b3f39849d3a36e0f9704ba648c1ca48",
+    "connection_records": "8e0237cfc80306e06b59d55ed249f9479531a9aa4bae3affc12a841258957f7d",
+    "file_evidence_metadata": "58f85468f918aaa245969e0a50140a65ed70f61fe719f1761fc5b25a7893a869",
+    "home": "7b9279bfcb23613954b62facd0ea82aeff57915a0929f203ef64c8f47c9a255c",
+    "indexes_caches_provider_backups": "f9e86fc67578d207f774045804129131ab421347e9b3b7b62ae5349f7107b7f0",
+    "interview_telemetry": "62ef21547d32a2e482da9a53caaad2d8b1028fa9c47ee15df8b99aadb54ac219",
+    "journal": "9e1fb70a7de8b40586b7038bc4a4bc9281ae4eeb75e6f76cbb00b27783bb6dc9",
+    "my_opportunities": "b3dfff9abdf46b8ecadc6d5bee9ec65ce606713bbd5ea6c8d685cc29bf960248",
+    "notifications_inbox": "c4113cabe69e2b18a8152427142a6ebe6c4304d093eb582c340dc8eae3c5145d",
+    "own_publication_versions": "418d3808b77533d1c06bfe3f1552093a945608a6aa1b9981f7715fc6b58908b7",
+    "profile_publication_foundation": "5b7d04efea5df29018b0911a5588ae9b848373fb5f5f9747de6d37c199c40d4b",
+    "projects": "a4f4b7757937146b9719ca0144cd2c51ed2f9cc380f87872908741b1ab22280f",
+    "workshop_knowledge_save_requests": "836854dc0662b4fc10ae5c270b459d561836597d6e66653cff4534bf9a09c564",
+}
+
+
 def domain_summary():
     """Render domain truth for the screen, straight from DOMAINS.
 
@@ -303,8 +422,10 @@ def domain_summary():
 
     Returned dispositions keep the ledger's own closed vocabulary --
     included, excluded, unavailable -- so the template never has to
-    invent a fourth category, and every not-included domain carries the
-    ledger's own reason rather than a softened paraphrase.
+    invent a fourth category. Every not-included domain carries a reason:
+    the plain-language member sentence when one is mapped (pinned by
+    digest to the exact ledger reason it paraphrases), and the ledger's
+    verbatim reason when none is.
     """
 
     from services.account_export_domain_readers import DOMAINS
@@ -316,7 +437,11 @@ def domain_summary():
             "key": key,
             "label": _DOMAIN_LABELS.get(key, key.replace("_", " ")),
             "disposition": entry.get("disposition"),
-            "reason": entry.get("reason"),
+            # The mapped plain-language sentence when one exists; the
+            # ledger's verbatim reason when one does not. .get(key, default)
+            # rather than `or`, so even an intentionally-empty mapping would
+            # surface rather than silently falling through.
+            "reason": _DOMAIN_REASONS.get(key, entry.get("reason")),
         }
         if row["disposition"] == "included":
             included.append(row)

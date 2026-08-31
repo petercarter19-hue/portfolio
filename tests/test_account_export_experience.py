@@ -544,5 +544,140 @@ class AccountExportHonestyTests(_ExportRouteTestBase):
         self.assertIn("not included", body)
 
 
+class MemberReasonWordingTests(unittest.TestCase):
+    """The plain-language reasons map: coverage, fallback, and jargon guards.
+
+    The map is presentation only. These tests are what make it safe: a
+    future domain added to DOMAINS without a plain sentence fails here
+    loudly instead of shipping engineer wording to a member, and an
+    unmapped domain is proven to show the ledger's verbatim truth rather
+    than nothing.
+    """
+
+    def test_every_non_included_domain_has_a_plain_sentence(self):
+        from services.account_export_domain_readers import DOMAINS
+        from services.account_export_experience_service import _DOMAIN_REASONS
+
+        missing = [
+            key
+            for key, entry in DOMAINS.items()
+            if entry.get("disposition") != "included"
+            and key not in _DOMAIN_REASONS
+        ]
+        self.assertEqual(
+            missing, [],
+            "non-included domains without a member-facing sentence: %r" % missing,
+        )
+
+    def test_no_mapped_sentence_maps_a_domain_that_no_longer_exists(self):
+        from services.account_export_domain_readers import DOMAINS
+        from services.account_export_experience_service import _DOMAIN_REASONS
+
+        orphans = [key for key in _DOMAIN_REASONS if key not in DOMAINS]
+        self.assertEqual(orphans, [], "orphaned reason mappings: %r" % orphans)
+
+    def test_an_unmapped_domain_falls_back_to_the_ledgers_verbatim_reason(self):
+        from unittest.mock import patch
+        from services import account_export_experience_service as svc
+
+        raw = "RAW LEDGER TRUTH sentinel-0451 must appear verbatim"
+        synthetic = {
+            "zz_synthetic_probe": {
+                "disposition": "excluded",
+                "reason": raw,
+                "readers": (),
+            }
+        }
+        from services.account_export_domain_readers import DOMAINS
+        merged = dict(DOMAINS)
+        merged.update(synthetic)
+        with patch(
+            "services.account_export_domain_readers.DOMAINS", merged
+        ):
+            summary = svc.domain_summary()
+        rows = [r for r in summary["not_included"] if r["key"] == "zz_synthetic_probe"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["reason"], raw)
+
+    def test_mapped_sentences_carry_no_internal_jargon(self):
+        import re
+        from services.account_export_experience_service import _DOMAIN_REASONS
+
+        # Widened after independent review: the original three patterns let
+        # procedure names, underscore package forms, and internal vocabulary
+        # like "field allowlist" or "domain ledger" through.
+        patterns = {
+            "package id": re.compile(r"PS[-_][A-Z]"),
+            "table name": re.compile(r"\bdbo\."),
+            "procedure name": re.compile(r"\busp_"),
+            "governance reference": re.compile(r"per C0|C0's|\bC[0-9]\b"),
+            "internal vocabulary": re.compile(
+                r"allowlist|domain ledger|idempotency|projection\b|canonical\b"
+                r"|\bV[0-9]\b|domain matrix|\breader\b"
+            ),
+            "snake_case identifier": re.compile(r"\b[a-z]+_[a-z_]+\b"),
+        }
+        offenders = {}
+        for key, sentence in _DOMAIN_REASONS.items():
+            hits = [name for name, rx in patterns.items() if rx.search(sentence)]
+            if hits:
+                offenders[key] = hits
+        self.assertEqual(offenders, {}, "jargon in member sentences: %r" % offenders)
+
+    def test_each_sentence_is_pinned_to_the_ledger_reason_it_paraphrases(self):
+        """The drift guard independent review proved was missing.
+
+        Review probed the original candidate by mutating a ledger reason to
+        an opposite ruling: every guard stayed green while the member kept
+        reading the old paraphrase. This pin makes that impossible -- a
+        changed ledger reason breaks the digest and forces the sentence to
+        be re-worded against the new truth.
+        """
+        import hashlib
+        from services.account_export_domain_readers import DOMAINS
+        from services.account_export_experience_service import (
+            _DOMAIN_REASONS,
+            _DOMAIN_REASON_SOURCE_DIGESTS,
+        )
+
+        self.assertEqual(
+            sorted(_DOMAIN_REASONS), sorted(_DOMAIN_REASON_SOURCE_DIGESTS)
+        )
+        stale = {}
+        for key, pinned in _DOMAIN_REASON_SOURCE_DIGESTS.items():
+            actual = hashlib.sha256(
+                DOMAINS[key]["reason"].encode("utf-8")
+            ).hexdigest()
+            if actual != pinned:
+                stale[key] = "ledger reason changed; re-word the member sentence"
+        self.assertEqual(stale, {}, repr(stale))
+
+    def test_no_included_domain_carries_a_reason_mapping(self):
+        """An included domain has no omission to explain.
+
+        If a domain flips excluded -> included (career_skill_links did
+        exactly this), a leftover mapping would be dead weight at best and
+        a stale explanation at worst. Forcing its removal keeps the map
+        exactly the set of domains a member needs explained.
+        """
+        from services.account_export_domain_readers import DOMAINS
+        from services.account_export_experience_service import _DOMAIN_REASONS
+
+        wrongly_mapped = [
+            key for key in _DOMAIN_REASONS
+            if DOMAINS.get(key, {}).get("disposition") == "included"
+        ]
+        self.assertEqual(wrongly_mapped, [], repr(wrongly_mapped))
+
+    def test_mapped_domains_render_the_plain_sentence(self):
+        from services import account_export_experience_service as svc
+
+        summary = svc.domain_summary()
+        by_key = {r["key"]: r for r in summary["not_included"]}
+        self.assertIn("journal", by_key)
+        self.assertNotIn("PS-JOURNAL-001", by_key["journal"]["reason"])
+        self.assertIn("Journal isn't in place yet", by_key["journal"]["reason"])
+
+
 if __name__ == "__main__":
     unittest.main()

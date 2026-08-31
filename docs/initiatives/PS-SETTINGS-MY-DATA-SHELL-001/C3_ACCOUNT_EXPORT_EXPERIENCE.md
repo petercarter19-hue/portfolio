@@ -123,14 +123,12 @@ Recorded as an open risk rather than silently assumed away.
 
 ## Recorded but not fixed here
 
-- **DOMAINS reasons reach members verbatim, including internal package codes**
-  such as "PS-JOURNAL-001 is registered but not applied". That is accurate and
-  it comes from the single source of truth, but it is not plain language and
-  reads against the owner's standard for member-facing copy. Rewriting those
-  strings would mean either editing another package's claimed surface or
-  maintaining a second, drift-prone copy of them here — the exact thing
-  `DOMAINS` forbids. Raised for an owner decision rather than solved
-  unilaterally.
+- ~~DOMAINS reasons reach members verbatim, including internal package
+  codes.~~ **Resolved by PS-SETTINGS-ACCOUNT-EXPORT-MEMBER-REASONS-001**: a
+  presentation-only `_DOMAIN_REASONS` map now supplies plain-language
+  sentences for every non-included domain, with a verbatim-truth fallback
+  for anything unmapped and tests forcing coverage of every future domain.
+  `DOMAINS` remains the single source of truth and was not edited.
 - **No rate limit on the download proxy.** It buffers a whole archive in
   memory per request. Authorization is unaffected; this is an availability and
   memory-pressure note for whoever sizes the deployment.
