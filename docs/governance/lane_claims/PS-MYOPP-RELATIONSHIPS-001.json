@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MYOPP-RELATIONSHIPS-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement and independently review the owner-scoped C6 relationships foundation: deterministic save, remove, and undo commands with idempotent identity and the doc 03 s7 machine; derived-only lifecycle overlays (posting_changed, closed_by_source, could_not_reverify) that never mutate saves, with REC-03 per-member change review; the owner-filtered saved view with member-side search and filters over read-time display resolution (references, never copies); slate_link record shape, table, and primitives without any C7 handoff command; the doc 09 s4 unknown-outcome write discipline; cross-member not-found isolation; and the additive governed PS-MYOPP-005 migration with verification and rollback. No route or UI work, no C7 commands, no provider work, no changes to C2, C3, C4, or C5 files, no deployment, enablement, or production/staging schema action. Disposable migration-gate databases run under Pete's recorded C4-C9 envelope authorization.",
   "assignment": "implementation",
   "writer_ref": "session:4b21c2ac-0236-4dc0-af54-2c15e6f126ce/myopp-relationships-writer",
@@ -39,6 +39,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "953933d3f95fe8ae892778a9db3597c5d35481e1",
+  "closed_at": "2026-08-31T22:49:39Z"
 }
