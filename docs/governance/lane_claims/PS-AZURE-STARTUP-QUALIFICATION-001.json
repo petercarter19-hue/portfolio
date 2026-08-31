@@ -4,7 +4,7 @@
   "state": "active",
   "outcome": "Build and merge only the production-inert Azure startup qualification automation foundation: a privacy-safe Cost Management reader and five-workload continuity report, a Microsoft Foundry GPT-5.6 Luna evaluation adapter and synthetic/public evaluation runner with an explicit price schedule and fail-closed per-run cost ceiling, and a disabled-by-default Azure DevOps schedule definition. The implementation must use fakes for tests, retain no prompts, model output, credentials, tokens, or private member content, and keep activation visibly separate. No Azure resource, budget, role, grant, credential, provider deployment, DNS, product AI routing, app runtime, schema, pipeline registration, paid call, spending, deployment, production operation, or start of the 60-day clock is authorized; those remain withheld until the $5,000 credit is visible and Pete separately authorizes the exact activation and spend.",
   "assignment": "implementation",
-  "writer_ref": "session:01a046b3-74fc-7903-a336-3f1647f81d1c/azure-startup-qualification-manager-writer",
+  "writer_ref": "session:5a019673-76c9-4242-b978-eebd027d8393/claude-code/azure-startup-qualification-writer",
   "branch": "work/2026-08-30-azure-startup-qualification-001",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
@@ -39,7 +39,12 @@
     "testing:azure-startup-qualification"
   ],
   "review_requirement": "independent",
-  "handoff": null,
+  "handoff": {
+    "from_ref": "session:01a046b3-74fc-7903-a336-3f1647f81d1c/azure-startup-qualification-manager-writer",
+    "to_ref": "session:5a019673-76c9-4242-b978-eebd027d8393/claude-code/azure-startup-qualification-writer",
+    "checkpoint_sha": "7239d59913a9668dd2bb474830c5db8cc3de1175",
+    "relinquished": true
+  },
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null
