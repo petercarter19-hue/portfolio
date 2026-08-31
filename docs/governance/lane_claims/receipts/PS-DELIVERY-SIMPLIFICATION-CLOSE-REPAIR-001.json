@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-SIMPLIFICATION-CLOSE-REPAIR-001",
+  "candidate_sha": "05a7ae8a76670ff0dc718210bd2cbc3f0b37a7ad",
+  "review_type": "independent",
+  "reviewer_ref": "session:9547fc3c-1d26-4689-abbf-61641eae154a/simplification-close-repair-independent-reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-08-31T22:45:00Z",
+  "findings": [
+    {
+      "status": "informational",
+      "summary": "The exception constant is a dict keyed by (package, candidate_sha, merged_sha) rather than a single named triple, so structurally it could hold additional entries; any addition would itself require a reviewed code change through the same governed path, so this is not a bypass mechanism. No change requested."
+    },
+    {
+      "status": "informational",
+      "summary": "The tuple's package key is compared raw, not casefolded, against the literal - the strict direction: a differently-cased package can never match the exception. Confirmation that no widening exists."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-DELIVERY-SIMPLIFICATION-CLOSE-REPAIR-001.md"
+}

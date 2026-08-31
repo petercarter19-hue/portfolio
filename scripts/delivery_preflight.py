@@ -86,6 +86,28 @@ CONTROL_INTENTS = {
     "activate", "authorize", "extend-surfaces", "transfer",
     "owner-reassignment", "pause", "resume", "close", "evidence-errata",
 }
+# PS-DELIVERY-SIMPLIFICATION-CLOSE-REPAIR-001: the delivery-control
+# simplification bootstrap introduced the per-package claim model itself, so
+# its independently reviewed candidate necessarily carried the two legacy
+# Synthetic bootstrap records outside its own claim. Close scope validation
+# tolerates exactly this one already-reviewed, already-merged historical
+# tuple; the tolerated paths stay subject to every other close proof (byte
+# identity, merged-path introduction, receipt and branch verification), and
+# every other package, candidate, merge, and path keeps strict behavior.
+HISTORICAL_BOOTSTRAP_CLOSE_TOLERATED_PATHS: dict[
+    tuple[str, str, str], frozenset[str]
+] = {
+    (
+        "PS-DELIVERY-CONTROL-SIMPLIFICATION-001",
+        "ff3959815f3e4a9ca4dc5dd404a42a5e11ec462a",
+        "1b6b5d4905af32edfee43c02d6e2bdb58d31898c",
+    ): frozenset(
+        {
+            "docs/governance/lane_claims/PS-SYNTHETIC-MULTI-MEMBER-QA-001.json",
+            "docs/governance/lane_claims/receipts/PS-SYNTHETIC-MULTI-MEMBER-QA-001.json",
+        }
+    ),
+}
 VOLUNTARY_HANDOFF_FIELDS = {
     "from_ref", "to_ref", "checkpoint_sha", "relinquished"
 }
@@ -2649,6 +2671,17 @@ def evaluate(
                         outside = _scope_errors(
                             candidate_paths, before.get("surfaces", [])
                         )
+                        tolerated = HISTORICAL_BOOTSTRAP_CLOSE_TOLERATED_PATHS.get(
+                            (
+                                str(before.get("package", "")),
+                                candidate_sha,
+                                merged_sha,
+                            ),
+                            frozenset(),
+                        )
+                        outside = [
+                            path for path in outside if path not in tolerated
+                        ]
                         if outside:
                             errors.append(
                                 "reviewed close candidate is outside its claim: "

@@ -3728,6 +3728,172 @@ class EvaluationTests(unittest.TestCase):
             any("does not contain the reviewed candidate" in error for error in errors)
         )
 
+    def _historical_bootstrap_close(
+        self,
+        *,
+        package="PS-DELIVERY-CONTROL-SIMPLIFICATION-001",
+        candidate_sha="ff3959815f3e4a9ca4dc5dd404a42a5e11ec462a",
+        merged_sha="1b6b5d4905af32edfee43c02d6e2bdb58d31898c",
+        extra_paths=(
+            "docs/governance/lane_claims/PS-SYNTHETIC-MULTI-MEMBER-QA-001.json",
+            "docs/governance/lane_claims/receipts/"
+            "PS-SYNTHETIC-MULTI-MEMBER-QA-001.json",
+        ),
+        candidate_bytes_match=True,
+    ):
+        """PS-DELIVERY-SIMPLIFICATION-CLOSE-REPAIR-001 scaffold: evaluate a
+        close whose reviewed candidate carries ``extra_paths`` outside the
+        claim, returning the error list."""
+        before = claim(package=package)
+        closed = claim(
+            package=package,
+            state="closed",
+            merged_sha=merged_sha,
+            closed_at="2026-09-01T00:00:00Z",
+        )
+        control_facts = facts(
+            branch="work/2026-09-01-delivery-close-simplification",
+            branch_paths=(preflight.claim_relative_path(package),),
+        )
+
+        def fake_git(_root, *command):
+            if command[0] == "fetch":
+                return ""
+            if command[0] == "rev-parse":
+                return HEAD
+            if command[0] == "merge-base":
+                return BASE
+            raise AssertionError(command)
+
+        def fake_diff(_root, range_spec):
+            if range_spec in (
+                f"{BASE}..{candidate_sha}",
+                f"{merged_sha}^..{merged_sha}",
+            ):
+                return ("src/package-1/change.py", *extra_paths)
+            raise AssertionError(range_spec)
+
+        with patch.object(
+            preflight,
+            "_git_result",
+            return_value=subprocess.CompletedProcess(
+                [], 0 if candidate_bytes_match else 1, "", ""
+            ),
+        ):
+            _, errors, _ = self.run_evaluate(
+                args("close", package=package),
+                closed,
+                control_facts,
+                origin_claims={package.casefold(): before},
+                origin_claim=patch.object(
+                    preflight, "_origin_claim", return_value=before
+                ),
+                origin_receipt=patch.object(
+                    preflight,
+                    "load_receipt_at_ref",
+                    return_value=receipt(
+                        package=package, candidate_sha=candidate_sha
+                    ),
+                ),
+                ancestor=patch.object(
+                    preflight, "_is_ancestor", return_value=True
+                ),
+                git=patch.object(preflight, "_git", side_effect=fake_git),
+                diff=patch.object(
+                    preflight, "_diff_paths", side_effect=fake_diff
+                ),
+            )
+        return errors
+
+    def test_close_tolerates_only_the_exact_simplification_bootstrap_tuple(self):
+        self.assertEqual([], self._historical_bootstrap_close())
+
+    def test_bootstrap_close_exception_is_keyed_to_the_exact_package(self):
+        errors = self._historical_bootstrap_close(
+            package="PS-EXAMPLE-001",
+        )
+        self.assertTrue(
+            any("outside its claim" in error for error in errors), errors
+        )
+
+    def test_bootstrap_close_exception_is_keyed_to_the_exact_candidate(self):
+        errors = self._historical_bootstrap_close(candidate_sha=CANDIDATE)
+        self.assertTrue(
+            any("outside its claim" in error for error in errors), errors
+        )
+
+    def test_bootstrap_close_exception_is_keyed_to_the_exact_merge(self):
+        errors = self._historical_bootstrap_close(merged_sha=MAIN)
+        self.assertTrue(
+            any("outside its claim" in error for error in errors), errors
+        )
+
+    def test_bootstrap_close_exception_admits_no_additional_path(self):
+        smuggled = "docs/governance/lane_claims/PS-OTHER-BOOTSTRAP-001.json"
+        errors = self._historical_bootstrap_close(
+            extra_paths=(
+                "docs/governance/lane_claims/PS-SYNTHETIC-MULTI-MEMBER-QA-001.json",
+                "docs/governance/lane_claims/receipts/"
+                "PS-SYNTHETIC-MULTI-MEMBER-QA-001.json",
+                smuggled,
+            ),
+        )
+        self.assertTrue(
+            any(
+                "outside its claim" in error and smuggled in error
+                for error in errors
+            ),
+            errors,
+        )
+        self.assertFalse(
+            any(
+                "PS-SYNTHETIC-MULTI-MEMBER-QA" in error for error in errors
+            ),
+            errors,
+        )
+
+    def test_bootstrap_close_exception_still_requires_candidate_bytes(self):
+        errors = self._historical_bootstrap_close(candidate_bytes_match=False)
+        self.assertTrue(
+            any("reviewed candidate bytes" in error for error in errors),
+            errors,
+        )
+
+    def test_bootstrap_close_exception_still_requires_the_receipt(self):
+        before = claim(package="PS-DELIVERY-CONTROL-SIMPLIFICATION-001")
+        closed = claim(
+            package="PS-DELIVERY-CONTROL-SIMPLIFICATION-001",
+            state="closed",
+            merged_sha="1b6b5d4905af32edfee43c02d6e2bdb58d31898c",
+            closed_at="2026-09-01T00:00:00Z",
+        )
+        control_facts = facts(
+            branch="work/2026-09-01-delivery-close-simplification",
+            branch_paths=(
+                preflight.claim_relative_path(before["package"]),
+            ),
+        )
+        _, errors, _ = self.run_evaluate(
+            args("close", package=before["package"]),
+            closed,
+            control_facts,
+            origin_claims={before["package"].casefold(): before},
+            origin_claim=patch.object(
+                preflight, "_origin_claim", return_value=before
+            ),
+            origin_receipt=patch.object(
+                preflight, "load_receipt_at_ref", return_value=None
+            ),
+            ancestor=patch.object(preflight, "_is_ancestor", return_value=True),
+        )
+        self.assertTrue(
+            any(
+                "requires the merged package review receipt" in error
+                for error in errors
+            ),
+            errors,
+        )
+
 
 class EvidenceErrataTests(unittest.TestCase):
     """PS-CLOSED-CLAIM-EVIDENCE-ERRATA-001: the owner-authorized amendment of
