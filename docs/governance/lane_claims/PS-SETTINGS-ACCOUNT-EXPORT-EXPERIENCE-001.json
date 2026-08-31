@@ -24,7 +24,9 @@
     "templates/owner_account_export.html",
     "tests/test_account_export_experience.py",
     "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C3_ACCOUNT_EXPORT_EXPERIENCE.md",
-    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C3_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C3_OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "tests/test_database_service.py",
+    "tests/test_owner_settings.py"
   ],
   "domains": [
     "runtime:settings:account-export-experience",
