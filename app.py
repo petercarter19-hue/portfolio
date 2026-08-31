@@ -231,6 +231,14 @@ app.config.update(
     PEERSLATE_OWNER_HOME_ENABLED=(
         os.environ.get('PEERSLATE_OWNER_HOME_ENABLED', 'false').lower() == 'true'
     ),
+    # PS-SETTINGS-ACCOUNT-EXPORT-EXPERIENCE-001 (C3). Default OFF: every
+    # export route 404s while it is false, and no export can be requested,
+    # observed or downloaded. Settings copy DOES change with the flag off --
+    # the My Data row now names export and deletion separately -- so this is
+    # not a no-op merge, only a no-new-capability one.
+    PEERSLATE_ACCOUNT_EXPORT_ENABLED=(
+        os.environ.get('PEERSLATE_ACCOUNT_EXPORT_ENABLED', 'false').lower() == 'true'
+    ),
     # DARK THEME PAUSE — THE SINGLE SWITCH.
     # Owner direction, 2026-08-03 (Pete): "no dark theme for now. We are
     # turning it off for the time being on the site... if it's already

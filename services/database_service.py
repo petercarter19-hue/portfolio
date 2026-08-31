@@ -14,6 +14,16 @@ _DATABASE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
 ALLOWED_PROCEDURES = frozenset(
     {
         "usp_AddSlateItem",
+        # PS-SETTINGS-ACCOUNT-EXPORT-EXPERIENCE-001 (C3). ONLY the three
+        # member-facing account-export procedures. Each resolves @UserKey
+        # to the active profile itself and filters every row by it. The
+        # five worker procedures (Claim/Complete/Fail/Expire/Cleanup) are
+        # deliberately absent: they take no @UserKey, operate system-wide
+        # across owners, and belong to a separate worker identity, so
+        # nothing reachable from a browser request may name them.
+        "usp_GetAccountExportDownloadMetadataForOwner",
+        "usp_GetAccountExportStatusForOwner",
+        "usp_RequestAccountExportForOwner",
         "usp_ArchiveSlateItem",
         "usp_ArchiveCapture",
         "usp_CompleteChallenge",

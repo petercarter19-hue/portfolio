@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | PeerSlate{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}">
+<style>
+    .owner-app__panel--export .owner-app__section {
+        margin-top: 2.5rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(10, 27, 54, 0.14);
+    }
+
+    .owner-app__panel--export h2 {
+        margin: 0;
+        font: 600 clamp(1.5rem, 3.4vw, 2rem)/1.15 Newsreader, serif;
+    }
+
+    .owner-app__panel--export p {
+        max-width: 62ch;
+        font: 400 1rem/1.65 Inter, sans-serif;
+    }
+
+    .export-state {
+        margin: 1.25rem 0 0;
+        padding: 1.1rem 1.25rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(10, 27, 54, 0.16);
+        background: rgba(10, 27, 54, 0.035);
+    }
+
+    .export-state__headline {
+        margin: 0;
+        font: 600 1.05rem/1.4 Inter, sans-serif;
+    }
+
+    .export-state__detail {
+        margin: 0.45rem 0 0;
+        font: 400 0.95rem/1.6 Inter, sans-serif;
+    }
+
+    .export-contents {
+        margin: 1rem 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 0.4rem;
+    }
+
+    .export-contents li {
+        font: 400 0.95rem/1.5 Inter, sans-serif;
+    }
+
+    .export-contents__reason {
+        display: block;
+        opacity: 0.78;
+        font-size: 0.875rem;
+    }
+
+    @media (max-width: 540px) {
+        .owner-app__panel--export { padding-inline: 1.25rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="owner-app">
+    <section class="owner-app__panel owner-app__panel--export"
+             aria-labelledby="export-title">
+        <p class="owner-app__eyebrow">Signed-in member settings</p>
+        <h1 id="export-title">Download your data</h1>
+
+    {% if not_found %}
+        <p class="export-state__detail">
+            We could not find that export. It may have finished and expired, or
+            the link may not be one of yours. You can request a new export below.
+        </p>
+    {% elif unavailable %}
+        <p class="export-state__detail">
+            Exports are temporarily unavailable. Nothing has been lost — please
+            try again shortly.
+        </p>
+    {% endif %}
+
+    {% if job %}
+        <section class="export-state" aria-labelledby="export-status-title">
+            <h2 id="export-status-title" class="export-state__headline">
+                {% if job.state == 'queued' %}Your export is queued
+                {% elif job.state == 'running' %}Your export is being prepared
+                {% elif job.state == 'ready' and job.download_available %}Your export is ready
+                {% elif job.state == 'ready' %}Your export has expired
+                {% elif job.state == 'expired' %}Your export has expired
+                {% elif job.state == 'failed' %}Your export could not be completed
+                {% endif %}
+            </h2>
+
+            {% if job.state in ('queued', 'running') %}
+                <p class="export-state__detail">
+                    We are gathering your data now. This page does not refresh by
+                    itself — reload it in a few minutes to check again.
+                </p>
+            {% elif job.state == 'ready' and job.download_available %}
+                <p class="export-state__detail">
+                    Your file is ready to download{% if job.ready_expires_at_utc %},
+                    and will be available until {{ job.ready_expires_at_utc }} (UTC){% endif %}.
+                    After that it is deleted and you can request a new one.
+                </p>
+                <div class="owner-app__actions">
+                    <a class="owner-app__primary"
+                       href="{{ url_for('owner.account_export_download', job_key=job.job_key) }}">
+                        Download your data (ZIP)
+                    </a>
+                </div>
+            {% elif job.state == 'failed' %}
+                <p class="export-state__detail">
+                    Something went wrong while preparing your export, so we did not
+                    produce a partial file. Your data has not been changed. You can
+                    request a new export below.
+                </p>
+            {% else %}
+                <p class="export-state__detail">
+                    Export files are kept for a limited time and then deleted. You
+                    can request a fresh one below.
+                </p>
+            {% endif %}
+        </section>
+    {% endif %}
+
+    {% if not job or job.state in ('ready', 'failed', 'expired') %}
+        <section class="owner-app__section" aria-labelledby="export-request-title">
+            <h2 id="export-request-title">Request an export</h2>
+            <p>
+                We will gather the information listed below into a single ZIP file.
+                Only you can download it, and the link is not shareable.
+            </p>
+            <form method="post"
+                  action="{{ url_for('owner.account_export') }}">
+                <div class="owner-app__actions">
+                    <button type="submit" class="owner-app__primary">
+                        {% if job %}Request a new export{% else %}Request my data{% endif %}
+                    </button>
+                </div>
+            </form>
+        </section>
+    {% endif %}
+
+    {% if domains %}
+        <section class="owner-app__section" aria-labelledby="export-contents-title">
+            <h2 id="export-contents-title">What an export contains</h2>
+            <p>
+                Your export includes {{ domains.included_count }} of the
+                {{ domains.total_count }} kinds of information PeerSlate holds
+                about you. We list what is left out, and why, so you know exactly
+                what you are getting.
+            </p>
+
+            <h3>Included</h3>
+            <ul class="export-contents">
+                {% for row in domains.included %}
+                    <li>{{ row.label }}</li>
+                {% endfor %}
+            </ul>
+
+            <h3>Not included</h3>
+            <ul class="export-contents">
+                {% for row in domains.not_included %}
+                    <li>
+                        {{ row.label }}
+                        {% if row.reason %}
+                            <span class="export-contents__reason">{{ row.reason }}</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+    </section>
+</div>
+{% endblock %}

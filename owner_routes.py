@@ -14,10 +14,15 @@ from flask import (
     render_template,
     request,
     send_file,
+    session,
     url_for,
 )
 
 from identity import AuthenticationRequired, get_current_identity
+from services import account_export_experience_service
+from services.account_export_experience_service import (
+    AccountExportExperienceError,
+)
 from services.database_service import DatabaseServiceError, database_service
 from services.capture_lifecycle_service import (
     CaptureLifecycleError,
@@ -365,11 +370,208 @@ def settings():
         current_app.logger.error("PeerSlate owner settings identity lookup failed.")
         return _render_owner_unavailable()
 
+    # Domain truth comes from DOMAINS via the experience service, never a
+    # second hand-maintained list, so this summary cannot drift from what an
+    # export actually contains.
+    #
+    # Read it ONLY when the export copy will actually use it. With the flag
+    # off the template never references these counts, so calling the reader
+    # anyway would hand every member a new way for Settings to fail while
+    # changing nothing they see -- a strictly worse trade for the members who
+    # cannot reach the feature at all.
+    export_enabled = _account_export_enabled()
+    export_included_count = None
+    export_total_count = None
+    if export_enabled:
+        domains = account_export_experience_service.domain_summary()
+        export_included_count = domains["included_count"]
+        export_total_count = domains["total_count"]
+
     return render_template(
         "owner_settings.html",
         page_title="Settings",
         member=identity,
+        account_export_enabled=export_enabled,
+        export_included_count=export_included_count,
+        export_total_count=export_total_count,
     )
+
+
+def _account_export_enabled():
+    return current_app.config.get("PEERSLATE_ACCOUNT_EXPORT_ENABLED", False) is True
+
+
+def _export_not_found():
+    """The single neutral answer for every job a member may not read.
+
+    Unknown, malformed, foreign, not-yet-ready, failed-and-cleaned, and
+    expired jobs all land here, so a response can never be used to learn
+    whether a job key exists or belongs to somebody else.
+    """
+
+    return (
+        render_template(
+            "owner_account_export.html",
+            page_title="Download your data",
+            job=None,
+            not_found=True,
+            domains=account_export_experience_service.domain_summary(),
+        ),
+        404,
+    )
+
+
+def _export_unavailable():
+    """Route-scoped recovery for a temporary export failure.
+
+    Deliberately not the global sign-in message: a signed-in member must
+    never be told to configure sign-in when their own export read failed.
+    """
+
+    return (
+        render_template(
+            "owner_account_export.html",
+            page_title="Download your data",
+            job=None,
+            unavailable=True,
+            domains=account_export_experience_service.domain_summary(),
+        ),
+        503,
+    )
+
+
+@owner.route("/app/settings/export", methods=("GET", "POST"))
+def account_export():
+    """Request an export of the signed-in member's own data."""
+
+    if not _account_export_enabled():
+        return "Account export is unavailable.", 404
+    if request.method == "POST" and not _is_same_origin_write():
+        return "Cross-site export requests are not allowed.", 403
+
+    try:
+        identity = get_current_identity()
+    except AuthenticationRequired:
+        return redirect(url_for("auth.sign_in", return_to="/app/settings/export"))
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate account export identity lookup failed.")
+        return _render_owner_unavailable()
+
+    if request.method == "POST":
+        try:
+            requested = account_export_experience_service.request_export(
+                identity.user_key
+            )
+        except AccountExportExperienceError:
+            current_app.logger.error("PeerSlate account export request failed.")
+            return _export_unavailable()
+        # Remember the member's own job so returning to this page finds it.
+        # This is a convenience hint only: ownership is re-proved in SQL on
+        # every status and download read, so a stale or absent value can
+        # never widen access.
+        session["account_export_job_key"] = requested["job_key"]
+        # Post/Redirect/Get: a refresh must not re-post a request.
+        return redirect(
+            url_for("owner.account_export_status", job_key=requested["job_key"])
+        )
+
+    remembered = session.get("account_export_job_key")
+    job = None
+    if remembered:
+        try:
+            job = account_export_experience_service.load_status(
+                identity.user_key, remembered
+            )
+        except AccountExportExperienceError:
+            job = None
+
+    return render_template(
+        "owner_account_export.html",
+        page_title="Download your data",
+        job=job,
+        domains=account_export_experience_service.domain_summary(),
+    )
+
+
+@owner.get("/app/settings/export/<job_key>")
+def account_export_status(job_key):
+    """Show truthful progress for one export this member owns."""
+
+    if not _account_export_enabled():
+        return "Account export is unavailable.", 404
+
+    try:
+        identity = get_current_identity()
+    except AuthenticationRequired:
+        return redirect(url_for("auth.sign_in", return_to="/app/settings/export"))
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate account export identity lookup failed.")
+        return _render_owner_unavailable()
+
+    try:
+        job = account_export_experience_service.load_status(
+            identity.user_key, job_key
+        )
+    except AccountExportExperienceError:
+        current_app.logger.error("PeerSlate account export status read failed.")
+        return _export_unavailable()
+
+    if job is None:
+        return _export_not_found()
+
+    return render_template(
+        "owner_account_export.html",
+        page_title="Download your data",
+        job=job,
+        domains=account_export_experience_service.domain_summary(),
+    )
+
+
+@owner.get("/app/settings/export/<job_key>/download")
+def account_export_download(job_key):
+    """Stream one member's own verified archive through the application.
+
+    An authenticated application proxy, never a redirect: the browser
+    never learns a container, object name, provider host, or SAS token,
+    because none of those values leaves the experience service.
+    """
+
+    if not _account_export_enabled():
+        return "Account export is unavailable.", 404
+
+    try:
+        identity = get_current_identity()
+    except AuthenticationRequired:
+        return redirect(url_for("auth.sign_in", return_to="/app/settings/export"))
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate account export identity lookup failed.")
+        return _render_owner_unavailable()
+
+    try:
+        artifact = account_export_experience_service.load_download(
+            identity.user_key, job_key
+        )
+    except AccountExportExperienceError:
+        current_app.logger.error("PeerSlate account export download failed.")
+        return _export_unavailable()
+
+    if artifact is None:
+        return _export_not_found()
+
+    response = current_app.response_class(
+        artifact["data"], mimetype="application/zip"
+    )
+    response.headers["Content-Type"] = "application/zip"
+    response.headers["Content-Length"] = str(artifact["compressed_size_bytes"])
+    # Quoted, job-key-only filename: nothing member-authored reaches this
+    # header, so it cannot carry a newline, quote, or path separator.
+    response.headers["Content-Disposition"] = (
+        'attachment; filename="%s"' % artifact["filename"]
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @owner.route("/app/capture", methods=("GET", "POST"))

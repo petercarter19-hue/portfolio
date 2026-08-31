@@ -106,10 +106,26 @@
                     </dd>
                 </div>
                 <div>
-                    <dt>Account-wide export, deletion, and closure</dt>
+                    <dt>Download your data</dt>
+                    <dd>
+                        {% if account_export_enabled %}
+                            <strong>Available.</strong> You can request a copy of your data as a
+                            single file. It includes {{ export_included_count }} of the
+                            {{ export_total_count }} kinds of information PeerSlate holds about you;
+                            the request page lists exactly what is and is not included, and why.
+                            Journal and Projects are not included.
+                        {% else %}
+                            <strong>Not available today.</strong> PeerSlate does not currently
+                            provide an account-wide export.
+                        {% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt>Account deletion and closure</dt>
                     <dd>
                         <strong>Not available today.</strong> PeerSlate does not currently provide
-                        these account-wide actions.
+                        these account-wide actions.{% if account_export_enabled %} Being able to
+                        download your data does not delete it.{% endif %}
                     </dd>
                 </div>
                 <div>
@@ -122,6 +138,29 @@
                 </div>
             </dl>
         </section>
+
+        {% if account_export_enabled %}
+        {#
+          A separate section, deliberately NOT inside the My Data summary
+          above. That summary is a read-only statement of truth states and a
+          regression test asserts it carries no controls at all; putting an
+          action inside it would quietly change what that section is. The
+          action lives here instead, where it can be a real control.
+        #}
+        <section class="owner-app__section" aria-labelledby="export-action-title">
+            <h2 id="export-action-title">Download your data</h2>
+            <p>
+                Request a single file containing the information listed on the
+                request page. Only you can download it, and the link is not
+                shareable.
+            </p>
+            <div class="owner-app__actions">
+                <a class="owner-app__primary" href="{{ url_for('owner.account_export') }}">
+                    Go to Download your data
+                </a>
+            </div>
+        </section>
+        {% endif %}
 
         <div class="owner-app__actions" aria-label="Member settings actions">
             <a class="owner-app__secondary" href="{{ url_for('auth.owner_workspace') }}">Back to workspace</a>

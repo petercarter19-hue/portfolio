@@ -26,6 +26,7 @@ caller's claim about what it is uploading.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import io
 import os
 import re
@@ -270,6 +271,57 @@ class AccountExportStorageService:
             "compressed_size_bytes": len(data),
             "uncompressed_size_bytes": uncompressed_size_bytes,
         }
+
+    def read_final(self, job_key, expected_sha256=None, expected_size=None):
+        """Return the verified final archive bytes for one job.
+
+        Called only by the application's own authenticated download proxy,
+        after dbo.usp_GetAccountExportDownloadMetadataForOwner has already
+        proved the requesting member owns this ready, unexpired job. This
+        method performs no authorization of its own and must never be
+        called with a job key the caller has not owner-checked.
+
+        ``expected_sha256`` and ``expected_size`` come from the job ledger,
+        where promote() committed them from an independent readback.
+        Re-checking them here means a replaced, truncated, or corrupted
+        object fails closed instead of being streamed to a member as if it
+        were their verified export.
+        """
+
+        final_name = final_blob_name(job_key)
+
+        try:
+            blob = self._client().get_blob_client(final_name)
+            properties = blob.get_blob_properties()
+            reported_size = int(getattr(properties, "size", 0) or 0)
+            data = blob.download_blob().readall()
+        except AccountExportStorageError:
+            raise
+        except Exception as error:
+            # Covers the missing-object case too: a cleaned-up or never
+            # promoted job must not be distinguishable here from any other
+            # read failure.
+            raise AccountExportStorageError("storage_read_failed") from error
+
+        if not data or len(data) != reported_size:
+            raise AccountExportStorageError("storage_invalid_properties")
+        if len(data) > self.max_compressed_bytes:
+            raise AccountExportStorageError("oversize_compressed")
+        if expected_size is not None and len(data) != int(expected_size):
+            raise AccountExportStorageError("storage_size_mismatch")
+        # A ready job always carries its digest -- the ledger's CHECK
+        # constraint requires it and the download procedure selects only
+        # ready rows -- so an absent digest here means the caller skipped
+        # the SQL proof or the ledger is corrupt. Fail closed rather than
+        # silently serving unverified bytes: a falsy digest must never be
+        # the reason verification did not happen.
+        if not expected_sha256:
+            raise AccountExportStorageError("storage_digest_unavailable")
+        actual = hashlib.sha256(data).hexdigest()
+        if not hmac.compare_digest(actual, str(expected_sha256).strip().lower()):
+            raise AccountExportStorageError("storage_hash_mismatch")
+
+        return data
 
     def cleanup_staging(self, job_key, attempt):
         """Delete one attempt's staging object, or prove it is already

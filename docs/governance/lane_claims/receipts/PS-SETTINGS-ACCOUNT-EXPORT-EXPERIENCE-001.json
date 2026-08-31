@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-EXPERIENCE-001",
+  "candidate_sha": "f16169716a9c6d57a9a1fa8cbaa08a2c3c37c51e",
+  "review_type": "independent",
+  "reviewer_ref": "agent:opus-fresh/settings-export-exp-2026-08-31-cde354f2",
+  "result": "pass",
+  "reviewed_at": "2026-08-31T14:45:00Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "IMPORTANT: the deletion row's reassurance that downloading does not delete rendered unconditionally, directly beneath flag-off copy saying no export exists -- a contradiction on the page whose purpose is telling members the truth, and pinned in by tests/test_owner_settings.py. Fixed: the sentence renders only when export exists, and the pin now matches the flag-off production state."
+    },
+    {
+      "status": "resolved",
+      "summary": "IMPORTANT: the containment claim 'merging changes nothing a member can reach' was false. Settings copy changes with the flag off, and settings() called domain_summary() unconditionally outside the try, giving Settings a new failure mode for every member including those who cannot reach the feature. Fixed: the read is gated behind the flag; both claims corrected in app.py and the contract document to 'no new capability, but copy does change'."
+    },
+    {
+      "status": "resolved",
+      "summary": "MINOR: read_final treated a falsy expected_sha256 as permission to skip digest verification. Now fails closed with storage_digest_unavailable, which flows through the single AccountExportStorageError seam and renders the same neutral answer."
+    },
+    {
+      "status": "resolved",
+      "summary": "MINOR: indistinguishability compared header names only. Now compares header values as well."
+    },
+    {
+      "status": "resolved",
+      "summary": "MINOR: the flag gate was proven for reads only. Now proven for the POST, and proven to refuse before any database call."
+    },
+    {
+      "status": "resolved",
+      "summary": "MINOR: a test case was mislabelled 'empty-ish key' when it is a malformed-length UUID; completion report counts were stale. Both corrected to the counted values, 17 and 4849."
+    },
+    {
+      "status": "informational",
+      "summary": "Privacy core attacked and held, verified by re-derivation rather than trust: all-pairs indistinguishability converging on one refusal site; locator containment across all six download outcomes; identical refusal code path for exists-but-not-yours versus does-not-exist; the malformed-key fast path reasoned sound; the session job_key hint not weaponisable because ownership is re-proved in SQL; read_final has one call site downstream of that proof; allowlist exactly the three ForOwner procedures."
+    },
+    {
+      "status": "informational",
+      "summary": "RECORDED NOT FIXED: DOMAINS reasons reach members verbatim with internal package codes such as PS-JOURNAL-001. Accurate and from the single source of truth, but not plain language. Not paraphrased here because that means editing another package's surface or keeping a drift-prone second copy; routed to the owner as a product decision."
+    },
+    {
+      "status": "informational",
+      "summary": "RECORDED NOT FIXED: no rate limit on the buffering download proxy. Authorization unaffected; an availability and memory-pressure note for deployment sizing."
+    },
+    {
+      "status": "informational",
+      "summary": "RECORDED NOT FIXED, and the most consequential: expiry is not deletion. Nothing schedules usp_ExpireAccountExportJobs or cleanup_final, so the owner's seven-day window is enforced in the ledger and NOT on disk -- an expired job correctly refuses to download while its archive remains in storage indefinitely. Belongs to the worker/operations slice and must close before real members are enabled."
+    },
+    {
+      "status": "informational",
+      "summary": "Reviewer provenance: round-one deep pass by a fresh Opus reviewer with no coordination history with the writer, findings verified and adjudicated by the C5 writer session, re-freeze confirmed directly against the diff. Disclosed because that session and the writer had collaborated extensively the same day."
+    },
+    {
+      "status": "informational",
+      "summary": "Residual risk, honestly untested: the database lookup's own timing. Structural mitigation is asserted -- identical code path for the two cases an attacker could learn from -- but proving or excluding a measurable timing difference needs a real database and a statistical harness. All tests use fake cursors and fake storage; the owner-filtering that enforces the guarantee lives in C1 SQL never yet executed against a real database."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-EXPERIENCE-001.md"
+}

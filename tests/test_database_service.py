@@ -347,6 +347,18 @@ class DatabaseServiceTests(unittest.TestCase):
         interview_ai_telemetry = {
             "usp_AppendInterviewAIServerCall",
         }
+        # PS-SETTINGS-ACCOUNT-EXPORT-EXPERIENCE-001 (C3). ONLY the three
+        # member-facing procedures. Each resolves @UserKey to the active
+        # profile itself and filters every row by it. The five worker
+        # procedures (Claim/Complete/Fail/Expire/Cleanup) must NEVER appear
+        # here: they take no @UserKey and operate system-wide across owners,
+        # so allowlisting one would let a browser request act on every
+        # member's export at once.
+        account_export = {
+            "usp_GetAccountExportDownloadMetadataForOwner",
+            "usp_GetAccountExportStatusForOwner",
+            "usp_RequestAccountExportForOwner",
+        }
         expected = (
             base
             | oppslate_os1
@@ -359,6 +371,7 @@ class DatabaseServiceTests(unittest.TestCase):
             | ask_pete_direct
             | community
             | interview_ai_telemetry
+            | account_export
         )
         # The groups above must not overlap each other — a name counted
         # twice would silently shrink the real union below the true count
@@ -375,9 +388,10 @@ class DatabaseServiceTests(unittest.TestCase):
             ask_pete_direct,
             community,
             interview_ai_telemetry,
+            account_export,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 139)
+        self.assertEqual(len(expected), 142)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_photo_procedures_are_explicitly_allowlisted(self):
