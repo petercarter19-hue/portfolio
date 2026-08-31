@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-RELATIONSHIPS-001",
+  "candidate_sha": "f8591ababa371b2f799d3ba264236bcfec7b1b6c",
+  "review_type": "independent",
+  "reviewer_ref": "agent:independent-review-2026-08-31/myopp-relationships-001-c8a304f2",
+  "result": "pass",
+  "reviewed_at": "2026-08-31T22:16:00Z",
+  "findings": [
+    {
+      "summary": "Round 1 (c8a304f2) returned REVISE: a Save pressed during the undo window silently no-opped while the item still disappeared (fixed as the doc 03 s7 removing->saved undo transition, deliberately not clearing posting_changed), replay staleness on undo_remove/mark_change_reviewed with a false README claim (both re-render live state; claim corrected), plus four minors. The reviewer re-ran its own reproductions against f8591aba: all fixed, no regressions (probe sets 24/24 and 35/35).",
+      "status": "resolved"
+    },
+    {
+      "summary": "Forward obligations recorded: SlateLink command replays still echo frozen receipts (disclosed in README item 11; C7 should route replay through a live re-read), the C2-backed reader must supply the governing head version for changed listings (C8), TRUNCATE/DROP sits outside trigger scope for the future erasure package, and the unknown-outcome lockout is per-process (shared store needed for multi-worker, C8/C9).",
+      "status": "informational"
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MYOPP-RELATIONSHIPS-001.md"
+}

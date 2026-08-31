@@ -2220,7 +2220,26 @@ class RetrievalMigrationTests(unittest.TestCase):
         )
         self.assertEqual(entry["requires"], ["PS-MYOPP-001", "PS-MYOPP-002", "PS-MYOPP-003"])
         self.assertTrue(entry["gate"] is None or isinstance(entry["gate"], dict))
-        self.assertIs(migrations[-1], entry)
+        # IMPORTANT 5 (PS-MYOPP-RELATIONSHIPS-001 self-review, extended
+        # surface): "this package's entry is literally last" is not a
+        # durable invariant -- it breaks the instant any later package
+        # appends to the shared, append-only registry.json (which is
+        # exactly what happened here once PS-MYOPP-005 was appended after
+        # PS-MYOPP-004). The durable invariant registry.json's own
+        # $comment actually promises ("apply order = list order") is
+        # relative, not absolute: every migration's `requires` entries
+        # must appear EARLIER in the array than the migration itself. That
+        # holds for PS-MYOPP-004 today and for every future package's
+        # append, forever.
+        index_by_id = {item["id"]: position for position, item in enumerate(migrations)}
+        for other_entry in migrations:
+            for required_id in other_entry.get("requires", []):
+                self.assertIn(required_id, index_by_id, f"{other_entry['id']} requires unknown {required_id}")
+                self.assertLess(
+                    index_by_id[required_id],
+                    index_by_id[other_entry["id"]],
+                    f"{other_entry['id']} requires {required_id}, which must appear earlier in registry.json",
+                )
 
     def test_no_forbidden_scoring_or_copied_content_column_in_c4_ddl(self):
         forward = FORWARD_PATH.read_text(encoding="utf-8")

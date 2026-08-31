@@ -102,6 +102,7 @@
       "PS-MYOPP-CANONICAL-001",
       "PS-MYOPP-CRITERIA-001",
       "PS-MYOPP-QUALIFICATION-001",
+      "PS-MYOPP-RELATIONSHIPS-001",
       "PS-MYOPP-RETRIEVAL-001",
       "PS-MYOPP-SUPPLY-RIGHTS-001",
       "PS-OPPORTUNITY-SLATE-CONTINUATION-001",
@@ -156,10 +157,10 @@
   },
   "counts": {
     "current_protect": 67,
-    "future_finish": 29,
+    "future_finish": 30,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 131
+    "total": 132
   }
 }
