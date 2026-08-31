@@ -22,7 +22,8 @@
     "SQL FIles/Migrations/PS-MYOPP-005_relationships.sql",
     "SQL FIles/Migrations/PS-MYOPP-005_relationships_rollback.sql",
     "SQL FIles/Verification/PS-MYOPP-005_relationships_verify.sql",
-    "SQL FIles/Migrations/registry.json"
+    "SQL FIles/Migrations/registry.json",
+    "tests/test_my_opportunities_retrieval.py"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-MYOPP-RELATIONSHIPS-001.md"
