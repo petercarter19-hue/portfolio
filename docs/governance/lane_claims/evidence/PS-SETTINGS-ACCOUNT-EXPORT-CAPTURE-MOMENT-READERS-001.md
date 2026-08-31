@@ -52,3 +52,39 @@ Runtime-inert review-tail record for replacement package 2 of the accepted
   before a surfaces extension reconciles its claim BEFORE review, never
   after; `PS-JOURNAL-001`, if ever applied, must revisit the moments
   allowlist in the same motion.
+
+## Errata (2026-08-31, owner-authorized): recorded merged_sha is wrong
+
+The closed claim's `merged_sha` field records
+`1f701263c9c1ad2a06e13de71e17dfef7cf9a761`. **No such object exists in this
+repository.** It is a transcription error: correct 40-hex prefix `1f701263`,
+corrupt from character 9 onward.
+
+The true merge commit for this package is
+`1f7012637dc5d897842a7d451ce39782ebadb695` — "Merge pull request 708 from
+work/2026-08-29-settings-account-export-capture-moment-readers-001 into main",
+2026-08-29T14:08:16Z, an ancestor of main, and the commit that introduced
+every one of this claim's eleven non-receipt surfaces.
+
+Three independent confirmations: (1) the merge subject names this claim's
+exact `branch`; (2) the paired receipt's `candidate_sha`
+`9e0cb6334c2c331028f91a3d442aedd0326964ac` is the reviewed branch tip that
+`1f701263…` squashed onto main; (3) the delivery-close merge that wrote the
+wrong value, `65c64db2bf163be496b49a728710851f7f49ce6e` (PR 709), has exactly
+one parent — `1f7012637dc5d897842a7d451ce39782ebadb695`.
+
+An audit of all 57 closed claims on main found this defect in exactly this
+one record; every other closed claim's `merged_sha` resolves and is an
+ancestor of main.
+
+The closed claim is not amended: a closed claim is never reopened or changed,
+and the evidence-errata transition forbids any claim delta. No delivered
+work, review outcome, or gate proof changes; only the merge commit identity
+is corrected, and only here.
+
+Related observation, recorded not remedied: `scripts/delivery_preflight.py`
+`--intent close` checks the merged_sha's ancestry, which fails closed on a
+nonexistent object. This value could not have passed that gate, so the close
+preflight for PR 709 was either not run or its failure was not honored.
+
+<!-- evidence-errata-authorization: session:947efb44-60f4-4728-b5c6-a0f7e1d9b296/pete-full-authorization-2026-08-31/cm-readers-merged-sha-errata -->
