@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-MEMBER-REASONS-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Give members plain-language explanations for the 18 export domains that are excluded or unavailable, replacing verbatim internal reason strings (package ids, table names, governance references) that currently reach the export screen. Mechanism: a presentation-only _DOMAIN_REASONS map in services/account_export_experience_service.py keyed by domain, following the existing _DOMAIN_LABELS precedent; DOMAINS in the reader module stays the single source of truth for what an export contains, is not edited, and any unmapped domain falls back to the ledger's verbatim reason so truth is never hidden. Every sentence must claim no more than the internal reason does. Tests pin: full coverage of every current non-included domain (a future domain without a plain sentence fails the suite), verbatim fallback, a jargon canary (no PS-* ids, no dbo., no 'per C0' in mapped values), and no orphan keys. Also retires the corresponding 'Recorded but not fixed here' bullet in the C3 contract document. No route, template, flag, schema, worker, or deployment change; production authority withheld.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-export-member-reasons-writer",
@@ -31,6 +31,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "6421865dcfb23288592e94fa04d0c6c1cc4b4b52",
+  "closed_at": "2026-08-31T23:40:28Z"
 }
