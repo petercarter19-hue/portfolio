@@ -23,7 +23,8 @@
     "SQL FIles/Migrations/PS-MYOPP-003_qualification.sql",
     "SQL FIles/Migrations/PS-MYOPP-003_qualification_rollback.sql",
     "SQL FIles/Verification/PS-MYOPP-003_qualification_verify.sql",
-    "SQL FIles/Migrations/registry.json"
+    "SQL FIles/Migrations/registry.json",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-MYOPP-QUALIFICATION-001.md"
