@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-RETRIEVAL-001",
+  "state": "active",
+  "outcome": "Implement and independently review the owner-scoped C4 retrieval foundation under the recorded REC-02 topology: deterministic search execution over canonical SQL truth with the doc 04 total ordering chain, pagination, ceilings, cancellation, degraded modes, and honest partial executions; the owner-bound search worker invoking C5's assessment writer under the doc 08 s2a binding, recheck, and durable-row rules, never fabricating a per-item state and excluding entries on assessment-persistence failure; owner-scoped persistence for search_execution and result_snapshot; index projection and fence contracts with no member data in any projection and canonical-mismatch drops, as contracts and fakes only; loading-copy truth binding; and the additive governed PS-MYOPP-004 migration with verification and rollback. No route or UI work, no C6 relationships, no provider integration or index provisioning, no Workshop, C2, C3, or C5 behavior change, no deployment, enablement, or production/staging schema action. A disposable migration-gate database needs separate bounded owner authorization.",
+  "assignment": "implementation",
+  "writer_ref": "session:4b21c2ac-0236-4dc0-af54-2c15e6f126ce/myopp-retrieval-writer",
+  "branch": "work/2026-08-31-myopp-retrieval-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "2da56f1d98c78c008fa5fe39bf265e3d87d03796",
+  "owner_outcome_ref": "session:4b21c2ac-0236-4dc0-af54-2c15e6f126ce/pete-chat-2026-08-31/start-c4-go-all-the-way",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MYOPP-RETRIEVAL-001.json",
+    "docs/governance/lane_claims/evidence/PS-MYOPP-RETRIEVAL-001.md",
+    "docs/governance/lane_claims/receipts/PS-MYOPP-RETRIEVAL-001.json",
+    "docs/initiatives/PS-MYOPP-RETRIEVAL-001/README.md",
+    "docs/initiatives/PS-MYOPP-RETRIEVAL-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "services/my_opportunities/retrieval_service.py",
+    "services/my_opportunities/search_worker.py",
+    "services/my_opportunities/index_projection.py",
+    "services/my_opportunities/index_fence.py",
+    "tests/test_my_opportunities_retrieval.py",
+    "SQL FIles/Migrations/PS-MYOPP-004_search_execution_results.sql",
+    "SQL FIles/Migrations/PS-MYOPP-004_search_execution_results_rollback.sql",
+    "SQL FIles/Verification/PS-MYOPP-004_search_execution_results_verify.sql",
+    "SQL FIles/Migrations/registry.json"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MYOPP-RETRIEVAL-001.md"
+  ],
+  "domains": [
+    "runtime:my-opportunities:retrieval",
+    "schema:my-opportunities:retrieval",
+    "privacy:my-opportunities:retrieval",
+    "governance:initiative:my-opportunities:retrieval",
+    "governance:package-registry:my-opportunities:retrieval"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
