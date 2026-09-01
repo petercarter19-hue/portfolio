@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-MEMBER-IMPORT-001",
+  "state": "active",
+  "outcome": "Implement and independently review the permanent private C10 member_import path: deterministic paste and document-upload intake under the shipped bounded-intake discipline (PDF/DOCX/plain text, magic-byte sniff, streaming cutoff), sanitize/extract recording the doc 06 s2 closed outcome states per stage (never AI), provenance held only inside the owner-scoped record, identical not-found owner isolation, export and member delete via body-removal tombstones, dual retention (member lifecycle plus rights at point of use), content-free audit (host class + reason code only), the API/UI seams C8 integrates, the prebuilt DISABLED service-level URL-fetch port resolving member_url_fetch_service.create_fetch_adapter() only when PEERSLATE_MY_OPPORTUNITIES_ENABLED and PEERSLATE_MY_OPPORTUNITIES_URL_FETCH_ENABLED are both true and the module imports, else the truthful url_fetch_unavailable outcome, and the additive governed PS-MYOPP-006 migration with rollback, verifier, and registry entry. No HTTP route, fetch capability, or member_url_fetch_service.py file; no promotion of any import to shared inventory; no C2-C6 file changes; no deployment, enablement, or production/staging schema action.",
+  "assignment": "implementation",
+  "writer_ref": "session:4b21c2ac-0236-4dc0-af54-2c15e6f126ce/myopp-member-import-writer",
+  "branch": "work/2026-09-01-myopp-member-import-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "fe3a9d2087097d47d3c65b55876c0db643928f3a",
+  "owner_outcome_ref": "session:4b21c2ac-0236-4dc0-af54-2c15e6f126ce/pete-chat-2026-09-01/registry-handback-confirmed-go",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MYOPP-MEMBER-IMPORT-001.json",
+    "docs/governance/lane_claims/evidence/PS-MYOPP-MEMBER-IMPORT-001.md",
+    "docs/governance/lane_claims/receipts/PS-MYOPP-MEMBER-IMPORT-001.json",
+    "docs/initiatives/PS-MYOPP-MEMBER-IMPORT-001/README.md",
+    "docs/initiatives/PS-MYOPP-MEMBER-IMPORT-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "services/my_opportunities/member_import_service.py",
+    "tests/test_my_opportunities_member_import.py",
+    "SQL FIles/Migrations/PS-MYOPP-006_member_import.sql",
+    "SQL FIles/Migrations/PS-MYOPP-006_member_import_rollback.sql",
+    "SQL FIles/Verification/PS-MYOPP-006_member_import_verify.sql"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MYOPP-MEMBER-IMPORT-001.md"
+  ],
+  "domains": [
+    "runtime:my-opportunities:member-import",
+    "schema:my-opportunities:member-import",
+    "privacy:my-opportunities:member-import",
+    "governance:initiative:my-opportunities:member-import",
+    "governance:package-registry:my-opportunities:member-import"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
