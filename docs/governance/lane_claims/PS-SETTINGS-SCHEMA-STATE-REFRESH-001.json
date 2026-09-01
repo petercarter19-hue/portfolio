@@ -15,7 +15,8 @@
     "docs/governance/lane_claims/PS-SETTINGS-SCHEMA-STATE-REFRESH-001.json",
     "docs/governance/lane_claims/evidence/PS-SETTINGS-SCHEMA-STATE-REFRESH-001.md",
     "docs/governance/lane_claims/receipts/PS-SETTINGS-SCHEMA-STATE-REFRESH-001.json",
-    "docs/governance/PRODUCTION_SCHEMA_STATE.md"
+    "docs/governance/PRODUCTION_SCHEMA_STATE.md",
+    "tests/test_workshop_provenance_visibility_migration.py"
   ],
   "domains": [
     "governance:schema-state-record"
