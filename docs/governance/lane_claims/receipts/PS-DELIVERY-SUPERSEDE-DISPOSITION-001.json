@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-SUPERSEDE-DISPOSITION-001",
+  "candidate_sha": "80e8a3c52d61b1e55ab086e1af35443408b73ce3",
+  "review_type": "independent",
+  "reviewer_ref": "session:9547fc3c-1d26-4689-abbf-61641eae154a/supersede-disposition-independent-reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-09-01T01:05:00Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Round 1 LOW: the --owner-authorization-ref argparse help text still named only evidence-errata and owner-reassignment while the enforced gate correctly admitted supersede. Corrected in the one-hunk follow-up commit; round 2 verified the delta is exactly that help string and re-ran the 201-test suite OK."
+    },
+    {
+      "status": "informational",
+      "summary": "The '-supersede-' branch-name gate is substring-based, the identical pre-existing idiom used by pause/resume/close/transfer/authorize; every substantive gate (delta, states, receipt, checkpoint, owner ref) still binds."
+    },
+    {
+      "status": "informational",
+      "summary": "A non-canonical-case id in superseded_by is verified closed via the casefolded claim lookup, consistent with how all claims are keyed; it cannot satisfy the replacement requirement on its own because PACKAGE_RE refuses it at claim level. No gate bypass."
+    },
+    {
+      "status": "informational",
+      "summary": "A non-list superseded_by iterates per-character in the intent gate and produces noisy per-character refusals - fail-closed, not exploitable."
+    },
+    {
+      "status": "informational",
+      "summary": "Residual assumption, not a defect: the receipt-absence gate reads origin/main's current tip and relies on the standing invariants that governed merges always leave receipts, control transitions change only claim paths, and direct pushes to main are blocked by Azure policy. A compound upstream governance breach deleting a receipt from main is outside this package's threat model."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-DELIVERY-SUPERSEDE-DISPOSITION-001.md"
+}

@@ -515,6 +515,141 @@ class ClaimValidationTests(unittest.TestCase):
         self.assertTrue(any("merged_sha" in e for e in errors))
         self.assertTrue(any("closed_at" in e for e in errors))
 
+    def test_superseded_claim_validation(self):
+        def superseded(**overrides):
+            value = dict(
+                state="superseded",
+                checkpoint_sha=HEAD,
+                superseded_at="2026-09-01T00:00:00Z",
+                supersession={
+                    "owner_authorization_ref": "task:owner/decision:supersede",
+                    "superseded_by": ["PS-REPLACEMENT-001"],
+                },
+            )
+            value.update(overrides)
+            return claim(**value)
+
+        self.assertEqual([], preflight.validate_claim(superseded()))
+        self.assertEqual(
+            [],
+            preflight.validate_claim(
+                superseded(
+                    supersession={
+                        "owner_authorization_ref": "task:owner/decision:supersede",
+                        "withdrawal_reason": "Scope review failed; work withdrawn.",
+                    }
+                )
+            ),
+        )
+        self.assertTrue(
+            any(
+                "checkpoint_sha" in e
+                for e in preflight.validate_claim(superseded(checkpoint_sha=None))
+            )
+        )
+        self.assertTrue(
+            any(
+                "superseded_at" in e
+                for e in preflight.validate_claim(superseded(superseded_at=None))
+            )
+        )
+        self.assertTrue(
+            any(
+                "must not record a merged_sha" in e
+                for e in preflight.validate_claim(superseded(merged_sha=MAIN))
+            )
+        )
+        self.assertTrue(
+            any(
+                "must not record closed_at" in e
+                for e in preflight.validate_claim(
+                    superseded(closed_at="2026-09-01T00:00:00Z")
+                )
+            )
+        )
+        self.assertTrue(
+            any(
+                "supersession record" in e
+                for e in preflight.validate_claim(superseded(supersession=None))
+            )
+        )
+        self.assertTrue(
+            any(
+                "owner_authorization_ref" in e
+                for e in preflight.validate_claim(
+                    superseded(supersession={"superseded_by": ["PS-REPLACEMENT-001"]})
+                )
+            )
+        )
+        self.assertTrue(
+            any(
+                "replacement package references" in e
+                for e in preflight.validate_claim(
+                    superseded(
+                        supersession={
+                            "owner_authorization_ref": "task:owner/decision:supersede",
+                        }
+                    )
+                )
+            )
+        )
+        self.assertTrue(
+            any(
+                "admits only" in e
+                for e in preflight.validate_claim(
+                    superseded(
+                        supersession={
+                            "owner_authorization_ref": "task:owner/decision:supersede",
+                            "superseded_by": ["PS-REPLACEMENT-001"],
+                            "bypass": True,
+                        }
+                    )
+                )
+            )
+        )
+
+    def test_only_superseded_claims_may_carry_supersession_fields(self):
+        errors = preflight.validate_claim(
+            claim(
+                supersession={
+                    "owner_authorization_ref": "task:owner/decision:supersede",
+                    "superseded_by": ["PS-REPLACEMENT-001"],
+                }
+            )
+        )
+        self.assertTrue(
+            any("only superseded claims" in e for e in errors), errors
+        )
+        errors = preflight.validate_claim(
+            claim(superseded_at="2026-09-01T00:00:00Z")
+        )
+        self.assertTrue(
+            any("only superseded claims" in e for e in errors), errors
+        )
+
+    def test_superseded_branch_stays_reserved(self):
+        superseded = claim(
+            package="PS-SUPERSEDED-001",
+            number=1,
+            state="superseded",
+            checkpoint_sha=HEAD,
+            superseded_at="2026-09-01T00:00:00Z",
+            supersession={
+                "owner_authorization_ref": "task:owner/decision:supersede",
+                "withdrawal_reason": "Withdrawn after failed scope review.",
+            },
+        )
+        rival = claim(package="PS-RIVAL-001", number=2, branch=superseded["branch"])
+        errors = preflight.validate_claim_set(
+            {
+                "ps-superseded-001": superseded,
+                "ps-rival-001": rival,
+            }
+        )
+        self.assertTrue(
+            any("branch collision" in e for e in errors), errors
+        )
+
     def test_impossible_closed_timestamp_is_rejected(self):
         errors = preflight.validate_claim(
             claim(
@@ -3895,6 +4030,214 @@ class EvaluationTests(unittest.TestCase):
         )
 
 
+class SupersedeIntentTests(EvaluationTests):
+    """PS-DELIVERY-SUPERSEDE-DISPOSITION-001: the terminal unmerged
+    disposition. Every gate is exercised fail-closed; a delivered, merged,
+    active, or receipt-bearing package can never take this path, and a
+    superseded claim is terminal."""
+
+    OWNER_REF = "task:owner/decision:supersede-omnibus"
+
+    def _paused(self):
+        return claim(
+            state="paused",
+            checkpoint_sha=HEAD,
+        )
+
+    def _superseded(self, **overrides):
+        value = dict(
+            state="superseded",
+            checkpoint_sha=HEAD,
+            superseded_at="2026-09-01T00:00:00Z",
+            supersession={
+                "owner_authorization_ref": self.OWNER_REF,
+                "superseded_by": ["PS-REPLACEMENT-001"],
+            },
+        )
+        value.update(overrides)
+        return claim(**value)
+
+    def _replacement(self, state="closed"):
+        value = claim(package="PS-REPLACEMENT-001", number=3, state=state)
+        if state == "closed":
+            value["merged_sha"] = MAIN
+            value["closed_at"] = "2026-08-30T00:00:00Z"
+        return value
+
+    def _run(
+        self,
+        *,
+        before=None,
+        after=None,
+        replacement_state="closed",
+        receipt_value=None,
+        remote_tip=None,
+        checkpoint_on_main=False,
+        owner_ref=None,
+        branch="work/2026-09-01-delivery-supersede-example",
+    ):
+        before = before if before is not None else self._paused()
+        after = after if after is not None else self._superseded()
+        replacement = self._replacement(replacement_state)
+        control_facts = facts(
+            branch=branch,
+            branch_paths=(preflight.claim_relative_path(after["package"]),),
+        )
+        tip = remote_tip if remote_tip is not None else HEAD
+
+        def fake_git(_root, *command):
+            if command[0] == "fetch":
+                return ""
+            if command[0] == "rev-parse":
+                return tip
+            raise AssertionError(command)
+
+        _, errors, _ = self.run_evaluate(
+            args(
+                "supersede",
+                owner_authorization_ref=(
+                    owner_ref if owner_ref is not None else self.OWNER_REF
+                ),
+            ),
+            after,
+            control_facts,
+            origin_claims={
+                after["package"].casefold(): before,
+                "ps-replacement-001": replacement,
+            },
+            candidate_claims={
+                after["package"].casefold(): after,
+                "ps-replacement-001": replacement,
+            },
+            origin_claim=patch.object(
+                preflight, "_origin_claim", return_value=before
+            ),
+            origin_receipt=patch.object(
+                preflight, "load_receipt_at_ref", return_value=receipt_value
+            ),
+            ancestor=patch.object(
+                preflight, "_is_ancestor", return_value=checkpoint_on_main
+            ),
+            git=patch.object(preflight, "_git", side_effect=fake_git),
+        )
+        return errors
+
+    def test_supersede_happy_path_passes(self):
+        self.assertEqual([], self._run())
+
+    def test_supersede_accepts_a_withdrawal_reason_instead_of_replacements(self):
+        after = self._superseded(
+            supersession={
+                "owner_authorization_ref": self.OWNER_REF,
+                "withdrawal_reason": "Pre-activation scope review failed.",
+            }
+        )
+        self.assertEqual([], self._run(after=after))
+
+    def test_supersede_refuses_an_accepted_receipt(self):
+        errors = self._run(receipt_value=receipt())
+        self.assertTrue(
+            any("accepted review receipt" in e for e in errors), errors
+        )
+
+    def test_supersede_requires_a_paused_origin_claim(self):
+        errors = self._run(before=claim(state="active"))
+        self.assertTrue(
+            any("paused origin claim" in e for e in errors), errors
+        )
+
+    def test_supersede_requires_closed_replacements(self):
+        errors = self._run(replacement_state="active")
+        self.assertTrue(
+            any("must be a closed claim" in e for e in errors), errors
+        )
+
+    def test_supersede_requires_the_exact_owner_reference(self):
+        errors = self._run(owner_ref="task:owner/decision:other")
+        self.assertTrue(
+            any(
+                "must equal --owner-authorization-ref" in e for e in errors
+            ),
+            errors,
+        )
+        errors = self._run(owner_ref="")
+        self.assertTrue(
+            any("requires --owner-authorization-ref" in e for e in errors),
+            errors,
+        )
+
+    def test_supersede_requires_the_preserved_checkpoint_tip(self):
+        errors = self._run(remote_tip=MAIN)
+        self.assertTrue(
+            any("equal the fetched branch tip" in e for e in errors), errors
+        )
+
+    def test_supersede_refuses_a_checkpoint_reachable_from_main(self):
+        errors = self._run(checkpoint_on_main=True)
+        self.assertTrue(
+            any("already reachable from origin/main" in e for e in errors),
+            errors,
+        )
+
+    def test_supersede_is_a_mutating_control_intent(self):
+        self.assertIn("supersede", preflight.MUTATING_INTENTS)
+        self.assertIn("supersede", preflight.CONTROL_INTENTS)
+
+    def test_supersede_requires_its_control_branch_pattern(self):
+        errors = self._run(branch="work/2026-09-01-delivery-close-example")
+        self.assertTrue(
+            any("delivery-supersede control branch" in e for e in errors),
+            errors,
+        )
+
+    def test_superseded_claims_are_terminal(self):
+        superseded = self._superseded()
+        resumed = self._superseded(state="active")
+        control_facts = facts(
+            branch="work/2026-09-01-delivery-resume-example",
+            branch_paths=(preflight.claim_relative_path(superseded["package"]),),
+        )
+        _, errors, _ = self.run_evaluate(
+            args("resume"),
+            resumed,
+            control_facts,
+            origin_claims={superseded["package"].casefold(): superseded},
+            origin_claim=patch.object(
+                preflight, "_origin_claim", return_value=superseded
+            ),
+        )
+        self.assertTrue(
+            any("resume requires a paused origin claim" in e for e in errors),
+            errors,
+        )
+        closed = self._superseded(
+            state="closed", merged_sha=MAIN, closed_at="2026-09-01T01:00:00Z"
+        )
+        control_facts = facts(
+            branch="work/2026-09-01-delivery-close-example",
+            branch_paths=(preflight.claim_relative_path(superseded["package"]),),
+        )
+        _, errors, _ = self.run_evaluate(
+            args("close"),
+            closed,
+            control_facts,
+            origin_claims={superseded["package"].casefold(): superseded},
+            origin_claim=patch.object(
+                preflight, "_origin_claim", return_value=superseded
+            ),
+            origin_receipt=patch.object(
+                preflight, "load_receipt_at_ref", return_value=None
+            ),
+        )
+        self.assertTrue(
+            any(
+                "close requires an active or paused origin claim" in e
+                for e in errors
+            ),
+            errors,
+        )
+
+
 class EvidenceErrataTests(unittest.TestCase):
     """PS-CLOSED-CLAIM-EVIDENCE-ERRATA-001: the owner-authorized amendment of
     a CLOSED package's one fixed runtime-inert evidence file, admitted without
@@ -4056,7 +4399,11 @@ class EvidenceErrataTests(unittest.TestCase):
             facts(),
         )
         self.assertTrue(
-            any("valid only for evidence-errata or owner-reassignment" in e for e in errors)
+            any(
+            "valid only for evidence-errata, owner-reassignment, or supersede"
+            in e
+            for e in errors
+        )
         )
 
     def test_a_second_path_riding_along_is_refused(self):

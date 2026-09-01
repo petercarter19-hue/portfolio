@@ -215,6 +215,21 @@ Merge that control PR before implementation merge.
 - Resume: on a `delivery-resume` branch, change only `state` from `paused` to
   `active`, then run `--intent resume`. The fetched branch must still equal the
   preserved checkpoint, and current branch/path/domain collisions rerun.
+- Supersede: the terminal disposition for an activated-but-unmerged package
+  that was rejected and replaced or withdrawn. It is distinct from close:
+  nothing was delivered. From a `paused` claim whose pushed checkpoint is
+  preserved, and only with Pete's explicit authorization reference, change
+  only the claim on a dedicated
+  `work/YYYY-MM-DD-delivery-supersede-<slug>` branch: set `state` to
+  `superseded`, add UTC `superseded_at`, and add a `supersession` record
+  holding `owner_authorization_ref` plus exact closed replacement package
+  references in `superseded_by` or an exact `withdrawal_reason`. Then run
+  `--intent supersede --owner-authorization-ref <owner-ref>`. The transition
+  refuses any package with an accepted review receipt on origin/main, any
+  merged or delivered history, a moved or missing checkpoint branch, or a
+  checkpoint already reachable from origin/main. Superseded is terminal:
+  no resume, close, pause, transfer, or write, and the claim branch name
+  stays reserved because the unmerged bytes exist only there.
 - Close: after the accepted repository SHA is on main, set the claim to
   `closed` with `merged_sha` and UTC `closed_at` on a `delivery-close` branch,
   then run `--intent close`. The check proves the reviewed candidate paths and

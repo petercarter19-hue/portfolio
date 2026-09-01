@@ -45,7 +45,7 @@ ACTIVATION_BRANCH_RE = re.compile(
 )
 CONTROL_BRANCH_RE = re.compile(
     r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-"
-    r"(?:authorize|extend-surfaces|transfer|owner-reassignment|pause|resume|close)-[a-z0-9-]+$"
+    r"(?:authorize|extend-surfaces|transfer|owner-reassignment|pause|resume|close|supersede)-[a-z0-9-]+$"
 )
 OWNER_REASSIGNMENT_CONTROL_BRANCH_RE = re.compile(
     r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-owner-reassignment-[a-z0-9-]+$"
@@ -69,14 +69,14 @@ LEGACY_CURRENT_WRITER_RE = re.compile(
 )
 
 ACTIVE_STATE = "active"
-STATES = {"active", "paused", "closed"}
+STATES = {"active", "paused", "closed", "superseded"}
 DELIVERY_PATHS = {"Routine", "Bounded", "Protected"}
 ASSIGNMENTS = {"implementation"}
 REPOSITORY_AUTHORITIES = {"through_merge", "write_only"}
 REVIEW_REQUIREMENTS = {"self", "independent"}
 MUTATING_INTENTS = {
     "activate", "authorize", "extend-surfaces", "write", "transfer",
-    "owner-reassignment", "pause", "resume", "merge", "close",
+    "owner-reassignment", "pause", "resume", "merge", "close", "supersede",
     "evidence-errata",
 }
 # evidence-errata is a control-style transition: it runs from the leased
@@ -84,7 +84,8 @@ MUTATING_INTENTS = {
 # unlike the lifecycle transitions it must leave every claim byte-identical.
 CONTROL_INTENTS = {
     "activate", "authorize", "extend-surfaces", "transfer",
-    "owner-reassignment", "pause", "resume", "close", "evidence-errata",
+    "owner-reassignment", "pause", "resume", "close", "supersede",
+    "evidence-errata",
 }
 # PS-DELIVERY-SIMPLIFICATION-CLOSE-REPAIR-001: the delivery-control
 # simplification bootstrap introduced the per-package claim model itself, so
@@ -1645,7 +1646,9 @@ def validate_claim(claim: dict, *, expected_package: str | None = None) -> list[
         errors.append(f"claim filename must match package {expected_package}")
     state = claim.get("state")
     if state not in STATES:
-        errors.append("claim state must be active, paused, or closed")
+        errors.append(
+            "claim state must be active, paused, closed, or superseded"
+        )
     _string_field(claim, "outcome", errors, maximum=1200)
     assignment = claim.get("assignment")
     if assignment not in ASSIGNMENTS:
@@ -1708,6 +1711,59 @@ def validate_claim(claim: dict, *, expected_package: str | None = None) -> list[
             errors.append("closed claims require merged_sha")
         if not is_valid_utc_timestamp(claim.get("closed_at")):
             errors.append("closed claims require a UTC closed_at timestamp")
+    # PS-DELIVERY-SUPERSEDE-DISPOSITION-001: superseded is the terminal
+    # disposition for an activated-but-unmerged package that was rejected and
+    # replaced or withdrawn. It is semantically distinct from closed: nothing
+    # was delivered, so it must never carry merged_sha or closed_at, and it
+    # must preserve the pushed checkpoint whose bytes exist only on the
+    # reserved claim branch.
+    if state == "superseded":
+        if not SHA_RE.fullmatch(str(claim.get("checkpoint_sha", ""))):
+            errors.append("superseded claims require the preserved checkpoint_sha")
+        if not is_valid_utc_timestamp(claim.get("superseded_at")):
+            errors.append("superseded claims require a UTC superseded_at timestamp")
+        if claim.get("merged_sha") is not None:
+            errors.append("superseded claims must not record a merged_sha")
+        if claim.get("closed_at") is not None:
+            errors.append("superseded claims must not record closed_at")
+        supersession = claim.get("supersession")
+        if not isinstance(supersession, dict):
+            errors.append("superseded claims require a supersession record")
+        else:
+            unknown = sorted(
+                set(supersession)
+                - {"owner_authorization_ref", "superseded_by", "withdrawal_reason"}
+            )
+            if unknown:
+                errors.append(
+                    "supersession admits only owner_authorization_ref, "
+                    "superseded_by, and withdrawal_reason: " + ", ".join(unknown)
+                )
+            owner_ref = supersession.get("owner_authorization_ref")
+            if not isinstance(owner_ref, str) or not REF_RE.fullmatch(owner_ref):
+                errors.append(
+                    "supersession requires an opaque owner_authorization_ref"
+                )
+            superseded_by = supersession.get("superseded_by")
+            reason = supersession.get("withdrawal_reason")
+            has_replacements = (
+                isinstance(superseded_by, list)
+                and bool(superseded_by)
+                and all(
+                    isinstance(item, str) and PACKAGE_RE.fullmatch(item)
+                    for item in superseded_by
+                )
+            )
+            has_reason = (
+                isinstance(reason, str) and 0 < len(reason.strip()) <= 1200
+            )
+            if not has_replacements and not has_reason:
+                errors.append(
+                    "supersession requires exact replacement package references "
+                    "or an exact withdrawal reason"
+                )
+    elif "supersession" in claim or "superseded_at" in claim:
+        errors.append("only superseded claims may carry supersession fields")
     handoff = claim.get("handoff")
     errors.extend(_validate_handoff(handoff))
     if isinstance(handoff, dict):
@@ -1741,7 +1797,9 @@ def _claim_set_error_components(
             errors.append(f"{package}: claim path must be {expected_path}")
         if claim.get("state") == ACTIVE_STATE:
             active.append(claim)
-        if claim.get("state") in {"active", "paused"}:
+        if claim.get("state") in {"active", "paused", "superseded"}:
+            # A superseded claim keeps its branch name reserved: the unmerged
+            # bytes exist only on that preserved remote branch.
             unresolved.append(claim)
 
     for index, left in enumerate(unresolved):
@@ -2180,10 +2238,11 @@ def evaluate(
     if owner_authorization_ref and args.intent not in {
         "evidence-errata",
         "owner-reassignment",
+        "supersede",
     }:
         errors.append(
-            "--owner-authorization-ref is valid only for evidence-errata or "
-            "owner-reassignment"
+            "--owner-authorization-ref is valid only for evidence-errata, "
+            "owner-reassignment, or supersede"
         )
 
     if args.intent == "read":
@@ -2710,6 +2769,97 @@ def evaluate(
                                 + ", ".join(mismatched)
                             )
 
+    elif args.intent == "supersede":
+        # PS-DELIVERY-SUPERSEDE-DISPOSITION-001: terminal unmerged
+        # disposition. Only a paused claim with a preserved pushed checkpoint,
+        # no accepted review receipt on origin/main, and no merged history may
+        # take it, and only with the owner's explicit authorization reference.
+        if (
+            not CONTROL_BRANCH_RE.fullmatch(facts.branch)
+            or "-supersede-" not in facts.branch
+        ):
+            errors.append("supersede requires a delivery-supersede control branch")
+        if not isinstance(owner_authorization_ref, str) or not REF_RE.fullmatch(
+            owner_authorization_ref
+        ):
+            errors.append(
+                "supersede requires --owner-authorization-ref as an opaque "
+                "task/session/agent/role reference"
+            )
+        before = _require_control_delta(
+            root=root,
+            claim=claim,
+            facts=facts,
+            allowed_fields={"state", "superseded_at", "supersession"},
+            errors=errors,
+        )
+        if before and before.get("state") != "paused":
+            errors.append(
+                "supersede requires a paused origin claim with a preserved "
+                "checkpoint"
+            )
+        if claim.get("state") != "superseded":
+            errors.append("supersede must set state to superseded")
+        supersession = claim.get("supersession")
+        if (
+            isinstance(supersession, dict)
+            and isinstance(owner_authorization_ref, str)
+            and REF_RE.fullmatch(owner_authorization_ref)
+            and supersession.get("owner_authorization_ref")
+            != owner_authorization_ref
+        ):
+            errors.append(
+                "supersession owner_authorization_ref must equal "
+                "--owner-authorization-ref"
+            )
+        if load_receipt_at_ref(root, "origin/main", args.package) is not None:
+            errors.append(
+                "supersede refuses a package with an accepted review receipt; "
+                "a reviewed package uses the ordinary merge and close path"
+            )
+        if isinstance(supersession, dict):
+            for replacement in supersession.get("superseded_by") or []:
+                target = authority_claims.get(str(replacement).casefold())
+                if not isinstance(target, dict) or target.get("state") != "closed":
+                    errors.append(
+                        "supersession replacement must be a closed claim on "
+                        f"origin/main: {replacement}"
+                    )
+        checkpoint = str(before.get("checkpoint_sha", "")) if before else ""
+        branch = str(before.get("branch", "")) if before else ""
+        if before and branch and SHA_RE.fullmatch(checkpoint):
+            try:
+                _git(
+                    root,
+                    "fetch",
+                    "origin",
+                    f"+refs/heads/{branch}:refs/remotes/origin/{branch}",
+                )
+                remote_tip = _git(
+                    root, "rev-parse", f"refs/remotes/origin/{branch}"
+                )
+            except PreflightError as exc:
+                errors.append(
+                    "supersede requires the preserved remote checkpoint branch: "
+                    + str(exc)
+                )
+            else:
+                if checkpoint != remote_tip:
+                    errors.append(
+                        "supersede checkpoint_sha must equal the fetched branch tip"
+                    )
+                if _is_ancestor(root, checkpoint, facts.origin_main):
+                    errors.append(
+                        "supersede refuses a checkpoint already reachable from "
+                        "origin/main; a merged package uses the ordinary close path"
+                    )
+        prospective_claims = dict(authority_claims)
+        prospective_claims[package_key] = claim
+        errors.extend(
+            "supersede prospective state: " + error
+            for error in validate_claim_set(prospective_claims)
+        )
+
     elif args.intent == "evidence-errata":
         # PS-CLOSED-CLAIM-EVIDENCE-ERRATA-001: owner-authorized amendment of
         # the one fixed runtime-inert evidence file of an already CLOSED
@@ -2920,6 +3070,7 @@ def build_parser() -> argparse.ArgumentParser:
             "grant",
             "merge",
             "close",
+            "supersede",
             "evidence-errata",
             "release",
         ],
@@ -2937,8 +3088,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--owner-authorization-ref",
         default="",
         help=(
-            "opaque owner reference required by evidence-errata and "
-            "owner-reassignment; invalid for every other intent"
+            "opaque owner reference required by evidence-errata, "
+            "owner-reassignment, and supersede; invalid for every other intent"
         ),
     )
     return parser
