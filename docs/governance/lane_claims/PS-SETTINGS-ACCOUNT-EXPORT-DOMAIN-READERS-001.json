@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-DOMAIN-READERS-001",
-  "state": "paused",
+  "state": "superseded",
   "outcome": "Deliver the Protected real-content contract the owner directed before C3: for every domain C0 marks included-by-allowlist, an owner-scoped read-only domain-reader procedure with an exact field allowlist and a redaction contract that excludes other-member, joint, secret, and provider-internal data by construction; one additive migration (PS-SETTINGS-EXPORT-002) with governed gate proof and an extended owner-isolation verification; a thin read-only python adapter exposing the readers to future slices without touching the C2 worker; offline tests pinning every allowlist and forbidden-field set; and contract records giving each domain a truthful disposition with stable safe reasons. Dormant or unavailable domains (Journal, publication foundation, joint/connection records, notifications inbox, audit, telemetry, browser-local history, third-party content) are recorded as excluded/unavailable with reasons, not implemented. No UI, no worker/container/schedule change, no real export run, no schema apply outside the disposable gate database, no production authority. Acceptance of this package's contract ends the C3 visual design's provisional status per the owner's 2026-08-29 directive.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-readers-writer",
@@ -36,5 +36,19 @@
   "handoff": null,
   "checkpoint_sha": "ecfa4754087825ae0df01739fce8e3a92292308a",
   "merged_sha": null,
-  "closed_at": null
+  "closed_at": null,
+  "superseded_at": "2026-09-01T01:38:44Z",
+  "supersession": {
+    "owner_authorization_ref": "role:owner/pete-chat-2026-08-31/central-five-item-cleanup-handoff",
+    "superseded_by": [
+      "PS-SETTINGS-ACCOUNT-EXPORT-CORE-READERS-001",
+      "PS-SETTINGS-ACCOUNT-EXPORT-CAPTURE-MOMENT-READERS-001",
+      "PS-SETTINGS-ACCOUNT-EXPORT-WORKSHOP-READER-001",
+      "PS-SETTINGS-ACCOUNT-EXPORT-OPPSLATE-READER-001",
+      "PS-SETTINGS-ACCOUNT-EXPORT-READER-INTEGRATION-001",
+      "PS-SETTINGS-ACCOUNT-EXPORT-MEDIA-TRANSCRIPT-READER-001",
+      "PS-SETTINGS-ACCOUNT-EXPORT-PREFERENCES-CONSENT-READER-001",
+      "PS-SETTINGS-ACCOUNT-EXPORT-EVIDENCE-RULE-READER-001"
+    ]
+  }
 }
