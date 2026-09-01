@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-RELEASE-PROOF-001",
+  "candidate_sha": "e058484dea0f1dd1ea729a91e3cac2a40c3e5563",
+  "review_type": "independent",
+  "reviewer_ref": "agent:review-ps-settings-account-export-release-proof-001:e058484d:release-proof-confirm",
+  "result": "pass",
+  "reviewed_at": "2026-09-01T16:10:21Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Round one (d43598cb) MODERATE F1, an under-claim: the frozen record still called the web-app Storage Blob Data Reader grant pending-owner, but the owner had executed it at 2026-09-01T14:59:37Z, ~46 minutes before freeze; the writer's gate-8 check was stale by freeze time. Resolved: re-verified live (exactly one direct ServicePrincipal assignment at exactly the container scope) and corrected in the status header, gate-8 section, honest limitations, gate-10 checklist, and completion-report known-limits, each recording that the reviewer caught the staleness."
+    },
+    {
+      "status": "resolved",
+      "summary": "Round one (d43598cb) MINOR F2: the completion report's grant breakdown said 37 EXECUTEs; corrected to 1 CONNECT + 36 EXECUTE (5 lifecycle + 31 readers) + 12 column SELECTs = 49 rows, matching the script's pinned tripwire and the release-proof record."
+    },
+    {
+      "status": "resolved",
+      "summary": "Reviewer inference that the live release had moved past run 2221 was retracted after the writer's independent /healthz recomputation at 2026-09-01T16:03:32Z proved run 2221 still live; the record now states that plainly with the computation. The confirm review verified the doc-only delta with the grants script and tip-pin test byte-identical to d43598cb."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-RELEASE-PROOF-001.md"
+}

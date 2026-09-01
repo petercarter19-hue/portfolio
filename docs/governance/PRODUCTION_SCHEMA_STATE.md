@@ -6,11 +6,9 @@ This file is the repository's record of which schema migrations the named databa
 
 - Database: `peerslate-database`
 - Server: `peerslate`
-- Read at: `2026-09-01T01:12:46Z` UTC
-- Pipeline source version: `290c38e5ae8c25f04715dbe1b0c88592089ec38b`
-- Pipeline build: `2149`
+- Read at: `2026-09-01T13:40:32Z` UTC
 
-## Applied (39)
+## Applied (40)
 
 In registry order.
 
@@ -55,8 +53,9 @@ In registry order.
 | 37 | `PS-SETTINGS-EXPORT-007` | 2026-08-31T23:32:16.3679487 | yes |
 | 38 | `PS-SETTINGS-EXPORT-008` | 2026-09-01T00:20:28.7994637 | yes |
 | 39 | `PS-SETTINGS-EXPORT-009` | 2026-09-01T01:12:46.1671935 | yes |
+| 40 | `PS-SETTINGS-EXPORT-010` | 2026-09-01T12:57:35.9905208 | yes |
 
-## Registered but not applied (10)
+## Registered but not applied (9)
 
 | Migration | Gate proof | Summary |
 | --- | --- | --- |
@@ -66,7 +65,6 @@ In registry order.
 | `PS-CONNECT-002` | matches file | Non-production additive relationship foundation for future Profile audience authorization: preserves PS-PLAT-004 request, connection, and block truth while adding pair-scoped lifecycle state, append-only event/epoch evidence, binary exact idempotent commands, and actor-scoped snapshots. It is not wired, applied, released, or enabled by this candidate. |
 | `PS-MYOPP-001` | matches file | Additive My Opportunities C2 shared-side canonical source-policy, receipt, version, lifecycle, dedupe, attribution, requirement, event, and rights-tombstone foundation. No member-side objects. |
 | `PS-MYOPP-002` | matches file | Additive My Opportunities C3 member-side criteria drafts, immutable draft versions and applied snapshots, owner-fenced references, terminal receipts, and TTL-bounded content-free idempotency records. No search execution, result, route, UI, provider, fixture, or production action. |
-| `PS-SETTINGS-EXPORT-010` | **none or stale** | Account-export domain-ledger writer (the export program's last structural gap): one worker-only, lease-fenced atomic completion procedure, usp_CompleteAccountExportWithDomains, added alongside C1's untouched usp_CompleteAccountExportJob. Derives job/owner identity from the locked row, re-checks owner-active under the lock, validates the canonical 30-domain JSON payload, inserts the per-domain rows into dbo.account_export_job_domains, and transitions the job to ready in one transaction - both succeed or neither. |
 | `PS-MYOPP-003` | matches file | Additive My Opportunities C5 member-side qualification persistence: fixed-purpose evidence grants with expiry and one-way revocation, one current assessment per member x requirement item x requirement version with append-only revisions and reference-only version-pinned evidence links, practical-fit observations structurally separate from the gate, and TTL-bounded content-free command receipts. No route, search execution, retrieval, provider, score or ranking field, Workshop change, fixture row, or production action. |
 | `PS-MYOPP-004` | matches file | Additive My Opportunities C4 member-side search execution and immutable result persistence: owner-fenced search executions bound to one applied criteria snapshot with a closed lifecycle state machine and truthful failed/partial/cancelled reason pairing, one immutable completeness-marked result snapshot per execution, and reference-only ordered result entries carrying the exact result-time governing basis with internal ordering inputs never serialized. No route, UI, provider integration, index provisioning, score or ranking field, C2/C3/C5 change, fixture row, or production action. |
 | `PS-MYOPP-005` | matches file | Additive My Opportunities C6 member-side saves and Slate-link persistence: owner-fenced saved opportunities following the closed save/remove/undo machine with an undo window, terminal removed rows, one active save per member and opportunity, and member-review recording of the last reviewed source version; owner-fenced Slate links with one active link per member and opportunity and unlinked history labels. Reference-only canonical bindings; no overlay, score, or copied-content column; no route, UI, provider integration, C2/C3/C4/C5 change, fixture row, or production action. |
@@ -247,6 +245,11 @@ In registry order.
       "registered": true
     },
     {
+      "applied_at_utc": "2026-09-01T12:57:35.9905208",
+      "id": "PS-SETTINGS-EXPORT-010",
+      "registered": true
+    },
+    {
       "applied_at_utc": "2026-07-19T13:17:12.7083616",
       "id": "PS-VOICE-001",
       "registered": true
@@ -273,7 +276,7 @@ In registry order.
     }
   ],
   "database": "peerslate-database",
-  "generated_at_utc": "2026-09-01T01:12:46Z",
+  "generated_at_utc": "2026-09-01T13:40:32Z",
   "pending": [
     "PS-JOURNAL-001",
     "PS-PLAT-008",
@@ -281,13 +284,12 @@ In registry order.
     "PS-CONNECT-002",
     "PS-MYOPP-001",
     "PS-MYOPP-002",
-    "PS-SETTINGS-EXPORT-010",
     "PS-MYOPP-003",
     "PS-MYOPP-004",
     "PS-MYOPP-005"
   ],
-  "pipeline_build_id": "2149",
-  "pipeline_source_version": "290c38e5ae8c25f04715dbe1b0c88592089ec38b",
+  "pipeline_build_id": "",
+  "pipeline_source_version": "",
   "registry_version": 1,
   "server": "peerslate",
   "unregistered_in_ledger": []

@@ -128,8 +128,12 @@ class WorkshopProvenanceVisibilityMigrationTests(unittest.TestCase):
         # movement of what production carries must be an explicit, reviewed
         # decision here. 2026-09-01: the owner-authorized eight-migration
         # account-export batch (PS-SETTINGS-EXPORT-001, 003-009) moved the
-        # tip from PS-WORKSHOP-004.
-        self.assertEqual(production_in_registry_order[-1], "PS-SETTINGS-EXPORT-009")
+        # tip from PS-WORKSHOP-004. Later on 2026-09-01: governed run 2212
+        # applied PS-SETTINGS-EXPORT-010 (the account-export domain-ledger
+        # writer) under pete-chat-2026-09-01/five-through-nine, moving the
+        # tip again; recorded by PS-SETTINGS-ACCOUNT-EXPORT-RELEASE-PROOF-001
+        # alongside its regeneration of PRODUCTION_SCHEMA_STATE.md.
+        self.assertEqual(production_in_registry_order[-1], "PS-SETTINGS-EXPORT-010")
 
         # The selector property this test exists for, now stated
         # tip-relative so it can never silently go stale: removing the
