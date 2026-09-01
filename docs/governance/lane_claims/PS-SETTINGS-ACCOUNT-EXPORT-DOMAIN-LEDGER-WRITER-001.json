@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-DOMAIN-LEDGER-WRITER-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Fill the export program's last structural gap: dbo.account_export_job_domains, the per-domain ledger C1 created, is written by nothing. Migration PS-SETTINGS-EXPORT-010 adds one worker-only, lease-fenced atomic completion procedure, usp_CompleteAccountExportJobWithDomains, alongside C1's untouched one: it derives job and owner identity from the locked job row (never a parameter), validates the canonical 30-domain set from one JSON payload, inserts the per-domain rows, and moves the job to ready in the same transaction - both succeed or neither, with owner-active re-checked inside it. Stable per-domain schema_identifier; the job's cutoff marker as source_change_marker. All payload validation happens before Blob promote so a post-promote failure cannot strand the job. The worker calls only the new procedure and its stale reader counts are corrected. Registry entry, clean-DROP rollback, two-owner isolation verification, and the full preactivation adversarial matrix. Populating the ledger permanently blocks C1 rollback - accepted and recorded. No UI, scheduler, worker host, deployment, or production grant.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-export-domain-ledger-writer",
@@ -39,6 +39,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "7e29781c6b3fb2703603f769c6c9e7558c3a4c83",
+  "closed_at": "2026-09-01T00:58:16Z"
 }
