@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-SUPERSEDE-DISPOSITION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Give delivery governance one truthful terminal disposition for an activated-but-unmerged package that was rejected and superseded, semantically distinct from closed/delivered. Add a superseded claim state and a supersede control transition that require a paused origin claim with its preserved pushed checkpoint, refuse any package holding an accepted review receipt on origin/main or any merged_sha, require an exact owner authorization reference plus exact closed replacement package references or an exact withdrawal reason, prove the preserved remote branch still equals the checkpoint and is not an ancestor of origin/main, keep the superseded branch name reserved against reuse, and rerun claim-set collision validation. Positive and adversarial tests prove a delivered, merged, active, or receipt-bearing package can never use the unmerged terminal path and that a superseded claim is terminal (no resume, close, pause, transfer, or write). Document the transition in START_HERE.md. No change to any other lifecycle behavior.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/central-cleanup-manager",
@@ -28,6 +28,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "0c8a69471a15a98b55ebd4388e5b621d9231a33d",
+  "closed_at": "2026-09-01T01:25:38Z"
 }
