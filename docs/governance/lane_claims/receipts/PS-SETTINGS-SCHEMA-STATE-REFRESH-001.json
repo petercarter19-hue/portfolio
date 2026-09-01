@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-SCHEMA-STATE-REFRESH-001",
+  "candidate_sha": "bb0ebc51e8aac352173e7c67a66c1d7dbf30b009",
+  "review_type": "self",
+  "reviewer_ref": "agent:claude-code/settings-schema-state-refresh-writer",
+  "result": "pass",
+  "reviewed_at": "2026-09-01T02:15:17Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Self-review caught the extracted render being stale at birth (build 2149's checkout predates EXPORT-010's registry entry); fixed by deterministic re-render via migration_registry.render_state using the same ledger snapshot against the current registry."
+    },
+    {
+      "status": "resolved",
+      "summary": "CI surfaced a second stale pin: the Workshop provenance-visibility regression asserts the production tip, W4-era. Claim extended via a proper extend-surfaces control PR; the pin moved with a dated rationale; the selector property restated tip-relative so it cannot silently go stale; the original W4->W3 guarantee preserved family-scoped."
+    },
+    {
+      "status": "resolved",
+      "summary": "PROCESS BREACH, recorded not hidden: the writer's own automation merged PR 827 while merge preflight was failing 'merge requires the package review receipt' -- a receipt-tail commit had silently failed (the file was absent after a branch rebuild) and the chain lacked an exit gate on merge-preflight failure, so the Azure merge proceeded on CI-green alone. The candidate bytes on main are exactly the reviewed bb0ebc51 content; what was bypassed was the receipt-before-merge ordering, not review substance. Remediated by this receipt-tail follow-up merged before close; root cause (missing exit gate) corrected in the writer's chain template."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-SCHEMA-STATE-REFRESH-001.md"
+}
