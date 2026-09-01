@@ -21,7 +21,9 @@
     "tests/test_my_opportunities_member_import.py",
     "SQL FIles/Migrations/PS-MYOPP-006_member_import.sql",
     "SQL FIles/Migrations/PS-MYOPP-006_member_import_rollback.sql",
-    "SQL FIles/Verification/PS-MYOPP-006_member_import_verify.sql"
+    "SQL FIles/Verification/PS-MYOPP-006_member_import_verify.sql",
+    "SQL FIles/Migrations/registry.json",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-MYOPP-MEMBER-IMPORT-001.md"
