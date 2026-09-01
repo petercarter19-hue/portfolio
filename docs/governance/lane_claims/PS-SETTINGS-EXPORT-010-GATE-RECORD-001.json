@@ -15,7 +15,8 @@
     "docs/governance/lane_claims/PS-SETTINGS-EXPORT-010-GATE-RECORD-001.json",
     "docs/governance/lane_claims/evidence/PS-SETTINGS-EXPORT-010-GATE-RECORD-001.md",
     "docs/governance/lane_claims/receipts/PS-SETTINGS-EXPORT-010-GATE-RECORD-001.json",
-    "SQL FIles/Migrations/registry.json"
+    "SQL FIles/Migrations/registry.json",
+    "SQL FIles/Verification/PS-SETTINGS-EXPORT-010_domain_ledger_isolation_verify.sql"
   ],
   "domains": [
     "governance:package-registry:settings:export-gate-record"
