@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-WORKER-OPS-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Close the recorded 'expiry is not deletion' retention gap for member account exports: add a maintenance mode to scripts/run_account_export_worker.py (run_maintenance plus a --maintenance flag) that first EXECs dbo.usp_ExpireAccountExportJobs, then, for exactly the jobs the ledger shows past-ready (expired, or failed where C1's cleanup contract covers staging leftovers) with cleanup_state 'pending', deletes the physical private-container objects through AccountExportStorageService's idempotent cleanup calls and only then marks each job cleaned through dbo.usp_CleanupAccountExportJob - never deleting an object for a still-downloadable job, never marking cleaned before a successful delete; a failed delete leaves the job pending, logs content-free, and fails the run loudly. New offline tests in tests/test_account_export_worker_ops.py pin ordering, scope, idempotence, and the counts-only log allowlist. CR11 docs record that this code runs nowhere until the separately gated owner worker-host decision; the C3 gap-bullet retirement is deferred to PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001, which holds that document. No SQL, scheduler, host, or production change.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-export-worker-ops-writer",
@@ -32,6 +32,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "945ac0002536f282b6a3c6d1537bb37e74ad805a",
+  "closed_at": "2026-09-01T12:43:22Z"
 }
