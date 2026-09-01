@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-SUPERSEDE-DISPOSITION-001",
+  "state": "active",
+  "outcome": "Give delivery governance one truthful terminal disposition for an activated-but-unmerged package that was rejected and superseded, semantically distinct from closed/delivered. Add a superseded claim state and a supersede control transition that require a paused origin claim with its preserved pushed checkpoint, refuse any package holding an accepted review receipt on origin/main or any merged_sha, require an exact owner authorization reference plus exact closed replacement package references or an exact withdrawal reason, prove the preserved remote branch still equals the checkpoint and is not an ancestor of origin/main, keep the superseded branch name reserved against reuse, and rerun claim-set collision validation. Positive and adversarial tests prove a delivered, merged, active, or receipt-bearing package can never use the unmerged terminal path and that a superseded claim is terminal (no resume, close, pause, transfer, or write). Document the transition in START_HERE.md. No change to any other lifecycle behavior.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/central-cleanup-manager",
+  "branch": "work/2026-09-01-supersede-disposition-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "ef64849a88680adb75e0742f7213ee5d87b07617",
+  "owner_outcome_ref": "pete-chat-2026-08-31/central-five-item-cleanup-handoff",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-DELIVERY-SUPERSEDE-DISPOSITION-001.json",
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-SUPERSEDE-DISPOSITION-001.md",
+    "docs/governance/lane_claims/receipts/PS-DELIVERY-SUPERSEDE-DISPOSITION-001.json",
+    "scripts/delivery_preflight.py",
+    "tests/test_delivery_preflight.py",
+    "START_HERE.md"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-DELIVERY-SUPERSEDE-DISPOSITION-001.md"
+  ],
+  "domains": [
+    "governance:delivery-control:unmerged-terminal-disposition"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
