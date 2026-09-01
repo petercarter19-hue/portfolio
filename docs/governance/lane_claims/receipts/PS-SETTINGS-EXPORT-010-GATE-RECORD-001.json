@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-EXPORT-010-GATE-RECORD-001",
+  "candidate_sha": "ae924a14bba1e71a8e0f98ad90d6682d82826642",
+  "review_type": "self",
+  "reviewer_ref": "agent:claude-code/settings-export-gate-record-writer",
+  "result": "pass",
+  "reviewed_at": "2026-09-01T10:30:42Z",
+  "findings": [
+    {
+      "status": "informational",
+      "summary": "Governed gate run a4 steps, from the tool's own output: prerequisites - PS-PLAT-000, PS-PLAT-001, PS-PLAT-002, PS-PLAT-003, PS-PLAT-004, PS-PLAT-005, PS-PLAT-006, PS-PLAT-007, PS-AUTH-001, PS-SETTINGS-EXPORT-001; forward apply - 1 object(s) created; re-apply is a no-op - objects and ledger unchanged; verification - PS-SETTINGS-EXPORT-010_domain_ledger_isolation_verify.sql returned verified = 1; rollback rehearsal - 1 object(s) reversed; forward apply after rollback - ledger row restored"
+    },
+    {
+      "status": "resolved",
+      "summary": "Three failed attempts preceded the pass, each torn down cleanly with nothing committed: a1 shell-sourcing truncated the dotenv connection string at its first semicolon (fixed via the tool's --env-file loader); a2 the verify's cleanup section hit trg_audit_events_immutable (fixed to the house pattern per C1's own verify -- no cleanup section, the throwaway's deletion is the cleanup, via a proper extend-surfaces to take the verification file); a3 an unescaped apostrophe introduced in the a2 fix (reworded)."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-EXPORT-010-GATE-RECORD-001.md"
+}

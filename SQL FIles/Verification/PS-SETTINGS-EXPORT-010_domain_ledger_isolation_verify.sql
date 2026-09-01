@@ -11,8 +11,10 @@
    discarded, and every fact confirmed with plain SELECTs afterward.
    For the same reason there is NO outer transaction: the new
    procedure's own refusal-path ROLLBACK would unwind it, voiding every
-   subsequent assertion against silently-vanished fixtures. Cleanup is
-   an explicit final section instead. Run ONLY on a disposable
+   subsequent assertion against silently-vanished fixtures. There is deliberately NO cleanup
+   section: the immutable audit ledger forecloses deleting the synthetic
+   users its rows reference, so the disposable database's deletion is the
+   cleanup, exactly as C1's own verify resolved it. Run ONLY on a disposable
    migration-gate database.
 
    Fresh THROW numbers in the 59400-59499 block. What is proven live:
@@ -261,34 +263,21 @@ BEGIN TRY
     IF (SELECT state FROM dbo.account_export_jobs WHERE job_key = @JobB) <> N'running'
         THROW 59430, 'The refused job must remain running for the reaper, not become ready.', 1;
 
-    /* ---------- 7. explicit synthetic cleanup (no outer txn to roll back) */
-    DELETE d FROM dbo.account_export_job_domains d WHERE d.owner_profile_id IN (@ProfileA, @ProfileB);
-    DELETE FROM dbo.account_export_jobs WHERE owner_profile_id IN (@ProfileA, @ProfileB);
-    DELETE FROM dbo.member_profiles WHERE profile_id IN (@ProfileA, @ProfileB);
-    /* the bare request calls durably committed audit rows naming these
-       users (FK_audit_events_app_users, no cascade) -- delete them first
-       or the app_users delete hits FK 547 and the proof can never finish */
-    DELETE FROM dbo.audit_events WHERE actor_user_id IN (@UserA, @UserB);
-    DELETE FROM dbo.app_users WHERE id IN (@UserA, @UserB);
+    /* ---------- 7. no cleanup, deliberately ----------
+       The bare request calls durably committed audit rows, and
+       PS-PLAT-001's trg_audit_events_immutable forbids deleting them --
+       which forecloses deleting the synthetic users they reference.
+       C1's own verify resolved this the same way: NO cleanup section.
+       This script runs only on a disposable gate database, and that
+       database's deletion is the cleanup. */
 
     SELECT
         CAST(1 AS bit) AS verified,
-        N'PS-SETTINGS-EXPORT-010: structural checks against the live procedure body; jobs and leases minted through BARE calls to the real request/claim procedures (INSERT...EXEC is illegal against CATCH-ROLLBACK procedures -- C1''s own recorded gate lesson) with facts confirmed by plain SELECTs; no outer transaction, so refusal-path rollbacks cannot void later assertions; refusals proven with exact numbers -- 57272 incomplete set (zero rows, job left running), 57273 duplicate, 57275 shape, 57281 over-long reason refused loudly rather than truncated, 57279 foreign lease and replay-after-ready (thirty original rows untouched), 57280 owner deactivated between claim and completion (nothing written, job left running); the successful completion produced exactly thirty rows all carrying the completing owner''s own profile id, the stable per-domain schema identifier, and the job cutoff marker on included rows, the other owner''s ledger untouched; explicit synthetic cleanup completed.' AS detail;
+        N'PS-SETTINGS-EXPORT-010: structural checks against the live procedure body; jobs and leases minted through BARE calls to the real request/claim procedures (INSERT...EXEC is illegal against CATCH-ROLLBACK procedures -- C1''s own recorded gate lesson) with facts confirmed by plain SELECTs; no outer transaction, so refusal-path rollbacks cannot void later assertions; refusals proven with exact numbers -- 57272 incomplete set (zero rows, job left running), 57273 duplicate, 57275 shape, 57281 over-long reason refused loudly rather than truncated, 57279 foreign lease and replay-after-ready (thirty original rows untouched), 57280 owner deactivated between claim and completion (nothing written, job left running); the successful completion produced exactly thirty rows all carrying the completing owner''s own profile id, the stable per-domain schema identifier, and the job cutoff marker on included rows, the other owner''s ledger untouched; no cleanup by design -- deleting the disposable gate database is the cleanup (the immutable audit ledger forecloses row deletion).' AS detail;
 END TRY
 BEGIN CATCH
-    /* best-effort cleanup, then surface the real failure */
+    /* no cleanup on failure either -- see section 7 */
     IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
     SET @Detail = ERROR_MESSAGE();
-    BEGIN TRY
-        DELETE d FROM dbo.account_export_job_domains d
-        WHERE d.owner_profile_id IN (SELECT profile_id FROM dbo.member_profiles WHERE profile_slug LIKE N'verify59400-%');
-        DELETE FROM dbo.account_export_jobs
-        WHERE owner_profile_id IN (SELECT profile_id FROM dbo.member_profiles WHERE profile_slug LIKE N'verify59400-%');
-        DELETE FROM dbo.member_profiles WHERE profile_slug LIKE N'verify59400-%';
-        DELETE FROM dbo.audit_events
-        WHERE actor_user_id IN (SELECT id FROM dbo.app_users WHERE user_key LIKE N'verify59400-%');
-        DELETE FROM dbo.app_users WHERE user_key LIKE N'verify59400-%';
-    END TRY
-    BEGIN CATCH END CATCH;
     THROW 59499, @Detail, 1;
 END CATCH;
