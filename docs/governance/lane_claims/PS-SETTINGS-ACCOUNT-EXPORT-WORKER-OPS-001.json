@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-WORKER-OPS-001",
+  "state": "active",
+  "outcome": "Close the recorded 'expiry is not deletion' retention gap for member account exports: add a maintenance mode to scripts/run_account_export_worker.py (run_maintenance plus a --maintenance flag) that first EXECs dbo.usp_ExpireAccountExportJobs, then, for exactly the jobs the ledger shows past-ready (expired, or failed where C1's cleanup contract covers staging leftovers) with cleanup_state 'pending', deletes the physical private-container objects through AccountExportStorageService's idempotent cleanup calls and only then marks each job cleaned through dbo.usp_CleanupAccountExportJob - never deleting an object for a still-downloadable job, never marking cleaned before a successful delete; a failed delete leaves the job pending, logs content-free, and fails the run loudly. New offline tests in tests/test_account_export_worker_ops.py pin ordering, scope, idempotence, and the counts-only log allowlist. CR11 docs record that this code runs nowhere until the separately gated owner worker-host decision; the C3 gap-bullet retirement is deferred to PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001, which holds that document. No SQL, scheduler, host, or production change.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/settings-export-worker-ops-writer",
+  "branch": "work/2026-09-01-settings-export-worker-ops-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "a06ef5f6d13d4001034e98b8edb6654ceae3de05",
+  "owner_outcome_ref": "pete-chat-2026-09-01/knock-everything-out-parallel",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-ACCOUNT-EXPORT-WORKER-OPS-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-WORKER-OPS-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-ACCOUNT-EXPORT-WORKER-OPS-001.json",
+    "scripts/run_account_export_worker.py",
+    "tests/test_account_export_worker_ops.py",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR11_EXPORT_WORKER_OPS.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR11_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+  ],
+  "domains": [
+    "runtime:settings:account-export-worker-ops",
+    "privacy:settings:account-export-retention",
+    "testing:settings:account-export-worker-ops"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-WORKER-OPS-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
