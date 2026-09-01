@@ -6,11 +6,11 @@ This file is the repository's record of which schema migrations the named databa
 
 - Database: `peerslate-database`
 - Server: `peerslate`
-- Read at: `2026-08-28T13:23:55Z` UTC
-- Pipeline source version: `a2938987f8998e3bc770b4c9a3eab99583f95fdc`
-- Pipeline build: `1759`
+- Read at: `2026-09-01T01:12:46Z` UTC
+- Pipeline source version: `290c38e5ae8c25f04715dbe1b0c88592089ec38b`
+- Pipeline build: `2149`
 
-## Applied (31)
+## Applied (39)
 
 In registry order.
 
@@ -47,8 +47,16 @@ In registry order.
 | 29 | `PS-OPPSLATE-USE-001` | 2026-08-28T01:44:09.3219369 | yes |
 | 30 | `PS-WORKSHOP-003` | 2026-08-28T13:11:47.1226908 | yes |
 | 31 | `PS-WORKSHOP-004` | 2026-08-28T13:23:55.2607176 | yes |
+| 32 | `PS-SETTINGS-EXPORT-001` | 2026-08-31T20:46:00.2695144 | yes |
+| 33 | `PS-SETTINGS-EXPORT-003` | 2026-08-31T20:59:01.5647518 | yes |
+| 34 | `PS-SETTINGS-EXPORT-004` | 2026-08-31T21:10:43.2603662 | yes |
+| 35 | `PS-SETTINGS-EXPORT-005` | 2026-08-31T21:40:20.4780020 | yes |
+| 36 | `PS-SETTINGS-EXPORT-006` | 2026-08-31T22:12:41.4795049 | yes |
+| 37 | `PS-SETTINGS-EXPORT-007` | 2026-08-31T23:32:16.3679487 | yes |
+| 38 | `PS-SETTINGS-EXPORT-008` | 2026-09-01T00:20:28.7994637 | yes |
+| 39 | `PS-SETTINGS-EXPORT-009` | 2026-09-01T01:12:46.1671935 | yes |
 
-## Registered but not applied (5)
+## Registered but not applied (10)
 
 | Migration | Gate proof | Summary |
 | --- | --- | --- |
@@ -57,6 +65,11 @@ In registry order.
 | `PS-PROFILE-002` | **none or stale** | Dark additive governed Profile publication foundation: normalized Profile-native versions, exact source projection references, private draft placements, immutable audience revision manifests, idempotent command records, and reserved slug history. Connections activation remains gated on the future PS-CONNECT-002 relationship hardening and is not enabled by this candidate. |
 | `PS-CONNECT-002` | matches file | Non-production additive relationship foundation for future Profile audience authorization: preserves PS-PLAT-004 request, connection, and block truth while adding pair-scoped lifecycle state, append-only event/epoch evidence, binary exact idempotent commands, and actor-scoped snapshots. It is not wired, applied, released, or enabled by this candidate. |
 | `PS-MYOPP-001` | matches file | Additive My Opportunities C2 shared-side canonical source-policy, receipt, version, lifecycle, dedupe, attribution, requirement, event, and rights-tombstone foundation. No member-side objects. |
+| `PS-MYOPP-002` | matches file | Additive My Opportunities C3 member-side criteria drafts, immutable draft versions and applied snapshots, owner-fenced references, terminal receipts, and TTL-bounded content-free idempotency records. No search execution, result, route, UI, provider, fixture, or production action. |
+| `PS-SETTINGS-EXPORT-010` | **none or stale** | Account-export domain-ledger writer (the export program's last structural gap): one worker-only, lease-fenced atomic completion procedure, usp_CompleteAccountExportWithDomains, added alongside C1's untouched usp_CompleteAccountExportJob. Derives job/owner identity from the locked row, re-checks owner-active under the lock, validates the canonical 30-domain JSON payload, inserts the per-domain rows into dbo.account_export_job_domains, and transitions the job to ready in one transaction - both succeed or neither. |
+| `PS-MYOPP-003` | matches file | Additive My Opportunities C5 member-side qualification persistence: fixed-purpose evidence grants with expiry and one-way revocation, one current assessment per member x requirement item x requirement version with append-only revisions and reference-only version-pinned evidence links, practical-fit observations structurally separate from the gate, and TTL-bounded content-free command receipts. No route, search execution, retrieval, provider, score or ranking field, Workshop change, fixture row, or production action. |
+| `PS-MYOPP-004` | matches file | Additive My Opportunities C4 member-side search execution and immutable result persistence: owner-fenced search executions bound to one applied criteria snapshot with a closed lifecycle state machine and truthful failed/partial/cancelled reason pairing, one immutable completeness-marked result snapshot per execution, and reference-only ordered result entries carrying the exact result-time governing basis with internal ordering inputs never serialized. No route, UI, provider integration, index provisioning, score or ranking field, C2/C3/C5 change, fixture row, or production action. |
+| `PS-MYOPP-005` | matches file | Additive My Opportunities C6 member-side saves and Slate-link persistence: owner-fenced saved opportunities following the closed save/remove/undo machine with an undo window, terminal removed rows, one active save per member and opportunity, and member-review recording of the last reviewed source version; owner-fenced Slate links with one active link per member and opportunity and unlinked history labels. Reference-only canonical bindings; no overlay, score, or copied-content column; no route, UI, provider integration, C2/C3/C4/C5 change, fixture row, or production action. |
 
 ## Machine-readable record
 
@@ -194,6 +207,46 @@ In registry order.
       "registered": true
     },
     {
+      "applied_at_utc": "2026-08-31T20:46:00.2695144",
+      "id": "PS-SETTINGS-EXPORT-001",
+      "registered": true
+    },
+    {
+      "applied_at_utc": "2026-08-31T20:59:01.5647518",
+      "id": "PS-SETTINGS-EXPORT-003",
+      "registered": true
+    },
+    {
+      "applied_at_utc": "2026-08-31T21:10:43.2603662",
+      "id": "PS-SETTINGS-EXPORT-004",
+      "registered": true
+    },
+    {
+      "applied_at_utc": "2026-08-31T21:40:20.4780020",
+      "id": "PS-SETTINGS-EXPORT-005",
+      "registered": true
+    },
+    {
+      "applied_at_utc": "2026-08-31T22:12:41.4795049",
+      "id": "PS-SETTINGS-EXPORT-006",
+      "registered": true
+    },
+    {
+      "applied_at_utc": "2026-08-31T23:32:16.3679487",
+      "id": "PS-SETTINGS-EXPORT-007",
+      "registered": true
+    },
+    {
+      "applied_at_utc": "2026-09-01T00:20:28.7994637",
+      "id": "PS-SETTINGS-EXPORT-008",
+      "registered": true
+    },
+    {
+      "applied_at_utc": "2026-09-01T01:12:46.1671935",
+      "id": "PS-SETTINGS-EXPORT-009",
+      "registered": true
+    },
+    {
       "applied_at_utc": "2026-07-19T13:17:12.7083616",
       "id": "PS-VOICE-001",
       "registered": true
@@ -220,16 +273,21 @@ In registry order.
     }
   ],
   "database": "peerslate-database",
-  "generated_at_utc": "2026-08-28T13:23:55Z",
+  "generated_at_utc": "2026-09-01T01:12:46Z",
   "pending": [
     "PS-JOURNAL-001",
     "PS-PLAT-008",
     "PS-PROFILE-002",
     "PS-CONNECT-002",
-    "PS-MYOPP-001"
+    "PS-MYOPP-001",
+    "PS-MYOPP-002",
+    "PS-SETTINGS-EXPORT-010",
+    "PS-MYOPP-003",
+    "PS-MYOPP-004",
+    "PS-MYOPP-005"
   ],
-  "pipeline_build_id": "1759",
-  "pipeline_source_version": "a2938987f8998e3bc770b4c9a3eab99583f95fdc",
+  "pipeline_build_id": "2149",
+  "pipeline_source_version": "290c38e5ae8c25f04715dbe1b0c88592089ec38b",
   "registry_version": 1,
   "server": "peerslate",
   "unregistered_in_ledger": []

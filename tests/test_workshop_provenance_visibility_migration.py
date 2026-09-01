@@ -123,16 +123,39 @@ class WorkshopProvenanceVisibilityMigrationTests(unittest.TestCase):
             for migration_id in registry_ids
             if migration_id in current_ledger
         ]
-        self.assertEqual(production_in_registry_order[-1], "PS-WORKSHOP-004")
+        # This pin is the production tip in registry order and moves with
+        # each authorized production apply batch -- that is its purpose: any
+        # movement of what production carries must be an explicit, reviewed
+        # decision here. 2026-09-01: the owner-authorized eight-migration
+        # account-export batch (PS-SETTINGS-EXPORT-001, 003-009) moved the
+        # tip from PS-WORKSHOP-004.
+        self.assertEqual(production_in_registry_order[-1], "PS-SETTINGS-EXPORT-009")
 
-        prior_ledger = current_ledger - {"PS-WORKSHOP-004"}
-        prior_ledger.add("PS-WORKSHOP-003")
+        # The selector property this test exists for, now stated
+        # tip-relative so it can never silently go stale: removing the
+        # current tip selects exactly its registry-order predecessor
+        # within the applied set.
+        tip = production_in_registry_order[-1]
+        prior_ledger = current_ledger - {tip}
         applied_in_registry_order = [
             migration_id
             for migration_id in registry_ids
             if migration_id in prior_ledger
         ]
-        self.assertEqual(applied_in_registry_order[-1], "PS-WORKSHOP-003")
+        self.assertEqual(
+            applied_in_registry_order[-1], production_in_registry_order[-2]
+        )
+
+        # And the original migration-specific guarantee, preserved within
+        # the Workshop family: with W4 rolled back to W3, W3 is the
+        # workshop tip.
+        workshop_prior = (current_ledger - {"PS-WORKSHOP-004"}) | {"PS-WORKSHOP-003"}
+        workshop_in_registry_order = [
+            migration_id
+            for migration_id in registry_ids
+            if migration_id in workshop_prior and migration_id.startswith("PS-WORKSHOP-")
+        ]
+        self.assertEqual(workshop_in_registry_order[-1], "PS-WORKSHOP-003")
 
     def test_unknown_foreign_and_forged_inputs_share_neutral_query_shape(self):
         procedure_literal = self.forward.split("EXEC(N'", 1)[1].split(
