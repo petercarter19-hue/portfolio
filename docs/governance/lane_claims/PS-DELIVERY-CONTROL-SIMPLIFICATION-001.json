@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-CONTROL-SIMPLIFICATION-001",
-  "state": "paused",
+  "state": "closed",
   "outcome": "Replace bespoke package admission with generic claims, collision checks, exact-candidate review receipts, and manual-only production operations; land and prove the repository change, then stop before deployment.",
   "assignment": "implementation",
   "writer_ref": "task:01a02b5c-1ac8-7960-8694-e4a288ec9cf4",
@@ -45,6 +45,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": "b731015b144fc3605086718fcd23f7122d8a32c8",
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "1b6b5d4905af32edfee43c02d6e2bdb58d31898c",
+  "closed_at": "2026-09-01T00:14:00Z"
 }
