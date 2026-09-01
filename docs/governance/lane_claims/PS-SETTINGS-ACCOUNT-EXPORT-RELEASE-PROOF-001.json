@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-RELEASE-PROOF-001",
+  "state": "active",
+  "outcome": "C4 release-and-operational proof of the account-export program (C5_* filenames; C4_* belongs to the closed domain-ledger package): execute and prove production gates 6-9 under Pete's authorization pete-chat-2026-09-01/five-through-nine. Gate 6: new scripts/configure_account_export_worker_sql_authority.py (plan|apply|verify, computed bytes_le SID, content-free JSON) granting the worker identity a contained EXTERNAL_USER, zero roles, six lifecycle EXECUTEs, the 31 enumerated domain-reader EXECUTEs, and the minimal column-scoped SELECTs its sanctioned direct reads require; applied only after independent pre-execution review. Gate 7: ACR Basic, Container Apps environment, two scheduled jobs from one digest-pinned image (worker */5, maintenance daily 03:00 UTC), one proven idle run, content-free logs. Gate 8: read-only verification; web-app Reader grant reported pending-owner. Gate 9: manual exact-main-SHA deploy, schemaAction=none, smoke, EXPORT_BLOB_* set output-free, flag proven absent, routes 404 signed-out. Regenerate PRODUCTION_SCHEMA_STATE.md from a live governed read. C0 item-7 evidence in the two C5 docs. Gate 10 NOT authorized: the enablement flag is never set.",
+  "assignment": "implementation",
+  "writer_ref": "session:e9ba1301-64a2-464d-a137-d8a315daecd9/settings-account-export-release-proof-writer",
+  "branch": "work/2026-09-01-settings-account-export-release-proof-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "51fa231007cc42bf82f029f3c19d0fd607ec93ed",
+  "owner_outcome_ref": "pete-chat-2026-09-01/five-through-nine",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-ACCOUNT-EXPORT-RELEASE-PROOF-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-RELEASE-PROOF-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-ACCOUNT-EXPORT-RELEASE-PROOF-001.json",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C5_ACCOUNT_EXPORT_RELEASE_PROOF.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C5_OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "scripts/configure_account_export_worker_sql_authority.py",
+    "docs/governance/PRODUCTION_SCHEMA_STATE.md"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-RELEASE-PROOF-001.md"
+  ],
+  "domains": [
+    "release:settings:account-export",
+    "operations:settings:account-export-worker",
+    "privacy:settings:account-export-release-proof",
+    "governance:initiative:settings:account-export-release-proof",
+    "governance:schema-state-record"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
