@@ -18,7 +18,8 @@
     "scripts/run_account_export_worker.py",
     "tests/test_account_export_worker_ops.py",
     "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR11_EXPORT_WORKER_OPS.md",
-    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR11_OWNER_TECHNICAL_COMPLETION_REPORT.md"
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/CR11_OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C3_ACCOUNT_EXPORT_EXPERIENCE.md"
   ],
   "domains": [
     "runtime:settings:account-export-worker-ops",
