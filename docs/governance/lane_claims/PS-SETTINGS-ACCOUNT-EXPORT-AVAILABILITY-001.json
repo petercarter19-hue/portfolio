@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Bound the availability cost of the account-export surface (C3's second recorded gap). Per-client rate limits on the three export routes in owner_routes.py (request POST 10/hour, request-page GET 60/minute, status GET 60/minute, download proxy GET 30/hour), declared as a MappingProxyType there and applied in app.py after blueprint registration via the PLANNED_RATE_LIMITS idiom so declaration and application cannot drift; the request route serves GET and POST from one view, so entries carry (spec, methods) pairs. In services/account_export_storage_service.py read_final, the 100 MiB compressed cap moves BEFORE the archive download: the provider-reported size is refused when over the cap or disagreeing with the ledger's expected size, reusing the oversize_compressed and storage_size_mismatch codes; every existing post-read verification stays. The 429 stays the app's static content-free JSON sentence and never varies by whether a job exists. New tests pin exact mapping coverage, applied wiring, the 429 body, and both pre-read refusals with no byte downloaded. Retires the 'No rate limit on the download proxy' C3 bullet. No template, flag, schema, worker, or deployment change.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/settings-export-availability-writer",
@@ -34,6 +34,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "7f5f5091c811820852700aa22d2015f1f5f846be",
+  "closed_at": "2026-09-01T10:26:26Z"
 }
