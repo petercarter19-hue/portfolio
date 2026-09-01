@@ -18,7 +18,8 @@
     "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C5_ACCOUNT_EXPORT_RELEASE_PROOF.md",
     "docs/initiatives/PS-SETTINGS-MY-DATA-SHELL-001/C5_OWNER_TECHNICAL_COMPLETION_REPORT.md",
     "scripts/configure_account_export_worker_sql_authority.py",
-    "docs/governance/PRODUCTION_SCHEMA_STATE.md"
+    "docs/governance/PRODUCTION_SCHEMA_STATE.md",
+    "tests/test_workshop_provenance_visibility_migration.py"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-RELEASE-PROOF-001.md"
