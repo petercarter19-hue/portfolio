@@ -420,6 +420,114 @@ class WorkerHelperTests(unittest.TestCase):
                 self.assertEqual(post_fail_state(attempt), "failed")
 
 
+class ReadFinalPreReadGuardTests(unittest.TestCase):
+    """PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001: refuse BEFORE reading.
+
+    The 100 MiB compressed cap used to be checked only after
+    ``download_blob().readall()`` had already buffered the whole object,
+    so it bounded nothing. ``read_final`` must now refuse from the
+    provider-reported properties alone — an oversized object, or one
+    whose reported size disagrees with the ledger's committed size, costs
+    a properties call and zero downloaded bytes. The reported size comes
+    from the provider, so the existing post-read verifications still run
+    unchanged on the actual bytes; these tests prove only that the cheap
+    refusal happens first.
+    """
+
+    class SpyingContainer(FakeContainer):
+        """Counts download_blob calls so 'refused without a read' is a
+        proven fact rather than an assumption."""
+
+        def __init__(self):
+            super().__init__()
+            self.download_calls = 0
+
+        def get_blob_client(self, name):
+            outer = self
+            blob = FakeBlob(self, name)
+            original_download = blob.download_blob
+
+            def counting_download():
+                outer.download_calls += 1
+                return original_download()
+
+            blob.download_blob = counting_download
+            return blob
+
+    def _ready_container(self):
+        container = self.SpyingContainer()
+        container.payloads[final_blob_name(JOB_KEY)] = VALID_ARCHIVE
+        return container
+
+    def test_provider_reported_oversize_is_refused_without_a_download(self):
+        container = self._ready_container()
+        # The stored payload is small; only the provider's REPORTED size is
+        # oversized. Refusal therefore proves the decision was made from
+        # properties, before any byte moved.
+        container.size_overrides[final_blob_name(JOB_KEY)] = (
+            storage_module.MAX_COMPRESSED_BYTES + 1
+        )
+        service = _service(container)
+
+        with self.assertRaises(AccountExportStorageError) as caught:
+            # No expected_size on purpose: the cap refusal must not depend
+            # on the ledger's opinion being available.
+            service.read_final(
+                JOB_KEY,
+                expected_sha256=hashlib.sha256(VALID_ARCHIVE).hexdigest(),
+            )
+        self.assertEqual(caught.exception.code, "oversize_compressed")
+        self.assertEqual(container.download_calls, 0)
+
+    def test_ledger_size_disagreement_is_refused_without_a_download(self):
+        container = self._ready_container()
+        container.size_overrides[final_blob_name(JOB_KEY)] = (
+            len(VALID_ARCHIVE) + 1
+        )
+        service = _service(container)
+
+        with self.assertRaises(AccountExportStorageError) as caught:
+            service.read_final(
+                JOB_KEY,
+                expected_sha256=hashlib.sha256(VALID_ARCHIVE).hexdigest(),
+                expected_size=len(VALID_ARCHIVE),
+            )
+        self.assertEqual(caught.exception.code, "storage_size_mismatch")
+        self.assertEqual(container.download_calls, 0)
+
+    def test_matching_facts_still_download_and_fully_verify(self):
+        """The guards must never break the working path: when the reported
+        size honours both the cap and the ledger, the bytes are downloaded
+        once and every post-read verification still passes."""
+        container = self._ready_container()
+        service = _service(container)
+
+        data = service.read_final(
+            JOB_KEY,
+            expected_sha256=hashlib.sha256(VALID_ARCHIVE).hexdigest(),
+            expected_size=len(VALID_ARCHIVE),
+        )
+
+        self.assertEqual(data, VALID_ARCHIVE)
+        self.assertEqual(container.download_calls, 1)
+
+    def test_post_read_verification_survives_the_new_guards(self):
+        """Belt and braces stays: a provider that reports an honest size
+        but serves different bytes is still caught AFTER the read by the
+        unchanged digest check — the pre-read guard replaced nothing."""
+        container = self._ready_container()
+        service = _service(container)
+
+        with self.assertRaises(AccountExportStorageError) as caught:
+            service.read_final(
+                JOB_KEY,
+                expected_sha256="0" * 64,
+                expected_size=len(VALID_ARCHIVE),
+            )
+        self.assertEqual(caught.exception.code, "storage_hash_mismatch")
+        self.assertEqual(container.download_calls, 1)
+
+
 class ContentFreeLoggingTests(unittest.TestCase):
     def test_only_allowlisted_fields_survive(self):
         fields = content_free_log_fields(

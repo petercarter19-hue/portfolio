@@ -289,11 +289,37 @@ class AccountExportStorageService:
         """
 
         final_name = final_blob_name(job_key)
+        # Normalized once, before any provider call: the pre-read refusal
+        # below and the unchanged post-read cross-check both compare
+        # against the same ledger value, and a malformed ledger value
+        # fails loudly here rather than after a download.
+        expected_size_bytes = (
+            int(expected_size) if expected_size is not None else None
+        )
 
         try:
             blob = self._client().get_blob_client(final_name)
             properties = blob.get_blob_properties()
             reported_size = int(getattr(properties, "size", 0) or 0)
+            # PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001: refuse BEFORE
+            # downloading a byte. These two checks used to exist only
+            # after readall() had already buffered the whole object in
+            # memory, which bounded nothing -- an oversized or swapped
+            # object cost the full allocation before being rejected. The
+            # provider-reported size is checked first so such an object
+            # is refused for the price of a properties call. The reported
+            # size comes from the provider, so every post-read
+            # verification below still runs on the actual bytes
+            # unchanged (belt and braces); the codes are deliberately the
+            # same ones the post-read checks raise, so no caller can
+            # distinguish where a refusal happened.
+            if reported_size > self.max_compressed_bytes:
+                raise AccountExportStorageError("oversize_compressed")
+            if (
+                expected_size_bytes is not None
+                and reported_size != expected_size_bytes
+            ):
+                raise AccountExportStorageError("storage_size_mismatch")
             data = blob.download_blob().readall()
         except AccountExportStorageError:
             raise

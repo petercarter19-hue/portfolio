@@ -129,9 +129,17 @@ Recorded as an open risk rather than silently assumed away.
   sentences for every non-included domain, with a verbatim-truth fallback
   for anything unmapped and tests forcing coverage of every future domain.
   `DOMAINS` remains the single source of truth and was not edited.
-- **No rate limit on the download proxy.** It buffers a whole archive in
-  memory per request. Authorization is unaffected; this is an availability and
-  memory-pressure note for whoever sizes the deployment.
+- ~~No rate limit on the download proxy. It buffers a whole archive in
+  memory per request.~~ **Resolved by
+  PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001**: the three export routes
+  now carry per-client budgets (request POST 10/hour, page and status
+  GETs 60/minute, download 30/hour) declared in `owner_routes.py` and
+  applied by `app.py`'s post-registration limiter idiom, and `read_final`
+  now refuses an oversized or ledger-disagreeing object from the
+  provider-reported size BEFORE downloading a byte, keeping every
+  post-read verification. Authorization was and is unaffected, and a 429
+  is keyed on the caller, never the job. Budget reasoning — including why
+  the download number is 30/hour — is in `CR10_EXPORT_AVAILABILITY.md`.
 - **Expiry is not deletion.** `usp_ExpireAccountExportJobs` marks a ready job
   expired, and `cleanup_final` can delete the object, but nothing schedules
   either. The worker only cleans staging after a failed attempt. So the

@@ -34,7 +34,11 @@ from identity import (
 from services.database_service import DatabaseServiceError
 from owner_authorization import is_owner
 from auth_routes import _render_identity_storage_unavailable, _safe_return_path, auth
-from owner_routes import owner
+# PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001. The account-export budgets
+# are declared next to the routes they govern (owner_routes.py) and read by
+# the post-registration wrapper further down rather than restated there, so
+# the declaration and the application cannot drift.
+from owner_routes import ACCOUNT_EXPORT_PLANNED_RATE_LIMITS, owner
 from control_room_routes import control_room
 from peerslate_api import peerslate_api
 from workshop_routes import workshop
@@ -939,6 +943,35 @@ for _direct_endpoint, _direct_limit in PLANNED_RATE_LIMITS.items():
     app.view_functions[_direct_endpoint] = limiter.limit(_direct_limit)(
         app.view_functions[_direct_endpoint]
     )
+
+# PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001: the same post-registration
+# wrapper idiom for the account-export surface -- C3's recorded "no rate
+# limit on the download proxy" gap. The budgets and their per-entry
+# reasoning live in owner_routes.ACCOUNT_EXPORT_PLANNED_RATE_LIMITS, next
+# to the views they govern; they are read from there rather than restated
+# here. A bare spec is the house form and binds every method the route
+# serves -- deliberately including HEAD, which Flask dispatches to the
+# same view at full cost and only then strips the body (independent
+# review HIGH 1: a methods=("GET",) pair on the download proxy left HEAD
+# running the whole ~100 MiB buffered read unbudgeted). A (spec, methods)
+# pair appears only where one view serves verbs with different budgets:
+# the request route, where methods= scopes each wrapper to its own verbs
+# so a member who exhausts the POST budget can still load their own page.
+# A breached budget answers the app-wide static 429 sentence below, keyed
+# on the caller and never the job, so a refusal reveals nothing about
+# whether any job exists.
+for _export_endpoint, _export_limits in ACCOUNT_EXPORT_PLANNED_RATE_LIMITS.items():
+    for _export_limit in _export_limits:
+        if isinstance(_export_limit, str):
+            _export_wrapper = limiter.limit(_export_limit)
+        else:
+            _export_spec, _export_methods = _export_limit
+            _export_wrapper = limiter.limit(
+                _export_spec, methods=list(_export_methods)
+            )
+        app.view_functions[_export_endpoint] = _export_wrapper(
+            app.view_functions[_export_endpoint]
+        )
 
 # PS-OPPSLATE-001: the same post-registration wrapper idiom for Opportunity
 # Slate's state-changing routes and its anonymous transports.

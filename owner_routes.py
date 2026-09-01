@@ -3,6 +3,7 @@
 import json
 import re
 from datetime import date, datetime
+from types import MappingProxyType
 from uuid import UUID
 
 from flask import (
@@ -438,6 +439,80 @@ def _export_unavailable():
         ),
         503,
     )
+
+
+# PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001: availability budgets for the
+# three export routes below, declared next to the views they govern and
+# applied by app.py AFTER register_blueprint -- the established idiom for a
+# blueprint that cannot wire its own limits (app.py owns the Limiter, and a
+# reusable blueprint never imports that module back; see
+# ask_pete_direct_routes.PLANNED_RATE_LIMITS and
+# opportunity_slate_v2_routes.PLANNED_RATE_LIMITS). app.py iterates this
+# mapping rather than restating it, so the declaration and the application
+# cannot drift, and tests/test_account_export_limits.py fails the suite if
+# an export route ever exists without a budget here.
+#
+# Deliberately NOT named PLANNED_RATE_LIMITS: on the two precedent
+# blueprints that name promises coverage of every state-changing endpoint
+# in the module. This mapping promises exactly the account-export surface,
+# nothing about the rest of the owner blueprint.
+#
+# Every entry is either a bare spec string -- the house form, binding
+# EVERY method the route serves -- or a (spec, methods) tuple, used only
+# where one view serves verbs with different budgets. Flask registers
+# HEAD alongside every GET and dispatches it to the same view function at
+# full cost, stripping the body only afterwards, so a budget that named
+# only GET would leave HEAD doing all of the work unbounded (independent
+# review HIGH 1: the first candidate's methods=("GET",) pair on the
+# download proxy let 100 HEADs run 100 full ~100 MiB buffered reads with
+# zero 429s). Bare specs cannot make that mistake. The limiter keys
+# these budgets on the calling client (the forwarded address for this
+# surface -- identity is resolved inside the views, after the limiter has
+# already run), never on a job, so a 429 can never confirm or deny that
+# any job key exists.
+ACCOUNT_EXPORT_PLANNED_RATE_LIMITS = MappingProxyType(
+    {
+        "owner.account_export": (
+            # POST requests an export. SQL is the real ceiling --
+            # usp_RequestAccountExportJob refuses a second job inside 24
+            # hours -- so this bounds only the COST of refused attempts:
+            # every rejected POST still buys an identity lookup and a
+            # database round trip. 10/hour is far more than a person
+            # re-pressing a form and far less than a script wants.
+            ("10 per hour", ("POST",)),
+            # GET renders the request page (and the remembered job's
+            # status), reading SQL on every load. Roomy enough for a
+            # member refreshing while they wait; bounded because it is
+            # still a database read per request. HEAD is named with GET
+            # because Flask dispatches it to this same view at full cost.
+            ("60 per minute", ("GET", "HEAD")),
+        ),
+        # Status polling. The page invites refreshing, so this matches the
+        # request page's read budget -- roomy, but each load is a SQL
+        # read, so it stays bounded per client. Bare spec: GET and HEAD
+        # burn it alike.
+        "owner.account_export_status": ("60 per minute",),
+        # The download proxy buffers one whole verified archive -- up to
+        # the C0 100 MiB compressed cap -- in application memory per
+        # request, making it the most expensive route in the application.
+        # Bare spec, deliberately: a HEAD here still executes the whole
+        # proxy read before the body is stripped, so it must burn the
+        # same budget.
+        #
+        # Why 30/hour (independent review's ruling, recorded): a
+        # per-address fixed-window limit is not the instance-survival
+        # control against a hostile client at ANY number here -- address
+        # rotation defeats 6/hour and 30/hour alike, and the real teeth
+        # are the 100 MiB per-request cap plus platform capacity -- while
+        # 6/hour plausibly refuses real member behaviour (interrupted
+        # downloads, multi-device retries; it is also below what the
+        # export experience suite itself exercises in one process). The
+        # window is fixed, not sliding, so the full 30 may arrive as one
+        # back-to-back burst: worst case ~2.93 GiB of CONCURRENT
+        # buffering per address, disclosed in CR10_EXPORT_AVAILABILITY.md.
+        "owner.account_export_download": ("30 per hour",),
+    }
+)
 
 
 @owner.route("/app/settings/export", methods=("GET", "POST"))

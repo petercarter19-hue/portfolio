@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001",
+  "candidate_sha": "e4ce9a4d1e49d7802c6ed90ab85ca61b9ec644ee",
+  "review_type": "independent",
+  "reviewer_ref": "agent:claude-code/settings-export-availability-independent-reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-09-01T10:02:35Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "HIGH: HEAD bypassed the download budget entirely while executing the full buffering path (methods=('GET',) let Flask-Limiter exempt HEAD while Flask dispatched it to the view; measured 100 HEADs = 100 full executions, zero 429s), and the guard test subtracted HEAD so it could not notice. Fixed in the reviewer's preferred shape: bare specs on the single-budget routes binding every served verb, the (spec,methods) pair only on the dual-verb request route naming ('GET','HEAD'); guard test requires every work-doing method budget-bound; a positive HEAD-burn test proves 30 HEADs consume the budget with the 31st refused on either verb."
+    },
+    {
+      "status": "resolved",
+      "summary": "MEDIUM: the '~3 GiB/hour' framing stated a rate; fixed-window permits the full 30 in one burst, so the instance-survival number is ~2.93 GiB of CONCURRENT buffering per address. Stated plainly in CR10."
+    },
+    {
+      "status": "resolved",
+      "summary": "Record corrections: pre-read test count fixed to four; the false 'may not be edited' claim about the closed experience test file replaced with the honest form -- editable via governed extend-surfaces, not chosen because re-choreographing a closed package's recorded green suite would mutate what its receipt attests."
+    },
+    {
+      "status": "informational",
+      "summary": "BUDGET RULING (review outcome on the number): the download budget ships at 30/hour, deviating from the scouted 6/hour, and STANDS. Reviewer's reasoning, recorded: per-address fixed-window limiting is not the instance-survival control at either number -- address rotation defeats both; the real teeth are the 100 MiB per-request cap and platform capacity -- while 6/hour plausibly refuses real member behaviour (interrupted downloads, multi-device retries). The writer proved empirically pre-push that 6/hour breaks the closed experience suite's own 11-request choreography. Conditions of the ruling, both met: the HEAD fix so 30 binds every verb that does work, and the burst disclosure."
+    },
+    {
+      "status": "informational",
+      "summary": "Verified clean by execution: 429-before-flag-gate behaviour correct with no new information surface; verb scoping confirmed to Flask-Limiter internals; int(expected_size) normalization unchanged on every reachable path (60-combination sweep); IP-keying disclosed both NAT directions; the app.py mapping loop fails loudly on a typo'd endpoint; the pre-read guard never accepts from provider-reported size (280-combination sweep, post-read block byte-identical); the 429 leaks nothing job-shaped."
+    },
+    {
+      "status": "informational",
+      "summary": "Hygiene: a stray untracked byte-identical app.py copy artifact appeared in the writer's worktree during patching; never staged, deleted before push; reviewer confirmed the pushed tree carries no stray file."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001.md"
+}
