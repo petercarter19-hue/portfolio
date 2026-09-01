@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-EXPORT-010-GATE-RECORD-001",
+  "state": "active",
+  "outcome": "Record the owner-authorized disposable-gate proof for PS-SETTINGS-EXPORT-010 in SQL FIles/Migrations/registry.json, filling its truthful gate: null. The proof itself runs the governed gate command against a throwaway database created for exactly this purpose and deleted immediately after: prerequisite chain, forward apply, idempotency re-apply, the two-owner isolation and atomicity verification file (verified = 1 required), and rollback rehearsal. One registry field set plus this package's records; no production database is touched; the throwaway is created and deleted under the owner's explicit gate-proof authorization (pete-chat-2026-09-01/yes-to-the-gate-proof).",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/settings-export-gate-record-writer",
+  "branch": "work/2026-09-01-settings-export-010-gate-record-001",
+  "delivery_path": "Routine",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "29cc469b94e09ddccb7331681c892ae359e5b79f",
+  "owner_outcome_ref": "pete-chat-2026-09-01/yes-to-the-gate-proof",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-EXPORT-010-GATE-RECORD-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-EXPORT-010-GATE-RECORD-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-EXPORT-010-GATE-RECORD-001.json",
+    "SQL FIles/Migrations/registry.json"
+  ],
+  "domains": [
+    "governance:package-registry:settings:export-gate-record"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-EXPORT-010-GATE-RECORD-001.md"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
