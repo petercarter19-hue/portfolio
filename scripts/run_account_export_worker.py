@@ -27,8 +27,9 @@ DOMAINS-included reader for that owner through
 services/account_export_domain_readers.py, plus one honest,
 reason-carrying excluded/unavailable entry for every other DOMAINS row
 (build_domain_files_from_readers) -> assemble the real archive -> stage
-and promote it through the private Blob adapter -> complete or fail the
-job through the C1 lease-fenced procedures. Every log line is
+and promote it through the private Blob adapter -> complete the job
+atomically (ledger rows + ready) through usp_CompleteAccountExportWithDomains,
+or fail it through C1's lease-fenced usp_FailAccountExportJob. Every log line is
 content-free: job_key, state, and bounded counts only.
 
 PS-SETTINGS-ACCOUNT-EXPORT-READER-INTEGRATION-001 (this package)
@@ -40,7 +41,7 @@ path (tests/test_account_export_integration.py -- every DOMAINS
 included reader invoked exactly once per job; no fixture source left in
 this module). This worker now reads and exports REAL member content
 for every domain services/account_export_domain_readers.py's DOMAINS
-registry marks "included" (7 domains, 22 readers today); every other
+registry marks "included" (12 domains, 31 readers today); every other
 domain still appears in the manifest as an honest, reasoned
 "excluded"/"unavailable" entry, never silently dropped. Still not wired
 to any scheduler, route, or UI -- run by hand from an operator shell
@@ -69,29 +70,24 @@ the domain set/dispositions/reasons are stable for a given owner
 ("this is a bounded assembly window, not an atomic request-time
 snapshot").
 
-Manifest/ledger agreement -- this package's central proof. C1's child
-ledger (dbo.account_export_job_domains) has no writer procedure at all
-(C1_ACCOUNT_EXPORT_FOUNDATION.md: "No procedure in this migration
-writes to this table... population is deferred to a future, separately
-claimed domain-reader slice"), and this package's frozen surfaces
-include no SQL file, so nothing here can INSERT a real ledger row.
+Manifest/ledger agreement -- now enforced end to end. Since
+PS-SETTINGS-EXPORT-010, C1's child ledger
+(dbo.account_export_job_domains) HAS its writer:
+dbo.usp_CompleteAccountExportWithDomains, which this worker calls as
+its one completion path, inserting the thirty per-domain rows and
+transitioning the job to ready in a single transaction.
 summarize_domain_ledger and domain_ledger_row_matches_check_shape below
-instead compute, offline, the EXACT row a future writer would need --
-shaped and validated against C1's own
-CK_account_export_job_domains_shape CHECK text -- and prove (in
-tests/test_account_export_integration.py) that it agrees, file by file
-and domain by domain, with the manifest and with the bytes actually
-serialized into the ZIP. run_once also runs this same shape check live,
-as a defensive backstop that refuses to complete a job whose own
-manifest could not satisfy that CHECK. The AGGREGATE facts that DO
-reach a real, live ledger row today (compressed_size_bytes,
-uncompressed_size_bytes, final_artifact_sha256, via
-usp_CompleteAccountExportJob) are unchanged by this package and still
-come from AccountExportStorageService.promote()'s own independent
-readback, never from a pre-upload estimate. Actually persisting a
-per-domain row remains a disclosed, out-of-scope gap: it needs a new
-procedure and migration this claim cannot author (see
-CR5_ACCOUNT_EXPORT_READER_INTEGRATION.md, "Manifest/ledger agreement").
+compute and validate the exact rows that call sends -- shaped against
+C1's own CK_account_export_job_domains_shape CHECK text -- and the
+integration suite proves they agree, file by file and domain by domain,
+with the manifest and with the bytes actually serialized into the ZIP.
+run_once additionally refuses, BEFORE any storage write, a summary that
+is not exactly the canonical domain set (assert_domain_ledger_complete),
+and bounds every over-long reason explicitly so the ledger can never
+hold an engine-truncated record that disagrees with the manifest. The
+aggregate artifact facts still come from
+AccountExportStorageService.promote()'s own independent readback, never
+from a pre-upload estimate.md, "Manifest/ledger agreement").
 """
 
 from __future__ import annotations
@@ -363,8 +359,98 @@ def claim_job(cursor):
         return None
     return dict(zip(columns, row))
 
+LEDGER_REASON_MAX_CHARS = 200  # dbo.account_export_job_domains' column bound
 
-def complete_job(
+
+def _bound_ledger_reason(reason):
+    """Bound a reason for the 200-character ledger column, explicitly.
+
+    Seven real DOMAINS reasons exceed 200 characters. The manifest keeps
+    the full text; the ledger row stores this bounded excerpt, marked with
+    an ellipsis so a reader knows it is one. Explicit here, and refused
+    loudly by the procedure (57281) if anything longer ever arrives, so
+    the engine can never truncate silently into a record that disagrees
+    mid-sentence with the archive.
+    """
+
+    if reason is None or len(reason) <= LEDGER_REASON_MAX_CHARS:
+        return reason
+    return reason[: LEDGER_REASON_MAX_CHARS - 1] + "\u2026"
+
+
+def build_domain_ledger_payload(domain_ledger_summary, manifest):
+    """One JSON payload row per canonical domain, for the atomic completion.
+
+    Values come from summarize_domain_ledger (already validated against the
+    CHECK shape) plus a per-domain provenance roll-up: the sorted, distinct
+    reader procedures the manifest recorded for that domain's included
+    files. Sorted so the payload is deterministic byte-for-byte for a given
+    manifest, matching the assembly service's own determinism discipline.
+    """
+
+    provenance_by_domain = {}
+    for entry in manifest["files"]:
+        if entry["disposition"] != "included":
+            continue
+        procedures = provenance_by_domain.setdefault(entry["domain_code"], set())
+        provenance = entry.get("provenance") or {}
+        reader_procedure = provenance.get("reader_procedure")
+        if reader_procedure:
+            procedures.add(reader_procedure)
+
+    payload = []
+    for domain_code in sorted(domain_ledger_summary):
+        row = domain_ledger_summary[domain_code]
+        procedures = sorted(provenance_by_domain.get(domain_code, ()))
+        payload.append(
+            {
+                "domain_code": domain_code,
+                "disposition": row["disposition"],
+                "record_count": row["record_count"],
+                "byte_count": row["byte_count"],
+                "content_sha256": row["content_sha256"],
+                "read_started_at_utc": row["read_started_at_utc"],
+                "read_ended_at_utc": row["read_ended_at_utc"],
+                "omission_reason": _bound_ledger_reason(row["omission_reason"]),
+                "failure_reason": _bound_ledger_reason(row["failure_reason"]),
+                "provenance_json": (
+                    json.dumps({"reader_procedures": procedures}, sort_keys=True)
+                    if procedures
+                    else None
+                ),
+            }
+        )
+    return payload
+
+
+def assert_domain_ledger_complete(domain_ledger_summary):
+    """Refuse, BEFORE any storage write, a summary that is not exactly the
+    canonical domain set.
+
+    Ordering is the point, not redundancy: the final object's name is
+    job-scoped and promote refuses overwrite, so a payload defect
+    discovered after promote would strand the job permanently -- every
+    retry re-assembles, hits storage_conflict, and burns an attempt until
+    the reaper fails the job. Validating completeness here means the only
+    failures possible after the archive physically exists are
+    infrastructure failures, which retries CAN cure. The procedure
+    re-validates everything server-side regardless; this is the belt, the
+    procedure is the braces.
+    """
+
+    expected = set(DOMAINS)
+    actual = set(domain_ledger_summary)
+    if actual != expected:
+        missing = sorted(expected - actual)
+        extra = sorted(actual - expected)
+        raise RuntimeError(
+            "Domain ledger summary is not the canonical set"
+            + (" missing=" + ",".join(missing) if missing else "")
+            + (" extra=" + ",".join(extra) if extra else "")
+        )
+
+
+def complete_job_with_domains(
     cursor,
     *,
     job_key,
@@ -377,14 +463,26 @@ def complete_job(
     final_artifact_sha256,
     compressed_size_bytes,
     uncompressed_size_bytes,
+    domain_ledger_payload,
 ):
+    """The atomic completion: ledger rows + ready in one procedure call.
+
+    The worker's connection is autocommit, so both-or-neither cannot live
+    here -- it lives inside dbo.usp_CompleteAccountExportWithDomains,
+    which validates the payload again, derives job/owner identity from the
+    locked row, re-checks owner-active under the lock, inserts exactly the
+    canonical per-domain rows, and transitions the job to ready in one
+    transaction. C1's usp_CompleteAccountExportJob remains untouched and
+    is no longer called by this worker.
+    """
+
     cursor.execute(
-        "EXEC dbo.usp_CompleteAccountExportJob "
+        "EXEC dbo.usp_CompleteAccountExportWithDomains "
         "@JobKey = ?, @LeaseToken = ?, @AssemblyStartedAtUtc = ?, "
         "@AssemblyCutoffAtUtc = ?, @ConsistencyMarkerStart = ?, "
         "@ConsistencyMarkerCutoff = ?, @FinalArtifactReference = ?, "
         "@FinalArtifactSha256 = ?, @CompressedSizeBytes = ?, "
-        "@UncompressedSizeBytes = ?;",
+        "@UncompressedSizeBytes = ?, @DomainLedgerJson = ?;",
         (
             job_key,
             lease_token,
@@ -396,6 +494,7 @@ def complete_job(
             final_artifact_sha256,
             compressed_size_bytes,
             uncompressed_size_bytes,
+            json.dumps(domain_ledger_payload, sort_keys=True),
         ),
     )
 
@@ -556,15 +655,14 @@ def build_domain_files_from_readers(connection, user_key):
 def summarize_domain_ledger(manifest):
     """Group ``manifest["files"]`` entries by domain_code into one
     ledger-shaped row per domain -- the exact row a future
-    domain-ledger-writing slice would need to INSERT into C1's
-    ``dbo.account_export_job_domains`` (currently unpopulated -- see
-    this module's own docstring). This package writes no such row
-    anywhere: that table has no writer procedure at all in the current
-    schema, and this claim's frozen surfaces include no SQL file, so
-    nothing here can create one. This function only PROVES, offline,
-    that the manifest's own per-file facts already sum to exactly what
-    such a future writer would need, so the manifest and any eventual
-    ledger population can never silently disagree.
+    domain-ledger write sends to dbo.usp_CompleteAccountExportWithDomains
+    (PS-SETTINGS-EXPORT-010), which INSERTs it into C1's
+    ``dbo.account_export_job_domains``. This function computes exactly
+    what that call persists, from the manifest's own per-file facts, so
+    the manifest and the ledger can never silently disagree; reason
+    strings longer than the ledger's 200-character bound are bounded
+    explicitly by build_domain_ledger_payload, with the full text
+    remaining in the manifest.
 
     An INCLUDED domain combines every one of its manifest files: summed
     record_count/byte_count (matching CK_account_export_job_domains_
@@ -781,17 +879,19 @@ def run_once(connection, *, domain_files_builder):
             ),
         )
 
-        # Defensive backstop, not merely a test-time exercise: refuse to
-        # complete a job whose own manifest could not satisfy C1's real
-        # CK_account_export_job_domains_shape CHECK, even though
-        # nothing in this claim's frozen surfaces can write that row
-        # today (see summarize_domain_ledger's own docstring above).
+        # Refuse to complete a job whose own manifest could not satisfy
+        # C1's real CK_account_export_job_domains_shape CHECK -- these are
+        # the exact rows usp_CompleteAccountExportWithDomains persists.
         domain_ledger_summary = summarize_domain_ledger(assembled["manifest"])
         for summarized_domain_code, ledger_row in domain_ledger_summary.items():
             if not domain_ledger_row_matches_check_shape(ledger_row):
                 raise RuntimeError(
                     "Domain ledger summary shape mismatch for " + summarized_domain_code
                 )
+        assert_domain_ledger_complete(domain_ledger_summary)
+        domain_ledger_payload = build_domain_ledger_payload(
+            domain_ledger_summary, assembled["manifest"]
+        )
 
         _log(
             "assembled",
@@ -814,7 +914,7 @@ def run_once(connection, *, domain_files_builder):
             uncompressed_size_bytes=promoted["uncompressed_size_bytes"],
         )
 
-        complete_job(
+        complete_job_with_domains(
             cursor,
             job_key=job_key,
             lease_token=lease_token,
@@ -826,6 +926,7 @@ def run_once(connection, *, domain_files_builder):
             final_artifact_sha256=promoted["sha256"],
             compressed_size_bytes=promoted["compressed_size_bytes"],
             uncompressed_size_bytes=promoted["uncompressed_size_bytes"],
+            domain_ledger_payload=domain_ledger_payload,
         )
         _log(
             "completed",

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-DOMAIN-LEDGER-WRITER-001",
+  "candidate_sha": "f93b3e9d1f749f3f54fe341dfb0e0d864fcd67af",
+  "review_type": "independent",
+  "reviewer_ref": "agent:claude-code/settings-export-domain-ledger-independent-review-001",
+  "result": "pass",
+  "reviewed_at": "2026-09-01T00:36:50Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "HIGH: silent truncation would have split one fact into two disagreeing records -- seven real DOMAINS reasons exceed the ledger's 200-character column and the draft parsed them at nvarchar(200), so every real export would have stored a ledger reason cut mid-sentence while the manifest carried the full text. Found by the reviewer EXECUTING the pipeline. Fixed three ways: wide parse, loud 57281 refusal, explicit ellipsis-marked bounding in the worker with the full text retained in the manifest; the reviewer's seven-domain probe is now a permanent, mutation-proven test."
+    },
+    {
+      "status": "resolved",
+      "summary": "HIGH: the verification file structurally could not run (INSERT...EXEC against CATCH-ROLLBACK procedures -- C1's own recorded gate lesson) and its outer transaction let refusal rollbacks silently void later assertions. Rewritten to C1's proven pattern: bare calls, plain-SELECT confirmation, no outer transaction, explicit cleanup."
+    },
+    {
+      "status": "resolved",
+      "summary": "Round 3 blocker: the rewritten cleanup hit FK_audit_events_app_users (the bare request calls durably audit), so the proof could never emit verified=1 and stranded synthetic rows. Audit rows now deleted before users in both cleanup sections."
+    },
+    {
+      "status": "resolved",
+      "summary": "Mediums: worker prose corrected to describe the writer truthfully and the dead C1-path completion function DELETED so a revert is loud; four payload-seam tests added; C1's collation-safe URL refusal restored byte-for-byte; @Now captured post-validation pre-lock; C4 doc corrected to claim only what the verify file actually reaches; the EXECUTE-grant obligation and timestamp-format caveat recorded; offline pins added for 57281 and the nvarchar(max) widths so reinstating the truncation mechanism fails offline."
+    },
+    {
+      "status": "informational",
+      "summary": "What held under attack across all three rounds, verified by execution: atomicity (one transaction spans lock, owner re-check, insert, ready, audit; no rows-without-ready or ready-without-thirty path found), identity derivation from the locked row with no owner parameter and no OPENJSON smuggling, the four-way lease fence with replay and foreign-lease refusals, the pre-promote completeness ordering in the real run_once path, the canonical 30 pinned set-equal to untouched DOMAINS, C1 byte-untouched with its 41 assertions green, registry entry exact with gate:null recorded truthfully."
+    },
+    {
+      "status": "informational",
+      "summary": "Recorded theoretical note: _bound_ledger_reason bounds by Python code points while SQL LEN counts UTF-16 units -- divergent only on non-BMP characters, none present in any DOMAINS reason today."
+    },
+    {
+      "status": "informational",
+      "summary": "Mid-build rename disclosed: the draft procedure name extended C1's and tripped the foundation package's anti-redefinition guard -- a closed package's regression correcting the live one. Final name usp_CompleteAccountExportWithDomains."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-DOMAIN-LEDGER-WRITER-001.md"
+}

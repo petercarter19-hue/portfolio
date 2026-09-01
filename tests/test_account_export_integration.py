@@ -840,6 +840,76 @@ class DomainLedgerRowMatchesCheckShapeTests(unittest.TestCase):
         self.assertFalse(domain_ledger_row_matches_check_shape(self._row("bogus")))
 
 
+class DomainLedgerPayloadTests(unittest.TestCase):
+    """The payload seam F-review flagged as untested: shape, bounding, and
+    the procedure actually called."""
+
+    def _summary_and_manifest(self):
+        from services.account_export_domain_readers import DOMAINS
+
+        entries = RunOnceOrchestrationTests.full_canonical_builder(None, OWNER_USER_KEY)
+        assembled = AccountExportAssemblyService().assemble(
+            job_key=JOB_KEY,
+            requested_at_utc="2026-01-01T00:00:00.000000Z",
+            assembly_started_at_utc="2026-01-01T00:00:01.000000Z",
+            assembly_cutoff_at_utc="2026-01-01T00:00:02.000000Z",
+            consistency_marker_start="00" * 8,
+            consistency_marker_cutoff="00" * 8,
+            domain_files=entries,
+        )
+        summary = worker_module.summarize_domain_ledger(assembled["manifest"])
+        return summary, assembled["manifest"]
+
+    def test_payload_is_thirty_rows_with_exactly_the_procedure_fields(self):
+        summary, manifest = self._summary_and_manifest()
+        payload = worker_module.build_domain_ledger_payload(summary, manifest)
+        self.assertEqual(len(payload), 30)
+        expected_keys = {
+            "domain_code", "disposition", "record_count", "byte_count",
+            "content_sha256", "read_started_at_utc", "read_ended_at_utc",
+            "omission_reason", "failure_reason", "provenance_json",
+        }
+        for row in payload:
+            self.assertEqual(set(row), expected_keys, row["domain_code"])
+
+    def test_every_reason_is_explicitly_bounded_for_the_ledger_column(self):
+        """Seven real DOMAINS reasons exceed 200 chars; silent engine
+        truncation would store a record disagreeing mid-sentence with the
+        manifest. The builder must bound explicitly, ellipsis-marked."""
+        summary, manifest = self._summary_and_manifest()
+        payload = worker_module.build_domain_ledger_payload(summary, manifest)
+        over_bound = [
+            row["domain_code"]
+            for row in payload
+            for value in (row["omission_reason"], row["failure_reason"])
+            if value is not None and len(value) > 200
+        ]
+        self.assertEqual(over_bound, [])
+        # and at least one real reason genuinely needed bounding
+        bounded = [
+            row["domain_code"]
+            for row in payload
+            for value in (row["omission_reason"], row["failure_reason"])
+            if value is not None and value.endswith("\u2026")
+        ]
+        self.assertGreater(len(bounded), 0)
+
+    def test_bounding_helper_is_lossless_below_the_bound(self):
+        self.assertIsNone(worker_module._bound_ledger_reason(None))
+        self.assertEqual(worker_module._bound_ledger_reason("x" * 200), "x" * 200)
+        bounded = worker_module._bound_ledger_reason("y" * 201)
+        self.assertEqual(len(bounded), 200)
+        self.assertTrue(bounded.endswith("\u2026"))
+
+    def test_the_worker_calls_only_the_new_atomic_procedure(self):
+        """A revert to C1's completion path must be loud, not invisible."""
+        import pathlib
+
+        source = pathlib.Path(worker_module.__file__).read_text(encoding="utf-8")
+        self.assertIn("EXEC dbo.usp_CompleteAccountExportWithDomains", source)
+        self.assertNotIn("EXEC dbo.usp_CompleteAccountExportJob ", source)
+
+
 class RunOnceOrchestrationTests(unittest.TestCase):
     """End-to-end run_once tests using a small, hand-built fake builder
     (not the full 22-reader harness -- that is exercised directly by
@@ -919,32 +989,55 @@ class RunOnceOrchestrationTests(unittest.TestCase):
         self.assertEqual(result["failure_code"], worker_module.OWNER_INACTIVE_FAILURE_CODE)
         self.assertEqual(self.fake_storage.staged_calls, [])
 
+    @staticmethod
+    def full_canonical_builder(connection_arg, user_key):
+        """A builder covering the complete canonical domain set.
+
+        Driven from DOMAINS itself so the fixture can never drift from
+        the canonical set the worker now refuses to complete without
+        (assert_domain_ledger_complete runs BEFORE any storage write).
+        """
+        from services.account_export_domain_readers import DOMAINS
+
+        entries = []
+        for domain_code in sorted(DOMAINS):
+            entry_meta = DOMAINS[domain_code]
+            if entry_meta["disposition"] == "included":
+                entries.append(
+                    {
+                        "path": "domains/%s/fixture.ndjson" % domain_code,
+                        "domain_code": domain_code,
+                        "schema_id": "peerslate.account_export.%s.fixture.v1" % domain_code,
+                        "schema_version": 1,
+                        "disposition": "included",
+                        "content": b'{"fixture":true}\n',
+                        "record_count": 1,
+                        "provenance": {"reader_procedure": "usp_Fixture_%s" % domain_code},
+                        "read_window": {
+                            "started_at_utc": "2026-01-01T00:00:00.000000Z",
+                            "ended_at_utc": "2026-01-01T00:00:01.000000Z",
+                        },
+                    }
+                )
+            else:
+                omitted = {
+                    "path": "domains/%s.omitted.json" % domain_code,
+                    "domain_code": domain_code,
+                    "schema_id": "peerslate.account_export.%s.v1" % domain_code,
+                    "schema_version": 1,
+                    "disposition": entry_meta["disposition"],
+                }
+                if entry_meta["disposition"] == "excluded":
+                    omitted["omission_reason"] = entry_meta["reason"]
+                else:
+                    omitted["failure_reason"] = entry_meta["reason"]
+                entries.append(omitted)
+        return entries
+
     def test_happy_path_builds_assembles_stages_promotes_and_completes(self):
         def small_builder(connection_arg, user_key):
             self.assertEqual(user_key, OWNER_USER_KEY)
-            return [
-                {
-                    "path": "domains/account/account.ndjson",
-                    "domain_code": "account",
-                    "schema_id": "peerslate.account_export.account.account.v1",
-                    "schema_version": 1,
-                    "disposition": "included",
-                    "content": b'{"display_name":"FIXTURE"}\n',
-                    "record_count": 1,
-                    "read_window": {
-                        "started_at_utc": "2026-01-01T00:00:00.000000Z",
-                        "ended_at_utc": "2026-01-01T00:00:01.000000Z",
-                    },
-                },
-                {
-                    "path": "domains/journal.omitted.json",
-                    "domain_code": "journal",
-                    "schema_id": "peerslate.account_export.journal.v1",
-                    "schema_version": 1,
-                    "disposition": "unavailable",
-                    "failure_reason": "synthetic reason",
-                },
-            ]
+            return self.full_canonical_builder(connection_arg, user_key)
 
         plan = [
             self._claim_step(),
@@ -953,7 +1046,7 @@ class RunOnceOrchestrationTests(unittest.TestCase):
             ("clock", FAKE_DBTS_MARKER_START),
             ("clock", FAKE_DBTS_MARKER_CUTOFF),
             ("content", [("requested_at_utc",)], [(datetime(2025, 12, 31, 23, 0, 0),)]),
-            ("content", [("ok",)], [(1,)]),  # complete_job's own EXEC
+            ("content", [("ok",)], [(1,)]),  # the atomic completion's own EXEC
         ]
         connection = SharedPlanConnection(plan)
 
@@ -964,6 +1057,39 @@ class RunOnceOrchestrationTests(unittest.TestCase):
         self.assertEqual(self.fake_storage.staged_calls[0][0], JOB_KEY)
         self.assertEqual(self.fake_storage.staged_calls[0][1], 1)
         self.assertIsNotNone(self.fake_storage.promote_result)
+
+    def test_an_incomplete_domain_set_fails_before_any_storage_write(self):
+        """The storage-conflict trap fix, proven at the orchestration level.
+
+        The final object's name is job-scoped and promote refuses
+        overwrite, so a payload defect discovered after promote would
+        strand the job permanently. An incomplete canonical set must
+        therefore fail BEFORE stage() -- zero storage calls, job failed,
+        attempts free to retry a hopefully-cured build.
+        """
+
+        def partial_builder(connection_arg, user_key):
+            entries = RunOnceOrchestrationTests.full_canonical_builder(
+                connection_arg, user_key
+            )
+            return [e for e in entries if e["domain_code"] != "journal"]
+
+        plan = [
+            self._claim_step(),
+            self._owner_active_step(active=True),
+            self._user_key_step(),
+            ("clock", FAKE_DBTS_MARKER_START),
+            ("clock", FAKE_DBTS_MARKER_CUTOFF),
+            ("content", [("requested_at_utc",)], [(datetime(2025, 12, 31, 23, 0, 0),)]),
+            ("content", [("ok",)], [(1,)]),  # fail_job's EXEC
+        ]
+        connection = SharedPlanConnection(plan)
+
+        result = run_once(connection, domain_files_builder=partial_builder)
+
+        self.assertEqual(result["outcome"], "failed")
+        self.assertEqual(self.fake_storage.staged_calls, [])
+        self.assertIsNone(self.fake_storage.promote_result)
 
     def test_a_domain_reader_exception_fails_the_job_not_crashes(self):
         def raising_builder(connection_arg, user_key):

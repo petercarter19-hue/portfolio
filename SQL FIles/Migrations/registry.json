@@ -2286,6 +2286,18 @@
       }
     },
     {
+      "id": "PS-SETTINGS-EXPORT-010",
+      "forward": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-010_domain_ledger_writer.sql",
+      "rollback": "SQL FIles/Migrations/PS-SETTINGS-EXPORT-010_domain_ledger_writer_rollback.sql",
+      "requires": [
+        "PS-SETTINGS-EXPORT-001",
+        "PS-AUTH-001",
+        "PS-PLAT-001"
+      ],
+      "summary": "Account-export domain-ledger writer (the export program's last structural gap): one worker-only, lease-fenced atomic completion procedure, usp_CompleteAccountExportWithDomains, added alongside C1's untouched usp_CompleteAccountExportJob. Derives job/owner identity from the locked row, re-checks owner-active under the lock, validates the canonical 30-domain JSON payload, inserts the per-domain rows into dbo.account_export_job_domains, and transitions the job to ready in one transaction - both succeed or neither.",
+      "gate": null
+    },
+    {
       "id": "PS-MYOPP-003",
       "forward": "SQL FIles/Migrations/PS-MYOPP-003_qualification.sql",
       "rollback": "SQL FIles/Migrations/PS-MYOPP-003_qualification_rollback.sql",
