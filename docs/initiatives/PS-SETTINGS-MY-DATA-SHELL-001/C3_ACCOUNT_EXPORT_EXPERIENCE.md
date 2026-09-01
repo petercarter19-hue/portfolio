@@ -140,13 +140,18 @@ Recorded as an open risk rather than silently assumed away.
   post-read verification. Authorization was and is unaffected, and a 429
   is keyed on the caller, never the job. Budget reasoning — including why
   the download number is 30/hour — is in `CR10_EXPORT_AVAILABILITY.md`.
-- **Expiry is not deletion.** `usp_ExpireAccountExportJobs` marks a ready job
-  expired, and `cleanup_final` can delete the object, but nothing schedules
-  either. The worker only cleans staging after a failed attempt. So the
-  owner-approved seven-day window is currently enforced in the ledger and
-  **not** on disk: an expired job would correctly refuse to download while its
-  file remained in storage. This belongs to the worker/operations slice, not
-  C3, and must be closed before the feature is enabled for real members.
+- ~~Expiry is not deletion. `usp_ExpireAccountExportJobs` marks a ready
+  job expired, and `cleanup_final` can delete the object, but nothing
+  schedules either.~~ **Resolved in code by
+  PS-SETTINGS-ACCOUNT-EXPORT-WORKER-OPS-001**
+  (`CR11_EXPORT_WORKER_OPS.md`): the worker's `--maintenance` mode runs
+  `usp_ExpireAccountExportJobs`, then deletes the physical objects for
+  exactly the past-ready jobs the ledger marks cleanup-pending —
+  `cleanup_final` unconditionally plus per-attempt staging — marking
+  each job cleaned through `usp_CleanupAccountExportJob` only after its
+  deletes succeeded. Still scheduled nowhere: the worker-host decision
+  remains separately gated, and enabling the feature for real members
+  without scheduling maintenance would reopen this gap.
 
 ## Limitations
 

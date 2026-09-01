@@ -88,6 +88,20 @@ hold an engine-truncated record that disagrees with the manifest. The
 aggregate artifact facts still come from
 AccountExportStorageService.promote()'s own independent readback, never
 from a pre-upload estimate.md, "Manifest/ledger agreement").
+
+Retention maintenance (PS-SETTINGS-ACCOUNT-EXPORT-WORKER-OPS-001).
+The same entrypoint also owns the retention half C3 recorded as
+"expiry is not deletion": --maintenance runs run_maintenance instead
+of run_once -- EXEC dbo.usp_ExpireAccountExportJobs first (ledger
+expiry), then, for exactly the past-ready jobs whose cleanup_state
+is 'pending', idempotent physical deletion through
+AccountExportStorageService followed -- only after a successful
+delete -- by dbo.usp_CleanupAccountExportJob. Never a deletion for a
+still-downloadable job; never a cleaned mark before the delete; a
+failed delete leaves the job pending for the next run and fails this
+run loudly. Like run_once, this mode is not wired to any scheduler,
+route, or UI -- run by hand from an operator shell only until the
+separately gated worker-host decision.
 """
 
 from __future__ import annotations
@@ -175,6 +189,12 @@ _LOG_FIELD_NAMES = frozenset(
         "file_count",
         "failure_code",
         "error_type",
+        # Maintenance-mode fields (PS-SETTINGS-ACCOUNT-EXPORT-WORKER-
+        # OPS-001): bounded counts only, deliberately widened here --
+        # never a reason, domain, or artifact reference.
+        "expired_count",
+        "cleaned_count",
+        "cleanup_failed_count",
     }
 )
 
@@ -507,6 +527,84 @@ def fail_job(cursor, *, job_key, lease_token, failure_code):
         "@JobKey = ?, @LeaseToken = ?, @FailureCode = ?;",
         (job_key, lease_token, failure_code),
     )
+
+
+def expire_ready_jobs(cursor):
+    """One bare ``EXEC dbo.usp_ExpireAccountExportJobs;`` -- the ledger
+    half of retention: every ready job past its ready_expires_at_utc
+    becomes 'expired' (blocking download; physical deletion is the
+    separate, later step below). The procedure's own default @BatchSize
+    (500) governs its internal bounded-batch loop, so no parameter is
+    passed here; its single result set is one expired_count row, read
+    back for content-free logging. SET NOCOUNT ON inside the procedure
+    means that SELECT is the only result set, so an absent result is a
+    defect worth failing loudly on -- never silently reported as zero.
+    """
+
+    cursor.execute("EXEC dbo.usp_ExpireAccountExportJobs;")
+    if cursor.description is None:
+        raise RuntimeError("usp_ExpireAccountExportJobs returned no result set.")
+    row = cursor.fetchone()
+    if row is None:
+        raise RuntimeError("usp_ExpireAccountExportJobs returned no expired_count row.")
+    return int(row[0])
+
+
+def fetch_cleanup_pending_jobs(cursor):
+    """The maintenance sweep's own ledger read: exactly the jobs whose
+    physical artifacts may be deleted under C1's contract --
+    cleanup_state 'pending' AND state 'expired' or 'failed', the two
+    states usp_CleanupAccountExportJob itself accepts (it throws 57257
+    for 'ready'; 'queued'/'running' can never be 'pending' per
+    CK_account_export_jobs_cleanup_pair). 'ready' is deliberately
+    absent: a still-downloadable job's artifact is untouchable, which is
+    the sacred half of the retention rule.
+
+    This is the same sanctioned interim direct-read shape as
+    fetch_requested_at_utc above: job ledger metadata only (job_key,
+    state, attempt_count), no @UserKey, no member content, no dynamic
+    SQL. attempt_count is read so a failed job's per-attempt staging
+    leftovers can be swept; the states are fixed literals from the
+    ledger's own closed CHECK vocabulary, never caller input.
+    """
+
+    cursor.execute(
+        "SELECT job_key, state, attempt_count "
+        "FROM dbo.account_export_jobs "
+        "WHERE cleanup_state = N'pending' "
+        "AND state IN (N'expired', N'failed') "
+        "ORDER BY account_export_job_id;"
+    )
+    # Values are returned RAW: run_maintenance normalizes and converts
+    # per job inside its own per-row isolation, so one malformed ledger
+    # row cannot abort the whole sweep here before any cleanup ran.
+    return [
+        {"job_key": row[0], "state": row[1], "attempt_count": row[2]}
+        for row in cursor.fetchall()
+    ]
+
+
+def mark_job_cleaned(cursor, job_key):
+    """Record one job's completed physical cleanup:
+    ``EXEC dbo.usp_CleanupAccountExportJob @JobKey = ?``. Called ONLY
+    after every storage delete for that job succeeded -- the mark must
+    never precede the delete, or the ledger would claim a deletion that
+    did not happen. The procedure is idempotent (a concurrently cleaned
+    job returns 'cleaned' without re-transitioning), refuses a
+    still-ready job with 57257 as an independent, database-side
+    enforcement of the same ordering rule, and appends the
+    account_export.cleaned audit event itself. Returns the procedure's
+    own reported cleanup_state.
+    """
+
+    cursor.execute("EXEC dbo.usp_CleanupAccountExportJob @JobKey = ?;", (job_key,))
+    if cursor.description is None:
+        raise RuntimeError("usp_CleanupAccountExportJob returned no result set.")
+    row = cursor.fetchone()
+    if row is None:
+        raise RuntimeError("usp_CleanupAccountExportJob returned no row.")
+    columns = [column[0] for column in cursor.description]
+    return dict(zip(columns, row)).get("cleanup_state")
 
 
 def _now_utc():
@@ -972,6 +1070,121 @@ def run_once(connection, *, domain_files_builder):
         return {"outcome": "failed", "job_key": job_key, "failure_code": failure_code}
 
 
+def run_maintenance(connection, storage):
+    """Retention maintenance (PS-SETTINGS-ACCOUNT-EXPORT-WORKER-OPS-001):
+    make expiry mean deletion.
+
+    Two phases, fixed order. First the ledger transition
+    (expire_ready_jobs); then physical cleanup for exactly the jobs the
+    ledger shows past-ready with cleanup pending -- delete the objects
+    through the storage adapter's idempotent calls, and only after the
+    deletes succeed, mark the job cleaned. The ordering rule both
+    directions: never delete an object for a job still downloadable
+    (only 'expired'/'failed' + 'pending' rows are swept, and a runtime
+    guard refuses anything else even if a defective read produced it),
+    and never mark cleaned before the delete succeeded (a failing
+    delete leaves the job 'pending' for the next run's retry -- every
+    delete is an idempotent no-op on re-run -- while this run continues
+    to the remaining jobs and then fails loudly at the end).
+
+    Every swept job gets cleanup_final plus its per-attempt staging
+    sweep, unconditionally. CK_account_export_jobs_ready_artifact
+    forces a failed job's LEDGER columns to NULL, but the physical
+    final object can still exist: promote() commits the final blob
+    BEFORE verify_promoted_hash and the completion call, so a failure
+    after that point orphans a committed final object while every
+    retry dies on storage_conflict (create-only final names) and the
+    job terminates 'failed' with no reference. cleanup_final deletes
+    that orphan, or proves absence for a job that never promoted --
+    both idempotent -- and a failed job is never downloadable
+    (usp_GetAccountExportDownloadMetadataForOwner serves only ready
+    jobs), so the unconditional delete cannot touch a downloadable
+    artifact.
+    Every log line is content-free: counts, job_key, ledger state, and
+    error_type -- never a reason, domain, or artifact reference.
+
+    Returns a content-free outcome dict; 'failed' means at least one
+    job's cleanup did not complete and the entrypoint exits nonzero.
+    """
+
+    cursor = connection.cursor()
+
+    expired_count = expire_ready_jobs(cursor)
+    _log("maintenance_expired", expired_count=expired_count)
+
+    cleaned_count = 0
+    cleanup_failed_count = 0
+    for job in fetch_cleanup_pending_jobs(cursor):
+        state = job["state"]
+        try:
+            # Normalized per job, inside the sweep, so one malformed
+            # ledger row is counted and skipped (fail-safe: nothing was
+            # deleted for it) instead of aborting the entire run before
+            # the remaining jobs' overdue deletions.
+            job_key = normalize_job_key(job["job_key"])
+            attempt_count = int(job["attempt_count"])
+        except Exception as error:  # noqa: BLE001 -- same one-job isolation as below
+            cleanup_failed_count += 1
+            _log(
+                "maintenance_cleanup_failed",
+                state=state,
+                error_type=type(error).__name__,
+            )
+            continue
+        if state not in ("expired", "failed"):
+            # Defense in depth for the sacred rule beyond the WHERE
+            # clause: a job in any other state is still (or may again
+            # be) downloadable and must never lose its artifact here.
+            cleanup_failed_count += 1
+            _log("maintenance_cleanup_refused", job_key=job_key, state=state)
+            continue
+        try:
+            # Unconditionally, for BOTH swept states: a 'failed' job's
+            # ledger reference is NULL, but a post-promote failure can
+            # orphan a committed physical final object (see docstring).
+            # Idempotent: absence is success.
+            storage.cleanup_final(job_key)
+            # Staging objects can exist only for attempts that actually
+            # ran (stage() is called with the claimed attempt ordinal),
+            # so the sweep is bounded by the job's own attempt_count --
+            # CK_account_export_jobs_attempts caps it at MAX_ATTEMPTS.
+            for attempt in range(1, attempt_count + 1):
+                storage.cleanup_staging(job_key, attempt)
+            marked_state = mark_job_cleaned(cursor, job_key)
+        except Exception as error:  # noqa: BLE001 -- one job's failure must not end the sweep
+            cleanup_failed_count += 1
+            _log(
+                "maintenance_cleanup_failed",
+                job_key=job_key,
+                state=state,
+                error_type=type(error).__name__,
+            )
+            continue
+        if marked_state != "cleaned":
+            # Defensive: the procedure reported something other than a
+            # settled cleanup. Leave the job for the next run and fail
+            # this one loudly rather than claim a cleanup the ledger
+            # does not show.
+            cleanup_failed_count += 1
+            _log("maintenance_cleanup_unconfirmed", job_key=job_key, state=state)
+            continue
+        cleaned_count += 1
+        _log("maintenance_cleaned", job_key=job_key, state=state)
+
+    _log(
+        "maintenance_finished",
+        expired_count=expired_count,
+        cleaned_count=cleaned_count,
+        cleanup_failed_count=cleanup_failed_count,
+    )
+    return {
+        "outcome": "completed" if cleanup_failed_count == 0 else "failed",
+        "expired_count": expired_count,
+        "cleaned_count": cleaned_count,
+        "cleanup_failed_count": cleanup_failed_count,
+    }
+
+
 def _connect(connection_string):
     from mssql_python import connect
 
@@ -984,6 +1197,15 @@ def main(argv=None):
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--expect-database", required=True)
+    parser.add_argument(
+        "--maintenance",
+        action="store_true",
+        help=(
+            "Run retention maintenance (ledger expiry, then physical "
+            "cleanup of past-ready pending artifacts) instead of "
+            "claiming one export job."
+        ),
+    )
     arguments = parser.parse_args(argv)
 
     connection_string = os.environ.get(CONNECTION_ENV)
@@ -1008,7 +1230,10 @@ def main(argv=None):
             LOGGER.error("Account export worker refused an unexpected database target.")
             return 1
 
-        result = run_once(connection, domain_files_builder=build_domain_files_from_readers)
+        if arguments.maintenance:
+            result = run_maintenance(connection, account_export_storage_service)
+        else:
+            result = run_once(connection, domain_files_builder=build_domain_files_from_readers)
         print(json.dumps(result, sort_keys=True))
         return 0 if result["outcome"] in ("idle", "completed") else 1
     finally:

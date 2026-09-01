@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-WORKER-OPS-001",
+  "candidate_sha": "e8abf1cef904cc59061fe6b22c1e7a64cf1c5c57",
+  "review_type": "independent",
+  "reviewer_ref": "agent:claude-code/independent-review/ps-settings-account-export-worker-ops-001/confirm-9c4d2e1a",
+  "result": "pass",
+  "reviewed_at": "2026-09-01T12:22:03Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Round one HIGH (F1): the maintenance sweep gated cleanup_final on state='expired' and five prose sites asserted a failed job never had a final artifact. False: CK_account_export_jobs_ready_artifact constrains the LEDGER columns, not the container -- promote() commits the final blob before hash verification and completion, so a post-promote failure orphans a committed final object while retries die on storage_conflict and the job terminates 'failed' with a NULL reference, leaving a member's complete archive on disk invisible to the sweep. Fixed: cleanup_final now runs unconditionally for every swept job (idempotent absence-proof otherwise; failed jobs are never downloadable, so the sacred rule is untouched) and all five prose sites were corrected. The failed-job test now asserts cleanup_final IS called."
+    },
+    {
+      "status": "resolved",
+      "summary": "Round one MEDIUM (F2, governance): the C3 'Expiry is not deletion' bullet retirement had been deferred to a package that carried no corresponding obligation. Resolved by claiming the C3 doc through the extend-surfaces control transition (PR 841) after PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001 closed and released the surface, then retiring the bullet in this package's own diff with its enablement warning preserved."
+    },
+    {
+      "status": "resolved",
+      "summary": "Round one LOW (F3): the marked_state != 'cleaned' confirmation branch was untested -- the one mutation that survived. Now pinned: a 'not_required' procedure response counts as a cleanup failure and the run ends 'failed'."
+    },
+    {
+      "status": "resolved",
+      "summary": "Round one LOW (F4): job_key normalization outside the per-job isolation let one malformed ledger row abort the whole sweep before any overdue deletion. Took the code option: fetch returns raw rows; normalize_job_key and the attempt_count conversion moved inside per-job isolation, counted and skipped on failure (fail-safe: nothing deleted for that row), with the unnormalizable raw value deliberately never logged. Pinned by a test."
+    },
+    {
+      "status": "informational",
+      "summary": "Sacred ordering certified CLEAN through all three layers under mutation testing across both rounds: the sweep SELECT never names 'ready', the runtime guard refuses any non-expired/failed row without a storage call, and usp_CleanupAccountExportJob's own 57257 refuses a still-ready job server-side; the mark statement never precedes a successful delete."
+    },
+    {
+      "status": "informational",
+      "summary": "Reviewer note recorded, no code change: the failed+pending deletion branch is forward-looking -- no current SQL procedure produces a failed+pending row (usp_FailAccountExportJob never sets cleanup_state). The branch is correct-by-construction for the future fail-time marking that CR11_EXPORT_WORKER_OPS.md already books as the named follow-up. The main chartered gap -- expired ready jobs with a real final object on disk -- is genuinely closed."
+    },
+    {
+      "status": "informational",
+      "summary": "Reviewer note recorded, no doc edit (evidence-only tail): CR11 says the retired C3 bullet's closing warning was 'preserved verbatim'; it was in fact rephrased semantically equivalently in the resolution text. The clarification is recorded here rather than by editing CR11, which would have forced another freeze/review round for a one-word nit."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-WORKER-OPS-001.md"
+}
