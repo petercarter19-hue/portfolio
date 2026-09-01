@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-SIMPLIFICATION-CLOSE-REPAIR-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Make the already-reviewed, already-merged PS-DELIVERY-CONTROL-SIMPLIFICATION-001 close representable without weakening delivery governance for any other package. The simplification bootstrap's reviewed candidate ff3959815f3e4a9ca4dc5dd404a42a5e11ec462a necessarily carried two legacy bootstrap records outside its own claim (docs/governance/lane_claims/PS-SYNTHETIC-MULTI-MEMBER-QA-001.json and docs/governance/lane_claims/receipts/PS-SYNTHETIC-MULTI-MEMBER-QA-001.json) because it created the per-package claim model itself. Add one exact historical-tuple recognition, keyed on that exact package, reviewed candidate, and implementation merge 1b6b5d4905af32edfee43c02d6e2bdb58d31898c, tolerating only those two exact paths during close scope validation. Byte identity, merged-path introduction, receipt verification, branch preservation, and strict scope behavior for every other package, candidate, merge, and path remain unchanged, proven by focused positive and adversarial negative tests. No generic bypass, waiver, or widening mechanism.",
   "assignment": "implementation",
   "writer_ref": "agent:claude-code/central-cleanup-manager",
@@ -27,6 +27,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "bd3bd08cd79c483aaaae8f1980b5437852ca9e3b",
+  "closed_at": "2026-08-31T23:58:22Z"
 }
