@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-SCHEMA-STATE-REFRESH-001",
+  "state": "active",
+  "outcome": "Commit the regenerated docs/governance/PRODUCTION_SCHEMA_STATE.md after the owner-authorized eight-migration account-export apply batch (PS-SETTINGS-EXPORT-001, 003-009). The file is generated, never hand-written: this refresh takes the byte content the governed migration path itself rendered from its live ledger read during the final apply (pipeline build 2149) and makes the repository record match the database again, clearing the stale-STATE warning every batch apply raised. One generated file; no schema, code, or claim-set change; no production action - the batch that made the file stale was separately authorized and is complete.",
+  "assignment": "implementation",
+  "writer_ref": "agent:claude-code/settings-schema-state-refresh-writer",
+  "branch": "work/2026-09-01-settings-schema-state-refresh-001",
+  "delivery_path": "Routine",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "021eac2d12d6a8cc3353807db03ecbf81c9fe918",
+  "owner_outcome_ref": "pete-chat-2026-08-31/schema-apply-eight-batch-closeout",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-SETTINGS-SCHEMA-STATE-REFRESH-001.json",
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-SCHEMA-STATE-REFRESH-001.md",
+    "docs/governance/lane_claims/receipts/PS-SETTINGS-SCHEMA-STATE-REFRESH-001.json",
+    "docs/governance/PRODUCTION_SCHEMA_STATE.md"
+  ],
+  "domains": [
+    "governance:schema-state-record"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-SETTINGS-SCHEMA-STATE-REFRESH-001.md"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
