@@ -55,7 +55,8 @@
     "tests/test_owner_home_migration.py",
     "tests/test_search_visibility.py",
     "tests/test_signin_experience.py",
-    "tests/test_signin_member_arrival.py"
+    "tests/test_signin_member_arrival.py",
+    "tests/test_workshop_checkpoint.py"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-OWNER-HOME-RETIREMENT-001.md"
