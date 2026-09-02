@@ -101,6 +101,7 @@
       "PS-MY-OPPORTUNITIES-001",
       "PS-MYOPP-CANONICAL-001",
       "PS-MYOPP-CRITERIA-001",
+      "PS-MYOPP-LICENSED-FEED-ADAPTER-001",
       "PS-MYOPP-MEMBER-IMPORT-001",
       "PS-MYOPP-QUALIFICATION-001",
       "PS-MYOPP-RELATIONSHIPS-001",
@@ -158,10 +159,10 @@
   },
   "counts": {
     "current_protect": 67,
-    "future_finish": 31,
+    "future_finish": 32,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 133
+    "total": 134
   }
 }

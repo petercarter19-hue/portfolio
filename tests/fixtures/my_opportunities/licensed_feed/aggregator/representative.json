@@ -1,0 +1,28 @@
+{
+  "_fixture": {
+    "citation_url": "https://developer.adzuna.com/overview",
+    "access_date": "2026-08-24",
+    "transcription_note": "Representative field shape transcribed from published documentation; names and listing content are fictional and this file was not captured from a live API.",
+    "data_class": "fixture"
+  },
+  "count": 1,
+  "results": [
+    {
+      "id": "aggregator-fixture-001",
+      "title": "Platform Reliability Engineer",
+      "company": {
+        "display_name": "Northstar Example Labs"
+      },
+      "location": {
+        "display_name": "Brussels, Belgium"
+      },
+      "contract_type": "permanent",
+      "redirect_url": "https://jobs.example/aggregator-fixture-001",
+      "description": "Build reliable platform services. Five years of distributed-systems experience is required.",
+      "category": {
+        "label": "Engineering",
+        "tag": "it-jobs"
+      }
+    }
+  ]
+}

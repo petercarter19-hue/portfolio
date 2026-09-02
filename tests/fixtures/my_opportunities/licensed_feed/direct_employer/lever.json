@@ -1,0 +1,21 @@
+{
+  "_fixture": {
+    "citation_url": "https://github.com/lever/postings-api/blob/master/README.md",
+    "access_date": "2026-08-24",
+    "transcription_note": "Field structure follows published Lever Postings API documentation; employer and role content are fictional and no postings endpoint was queried.",
+    "data_class": "fixture"
+  },
+  "postings": [
+    {
+      "id": "direct-lever-fixture-001",
+      "text": "Member Experience Engineer",
+      "hostedUrl": "https://jobs.lever.co/example/00000000-0000-0000-0000-000000000000",
+      "descriptionPlain": "A fictional documented-format role. Applicants must have experience building accessible web products.",
+      "categories": {
+        "commitment": "Full-time",
+        "location": "Remote",
+        "team": "Member Experience"
+      }
+    }
+  ]
+}

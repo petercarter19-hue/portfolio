@@ -1,0 +1,40 @@
+{
+  "_fixture": {
+    "citation_url": "https://developer.usajobs.gov/",
+    "access_date": "2026-08-24",
+    "transcription_note": "Response field names follow the published USAJOBS search documentation; the announcement, identifier, and organization are fictional and no API call was made.",
+    "data_class": "fixture"
+  },
+  "SearchResult": {
+    "SearchResultCount": 1,
+    "SearchResultCountAll": 1,
+    "SearchResultItems": [
+      {
+        "MatchedObjectId": "government-fixture-001",
+        "MatchedObjectDescriptor": {
+          "PositionTitle": "Digital Service Engineer",
+          "OrganizationName": "Example Public Digital Service",
+          "DepartmentName": "Example Department",
+          "PositionLocation": [
+            {
+              "LocationName": "Washington, District of Columbia"
+            }
+          ],
+          "PositionSchedule": [
+            {
+              "Name": "Full-time"
+            }
+          ],
+          "PositionURI": "https://www.usajobs.gov/job/000000000",
+          "QualificationSummary": "Applicants must have experience delivering secure public services.",
+          "UserArea": {
+            "Details": {
+              "JobSummary": "A fictional documented-format public-service role.",
+              "Requirements": "Applicants must have experience delivering secure public services. Experience with accessibility is preferred."
+            }
+          }
+        }
+      }
+    ]
+  }
+}

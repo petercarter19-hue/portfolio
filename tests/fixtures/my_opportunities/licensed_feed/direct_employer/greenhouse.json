@@ -1,0 +1,29 @@
+{
+  "_fixture": {
+    "citation_url": "https://developers.greenhouse.io/job-board.html",
+    "access_date": "2026-08-24",
+    "transcription_note": "Field structure follows published Greenhouse Job Board API documentation; employer and role content are fictional and no board was queried.",
+    "data_class": "fixture"
+  },
+  "jobs": [
+    {
+      "id": "direct-greenhouse-fixture-001",
+      "title": "Product Systems Engineer",
+      "location": {
+        "name": "Remote in Europe"
+      },
+      "absolute_url": "https://boards.greenhouse.io/example/jobs/0000000",
+      "content": "A fictional documented-format role. Candidates must have experience designing dependable product systems.",
+      "departments": [
+        {
+          "id": 1001,
+          "name": "Product Engineering"
+        }
+      ],
+      "updated_at": "2026-08-24T12:00:00Z"
+    }
+  ],
+  "meta": {
+    "total": 1
+  }
+}

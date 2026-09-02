@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-LICENSED-FEED-ADAPTER-001",
+  "candidate_sha": "0007dd5210f0ae0cc4e478b70fc15e2075ba3116",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/myopp_c11_impl/c11_independent_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-02T20:34:58Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MYOPP-LICENSED-FEED-ADAPTER-001.md"
+}
