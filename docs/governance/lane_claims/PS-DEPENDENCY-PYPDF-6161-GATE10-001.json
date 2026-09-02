@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "package": "PS-DEPENDENCY-PYPDF-6161-GATE10-001",
+  "state": "active",
+  "outcome": "Unblock the owner-authorized Settings Account Export Gate 10 control path by replacing the repository's vulnerable pypdf 6.15.0 pin with 6.16.1, which clears the three current pip-audit findings for crafted-PDF infinite-loop, long-runtime, and high-memory conditions. Prove the strict dependency audit clean and the My Opportunities member-import parser tests green without changing that program's code, claim, branch, or product behavior. Because every PR is blocked by the vulnerable target pin, this one activation PR may carry the claim, one-line pin, self-review receipt, and evidence as the minimum owner-directed CI-unblock exception; it changes no other dependency, runtime code, schema, deployment, configuration, feature flag, identity, or production state. The older unmerged dependency activation branch remains untouched and non-authoritative.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a03e17-a645-7ae0-8da3-164eef90a333/settings-account-export-gate-10-execution-manager",
+  "branch": "work/2026-09-02-dependency-pypdf-6161-gate10-001",
+  "delivery_path": "Bounded",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "f59dfc5e1065228d6180604b10ed184384ae4545",
+  "owner_outcome_ref": "pete-chat-2026-09-02/settings-account-export-gate-10-enable-and-proof",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-DEPENDENCY-PYPDF-6161-GATE10-001.json",
+    "docs/governance/lane_claims/evidence/PS-DEPENDENCY-PYPDF-6161-GATE10-001.md",
+    "docs/governance/lane_claims/receipts/PS-DEPENDENCY-PYPDF-6161-GATE10-001.json",
+    "requirements.txt"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-DEPENDENCY-PYPDF-6161-GATE10-001.md"
+  ],
+  "domains": [
+    "runtime:dependencies:pypdf:gate10-unblock"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}

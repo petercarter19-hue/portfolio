@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "package": "PS-DEPENDENCY-PYPDF-6161-GATE10-001",
+  "candidate_sha": "629204ee1faed7f377653af324bfa7215c0cfbeb",
+  "review_type": "self",
+  "reviewer_ref": "session:01a03e17-a645-7ae0-8da3-164eef90a333/settings-account-export-gate-10-execution-manager",
+  "result": "pass",
+  "reviewed_at": "2026-09-02T14:01:07Z",
+  "findings": [
+    {
+      "id": "SR1-bounded-pin-only",
+      "status": "informational",
+      "summary": "The complete candidate changes the dependency surface by exactly one pin, pypdf 6.15.0 to 6.16.1; no My Opportunities code, claim, branch, schema, configuration, or production surface changes. The separate claim records the owner-directed activation-PR exception required because the vulnerable target pin blocks every ordinary PR."
+    },
+    {
+      "id": "SR2-security-and-parser-verification",
+      "status": "informational",
+      "summary": "A fresh isolated Python 3.12 environment resolved pypdf 6.16.1, pip-audit 2.9.0 reported no known vulnerabilities for requirements.txt, and the untouched remote My Opportunities member-import candidate passed 154 tests plus 2 subtests with 2 skips against the new pin."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-DEPENDENCY-PYPDF-6161-GATE10-001.md"
+}
