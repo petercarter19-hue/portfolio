@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-URL-FETCH-001",
+  "state": "active",
+  "outcome": "Implement C13, the member URL-fetch adapter behind C10's disabled service-level port: member_url_fetch_service.py exposing create_fetch_adapter(), which admits https-only ASCII URLs, runs doc 06 s1 network rules through C2 safe_outbound (per-connection DNS revalidation, deny set, redirect and wall-clock budgets, streaming cap, fixed headers, no credentials) over a stdlib pinned-address TLS transport, admits only 200 text/html or text/plain bodies that sniff as text, hands wire bytes to C10's deterministic sanitize/extract pipeline, and returns provenance for the member's own member_import row with content-free host class and closed reason codes; plus the per-member fetch-budget seam C8 wires later, and retirement of exactly the three C10 module-absence stop-control tests falsified by this module. Effective only when PEERSLATE_MY_OPPORTUNITIES_ENABLED and PEERSLATE_MY_OPPORTUNITIES_URL_FETCH_ENABLED are both true; the fetch flag stays off. PACKAGE_REGISTRY.json is deferred until its current owner closes. No route, app.py, template, JS, C2 or C10 service change, schema, migration, real network in tests, deployment, or enablement.",
+  "assignment": "implementation",
+  "writer_ref": "agent:codex/2026-09-02/myopp-c13-url-fetch-writer",
+  "branch": "work/2026-09-02-myopp-url-fetch-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "9813ef8caea9a4984481397daf2044dd1cf1d59e",
+  "owner_outcome_ref": "session:4b21c2ac-0236-4dc0-af54-2c15e6f126ce/pete-chat-2026-09-01/complete-everything-backend",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MYOPP-URL-FETCH-001.json",
+    "docs/governance/lane_claims/evidence/PS-MYOPP-URL-FETCH-001.md",
+    "docs/governance/lane_claims/receipts/PS-MYOPP-URL-FETCH-001.json",
+    "docs/initiatives/PS-MYOPP-URL-FETCH-001/README.md",
+    "docs/initiatives/PS-MYOPP-URL-FETCH-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "services/my_opportunities/member_url_fetch_service.py",
+    "tests/test_my_opportunities_member_url_fetch.py",
+    "tests/test_my_opportunities_member_import.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MYOPP-URL-FETCH-001.md"
+  ],
+  "domains": [
+    "runtime:my-opportunities:url-fetch",
+    "privacy:my-opportunities:url-fetch",
+    "governance:initiative:my-opportunities:url-fetch",
+    "governance:package-registry:my-opportunities:url-fetch"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
