@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-URL-FETCH-001",
+  "candidate_sha": "410ae3b4272095173096b68b283155ed630d5693",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/shell_nav_prep",
+  "result": "pass",
+  "reviewed_at": "2026-09-02T22:42:15Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MYOPP-URL-FETCH-001.md"
+}

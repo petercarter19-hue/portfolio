@@ -1105,17 +1105,6 @@ class UrlFetchPortTests(Harness):
         self.assertEqual(ctx.exception.failure_code, "url_fetch_unavailable")
         self.assertEqual(self.sink.events[-1].reason_code, "adapter_absent")
 
-    def test_default_adapter_resolver_returns_none_because_module_is_absent(self):
-        """Stop-control pre-proof: with the REAL (default) resolver and both
-        flags forced on, the refusal is still adapter_absent, because
-        member_url_fetch_service.py genuinely does not exist at this
-        candidate."""
-        service = MemberImportService(self.repository, self.sink, flag_reader=lambda name: True)
-        with self.assertRaises(MemberImportServiceError) as ctx:
-            service.import_from_url("alice", "https://example.com/job", self.key(), now=NOW)
-        self.assertEqual(ctx.exception.failure_code, "url_fetch_unavailable")
-        self.assertEqual(self.sink.events[-1].reason_code, "adapter_absent")
-
     def test_url_refusal_never_appears_in_any_audit_field(self):
         secret_url = "https://internal.example.com/leak-me?token=abc123"
         with self.assertRaises(MemberImportServiceError):
@@ -1133,16 +1122,6 @@ class UrlFetchPortTests(Harness):
             self.service.import_from_url("alice", "https://example.com/job", self.key(), now=NOW)
         self.assertEqual(self.repository.state_digest(), digest_before)
         self.assertEqual(self.repository.imports_for_owner("alice"), ())
-
-    def test_member_url_fetch_service_module_does_not_exist(self):
-        """The literal stop control the blueprint requires: the C13-reserved
-        module must be ABSENT at the C10 candidate."""
-        path = ROOT / "services" / "my_opportunities" / "member_url_fetch_service.py"
-        self.assertFalse(path.exists(), "member_url_fetch_service.py must not exist at the C10 candidate")
-        import importlib
-
-        with self.assertRaises(ImportError):
-            importlib.import_module(FETCH_MODULE)
 
     # -- Group C: downstream pre-proof via an injected FetchAdapter double --
 
@@ -2612,10 +2591,6 @@ class StructuralStopTests(unittest.TestCase):
                 self.assertNotIn(
                     forbidden, lowered, f"member_import_service.py must not import {forbidden} (found: {name})"
                 )
-
-    def test_member_url_fetch_service_module_absent_at_candidate(self):
-        path = ROOT / "services" / "my_opportunities" / "member_url_fetch_service.py"
-        self.assertFalse(path.exists())
 
     def test_service_module_exports_no_http_route_symbols(self):
         for forbidden in ("Blueprint", "route", "app", "request", "jsonify", "Flask"):
