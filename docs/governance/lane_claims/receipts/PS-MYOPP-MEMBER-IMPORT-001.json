@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-MEMBER-IMPORT-001",
+  "candidate_sha": "d62ad090ed09dbad8645445dc639fa0289972f0a",
+  "review_type": "independent",
+  "reviewer_ref": "agent:codex/ps-myopp-member-import-001/c10/rlimit-direct-worker-delta-review",
+  "result": "pass",
+  "reviewed_at": "2026-09-02T18:33:36Z",
+  "findings": [
+    {
+      "summary": "Five review rounds on the untrusted-PDF memory-exhaustion class. Rounds 1-4 each fixed one bounding approach that the reviewer then falsified (per-page /Contents; document-wide font-aux over the XObject graph; a parser-independent raw-structure scan; a tracemalloc watchdog), proving an untrusted parser cannot be safely policed in-process. Round 4's fix moved ALL PDF/DOCX parsing into an OS-isolated, memory-capped, wall-clock-bounded child subprocess; round 5 verified (via real getrusage RSS) that the parent worker's memory is bounded unconditionally on every bomb class (a 2.7 GiB child left the parent at +15 MiB) with no parent-harm path. PASS on bf6d8407, carried to c7ddc10c after a behavior-identical stderr=DEVNULL hardening.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Azure Linux CI build 2224 then failed one test of 5440 at c7ddc10c: the ObjStm bomb refused parser_failure rather than parser_resource_bounds. Cause: on Linux RLIMIT_AS genuinely enforces, so the bomb raises MemoryError inside the child, where generic except Exception handlers mislabelled it. Fix fed12d29 mapped MemoryError to REASON_PARSER_RESOURCE_BOUNDS at every guarded site. A fresh delta review returned REVISE: F1, one missed and execution-proven reachable site at the nested reader.decrypt('') guard; F2, the receipt no longer covered the candidate; F3/F4, a now-false test name and comment. All four are corrected in abb58f7e, which adds the F1 clause plus a fourth targeted test, renames the bomb test to test_large_scale_objstm_bomb_is_refused_by_isolation_on_every_platform, corrects the sanitizer comment, and adds Linux-gated ceiling-enforcement tests.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Delta re-review of abb58f7e returned CONFIRM: the F1 site is closed end-to-end through the real child worker (refusal propagates as parser_resource_bounds in the worker JSON); a fresh full enumeration of every except Exception, every narrow handler, and every unguarded allocation region in the child found no second gap; scope is confined to the two claimed files with comment-only and rename deletions; 156 package tests OK (2 Linux-gated skips on the macOS host) and 331 C2-C6 regression / package-registry tests OK.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Azure Linux CI build 2267 passed dependency, secret, and compile checks, then the monolithic unittest task timed out at the configured 60-minute job limit. The deterministic cause was the direct in-process child-worker mapping test calling _subprocess_worker_main(), whose production resource.setrlimit call permanently lowered the caller's hard RLIMIT_AS; the log then emitted MemoryError before the runner hung. Test-only candidate d62ad090 patches resource.setrlimit only around that direct call. A fresh independent delta review returned CONFIRM that the mock is lexically restored, the mapping assertions remain intact, and the real fresh-child LinuxCeilingEnforcementTests and service code are unchanged. Local pypdf 6.16.1 validation passed all 156 package tests (2 expected Linux-only skips on macOS) and all 5,423 repository tests (26 skips); pip check and diff check were clean.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Recorded non-blocking obligations (README items 1,6,8,9): the member-data erasure path (shared C5/C6/C10 gap) and the shared-store unknown-outcome lockout before real member data / multi-worker enablement; the BINDING pre-ENABLEMENT gate proving the 256 MiB child RLIMIT_AS cap enforces on the Azure Linux runtime, which the reviewer ruled must stay OPEN (build 2224 is corroborating but non-dispositive, and the fix destroys that accidental oracle) with two named strengthenings and an executed-not-skipped condition recorded in the evidence file; and the per-upload subprocess concurrency footprint for C8 route wiring. None blocks this repository merge; all land on the PS-OPS enablement checklist.",
+      "status": "informational"
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MYOPP-MEMBER-IMPORT-001.md"
+}
