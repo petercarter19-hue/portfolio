@@ -19,7 +19,8 @@
     "docs/initiatives/PS-MYOPP-URL-FETCH-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
     "services/my_opportunities/member_url_fetch_service.py",
     "tests/test_my_opportunities_member_url_fetch.py",
-    "tests/test_my_opportunities_member_import.py"
+    "tests/test_my_opportunities_member_import.py",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-MYOPP-URL-FETCH-001.md"
