@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MYOPP-MEMBER-IMPORT-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement and independently review the permanent private C10 member_import path: deterministic paste and document-upload intake under the shipped bounded-intake discipline (PDF/DOCX/plain text, magic-byte sniff, streaming cutoff), sanitize/extract recording the doc 06 s2 closed outcome states per stage (never AI), provenance held only inside the owner-scoped record, identical not-found owner isolation, export and member delete via body-removal tombstones, dual retention (member lifecycle plus rights at point of use), content-free audit (host class + reason code only), the API/UI seams C8 integrates, the prebuilt DISABLED service-level URL-fetch port resolving member_url_fetch_service.create_fetch_adapter() only when PEERSLATE_MY_OPPORTUNITIES_ENABLED and PEERSLATE_MY_OPPORTUNITIES_URL_FETCH_ENABLED are both true and the module imports, else the truthful url_fetch_unavailable outcome, and the additive governed PS-MYOPP-006 migration with rollback, verifier, and registry entry. No HTTP route, fetch capability, or member_url_fetch_service.py file; no promotion of any import to shared inventory; no C2-C6 file changes; no deployment, enablement, or production/staging schema action.",
   "assignment": "implementation",
   "writer_ref": "session:4b21c2ac-0236-4dc0-af54-2c15e6f126ce/myopp-member-import-writer",
@@ -38,6 +38,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "9b45fcc0b8ad3374b0a4e48a1c9401ce00663d16",
+  "closed_at": "2026-09-02T18:45:31Z"
 }
