@@ -19,7 +19,8 @@
     "docs/initiatives/PS-MYOPP-LICENSED-FEED-ADAPTER-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
     "services/my_opportunities/licensed_feed_adapter.py",
     "tests/test_my_opportunities_licensed_feed_adapter.py",
-    "tests/fixtures/my_opportunities/licensed_feed"
+    "tests/fixtures/my_opportunities/licensed_feed",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-MYOPP-LICENSED-FEED-ADAPTER-001.md"
