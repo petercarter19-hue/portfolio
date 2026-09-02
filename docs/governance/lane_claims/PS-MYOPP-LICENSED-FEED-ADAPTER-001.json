@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MYOPP-LICENSED-FEED-ADAPTER-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement C11 for all three source classes under Pete's include-all decision: one provider-neutral core on C2's describe/acquire/normalize interface plus licensed-aggregator, government-feed, and direct-employer variants, each with its own documented-format fixture family; registration refused without a live source_policy row per class; point-of-use rights enforcement via C2 policy checks plus a normalize-time projection dropping policy-denied fields; bounded error/retry/rate budgets; credentials from named App Service settings only, failing closed without network when absent; recorded-fixture P-1 tests only (no live acquire or network); termination/removal/exit rehearsals per doc 05 sections 7-8. Licensed class stays fail-closed-empty until Pete's provider packet; government live use awaits written approval; direct live use awaits per-employer registration. Activated ahead of C8 under Pete's 2026-09-01 concurrency instruction (doc 14 order varied; surfaces disjoint from active C10; PACKAGE_REGISTRY.json via extend-surfaces after C10 closes). No migration, policy seeding, deployment, enablement, scheduling, spend, live-inventory claim, or Level 3 operation. No repository secrets.",
   "assignment": "implementation",
   "writer_ref": "agent:codex/2026-09-02/myopp-c11-writer",
@@ -37,6 +37,6 @@
     "relinquished": true
   },
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "5e973c4314718bf1f8617e7d2f4c7edffa094325",
+  "closed_at": "2026-09-02T20:44:45Z"
 }
