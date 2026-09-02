@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-MYOPP-LICENSED-FEED-ADAPTER-001",
+  "state": "active",
+  "outcome": "Implement C11 for all three source classes under Pete's include-all decision: one provider-neutral core on C2's describe/acquire/normalize interface plus licensed-aggregator, government-feed, and direct-employer variants, each with its own documented-format fixture family; registration refused without a live source_policy row per class; point-of-use rights enforcement via C2 policy checks plus a normalize-time projection dropping policy-denied fields; bounded error/retry/rate budgets; credentials from named App Service settings only, failing closed without network when absent; recorded-fixture P-1 tests only (no live acquire or network); termination/removal/exit rehearsals per doc 05 sections 7-8. Licensed class stays fail-closed-empty until Pete's provider packet; government live use awaits written approval; direct live use awaits per-employer registration. Activated ahead of C8 under Pete's 2026-09-01 concurrency instruction (doc 14 order varied; surfaces disjoint from active C10; PACKAGE_REGISTRY.json via extend-surfaces after C10 closes). No migration, policy seeding, deployment, enablement, scheduling, spend, live-inventory claim, or Level 3 operation. No repository secrets.",
+  "assignment": "implementation",
+  "writer_ref": "session:4b21c2ac-0236-4dc0-af54-2c15e6f126ce/myopp-licensed-feed-adapter-writer",
+  "branch": "work/2026-09-01-myopp-licensed-feed-adapter-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "f59dfc5e1065228d6180604b10ed184384ae4545",
+  "owner_outcome_ref": "session:4b21c2ac-0236-4dc0-af54-2c15e6f126ce/pete-chat-2026-09-01/include-all-provider-options",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MYOPP-LICENSED-FEED-ADAPTER-001.json",
+    "docs/governance/lane_claims/evidence/PS-MYOPP-LICENSED-FEED-ADAPTER-001.md",
+    "docs/governance/lane_claims/receipts/PS-MYOPP-LICENSED-FEED-ADAPTER-001.json",
+    "docs/initiatives/PS-MYOPP-LICENSED-FEED-ADAPTER-001/README.md",
+    "docs/initiatives/PS-MYOPP-LICENSED-FEED-ADAPTER-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "services/my_opportunities/licensed_feed_adapter.py",
+    "tests/test_my_opportunities_licensed_feed_adapter.py",
+    "tests/fixtures/my_opportunities/licensed_feed"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MYOPP-LICENSED-FEED-ADAPTER-001.md"
+  ],
+  "domains": [
+    "runtime:my-opportunities:licensed-feed-adapter",
+    "governance:initiative:my-opportunities:licensed-feed-adapter"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
