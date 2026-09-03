@@ -24,6 +24,13 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_GetAccountExportDownloadMetadataForOwner",
         "usp_GetAccountExportStatusForOwner",
         "usp_RequestAccountExportForOwner",
+        # PS-PROFILE-CONNECTIONS-PROVIDER-INTEGRATION-001 (Profile D3): only
+        # the three actor-scoped PS-CONNECT-002 procedures used by the closed,
+        # injected repository. This allowlist does not register the provider,
+        # apply its schema, or grant any database identity EXECUTE authority.
+        "usp_CommitConnectionRelationshipCommandForActor",
+        "usp_GetConnectionRelationshipCommandForActor",
+        "usp_GetConnectionRelationshipSnapshotForActor",
         "usp_ArchiveSlateItem",
         "usp_ArchiveCapture",
         "usp_CompleteChallenge",

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-PROFILE-CONNECTIONS-PROVIDER-INTEGRATION-001",
+  "candidate_sha": "690181f9ffd880dd227be329c95a36e031eb113e",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/profile_d1_writer",
+  "result": "pass",
+  "reviewed_at": "2026-09-03T07:12:51Z",
+  "findings": [
+    {
+      "summary": "Before the first provisional commit, a working-tree scan found two deterministic generic-api-key false positives in synthetic SubjectUserKey fixtures. Only those local values changed, parameter-binding semantics remained identical, and the affected suite plus every later secret scan passed.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Independent final exact-SHA review accepted candidate 690181f9ffd880dd227be329c95a36e031eb113e on exact current-main base d846bb265c3cd7436d9a902c4fd012a2fcda94b8 with zero findings. All six changed paths are claimed; the three-name allowlist, positional binding, negative relationship-state proof, unchanged provider and SQL boundaries, and dark unregistered runtime scope satisfy the package contract.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Validation passed: 54 focused tests; two Registry tests; 5,552 full-repository tests with 26 inherited skips; executable digest, compile, diff, path, and immutable-input checks; strict fetched write preflight; and current-tree, exact-range, and all-local-ref Gitleaks with zero findings. Production authority remains withheld.",
+      "status": "informational"
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-PROFILE-CONNECTIONS-PROVIDER-INTEGRATION-001.md"
+}

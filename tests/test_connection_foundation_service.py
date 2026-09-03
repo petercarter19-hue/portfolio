@@ -17,6 +17,8 @@ from services.connection_foundation_service import (
     ConnectionFoundationUnavailableError,
     ConnectionFoundationValidationError,
 )
+from services.profile_core_service import ProfileNotFound
+from services.profile_relationship_service import ProfileRelationshipService
 
 
 ACTOR = PeerSlateIdentity(
@@ -287,6 +289,28 @@ class ConnectionFoundationServiceTests(unittest.TestCase):
         store.error = RuntimeError("unavailable")
         with self.assertRaises(ConnectionFoundationUnavailableError):
             reader.current_snapshot(actor_key=ACTOR.user_key, subject_owner_key=SUBJECT)
+
+    def test_profile_reader_preserves_pending_block_and_epoch_truth_for_profile(self):
+        store = Store()
+        reader = ConnectionFoundationProfileReader(store)
+
+        for state in ("outbound_pending", "inbound_pending", "disconnected", "blocked"):
+            with self.subTest(state=state):
+                store.current = snapshot(state=state, version=7, epoch=11)
+                value = reader.current_snapshot(
+                    actor_key=ACTOR.user_key,
+                    subject_owner_key=SUBJECT,
+                )
+
+                self.assertEqual(value.state, state)
+                self.assertEqual(value.relationship_version, "rel_00000000000000000007")
+                self.assertEqual(value.block_epoch, "blk_00000000000000000011")
+                self.assertEqual(value.blocked_either_direction, state == "blocked")
+                with self.assertRaises(ProfileNotFound):
+                    ProfileRelationshipService(reader).require_connection(
+                        actor_key=ACTOR.user_key,
+                        subject_owner_key=SUBJECT,
+                    )
 
 
 if __name__ == "__main__":

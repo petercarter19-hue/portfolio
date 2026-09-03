@@ -1,8 +1,9 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from mssql_python import DatabaseError
 
+from services.connection_foundation_repository import CONNECTION_FOUNDATION_PROCEDURES
 from services.database_service import (
     ALLOWED_PROCEDURES,
     DatabaseService,
@@ -131,6 +132,114 @@ class DatabaseServiceTests(unittest.TestCase):
         }
 
         self.assertTrue(expected.issubset(ALLOWED_PROCEDURES))
+
+    def test_connection_foundation_allowlist_is_the_exact_repository_contract(self):
+        expected = {
+            "usp_CommitConnectionRelationshipCommandForActor",
+            "usp_GetConnectionRelationshipCommandForActor",
+            "usp_GetConnectionRelationshipSnapshotForActor",
+        }
+
+        self.assertEqual(CONNECTION_FOUNDATION_PROCEDURES, frozenset(expected))
+        self.assertEqual(expected & set(ALLOWED_PROCEDURES), expected)
+        self.assertEqual(
+            {
+                name
+                for name in ALLOWED_PROCEDURES
+                if "ConnectionRelationship" in name
+            },
+            expected,
+        )
+
+    @patch("services.database_service.get_connection")
+    def test_connection_foundation_calls_bind_every_value(self, get_connection):
+        connection = MagicMock()
+        cursor = connection.__enter__.return_value.cursor.return_value
+        cursor.description = None
+        cursor.nextset.return_value = False
+        get_connection.return_value = connection
+        digest = "a" * 64
+        cases = (
+            (
+                "usp_CommitConnectionRelationshipCommandForActor",
+                (
+                    ("@ActorUserKey", "actorAlpha_001"),
+                    ("@SubjectUserKey", "subject-id-11111111"),
+                    ("@Command", "request"),
+                    ("@ExpectedRelationshipVersion", None),
+                    ("@IdempotencyKey", "request-0001"),
+                    ("@RequestDigest", digest),
+                ),
+            ),
+            (
+                "usp_GetConnectionRelationshipCommandForActor",
+                (
+                    ("@ActorUserKey", "actorAlpha_001"),
+                    ("@IdempotencyKey", "request-0001"),
+                ),
+            ),
+            (
+                "usp_GetConnectionRelationshipSnapshotForActor",
+                (
+                    ("@ActorUserKey", "actorAlpha_001"),
+                    ("@SubjectUserKey", "subject-id-11111111"),
+                ),
+            ),
+        )
+
+        for procedure_name, parameters in cases:
+            self.service.execute_procedure(procedure_name, parameters)
+
+        self.assertEqual(
+            cursor.execute.call_args_list,
+            [
+                call(
+                    "EXEC dbo.usp_CommitConnectionRelationshipCommandForActor "
+                    "@ActorUserKey = ?, @SubjectUserKey = ?, @Command = ?, "
+                    "@ExpectedRelationshipVersion = ?, @IdempotencyKey = ?, "
+                    "@RequestDigest = ?",
+                    (
+                        "actorAlpha_001",
+                        "subject-id-11111111",
+                        "request",
+                        None,
+                        "request-0001",
+                        digest,
+                    ),
+                ),
+                call(
+                    "EXEC dbo.usp_GetConnectionRelationshipCommandForActor "
+                    "@ActorUserKey = ?, @IdempotencyKey = ?",
+                    ("actorAlpha_001", "request-0001"),
+                ),
+                call(
+                    "EXEC dbo.usp_GetConnectionRelationshipSnapshotForActor "
+                    "@ActorUserKey = ?, @SubjectUserKey = ?",
+                    ("actorAlpha_001", "subject-id-11111111"),
+                ),
+            ],
+        )
+
+    @patch("services.database_service.get_connection")
+    def test_connection_foundation_typos_and_parameter_fragments_never_connect(
+        self, get_connection
+    ):
+        for procedure_name in (
+            "usp_CommitConnectionRelationshipCommandForActors",
+            "usp_GetConnectionRelationshipSnapshotForactor",
+            "usp_GetConnectionRelationshipForActor",
+            "usp_GetConnectionRelationshipCommandForActor;SELECT",
+        ):
+            with self.subTest(procedure_name=procedure_name):
+                with self.assertRaises(ValueError):
+                    self.service.execute_procedure(procedure_name)
+
+        with self.assertRaises(ValueError):
+            self.service.execute_procedure(
+                "usp_GetConnectionRelationshipSnapshotForActor",
+                (("@ActorUserKey;SELECT", "actorAlpha_001"),),
+            )
+        get_connection.assert_not_called()
 
     def test_the_allowlist_is_exactly_this_set_and_nothing_more(self):
         """2026-08-05 independent review, finding F-5. Every other test in
@@ -359,6 +468,13 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_GetAccountExportStatusForOwner",
             "usp_RequestAccountExportForOwner",
         }
+        # PS-PROFILE-CONNECTIONS-PROVIDER-INTEGRATION-001 (Profile D3): the
+        # exact closed PS-CONNECT-002 repository procedure contract.
+        connection_foundation = {
+            "usp_CommitConnectionRelationshipCommandForActor",
+            "usp_GetConnectionRelationshipCommandForActor",
+            "usp_GetConnectionRelationshipSnapshotForActor",
+        }
         expected = (
             base
             | oppslate_os1
@@ -372,6 +488,7 @@ class DatabaseServiceTests(unittest.TestCase):
             | community
             | interview_ai_telemetry
             | account_export
+            | connection_foundation
         )
         # The groups above must not overlap each other — a name counted
         # twice would silently shrink the real union below the true count
@@ -389,9 +506,10 @@ class DatabaseServiceTests(unittest.TestCase):
             community,
             interview_ai_telemetry,
             account_export,
+            connection_foundation,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 142)
+        self.assertEqual(len(expected), 145)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_photo_procedures_are_explicitly_allowlisted(self):
