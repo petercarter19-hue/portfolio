@@ -826,6 +826,7 @@
             var tabMode = tab.getAttribute('data-is-mode');
             var enabled = modeIsEnabled(tabMode);
             var active = tabMode === mode;
+            tab.removeAttribute('aria-current');
             tab.setAttribute('role', 'tab');
             tab.setAttribute('aria-controls', 'is-panel-' + tabMode);
             tab.setAttribute('aria-disabled', enabled ? 'false' : 'true');
@@ -959,6 +960,7 @@
             tab.removeAttribute('role');
             tab.removeAttribute('aria-controls');
             tab.removeAttribute('aria-selected');
+            tab.removeAttribute('aria-current');
             tab.removeAttribute('tabindex');
         });
         if (historyLink) historyLink.setAttribute('aria-current', 'page');
@@ -987,6 +989,7 @@
             tab.removeAttribute('role');
             tab.removeAttribute('aria-controls');
             tab.removeAttribute('aria-selected');
+            tab.removeAttribute('aria-current');
             tab.removeAttribute('tabindex');
         });
         if (historyLink) historyLink.removeAttribute('aria-current');
@@ -1320,6 +1323,33 @@
     var sessionOpportunityField = one('[data-is-session-opportunity-field]');
     var sessionStageSelect = one('[data-is-session-stage]');
     var sessionMixSelect = one('[data-is-session-mix]');
+    var sessionSetupSection = one('[data-is-session-setup]');
+    var sessionSetupOpen = one('[data-is-session-setup-open]');
+    var sessionSetupCancel = one('[data-is-session-setup-cancel]');
+    var sessionSetupInvoker = null;
+
+    function closeSessionSetup(options) {
+        options = options || {};
+        if (!authenticated || !sessionSetupSection) return;
+        setHidden(sessionSetupSection, true);
+        if (sessionSetupOpen) sessionSetupOpen.setAttribute('aria-expanded', 'false');
+        if (options.restoreFocus !== false && sessionSetupInvoker && document.contains(sessionSetupInvoker)) {
+            window.requestAnimationFrame(function () { sessionSetupInvoker.focus(); });
+        }
+        if (options.announce !== false) announce(options.message || 'Session setup closed. No changes were applied.');
+    }
+
+    function openSessionSetup(invoker) {
+        if (!authenticated || !sessionSetupSection || !sessionSetupOpen) return;
+        sessionSetupInvoker = invoker || sessionSetupOpen;
+        setHidden(sessionSetupSection, false);
+        sessionSetupOpen.setAttribute('aria-expanded', 'true');
+        sessionSetupSection.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+        window.requestAnimationFrame(function () {
+            if (sessionKindSelect) sessionKindSelect.focus();
+        });
+        announce('Session setup opened. Applying changes starts a new browser-local session.');
+    }
 
     function syncNewSessionFields() {
         if (!sessionKindSelect) return;
@@ -1383,7 +1413,7 @@
         if (!setMode(nextMode, true)) return;
         renderQuestion();
         if (authenticated) {
-            if (sessionSetupSection) setHidden(sessionSetupSection, true);
+            closeSessionSetup({ restoreFocus: false, announce: false });
             setFinishSessionCompleted(false);
         }
         if (nextMode === 'me') answer.focus();
@@ -1397,21 +1427,27 @@
     syncNewSessionInputs();
     if (sessionKindSelect) sessionKindSelect.addEventListener('change', syncNewSessionFields);
     if (newSessionForm) newSessionForm.addEventListener('submit', startNewSession);
-    var sessionSetupSection = one('[data-is-session-setup]');
-    all('[data-is-new-session-focus]').forEach(function (newSessionFocus) {
-        newSessionFocus.addEventListener('click', function () {
-            /* Slice 3: the authenticated rail's "Change setup"/"New
-               session"/"Session" controls are the only way to reach the
-               setup form -- it starts hidden (architecture 03 section 6,
-               "focused attached surface") instead of sitting permanently
-               above the question like the public page. */
-            if (authenticated && sessionSetupSection) {
-                setHidden(sessionSetupSection, false);
-                sessionSetupSection.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    if (sessionSetupOpen) {
+        sessionSetupOpen.addEventListener('click', function () { openSessionSetup(sessionSetupOpen); });
+    }
+    if (sessionSetupCancel) {
+        sessionSetupCancel.addEventListener('click', function () { closeSessionSetup(); });
+    }
+    if (sessionSetupSection) {
+        sessionSetupSection.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && authenticated && !sessionSetupSection.hidden) {
+                event.preventDefault();
+                closeSessionSetup();
             }
-            if (sessionKindSelect) sessionKindSelect.focus();
         });
-    });
+    }
+    if (!authenticated) {
+        all('[data-is-new-session-focus]').forEach(function (newSessionFocus) {
+            newSessionFocus.addEventListener('click', function () {
+                if (sessionKindSelect) sessionKindSelect.focus();
+            });
+        });
+    }
 
     if (levelSelect) levelSelect.addEventListener('change', function () {
         stopDictation('interrupted');
@@ -5128,14 +5164,76 @@
     var settingsDialog = one('[data-is-settings]');
     var settingsOpen = one('[data-is-settings-open]');
     var settingsClose = one('[data-is-settings-close]');
-    if (settingsOpen && settingsDialog) {
-        settingsOpen.addEventListener('click', function () {
-            if (typeof settingsDialog.showModal === 'function') settingsDialog.showModal();
-            else settingsDialog.setAttribute('open', '');
+    var settingsInvoker = null;
+
+    function settingsFocusableElements() {
+        if (!settingsDialog) return [];
+        return all('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])', settingsDialog).filter(function (element) {
+            return !element.disabled && !element.hidden && element.getAttribute('aria-hidden') !== 'true';
         });
     }
-    if (settingsClose && settingsDialog) settingsClose.addEventListener('click', function () { settingsDialog.close(); });
-    if (settingsDialog) settingsDialog.addEventListener('click', function (event) { if (event.target === settingsDialog) settingsDialog.close(); });
+
+    function closeSettings(options) {
+        options = options || {};
+        if (!settingsDialog) return;
+        if (settingsDialog.open && typeof settingsDialog.close === 'function') settingsDialog.close();
+        else settingsDialog.removeAttribute('open');
+        if (settingsOpen) settingsOpen.setAttribute('aria-expanded', 'false');
+        if (options.restoreFocus !== false && settingsInvoker && document.contains(settingsInvoker)) {
+            window.requestAnimationFrame(function () { settingsInvoker.focus(); });
+        }
+        if (options.announce !== false) announce(options.message || 'Studio settings closed.');
+    }
+
+    function openSettings(invoker) {
+        if (!settingsDialog) return;
+        settingsInvoker = invoker || settingsOpen;
+        closeSessionSetup({ restoreFocus: false, announce: false });
+        if (typeof settingsDialog.showModal === 'function') settingsDialog.showModal();
+        else settingsDialog.setAttribute('open', '');
+        if (settingsOpen) settingsOpen.setAttribute('aria-expanded', 'true');
+        window.requestAnimationFrame(function () {
+            var firstSetting = one('[data-is-confirm-navigation]', settingsDialog) || settingsClose;
+            if (firstSetting) firstSetting.focus();
+        });
+        announce('Studio settings opened.');
+    }
+
+    if (settingsOpen && settingsDialog) {
+        settingsOpen.addEventListener('click', function () { openSettings(settingsOpen); });
+    }
+    if (settingsClose && settingsDialog) settingsClose.addEventListener('click', function () { closeSettings(); });
+    if (settingsDialog) {
+        settingsDialog.addEventListener('cancel', function (event) {
+            event.preventDefault();
+            closeSettings();
+        });
+        settingsDialog.addEventListener('close', function () {
+            if (settingsOpen) settingsOpen.setAttribute('aria-expanded', 'false');
+        });
+        settingsDialog.addEventListener('click', function (event) {
+            if (event.target === settingsDialog) closeSettings();
+        });
+        settingsDialog.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !(typeof settingsDialog.showModal === 'function' && settingsDialog.open)) {
+                event.preventDefault();
+                closeSettings();
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            var focusable = settingsFocusableElements();
+            if (!focusable.length) return;
+            var first = focusable[0];
+            var last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        });
+    }
     function clearLocalData() {
         if (!window.confirm('Clear Interview Studio drafts and history stored in this browser, and discard any active local recording?')) return;
         stopDictation('interrupted');
@@ -5172,7 +5270,7 @@
         syncNewSessionInputs();
         renderQuestion();
         renderHistory();
-        if (settingsDialog) settingsDialog.close();
+        closeSettings({ announce: false });
         announce('Interview Studio browser data cleared.');
     }
     all('[data-is-clear-local], [data-is-history-clear-local]').forEach(function (button) {
@@ -5195,6 +5293,12 @@
                 id: questionId({ family: session.family, text: incomingQuestion.trim() })
             };
     }
+
+    /* Reveal local progressive-enhancement controls only after all of their
+       handlers are installed. If this script is blocked or fails, genuine
+       mode and History anchors remain available and inert buttons do not. */
+    all('[data-is-js-control]').forEach(function (control) { control.hidden = false; });
+    root.setAttribute('data-is-enhanced', 'true');
 
     /* Initial render */
     renderQuestion();

@@ -5993,3 +5993,147 @@ body.interview-studio-page:has(.is[data-authenticated="true"]):not([data-theme="
     }
     .is[data-authenticated="true"] .is-video-chip--right { margin-left: 0; }
 }
+
+/* ---------------------------------------------------------------------
+   PS-INTERVIEW-STUDIO-OPERABILITY-001
+   One authenticated title, History destination, Session setup launcher,
+   and Studio settings launcher at every breakpoint. JS-only controls stay
+   absent from interaction until their handlers are installed.
+   --------------------------------------------------------------------- */
+.is[data-authenticated="true"] .is-auth__rail-title {
+    margin: 0 0 0.65rem;
+    color: var(--is-ink);
+    font: 700 clamp(1.35rem, 2vw, 1.75rem)/1.15 var(--ps-font-display, Georgia, serif);
+    overflow-wrap: anywhere;
+}
+
+.is[data-authenticated="true"] [data-is-js-control][hidden] {
+    display: none !important;
+}
+
+.is[data-authenticated="true"] .is-auth__rail > .is-auth__rail-history,
+.is[data-authenticated="true"] .is-auth__session-setup-launcher,
+.is[data-authenticated="true"] .is-auth__settings-launcher {
+    display: flex;
+    min-width: 0;
+    min-height: 2.75rem;
+    overflow-wrap: anywhere;
+}
+
+.is[data-authenticated="true"] .is-auth__mode,
+.is[data-authenticated="true"] .is-auth__mode-toggle,
+.is[data-authenticated="true"] .is__session-setup :is(button, input, select) {
+    min-height: 2.75rem;
+}
+
+.is[data-authenticated="true"] .is-auth__rail-action:focus-visible,
+.is[data-authenticated="true"] .is-auth__mode-toggle:focus-visible,
+.is[data-authenticated="true"] .is__session-setup :is(button, input, select, textarea):focus-visible,
+.is[data-authenticated="true"] .is__settings :is(button, input):focus-visible {
+    outline: 3px solid var(--is-focus);
+    outline-offset: 2px;
+}
+
+.is[data-authenticated="true"] .is-auth__setup-consequence {
+    margin: 0;
+    padding: 0.8rem 1rem 0;
+    max-width: 72ch;
+    color: var(--is-text-muted);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.is[data-authenticated="true"] .is-auth__setup-actions {
+    grid-column: 1 / -1;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 0;
+}
+
+.is[data-authenticated="true"] .is__settings {
+    width: min(36rem, calc(100vw - 2rem));
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100dvh - 2rem);
+    overflow: auto;
+}
+
+.is[data-authenticated="true"] .is__settings-body,
+.is[data-authenticated="true"] .is__settings-body > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 72rem) {
+    .is[data-authenticated="true"] .is-auth__rail-title {
+        order: 0;
+        flex: 1 0 100%;
+        margin-bottom: 0.15rem;
+    }
+    .is[data-authenticated="true"] .is-auth__mode-picker { order: 1; }
+    .is[data-authenticated="true"] .is-auth__rail > .is-auth__rail-history {
+        order: 2;
+        flex: 1 1 calc(50% - 0.25rem);
+        justify-content: center;
+    }
+    .is[data-authenticated="true"] .is-auth__session-setup-launcher {
+        order: 3;
+        flex: 1 1 calc(50% - 0.25rem);
+        justify-content: center;
+    }
+    .is[data-authenticated="true"] .is-auth__settings-launcher {
+        order: 4;
+        flex: 1 0 100%;
+        justify-content: center;
+    }
+
+    /* Without JavaScript the genuine mode anchors remain a normal wrapping
+       list. The collapsed button is hidden in markup until enhancement. */
+    .is[data-authenticated="true"]:not([data-is-enhanced="true"]) .is-auth__modes {
+        display: flex;
+        position: static;
+        flex-flow: row wrap;
+        box-shadow: none;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    .is[data-authenticated="true"]:not([data-is-enhanced="true"]) .is-auth__mode {
+        flex: 1 1 9rem;
+        justify-content: center;
+    }
+}
+
+@media screen and (max-width: 24rem) {
+    .is[data-authenticated="true"] .is-auth__rail > .is-auth__rail-history,
+    .is[data-authenticated="true"] .is-auth__session-setup-launcher {
+        flex-basis: 100%;
+    }
+    .is[data-authenticated="true"] .is-auth__setup-actions {
+        align-items: stretch;
+        flex-direction: column-reverse;
+    }
+    .is[data-authenticated="true"] .is-auth__setup-actions .is__button {
+        width: 100%;
+        min-height: 2.75rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .is[data-authenticated="true"] .is-auth__mode-toggle-caret {
+        transition: none;
+    }
+}
+
+@media (forced-colors: active) {
+    .is[data-authenticated="true"] .is-auth__rail-action,
+    .is[data-authenticated="true"] .is-auth__mode-toggle,
+    .is[data-authenticated="true"] .is__settings,
+    .is[data-authenticated="true"] .is__session-setup {
+        border: 1px solid ButtonText;
+        forced-color-adjust: auto;
+    }
+    .is[data-authenticated="true"] :focus-visible {
+        outline-color: Highlight;
+    }
+}

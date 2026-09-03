@@ -123,7 +123,7 @@
            duplicate data-is-* elements, so every existing binding below
            keeps working unchanged in both layouts). #}
         <aside class="is-auth__rail" data-is-auth-rail aria-label="Interview Studio">
-            <p class="is-auth__rail-eyebrow">Interview Studio</p>
+            <h1 class="is-auth__rail-title">Interview Studio</h1>
 
             {# Architect ruling R1 (slice 5-6 review): locked visual 13 shows a
                collapsed "Interview Me ▾" dropdown control in the mobile
@@ -139,20 +139,22 @@
                     class="is-auth__mode-toggle"
                     type="button"
                     data-is-mode-toggle
+                    data-is-js-control
                     aria-haspopup="true"
                     aria-expanded="false"
                     aria-controls="is-auth-modes-list"
+                    hidden
                 >
                     <svg data-is-mode-toggle-icon viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg>
                     <span data-is-mode-toggle-label>Interview Me</span>
                     <svg class="is-auth__mode-toggle-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
-            <nav class="is-auth__modes" id="is-auth-modes-list" role="tablist" aria-label="Interview practice mode">
+            <nav class="is-auth__modes" id="is-auth-modes-list" aria-label="Interview practice mode">
                 <a
                     class="is-auth__mode"
                     href="{{ url_for('interview_studio', mode='me') }}"
                     aria-disabled="{{ 'false' if interview_entitlements.written_practice else 'true' }}"
-                    role="tab" aria-controls="is-panel-me" aria-selected="{{ 'true' if interview_initial_mode == 'me' else 'false' }}" tabindex="{{ '0' if interview_initial_mode == 'me' else '-1' }}"
+                    aria-current="{{ 'page' if interview_initial_view != 'history' and interview_initial_mode == 'me' else 'false' }}"
                     id="is-tab-me"
                     data-is-mode="me"
                 >
@@ -163,7 +165,7 @@
                     class="is-auth__mode"
                     href="{{ url_for('interview_studio', mode='ai') }}"
                     aria-disabled="{{ 'false' if interview_entitlements.model_answers else 'true' }}"
-                    role="tab" aria-controls="is-panel-ai" aria-selected="{{ 'true' if interview_initial_mode == 'ai' else 'false' }}" tabindex="{{ '0' if interview_initial_mode == 'ai' else '-1' }}"
+                    aria-current="{{ 'page' if interview_initial_view != 'history' and interview_initial_mode == 'ai' else 'false' }}"
                     id="is-tab-ai"
                     data-is-mode="ai"
                 >
@@ -174,7 +176,7 @@
                     class="is-auth__mode"
                     href="{{ url_for('interview_studio', mode='video') }}"
                     aria-disabled="{{ 'false' if interview_entitlements.video_studio != 'disabled' else 'true' }}"
-                    role="tab" aria-controls="is-panel-video" aria-selected="{{ 'true' if interview_initial_mode == 'video' else 'false' }}" tabindex="{{ '0' if interview_initial_mode == 'video' else '-1' }}"
+                    aria-current="{{ 'page' if interview_initial_view != 'history' and interview_initial_mode == 'video' else 'false' }}"
                     id="is-tab-video"
                     data-is-mode="video"
                 >
@@ -197,9 +199,30 @@
                 <span>History</span>
             </a>
 
-            <button class="is-auth__rail-action is-auth__rail-mobile-only" type="button" data-is-new-session-focus>
+            <button
+                class="is-auth__rail-action is-auth__session-setup-launcher"
+                type="button"
+                data-is-session-setup-open
+                data-is-js-control
+                aria-expanded="false"
+                aria-controls="is-session-setup"
+                hidden
+            >
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-                <span>Session</span>
+                <span>Session setup</span>
+            </button>
+
+            <button
+                class="is-auth__rail-action is-auth__settings-launcher"
+                type="button"
+                data-is-settings-open
+                data-is-js-control
+                aria-expanded="false"
+                aria-controls="is-settings-dialog"
+                hidden
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>
+                <span>Studio settings</span>
             </button>
 
             <div class="is-auth__rail-detail">
@@ -211,11 +234,6 @@
                     <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9l6 6M15 9l-6 6"/></svg><span data-is-rail-summary-family>Behavioral</span></li>
                     <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M8.2 14.5a7 7 0 1 1 7.6 0c-.8.6-1.3 1.3-1.5 2.2h-4.6c-.2-.9-.7-1.6-1.5-2.2Z"/></svg><span>Open-ended session</span></li>
                 </ul>
-                <button class="is-auth__rail-action" type="button" data-is-new-session-focus>
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                    <span>Change setup</span>
-                </button>
-
                 {# Review finding P1-2d (lock 11): the rail's "Completed
                    questions" group is missing -- built here, populated by
                    renderSessionComplete() from the same reviewed-answer
@@ -230,17 +248,6 @@
                 </div>
 
                 <p class="is-auth__rail-eyebrow">Session tools</p>
-                {# Locks 01-12 place History under SESSION TOOLS. The top-level
-                   history control above stays for the sub-72rem control row
-                   (its parent detail block is hidden there); this desktop twin
-                   is a plain canonical link with no JS hook, so the single
-                   data-is-history-link binding stays unambiguous. #}
-                <a class="is-auth__rail-action is-auth__rail-history-desktop"
-                   href="{{ url_for('interview_studio_history') }}"
-                   {% if interview_initial_view == 'history' %}aria-current="page"{% endif %}>
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-                    <span>History</span>
-                </a>
                 {# Architect ruling R4 (slice 5-6 review): "Question trail" is a
                    preserved capability -- the locked rail does not show it, so
                    it is added quietly here, styled consistent with the rail's
@@ -253,10 +260,6 @@
                 <button class="is-auth__rail-action is-auth__rail-action--quiet" type="button" data-is-queue-open aria-haspopup="dialog">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>
                     <span>Question trail</span>
-                </button>
-                <button class="is-auth__rail-action" type="button" data-is-new-session-focus>
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                    <span>New session</span>
                 </button>
                 <button class="is-auth__rail-action is-auth__rail-finish" type="button" data-is-finish-session>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 4h13l-3 4 3 4H5"/></svg>
@@ -272,11 +275,11 @@
         </aside>
         {% endif %}
 
-        <section class="is__disclosure is__session-setup" data-is-controls data-is-session-setup {% if interview_initial_view == 'history' or interview_authenticated %}hidden{% endif %} aria-label="New Session">
+        <section class="is__disclosure is__session-setup" data-is-controls data-is-session-setup {% if interview_authenticated %}id="is-session-setup" hidden aria-labelledby="is-session-setup-title"{% else %}{% if interview_initial_view == 'history' %}hidden{% endif %} aria-label="New Session"{% endif %}>
             <div class="is__setup-summary">
-                <div><p class="is__eyebrow">New Session</p><strong data-is-setup-summary-text>General practice / Experienced / Behavioral / open session</strong></div>
-                <button class="is__button is__button--quiet" type="button" data-is-new-session-focus>Change setup</button>
-            </div>
+                <div><p class="is__eyebrow"{% if interview_authenticated %} id="is-session-setup-title"{% endif %}>{% if interview_authenticated %}Session setup{% else %}New Session{% endif %}</p><strong data-is-setup-summary-text>General practice / Experienced / Behavioral / open session</strong></div>
+                {% if not interview_authenticated %}<button class="is__button is__button--quiet" type="button" data-is-new-session-focus>Change setup</button>{% endif %}
+            </div>{% if interview_authenticated %}<p class="is-auth__setup-consequence" data-is-session-setup-consequence>Applying changes starts a new browser-local session. PeerSlate will ask before replacing a non-empty draft or discarding an active recording.</p>{% endif %}
             <form class="is__disclosure-body is__setup-body" data-is-new-session-form>
                 <label class="is__select">
                     <span>Preparing for</span>
@@ -347,7 +350,7 @@
                     </select>
                     <span id="is-ai-mode-note" class="is__sr-only" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</span>
                 </label>
-                <button class="is__button is__button--primary" type="submit" data-is-start-session>Start this session</button>
+                {% if interview_authenticated %}<div class="is__actions is-auth__setup-actions"><button class="is__button is__button--quiet" type="button" data-is-session-setup-cancel>Cancel</button><button class="is__button is__button--primary" type="submit" data-is-start-session>Apply changes</button></div>{% else %}<button class="is__button is__button--primary" type="submit" data-is-start-session>Start this session</button>{% endif %}
             </form>
         </section>
 
@@ -1501,7 +1504,7 @@
                         <p class="is-history__note">You can still practice, type, dictate, and review an answer now.</p>
                         <div class="is__actions" style="justify-content:center">
                             <a class="is__button is__button--primary" href="{{ url_for('interview_studio', mode='me') }}">Start Interview Me</a>
-                            <button class="is__button" type="button" data-is-new-session-focus>Change setup</button>
+                            {% if not interview_authenticated %}<button class="is__button" type="button" data-is-new-session-focus>Change setup</button>{% endif %}
                         </div>
                     </div>
 
@@ -1704,7 +1707,7 @@
         </form>
     </dialog>
 
-    <dialog class="is__dialog is__settings" data-is-settings aria-labelledby="is-settings-title">
+    <dialog class="is__dialog is__settings"{% if interview_authenticated %} id="is-settings-dialog"{% endif %} data-is-settings aria-labelledby="is-settings-title">
         <div class="is__dialog-head">
             <h2 id="is-settings-title">Interview Studio settings</h2>
             <div class="is__dialog-actions">

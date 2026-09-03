@@ -137,11 +137,20 @@ class InterviewStudioRouteTests(unittest.TestCase):
     def test_history_route_is_active_without_selecting_a_practice_mode(self):
         html = self.html('/interview-studio/history')
         self.assertIn('data-is-history-link', html)
-        self.assertIn('aria-current="page"', html)
         self.assertIn('data-initial-view="history"', html)
         mode_nav = html.split('class="is__modes"', 1)[1].split('</nav>', 1)[0]
+        self.assertNotIn('aria-current="page"', mode_nav)
+        history_link = html.split('data-is-history-link', 1)[0].rsplit('<a', 1)[-1]
+        self.assertIn('aria-current="page"', history_link)
         self.assertNotIn('role="tablist"', mode_nav)
         self.assertNotIn('tabindex="-1"', mode_nav)
+
+    def test_history_and_orientation_transitions_clear_mode_current_page_state(self):
+        source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
+        history = source.split('function showHistoryView()', 1)[1].split('function showOrientationView()', 1)[0]
+        orientation = source.split('function showOrientationView()', 1)[1].split("all('[data-is-orientation-link]')", 1)[0]
+        self.assertIn("tab.removeAttribute('aria-current')", history)
+        self.assertIn("tab.removeAttribute('aria-current')", orientation)
 
     def test_ready_state_has_real_question_and_required_terminology(self):
         html = self.html('/interview-studio?mode=me')
@@ -4028,9 +4037,7 @@ class InterviewStudioAuthenticatedShellTests(_InterviewStudioAuthenticatedTestCa
         html = response.get_data(as_text=True)
         for marker in (
             'data-is-auth-rail',
-            # Eyebrow text content; CSS renders it uppercase (text-transform),
-            # so the HTML itself carries title case.
-            'is-auth__rail-eyebrow">Interview Studio<',
+            'is-auth__rail-title">Interview Studio<',
             'is-auth__rail-eyebrow">Current session<',
             'is-auth__rail-eyebrow">Session tools<',
             'data-is-rail-summary-context',
@@ -4060,6 +4067,39 @@ class InterviewStudioAuthenticatedShellTests(_InterviewStudioAuthenticatedTestCa
         self.assertIn('data-is-finish-session-truth hidden', html)
 
     @patch('identity.database_service.first_row')
+    def test_authenticated_operability_controls_are_single_and_programmatically_related(self, first_row):
+        first_row.return_value = _interview_mapped_user('operability-member')
+        response = self.client.get(
+            '/interview-studio',
+            headers=_interview_principal_header('operability-member'),
+            base_url='http://localhost',
+        )
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        rail = html.split('data-is-auth-rail', 1)[1].split('</aside>', 1)[0]
+
+        self.assertEqual(html.count('<h1'), 1)
+        self.assertEqual(rail.count('data-is-history-link'), 1)
+        self.assertEqual(rail.count('data-is-session-setup-open'), 1)
+        self.assertEqual(rail.count('data-is-settings-open'), 1)
+        self.assertNotIn('is-auth__rail-history-desktop', html)
+        self.assertNotIn('is-auth__rail-mobile-only', html)
+        self.assertEqual(html.count('data-is-new-session-focus'), 0)
+
+        self.assertIn('aria-controls="is-session-setup"', rail)
+        self.assertIn('aria-controls="is-settings-dialog"', rail)
+        self.assertEqual(html.count('id="is-session-setup"'), 1)
+        self.assertEqual(html.count('id="is-settings-dialog"'), 1)
+        self.assertIn('data-is-session-setup-open', rail)
+        self.assertIn('data-is-js-control', rail)
+        self.assertIn('Applying changes starts a new browser-local session.', html)
+        self.assertIn('data-is-session-setup-cancel', html)
+        self.assertIn('data-is-start-session>Apply changes<', html)
+
+        ids = re.findall(r'\bid="([^"]+)"', html)
+        self.assertEqual(len(ids), len(set(ids)), 'authenticated render contains duplicate IDs')
+
+    @patch('identity.database_service.first_row')
     def test_setup_disclosure_starts_hidden_unlike_the_public_page(self, first_row):
         """Slice 3: the setup form is a focused attached surface (architecture
         03 section 6), not a permanently-visible bar like the public page."""
@@ -4070,7 +4110,8 @@ class InterviewStudioAuthenticatedShellTests(_InterviewStudioAuthenticatedTestCa
             base_url='http://localhost',
         )
         html = response.get_data(as_text=True)
-        self.assertIn('data-is-session-setup hidden', html)
+        setup = html.split('data-is-session-setup', 1)[1].split('>', 1)[0]
+        self.assertIn('hidden', setup)
 
     @patch('identity.database_service.first_row')
     def test_demo_cards_are_retired_on_every_panel(self, first_row):
@@ -4269,8 +4310,34 @@ class InterviewStudioConsequenceStackContractTests(unittest.TestCase):
         script = _studio_script()
         self.assertIn('data-is-rail-summary-context', script)
         self.assertIn('function labelExperienceLevel(value)', script)
-        self.assertIn('if (authenticated && sessionSetupSection) {', script)
+        self.assertIn('function openSessionSetup(invoker)', script)
+        self.assertIn('function closeSessionSetup(options)', script)
+        self.assertIn("sessionSetupOpen.setAttribute('aria-expanded', 'true');", script)
+        self.assertIn("event.key === 'Escape' && authenticated", script)
         self.assertIn('if (!authenticated) setHidden(controls, false);', script)
+
+    def test_settings_focus_contract_and_progressive_enhancement_are_explicit(self):
+        script = _studio_script()
+        for marker in (
+            'function openSettings(invoker)',
+            'function closeSettings(options)',
+            'function settingsFocusableElements()',
+            "settingsOpen.setAttribute('aria-expanded', 'true');",
+            "settingsDialog.addEventListener('cancel'",
+            'if (event.target === settingsDialog) closeSettings();',
+            "root.setAttribute('data-is-enhanced', 'true');",
+        ):
+            self.assertIn(marker, script)
+        self.assertIn("all('[data-is-js-control]').forEach", script)
+
+    def test_operability_css_keeps_targets_reflow_and_no_js_links_usable(self):
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        self.assertIn('.is[data-authenticated="true"] .is-auth__rail-title {', css)
+        self.assertIn('min-height: 2.75rem;', css)
+        self.assertIn('[data-is-js-control][hidden]', css)
+        self.assertIn(':not([data-is-enhanced="true"]) .is-auth__modes', css)
+        self.assertIn('@media (max-width: 24rem)', css)
+        self.assertIn('@media (forced-colors: active)', css)
 
 
 class InterviewStudioSlice56RecompositionTests(_InterviewStudioAuthenticatedTestCase):

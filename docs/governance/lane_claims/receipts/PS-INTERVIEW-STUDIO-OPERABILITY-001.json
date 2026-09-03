@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-INTERVIEW-STUDIO-OPERABILITY-001",
+  "candidate_sha": "2477b4555746028b22a2128688d0de0b758bee7a",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/profile_d1_writer",
+  "result": "pass",
+  "reviewed_at": "2026-09-03T08:29:18Z",
+  "findings": [
+    {
+      "summary": "Pre-registry candidate 1faa082b77adfcaa3f8a491e566f32d260e1b6f3 used tab-only aria-selected on native no-JavaScript mode links. Corrected candidate b384ad729cd846959ce42780975830337eb5e728 used native aria-current before enhancement and was provisionally accepted; it remained unmergeable until the governed Registry extension.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Final candidate 9ed548f58a32d3b6761686b8e56dd67473c78375 allowed History and a fallback practice mode to both carry current-page state. Candidate 4e2b47b08817edb4199df88c7dcf40cb6c4054e0 corrected server and enhanced transitions and added no-JavaScript and enhanced browser proof.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Candidate 4e2b47b08817edb4199df88c7dcf40cb6c4054e0 retained a stale 309 route/unit count in the completion report after the added transition test made the exact count 310. Candidate 2477b4555746028b22a2128688d0de0b758bee7a changes only that report line, and the final delta re-review accepted it with zero remaining findings.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Validation passed: 310 Interview Studio route/unit tests, two Package Registry tests, eight local Playwright tests, 613 inherited focused regressions, and 5,564 full-repository tests with 34 inherited skips and zero failures. Eleven external captures are bound to the exact candidate and every recorded hash and size verifies.",
+      "status": "informational"
+    },
+    {
+      "summary": "The exact eight-path delta, one Registry entry with counts 73 and 141, JavaScript syntax, diff, strict fetched write preflight, current-tree and current-main-range Gitleaks, progressive enhancement, public/flag-off preservation, and production-withheld boundaries all passed independent review.",
+      "status": "resolved"
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-INTERVIEW-STUDIO-OPERABILITY-001.md"
+}
