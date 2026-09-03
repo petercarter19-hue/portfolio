@@ -21,7 +21,8 @@
     "static/css/interview-studio.css",
     "static/js/interview-studio.js",
     "tests/test_interview_studio.py",
-    "tests/test_interview_studio_operability_browser.py"
+    "tests/test_interview_studio_operability_browser.py",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-INTERVIEW-STUDIO-OPERABILITY-001.md"
