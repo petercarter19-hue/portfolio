@@ -214,10 +214,12 @@ class AzureStartupQualificationTests(unittest.TestCase):
         self.assertEqual(pipeline.count("batch: true"), 2)
         self.assertIn("lockBehavior: sequential", pipeline)
         self.assertIn("qualification/foundry/last-success-day", pipeline)
+        self.assertIn('.get("success_marker_eligible")', pipeline)
         self.assertIn("--minimum-fresh-input-tokens", pipeline)
         self.assertIn("--minimum-input-tokens-per-call", pipeline)
         self.assertIn("--minimum-call-interval-seconds", pipeline)
         self.assertIn("qualificationSyntheticContextRecords: '13000'", pipeline)
+        self.assertIn("qualificationEvaluationRepeats: '1'", pipeline)
         self.assertIn("qualificationMinimumFreshInputTokens: '2800000'", pipeline)
         self.assertIn("qualificationMinimumInputTokensPerCall: '272001'", pipeline)
         self.assertIn("qualificationMinimumCallIntervalSeconds: '65'", pipeline)
@@ -225,6 +227,10 @@ class AzureStartupQualificationTests(unittest.TestCase):
         self.assertIn("if latest is None:", pipeline)
         self.assertIn("--hard-cap-usd", pipeline)
         self.assertIn("PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF", pipeline)
+        self.assertIn("daily product-quality evaluation", pipeline)
+        self.assertIn("Automated quality checks passed", pipeline)
+        self.assertIn("Stop category", pipeline)
+        self.assertIn("Prompts and model output are not retained", pipeline)
 
     def test_pipeline_does_not_borrow_the_production_deploy_identity(self):
         """A nightly cost read must not hold deploy/migration authority.

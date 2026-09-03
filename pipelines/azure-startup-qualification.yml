@@ -38,7 +38,9 @@ variables:
   qualificationAppConfigurationEndpoint: 'https://peerslate-startup-qualification.azconfig.io'
   qualificationFoundryEndpoint: 'https://peerslate-foundry.openai.azure.com'
   qualificationFoundryDeployment: 'gpt-5.6-luna'
-  qualificationEvaluationRepeats: '3'
+  # Nine distinct product-aligned cases run once: the call count and spend
+  # envelope stay identical to the reviewed three-cases-times-three plan.
+  qualificationEvaluationRepeats: '1'
   qualificationSyntheticContextRecords: '13000'
   qualificationMinimumFreshInputTokens: '2800000'
   qualificationMinimumInputTokensPerCall: '272001'
@@ -221,8 +223,8 @@ stages:
                   > "$qualification_result_file"
                 qualification_runner_exit=$?
                 set -e
-                qualification_target_reached=$(python -c 'import json,sys; print(str(bool(json.load(open(sys.argv[1], encoding="utf-8")).get("fresh_input_target_reached"))).lower())' "$qualification_result_file")
-                if [ "$qualification_target_reached" = "true" ]; then
+                qualification_marker_eligible=$(python -c 'import json,sys; print(str(bool(json.load(open(sys.argv[1], encoding="utf-8")).get("success_marker_eligible"))).lower())' "$qualification_result_file")
+                if [ "$qualification_marker_eligible" = "true" ]; then
                   az appconfig kv set \
                     --endpoint "$(qualificationAppConfigurationEndpoint)" \
                     --key "qualification/foundry/last-success-day" \
@@ -238,19 +240,67 @@ stages:
                 import sys
 
                 report = json.load(open(sys.argv[1], encoding="utf-8"))
+                maximum_calls = report.get("maximum_calls", 0)
+                passed = report.get("passed", 0)
                 lines = [
-                    "# Foundry Luna daily evaluation",
+                    "# Foundry Luna daily product-quality evaluation",
                     "",
                     f"Mode: **{report['mode']}**",
-                    f"Fresh-input target reached: **{'yes' if report.get('fresh_input_target_reached') else 'no'}**",
+                    (
+                        "Success marker eligible: **"
+                        f"{'yes' if report.get('success_marker_eligible') else 'no'}**"
+                    ),
+                    (
+                        "Fresh-input target reached: **"
+                        f"{'yes' if report.get('fresh_input_target_reached') else 'no'}**"
+                    ),
+                    f"Automated quality checks passed: **{passed}/{maximum_calls}**",
+                    (
+                        "All automated quality checks passed: **"
+                        f"{'yes' if report.get('quality_checks_passed') else 'no'}**"
+                    ),
                     f"Calls billed: **{report.get('calls_billed', 0)}**",
                     f"Fresh input tokens: **{report.get('fresh_input_tokens', 0):,}**",
                     f"Cached input tokens: **{report.get('cached_input_tokens', 0):,}**",
                     f"Output tokens: **{report.get('output_tokens', 0):,}**",
                     f"Safety-schedule estimate: **${report.get('estimated_cost_usd', 0):.4f}**",
                     "",
-                    "Prompts and model output are not retained in this report.",
+                    "| Product | Capability | Benchmark | Result |",
+                    "|---|---|---|---|",
                 ]
+                if report.get("stop_category"):
+                    lines[3:3] = [
+                        f"Stop category: **{report['stop_category']}**",
+                    ]
+                for item in report.get("case_results", []):
+                    attempts = item.get("attempts", 0)
+                    result = (
+                        f"{item.get('passed', 0)}/{attempts} passed"
+                        if attempts
+                        else "not run"
+                    )
+                    lines.append(
+                        f"| {item['product']} | {item['capability']} | "
+                        f"{item['benchmark_ref']} | {result} |"
+                    )
+                failure_categories = report.get("failure_categories", {})
+                if failure_categories:
+                    lines.extend(["", "Failure categories:"])
+                    lines.extend(
+                        f"- {category}: {count}"
+                        for category, count in sorted(failure_categories.items())
+                    )
+                lines.extend(
+                    [
+                        "",
+                        (
+                            "This is a synthetic foundation-level behavioral smoke "
+                            "suite, not a human quality score or proof of production "
+                            "prompt parity."
+                        ),
+                        "Prompts and model output are not retained in this report.",
+                    ]
+                )
                 open(sys.argv[2], "w", encoding="utf-8").write("\n".join(lines) + "\n")
                 PY
                 echo "##vso[task.uploadsummary]$qualification_summary_file"

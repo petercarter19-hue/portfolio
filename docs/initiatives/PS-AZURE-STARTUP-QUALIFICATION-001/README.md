@@ -16,7 +16,7 @@ Configuration Data Owner access.  The misleading subscription-wide $20
 budget was replaced with a $550 monthly alert ceiling at $275 actual,
 approximately $325 forecasted, and $550 actual.
 
-The activation candidate runs nine bounded long-context Luna evaluations to
+The active automation runs nine bounded long-context Luna evaluations to
 reach at least 2.8 million non-cached input tokens per UTC day, under a $3.25
 safety cap.  Each call must report more than 272,000 input tokens, and call
 starts are at least 65 seconds apart to remain within the deployed 500,000
@@ -26,8 +26,12 @@ UTC.  App Configuration records the non-secret success day so the second run
 does not repeat paid inference after the first succeeds.  The service
 connection's exclusive lock and the pipeline's sequential lock behavior make
 the marker read, inference, and marker write one serialized operation.
-Pipeline registration and the first scheduled run occur only after the
-independently reviewed activation candidate merges to `main`.
+Marker eligibility is computed from settled usage on every exit path, so a
+malformed ninth answer can fail the quality run without buying nine more calls
+in the recovery window after the fresh-input target was already reached.
+The registered Azure DevOps pipeline has a primary and recovery schedule.  A
+corrected September 3 run reached the fresh-input target and wrote that day's
+idempotency marker; the next complete UTC day remains the continuity proof.
 
 The current operating estimate is approximately $305/month, not the $550
 ceiling.  Only complete Cost Management days above $1 for all five services
@@ -107,11 +111,14 @@ and retained only usage aggregates.  One call reported 325,174 input tokens,
 zero cached tokens, 325,171 cache-write tokens, and 1,028 output tokens.  That
 crosses Microsoft's 272,000-token long-context boundary.
 
-The active plan has three useful synthetic evaluation cases repeated three
-times: nine calls and at least 2.8 million non-cached input tokens.  At the
-published Global long-context rate of $0.40/million ordinary input tokens,
-2.8 million costs $1.12 before output.  Cache-write input is priced higher at
-$0.50/million.  The runner also requires every call to report more than
+The active plan now has nine distinct synthetic product-quality cases run
+once each: six Interview Studio golden-reference cases aligned to the existing
+golden-case references, plus one case each for Ask Pete, Opportunity Slate,
+and Workshop.  That is still nine calls and at least 2.8 million non-cached
+input tokens, so this change does not raise the daily call or dollar ceiling.
+At the published Global long-context rate of $0.40/million ordinary input
+tokens, 2.8 million costs $1.12 before output.  Cache-write input is priced
+higher at $0.50/million.  The runner also requires every call to report more than
 272,000 input tokens; a short-context call, cached-input shortfall, missing
 usage record, or partial run cannot set the day's success marker.
 
@@ -119,6 +126,16 @@ The code's deliberately overstated $1/million input and $6/million output
 safety schedule reserves against a $3.25 maximum for the run.  The schedule is
 a spending guard, not the qualification estimate.  The Azure bill and the
 Microsoft for Startups portal remain authoritative.
+
+Each run emits a privacy-safe scorecard with product, capability, benchmark
+reference, structural pass/fail, aggregate failure categories, and token/cost
+usage.  Prompts and model output stay ephemeral and are not written into the
+report.  This is a foundation-level behavioral smoke suite, not a human
+quality score and not proof that today's production prompts behave identically.
+Bounded lexical checks flag common forms of person scoring/ranking, hiring
+recommendations, false save/send/publish claims, prompt-injection bait, and
+an incorrect recruiter-question count.  They are regression signals, not an
+exhaustive semantic safety proof.
 
 Sources: [Microsoft's GPT-5.6 pricing announcement](https://azure.microsoft.com/en-us/blog/gpt-5-6-now-available-in-microsoft-foundry/),
 [long-context pricing boundary](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/provisioned-throughput-sizing),
@@ -140,8 +157,8 @@ and the [Azure Retail Prices API](https://prices.azure.com/api/retail/prices).
 - `scripts/run_foundry_luna_evaluations.py` is dry-run by default.  A real call
   needs all of `--execute`, credit confirmation, activation confirmation, a
   nonempty exact authorization reference, a valid endpoint, and remaining
-  call/dollar capacity.  It prints only structural results and token/cost
-  aggregates.
+  call/dollar capacity.  It prints only structural per-case and per-product
+  results, aggregate failure categories, and token/cost aggregates.
 - At this package's close, `pipelines/azure-startup-qualification.yml` had no
   schedule, was not registered, and every operative variable was default-off.
   The later `PS-AZURE-STARTUP-ACTIVATION-001` package owns any active schedule.
@@ -189,9 +206,11 @@ than one-time spikes.
 5. The service connection has an exclusive lock.  The active YAML adds
    sequential lock behavior, two non-overlapping schedules, fail-closed marker
    reads, and the reviewed Luna limits.
-6. After this candidate merges, register the separate pipeline, authorize only
-   that pipeline to the dedicated connection, and observe its first run.
-7. Check complete Cost Management days and the Startups portal daily.  Missing
+6. The separate scheduled pipeline is registered and only its dedicated
+   workload identity has the bounded read/inference/marker permissions.
+7. Observe the nine-case product-quality scorecard on the next unattended
+   primary run; the same-day recovery remains idempotent after a success.
+8. Check complete Cost Management days and the Startups portal daily.  Missing
    data, a workload at or below $1, a failed evaluation, or a budget alert
    requires diagnosis; it never silently advances the local streak.
 

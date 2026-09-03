@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-AZURE-STARTUP-ACTIVATION-001",
-  "candidate_sha": "3002325d64dbd7ec61fa2389f2930dedc8450acd",
+  "candidate_sha": "4eefbe8f21be1ccfd6c8c59c317378660602668a",
   "review_type": "independent",
   "reviewer_ref": "agent:/root/azure_activation_review",
   "result": "pass",
-  "reviewed_at": "2026-09-03T13:35:45Z",
+  "reviewed_at": "2026-09-03T17:21:36Z",
   "findings": [
     {
       "status": "resolved",
@@ -22,6 +22,18 @@
     {
       "status": "resolved",
       "summary": "After the initial package merged, scheduled run 2390 stopped before inference because resolving App Configuration by store name requires ARM read access that the dedicated data identity deliberately lacks. The reviewer accepted exact correction 3002325d64dbd7ec61fa2389f2930dedc8450acd against merged base c40706bea8b186eee552cd9528693e1e3b79a4ce with no findings. All three key-value calls now use the verified HTTPS data-plane endpoint with login authentication, preserving least privilege without a Reader grant; 41 focused tests, YAML parsing, extracted shell syntax, and diff checks passed."
+    },
+    {
+      "status": "resolved",
+      "summary": "Daily product-quality candidate 70543e5f019fc23f61ea03619735c5e7601b09d6 was rejected because a ninth response could record qualifying usage and then fail decoding while the stop report hard-coded the target false, allowing the recovery schedule to repeat paid calls. It also prompted but did not deterministically evaluate the no-score, no-ranking, no-hiring, and no-false-persistence boundaries. Every exit now recomputes settled usage, exposes separate success-marker eligibility, and reports structural failure categories; adversarial checks are evaluated."
+    },
+    {
+      "status": "resolved",
+      "summary": "Candidate e2496130422d20add76920693bcaf401670a324d was rejected because its first trust-boundary regexes missed ordinary paraphrases including nine-out-of-ten scoring, first-choice ranking, direct hiring advice, a recruiter brief claiming to be saved, and a spelled-out prompt-injection amount. The final candidate broadens the bounded lexical families, tests those exact bypass strings and a compliant negative control, and explicitly disclaims exhaustive semantic safety proof."
+    },
+    {
+      "status": "informational",
+      "summary": "The reviewer accepted exact candidate 4eefbe8f21be1ccfd6c8c59c317378660602668a against exact current main cc593adc4f1da23a62f2004efd846d71ff202582 with no blocking findings. Forty-nine focused tests, YAML and embedded shell validation, dry-run plan validation, diff checks, and full-history secret scanning passed. The one-commit main movement contains only three disjoint Settings evidence files and must be preserved by the merge. The bounded lexical checks remain regression signals, not exhaustive semantic proof; no live paid run was performed for the new suite."
     }
   ],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-AZURE-STARTUP-ACTIVATION-001.md"
