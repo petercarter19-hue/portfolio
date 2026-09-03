@@ -20,7 +20,8 @@
     "static/data/projects_board.json",
     "tests/test_projects.py",
     "docs/initiatives/PS-PROJECTS-001/README.md",
-    "docs/initiatives/PS-PROJECTS-001/02_EXPERIENCE_AND_VISUAL_DIRECTION.md"
+    "docs/initiatives/PS-PROJECTS-001/02_EXPERIENCE_AND_VISUAL_DIRECTION.md",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-LEGACY-PROJECTS-PRIVACY-CONTAINMENT-001.md"
