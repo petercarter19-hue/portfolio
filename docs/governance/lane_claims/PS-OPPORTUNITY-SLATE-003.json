@@ -44,7 +44,8 @@
     "SQL FIles/Verification/PS-OPPSLATE-005_owner_isolation_verify.sql",
     "SQL FIles/Migrations/registry.json",
     "docs/governance/PACKAGE_REGISTRY.json",
-    "artifacts/2026-09-03-opportunity-slate-v2-r2"
+    "artifacts/2026-09-03-opportunity-slate-v2-r2",
+    "tests/test_database_service.py"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-OPPORTUNITY-SLATE-003.md"
