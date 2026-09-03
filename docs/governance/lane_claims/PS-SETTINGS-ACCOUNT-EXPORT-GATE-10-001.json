@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SETTINGS-ACCOUNT-EXPORT-GATE-10-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Execute and independently review only Settings Account Export Gate 10 under Pete's authorization pete-chat-2026-09-02/settings-account-export-gate-10-enable-and-proof: re-prove the live release, flag, jobs, grants, private storage, schema, and signed-out boundary; enable the flag output-free; create exactly two new disposable ordinary synthetic members and four fresh isolated browser clients; prove request/status/ready/download, bidirectional isolation and foreign-reference refusal, request eligibility/rate behavior, deterministic archive/manifest truth, expiry/maintenance, and content-free logs; record the first completed export closing the EXPORT-010 rollback window; retire the exact two application identities and stop for Pete's action-time decision before irreversible directory deletion. Disable on material failure. Governance-only Gate 10 evidence; no product/schema change, My Opportunities touch, or superseded-claim work. The execution manager is the sole evidence writer.",
   "assignment": "implementation",
   "writer_ref": "session:01a03e17-a645-7ae0-8da3-164eef90a333/settings-account-export-gate-10-execution-manager",
@@ -29,6 +29,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "cc593adc4f1da23a62f2004efd846d71ff202582",
+  "closed_at": "2026-09-03T17:08:21Z"
 }
