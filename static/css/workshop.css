@@ -223,12 +223,14 @@ body.workshop-page .site-sky {
 }
 
 /* ---------------------------------------------------------
-   Focus — visible everywhere inside Workshop, including on
-   aria-disabled links/buttons (they stay in the tab order).
+   Focus — visible everywhere inside Workshop. Inert fixture
+   affordances are native-disabled controls or plain text and therefore do
+   not consume a stop in the keyboard sequence.
    --------------------------------------------------------- */
 .wk a:focus-visible,
 .wk button:focus-visible,
 .wk input:focus-visible,
+.wk textarea:focus-visible,
 .wk summary:focus-visible {
     outline: 3px solid var(--wk-focus);
     outline-offset: 2px;
@@ -274,7 +276,10 @@ body.workshop-page .site-sky {
 }
 
 .wk-modes__tab {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
     padding: 0 0.15rem 0.85rem;
     color: var(--wk-muted);
     text-decoration: none;
@@ -399,6 +404,7 @@ body.workshop-page .site-sky {
     border: 1px solid transparent;
     cursor: pointer;
     line-height: 1.2;
+    min-height: 44px;
 }
 
 .wk-btn .wk-icon { width: 18px; height: 18px; }
@@ -447,13 +453,24 @@ body.workshop-page .site-sky {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border-radius: var(--wk-radius-sm);
     background: transparent;
     border: 1px solid transparent;
     color: var(--wk-muted);
     cursor: pointer;
+}
+
+.wk button:disabled,
+.wk [aria-disabled="true"] {
+    cursor: not-allowed;
+}
+
+.wk-search__mic:disabled,
+.wk-icon-btn:disabled,
+.wk-sort:disabled {
+    opacity: 0.55;
 }
 
 /* ---------------------------------------------------------
@@ -487,17 +504,16 @@ body.workshop-page .site-sky {
     font-size: 0.98rem;
     font-family: inherit;
     min-width: 0;
+    min-height: 44px;
 }
-
-.wk-search__field input:focus { outline: none; }
 
 .wk-search__field input::placeholder { color: var(--wk-muted); }
 
 .wk-search__mic,
 .wk-search__submit {
     flex: none;
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: 1px solid var(--wk-line);
     background: var(--wk-surface-muted);
@@ -558,6 +574,7 @@ body.workshop-page .site-sky {
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
+    min-height: 44px;
 }
 
 .wk-chip .wk-icon { width: 15px; height: 15px; }
@@ -899,6 +916,7 @@ body.workshop-page .site-sky {
     font-size: 0.92rem;
     font-weight: 700;
     cursor: pointer;
+    min-height: 44px;
 }
 
 .wk-wording-history__count {
@@ -1076,6 +1094,7 @@ body.workshop-page .site-sky {
     font-size: 0.95rem;
     cursor: pointer;
     list-style: none;
+    min-height: 44px;
 }
 
 .wk-info__summary::-webkit-details-marker { display: none; }
@@ -1204,30 +1223,13 @@ body.workshop-page .site-sky {
     .wk-aside > .wk-info { order: 1; }
     .wk-aside > .wk-suggestion { order: 2; }
 
-    /* Authority 06 draws this card's heading as a plain uppercase label —
-       no icon, no chevron, not a disclosure widget — because at desktop
-       width the card is always fully expanded. The <details>/<summary>
-       markup stays (it is what makes file 09's collapsed mobile accordion
-       possible without JavaScript); desktop only changes how it looks and
-       neutralizes the toggle so it cannot visually collapse. */
+    /* Keep the native disclosure truthful at desktop too. It starts open to
+       preserve the approved expanded composition, but the visible summary,
+       chevron and content always agree with the member-controlled state. */
     .wk-info__summary {
-        cursor: default;
-        pointer-events: none;
         text-transform: uppercase;
         letter-spacing: 0.03em;
         font-size: 0.82rem;
-    }
-
-    .wk-info__summary .wk-icon--shield,
-    .wk-info__summary .wk-icon--chevron-down {
-        display: none;
-    }
-
-    /* Defensive: if a keyboard user still toggles the native <details> via
-       Enter on the focused (but pointer-events:none) summary, the list
-       stays visually expanded at desktop regardless of the open attribute. */
-    .wk-info__list {
-        display: flex !important;
     }
 
     /* Owner-approved scroll cap (2026-08-02, doc 20 SS6f): with a large
@@ -1434,18 +1436,18 @@ body.workshop-page .site-sky {
         gap: 0.75rem;
     }
 
-    /* Authority 09 keeps Edit / Archive / Delete on ONE row on a phone.
-       Compact the buttons so all three fit at 390px without clipping. */
+    /* Reflow polish: keep every action at a readable 44px target and stack
+       the row instead of compressing three labels into a 320–390px viewport. */
     .wk-detail__actions {
+        flex-direction: column;
+        align-items: stretch;
         flex-wrap: nowrap;
         gap: 0.5rem;
     }
+    .wk-detail__actions form { width: 100%; }
     .wk-detail__actions .wk-btn {
-        flex: 1 1 0;
-        padding: 0.65rem 0.6rem;
-        font-size: 0.85rem;
+        width: 100%;
     }
-    .wk-detail__actions .wk-btn .wk-icon { width: 15px; height: 15px; }
 
     /* Authority 09 draws the four status chips on one row. At 390px the
        four labels do not fit on one row above the readable size floor, so
@@ -1456,12 +1458,6 @@ body.workshop-page .site-sky {
         padding: 0.28rem 0.55rem;
         white-space: nowrap;
     }
-}
-
-/* Below ~360px the one-row action requirement would clip; the authority
-   frame is a ~390px phone, so narrower viewports may wrap. */
-@media (max-width: 359px) {
-    .wk-detail__actions { flex-wrap: wrap; }
 }
 
 /* ---------------------------------------------------------
@@ -1665,9 +1661,8 @@ body.workshop-page .site-sky {
     color: var(--wk-ink);
     font-size: 1rem;
     font-family: inherit;
+    min-height: 44px;
 }
-
-.wk-field__input:focus { outline: none; }
 
 .wk-field__textarea-wrap {
     position: relative;
@@ -1718,14 +1713,12 @@ body.workshop-page .site-sky {
     min-height: calc(2 * 1.6rem + 1.8rem + 2px);
 }
 
-.wk-field__textarea:focus { outline: none; }
-
 .wk-mic-btn {
     position: absolute;
     right: 0.7rem;
     bottom: 0.7rem;
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: 1px solid var(--wk-line);
     background: var(--wk-surface-muted);
@@ -1766,6 +1759,7 @@ body.workshop-page .site-sky {
     font-size: 0.92rem;
     font-weight: 600;
     cursor: pointer;
+    min-height: 44px;
 }
 
 .wk-choice input {
@@ -1827,6 +1821,9 @@ body.workshop-page .site-sky {
 }
 
 .wk-btn-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: none;
     border: none;
     color: var(--wk-action);
@@ -1836,6 +1833,7 @@ body.workshop-page .site-sky {
     padding: 0.5rem;
     font-family: inherit;
     text-decoration: none;
+    min-height: 44px;
 }
 
 /* ---------------------------------------------------------
@@ -2172,8 +2170,8 @@ body.workshop-page[data-theme="dark"] {
 
 .wk-work-composer__submit {
     flex: none;
-    width: 2.6rem;
-    height: 2.6rem;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: 1px solid var(--wk-line);
     background: var(--wk-surface-muted);
@@ -2378,8 +2376,9 @@ button.wk-door:focus-visible {
     color: var(--wk-action);
     background: none;
     border: none;
-    padding: 0.15rem 0.3rem;
+    padding: 0.55rem 0.7rem;
     cursor: pointer;
+    min-height: 44px;
 }
 
 .wk-door__resume-btn:hover { text-decoration: underline; }
@@ -2543,8 +2542,7 @@ button.wk-door:focus-visible {
     font-weight: 600;
     color: var(--wk-action);
     cursor: pointer;
-    /* 24px minimum touch target (architecture doc 17 section 11). */
-    min-height: 24px;
+    min-height: 44px;
 }
 
 .wk-spark__link:hover { text-decoration: underline; }
@@ -2755,6 +2753,8 @@ button.wk-door:focus-visible {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 44px;
+    justify-content: center;
 }
 
 .wk-context-item__title {
@@ -3048,6 +3048,7 @@ body.workshop-page[data-theme="dark"]::before {
     color: var(--wk-ink);
     font: inherit;
     padding: 0.55rem 0.9rem;
+    min-height: 44px;
 }
 .wk-followup-form__input:focus-visible {
     outline: 2px solid var(--wk-focus);
@@ -3055,8 +3056,8 @@ body.workshop-page[data-theme="dark"]::before {
 }
 .wk-followup-form__submit {
     flex: none;
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: none;
     background: var(--wk-action);
@@ -3439,4 +3440,268 @@ body.workshop-page[data-theme="dark"] .wk-followup-form__input {
     margin: 0.4rem 0 0;
     color: var(--wk-muted);
     font-size: 0.82rem;
+}
+
+/* =========================================================
+   PS-WORKSHOP-REFLOW-ACCESSIBILITY-POLISH-001
+
+   A bounded accessibility/reflow pass over the accepted 2026-08-02 visual
+   language. These rules do not introduce a new Workshop composition: they
+   keep existing controls reachable at narrow/zoomed widths, preserve native
+   disclosure state, and provide non-colour focus/selection cues.
+   ========================================================= */
+
+.wk-modes,
+.wk-list__header,
+.wk-detail__head,
+.wk-detail__meta-row,
+.wk-wording-history__version-head,
+.wk-review__source-row,
+.wk-review-section__head,
+.wk-voice-status__recovery {
+    flex-wrap: wrap;
+}
+
+.wk-list__item-link,
+.wk-detail__head > *,
+.wk-detail__meta-row dd,
+.wk-wording-history__version-head > *,
+.wk-review-section__head > *,
+.wk-followup-form__field {
+    min-width: 0;
+}
+
+.wk p,
+.wk li,
+.wk dd,
+.wk dt,
+.wk blockquote,
+.wk h1,
+.wk h2,
+.wk h3,
+.wk h4,
+.wk-list__item-title,
+.wk-context-item__title,
+.wk-spark__suggestion,
+.wk-status-banner {
+    overflow-wrap: anywhere;
+}
+
+/* The suggestion head shares a narrow rail with its badge and preview pill.
+   Let those items wrap before the eyebrow is squeezed into mid-word fragments;
+   retain emergency wrapping only for a genuinely unbreakable token. */
+.wk-suggestion__head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.wk-suggestion__eyebrow {
+    flex: 1 1 12rem;
+    min-width: min(100%, 9rem);
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
+.wk-suggestion__head .wk-pill {
+    flex: 0 0 auto;
+    max-width: 100%;
+    white-space: normal;
+}
+
+.wk-context-item__title {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+}
+
+.wk-spark__actions .wk-btn,
+.wk-status-banner__start-fresh,
+.wk-voice__inline {
+    white-space: normal;
+}
+
+/* A focused row is always drawn inward. On desktop its list can scroll; on
+   mobile each row clips its rounded card. The same inward ring survives both. */
+.wk-list__item-link:focus-visible {
+    outline-offset: -3px;
+}
+
+.wk-breadcrumb,
+.wk-breadcrumb--button,
+.wk-review-section__edit,
+.wk-suggestion__dismiss-link,
+.wk-status-banner a,
+.wk-status-banner__start-fresh,
+.wk-voice__cancel,
+.wk-voice-link {
+    display: inline-flex;
+    align-items: center;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+/* The three direct suggestion actions belong to the legacy fixture-only
+   preview and have no real route or behavior. The partial is outside this
+   package, so suppress only its exact dead-anchor shape at the Workshop CSS
+   boundary. display:none removes the false affordances from layout, the
+   accessibility tree, and sequential focus until a real capability exists. */
+.wk-suggestion > a[href="#"][aria-disabled="true"] {
+    display: none;
+}
+
+.wk-door,
+.wk-delete-confirm__checkbox {
+    min-height: 44px;
+}
+
+/* Native sequential focus scrolling honours scroll padding on the document
+   scroller. Reserve the shared sticky-header and phone-bar zones only while
+   a Workshop view is present, so a tabbed-to control never settles behind
+   either piece of shared chrome. */
+html:has(body.workshop-page) {
+    scroll-padding-block: 6rem 5rem;
+}
+
+.wk :is(a, button, input, textarea, summary) {
+    scroll-margin-block: 6rem 2rem;
+}
+
+@media (max-width: 640px) {
+    .wk {
+        padding: 1.5rem 0.75rem 2.5rem;
+    }
+
+    .wk-hero {
+        margin-bottom: 1.2rem;
+    }
+
+    .wk-hero__title {
+        font-size: clamp(2rem, 11vw, 2.75rem);
+        margin-bottom: 0.6rem;
+    }
+
+    .wk-modes {
+        justify-content: stretch;
+        gap: 0.25rem 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .wk-modes__tab {
+        flex: 1 1 8rem;
+        padding: 0.55rem 0.25rem 0.65rem;
+        text-align: center;
+    }
+
+    .wk-modes__tab--disabled {
+        flex-basis: 100%;
+        justify-content: center;
+    }
+
+    .wk-card,
+    .wk-detail,
+    .wk-info,
+    .wk-suggestion,
+    .wk-spark {
+        padding-inline: 1rem;
+    }
+
+    .wk-detail__meta-row,
+    .wk-wording-history__version-head,
+    .wk-review__source-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .wk-detail__meta-row dd,
+    .wk-wording-history__version-head time {
+        text-align: left;
+    }
+
+    .wk-detail .wk-badge {
+        padding: 0.4rem 0.7rem;
+        font-size: 0.82rem;
+        white-space: normal;
+    }
+
+    .wk-review-section__head {
+        align-items: flex-start;
+    }
+
+    .wk-work-composer__row,
+    .wk-followup-form__row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .wk-work-composer__row .wk-field__textarea-wrap,
+    .wk-followup-form__field {
+        width: 100%;
+    }
+
+    .wk-work-composer__submit,
+    .wk-followup-form__submit {
+        align-self: flex-end;
+    }
+}
+
+@media (max-width: 359px) {
+    .wk-modes__tab {
+        flex-basis: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wk *,
+    .wk *::before,
+    .wk *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+@media (forced-colors: active) {
+    .wk a:focus-visible,
+    .wk button:focus-visible,
+    .wk input:focus-visible,
+    .wk textarea:focus-visible,
+    .wk summary:focus-visible,
+    .wk-choice:focus-within {
+        outline-color: Highlight;
+    }
+
+    .wk-modes__tab--active,
+    .wk-chip[aria-current="true"],
+    .wk-list__item--selected .wk-list__item-link,
+    .wk-context-item:has(input:checked) {
+        border-color: Highlight;
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+    }
+
+    .wk-btn--primary,
+    .wk-work-composer__submit,
+    .wk-followup-form__submit,
+    .wk-mic-btn--live {
+        border: 2px solid ButtonText;
+    }
+
+    .wk button:disabled,
+    .wk [aria-disabled="true"] {
+        color: GrayText;
+        border-color: GrayText;
+        opacity: 1;
+    }
+
+    .wk-rail,
+    .wk-suggestion,
+    .wk-info,
+    .wk-list,
+    .wk-detail,
+    .wk-card,
+    .wk-status-banner {
+        box-shadow: none;
+    }
 }

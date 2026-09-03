@@ -17,14 +17,14 @@
 
    The head's trailing control also differs by authority: 06 draws a kebab
    "More actions" affordance; 09 draws a chevron-up collapse affordance in
-   the same corner. Both render (both aria-disabled — no additional actions
+   the same corner. Both render (both natively disabled — no additional actions
    exist beyond Edit/Archive/Restore/Delete at this slice) and workshop.css
    shows one or the other per breakpoint.
 
    Edit / Archive / Restore / Delete are real, wired actions for a real
    item (workshop.detail.edit_url etc. are set); a dev-fixture item has no
-   backing record to act on, so its actions render inert (href="#",
-   aria-disabled="true") exactly as the checkpoint did.
+   backing record to act on, so its action labels remain visible as inert
+   spans rather than pretending to be links.
 
    Workshop D (PS-WORKSHOP-USE-DISCLOSURE-001): the downstream-use badge and
    meta row are now conditional. A signed-in real item carries the actual
@@ -42,10 +42,10 @@
 <article class="wk-detail" aria-labelledby="wk-detail-title">
     <div class="wk-detail__head">
         <h3 id="wk-detail-title" class="wk-detail__title">{{ item.title }}</h3>
-        <button type="button" class="wk-icon-btn wk-icon-btn--more" aria-label="More actions" aria-disabled="true">
+        <button type="button" class="wk-icon-btn wk-icon-btn--more" aria-label="More actions — not available for this item" disabled>
             {{ workshop_icon("kebab") }}
         </button>
-        <button type="button" class="wk-icon-btn wk-icon-btn--collapse" aria-label="Collapse" aria-disabled="true">
+        <button type="button" class="wk-icon-btn wk-icon-btn--collapse" aria-label="Collapse — not available for this item" disabled>
             {{ workshop_icon("chevron-up") }}
         </button>
     </div>
@@ -139,9 +139,9 @@
             {{ workshop_icon("pencil") }}<span>Edit</span>
         </a>
         {% else %}
-        <a class="wk-btn wk-btn--outline" href="#" aria-disabled="true" role="link">
+        <span class="wk-btn wk-btn--outline" aria-disabled="true">
             {{ workshop_icon("pencil") }}<span>Edit</span>
-        </a>
+        </span>
         {% endif %}
 
         {% if item.status == "archived" %}
@@ -153,9 +153,9 @@
                 </button>
             </form>
             {% else %}
-            <a class="wk-btn wk-btn--outline" href="#" aria-disabled="true" role="link">
+            <span class="wk-btn wk-btn--outline" aria-disabled="true">
                 {{ workshop_icon("archive") }}<span>Restore</span>
-            </a>
+            </span>
             {% endif %}
         {% else %}
             {% if item.archive_url %}
@@ -166,9 +166,9 @@
                 </button>
             </form>
             {% else %}
-            <a class="wk-btn wk-btn--outline" href="#" aria-disabled="true" role="link">
+            <span class="wk-btn wk-btn--outline" aria-disabled="true">
                 {{ workshop_icon("archive") }}<span>Archive</span>
-            </a>
+            </span>
             {% endif %}
         {% endif %}
 
@@ -177,9 +177,9 @@
             {{ workshop_icon("trash") }}<span>Delete</span>
         </a>
         {% else %}
-        <a class="wk-btn wk-btn--danger" href="#" aria-disabled="true" role="link">
+        <span class="wk-btn wk-btn--danger" aria-disabled="true">
             {{ workshop_icon("trash") }}<span>Delete</span>
-        </a>
+        </span>
         {% endif %}
     </div>
 </article>

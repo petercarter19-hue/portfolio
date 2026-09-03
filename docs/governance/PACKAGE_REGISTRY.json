@@ -85,7 +85,8 @@
       "PS-VISUAL-INTEGRITY-GOV-001",
       "PS-VISUAL-MATERIALITY-001",
       "PS-VOICE-001",
-      "PS-VOICE-VISUAL-PARITY-001"
+      "PS-VOICE-VISUAL-PARITY-001",
+      "PS-WORKSHOP-REFLOW-ACCESSIBILITY-POLISH-001"
     ],
     "future_finish": [
       "PS-AI-AGENT-QUALITY-ROUND-2-001",
@@ -165,11 +166,11 @@
     ]
   },
   "counts": {
-    "current_protect": 73,
+    "current_protect": 74,
     "future_finish": 33,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 141
+    "total": 142
   }
 }

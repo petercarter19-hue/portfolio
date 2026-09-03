@@ -327,7 +327,7 @@ class SessionRoundTripTests(WorkOnSomethingTestCase):
     def _question_on_screen(self, client=None):
         client = client or self.client
         body = client.get("/app/workshop/work/session").data.decode("utf-8")
-        match = re.search(r'wk-session-question">(.*?)</h1>', body)
+        match = re.search(r'wk-session-question">(.*?)</h2>', body)
         self.assertIsNotNone(match, "expected a focused question on the session screen")
         # Unescaped so it can be compared against the curated constants
         # themselves (the questions contain apostrophes and em dashes).

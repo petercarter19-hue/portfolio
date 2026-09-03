@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-REFLOW-ACCESSIBILITY-POLISH-001",
+  "candidate_sha": "2ec9a3269dc37db44714c0efbcb03df067564719",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/interview_studio_operability",
+  "result": "pass",
+  "reviewed_at": "2026-09-03T09:27:19Z",
+  "findings": [
+    {
+      "summary": "Pre-registry candidate 977533979066c08cb0bd0fae5b0a6fe4a4efea5f left three fixture-only suggestion anchors as dead sequential focus stops and allowed a desktop suggestion eyebrow to fragment mid-word. Corrected candidate 02f5cf8493e9804c8de3c1d028545d069c70a687 narrowly suppresses only those exact anchors, adds rendered and browser assertions, and corrects flex sizing and wrapping.",
+      "status": "resolved"
+    },
+    {
+      "summary": "The sole canonical main contains exactly one visible Workshop H1 and is the shared skip-link target. Under the central manager's bounded interpretation this satisfies the claimed labelled-main ownership relationship without an excluded shared-base edit or invalid nested landmark.",
+      "status": "resolved"
+    },
+    {
+      "summary": "The governed surface extension added only docs/governance/PACKAGE_REGISTRY.json before any Registry edit. Final candidate 2ec9a3269dc37db44714c0efbcb03df067564719 contains exactly one locally alphabetized Workshop current_protect row; counts reconcile to 74, 33, 6, 23, 6, total 142 with 142 unique rows.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Validation passed: 102 claimed focused tests with one expected skip, 697 Workshop tests with three expected skips, two Registry tests, 49 Node checks, 26 template compilations, and 5,580 full-repository tests with 35 expected skips and zero failures. Eighteen external captures are bound to the exact candidate and every recorded hash and size verifies.",
+      "status": "informational"
+    },
+    {
+      "summary": "The exact 13-path claimed delta, no-JavaScript behavior, focus/target/reflow/forced-colors/reduced-motion contracts, production-withheld scope, strict fetched write preflight, diff check, and exact-range/full-history Gitleaks scans all passed independent review with zero findings.",
+      "status": "resolved"
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-WORKSHOP-REFLOW-ACCESSIBILITY-POLISH-001.md"
+}

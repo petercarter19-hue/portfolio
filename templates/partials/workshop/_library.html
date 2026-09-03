@@ -62,7 +62,7 @@
                 autocomplete="off"
                 value="{{ workshop.search_query }}"
             >
-            <button type="button" class="wk-search__mic" aria-label="Search by voice — not available yet" aria-disabled="true">
+            <button type="button" class="wk-search__mic" aria-label="Search by voice — not available yet" disabled>
                 {{ workshop_icon("mic") }}
             </button>
             <button type="submit" class="wk-search__submit" aria-label="Search your information">
@@ -124,10 +124,9 @@
                         {% if item.selected %}aria-current="true"{% endif %}
                     >
                     {% else %}
-                    {# Dev-fixture rows have no backing item to open into. #}
-                    <a class="wk-list__item-link" href="#" aria-disabled="true" role="link"
-                        {% if item.selected %}aria-current="true"{% endif %}
-                    >
+                    {# Dev-fixture rows have no backing item to open into. Keep
+                       their content visible without advertising a dead link. #}
+                    <span class="wk-list__item-link" aria-disabled="true">
                     {% endif %}
                         <span class="wk-list__item-text">
                             <span class="wk-list__item-title">{{ item.title }}</span>
@@ -137,7 +136,7 @@
                             <span class="wk-list__item-meta">Private &middot; {{ item.classification_label }}</span>
                         </span>
                         {{ workshop_icon("chevron-right") }}
-                    </a>
+                    {% if item.select_url %}</a>{% else %}</span>{% endif %}
                 </li>
                 {% endfor %}
             </ul>

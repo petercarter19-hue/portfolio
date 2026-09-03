@@ -281,5 +281,151 @@ class FinalWordingFieldTests(unittest.TestCase):
         self.assertIn("padding: 0.9rem 3rem 0.9rem 0.9rem;", self.css)
 
 
+class HeadingOwnershipPolishTests(unittest.TestCase):
+    """The inherited Workshop hero owns the one page H1 on every W2 view."""
+
+    def test_the_shared_workshop_heading_remains_the_only_h1(self):
+        hero = read_source("templates/partials/workshop/_hero_and_modes.html")
+        self.assertEqual(hero.count("<h1"), 1)
+        self.assertIn('class="wk-hero__title"', hero)
+
+        expected_local_h2 = {
+            "templates/workshop_work.html": 'h2 class="wk-work-composer__title"',
+            "templates/workshop_work_session.html": 'h2 class="wk-session-question"',
+            "templates/workshop_work_review.html": 'h2 class="wk-flow-title"',
+        }
+        for template, marker in expected_local_h2.items():
+            with self.subTest(template=template):
+                source = read_source(template)
+                self.assertNotIn("<h1", source)
+                self.assertIn(marker, source)
+
+
+class DeadControlAndDisclosurePolishTests(unittest.TestCase):
+    """Unavailable fixture affordances never masquerade as working controls."""
+
+    def setUp(self):
+        self.library = read_source("templates/partials/workshop/_library.html")
+        self.detail = read_source("templates/partials/workshop/_item_detail.html")
+        self.info = read_source("templates/partials/workshop/_info_card.html")
+        self.css = read_source("static/css/workshop.css")
+
+    def test_unavailable_search_and_detail_buttons_are_natively_disabled(self):
+        self.assertRegex(
+            self.library,
+            r'<button[^>]+class="wk-search__mic"[^>]+\bdisabled>',
+        )
+        for class_name in ("wk-icon-btn--more", "wk-icon-btn--collapse"):
+            with self.subTest(class_name=class_name):
+                self.assertRegex(
+                    self.detail,
+                    rf'<button[^>]+{class_name}[^>]+\bdisabled>',
+                )
+
+    def test_fixture_rows_and_actions_are_plain_text_not_dead_links(self):
+        self.assertNotIn('href="#"', self.library)
+        self.assertNotIn('href="#"', self.detail)
+        self.assertIn('<span class="wk-list__item-link" aria-disabled="true">', self.library)
+        self.assertIn('<span class="wk-btn wk-btn--outline" aria-disabled="true">', self.detail)
+
+    def test_legacy_suggestion_fixture_actions_are_narrowly_suppressed(self):
+        selector = '.wk-suggestion > a[href="#"][aria-disabled="true"] {'
+        start = self.css.index(selector)
+        rule = self.css[start : self.css.index("}", start)]
+        self.assertIn("display: none;", rule)
+        self.assertNotIn("pointer-events", rule)
+
+    def test_suggestion_heading_wraps_without_mid_word_fragmentation(self):
+        head_start = self.css.rindex(".wk-suggestion__head {")
+        head_rule = self.css[head_start : self.css.index("}", head_start)]
+        self.assertIn("flex-wrap: wrap;", head_rule)
+
+        eyebrow_start = self.css.rindex(".wk-suggestion__eyebrow {")
+        eyebrow_rule = self.css[eyebrow_start : self.css.index("}", eyebrow_start)]
+        self.assertIn("min-width: min(100%, 9rem);", eyebrow_rule)
+        self.assertIn("overflow-wrap: break-word;", eyebrow_rule)
+        self.assertIn("word-break: normal;", eyebrow_rule)
+
+    def test_information_card_is_one_truthful_native_disclosure_at_every_width(self):
+        self.assertIn('<details class="wk-info" open>', self.info)
+        self.assertIn('<summary class="wk-info__summary">', self.info)
+        desktop = self.css.split("@media (min-width: 1101px) {", 1)[1]
+        summary_start = desktop.index(".wk-info__summary {")
+        summary_rule = desktop[summary_start : desktop.index("}", summary_start)]
+        self.assertNotIn("pointer-events: none", summary_rule)
+        self.assertNotIn("display: flex !important", self.css)
+
+
+class AccessibilityCssContractTests(unittest.TestCase):
+    """Static guardrails for focus, target size, reflow and system colours."""
+
+    def setUp(self):
+        self.css = read_source("static/css/workshop.css")
+
+    def test_focus_is_visible_for_textareas_and_no_field_suppresses_it(self):
+        self.assertIn(".wk textarea:focus-visible,", self.css)
+        self.assertNotRegex(self.css, r":focus\s*\{\s*outline:\s*none")
+        self.assertIn("outline: 3px solid var(--wk-focus);", self.css)
+
+    def test_core_controls_have_the_44px_target_floor(self):
+        target_rules = (
+            ".wk-modes__tab {",
+            ".wk-btn {",
+            ".wk-chip {",
+            ".wk-info__summary {",
+            ".wk-wording-history__summary {",
+            ".wk-choice {",
+            ".wk-btn-link {",
+            ".wk-door__resume-btn {",
+            ".wk-spark__link {",
+            ".wk-context-item__body {",
+        )
+        for index, selector in enumerate(target_rules):
+            with self.subTest(selector=selector):
+                start = self.css.index(selector)
+                end = self.css.index("}", start)
+                self.assertIn("min-height: 44px;", self.css[start:end])
+
+        for selector in (
+            ".wk-icon-btn {",
+            ".wk-search__mic,",
+            ".wk-mic-btn {",
+            ".wk-work-composer__submit {",
+            ".wk-followup-form__submit {",
+        ):
+            with self.subTest(selector=selector):
+                start = self.css.index(selector)
+                end = self.css.index("}", start)
+                rule = self.css[start:end]
+                self.assertRegex(rule, r"(?:width|min-width): 44px;")
+                self.assertRegex(rule, r"(?:height|min-height): 44px;")
+
+    def test_reflow_does_not_ellipsis_or_force_member_content_onto_one_line(self):
+        title_start = self.css.rindex(".wk-context-item__title {")
+        title_rule = self.css[title_start : self.css.index("}", title_start)]
+        self.assertIn("white-space: normal;", title_rule)
+        self.assertIn("overflow-wrap: anywhere;", self.css)
+        self.assertIn(".wk-followup-form__row {", self.css)
+        self.assertIn("flex-direction: column;", self.css)
+
+    def test_native_tab_scrolling_reserves_both_shared_sticky_chrome_zones(self):
+        start = self.css.index("html:has(body.workshop-page) {")
+        rule = self.css[start : self.css.index("}", start)]
+        self.assertIn("scroll-padding-block: 6rem 5rem;", rule)
+        self.assertIn("scroll-margin-block: 6rem 2rem;", self.css)
+
+    def test_forced_colours_keep_focus_selection_and_disabled_state_non_colour_only(self):
+        forced = self.css.split("@media (forced-colors: active) {", 1)[1]
+        self.assertIn("outline-color: Highlight;", forced)
+        self.assertIn("outline: 2px solid Highlight;", forced)
+        self.assertIn("color: GrayText;", forced)
+        self.assertIn("border-color: GrayText;", forced)
+
+    def test_reduced_motion_applies_to_every_workshop_transition_and_animation(self):
+        reduced = self.css.rsplit("@media (prefers-reduced-motion: reduce) {", 1)[1]
+        self.assertIn("animation-duration: 0.01ms !important;", reduced)
+        self.assertIn("transition-duration: 0.01ms !important;", reduced)
+
+
 if __name__ == "__main__":
     unittest.main()
