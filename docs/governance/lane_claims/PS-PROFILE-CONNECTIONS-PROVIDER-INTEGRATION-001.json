@@ -19,7 +19,8 @@
     "docs/initiatives/PS-PROFILE-CONNECTIONS-PROVIDER-INTEGRATION-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
     "services/database_service.py",
     "tests/test_database_service.py",
-    "tests/test_connection_foundation_service.py"
+    "tests/test_connection_foundation_service.py",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-PROFILE-CONNECTIONS-PROVIDER-INTEGRATION-001.md"
