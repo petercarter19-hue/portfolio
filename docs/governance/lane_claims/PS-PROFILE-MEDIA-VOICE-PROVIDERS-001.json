@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "package": "PS-PROFILE-MEDIA-VOICE-PROVIDERS-001",
+  "state": "active",
+  "outcome": "Build Profile Media and Voice providers over applied PS-CAPTURE-MEDIA-001/PS-VOICE-001 lifecycles and D0 contracts. Bind exact owner/projection/source/version/audience, current lifecycle, authorized derivative/audio, and approved transcript; authorize before bytes; keep Public and Connections independent; fail closed on absent, stale, revoked, unpublished, deleted, blocked, cross-owner, malformed, or unavailable state. Exclude video, originals, provider locators/keys, filenames, EXIF, unapproved transcripts, autoplay, Profile/app/UI/flags, publication composition, schema/apply/grants, deployment, identities/providers, and live proof. Prove two-owner/blocked isolation, digest/version binding, revoke/delete/where-used races, transcript without audio, audio without approved transcript, neutral failure, export/deletion consistency, accessibility metadata, and Capture/Photo/Voice regressions. PACKAGE_REGISTRY.json is deferred; implementation must not merge until a governed extend-surfaces transition adds it, current_protect entry/counts are implemented after refresh from current main, and validation plus independent exact-SHA/delta review pass again. Merge is not production authority.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/profile_d1_writer",
+  "branch": "work/2026-09-03-profile-media-voice-providers-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "3b950e6adcfd8f1e93e2788915bee9ef7ddbbaf3",
+  "owner_outcome_ref": "session:01a03e17-a645-7ae0-8da3-164eef90a333/pete-chat-2026-09-02/manage-audit-execution-order-and-parallel-work",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-PROFILE-MEDIA-VOICE-PROVIDERS-001.json",
+    "docs/governance/lane_claims/evidence/PS-PROFILE-MEDIA-VOICE-PROVIDERS-001.md",
+    "docs/governance/lane_claims/receipts/PS-PROFILE-MEDIA-VOICE-PROVIDERS-001.json",
+    "docs/initiatives/PS-PROFILE-MEDIA-VOICE-PROVIDERS-001/README.md",
+    "docs/initiatives/PS-PROFILE-MEDIA-VOICE-PROVIDERS-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "services/profile_media_projection_provider.py",
+    "services/profile_voice_projection_provider.py",
+    "tests/test_profile_media_projection_provider.py",
+    "tests/test_profile_voice_projection_provider.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-PROFILE-MEDIA-VOICE-PROVIDERS-001.md"
+  ],
+  "domains": [
+    "provider:profile:media-projection",
+    "provider:profile:voice-projection",
+    "privacy:profile:authorized-media-bytes",
+    "privacy:profile:approved-voice-transcript",
+    "governance:package-registry:profile-media-voice-providers"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
