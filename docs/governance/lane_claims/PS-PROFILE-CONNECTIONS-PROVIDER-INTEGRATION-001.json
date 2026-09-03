@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-PROFILE-CONNECTIONS-PROVIDER-INTEGRATION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Integrate closed PS-CONNECT-002 ConnectionFoundationProfileReader at the repository execution boundary by allowlisting only its three exact procedures and proving the unchanged provider contract. Preserve its service, repository, migration, rollback, verifier, and SQL registry row. Prove PeerSlateIdentity actor derivation; request/accept/decline/cancel/expire/disconnect/block/unblock/reconnect truth; reciprocal races, compare-and-swap, replay idempotency, append-only reconnect history, block precedence, authorization epochs, neutral absence/failure, and direct-key, unrelated, pending, cross-owner, and blocked-both-directions negatives. Exclude Profile/app route/template/navigation/search/cache wiring, D4 composition, durable identities/relationships/reports/fixtures, schema apply/replay/grants/state refresh, deployment, flags, and live proof. PACKAGE_REGISTRY.json is deferred; implementation cannot merge until a governed extend-surfaces transition adds it, current_protect entry/counts are implemented after refresh from current main, and validation plus independent exact-SHA/delta review pass again. Merge is not authority to apply PS-CONNECT-002 or enable Profile.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/profile_d3_writer",
@@ -34,6 +34,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "9d4d5382802b66cc706b7fc42da318af045366aa",
+  "closed_at": "2026-09-03T07:23:20Z"
 }
