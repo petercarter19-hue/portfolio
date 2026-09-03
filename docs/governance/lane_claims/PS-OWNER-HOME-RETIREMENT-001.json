@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-OWNER-HOME-RETIREMENT-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Retire both Capture-first implementations of Owner Home and the executable PEERSLATE_OWNER_HOME_ENABLED path. Keep /app as the protected signed-in ingress and render one neutral shared-shell My PeerSlate launchpad containing only real authorization-aware destinations: Capture remains an explicit tool but is not the default or dominant home; Settings remains /app/settings; valid protected deep-link returns remain unchanged; no member Profile route or capability is invented or enabled. Remove the retired Owner Home API/service/template/partials/assets and stale account-navigation wording after a complete reference audit, preserve historical documentation, migrations, artifacts, and immutable evidence, and add focused authentication, safe-return, authorization, navigation, security, accessibility, narrow-screen, and 400-percent reflow proof. No deployment, production flag/configuration, schema, identity, provider, or live action.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/owner_home_retirement",
@@ -73,6 +73,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "efd210f93d36b6ca561213fabe35e76fb7632369",
+  "closed_at": "2026-09-03T01:13:29Z"
 }
