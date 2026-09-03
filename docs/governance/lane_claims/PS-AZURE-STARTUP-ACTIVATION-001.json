@@ -23,7 +23,8 @@
     "scripts/run_foundry_luna_evaluations.py",
     "services/azure_startup_qualification.py",
     "tests/test_azure_startup_qualification.py",
-    "tests/ai_foundation/test_azure_foundry_provider.py"
+    "tests/ai_foundation/test_azure_foundry_provider.py",
+    "services/ai_foundation/azure_foundry.py"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-AZURE-STARTUP-ACTIVATION-001.md"
