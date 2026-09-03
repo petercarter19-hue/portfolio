@@ -39,7 +39,8 @@
     "tests/test_owner_home.py",
     "tests/test_owner_home_accessibility.py",
     "tests/test_owner_settings.py",
-    "tests/test_workshop_checkpoint.py"
+    "tests/test_workshop_checkpoint.py",
+    "tests/test_interview_studio.py"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-SHARED-SHELL-CONVERGENCE-001.md"
