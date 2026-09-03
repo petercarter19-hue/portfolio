@@ -27,7 +27,8 @@
     "templates/workshop_work_review.html",
     "tests/test_workshop_accessibility.py",
     "tests/test_workshop_polish.py",
-    "tests/test_workshop_work_session.py"
+    "tests/test_workshop_work_session.py",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-WORKSHOP-REFLOW-ACCESSIBILITY-POLISH-001.md"
