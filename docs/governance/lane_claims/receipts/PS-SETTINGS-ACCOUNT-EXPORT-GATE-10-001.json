@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "package": "PS-SETTINGS-ACCOUNT-EXPORT-GATE-10-001",
+  "candidate_sha": "be20fdc25ee6d8c18e90f96be35c3f5549edd55d",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/gate10_evidence_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-03T16:57:52Z",
+  "findings": [
+    {
+      "status": "informational",
+      "summary": "PASS means the frozen repository candidate is an accurate FAILED SAFE / NOT ACCEPTED record; it does not mean Gate 10 passed. The reviewer independently corroborated the two synthetic sign-ins, two distinct jobs, SQL ready results, post-ready refusal, exact cleanup counts, and soft-retirement boundary; V4's zero-account/zero-job refusal; V5's observability-only scope; the diagnostic firewall incident and restoration; the historical-state caveats; the unproven criteria; and the rule-based EXPORT-010 rollback-window disposition."
+    },
+    {
+      "status": "informational",
+      "summary": "The exact candidate delta adds only the claimed initiative evidence file. Candidate ancestry, pushed SHA, claimed-surface containment, seven preserved hashes, repository contracts, and retained content-free records were checked; git diff --check and 33 focused governance/repository-evidence tests passed. The reviewer made no repository mutation or live/product call and reported no actionable findings."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SETTINGS-ACCOUNT-EXPORT-GATE-10-001.md"
+}
