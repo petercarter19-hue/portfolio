@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-INTERVIEW-STUDIO-OPERABILITY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Make authenticated Interview Studio operable without redesigning its product model: add one visible, accessible H1; expose one truthful Studio settings launcher for the existing dialog; converge breakpoint-dependent History links to one canonical guarded control; converge Session, Change setup, and New session affordances to one responsive Session setup control that states applying changes starts a new session; and implement dialog/setup keyboard, focus, announcement, JS-off, forced-colors, reduced-motion, text-spacing, zoom, and narrow-screen behavior. Preserve public/flag-off rendering, browser-local storage, APIs, payloads, session/history meaning, safe-return/auth, no-store/noindex, Quiet Preview, robots, sitemap, and default-off flags. docs/governance/PACKAGE_REGISTRY.json is explicitly deferred for claim-only activation; implementation must not merge until a governed extend-surfaces transition adds that exact path, registration and counts land, the branch refreshes from current origin/main, and validation plus independent exact-SHA/delta review repeat. No broader Interview redesign or app/shared-shell/auth/schema/provider/deployment/production change.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/interview_studio_operability",
@@ -37,6 +37,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "eabd066ed042d0e1a96209278f27b4b144e5c782",
+  "closed_at": "2026-09-03T08:40:54Z"
 }
