@@ -67,6 +67,7 @@
       "PS-PORTABLE-SESSION-MANAGER-001",
       "PS-PORTABLE-SESSION-MANAGER-002",
       "PS-PROFILE-EXPERIENCE-001",
+      "PS-PROFILE-MEDIA-VOICE-PROVIDERS-001",
       "PS-REPOSITORY-RATIONALIZATION-001",
       "PS-RESUME-PUBLIC-REFINE-001",
       "PS-RULES-001",
@@ -162,11 +163,11 @@
     ]
   },
   "counts": {
-    "current_protect": 70,
+    "current_protect": 71,
     "future_finish": 33,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 138
+    "total": 139
   }
 }
