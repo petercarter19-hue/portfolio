@@ -133,8 +133,21 @@ class AzureFoundryProviderTests(unittest.TestCase):
         self.assertEqual(call["json"]["model"], "gpt-5.6-luna")
         self.assertEqual(call["timeout"], (5.0, 90.0))
         self.assertEqual(usages[0].input_tokens, 608)
+        self.assertEqual(usages[0].cached_input_tokens, 0)
         self.assertFalse(hasattr(usages[0], "prompt"))
         self.assertEqual(ledger.snapshot()["spent_micro_usd"], 3476)
+
+    def test_cache_token_details_are_structural_usage_only(self):
+        payload = answer_payload(input_tokens=608, output_tokens=478)
+        payload["usage"]["input_tokens_details"] = {
+            "cached_tokens": 100,
+            "cache_write_tokens": 500,
+        }
+        provider, _, usages, _ = self.provider(FakeResponse(200, payload))
+        request, sources = request_and_sources()
+        provider.answer(request, sources)
+        self.assertEqual(usages[0].cached_input_tokens, 100)
+        self.assertEqual(usages[0].cache_write_input_tokens, 500)
 
     def test_endpoint_must_be_the_exact_azure_openai_origin_shape(self):
         rejected = (
@@ -204,12 +217,37 @@ class AzureFoundryProviderTests(unittest.TestCase):
         self.assertEqual(len(transport.calls), 1)
 
     def test_input_larger_than_the_prepaid_bound_never_calls_transport(self):
-        provider, transport, _, ledger = self.provider(maximum_input_tokens=100)
+        provider, transport, _, ledger = self.provider(
+            maximum_input_tokens=1_000,
+            maximum_input_bytes=100,
+        )
         request, sources = request_and_sources()
         with self.assertRaisesRegex(ExecutionLimitError, "prepaid"):
             provider.answer(request, sources)
         self.assertEqual(transport.calls, [])
         self.assertEqual(ledger.snapshot()["calls"], 0)
+
+    def test_input_byte_ceiling_is_separate_from_token_reservation(self):
+        provider, transport, usages, _ = self.provider(
+            maximum_input_tokens=700,
+            maximum_input_bytes=10_000,
+        )
+        request, sources = request_and_sources()
+        provider.answer(request, sources)
+        self.assertEqual(len(transport.calls), 1)
+        self.assertEqual(usages[0].input_tokens, 608)
+
+    def test_provider_token_overage_is_billed_reported_and_fails_closed(self):
+        provider, transport, usages, ledger = self.provider(
+            maximum_input_tokens=600,
+            maximum_input_bytes=10_000,
+        )
+        request, sources = request_and_sources()
+        with self.assertRaisesRegex(ExecutionLimitError, "token reservation"):
+            provider.answer(request, sources)
+        self.assertEqual(len(transport.calls), 1)
+        self.assertEqual(usages[0].input_tokens, 608)
+        self.assertEqual(ledger.snapshot()["spent_micro_usd"], 3_476)
 
     def test_malformed_usage_fails_closed_without_exposing_output(self):
         payload = answer_payload()
@@ -219,6 +257,12 @@ class AzureFoundryProviderTests(unittest.TestCase):
         with self.assertRaisesRegex(ProviderUnavailableError, "usage"):
             provider.answer(request, sources)
         self.assertEqual(ledger.snapshot()["spent_micro_usd"], 5700)
+
+        payload = answer_payload()
+        payload["usage"]["input_tokens_details"] = {"cached_tokens": "secret"}
+        provider, _, _, _ = self.provider(FakeResponse(200, payload))
+        with self.assertRaisesRegex(ProviderUnavailableError, "token details"):
+            provider.answer(request, sources)
 
     def test_runner_is_dry_by_default_even_with_an_endpoint(self):
         environment = dict(os.environ)
@@ -385,10 +429,83 @@ class SpendReportTests(unittest.TestCase):
         fields = _spend_fields(ledger, usages)
         self.assertEqual(fields["calls_billed"], 2)
         self.assertEqual(fields["calls_with_usage"], 1)
+        self.assertEqual(fields["fresh_input_tokens"], 608)
+        self.assertEqual(fields["cached_input_tokens"], 0)
         # The dollar figure covers both calls, so the count must too.
         self.assertAlmostEqual(
             fields["estimated_cost_usd"], (3_476 + 5_700) / 1_000_000
         )
+
+
+class SyntheticLongContextTests(unittest.TestCase):
+    def test_expansion_is_bounded_synthetic_and_digest_current(self):
+        from scripts.run_foundry_luna_evaluations import (
+            DEFAULT_FIXTURE,
+            _expanded_sources,
+            _load_cases,
+        )
+
+        case = _load_cases(DEFAULT_FIXTURE)[0]
+        expanded = _expanded_sources(case, 3)
+        self.assertEqual(len(expanded), len(case.sources))
+        self.assertIn("Synthetic distractor record 0000", expanded[0].content)
+        self.assertTrue(expanded[0].content.endswith(case.sources[0].content))
+        self.assertTrue(expanded[0].digest_is_current())
+        self.assertNotIn("member content", expanded[0].content.casefold())
+
+    def test_zero_records_preserves_the_reviewed_sources(self):
+        from scripts.run_foundry_luna_evaluations import (
+            DEFAULT_FIXTURE,
+            _expanded_sources,
+            _load_cases,
+        )
+
+        case = _load_cases(DEFAULT_FIXTURE)[0]
+        self.assertIs(_expanded_sources(case, 0), case.sources)
+
+    def test_daily_target_requires_every_expected_call_above_long_floor(self):
+        from scripts.run_foundry_luna_evaluations import (
+            _qualification_targets_reached,
+        )
+
+        def usage(tokens):
+            return FoundryUsage(
+                deployment="gpt-5.6-luna",
+                input_tokens=tokens,
+                output_tokens=1,
+                estimated_micro_usd=1,
+                price_schedule_ref="test",
+            )
+
+        reached, floor = _qualification_targets_reached(
+            usages=[usage(300_000), usage(271_999)],
+            expected_calls=2,
+            fresh_input_tokens=3_000_000,
+            minimum_fresh_input_tokens=2_800_000,
+            minimum_input_tokens_per_call=272_001,
+        )
+        self.assertFalse(reached)
+        self.assertFalse(floor)
+
+        reached, floor = _qualification_targets_reached(
+            usages=[usage(1_400_001), usage(1_400_001)],
+            expected_calls=2,
+            fresh_input_tokens=2_800_002,
+            minimum_fresh_input_tokens=2_800_000,
+            minimum_input_tokens_per_call=272_001,
+        )
+        self.assertTrue(reached)
+        self.assertTrue(floor)
+
+        reached, floor = _qualification_targets_reached(
+            usages=[usage(300_000), usage(300_000)],
+            expected_calls=3,
+            fresh_input_tokens=3_000_000,
+            minimum_fresh_input_tokens=2_800_000,
+            minimum_input_tokens_per_call=272_001,
+        )
+        self.assertFalse(reached)
+        self.assertFalse(floor)
 
 
 @dataclass

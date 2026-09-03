@@ -13,10 +13,13 @@ import json
 import os
 import subprocess
 import sys
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, replace
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 if str(REPOSITORY_ROOT) not in sys.path:
@@ -28,6 +31,7 @@ from services.ai_foundation import (
     AnswerExpectation,
     AnswerState,
     Audience,
+    ExecutionLimits,
     Purpose,
     SourceVersion,
     evaluate_answer,
@@ -54,6 +58,8 @@ DEFAULT_FIXTURE = (
     / "azure_startup_qualification"
     / "luna_eval_cases.json"
 )
+MAX_SYNTHETIC_CONTEXT_RECORDS = 15_000
+MAX_FRESH_INPUT_TARGET = 5_000_000
 
 
 @dataclass(frozen=True)
@@ -74,7 +80,12 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--repeat", type=int, default=1)
     parser.add_argument("--hard-cap-usd", default="1.25")
     parser.add_argument("--maximum-input-tokens", type=int, default=1500)
+    parser.add_argument("--maximum-input-bytes", type=int)
     parser.add_argument("--maximum-output-tokens", type=int, default=700)
+    parser.add_argument("--synthetic-context-records", type=int, default=0)
+    parser.add_argument("--minimum-fresh-input-tokens", type=int, default=0)
+    parser.add_argument("--minimum-input-tokens-per-call", type=int, default=0)
+    parser.add_argument("--minimum-call-interval-seconds", type=float, default=0)
     parser.add_argument("--execute", action="store_true")
     return parser.parse_args()
 
@@ -170,6 +181,40 @@ def _execution_authorized(args: argparse.Namespace) -> bool:
     )
 
 
+def _expanded_sources(
+    case: EvaluationCase, record_count: int
+) -> tuple[SourceVersion, ...]:
+    """Create a bounded synthetic long-context retrieval benchmark.
+
+    The distractors are deterministic, explicitly fictional, and contain no
+    member or repository content.  The reviewed evidence needle stays in its
+    original source and is moved to the end so the call exercises long-context
+    evidence retrieval rather than merely inflating a short prompt.
+    """
+
+    if record_count == 0:
+        return case.sources
+    distractors = "".join(
+        "Synthetic distractor record "
+        f"{ordinal:04d}: This fictional workspace entry is unrelated to the "
+        "requested fact and has no verified answer.\n"
+        for ordinal in range(record_count)
+    )
+    return tuple(
+        SourceVersion.approved(
+            source_version_key=source.source_version_key,
+            source_key=source.source_key,
+            version=source.version,
+            subject_key=source.subject_key,
+            title=source.title,
+            content=f"{distractors}Synthetic evidence needle:\n{source.content}",
+            allowed_audiences=source.allowed_audiences,
+            allowed_purposes=source.allowed_purposes,
+        )
+        for source in case.sources
+    )
+
+
 def _plan(args: argparse.Namespace, case_count: int) -> dict[str, Any]:
     return {
         "mode": "execute" if _execution_authorized(args) else "dry_run",
@@ -179,6 +224,13 @@ def _plan(args: argparse.Namespace, case_count: int) -> dict[str, Any]:
         "repeat": args.repeat,
         "maximum_calls": case_count * args.repeat,
         "hard_cap_usd": str(Decimal(args.hard_cap_usd)),
+        "maximum_input_tokens": args.maximum_input_tokens,
+        "maximum_input_bytes": args.maximum_input_bytes,
+        "maximum_output_tokens": args.maximum_output_tokens,
+        "synthetic_context_records": args.synthetic_context_records,
+        "minimum_fresh_input_tokens": args.minimum_fresh_input_tokens,
+        "minimum_input_tokens_per_call": args.minimum_input_tokens_per_call,
+        "minimum_call_interval_seconds": args.minimum_call_interval_seconds,
         "credit_confirmed": os.environ.get(CREDIT_ENV) == "true",
         "activation_enabled": os.environ.get(ACTIVATED_ENV) == "true",
         "spend_authorization_present": bool(
@@ -203,20 +255,85 @@ def _spend_fields(ledger: SpendLedger, usages: list[FoundryUsage]) -> dict[str, 
     record, which is worth seeing when reconciling against the Azure bill.
     """
     snapshot = ledger.snapshot()
+    cached_input_tokens = sum(item.cached_input_tokens for item in usages)
+    cache_write_input_tokens = sum(
+        item.cache_write_input_tokens for item in usages
+    )
+    input_tokens = sum(item.input_tokens for item in usages)
     return {
         "calls_billed": snapshot["calls"],
         "calls_with_usage": len(usages),
-        "input_tokens": sum(item.input_tokens for item in usages),
+        "input_tokens": input_tokens,
+        "cached_input_tokens": cached_input_tokens,
+        "cache_write_input_tokens": cache_write_input_tokens,
+        "fresh_input_tokens": input_tokens - cached_input_tokens,
         "output_tokens": sum(item.output_tokens for item in usages),
         "estimated_cost_usd": snapshot["spent_micro_usd"] / 1_000_000,
         "price_schedule_ref": usages[0].price_schedule_ref if usages else None,
     }
 
 
+def _qualification_targets_reached(
+    *,
+    usages: list[FoundryUsage],
+    expected_calls: int,
+    fresh_input_tokens: int,
+    minimum_fresh_input_tokens: int,
+    minimum_input_tokens_per_call: int,
+) -> tuple[bool, bool]:
+    """Return (daily target, per-call long-context floor) fail-closed."""
+
+    per_call_floor_reached = (
+        len(usages) == expected_calls
+        and all(
+            usage.input_tokens >= minimum_input_tokens_per_call
+            for usage in usages
+        )
+    )
+    return (
+        fresh_input_tokens >= minimum_fresh_input_tokens
+        and per_call_floor_reached,
+        per_call_floor_reached,
+    )
+
+
 def main() -> int:
     args = _arguments()
     if args.repeat < 1 or args.repeat > 300:
         raise SystemExit("--repeat must be between 1 and 300")
+    if (
+        args.synthetic_context_records < 0
+        or args.synthetic_context_records > MAX_SYNTHETIC_CONTEXT_RECORDS
+    ):
+        raise SystemExit(
+            "--synthetic-context-records must be between 0 and "
+            f"{MAX_SYNTHETIC_CONTEXT_RECORDS}"
+        )
+    if (
+        args.minimum_fresh_input_tokens < 0
+        or args.minimum_fresh_input_tokens > MAX_FRESH_INPUT_TARGET
+    ):
+        raise SystemExit(
+            "--minimum-fresh-input-tokens must be between 0 and "
+            f"{MAX_FRESH_INPUT_TARGET}"
+        )
+    if args.maximum_input_bytes is None:
+        args.maximum_input_bytes = args.maximum_input_tokens
+    if args.maximum_input_tokens < 1 or args.maximum_input_bytes < 1:
+        raise SystemExit("input token and byte ceilings must be positive")
+    if (
+        args.minimum_input_tokens_per_call < 0
+        or args.minimum_input_tokens_per_call > args.maximum_input_tokens
+    ):
+        raise SystemExit(
+            "--minimum-input-tokens-per-call must be between 0 and "
+            "--maximum-input-tokens"
+        )
+    if (
+        args.minimum_call_interval_seconds < 0
+        or args.minimum_call_interval_seconds > 120
+    ):
+        raise SystemExit("--minimum-call-interval-seconds must be between 0 and 120")
     try:
         cases = _load_cases(args.fixture)
         hard_cap = usd_to_micro_usd(args.hard_cap_usd)
@@ -242,22 +359,64 @@ def main() -> int:
         hard_cap_micro_usd=hard_cap,
         max_calls=len(cases) * args.repeat,
     )
+    try:
+        bearer_token = _entra_token()
+    except RuntimeError:
+        print(
+            json.dumps(
+                {
+                    **plan,
+                    **_spend_fields(ledger, usages),
+                    "mode": "stopped",
+                    "stop_category": "token_unavailable",
+                    "fresh_input_target_reached": False,
+                    "prompts_or_outputs_retained": False,
+                },
+                sort_keys=True,
+            )
+        )
+        return 2
     provider = AzureFoundryResponsesProvider(
         endpoint=args.endpoint,
         deployment=args.deployment,
-        token_provider=_entra_token,
+        token_provider=lambda: bearer_token,
         spend_ledger=ledger,
         usage_sink=usages.append,
         maximum_input_tokens=args.maximum_input_tokens,
+        maximum_input_bytes=args.maximum_input_bytes,
         maximum_output_tokens=args.maximum_output_tokens,
     )
-    gateway = AIFoundationGateway(provider)
+    gateway = AIFoundationGateway(
+        provider,
+        limits=ExecutionLimits(
+            maximum_single_source_characters=args.maximum_input_bytes,
+            maximum_total_source_characters=args.maximum_input_bytes,
+        ),
+    )
     passed = 0
     failures: dict[str, int] = {}
+    run_nonce = f"{datetime.now(timezone.utc).date().isoformat()}-{uuid4().hex[:12]}"
+    call_ordinal = 0
+    expanded_sources = {
+        case.case_id: _expanded_sources(case, args.synthetic_context_records)
+        for case in cases
+    }
+    last_call_started_at: float | None = None
     for _ in range(args.repeat):
         for case in cases:
+            call_ordinal += 1
+            request = replace(
+                case.request,
+                request_id=f"eval:{case.case_id}:{run_nonce}:{call_ordinal}",
+            )
+            if last_call_started_at is not None:
+                elapsed = time.monotonic() - last_call_started_at
+                remaining = args.minimum_call_interval_seconds - elapsed
+                if remaining > 0:
+                    time.sleep(remaining)
+            last_call_started_at = time.monotonic()
             try:
-                result = gateway.answer(case.request, case.sources)
+                result = gateway.answer(request, expanded_sources[case.case_id])
             except ExecutionLimitError as error:
                 # A bound was reached.  Stop, but report what was already
                 # billed and say which bound fired: the dollar ceiling, the
@@ -271,6 +430,7 @@ def main() -> int:
                             "mode": "stopped",
                             "stop_category": "execution_limit",
                             "stop_reason": str(error),
+                            "fresh_input_target_reached": False,
                             "prompts_or_outputs_retained": False,
                         },
                         sort_keys=True,
@@ -292,6 +452,7 @@ def main() -> int:
                             **_spend_fields(ledger, usages),
                             "mode": "stopped",
                             "stop_category": "provider_unavailable",
+                            "fresh_input_target_reached": False,
                             "prompts_or_outputs_retained": False,
                         },
                         sort_keys=True,
@@ -308,19 +469,31 @@ def main() -> int:
             for failure in evaluation.failures:
                 failures[failure] = failures.get(failure, 0) + 1
 
-    print(
-        json.dumps(
-            {
-                **plan,
-                **_spend_fields(ledger, usages),
-                "mode": "completed",
-                "passed": passed,
-                "failed": len(cases) * args.repeat - passed,
-                "failure_categories": failures,
-            },
-            sort_keys=True,
+    spend_fields = _spend_fields(ledger, usages)
+    fresh_input_target_reached, per_call_floor_reached = (
+        _qualification_targets_reached(
+            usages=usages,
+            expected_calls=len(cases) * args.repeat,
+            fresh_input_tokens=spend_fields["fresh_input_tokens"],
+            minimum_fresh_input_tokens=args.minimum_fresh_input_tokens,
+            minimum_input_tokens_per_call=args.minimum_input_tokens_per_call,
         )
     )
+    result = {
+        **plan,
+        **spend_fields,
+        "mode": "completed" if fresh_input_target_reached else "stopped",
+        "passed": passed,
+        "failed": len(cases) * args.repeat - passed,
+        "failure_categories": failures,
+        "per_call_input_floor_reached": per_call_floor_reached,
+        "fresh_input_target_reached": fresh_input_target_reached,
+    }
+    if not fresh_input_target_reached:
+        result["stop_category"] = "fresh_input_target_not_reached"
+    print(json.dumps(result, sort_keys=True))
+    if not fresh_input_target_reached:
+        return 2
     return 0 if passed == len(cases) * args.repeat else 1
 
 

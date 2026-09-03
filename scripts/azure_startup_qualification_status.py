@@ -41,6 +41,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--end", type=date.fromisoformat)
     parser.add_argument("--days", type=int, default=75)
     parser.add_argument("--pretty", action="store_true")
+    parser.add_argument("--require-qualified-latest-day", action="store_true")
     return parser.parse_args()
 
 
@@ -75,25 +76,28 @@ def _live_query(subscription_id: str, start: date, end: date) -> dict[str, Any]:
         f"{subscription_id}/providers/Microsoft.CostManagement/query"
         f"?api-version={COST_QUERY_API_VERSION}"
     )
-    completed = subprocess.run(
-        [
-            "az",
-            "rest",
-            "--method",
-            "post",
-            "--url",
-            url,
-            "--body",
-            json.dumps(_query_body(start, end), separators=(",", ":")),
-            "--output",
-            "json",
-            "--only-show-errors",
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=120,
-    )
+    try:
+        completed = subprocess.run(
+            [
+                "az",
+                "rest",
+                "--method",
+                "post",
+                "--url",
+                url,
+                "--body",
+                json.dumps(_query_body(start, end), separators=(",", ":")),
+                "--output",
+                "json",
+                "--only-show-errors",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError("Azure Cost Management query timed out") from error
     if completed.returncode != 0:
         raise RuntimeError("Azure Cost Management query failed")
     try:
@@ -136,6 +140,10 @@ def main() -> int:
     output = report.as_privacy_safe_dict()
     output["budget"] = planned_budget()
     print(json.dumps(output, indent=2 if args.pretty else None, sort_keys=True))
+    if args.require_qualified_latest_day:
+        latest = output.get("latest_day")
+        if not isinstance(latest, dict) or not latest.get("qualifies"):
+            return 3
     return 0
 
 

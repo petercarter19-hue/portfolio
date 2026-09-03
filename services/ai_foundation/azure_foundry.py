@@ -110,20 +110,20 @@ class UrllibTransport:
 class LunaPriceSchedule:
     """Safety schedule in micro-USD per one million tokens.
 
-    These defaults are a deliberate OVER-estimate, not a measurement.  No paid
-    Foundry call has been made by this package, so nothing here was observed on
-    a live meter.
+    These defaults are a deliberate over-estimate for the bounded activation
+    runner, not a prediction of the Azure bill.
 
     They are bounded above the published Azure retail maximums for GPT-5.6 Luna
     so the estimate can only err high and the hard cap can only bind early:
 
-        source: https://prices.azure.com/api/retail/prices
-                filter contains(meterName,'luna'), read 2026-08-31
-        highest published non-cached input meter   $0.44 per 1M tokens
-        highest published output meter             $2.64 per 1M tokens
+        sources: https://azure.microsoft.com/en-us/blog/
+                 gpt-5-6-now-available-in-microsoft-foundry/
+                 https://prices.azure.com/api/retail/prices
+        Global long-context input/cache-write      $0.40/$0.50 per 1M
+        Global long-context output                 $1.80 per 1M
         defaults below                             $1.00 / $6.00 per 1M tokens
 
-    That is roughly a 2.3x margin on both sides.  The margin exists because the
+    That is at least a 2x margin.  The margin exists because the
     exact meter a given deployment bills against (global vs data-zone, standard
     vs provisioned, short vs long context) is not known until activation.
     Activation must still recheck the actual meter and correct the repeat count
@@ -132,7 +132,7 @@ class LunaPriceSchedule:
 
     input_micro_usd_per_million: int = 1_000_000
     output_micro_usd_per_million: int = 6_000_000
-    schedule_ref: str = "retail-bounded-safety-schedule-2026-08-31"
+    schedule_ref: str = "retail-bounded-safety-schedule-2026-09-03"
 
     def __post_init__(self) -> None:
         if self.input_micro_usd_per_million < 1:
@@ -159,6 +159,8 @@ class FoundryUsage:
     output_tokens: int
     estimated_micro_usd: int
     price_schedule_ref: str
+    cached_input_tokens: int = 0
+    cache_write_input_tokens: int = 0
 
 
 class SpendLedger:
@@ -236,6 +238,7 @@ class AzureFoundryResponsesProvider:
         spend_ledger: SpendLedger,
         usage_sink: Callable[[FoundryUsage], None] | None = None,
         maximum_input_tokens: int = 1_500,
+        maximum_input_bytes: int | None = None,
         maximum_output_tokens: int = 700,
     ) -> None:
         parsed_endpoint = urlsplit(endpoint)
@@ -255,7 +258,13 @@ class AzureFoundryResponsesProvider:
         normalized = f"https://{hostname}"
         if not deployment.strip():
             raise ValueError("Foundry deployment is required")
-        if maximum_input_tokens < 1 or maximum_output_tokens < 1:
+        if maximum_input_bytes is None:
+            maximum_input_bytes = maximum_input_tokens
+        if (
+            maximum_input_tokens < 1
+            or maximum_input_bytes < 1
+            or maximum_output_tokens < 1
+        ):
             raise ValueError("token ceilings must be positive")
         self._url = f"{normalized}/openai/v1/responses"
         self._token_provider = token_provider
@@ -265,6 +274,7 @@ class AzureFoundryResponsesProvider:
         self._ledger = spend_ledger
         self._usage_sink = usage_sink
         self._maximum_input_tokens = maximum_input_tokens
+        self._maximum_input_bytes = maximum_input_bytes
         self._maximum_output_tokens = maximum_output_tokens
 
     @staticmethod
@@ -331,13 +341,13 @@ class AzureFoundryResponsesProvider:
     ) -> Mapping[str, Any]:
         instructions = self._instructions()
         input_text = self._input(request, sources)
-        # One model token cannot contain less than one UTF-8 byte.  Bounding
-        # the complete UTF-8 input at the token reservation therefore makes
-        # the pre-call reservation conservative without provider tokenization.
+        # The byte ceiling prevents unbounded request bodies before the call.
+        # Token reservation is separate because bytes are not a safe token
+        # estimate for a deliberately long-context request.
         input_bytes = len(instructions.encode("utf-8")) + len(
             input_text.encode("utf-8")
         )
-        if input_bytes > self._maximum_input_tokens:
+        if input_bytes > self._maximum_input_bytes:
             raise ExecutionLimitError("Foundry input exceeds its prepaid ceiling")
         reservation = self._price.estimate_micro_usd(
             input_tokens=self._maximum_input_tokens,
@@ -385,6 +395,28 @@ class AzureFoundryResponsesProvider:
                 or output_tokens < 0
             ):
                 raise ProviderUnavailableError("Foundry token usage is malformed")
+            input_details = usage.get("input_tokens_details")
+            cached_input_tokens = 0
+            cache_write_input_tokens = 0
+            if input_details is not None:
+                if not isinstance(input_details, Mapping):
+                    raise ProviderUnavailableError(
+                        "Foundry input token details are malformed"
+                    )
+                cached_input_tokens = input_details.get("cached_tokens", 0)
+                cache_write_input_tokens = input_details.get(
+                    "cache_write_tokens", 0
+                )
+                if any(
+                    isinstance(value, bool)
+                    or not isinstance(value, int)
+                    or value < 0
+                    or value > input_tokens
+                    for value in (cached_input_tokens, cache_write_input_tokens)
+                ):
+                    raise ProviderUnavailableError(
+                        "Foundry input token details are malformed"
+                    )
             actual = self._price.estimate_micro_usd(
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
@@ -403,11 +435,20 @@ class AzureFoundryResponsesProvider:
                             output_tokens=output_tokens,
                             estimated_micro_usd=actual,
                             price_schedule_ref=self._price.schedule_ref,
+                            cached_input_tokens=cached_input_tokens,
+                            cache_write_input_tokens=cache_write_input_tokens,
                         )
                     )
                 except Exception:  # noqa: BLE001,S110
                     # Diagnostics must not alter the provider result.
                     pass
+            if input_tokens > self._maximum_input_tokens:
+                # Settlement and the privacy-safe usage callback deliberately
+                # happen first: Azure may already have billed this call, so a
+                # ceiling breach must remain visible in the stopped report.
+                raise ExecutionLimitError(
+                    "Foundry provider exceeded the input token reservation"
+                )
             try:
                 decoded = json.loads(self._output_text(payload))
             except (json.JSONDecodeError, TypeError) as error:

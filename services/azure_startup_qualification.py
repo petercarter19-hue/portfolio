@@ -136,7 +136,7 @@ class QualificationReport:
     def as_privacy_safe_dict(self) -> dict[str, Any]:
         """Return aggregates only; subscription and resource IDs never leave."""
 
-        newest = self.days[-1] if self.days else None
+        newest = next((day for day in reversed(self.days) if day.complete), None)
         return {
             "generated_at": self.generated_at.isoformat(),
             "authoritative_source": "Microsoft for Startups portal",
@@ -367,10 +367,11 @@ def planned_budget(
 ) -> dict[str, Any]:
     daily = sum(item.planned_daily_micro_usd for item in workloads)
     return {
-        "planned_daily_usd": daily / MICRO_USD_PER_USD,
-        "planned_30_day_usd": daily * 30 / MICRO_USD_PER_USD,
-        "planned_60_day_usd": daily * 60 / MICRO_USD_PER_USD,
-        "operating_warning_monthly_usd": 275.0,
-        "operating_hard_ceiling_monthly_usd": 325.0,
-        "account_credit_ceiling_monthly_usd": 550.0,
+        "workload_plan_daily_usd": daily / MICRO_USD_PER_USD,
+        "workload_plan_30_day_usd": daily * 30 / MICRO_USD_PER_USD,
+        "workload_plan_60_day_usd": daily * 60 / MICRO_USD_PER_USD,
+        "expected_all_in_monthly_usd": 305.0,
+        "warning_actual_monthly_usd": 275.0,
+        "intervention_forecast_monthly_usd": 325.0,
+        "emergency_alert_monthly_usd": 550.0,
     }

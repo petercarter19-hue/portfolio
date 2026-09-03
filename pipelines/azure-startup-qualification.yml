@@ -1,36 +1,50 @@
-# Production-inert definition for PS-AZURE-STARTUP-QUALIFICATION-001.
+# Active definition for PS-AZURE-STARTUP-ACTIVATION-001.
 #
-# This file is not registered as an Azure Pipeline by the package that created
-# it, and it deliberately defines NO schedule.  A later reviewed activation
-# change must add the schedule block, so this file cannot start itself even if
-# it is registered early.
-#
-# Every operative stage stays off until that activation supplies all five
-# fail-closed values below, including a dedicated least-privilege service
-# connection.  Two conditions are NOT enforced by this file and must be checked
-# at activation: that the pipeline remains unregistered until then, and that the
-# project restricts queue-time variable overrides -- otherwise the gate
-# variables and the spend ceiling below can be replaced when a run is queued.
+# The two daily schedules are deliberately redundant.  App Configuration holds
+# a non-secret UTC success marker, so the second run spends nothing when the
+# first Foundry run reached its reviewed fresh-input target.  The fallback can
+# recover a transient early-day failure without relying on a person.
 trigger: none
 pr: none
+lockBehavior: sequential
+
+schedules:
+  - cron: '20 1 * * *'
+    displayName: Primary daily qualification run
+    batch: true
+    branches:
+      include:
+        - main
+    always: true
+  - cron: '20 13 * * *'
+    displayName: Daily qualification recovery run
+    batch: true
+    branches:
+      include:
+        - main
+    always: true
 
 variables:
   vmImageName: 'ubuntu-latest'
   pythonVersion: '3.12'
-  # Least-privilege connection, supplied only at activation.  It must grant
-  # Cost Management read and Foundry inference and nothing else.  It is
-  # deliberately NOT the production deploy/migration connection used by
-  # azure-pipelines.yml: a nightly cost read must never hold authority to
-  # deploy the site or apply a schema migration.  Empty is fail-closed.
-  qualificationServiceConnectionId: ''
-  qualificationActivationEnabled: 'false'
-  qualificationCreditConfirmed: 'false'
-  qualificationSpendAuthorizationRef: ''
-  qualificationSubscriptionId: ''
-  qualificationFoundryEndpoint: ''
+  # This passwordless connection is dedicated to qualification.  It is not the
+  # production deploy/migration connection in azure-pipelines.yml.
+  qualificationServiceConnectionId: 'peerslate-startup-qualification-wif'
+  qualificationActivationEnabled: 'true'
+  qualificationCreditConfirmed: 'true'
+  qualificationSpendAuthorizationRef: 'session:01a046b3-74fc-7903-a336-3f1647f81d1c/owner-authorization:2026-09-03/activate-five-azure-startup-services-and-continuous-tracking'
+  qualificationAppConfigurationName: 'peerslate-startup-qualification'
+  qualificationFoundryEndpoint: 'https://peerslate-foundry.openai.azure.com'
   qualificationFoundryDeployment: 'gpt-5.6-luna'
-  qualificationEvaluationRepeats: '96'
-  qualificationFoundryHardCapUsd: '1.25'
+  qualificationEvaluationRepeats: '3'
+  qualificationSyntheticContextRecords: '13000'
+  qualificationMinimumFreshInputTokens: '2800000'
+  qualificationMinimumInputTokensPerCall: '272001'
+  qualificationMaximumInputTokens: '350000'
+  qualificationMaximumInputBytes: '1800000'
+  qualificationMaximumOutputTokens: '2000'
+  qualificationMinimumCallIntervalSeconds: '65'
+  qualificationFoundryHardCapUsd: '3.25'
 
 stages:
   - stage: Inactive
@@ -54,7 +68,6 @@ stages:
         eq(variables['qualificationActivationEnabled'], 'true'),
         eq(variables['qualificationCreditConfirmed'], 'true'),
         ne(variables['qualificationSpendAuthorizationRef'], ''),
-        ne(variables['qualificationSubscriptionId'], ''),
         ne(variables['qualificationServiceConnectionId'], '')
       )
     jobs:
@@ -77,15 +90,67 @@ stages:
               scriptLocation: inlineScript
               inlineScript: |
                 set -euo pipefail
+                qualification_subscription_id=$(az account show --query id -o tsv)
+                qualification_status_file="$AGENT_TEMPDIRECTORY/qualification-status.json"
+                set +e
                 python scripts/azure_startup_qualification_status.py \
-                  --subscription-id "$(qualificationSubscriptionId)"
+                  --subscription-id "$qualification_subscription_id" \
+                  --pretty \
+                  --require-qualified-latest-day \
+                  > "$qualification_status_file"
+                qualification_status_exit=$?
+                set -e
+                qualification_summary_file="$AGENT_TEMPDIRECTORY/qualification-status.md"
+                python - "$qualification_status_file" "$qualification_summary_file" <<'PY'
+                import json
+                import sys
+
+                report = json.load(open(sys.argv[1], encoding="utf-8"))
+                latest = report["latest_day"]
+                if latest is None:
+                    lines = [
+                        "# Azure startup qualification status",
+                        "",
+                        "No complete UTC Cost Management day is available yet.",
+                        "",
+                        "This is a conservative Cost Management estimate. The Microsoft for Startups portal remains authoritative.",
+                    ]
+                    open(sys.argv[2], "w", encoding="utf-8").write("\n".join(lines) + "\n")
+                    raise SystemExit(0)
+                costs = latest["workload_cost_usd"]
+                labels = {item["key"]: item["label"] for item in report["workloads"]}
+                lines = [
+                    "# Azure startup qualification status",
+                    "",
+                    f"Latest complete UTC day: **{latest['day']}**",
+                    f"Five-service day qualified: **{'yes' if latest['qualifies'] else 'no'}**",
+                    f"Current uninterrupted five-service streak: **{report['current_complete_day_streak']} days**",
+                    "",
+                    "| Workload | Cost | Above $1 |",
+                    "|---|---:|:---:|",
+                ]
+                for key in sorted(labels):
+                    value = costs.get(key, 0)
+                    lines.append(
+                        f"| {labels[key]} | ${value:.4f} | {'Yes' if value > 1 else 'No'} |"
+                    )
+                lines.extend(
+                    [
+                        "",
+                        "This is a conservative Cost Management estimate. The Microsoft for Startups portal remains authoritative.",
+                    ]
+                )
+                open(sys.argv[2], "w", encoding="utf-8").write("\n".join(lines) + "\n")
+                PY
+                echo "##vso[task.uploadsummary]$qualification_summary_file"
+                exit "$qualification_status_exit"
 
   - stage: FoundryEvaluation
     displayName: Run bounded Luna evaluations
     dependsOn: QualificationStatus
     condition: >-
       and(
-        succeeded(),
+        always(),
         eq(variables['qualificationActivationEnabled'], 'true'),
         eq(variables['qualificationCreditConfirmed'], 'true'),
         ne(variables['qualificationSpendAuthorizationRef'], ''),
@@ -94,6 +159,7 @@ stages:
       )
     jobs:
       - job: BoundedFoundryEvaluation
+        timeoutInMinutes: 30
         pool:
           vmImage: $(vmImageName)
         steps:
@@ -112,12 +178,81 @@ stages:
               scriptLocation: inlineScript
               inlineScript: |
                 set -euo pipefail
+                qualification_enabled=$(az appconfig kv show \
+                  --name "$(qualificationAppConfigurationName)" \
+                  --key "qualification/enabled" \
+                  --auth-mode login \
+                  --query value \
+                  --output tsv \
+                  --only-show-errors)
+                if [ "$qualification_enabled" != "true" ]; then
+                  echo "Qualification automation is disabled in App Configuration."
+                  exit 2
+                fi
+                qualification_today=$(date -u +%F)
+                qualification_last_success=$(az appconfig kv show \
+                  --name "$(qualificationAppConfigurationName)" \
+                  --key "qualification/foundry/last-success-day" \
+                  --auth-mode login \
+                  --query value \
+                  --output tsv \
+                  --only-show-errors)
+                if [ "$qualification_last_success" = "$qualification_today" ]; then
+                  echo "Foundry fresh-input target already reached for $qualification_today; no paid call is needed."
+                  exit 0
+                fi
+                qualification_result_file="$AGENT_TEMPDIRECTORY/foundry-evaluation.json"
+                set +e
                 python scripts/run_foundry_luna_evaluations.py \
                   --execute \
                   --endpoint "$(qualificationFoundryEndpoint)" \
                   --deployment "$(qualificationFoundryDeployment)" \
                   --repeat "$(qualificationEvaluationRepeats)" \
-                  --hard-cap-usd "$(qualificationFoundryHardCapUsd)"
+                  --synthetic-context-records "$(qualificationSyntheticContextRecords)" \
+                  --minimum-fresh-input-tokens "$(qualificationMinimumFreshInputTokens)" \
+                  --minimum-input-tokens-per-call "$(qualificationMinimumInputTokensPerCall)" \
+                  --maximum-input-tokens "$(qualificationMaximumInputTokens)" \
+                  --maximum-input-bytes "$(qualificationMaximumInputBytes)" \
+                  --maximum-output-tokens "$(qualificationMaximumOutputTokens)" \
+                  --minimum-call-interval-seconds "$(qualificationMinimumCallIntervalSeconds)" \
+                  --hard-cap-usd "$(qualificationFoundryHardCapUsd)" \
+                  > "$qualification_result_file"
+                qualification_runner_exit=$?
+                set -e
+                qualification_target_reached=$(python -c 'import json,sys; print(str(bool(json.load(open(sys.argv[1], encoding="utf-8")).get("fresh_input_target_reached"))).lower())' "$qualification_result_file")
+                if [ "$qualification_target_reached" = "true" ]; then
+                  az appconfig kv set \
+                    --name "$(qualificationAppConfigurationName)" \
+                    --key "qualification/foundry/last-success-day" \
+                    --value "$qualification_today" \
+                    --auth-mode login \
+                    --yes \
+                    --output none \
+                    --only-show-errors
+                fi
+                qualification_summary_file="$AGENT_TEMPDIRECTORY/foundry-evaluation.md"
+                python - "$qualification_result_file" "$qualification_summary_file" <<'PY'
+                import json
+                import sys
+
+                report = json.load(open(sys.argv[1], encoding="utf-8"))
+                lines = [
+                    "# Foundry Luna daily evaluation",
+                    "",
+                    f"Mode: **{report['mode']}**",
+                    f"Fresh-input target reached: **{'yes' if report.get('fresh_input_target_reached') else 'no'}**",
+                    f"Calls billed: **{report.get('calls_billed', 0)}**",
+                    f"Fresh input tokens: **{report.get('fresh_input_tokens', 0):,}**",
+                    f"Cached input tokens: **{report.get('cached_input_tokens', 0):,}**",
+                    f"Output tokens: **{report.get('output_tokens', 0):,}**",
+                    f"Safety-schedule estimate: **${report.get('estimated_cost_usd', 0):.4f}**",
+                    "",
+                    "Prompts and model output are not retained in this report.",
+                ]
+                open(sys.argv[2], "w", encoding="utf-8").write("\n".join(lines) + "\n")
+                PY
+                echo "##vso[task.uploadsummary]$qualification_summary_file"
+                exit "$qualification_runner_exit"
             env:
               PEERSLATE_AZURE_QUALIFICATION_ACTIVATED: $(qualificationActivationEnabled)
               PEERSLATE_AZURE_CREDIT_CONFIRMED: $(qualificationCreditConfirmed)

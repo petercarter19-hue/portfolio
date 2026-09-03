@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-AZURE-STARTUP-ACTIVATION-001",
+  "candidate_sha": "855bf8d0208cb4525c9b7ddce7bc61f10c2a0186",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/azure_activation_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-03T13:06:36Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Candidate 645e085bb72677ae050be4d38e46800804fbb2a3 was rejected because the short-context Foundry target did not establish more than $1 of daily service usage, marker reads failed open and were not serialized, Cost Management timeouts could disclose command data, no-data summaries failed, and budget labels conflicted. The writer calibrated a privacy-safe synthetic long-context request and corrected all five findings."
+    },
+    {
+      "status": "resolved",
+      "summary": "Candidate 1aade0aa03a579c8566af70d7fe5ea42f09f61a3 was rejected because 45-second call spacing could place two approximately 325,000-token requests inside the live 500,000-token, 60-second quota window. The final candidate spaces starts by at least 65 seconds and pins that value in test coverage."
+    },
+    {
+      "status": "informational",
+      "summary": "The reviewer accepted exact candidate 855bf8d0208cb4525c9b7ddce7bc61f10c2a0186 against exact base 8a0b6213a226b7844e8aa4484f5524c46012da42 with no blocking findings. Git diff checks and 41 focused tests passed. The external ExclusiveLock remains load-bearing; the $3.25 runner cap is a conservative application-side estimate rather than an Azure billing stop; and the first scheduled run, delayed Cost Management result, and Startups portal count remain to be observed."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-AZURE-STARTUP-ACTIVATION-001.md"
+}

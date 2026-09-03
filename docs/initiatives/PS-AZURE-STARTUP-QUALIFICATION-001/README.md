@@ -5,6 +5,35 @@
 and production changes are withheld
 **Operator:** Codex-managed repository package
 
+## September 3, 2026 activation
+
+The later protected package `PS-AZURE-STARTUP-ACTIVATION-001` owns the live
+five-workload activation.  Under Pete's exact authorization, Azure SQL was
+scaled from S0 to S1, one Standard App Configuration store was created, and a
+dedicated secretless Azure DevOps workload-identity connection was created
+with only Cost Management Reader, Cognitive Services OpenAI User, and App
+Configuration Data Owner access.  The misleading subscription-wide $20
+budget was replaced with a $550 monthly alert ceiling at $275 actual,
+approximately $325 forecasted, and $550 actual.
+
+The activation candidate runs nine bounded long-context Luna evaluations to
+reach at least 2.8 million non-cached input tokens per UTC day, under a $3.25
+safety cap.  Each call must report more than 272,000 input tokens, and call
+starts are at least 65 seconds apart to remain within the deployed 500,000
+tokens-per-minute rate limit.
+It schedules a primary run at 01:20 UTC and an idempotent recovery run at 13:20
+UTC.  App Configuration records the non-secret success day so the second run
+does not repeat paid inference after the first succeeds.  The service
+connection's exclusive lock and the pipeline's sequential lock behavior make
+the marker read, inference, and marker write one serialized operation.
+Pipeline registration and the first scheduled run occur only after the
+independently reviewed activation candidate merges to `main`.
+
+The current operating estimate is approximately $305/month, not the $550
+ceiling.  Only complete Cost Management days above $1 for all five services
+are counted locally, and the Microsoft for Startups portal remains
+authoritative.
+
 ## Decision in plain language
 
 The $25,000 milestone requires **5 or more Azure workloads** over approximately
@@ -18,11 +47,12 @@ Source: [Microsoft for Startups milestones and workload definition](https://lear
 
 ## The reasonable five-workload plan
 
-The account-level $550 monthly budget is an emergency credit ceiling, not the
-operating target.  The conservative operating plan is about **$248.70 per 30
-days** and **$497.40 per 60 days**, with a $275 warning and $325 operating hard
-ceiling.  This leaves substantial room for meter variation without planning to
-consume $550.
+The account-level $550 monthly budget is an emergency alert, not the operating
+target or an automatic spending stop.  The five workload targets total about
+**$248.70 per 30 days** and **$497.40 per 60 days**.  Existing ancillary Azure
+usage brings the expected all-in amount to roughly **$305/month**.  The budget
+therefore has a $275 actual early warning, an approximately $325 forecast
+intervention alert, and a $550 actual emergency alert.
 
 | Workload | Purpose | Planned daily amount |
 |---|---|---:|
@@ -43,19 +73,20 @@ Source: [Azure App Configuration pricing](https://azure.microsoft.com/en-us/pric
 
 ## Current live Cost Management read
 
-On August 30, 2026, the latest complete UTC day (August 29) showed:
+Before activation, the latest complete UTC day (September 2) showed:
 
 | Tracked workload | ActualCost estimate | Above $1? |
 |---|---:|---:|
 | Azure App Service | $2.472 | Yes |
 | Azure AI Search | $2.424 | Yes |
-| Azure SQL Database | $0.736169 | No |
-| Azure App Configuration | $0.00 | No—not created/activated |
+| Azure SQL Database | $0.675260 | No |
+| Azure App Configuration | $0.00 | No—not active on that day |
 | Microsoft Foundry Luna | $0.00 | No |
 
-The conservative result is **2 of 5 and a zero-day streak**.  Historical
-Foundry tests and occasional SQL days do not create continuity.  The current
-UTC day is excluded because Cost Management is incomplete until later.
+The conservative result was **2 of 5 and a zero-day streak**.  SQL S1 and App
+Configuration Standard were activated on September 3.  Historical Foundry
+tests and occasional SQL days do not create continuity.  The current UTC day
+is excluded because Cost Management is incomplete until later.
 
 ## Why Foundry API usage counts differently from Cursor
 
@@ -71,30 +102,27 @@ Source: [Azure OpenAI Responses API and supported models](https://learn.microsof
 
 One token-light call per day is nowhere near $1.
 
-**This package has made no paid Foundry call.**  The sizing below is arithmetic
-on an assumed call shape, not a measurement taken by this work.  A read-only
-Cost Management query on 2026-08-31 confirms it: Foundry spend across
-2026-08-20 to 2026-08-30 was $0.00.  The subscription does carry $3.21 of
-earlier Foundry Models usage, all of it in July (2026-07-08 $0.01,
-2026-07-29 $2.49, 2026-07-30 $0.70) from work that predates this package.
+An attended September 3 calibration used deterministic fictional distractors
+and retained only usage aggregates.  One call reported 325,174 input tokens,
+zero cached tokens, 325,171 cache-write tokens, and 1,028 output tokens.  That
+crosses Microsoft's 272,000-token long-context boundary.
 
-Sizing assumption: 99 calls at roughly 608 input and 478 output tokens each
-(60,228 input and 47,320 output tokens in total).  Priced at this package's
-deliberately over-stated safety rates of $1/million input and $6/million
-output, that is about $0.344, or $0.00348 per call.  Roughly 288 similarly
-sized calls would approach $1.
+The active plan has three useful synthetic evaluation cases repeated three
+times: nine calls and at least 2.8 million non-cached input tokens.  At the
+published Global long-context rate of $0.40/million ordinary input tokens,
+2.8 million costs $1.12 before output.  Cache-write input is priced higher at
+$0.50/million.  The runner also requires every call to report more than
+272,000 input tokens; a short-context call, cached-input shortfall, missing
+usage record, or partial run cannot set the day's success marker.
 
-Those safety rates sit about 2.3x above the highest published Azure retail
-meters for GPT-5.6 Luna, which are $0.44/million input and $2.64/million
-output ([Azure Retail Prices API](https://prices.azure.com/api/retail/prices),
-read 2026-08-31).  The estimate therefore errs high and the hard cap binds
-early, which is the safe direction.
+The code's deliberately overstated $1/million input and $6/million output
+safety schedule reserves against a $3.25 maximum for the run.  The schedule is
+a spending guard, not the qualification estimate.  The Azure bill and the
+Microsoft for Startups portal remain authoritative.
 
-The scheduled definition contains 3 useful synthetic/public evaluation cases
-repeated 96 times (288 total), but the runner stops before its $1.25 hard cap.
-A retail list price is not a bill, and the assumed call shape is unverified, so
-the first authorized run must be observed and the repeat count corrected rather
-than blindly assumed.
+Sources: [Microsoft's GPT-5.6 pricing announcement](https://azure.microsoft.com/en-us/blog/gpt-5-6-now-available-in-microsoft-foundry/),
+[long-context pricing boundary](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/provisioned-throughput-sizing),
+and the [Azure Retail Prices API](https://prices.azure.com/api/retail/prices).
 
 ## What is built
 
@@ -114,8 +142,9 @@ than blindly assumed.
   nonempty exact authorization reference, a valid endpoint, and remaining
   call/dollar capacity.  It prints only structural results and token/cost
   aggregates.
-- `pipelines/azure-startup-qualification.yml` describes a daily schedule, but
-  it is not registered and every operative variable is default-off.
+- At this package's close, `pipelines/azure-startup-qualification.yml` had no
+  schedule, was not registered, and every operative variable was default-off.
+  The later `PS-AZURE-STARTUP-ACTIVATION-001` package owns any active schedule.
 
 No prompt, source body, model answer, access token, credential, endpoint,
 subscription ID, or Azure resource ID is written into evaluation results.
@@ -145,35 +174,26 @@ often too inexpensive to remain above $1 every day.  Artificial traffic is not
 a durable product design and Microsoft evaluates sustained patterns rather
 than one-time spikes.
 
-## Activation checklist (not authorized by this package)
+## Activation status and remaining sequence
 
-1. Confirm the $5,000 credit is visible in the Startups and Azure portals.
-2. Re-read the current milestone rules and verify the portal's current workload
-   count.  Do not assume historical days qualify.
-3. Read the last 7 complete UTC days from Cost Management and verify service
-   names/meter costs map correctly.
-4. Set Azure budgets/alerts at $275 warning, $325 operating hard ceiling, and
-   $550 account emergency ceiling.  A budget alerts; it does not automatically
-   stop most resources.
-5. Create a NEW, dedicated Azure DevOps service connection for this pipeline and
-   grant its identity only Cost Management read and Foundry inference.  Do not
-   reuse the production deploy/migration connection used by
-   `azure-pipelines.yml`, and do not add these grants to that principal: a
-   nightly cost read must never hold authority to deploy the site or apply a
-   schema migration.  Supply the new connection id as
-   `qualificationServiceConnectionId`; it is empty and fail-closed until then.
-   Never place an API key in the repository or pipeline output.
-6. Confirm the Azure DevOps project restricts queue-time variable overrides
-   ("Limit variables that can be set at queue time").  Without it, the gate
-   variables and the `$1.25` spend ceiling can be replaced when a run is queued.
-7. Perform one attended bounded Luna calibration under an exact spend
-   authorization and inspect next-day ActualCost.  Compare the real meter rate
-   against the over-stated safety schedule and correct it.
-8. Correct the repeat count/targets, add the schedule block (this file
-   deliberately ships without one), register the separate pipeline, and supply
-   all five fail-closed gate values in one reviewed activation.
-9. Check the report daily.  Missing data, a workload below $1, a failed eval,
-   or a budget alert stops escalation and requires diagnosis.
+1. The $5,000 credit is visible, and the current milestone rule has been
+   re-read.  Historical days are not assumed to qualify.
+2. SQL S1 and App Configuration Standard are active.  App Service and Search
+   were already above the conservative threshold on the latest complete day.
+3. A dedicated passwordless service connection has only Cost Management
+   Reader, Foundry inference, and App Configuration data access.  It cannot
+   deploy the site or apply a schema migration.
+4. The subscription-wide budget has a $275 actual warning, approximately $325
+   forecast intervention alert, and $550 actual emergency alert.  A budget
+   alerts; it does not automatically stop resources.
+5. The service connection has an exclusive lock.  The active YAML adds
+   sequential lock behavior, two non-overlapping schedules, fail-closed marker
+   reads, and the reviewed Luna limits.
+6. After this candidate merges, register the separate pipeline, authorize only
+   that pipeline to the dedicated connection, and observe its first run.
+7. Check complete Cost Management days and the Startups portal daily.  Missing
+   data, a workload at or below $1, a failed evaluation, or a budget alert
+   requires diagnosis; it never silently advances the local streak.
 
 ## Claude and Xcode
 
