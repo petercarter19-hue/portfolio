@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKSHOP-REFLOW-ACCESSIBILITY-POLISH-001",
+  "state": "active",
+  "outcome": "Polish Workshop after Shared Shell closes without changing composition, copy, flow, visual language, or closed E/F/G behavior. Limit to Workshop-local CSS, three Work templates, four partials, focused tests, and package records. Establish one H1 and labelled main per view; visible focus at >=3:1; 44px targets or documented spacing exceptions; truthful nonfocusable dead controls; correct disclosure semantics; forced-colors selected-state distinction; and no overflow or obscured focus at desktop, tablet, 768px, 640px/200%, 390px, and 320px/400%, with long text, text spacing, reduced motion, and JS-off truth. Preserve owner scoping, real no-JS forms/routes, and deterministic shell/local-state captures. docs/governance/PACKAGE_REGISTRY.json is explicitly deferred for claim-only activation; implementation must not merge until a governed extend-surfaces transition adds that exact path, registration and counts land, the branch refreshes from current origin/main, and validation plus independent exact-SHA/delta review repeat. Exclude shared shell/base/navigation, app/auth/routes/services/schema/flags, deployment/production, identity, and the separate fresh two-member proof.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/workshop_polish_prep",
+  "branch": "work/2026-09-03-workshop-reflow-accessibility-polish-001",
+  "delivery_path": "Bounded",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "df37a13d293c42a4ad3f4b0ba350bad207b0a306",
+  "owner_outcome_ref": "session:01a03e17-a645-7ae0-8da3-164eef90a333/pete-chat-2026-09-02/manage-audit-execution-order-and-parallel-work",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-WORKSHOP-REFLOW-ACCESSIBILITY-POLISH-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-REFLOW-ACCESSIBILITY-POLISH-001.md",
+    "docs/governance/lane_claims/receipts/PS-WORKSHOP-REFLOW-ACCESSIBILITY-POLISH-001.json",
+    "docs/initiatives/PS-WORKSHOP-REFLOW-ACCESSIBILITY-POLISH-001/README.md",
+    "docs/initiatives/PS-WORKSHOP-REFLOW-ACCESSIBILITY-POLISH-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "static/css/workshop.css",
+    "templates/partials/workshop/_hero_and_modes.html",
+    "templates/partials/workshop/_library.html",
+    "templates/partials/workshop/_item_detail.html",
+    "templates/partials/workshop/_info_card.html",
+    "templates/workshop_work.html",
+    "templates/workshop_work_session.html",
+    "templates/workshop_work_review.html",
+    "tests/test_workshop_accessibility.py",
+    "tests/test_workshop_polish.py",
+    "tests/test_workshop_work_session.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKSHOP-REFLOW-ACCESSIBILITY-POLISH-001.md"
+  ],
+  "domains": [
+    "accessibility:workshop:semantics-focus-targets",
+    "experience:workshop:responsive-reflow",
+    "runtime:workshop:template-presentation",
+    "governance:initiative:workshop-reflow-accessibility-polish",
+    "governance:package-registry:workshop-reflow-accessibility-polish"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
