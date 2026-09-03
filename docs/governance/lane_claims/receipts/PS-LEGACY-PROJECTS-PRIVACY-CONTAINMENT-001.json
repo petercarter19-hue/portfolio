@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-LEGACY-PROJECTS-PRIVACY-CONTAINMENT-001",
+  "candidate_sha": "5544d76e508b4066b001a12f6867334bc5c34cc2",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/owner_home_retirement",
+  "result": "pass",
+  "reviewed_at": "2026-09-03T02:01:34Z",
+  "findings": [
+    {
+      "summary": "A pre-registry independent review provisionally accepted exact candidate 860df6e4bc302ed32b872ee9cff95262c5d0e9dc with no implementation finding while preserving the declared Package Registry merge blocker. Owner Home then closed, the claim gained only the released registry surface through independently passed control commit da2cacf50a2a8321ba2574149088da8e08befadc and PR 871, and the implementation branch refreshed from that resulting main without changing the reviewed containment bytes.",
+      "status": "resolved"
+    },
+    {
+      "summary": "The final independent exact-SHA and delta review accepted candidate 5544d76e508b4066b001a12f6867334bc5c34cc2 against fresh unchanged main fb6316dfd8a857c7da8f10717761b96f26b766ef. The exact 40-byte tombstone, HTTP behaviors, redirects, resume separation, search and sitemap exclusion, two current-state documentation corrections, authoritative current_protect registry classification, counts, claimed paths, and collision boundaries passed with no blocker.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Validation passed: 5,513 repository tests with 26 inherited skips; 49 focused registry, Projects, navigation, and search tests; write preflight; evidence and migration registries; compile and diff checks; current-tree and 2,435-commit full-history Gitleaks; and a 3,619-file candidate archive scan proving the retired payload digest and six unique private-record markers absent. No deployment or live, GitHub, cache, history, schema, or identity action is authorized.",
+      "status": "informational"
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-LEGACY-PROJECTS-PRIVACY-CONTAINMENT-001.md"
+}

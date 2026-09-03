@@ -1,12 +1,21 @@
+import hashlib
 import json
 import unittest
+import xml.etree.ElementTree as ET
 from pathlib import Path
+from urllib.parse import urlsplit
 
-from app import app, _load_project_board, _normalize_board_project
+from app import app
+
+
+EXPECTED_TOMBSTONE = b'{\n  "retired": true,\n  "projects": []\n}\n'
+LEGACY_BOARD_SHA256 = (
+    'f3e2e933146005ccb6879737cbc78b691b3411c5fbdbee5d7fbc2796c914b642'
+)
 
 
 class ProjectsBoardTests(unittest.TestCase):
-    """Preserve project records while retiring their standalone public pages."""
+    """Contain the retired board while preserving unrelated public behavior."""
 
     def setUp(self):
         self.client = app.test_client()
@@ -16,80 +25,115 @@ class ProjectsBoardTests(unittest.TestCase):
         self.assertIn(response.status_code, (301, 302, 307, 308))
         self.assertEqual(response.headers['Location'], expected_location)
 
-    # ---- preserved board data -----------------------------------------
+    # ---- retired board payload containment ----------------------------
 
-    def _board(self):
-        fixture = (
+    def _fixture(self):
+        return (
             Path(__file__).resolve().parents[1]
             / 'static'
             / 'data'
             / 'projects_board.json'
         )
-        return json.loads(fixture.read_text(encoding='utf-8'))
 
-    def test_board_data_is_profile_scoped_and_loads(self):
-        data = _load_project_board('petec')
-        self.assertIsNotNone(data)
-        self.assertEqual(data['profile_slug'], 'petec')
-        self.assertEqual(len(data['projects']), 6)
+    def test_retired_board_is_the_exact_inert_tombstone(self):
+        payload = self._fixture().read_bytes()
+        self.assertEqual(payload, EXPECTED_TOMBSTONE)
+        self.assertEqual(json.loads(payload), {'retired': True, 'projects': []})
+        self.assertNotEqual(
+            hashlib.sha256(payload).hexdigest(), LEGACY_BOARD_SHA256
+        )
 
-    def test_unknown_profile_board_fails_safely(self):
-        self.assertIsNone(_load_project_board('nobody'))
-
-    def test_partial_project_is_normalized_for_future_reuse(self):
-        bare = {'slug': 'wip', 'status': 'on-deck'}
-        _normalize_board_project(bare)
-        detail = bare['detail']
-
-        self.assertEqual(detail['actions']['view_live']['enabled'], False)
-        self.assertIn('category', detail['info'])
-        self.assertIn('note', detail['info']['team'])
-        for key in (
-            'updates',
-            'milestones',
-            'media',
-            'links',
-            'notes',
-            'key_features',
-            'tech_stack',
+    def test_get_and_query_return_only_the_tombstone(self):
+        for path in (
+            '/static/data/projects_board.json',
+            '/static/data/projects_board.json?cache-bust=privacy-containment',
         ):
-            self.assertEqual(detail[key], [])
-        self.assertEqual(bare['status_label'], 'On Deck')
+            with self.subTest(path=path):
+                response = self.client.get(path, base_url='https://peerslate.com')
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.mimetype, 'application/json')
+                self.assertEqual(response.data, EXPECTED_TOMBSTONE)
+                self.assertNotIn('Set-Cookie', response.headers)
+                response.close()
 
-    def test_every_project_keeps_the_fields_reusable_views_need(self):
-        for project in self._board()['projects']:
-            for key in (
-                'id',
-                'slug',
-                'title',
-                'summary',
-                'status',
-                'status_label',
-                'tags',
-                'card_image',
-                'detail',
-            ):
-                self.assertIn(key, project, f"{project.get('slug')} missing {key}")
-            self.assertIn(project['status'], ('active', 'completed', 'on-deck'))
-            for key in (
-                'about',
-                'info',
-                'actions',
-                'updates',
-                'milestones',
-                'links',
-                'notes',
-                'key_features',
-            ):
-                self.assertIn(
-                    key,
-                    project['detail'],
-                    f"{project['slug']}.detail missing {key}",
-                )
+    def test_head_has_the_tombstone_length_and_no_body(self):
+        response = self.client.head(
+            '/static/data/projects_board.json',
+            base_url='https://peerslate.com',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, 'application/json')
+        self.assertEqual(response.data, b'')
+        self.assertEqual(
+            int(response.headers['Content-Length']), len(EXPECTED_TOMBSTONE)
+        )
+        self.assertNotIn('Set-Cookie', response.headers)
+        response.close()
 
-    def test_project_fixture_does_not_overclaim_enforced_privacy(self):
-        serialized = json.dumps(self._board()).lower()
-        self.assertNotIn('only you can see these', serialized)
+    def test_conditional_get_never_replays_the_retired_payload(self):
+        initial = self.client.get(
+            '/static/data/projects_board.json',
+            base_url='https://peerslate.com',
+        )
+        self.assertEqual(initial.status_code, 200)
+        self.assertTrue(initial.headers.get('ETag'))
+        etag = initial.headers['ETag']
+        initial.close()
+        response = self.client.get(
+            '/static/data/projects_board.json',
+            base_url='https://peerslate.com',
+            headers={'If-None-Match': etag},
+        )
+        self.assertEqual(response.status_code, 304)
+        self.assertEqual(response.data, b'')
+        self.assertNotIn('Set-Cookie', response.headers)
+        response.close()
+
+    def test_range_requests_can_return_only_tombstone_bytes(self):
+        response = self.client.get(
+            '/static/data/projects_board.json',
+            base_url='https://peerslate.com',
+            headers={'Range': 'bytes=0-19'},
+        )
+        self.assertEqual(response.status_code, 206)
+        self.assertEqual(response.data, EXPECTED_TOMBSTONE[:20])
+        self.assertEqual(
+            response.headers.get('Content-Range'),
+            f'bytes 0-19/{len(EXPECTED_TOMBSTONE)}',
+        )
+        self.assertNotIn('Set-Cookie', response.headers)
+        response.close()
+
+    def test_search_and_sitemap_do_not_advertise_the_retired_board(self):
+        home = self.client.get('/', base_url='https://peerslate.com')
+        self.assertEqual(home.status_code, 200)
+        body = home.get_data(as_text=True)
+        block = body.split(
+            '<script id="nav-search-data" type="application/json">', 1
+        )[1].split('</script>', 1)[0]
+        destinations = json.loads(block)
+        retired_fragments = ('projects_board.json', '/projects', '/work')
+        for destination in destinations:
+            href = destination['href']
+            with self.subTest(href=href):
+                self.assertFalse(any(part in href for part in retired_fragments))
+
+        sitemap = self.client.get(
+            '/sitemap.xml', base_url='https://peerslate.com'
+        )
+        self.assertEqual(sitemap.status_code, 200)
+        root = ET.fromstring(sitemap.get_data(as_text=True))
+        namespace = {'sitemap': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+        paths = [
+            urlsplit(location.text).path
+            for location in root.findall('sitemap:url/sitemap:loc', namespace)
+        ]
+        self.assertTrue(paths)
+        self.assertNotIn('/projects', paths)
+        self.assertNotIn('/petec/projects', paths)
+        self.assertNotIn('/work', paths)
+        self.assertNotIn('/petec/work', paths)
+        self.assertNotIn('/static/data/projects_board.json', paths)
 
     # ---- retired project routes ---------------------------------------
 

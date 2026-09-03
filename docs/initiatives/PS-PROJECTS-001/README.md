@@ -78,8 +78,11 @@ brief, portfolio story, manager update, or selected public Project page.
 
 - `GET /projects`, `/petec/projects`, `/work`, and `/petec/work` currently
   redirect to `/petec/resume#experience`.
-- Historical profile-scoped Project fixtures and case-study data are preserved,
-  but their standalone pages are retired.
+- The legacy browser-facing Project Board payload is retired in the repository
+  by `PS-LEGACY-PROJECTS-PRIVACY-CONTAINMENT-001`: its current-tree file is an
+  inert empty tombstone. That repository containment is not a production fix
+  until a separately authorized deployment reaches every public host and stale
+  cache behavior is verified. Separate résumé case-study data is preserved.
 - Slate Board has a browser-facing Projects column, but it is not an
   authenticated canonical Projects workspace.
 - The released Placement foundation can reference one exact confirmed Moment
@@ -212,9 +215,13 @@ Implementation remains blocked until all of the following are durable:
 - `docs/PEERSLATE_SITE_RULES.md`
 - `AGENTS.md`, `CLAUDE.md`, and focused governance guardrails
 
-No route, template, JavaScript, stylesheet, current Project fixture, résumé
-data, Slate Board behavior, service, SQL migration, infrastructure, dependency,
-or production capability is reserved or changed.
+This historical direction-registration slice changed no route, template,
+JavaScript, stylesheet, Project fixture, résumé data, Slate Board behavior,
+service, SQL migration, infrastructure, dependency, or production capability.
+The later, separately governed
+`PS-LEGACY-PROJECTS-PRIVACY-CONTAINMENT-001` repository package replaces only
+the retired board payload with an inert tombstone; it does not activate this
+planned Projects product.
 
 ## Required package records
 

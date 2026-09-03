@@ -128,10 +128,14 @@ result, saves privately, and publishes through a separate explicit action.
 
 ## Historical Projects design status
 
-`docs/design/projects-experience/` and `static/data/projects_board.json` are
-preserved evidence from the retired public Projects experience. Their museum/
-documentary pacing and artifact sensitivity may inform future projection
-exploration, but they do not control the authenticated product because:
+`docs/design/projects-experience/` remains design evidence from the retired
+public Projects experience. The former browser-facing
+`static/data/projects_board.json` payload is preserved only in Git history;
+`PS-LEGACY-PROJECTS-PRIVACY-CONTAINMENT-001` replaces the current-tree file
+with an inert empty tombstone. That repository change does not claim production
+containment until a separately authorized deployment and host/cache proof.
+The surviving design evidence may inform future projection exploration, but it
+does not control the authenticated product because:
 
 - they predate the current owner-system and Deep Navy Gold authority chain;
 - they describe Pete-profile fixtures rather than a multi-user owner workflow;

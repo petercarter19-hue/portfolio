@@ -54,6 +54,7 @@
       "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
       "PS-INTERVIEW-STUDIO-INTEGRATION-001",
       "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001",
+      "PS-LEGACY-PROJECTS-PRIVACY-CONTAINMENT-001",
       "PS-MOMENT-001",
       "PS-OPPORTUNITY-SLATE-001",
       "PS-OPPORTUNITY-SLATE-002",
@@ -160,11 +161,11 @@
     ]
   },
   "counts": {
-    "current_protect": 68,
+    "current_protect": 69,
     "future_finish": 33,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 136
+    "total": 137
   }
 }
