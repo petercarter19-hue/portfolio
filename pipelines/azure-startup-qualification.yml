@@ -33,7 +33,9 @@ variables:
   qualificationActivationEnabled: 'true'
   qualificationCreditConfirmed: 'true'
   qualificationSpendAuthorizationRef: 'session:01a046b3-74fc-7903-a336-3f1647f81d1c/owner-authorization:2026-09-03/activate-five-azure-startup-services-and-continuous-tracking'
-  qualificationAppConfigurationName: 'peerslate-startup-qualification'
+  # Use the data-plane endpoint so this identity needs no ARM Reader role just
+  # to discover a store it already has exact App Configuration data access to.
+  qualificationAppConfigurationEndpoint: 'https://peerslate-startup-qualification.azconfig.io'
   qualificationFoundryEndpoint: 'https://peerslate-foundry.openai.azure.com'
   qualificationFoundryDeployment: 'gpt-5.6-luna'
   qualificationEvaluationRepeats: '3'
@@ -179,7 +181,7 @@ stages:
               inlineScript: |
                 set -euo pipefail
                 qualification_enabled=$(az appconfig kv show \
-                  --name "$(qualificationAppConfigurationName)" \
+                  --endpoint "$(qualificationAppConfigurationEndpoint)" \
                   --key "qualification/enabled" \
                   --auth-mode login \
                   --query value \
@@ -191,7 +193,7 @@ stages:
                 fi
                 qualification_today=$(date -u +%F)
                 qualification_last_success=$(az appconfig kv show \
-                  --name "$(qualificationAppConfigurationName)" \
+                  --endpoint "$(qualificationAppConfigurationEndpoint)" \
                   --key "qualification/foundry/last-success-day" \
                   --auth-mode login \
                   --query value \
@@ -222,7 +224,7 @@ stages:
                 qualification_target_reached=$(python -c 'import json,sys; print(str(bool(json.load(open(sys.argv[1], encoding="utf-8")).get("fresh_input_target_reached"))).lower())' "$qualification_result_file")
                 if [ "$qualification_target_reached" = "true" ]; then
                   az appconfig kv set \
-                    --name "$(qualificationAppConfigurationName)" \
+                    --endpoint "$(qualificationAppConfigurationEndpoint)" \
                     --key "qualification/foundry/last-success-day" \
                     --value "$qualification_today" \
                     --auth-mode login \

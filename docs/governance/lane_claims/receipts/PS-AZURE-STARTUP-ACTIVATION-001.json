@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-AZURE-STARTUP-ACTIVATION-001",
-  "candidate_sha": "855bf8d0208cb4525c9b7ddce7bc61f10c2a0186",
+  "candidate_sha": "3002325d64dbd7ec61fa2389f2930dedc8450acd",
   "review_type": "independent",
   "reviewer_ref": "agent:/root/azure_activation_review",
   "result": "pass",
-  "reviewed_at": "2026-09-03T13:06:36Z",
+  "reviewed_at": "2026-09-03T13:35:45Z",
   "findings": [
     {
       "status": "resolved",
@@ -18,6 +18,10 @@
     {
       "status": "informational",
       "summary": "The reviewer accepted exact candidate 855bf8d0208cb4525c9b7ddce7bc61f10c2a0186 against exact base 8a0b6213a226b7844e8aa4484f5524c46012da42 with no blocking findings. Git diff checks and 41 focused tests passed. The external ExclusiveLock remains load-bearing; the $3.25 runner cap is a conservative application-side estimate rather than an Azure billing stop; and the first scheduled run, delayed Cost Management result, and Startups portal count remain to be observed."
+    },
+    {
+      "status": "resolved",
+      "summary": "After the initial package merged, scheduled run 2390 stopped before inference because resolving App Configuration by store name requires ARM read access that the dedicated data identity deliberately lacks. The reviewer accepted exact correction 3002325d64dbd7ec61fa2389f2930dedc8450acd against merged base c40706bea8b186eee552cd9528693e1e3b79a4ce with no findings. All three key-value calls now use the verified HTTPS data-plane endpoint with login authentication, preserving least privilege without a Reader grant; 41 focused tests, YAML parsing, extracted shell syntax, and diff checks passed."
     }
   ],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-AZURE-STARTUP-ACTIVATION-001.md"
