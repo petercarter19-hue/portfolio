@@ -162,7 +162,7 @@ class KnowledgeServiceListTests(unittest.TestCase):
         self.assertEqual(result.total_count, 0)
 
     def test_list_superset_row_is_rejected(self):
-        """Exact-shape discipline (owner_home_service's _require_exact_fields):
+        """Exact-shape discipline for server-owned knowledge contracts:
         a row carrying one extra, unrecognized column is rejected outright,
         not silently passed through with the extra field dropped."""
         self.database.execute_procedure.return_value = [

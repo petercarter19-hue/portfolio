@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-OWNER-HOME-RETIREMENT-001",
+  "candidate_sha": "70c4f3463faccab7829cac5a6ea1e6c9b72b261c",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/profile_critical_path_prep",
+  "result": "pass",
+  "reviewed_at": "2026-09-03T01:04:09Z",
+  "findings": [
+    {
+      "summary": "The first replacement review found a guaranteed dead Ask Pete AI control on protected routes and a focus outline below the 3:1 non-text contrast threshold. The final candidate removes the dead protected control, proves its absence in rendered output, uses #203767 for focus, and numerically verifies at least 3:1 against both adjacent backgrounds.",
+      "status": "resolved"
+    },
+    {
+      "summary": "The final independent exact-SHA review accepted the complete bounded retirement: 42 of 42 changed paths were claimed; authenticated /app remains private/no-store with safe-return behavior preserved; retired Owner Home runtime paths are absent; launchpad, header, and search destinations share truthful availability gates; Capture is equal rather than default; no member Profile or Pete public chrome is invented on protected routes; accessibility and reflow contracts pass.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Validation passed: 658 focused tests, 5,512 full-repository tests with 26 inherited skips, package-registry checks, diff and write preflight, and fresh-clone full-history Gitleaks. Rejected candidate dbc39fdd1751b241873e65530fcc2d313bee3603 is absent from remote refs. Main drift to 50e983fb is one disjoint Projects claim-only file with no path, domain, or merge-tree collision, so the exact acceptance remains valid.",
+      "status": "informational"
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-OWNER-HOME-RETIREMENT-001.md"
+}

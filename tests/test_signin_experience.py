@@ -18,7 +18,6 @@ PUBLIC_NAV = (ROOT / "static" / "css" / "public-navigation.css").read_text(
 )
 STYLE = (ROOT / "static" / "css" / "style.css").read_text(encoding="utf-8")
 OWNER_APP = (ROOT / "static" / "css" / "owner-app.css").read_text(encoding="utf-8")
-OWNER_HOME = (ROOT / "static" / "css" / "owner-home.css").read_text(encoding="utf-8")
 WAKING_JS = (ROOT / "static" / "js" / "workspace-waking.js").read_text(
     encoding="utf-8"
 )
@@ -126,12 +125,10 @@ class WakingStyleTests(unittest.TestCase):
         # `[hidden] { display: none }` rule, so without an explicit guard the
         # stop control would be visible before its script ran, and would stay
         # visible with JavaScript disabled.
-        self.assertIn(".oh__btn[hidden]", OWNER_HOME)
         self.assertIn(".owner-app__secondary[hidden]", OWNER_APP)
 
     def test_the_pulse_respects_reduced_motion(self):
-        for css, selector in ((OWNER_HOME, ".oh__waking-dot"),
-                              (OWNER_APP, ".owner-app__waking-dot")):
+        for css, selector in ((OWNER_APP, ".owner-app__waking-dot"),):
             named = [
                 reduce_block
                 for reduce_block in blocks(
@@ -144,31 +141,12 @@ class WakingStyleTests(unittest.TestCase):
             )
 
     def test_the_dot_survives_forced_colors(self):
-        for css, selector in ((OWNER_HOME, ".oh__waking-dot"),
-                              (OWNER_APP, ".owner-app__waking-dot")):
+        for css, selector in ((OWNER_APP, ".owner-app__waking-dot"),):
             self.assertTrue(
                 any(selector in forced
                     for forced in blocks(css, "@media (forced-colors: active) {")),
                 f"no forced-colors rule keeps {selector} visible",
             )
-
-    def test_owner_home_keeps_exactly_one_forced_colors_block(self):
-        # tests/test_owner_home_accessibility.py inspects the first such block
-        # in this file; a second one would silently change what it checks.
-        self.assertEqual(OWNER_HOME.count("@media (forced-colors: active) {"), 1)
-
-    def test_waking_panel_reuses_the_released_failure_geometry(self):
-        # Not a new visual direction: the same panel, saying something true.
-        # The only additions are the eyebrow dot and the status line, so the
-        # modifier class must not acquire geometry, colour, or type of its own.
-        self.assertNotIn(".oh__failure--waking {", OWNER_HOME)
-        stage = (ROOT / "templates" / "partials" / "owner_home"
-                 / "_stage.html").read_text(encoding="utf-8")
-        self.assertIn('class="oh__failure oh__failure--waking"', stage)
-        # The contract failure stays assertive; a transient wake-up must not.
-        self.assertIn('class="oh__failure" role="alert"', stage)
-        self.assertNotIn('oh__failure--waking"\n                role="alert"', stage)
-
 
 class WakingScriptTests(unittest.TestCase):
     """Item 2.2 — the automatic re-check is bounded, stoppable, and quiet."""

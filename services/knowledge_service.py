@@ -179,7 +179,7 @@ RETIRED_STATUS_FILTER_LABELS = MappingProxyType(
 # availability dict exactly. "Work on Something" and destination/use
 # projections remain later slices (doc 18 W2/W4) — declared honestly as
 # "coming_later" rather than omitted, per the availability-registry idiom
-# in services/owner_home_service.py. This registry only ever backs the
+# by the retired Owner Home implementation. This registry only ever backs the
 # dev-fixture checkpoint seam below; the real path builds its own
 # equivalent dict directly in workshop_routes.py.
 AVAILABILITY_REGISTRY = MappingProxyType(

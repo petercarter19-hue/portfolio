@@ -409,9 +409,6 @@ class PrivateResponseCacheTests(unittest.TestCase):
                 "PEERSLATE_ALLOW_DEV_IDENTITY"
             ),
             "PEERSLATE_DEV_USER_KEY": app.config.get("PEERSLATE_DEV_USER_KEY"),
-            "PEERSLATE_OWNER_HOME_ENABLED": app.config.get(
-                "PEERSLATE_OWNER_HOME_ENABLED"
-            ),
             "PEERSLATE_DATABASE_UI_ENABLED": app.config.get(
                 "PEERSLATE_DATABASE_UI_ENABLED"
             ),
@@ -420,7 +417,6 @@ class PrivateResponseCacheTests(unittest.TestCase):
             TESTING=True,
             PEERSLATE_ALLOW_DEV_IDENTITY=True,
             PEERSLATE_DEV_USER_KEY="edge-owner",
-            PEERSLATE_OWNER_HOME_ENABLED=False,
             PEERSLATE_DATABASE_UI_ENABLED=False,
         )
         self.client = app.test_client()
@@ -505,37 +501,6 @@ class PrivateResponseCacheTests(unittest.TestCase):
         self.assertEqual(
             response.headers["Cache-Control"], "no-cache, must-revalidate"
         )
-
-
-class FeatureFlagConsistencyTests(unittest.TestCase):
-    """Two blueprints read the Owner Home flag through their own helper.
-
-    auth_routes gates the /app render and owner_routes gates the
-    /api/v1/owner/home contract. The helpers are separate but must agree:
-    changing the semantics in one and not the other would split the page
-    from its data source, showing a shell with no API behind it or the
-    reverse. Assert they stay in lockstep rather than coupling the modules.
-    """
-
-    def setUp(self):
-        self.original = app.config.get("PEERSLATE_OWNER_HOME_ENABLED")
-
-    def tearDown(self):
-        app.config["PEERSLATE_OWNER_HOME_ENABLED"] = self.original
-
-    def test_both_owner_home_flag_readers_agree(self):
-        import auth_routes
-        import owner_routes
-
-        for value in (True, False, None, "true", 1):
-            with self.subTest(value=value):
-                app.config["PEERSLATE_OWNER_HOME_ENABLED"] = value
-                with app.test_request_context("/app"):
-                    self.assertEqual(
-                        auth_routes._owner_home_enabled(),
-                        owner_routes._owner_home_enabled(),
-                        f"the two Owner Home flag readers disagree for {value!r}",
-                    )
 
 
 class StaticVersioningTests(unittest.TestCase):

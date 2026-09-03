@@ -14,7 +14,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 from app import app
-from services.owner_home_service import OwnerHomeContractError
 from PIL import Image, ImageChops
 
 DEV_USER_KEY = "milestone-journal-owner"
@@ -63,7 +62,6 @@ class MilestoneSharedShellTests(unittest.TestCase):
             key: app.config.get(key)
             for key in (
                 "PEERSLATE_JOURNAL_ENABLED",
-                "PEERSLATE_OWNER_HOME_ENABLED",
                 "PEERSLATE_ALLOW_DEV_IDENTITY",
                 "PEERSLATE_DEV_USER_KEY",
                 "PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED",
@@ -75,19 +73,18 @@ class MilestoneSharedShellTests(unittest.TestCase):
     def tearDown(self):
         app.config.update(self.original_config)
 
-    def test_template_retains_both_explicit_control_signals(self):
+    def test_template_retains_private_journal_signal_and_no_retired_shell(self):
         with open("templates/base.html", encoding="utf-8") as template:
             body = template.read()
 
-        self.assertIn("standalone_owner_shell", body)
+        self.assertNotIn("standalone_owner_shell", body)
         self.assertIn("is_private_journal_path", body)
         self.assertIn("_p.startswith('/app/journal')", body)
-        self.assertIn("{% if not standalone_owner_shell %}", body)
-        self.assertIn("and not is_private_journal_path", body)
+        self.assertNotIn("data-open-chat", body)
 
     def test_default_flags_remain_off(self):
         self.assertIs(app.config["PEERSLATE_JOURNAL_ENABLED"], False)
-        self.assertIs(app.config["PEERSLATE_OWNER_HOME_ENABLED"], False)
+        self.assertNotIn("PEERSLATE_OWNER_HOME_ENABLED", app.config)
 
     def test_community_uses_the_global_shell_without_profile_navigation(self):
         # PS-COMMUNITY-AUTH-WALL-001: Community renders only for a signed-in
@@ -109,9 +106,8 @@ class MilestoneSharedShellTests(unittest.TestCase):
         self.assertIn('class="footer"', body)
         self.assertNotIn('class="owner-home-shell"', body)
 
-    def test_flag_off_app_preserves_the_released_workspace_shell(self):
+    def test_app_uses_the_neutral_shared_workspace_shell(self):
         app.config.update(
-            PEERSLATE_OWNER_HOME_ENABLED=False,
             PEERSLATE_ALLOW_DEV_IDENTITY=True,
             PEERSLATE_DEV_USER_KEY="existing-owner",
         )
@@ -119,16 +115,10 @@ class MilestoneSharedShellTests(unittest.TestCase):
         response = self.client.get("/app")
 
         self.assertEqual(response.status_code, 200)
-        # Private workspace renders are no-store. The byte/sha pin that used
-        # to sit here belongs to tests/test_owner_home.py; the shared base
-        # shell legitimately changed under PS-COMMUNITY-AUTH-WALL-001 (nav
-        # and search-index entries), so this seam test asserts the milestone
-        # contract that matters — the flag-off /app is still the released
-        # workspace, never the Owner Home shell — without duplicating a
-        # byte baseline owned by another suite.
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
         self.assertIn(b"My PeerSlate", response.data)
-        self.assertIn(b"Private owner workspace", response.data)
+        self.assertIn(b"private starting point, not your Profile", response.data)
+        self.assertIn(b'class="global-header"', response.data)
         self.assertNotIn(b"owner-home-shell", response.data)
 
     @patch("owner_routes.journal_service")
@@ -151,25 +141,24 @@ class MilestoneSharedShellTests(unittest.TestCase):
         self.assertNotIn('id="chat-toggle"', body)
         self.assertNotIn('class="owner-home-shell"', body)
 
-    @patch("auth_routes.owner_home_service")
-    def test_flag_on_owner_home_is_standalone_without_public_shell(self, service):
+    def test_stale_flag_value_cannot_restore_the_retired_shell(self):
         app.config.update(
-            PEERSLATE_OWNER_HOME_ENABLED=True,
             PEERSLATE_ALLOW_DEV_IDENTITY=True,
             PEERSLATE_DEV_USER_KEY="milestone-owner",
         )
-        service.get_home.side_effect = OwnerHomeContractError("synthetic check")
+        app.config["PEERSLATE_OWNER_HOME_ENABLED"] = True
+        try:
+            response = self.client.get("/app")
+            body = response.get_data(as_text=True)
+        finally:
+            app.config.pop("PEERSLATE_OWNER_HOME_ENABLED", None)
 
-        response = self.client.get("/app")
-        body = response.get_data(as_text=True)
-
-        self.assertEqual(response.status_code, 503)
-        self.assertIn('class="owner-home-shell"', body)
-        self.assertNotIn('class="global-header"', body)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('class="owner-home-shell"', body)
+        self.assertIn('class="global-header"', body)
         self.assertNotIn('class="profile-tabs', body)
-        self.assertNotIn('class="footer"', body)
+        self.assertIn('class="footer"', body)
         self.assertNotIn('id="chat-toggle"', body)
-        self.assertNotIn('static/js/theme-toggle.js', body)
 
     def test_unrelated_route_retains_only_the_ordinary_global_shell(self):
         response = self.client.get("/peerslate")

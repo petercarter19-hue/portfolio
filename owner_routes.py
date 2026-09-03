@@ -53,10 +53,6 @@ from services.photo_lifecycle_access_service import (
     PHOTO_ACCESS_PROOF,
     photo_lifecycle_access_service,
 )
-from services.owner_home_service import (
-    OwnerHomeContractError,
-    owner_home_service,
-)
 from services.journal_service import JournalServiceError, journal_service
 
 
@@ -180,36 +176,6 @@ def _allow_bounded_voice_upload():
 
 def _photo_unavailable():
     return "Photo Capture is unavailable.", 404
-
-
-def _owner_home_enabled():
-    return current_app.config.get("PEERSLATE_OWNER_HOME_ENABLED", False) is True
-
-
-@owner.get("/api/v1/owner/home")
-def owner_home_data():
-    """Return the bounded private Home contract while its server flag is on."""
-    if not _owner_home_enabled():
-        return jsonify({"error": "not_found"}), 404
-
-    try:
-        identity = get_current_identity()
-    except AuthenticationRequired:
-        return jsonify({"error": "authentication_required"}), 401
-    except DatabaseServiceError:
-        current_app.logger.error("PeerSlate Owner Home identity is unavailable.")
-        return jsonify({"error": "unavailable"}), 503
-
-    try:
-        payload = owner_home_service.get_home(identity).to_dict()
-    except (DatabaseServiceError, OwnerHomeContractError):
-        current_app.logger.error("PeerSlate Owner Home data is unavailable.")
-        return jsonify({"error": "unavailable"}), 503
-
-    response = jsonify(payload)
-    response.headers["Cache-Control"] = "private, no-store"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    return response
 
 
 def _capture_body_length(body):

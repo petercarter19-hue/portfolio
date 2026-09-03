@@ -44,9 +44,6 @@ class AuthenticationFlowTests(unittest.TestCase):
             "PEERSLATE_WORKSHOP_ENABLED": app.config.get(
                 "PEERSLATE_WORKSHOP_ENABLED"
             ),
-            "PEERSLATE_OWNER_HOME_ENABLED": app.config.get(
-                "PEERSLATE_OWNER_HOME_ENABLED"
-            ),
             "PEERSLATE_ENFORCE_CANONICAL_HOST": app.config.get(
                 "PEERSLATE_ENFORCE_CANONICAL_HOST"
             ),
@@ -66,7 +63,6 @@ class AuthenticationFlowTests(unittest.TestCase):
             PEERSLATE_AUTH_ISSUER=None,
             PEERSLATE_AUTH_PROVIDER_NAME="aad",
             PEERSLATE_WORKSHOP_ENABLED=False,
-            PEERSLATE_OWNER_HOME_ENABLED=False,
             PEERSLATE_ENFORCE_CANONICAL_HOST=False,
             PEERSLATE_CANONICAL_HOST="peerslate.com",
             PEERSLATE_AZURE_HOSTNAME="",
@@ -150,9 +146,9 @@ class AuthenticationFlowTests(unittest.TestCase):
         response = self.client.get("/app", headers=easy_auth_header("pete-id"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Private owner workspace", response.data)
+        self.assertIn(b"My PeerSlate", response.data)
         self.assertIn(b"Welcome, Pete Example", response.data)
-        self.assertIn(b"Default audience", response.data)
+        self.assertIn(b"private starting point, not your Profile", response.data)
         parameters = first_row.call_args.args[1]
         self.assertIn(
             ("@AuthIssuer", "https://example.ciamlogin.com/example/v2.0"),
@@ -542,7 +538,6 @@ class AuthenticationFlowTests(unittest.TestCase):
         app.config.update(
             PEERSLATE_TRUST_EASYAUTH_HEADERS=True,
             PEERSLATE_WORKSHOP_ENABLED=True,
-            PEERSLATE_OWNER_HOME_ENABLED=True,
         )
         bad_header = {"X-MS-CLIENT-PRINCIPAL": "not-base64"}
         routes = (
@@ -552,7 +547,6 @@ class AuthenticationFlowTests(unittest.TestCase):
             ("/auth/sign-in", False),
             ("/auth/complete", False),
             ("/api/dashboard", True),
-            ("/api/v1/owner/home", True),
         )
 
         for path, is_json in routes:
@@ -760,14 +754,14 @@ class ShellAccountControlTests(unittest.TestCase):
             header,
         )
 
-    def test_account_menu_holds_only_my_slate_and_sign_out(self):
+    def test_account_menu_holds_only_my_peerslate_and_sign_out(self):
         app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
         header = self.header(headers=easy_auth_header("shell-id"))
         menu = header.split('class="platform-account__menu"', 1)[1].split(
             "</form>", 1
         )[0]
 
-        self.assertIn(">My Slate</a>", menu)
+        self.assertIn(">My PeerSlate</a>", menu)
         self.assertIn(">Sign out</button>", menu)
         for absent in ("Settings", "Profile", "Help", "Capture", "Notification"):
             self.assertNotIn(absent, menu)

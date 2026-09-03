@@ -2,43 +2,73 @@
 
 {% block title %}{{ page_title }} | PeerSlate{% endblock %}
 
+{% block meta_description %}Your private PeerSlate starting point.{% endblock %}
+
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}">
 {% endblock %}
 
 {% block content %}
-<main class="owner-app" id="main-content">
-    <section class="owner-app__panel" aria-labelledby="owner-workspace-title">
-        <p class="owner-app__eyebrow">Private owner workspace</p>
-        <h1 id="owner-workspace-title">
-            Welcome, {{ member.display_name or 'PeerSlate member' }}.
-        </h1>
-        <p>
-            This is your protected PeerSlate space. New captures and drafts stay
-            private until you deliberately approve and publish them.
+<section class="owner-app owner-app--launchpad" aria-labelledby="owner-workspace-title">
+    <div class="owner-app__panel owner-app__panel--launchpad">
+        <header class="owner-app__launchpad-intro">
+            <p class="owner-app__eyebrow">My PeerSlate</p>
+            <h1 id="owner-workspace-title">
+                Welcome, {{ member.display_name or 'PeerSlate member' }}.
+            </h1>
+            <p>
+                Choose where you want to continue. This is a
+                <span>private starting point, not your Profile</span>, and nothing here publishes or shares
+                your information.
+            </p>
+        </header>
+
+        <nav class="owner-app__destinations" aria-label="Your PeerSlate destinations">
+            <ul class="owner-app__destination-list">
+                {% if workshop_nav_enabled %}
+                <li>
+                    <a class="owner-app__destination" href="{{ workshop_url }}">
+                        <span class="owner-app__destination-title">Workshop</span>
+                        <span class="owner-app__destination-copy">Use your private information library.</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% if opportunity_slate_available %}<li>
+                    <a class="owner-app__destination" href="{{ opportunity_slate_url }}">
+                        <span class="owner-app__destination-title">My Opportunities</span>
+                        <span class="owner-app__destination-copy">Review opportunities and how your evidence lines up.</span>
+                    </a>
+                </li>{% endif %}
+                <li>
+                    <a class="owner-app__destination" href="{{ interview_studio_url }}">
+                        <span class="owner-app__destination-title">Interview Studio</span>
+                        <span class="owner-app__destination-copy">Practice, prepare, and return to your interview work.</span>
+                    </a>
+                </li>
+                {% if community_public_pilot_enabled %}<li>
+                    <a class="owner-app__destination" href="{{ url_for('the_slate') }}">
+                        <span class="owner-app__destination-title">Community</span>
+                        <span class="owner-app__destination-copy">Visit the member community.</span>
+                    </a>
+                </li>{% endif %}
+                <li>
+                    <a class="owner-app__destination" href="{{ url_for('owner.capture') }}">
+                        <span class="owner-app__destination-title">Capture</span>
+                        <span class="owner-app__destination-copy">Add a private note, voice capture, or photo.</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="owner-app__destination" href="{{ url_for('owner.settings') }}">
+                        <span class="owner-app__destination-title">Settings</span>
+                        <span class="owner-app__destination-copy">Manage your account and My Data controls.</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <p class="owner-app__privacy-note">
+            Your workspace stays private. You choose when anything is shared.
         </p>
-
-        <div class="owner-app__actions" aria-label="Owner workspace destinations">
-            <a class="owner-app__primary" href="{{ url_for('owner.capture') }}">Capture</a>
-            <a class="owner-app__primary" href="{{ url_for('slate_board') }}">Open My Slate</a>
-            <a class="owner-app__secondary" href="{{ url_for('interview_studio') }}">Interview Studio</a>
-            <a class="owner-app__secondary" href="{{ url_for('owner.settings') }}">Settings</a>
-        </div>
-
-        <dl class="owner-app__status">
-            <div>
-                <dt>Account</dt>
-                <dd>Signed in</dd>
-            </div>
-            <div>
-                <dt>Default audience</dt>
-                <dd>Private</dd>
-            </div>
-        </dl>
-
-        <form method="post" action="{{ auth_sign_out_url }}">
-            <button class="owner-app__sign-out" type="submit">Sign out</button>
-        </form>
-    </section>
-</main>
+    </div>
+</section>
 {% endblock %}

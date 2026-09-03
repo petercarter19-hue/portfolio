@@ -3270,16 +3270,19 @@ _INTERVIEW_JS_VERSION_TOKEN = re.compile(
 # working on this page: a signed-out reader who signs in from here now
 # comes back here. Proven by rendering this exact request before and after
 # -- the only other diff is a versioned asset token, now normalized above.
-FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH = 114859
+# PS-OWNER-HOME-RETIREMENT-001 recapture: +8 bytes on each route, exactly
+# two global account controls changing `My Slate` to the truthful temporary
+# `My PeerSlate` label. No Interview Studio markup or behavior changed.
+FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH = 114867
 FLAG_OFF_INTERVIEW_STUDIO_SHA256 = (
-    '9b6f66f504eb66a9e2cbf25e1ca0a0f8116f9dc8cbd2c4b60f10cc298e800914'
+    'fad975b1c130ccf67ebc3c675a54126e1fe338d308af6a1d400a5afa52ca28d1'
 )
 # PS-SIGNIN-MEMBER-ARRIVAL-001 recapture: +42 bytes, exactly the two header
 # controls now returning to /interview-studio/history (25 chars) rather
 # than /app (4), twice.
-FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH = 114652
+FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH = 114660
 FLAG_OFF_INTERVIEW_STUDIO_HISTORY_SHA256 = (
-    '01fd1902c8246872049cd601299aef2f13a0c894ab6d2c29de90f8ee0c9f2b20'
+    '9159964a7c602335dc4cfb1e01ff3a0ce3ccefa9ede5a2587f621dfe2d5c333e'
 )
 
 

@@ -32,7 +32,6 @@ from safe_return import (
     safe_return_path as _safe_return_path,
 )
 from services.database_service import DatabaseServiceError
-from services.owner_home_service import OwnerHomeContractError, owner_home_service
 
 
 auth = Blueprint("auth", __name__)
@@ -336,10 +335,6 @@ def session_status():
     return response
 
 
-def _owner_home_enabled():
-    return current_app.config.get("PEERSLATE_OWNER_HOME_ENABLED", False) is True
-
-
 def _studio_slice1_enabled():
     return current_app.config.get("PEERSLATE_SLATE_STUDIO_SLICE1_ENABLED", False) is True
 
@@ -442,66 +437,14 @@ def owner_workspace():
         current_app.logger.error("PeerSlate owner workspace identity lookup failed.")
         return _render_identity_storage_unavailable()
 
-    # PS-HOME-FRONTEND-001: with the flag off, /app is byte-identical to the
-    # released owner workspace fallback below (PEERSLATE_OWNER_HOME_ENABLED
-    # defaults false, so this branch is never taken in current production).
-    if not _owner_home_enabled():
-        # The rendered bytes stay byte-identical to the released baseline;
-        # only the response policy hardens. This page carries the member's
-        # own workspace, so it must not be stored by a shared cache or
-        # restored from the back/forward cache after sign-out.
-        return render_template(
-            "owner_workspace.html",
-            page_title="My PeerSlate",
-            member=identity,
-        ), 200, {"Cache-Control": "private, no-store"}
-
-    # Flag on: render the finite Owner Home from the real owner-home.v1 view
-    # model. A contract/database failure still renders the private shell with
-    # an honest state and a real safe Capture destination — it never falls
-    # back to the legacy workspace or fabricates data.
-    #
-    # PS-SIGNIN-EXPERIENCE-001 item 2.1: the two failures are not the same
-    # thing and must not read the same way. Azure SQL serverless auto-pauses,
-    # so DatabaseServiceError on the first signed-in request after an idle
-    # period usually means "the database is resuming" — a transient wake-up
-    # that resolves itself in well under a minute. OwnerHomeContractError
-    # means the data PeerSlate did receive was not a valid owner-home.v1
-    # payload, which is a real failure and keeps the existing failure card.
-    try:
-        home = owner_home_service.get_home(identity).to_dict()
-        home_failed = False
-        home_waking = False
-    except DatabaseServiceError:
-        current_app.logger.error("PeerSlate Owner Home storage is unavailable.")
-        home = None
-        home_failed = False
-        home_waking = True
-    except OwnerHomeContractError:
-        current_app.logger.error("PeerSlate Owner Home data is unavailable.")
-        home = None
-        home_failed = True
-        home_waking = False
-
-    # This private owner-specific render must never be stored by a browser or
-    # intermediary.  app.py preserves an explicit response policy while it
-    # continues to provide the legacy no-cache policy for ordinary HTML.
-    response_headers = {"Cache-Control": "private, no-store"}
-    if home_waking:
-        # Same response policy the identity waking surface already returns.
-        response_headers["Retry-After"] = "5"
-
+    # PS-OWNER-HOME-RETIREMENT-001: /app is a stable protected ingress, not a
+    # Capture-first product or a provisional member Profile. It renders one
+    # neutral launchpad and leaves valid deep-link return handling unchanged.
     return render_template(
-        "owner_home.html",
-        page_title=("Your workspace is waking up" if home_waking else "Owner Home"),
+        "owner_workspace.html",
+        page_title="My PeerSlate",
         member=identity,
-        home=home,
-        home_failed=home_failed,
-        home_waking=home_waking,
-        waking_retry_path=url_for("auth.owner_workspace"),
-        waking_budget_seconds=WAKING_RETRY_BUDGET_SECONDS,
-        standalone_owner_shell=True,
-    ), (503 if (home_failed or home_waking) else 200), response_headers
+    ), 200, {"Cache-Control": "private, no-store"}
 
 
 @auth.get("/app/studio/build-your-future")
@@ -571,10 +514,4 @@ def shared_authentication_state():
             "auth.complete", return_to=_current_return_target()
         ),
         "owner_workspace_url": url_for("auth.owner_workspace"),
-        # Default off for every route. Only the flag-on Owner Home render
-        # (PS-HOME-FRONTEND-001) passes standalone_owner_shell=True to
-        # render_template, which overrides this context-processor default
-        # (Flask applies explicit render_template kwargs last). base.html
-        # uses it to bypass the public chrome for that render only.
-        "standalone_owner_shell": False,
     }

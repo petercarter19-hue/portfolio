@@ -39,14 +39,8 @@
          longer lined up with the page around it (worse in Safari, which
          Macs default to). Real tablets don't hit this bug because forcing
          the viewport width is native browser behavior, not a CSS scaling
-         trick — that's why this script only touches touch devices now.{% if standalone_owner_shell %}
-
-         Owner Home (standalone_owner_shell, PS-HOME-FRONTEND-001): the
-         flag-on Owner Home render ships its own native 390/320/844
-         responsive layout and must not be forced to the 1280px desktop
-         viewport, so this whole script is skipped only for that render;
-         every other route keeps the exact existing behavior.{% endif %} -->
-    {% if not standalone_owner_shell %}<script>
+         trick — that's why this script only touches touch devices now. -->
+    <script>
         (function () {
             var DESKTOP_WIDTH = 1280;  /* width the desktop layout is designed at */
             var TABLET_MIN = 744;      /* iPad Mini portrait width */
@@ -66,7 +60,7 @@
                 }
             }
         })();
-    </script>{% endif %}
+    </script>
 
     <meta
         name="description"
@@ -135,7 +129,7 @@
     {% endif %}
 </head>
 
-{% set _p = request.path %}{% set is_owner_app_path = _p == '/app' or _p.startswith('/app/') %}{% set is_private_journal_path = _p.startswith('/app/journal') %}{% set is_workshop_path = request.blueprint == 'workshop' %}{% set is_legacy_owner_workspace_path = _p == '/app' %}{# Owner-directed temporary availability gate, 2026-08-03. Missing config is intentionally false; the existing dark assets stay dormant for a later redesign. #}{% set dark_theme_enabled = config.get('PEERSLATE_DARK_THEME_ENABLED', false) %}{% set page_room = 'bronze' if ('/resume' in _p or '/projects' in _p or _p.endswith('/work') or '/skills' in _p) else ('teal' if '/interview' in _p else ('plum' if 'my-story' in _p else ('amber' if 'slate-board' in _p else ('pine' if (_p.startswith('/the-slate') or _p.startswith('/feed-living-stream')) else 'iris')))) %}{# PS-SHELL-001 (Editorial Top Bar). Three shell-only values, derived here so
+{% set _p = request.path %}{% set is_owner_app_path = _p == '/app' or _p.startswith('/app/') %}{% set is_private_journal_path = _p.startswith('/app/journal') %}{% set is_workshop_path = request.blueprint == 'workshop' %}{# Owner-directed temporary availability gate, 2026-08-03. Missing config is intentionally false; the existing dark assets stay dormant for a later redesign. #}{% set dark_theme_enabled = config.get('PEERSLATE_DARK_THEME_ENABLED', false) %}{% set page_room = 'bronze' if ('/resume' in _p or '/projects' in _p or _p.endswith('/work') or '/skills' in _p) else ('teal' if '/interview' in _p else ('plum' if 'my-story' in _p else ('amber' if 'slate-board' in _p else ('pine' if (_p.startswith('/the-slate') or _p.startswith('/feed-living-stream')) else 'iris')))) %}{# PS-SHELL-001 (Editorial Top Bar). Three shell-only values, derived here so
    the owner `/app` branch below emits no extra bytes. shell_room_label names
    the destination the viewer is currently inside — the medium-width room
    switcher's pill label, and the phone header's room title. shell_account_name
@@ -167,20 +161,15 @@
     'interview': 'M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM7 11a5 5 0 0 0 10 0h2a7 7 0 0 1-6 6.93V21h-2v-3.07A7 7 0 0 1 5 11z',
     'more': 'M6 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm6 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm6 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4z',
 } %}
-{% if standalone_owner_shell %}{# Owner Home standalone shell (U1/U3, PS-HOME-FRONTEND-001): the flag-on
-   Owner Home render owns its own dark cinematic body and omits every public
-   chrome class (portfolio-shell/platform-shell, slate-light,
-   ps-editorial-surface) and the site light/dark theme attribute — this
-   route is not affected by the shared theme toggle. Every other route is
-   completely unaffected by this branch. #}<body class="owner-home-shell" data-ps-auth-state="{{ auth_navigation_state }}">{% else %}<body data-room="{{ page_room }}" class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% if request.path.startswith('/the-slate') %}the-slate-page {% endif %}{# EDITORIAL GLASS (2026-07-13): every page EXCEPT the protected
+<body data-room="{{ page_room }}" class="{% if is_portfolio_path %}portfolio-shell{% else %}platform-shell{% endif %} {% if request.path != '/experience' %}slate-light {% endif %}{% if request.path.startswith('/the-slate') %}the-slate-page {% endif %}{# EDITORIAL GLASS (2026-07-13): every page EXCEPT the protected
        cinematic homepage (served at "/" and its comparison link
        /experience) gets the pale editorial background + card finish.
        All of that CSS is scoped under this class in editorial-glass.css,
-       so the homepage can never receive any of it. #}{% if request.path not in ['/', '/experience'] %}ps-editorial-surface {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.webp') }}');">{% endif %}
+       so the homepage can never receive any of it. #}{% if request.path not in ['/', '/experience'] %}ps-editorial-surface {% endif %}{% block body_class %}{% endblock %}" data-theme="modern-blue" style="--site-circuit-image: url('{{ url_for('static', filename='images/circuit-banner-option-2.webp') }}');">
 
     {% set is_resume_page = request.path.endswith('/resume') or request.path == '/_internal/living-resume-v2' %}
 
-    {% if not standalone_owner_shell and dark_theme_enabled %}{# Dark theme (Monochrome & Signal Gold, PS-THEME-001): a returning
+    {% if dark_theme_enabled %}{# Dark theme (Monochrome & Signal Gold, PS-THEME-001): a returning
        visitor's stored preference is applied here, as the very first thing
        in <body>, so it happens before anything below paints — otherwise a
        dark-theme visitor would see a flash of the light theme on every
@@ -198,7 +187,7 @@
 
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
-    {% if not standalone_owner_shell %}{# Site-wide light-orbit backdrop (updated 2026-07-15, Pete): every page except
+    {# Site-wide light-orbit backdrop (updated 2026-07-15, Pete): every page except
        the Experience film shares the fixed blue-white abstract scene.
        The resume route keeps its own identical layer, so it hides this one. #}
     <div class="site-sky" aria-hidden="true"></div>
@@ -249,8 +238,8 @@
                        It replaced the separate "Slate Feed" and "Slate Board"
                        links — both experiences now live inside The Slate's
                        tabs (feed layers + My Slate goal map + Daily + Paths). #}
-                    <li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>Community</a></li>
-                    <li><a href="{{ interview_studio_url }}" {% if request.path.startswith('/interview-studio') %}aria-current="page"{% endif %}>Interview Studio</a></li>{# Workshop (PS-WORKSHOP-001): flag-gated and visible to everyone by owner decision 2026-08-02. That same 2026-08-02 decision (doc 20 section 6d) also removed the sign-in wall from the library/add/save routes themselves — a signed-out visitor now gets the real page over honestly-labeled sample content, not a sign-in redirect (workshop_routes.py's public preview mode). Edit/archive/restore/delete still require sign-in. workshop_nav_enabled/workshop_url come from workshop_routes.py's own app_context_processor. Kept on this line so the flag-off render adds no bytes. #}{% if workshop_nav_enabled %}<li><a href="{{ workshop_url }}" {% if request.path.startswith('/app/workshop') %}aria-current="page"{% endif %}>Workshop</a></li>{% endif %}{# Opportunity Slate (PS-OPPORTUNITY-SLATE-001 leg 7): unconditional, by Pete's 2026-08-05 order ("I need a link. I added next to the workshop link on the main page so it can be accessed anywhere.") — unlike Workshop there is no paired nav flag because the room is already live for everyone. opportunity_slate_url comes from opportunity_slate_routes.py's own app_context_processor, the same pattern Workshop uses. The route keeps its own noindex/nofollow headers; this link only adds site-internal discoverability. #}<li><a href="{{ opportunity_slate_url }}" {% if request.path.startswith('/opportunity-slate') %}aria-current="page"{% endif %}>Opportunity Slate</a></li>
+                    {% if not is_owner_app_path or community_public_pilot_enabled %}<li><a href="{{ url_for('the_slate') }}" {% if request.path.startswith('/the-slate') %}aria-current="page"{% endif %}>Community</a></li>{% endif %}
+                    <li><a href="{{ interview_studio_url }}" {% if request.path.startswith('/interview-studio') %}aria-current="page"{% endif %}>Interview Studio</a></li>{# Workshop (PS-WORKSHOP-001): flag-gated and visible to everyone by owner decision 2026-08-02. That same 2026-08-02 decision (doc 20 section 6d) also removed the sign-in wall from the route itself. #}{% if workshop_nav_enabled %}<li><a href="{{ workshop_url }}" {% if request.path.startswith('/app/workshop') %}aria-current="page"{% endif %}>Workshop</a></li>{% endif %}{% if not is_owner_app_path or opportunity_slate_available %}<li><a href="{{ opportunity_slate_url }}" {% if request.path.startswith('/opportunity-slate') %}aria-current="page"{% endif %}>Opportunity Slate</a></li>{% endif %}
                     {# The company/mission link moved to the footer as
                        "Why PeerSlate" (v1.2 rule 66 / PS-BRAND-NAV-001). #}
                 </ul>{% if not is_owner_app_path %}{# PS-SHELL-001 room switcher (approved direction 2, medium width only).
@@ -347,15 +336,10 @@
                         </svg>
                         <span>Menu</span>
                     </button>
-                    {% elif page_room != 'pine' and not is_private_journal_path %}
-                    <button class="nav-ask-ai" type="button" data-open-chat aria-label="Ask Pete AI">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                        <span>Ask AI</span>
-                    </button>
                     {% endif %}
 
                     {% if is_owner_app_path %}{% if auth_navigation_state == 'workspace_waking' %}<a class="sign-in-btn" href="{{ owner_workspace_url }}">Workspace waking</a>{% elif current_member %}
-                    <a class="sign-in-btn" href="{{ owner_workspace_url }}">My Slate</a>
+                    <a class="sign-in-btn" href="{{ owner_workspace_url }}">My PeerSlate</a>
                     {# Global sign-out (owner request 2026-07-21): previously the
                        only sign-out lived buried on /app and /app/settings. #}
                     <form class="nav-sign-out" method="post" action="{{ auth_sign_out_url }}">
@@ -394,7 +378,7 @@
                            accessible name — aria-label on a role-less element
                            is discarded, leaving the panel unnamed. #}
                         <div class="platform-account__menu" id="platform-account-menu" role="group" aria-label="Account" data-platform-account-menu hidden>
-                            <a class="platform-account__item" href="{{ owner_workspace_url }}">My Slate</a>
+                            <a class="platform-account__item" href="{{ owner_workspace_url }}">My PeerSlate</a>
                             <form class="nav-sign-out platform-account__form" method="post" action="{{ auth_sign_out_url }}" data-ps-auth-control="authenticated"{% if auth_navigation_state != 'authenticated' %} hidden{% endif %}>
                                 <button class="nav-sign-out__btn platform-account__item" type="submit">Sign out</button>
                             </form>
@@ -422,7 +406,7 @@
                        same server-derived state as every other account
                        control. #}
                     <div class="platform-menu__account" data-ps-auth-control="authenticated"{% if auth_navigation_state != 'authenticated' %} hidden{% endif %}>
-                        <a class="platform-menu__account-item" href="{{ owner_workspace_url }}">My Slate</a>
+                        <a class="platform-menu__account-item" href="{{ owner_workspace_url }}">My PeerSlate</a>
                         <a class="platform-menu__account-item" href="/app/settings">Settings</a>
                         <form class="nav-sign-out platform-menu__account-form" method="post" action="{{ auth_sign_out_url }}">
                             <button class="nav-sign-out__btn platform-menu__account-item" type="submit">Sign out</button>
@@ -450,16 +434,11 @@
            control. Journal and Workshop had each opted out separately;
            those exemptions are now implied by the rule itself.
 
-           `/app` alone keeps it: that is the deferred legacy owner
-           workspace PS-PUBLIC-NAV-001 deliberately froze and
-           PS-HOME-FRONTEND-001 replaces wholesale (flag on, `/app` renders
-           the standalone shell and no part of this header). Its flag-off
-           render is byte-locked by tests/test_owner_home.py and is not this
-           correction's to recapture. #}
-        {% if is_portfolio_path or is_legacy_owner_workspace_path %}
+           Protected member routes never render Pete's public profile tabs. #}
+        {% if is_portfolio_path %}
             {% include "partials/profile_tabs.html" %}
         {% endif %}
-    </header>{% endif %}
+    </header>
 
     {# The profile band + tab strip frame the portfolio pages — EXCEPT
        Slate Board and Interview Studio, which the mockups treat as
@@ -482,7 +461,7 @@
         {% endblock %}
     </main>
 
-    {% if not standalone_owner_shell %}<footer class="footer">
+    <footer class="footer">
         {# Mockup privacy line — every page. #}
         <p class="footer-privacy">
             <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;">
@@ -512,7 +491,7 @@
        Ask Pete AI button is on screen, then fades in once the visitor
        scrolls past it (chatbot.js watches that button and toggles the
        is-visible class), so long pages always keep the AI one click away. #}
-    {% if (is_portfolio_path or is_owner_app_path) and not is_private_journal_path and not is_workshop_path and not (ask_pete_evidence_companion_enabled | default(false)) %}
+    {% if is_portfolio_path and not (ask_pete_evidence_companion_enabled | default(false)) %}
     <button id="chat-toggle" aria-label="Open Pete's AI assistant">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2"
@@ -568,19 +547,18 @@
     {% endif %}
 
     {# Destination index for header search. URLs come from Flask so they stay
-       correct on every host. The owner branch is intentionally unchanged. #}
+       correct on every host. Protected member routes list only working
+       product destinations; they never present Pete's public pages as the
+       member's own Profile. #}
     <script id="nav-search-data" type="application/json">
     [
         {% if is_owner_app_path %}
-        {"title": "My Story", "sub": "The engineer behind the work", "href": "{{ portfolio_story_url }}", "keys": "story about journey bio my story my slate personal life"},
-        {"title": "Skills in practice", "sub": "Sources behind the skills", "href": "{{ portfolio_skills_url }}", "keys": "skills sources mbse sysml cameo doors expertise supporting work"},
-        {"title": "Slate Board", "sub": "Goals, wins, and progress", "href": "{{ portfolio_url('slate-board') }}", "keys": "board goals whiteboard badges tracking momentum trophy streak"},
-        {"title": "Resume", "sub": "Interactive career evidence", "href": "{{ portfolio_resume_url }}", "keys": "resume career experience education certifications pmp jobs roles clearance"},
+        {"title": "My PeerSlate", "sub": "Your private starting point", "href": "{{ owner_workspace_url }}", "keys": "my peerslate start workspace home"},
+        {"title": "Capture", "sub": "Add something privately", "href": "{{ url_for('owner.capture') }}", "keys": "capture note voice photo moment private"},
+        {"title": "Settings", "sub": "Account controls", "href": "{{ url_for('owner.settings') }}", "keys": "settings account my data export"},
         {"title": "Interview Studio", "sub": "Practice, coaching, video, and growth", "href": "{{ interview_studio_url }}", "keys": "interview me interview ai video practice questions star behavioral coach mock answer"},{% if workshop_nav_enabled %}{"title": "Workshop", "sub": "Your private information library", "href": "{{ workshop_url }}", "keys": "workshop my information private library knowledge add information"},{% endif %}
-        {"title": "Opportunity Slate", "sub": "See how your evidence lines up with a role", "href": "{{ opportunity_slate_url }}", "keys": "opportunity slate role job posting alignment requirements evidence match analysis"},
-        {"title": "Contact", "sub": "Email, LinkedIn, resume", "href": "{{ portfolio_contact_url }}", "keys": "contact email message linkedin reach hire connect"},
-        {"title": "Download Resume (PDF)", "sub": "One-page PDF", "href": "{{ url_for('static', filename='files/pete-carter-resume.pdf') }}", "keys": "download resume pdf file print ats"},
-        {"title": "Community", "sub": "Visible to signed-in PeerSlate members", "href": "{{ url_for('the_slate') }}", "keys": "the slate hub feed people community goals progress proof connect"},
+        {% if opportunity_slate_available %}{"title": "Opportunity Slate", "sub": "See how your evidence lines up with a role", "href": "{{ opportunity_slate_url }}", "keys": "opportunity slate role job posting alignment requirements evidence match analysis"},{% endif %}
+        {% if community_public_pilot_enabled %}{"title": "Community", "sub": "Visible to signed-in PeerSlate members", "href": "{{ url_for('the_slate') }}", "keys": "the slate hub feed people community goals progress proof connect"},{% endif %}
         {"title": "Why PeerSlate", "sub": "Why the platform exists", "href": "{{ peerslate_home_url }}", "keys": "why peerslate about mission journal private first how it works"}
         {% else %}
         {"title": "Pete's Slate", "sub": "Pete Carter's public Overview", "href": "{{ portfolio_home_url }}#overview", "keys": "pete slate profile overview public"},
@@ -642,7 +620,7 @@
     <script src="{{ url_for('static', filename='js/public-site-search.js') }}"></script>
     <script src="{{ url_for('static', filename='js/public-mobile-nav.js') }}"></script>
     {% endif %}
-    {% if dark_theme_enabled %}<script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>{% endif %}{% endif %}
+    {% if dark_theme_enabled %}<script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>{% endif %}
     {% block extra_scripts %}{% endblock %}
 
 </body>

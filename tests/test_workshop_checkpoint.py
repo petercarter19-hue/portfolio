@@ -751,7 +751,7 @@ class WorkshopChromeScopeTests(unittest.TestCase):
         self.assertNotIn("chat-toggle", body)
         self.assertNotIn("chat-panel", body)
 
-    def test_app_still_shows_profile_tabs_and_floating_ask_ai(self):
+    def test_app_uses_neutral_member_shell_without_petes_profile_chrome(self):
         with patch(
             "auth_routes.get_current_identity",
             return_value=member("Checkpoint Member", "member-checkpoint-1"),
@@ -760,8 +760,10 @@ class WorkshopChromeScopeTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         body = response.data.decode("utf-8")
-        self.assertIn("profile-tabs", body)
-        self.assertIn("chat-toggle", body)
+        self.assertNotIn("profile-tabs", body)
+        self.assertNotIn("chat-toggle", body)
+        self.assertIn("My PeerSlate", body)
+        self.assertIn("private starting point, not your Profile", body)
 
 
 class WorkshopNavigationTests(unittest.TestCase):

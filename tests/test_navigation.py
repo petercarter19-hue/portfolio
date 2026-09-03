@@ -259,10 +259,11 @@ class NavigationTests(unittest.TestCase):
                     self.assertNotIn(b'class="profile-tabs', response.data)
                     self.assertNotIn(b'profile-tabs__ask-btn', response.data)
 
-            # The legacy /app workspace is deliberately unchanged.
-            legacy = self.client.get('/app', base_url='http://localhost')
-            self.assertEqual(legacy.status_code, 200)
-            self.assertIn(b'class="profile-tabs', legacy.data)
+            # The neutral /app launchpad uses the same protected shell rule.
+            launchpad = self.client.get('/app', base_url='http://localhost')
+            self.assertEqual(launchpad.status_code, 200)
+            self.assertNotIn(b'class="profile-tabs', launchpad.data)
+            self.assertNotIn(b'profile-tabs__ask-btn', launchpad.data)
         finally:
             for key, value in originals.items():
                 if value is None:
@@ -654,12 +655,8 @@ class NavigationTests(unittest.TestCase):
             actions.index('class="platform-account"'),
         )
 
-    def test_legacy_owner_workspace_keeps_the_unconverged_shell(self):
-        """Architecture section 6 wants one component set. /app cannot join
-        it while tests/test_owner_home.py locks that render byte for byte —
-        including the content fingerprints of style.css, site-search.js and
-        mobile-nav.js. The fork is therefore deferred, and this test pins the
-        deferral so it is visible rather than assumed."""
+    def test_owner_workspace_uses_the_shared_shell_without_profile_tabs(self):
+        """The retired standalone and legacy branches converge on one shell."""
         originals = {
             key: app.config.get(key)
             for key in ('PEERSLATE_ALLOW_DEV_IDENTITY', 'PEERSLATE_DEV_USER_KEY')
@@ -678,6 +675,10 @@ class NavigationTests(unittest.TestCase):
         self.assertEqual(legacy.status_code, 200)
         body = legacy.get_data(as_text=True)
         self.assertNotIn('public-navigation.css', body)
+        self.assertIn('class="global-header"', body)
+        self.assertIn('href="/app">My PeerSlate</a>', body)
+        self.assertNotIn('class="profile-tabs', body)
+        self.assertNotIn('owner-home-shell', body)
         self.assertIn('js/site-search.js', body)
         self.assertIn('js/mobile-nav.js', body)
         for shell_only in ('platform-roomswitcher', 'platform-account',

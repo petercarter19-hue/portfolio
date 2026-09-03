@@ -472,12 +472,10 @@ class PrivateWorkspaceReconciliationTests(unittest.TestCase):
         self.original = {
             key: app.config.get(key)
             for key in (
-                "PEERSLATE_OWNER_HOME_ENABLED",
                 "PEERSLATE_DEV_USER_KEY",
                 "PEERSLATE_ALLOW_DEV_IDENTITY",
             )
         }
-        app.config["PEERSLATE_OWNER_HOME_ENABLED"] = False
         app.config["PEERSLATE_DEV_USER_KEY"] = "existing-owner"
         app.config["PEERSLATE_ALLOW_DEV_IDENTITY"] = True
 
@@ -616,39 +614,12 @@ class PrivateWorkspaceReconciliationTests(unittest.TestCase):
             for key, value in original.items():
                 app.config[key] = value
 
-    def test_both_owner_shells_declare_their_state(self):
-        """The declaration must survive the shell the flag chooses.
-
-        ``/app`` renders through two different shells. Flag-off uses the global
-        header, whose ``platform-actions`` carries the declaration. Flag-on uses
-        the standalone Owner Home shell, where ``{% if not
-        standalone_owner_shell %}`` skips that entire header — so the
-        declaration has to live on ``<body>`` as well.
-
-        Independent review found this hole, and production runs the flag **on**:
-        without the body declaration the cross-tab fix would have been inert on
-        the one page this package exists to fix, while still passing every
-        flag-off test.
-        """
-        original = app.config.get("PEERSLATE_OWNER_HOME_ENABLED")
-        try:
-            for enabled in (False, True):
-                with self.subTest(owner_home_enabled=enabled):
-                    app.config["PEERSLATE_OWNER_HOME_ENABLED"] = enabled
-                    response = self.client.get("/app", follow_redirects=False)
-                    self.assertIn(response.status_code, (200, 503))
-                    self.assertIn(b"/static/js/auth-state.js?v=", response.data)
-                    self.assertIn(
-                        b'data-ps-auth-state="authenticated"',
-                        response.data,
-                        "a signed-in owner workspace must declare itself on "
-                        "either shell, or the client cannot reload it",
-                    )
-                    self.assertEqual(
-                        enabled, b"owner-home-shell" in response.data
-                    )
-        finally:
-            app.config["PEERSLATE_OWNER_HOME_ENABLED"] = original
+    def test_the_single_owner_shell_declares_its_state(self):
+        response = self.client.get("/app", follow_redirects=False)
+        self.assertIn(response.status_code, (200, 503))
+        self.assertIn(b"/static/js/auth-state.js?v=", response.data)
+        self.assertIn(b'data-ps-auth-state="authenticated"', response.data)
+        self.assertNotIn(b"owner-home-shell", response.data)
 
     def test_the_auth_surfaces_still_exclude_it(self):
         for path in ("/auth/sign-in", "/auth/complete"):

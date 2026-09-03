@@ -232,9 +232,6 @@ app.config.update(
     PEERSLATE_LIVING_RESUME_DB_ENABLED=(
         os.environ.get('PEERSLATE_LIVING_RESUME_DB_ENABLED', 'false').lower() == 'true'
     ),
-    PEERSLATE_OWNER_HOME_ENABLED=(
-        os.environ.get('PEERSLATE_OWNER_HOME_ENABLED', 'false').lower() == 'true'
-    ),
     # PS-SETTINGS-ACCOUNT-EXPORT-EXPERIENCE-001 (C3). Default OFF: every
     # export route 404s while it is false, and no export can be requested,
     # observed or downloaded. Settings copy DOES change with the flag off --
@@ -254,8 +251,6 @@ app.config.update(
     # ps-theme replay, and the Control Room's prefers-color-scheme variant in
     # one move. See docs/governance/DECISIONS.md, "2026-08-03 - Pause the dark
     # theme site-wide".
-    # NOTE: /app Owner Home (body.owner-home-shell) is dark BY DESIGN under its
-    # own locked mockup, not by theme. It never used this switch.
     PEERSLATE_DARK_THEME_ENABLED=(
         os.environ.get('PEERSLATE_DARK_THEME_ENABLED', 'false').lower() == 'true'
     ),
@@ -1210,6 +1205,12 @@ def shared_navigation_urls():
         # offering it.
         'community_public_pilot_enabled': app.config.get(
             'PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED', False
+        ),
+        # The neutral authenticated launchpad must never advertise a route
+        # that its registered Opportunity blueprint will refuse as flag-off.
+        'opportunity_slate_available': bool(
+            app.config.get('PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED', False)
+            or app.config.get('PEERSLATE_OPPORTUNITY_SLATE_ENABLED', False)
         ),
     }
 

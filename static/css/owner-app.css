@@ -26,6 +26,98 @@
     width: min(100%, 880px);
 }
 
+.owner-app__panel--launchpad {
+    width: min(100%, 980px);
+}
+
+.owner-app__launchpad-intro > p:not(.owner-app__eyebrow) {
+    max-width: 62ch;
+    margin: 1.25rem 0 0;
+    color: #33445f;
+    font: 400 1.05rem/1.7 Inter, sans-serif;
+}
+
+.owner-app__destinations {
+    margin-top: clamp(2rem, 5vw, 3rem);
+}
+
+.owner-app__destination-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.owner-app__destination-list li {
+    min-width: 0;
+}
+
+.owner-app__destination {
+    display: flex;
+    min-height: 9rem;
+    height: 100%;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.35rem;
+    border: 1px solid rgba(32, 55, 103, 0.22);
+    border-radius: 18px;
+    background: #fff;
+    color: #0a1b36;
+    box-shadow: 0 12px 30px rgba(10, 27, 54, 0.07);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.owner-app__destination:hover {
+    border-color: #203767;
+    box-shadow: 0 16px 36px rgba(10, 27, 54, 0.12);
+}
+
+.owner-app__destination:focus-visible {
+    outline: 3px solid #203767;
+    outline-offset: 3px;
+}
+
+.owner-app__destination-title {
+    font: 700 clamp(1.35rem, 3vw, 1.7rem)/1.15 Newsreader, serif;
+}
+
+.owner-app__destination-copy {
+    color: #526078;
+    font: 400 0.95rem/1.55 Inter, sans-serif;
+}
+
+.owner-app__privacy-note {
+    max-width: 62ch;
+    margin: 2rem 0 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(10, 27, 54, 0.14);
+    color: #526078;
+    font: 600 0.9rem/1.55 Inter, sans-serif;
+}
+
+@media (max-width: 640px) {
+    .owner-app--launchpad {
+        padding-inline: 0.75rem;
+    }
+
+    .owner-app__panel--launchpad {
+        padding: 1.5rem;
+        border-radius: 20px;
+    }
+
+    .owner-app__destination-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .owner-app__destination {
+        min-height: 7.5rem;
+    }
+}
+
 .owner-app__eyebrow {
     margin: 0 0 0.75rem;
     color: #203767;

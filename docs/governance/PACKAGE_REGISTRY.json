@@ -57,6 +57,7 @@
       "PS-MOMENT-001",
       "PS-OPPORTUNITY-SLATE-001",
       "PS-OPPORTUNITY-SLATE-002",
+      "PS-OWNER-HOME-RETIREMENT-001",
       "PS-OPS-001",
       "PS-OPS-CANDIDATE-ADMISSION-001",
       "PS-PERFORMANCE-FOUNDATION-001",
@@ -159,11 +160,11 @@
     ]
   },
   "counts": {
-    "current_protect": 67,
+    "current_protect": 68,
     "future_finish": 33,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 135
+    "total": 136
   }
 }
