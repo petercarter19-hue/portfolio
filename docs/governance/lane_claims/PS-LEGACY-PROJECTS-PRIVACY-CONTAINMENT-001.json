@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-LEGACY-PROJECTS-PRIVACY-CONTAINMENT-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Contain Phase A of the confirmed anonymous legacy Projects Board disclosure by replacing static/data/projects_board.json with one exact inert JSON tombstone, removing tests that preserve or normalize the six retired records, adding focused anonymous static-response proof while preserving the existing redirect and distinct resume case-study contracts, and correcting only the two current-state PS-PROJECTS-001 descriptions plus this containment package's records. Preserve the retired payload only in existing Git history; do not copy it into another current-tree path, activate PS-PROJECTS-001, or invent Profile Projects. PACKAGE_REGISTRY.json is explicitly deferred while PS-OWNER-HOME-RETIREMENT-001 owns that exact surface, and this implementation must not merge until Owner Home is closed, a governed extend-surfaces transition adds the registry, the package is registered, the branch refreshes from current origin/main, and verification plus independent exact-SHA review pass again. No app.py or dead-loader change, image removal, navigation, Profile, Settings, Interview, Workshop, deployment, production, GitHub mirror, cache/search purge, history rewrite, or other external operation.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/projects_privacy_containment",
@@ -36,6 +36,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "e14481329df56bb90b29b9506446d3340e8f1f21",
+  "closed_at": "2026-09-03T02:12:00Z"
 }
