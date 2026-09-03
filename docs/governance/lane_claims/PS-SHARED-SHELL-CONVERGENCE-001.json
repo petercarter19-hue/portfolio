@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SHARED-SHELL-CONVERGENCE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Converge PeerSlate's established shared shell across public and authenticated routes after Owner Home retirement. Separate protected-route access classification from shell selection; make /app, Settings, Capture and Workshop use the same server-rendered destination set, navigation-only search, responsive Menu/room switcher, truthful account states and signed-in phone bar without exposing protected content. Preserve the neutral My PeerSlate launchpad, safe-return/auth boundaries, private/no-store and robots contracts, keyboard/no-JS reachability, one main/skip target, visible focus, 44px controls, forced colors, reduced motion and 320px/200%/400% reflow. Correct only the existing homepage Interview sign-in wording, misleading Project Update affordance, and public-profile H1 ownership. Retire legacy owner search/mobile scripts only after proving they are unreferenced. Preserve the accepted shell visual direction. No Workshop or Interview-local redesign, Projects/Profile capability, route/auth/schema/data/flag change, deployment, production/live action or Pete prompt.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/workshop_polish_prep",
@@ -58,6 +58,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "6da51b9af9001dc91fbd1f32ec7e50581fbceda3",
+  "closed_at": "2026-09-03T04:50:46Z"
 }
