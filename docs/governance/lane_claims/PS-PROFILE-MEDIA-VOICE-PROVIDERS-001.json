@@ -20,7 +20,8 @@
     "services/profile_media_projection_provider.py",
     "services/profile_voice_projection_provider.py",
     "tests/test_profile_media_projection_provider.py",
-    "tests/test_profile_voice_projection_provider.py"
+    "tests/test_profile_voice_projection_provider.py",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-PROFILE-MEDIA-VOICE-PROVIDERS-001.md"
