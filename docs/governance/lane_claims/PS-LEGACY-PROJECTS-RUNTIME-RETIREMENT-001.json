@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "package": "PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001",
+  "state": "active",
+  "outcome": "Complete Phase B of accepted legacy Projects privacy containment: remove the dead Projects Board loader/normalizer and inert static tombstone, return 410 Gone from its retired address, and preserve Projects/Work redirects, resume case studies, search, sitemap, and unrelated behavior. The full PS-PROJECTS-001 product and Profile Projects remain deferred to Audit Round Two. PACKAGE_REGISTRY.json is deferred while PS-OPPORTUNITY-SLATE-003 owns it; do not merge until a governed surface extension, registration, current-main refresh, validation, and fresh independent exact-SHA review pass. No navigation, shared shell, deployment, production, GitHub, cache/CDN, history, schema, grant, identity, provider, configuration, or external operation.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/projects_profile_next",
+  "branch": "work/2026-09-03-legacy-projects-runtime-retirement-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "c75f842ddb2e27aca249c41ac36a29c02829afbe",
+  "owner_outcome_ref": "session:01a03e17-a645-7ae0-8da3-164eef90a333/pete-chat-2026-09-03/get-going-everything-parallel",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001.json",
+    "docs/governance/lane_claims/evidence/PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001.md",
+    "docs/governance/lane_claims/receipts/PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001.json",
+    "docs/initiatives/PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001/README.md",
+    "docs/initiatives/PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "app.py",
+    "static/data/projects_board.json",
+    "tests/test_projects.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001.md"
+  ],
+  "domains": [
+    "privacy:legacy-projects-static-disclosure",
+    "security:public-static-data-boundary",
+    "runtime:legacy-project-board-endpoint-retirement",
+    "governance:initiative:legacy-projects-runtime-retirement",
+    "governance:package-registry:legacy-projects-runtime-retirement"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
