@@ -150,13 +150,11 @@ class SearchVisibilityQuietPreviewTests(unittest.TestCase):
 
 
 class ShellSearchScopeTests(unittest.TestCase):
-    """PS-SHELL-001 — search is restyled, not re-scoped.
+    """The shared shell keeps one navigation-only search implementation.
 
-    The Editorial Top Bar restyles the header field and makes it available at
-    every width, including the two bands that previously hid it. It must not
-    expand the destination index, add content search, change what either
-    server-rendered branch exposes, or advertise a newly linked protected
-    route to a crawler.
+    Public-profile detail stays on public pages. Protected pages add only the
+    real My PeerSlate and Settings destinations; no owner content, capture
+    records, or AI fallback enters the index.
     """
 
     def setUp(self):
@@ -184,22 +182,38 @@ class ShellSearchScopeTests(unittest.TestCase):
             [r for r in records if r["href"].startswith("/api/")]
         )
 
-    def test_the_shell_adds_no_record_to_either_branch(self):
-        """The shell's own new controls — the room switcher, the account
-        menu, the More sheet's Settings entry — are navigation, not search
-        results. None of them may enter the index."""
+    def test_public_search_does_not_expose_protected_account_destinations(self):
         for path in ("/", "/interview-studio"):
             with self.subTest(path=path):
                 titles = [r["title"] for r in self.index_records(path)]
-                for absent in ("Settings", "Sign out", "My Slate", "More",
-                               "Account"):
+                for absent in ("Settings", "My PeerSlate", "Capture",
+                               "Sign out", "More", "Account"):
                     self.assertNotIn(absent, titles)
 
-    def test_the_public_branch_never_exposes_the_owner_branch(self):
-        public = {r["title"] for r in self.index_records("/")}
-        # The owner branch's distinct entries stay on the owner branch.
-        self.assertNotIn("Download Resume (PDF)", public)
-        self.assertIn("Download résumé", public)
+    def test_protected_search_has_real_account_destinations_but_no_content(self):
+        originals = {
+            key: app.config.get(key)
+            for key in ("PEERSLATE_ALLOW_DEV_IDENTITY", "PEERSLATE_DEV_USER_KEY")
+        }
+        app.config.update(
+            PEERSLATE_ALLOW_DEV_IDENTITY=True,
+            PEERSLATE_DEV_USER_KEY="shell-search-member",
+        )
+        try:
+            records = self.index_records("/app")
+        finally:
+            for key, value in originals.items():
+                if value is None:
+                    app.config.pop(key, None)
+                else:
+                    app.config[key] = value
+
+        titles = {record["title"] for record in records}
+        self.assertIn("My PeerSlate", titles)
+        self.assertIn("Settings", titles)
+        for absent in ("Capture", "Sign out", "More", "Account", "Ask Pete"):
+            self.assertNotIn(absent, titles)
+        self.assertFalse([r for r in records if r["href"].startswith("/api/")])
 
     def test_newly_linked_protected_routes_stay_out_of_crawl_scope(self):
         """The More sheet links /app/settings for a signed-in member. That
@@ -239,7 +253,7 @@ class ShellSearchScopeTests(unittest.TestCase):
 
     def test_search_authorization_and_behaviour_are_untouched(self):
         source = Path("static/js/public-site-search.js").read_text(encoding="utf-8")
-        self.assertIn("No matching public destination", source)
+        self.assertIn("No matching destination", source)
         self.assertNotIn("Ask Pete", source)
         self.assertNotIn("fetch(", source)
         self.assertNotIn("credentials", source)

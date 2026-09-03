@@ -7,7 +7,7 @@
    Clicking "Walk me through it" opens a MODAL that pops out over a dimmed,
    blurred backdrop — the same guided pattern as the Voice capture overlay —
    and steps through Write your answer -> Submit for coaching -> Bottom line
-   -> Improve and retry, ending on a normal link to the real public Studio.
+   -> Improve and retry, ending on a normal link to the sign-in-gated Studio.
 
    Every word is fixed fictional content. No microphone, no visitor input,
    no AI request, no network call, and no answer or practice-data storage — see
@@ -41,7 +41,7 @@
                 </li>
                 <li>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-                    The final action opens the real public Interview Studio.
+                    The final action opens Interview Studio after sign-in.
                 </li>
             </ul>
         </div>
@@ -73,7 +73,7 @@
                     Walk me through it
                 </button>
                 {# Without JavaScript the modal can't open, so a normal link is the fallback. #}
-                <a class="hv-btn hv-btn--ghost hv-int-nojs" href="{{ interview_studio_url }}">Open Interview Studio</a>
+                <a class="hv-btn hv-btn--ghost hv-int-nojs" href="{{ interview_studio_url }}">Sign in to open Interview Studio</a>
             </div>
 
             <footer class="hv-int-truthbar">
@@ -268,7 +268,7 @@
                         <li><strong>Voice preserved</strong><span>Refines rather than replaces.</span></li>
                     </ul>
 
-                    <p class="hv-int-inline-note">Ready for real practice. Open the full public Studio to write your answer and submit for real coaching.</p>
+                    <p class="hv-int-inline-note">Ready for real practice. Sign in to open the full Studio, write your answer, and submit for real coaching.</p>
                 </section>
 
             </div>
@@ -290,7 +290,7 @@
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
                     </button>
                     <a class="hv-btn hv-btn--primary hv-int-finish" href="{{ interview_studio_url }}" data-int-finish hidden>
-                        Practice this question in Interview Studio
+                        Sign in to practice in Interview Studio
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
                     </a>
                 </div>

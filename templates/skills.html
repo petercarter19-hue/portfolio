@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% set profile_content_owns_h1 = true %}
 
 {# Only skills approved for public display appear on this page. #}
 {% set public_skills = resume.skills|selectattr("public_display")|list %}

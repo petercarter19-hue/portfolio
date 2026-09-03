@@ -166,15 +166,35 @@ class SearchIndexTemplateTests(unittest.TestCase):
         from pathlib import Path
 
         root = Path(__file__).resolve().parents[1]
-        template = (root / "templates" / "base.html").read_text(encoding="utf-8")
-        start = template.index('<script id="nav-search-data"')
-        cls.index_block = template[start : template.index("</script>", start)]
+        cls.template = (root / "templates" / "base.html").read_text(
+            encoding="utf-8"
+        )
+        start = cls.template.index('<script id="nav-search-data"')
+        cls.index_block = cls.template[
+            start : cls.template.index("</script>", start)
+        ]
 
-    def test_each_branch_has_exactly_one_community_entry_reaching_the_slate(self):
-        # One owner-branch entry and one public-branch entry.
-        self.assertEqual(self.index_block.count('"title": "Community"'), 2)
+    def test_each_branch_reads_the_single_shared_community_destination(self):
+        # Shared Shell convergence defines Community once, then both protected
+        # and public search branches consume the same destination collection.
+        destination_block = self.template.split(
+            "{% set shell_destinations = [", 1
+        )[1].split("] | selectattr('show') | list %}", 1)[0]
+        self.assertEqual(destination_block.count("'label': 'Community'"), 1)
         self.assertEqual(
-            self.index_block.count("url_for('the_slate')"), 2
+            destination_block.count("'href': url_for('the_slate')"), 1
+        )
+        self.assertEqual(
+            self.index_block.count("{% for destination in shell_destinations"),
+            2,
+        )
+        self.assertIn(
+            "{% for destination in shell_destinations %}", self.index_block
+        )
+        self.assertIn(
+            "{% for destination in shell_destinations if "
+            "destination.icon != 'slate' %}",
+            self.index_block,
         )
 
     def test_no_branch_offers_a_living_stream_or_legacy_slate_entry(self):

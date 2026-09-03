@@ -170,7 +170,10 @@ class AuthenticationFlowTests(unittest.TestCase):
         self.assertIn(b'href="/app">Check now</a>', response.data)
         self.assertIn(b">Workspace waking</a>", response.data)
         self.assertNotIn(b"Sign in is not configured", response.data)
-        self.assertNotIn(b">Sign In</a>", response.data)
+        self.assertIn(
+            b'data-ps-auth-control="signed_out" hidden>Sign In</a>',
+            response.data,
+        )
         first_row.assert_called_once()
 
     @patch("identity.database_service.first_row")
@@ -754,7 +757,7 @@ class ShellAccountControlTests(unittest.TestCase):
             header,
         )
 
-    def test_account_menu_holds_only_my_peerslate_and_sign_out(self):
+    def test_account_menu_holds_my_peerslate_settings_and_sign_out(self):
         app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
         header = self.header(headers=easy_auth_header("shell-id"))
         menu = header.split('class="platform-account__menu"', 1)[1].split(
@@ -762,8 +765,9 @@ class ShellAccountControlTests(unittest.TestCase):
         )[0]
 
         self.assertIn(">My PeerSlate</a>", menu)
+        self.assertIn('href="/app/settings">Settings</a>', menu)
         self.assertIn(">Sign out</button>", menu)
-        for absent in ("Settings", "Profile", "Help", "Capture", "Notification"):
+        for absent in ("Profile", "Help", "Capture", "Notification"):
             self.assertNotIn(absent, menu)
         self.assertIn('id="platform-account-menu"', header)
         self.assertIn('aria-controls="platform-account-menu"', header)

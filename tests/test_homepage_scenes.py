@@ -29,10 +29,12 @@ class HomepageSceneTests(unittest.TestCase):
         self.assertEqual(self.html.count('<h1'), 1)
 
     def test_shared_global_header_has_public_destinations_and_menu(self):
-        for expected in ('class="global-header"', "Pete's Slate", 'Community',
+        for expected in ('class="global-header"', "Pete&#39;s Slate",
                          'Interview Studio', 'Why PeerSlate',
                          'data-platform-menu-toggle', 'Sign In'):
             self.assertIn(expected, self.html)
+        # Flag-off destinations are not advertised by any shell representation.
+        self.assertNotIn('>Community</a>', self.html)
         self.assertNotIn('Ask Pete AI', self.html)
 
     def test_no_mockup_only_navigation(self):
@@ -225,9 +227,9 @@ class HomepageInterviewDemoTests(unittest.TestCase):
                       self.scene)
 
     def test_final_cta_resolves_to_interview_studio(self):
-        self.assertIn('Practice this question in Interview Studio',
+        self.assertIn('Sign in to practice in Interview Studio',
                       self.scene)
-        self.assertIn('Open Interview Studio', self.scene)
+        self.assertIn('Sign in to open Interview Studio', self.scene)
         self.assertGreaterEqual(self.scene.count('href="/interview-studio"'), 2)
         self.assertEqual(self.client.get('/interview-studio').status_code, 200)
 
@@ -384,7 +386,7 @@ class HomepageInterviewDemoTests(unittest.TestCase):
         tag = self.scene[self.scene.rfind('<', 0, idx):self.scene.index('>', idx) + 1]
         self.assertTrue(tag.startswith('<a'), tag)
         self.assertIn('href="/interview-studio"', tag)
-        self.assertIn('Open Interview Studio', self.scene)
+        self.assertIn('Sign in to open Interview Studio', self.scene)
 
     def test_reduced_motion_css_covers_scene(self):
         self.assertIn('@media (prefers-reduced-motion: reduce)', self.css)

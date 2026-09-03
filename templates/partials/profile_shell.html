@@ -18,7 +18,11 @@
 
         <div class="profile-identity">
             <p class="profile-openchip"><i aria-hidden="true"></i>Open to conversations</p>
+            {% if profile_content_owns_h1 | default(false) %}
+            <p class="profile-identity__name">Pete Carter</p>
+            {% else %}
             <h1>Pete Carter</h1>
+            {% endif %}
             <p class="profile-title">Systems Engineer</p>
             <p class="profile-subtitle">Systems Engineering <span>&bull;</span> Project Management <span>&bull;</span> M.S.E.M. <span>&bull;</span> Artificial Intelligence</p>
             <p class="profile-meta">

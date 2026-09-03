@@ -292,7 +292,9 @@ class NavigationLanguageTests(unittest.TestCase):
 
     def test_about_peerslate_not_in_header_nav(self):
         content = _read(os.path.join(ROOT, 'templates/base.html'))
-        nav = content.split('platform-nav__links')[1].split('</ul>')[0]
+        nav = content.split('class="platform-nav__links"', 1)[1].split(
+            '</ul>', 1
+        )[0]
         self.assertNotIn('About PeerSlate', nav)
         self.assertIn('footer-why-link', content)
 

@@ -2,7 +2,7 @@
 //
 // 1) The header Menu opens the one server-rendered destination sheet.
 // 2) The medium-width room switcher opens the same five destinations.
-// 3) The account control opens My Slate + Sign out.
+// 3) The account control opens My PeerSlate + Settings + Sign out.
 // 4) The one bottom bar mirrors a page's section tabs where the page has
 //    them, and otherwise carries the global four-slot structure.
 //
@@ -15,6 +15,21 @@
     var menuToggle = document.querySelector('[data-platform-menu-toggle]');
     var menu = document.querySelector('[data-platform-menu]');
     var menuOpener = menuToggle;
+    var disclosureClosers = [];
+
+    function isVisible(element) {
+        return Boolean(
+            element && element.isConnected && element.getClientRects().length
+        );
+    }
+
+    function restoreSafeFocus(preferred) {
+        var fallback = document.querySelector('.platform-brand__logo');
+        var target = isVisible(preferred)
+            ? preferred
+            : (isVisible(menuToggle) ? menuToggle : fallback);
+        if (target) target.focus();
+    }
 
     function setMenuOpen(open, restoreFocus) {
         if (!menu) return;
@@ -29,14 +44,23 @@
         if (open) {
             var firstFocus = menu.querySelector('a, input, button');
             if (firstFocus) firstFocus.focus();
-        } else if (restoreFocus && menuOpener) {
-            menuOpener.focus();
+        } else if (restoreFocus) {
+            restoreSafeFocus(menuOpener);
         }
     }
 
     function openMenuFrom(opener) {
         if (!menu) return;
         var isOpen = menu.hidden;
+        if (isOpen) {
+            disclosureClosers.forEach(function (disclosure) {
+                if (!disclosure.panel.hidden) {
+                    disclosure.close(
+                        disclosure.panel.contains(document.activeElement)
+                    );
+                }
+            });
+        }
         if (menuOpener && menuOpener !== opener) {
             menuOpener.setAttribute('aria-expanded', 'false');
         }
@@ -67,14 +91,13 @@
                 !menu.contains(event.target) &&
                 !(menuOpener && menuOpener.contains(event.target))
             ) {
-                setMenuOpen(false, false);
+                setMenuOpen(false, menu.contains(document.activeElement));
             }
         });
 
         window.addEventListener('resize', function () {
-            if (window.innerWidth > 1024 && !menu.hidden) {
-                setMenuOpen(false, false);
-            }
+            if (menu.hidden) return;
+            setMenuOpen(false, menu.contains(document.activeElement));
         });
     }
 
@@ -85,6 +108,18 @@
         if (!trigger || !panel) return;
 
         function setOpen(open, restoreFocus) {
+            if (open) {
+                if (menu && !menu.hidden) {
+                    setMenuOpen(false, menu.contains(document.activeElement));
+                }
+                disclosureClosers.forEach(function (disclosure) {
+                    if (disclosure.panel !== panel && !disclosure.panel.hidden) {
+                        disclosure.close(
+                            disclosure.panel.contains(document.activeElement)
+                        );
+                    }
+                });
+            }
             panel.hidden = !open;
             trigger.setAttribute('aria-expanded', String(open));
 
@@ -92,7 +127,7 @@
                 var firstFocus = panel.querySelector('a[href], button');
                 if (firstFocus) firstFocus.focus();
             } else if (restoreFocus) {
-                trigger.focus();
+                restoreSafeFocus(trigger);
             }
         }
 
@@ -116,9 +151,16 @@
                 !panel.contains(event.target) &&
                 !trigger.contains(event.target)
             ) {
-                setOpen(false, false);
+                setOpen(false, panel.contains(document.activeElement));
             }
         });
+
+        window.addEventListener('resize', function () {
+            if (panel.hidden) return;
+            setOpen(false, panel.contains(document.activeElement));
+        });
+
+        disclosureClosers.push({ panel: panel, close: setOpen });
     }
 
     wireDisclosure(

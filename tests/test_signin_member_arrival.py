@@ -461,10 +461,9 @@ class PrivateWorkspaceReconciliationTests(unittest.TestCase):
 
     Before this round it was excluded from ``/app`` and ``/auth/``.  The
     ``/auth/`` exclusion is deliberate and stays: reloading a sign-in page on
-    a signed-out session is a loop.  The ``/app`` exclusion was the bug — and
-    note that loading the script there does not merely swap header controls,
-    because ``templates/base.html`` renders no ``data-ps-auth-control``
-    elements on the owner workspace at all.  Its job there is the reload.
+    a signed-out session is a loop.  The ``/app`` exclusion was the bug. Shared
+    Shell convergence now also gives the workspace truthful account controls,
+    so the script owns both their reconciliation and the private-page reload.
     """
 
     def setUp(self):
@@ -488,9 +487,12 @@ class PrivateWorkspaceReconciliationTests(unittest.TestCase):
 
         self.assertEqual(200, response.status_code)
         self.assertIn(b"/static/js/auth-state.js?v=", response.data)
-        # The owner workspace renders none of the toggleable controls, which
-        # is why a header swap would have been a no-op here.
-        self.assertNotIn(b"data-ps-auth-control", response.data)
+        self.assertIn(
+            b'data-ps-auth-controls data-ps-auth-state="authenticated"',
+            response.data,
+        )
+        self.assertIn(b'data-ps-auth-control="authenticated"', response.data)
+        self.assertIn(b'method="post" action="/auth/sign-out"', response.data)
 
     def test_a_flag_gated_namespace_can_render_public_and_says_so(self):
         """Why the client cannot treat a private prefix as always private.
@@ -538,14 +540,13 @@ class PrivateWorkspaceReconciliationTests(unittest.TestCase):
                 app.config[key] = value
 
     def test_the_public_workshop_preview_declares_signed_out_and_is_left_alone(self):
-        """The case that made the missing-container heuristic unsafe.
+        """A public preview remains public after its account shell converges.
 
         ``/app/workshop`` is a deliberately public preview — owner decision
         2026-08-02 — and returns 200 to a signed-out visitor in production
-        today. It renders on the *owner* shell, which carries no account
-        controls at all, so an earlier revision of this package inferred
-        "private document" from that absence and would have reloaded the page
-        every time a signed-out visitor returned to the tab.
+        today. It now renders the shared shell's signed-out account controls;
+        the server-declared state still tells reconciliation not to mistake
+        the public document for a stale signed-in private page and reload it.
 
         The shell must therefore declare what it rendered, on every branch.
         """
@@ -578,9 +579,13 @@ class PrivateWorkspaceReconciliationTests(unittest.TestCase):
                 "a public owner-shell render must declare the state it is in, "
                 "or the client cannot tell it from a stale private page",
             )
-            # The owner shell renders no account controls; the declared state
-            # is the only signal, which is exactly why it must be present.
-            self.assertNotIn(b"data-ps-auth-control=", response.data)
+            self.assertIn(
+                b'data-ps-auth-control="signed_out"', response.data
+            )
+            self.assertIn(
+                b'href="/auth/sign-in?return_to=/app/workshop"',
+                response.data,
+            )
         finally:
             for key, value in original.items():
                 app.config[key] = value

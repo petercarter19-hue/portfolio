@@ -167,7 +167,8 @@
  * recorded, not resolved here.
  */
 .global-header,
-.mobile-tabbar {
+.mobile-tabbar,
+.platform-nojs-navigation {
     --ps-shell-ground: var(--bg);
     --ps-shell-stage: var(--bg-elevated);
     --ps-shell-surface: var(--surface);
@@ -263,7 +264,8 @@
  * block declares colour and only colour.
  */
 body:not([data-theme="dark"]):not(.slate-light) .global-header,
-body:not([data-theme="dark"]):not(.slate-light) .mobile-tabbar {
+body:not([data-theme="dark"]):not(.slate-light) .mobile-tabbar,
+body:not([data-theme="dark"]):not(.slate-light) .platform-nojs-navigation {
     --ps-shell-rail: #f4f8fd;
     --ps-shell-border: #d9e2ec;
     --ps-shell-text: #061a3a;
@@ -287,8 +289,11 @@ body:not([data-theme="dark"]):not(.slate-light) .mobile-tabbar {
 body:not([data-theme="dark"]) .global-header a:focus-visible,
 body:not([data-theme="dark"]) .global-header button:not(.theme-toggle):focus-visible,
 body:not([data-theme="dark"]) .mobile-tabbar a:focus-visible,
-body:not([data-theme="dark"]) .mobile-tabbar button:focus-visible {
+body:not([data-theme="dark"]) .mobile-tabbar button:focus-visible,
+body:not([data-theme="dark"]) .platform-nojs-navigation a:focus-visible,
+body:not([data-theme="dark"]) .platform-nojs-navigation button:focus-visible {
     outline: 3px solid var(--ps-shell-focus);
+    outline-offset: 2px;
 }
 
 /* Shell-scoped visually hidden text. The shell has no site-wide utility for
@@ -359,6 +364,10 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-brand 
    treatment, and the file renders in its own colours on every route. */
 .global-header .platform-brand__logo,
 body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-brand__logo {
+    display: inline-flex;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    align-items: center;
     padding: 0;
     border-radius: 0;
     background: none;
@@ -557,7 +566,7 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-action
    room icon, and rows of icon, title and one-line description. */
 .global-header .platform-roomswitcher__trigger {
     display: inline-flex;
-    min-height: 2.5rem;
+    min-height: 2.75rem;
     max-width: 100%;
     align-items: center;
     gap: 0.5rem;
@@ -694,7 +703,7 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-action
 /*
  * THE ACCOUNT CONTROL (README assumption A3). An initial, never a photo:
  * no truthful avatar source exists for the signed-in viewer. The menu holds
- * only the two controls that exist today.
+ * the three real account actions: My PeerSlate, Settings and Sign out.
  */
 .global-header .platform-account {
     position: relative;
@@ -708,8 +717,8 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-action
 
 .global-header .platform-account__trigger {
     display: inline-flex;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.75rem;
+    height: 2.75rem;
     align-items: center;
     justify-content: center;
     padding: 0;
@@ -731,6 +740,21 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-action
     font-size: 0.875rem;
     font-weight: 650;
     line-height: 1;
+}
+
+.global-header .theme-toggle {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    justify-content: center;
+}
+
+/* Sign-in is the account action for a signed-out shell, so it carries the
+   same 44px minimum target as the signed-in account control. Match the
+   page-shell selector variants that otherwise leave it at 38-42px. */
+.global-header .sign-in-btn,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .sign-in-btn,
+body.living-resume-v2-page .global-header .sign-in-btn {
+    min-height: 2.75rem;
 }
 
 .global-header .platform-account__menu[hidden] {
@@ -841,7 +865,7 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .profile-tabs__a
 .global-header .nav-search__input,
 body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__input {
     width: 11rem;
-    min-height: 2.25rem;
+    min-height: 2.75rem;
     padding: 0 0.75rem 0 2.1rem;
     border: 1px solid var(--ps-shell-border);
     border-radius: 0.5rem;
@@ -866,6 +890,12 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
     background: var(--ps-shell-surface);
 }
 
+.global-header .nav-search__input:focus-visible,
+body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__input:focus-visible {
+    outline: 3px solid var(--ps-shell-focus);
+    outline-offset: 2px;
+}
+
 .global-header .nav-search__results,
 .platform-menu .nav-search__results {
     border-radius: 0.75rem;
@@ -886,6 +916,65 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
 .global-tabsource,
 .global-tabsource[hidden] {
     display: none;
+}
+
+/* Script-off shell. The companion <noscript> rule in base.html removes every
+   control whose promise depends on JavaScript; these ordinary links and the
+   existing POST sign-out action keep navigation and account exit reachable. */
+.platform-nojs-navigation {
+    border-bottom: 1px solid var(--ps-shell-border);
+    background: var(--ps-shell-surface);
+}
+
+.platform-nojs-navigation__inner {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.5rem var(--ps-public-nav-gutter);
+}
+
+.platform-nojs-navigation__links,
+.platform-nojs-navigation__account {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.platform-nojs-navigation__account {
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--ps-shell-border);
+}
+
+.platform-nojs-navigation__account form {
+    display: contents;
+}
+
+.platform-nojs-navigation a,
+.platform-nojs-navigation button {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    padding: 0 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    background: none;
+    color: var(--ps-shell-text);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+
+.platform-nojs-navigation a:hover,
+.platform-nojs-navigation a:focus-visible,
+.platform-nojs-navigation button:hover,
+.platform-nojs-navigation button:focus-visible,
+.platform-nojs-navigation a[aria-current="page"] {
+    background: var(--ps-shell-accent-soft);
+    color: var(--ps-shell-accent-room);
 }
 
 /*
@@ -1065,15 +1154,15 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
 
     .global-header .platform-actions .nav-search__input,
     body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-actions .nav-search__input {
-        width: 2.25rem;
-        min-width: 2.25rem;
-        min-height: 2.25rem;
-        padding: 0 0 0 2rem;
+        width: 2.75rem;
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+        padding: 0 0 0 2.2rem;
     }
 
     .global-header .platform-actions .nav-search__input:focus,
     body.portfolio-shell:not(.living-resume-v2-page) .global-header .platform-actions .nav-search__input:focus {
-        width: min(48vw, 12rem);
+        width: min(36vw, 9rem);
         padding-right: 0.6rem;
     }
 
@@ -1096,14 +1185,14 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
 
     .global-header .sign-in-btn,
     body.living-resume-v2-page .global-header .sign-in-btn {
-        min-height: 2rem;
+        min-height: 2.75rem;
         padding: 0 0.65rem;
         font-size: 0.72rem;
     }
 
     .global-header .platform-account__trigger {
-        width: 2rem;
-        height: 2rem;
+        width: 2.75rem;
+        height: 2.75rem;
     }
 
     /* --ps-shell-rail is the shell's CONTROL ground: the search field, the
@@ -1113,7 +1202,7 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
        neighbours. */
     .platform-menu-toggle {
         display: inline-flex;
-        min-height: 2rem;
+        min-height: 2.75rem;
         align-items: center;
         gap: 0.35rem;
         padding: 0 0.55rem;
@@ -1147,7 +1236,7 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
     /* The sheet is anchored to a sticky header, so its own bottom edge is
        pinned to the viewport and scrolling the page cannot bring a row below
        the fold into view. Signed in it is ~372px tall, and on a landscape
-       phone that put Sign out — and at 568x320 also My Slate and Settings —
+       phone that put Sign out — and at 568x320 also My PeerSlate and Settings —
        permanently out of reach, keyboard included. It must carry its own
        scroll: bounded to the space under the header, and scrollable inside
        that. 100dvh rather than 100vh so a mobile browser's retracting URL bar
@@ -1222,9 +1311,9 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
         background: var(--ps-shell-accent-room);
     }
 
-    /* The More sheet's account group. Settings and Sign out are the only
-       two real routes the direction's More list has; there is no Help route
-       in the application, so no Help entry is offered. */
+    /* The More sheet's account group. My PeerSlate, Settings and Sign out are
+       the three real account actions; there is no Help route in the
+       application, so no Help entry is offered. */
     .platform-menu__account[hidden] {
         display: none;
     }
@@ -1241,8 +1330,8 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
         margin: 0;
     }
 
-    /* A menu row is a menu row. My Slate, Settings and Sign out here were
-       --ps-shell-text-muted while the identical My Slate and Sign out in the
+    /* A menu row is a menu row. My PeerSlate, Settings and Sign out here were
+       --ps-shell-text-muted while the identical My PeerSlate and Sign out in the
        account menu, and every destination row in this same sheet, were
        --ps-shell-text — the same control reading two ways in two places,
        and a needless contrast drop on the only place a phone can sign out.
@@ -1459,13 +1548,13 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
 @media (max-width: 34rem) {
     /* The :not() pair matters. This rule was written for a standalone sign-out
        PILL sitting in the header row. Sign out now lives inside the account
-       menu and the More sheet, where it is a menu row beside My Slate and
+       menu and the More sheet, where it is a menu row beside My PeerSlate and
        Settings — and at 0,2,0 this selector outranked those rows and shrank
        Sign out alone to 11.5px in a 32px box while its neighbours stayed
        15px in 44px. It reads as a rendering fault. Scoped out of both menus,
        the rule keeps doing its original job and nothing else. */
     .global-header .nav-sign-out__btn:not(.platform-account__item):not(.platform-menu__account-item) {
-        min-height: 2rem;
+        min-height: 2.75rem;
         padding: 0 0.65rem;
         font-size: 0.72rem;
     }
@@ -1475,7 +1564,7 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
     }
 
     .global-header .platform-actions:has(.nav-sign-out:not([hidden])) .platform-menu-toggle {
-        width: 2rem;
+        width: 2.75rem;
         justify-content: center;
         padding: 0;
     }
@@ -1487,6 +1576,42 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
+    }
+}
+
+/* Skills and Contact own their page H1. Their repeated identity name keeps the
+   released profile-band treatment without claiming a second heading; About and
+   Hobbies continue to receive the profile band's H1. */
+.profile-identity__name {
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(2.15rem, 4vw, 2.9rem);
+    font-weight: 650;
+    letter-spacing: normal;
+    line-height: 1.05;
+}
+
+body.slate-light .profile-identity__name {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+@media (min-width: 744px) and (max-width: 1080px) {
+    .profile-identity__name {
+        font-size: 1.7rem;
+    }
+}
+
+@media (max-width: 743px) {
+    .profile-identity__name {
+        font-size: 1.7rem;
+    }
+}
+
+@media (max-width: 520px) {
+    .profile-identity__name {
+        font-size: 1.5rem;
     }
 }
 
@@ -1505,7 +1630,7 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
     }
 
     .platform-menu-toggle {
-        width: 2rem;
+        width: 2.75rem;
         justify-content: center;
         padding: 0;
     }
@@ -1514,6 +1639,7 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
 @media (prefers-reduced-motion: reduce) {
     .platform-menu-toggle,
     .platform-menu,
+    .platform-nojs-navigation,
     .global-header .platform-nav__links a,
     .global-header .nav-search__input,
     .global-header .platform-roomswitcher__chevron {
@@ -1527,12 +1653,21 @@ body.portfolio-shell:not(.living-resume-v2-page) .global-header .nav-search__inp
     .platform-menu__links a[aria-current="page"],
     .global-header .platform-account__trigger,
     .global-header .platform-account__menu,
+    .global-header .nav-search__input,
     .global-header .platform-roomswitcher__trigger,
-    .global-header .platform-roomswitcher__list {
+    .global-header .platform-roomswitcher__list,
+    .platform-nojs-navigation,
+    .platform-nojs-navigation a[aria-current="page"] {
         border: 1px solid CanvasText;
     }
 
     .global-header .platform-nav__links a[aria-current="page"]::after {
         background: CanvasText;
+    }
+
+    .global-header .nav-search__input:focus-visible,
+    body.has-global-tabbar .mobile-tabbar__item[aria-current="page"] {
+        outline: 3px solid Highlight;
+        outline-offset: 2px;
     }
 }

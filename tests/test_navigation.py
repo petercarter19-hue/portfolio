@@ -2,6 +2,7 @@ import json
 import re
 import unittest
 import xml.etree.ElementTree as ET
+from contextlib import contextmanager
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -60,6 +61,24 @@ class NavigationTests(unittest.TestCase):
         self.assertIsNotNone(match)
         return json.loads(match.group(1))
 
+    @contextmanager
+    def destination_flags(self, *, community=False, workshop=False, opportunity=False):
+        values = {
+            'PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED': community,
+            'PEERSLATE_WORKSHOP_ENABLED': workshop,
+            'PEERSLATE_OPPORTUNITY_SLATE_ENABLED': opportunity,
+        }
+        originals = {key: app.config.get(key) for key in values}
+        app.config.update(values)
+        try:
+            yield
+        finally:
+            for key, value in originals.items():
+                if value is None:
+                    app.config.pop(key, None)
+                else:
+                    app.config[key] = value
+
     def test_petes_slate_opens_the_canonical_resume_and_redundant_home_is_omitted(self):
         for path in ('/', '/petec/resume'):
             with self.subTest(path=path):
@@ -109,10 +128,12 @@ class NavigationTests(unittest.TestCase):
             self.assertNotIn(retired, titles)
 
     def test_global_product_names_and_links_use_the_new_information_architecture(self):
-        links = {
-            link['text']: link
-            for link in self.parse_platform_links('/interview-studio')
-        }
+        with self.destination_flags(community=True):
+            links = {
+                link['text']: link
+                for link in self.parse_platform_links('/interview-studio')
+            }
+            records = self.search_records('/interview-studio')
         self.assertEqual(links['Community']['attributes']['href'], '/the-slate')
         self.assertEqual(links['Interview Studio']['attributes']['href'], '/interview-studio')
         # v1.2 (PS-BRAND-NAV-001): About left the header; the footer link
@@ -126,7 +147,6 @@ class NavigationTests(unittest.TestCase):
         self.assertNotIn('Interview Me', links)
         self.assertNotIn('About', links)
 
-        records = self.search_records('/interview-studio')
         records_by_title = {record['title']: record for record in records}
         # PS-COMMUNITY-AUTH-WALL-001: the search entry is simply "Community"
         # and is honest about its members-only audience.
@@ -191,13 +211,16 @@ class NavigationTests(unittest.TestCase):
         self.assertNotIn(b'the-slate-page', homepage.data)
 
     def test_public_mobile_menu_has_one_complete_global_destination_set(self):
-        response = self.client.get('/interview-studio', base_url='http://localhost')
+        with self.destination_flags(community=True):
+            response = self.client.get(
+                '/interview-studio', base_url='http://localhost'
+            )
         html = response.get_data(as_text=True)
 
         self.assertIn('data-platform-menu-toggle', html)
         self.assertIn('id="platform-mobile-menu"', html)
         menu = html.split('id="platform-mobile-menu"', 1)[1].split('</nav>', 1)[0]
-        for label in ("Pete's Slate", 'Community', 'Interview Studio'):
+        for label in ('Pete&#39;s Slate', 'Community', 'Interview Studio'):
             self.assertEqual(menu.count(f'>{label}</a>'), 1)
         # PS-SHELL-001: the sheet no longer carries its own search field. The
         # header field is present at every width, so a second one here meant
@@ -273,32 +296,36 @@ class NavigationTests(unittest.TestCase):
 
     def test_public_search_is_navigation_only_without_an_ai_fallback(self):
         source = Path('static/js/public-site-search.js').read_text(encoding='utf-8')
-        self.assertIn('No matching public destination', source)
+        self.assertIn('No matching destination', source)
         self.assertNotIn('Ask Pete', source)
         self.assertNotIn('data-ask-url', self.client.get('/').get_data(as_text=True))
 
-    def test_opportunity_slate_link_sits_next_to_workshop_in_both_menus(self):
-        """PS-OPPORTUNITY-SLATE-001 leg 7 (Pete's 2026-08-05 order): the link
-        is unconditional, unlike Workshop's flag-gated entry beside it."""
-        homepage_links = {
-            link['text']: link for link in self.parse_platform_links('/')
-        }
-        self.assertIn('Opportunity Slate', homepage_links)
-        self.assertEqual(
-            homepage_links['Opportunity Slate']['attributes']['href'],
-            '/opportunity-slate',
-        )
-        self.assertNotIn(
-            'aria-current', homepage_links['Opportunity Slate']['attributes']
-        )
-
-        mobile_menu = self.client.get('/', base_url='http://localhost').get_data(
-            as_text=True
-        )
-        menu = mobile_menu.split('id="platform-mobile-menu"', 1)[1].split(
-            '</nav>', 1
-        )[0]
-        self.assertEqual(menu.count('>Opportunity Slate</a>'), 1)
+    def test_opportunity_slate_availability_is_shared_by_both_menus(self):
+        """A flag-off route is absent from every shared-shell affordance."""
+        for enabled in (False, True):
+            with self.subTest(opportunity_enabled=enabled), self.destination_flags(
+                workshop=True, opportunity=enabled
+            ):
+                html = self.client.get(
+                    '/', base_url='http://localhost'
+                ).get_data(as_text=True)
+                links = {
+                    link['text']: link for link in self.parse_platform_links('/')
+                }
+                menu = html.split('id="platform-mobile-menu"', 1)[1].split(
+                    '</nav>', 1
+                )[0]
+                self.assertEqual('Opportunity Slate' in links, enabled)
+                self.assertEqual(menu.count('>Opportunity Slate</a>'), int(enabled))
+                if enabled:
+                    self.assertEqual(
+                        links['Opportunity Slate']['attributes']['href'],
+                        '/opportunity-slate',
+                    )
+                    self.assertLess(
+                        menu.index('>Workshop</a>'),
+                        menu.index('>Opportunity Slate</a>'),
+                    )
 
     def test_opportunity_slate_link_shows_aria_current_on_its_own_room(self):
         original_flag = app.config.get('PEERSLATE_OPPORTUNITY_SLATE_ENABLED')
@@ -319,31 +346,26 @@ class NavigationTests(unittest.TestCase):
         """The Opportunity Slate record sits after Workshop's
         ``{% if workshop_nav_enabled %}...{% endif %}`` block, so the JSON
         must stay valid whether or not that flag is on."""
-        original_workshop_flag = app.config.get('PEERSLATE_WORKSHOP_ENABLED')
-        try:
-            for workshop_enabled in (True, False):
-                with self.subTest(workshop_nav_enabled=workshop_enabled):
-                    app.config['PEERSLATE_WORKSHOP_ENABLED'] = workshop_enabled
-                    records = self.search_records()
-                    titles = [record['title'] for record in records]
-                    self.assertIn('Opportunity Slate', titles)
-                    self.assertEqual(
-                        titles.count('Opportunity Slate'), 1
-                    )
-                    entry = next(
-                        record
-                        for record in records
-                        if record['title'] == 'Opportunity Slate'
-                    )
-                    self.assertEqual(entry['href'], '/opportunity-slate')
-                    self.assertEqual(
-                        entry['sub'],
-                        'See how your evidence lines up with a role',
-                    )
-                    self.assertIn('role', entry['keys'])
-                    self.assertEqual('Workshop' in titles, workshop_enabled)
-        finally:
-            app.config['PEERSLATE_WORKSHOP_ENABLED'] = original_workshop_flag
+        for workshop_enabled in (True, False):
+            with self.subTest(workshop_nav_enabled=workshop_enabled), self.destination_flags(
+                workshop=workshop_enabled, opportunity=True
+            ):
+                records = self.search_records()
+                titles = [record['title'] for record in records]
+                self.assertIn('Opportunity Slate', titles)
+                self.assertEqual(titles.count('Opportunity Slate'), 1)
+                entry = next(
+                    record
+                    for record in records
+                    if record['title'] == 'Opportunity Slate'
+                )
+                self.assertEqual(entry['href'], '/opportunity-slate')
+                self.assertEqual(
+                    entry['sub'],
+                    'See how your evidence lines up with a role',
+                )
+                self.assertIn('role', entry['keys'])
+                self.assertEqual('Workshop' in titles, workshop_enabled)
 
     # ------------------------------------------------------------------
     # PS-SHELL-001 — the Editorial Top Bar
@@ -518,42 +540,43 @@ class NavigationTests(unittest.TestCase):
         paths = ('/interview-studio', '/opportunity-slate', '/petec/resume')
         # Anonymous first: signed_in_client() flips application config, so a
         # client created before it would not stay anonymous.
-        anonymous_renders = {
-            path: self.client.get(path, base_url='http://localhost').get_data(
-                as_text=True
-            )
-            for path in paths
-        }
-
-        signed_in = self.signed_in_client()
-        for path, expected in zip(
-            paths, ('Interview Studio', 'Opportunity Slate', "Pete's Slate")
-        ):
-            with self.subTest(path=path):
-                html = signed_in.get(
-                    path, base_url='http://localhost'
-                ).get_data(as_text=True)
-                # The label is a rendered value, so Jinja escapes the
-                # apostrophe in "Pete's Slate".
-                escaped = expected.replace("'", '&#39;')
-                self.assertIn(' data-ps-shell-room-title>', html)
-                self.assertIn(
-                    '<span class="platform-room-title" '
-                    f'data-platform-room-title>{escaped}</span>',
-                    html,
+        with self.destination_flags(opportunity=True):
+            anonymous_renders = {
+                path: self.client.get(path, base_url='http://localhost').get_data(
+                    as_text=True
                 )
+                for path in paths
+            }
+
+            signed_in = self.signed_in_client()
+            for path, expected in zip(
+                paths, ('Interview Studio', 'Opportunity Slate', "Pete's Slate")
+            ):
+                with self.subTest(path=path):
+                    html = signed_in.get(
+                        path, base_url='http://localhost'
+                    ).get_data(as_text=True)
+                    # The label is a rendered value, so Jinja escapes the
+                    # apostrophe in "Pete's Slate".
+                    escaped = expected.replace("'", '&#39;')
+                    self.assertIn(' data-ps-shell-room-title>', html)
+                    self.assertIn(
+                        '<span class="platform-room-title" '
+                        f'data-platform-room-title>{escaped}</span>',
+                        html,
+                    )
 
                 # It is an addition to the brand row, not a substitution: the
                 # mark is in the same render, immediately before it.
-                self.assertLess(
-                    html.index('class="platform-brand__logo"'),
-                    html.index('class="platform-room-title"'),
-                )
+                    self.assertLess(
+                        html.index('class="platform-brand__logo"'),
+                        html.index('class="platform-room-title"'),
+                    )
 
-                anonymous = anonymous_renders[path]
-                self.assertNotIn('data-ps-shell-room-title', anonymous)
-                self.assertNotIn('platform-room-title', anonymous)
-                self.assertIn('platform-brand__logo', anonymous)
+                    anonymous = anonymous_renders[path]
+                    self.assertNotIn('data-ps-shell-room-title', anonymous)
+                    self.assertNotIn('platform-room-title', anonymous)
+                    self.assertIn('platform-brand__logo', anonymous)
 
         # A route that is not one of the five destinations names no room, and
         # shows the mark alone rather than an empty brand slot.
@@ -586,13 +609,14 @@ class NavigationTests(unittest.TestCase):
         """Architecture section 5: the four-slot structure is a source list
         for the one existing bottom bar. Slot 1 keeps assumption A1's label
         because no per-member profile route is registered."""
-        html = self.signed_in_client().get(
-            '/interview-studio', base_url='http://localhost'
-        ).get_data(as_text=True)
+        with self.destination_flags(community=True):
+            html = self.signed_in_client().get(
+                '/interview-studio', base_url='http://localhost'
+            ).get_data(as_text=True)
         source = html.split('data-global-tabsource', 1)[1].split('</ul>', 1)[0]
 
         self.assertIn(f'href="{"/petec/resume"}#overview" ', source)
-        self.assertIn(">Pete's Slate</span>", source)
+        self.assertIn('>Pete&#39;s Slate</span>', source)
         self.assertNotIn('>Profile<', source)
         self.assertIn('href="/the-slate"', source)
         self.assertIn('>Community</span>', source)
@@ -614,17 +638,20 @@ class NavigationTests(unittest.TestCase):
         """The direction's More list names Help, but no Help route is
         registered anywhere in the application. Navigation gains no
         destination that lacks a real page, so Help is not offered."""
-        html = self.client.get(
-            '/interview-studio', base_url='http://localhost'
-        ).get_data(as_text=True)
+        with self.destination_flags(
+            community=True, workshop=True, opportunity=True
+        ):
+            html = self.client.get(
+                '/interview-studio', base_url='http://localhost'
+            ).get_data(as_text=True)
         menu = html.split('id="platform-mobile-menu"', 1)[1].split('</nav>', 1)[0]
 
         self.assertIn('>Settings</a>', menu)
         self.assertIn('href="/app/settings"', menu)
         self.assertNotIn('>Help<', menu)
         # Every one of the five destinations is still reachable from the sheet.
-        for label in ("Pete's Slate", 'Community', 'Interview Studio',
-                      'Opportunity Slate'):
+        for label in ('Pete&#39;s Slate', 'Community', 'Interview Studio',
+                      'Workshop', 'Opportunity Slate'):
             self.assertEqual(menu.count(f'>{label}</a>'), 1)
 
     def test_shell_offers_no_notification_or_add_control(self):
@@ -674,17 +701,18 @@ class NavigationTests(unittest.TestCase):
 
         self.assertEqual(legacy.status_code, 200)
         body = legacy.get_data(as_text=True)
-        self.assertNotIn('public-navigation.css', body)
+        self.assertEqual(body.count('public-navigation.css'), 1)
         self.assertIn('class="global-header"', body)
         self.assertIn('href="/app">My PeerSlate</a>', body)
         self.assertNotIn('class="profile-tabs', body)
         self.assertNotIn('owner-home-shell', body)
-        self.assertIn('js/site-search.js', body)
-        self.assertIn('js/mobile-nav.js', body)
-        for shell_only in ('platform-roomswitcher', 'platform-account',
-                           'platform-room-title', 'data-global-tabsource',
-                           'PS-SHELL-001 reserved Add slot'):
-            self.assertNotIn(shell_only, body)
+        self.assertEqual(body.count('js/public-site-search.js'), 1)
+        self.assertEqual(body.count('js/public-mobile-nav.js'), 1)
+        self.assertNotIn('js/site-search.js', body)
+        self.assertNotIn('js/mobile-nav.js', body)
+        for shell_control in ('platform-roomswitcher', 'platform-account',
+                              'data-global-tabsource'):
+            self.assertIn(shell_control, body)
 
     def test_sitemap_contains_only_current_canonical_public_routes(self):
         response = self.client.get(

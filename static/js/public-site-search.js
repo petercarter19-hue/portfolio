@@ -26,7 +26,7 @@
         return 0;
     }
 
-    roots.forEach(function (root) {
+    roots.forEach(function (root, rootIndex) {
         var input = root.querySelector('.nav-search__input');
         var results = root.querySelector('.nav-search__results');
         if (!input || !results) return;
@@ -37,6 +37,7 @@
         function close() {
             results.hidden = true;
             input.setAttribute('aria-expanded', 'false');
+            input.removeAttribute('aria-activedescendant');
             items = [];
             active = -1;
         }
@@ -58,11 +59,13 @@
 
             results.innerHTML = '';
 
-            hits.forEach(function (hit) {
+            hits.forEach(function (hit, hitIndex) {
                 var row = document.createElement('a');
                 row.className = 'nav-search__item';
+                row.id = 'nav-search-option-' + rootIndex + '-' + hitIndex;
                 row.href = hit.entry.href;
                 row.setAttribute('role', 'option');
+                row.setAttribute('aria-selected', 'false');
                 row.innerHTML = '<strong></strong><small></small>';
                 row.querySelector('strong').textContent = hit.entry.title;
                 row.querySelector('small').textContent = hit.entry.sub;
@@ -73,7 +76,7 @@
                 var empty = document.createElement('p');
                 empty.className = 'nav-search__empty';
                 empty.setAttribute('role', 'status');
-                empty.textContent = 'No matching public destination';
+                empty.textContent = 'No matching destination';
                 results.appendChild(empty);
             }
 
@@ -81,6 +84,7 @@
                 results.querySelectorAll('a[role="option"]')
             );
             active = -1;
+            input.removeAttribute('aria-activedescendant');
             results.hidden = false;
             input.setAttribute('aria-expanded', 'true');
         }
@@ -89,8 +93,11 @@
             if (!items.length) return;
             active = (next + items.length) % items.length;
             items.forEach(function (item, indexPosition) {
-                item.classList.toggle('is-active', indexPosition === active);
+                var selected = indexPosition === active;
+                item.classList.toggle('is-active', selected);
+                item.setAttribute('aria-selected', String(selected));
             });
+            input.setAttribute('aria-activedescendant', items[active].id);
         }
 
         input.addEventListener('input', function () { render(input.value); });
@@ -113,7 +120,6 @@
                 }
             } else if (event.key === 'Escape') {
                 close();
-                input.blur();
             }
         });
 

@@ -73,6 +73,7 @@
       "PS-SEARCH-DARK-PROOF-001",
       "PS-SEC-EDGE-001",
       "PS-SETTINGS-MY-DATA-SHELL-001",
+      "PS-SHARED-SHELL-CONVERGENCE-001",
       "PS-SHELL-001",
       "PS-SIGNIN-EXPERIENCE-001",
       "PS-SIGNIN-MEMBER-ARRIVAL-001",
@@ -161,11 +162,11 @@
     ]
   },
   "counts": {
-    "current_protect": 69,
+    "current_protect": 70,
     "future_finish": 33,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 137
+    "total": 138
   }
 }

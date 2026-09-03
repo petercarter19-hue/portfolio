@@ -3273,16 +3273,22 @@ _INTERVIEW_JS_VERSION_TOKEN = re.compile(
 # PS-OWNER-HOME-RETIREMENT-001 recapture: +8 bytes on each route, exactly
 # two global account controls changing `My Slate` to the truthful temporary
 # `My PeerSlate` label. No Interview Studio markup or behavior changed.
-FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH = 114867
+# PS-SHARED-SHELL-CONVERGENCE-001 recapture: the shared server-rendered
+# destination, account, search and no-JavaScript chrome changed while the
+# flag-off Interview markers, access status, cache policy, robots contract,
+# history render and on/off/on determinism were re-proved unchanged below.
+FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH = 114806
 FLAG_OFF_INTERVIEW_STUDIO_SHA256 = (
-    'fad975b1c130ccf67ebc3c675a54126e1fe338d308af6a1d400a5afa52ca28d1'
+    '8a4287d4e1f76c18639cbcfc9b178384ba7e4af327cadf2832d4895af00240b0'
 )
 # PS-SIGNIN-MEMBER-ARRIVAL-001 recapture: +42 bytes, exactly the two header
 # controls now returning to /interview-studio/history (25 chars) rather
 # than /app (4), twice.
-FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH = 114660
+# The Shared Shell convergence recapture covers this history route under the
+# same flag-off semantic, access, cache and toggle assertions.
+FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH = 114607
 FLAG_OFF_INTERVIEW_STUDIO_HISTORY_SHA256 = (
-    '9159964a7c602335dc4cfb1e01ff3a0ce3ccefa9ede5a2587f621dfe2d5c333e'
+    'e486a3e5f6fdcd841404159258dd3d4b3d7a26bd4346be8f9a0b96fef32ae14d'
 )
 
 

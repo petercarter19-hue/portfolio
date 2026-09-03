@@ -720,11 +720,9 @@ class WorkshopDevFixtureSeamTests(unittest.TestCase):
 
 class WorkshopChromeScopeTests(unittest.TestCase):
     """The approved mockups (06/09) draw no profile-tabs sub-strip and no
-    floating Ask AI button on /app/workshop. base.html's shared
-    is_owner_app_path chrome is excluded for the workshop blueprint
-    specifically (is_workshop_path), so this is confirmed both ways: absent
-    on Workshop, still present on a sibling /app-family page whose approved
-    authority does draw it.
+    floating Ask AI button on /app/workshop. The shared shell now classifies
+    every protected app route consistently, while Pete's profile chrome stays
+    scoped to his public-profile routes.
     """
 
     def setUp(self):
@@ -787,7 +785,9 @@ class WorkshopNavigationTests(unittest.TestCase):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         body = response.data.decode("utf-8")
-        return body.split('platform-nav__links')[1].split("</ul>")[0]
+        return body.split('class="platform-nav__links"', 1)[1].split(
+            "</ul>", 1
+        )[0]
 
     def _search_data(self):
         response = self.client.get("/")
