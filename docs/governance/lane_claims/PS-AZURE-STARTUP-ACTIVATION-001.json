@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-AZURE-STARTUP-ACTIVATION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement, independently review, and activate the Microsoft for Startups five-workload system now that the $5,000 credit is visible: App Service, AI Search, SQL Database, App Configuration Standard, and Foundry Luna. Activate the privacy-safe reader and synthetic/public Luna runner with two daily no-end-date idempotent schedules and shortfall status. The separately owner-authorized Azure operation may scale only peerslate-database S0 to S1; create one Standard App Configuration store; create one passwordless least-privilege qualification identity and DevOps WIF connection; replace the misleading $20 budget with a $550 monthly budget and $275/$325/$550 alerts; register and calibrate this pipeline; and run the first bounded evaluation. Expected all-in spend is about $305/month; Foundry is capped at $3.25 per successful run. Exclude DevOps, count Foundry once, and score only complete UTC days above $1. No application deployment, schema/data mutation, DNS, product AI routing, resource deletion, secrets, or private content. Rollback is SQL S1 to S0 and pipeline disable; continue until the portal confirms the milestone.",
   "assignment": "implementation",
   "writer_ref": "session:01a046b3-74fc-7903-a336-3f1647f81d1c/codex/azure-startup-activation-writer",
@@ -40,6 +40,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "32a137bcfc439ee5257581864ed8b3ab77ebbd3f",
+  "closed_at": "2026-09-04T08:38:41Z"
 }
