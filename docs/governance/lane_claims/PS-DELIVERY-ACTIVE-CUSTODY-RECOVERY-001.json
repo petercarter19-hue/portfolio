@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-ACTIVE-CUSTODY-RECOVERY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Harden the existing Protected owner-reassignment recovery so a vanished writer's exact managed durable checkout can be recovered when its machine-local registry HEAD is stale but every authoritative and live custody fact proves one safe successor: accept the governed terminal superseded claim state as non-live ownership; require the active claim's exact package, writer, branch, path, and a separately named bounded source-unavailability evidence reference; require no lease, lock, pending operation, residue, duplicate, or ambiguity; require the pristine live worktree, local branch, and exact fetched remote branch tip to equal the requested checkpoint; require the old recorded HEAD to be an ancestor; journal and atomically reconcile the registry identity with the guarded absent successor creation; roll back that reconciliation when the successor remains absent; and fail closed on any race or divergence. Do not reassign or close a product claim in this package, and do not change product code, production, schema, identity, branches other than the lifecycle-created absent successor used by a later authorized recovery, closed-worktree retirement, or destructive Git state.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/active_custody_recovery",
@@ -31,6 +31,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "ccdf9e073ae74782adedd00b72586575d945c4c5",
+  "closed_at": "2026-09-04T09:52:53Z"
 }
