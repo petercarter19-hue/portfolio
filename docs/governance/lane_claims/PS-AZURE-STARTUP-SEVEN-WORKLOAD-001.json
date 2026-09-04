@@ -25,7 +25,8 @@
     "services/azure_speech_qualification.py",
     "tests/fixtures/azure_startup_qualification/speech_eval_cases.json",
     "tests/test_azure_startup_qualification.py",
-    "tests/test_azure_speech_qualification.py"
+    "tests/test_azure_speech_qualification.py",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-AZURE-STARTUP-SEVEN-WORKLOAD-001.md"
