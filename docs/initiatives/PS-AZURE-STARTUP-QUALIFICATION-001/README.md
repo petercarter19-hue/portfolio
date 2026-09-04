@@ -5,6 +5,31 @@
 and production changes are withheld
 **Operator:** Codex-managed repository package
 
+## September 4, 2026 seven-workload extension
+
+Protected package `PS-AZURE-STARTUP-SEVEN-WORKLOAD-001` is the separately
+owner-authorized extension from five to seven workloads. Its implementation
+candidate adds simultaneous five-of-seven and seven-of-seven streak reporting,
+a pinned data-plane-only Container Registry catalog check, and a resumable
+synthetic Azure Speech regression with per-profile pre-call attempt records.
+The five-workload calculation uses the fifth-highest individual service streak,
+so rotating shortfalls cannot manufacture continuity. The exact Azure resize,
+roles, marker seeding, budget
+alert recalibration, and first paid run remain separate live operations until
+the candidate is independently reviewed and merged.
+
+The current East US retail meter recheck corrected Speech batch/fast
+transcription to $0.18 per audio hour. The suite therefore targets 6.25-6.5
+successful audio hours ($1.125-$1.17/day), not the obsolete 3.25-hour estimate.
+It emits only aggregate structural quality and usage results and retains no
+audio or transcript. Progress is bound to the full fixture digest; ambiguous
+same-day attempts are never replayed, and reports separate successful audio
+from the possible billed-audio ceiling. SQL S2 and ACR Premium would bring the expected all-in
+subscription amount to approximately $427.32/month under the unchanged $550
+subscription-wide alert ceiling. The Microsoft for Startups portal remains
+authoritative, and no clock is claimed before complete Cost Management days
+and the portal confirm the services.
+
 ## September 3, 2026 activation
 
 The later protected package `PS-AZURE-STARTUP-ACTIVATION-001` owns the live
@@ -169,22 +194,18 @@ subscription ID, or Azure resource ID is written into evaluation results.
 ## Seven-workload direction
 
 Seven is the documented $50,000 milestone, not the requirement for the $25,000
-milestone.  Do not add two idle services merely to create spend.  The next two
-should be activated only when they support product work and can honestly stay
-above $1/day:
+milestone. The selected additional services are **Azure Container Registry
+Premium** and **Azure Speech**. The registry already holds product worker
+images; Premium adds capacity/security headroom, while the qualification job
+performs a read-only catalog health check. Speech supports the existing voice
+and transcription direction through a bounded synthetic-audio quality suite.
+Neither service is represented as portal-qualified before Microsoft confirms
+it.
 
-1. **Azure Speech** for the existing voice/transcription experience and a
-   bounded synthetic-audio quality suite.  Do not generate empty calls merely
-   to produce a meter.
-2. **Azure Monitor / Log Analytics** when real traffic and operational
-   telemetry justify ingestion/retention.  It helps reliability at 1,000+
-   users; today it may not naturally reach $1/day.
-
-Azure Service Bus or API Management is the next reserve choice when
-asynchronous jobs or a public/customer API actually exists.  Service Bus can
-support durable media, export, notification, and AI jobs.  API Management
-becomes useful when customers or integrations need a governed API boundary,
-but a paid tier is wasteful before that.
+Azure Monitor/Log Analytics remains a future scale candidate when real traffic
+can honestly sustain it above $1/day. Azure Service Bus or API Management is a
+reserve choice only when asynchronous jobs or a public/customer API needs it.
+API Management is explicitly not authorized by the seven-workload package.
 
 Key Vault, Functions consumption, or tiny storage transactions are useful but
 often too inexpensive to remain above $1 every day.  Artificial traffic is not

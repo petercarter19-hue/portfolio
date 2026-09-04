@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "package": "PS-AZURE-STARTUP-SEVEN-WORKLOAD-001",
+  "candidate_sha": "ba4476ea875b181fd810f879063557d7366df0d9",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/azure_activation_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-04T12:07:19Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "CI 2439 found the initiative missing from PACKAGE_REGISTRY.json. Control PR 918 and CI 2448 extended the claim, and the final candidate registers the package exactly once with reconciled counts."
+    },
+    {
+      "status": "informational",
+      "summary": "The reviewer accepted exact candidate ba4476ea875b181fd810f879063557d7366df0d9 with no findings. Sixty-eight focused tests, registry reconciliation, claimed-path checks, diff hygiene, remote identity, clean preflight, and compatibility with authoritative main faf6687edd871a3e4073eef3254385f45ff06fb9 passed. No Azure mutation or paid call occurred."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-AZURE-STARTUP-SEVEN-WORKLOAD-001.md"
+}

@@ -20,7 +20,8 @@ MICRO_USD_PER_USD = 1_000_000
 QUALIFYING_DAILY_MICRO_USD = MICRO_USD_PER_USD
 SAFE_DAILY_TARGET_MICRO_USD = 1_100_000
 TARGET_CONTINUOUS_DAYS = 60
-TARGET_WORKLOAD_COUNT = 5
+MINIMUM_MILESTONE_WORKLOAD_COUNT = 5
+TARGET_WORKLOAD_COUNT = 7
 
 
 class CostDataError(ValueError):
@@ -80,6 +81,7 @@ DEFAULT_WORKLOADS = (
         service_names=frozenset(
             {"Azure SQL Database", "SQL Database", "SQL Database - Single"}
         ),
+        planned_daily_micro_usd=2_420_000,
     ),
     WorkloadDefinition(
         key="app_configuration",
@@ -98,6 +100,24 @@ DEFAULT_WORKLOADS = (
                 "Foundry Models",
             }
         ),
+    ),
+    WorkloadDefinition(
+        key="container_registry",
+        label="Azure Container Registry Premium",
+        service_names=frozenset({"Container Registry", "Azure Container Registry"}),
+        planned_daily_micro_usd=1_666_600,
+    ),
+    WorkloadDefinition(
+        key="azure_speech",
+        label="Azure Speech synthetic regression",
+        service_names=frozenset(
+            {
+                "Foundry Tools",
+                "Azure Speech",
+                "Speech Services",
+            }
+        ),
+        planned_daily_micro_usd=1_125_000,
     ),
 )
 
@@ -122,6 +142,13 @@ class DailyQualificationStatus:
     def qualifies(self) -> bool:
         return self.complete and not self.missing_workloads
 
+    @property
+    def qualifies_five(self) -> bool:
+        return (
+            self.complete
+            and len(self.qualified_workloads) >= MINIMUM_MILESTONE_WORKLOAD_COUNT
+        )
+
 
 @dataclass(frozen=True)
 class QualificationReport:
@@ -130,7 +157,10 @@ class QualificationReport:
     threshold_micro_usd: int
     workloads: tuple[WorkloadDefinition, ...]
     days: tuple[DailyQualificationStatus, ...]
+    current_workload_streak_days: Mapping[str, int]
+    current_five_workload_streak_days: int
     current_streak_days: int
+    projected_five_workload_completion_day: date | None
     projected_completion_day: date | None
 
     def as_privacy_safe_dict(self) -> dict[str, Any]:
@@ -145,7 +175,18 @@ class QualificationReport:
             / MICRO_USD_PER_USD,
             "target_continuous_days": self.target_days,
             "target_workload_count": len(self.workloads),
+            "minimum_milestone_workload_count": MINIMUM_MILESTONE_WORKLOAD_COUNT,
+            "current_workload_streak_days": dict(
+                sorted(self.current_workload_streak_days.items())
+            ),
+            "current_five_workload_streak_days": self.current_five_workload_streak_days,
             "current_complete_day_streak": self.current_streak_days,
+            "current_seven_workload_streak_days": self.current_streak_days,
+            "projected_five_workload_completion_day": (
+                self.projected_five_workload_completion_day.isoformat()
+                if self.projected_five_workload_completion_day
+                else None
+            ),
             "projected_completion_day": (
                 self.projected_completion_day.isoformat()
                 if self.projected_completion_day
@@ -175,6 +216,9 @@ def _status_dict(status: DailyQualificationStatus) -> dict[str, Any]:
         "day": status.day.isoformat(),
         "complete": status.complete,
         "qualifies": status.qualifies,
+        "qualifies_five": status.qualifies_five,
+        "qualifies_seven": status.qualifies,
+        "qualified_workload_count": len(status.qualified_workloads),
         "qualified_workloads": list(status.qualified_workloads),
         "missing_workloads": list(status.missing_workloads),
         "workload_cost_usd": {
@@ -292,7 +336,7 @@ def build_report(
     generated_at: datetime | None = None,
     target_days: int = TARGET_CONTINUOUS_DAYS,
 ) -> QualificationReport:
-    if len(workloads) < TARGET_WORKLOAD_COUNT:
+    if len(workloads) < MINIMUM_MILESTONE_WORKLOAD_COUNT:
         raise ValueError("at least five workload definitions are required")
     keys = [workload.key for workload in workloads]
     if len(keys) != len(set(keys)):
@@ -339,26 +383,50 @@ def build_report(
         )
         cursor += timedelta(days=1)
 
-    streak = 0
-    expected = today - timedelta(days=1)
     by_day = {item.day: item for item in calendar_days}
-    while expected in by_day and by_day[expected].qualifies:
-        streak += 1
-        expected -= timedelta(days=1)
 
-    projected = (
-        today + timedelta(days=max(0, target_days - streak) - 1)
-        if streak < target_days
-        else today - timedelta(days=1)
-    )
+    def uninterrupted_workload_streak(workload_key: str) -> int:
+        streak = 0
+        expected = today - timedelta(days=1)
+        while (
+            expected in by_day
+            and by_day[expected].complete
+            and workload_key in by_day[expected].qualified_workloads
+        ):
+            streak += 1
+            expected -= timedelta(days=1)
+        return streak
+
+    def projected_day(streak: int) -> date:
+        return (
+            today + timedelta(days=max(0, target_days - streak) - 1)
+            if streak < target_days
+            else today - timedelta(days=1)
+        )
+
+    workload_streaks = {
+        key: uninterrupted_workload_streak(key)
+        for key in keys
+    }
+    # A five-workload milestone needs the *same* five workloads to remain above
+    # the threshold.  Counting only the daily number would allow two rotating
+    # shortfalls to manufacture a streak that no fixed five-workload set has.
+    # The fifth-highest per-workload streak is exactly the longest current
+    # interval shared by any fixed set of five workloads.
+    ranked_streaks = sorted(workload_streaks.values(), reverse=True)
+    five_streak = ranked_streaks[MINIMUM_MILESTONE_WORKLOAD_COUNT - 1]
+    seven_streak = ranked_streaks[len(workloads) - 1]
     return QualificationReport(
         generated_at=utc_now,
         target_days=target_days,
         threshold_micro_usd=QUALIFYING_DAILY_MICRO_USD,
         workloads=tuple(workloads),
         days=tuple(calendar_days),
-        current_streak_days=streak,
-        projected_completion_day=projected,
+        current_workload_streak_days=workload_streaks,
+        current_five_workload_streak_days=five_streak,
+        current_streak_days=seven_streak,
+        projected_five_workload_completion_day=projected_day(five_streak),
+        projected_completion_day=projected_day(seven_streak),
     )
 
 
@@ -370,8 +438,8 @@ def planned_budget(
         "workload_plan_daily_usd": daily / MICRO_USD_PER_USD,
         "workload_plan_30_day_usd": daily * 30 / MICRO_USD_PER_USD,
         "workload_plan_60_day_usd": daily * 60 / MICRO_USD_PER_USD,
-        "expected_all_in_monthly_usd": 305.0,
-        "warning_actual_monthly_usd": 275.0,
-        "intervention_forecast_monthly_usd": 325.0,
+        "expected_all_in_monthly_usd": 427.32,
+        "warning_actual_monthly_usd": 412.5,
+        "intervention_forecast_monthly_usd": 495.0,
         "emergency_alert_monthly_usd": 550.0,
     }

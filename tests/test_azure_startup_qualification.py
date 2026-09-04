@@ -28,6 +28,8 @@ def cost_payload(days):
         "Azure SQL Database",
         "App Configuration",
         "Azure OpenAI Service",
+        "Container Registry",
+        "Foundry Tools",
     ]
     for day, amount in days:
         for index, service_name in enumerate(service_names):
@@ -84,7 +86,7 @@ class AzureStartupQualificationTests(unittest.TestCase):
             item for item in report.days if item.day.isoformat() == "2026-08-28"
         )
         self.assertFalse(missing_day.qualifies)
-        self.assertEqual(len(missing_day.missing_workloads), 5)
+        self.assertEqual(len(missing_day.missing_workloads), 7)
 
     def test_one_under_threshold_workload_fails_the_whole_day(self):
         payload = cost_payload([("2026-08-29", 1.1)])
@@ -94,7 +96,59 @@ class AzureStartupQualificationTests(unittest.TestCase):
             generated_at=datetime(2026, 8, 30, tzinfo=timezone.utc),
         )
         self.assertEqual(report.current_streak_days, 0)
-        self.assertEqual(report.days[0].missing_workloads, ("foundry_luna",))
+        self.assertEqual(report.days[0].missing_workloads, ("azure_speech",))
+
+    def test_five_service_streak_survives_two_shortfalls_but_seven_does_not(self):
+        payload = cost_payload([("2026-08-29", 1.1)])
+        payload["properties"]["rows"][-1][0] = 0.5
+        payload["properties"]["rows"][-2][0] = 0.5
+        report = build_report(
+            cost_rows_from_query(payload),
+            generated_at=datetime(2026, 8, 30, tzinfo=timezone.utc),
+        )
+        self.assertEqual(report.current_five_workload_streak_days, 1)
+        self.assertEqual(report.current_streak_days, 0)
+        self.assertTrue(report.days[0].qualifies_five)
+        self.assertFalse(report.days[0].qualifies)
+
+    def test_five_service_streak_cannot_rotate_workloads_between_days(self):
+        payload = cost_payload(
+            [("2026-09-02", 1.1), ("2026-09-03", 1.1)]
+        )
+        rows = payload["properties"]["rows"]
+        # Day one misses App Service and Search; day two misses SQL and App
+        # Configuration.  Each day has five qualifying workloads, but only
+        # Foundry, ACR, and Speech are continuous across both days.
+        rows[0][0] = 0.5
+        rows[1][0] = 0.5
+        rows[9][0] = 0.5
+        rows[10][0] = 0.5
+        report = build_report(
+            cost_rows_from_query(payload),
+            generated_at=datetime(2026, 9, 4, tzinfo=timezone.utc),
+        )
+        self.assertTrue(
+            all(day.qualifies_five for day in report.days if day.complete)
+        )
+        self.assertEqual(report.current_five_workload_streak_days, 1)
+        self.assertEqual(report.current_workload_streak_days["foundry_luna"], 2)
+        self.assertEqual(report.current_workload_streak_days["app_service"], 1)
+        self.assertEqual(report.current_workload_streak_days["azure_sql"], 0)
+
+    def test_privacy_safe_report_includes_each_workload_streak(self):
+        payload = cost_payload([("2026-08-29", 1.1)])
+        report = build_report(
+            cost_rows_from_query(payload),
+            generated_at=datetime(2026, 8, 30, tzinfo=timezone.utc),
+        )
+        output = report.as_privacy_safe_dict()
+        self.assertEqual(
+            set(output["current_workload_streak_days"]),
+            {workload.key for workload in DEFAULT_WORKLOADS},
+        )
+        self.assertTrue(
+            all(value == 1 for value in output["current_workload_streak_days"].values())
+        )
 
     def test_cost_rows_for_one_service_are_aggregated(self):
         payload = cost_payload([("2026-08-29", 1.1)])
@@ -145,9 +199,9 @@ class AzureStartupQualificationTests(unittest.TestCase):
 
     def test_budget_target_is_well_below_the_account_credit_ceiling(self):
         budget = planned_budget(DEFAULT_WORKLOADS)
-        self.assertAlmostEqual(budget["workload_plan_daily_usd"], 8.29)
-        self.assertAlmostEqual(budget["workload_plan_30_day_usd"], 248.7)
-        self.assertEqual(budget["expected_all_in_monthly_usd"], 305.0)
+        self.assertAlmostEqual(budget["workload_plan_daily_usd"], 12.4016)
+        self.assertAlmostEqual(budget["workload_plan_30_day_usd"], 372.048)
+        self.assertEqual(budget["expected_all_in_monthly_usd"], 427.32)
         self.assertLess(
             budget["intervention_forecast_monthly_usd"],
             budget["emergency_alert_monthly_usd"],
@@ -173,7 +227,7 @@ class AzureStartupQualificationTests(unittest.TestCase):
             )
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertNotIn("/private/resource", completed.stdout)
-        self.assertEqual(json.loads(completed.stdout)["target_workload_count"], 5)
+        self.assertEqual(json.loads(completed.stdout)["target_workload_count"], 7)
 
     def test_live_query_rejects_a_non_uuid_subscription_before_azure_cli(self):
         with self.assertRaisesRegex(RuntimeError, "identifier is invalid"):
@@ -231,6 +285,17 @@ class AzureStartupQualificationTests(unittest.TestCase):
         self.assertIn("Automated quality checks passed", pipeline)
         self.assertIn("Stop category", pipeline)
         self.assertIn("Prompts and model output are not retained", pipeline)
+        self.assertIn(
+            "qualificationContainerRegistryEndpoint: 'https://peerslateacr.azurecr.io'",
+            pipeline,
+        )
+        self.assertNotIn("az acr repository list", pipeline)
+        self.assertIn("class RefuseRedirects", pipeline)
+        self.assertIn("def redirect_request", pipeline)
+        self.assertIn('"scope": "registry:catalog:*"', pipeline)
+        self.assertIn("response.geturl() != url", pipeline)
+        self.assertIn("response.read(65_537)", pipeline)
+        self.assertIn("Registry data-plane catalog access succeeded", pipeline)
 
     def test_pipeline_does_not_borrow_the_production_deploy_identity(self):
         """A nightly cost read must not hold deploy/migration authority.
@@ -266,7 +331,7 @@ class AzureStartupQualificationTests(unittest.TestCase):
         operative = [
             block for block in pipeline.split("  - stage: ") if "AzureCLI@2" in block
         ]
-        self.assertEqual(len(operative), 2, "expected two operative stages")
+        self.assertEqual(len(operative), 4, "expected four operative stages")
         for block in operative:
             condition = block.split("jobs:")[0]
             self.assertIn(
@@ -318,7 +383,7 @@ class QualifyingThresholdTests(unittest.TestCase):
         self.assertEqual(self._qualifying_count(1.0), 0)
 
     def test_one_micro_dollar_above_one_dollar_qualifies(self):
-        self.assertEqual(self._qualifying_count(1.000001), 5)
+        self.assertEqual(self._qualifying_count(1.000001), 7)
 
     def test_just_below_one_dollar_does_not_qualify(self):
         self.assertEqual(self._qualifying_count(0.999999), 0)

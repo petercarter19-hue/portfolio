@@ -1,0 +1,90 @@
+[
+  {
+    "key": "interview_behavioral_clean",
+    "product": "Interview Studio",
+    "capability": "behavioral-answer transcription",
+    "benchmark_ref": "synthetic interview behavioral baseline",
+    "profile": "clean",
+    "text": "This is a fictional Interview Studio practice answer. The situation involved a delayed community project. My task was to clarify ownership without ranking any person. I asked seven focused questions, documented the evidence, and proposed a reversible next step. The team made the final decision. The result was a clear plan, a smaller risk, and an honest record of what remained uncertain.",
+    "required_terms": ["interview studio", "seven", "evidence", "reversible", "uncertain"],
+    "speed_wpm": 155,
+    "pitch": 50
+  },
+  {
+    "key": "interview_followup_fast",
+    "product": "Interview Studio",
+    "capability": "fast follow-up capture",
+    "benchmark_ref": "synthetic interview pace regression",
+    "profile": "fast",
+    "text": "Here is a fictional follow-up spoken at a quicker pace. I noticed that the original assumption was incomplete, so I separated the source evidence from my interpretation. I did not claim that the system saved, sent, or published anything. I explained the tradeoff, asked for confirmation, and kept the next action small enough to reverse.",
+    "required_terms": ["follow-up", "source evidence", "interpretation", "confirmation", "reverse"],
+    "speed_wpm": 205,
+    "pitch": 52
+  },
+  {
+    "key": "capture_reflection_slow",
+    "product": "Capture",
+    "capability": "reflective voice-note transcription",
+    "benchmark_ref": "synthetic slow reflection regression",
+    "profile": "slow",
+    "text": "This fictional voice note is intentionally reflective. Today I learned that a useful memory needs context, date, source, and uncertainty. I want the journal to preserve my words without turning a suggestion into canonical truth. Later, I can review the proposal and decide whether it belongs in a profile, a workshop, or nowhere at all.",
+    "required_terms": ["voice note", "context", "uncertainty", "canonical truth", "review"],
+    "speed_wpm": 112,
+    "pitch": 48
+  },
+  {
+    "key": "ask_pete_light_noise",
+    "product": "Ask Pete",
+    "capability": "grounded question transcription",
+    "benchmark_ref": "synthetic light-noise grounding regression",
+    "profile": "light_noise",
+    "text": "In this synthetic Ask Pete example, the question is: what evidence supports the proposed next step? The answer should distinguish a verified fact, a source quotation, an inference, and an open question. It should never invent a private memory or imply that a person has been scored. A human remains responsible for the decision.",
+    "required_terms": ["ask pete", "verified fact", "source quotation", "inference", "human"],
+    "speed_wpm": 150,
+    "pitch": 50
+  },
+  {
+    "key": "opportunity_slate_low_gain",
+    "product": "Opportunity Slate",
+    "capability": "requirements-note transcription",
+    "benchmark_ref": "synthetic low-gain requirements regression",
+    "profile": "low_gain",
+    "text": "This is a fictional Opportunity Slate requirements note recorded at low gain. Requirement one is a valid closing date of October fifteenth, twenty twenty-six. Requirement two is authorization to work in the United States. Requirement three is a portfolio link. Evidence is missing for requirement two, so the correct status is needs review, not qualified.",
+    "required_terms": ["opportunity slate", "october fifteenth", "authorization", "portfolio link", "needs review"],
+    "speed_wpm": 148,
+    "pitch": 47
+  },
+  {
+    "key": "workshop_phone_band",
+    "product": "Workshop",
+    "capability": "compressed-audio note transcription",
+    "benchmark_ref": "synthetic telephone-band privacy regression",
+    "profile": "phone_band",
+    "text": "This fictional Workshop note uses telephone-band audio. The source remains private by default. Artificial intelligence may propose a summary, but it does not silently save, publish, send, delete, or make the proposal canonical. The member can inspect the evidence, correct the wording, and choose whether to accept the change.",
+    "required_terms": ["workshop", "private by default", "artificial intelligence", "canonical", "accept"],
+    "speed_wpm": 152,
+    "pitch": 50
+  },
+  {
+    "key": "product_vocabulary_high_pitch",
+    "product": "PeerSlate",
+    "capability": "product-vocabulary transcription",
+    "benchmark_ref": "synthetic product vocabulary regression",
+    "profile": "high_pitch",
+    "text": "PeerSlate includes Interview Studio, Ask Pete, Opportunity Slate, Capture, Journal, Workshop, Community, and Profile. Azure App Service runs the website. Azure SQL Database stores canonical application data. Azure AI Search supports retrieval. Microsoft Foundry models support bounded evaluations. App Configuration records non-secret operational markers.",
+    "required_terms": ["peerslate", "interview studio", "opportunity slate", "azure sql database", "app configuration"],
+    "speed_wpm": 158,
+    "pitch": 72
+  },
+  {
+    "key": "numbers_punctuation_low_pitch",
+    "product": "PeerSlate",
+    "capability": "numbers and punctuation transcription",
+    "benchmark_ref": "synthetic numeric and punctuation regression",
+    "profile": "low_pitch",
+    "text": "Did the daily check pass? Five of seven workloads exceeded one dollar, but two did not. The measured latency was one point eight seconds; the retry count was zero. Record September fourth, twenty twenty-six, as observed rather than authoritative. Why? Cost data can arrive late, and the Microsoft for Startups portal makes the final determination.",
+    "required_terms": ["five of seven", "one dollar", "one point eight", "september fourth", "final determination"],
+    "speed_wpm": 145,
+    "pitch": 28
+  }
+]

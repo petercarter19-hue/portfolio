@@ -32,12 +32,14 @@ variables:
   qualificationServiceConnectionId: 'peerslate-startup-qualification-wif'
   qualificationActivationEnabled: 'true'
   qualificationCreditConfirmed: 'true'
-  qualificationSpendAuthorizationRef: 'session:01a046b3-74fc-7903-a336-3f1647f81d1c/owner-authorization:2026-09-03/activate-five-azure-startup-services-and-continuous-tracking'
+  qualificationSpendAuthorizationRef: 'session:01a046b3-74fc-7903-a336-3f1647f81d1c/owner-authorization:2026-09-04/start-seven-azure-workload-plan'
   # Use the data-plane endpoint so this identity needs no ARM Reader role just
   # to discover a store it already has exact App Configuration data access to.
   qualificationAppConfigurationEndpoint: 'https://peerslate-startup-qualification.azconfig.io'
   qualificationFoundryEndpoint: 'https://peerslate-foundry.openai.azure.com'
   qualificationFoundryDeployment: 'gpt-5.6-luna'
+  qualificationSpeechEndpoint: 'https://peerslate-foundry.cognitiveservices.azure.com'
+  qualificationContainerRegistryEndpoint: 'https://peerslateacr.azurecr.io'
   # Nine distinct product-aligned cases run once: the call count and spend
   # envelope stay identical to the reviewed three-cases-times-three plan.
   qualificationEvaluationRepeats: '1'
@@ -66,7 +68,7 @@ stages:
             displayName: Report inactive state
 
   - stage: QualificationStatus
-    displayName: Read five-workload continuity
+    displayName: Read five- and seven-workload continuity
     condition: >-
       and(
         eq(variables['qualificationActivationEnabled'], 'true'),
@@ -122,21 +124,24 @@ stages:
                     open(sys.argv[2], "w", encoding="utf-8").write("\n".join(lines) + "\n")
                     raise SystemExit(0)
                 costs = latest["workload_cost_usd"]
+                streaks = report["current_workload_streak_days"]
                 labels = {item["key"]: item["label"] for item in report["workloads"]}
                 lines = [
                     "# Azure startup qualification status",
                     "",
                     f"Latest complete UTC day: **{latest['day']}**",
-                    f"Five-service day qualified: **{'yes' if latest['qualifies'] else 'no'}**",
-                    f"Current uninterrupted five-service streak: **{report['current_complete_day_streak']} days**",
+                    f"Five-service day qualified: **{'yes' if latest['qualifies_five'] else 'no'}**",
+                    f"Seven-service day qualified: **{'yes' if latest['qualifies_seven'] else 'no'}**",
+                    f"Current uninterrupted five-service streak: **{report['current_five_workload_streak_days']} days**",
+                    f"Current uninterrupted seven-service streak: **{report['current_seven_workload_streak_days']} days**",
                     "",
-                    "| Workload | Cost | Above $1 |",
-                    "|---|---:|:---:|",
+                    "| Workload | Cost | Above $1 | Current streak |",
+                    "|---|---:|:---:|---:|",
                 ]
                 for key in sorted(labels):
                     value = costs.get(key, 0)
                     lines.append(
-                        f"| {labels[key]} | ${value:.4f} | {'Yes' if value > 1 else 'No'} |"
+                        f"| {labels[key]} | ${value:.4f} | {'Yes' if value > 1 else 'No'} | {streaks[key]} days |"
                     )
                 lines.extend(
                     [
@@ -148,6 +153,152 @@ stages:
                 PY
                 echo "##vso[task.uploadsummary]$qualification_summary_file"
                 exit "$qualification_status_exit"
+
+  - stage: RegistryVerification
+    displayName: Verify the product container registry is readable
+    dependsOn: QualificationStatus
+    condition: >-
+      and(
+        always(),
+        eq(variables['qualificationActivationEnabled'], 'true'),
+        eq(variables['qualificationCreditConfirmed'], 'true'),
+        ne(variables['qualificationSpendAuthorizationRef'], ''),
+        ne(variables['qualificationContainerRegistryEndpoint'], ''),
+        ne(variables['qualificationServiceConnectionId'], '')
+      )
+    jobs:
+      - job: ReadOnlyRegistryVerification
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: none
+          - task: AzureCLI@2
+            displayName: Verify registry catalog access without listing names
+            inputs:
+              azureSubscription: $(qualificationServiceConnectionId)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                qualification_registry_aad_token=$(az account get-access-token \
+                  --resource 'https://containerregistry.azure.net' \
+                  --query accessToken \
+                  --output tsv \
+                  --only-show-errors)
+                qualification_registry_tenant=$(az account show \
+                  --query tenantId \
+                  --output tsv \
+                  --only-show-errors)
+                QUALIFICATION_REGISTRY_ENDPOINT="$(qualificationContainerRegistryEndpoint)" \
+                QUALIFICATION_REGISTRY_AAD_TOKEN="$qualification_registry_aad_token" \
+                QUALIFICATION_REGISTRY_TENANT="$qualification_registry_tenant" \
+                python3 - <<'PY'
+                import json
+                import os
+                import re
+                import urllib.error
+                import urllib.parse
+                import urllib.request
+
+                endpoint = os.environ.get("QUALIFICATION_REGISTRY_ENDPOINT", "")
+                expected_endpoint = "https://peerslateacr.azurecr.io"
+                service = "peerslateacr.azurecr.io"
+                aad_token = os.environ.get("QUALIFICATION_REGISTRY_AAD_TOKEN", "")
+                tenant = os.environ.get("QUALIFICATION_REGISTRY_TENANT", "")
+                if endpoint != expected_endpoint:
+                    raise SystemExit("Registry endpoint is not the pinned origin.")
+                if not re.fullmatch(r"[0-9a-fA-F-]{36}", tenant):
+                    raise SystemExit("Registry tenant identifier is invalid.")
+                if not 40 <= len(aad_token) <= 24_000 or any(char.isspace() for char in aad_token):
+                    raise SystemExit("Registry workload token is invalid.")
+
+                class RefuseRedirects(urllib.request.HTTPRedirectHandler):
+                    def redirect_request(self, req, fp, code, msg, headers, newurl):
+                        return None
+
+                opener = urllib.request.build_opener(RefuseRedirects)
+
+                def exact_json(path, *, form=None, bearer=None, field=None):
+                    url = endpoint + path
+                    parsed = urllib.parse.urlsplit(url)
+                    if (
+                        parsed.scheme != "https"
+                        or parsed.netloc != "peerslateacr.azurecr.io"
+                        or parsed.username is not None
+                        or parsed.password is not None
+                        or parsed.port is not None
+                    ):
+                        raise SystemExit("Registry request origin is invalid.")
+                    data = None
+                    headers = {"Accept": "application/json"}
+                    if form is not None:
+                        data = urllib.parse.urlencode(form).encode("ascii")
+                        headers["Content-Type"] = "application/x-www-form-urlencoded"
+                    if bearer is not None:
+                        headers["Authorization"] = "Bearer " + bearer
+                    request = urllib.request.Request(url, data=data, headers=headers)
+                    try:
+                        with opener.open(request, timeout=30) as response:
+                            if response.status != 200 or response.geturl() != url:
+                                raise SystemExit("Registry data-plane request was refused.")
+                            body = response.read(65_537)
+                    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as error:
+                        raise SystemExit("Registry data-plane request failed.") from error
+                    if len(body) > 65_536:
+                        raise SystemExit("Registry response exceeded its safe bound.")
+                    try:
+                        payload = json.loads(body)
+                    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+                        raise SystemExit("Registry response was malformed.") from error
+                    if not isinstance(payload, dict):
+                        raise SystemExit("Registry response shape was invalid.")
+                    if field is not None:
+                        if set(payload) != {field}:
+                            raise SystemExit("Registry token response fields were not exact.")
+                        token = payload[field]
+                        if (
+                            not isinstance(token, str)
+                            or not 40 <= len(token) <= 24_000
+                            or any(char.isspace() for char in token)
+                        ):
+                            raise SystemExit("Registry token response was invalid.")
+                        return token
+                    return payload
+
+                refresh_token = exact_json(
+                    "/oauth2/exchange",
+                    form={
+                        "grant_type": "access_token",
+                        "service": service,
+                        "tenant": tenant,
+                        "access_token": aad_token,
+                    },
+                    field="refresh_token",
+                )
+                catalog_token = exact_json(
+                    "/oauth2/token",
+                    form={
+                        "grant_type": "refresh_token",
+                        "service": service,
+                        "scope": "registry:catalog:*",
+                        "refresh_token": refresh_token,
+                    },
+                    field="access_token",
+                )
+                catalog = exact_json("/v2/_catalog?n=1", bearer=catalog_token)
+                if set(catalog) != {"repositories"} or not isinstance(catalog["repositories"], list):
+                    raise SystemExit("Registry catalog response fields were not exact.")
+                if len(catalog["repositories"]) > 1 or any(
+                    not isinstance(name, str) or len(name) > 256
+                    for name in catalog["repositories"]
+                ):
+                    raise SystemExit("Registry catalog response was outside its bound.")
+                print(
+                    "Registry data-plane catalog access succeeded; "
+                    f"bounded page entries: {len(catalog['repositories'])}. Names were not emitted."
+                )
+                PY
+                unset qualification_registry_aad_token qualification_registry_tenant
 
   - stage: FoundryEvaluation
     displayName: Run bounded Luna evaluations
@@ -305,6 +456,114 @@ stages:
                 PY
                 echo "##vso[task.uploadsummary]$qualification_summary_file"
                 exit "$qualification_runner_exit"
+            env:
+              PEERSLATE_AZURE_QUALIFICATION_ACTIVATED: $(qualificationActivationEnabled)
+              PEERSLATE_AZURE_CREDIT_CONFIRMED: $(qualificationCreditConfirmed)
+              PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF: $(qualificationSpendAuthorizationRef)
+
+  - stage: SpeechEvaluation
+    displayName: Run bounded synthetic Speech regressions
+    dependsOn: QualificationStatus
+    condition: >-
+      and(
+        always(),
+        eq(variables['qualificationActivationEnabled'], 'true'),
+        eq(variables['qualificationCreditConfirmed'], 'true'),
+        ne(variables['qualificationSpendAuthorizationRef'], ''),
+        ne(variables['qualificationSpeechEndpoint'], ''),
+        ne(variables['qualificationAppConfigurationEndpoint'], ''),
+        ne(variables['qualificationServiceConnectionId'], '')
+      )
+    jobs:
+      - job: BoundedSpeechEvaluation
+        timeoutInMinutes: 90
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: self
+            fetchDepth: 1
+            persistCredentials: false
+            clean: true
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: $(pythonVersion)
+          - script: |
+              set -euo pipefail
+              sudo apt-get update -qq
+              sudo apt-get install -y --no-install-recommends espeak-ng ffmpeg
+              python -m pip install --disable-pip-version-check requests==2.34.2
+            displayName: Install bounded synthetic-audio runtime
+          - task: AzureCLI@2
+            displayName: Run Speech quality suite with resumable progress
+            inputs:
+              azureSubscription: $(qualificationServiceConnectionId)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                qualification_enabled=$(az appconfig kv show \
+                  --endpoint "$(qualificationAppConfigurationEndpoint)" \
+                  --key "qualification/enabled" \
+                  --auth-mode login \
+                  --query value \
+                  --output tsv \
+                  --only-show-errors)
+                if [ "$qualification_enabled" != "true" ]; then
+                  echo "Qualification automation is disabled in App Configuration."
+                  exit 2
+                fi
+                qualification_speech_result="$AGENT_TEMPDIRECTORY/speech-evaluation.json"
+                set +e
+                python scripts/run_speech_quality_evaluations.py \
+                  --execute \
+                  --endpoint "$(qualificationSpeechEndpoint)" \
+                  --app-configuration-endpoint "$(qualificationAppConfigurationEndpoint)" \
+                  > "$qualification_speech_result"
+                qualification_speech_exit=$?
+                set -e
+                qualification_speech_summary="$AGENT_TEMPDIRECTORY/speech-evaluation.md"
+                python - "$qualification_speech_result" "$qualification_speech_summary" <<'PY'
+                import json
+                import sys
+
+                report = json.load(open(sys.argv[1], encoding="utf-8"))
+                lines = [
+                    "# Azure Speech daily synthetic regression",
+                    "",
+                    f"Mode: **{report['mode']}**",
+                    f"Pre-recorded attempts: **{report.get('attempted_requests', 0)}/{report.get('planned_requests', 0)}**",
+                    f"Completed profiles: **{report.get('completed_requests', 0)}/{report.get('planned_requests', 0)}**",
+                    f"Unresolved attempts: **{report.get('unresolved_attempts', 0)}**",
+                    f"Confirmed successful audio: **{report.get('audio_hours', 0):.4f} hours**",
+                    f"Successful-audio retail estimate: **${report.get('estimated_cost_usd', 0):.4f}**",
+                    f"Possible billed audio ceiling: **{report.get('possible_billed_audio_hours', 0):.4f} hours / ${report.get('maximum_possible_cost_usd', 0):.4f}**",
+                    f"Spend target reached: **{'yes' if report.get('spend_target_reached') else 'no'}**",
+                    f"Quality checks passed: **{'yes' if report.get('quality_checks_passed') else 'no'}**",
+                    "",
+                    "| Product | Capability | Profile | Sample WER | Term recall | Latency | Result |",
+                    "|---|---|---|---:|---:|---:|:---:|",
+                ]
+                if report.get("stop_category"):
+                    lines[3:3] = [f"Stop category: **{report['stop_category']}**"]
+                for item in report.get("profile_results", []):
+                    lines.append(
+                        f"| {item['product']} | {item['capability']} | {item['profile']} | "
+                        f"{item['sample_word_error_rate_milli'] / 10:.1f}% | "
+                        f"{item['required_term_recall_milli'] / 10:.1f}% | "
+                        f"{item['latency_milliseconds'] / 1000:.1f}s | "
+                        f"{'Pass' if item['quality_passed'] else 'Review'} |"
+                    )
+                lines.extend(
+                    [
+                        "",
+                        "Synthetic speech is a repeatable regression signal, not a human-usability study.",
+                        "Audio, transcripts, credentials, identifiers, and provider payloads are not retained.",
+                    ]
+                )
+                open(sys.argv[2], "w", encoding="utf-8").write("\n".join(lines) + "\n")
+                PY
+                echo "##vso[task.uploadsummary]$qualification_speech_summary"
+                exit "$qualification_speech_exit"
             env:
               PEERSLATE_AZURE_QUALIFICATION_ACTIVATED: $(qualificationActivationEnabled)
               PEERSLATE_AZURE_CREDIT_CONFIRMED: $(qualificationCreditConfirmed)

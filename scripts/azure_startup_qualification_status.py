@@ -27,7 +27,7 @@ COST_QUERY_API_VERSION = "2025-03-01"
 
 def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Estimate five-workload continuity from Azure ActualCost data."
+        description="Estimate five- and seven-workload continuity from Azure ActualCost data."
     )
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument(
@@ -42,6 +42,7 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--days", type=int, default=75)
     parser.add_argument("--pretty", action="store_true")
     parser.add_argument("--require-qualified-latest-day", action="store_true")
+    parser.add_argument("--require-five-qualified-latest-day", action="store_true")
     return parser.parse_args()
 
 
@@ -143,6 +144,10 @@ def main() -> int:
     if args.require_qualified_latest_day:
         latest = output.get("latest_day")
         if not isinstance(latest, dict) or not latest.get("qualifies"):
+            return 3
+    if args.require_five_qualified_latest_day:
+        latest = output.get("latest_day")
+        if not isinstance(latest, dict) or not latest.get("qualifies_five"):
             return 3
     return 0
 
