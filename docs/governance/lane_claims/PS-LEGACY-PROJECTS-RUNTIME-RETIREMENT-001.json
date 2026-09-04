@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Complete Phase B of accepted legacy Projects privacy containment: remove the dead Projects Board loader/normalizer and inert static tombstone, return 410 Gone from its retired address, and preserve Projects/Work redirects, resume case studies, search, sitemap, and unrelated behavior. The full PS-PROJECTS-001 product and Profile Projects remain deferred to Audit Round Two. PACKAGE_REGISTRY.json is deferred while PS-OPPORTUNITY-SLATE-003 owns it; do not merge until a governed surface extension, registration, current-main refresh, validation, and fresh independent exact-SHA review pass. No navigation, shared shell, deployment, production, GitHub, cache/CDN, history, schema, grant, identity, provider, configuration, or external operation.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/legacy_projects_successor_close",
@@ -43,6 +43,6 @@
     "owner_authorization_ref": "session:01a03e17-a645-7ae0-8da3-164eef90a333/pete-chat-2026-09-04/start-closing-active-claims-worktrees"
   },
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "9a8f28949162b391b7426eedab92dfcd3f33ff48",
+  "closed_at": "2026-09-04T11:36:58Z"
 }
