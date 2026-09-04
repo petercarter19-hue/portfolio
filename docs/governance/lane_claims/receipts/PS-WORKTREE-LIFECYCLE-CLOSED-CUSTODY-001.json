@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001",
-  "candidate_sha": "4510823d2a9aa1fbcbabce0eab2273f78c714180",
+  "candidate_sha": "e808ce995f71bc3243e87b26a8d57da813b09578",
   "review_type": "independent",
   "reviewer_ref": "agent:/root/closed_custody_implementation/closed_custody_review",
   "result": "pass",
-  "reviewed_at": "2026-09-04T14:07:05Z",
+  "reviewed_at": "2026-09-04T14:35:32Z",
   "findings": [
     {
       "status": "resolved",
@@ -30,6 +30,14 @@
     {
       "status": "informational",
       "summary": "Independent evidence audit accepted exact candidate 4510823d2a9aa1fbcbabce0eab2273f78c714180 against exact main 4e4266403bf347bb19e644325150a1fc3c4b7943. The candidate changes only the fixed package evidence file. Machine-local registry, filesystem and Git absence, preserved local/server refs, closed claims and original writers, unique source-unavailability references, reviewed candidate/main custody proofs, Trash contents, table arithmetic, three deliberately retained residue cases, PR merge policy, and CI results all reconcile exactly. Registry pending is null and its lock is absent. No target or custody payload was mutated during review."
+    },
+    {
+      "status": "informational",
+      "summary": "Independent exact-SHA review accepted 46258986432e1f0ef76b7d7e493c4800b8b34df5 with no blocking findings. Its complete parent delta is limited to the claimed lifecycle documentation and fixed package evidence. The documented evidence-only close refusal matches the existing fail-closed implementation exactly; PR 922 and the unmerged refused close commit reconcile. Independent Trash measurements match all reported per-addition and aggregate counts, the active claim and Group-C preserve cases remain intact, and no implementation, package-registry, target, ref, registry, cache, or custody state was changed by this review."
+    },
+    {
+      "status": "informational",
+      "summary": "Independent exact-SHA review accepted e808ce995f71bc3243e87b26a8d57da813b09578 against exact current main and merge base 84fbc1c148afe57738a44446b0fcc412d6e80ce1, with no blocking findings. The complete merge-base delta is limited to the claimed lifecycle documentation, fixed package evidence, and package receipt; the receipt truthfully records only the preceding accepted 4625898 review pending this fresh acceptance. The server branch has no post-review paths, implementation, package registry, tests, and claim bytes are unchanged, all previously accepted custody totals and Group-C preserve facts reconcile exactly, and the review made no mutation."
     }
   ],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001.md"

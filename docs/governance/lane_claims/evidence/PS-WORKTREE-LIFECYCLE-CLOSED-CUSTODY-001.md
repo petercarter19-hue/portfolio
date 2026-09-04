@@ -81,6 +81,39 @@
 - The final review also accepted the production-shaped same-package
   control-singleton correction with no blocking findings and no target
   mutation.
+
+### Final close-sequencing review
+
+- Reviewer:
+  `agent:/root/closed_custody_implementation/closed_custody_review`.
+- Reviewed at: `2026-09-04T14:31:19Z`.
+- Result: pass with no blocking findings for exact candidate
+  `46258986432e1f0ef76b7d7e493c4800b8b34df5`, tree
+  `fc74e70518caf6b6f1d7aa9992256d434753f724`, direct parent
+  `5011423709d5b8a14bb801bcb72970cde451ee37`, and current-main merge base
+  `f073f5e75f145d12845f8ea9cba324bc914babe9`.
+- The exact candidate delta is limited to this fixed evidence file and the
+  claimed `docs/governance/WORKTREE_LIFECYCLE.md` close-sequencing
+  clarification. The claim, receipt, implementation, tests, and
+  `docs/governance/PACKAGE_REGISTRY.json` are byte-identical to the parent.
+- Independent review reproduced the evidence-only close refusal, remeasured
+  all Trash counts and bytes exactly, proved package and `_control` pristine
+  with lease/pending null and lock absent, and confirmed the three Group-C
+  worktrees still have their recorded HEAD splits and residue. It made no
+  repository, registry, ref, cache, custody, target, or Group-C mutation.
+- After current main advanced through the disjoint Azure merge, merge preflight
+  correctly refused that earlier candidate because the later main merge was a
+  non-evidence post-review branch delta. The reviewer therefore independently
+  accepted the new exact branch-tip candidate
+  `e808ce995f71bc3243e87b26a8d57da813b09578` at
+  `2026-09-04T14:35:32Z`, tree
+  `e63ea3ae975f002fec8fe3a825875635b7adb087`, against exact current main and
+  merge base `84fbc1c148afe57738a44446b0fcc412d6e80ce1`. Its complete merge-base delta
+  is only the claimed lifecycle document, fixed package evidence, and package
+  receipt; its server-tip post-review delta is empty. All prior custody totals,
+  package/control state, and Group-C preserve facts re-reconciled exactly, and
+  the fresh review made no mutation.
+
 ## Protected merge and execution gate
 
 - Initial PR 920 merged without bypass at
@@ -136,7 +169,7 @@ Trash root:
 
 | Package | Cache roots | Files | Directories | Logical bytes | Allocated-entry bytes |
 |---|---:|---:|---:|---:|---:|
-| `PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001` | 5 | 19 | 5 | 939,889 | 983,040 |
+| `PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001` | 7 | 21 | 7 | 1,558,835 | 1,605,632 |
 | `PS-DELIVERY-OWNER-REASSIGNMENT-001` | 2 | 11 | 2 | 978,069 | 999,424 |
 | `PS-WORKSHOP-DELIVERY-CONTINUITY-001` | 2 | 5 | 2 | 835,051 | 843,776 |
 | `PS-SYNTHETIC-SEALED-CREDENTIAL-BROKER-WINDOWS-CHILD-RUNTIME-001` | 6 | 7 | 6 | 404,702 | 417,792 |
@@ -144,11 +177,24 @@ Trash root:
 | `PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-002` | 3 | 5 | 3 | 420,823 | 430,080 |
 | `PS-AZURE-STARTUP-QUALIFICATION-001` | 16 | 505 | 19 | 18,334,062 | 19,398,656 |
 | `PS-CI-SECRET-SCAN-ALLOWLIST-001` | 13 | 256 | 13 | 9,361,776 | 9,904,128 |
-| **Total** | **50** | **813** | **53** | **31,694,021** | **33,406,976** |
+| **Total** | **52** | **815** | **55** | **32,312,967** | **34,029,568** |
 
-The Trash tree contains the same 813 files and 31,694,021 logical file bytes.
-Including custody parent directories, it has 112 directories and 33,406,976
+The Trash tree contains the same 815 files and 32,312,967 logical file bytes.
+Including custody parent directories, it has 118 directories and 34,029,568
 allocated-entry bytes. The payload remains recoverable; nothing was deleted.
+
+After the evidence-only cleanup result was merged, the first formal close
+preflight correctly refused because the receipt candidate contained only the
+package evidence path once evidence and receipt tails were excluded. No claim
+close was merged. The `_control` lease was released cleanly, and its one proven
+ignored Python cache file was moved to a distinct `_control` custody path with
+exact source/destination parity (309,457 logical bytes; 311,296 allocated-entry
+bytes). A later exact pre-retirement check found one proven ignored Python
+cache file in the cleanup worktree; it was likewise moved to a distinct
+`cleanup-final` custody path with parity (309,489 logical bytes; 311,296
+allocated-entry bytes). The row and totals above include both additions. All
+subsequent Python lifecycle and preflight invocations use bytecode suppression
+so the final worktree remains pristine.
 
 ## Deliberately retained preserve cases
 
