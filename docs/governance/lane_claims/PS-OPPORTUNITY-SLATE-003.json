@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-OPPORTUNITY-SLATE-003",
-  "state": "active",
+  "state": "paused",
   "outcome": "Implement and independently review Opportunity Slate v2 R2 behind PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED: stage 3 requirement review (interpretation with per-clause display phrases, contract os-statements-v2; Accurate/Needs correction/Not a requirement review events; correction inspector; Final check; Confirm requirements projecting member decisions, setting the confirmation triple, bumping member_confirmed_ordinal and running analysis; post-confirm Revise); stage 4 guided qualification review (citations-only alignment with validator and zero-evidence short-circuit; evidence_snapshot_sha256 plus ordinal currency with the outdated label and explicit Reanalyze; member takes; reviewed responses; evidence inspector and sheet; zero-qualification and interim completion states; AI failure anatomy); D-1 durability via usp_KeepOpportunityWorkingSessionForOwner; additive procedure-only PS-OPPSLATE-005 (11 new procedures; no table, column, row, or takeover change) with rollback, verifier, registry entry and disposable gate proof; database_service allowlist entries. No save/history (R3), no M-1 visual, no legacy or app.py change, no flag flip, no deployment or production schema action.",
   "assignment": "implementation",
   "writer_ref": "agent:codex/2026-09-04/opportunity-slate-custody-pause",
@@ -68,7 +68,7 @@
     "checkpoint_sha": "48935bbd5fed4f4339185bb1f20526c4ddf3dd1d",
     "owner_authorization_ref": "session:01a03e17-a645-7ae0-8da3-164eef90a333/pete-chat-2026-09-04/start-closing-active-claims-worktrees"
   },
-  "checkpoint_sha": null,
+  "checkpoint_sha": "48935bbd5fed4f4339185bb1f20526c4ddf3dd1d",
   "merged_sha": null,
   "closed_at": null
 }
