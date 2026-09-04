@@ -19,7 +19,8 @@
     "docs/initiatives/PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
     "app.py",
     "static/data/projects_board.json",
-    "tests/test_projects.py"
+    "tests/test_projects.py",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001.md"
