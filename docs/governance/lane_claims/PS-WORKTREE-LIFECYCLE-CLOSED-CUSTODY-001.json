@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001",
+  "state": "active",
+  "outcome": "Add a distinct owner-authorized retire-closed-custody command for exact managed durable worktrees whose fetched target claim is closed but whose original task is unavailable. Require the active Protected cleanup claim's exact current writer and owner reference, a separate truthful source-unavailability reference per target, and exact target package, canonical path, branch, original task, pristine live checkout, local branch, and server expected HEAD. Admit a stale registry HEAD only when equal to or a proven ancestor of that HEAD; refuse leases, locks, unresolved journals, duplicates, nesting, path ambiguity, behind-server state, divergence, residue, or uncertainty. Journal any custody reconciliation and retirement crash-safely, preserve the original task_ref while recording the cleanup caller separately, use only ordinary non-force git worktree remove, and preserve every branch and ref. Add no reset, clean, prune, garbage collection, force, ref deletion, product code, deployment, schema, identity, or production change.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/closed_custody_implementation",
+  "branch": "work/2026-09-04-worktree-lifecycle-closed-custody-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "faf6687edd871a3e4073eef3254385f45ff06fb9",
+  "owner_outcome_ref": "session:01a03e17-a645-7ae0-8da3-164eef90a333/pete-chat-2026-09-04/close-worktrees-cleanup-very-important",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001.md",
+    "docs/governance/lane_claims/receipts/PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001.json",
+    "AGENTS.md",
+    "START_HERE.md",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+    "scripts/worktree_lifecycle.py",
+    "tests/test_worktree_lifecycle.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001.md"
+  ],
+  "domains": [
+    "governance:delivery:closed-custody-retirement",
+    "tooling:worktree-lifecycle:closed-custody-retirement"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
