@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Add a distinct owner-authorized retire-closed-custody command for exact managed durable worktrees whose fetched target claim is closed but whose original task is unavailable. Require the active Protected cleanup claim's exact current writer and owner reference, a separate truthful source-unavailability reference per target, and exact target package, canonical path, branch, original task, pristine live checkout, local branch, and server expected HEAD. Admit a stale registry HEAD only when equal to or a proven ancestor of that HEAD; refuse leases, locks, unresolved journals, duplicates, nesting, path ambiguity, behind-server state, divergence, residue, or uncertainty. Journal any custody reconciliation and retirement crash-safely, preserve the original task_ref while recording the cleanup caller separately, use only ordinary non-force git worktree remove, and preserve every branch and ref. Add no reset, clean, prune, garbage collection, force, ref deletion, product code, deployment, schema, identity, or production change.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/closed_custody_implementation",
@@ -31,6 +31,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "823378bc821da76a64788484e74889587d710e7b",
+  "closed_at": "2026-09-04T14:48:08Z"
 }
