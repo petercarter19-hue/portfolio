@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001",
+  "candidate_sha": "3857757a99adb2ba3ccaf5436eb579afcf89ebed",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/legacy_projects_successor_close/legacy_projects_exact_sha_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-09-04T11:23:36Z",
+  "findings": [
+    {
+      "summary": "The first exact-SHA review rejected candidate d45e60fcf6e887845838db2a9f6a34f1baac4d74 solely because its completion report still described the superseded writer, branch, deferred Package Registry work, and old validation checkpoint. The replacement candidate corrected only that claimed report.",
+      "status": "resolved"
+    },
+    {
+      "summary": "The fresh independent review accepted exact replacement candidate 3857757a99adb2ba3ccaf5436eb579afcf89ebed against exact current main 26a29e1e09906ffca250e3c5dc472ca6e072a406 with no actionable findings. The reviewer confirmed exact remote state, ancestry, claimed paths, runtime retirement and privacy boundary, Package Registry placement and counts, documentation truth, and diff cleanliness.",
+      "status": "resolved"
+    },
+    {
+      "summary": "Validation passed: 5,603 repository tests with 35 skips; 47 focused Projects, navigation, search, and Package Registry tests; app syntax; SQL migration registry consistency; exact write preflight; git diff check; and a 2,557-commit full-history Gitleaks scan. No deployment or live, GitHub, cache/CDN, history, schema, identity, provider, configuration, or external operation is authorized.",
+      "status": "informational"
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001.md"
+}

@@ -56,6 +56,7 @@
       "PS-INTERVIEW-STUDIO-OPERABILITY-001",
       "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001",
       "PS-LEGACY-PROJECTS-PRIVACY-CONTAINMENT-001",
+      "PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001",
       "PS-MOMENT-001",
       "PS-OPPORTUNITY-SLATE-001",
       "PS-OPPORTUNITY-SLATE-002",
@@ -166,11 +167,11 @@
     ]
   },
   "counts": {
-    "current_protect": 74,
+    "current_protect": 75,
     "future_finish": 33,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 142
+    "total": 143
   }
 }
