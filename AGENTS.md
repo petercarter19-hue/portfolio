@@ -105,7 +105,8 @@ handoffs are evidence, not additional gates.
   without `relinquished`. Preparation requires a complete initialized registry
   with exactly one exclusively leased `_control` record, no lock or unresolved
   pending operation, and no malformed/orphaned preparation state. Every
-  pending create, retire, control-repoint, or branch-create journal must have
+  pending create, retire, closed-custody-retire, control-repoint, or
+  branch-create journal must have
   its exact schema and registry-record custody before reconciliation; recovery
   otherwise leaves the registry unchanged. Preparation reconciles
   every active target/source durable record against its exact pristine live
@@ -135,6 +136,28 @@ handoffs are evidence, not additional gates.
   pending or completed/consuming/consumed preparation state. Any omitted or
   orphan link, residue, divergence, lease, ambiguity, or race preserves a refusal. A
   governed `superseded` claim is terminal and is never live ownership.
+- Closed-claim worktree retirement by a successor is a separate Protected
+  operation, not owner impersonation and not ordinary `retire`. Use
+  `retire-closed-custody` only from the exact active cleanup package worktree
+  and writer, with Pete's cleanup authorization reference and a distinct
+  truthful source-unavailability reference for the one target. Fetched main
+  must contain the accepted independent receipt and evidence, every reviewed
+  lifecycle surface must have the reviewed bytes on main and the cleanup
+  branch, and the executing script blob must be that exact main blob. The fetched
+  target claim must be exactly `closed` for the original task and branch; the
+  canonical managed path, live checkout, local branch, and server branch must
+  all equal the explicit expected HEAD. A stale registry HEAD is admitted only
+  when it is equal to or a proven ancestor of that HEAD. The target must have no
+  lease, pending operation, duplicate, nesting, reparse point, path ambiguity,
+  tracked/untracked/ignored residue, behind-server state, or divergence. The
+  transaction preserves the original `task_ref`, records the cleanup caller
+  separately with both evidence references, journals exact before/after
+  records. Present-side recovery re-proves the complete path, repository,
+  branch, live/local HEAD, reparse, nesting, and pristine identity before it
+  may clear a preserved journal; every mismatch retains that journal. Removal
+  uses only ordinary non-force Git worktree removal. Every branch,
+  tag, and ref remains. Any mismatch preserves the target; never reset, clean,
+  force, prune, run garbage collection, or delete a ref to make it pass.
 - On an initialized machine, mutating preflight requires `--task-ref` and the
   exact registered package or control context. Except for owner reassignment's
   mandatory local preparation proof, CI and an uninitialized machine do not

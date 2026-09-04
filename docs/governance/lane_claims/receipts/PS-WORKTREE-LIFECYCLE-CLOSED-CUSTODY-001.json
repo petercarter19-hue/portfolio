@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001",
+  "candidate_sha": "02a543d987a6a53235ac0355a6acf40ef96183bd",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/closed_custody_implementation/closed_custody_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-04T13:17:01Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Rejected candidate 9272617d51e6f2f4a663249e2d3b624871c204ac could execute retirement before independent review and merge. The accepted candidate requires an exact independent-pass receipt and evidence on fetched main, candidate/main/cleanup equality for every reviewed lifecycle surface, candidate ancestry in the exact cleanup branch, and equality between the executing lifecycle script blob and the reviewed main blob. Pre-review and unmerged-script refusal tests pass."
+    },
+    {
+      "status": "resolved",
+      "summary": "Rejected candidate 9272617d51e6f2f4a663249e2d3b624871c204ac cleared a present-side recovery journal after checking only filesystem and Git-list presence. The accepted candidate re-proves canonical managed and reparse-safe path, repository identity, target branch, live/local/expected HEAD, pristine tracked/untracked/ignored state, and absence of nested worktrees before clearing. Detached, switched, moved-HEAD, residue, reparse, nested, and replaced-path tests preserve the exact journal and refuse."
+    },
+    {
+      "status": "resolved",
+      "summary": "Rejected candidate 9272617d51e6f2f4a663249e2d3b624871c204ac did not bind registry_previous_head to the pending before-record. The accepted candidate requires exact equality with before_record.head and additionally binds package, source task, branch, and path; malformed journal recovery refuses without mutation."
+    },
+    {
+      "status": "informational",
+      "summary": "Independent review accepted exact candidate 02a543d987a6a53235ac0355a6acf40ef96183bd against merge base 69d94cc0ac903c1d76be052ca7450d5e996c99c0 with no remaining blocking findings. Seven focused tests and all 62 lifecycle tests passed from an immutable non-worktree archive. The command preserves original task_ref and all branches, tags, and refs, and uses only the shared ordinary non-force Git worktree removal helper."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001.md"
+}

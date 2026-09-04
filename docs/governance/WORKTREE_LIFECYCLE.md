@@ -38,6 +38,19 @@ managed root, external evidence root, durable package worktrees, the `_control`
 singleton, exceptional task-temporary worktrees, task leases, pending
 operations, and grandfathered observations.
 
+Closed-custody retirement has its own `retire_closed_custody` journal. It binds
+one exact active source record to one exact retired successor record plus the
+cleanup package/writer/worktree/branch/HEAD, owner authorization, distinct
+source-unavailability evidence, original package/task/path/branch, previous
+registry HEAD, expected/server HEAD, authoritative main, and timestamp. The
+registry keeps the active before-record until ordinary Git removal succeeds.
+Recovery clears the journal as preserved only when the exact worktree still
+exists in both filesystem and Git and its managed/reparse-safe path,
+repository, branch, live/local HEAD, nesting, and pristine state still match
+the immutable proof, or publishes the exact after-record only when it is
+absent from both. A mismatch retains the journal and refuses. The proof's
+previous registry HEAD must equal the journal's exact before-record HEAD.
+
 Registry changes use an exclusive lock directory, write a pending operation
 before Git mutation, and publish JSON through a temporary file plus
 `os.replace`. Every mutation reconciles the exact filesystem path and
@@ -172,7 +185,8 @@ competing lock or unresolved pending operation. Every preparation record and
 legal transient state is schema-validated before recovery, journaling, or
 remote mutation; a duplicate control, poisoned history, or orphan transition
 stops. A registry worktree marked `pending` must have one exact matching create
-journal; every create, retire, control-repoint, and branch-create journal must
+journal; every create, retire, closed-custody-retire, control-repoint, and
+branch-create journal must
 also have its exact field set, timestamp, canonical path where applicable, and
 registry-record/control custody before reconciliation. Invalid journals and
 orphan or ambiguous pending records stop without changing the registry. The control branch must
@@ -337,6 +351,46 @@ requires a fetched closed claim and a recoverable exact branch/HEAD.
 ```powershell
 python scripts/worktree_lifecycle.py retire --path "C:\Users\peter\Documents\PeerSlateWorktrees\PS-EXAMPLE-001" --task-ref "session:<writer-task-id>" --expected-head "<40-character-sha>" --execute
 ```
+
+### Retire closed custody when the original task is unavailable
+
+`retire-closed-custody` is a distinct owner-authorized Protected path. It is
+not a transfer, does not make the cleanup writer the source writer, and cannot
+retire an active or paused claim. It also cannot run from an unreviewed or
+unmerged implementation: fetched main must contain an exact independent-pass
+receipt and its evidence, every reviewed lifecycle surface must match the
+candidate on both main and the cleanup branch, and the executing lifecycle
+script blob must equal that reviewed main blob. Run it only from the exact active
+durable worktree of the cleanup package after the reviewed mechanism is merged:
+
+```powershell
+python scripts/worktree_lifecycle.py retire-closed-custody --cleanup-package "PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001" --task-ref "agent:<cleanup-writer>" --target-package "PS-CLOSED-EXAMPLE-001" --path "C:\Users\peter\Documents\PeerSlateWorktrees\PS-CLOSED-EXAMPLE-001" --branch "work/YYYY-MM-DD-closed-example-001" --source-task-ref "session:<original-writer>" --expected-head "<40-character-server-sha>" --owner-authorization-ref "session:<owner-cleanup-decision>" --source-unavailable-ref "session:<target-specific-unavailability-proof>" --execute
+```
+
+The cleanup claim must be current on fetched `origin/main`, active,
+`Protected`, `implementation`, `through_merge`, production-withheld, and
+independently reviewed, with the exact lifecycle cleanup surfaces/domains,
+writer, branch, and owner reference. Its canonical durable worktree must be the
+invoking CWD; the registry identity, pristine live checkout, local branch, and
+server tip must agree exactly. The target claim must be fetched and exactly
+`closed`, with its original writer and branch equal to the explicit arguments.
+The target must be one canonical active managed durable record and one live Git
+worktree, with no lease, duplicate package/branch/path custody, nested
+worktree, reparse point, residue, or ambiguity. Live HEAD, the local branch,
+and the server branch must all equal `--expected-head`. The registry HEAD may
+equal that commit or be its proven ancestor; missing, ahead, or divergent
+registry custody refuses.
+
+Immediately before journaling, one server advertisement re-proves current
+main, the cleanup branch, and the target branch while the registry mutex is
+held. The source-unavailability reference must be different from the cleanup
+caller, original task, and owner reference, and it may appear in only one
+completed or pending closed-custody operation. The journal records immutable
+before/after snapshots. Completion leaves the retired record's `task_ref` set
+to the original task and records the cleanup caller separately in
+`closed_custody_retirement`. It then invokes the same sole ordinary non-force
+Git removal helper as `retire`. It never resets, cleans, force-removes, prunes,
+runs garbage collection, or deletes/moves a branch, tag, or ref.
 
 ## Non-negotiable retirement refusals
 

@@ -179,7 +179,8 @@ Merge that control PR before implementation merge.
   every completed/consuming/consumed preparation and rejects malformed,
   duplicate, type-confused, orphan, or incompatible state, including a pending
   worktree record without its exact create journal and any create, retire,
-  control-repoint, or branch-create journal without its exact record linkage,
+  closed-custody-retire, control-repoint, or branch-create journal without its
+  exact record linkage,
   before remote mutation. Before
   journaling or pushing, it reconciles every active target-package/source-branch
   durable record against one exact absolute live Git path, old task, old
@@ -224,6 +225,38 @@ Merge that control PR before implementation merge.
   its first ensure. A later legitimate reassignment preserves older sources and
   history under their own handoffs while consuming only the current source.
   Recovery never deletes or force-moves the old branch or worktree.
+- Retire unavailable-writer closed custody: use only the separately claimed
+  Protected cleanup package and run from that package's exact active durable
+  worktree after its reviewed mechanism is merged. Supply Pete's current exact
+  cleanup authorization reference and a fresh truthful source-unavailability
+  reference dedicated to one target:
+
+  ```bash
+  python scripts/worktree_lifecycle.py retire-closed-custody --cleanup-package <CLEANUP-PACKAGE> --task-ref <CLEANUP-WRITER-REF> --target-package <CLOSED-PACKAGE> --path <EXACT-CANONICAL-WORKTREE-PATH> --branch <ORIGINAL-BRANCH> --source-task-ref <ORIGINAL-WRITER-REF> --expected-head <EXACT-SERVER-SHA> --owner-authorization-ref <OWNER-REF> --source-unavailable-ref <TARGET-SPECIFIC-EVIDENCE-REF> --execute
+  ```
+
+  This is not ordinary writer retirement and does not transfer source
+  authority. The command is unavailable until fetched main contains the
+  accepted independent receipt and evidence, all reviewed lifecycle surfaces
+  match the reviewed candidate on both main and the cleanup branch, and the
+  executing lifecycle script is that exact main blob. The tool also requires
+  the cleanup claim's exact Protected policy and
+  surfaces, its current writer/worktree/branch/server tip, and the target's
+  fetched closed claim, original task, canonical active durable registry
+  record, pristine live checkout, local branch, and exact server tip. Only a
+  registry HEAD equal to or ancestral to the expected HEAD may be reconciled.
+  A lease, lock, unrelated pending journal, duplicate, nesting, reparse point,
+  path ambiguity, residue (including ignored files), missing ref,
+  behind-server state, divergence, or any race is a refusal. A distinct
+  before/after journal makes process-death recovery preserve or finish only the
+  proven target. If the target is still present, recovery re-proves its exact
+  repository, canonical/reparse-safe path, branch, live/local HEAD, nesting,
+  and pristine state before clearing the journal as preserved; a mismatch
+  retains the journal. The retired record keeps the original `task_ref` and
+  stores the cleanup caller and both evidence references in separate custody
+  proof.
+  Ordinary non-force `git worktree remove` is the only removal; branches, tags,
+  and refs are never deleted.
 - Pause: push the exact work branch, set the claim to `paused` with that fetched
   checkpoint on a `delivery-pause` branch, then run `--intent pause`. Do not
   merge unfinished implementation merely to release ownership.

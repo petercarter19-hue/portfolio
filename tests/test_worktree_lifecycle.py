@@ -1,4 +1,5 @@
 import copy
+import contextlib
 import importlib.util
 import json
 import os
@@ -228,6 +229,255 @@ class WorktreeLifecycleTests(unittest.TestCase):
             "--execute",
             cwd=control_path,
         )
+
+    def closed_custody_setup(
+        self, label: str, *, advance_target: bool = False
+    ) -> tuple[RepositoryFixture, Path, Path, dict[str, str]]:
+        fixture = self.fixture()
+        (fixture.repo / "scripts" / "worktree_lifecycle.py").write_bytes(
+            SCRIPT.read_bytes()
+        )
+        (fixture.repo / "docs" / "governance" / "WORKTREE_LIFECYCLE.md").write_text(
+            "reviewed lifecycle contract\n", encoding="utf-8"
+        )
+        (fixture.repo / "tests" / "test_worktree_lifecycle.py").write_text(
+            "reviewed lifecycle tests\n", encoding="utf-8"
+        )
+        git(
+            fixture.repo,
+            "add",
+            "scripts/worktree_lifecycle.py",
+            "docs/governance/WORKTREE_LIFECYCLE.md",
+            "tests/test_worktree_lifecycle.py",
+        )
+        git(fixture.repo, "commit", "-m", "install reviewed lifecycle candidate")
+        git(fixture.repo, "push", "origin", "main")
+        fixture.main_sha = git(fixture.repo, "rev-parse", "HEAD")
+        fixture.initialize()
+        code, target = fixture.run(
+            "ensure",
+            "--package",
+            fixture.package,
+            "--task-ref",
+            fixture.writer,
+            "--execute",
+        )
+        self.assertEqual(code, 0, target)
+        target_path = Path(target["path"])
+        git(
+            target_path,
+            "push",
+            "-u",
+            "origin",
+            f"HEAD:refs/heads/{fixture.branch}",
+        )
+        target_head = fixture.main_sha
+        if advance_target:
+            (target_path / "sample.txt").write_text(
+                f"closed custody {label}\n", encoding="utf-8"
+            )
+            git(target_path, "add", "sample.txt")
+            git(target_path, "commit", "-m", f"advance closed custody {label}")
+            target_head = git(target_path, "rev-parse", "HEAD")
+            git(target_path, "push", "origin", f"HEAD:refs/heads/{fixture.branch}")
+
+        cleanup_package = "PS-CLOSED-CUSTODY-CLEANUP-001"
+        cleanup_task = f"agent:closed-custody-cleanup-{label}"
+        cleanup_branch = f"work/2026-09-04-closed-custody-cleanup-{label}"
+        owner_ref = f"session:owner/closed-custody-{label}"
+        unavailable_ref = f"session:source-unavailable/closed-custody-{label}"
+        evidence = (
+            "docs/governance/lane_claims/evidence/"
+            f"{cleanup_package}.md"
+        )
+        cleanup_claim = {
+            "schema_version": 1,
+            "package": cleanup_package,
+            "state": "active",
+            "outcome": "test closed custody",
+            "assignment": "implementation",
+            "writer_ref": cleanup_task,
+            "branch": cleanup_branch,
+            "delivery_path": "Protected",
+            "repository_authority": "through_merge",
+            "production_authority": "withheld",
+            "owner_outcome_ref": owner_ref,
+            "surfaces": [
+                f"docs/governance/lane_claims/{cleanup_package}.json",
+                evidence,
+                (
+                    "docs/governance/lane_claims/receipts/"
+                    f"{cleanup_package}.json"
+                ),
+                *sorted(LIFECYCLE.CLOSED_CUSTODY_REQUIRED_SURFACES),
+            ],
+            "evidence_surfaces": [evidence],
+            "domains": sorted(LIFECYCLE.CLOSED_CUSTODY_REQUIRED_DOMAINS),
+            "review_requirement": "independent",
+        }
+        claim_path = (
+            fixture.repo
+            / "docs"
+            / "governance"
+            / "lane_claims"
+            / f"{cleanup_package}.json"
+        )
+        claim_path.write_text(
+            json.dumps(cleanup_claim, indent=2) + "\n", encoding="utf-8"
+        )
+        evidence_path = fixture.repo / evidence
+        evidence_path.parent.mkdir(parents=True, exist_ok=True)
+        evidence_path.write_text("accepted review evidence\n", encoding="utf-8")
+        receipt_path = (
+            fixture.repo
+            / "docs"
+            / "governance"
+            / "lane_claims"
+            / "receipts"
+            / f"{cleanup_package}.json"
+        )
+        receipt_path.parent.mkdir(parents=True, exist_ok=True)
+        receipt_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "package": cleanup_package,
+                    "candidate_sha": fixture.main_sha,
+                    "review_type": "independent",
+                    "reviewer_ref": f"agent:closed-custody-reviewer-{label}",
+                    "result": "pass",
+                    "reviewed_at": "2026-09-04T00:00:00Z",
+                    "findings": [
+                        {
+                            "status": "informational",
+                            "summary": "fixture candidate accepted",
+                        }
+                    ],
+                    "evidence_ref": evidence,
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        git(
+            fixture.repo,
+            "add",
+            str(claim_path.relative_to(fixture.repo)),
+            str(evidence_path.relative_to(fixture.repo)),
+            str(receipt_path.relative_to(fixture.repo)),
+        )
+        git(fixture.repo, "commit", "-m", "activate reviewed cleanup claim")
+        git(fixture.repo, "push", "origin", "main")
+        code, cleanup = fixture.run(
+            "ensure",
+            "--package",
+            cleanup_package,
+            "--task-ref",
+            cleanup_task,
+            "--execute",
+        )
+        self.assertEqual(code, 0, cleanup)
+        cleanup_path = Path(cleanup["path"])
+        git(
+            cleanup_path,
+            "push",
+            "-u",
+            "origin",
+            f"HEAD:refs/heads/{cleanup_branch}",
+        )
+        fixture.close_claim()
+        facts = {
+            "cleanup_package": cleanup_package,
+            "cleanup_task": cleanup_task,
+            "cleanup_branch": cleanup_branch,
+            "owner_ref": owner_ref,
+            "unavailable_ref": unavailable_ref,
+            "target_head": target_head,
+        }
+        return fixture, target_path, cleanup_path, facts
+
+    def run_closed_custody(
+        self,
+        fixture: RepositoryFixture,
+        target_path: Path,
+        cleanup_path: Path,
+        facts: dict[str, str],
+        **overrides: str,
+    ) -> tuple[int, dict]:
+        values = {
+            "cleanup_package": facts["cleanup_package"],
+            "task_ref": facts["cleanup_task"],
+            "target_package": fixture.package,
+            "path": str(target_path),
+            "branch": fixture.branch,
+            "source_task_ref": fixture.writer,
+            "expected_head": facts["target_head"],
+            "owner_authorization_ref": facts["owner_ref"],
+            "source_unavailable_ref": facts["unavailable_ref"],
+        }
+        values.update(overrides)
+        return fixture.run(
+            "retire-closed-custody",
+            "--cleanup-package",
+            values["cleanup_package"],
+            "--task-ref",
+            values["task_ref"],
+            "--target-package",
+            values["target_package"],
+            "--path",
+            values["path"],
+            "--branch",
+            values["branch"],
+            "--source-task-ref",
+            values["source_task_ref"],
+            "--expected-head",
+            values["expected_head"],
+            "--owner-authorization-ref",
+            values["owner_authorization_ref"],
+            "--source-unavailable-ref",
+            values["source_unavailable_ref"],
+            "--execute",
+            cwd=cleanup_path,
+        )
+
+    def begin_closed_custody_crash_before_remove(
+        self,
+        fixture: RepositoryFixture,
+        target_path: Path,
+        cleanup_path: Path,
+        facts: dict[str, str],
+    ) -> tuple[object, SimpleNamespace]:
+        arguments = SimpleNamespace(
+            cleanup_package=facts["cleanup_package"],
+            task_ref=facts["cleanup_task"],
+            target_package=fixture.package,
+            path=str(target_path),
+            branch=fixture.branch,
+            source_task_ref=fixture.writer,
+            expected_head=facts["target_head"],
+            owner_authorization_ref=facts["owner_ref"],
+            source_unavailable_ref=facts["unavailable_ref"],
+            execute=True,
+        )
+        context = LIFECYCLE._repo_context(fixture.repo)
+        previous_cwd = Path.cwd()
+        try:
+            os.chdir(cleanup_path)
+            with patch.object(
+                LIFECYCLE,
+                "_ordinary_worktree_remove",
+                side_effect=LIFECYCLE.Refusal("simulated crash before remove"),
+            ):
+                with self.assertRaises(LIFECYCLE.Refusal):
+                    LIFECYCLE.command_retire_closed_custody(context, arguments)
+        finally:
+            os.chdir(previous_cwd)
+        registry = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        self.assertEqual(
+            registry["pending"]["operation"], "retire_closed_custody"
+        )
+        return context, arguments
 
     def assert_remote_branch_absent(
         self, fixture: RepositoryFixture, branch: str
@@ -1376,6 +1626,445 @@ class WorktreeLifecycleTests(unittest.TestCase):
             fixture.registry_path.read_text(encoding="utf-8"), registry_before
         )
         self.assertIsNotNone(LIFECYCLE._worktree_at(fixture.repo, retained_path))
+
+    def test_closed_custody_retires_exact_and_stale_ancestor_without_deleting_refs(self):
+        for label, advance_target in (("exact", False), ("ancestor", True)):
+            with self.subTest(label=label):
+                fixture, target_path, cleanup_path, facts = self.closed_custody_setup(
+                    label, advance_target=advance_target
+                )
+                git(fixture.repo, "tag", f"closed-custody-{label}", facts["target_head"])
+                code, retired = self.run_closed_custody(
+                    fixture, target_path, cleanup_path, facts
+                )
+                self.assertEqual(code, 0, retired)
+                self.assertEqual(retired["status"], "retired_closed_custody")
+                self.assertFalse(target_path.exists())
+                self.assertEqual(
+                    git(fixture.repo, "rev-parse", f"refs/heads/{fixture.branch}"),
+                    facts["target_head"],
+                )
+                self.assertEqual(
+                    git(fixture.repo, "rev-parse", f"refs/tags/closed-custody-{label}"),
+                    facts["target_head"],
+                )
+                self.assertIn(
+                    facts["target_head"],
+                    git(
+                        fixture.repo,
+                        "ls-remote",
+                        "--heads",
+                        "origin",
+                        f"refs/heads/{fixture.branch}",
+                    ),
+                )
+                registry = json.loads(
+                    fixture.registry_path.read_text(encoding="utf-8")
+                )
+                record = next(
+                    item
+                    for item in registry["worktrees"]
+                    if item.get("package") == fixture.package
+                )
+                proof = record["closed_custody_retirement"]
+                self.assertEqual(record["state"], "retired")
+                self.assertEqual(record["task_ref"], fixture.writer)
+                self.assertEqual(proof["source_task_ref"], fixture.writer)
+                self.assertEqual(proof["cleanup_task_ref"], facts["cleanup_task"])
+                self.assertEqual(
+                    proof["registry_previous_head"], fixture.main_sha
+                )
+                self.assertEqual(proof["expected_head"], facts["target_head"])
+                self.assertIsNone(registry["pending"])
+
+    def test_closed_custody_refuses_authority_identity_lease_duplicate_and_pending(self):
+        fixture, target_path, cleanup_path, facts = self.closed_custody_setup(
+            "authority"
+        )
+        receipt_path = (
+            fixture.repo
+            / "docs"
+            / "governance"
+            / "lane_claims"
+            / "receipts"
+            / f"{facts['cleanup_package']}.json"
+        )
+        receipt_bytes = receipt_path.read_bytes()
+        git(fixture.repo, "rm", str(receipt_path.relative_to(fixture.repo)))
+        git(fixture.repo, "commit", "-m", "simulate pre-review main")
+        git(fixture.repo, "push", "origin", "main")
+        code, pre_review = self.run_closed_custody(
+            fixture, target_path, cleanup_path, facts
+        )
+        self.assertEqual(code, 2, pre_review)
+        self.assertIn("receipt is absent", pre_review["error"])
+        receipt_path.parent.mkdir(parents=True, exist_ok=True)
+        receipt_path.write_bytes(receipt_bytes)
+        git(fixture.repo, "add", str(receipt_path.relative_to(fixture.repo)))
+        git(fixture.repo, "commit", "-m", "restore accepted review receipt")
+        git(fixture.repo, "push", "origin", "main")
+
+        lifecycle_path = fixture.repo / "scripts" / "worktree_lifecycle.py"
+        lifecycle_path.write_text("print('pre-merge')\n", encoding="utf-8")
+        git(fixture.repo, "add", str(lifecycle_path.relative_to(fixture.repo)))
+        git(fixture.repo, "commit", "-m", "simulate unmerged lifecycle script")
+        git(fixture.repo, "push", "origin", "main")
+        code, pre_merge = self.run_closed_custody(
+            fixture, target_path, cleanup_path, facts
+        )
+        self.assertEqual(code, 2, pre_merge)
+        self.assertIn("surface is not exact", pre_merge["error"])
+        lifecycle_path.write_bytes(SCRIPT.read_bytes())
+        git(fixture.repo, "add", str(lifecycle_path.relative_to(fixture.repo)))
+        git(fixture.repo, "commit", "-m", "restore merged lifecycle script")
+        git(fixture.repo, "push", "origin", "main")
+
+        for field, value, expected in (
+            ("source_task_ref", "agent:not-original", "target claim"),
+            ("owner_authorization_ref", "session:owner/not-authorized", "cleanup claim"),
+            (
+                "source_unavailable_ref",
+                facts["owner_ref"],
+                "must be distinct",
+            ),
+            ("path", str(target_path) + "/..", "exact, absolute, and canonical"),
+            ("branch", fixture.branch + "-wrong", "target claim"),
+        ):
+            with self.subTest(field=field):
+                code, refused = self.run_closed_custody(
+                    fixture,
+                    target_path,
+                    cleanup_path,
+                    facts,
+                    **{field: value},
+                )
+                self.assertEqual(code, 2, refused)
+                self.assertIn(expected, refused["error"])
+                self.assertTrue(target_path.exists())
+
+        fixture.write_claim("active")
+        claim_relative = f"docs/governance/lane_claims/{fixture.package}.json"
+        git(fixture.repo, "add", claim_relative)
+        git(fixture.repo, "commit", "-m", "temporarily reopen target claim")
+        git(fixture.repo, "push", "origin", "main")
+        code, active_claim = self.run_closed_custody(
+            fixture, target_path, cleanup_path, facts
+        )
+        self.assertEqual(code, 2, active_claim)
+        self.assertIn("target claim", active_claim["error"])
+        fixture.close_claim()
+
+        clean_registry = fixture.registry_path.read_bytes()
+        registry = json.loads(clean_registry)
+        target = next(
+            item for item in registry["worktrees"] if item.get("package") == fixture.package
+        )
+        target["lease"] = {"kind": "forged-live-lease"}
+        fixture.registry_path.write_text(
+            json.dumps(registry, indent=2) + "\n", encoding="utf-8"
+        )
+        code, leased = self.run_closed_custody(
+            fixture, target_path, cleanup_path, facts
+        )
+        self.assertEqual(code, 2, leased)
+        self.assertIn("identity or lease", leased["error"])
+        fixture.registry_path.write_bytes(clean_registry)
+
+        registry = json.loads(clean_registry)
+        target = next(
+            item for item in registry["worktrees"] if item.get("package") == fixture.package
+        )
+        duplicate = copy.deepcopy(target)
+        duplicate["path"] = str(fixture.managed / "duplicate-target")
+        registry["worktrees"].append(duplicate)
+        fixture.registry_path.write_text(
+            json.dumps(registry, indent=2) + "\n", encoding="utf-8"
+        )
+        code, duplicated = self.run_closed_custody(
+            fixture, target_path, cleanup_path, facts
+        )
+        self.assertEqual(code, 2, duplicated)
+        self.assertIn("duplicated, or ambiguous", duplicated["error"])
+        fixture.registry_path.write_bytes(clean_registry)
+
+        unrelated = fixture.repo / "unrelated-registry-head.txt"
+        unrelated.write_text("ahead registry custody\n", encoding="utf-8")
+        git(fixture.repo, "add", unrelated.name)
+        git(fixture.repo, "commit", "-m", "create unrelated registry head")
+        nonancestor = git(fixture.repo, "rev-parse", "HEAD")
+        for registry_head, expected in (
+            (nonancestor, "neither equal to nor an ancestor"),
+            ("f" * 40, "commit object is not available"),
+        ):
+            with self.subTest(registry_head=registry_head):
+                registry = json.loads(clean_registry)
+                target = next(
+                    item
+                    for item in registry["worktrees"]
+                    if item.get("package") == fixture.package
+                )
+                target["head"] = registry_head
+                fixture.registry_path.write_text(
+                    json.dumps(registry, indent=2) + "\n", encoding="utf-8"
+                )
+                code, stale = self.run_closed_custody(
+                    fixture, target_path, cleanup_path, facts
+                )
+                self.assertEqual(code, 2, stale)
+                self.assertIn(expected, stale["error"])
+                self.assertTrue(target_path.exists())
+        fixture.registry_path.write_bytes(clean_registry)
+
+        registry = json.loads(clean_registry)
+        target = next(
+            item for item in registry["worktrees"] if item.get("package") == fixture.package
+        )
+        registry["pending"] = {
+            "operation": "retire",
+            "path": target["path"],
+            "record": copy.deepcopy(target),
+            "started_at": "2026-09-04T00:00:00Z",
+        }
+        fixture.registry_path.write_text(
+            json.dumps(registry, indent=2) + "\n", encoding="utf-8"
+        )
+        exact_pending = fixture.registry_path.read_bytes()
+        code, pending = self.run_closed_custody(
+            fixture, target_path, cleanup_path, facts
+        )
+        self.assertEqual(code, 2, pending)
+        self.assertIn("unresolved lifecycle journal", pending["error"])
+        self.assertEqual(fixture.registry_path.read_bytes(), exact_pending)
+        self.assertTrue(target_path.exists())
+
+    def test_closed_custody_refuses_tracked_untracked_ignored_behind_and_divergent(self):
+        fixture, target_path, cleanup_path, facts = self.closed_custody_setup(
+            "residue"
+        )
+        original = (target_path / "sample.txt").read_text(encoding="utf-8")
+        residue_cases = (
+            (target_path / "sample.txt", "tracked residue\n"),
+            (target_path / "untracked.tmp", "untracked residue\n"),
+            (target_path / "ignored.cache", "ignored residue\n"),
+        )
+        for residue_path, content in residue_cases:
+            with self.subTest(residue=residue_path.name):
+                residue_path.write_text(content, encoding="utf-8")
+                code, refused = self.run_closed_custody(
+                    fixture, target_path, cleanup_path, facts
+                )
+                self.assertEqual(code, 2, refused)
+                self.assertTrue(refused["blockers"])
+                if residue_path.name == "sample.txt":
+                    residue_path.write_text(original, encoding="utf-8")
+                else:
+                    residue_path.unlink()
+
+        remote_head = fixture.publish_claim_branch_commit(
+            "server advanced closed custody", advance=True
+        )
+        self.assertNotEqual(remote_head, facts["target_head"])
+        code, behind = self.run_closed_custody(
+            fixture, target_path, cleanup_path, facts
+        )
+        self.assertEqual(code, 2, behind)
+        self.assertIn("moved at commit boundary", behind["error"])
+        self.assertTrue(target_path.exists())
+
+        (target_path / "sample.txt").write_text(
+            "local divergent closed custody\n", encoding="utf-8"
+        )
+        git(target_path, "add", "sample.txt")
+        git(target_path, "commit", "-m", "diverge local closed custody")
+        facts["target_head"] = git(target_path, "rev-parse", "HEAD")
+        code, divergent = self.run_closed_custody(
+            fixture, target_path, cleanup_path, facts
+        )
+        self.assertEqual(code, 2, divergent)
+        self.assertIn("moved at commit boundary", divergent["error"])
+        self.assertTrue(target_path.exists())
+
+    def test_closed_custody_journal_recovers_before_and_after_remove(self):
+        for label, remove_first, expected_recovery in (
+            ("crash-before", False, "preserved"),
+            ("crash-after", True, "completed"),
+        ):
+            with self.subTest(label=label):
+                fixture, target_path, cleanup_path, facts = self.closed_custody_setup(
+                    label
+                )
+                arguments = SimpleNamespace(
+                    cleanup_package=facts["cleanup_package"],
+                    task_ref=facts["cleanup_task"],
+                    target_package=fixture.package,
+                    path=str(target_path),
+                    branch=fixture.branch,
+                    source_task_ref=fixture.writer,
+                    expected_head=facts["target_head"],
+                    owner_authorization_ref=facts["owner_ref"],
+                    source_unavailable_ref=facts["unavailable_ref"],
+                    execute=True,
+                )
+                context = LIFECYCLE._repo_context(fixture.repo)
+                original_remove = LIFECYCLE._ordinary_worktree_remove
+
+                def simulated_crash(remove_context: object, remove_path: Path) -> None:
+                    if remove_first:
+                        original_remove(remove_context, remove_path)
+                    raise LIFECYCLE.Refusal("simulated closed-custody crash")
+
+                previous_cwd = Path.cwd()
+                try:
+                    os.chdir(cleanup_path)
+                    with patch.object(
+                        LIFECYCLE,
+                        "_ordinary_worktree_remove",
+                        side_effect=simulated_crash,
+                    ):
+                        with self.assertRaises(LIFECYCLE.Refusal):
+                            LIFECYCLE.command_retire_closed_custody(
+                                context, arguments
+                            )
+                finally:
+                    os.chdir(previous_cwd)
+                journal = json.loads(
+                    fixture.registry_path.read_text(encoding="utf-8")
+                )
+                self.assertEqual(
+                    journal["pending"]["operation"], "retire_closed_custody"
+                )
+                code, recovered = self.run_closed_custody(
+                    fixture, target_path, cleanup_path, facts
+                )
+                self.assertEqual(code, 0, recovered)
+                self.assertEqual(
+                    recovered["recovered_pending"]["outcome"], expected_recovery
+                )
+                self.assertFalse(target_path.exists())
+                final = json.loads(
+                    fixture.registry_path.read_text(encoding="utf-8")
+                )
+                self.assertIsNone(final["pending"])
+
+    def test_closed_custody_present_recovery_retains_journal_on_every_mismatch(self):
+        for case in (
+            "detached",
+            "switched",
+            "moved_head",
+            "residue",
+            "reparse",
+            "nested",
+            "replaced_path",
+        ):
+            with self.subTest(case=case):
+                fixture, target_path, cleanup_path, facts = self.closed_custody_setup(
+                    f"recovery-{case.replace('_', '-')}"
+                )
+                context, arguments = self.begin_closed_custody_crash_before_remove(
+                    fixture, target_path, cleanup_path, facts
+                )
+                if case == "detached":
+                    git(target_path, "switch", "--detach")
+                elif case == "switched":
+                    git(
+                        target_path,
+                        "switch",
+                        "-c",
+                        f"work/2026-09-04-recovery-switched-{case}",
+                    )
+                elif case == "moved_head":
+                    (target_path / "sample.txt").write_text(
+                        "moved recovery head\n", encoding="utf-8"
+                    )
+                    git(target_path, "add", "sample.txt")
+                    git(target_path, "commit", "-m", "move recovery head")
+                elif case == "residue":
+                    (target_path / "ignored.cache").write_text(
+                        "retained residue\n", encoding="utf-8"
+                    )
+                elif case == "nested":
+                    nested_path = target_path / "nested-worktree"
+                    git(
+                        fixture.repo,
+                        "worktree",
+                        "add",
+                        "-b",
+                        "work/2026-09-04-nested-recovery-proof",
+                        str(nested_path),
+                        facts["target_head"],
+                    )
+                elif case == "replaced_path":
+                    target_path.rename(
+                        target_path.with_name(target_path.name + "-moved")
+                    )
+                    target_path.mkdir()
+
+                exact_journal = fixture.registry_path.read_bytes()
+                previous_cwd = Path.cwd()
+                try:
+                    os.chdir(cleanup_path)
+                    if case == "reparse":
+                        guard = patch.object(
+                            LIFECYCLE,
+                            "_has_reparse_component",
+                            return_value=True,
+                        )
+                    elif case == "nested":
+                        original_pristine = LIFECYCLE._is_pristine
+
+                        def allow_nested_only(check_path: Path):
+                            if LIFECYCLE._path_key(check_path) == LIFECYCLE._path_key(
+                                target_path
+                            ):
+                                return True, []
+                            return original_pristine(check_path)
+
+                        guard = patch.object(
+                            LIFECYCLE, "_is_pristine", side_effect=allow_nested_only
+                        )
+                    else:
+                        guard = contextlib.nullcontext()
+                    with guard:
+                        with self.assertRaises(LIFECYCLE.Refusal):
+                            LIFECYCLE.command_retire_closed_custody(
+                                context, arguments
+                            )
+                finally:
+                    os.chdir(previous_cwd)
+                self.assertEqual(fixture.registry_path.read_bytes(), exact_journal)
+                self.assertIsNotNone(
+                    json.loads(exact_journal)["pending"]
+                )
+
+    def test_closed_custody_pending_binds_previous_head_and_rejects_poison(self):
+        fixture, target_path, cleanup_path, facts = self.closed_custody_setup(
+            "pending-head-poison"
+        )
+        context, arguments = self.begin_closed_custody_crash_before_remove(
+            fixture, target_path, cleanup_path, facts
+        )
+        registry = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        cleanup = next(
+            item
+            for item in registry["worktrees"]
+            if item.get("package") == facts["cleanup_package"]
+        )
+        registry["pending"]["after_record"]["closed_custody_retirement"][
+            "registry_previous_head"
+        ] = cleanup["head"]
+        fixture.registry_path.write_text(
+            json.dumps(registry, indent=2) + "\n", encoding="utf-8"
+        )
+        poisoned = fixture.registry_path.read_bytes()
+        previous_cwd = Path.cwd()
+        try:
+            os.chdir(cleanup_path)
+            with self.assertRaises(LIFECYCLE.Refusal):
+                LIFECYCLE.command_retire_closed_custody(context, arguments)
+        finally:
+            os.chdir(previous_cwd)
+        self.assertEqual(fixture.registry_path.read_bytes(), poisoned)
+        self.assertTrue(target_path.exists())
 
     def test_retire_refuses_dirty_ignored_untracked_live_cwd_and_unpushed(self):
         fixture = self.fixture()

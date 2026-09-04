@@ -108,6 +108,39 @@ OWNER_REASSIGNMENT_HEAD_RECONCILIATION_FIELDS = {
     "source_unavailable_ref",
     "reconciled_at",
 }
+CLOSED_CUSTODY_RETIREMENT_FIELDS = {
+    "schema_version",
+    "cleanup_package",
+    "cleanup_task_ref",
+    "cleanup_path",
+    "cleanup_branch",
+    "cleanup_head",
+    "reviewed_candidate",
+    "reviewer_ref",
+    "lifecycle_script_blob",
+    "owner_authorization_ref",
+    "source_unavailable_ref",
+    "target_package",
+    "source_task_ref",
+    "target_path",
+    "target_branch",
+    "registry_previous_head",
+    "expected_head",
+    "authoritative_main",
+    "target_server_head",
+    "recorded_at",
+}
+CLOSED_CUSTODY_REQUIRED_DOMAINS = {
+    "governance:delivery:closed-custody-retirement",
+    "tooling:worktree-lifecycle:closed-custody-retirement",
+}
+CLOSED_CUSTODY_REQUIRED_SURFACES = {
+    "AGENTS.md",
+    "START_HERE.md",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+    "scripts/worktree_lifecycle.py",
+    "tests/test_worktree_lifecycle.py",
+}
 
 
 def _owner_reassignment_preparation_immutable_fields(
@@ -1048,6 +1081,164 @@ def _validate_pending_retire(registry: dict[str, Any], pending: dict[str, Any]) 
     )
 
 
+def _validate_closed_custody_retirement(
+    proof: Any, *, record: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    if not isinstance(proof, dict) or set(proof) != CLOSED_CUSTODY_RETIREMENT_FIELDS:
+        raise Refusal("closed-custody retirement proof has an inexact field set")
+    if proof.get("schema_version") != 1:
+        raise Refusal("closed-custody retirement proof schema is unsupported")
+    for field in ("cleanup_package", "target_package"):
+        _validate_package(proof.get(field))
+    for field in (
+        "cleanup_task_ref",
+        "reviewer_ref",
+        "owner_authorization_ref",
+        "source_unavailable_ref",
+        "source_task_ref",
+    ):
+        _validate_delivery_ref(str(proof.get(field, "")))
+    if len(
+        {
+            proof["cleanup_task_ref"],
+            proof["owner_authorization_ref"],
+            proof["source_unavailable_ref"],
+            proof["source_task_ref"],
+        }
+    ) != 4:
+        raise Refusal(
+            "closed-custody caller, owner, source, and source-unavailability "
+            "references must be distinct"
+        )
+    if proof["reviewer_ref"] == proof["cleanup_task_ref"]:
+        raise Refusal("closed-custody reviewer must be independent of the cleanup caller")
+    for field in ("cleanup_branch", "target_branch"):
+        _validate_work_branch(str(proof.get(field, "")))
+    for field in (
+        "cleanup_head",
+        "reviewed_candidate",
+        "lifecycle_script_blob",
+        "registry_previous_head",
+        "expected_head",
+        "authoritative_main",
+        "target_server_head",
+    ):
+        _validate_sha(str(proof.get(field, "")))
+    for field in ("cleanup_path", "target_path"):
+        value = proof.get(field)
+        if (
+            not isinstance(value, str)
+            or not Path(value).is_absolute()
+            or str(_canonical(value)) != value
+        ):
+            raise Refusal(f"closed-custody {field} is not exact and canonical")
+    _validate_utc_timestamp(proof.get("recorded_at"), field="recorded_at")
+    if proof["target_server_head"] != proof["expected_head"]:
+        raise Refusal("closed-custody server proof does not equal expected HEAD")
+    if record is not None and (
+        record.get("state") != "retired"
+        or record.get("kind") != "durable"
+        or record.get("package") != proof["target_package"]
+        or record.get("task_ref") != proof["source_task_ref"]
+        or record.get("branch") != proof["target_branch"]
+        or record.get("head") != proof["expected_head"]
+        or record.get("path") != proof["target_path"]
+        or record.get("retired_at") != proof["recorded_at"]
+        or record.get("lease") is not None
+    ):
+        raise Refusal("closed-custody retirement proof lost target record custody")
+    return proof
+
+
+def _closed_custody_after_record(
+    before: dict[str, Any], proof: dict[str, Any]
+) -> dict[str, Any]:
+    after = json.loads(json.dumps(before, sort_keys=True))
+    after.update(
+        {
+            "state": "retired",
+            "head": proof["expected_head"],
+            "lease": None,
+            "retired_at": proof["recorded_at"],
+            "updated_at": proof["recorded_at"],
+            "closed_custody_retirement": proof,
+        }
+    )
+    return after
+
+
+def _validate_pending_closed_custody(
+    registry: dict[str, Any], pending: dict[str, Any]
+) -> None:
+    if set(pending) != {
+        "operation",
+        "path",
+        "before_record",
+        "after_record",
+        "started_at",
+    }:
+        raise Refusal("pending closed-custody retirement has an inexact field set")
+    _validate_utc_timestamp(pending.get("started_at"), field="pending started_at")
+    path = _validate_preparation_path(pending.get("path"), field="pending path")
+    before = pending.get("before_record")
+    after = pending.get("after_record")
+    if not isinstance(before, dict) or not isinstance(after, dict):
+        raise Refusal("pending closed-custody record snapshots are missing")
+    matches = [
+        record
+        for record in registry.get("worktrees", [])
+        if isinstance(record, dict)
+        and _path_key(str(record.get("path", ""))) == _path_key(path)
+    ]
+    if matches != [before]:
+        raise Refusal("pending closed-custody retirement lost exact registry custody")
+    proof = _validate_closed_custody_retirement(
+        after.get("closed_custody_retirement"), record=after
+    )
+    if (
+        before.get("state") != "active"
+        or before.get("kind") != "durable"
+        or before.get("lease") is not None
+        or before.get("path") != path
+        or "closed_custody_retirement" in before
+        or proof["registry_previous_head"] != before.get("head")
+        or proof["target_package"] != before.get("package")
+        or proof["source_task_ref"] != before.get("task_ref")
+        or proof["target_branch"] != before.get("branch")
+        or proof["target_path"] != before.get("path")
+    ):
+        raise Refusal("pending closed-custody source record is incompatible")
+    if after != _closed_custody_after_record(before, proof):
+        raise Refusal("pending closed-custody target record changed unrelated fields")
+
+
+def _validate_closed_custody_registry(registry: dict[str, Any]) -> None:
+    seen_unavailability: set[str] = set()
+    for record in registry.get("worktrees", []):
+        if not isinstance(record, dict):
+            continue
+        proof = record.get("closed_custody_retirement")
+        if proof is None:
+            continue
+        validated = _validate_closed_custody_retirement(proof, record=record)
+        source_ref = validated["source_unavailable_ref"]
+        if source_ref in seen_unavailability:
+            raise Refusal("closed-custody source-unavailability proof is duplicated")
+        seen_unavailability.add(source_ref)
+    pending = registry.get("pending")
+    if isinstance(pending, dict) and pending.get("operation") == "retire_closed_custody":
+        after = pending.get("after_record")
+        if isinstance(after, dict):
+            proof = after.get("closed_custody_retirement")
+            if (
+                isinstance(proof, dict)
+                and proof.get("source_unavailable_ref") in seen_unavailability
+            ):
+                raise Refusal(
+                    "pending closed-custody source-unavailability proof is duplicated"
+                )
+
+
 def _validate_optional_control_identity(
     value: Any, *, field: str
 ) -> str | None:
@@ -1528,6 +1719,7 @@ def _validate_pending_operation(registry: dict[str, Any]) -> None:
     validators = {
         "create": _validate_pending_create,
         "retire": _validate_pending_retire,
+        "retire_closed_custody": _validate_pending_closed_custody,
         "control_repoint": _validate_pending_control_repoint,
         "owner_reassignment_branch_create": (
             _validate_pending_owner_reassignment_branch_create
@@ -1629,6 +1821,7 @@ def validate_owner_reassignment_registry(registry: dict[str, Any]) -> None:
     _validate_owner_reassignment_preparations(registry)
     _validate_pending_operation(registry)
     _validate_head_reconciliation_custody(registry)
+    _validate_closed_custody_registry(registry)
 
 
 def _load_registry(path: Path, *, required: bool = True) -> dict[str, Any] | None:
@@ -2372,6 +2565,67 @@ def _reconcile_owner_reassignment_branch_create(
     }
 
 
+def _reconcile_closed_custody_retirement(
+    context: RepoContext,
+    registry: dict[str, Any],
+    pending: dict[str, Any],
+    *,
+    on_disk: bool,
+) -> dict[str, Any]:
+    """Reconcile an exact closed-custody journal without retrying removal."""
+
+    _validate_pending_closed_custody(registry, pending)
+    path = _canonical(pending["path"])
+    before = pending["before_record"]
+    after = pending["after_record"]
+    if on_disk:
+        proof = after["closed_custody_retirement"]
+        all_worktrees = _closed_custody_worktree_proof(
+            context,
+            registry,
+            before,
+            path=path,
+            branch=proof["target_branch"],
+            expected_head=proof["expected_head"],
+            label="pending closed-custody target",
+        )
+        nested = [
+            str(entry.get("worktree"))
+            for entry in all_worktrees
+            if _path_key(str(entry.get("worktree", ""))) != _path_key(path)
+            and _is_strictly_within(str(entry.get("worktree", "")), path)
+        ]
+        if nested:
+            raise Refusal(
+                "pending closed-custody target contains a nested Git worktree",
+                blockers=nested,
+            )
+        registry["pending"] = None
+        _atomic_write(context.registry_path, registry)
+        return {
+            "operation": "retire_closed_custody",
+            "outcome": "preserved",
+            "path": str(path),
+            "proof": after["closed_custody_retirement"],
+        }
+    matches = [
+        (index, record)
+        for index, record in enumerate(registry["worktrees"])
+        if _path_key(str(record.get("path", ""))) == _path_key(path)
+    ]
+    if len(matches) != 1 or matches[0][1] != before:
+        raise Refusal("pending closed-custody retirement cannot publish exact custody")
+    registry["worktrees"][matches[0][0]] = after
+    registry["pending"] = None
+    _atomic_write(context.registry_path, registry)
+    return {
+        "operation": "retire_closed_custody",
+        "outcome": "completed",
+        "path": str(path),
+        "proof": after["closed_custody_retirement"],
+    }
+
+
 def _reconcile_pending(
     context: RepoContext, registry: dict[str, Any]
 ) -> dict[str, Any] | None:
@@ -2385,6 +2639,7 @@ def _reconcile_pending(
     if not isinstance(pending, dict) or pending.get("operation") not in {
         "create",
         "retire",
+        "retire_closed_custody",
         "control_repoint",
         "owner_reassignment_branch_create",
     }:
@@ -2408,6 +2663,10 @@ def _reconcile_pending(
         )
     if operation == "control_repoint":
         return _reconcile_control_repoint(context, registry, pending)
+    if operation == "retire_closed_custody":
+        return _reconcile_closed_custody_retirement(
+            context, registry, pending, on_disk=on_disk
+        )
     record = _record_by_path(registry, path)
     if operation == "create":
         if not on_disk:
@@ -4696,6 +4955,12 @@ def _retirement_blockers(
     return blockers
 
 
+def _ordinary_worktree_remove(context: RepoContext, path: Path) -> None:
+    """Use Git's sole non-force removal primitive for an exact guarded path."""
+
+    _git(context.root, "worktree", "remove", str(path))
+
+
 def _retire_record_locked(
     context: RepoContext,
     registry: dict[str, Any],
@@ -4726,8 +4991,7 @@ def _retire_record_locked(
         path=path,
         record=pending_record,
     )
-    # This is intentionally the only removal primitive in the module.
-    _git(context.root, "worktree", "remove", str(path))
+    _ordinary_worktree_remove(context, path)
     if path.exists() or _worktree_at(context.root, path) is not None:
         raise Refusal("ordinary Git removal did not fully retire the exact worktree")
     record["state"] = "retired"
@@ -4830,6 +5094,534 @@ def command_retire(context: RepoContext, args: argparse.Namespace) -> dict[str, 
             server_proof=server_proof,
         )
     return {"status": "retired", **result, "recovered_pending": recovered}
+
+
+def _exact_canonical_argument_path(value: Any) -> Path:
+    if not isinstance(value, str) or not Path(value).is_absolute():
+        raise Refusal("closed-custody path must be exact, absolute, and canonical")
+    path = _canonical(value)
+    if str(path) != value:
+        raise Refusal("closed-custody path must be exact, absolute, and canonical")
+    return path
+
+
+def _closed_custody_cleanup_claim(
+    context: RepoContext,
+    *,
+    package: str,
+    task_ref: str,
+    owner_authorization_ref: str,
+) -> dict[str, Any]:
+    claim = _active_claim(context, package, task_ref)
+    evidence = f"docs/governance/lane_claims/evidence/{package}.md"
+    receipt = f"docs/governance/lane_claims/receipts/{package}.json"
+    claim_path = f"docs/governance/lane_claims/{package}.json"
+    required_surfaces = CLOSED_CUSTODY_REQUIRED_SURFACES | {
+        claim_path,
+        evidence,
+        receipt,
+    }
+    surfaces = claim.get("surfaces")
+    domains = claim.get("domains")
+    if (
+        claim.get("assignment") != "implementation"
+        or claim.get("delivery_path") != "Protected"
+        or claim.get("repository_authority") != "through_merge"
+        or claim.get("production_authority") != "withheld"
+        or claim.get("review_requirement") != "independent"
+        or claim.get("owner_outcome_ref") != owner_authorization_ref
+        or not isinstance(surfaces, list)
+        or not required_surfaces.issubset(set(surfaces))
+        or not isinstance(domains, list)
+        or not CLOSED_CUSTODY_REQUIRED_DOMAINS.issubset(set(domains))
+    ):
+        raise Refusal(
+            "active cleanup claim does not grant exact Protected closed-custody authority"
+        )
+    evidence_surfaces = claim.get("evidence_surfaces")
+    if not isinstance(evidence_surfaces, list) or evidence not in evidence_surfaces:
+        raise Refusal("active cleanup claim lacks its exact evidence surface")
+    return claim
+
+
+def _git_blob_sha(context: RepoContext, ref: str, path: str) -> str | None:
+    value = _git_optional(context.root, "rev-parse", "--verify", f"{ref}:{path}")
+    return value.casefold() if value and SHA_RE.fullmatch(value.casefold()) else None
+
+
+def _accepted_closed_custody_review(
+    context: RepoContext,
+    *,
+    package: str,
+    cleanup_task_ref: str,
+    cleanup_head: str,
+) -> tuple[dict[str, Any], str]:
+    receipt_path = f"docs/governance/lane_claims/receipts/{package}.json"
+    raw = _git_optional(context.root, "show", f"origin/main:{receipt_path}")
+    if raw is None:
+        raise Refusal("accepted closed-custody review receipt is absent from fetched main")
+    try:
+        receipt = json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise Refusal("closed-custody review receipt is invalid JSON") from error
+    if not isinstance(receipt, dict):
+        raise Refusal("closed-custody review receipt is not an object")
+    expected_fields = {
+        "schema_version",
+        "package",
+        "candidate_sha",
+        "review_type",
+        "reviewer_ref",
+        "result",
+        "reviewed_at",
+        "findings",
+        "evidence_ref",
+    }
+    candidate = _validate_sha(str(receipt.get("candidate_sha", "")))
+    reviewer_ref = _validate_delivery_ref(str(receipt.get("reviewer_ref", "")))
+    findings = receipt.get("findings")
+    if (
+        set(receipt) != expected_fields
+        or receipt.get("schema_version") != 1
+        or receipt.get("package") != package
+        or receipt.get("review_type") != "independent"
+        or receipt.get("result") != "pass"
+        or reviewer_ref == cleanup_task_ref
+        or not isinstance(findings, list)
+        or any(
+            not isinstance(finding, dict)
+            or finding.get("status") not in {"resolved", "informational"}
+            for finding in findings
+        )
+        or receipt.get("evidence_ref")
+        != f"docs/governance/lane_claims/evidence/{package}.md"
+    ):
+        raise Refusal("closed-custody review receipt is not an exact independent pass")
+    if _git_blob_sha(context, "origin/main", str(receipt["evidence_ref"])) is None:
+        raise Refusal("accepted closed-custody review evidence is absent from fetched main")
+    _validate_utc_timestamp(receipt.get("reviewed_at"), field="reviewed_at")
+    _exact_commit(context, candidate)
+    if not _is_ancestor(context, candidate, cleanup_head):
+        raise Refusal("reviewed closed-custody candidate is not in the cleanup branch")
+    for path in CLOSED_CUSTODY_REQUIRED_SURFACES:
+        candidate_blob = _git_blob_sha(context, candidate, path)
+        main_blob = _git_blob_sha(context, "origin/main", path)
+        cleanup_blob = _git_blob_sha(context, cleanup_head, path)
+        if candidate_blob is None or not (
+            candidate_blob == main_blob == cleanup_blob
+        ):
+            raise Refusal(
+                f"reviewed closed-custody surface is not exact on fetched main: {path}"
+            )
+    script_blob = _git_blob_sha(
+        context, "origin/main", "scripts/worktree_lifecycle.py"
+    )
+    executing_blob = _git(
+        context.root, "hash-object", str(_canonical(Path(__file__)))
+    ).casefold()
+    if script_blob is None or executing_blob != script_blob:
+        raise Refusal(
+            "executing lifecycle script is not the reviewed implementation on fetched main"
+        )
+    return receipt, script_blob
+
+
+def _unique_active_durable_record(
+    registry: dict[str, Any],
+    *,
+    package: str,
+    path: Path,
+    branch: str,
+    task_ref: str,
+    label: str,
+) -> dict[str, Any]:
+    matches = [
+        record
+        for record in registry["worktrees"]
+        if isinstance(record, dict)
+        and record.get("state") == "active"
+        and (
+            record.get("package") == package
+            or record.get("branch") == branch
+            or _path_key(str(record.get("path", ""))) == _path_key(path)
+        )
+    ]
+    if len(matches) != 1:
+        raise Refusal(f"{label} registry custody is missing, duplicated, or ambiguous")
+    record = matches[0]
+    if (
+        record.get("kind") != "durable"
+        or record.get("package") != package
+        or record.get("branch") != branch
+        or record.get("task_ref") != task_ref
+        or record.get("path") != str(path)
+        or record.get("lease") is not None
+    ):
+        raise Refusal(f"{label} registry identity or lease is not exact")
+    all_path_matches = [
+        item
+        for item in registry["worktrees"]
+        if isinstance(item, dict)
+        and _path_key(str(item.get("path", ""))) == _path_key(path)
+    ]
+    if all_path_matches != [record]:
+        raise Refusal(f"{label} registry path custody is duplicated or ambiguous")
+    return record
+
+
+def _closed_custody_worktree_proof(
+    context: RepoContext,
+    registry: dict[str, Any],
+    record: dict[str, Any],
+    *,
+    path: Path,
+    branch: str,
+    expected_head: str,
+    label: str,
+) -> list[dict[str, Any]]:
+    _assert_managed_target(registry, path)
+    if not path.exists():
+        raise Refusal(f"{label} path is absent")
+    _assert_same_repository(context, path)
+    all_worktrees = _worktrees(context.root)
+    entries = [
+        entry
+        for entry in all_worktrees
+        if _path_key(str(entry.get("worktree", ""))) == _path_key(path)
+    ]
+    if len(entries) != 1:
+        raise Refusal(f"{label} Git worktree identity is missing or ambiguous")
+    entry = entries[0]
+    local_head = _ref_sha(context, f"refs/heads/{branch}")
+    current_branch = _current_branch(path)
+    live_head = _validate_sha(_git(path, "rev-parse", "HEAD"))
+    if (
+        entry.get("branch") != branch
+        or entry.get("head") != expected_head
+        or current_branch != branch
+        or local_head != expected_head
+        or live_head != expected_head
+    ):
+        raise Refusal(f"{label} live, branch, or local HEAD is not exact")
+    pristine, residue = _is_pristine(path)
+    if not pristine:
+        raise Refusal(
+            f"{label} contains tracked, untracked, or ignored residue",
+            blockers=residue,
+        )
+    if record.get("path") != str(path):
+        raise Refusal(f"{label} registry path is not canonical")
+    return all_worktrees
+
+
+def _closed_custody_pending_matches(
+    pending: dict[str, Any],
+    *,
+    cleanup_package: str,
+    cleanup_task_ref: str,
+    target_package: str,
+    target_path: Path,
+    target_branch: str,
+    source_task_ref: str,
+    expected_head: str,
+    owner_authorization_ref: str,
+    source_unavailable_ref: str,
+) -> bool:
+    after = pending.get("after_record")
+    proof = after.get("closed_custody_retirement") if isinstance(after, dict) else None
+    return bool(
+        isinstance(proof, dict)
+        and pending.get("operation") == "retire_closed_custody"
+        and proof.get("cleanup_package") == cleanup_package
+        and proof.get("cleanup_task_ref") == cleanup_task_ref
+        and proof.get("target_package") == target_package
+        and proof.get("target_path") == str(target_path)
+        and proof.get("target_branch") == target_branch
+        and proof.get("source_task_ref") == source_task_ref
+        and proof.get("expected_head") == expected_head
+        and proof.get("owner_authorization_ref") == owner_authorization_ref
+        and proof.get("source_unavailable_ref") == source_unavailable_ref
+    )
+
+
+def command_retire_closed_custody(
+    context: RepoContext, args: argparse.Namespace
+) -> dict[str, Any]:
+    """Retire one closed-claim durable worktree under successor custody."""
+
+    _require_execute(args.execute)
+    cleanup_package = _validate_package(args.cleanup_package)
+    cleanup_task_ref = _validate_task_ref(args.task_ref)
+    _validate_delivery_ref(cleanup_task_ref)
+    target_package = _validate_package(args.target_package)
+    target_path = _exact_canonical_argument_path(args.path)
+    target_branch = _validate_work_branch(args.branch)
+    source_task_ref = _validate_delivery_ref(args.source_task_ref)
+    expected_head = _validate_sha(args.expected_head)
+    owner_authorization_ref = _validate_delivery_ref(args.owner_authorization_ref)
+    source_unavailable_ref = _validate_delivery_ref(args.source_unavailable_ref)
+    if len(
+        {
+            cleanup_task_ref,
+            source_task_ref,
+            owner_authorization_ref,
+            source_unavailable_ref,
+        }
+    ) != 4:
+        raise Refusal(
+            "cleanup caller, source task, owner authorization, and source-unavailability "
+            "references must be distinct"
+        )
+
+    recovered_pending: dict[str, Any] | None = None
+    with _registry_lock(context.registry_path):
+        registry = _load_registry(context.registry_path)
+        assert registry is not None
+        _assert_registry_identity(context, registry)
+        pending = registry.get("pending")
+        if pending is not None:
+            if not isinstance(pending, dict) or not _closed_custody_pending_matches(
+                pending,
+                cleanup_package=cleanup_package,
+                cleanup_task_ref=cleanup_task_ref,
+                target_package=target_package,
+                target_path=target_path,
+                target_branch=target_branch,
+                source_task_ref=source_task_ref,
+                expected_head=expected_head,
+                owner_authorization_ref=owner_authorization_ref,
+                source_unavailable_ref=source_unavailable_ref,
+            ):
+                raise Refusal(
+                    "an unresolved lifecycle journal is not this exact closed-custody request"
+                )
+            recovered_pending = _reconcile_pending(context, registry)
+            if recovered_pending and recovered_pending.get("outcome") == "completed":
+                return {
+                    "status": "retired_recovered",
+                    "path": str(target_path),
+                    "head": expected_head,
+                    "source_task_ref": source_task_ref,
+                    "cleanup_task_ref": cleanup_task_ref,
+                    "custody_proof": recovered_pending["proof"],
+                    "recovered_pending": recovered_pending,
+                }
+
+    _fetch_origin_main(context)
+    authoritative_main = _ref_sha(context, "refs/remotes/origin/main")
+    if authoritative_main is None:
+        raise Refusal("fetched origin/main has no exact commit")
+    cleanup_claim = _closed_custody_cleanup_claim(
+        context,
+        package=cleanup_package,
+        task_ref=cleanup_task_ref,
+        owner_authorization_ref=owner_authorization_ref,
+    )
+    cleanup_branch = _validate_work_branch(str(cleanup_claim.get("branch", "")))
+    target_claim = _claim_from_origin_main(context, target_package)
+    if (
+        target_claim.get("state") != "closed"
+        or target_claim.get("writer_ref") != source_task_ref
+        or target_claim.get("branch") != target_branch
+    ):
+        raise Refusal(
+            "target claim is not exactly closed for its original task and branch"
+        )
+    cleanup_path = _canonical(Path.cwd())
+    if _path_key(target_path) == _path_key(cleanup_path):
+        raise Refusal("cleanup caller worktree cannot be its own retirement target")
+    cleanup_remote = _remote_branch_tip(context, cleanup_branch)
+    target_remote = _remote_branch_tip(context, target_branch)
+    if cleanup_remote is None or target_remote is None:
+        raise Refusal("cleanup or target branch is absent from the server")
+
+    with _registry_lock(context.registry_path):
+        registry = _load_registry(context.registry_path)
+        assert registry is not None
+        _assert_registry_identity(context, registry)
+        if registry.get("pending") is not None:
+            raise Refusal("lifecycle journal changed before closed-custody commit")
+        cleanup_record = _unique_active_durable_record(
+            registry,
+            package=cleanup_package,
+            path=cleanup_path,
+            branch=cleanup_branch,
+            task_ref=cleanup_task_ref,
+            label="cleanup caller",
+        )
+        cleanup_local_head = _ref_sha(context, f"refs/heads/{cleanup_branch}")
+        if cleanup_local_head is None:
+            raise Refusal("cleanup caller local branch is absent")
+        _closed_custody_worktree_proof(
+            context,
+            registry,
+            cleanup_record,
+            path=cleanup_path,
+            branch=cleanup_branch,
+            expected_head=cleanup_local_head,
+            label="cleanup caller",
+        )
+        review_receipt, lifecycle_script_blob = _accepted_closed_custody_review(
+            context,
+            package=cleanup_package,
+            cleanup_task_ref=cleanup_task_ref,
+            cleanup_head=cleanup_local_head,
+        )
+        target_record = _unique_active_durable_record(
+            registry,
+            package=target_package,
+            path=target_path,
+            branch=target_branch,
+            task_ref=source_task_ref,
+            label="closed-custody target",
+        )
+        all_worktrees = _closed_custody_worktree_proof(
+            context,
+            registry,
+            target_record,
+            path=target_path,
+            branch=target_branch,
+            expected_head=expected_head,
+            label="closed-custody target",
+        )
+        if _path_key(target_path) == _path_key(context.primary_root):
+            raise Refusal("primary worktree closed-custody retirement is prohibited")
+        nested = [
+            str(entry.get("worktree"))
+            for entry in all_worktrees
+            if _path_key(str(entry.get("worktree", ""))) != _path_key(target_path)
+            and _is_strictly_within(str(entry.get("worktree", "")), target_path)
+        ]
+        if nested:
+            raise Refusal(
+                "nested Git worktree exists inside the closed-custody target",
+                blockers=nested,
+            )
+        previous_head = _validate_sha(str(target_record.get("head", "")))
+        _exact_commit(context, previous_head)
+        if not _is_ancestor(context, previous_head, expected_head):
+            raise Refusal(
+                "target registry HEAD is neither equal to nor an ancestor of expected HEAD"
+            )
+        for record in registry["worktrees"]:
+            proof = record.get("closed_custody_retirement") if isinstance(record, dict) else None
+            if (
+                isinstance(proof, dict)
+                and proof.get("source_unavailable_ref") == source_unavailable_ref
+            ):
+                raise Refusal("source-unavailability evidence reference was already used")
+
+        if _ref_sha(context, "refs/remotes/origin/main") != authoritative_main:
+            raise Refusal("fetched origin/main moved before closed-custody commit")
+        if _closed_custody_cleanup_claim(
+            context,
+            package=cleanup_package,
+            task_ref=cleanup_task_ref,
+            owner_authorization_ref=owner_authorization_ref,
+        ) != cleanup_claim:
+            raise Refusal("cleanup claim changed before closed-custody commit")
+        if _claim_from_origin_main(context, target_package) != target_claim:
+            raise Refusal("target claim changed before closed-custody commit")
+        terminal = _remote_branch_tuple(
+            context, ("main", cleanup_branch, target_branch)
+        )
+        if terminal != {
+            "main": authoritative_main,
+            cleanup_branch: cleanup_local_head,
+            target_branch: expected_head,
+        } or cleanup_remote != cleanup_local_head or target_remote != expected_head:
+            raise Refusal("main, cleanup branch, or target branch moved at commit boundary")
+        terminal_registry = _load_registry(context.registry_path)
+        if terminal_registry != registry:
+            raise Refusal("registry changed at closed-custody commit boundary")
+        _closed_custody_worktree_proof(
+            context,
+            registry,
+            cleanup_record,
+            path=cleanup_path,
+            branch=cleanup_branch,
+            expected_head=cleanup_local_head,
+            label="cleanup caller",
+        )
+        _closed_custody_worktree_proof(
+            context,
+            registry,
+            target_record,
+            path=target_path,
+            branch=target_branch,
+            expected_head=expected_head,
+            label="closed-custody target",
+        )
+
+        recorded_at = _utc_now()
+        proof = {
+            "schema_version": 1,
+            "cleanup_package": cleanup_package,
+            "cleanup_task_ref": cleanup_task_ref,
+            "cleanup_path": str(cleanup_path),
+            "cleanup_branch": cleanup_branch,
+            "cleanup_head": cleanup_local_head,
+            "reviewed_candidate": review_receipt["candidate_sha"],
+            "reviewer_ref": review_receipt["reviewer_ref"],
+            "lifecycle_script_blob": lifecycle_script_blob,
+            "owner_authorization_ref": owner_authorization_ref,
+            "source_unavailable_ref": source_unavailable_ref,
+            "target_package": target_package,
+            "source_task_ref": source_task_ref,
+            "target_path": str(target_path),
+            "target_branch": target_branch,
+            "registry_previous_head": previous_head,
+            "expected_head": expected_head,
+            "authoritative_main": authoritative_main,
+            "target_server_head": expected_head,
+            "recorded_at": recorded_at,
+        }
+        _validate_closed_custody_retirement(proof)
+        before = json.loads(json.dumps(target_record, sort_keys=True))
+        after = _closed_custody_after_record(before, proof)
+        registry["pending"] = {
+            "operation": "retire_closed_custody",
+            "path": str(target_path),
+            "before_record": before,
+            "after_record": after,
+            "started_at": recorded_at,
+        }
+        _atomic_write(context.registry_path, registry)
+        _closed_custody_worktree_proof(
+            context,
+            registry,
+            target_record,
+            path=target_path,
+            branch=target_branch,
+            expected_head=expected_head,
+            label="closed-custody target",
+        )
+        _ordinary_worktree_remove(context, target_path)
+        if target_path.exists() or _worktree_at(context.root, target_path) is not None:
+            raise Refusal(
+                "ordinary Git removal did not fully retire the closed-custody target"
+            )
+        matches = [
+            (index, record)
+            for index, record in enumerate(registry["worktrees"])
+            if _path_key(str(record.get("path", ""))) == _path_key(target_path)
+        ]
+        if len(matches) != 1 or matches[0][1] != before:
+            raise Refusal("closed-custody target lost exact registry custody")
+        registry["worktrees"][matches[0][0]] = after
+        registry["pending"] = None
+        _atomic_write(context.registry_path, registry)
+    return {
+        "status": "retired_closed_custody",
+        "path": str(target_path),
+        "head": expected_head,
+        "source_task_ref": source_task_ref,
+        "cleanup_task_ref": cleanup_task_ref,
+        "server_branch": target_branch,
+        "server_tip": expected_head,
+        "custody_proof": proof,
+        "recovered_pending": recovered_pending,
+    }
 
 
 def command_verify(
@@ -5706,6 +6498,25 @@ def _parser() -> argparse.ArgumentParser:
     retire.add_argument("--expected-head", required=True)
     retire.add_argument("--execute", action="store_true")
 
+    retire_closed_custody = subparsers.add_parser(
+        "retire-closed-custody",
+        help="retire one exact closed-claim durable worktree under successor custody",
+    )
+    retire_closed_custody.add_argument("--cleanup-package", required=True)
+    retire_closed_custody.add_argument("--task-ref", required=True)
+    retire_closed_custody.add_argument("--target-package", required=True)
+    retire_closed_custody.add_argument("--path", required=True)
+    retire_closed_custody.add_argument("--branch", required=True)
+    retire_closed_custody.add_argument("--source-task-ref", required=True)
+    retire_closed_custody.add_argument("--expected-head", required=True)
+    retire_closed_custody.add_argument(
+        "--owner-authorization-ref", required=True
+    )
+    retire_closed_custody.add_argument(
+        "--source-unavailable-ref", required=True
+    )
+    retire_closed_custody.add_argument("--execute", action="store_true")
+
     finalize = subparsers.add_parser("finalize-task", help="release/retire this task's temporary resources")
     finalize.add_argument("--task-ref", required=True)
     finalize.add_argument("--execute", action="store_true")
@@ -5743,6 +6554,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             payload, code = command_verify(context, args)
         elif args.subcommand == "retire":
             payload, code = command_retire(context, args), 0
+        elif args.subcommand == "retire-closed-custody":
+            payload, code = command_retire_closed_custody(context, args), 0
         elif args.subcommand == "finalize-task":
             payload, code = command_finalize_task(context, args)
         elif args.subcommand == "evidence-path":
