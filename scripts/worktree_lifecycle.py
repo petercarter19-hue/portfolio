@@ -5240,6 +5240,7 @@ def _unique_active_durable_record(
         for record in registry["worktrees"]
         if isinstance(record, dict)
         and record.get("state") == "active"
+        and record.get("kind") == "durable"
         and (
             record.get("package") == package
             or record.get("branch") == branch
@@ -5250,8 +5251,7 @@ def _unique_active_durable_record(
         raise Refusal(f"{label} registry custody is missing, duplicated, or ambiguous")
     record = matches[0]
     if (
-        record.get("kind") != "durable"
-        or record.get("package") != package
+        record.get("package") != package
         or record.get("branch") != branch
         or record.get("task_ref") != task_ref
         or record.get("path") != str(path)

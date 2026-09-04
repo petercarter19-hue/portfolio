@@ -369,6 +369,27 @@ class WorktreeLifecycleTests(unittest.TestCase):
         )
         git(fixture.repo, "commit", "-m", "activate reviewed cleanup claim")
         git(fixture.repo, "push", "origin", "main")
+        code, controlled = fixture.run(
+            "control",
+            "--package",
+            cleanup_package,
+            "--task-ref",
+            cleanup_task,
+            "--branch",
+            f"work/2026-09-04-delivery-activation-{label}",
+            "--base",
+            "origin/main",
+            "--execute",
+        )
+        self.assertEqual(code, 0, controlled)
+        code, released = fixture.run(
+            "control",
+            "--task-ref",
+            cleanup_task,
+            "--release",
+            "--execute",
+        )
+        self.assertEqual(code, 0, released)
         code, cleanup = fixture.run(
             "ensure",
             "--package",

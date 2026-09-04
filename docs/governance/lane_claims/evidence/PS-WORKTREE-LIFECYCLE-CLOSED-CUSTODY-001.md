@@ -7,7 +7,7 @@
 - The package is Protected, repository authority is `through_merge`, and
   production authority is withheld.
 - The accepted implementation candidate is
-  `02a543d987a6a53235ac0355a6acf40ef96183bd` on
+  `d74a7072efe5777d431f15a5906ac447fa18c808` on
   `work/2026-09-04-worktree-lifecycle-closed-custody-001`.
 - This evidence records implementation and review only. No target worktree was
   mutated before independent acceptance and merge. Per-target cleanup results,
@@ -35,6 +35,12 @@
 - Uses one shared ordinary non-force `git worktree remove` primitive. It does
   not reset, clean, force, prune, run garbage collection, delete a branch/tag/
   ref, or deploy.
+- Initial implementation PR 920 passed required CI 2459 and merged without
+  bypass at `ce4e026f2f6af30c98525fcc8efbb8a762361899`. Read-only production-state
+  proof then found that the released same-package control singleton was counted
+  alongside the cleanup durable record. Final candidate `d74a7072...` narrows
+  that initial lookup to active durable records while preserving independent
+  exact-path ambiguity refusal across all record kinds and states.
 
 ## Validation
 
@@ -44,6 +50,9 @@
   105.331 seconds.
 - Writer: `python3 -B -m unittest tests.test_delivery_preflight tests.test_package_registry -q`
   — 203 passed in 2.174 seconds.
+- Writer after the production-state correction: six closed-custody tests passed
+  in 29.479 seconds; all 62 lifecycle tests passed in 111.426 seconds; all 203
+  delivery/registry tests passed in 2.186 seconds.
 - Writer: `git diff --check` and exact forbidden-primitive scan — passed; one
   literal ordinary worktree removal primitive and no force/reset/clean/prune/
   garbage-collection/ref-deletion primitive.
@@ -57,16 +66,19 @@
 
 - Reviewer:
   `agent:/root/closed_custody_implementation/closed_custody_review`.
-- Reviewed at: `2026-09-04T13:17:01Z`.
+- Final candidate reviewed at: `2026-09-04T13:37:47Z`.
 - Result: pass with no blocking findings.
-- Exact remote candidate, merge base, and tree were
-  `02a543d987a6a53235ac0355a6acf40ef96183bd`,
-  `69d94cc0ac903c1d76be052ca7450d5e996c99c0`, and
-  `2eec6907e0fca34f863fd7c75b299b47a7317a79`.
-- Reviewer validation from an immutable non-worktree archive: seven focused
-  corrected-path tests passed in 24.832 seconds; all 62 lifecycle tests passed
-  in 110.051 seconds; diff and forbidden-primitive checks passed.
+- Exact final remote candidate, merge base, and tree were
+  `d74a7072efe5777d431f15a5906ac447fa18c808`,
+  `ce4e026f2f6af30c98525fcc8efbb8a762361899`, and
+  `c479aaee7a55f6563ef7d69243911f2b1f80adfa`.
+- Reviewer validation: seven focused corrected-path tests passed in 29.473
+  seconds; all 62 lifecycle tests passed in 112.458 seconds; diff and forbidden-
+  primitive checks passed.
 - The review resolved all three blockers from rejected candidate
   `9272617d51e6f2f4a663249e2d3b624871c204ac`: pre-merge execution gating,
   complete present-side crash recovery proof, and exact previous-head journal
   binding.
+- The final review also accepted the production-shaped same-package
+  control-singleton correction with no blocking findings and no target
+  mutation.

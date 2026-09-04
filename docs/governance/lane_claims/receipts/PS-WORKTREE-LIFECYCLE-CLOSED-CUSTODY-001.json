@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001",
-  "candidate_sha": "02a543d987a6a53235ac0355a6acf40ef96183bd",
+  "candidate_sha": "d74a7072efe5777d431f15a5906ac447fa18c808",
   "review_type": "independent",
   "reviewer_ref": "agent:/root/closed_custody_implementation/closed_custody_review",
   "result": "pass",
-  "reviewed_at": "2026-09-04T13:17:01Z",
+  "reviewed_at": "2026-09-04T13:37:47Z",
   "findings": [
     {
       "status": "resolved",
@@ -20,8 +20,12 @@
       "summary": "Rejected candidate 9272617d51e6f2f4a663249e2d3b624871c204ac did not bind registry_previous_head to the pending before-record. The accepted candidate requires exact equality with before_record.head and additionally binds package, source task, branch, and path; malformed journal recovery refuses without mutation."
     },
     {
+      "status": "resolved",
+      "summary": "After merged PR 920, read-only production-state proof found that the released same-package control_singleton was counted alongside the durable cleanup worktree. Exact correction d74a7072efe5777d431f15a5906ac447fa18c808 scopes initial identity candidates to state=active and kind=durable before matching package, branch, or path. Multiple matching active durable records still refuse, and the independent all-record exact-path check still rejects path ambiguity across every kind and state. The fixture now creates and releases an active same-package control_singleton with a null lease alongside the active durable cleanup record; all closed-custody happy, authority, residue, recovery, and journal-poison tests exercise that production-shaped state. Seven focused tests and all 62 lifecycle tests passed, with all previously accepted receipt/blob, recovery, HEAD-binding, residue, race, and ref-preservation gates intact."
+    },
+    {
       "status": "informational",
-      "summary": "Independent review accepted exact candidate 02a543d987a6a53235ac0355a6acf40ef96183bd against merge base 69d94cc0ac903c1d76be052ca7450d5e996c99c0 with no remaining blocking findings. Seven focused tests and all 62 lifecycle tests passed from an immutable non-worktree archive. The command preserves original task_ref and all branches, tags, and refs, and uses only the shared ordinary non-force Git worktree removal helper."
+      "summary": "Independent review accepted final exact candidate d74a7072efe5777d431f15a5906ac447fa18c808 against current main ce4e026f2f6af30c98525fcc8efbb8a762361899 with no remaining blocking findings. The complete delta is limited to the durable-record selector and its production-shaped fixture. The command preserves original task_ref and all branches, tags, and refs, and uses only the shared ordinary non-force Git worktree removal helper."
     }
   ],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001.md"
