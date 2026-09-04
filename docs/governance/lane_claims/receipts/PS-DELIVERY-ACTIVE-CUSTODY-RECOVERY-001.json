@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-ACTIVE-CUSTODY-RECOVERY-001",
+  "candidate_sha": "01479d66db83dc453291a8b44e5860cb1d3b1744",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/active_custody_recovery/active_custody_exact_sha_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-04T09:37:40Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Candidate 14096f4ebc1e4a7bb2eb5021666fb45d95fa3673 enforced a separate source-unavailability reference only during creation. Persisted reconciliation validation now enforces the same invariant, with pending and completed poison regressions."
+    },
+    {
+      "status": "resolved",
+      "summary": "Candidate 4ad2cb23aeff91834b6122a1f3ca923fcd18263f allowed a poisoned pending journal to omit its reconciliation while leaving an orphan reconciled record. Every recovery proof is now digest-bound into completed preparation custody and bidirectionally linked to exactly one pending or completed/consuming/consumed state."
+    },
+    {
+      "status": "resolved",
+      "summary": "Candidate a2a505bdd9f48126a05a037f809016d60ca3ed6e did not yet document the new immutable preparation field. All three governance documents now state the digest-bound proof and bidirectional custody contract."
+    },
+    {
+      "status": "resolved",
+      "summary": "Candidate 9880fa228f110921daa30869393dabd38925a894 treated an explicitly null optional reconciliation key like absence. Record and preparation validators now distinguish absence from present-null and reject the latter."
+    },
+    {
+      "status": "informational",
+      "summary": "Two independent reviewers accepted exact candidate 01479d66db83dc453291a8b44e5860cb1d3b1744 with no blocking findings. The primary reviewer passed 257 combined delivery-preflight and lifecycle tests; the second reviewer passed 56 lifecycle tests and six focused adversarial checks."
+    }
+  ],
+  "evidence_ref": "lane_claims/evidence/PS-DELIVERY-ACTIVE-CUSTODY-RECOVERY-001.md"
+}

@@ -153,6 +153,18 @@ editing the claim:
 python scripts/worktree_lifecycle.py prepare-owner-reassignment --package "PS-EXAMPLE-001" --task-ref "agent:<receiving-writer>" --successor-branch "work/2026-08-27-example-recovery" --expected-checkpoint "<40-character-old-remote-sha>" --owner-authorization-ref "session:<owner-decision>" --execute
 ```
 
+If bounded orchestrator/lifecycle evidence proves the source task is no longer
+available, but its exact managed durable checkout and server branch advanced
+identically beyond the registry's recorded HEAD, add
+`--source-unavailable-ref "session:<bounded-evidence>"`. This does not let the
+receiver act as the old task. The exception is admitted only inside successor
+preparation and requires the active claim's exact package, old writer, branch,
+and canonical path; no lease, lock, pending operation, duplicate, residue, or
+ambiguity; a pristine source checkout; equal live HEAD, local branch, and exact
+fetched server tip; and an old recorded HEAD that is a Git ancestor of the
+requested checkpoint. The tool records the owner and unavailability references
+in machine-local custody evidence.
+
 The command requires a complete initialized registry with exactly one
 `control_singleton` record: that record must be active, receiver-leased,
 current-main, pristine, and at the deterministic `_control` path, with no
@@ -202,13 +214,29 @@ Successful completion atomically clears the pending journal and appends one
 owner authorization, old/new task refs and branches, checkpoint, control
 branch, prepared main, proof timestamp, the exact new-branch response, and the
 source snapshot (local source ref, source worktrees, and reconciled durable
-records). Schema-1 registries created before this field existed load it as an
+records). When active-durable HEAD recovery is used, the immutable tuple also
+contains the exact `source_head_reconciliation` proof, including its separate
+source-unavailability reference. Schema-1 registries created before this field existed load it as an
 empty list and persist it on the next lifecycle mutation; no registry reset or
 re-initialization is required. Once present, every record must have the exact
 `completed`, linked `consuming`, or terminal `consumed` field set, type-exact
 references and SHAs, unique digest and handoff identity, normalized source
 snapshot, and legal package state. Malformed, duplicated, replayed, or incompatible history is never
 silently discarded.
+
+When that guarded active-durable HEAD exception is used, the stale-record
+correction and the successor-creation journal are published together. If the
+successor remains absent, recovery restores the complete prior durable record
+and clears the journal in one write. If Git supplies the one exact
+`[new branch]` proof, final recovery repeats ancestry, source, claim, namespace,
+and server-tuple checks before committing the reconciled custody record and
+completed preparation together. A missing proof or any race preserves the
+journal and refuses. Every proof-bearing custody record must link in both
+directions to exactly one current branch-create journal or digest-valid
+completed/consuming/consumed preparation; an omitted journal field, orphan
+proof, or changed reference fails before recovery. No branch is moved or
+deleted. Governed `superseded`
+claims are terminal records and are excluded from live ownership.
 
 After preparation, change only the claim's `writer_ref`, `branch`, and exact
 `owner_reassignment` handoff and validate with the matching delivery intent.

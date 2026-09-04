@@ -158,6 +158,21 @@ Merge that control PR before implementation merge.
   python scripts/worktree_lifecycle.py prepare-owner-reassignment --package <PACKAGE-ID> --task-ref <RECEIVER-REF> --successor-branch <NEW-WORK-BRANCH> --expected-checkpoint <OLD-REMOTE-SHA> --owner-authorization-ref <OWNER-REF> --execute
   ```
 
+  When the vanished writer advanced the pristine registered checkout and its
+  server branch but the machine-local durable record still names an older
+  HEAD, first obtain a bounded orchestrator/lifecycle reference proving that
+  source task is unavailable and add
+  `--source-unavailable-ref <EVIDENCE-REF>`. The tool accepts this recovery only
+  when the old recorded HEAD is an ancestor and the exact claim, old task,
+  branch, canonical path, pristine live HEAD, local branch, and fetched server
+  tip all agree. It journals the registry correction with successor creation,
+  rolls the correction back when the successor remains absent, and preserves
+  the proof in the completed preparation's digest-bound immutable tuple. The
+  proof-bearing record and its pending or completed/consuming/consumed state
+  must remain bidirectionally linked; a missing or orphan link refuses before
+  recovery. Any ambiguous state remains for investigation. The receiver never impersonates the
+  old writer. A `superseded` claim is terminal, not live ownership.
+
   This command requires a complete initialized registry, exactly one total
   `control_singleton` record, and that exact active leased control singleton
   with no registry lock or unresolved pending operation. It schema-validates

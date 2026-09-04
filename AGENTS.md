@@ -124,6 +124,17 @@ handoffs are evidence, not additional gates.
   Successive legitimate reassignments retain each older source and preparation
   under its own handoff while binding the new transition only to its current
   source.
+  A stale active-durable registry HEAD may be reconciled only inside that same
+  preparation transaction, only with a separate bounded source-unavailability
+  evidence reference, and only when the recorded HEAD is an ancestor while the
+  exact claim/task/branch/path, pristine live checkout, local branch, and
+  fetched server tip all prove the requested checkpoint. If guarded successor
+  creation proves no new branch, the registry reconciliation rolls back; any
+  successful proof is retained in the preparation's digest-bound immutable
+  tuple, and its custody record must link bidirectionally to exactly one
+  pending or completed/consuming/consumed preparation state. Any omitted or
+  orphan link, residue, divergence, lease, ambiguity, or race preserves a refusal. A
+  governed `superseded` claim is terminal and is never live ownership.
 - On an initialized machine, mutating preflight requires `--task-ref` and the
   exact registered package or control context. Except for owner reassignment's
   mandatory local preparation proof, CI and an uninitialized machine do not

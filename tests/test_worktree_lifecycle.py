@@ -242,6 +242,32 @@ class WorktreeLifecycleTests(unittest.TestCase):
         )
         self.assertEqual(lookup.stdout, "")
 
+    def test_strict_live_claims_treats_superseded_as_terminal(self):
+        fixture = self.fixture()
+        fixture.write_claim("superseded")
+        git(
+            fixture.repo,
+            "add",
+            f"docs/governance/lane_claims/{fixture.package}.json",
+        )
+        git(fixture.repo, "commit", "-m", "supersede test package")
+        git(fixture.repo, "push", "origin", "main")
+        context = LIFECYCLE._repo_context(fixture.repo)
+        LIFECYCLE._fetch_origin_main(context)
+        self.assertEqual(LIFECYCLE._strict_live_claims(context), [])
+
+        fixture.write_claim("withdrawn")
+        git(
+            fixture.repo,
+            "add",
+            f"docs/governance/lane_claims/{fixture.package}.json",
+        )
+        git(fixture.repo, "commit", "-m", "invalid terminal state")
+        git(fixture.repo, "push", "origin", "main")
+        LIFECYCLE._fetch_origin_main(context)
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "invalid state"):
+            LIFECYCLE._strict_live_claims(context)
+
     def synthetic_owner_reassignment_preparation(
         self,
         fixture: RepositoryFixture,
@@ -2492,6 +2518,558 @@ class WorktreeLifecycleTests(unittest.TestCase):
         )
         self.assertEqual(code, 2, tampered_source)
         self.assertIn("source custody changed", tampered_source["error"])
+
+    def test_owner_reassignment_without_a_durable_source_keeps_normal_path(self):
+        fixture = self.fixture()
+        receiver = "agent:replacement-without-source-worktree"
+        successor = "work/2026-08-27-test-lifecycle-no-source-recovery"
+        owner_ref = "session:owner/decision:no-source-reassignment"
+        git(
+            fixture.repo,
+            "push",
+            "origin",
+            f"{fixture.main_sha}:refs/heads/{fixture.branch}",
+        )
+        fixture.initialize()
+        code, leased = fixture.run(
+            "control",
+            "--task-ref",
+            receiver,
+            "--package",
+            fixture.package,
+            "--branch",
+            "work/2026-08-27-delivery-owner-reassignment-no-source",
+            "--execute",
+        )
+        self.assertEqual(code, 0, leased)
+
+        code, prepared = fixture.run(
+            "prepare-owner-reassignment",
+            "--package",
+            fixture.package,
+            "--task-ref",
+            receiver,
+            "--successor-branch",
+            successor,
+            "--expected-checkpoint",
+            fixture.main_sha,
+            "--owner-authorization-ref",
+            owner_ref,
+            "--execute",
+            cwd=Path(leased["path"]),
+        )
+        self.assertEqual(code, 0, prepared)
+        self.assertFalse(prepared["source_registry_head_reconciled"])
+        registry = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        self.assertEqual(
+            registry["owner_reassignment_preparations"][0]["source_snapshot"][
+                "durable_records"
+            ],
+            [],
+        )
+
+    def test_owner_reassignment_atomically_reconciles_stale_active_durable_head(self):
+        (
+            fixture,
+            receiver,
+            successor,
+            owner_ref,
+            source_path,
+            control_path,
+        ) = self.owner_reassignment_setup("stale-active-head")
+        source_unavailable_ref = "session:orchestrator/source-task-unavailable"
+        original_registry = json.loads(
+            fixture.registry_path.read_text(encoding="utf-8")
+        )
+        original_record = next(
+            record
+            for record in original_registry["worktrees"]
+            if record.get("package") == fixture.package
+            and record.get("kind") == "durable"
+        )
+        self.assertEqual(original_record["head"], fixture.main_sha)
+
+        (source_path / "sample.txt").write_text(
+            "advanced by the original writer\n", encoding="utf-8"
+        )
+        git(source_path, "add", "sample.txt")
+        git(source_path, "commit", "-m", "advance source checkpoint")
+        checkpoint = git(source_path, "rev-parse", "HEAD")
+        git(source_path, "push", "origin", fixture.branch)
+        self.assertNotEqual(checkpoint, fixture.main_sha)
+
+        code, prepared = fixture.run(
+            "prepare-owner-reassignment",
+            "--package",
+            fixture.package,
+            "--task-ref",
+            receiver,
+            "--successor-branch",
+            successor,
+            "--expected-checkpoint",
+            checkpoint,
+            "--owner-authorization-ref",
+            owner_ref,
+            "--source-unavailable-ref",
+            source_unavailable_ref,
+            "--execute",
+            cwd=control_path,
+        )
+        self.assertEqual(code, 0, prepared)
+        self.assertTrue(prepared["source_registry_head_reconciled"])
+        self.assertEqual(prepared["source_unavailable_ref"], source_unavailable_ref)
+        registry = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        self.assertIsNone(registry["pending"])
+        record = next(
+            item
+            for item in registry["worktrees"]
+            if item.get("package") == fixture.package
+            and item.get("kind") == "durable"
+        )
+        self.assertEqual(record["head"], checkpoint)
+        self.assertEqual(record["previous_head"], fixture.main_sha)
+        proof = record["owner_reassignment_head_reconciliation"]
+        self.assertEqual(proof["previous_head"], fixture.main_sha)
+        self.assertEqual(proof["checkpoint_sha"], checkpoint)
+        self.assertEqual(proof["source_unavailable_ref"], source_unavailable_ref)
+        self.assertEqual(record["remote_branch_tip"], checkpoint)
+        self.assertEqual(record["remote_branch_status"], "fetched")
+        LIFECYCLE.validate_owner_reassignment_registry(registry)
+        completed_preparation = registry["owner_reassignment_preparations"][0]
+        self.assertEqual(completed_preparation["source_head_reconciliation"], proof)
+        orphaned_completed = copy.deepcopy(registry)
+        orphaned_preparation = orphaned_completed[
+            "owner_reassignment_preparations"
+        ][0]
+        orphaned_preparation.pop("source_head_reconciliation")
+        orphaned_preparation["preparation_id"] = LIFECYCLE._preparation_digest(
+            orphaned_preparation
+        )
+        with self.assertRaisesRegex(
+            LIFECYCLE.Refusal, "lacks one exact journal or preparation"
+        ):
+            LIFECYCLE.validate_owner_reassignment_registry(orphaned_completed)
+        for field in (
+            "owner_reassignment_head_reconciliation",
+            "source_head_reconciliation",
+        ):
+            null_proof = copy.deepcopy(registry)
+            if field == "owner_reassignment_head_reconciliation":
+                target = next(
+                    item
+                    for item in null_proof["worktrees"]
+                    if item.get("package") == fixture.package
+                    and item.get("kind") == "durable"
+                )
+            else:
+                target = null_proof["owner_reassignment_preparations"][0]
+            target[field] = None
+            with self.assertRaises(LIFECYCLE.Refusal):
+                LIFECYCLE.validate_owner_reassignment_registry(null_proof)
+        poisoned_completed = copy.deepcopy(registry)
+        poisoned_completed_record = next(
+            item
+            for item in poisoned_completed["worktrees"]
+            if item.get("package") == fixture.package
+            and item.get("kind") == "durable"
+        )
+        poisoned_completed_record[
+            "owner_reassignment_head_reconciliation"
+        ]["source_unavailable_ref"] = owner_ref
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "must be separate"):
+            LIFECYCLE.validate_owner_reassignment_registry(poisoned_completed)
+        self.assertEqual(
+            registry["owner_reassignment_preparations"][0]["checkpoint_sha"],
+            checkpoint,
+        )
+        self.assertEqual(
+            git(
+                fixture.repo,
+                "ls-remote",
+                "origin",
+                f"refs/heads/{successor}",
+            ).split()[0],
+            checkpoint,
+        )
+        handoff = {
+            "type": "owner_reassignment",
+            "from_ref": fixture.writer,
+            "to_ref": receiver,
+            "from_branch": fixture.branch,
+            "to_branch": successor,
+            "checkpoint_sha": checkpoint,
+            "owner_authorization_ref": owner_ref,
+        }
+        claim_path = (
+            fixture.repo
+            / "docs"
+            / "governance"
+            / "lane_claims"
+            / f"{fixture.package}.json"
+        )
+        reassigned_claim = json.loads(claim_path.read_text(encoding="utf-8"))
+        reassigned_claim.update(
+            {"writer_ref": receiver, "branch": successor, "handoff": handoff}
+        )
+        claim_path.write_text(
+            json.dumps(reassigned_claim, indent=2) + "\n", encoding="utf-8"
+        )
+        git(fixture.repo, "add", str(claim_path.relative_to(fixture.repo)))
+        git(fixture.repo, "commit", "-m", "merge stale-head reassignment")
+        git(fixture.repo, "push", "origin", "main")
+        code, ensured = fixture.run(
+            "ensure",
+            "--package",
+            fixture.package,
+            "--task-ref",
+            receiver,
+            "--execute",
+        )
+        self.assertEqual(code, 0, ensured)
+        consumed_registry = json.loads(
+            fixture.registry_path.read_text(encoding="utf-8")
+        )
+        LIFECYCLE.validate_owner_reassignment_registry(consumed_registry)
+        source = next(
+            item
+            for item in consumed_registry["worktrees"]
+            if item.get("kind") == "reassignment_source"
+            and item.get("package") == fixture.package
+        )
+        self.assertEqual(
+            source["owner_reassignment_head_reconciliation"], proof
+        )
+
+    def test_stale_active_durable_head_requires_unavailability_evidence(self):
+        (
+            fixture,
+            receiver,
+            successor,
+            owner_ref,
+            source_path,
+            control_path,
+        ) = self.owner_reassignment_setup("stale-head-no-evidence")
+        (source_path / "sample.txt").write_text(
+            "advanced without a recovery witness\n", encoding="utf-8"
+        )
+        git(source_path, "add", "sample.txt")
+        git(source_path, "commit", "-m", "advance unwitnessed source")
+        checkpoint = git(source_path, "rev-parse", "HEAD")
+        git(source_path, "push", "origin", fixture.branch)
+        before = fixture.registry_path.read_bytes()
+        code, refused = fixture.run(
+            "prepare-owner-reassignment",
+            "--package",
+            fixture.package,
+            "--task-ref",
+            receiver,
+            "--successor-branch",
+            successor,
+            "--expected-checkpoint",
+            checkpoint,
+            "--owner-authorization-ref",
+            owner_ref,
+            "--execute",
+            cwd=control_path,
+        )
+        self.assertEqual(code, 2, refused)
+        self.assertIn("source-unavailability", refused["error"])
+        self.assertEqual(fixture.registry_path.read_bytes(), before)
+        self.assert_remote_branch_absent(fixture, successor)
+        for reused_ref in (fixture.writer, owner_ref):
+            code, refused = fixture.run(
+                "prepare-owner-reassignment",
+                "--package",
+                fixture.package,
+                "--task-ref",
+                receiver,
+                "--successor-branch",
+                successor,
+                "--expected-checkpoint",
+                checkpoint,
+                "--owner-authorization-ref",
+                owner_ref,
+                "--source-unavailable-ref",
+                reused_ref,
+                "--execute",
+                cwd=control_path,
+            )
+            self.assertEqual(code, 2, refused)
+            self.assertIn("must be separate", refused["error"])
+            self.assertEqual(fixture.registry_path.read_bytes(), before)
+            self.assert_remote_branch_absent(fixture, successor)
+
+    def test_failed_successor_creation_rolls_back_head_reconciliation(self):
+        (
+            fixture,
+            receiver,
+            successor,
+            owner_ref,
+            source_path,
+            control_path,
+        ) = self.owner_reassignment_setup("stale-head-push-failure")
+        (source_path / "sample.txt").write_text(
+            "advanced before failed successor creation\n", encoding="utf-8"
+        )
+        git(source_path, "add", "sample.txt")
+        git(source_path, "commit", "-m", "advance source before push failure")
+        checkpoint = git(source_path, "rev-parse", "HEAD")
+        git(source_path, "push", "origin", fixture.branch)
+        registry_before = json.loads(
+            fixture.registry_path.read_text(encoding="utf-8")
+        )
+        source_before = next(
+            copy.deepcopy(record)
+            for record in registry_before["worktrees"]
+            if record.get("package") == fixture.package
+            and record.get("kind") == "durable"
+        )
+        context = LIFECYCLE._repo_context(fixture.repo)
+        arguments = SimpleNamespace(
+            execute=True,
+            package=fixture.package,
+            task_ref=receiver,
+            successor_branch=successor,
+            expected_checkpoint=checkpoint,
+            owner_authorization_ref=owner_ref,
+            source_unavailable_ref="session:orchestrator/source-task-unavailable",
+        )
+        original_git_result = LIFECYCLE._git_result
+
+        def refuse_successor_push(root: Path, *git_arguments: str):
+            if git_arguments[:2] == ("push", "--porcelain"):
+                return subprocess.CompletedProcess(
+                    ["git", *git_arguments],
+                    1,
+                    stdout="",
+                    stderr="simulated successor push refusal",
+                )
+            return original_git_result(root, *git_arguments)
+
+        with patch.object(LIFECYCLE.Path, "cwd", return_value=control_path), patch.object(
+            LIFECYCLE, "_git_result", side_effect=refuse_successor_push
+        ):
+            with self.assertRaisesRegex(
+                LIFECYCLE.Refusal, "guarded absent-ref successor creation failed"
+            ):
+                LIFECYCLE.command_prepare_owner_reassignment(context, arguments)
+        registry_after = json.loads(
+            fixture.registry_path.read_text(encoding="utf-8")
+        )
+        source_after = next(
+            record
+            for record in registry_after["worktrees"]
+            if record.get("package") == fixture.package
+            and record.get("kind") == "durable"
+        )
+        self.assertEqual(source_after, source_before)
+        self.assertIsNone(registry_after["pending"])
+        self.assertEqual(registry_after["owner_reassignment_preparations"], [])
+        self.assert_remote_branch_absent(fixture, successor)
+
+    def test_stale_active_durable_head_must_be_checkpoint_ancestor(self):
+        (
+            fixture,
+            receiver,
+            successor,
+            owner_ref,
+            _source_path,
+            control_path,
+        ) = self.owner_reassignment_setup("stale-head-nonancestor")
+        registry = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        source = next(
+            record
+            for record in registry["worktrees"]
+            if record.get("package") == fixture.package
+            and record.get("kind") == "durable"
+        )
+        source["head"] = "f" * 40
+        fixture.registry_path.write_text(
+            json.dumps(registry, indent=2) + "\n", encoding="utf-8"
+        )
+        before = fixture.registry_path.read_bytes()
+        code, refused = fixture.run(
+            "prepare-owner-reassignment",
+            "--package",
+            fixture.package,
+            "--task-ref",
+            receiver,
+            "--successor-branch",
+            successor,
+            "--expected-checkpoint",
+            fixture.main_sha,
+            "--owner-authorization-ref",
+            owner_ref,
+            "--source-unavailable-ref",
+            "session:orchestrator/source-task-unavailable",
+            "--execute",
+            cwd=control_path,
+        )
+        self.assertEqual(code, 2, refused)
+        self.assertIn("not an ancestor", refused["error"])
+        self.assertEqual(fixture.registry_path.read_bytes(), before)
+        self.assert_remote_branch_absent(fixture, successor)
+
+    def test_crash_before_successor_push_recovers_prior_registry_head(self):
+        (
+            fixture,
+            receiver,
+            successor,
+            owner_ref,
+            source_path,
+            control_path,
+        ) = self.owner_reassignment_setup("stale-head-prepush-crash")
+        (source_path / "sample.txt").write_text(
+            "advanced before simulated process death\n", encoding="utf-8"
+        )
+        git(source_path, "add", "sample.txt")
+        git(source_path, "commit", "-m", "advance before simulated death")
+        checkpoint = git(source_path, "rev-parse", "HEAD")
+        git(source_path, "push", "origin", fixture.branch)
+        registry_before = json.loads(
+            fixture.registry_path.read_text(encoding="utf-8")
+        )
+        source_before = next(
+            copy.deepcopy(record)
+            for record in registry_before["worktrees"]
+            if record.get("package") == fixture.package
+            and record.get("kind") == "durable"
+        )
+        context = LIFECYCLE._repo_context(fixture.repo)
+        arguments = SimpleNamespace(
+            execute=True,
+            package=fixture.package,
+            task_ref=receiver,
+            successor_branch=successor,
+            expected_checkpoint=checkpoint,
+            owner_authorization_ref=owner_ref,
+            source_unavailable_ref="session:orchestrator/source-task-unavailable",
+        )
+        original_git_result = LIFECYCLE._git_result
+
+        def crash_before_push(root: Path, *git_arguments: str):
+            if git_arguments[:2] == ("push", "--porcelain"):
+                raise RuntimeError("simulated process death before successor push")
+            return original_git_result(root, *git_arguments)
+
+        with patch.object(LIFECYCLE.Path, "cwd", return_value=control_path), patch.object(
+            LIFECYCLE, "_git_result", side_effect=crash_before_push
+        ):
+            with self.assertRaisesRegex(RuntimeError, "simulated process death"):
+                LIFECYCLE.command_prepare_owner_reassignment(context, arguments)
+        pending_bytes = fixture.registry_path.read_bytes()
+        pending_registry = json.loads(pending_bytes)
+        self.assertIsNotNone(pending_registry["pending"])
+        pending_source = next(
+            record
+            for record in pending_registry["worktrees"]
+            if record.get("package") == fixture.package
+            and record.get("kind") == "durable"
+        )
+        self.assertEqual(pending_source["head"], checkpoint)
+        missing_link = copy.deepcopy(pending_registry)
+        missing_link["pending"].pop("source_registry_reconciliation")
+        fixture.registry_path.write_text(
+            json.dumps(missing_link, indent=2) + "\n", encoding="utf-8"
+        )
+        with self.assertRaisesRegex(
+            LIFECYCLE.Refusal, "lacks one exact journal or preparation"
+        ):
+            LIFECYCLE._load_registry(fixture.registry_path)
+        self.assertEqual(
+            json.loads(fixture.registry_path.read_text(encoding="utf-8")),
+            missing_link,
+        )
+        fixture.registry_path.write_bytes(pending_bytes)
+        poisoned_pending = copy.deepcopy(pending_registry)
+        poisoned_pending_source = next(
+            record
+            for record in poisoned_pending["worktrees"]
+            if record.get("package") == fixture.package
+            and record.get("kind") == "durable"
+        )
+        poisoned_pending_source[
+            "owner_reassignment_head_reconciliation"
+        ]["source_unavailable_ref"] = fixture.writer
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "must be separate"):
+            LIFECYCLE.validate_owner_reassignment_registry(poisoned_pending)
+        self.assert_remote_branch_absent(fixture, successor)
+
+        loaded = LIFECYCLE._load_registry(fixture.registry_path)
+        recovered = LIFECYCLE._reconcile_pending(context, loaded)
+        self.assertEqual(recovered["outcome"], "rolled_back")
+        recovered_registry = json.loads(
+            fixture.registry_path.read_text(encoding="utf-8")
+        )
+        recovered_source = next(
+            record
+            for record in recovered_registry["worktrees"]
+            if record.get("package") == fixture.package
+            and record.get("kind") == "durable"
+        )
+        self.assertEqual(recovered_source, source_before)
+        self.assertIsNone(recovered_registry["pending"])
+
+    def test_reconciled_source_cannot_be_advanced_by_later_ensure(self):
+        (
+            fixture,
+            receiver,
+            successor,
+            owner_ref,
+            source_path,
+            control_path,
+        ) = self.owner_reassignment_setup("reconciled-source-freeze")
+        (source_path / "sample.txt").write_text(
+            "authorized recovery checkpoint\n", encoding="utf-8"
+        )
+        git(source_path, "add", "sample.txt")
+        git(source_path, "commit", "-m", "prepare recovery checkpoint")
+        checkpoint = git(source_path, "rev-parse", "HEAD")
+        git(source_path, "push", "origin", fixture.branch)
+        code, prepared = fixture.run(
+            "prepare-owner-reassignment",
+            "--package",
+            fixture.package,
+            "--task-ref",
+            receiver,
+            "--successor-branch",
+            successor,
+            "--expected-checkpoint",
+            checkpoint,
+            "--owner-authorization-ref",
+            owner_ref,
+            "--source-unavailable-ref",
+            "session:orchestrator/source-task-unavailable",
+            "--execute",
+            cwd=control_path,
+        )
+        self.assertEqual(code, 0, prepared)
+
+        (source_path / "sample.txt").write_text(
+            "unexpected post-preparation movement\n", encoding="utf-8"
+        )
+        git(source_path, "add", "sample.txt")
+        git(source_path, "commit", "-m", "move source after preparation")
+        git(source_path, "push", "origin", fixture.branch)
+        code, refused = fixture.run(
+            "ensure",
+            "--package",
+            fixture.package,
+            "--task-ref",
+            fixture.writer,
+            "--execute",
+        )
+        self.assertEqual(code, 2, refused)
+        self.assertIn("moved after preparation", refused["error"])
+        registry = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        source = next(
+            record
+            for record in registry["worktrees"]
+            if record.get("package") == fixture.package
+            and record.get("kind") == "durable"
+        )
+        self.assertEqual(source["head"], checkpoint)
+        self.assertIsNone(registry["pending"])
 
     def test_owner_reassignment_refuses_existing_successor_and_dirty_source(self):
         fixture = self.fixture()

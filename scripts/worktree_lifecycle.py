@@ -98,6 +98,25 @@ OWNER_REASSIGNMENT_SOURCE_SNAPSHOT_FIELDS = {
     "worktrees",
     "durable_records",
 }
+OWNER_REASSIGNMENT_HEAD_RECONCILIATION_FIELDS = {
+    "package",
+    "from_ref",
+    "from_branch",
+    "previous_head",
+    "checkpoint_sha",
+    "owner_authorization_ref",
+    "source_unavailable_ref",
+    "reconciled_at",
+}
+
+
+def _owner_reassignment_preparation_immutable_fields(
+    record: dict[str, Any],
+) -> set[str]:
+    fields = set(OWNER_REASSIGNMENT_PREPARATION_IMMUTABLE_FIELDS)
+    if "source_head_reconciliation" in record:
+        fields.add("source_head_reconciliation")
+    return fields
 
 
 class Refusal(RuntimeError):
@@ -732,7 +751,7 @@ def _validate_owner_reassignment_preparations(registry: dict[str, Any]) -> None:
         ):
             raise Refusal("owner-reassignment preparation state is invalid")
         expected_fields = (
-            OWNER_REASSIGNMENT_PREPARATION_IMMUTABLE_FIELDS
+            _owner_reassignment_preparation_immutable_fields(preparation)
             | {"status", "preparation_id"}
             | OWNER_REASSIGNMENT_PREPARATION_STATE_FIELDS[status]
         )
@@ -788,6 +807,7 @@ def _validate_owner_reassignment_preparations(registry: dict[str, Any]) -> None:
                 "owner-reassignment preparation lacks the exact new-branch response"
             )
         _validate_owner_reassignment_source_snapshot(preparation)
+        _validate_preparation_head_reconciliation(preparation)
 
         preparation_id = preparation.get("preparation_id")
         if (
@@ -800,7 +820,9 @@ def _validate_owner_reassignment_preparations(registry: dict[str, Any]) -> None:
             {
                 field: preparation[field]
                 for field in sorted(
-                    OWNER_REASSIGNMENT_PREPARATION_IMMUTABLE_FIELDS
+                    _owner_reassignment_preparation_immutable_fields(
+                        preparation
+                    )
                 )
             },
             sort_keys=True,
@@ -1143,6 +1165,169 @@ def _validate_pending_control_repoint(
         raise Refusal("pending control repoint target branch is invalid")
 
 
+def _validate_owner_reassignment_head_reconciliation_record(
+    record: dict[str, Any],
+) -> None:
+    if "owner_reassignment_head_reconciliation" not in record:
+        return
+    proof = record.get("owner_reassignment_head_reconciliation")
+    if not isinstance(proof, dict) or set(proof) != (
+        OWNER_REASSIGNMENT_HEAD_RECONCILIATION_FIELDS
+    ):
+        raise Refusal("owner-reassignment source HEAD reconciliation proof is inexact")
+    package = _validate_package(proof.get("package"))
+    from_ref = _validate_delivery_ref(proof.get("from_ref"))
+    from_branch = _validate_work_branch(proof.get("from_branch"))
+    previous_head = _validate_preparation_sha(
+        proof.get("previous_head"), field="source previous registry HEAD"
+    )
+    checkpoint = _validate_preparation_sha(
+        proof.get("checkpoint_sha"), field="source reconciled registry HEAD"
+    )
+    owner_authorization_ref = _validate_delivery_ref(
+        proof.get("owner_authorization_ref")
+    )
+    source_unavailable_ref = _validate_delivery_ref(
+        proof.get("source_unavailable_ref")
+    )
+    if source_unavailable_ref in {from_ref, owner_authorization_ref}:
+        raise Refusal(
+            "source-unavailability evidence must be separate from source and "
+            "owner-authorization references"
+        )
+    reconciled_at = _validate_utc_timestamp(
+        proof.get("reconciled_at"), field="source HEAD reconciled_at"
+    )
+    if (
+        previous_head == checkpoint
+        or record.get("package") != package
+        or record.get("task_ref") != from_ref
+        or record.get("branch") != from_branch
+        or record.get("previous_head") != previous_head
+        or record.get("head") != checkpoint
+        or record.get("head_reconciled_at") != reconciled_at
+        or record.get("remote_branch_tip") != checkpoint
+        or record.get("remote_branch_status") != "fetched"
+    ):
+        raise Refusal("owner-reassignment source HEAD reconciliation changed identity")
+
+
+def _validate_preparation_head_reconciliation(
+    preparation: dict[str, Any],
+) -> None:
+    if "source_head_reconciliation" not in preparation:
+        return
+    proof = preparation.get("source_head_reconciliation")
+    if not isinstance(proof, dict):
+        raise Refusal("source HEAD reconciliation preparation proof is invalid")
+    durable = preparation.get("source_snapshot", {}).get("durable_records")
+    if not isinstance(durable, list) or len(durable) != 1:
+        raise Refusal(
+            "source HEAD reconciliation requires one prepared durable source"
+        )
+    snapshot = durable[0]
+    if not isinstance(snapshot, dict):
+        raise Refusal("source HEAD reconciliation durable source is invalid")
+    synthetic_record = {
+        **snapshot,
+        "previous_head": proof.get("previous_head")
+        if isinstance(proof, dict)
+        else None,
+        "head_reconciled_at": proof.get("reconciled_at")
+        if isinstance(proof, dict)
+        else None,
+        "remote_branch_tip": snapshot.get("head"),
+        "remote_branch_status": "fetched",
+        "owner_reassignment_head_reconciliation": proof,
+    }
+    _validate_owner_reassignment_head_reconciliation_record(synthetic_record)
+    if (
+        proof.get("owner_authorization_ref")
+        != preparation.get("owner_authorization_ref")
+        or proof.get("checkpoint_sha") != preparation.get("checkpoint_sha")
+    ):
+        raise Refusal(
+            "source HEAD reconciliation is not bound to its preparation"
+        )
+
+
+def _pending_source_registry_reconciliation(
+    registry: dict[str, Any], pending: dict[str, Any]
+) -> dict[str, Any] | None:
+    if "source_registry_reconciliation" not in pending:
+        return None
+    reconciliation = pending.get("source_registry_reconciliation")
+    if not isinstance(reconciliation, dict) or set(reconciliation) != {
+        "before",
+        "after",
+    }:
+        raise Refusal("pending source registry reconciliation is inexact")
+    before = reconciliation.get("before")
+    after = reconciliation.get("after")
+    required = {
+        "path",
+        "kind",
+        "state",
+        "package",
+        "branch",
+        "head",
+        "task_ref",
+        "lease",
+    }
+    if (
+        not isinstance(before, dict)
+        or not isinstance(after, dict)
+        or not required.issubset(before)
+        or not required.issubset(after)
+    ):
+        raise Refusal("pending source registry reconciliation record is incomplete")
+    added = {
+        "previous_head",
+        "head_reconciled_at",
+        "owner_reassignment_head_reconciliation",
+    }
+    if added & set(before) or set(after) != set(before) | added:
+        raise Refusal("pending source registry reconciliation field set is invalid")
+    proof = after.get("owner_reassignment_head_reconciliation")
+    _validate_owner_reassignment_head_reconciliation_record(after)
+    expected_after = json.loads(json.dumps(before, sort_keys=True))
+    expected_after.update(
+        {
+            "previous_head": proof["previous_head"],
+            "head": proof["checkpoint_sha"],
+            "head_reconciled_at": proof["reconciled_at"],
+            "updated_at": proof["reconciled_at"],
+            "remote_branch_tip": proof["checkpoint_sha"],
+            "remote_branch_status": "fetched",
+            "owner_reassignment_head_reconciliation": proof,
+        }
+    )
+    if after != expected_after:
+        raise Refusal("pending source registry reconciliation changed unrelated fields")
+    if (
+        before.get("head") != proof.get("previous_head")
+        or proof.get("owner_authorization_ref")
+        != pending.get("owner_authorization_ref")
+        or after.get("package") != pending.get("package")
+        or after.get("task_ref") != pending.get("from_ref")
+        or after.get("branch") != pending.get("from_branch")
+        or after.get("head") != pending.get("checkpoint_sha")
+        or after.get("kind") != "durable"
+        or after.get("state") != "active"
+        or after.get("lease") is not None
+    ):
+        raise Refusal("pending source registry reconciliation lost source custody")
+    matches = [
+        record
+        for record in registry["worktrees"]
+        if _path_key(str(record.get("path", "")))
+        == _path_key(str(after.get("path", "")))
+    ]
+    if len(matches) != 1 or matches[0] != after:
+        raise Refusal("pending source registry reconciliation is not registry-custodied")
+    return reconciliation
+
+
 def _validate_pending_branch_source_snapshots(
     registry: dict[str, Any], pending: dict[str, Any]
 ) -> None:
@@ -1222,6 +1407,7 @@ def _validate_pending_branch_source_snapshots(
             != checkpoint
         ):
             raise Refusal("pending owner-reassignment durable source changed identity")
+    _pending_source_registry_reconciliation(registry, pending)
 
 
 def _validate_pending_owner_reassignment_branch_create(
@@ -1247,6 +1433,8 @@ def _validate_pending_owner_reassignment_branch_create(
     }
     push_proven = pending.get("push_proven_new")
     expected_fields = set(base_fields)
+    if "source_registry_reconciliation" in pending:
+        expected_fields.add("source_registry_reconciliation")
     if push_proven is True:
         expected_fields |= {"new_branch_response", "push_proven_at"}
     if type(push_proven) is not bool or set(pending) != expected_fields:
@@ -1355,6 +1543,76 @@ def _validate_pending_operation(registry: dict[str, Any]) -> None:
     validator(registry, pending)
 
 
+def _validate_head_reconciliation_custody(registry: dict[str, Any]) -> None:
+    """Require one immutable journal or preparation for every custody proof."""
+
+    links: list[tuple[str, dict[str, Any]]] = []
+    pending = registry.get("pending")
+    if (
+        isinstance(pending, dict)
+        and pending.get("operation") == "owner_reassignment_branch_create"
+        and "source_registry_reconciliation" in pending
+    ):
+        reconciliation = pending["source_registry_reconciliation"]
+        links.append((reconciliation["after"]["path"], reconciliation["after"]))
+
+    for preparation in registry.get("owner_reassignment_preparations", []):
+        proof = preparation.get("source_head_reconciliation")
+        if proof is None:
+            continue
+        durable = preparation["source_snapshot"]["durable_records"]
+        source = durable[0]
+        links.append(
+            (
+                source["path"],
+                {
+                    **source,
+                    "owner_reassignment_head_reconciliation": proof,
+                },
+            )
+        )
+
+    records = [
+        record
+        for record in registry.get("worktrees", [])
+        if isinstance(record, dict)
+        and record.get("owner_reassignment_head_reconciliation") is not None
+    ]
+    for record in records:
+        matches = [
+            linked
+            for path, linked in links
+            if _path_key(path) == _path_key(str(record.get("path", "")))
+            and linked.get("package") == record.get("package")
+            and linked.get("task_ref") == record.get("task_ref")
+            and linked.get("branch") == record.get("branch")
+            and linked.get("head") == record.get("head")
+            and linked.get("owner_reassignment_head_reconciliation")
+            == record.get("owner_reassignment_head_reconciliation")
+        ]
+        if len(matches) != 1:
+            raise Refusal(
+                "source HEAD reconciliation lacks one exact journal or "
+                "preparation custody link"
+            )
+    for path, linked in links:
+        matches = [
+            record
+            for record in records
+            if _path_key(str(record.get("path", ""))) == _path_key(path)
+            and record.get("package") == linked.get("package")
+            and record.get("task_ref") == linked.get("task_ref")
+            and record.get("branch") == linked.get("branch")
+            and record.get("head") == linked.get("head")
+            and record.get("owner_reassignment_head_reconciliation")
+            == linked.get("owner_reassignment_head_reconciliation")
+        ]
+        if len(matches) != 1:
+            raise Refusal(
+                "source HEAD reconciliation custody link has no exact record"
+            )
+
+
 def validate_owner_reassignment_registry(registry: dict[str, Any]) -> None:
     """Validate preparation history and every transient registry operation.
 
@@ -1362,8 +1620,15 @@ def validate_owner_reassignment_registry(registry: dict[str, Any]) -> None:
     its read-only gate cannot drift on JSON types, history, replay, or custody.
     """
 
+    worktrees = registry.get("worktrees", [])
+    if not isinstance(worktrees, list):
+        raise Refusal("registry worktrees must be a list")
+    for record in worktrees:
+        if isinstance(record, dict):
+            _validate_owner_reassignment_head_reconciliation_record(record)
     _validate_owner_reassignment_preparations(registry)
     _validate_pending_operation(registry)
+    _validate_head_reconciliation_custody(registry)
 
 
 def _load_registry(path: Path, *, required: bool = True) -> dict[str, Any] | None:
@@ -1976,6 +2241,14 @@ def _reprove_owner_reassignment_branch_completion(
         checkpoint=checkpoint,
     ) != pending.get("source_durable_records"):
         raise Refusal("durable source identity changed during final proof")
+    reconciliation = _pending_source_registry_reconciliation(registry, pending)
+    if reconciliation is not None:
+        previous_head = reconciliation["before"]["head"]
+        if not _is_ancestor(context, previous_head, checkpoint):
+            raise Refusal(
+                "reconciled source registry HEAD is no longer an ancestor of "
+                "the checkpoint"
+            )
     if _ref_sha(context, f"refs/heads/{successor_branch}") is not None:
         raise Refusal("successor creation unexpectedly created a local branch")
     _assert_successor_namespace_available(
@@ -2002,6 +2275,27 @@ def _reprove_owner_reassignment_branch_completion(
         successor_branch: checkpoint,
     }:
         raise Refusal("remote branch tuple moved at owner-reassignment commit boundary")
+
+
+def _rollback_source_registry_reconciliation(
+    registry: dict[str, Any], pending: dict[str, Any]
+) -> None:
+    reconciliation = _pending_source_registry_reconciliation(registry, pending)
+    if reconciliation is None:
+        return
+    before = reconciliation["before"]
+    after = reconciliation["after"]
+    matches = [
+        (index, record)
+        for index, record in enumerate(registry["worktrees"])
+        if _path_key(str(record.get("path", "")))
+        == _path_key(str(after.get("path", "")))
+    ]
+    if len(matches) != 1 or matches[0][1] != after:
+        raise Refusal("source registry reconciliation cannot be rolled back exactly")
+    registry["worktrees"][matches[0][0]] = json.loads(
+        json.dumps(before, sort_keys=True)
+    )
 
 
 def _reconcile_owner_reassignment_branch_create(
@@ -2039,6 +2333,7 @@ def _reconcile_owner_reassignment_branch_create(
             raise Refusal(
                 "proven successor branch disappeared; pending recovery is preserved"
             )
+        _rollback_source_registry_reconciliation(registry, pending)
         registry["pending"] = None
         _atomic_write(context.registry_path, registry)
         return {
@@ -2623,6 +2918,14 @@ def command_ensure(context: RepoContext, args: argparse.Namespace) -> dict[str, 
                 if entry is None or entry.get("branch") != claim["branch"]:
                     raise Refusal("registered durable worktree is missing or mismatched")
                 live_head = entry.get("head")
+                if record.get("owner_reassignment_head_reconciliation") is not None and (
+                    live_head != record.get("head")
+                    or fetched_branch_tip != record.get("head")
+                ):
+                    raise Refusal(
+                        "owner-reassignment reconciled source moved after preparation; "
+                        "preserve its recorded custody for investigation"
+                    )
                 if fetched_branch_tip and live_head != fetched_branch_tip:
                     if _is_ancestor(context, str(live_head), fetched_branch_tip):
                         raise Refusal(
@@ -2987,6 +3290,7 @@ def _owner_reassignment_control_admission(
             raise Refusal("owner-reassignment registry worktree HEAD is invalid")
         if record.get("lease") is not None and not isinstance(record.get("lease"), dict):
             raise Refusal("owner-reassignment registry worktree lease is invalid")
+        _validate_owner_reassignment_head_reconciliation_record(record)
         if kind == "control_singleton":
             controls.append(record)
         if state == "pending":
@@ -3403,6 +3707,131 @@ def _assert_successor_namespace_available(
         )
 
 
+def _prepare_source_registry_head_reconciliation(
+    context: RepoContext,
+    registry: dict[str, Any],
+    *,
+    package: str,
+    from_ref: str,
+    from_branch: str,
+    checkpoint: str,
+    owner_authorization_ref: str,
+    source_unavailable_ref: str | None,
+) -> dict[str, Any] | None:
+    """Journal an exact stale active-durable HEAD correction in memory.
+
+    The caller persists this only together with the owner-reassignment branch
+    creation journal.  Recovery either restores ``before`` when the successor
+    is still absent or commits ``after`` with the completed preparation.
+    """
+
+    candidates = [
+        record
+        for record in registry["worktrees"]
+        if record.get("state") == "active"
+        and record.get("kind") == "durable"
+        and (
+            str(record.get("package", "")).casefold() == package.casefold()
+            or record.get("branch") == from_branch
+        )
+    ]
+    if len(candidates) > 1:
+        raise Refusal(
+            "owner reassignment has duplicate or ambiguous target/source durable records"
+        )
+    if not candidates:
+        return None
+    record = candidates[0]
+    if (
+        record.get("package") != package
+        or record.get("task_ref") != from_ref
+        or record.get("branch") != from_branch
+    ):
+        raise Refusal(
+            "target/source durable registry record does not match the exact "
+            "source package, task, and branch"
+        )
+    recorded_head = _validate_sha(str(record.get("head", "")))
+    if recorded_head == checkpoint:
+        return None
+    if source_unavailable_ref is None:
+        raise Refusal(
+            "stale active durable custody requires a bounded source-unavailability "
+            "evidence reference"
+        )
+    source_unavailable_ref = _validate_delivery_ref(source_unavailable_ref)
+    if source_unavailable_ref in {from_ref, owner_authorization_ref}:
+        raise Refusal(
+            "source-unavailability evidence must be separate from source and "
+            "owner-authorization references"
+        )
+    if record.get("lease") is not None:
+        raise Refusal("stale active durable custody cannot have an active task lease")
+    forbidden_existing = {
+        "previous_head",
+        "head_reconciled_at",
+        "owner_reassignment_head_reconciliation",
+    }
+    if forbidden_existing & set(record):
+        raise Refusal("active durable custody already carries HEAD reconciliation state")
+    raw_path = record.get("path")
+    if not isinstance(raw_path, str) or not Path(raw_path).is_absolute():
+        raise Refusal("target/source durable registry path is not exact and absolute")
+    path = _canonical(raw_path)
+    if raw_path != str(path):
+        raise Refusal("target/source durable registry path is not canonical")
+    live = _worktree_at(context.root, path)
+    pristine, residue = _is_pristine(path) if live is not None else (False, [])
+    if (
+        live is None
+        or live.get("detached")
+        or live.get("branch") != from_branch
+        or live.get("head") != checkpoint
+        or not pristine
+    ):
+        raise Refusal(
+            "stale active durable custody does not match a pristine source "
+            "worktree at the fetched checkpoint",
+            blockers=[str(path), *residue],
+        )
+    if _ref_sha(context, f"refs/heads/{from_branch}") != checkpoint:
+        raise Refusal("source local branch does not equal the fetched checkpoint")
+    if not _is_ancestor(context, recorded_head, checkpoint):
+        raise Refusal(
+            "recorded durable HEAD is not an ancestor of the fetched checkpoint"
+        )
+
+    before = json.loads(json.dumps(record, sort_keys=True))
+    reconciled_at = _utc_now()
+    proof = {
+        "package": package,
+        "from_ref": from_ref,
+        "from_branch": from_branch,
+        "previous_head": recorded_head,
+        "checkpoint_sha": checkpoint,
+        "owner_authorization_ref": owner_authorization_ref,
+        "source_unavailable_ref": source_unavailable_ref,
+        "reconciled_at": reconciled_at,
+    }
+    after = json.loads(json.dumps(before, sort_keys=True))
+    after.update(
+        {
+            "previous_head": recorded_head,
+            "head": checkpoint,
+            "head_reconciled_at": reconciled_at,
+            "updated_at": reconciled_at,
+            "remote_branch_tip": checkpoint,
+            "remote_branch_status": "fetched",
+            "owner_reassignment_head_reconciliation": proof,
+        }
+    )
+    record.clear()
+    record.update(after)
+    reconciliation = {"before": before, "after": after}
+    _validate_owner_reassignment_head_reconciliation_record(record)
+    return reconciliation
+
+
 def _source_durable_registry_snapshot(
     context: RepoContext,
     registry: dict[str, Any],
@@ -3477,7 +3906,9 @@ def _source_durable_registry_snapshot(
 def _preparation_digest(record: dict[str, Any]) -> str:
     immutable = {
         field: record.get(field)
-        for field in sorted(OWNER_REASSIGNMENT_PREPARATION_IMMUTABLE_FIELDS)
+        for field in sorted(
+            _owner_reassignment_preparation_immutable_fields(record)
+        )
     }
     payload = json.dumps(
         immutable, sort_keys=True, separators=(",", ":"), ensure_ascii=True
@@ -3507,6 +3938,16 @@ def _completed_preparation_from_pending(pending: dict[str, Any]) -> dict[str, An
         "source_snapshot": source_snapshot,
         "prepared_at": pending.get("push_proven_at"),
     }
+    reconciliation = pending.get("source_registry_reconciliation")
+    if reconciliation is not None:
+        record["source_head_reconciliation"] = json.loads(
+            json.dumps(
+                reconciliation["after"][
+                    "owner_reassignment_head_reconciliation"
+                ],
+                sort_keys=True,
+            )
+        )
     response = record["new_branch_response"]
     columns = response.split("\t") if isinstance(response, str) else []
     if (
@@ -3571,7 +4012,7 @@ def _matching_owner_reassignment_preparation(
         raise Refusal("claim does not have one exact owner-reassignment preparation")
     preparation = matches[0]
     expected_fields = (
-        OWNER_REASSIGNMENT_PREPARATION_IMMUTABLE_FIELDS
+        _owner_reassignment_preparation_immutable_fields(preparation)
         | {"status", "preparation_id"}
     )
     if preparation.get("status") == "consumed":
@@ -3836,7 +4277,7 @@ def _strict_live_claims(context: RepoContext) -> list[dict[str, Any]]:
         state = claim.get("state")
         if not isinstance(package, str) or not PACKAGE_RE.fullmatch(package):
             raise Refusal(f"authoritative claim has an invalid package: {name}")
-        if state not in {"active", "paused", "closed"}:
+        if state not in {"active", "paused", "closed", "superseded"}:
             raise Refusal(f"authoritative claim has an invalid state: {name}")
         if state in {"active", "paused"}:
             _validate_work_branch(str(claim.get("branch", "")))
@@ -3856,6 +4297,12 @@ def command_prepare_owner_reassignment(
     successor_branch = _validate_work_branch(args.successor_branch)
     checkpoint = _validate_sha(args.expected_checkpoint)
     owner_authorization_ref = _validate_delivery_ref(args.owner_authorization_ref)
+    raw_source_unavailable_ref = getattr(args, "source_unavailable_ref", None)
+    source_unavailable_ref = (
+        _validate_delivery_ref(raw_source_unavailable_ref)
+        if raw_source_unavailable_ref is not None
+        else None
+    )
 
     _fetch_origin_main(context)
     claim = _claim_from_origin_main(context, package)
@@ -3973,6 +4420,18 @@ def command_prepare_owner_reassignment(
         source_worktrees = _snapshot_branch_worktrees(
             context, from_branch, checkpoint
         )
+        source_registry_reconciliation = (
+            _prepare_source_registry_head_reconciliation(
+                context,
+                registry,
+                package=package,
+                from_ref=from_ref,
+                from_branch=from_branch,
+                checkpoint=checkpoint,
+                owner_authorization_ref=owner_authorization_ref,
+                source_unavailable_ref=source_unavailable_ref,
+            )
+        )
         source_durable_records = _source_durable_registry_snapshot(
             context,
             registry,
@@ -3999,7 +4458,12 @@ def command_prepare_owner_reassignment(
             "push_proven_new": False,
             "started_at": _utc_now(),
         }
+        if source_registry_reconciliation is not None:
+            pending["source_registry_reconciliation"] = (
+                source_registry_reconciliation
+            )
         registry["pending"] = pending
+        _validate_pending_owner_reassignment_branch_create(registry, pending)
         _atomic_write(context.registry_path, registry)
 
         # The empty expected value is an absent-ref compare-and-set.  Although
@@ -4016,6 +4480,7 @@ def command_prepare_owner_reassignment(
         )
         if push.returncode:
             if _remote_branch_tip(context, successor_branch) is None:
+                _rollback_source_registry_reconciliation(registry, pending)
                 registry["pending"] = None
                 _atomic_write(context.registry_path, registry)
             detail = push.stderr.strip() or push.stdout.strip() or "git push failed"
@@ -4071,6 +4536,10 @@ def command_prepare_owner_reassignment(
         "successor_branch": successor_branch,
         "checkpoint_sha": checkpoint,
         "owner_authorization_ref": owner_authorization_ref,
+        "source_unavailable_ref": source_unavailable_ref,
+        "source_registry_head_reconciled": (
+            source_registry_reconciliation is not None
+        ),
         "preparation_id": preparation["preparation_id"],
         "old_branch_preserved": True,
         "old_worktrees_preserved": [item["path"] for item in source_worktrees],
@@ -5213,6 +5682,13 @@ def _parser() -> argparse.ArgumentParser:
     owner_reassignment.add_argument("--successor-branch", required=True)
     owner_reassignment.add_argument("--expected-checkpoint", required=True)
     owner_reassignment.add_argument("--owner-authorization-ref", required=True)
+    owner_reassignment.add_argument(
+        "--source-unavailable-ref",
+        help=(
+            "bounded orchestrator/lifecycle evidence reference; required only "
+            "when the active durable registry HEAD must be reconciled"
+        ),
+    )
     owner_reassignment.add_argument("--execute", action="store_true")
 
     verify = subparsers.add_parser("verify", help="diff-only or runnable exact-SHA verification")
