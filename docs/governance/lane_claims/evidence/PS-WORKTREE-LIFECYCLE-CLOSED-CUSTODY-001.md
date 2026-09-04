@@ -9,10 +9,9 @@
 - The accepted implementation candidate is
   `d74a7072efe5777d431f15a5906ac447fa18c808` on
   `work/2026-09-04-worktree-lifecycle-closed-custody-001`.
-- This evidence records implementation and review only. No target worktree was
-  mutated before independent acceptance and merge. Per-target cleanup results,
-  cache custody, recovered bytes, and retained exceptions will be appended
-  after the reviewed mechanism is merged and used.
+- No target worktree was mutated before independent acceptance and merge. The
+  execution sections below record the later per-target cleanup, cache custody,
+  recovered bytes, and retained exceptions.
 
 ## Implemented contract
 
@@ -82,3 +81,93 @@
 - The final review also accepted the production-shaped same-package
   control-singleton correction with no blocking findings and no target
   mutation.
+## Protected merge and execution gate
+
+- Initial PR 920 merged without bypass at
+  `ce4e026f2f6af30c98525fcc8efbb8a762361899` after required CI 2459 succeeded.
+- The production-state correction PR 921 merged without bypass at
+  `4e4266403bf347bb19e644325150a1fc3c4b7943` after required CI 2463 succeeded.
+- Before cleanup, fetched main, receipt candidate
+  `d74a7072efe5777d431f15a5906ac447fa18c808`, cleanup branch, and executing
+  script passed the exact reviewed-blob gate. Registry pending was null, the
+  control lease was null, and `worktree_registry.lock` was absent.
+- The first target attempt refused before journaling because the cleanup caller
+  contained five ignored Python cache directories created by validation. The
+  target was preserved. Those five proven ignored/untracked cache roots (19
+  files, 5 directories, 939,889 logical bytes, 983,040 allocated-entry bytes)
+  were moved with exact source/destination parity to the recoverable Trash
+  custody root below. The cleanup worktree then re-proved pristine.
+
+## Retired worktrees
+
+Each row was freshly proved against its fetched closed claim and exact local,
+live, and server HEAD, then retired in a separate ordinary non-force Git
+transaction. Post-audit proved the path absent, the registry record retired,
+the original `task_ref` retained, and both local and server branch refs still
+at the expected SHA.
+
+| Package | Expected HEAD | Recorded at (UTC) | Allocation (KiB) | Logical file bytes | Source-unavailability ref suffix |
+|---|---|---:|---:|---:|---|
+| `PS-SYNTHETIC-SEALED-AZURE-CLI-DARWIN-COMPAT-001` | `a153462ab3729352456d425f8daaa7a0ec0fd924` | `2026-09-04T13:49:46Z` | 951,440 | 967,027,915 | `azure-cli-darwin-compat` |
+| `PS-SYNTHETIC-SEALED-AZURE-AUTH-SHAPE-001` | `1a2ee909b16b5298fac6dfce721fe61b55177a87` | `2026-09-04T13:50:23Z` | 952,256 | 967,772,938 | `azure-auth-shape` |
+| `PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-REBIND-001` | `da5ca9188857d7e4f22f75ae6a4fcd238b8e2314` | `2026-09-04T13:51:12Z` | 952,268 | 967,778,899 | `graph-public-client-rebind` |
+| `PS-DELIVERY-OWNER-REASSIGNMENT-001` | `6f5bf17127ba93250ea14e016aec2a97222d5a9c` | `2026-09-04T13:52:05Z` | 50,060 | 50,506,311 | `delivery-owner-reassignment` |
+| `PS-WORKSHOP-DELIVERY-CONTINUITY-001` | `80c421a101d6fec4c43993cd6ea3999131f61fa7` | `2026-09-04T13:52:49Z` | 49,944 | 50,390,743 | `workshop-delivery-continuity` |
+| `PS-SYNTHETIC-SEALED-CREDENTIAL-BROKER-WINDOWS-CHILD-RUNTIME-001` | `88f05ad08ecc21cad46d8ef6ccc35f475cdb23db` | `2026-09-04T13:53:50Z` | 951,820 | 967,409,450 | `windows-child-runtime` |
+| `PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-001` | `8c4cf881d1b3e6ec1a08c1737345c9eda2d333b5` | `2026-09-04T13:54:38Z` | 952,664 | 968,186,482 | `fg-authenticated-proof-truth-001` |
+| `PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-002` | `3d1948f07485a421fd3c0a95dfff09a0f82f1ae7` | `2026-09-04T13:55:29Z` | 952,892 | 968,386,022 | `fg-authenticated-proof-truth-002` |
+| `PS-AZURE-STARTUP-QUALIFICATION-001` | `421caa561a2c6d40553c07660ef58cf712f26e43` | `2026-09-04T13:56:45Z` | 971,980 | 986,812,577 | `azure-startup-qualification` |
+| `PS-CI-SECRET-SCAN-ALLOWLIST-001` | `98f72b3ec5c8e66a307e3ee3344078e4c74b8af4` | `2026-09-04T13:57:57Z` | 962,708 | 977,845,409 | `ci-secret-scan-allowlist` |
+
+The common prefix for every last-column reference is
+`session:01a03e17-a645-7ae0-8da3-164eef90a333/closed-custody/unavailable/`.
+The 10 retired worktrees total 7,748,032 allocated KiB, or 7,933,984,768
+allocated-entry bytes, and 7,872,116,746 logical file bytes. These values were
+captured before each ordinary removal; no prune or garbage collection ran.
+
+## Recoverable cache custody
+
+Only ignored cache roots with zero tracked files and zero nonignored residue
+were moved. Each target then re-proved fully pristine before retirement. Source
+and Trash destination measurements matched exactly.
+
+Trash root:
+`/Users/petercarter/.Trash/PeerSlate-closed-custody-2026-09-04-d74a7072`
+
+| Package | Cache roots | Files | Directories | Logical bytes | Allocated-entry bytes |
+|---|---:|---:|---:|---:|---:|
+| `PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001` | 5 | 19 | 5 | 939,889 | 983,040 |
+| `PS-DELIVERY-OWNER-REASSIGNMENT-001` | 2 | 11 | 2 | 978,069 | 999,424 |
+| `PS-WORKSHOP-DELIVERY-CONTINUITY-001` | 2 | 5 | 2 | 835,051 | 843,776 |
+| `PS-SYNTHETIC-SEALED-CREDENTIAL-BROKER-WINDOWS-CHILD-RUNTIME-001` | 6 | 7 | 6 | 404,702 | 417,792 |
+| `PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-001` | 3 | 5 | 3 | 419,649 | 430,080 |
+| `PS-WORKSHOP-FG-AUTHENTICATED-PROOF-TRUTH-002` | 3 | 5 | 3 | 420,823 | 430,080 |
+| `PS-AZURE-STARTUP-QUALIFICATION-001` | 16 | 505 | 19 | 18,334,062 | 19,398,656 |
+| `PS-CI-SECRET-SCAN-ALLOWLIST-001` | 13 | 256 | 13 | 9,361,776 | 9,904,128 |
+| **Total** | **50** | **813** | **53** | **31,694,021** | **33,406,976** |
+
+The Trash tree contains the same 813 files and 31,694,021 logical file bytes.
+Including custody parent directories, it has 112 directories and 33,406,976
+allocated-entry bytes. The payload remains recoverable; nothing was deleted.
+
+## Deliberately retained preserve cases
+
+The following three worktrees were rechecked read-only and were not reset,
+cleaned, fast-forwarded, cache-moved, removed, or otherwise mutated:
+
+- `PS-SYNTHETIC-SEALED-GRAPH-DELETION-001`: present with seven tracked
+  modifications and an ignored cache; live/local HEAD
+  `c7122dc69421014155643568f231616206170eb1` differs from server HEAD
+  `61de8ed7ffc46d961597c0bf8fdf602cfba9b5c9`.
+- `PS-SYNTHETIC-SEALED-GRAPH-DELETION-CORRECTION-001`: present with an ignored
+  cache; live/local HEAD `f0a919d05db7983329fc1eff1fdf00c76540c2ec`
+  differs from server HEAD `7d0e95e9e5191b31afd85f04fd80263765831c9b`.
+- `PS-SYNTHETIC-SEALED-GRAPH-PUBLIC-CLIENT-001`: present with four tracked
+  modifications, one untracked lock file, and two ignored caches; live/local
+  HEAD `d80f2a885ba90e5eed9f3fbd148e133806b2af48` differs from server HEAD
+  `1e62ee370eec9b4f9c55be977851ef2fa14a3fc5`.
+
+Final local registry proof after all safe retirements: pending null, registry
+lock absent, 10 exact retired custody records, and every retirement proof bound
+to final reviewed candidate `d74a7072efe5777d431f15a5906ac447fa18c808`
+and authoritative main `4e4266403bf347bb19e644325150a1fc3c4b7943`.

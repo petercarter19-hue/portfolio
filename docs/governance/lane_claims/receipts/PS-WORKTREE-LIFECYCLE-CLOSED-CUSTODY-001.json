@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001",
-  "candidate_sha": "d74a7072efe5777d431f15a5906ac447fa18c808",
+  "candidate_sha": "4510823d2a9aa1fbcbabce0eab2273f78c714180",
   "review_type": "independent",
   "reviewer_ref": "agent:/root/closed_custody_implementation/closed_custody_review",
   "result": "pass",
-  "reviewed_at": "2026-09-04T13:37:47Z",
+  "reviewed_at": "2026-09-04T14:07:05Z",
   "findings": [
     {
       "status": "resolved",
@@ -26,6 +26,10 @@
     {
       "status": "informational",
       "summary": "Independent review accepted final exact candidate d74a7072efe5777d431f15a5906ac447fa18c808 against current main ce4e026f2f6af30c98525fcc8efbb8a762361899 with no remaining blocking findings. The complete delta is limited to the durable-record selector and its production-shaped fixture. The command preserves original task_ref and all branches, tags, and refs, and uses only the shared ordinary non-force Git worktree removal helper."
+    },
+    {
+      "status": "informational",
+      "summary": "Independent evidence audit accepted exact candidate 4510823d2a9aa1fbcbabce0eab2273f78c714180 against exact main 4e4266403bf347bb19e644325150a1fc3c4b7943. The candidate changes only the fixed package evidence file. Machine-local registry, filesystem and Git absence, preserved local/server refs, closed claims and original writers, unique source-unavailability references, reviewed candidate/main custody proofs, Trash contents, table arithmetic, three deliberately retained residue cases, PR merge policy, and CI results all reconcile exactly. Registry pending is null and its lock is absent. No target or custody payload was mutated during review."
     }
   ],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-WORKTREE-LIFECYCLE-CLOSED-CUSTODY-001.md"
