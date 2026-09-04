@@ -10,6 +10,20 @@
 
 **Microsoft for Startups authority:** the portal, not this package
 
+## Current operational state
+
+SQL S2, Container Registry Premium, seven-service reporting, the $550 budget
+alerts, and the existing Registry and Luna automation are active. Live
+Microsoft Entra requests to Speech returned `speech_auth_failed` with the
+owner-authorized narrow Speech role. Three September 4 profiles were durably
+reserved before those refused provider calls; none is replayed.
+
+The scheduled pipeline therefore has an explicitly empty Speech endpoint so
+future runs skip that stage while the working stages continue. Speech is not a
+confirmed qualifying workload, and no seven-service clock is claimed.
+Re-enablement requires a separately reviewed correction and exact owner
+authority; this package does not add a broader role or use resource keys.
+
 ## Selected outcome
 
 Advance the existing five-workload system to a useful seven-workload plan:
@@ -133,25 +147,15 @@ day, or ambiguous data fails closed. Foundry model deployments count once,
 Azure DevOps is excluded, and only the Microsoft for Startups portal can award
 a milestone.
 
-## Exact Azure operation and rollback
+## Completed Azure operation and retained boundary
 
-After the reviewed repository change is on `main`, the authorized operator may:
+The authorized SQL S2 and ACR Premium updates, exact Speech User and AcrPull
+assignments, non-secret marker seed, and 75% Actual, 90% Forecasted, and 100%
+Actual budget notifications are complete. The budget amount, dates, contact,
+locale, empty filter, and time grain were preserved.
 
-- update SQL to S2; rollback is S1;
-- update ACR to Premium; rollback is Basic;
-- assign Cognitive Services Speech User on only `peerslate-foundry` and
-  AcrPull on only the legacy-permissions `peerslateacr` registry to the
-  dedicated qualification identity; rollback removes only those two new
-  assignments;
-- seed the version-2 non-secret Speech progress marker with the exact fixture
-  digest and empty attempts/results plus a non-current last-success marker;
-- replace only the budget notification percentages with 75% Actual, 90%
-  Forecasted, and 100% Actual while preserving amount, dates, contact, locale,
-  filter, and time grain; rollback restores 50%, 59%, and 100%; and
-- queue the already-registered qualification pipeline from the reviewed main
-  commit.
-
-Stop on any changed target, unexpected role, nonempty budget filter, missing
-credit, price drift that puts a service at or below $1, failed exact-operation
-precondition, or inability to preserve the previous configuration. No command
-may infer permission to widen the resource, identity, spend, or product scope.
+These are recorded results, not instructions to repeat an operation. In
+particular, the Speech progress marker now contains three durable September 4
+attempt reservations and must not be reset, emptied, or replayed. Any rollback,
+role expansion, marker replacement, Speech re-enablement, or other live change
+requires a new exact owner authorization and fresh precondition proof.

@@ -38,7 +38,11 @@ variables:
   qualificationAppConfigurationEndpoint: 'https://peerslate-startup-qualification.azconfig.io'
   qualificationFoundryEndpoint: 'https://peerslate-foundry.openai.azure.com'
   qualificationFoundryDeployment: 'gpt-5.6-luna'
-  qualificationSpeechEndpoint: 'https://peerslate-foundry.cognitiveservices.azure.com'
+  # Live WIF requests returned speech_auth_failed with the authorized narrow
+  # Speech role. Keep this empty so schedules skip Speech without touching the
+  # working status, Registry, or Luna stages. Re-enablement requires a reviewed
+  # correction and exact owner authority; keys and broader roles are not used.
+  qualificationSpeechEndpoint: ''
   qualificationContainerRegistryEndpoint: 'https://peerslateacr.azurecr.io'
   # Nine distinct product-aligned cases run once: the call count and spend
   # envelope stay identical to the reviewed three-cases-times-three plan.

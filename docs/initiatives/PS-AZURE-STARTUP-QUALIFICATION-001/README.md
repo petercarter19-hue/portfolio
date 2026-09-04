@@ -8,15 +8,19 @@ and production changes are withheld
 ## September 4, 2026 seven-workload extension
 
 Protected package `PS-AZURE-STARTUP-SEVEN-WORKLOAD-001` is the separately
-owner-authorized extension from five to seven workloads. Its implementation
-candidate adds simultaneous five-of-seven and seven-of-seven streak reporting,
-a pinned data-plane-only Container Registry catalog check, and a resumable
-synthetic Azure Speech regression with per-profile pre-call attempt records.
+owner-authorized extension from five to seven workloads. SQL S2, Container
+Registry Premium, simultaneous five-of-seven and seven-of-seven reporting,
+the pinned Registry check, and the existing Luna automation are live. The
+resumable Speech runner preserved three September 4 pre-call reservations, but
+the provider returned `speech_auth_failed` with the authorized narrow role.
+Speech is now fail-safe skipped by an explicitly empty pipeline endpoint; it is
+not a confirmed qualifying workload and no seven-service clock is claimed.
+Re-enablement requires a reviewed correction and exact owner authority.
+
 The five-workload calculation uses the fifth-highest individual service streak,
 so rotating shortfalls cannot manufacture continuity. The exact Azure resize,
-roles, marker seeding, budget
-alert recalibration, and first paid run remain separate live operations until
-the candidate is independently reviewed and merged.
+roles, marker seeding, and budget alert recalibration were completed without
+deploying the application or changing product data.
 
 The current East US retail meter recheck corrected Speech batch/fast
 transcription to $0.18 per audio hour. The suite therefore targets 6.25-6.5
@@ -216,21 +220,25 @@ than one-time spikes.
 
 1. The $5,000 credit is visible, and the current milestone rule has been
    re-read.  Historical days are not assumed to qualify.
-2. SQL S1 and App Configuration Standard are active.  App Service and Search
-   were already above the conservative threshold on the latest complete day.
-3. A dedicated passwordless service connection has only Cost Management
-   Reader, Foundry inference, and App Configuration data access.  It cannot
-   deploy the site or apply a schema migration.
-4. The subscription-wide budget has a $275 actual warning, approximately $325
-   forecast intervention alert, and $550 actual emergency alert.  A budget
-   alerts; it does not automatically stop resources.
+2. SQL S2, App Configuration Standard, and Container Registry Premium are
+   active. App Service and Search were already above the conservative threshold
+   on the latest complete day.
+3. The dedicated passwordless service connection has Cost Management Reader,
+   Cognitive Services OpenAI User, App Configuration Data Owner, Cognitive
+   Services Speech User, and exact-scope AcrPull. It cannot deploy the site or
+   apply a schema migration.
+4. The unfiltered subscription-wide budget has $412.50 actual warning, $495
+   forecast intervention, and $550 actual emergency alerts. A budget alerts;
+   it does not automatically stop resources.
 5. The service connection has an exclusive lock.  The active YAML adds
    sequential lock behavior, two non-overlapping schedules, fail-closed marker
    reads, and the reviewed Luna limits.
 6. The separate scheduled pipeline is registered and only its dedicated
    workload identity has the bounded read/inference/marker permissions.
-7. Observe the nine-case product-quality scorecard on the next unattended
-   primary run; the same-day recovery remains idempotent after a success.
+7. Speech is fail-safe skipped after live `speech_auth_failed` results. Three
+   September 4 attempts remain durably reserved and must not be reset or
+   replayed. Re-enablement needs a reviewed correction and exact owner
+   authority; no seven-service clock is claimed.
 8. Check complete Cost Management days and the Startups portal daily.  Missing
    data, a workload at or below $1, a failed evaluation, or a budget alert
    requires diagnosis; it never silently advances the local streak.

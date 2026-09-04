@@ -416,6 +416,24 @@ class AzureSpeechQualificationTests(unittest.TestCase):
         self.assertEqual(report["mode"], "refused")
         self.assertNotIn("https://", completed.stdout)
 
+    def test_registered_pipeline_fail_safe_disables_speech_only(self):
+        pipeline = (ROOT / "pipelines" / "azure-startup-qualification.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("qualificationSpeechEndpoint: ''", pipeline)
+        self.assertIn(
+            "ne(variables['qualificationSpeechEndpoint'], '')",
+            pipeline,
+        )
+        self.assertIn(
+            "qualificationFoundryEndpoint: 'https://peerslate-foundry.openai.azure.com'",
+            pipeline,
+        )
+        self.assertIn(
+            "qualificationContainerRegistryEndpoint: 'https://peerslateacr.azurecr.io'",
+            pipeline,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

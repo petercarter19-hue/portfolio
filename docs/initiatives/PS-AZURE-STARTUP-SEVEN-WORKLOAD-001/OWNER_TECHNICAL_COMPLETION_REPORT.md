@@ -2,12 +2,13 @@
 
 ## Outcome
 
-The repository implementation for Pete's seven-workload Azure startup plan is
-complete and ready for a fresh independent review. It extends the existing
-qualification automation without deploying the application or changing
-product data. Live Azure resize, role, marker, budget, and first paid-run
-operations remain deliberately pending until the repository candidate passes
-independent review and merge/operation gates.
+The repository implementation and authorized live activation completed SQL S2,
+Container Registry Premium, exact narrow roles, non-secret markers, and the
+$550 budget alerts without deploying the application or changing product data.
+Registry verification passed and Luna reached its September 4 target. Speech
+returned `speech_auth_failed`; three profiles are durably reserved with no
+confirmed success and are not replayed. The pipeline now fail-safe skips Speech
+while the working scheduled stages continue. No seven-service clock is claimed.
 
 The plan tracks these seven distinct Azure workloads:
 
@@ -84,35 +85,19 @@ The corrected candidate is checked with:
 The review receipt and fixed governance evidence file record exact candidate
 identity and results after that review completes.
 
-## Live preconditions and exact pending operations
+## Live state and blocked operation
 
-The latest read-only precondition check found the subscription enabled; SQL
-online at S1/20 DTUs; ACR Basic with admin disabled, public access enabled, and
-legacy registry permissions; the Foundry resource at AIServices S0; and one
-unfiltered subscription-wide $550 monthly budget with 50% Actual, 59%
-Forecasted, and 100% Actual notifications. Drift-prone state, credit balance,
-expiry, and retail prices must be re-read immediately before mutation.
+The verified live state is SQL S2; ACR Premium with admin disabled, public
+access enabled, and legacy registry permissions; the exact Speech User and
+AcrPull assignments on the dedicated qualification identity; seeded non-secret
+Speech markers; and one unfiltered subscription-wide $550 monthly budget with
+75% Actual, 90% Forecasted, and 100% Actual notifications. Temporary operator
+App Configuration access was removed and verified absent.
 
-After a passing review and repository merge, the separately owner-authorized
-operator sequence is limited to:
-
-1. scale only `peerslate-database` S1 to S2;
-2. scale only `peerslateacr` Basic to Premium without changing admin, network,
-   or role-assignment mode;
-3. grant the dedicated qualification identity only Cognitive Services Speech
-   User on `peerslate-foundry` and legacy AcrPull on `peerslateacr`;
-4. seed the non-secret version-2 Speech progress marker with the exact fixture
-   digest, empty attempts/results, and a non-current last-success day;
-5. retain the $550 budget amount/filter/dates/contacts/time grain while changing
-   only notifications to 75% Actual, 90% Forecasted, and 100% Actual; and
-6. queue and observe the qualification pipeline from the exact merged `main`
-   commit.
-
-Rollback is S2 to S1, Premium to Basic, removal of only the two new role
-assignments, restoration of the prior marker values, and restoration of the
-50/59/100 budget notifications. A failed precondition, missing credit, changed
-target, broader role requirement, price drift, budget-filter drift, or failed
-operation stops the sequence.
+Speech cannot be called again safely under current authority. A broader role,
+resource key, new resource, or provider workaround is not authorized. The
+repository fail-safe must remain until a separately authorized, reviewed
+correction is available.
 
 ## Honest limitations
 

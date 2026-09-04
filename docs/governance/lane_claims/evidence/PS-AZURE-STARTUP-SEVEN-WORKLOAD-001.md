@@ -9,10 +9,10 @@ enumerated in the active claim and technical report.
 ## Repository outcome
 
 Exact reviewed candidate
-`ba4476ea875b181fd810f879063557d7366df0d9` implements seven-workload
-tracking and bounded daily automation for Azure App Service, Azure AI Search,
-Azure SQL Database S2, Azure App Configuration Standard, Microsoft Foundry
-GPT-5.6 Luna, Azure Container Registry Premium, and Azure Speech.
+`496cd9c5175148da149fe3e5b93d0a49805af0aa` preserves seven-workload
+tracking while fail-safe skipping only Azure Speech after live keyless requests
+returned `speech_auth_failed`. The working Cost Management, Microsoft Foundry
+GPT-5.6 Luna, and Azure Container Registry stages remain scheduled and enabled.
 
 The report uses complete UTC Cost Management days and a strict greater-than-$1
 threshold. It calculates each workload's uninterrupted streak, uses the
@@ -46,10 +46,30 @@ tests; all changed paths are claimed; prior implementation bytes remain
 identical to the accepted implementation candidate; remote identity,
 compatibility, clean preflight, and `git diff --check` passed.
 
+- Fail-safe candidate `955c631bdadb33ce44851dc7b54c604d4bc53c46`
+  was rejected because two stale documentation sections could have instructed
+  an operator to repeat completed Azure work or reset durable reservations.
+- Both contradictions were corrected. Independent reviewer
+  `agent:/root/azure_activation_review` returned an unconditional PASS with no
+  findings for exact candidate
+  `496cd9c5175148da149fe3e5b93d0a49805af0aa` against authoritative base
+  `4e4266403bf347bb19e644325150a1fc3c4b7943`.
+
+The fail-safe candidate passed 39 focused Cost Management and Speech tests,
+YAML parsing, claimed-path checks, remote identity checks, read preflight, and
+`git diff --check`.
+
 ## Live boundary
 
-No SQL/ACR resize, role assignment, marker seed, budget edit, or paid Speech
-call occurred during repository review. Live operations must re-read credit,
-price, resource, identity, and budget state. Cost Management is delayed, and
-only the Microsoft for Startups portal can recognize a workload or award
-credits. No continuous day is claimed before a complete qualifying UTC day.
+SQL S2, ACR Premium, the exact narrow Speech User and AcrPull roles, non-secret
+Speech markers, and the unfiltered $550 budget with 75% Actual, 90% Forecasted,
+and 100% Actual notifications are live. Registry verification passed and Luna
+reached its September 4 target. Three Speech profiles are durably reserved,
+with zero confirmed successful Speech spend and a $0.4233 possible billed
+ceiling; they must not be reset or replayed. Temporary operator App
+Configuration access was removed and verified absent.
+
+No seven-service clock is claimed. Speech remains disabled until a separately
+authorized and reviewed correction is available. Cost Management is delayed,
+and only the Microsoft for Startups portal can recognize a workload or award
+credits.
