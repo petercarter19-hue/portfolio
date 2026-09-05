@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-AGENT-CAPABILITY-INSTRUCTIONS-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Apply Pete's approved capability recommendations to the existing agent instructions: Astra as the default OpenAI coding model with optional Sol, Cursor as a full assigned writer or reviewer, bounded useful parallelism, browser evidence, exact-candidate review, governed worktrees, exact-task continuity, explicitly requested goals and scheduling, and proportional verification and stopping. Keep one canonical capability policy and preserve package-specific, visual, privacy, ownership, and production boundaries. This documentation outcome changes no product scope contract, runtime, lifecycle tooling, model settings, integrations, schedules, deployment, schema, identities, or existing worktree custody.",
   "assignment": "implementation",
   "writer_ref": "session:01a06e5b-05d4-7023-8266-2bd5d6abccbd",
@@ -23,10 +23,12 @@
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-AGENT-CAPABILITY-INSTRUCTIONS-001.md"
   ],
-  "domains": ["governance:agent-capability-instructions"],
+  "domains": [
+    "governance:agent-capability-instructions"
+  ],
   "review_requirement": "self",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "291104d5fd422353aefbf7d9f36ab905c87ae1f2",
+  "closed_at": "2026-09-05T07:59:58Z"
 }
