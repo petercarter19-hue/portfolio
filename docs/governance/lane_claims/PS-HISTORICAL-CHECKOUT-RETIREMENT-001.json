@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-HISTORICAL-CHECKOUT-RETIREMENT-001",
+  "state": "active",
+  "outcome": "Manager/writer session:01a07158-684b-74a2-a47e-7ca0e91889b7; return to Site Audit Manager session:01a06e5b-05d4-7023-8266-2bd5d6abccbd. Selected successor after PS-WORKTREE-OPERATIONS-CLOSE-001 close: add a Protected retirement command for an independently reviewed immutable allowlist of pristine named-branch server-tip-recoverable init-grandfathered observations with null package/task/lease. Require exact repository custody and no conflicting claim/custody. Preserve historical identity and all refs; journal ordinary non-force removal and reprove recovery. Validate, review, merge, retire individually eligible targets, record results and residual choices, close and retire own worktree. Exclude unregistered, detached, unique, dirty, nested, reparse, primary, control, Synthetic, paused, superseded, reassignment and protected work. No adoption, product, visual, production, deployment, schema, identity, resource, plugin, tracked-evidence deletion, history rewrite, Git GC or ref deletion.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a07158-684b-74a2-a47e-7ca0e91889b7",
+  "branch": "work/2026-09-05-historical-checkout-retirement-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "886ac9cccbaa602ad563142c9c6cb2883084f0d4",
+  "owner_outcome_ref": "session:01a07158-684b-74a2-a47e-7ca0e91889b7/delegation:2026-09-05/selected-historical-checkout-housekeeping-followup",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-HISTORICAL-CHECKOUT-RETIREMENT-001.json",
+    "docs/governance/lane_claims/receipts/PS-HISTORICAL-CHECKOUT-RETIREMENT-001.json",
+    "docs/governance/lane_claims/evidence/PS-HISTORICAL-CHECKOUT-RETIREMENT-001.md",
+    "AGENTS.md",
+    "START_HERE.md",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+    "scripts/worktree_lifecycle.py",
+    "tests/test_worktree_lifecycle.py",
+    "docs/governance/worktree_retirement_allowlists/PS-HISTORICAL-CHECKOUT-RETIREMENT-001.json"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-HISTORICAL-CHECKOUT-RETIREMENT-001.md"
+  ],
+  "domains": [
+    "governance:delivery:closed-custody-retirement",
+    "tooling:worktree-lifecycle:closed-custody-retirement",
+    "tooling:worktree-lifecycle:historical-checkout-retirement"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
