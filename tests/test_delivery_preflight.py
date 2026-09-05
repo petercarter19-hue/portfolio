@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import unittest
 from argparse import Namespace
-from contextlib import redirect_stdout
+from contextlib import ExitStack, nullcontext, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -4539,6 +4539,219 @@ class CurrentRepositoryTests(unittest.TestCase):
         self.assertEqual(0, result, payload)
         self.assertEqual("pass", payload["result"])
         self.assertIn("withheld", payload["authority"]["production"])
+
+
+class OperationsOnlyCloseTests(unittest.TestCase):
+    """Exercise completion admission with real custody/receipt validators."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name).resolve()
+        self.claim = claim(
+            surfaces=claimed_surfaces("PS-EXAMPLE-001", *sorted(
+                lifecycle_registry.CLOSED_CUSTODY_REQUIRED_SURFACES)),
+            domains=sorted(lifecycle_registry.CLOSED_CUSTODY_REQUIRED_DOMAINS),
+        )
+        self.evidence_path = preflight.evidence_relative_path(self.claim["package"])
+        self.review = receipt(evidence_ref=self.evidence_path)
+        self.accepted = receipt(candidate_sha=BASE, evidence_ref=self.evidence_path)
+        self.historical_claim = copy.deepcopy(self.claim)
+        self.proof = {
+            "schema_version": 1,
+            "cleanup_package": self.claim["package"],
+            "cleanup_task_ref": self.claim["writer_ref"],
+            "cleanup_path": str(self.root / "cleanup"),
+            "cleanup_branch": self.claim["branch"],
+            "cleanup_head": HEAD,
+            "reviewed_candidate": BASE,
+            "reviewer_ref": self.accepted["reviewer_ref"],
+            "lifecycle_script_blob": "f" * 40,
+            "owner_authorization_ref": self.claim["owner_outcome_ref"],
+            "source_unavailable_ref": "session:target-unavailable/evidence-1",
+            "target_package": "PS-TARGET-001",
+            "source_task_ref": "session:original-target-writer",
+            "target_path": str(self.root / "retired-target"),
+            "target_branch": "work/2026-08-23-target",
+            "registry_previous_head": BASE,
+            "expected_head": HEAD,
+            "authoritative_main": MAIN,
+            "target_server_head": HEAD,
+            "recorded_at": "2026-09-05T10:00:00Z",
+        }
+        self.target_claim = {
+            "state": "closed", "writer_ref": self.proof["source_task_ref"],
+            "branch": self.proof["target_branch"],
+        }
+        self.record = {
+            "state": "retired", "kind": "durable", "lease": None,
+            "package": self.proof["target_package"],
+            "task_ref": self.proof["source_task_ref"],
+            "branch": self.proof["target_branch"], "head": HEAD,
+            "path": self.proof["target_path"], "retired_at": self.proof["recorded_at"],
+            "closed_custody_retirement": self.proof,
+        }
+        self.registry = {"pending": None, "worktrees": [self.record, {
+            "state": "active", "kind": "durable", "lease": None,
+            "package": self.claim["package"], "task_ref": self.claim["writer_ref"],
+            "branch": self.claim["branch"], "path": self.proof["cleanup_path"],
+        }]}
+        self.completion = {
+            "schema_version": 1, "package": self.claim["package"],
+            "retirements": [copy.deepcopy(self.proof)],
+        }
+        self.raw_override = None
+        self.changed_blob = None
+
+    def run_close(self, lifecycle_overrides=None, **overrides):
+        def git(_root, *command):
+            if command[0] == "show":
+                return self.raw_override if self.raw_override is not None else (
+                    "# Completion\n```peerslate-closed-custody-completion\n"
+                    + json.dumps(self.completion) + "\n```\n"
+                )
+            if command[0] == "rev-parse":
+                return "e" * 40 if command[1] == self.changed_blob else "f" * 40
+            raise AssertionError(command)
+
+        def json_at_ref(_root, _ref, path):
+            return self.target_claim if "PS-TARGET-001" in path else self.historical_claim
+
+        context = Namespace(root=self.root, registry_path=self.root / "registry.json")
+        defaults = {
+            "_is_ci_environment": False, "_tracked_regular_blob": True,
+            "_is_ancestor": True,
+        }
+        with ExitStack() as stack:
+            for name, value in {**defaults, **overrides}.items():
+                stack.enter_context(patch.object(preflight, name, return_value=value))
+            local_defaults = {
+                "_repo_context": context, "_registry_lock": nullcontext(),
+                "_load_registry": self.registry, "_assert_registry_identity": None,
+                "_active_claim": self.claim, "_worktree_at": None,
+                "_remote_branch_tip": HEAD,
+            }
+            for name, value in {**local_defaults, **(lifecycle_overrides or {})}.items():
+                stack.enter_context(patch.object(lifecycle_registry, name, return_value=value))
+            stack.enter_context(patch.object(preflight, "_git", side_effect=git))
+            stack.enter_context(patch.object(preflight, "_json_at_ref", side_effect=json_at_ref))
+            stack.enter_context(patch.object(preflight, "load_receipt_at_ref", return_value=self.accepted))
+            mutation = stack.enter_context(patch.object(lifecycle_registry, "_atomic_write"))
+            removal = stack.enter_context(patch.object(lifecycle_registry, "_ordinary_worktree_remove"))
+            errors = preflight._operations_only_close_errors(
+                self.root, self.claim, self.review, CANDIDATE, MAIN, HEAD,
+                (self.evidence_path,),
+            )
+            mutation.assert_not_called()
+            removal.assert_not_called()
+            return errors
+
+    def test_exact_reviewed_completed_custody_passes_without_mutation(self):
+        self.assertEqual([], self.run_close())
+
+    def test_empty_arbitrary_or_duplicate_key_evidence_refuses(self):
+        for raw in ("audit only", "", "```peerslate-closed-custody-completion\n"
+                    '{"schema_version":1,"schema_version":1}\n```'):
+            with self.subTest(raw=raw):
+                self.raw_override = raw
+                self.assertTrue(self.run_close())
+        self.raw_override = None
+        self.completion["retirements"] = []
+        self.assertTrue(self.run_close())
+
+    def test_custody_evidence_tampering_or_omission_refuses(self):
+        for field, value in (
+            ("source_unavailable_ref", "session:invented"),
+            ("owner_authorization_ref", "session:other-owner"),
+            ("expected_head", BASE), ("target_path", str(self.root / "wrong")),
+        ):
+            with self.subTest(field=field):
+                original = self.completion["retirements"][0][field]
+                self.completion["retirements"][0][field] = value
+                self.assertTrue(self.run_close())
+                self.completion["retirements"][0][field] = original
+        self.completion["retirements"] *= 2
+        self.assertTrue(self.run_close())
+
+    def test_unauthenticated_or_changed_mechanism_review_refuses(self):
+        for field, value in (
+            ("candidate_sha", CANDIDATE), ("reviewer_ref", "agent:other-reviewer"),
+            ("review_type", "self"), ("result", "fail"),
+            ("evidence_ref", "task:unrelated-evidence"),
+        ):
+            with self.subTest(field=field):
+                old = self.accepted[field]
+                self.accepted[field] = value
+                self.assertTrue(self.run_close())
+                self.accepted[field] = old
+        self.historical_claim["owner_outcome_ref"] = "session:old-authority"
+        self.assertTrue(self.run_close())
+
+    def test_evidence_receipt_and_mechanism_bytes_are_immutable(self):
+        for ref, path in (
+            (CANDIDATE, self.evidence_path),
+            (HEAD, preflight.receipt_relative_path(self.claim["package"])),
+            (BASE, "scripts/worktree_lifecycle.py"),
+            (MAIN, "scripts/delivery_preflight.py"),
+            (HEAD, "tests/test_delivery_preflight.py"),
+        ):
+            with self.subTest(ref=ref, path=path):
+                self.changed_blob = f"{ref}:{path}"
+                self.assertTrue(self.run_close())
+
+    def test_wrong_policy_pending_or_duplicate_custody_refuses(self):
+        for field, value in (
+            ("delivery_path", "Bounded"), ("review_requirement", "self"),
+            ("repository_authority", "write_only"), ("domains", []),
+        ):
+            with self.subTest(field=field):
+                old = self.claim[field]
+                self.claim[field] = value
+                self.assertTrue(self.run_close())
+                self.claim[field] = old
+        self.registry["pending"] = {"operation": "unresolved"}
+        self.assertTrue(self.run_close())
+        self.registry["pending"] = None
+        self.registry["worktrees"].append(copy.deepcopy(self.record))
+        self.assertTrue(self.run_close())
+        self.registry["worktrees"][-1] = None
+        self.assertTrue(self.run_close())
+
+    def test_local_source_independence_and_live_absence_remain_required(self):
+        self.assertTrue(self.run_close(_is_ci_environment=True))
+        self.assertTrue(self.run_close(_tracked_regular_blob=False))
+        self.assertTrue(self.run_close(_is_ancestor=False))
+        self.assertTrue(self.run_close(lifecycle_overrides={"_load_registry": None}))
+        self.assertTrue(self.run_close(lifecycle_overrides={"_remote_branch_tip": BASE}))
+        self.assertTrue(self.run_close(lifecycle_overrides={"_worktree_at": {"head": HEAD}}))
+        Path(self.proof["target_path"]).mkdir()
+        self.assertTrue(self.run_close())
+
+    def test_registry_and_evidence_cannot_reassign_or_reuse_source_authority(self):
+        for field, value in (
+            ("source_unavailable_ref", self.claim["writer_ref"]),
+            ("source_unavailable_ref", self.proof["source_task_ref"]),
+            ("owner_authorization_ref", "session:other-owner"),
+            ("cleanup_task_ref", "session:other-cleanup-writer"),
+            ("lifecycle_script_blob", BASE),
+        ):
+            with self.subTest(field=field, value=value):
+                old = self.proof[field]
+                self.proof[field] = value
+                self.completion["retirements"][0][field] = value
+                self.assertTrue(self.run_close())
+                self.proof[field] = old
+                self.completion["retirements"][0][field] = old
+
+    def test_closed_target_original_writer_and_current_completion_review_required(self):
+        self.target_claim["state"] = "paused"
+        self.assertTrue(self.run_close())
+        self.target_claim["state"] = "closed"
+        self.target_claim["writer_ref"] = "session:other-source"
+        self.assertTrue(self.run_close())
+        self.target_claim["writer_ref"] = self.proof["source_task_ref"]
+        self.review["reviewer_ref"] = self.claim["writer_ref"]
+        self.assertTrue(self.run_close())
 
 
 if __name__ == "__main__":

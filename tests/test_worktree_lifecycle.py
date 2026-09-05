@@ -231,7 +231,7 @@ class WorktreeLifecycleTests(unittest.TestCase):
         )
 
     def closed_custody_setup(
-        self, label: str, *, advance_target: bool = False
+        self, label: str, *, advance_target: bool = False, completion: bool = False
     ) -> tuple[RepositoryFixture, Path, Path, dict[str, str]]:
         fixture = self.fixture()
         (fixture.repo / "scripts" / "worktree_lifecycle.py").write_bytes(
@@ -243,6 +243,10 @@ class WorktreeLifecycleTests(unittest.TestCase):
         (fixture.repo / "tests" / "test_worktree_lifecycle.py").write_text(
             "reviewed lifecycle tests\n", encoding="utf-8"
         )
+        if completion:
+            for relative in ("scripts/delivery_preflight.py", "tests/test_delivery_preflight.py"):
+                (fixture.repo / relative).write_bytes((ROOT / relative).read_bytes())
+                git(fixture.repo, "add", relative)
         git(
             fixture.repo,
             "add",
@@ -1647,6 +1651,70 @@ class WorktreeLifecycleTests(unittest.TestCase):
             fixture.registry_path.read_text(encoding="utf-8"), registry_before
         )
         self.assertIsNotNone(LIFECYCLE._worktree_at(fixture.repo, retained_path))
+
+    def test_operations_only_close_binds_real_retirement_and_squashed_evidence(self):
+        from scripts import delivery_preflight as preflight
+
+        fixture, target, cleanup, facts = self.closed_custody_setup(
+            "operations-completion", advance_target=True, completion=True,
+        )
+        code, result = self.run_closed_custody(fixture, target, cleanup, facts)
+        self.assertEqual(0, code, result)
+        registry_before = fixture.registry_path.read_bytes()
+        records = json.loads(registry_before)["worktrees"]
+        proofs = [r["closed_custody_retirement"] for r in records
+                  if r.get("closed_custody_retirement")]
+        package = facts["cleanup_package"]
+        evidence = preflight.evidence_relative_path(package)
+        receipt_path = preflight.receipt_relative_path(package)
+        git(cleanup, "merge", "origin/main", "--no-edit")
+        (cleanup / evidence).write_text(
+            "# Completed fixture retirement\n```peerslate-closed-custody-completion\n"
+            + json.dumps({"schema_version": 1, "package": package, "retirements": proofs})
+            + "\n```\n", encoding="utf-8",
+        )
+        git(cleanup, "add", evidence)
+        git(cleanup, "commit", "-m", "freeze operations-only evidence")
+        candidate = git(cleanup, "rev-parse", "HEAD")
+        review = json.loads((cleanup / receipt_path).read_text(encoding="utf-8"))
+        review["candidate_sha"] = candidate
+        review["reviewer_ref"] = "agent:independent-completion-reviewer"
+        (cleanup / receipt_path).write_text(json.dumps(review) + "\n", encoding="utf-8")
+        git(cleanup, "add", receipt_path)
+        git(cleanup, "commit", "-m", "record independent completion review")
+        remote_tip = git(cleanup, "rev-parse", "HEAD")
+        git(cleanup, "push", "origin", facts["cleanup_branch"])
+        git(fixture.repo, "merge", "--squash", facts["cleanup_branch"])
+        git(fixture.repo, "commit", "-m", "accept reviewed operations completion")
+        merged = git(fixture.repo, "rev-parse", "HEAD")
+        git(fixture.repo, "push", "origin", "main")
+        git(cleanup, "fetch", "origin", "main")
+        claim = json.loads((cleanup / preflight.claim_relative_path(package)).read_text())
+        merged_paths = preflight._diff_paths(cleanup, f"{merged}^..{merged}")
+        with patch.object(preflight, "_is_ci_environment", return_value=False):
+            errors = preflight._operations_only_close_errors(
+                cleanup, claim, review, candidate, merged, remote_tip, merged_paths,
+            )
+        self.assertEqual([], errors)
+        self.assertEqual(registry_before, fixture.registry_path.read_bytes())
+        self.assertFalse(target.exists())
+        self.assertEqual(facts["target_head"], git(
+            fixture.repo, "rev-parse", f"refs/remotes/origin/{fixture.branch}"))
+
+        # An evidence-only post-review edit must fail this exception even
+        # though ordinary code receipts permit a runtime-inert evidence tail.
+        with (cleanup / evidence).open("a", encoding="utf-8") as handle:
+            handle.write("Unreviewed completion alteration\n")
+        git(cleanup, "add", evidence)
+        git(cleanup, "commit", "-m", "alter evidence after review")
+        changed_tip = git(cleanup, "rev-parse", "HEAD")
+        git(cleanup, "push", "origin", facts["cleanup_branch"])
+        with patch.object(preflight, "_is_ci_environment", return_value=False):
+            errors = preflight._operations_only_close_errors(
+                cleanup, claim, review, candidate, merged, changed_tip, merged_paths,
+            )
+        self.assertTrue(any("completion bytes changed" in e for e in errors), errors)
+        self.assertEqual(registry_before, fixture.registry_path.read_bytes())
 
     def test_closed_custody_retires_exact_and_stale_ancestor_without_deleting_refs(self):
         for label, advance_target in (("exact", False), ("ancestor", True)):

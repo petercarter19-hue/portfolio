@@ -281,7 +281,11 @@ Merge that control PR before implementation merge.
 - Close: after the accepted repository SHA is on main, set the claim to
   `closed` with `merged_sha` and UTC `closed_at` on a `delivery-close` branch,
   then run `--intent close`. The check proves the reviewed candidate paths and
-  bytes were introduced by that recorded main commit. Keep the remote
+  bytes were introduced by that recorded main commit. Operations-only
+  closed-custody cleanup may instead use the independently reviewed immutable
+  completion evidence and originating-registry proof specified in
+  `docs/governance/WORKTREE_LIFECYCLE.md`; arbitrary empty candidates still fail.
+  Keep the remote
   implementation branch through close; if it was deleted, re-push the exact
   reviewed branch before retrying.
 - Evidence errata: the only way to amend a CLOSED package's one fixed

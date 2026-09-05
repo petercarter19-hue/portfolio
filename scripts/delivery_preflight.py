@@ -2123,6 +2123,161 @@ def _origin_claim(root: Path, package: str) -> dict:
     return _json_at_ref(root, "origin/main", claim_relative_path(package))
 
 
+def _operations_only_close_errors(
+    root: Path, claim: dict, receipt: dict, candidate: str, merged: str,
+    remote_tip: str, merged_paths: Iterable[str],
+) -> list[str]:
+    """Admit reviewed, immutable completed custody evidence, never an empty audit.
+
+    This local-operation exception needs the originating machine's registry;
+    unlike ordinary close, neither CI nor an uninitialized host can attest it.
+    It grants no retirement permission and never reconciles or changes custody.
+    """
+    lifecycle = lifecycle_registry
+    try:
+        if _is_ci_environment():
+            raise ValueError("operations completion requires local custody, not CI")
+        package = claim["package"]
+        evidence_path = evidence_relative_path(package)
+        receipt_path = receipt_relative_path(package)
+        if validate_receipt(receipt, claim) or receipt.get("review_type") != "independent":
+            raise ValueError("operations completion requires an independent pass")
+        if receipt.get("evidence_ref") != evidence_path:
+            raise ValueError("completion receipt must name the fixed evidence file")
+        if evidence_path not in merged_paths:
+            raise ValueError("merged_sha must introduce the reviewed completion evidence")
+        context = lifecycle._repo_context(root)
+        # A mutex-held read binds evidence to completed local custody. There is
+        # intentionally no CI/missing-registry fallback for this exception.
+        with lifecycle._registry_lock(context.registry_path):
+            registry = lifecycle._load_registry(context.registry_path)
+            if registry is None:
+                raise ValueError("operations completion requires an initialized registry")
+            lifecycle._assert_registry_identity(context, registry)
+            if registry.get("pending") is not None:
+                raise ValueError("operations completion refuses pending custody")
+            if not all(isinstance(item, dict) for item in registry["worktrees"]):
+                raise ValueError("operations completion refuses malformed registry custody")
+            lifecycle._closed_custody_cleanup_claim(
+                context, package=package, task_ref=claim["writer_ref"],
+                owner_authorization_ref=claim["owner_outcome_ref"],
+            )
+            lifecycle._validate_closed_custody_registry(registry)
+            # The evidence itself is reviewed: the ordinary evidence-tail
+            # allowance cannot change it after this completion candidate.
+            def exact_blob(path: str, refs: Iterable[str]) -> str:
+                blobs = []
+                for ref in refs:
+                    if not _tracked_regular_blob(root, ref, path):
+                        raise ValueError(f"completion requires ordinary Git blob: {path}")
+                    blobs.append(_git(root, "rev-parse", f"{ref}:{path}"))
+                if len(set(blobs)) != 1:
+                    raise ValueError(f"completion bytes changed: {path}")
+                return blobs[0]
+
+            exact_blob(evidence_path, (candidate, merged, "origin/main", remote_tip))
+            exact_blob(receipt_path, (merged, "origin/main", remote_tip))
+            raw = _git(root, "show", f"{candidate}:{evidence_path}")
+            blocks = re.findall(
+                r"^```peerslate-closed-custody-completion\s*\n(.*?)\n```[ \t]*$",
+                raw, flags=re.MULTILINE | re.DOTALL,
+            )
+            if len(blocks) != 1:
+                raise ValueError("one closed-custody completion JSON block is required")
+
+            def unique_object(pairs):
+                value = {}
+                for key, item in pairs:
+                    if key in value:
+                        raise ValueError("duplicate completion JSON key")
+                    value[key] = item
+                return value
+
+            completion = json.loads(blocks[0], object_pairs_hook=unique_object)
+            if (
+                not isinstance(completion, dict)
+                or set(completion) != {"schema_version", "package", "retirements"}
+                or type(completion["schema_version"]) is not int
+                or completion["schema_version"] != 1
+                or completion["package"] != package
+                or not isinstance(completion["retirements"], list)
+                or not completion["retirements"]
+            ):
+                raise ValueError("completion must contain non-empty exact custody evidence")
+            records = [
+                item for item in registry["worktrees"]
+                if isinstance(item.get("closed_custody_retirement"), dict)
+                and item["closed_custody_retirement"].get("cleanup_package") == package
+            ]
+            proofs = [item["closed_custody_retirement"] for item in records]
+            stable = lambda value: json.dumps(value, sort_keys=True)
+            if sorted(map(stable, proofs)) != sorted(map(stable, completion["retirements"])):
+                raise ValueError("completion evidence does not equal all recorded package retirements")
+            mechanisms = lifecycle.CLOSED_CUSTODY_REQUIRED_SURFACES | {
+                "scripts/delivery_preflight.py", "tests/test_delivery_preflight.py",
+            }
+            for record in records:
+                proof = lifecycle._validate_closed_custody_retirement(
+                    record["closed_custody_retirement"], record=record,
+                )
+                if sum(item.get("path") == proof["target_path"] for item in registry["worktrees"]) != 1:
+                    raise ValueError("completed target has duplicate registry custody")
+                lifecycle._unique_active_durable_record(
+                    registry, package=package, path=Path(proof["cleanup_path"]),
+                    branch=claim["branch"], task_ref=claim["writer_ref"], label="cleanup",
+                )
+                if (
+                    proof["cleanup_task_ref"] != claim["writer_ref"]
+                    or proof["cleanup_branch"] != claim["branch"]
+                    or proof["owner_authorization_ref"] != claim["owner_outcome_ref"]
+                ):
+                    raise ValueError("completed operation lost current cleanup authority")
+                authority = proof["authoritative_main"]
+                historical_claim = _json_at_ref(root, authority, claim_relative_path(package))
+                if _changed_fields(historical_claim, claim):
+                    raise ValueError("operation claim differs from current cleanup authority")
+                accepted = load_receipt_at_ref(root, authority, package)
+                if (
+                    accepted is None or validate_receipt(accepted, claim)
+                    or accepted.get("review_type") != "independent"
+                    or accepted.get("candidate_sha") != proof["reviewed_candidate"]
+                    or accepted.get("reviewer_ref") != proof["reviewer_ref"]
+                    or accepted.get("evidence_ref") != evidence_path
+                    or not _tracked_regular_blob(root, authority, evidence_path)
+                ):
+                    raise ValueError("operation lacks its accepted exact mechanism review")
+                for older, newer in (
+                    (authority, merged),
+                    (proof["reviewed_candidate"], proof["cleanup_head"]),
+                    (proof["cleanup_head"], candidate),
+                ):
+                    if not _is_ancestor(root, older, newer):
+                        raise ValueError("operation mechanism is not in accepted completion history")
+                for path in mechanisms:
+                    blob = exact_blob(path, (
+                        proof["reviewed_candidate"], authority, proof["cleanup_head"],
+                        candidate, merged, "origin/main", remote_tip,
+                    ))
+                    if path == "scripts/worktree_lifecycle.py" and blob != proof["lifecycle_script_blob"]:
+                        raise ValueError("operation lifecycle blob differs from accepted mechanism")
+                for ref in (authority, "origin/main"):
+                    target = _json_at_ref(root, ref, claim_relative_path(proof["target_package"]))
+                    if (
+                        target.get("state") != "closed"
+                        or target.get("writer_ref") != proof["source_task_ref"]
+                        or target.get("branch") != proof["target_branch"]
+                    ):
+                        raise ValueError("completed target lost its closed original custody")
+                path = Path(proof["target_path"])
+                if os.path.lexists(path) or lifecycle._worktree_at(root, path):
+                    raise ValueError("completed target is still present or registered")
+                if lifecycle._remote_branch_tip(context, proof["target_branch"]) != proof["expected_head"]:
+                    raise ValueError("completed target recovery branch no longer equals expected HEAD")
+        return []
+    except (lifecycle.Refusal, PreflightError, ValueError, KeyError, TypeError, OSError) as exc:
+        return ["close requires a non-empty reviewed candidate or valid operations completion: " + str(exc)]
+
+
 def _require_control_delta(
     *,
     root: Path,
@@ -2726,7 +2881,10 @@ def evaluate(
                             root, f"{merged_sha}^..{merged_sha}"
                         )
                         if not candidate_paths:
-                            errors.append("close requires a non-empty reviewed candidate")
+                            errors.extend(_operations_only_close_errors(
+                                root, before, receipt, candidate_sha, merged_sha,
+                                remote_tip, merged_paths,
+                            ))
                         outside = _scope_errors(
                             candidate_paths, before.get("surfaces", [])
                         )

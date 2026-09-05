@@ -143,13 +143,45 @@ closed package and the claim itself is never edited.
 the requested dedicated control branch and base. Run the one-claim transition
 there, then finalize it in the same task.
 
-For `close`, the merged receipt must identify a reviewed candidate with at
-least one non-evidence claimed surface that the claim's `merged_sha` introduced.
-An evidence-only audit tail is intentionally not a close candidate: merge the
-audit evidence first, then independently review and merge a final claimed
-lifecycle surface, update the receipt to that candidate, and close against that
-new merge. This keeps the close transition bound to reviewed package work
-instead of allowing evidence or receipt metadata alone to satisfy the gate.
+For ordinary `close`, the merged receipt must identify a reviewed candidate
+with at least one non-evidence claimed surface introduced by `merged_sha`.
+An arbitrary empty candidate or evidence-only audit still cannot close.
+
+An operations-only closed-custody cleanup has one narrow alternative. First
+merge its independently reviewed lifecycle mechanism and receipt, then perform
+only admitted `retire-closed-custody` operations from its active durable
+worktree. Synchronize that branch with accepted main. Copy **all** of this
+package's completed `closed_custody_retirement` proof objects from the local
+registry into its fixed evidence file, inside exactly one fenced block:
+
+````text
+```peerslate-closed-custody-completion
+{"schema_version": 1, "package": "<CLEANUP-PACKAGE>", "retirements": [<exact completed proof objects>]}
+```
+````
+
+Freeze and push that evidence-only completion candidate. Obtain an independent
+review of the exact completion evidence and custody (not a duplicate code
+review), update the package receipt to that candidate, and merge. Do not change
+the evidence after review. Close against the commit that introduced that
+evidence, using the ordinary leased `delivery-close` transition. Do not invent
+an unrelated code or documentation change just to satisfy close.
+
+The exception requires the originating initialized machine registry, even in
+CI; CI or a missing registry cannot attest local operations completion. It
+reads custody under the registry mutex and refuses pending state, empty or
+omitted operations, duplicate custody, or any mismatch with completed retired
+records and the current cleanup writer, owner, branch and durable worktree.
+Every original target must remain closed, absent from filesystem and Git, and
+recoverable at its exact current server branch tip. Each operation must carry
+its accepted historical independent mechanism review, distinct target-specific
+source-unavailability reference and original writer custody. The reviewed
+lifecycle surfaces, plus `delivery_preflight.py` and its tests, must be
+byte-identical at the mechanism candidate, operation authority/cleanup HEAD,
+completion candidate, merge, current main and preserved cleanup branch.
+Completion evidence must be identical at candidate/merge/main/branch, and its
+receipt identical at merge/main/branch. This is a close-only proof check; it
+does not retire anything, reconcile a registry or extend cleanup authority.
 
 ```powershell
 python scripts/worktree_lifecycle.py control --package "PS-EXAMPLE-001" --task-ref "session:<task-id>" --branch "work/2026-08-23-delivery-close-example-001" --base "origin/main" --execute
