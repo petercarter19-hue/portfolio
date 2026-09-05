@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-WORKTREE-OPERATIONS-CLOSE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Package manager and sole writer: session:01a07158-684b-74a2-a47e-7ca0e91889b7; overall Site Audit Manager: session:01a06e5b-05d4-7023-8266-2bd5d6abccbd. Correct only the operations-only cleanup close gate, binding independent exact-candidate review to accepted unchanged lifecycle mechanisms and immutable operations evidence while preserving ordinary non-empty code-candidate checks, exact source custody, server-tip, source-unavailability and owner authorization. Validate positive and negative cases, independently review, merge, then retire only individually eligible previously identified Windows closed durable worktrees through current governed tooling. Record refusals, close honestly, and retire this package worktree when eligible. Preserve paused, superseded, reassignment, ambiguous and residue-bearing work, all branches/refs, Mac cleanup and recovery evidence. No product, visual, deployment, production, schema, identity, resources/spending or plugin changes.",
   "assignment": "implementation",
   "writer_ref": "session:01a07158-684b-74a2-a47e-7ca0e91889b7",
@@ -34,6 +34,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "f73a124c23ac331bc80fe7d8097c766bc5214eaf",
+  "closed_at": "2026-09-05T13:11:11Z"
 }
