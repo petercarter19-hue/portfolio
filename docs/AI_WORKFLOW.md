@@ -19,23 +19,21 @@ operations._
 5. Report merge, deployment, schema, enablement, and live verification as
    separate states.
 
-No architecture pass, manager handoff, independent review, Candidate
-environment, specialist-document sweep, or full-site audit is universal. None
-is required unless its delivery path or package specifically triggers it.
+Specialist reviews and full-site audits are event-driven. None is required
+unless its delivery path or package specifically triggers it. Use
+[capability routing](AI_MODEL_AND_ROLE_ROUTING.md#capability-use) for model and tool choices.
 
 ## Concurrency and collision rule
 
-Any number of implementation writers may proceed when every active claim has a
-unique work branch, non-overlapping normalized paths, and non-overlapping
-hierarchical domains. There are no fixed writer, lane-class, shared-foundation,
-direction, or production-capable counts. Review-only tasks do not claim mutable
-surfaces.
+Any number of writers may proceed with unique branches, non-overlapping
+normalized paths and hierarchical domains. There are no fixed writer,
+lane-class, shared-foundation, direction or production-capable counts.
+Review-only tasks claim no mutable surfaces.
 
-Each package permanently owns its exact claim, receipt, and evidence paths;
-ordinary claims may not reserve another package's control records or a broad
-parent. Paused work releases product paths/domains but keeps its branch reserved
-until resume or close. Closed work releases implementation ownership, not its
-historical control namespace.
+Each package permanently owns its claim, receipt and evidence paths; other
+claims cannot reserve them or a broad parent. Paused work releases product
+paths/domains but reserves its branch. Closed work releases implementation
+ownership, not its historical control namespace.
 
 A collision is a stop for the colliding packages only. Disjoint main movement
 does not expire a reviewed candidate. Movement across one of its claimed
@@ -157,3 +155,6 @@ Stop only for an unclear owner outcome, active branch/path/domain collision,
 identity/privacy/authorization issue, unsafe migration or deletion, conflict
 between current authorities, missing locked material-visual authority, or a
 failed executable gate. Old packages and unrelated findings are not stops.
+
+Stop when the authorized outcome and required checks are complete. Repeat checks
+only for changed inputs, failures or unresolved requirements.

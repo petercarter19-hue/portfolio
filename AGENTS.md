@@ -82,6 +82,9 @@ handoffs are evidence, not additional gates.
 - Follow [AI model and role routing](docs/AI_MODEL_AND_ROLE_ROUTING.md). Overall
   audit manager, package manager, visual creator, architect, writer, reviewer,
   and release owner are separate assignments; no role silently inherits another.
+  Its capability-use section governs useful delegation, browser evidence,
+  continuity, goals and scheduling for Codex and Cursor agents. Keep that policy
+  canonical rather than copying it into host-specific rules.
 
 ## Local worktree lifecycle
 

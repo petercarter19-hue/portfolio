@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-AGENT-CAPABILITY-INSTRUCTIONS-001",
+  "candidate_sha": "5820a8fe60125b6df84d557b1718d2d534b6db29",
+  "review_type": "self",
+  "reviewer_ref": "session:01a06e5b-05d4-7023-8266-2bd5d6abccbd",
+  "result": "pass",
+  "reviewed_at": "2026-09-05T07:50:10Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-AGENT-CAPABILITY-INSTRUCTIONS-001.md"
+}

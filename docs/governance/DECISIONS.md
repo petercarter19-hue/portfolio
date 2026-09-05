@@ -967,3 +967,19 @@ can push it all the way to deployment."
   transitions must use the normal activation, durable-worktree, control,
   review, and merge gates. Read remains non-authorizing; malformed claims and
   every collision-preserving or collision-creating mutation remain fail-closed.
+
+## 2026-09-05 - Apply approved agent capability instructions
+
+- Pete approved the capability recommendations in
+  `session:01a06e5b-05d4-7023-8266-2bd5d6abccbd/pete-2026-09-05/capability-instructions`.
+  The bounded repository outcome is `PS-AGENT-CAPABILITY-INSTRUCTIONS-001`.
+- `docs/AI_MODEL_AND_ROLE_ROUTING.md` remains the canonical capability and
+  model policy: Astra is the default OpenAI model, Sol is optional, and Cursor
+  agents can be assigned full writer or independent-review roles. Use tools,
+  delegation and reasoning effort according to the task; retain exact review,
+  privacy, visual-authority, ownership and production boundaries.
+- Apply this through the existing startup and delivery documents. This approval
+  configures no models, integrations, goals or schedules and activates no
+  product implementation, production operation or historical proof. Pete wants
+  the remaining MVP and cleanup steps presented plainly for approval one at a
+  time; agreement with the overall plan is not activation of those steps.

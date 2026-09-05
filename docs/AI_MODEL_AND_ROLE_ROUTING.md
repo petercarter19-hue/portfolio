@@ -1,6 +1,6 @@
 # PeerSlate AI Model and Role Routing
 
-**Operational standard:** July 24, 2026
+**Operational standard:** September 5, 2026
 
 This is the central authority for model versions and stable delivery roles.
 Packages name roles, not model versions. Verify the available model and resolved
@@ -67,7 +67,7 @@ preference.
 
 | Primary outcome or evidence | Default package manager | Use when |
 |---|---|---|
-| Member experience and product readiness | **ChatGPT Work** | The package benefits materially from connected files, live or on-screen signed-in review, responsive or device evidence, voice or dictation testing, multi-source synthesis, owner decision capture, or coordination across visual and technical specialists. ChatGPT Work is the default package manager for substantial product and experience packages with these needs. |
+| Member experience and product readiness | **Codex or ChatGPT Work, according to available tools** | Choose the environment that can inspect the repository, authorized browser session, rendered states and supporting evidence needed by the package. Existing tools and useful continuity decide the assignment; a product package does not require a host transfer when its current manager can do the work. |
 | Repository and technical truth | **Codex** | The primary work is repository evidence, code, tests, security, schema, backend, protected operations, Azure PR/pipeline truth, or release reconciliation. Codex may manage a bounded technical package directly. |
 | Explicit Claude planning coordination | **Claude Co-Work** | The active package expressly assigns cross-artifact planning, architecture coordination, or a Claude-centered delivery lane. Claude Co-Work management is distinct from Claude Code writing. |
 
@@ -80,8 +80,14 @@ ChatGPT Work is not mandatory for every package. A Routine or simple Bounded
 package may be self-managed by its sole writer when a separate manager would
 only repeat the writer's review; the package still records that assignment.
 Being package manager grants no repository, writer, merge, release, deployment,
-credential, or production-operator authority. Codex or Claude writes only when
-the active package separately names that writer, branch, and mutable surface.
+credential, or production-operator authority. Codex, Cursor and Claude agents
+write only when the active package separately names that writer, branch, and
+mutable surface. Cursor agents may also serve as assigned independent reviewers;
+the reviewer remains read-only. Cursor follows the same locked-visual-authority
+rules. Models and agent environments are separate
+choices: verify model availability, tools, repository access and context in the
+actual environment. Azure remains authoritative; a cloud agent does not inherit
+local worktrees, iCloud files, browser sessions or task continuity automatically.
 
 Original ChatGPT is the sole creator of new or materially revised
 production-intent visual authority. It works directly with Pete during visual
@@ -106,6 +112,10 @@ physical-device-only actions. Those retained responsibilities do not make Pete
 the routine browser operator.
 
 ### Sealed synthetic-QA credential-broker exception
+
+The following is an exact package-specific contract, not standing authority for
+a new run or another task. Reverify its current claim and action-specific owner
+authority; general capability or model defaults never resume a preserved proof.
 
 `PS-SYNTHETIC-SEALED-GRAPH-DELETION-001`, as narrowly corrected by
 `PS-SYNTHETIC-SEALED-GRAPH-DELETION-CORRECTION-001`, is the complete-lifecycle
@@ -206,8 +216,8 @@ retains a screenshot, trace, download, DOM, browser profile, storage state,
 cookie, token, claim, network record, database row, Graph response, identity
 inventory, or mutation ledger. Repository implementation and review authorize
 no live run. This package's Protected control explicitly requires a fresh
-GPT-5.6 Sol, Ultra exact-SHA reviewer, overriding the general High-effort
-independent-review default below for this package only.
+GPT-5.6 Sol, Ultra exact-SHA reviewer, overriding the general OpenAI model
+routing below for this package only.
 
 The assigned browser-capable operator opens pages, navigates, clicks ordinary
 controls, manages tabs and refreshes, departs to and returns from public pages,
@@ -245,18 +255,59 @@ independent reviewer unless one of these triggers applies. The required
 pre-merge tests, complete-diff self-review, evidence, release truth, and
 rollback/stop controls remain in every applicable package.
 
-## Current OpenAI / Codex routing
+## Capability use
+
+Use available capabilities when they advance the authorized outcome. They add
+no automatic package, review cycle, configuration change or production authority.
+Follow the host's applicable tool and skill instructions; a documented feature
+is not proof that it is installed, connected or active here.
+
+| Capability | When and how to use it |
+|---|---|
+| Parallel agents | Delegate bounded independent research, diagnosis or review when it saves time or improves evidence. Name each deliverable and return point. Concurrent writers need approved disjoint branches, paths and domains; agents sharing a checkout cannot mutate it concurrently. |
+| Browser inspection | For affected user journeys, inspect rendered states, relevant desktop/mobile sizes, keyboard behavior, errors and degraded behavior. Use authorized sessions and the privacy and visual rules above. Report unavailable evidence honestly. |
+| Exact-candidate review | Freeze and identify the commit being reviewed. Use a fresh read-only reviewer when a risk, package or owner requirement applies. Changing a model or application alone is not independence; corrections require the affected evidence to be checked again. |
+| Governed worktrees | Reuse the package's registered durable worktree. Agent count does not justify extra checkouts. Codex or Cursor automatic creation and cleanup cannot replace `WORKTREE_LIFECYCLE.md`; preserve custody and use its tools. |
+| Continuity | Record material decisions, checkpoints and results once in exact-task continuity when available. Handoffs identify the source task, repository evidence and remaining work. Verify cross-machine imports; never transfer credentials or session-only authority. |
+| Goals | Create a tracked goal only when Pete explicitly requests one. Give it a bounded outcome and observable completion criteria; use a token budget only when requested. A goal does not authorize a new package or additional operations. |
+| Scheduling | Schedule later or recurring work only when Pete requests it. Define the trigger, evidence, useful output and action boundary. Start monitoring with a read-only change digest; a schedule grants no production or cleanup authority. |
+| Verification and stopping | Run required gates and focused behavioral checks proportional to the change. Broaden or repeat for changed inputs, failures or unresolved requirements. Stop when the authorized outcome and required checks are complete; do not add tests that merely restate the implementation or policy. |
+
+Continue independent work while awaiting a clarification; wait for answers that
+control a consequential decision. Incorporate owner corrections without losing
+the original outcome. Do not repeat an approval already supplied within its
+scope. Before adding an artifact, package or review pass, identify the unresolved
+requirement it closes; if there is none, do not add it. After three materially
+identical failures, stop retrying and report the blocker.
+
+## Current OpenAI model routing
 
 | Stable role | Current choice | Use |
 |---|---|---|
-| Architect | **GPT-5.6 Sol, Extra High** | New or materially changed product, data, privacy, or technical architecture |
-| Implementer | **GPT-5.6 Terra, Extra High** | Bounded repository implementation, tests, documentation, corrections, and closeout |
-| Independent reviewer | **Fresh GPT-5.6 Sol, High** | Exact-SHA, risk-triggered review and audit findings |
+| Architect | **GPT-6 Astra** | New or materially changed architecture; increase effort for difficult tradeoffs |
+| Implementer | **GPT-6 Astra** | Repository implementation, tests, documentation, corrections and closeout; start with moderate effort and use less for focused work |
+| Independent reviewer | **Fresh GPT-6 Astra, High** | Exact-SHA, risk-triggered review and audit findings; use deeper effort when the risk needs it |
 
-Use a smaller capable tool for read-only inventory, extraction, formatting, or
-test-log reduction. Do not lower a required role's evidence standard because a
-model, plan, or cost limit changes; record an exception and obtain direction
-when the specified role is unavailable.
+These are defaults, not a compulsory model hierarchy. Sol remains optional when
+actual availability, responsiveness or measured total effort supports it. Compare
+accepted outcomes, corrections, elapsed time and observed usage, including
+delegated work; neither cheaper tokens nor a benchmark proves lower PeerSlate
+task cost. Do not run duplicate implementations solely to fill model roles.
+
+Use the lowest reasoning effort that meets the task's evidence standard. Reserve
+Max for difficult reasoning and Ultra for substantial work with useful parallel
+parts; full capability use does not mean maximum effort on every task. A package
+that explicitly pins a model or review control keeps that requirement within
+its exact authorized scope. If it is unavailable, report the conflict rather
+than silently weakening it. Otherwise use an available capable option and state
+any material limitation. This policy changes no host settings or PeerSlate's
+runtime AI models.
+
+Capability references: [OpenAI model guidance](https://developers.openai.com/api/docs/guides/latest-model),
+[Codex models and effort](https://learn.chatgpt.com/docs/models),
+[Cursor rules and AGENTS.md](https://cursor.com/docs/rules), and
+[Cursor Azure DevOps integration](https://cursor.com/docs/integrations/azure-devops).
+Recheck changing availability and pricing when a decision depends on them.
 
 ## Current Claude routing
 
