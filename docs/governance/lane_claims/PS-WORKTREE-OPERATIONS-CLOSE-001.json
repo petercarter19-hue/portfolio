@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "package": "PS-WORKTREE-OPERATIONS-CLOSE-001",
+  "state": "active",
+  "outcome": "Package manager and sole writer: session:01a07158-684b-74a2-a47e-7ca0e91889b7; overall Site Audit Manager: session:01a06e5b-05d4-7023-8266-2bd5d6abccbd. Correct only the operations-only cleanup close gate, binding independent exact-candidate review to accepted unchanged lifecycle mechanisms and immutable operations evidence while preserving ordinary non-empty code-candidate checks, exact source custody, server-tip, source-unavailability and owner authorization. Validate positive and negative cases, independently review, merge, then retire only individually eligible previously identified Windows closed durable worktrees through current governed tooling. Record refusals, close honestly, and retire this package worktree when eligible. Preserve paused, superseded, reassignment, ambiguous and residue-bearing work, all branches/refs, Mac cleanup and recovery evidence. No product, visual, deployment, production, schema, identity, resources/spending or plugin changes.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a07158-684b-74a2-a47e-7ca0e91889b7",
+  "branch": "work/2026-09-05-worktree-operations-close-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "bbb9897e25bf3255614dccedf487f6f2b3a5c6c1",
+  "owner_outcome_ref": "session:01a07158-684b-74a2-a47e-7ca0e91889b7/delegation:2026-09-05/windows-cleanup-and-operations-close-correction",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-WORKTREE-OPERATIONS-CLOSE-001.json",
+    "docs/governance/lane_claims/receipts/PS-WORKTREE-OPERATIONS-CLOSE-001.json",
+    "docs/governance/lane_claims/evidence/PS-WORKTREE-OPERATIONS-CLOSE-001.md",
+    "AGENTS.md",
+    "START_HERE.md",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+    "scripts/worktree_lifecycle.py",
+    "tests/test_worktree_lifecycle.py",
+    "scripts/delivery_preflight.py",
+    "tests/test_delivery_preflight.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-WORKTREE-OPERATIONS-CLOSE-001.md"
+  ],
+  "domains": [
+    "governance:delivery:closed-custody-retirement",
+    "tooling:worktree-lifecycle:closed-custody-retirement",
+    "tooling:delivery-preflight:operations-close"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
