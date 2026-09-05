@@ -1,15 +1,19 @@
 {
   "schema_version": 1,
   "package": "PS-WORKTREE-OPERATIONS-CLOSE-001",
-  "candidate_sha": "78cb3f49ce916cf0283cbe64ab6c392c2fefe2ca",
+  "candidate_sha": "31e80b182958697889c14c5b282ed4a2764faed8",
   "review_type": "independent",
   "reviewer_ref": "agent:/root/operations_close_review",
   "result": "pass",
-  "reviewed_at": "2026-09-05T12:44:07Z",
+  "reviewed_at": "2026-09-05T13:01:27Z",
   "findings": [
     {
       "status": "informational",
       "summary": "Exact candidate code review PASS with no actionable findings. Reviewer confirmed validation condition satisfied: final 210 preflight tests pass including corrected missing-registry case, plus 63 passing lifecycle tests on unchanged final lifecycle files. The combined older-import run one-error result is disclosed in evidence. No repeat suite or code review required. Later operations evidence needs its own exact-candidate review."
+    },
+    {
+      "status": "informational",
+      "summary": "Independent exact completion-evidence review PASS31e80b182958697889c14c5b282ed4a2764faed8 at main4076248d87743c54ecfe2ee36a7cc5f8fddba359 with no actionable findings. Sole evidence delta and all five manifest proofs match retired local custody; pending null; targets absent disk/Git; original identities and local/server tips preserved; source-report hashes/references match; seven accepted mechanism surfaces unchanged; byte totals reconcile; remaining scope and physical-recovery limits truthful. Evidence frozen after review."
     }
   ],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-WORKTREE-OPERATIONS-CLOSE-001.md"
