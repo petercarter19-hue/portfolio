@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-HISTORICAL-CHECKOUT-RETIREMENT-001",
-  "state": "active",
+  "state": "paused",
   "outcome": "Manager/writer session:01a07158-684b-74a2-a47e-7ca0e91889b7; return to Site Audit Manager session:01a06e5b-05d4-7023-8266-2bd5d6abccbd. Selected successor after PS-WORKTREE-OPERATIONS-CLOSE-001 close: add a Protected retirement command for an independently reviewed immutable allowlist of pristine named-branch server-tip-recoverable init-grandfathered observations with null package/task/lease. Require exact repository custody and no conflicting claim/custody. Preserve historical identity and all refs; journal ordinary non-force removal and reprove recovery. Validate, review, merge, retire individually eligible targets, record results and residual choices, close and retire own worktree. Exclude unregistered, detached, unique, dirty, nested, reparse, primary, control, Synthetic, paused, superseded, reassignment and protected work. No adoption, product, visual, production, deployment, schema, identity, resource, plugin, tracked-evidence deletion, history rewrite, Git GC or ref deletion.",
   "assignment": "implementation",
   "writer_ref": "agent:cursor/9d26b0e2-7c9b-48f0-8270-d6e950b5a74b",
@@ -37,7 +37,7 @@
     "checkpoint_sha": "cd17e72a2e8e65c2a234439e6bfbc71943d99721",
     "relinquished": true
   },
-  "checkpoint_sha": null,
+  "checkpoint_sha": "cd17e72a2e8e65c2a234439e6bfbc71943d99721",
   "merged_sha": null,
   "closed_at": null
 }
