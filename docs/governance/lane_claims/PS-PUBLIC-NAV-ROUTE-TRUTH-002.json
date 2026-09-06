@@ -32,7 +32,10 @@
     "tests/test_auth.py",
     "tests/test_search_visibility.py",
     "tests/test_owner_home.py",
-    "tests/test_homepage_scenes.py"
+    "tests/test_homepage_scenes.py",
+    "templates/homepage.html",
+    "templates/partials/homepage/_story_future_scene.html",
+    "templates/experience.html"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-PUBLIC-NAV-ROUTE-TRUTH-002.md"
