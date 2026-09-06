@@ -3,10 +3,17 @@
 Use this for a change, not a read-only discussion.
 
 - [ ] Checked branch, status, Azure origin/main, and preserved unrelated work.
+- [ ] Recorded the exact package, manager, role, task reference, and next
+  authorized outcome. Selected the current role default from
+  `AI_MODEL_AND_ROLE_ROUTING.md` and verified the effective model and effort
+  in this task. Missing inspection is `unavailable`; a safe unfamiliar model
+  label stays the observed label. Did not churn settings or warm caches.
 - [ ] Ran the read-only lifecycle audit when locally initialized; reused the
   package's one registered durable worktree with `ensure` or exact `adopt`, and
-  did not create an ad hoc checkout. Unrelated grandfathered worktrees are not
-  a global stop.
+  inspected `ensure.environment_readiness` for that exact worktree. Did not
+  create an ad hoc checkout. Unavailable optional readiness does not change
+  custody or grant authority. Unrelated grandfathered worktrees are not a
+  global stop.
 - [ ] Read `CURRENT_BASELINE.yaml`, `CURRENT_LANES.json`, and the exact package
   claim; chose Routine, Bounded, or Protected.
 - [ ] For implementation edits, passed `delivery_preflight.py --package
@@ -53,7 +60,12 @@ Use this for a change, not a read-only discussion.
   exact production operation.
 - [ ] Planned same-task `finalize-task` for temporary resources. After close,
   any durable retirement uses the exact registered path/task/HEAD and ordinary
-  non-force Git removal only; a refusal preserves the worktree.
+  non-force Git removal only; a refusal preserves the worktree. Planned to
+  carry the exact-session `usage_summary` into the completion record and to
+  select each child session explicitly once.
+- [ ] For a complete cross-platform transfer, verified the receiver's exact
+  task, platform/account/project/repository access, effective role setting, and
+  explicit acceptance. Transferred no credential or session-only authority.
 
 For a new outcome, merge a one-claim activation before creating its worktree.
 For a real authority expansion, transfer, owner reassignment, pause, resume, or
@@ -64,3 +76,8 @@ Authority expansion applies only to a claim Pete explicitly narrowed to
 `write_only` and requires a new opaque owner decision reference.
 Stop on a genuine collision or trust-boundary problem, not an unrelated
 historical gate.
+
+Use compact event-driven updates for a decision, meaningful state change,
+failure, completion, or required owner action. Do not add acknowledgement
+loops, duplicate review, unrelated audits, cache warmers, or status-only
+monitoring.

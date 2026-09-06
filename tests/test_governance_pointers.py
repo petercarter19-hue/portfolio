@@ -28,18 +28,18 @@ def _read(*parts):
 
 class LeanStartupTests(unittest.TestCase):
     def test_supported_agents_enter_through_one_start_file(self):
-        for filename in ("AGENTS.md", "CLAUDE.md"):
-            body = _read(filename)
-            self.assertIn("MANDATORY PRE-WORK GATE", body)
-            self.assertIn("START_HERE", body)
-            self.assertIn("CURRENT_BASELINE.yaml", body)
-            self.assertIn("Routine", body)
-            self.assertIn("Bounded", body)
-            self.assertIn("Protected", body)
-            self.assertIn("control-only", body)
-            self.assertIn("--intent read", body)
-            self.assertIn("matching", body)
-            self.assertIn("control intent", body)
+        body = _read("AGENTS.md")
+        self.assertIn("MANDATORY PRE-WORK GATE", body)
+        self.assertIn("START_HERE", body)
+        self.assertIn("CURRENT_BASELINE.yaml", body)
+        for term in ("Routine", "Bounded", "Protected", "control-only"):
+            self.assertIn(term, body)
+        self.assertIn("--intent read", body)
+        claude = _read("CLAUDE.md")
+        self.assertIn("@AGENTS.md", claude)
+        self.assertIn("@docs/AI_WORKFLOW.md", claude)
+        self.assertIn("MANDATORY PRE-WORK GATE", claude)
+        self.assertLess(len(claude.split()), 300)
 
     def test_manager_and_specialist_routing_is_visible_at_startup(self):
         body = _read("AGENTS.md")
@@ -65,10 +65,11 @@ class LeanStartupTests(unittest.TestCase):
 
     def test_workflow_has_three_paths_and_no_universal_specialist_gate(self):
         body = _read("docs", "AI_WORKFLOW.md")
+        normalized = " ".join(body.split())
         for term in ("Routine", "Bounded", "Protected"):
             self.assertIn(term, body)
-        self.assertIn("unless its delivery path or package specifically triggers it", body)
-        self.assertIn("None blocks unrelated Routine or Bounded work", body)
+        self.assertIn("unless its delivery path or package specifically triggers it", normalized)
+        self.assertIn("None blocks unrelated Routine or Bounded work", normalized)
         self.assertIn("Documentation-only closeout", body)
         self.assertIn("[skip ci]", body)
         self.assertIn("Do not restart App Service merely to publish bookkeeping", body)
@@ -190,7 +191,6 @@ class ControlPlaneTests(unittest.TestCase):
 
         for parts in (
             ("AGENTS.md",),
-            ("CLAUDE.md",),
             ("START_HERE.md",),
             ("docs", "governance", "AGENT_STARTUP_CHECKLIST.md"),
             ("docs", "governance", "PEERSLATE_OWNER_DELIVERY_GUIDE.md"),
@@ -201,6 +201,7 @@ class ControlPlaneTests(unittest.TestCase):
             self.assertRegex(normalized, r"(?:no fixed|no numeric|unlimited|any number)")
             self.assertIn("collision", normalized, "/".join(parts))
             self.assertIn("production", normalized, "/".join(parts))
+        self.assertIn("@AGENTS.md", _read("CLAUDE.md"))
 
         active_packages = []
         claims_root = _path("docs", "governance", "lane_claims")
@@ -243,11 +244,11 @@ class ProductTrustTests(unittest.TestCase):
             "records its manager at its next handoff",
             "Selection is based on the package outcome and evidence needed",
             "ChatGPT Work is not mandatory for every package",
-            "Codex is the default manager when the primary outcome is repository truth",
-            "Claude Co-Work management is distinct from Claude Code writing",
+            "Assigned capable environment",
+            "No hidden Codex manager or Codex supervisory approval is required",
             "Visual assignment does not make Original ChatGPT the package manager",
             "Being package manager grants no repository, writer, merge, release, deployment, credential, or production-operator authority",
-            "The package manager returns one package-exit record to the overall site-audit manager",
+            "The accepted package assigns its manager and writer explicitly",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, body)
@@ -304,7 +305,6 @@ class ProductTrustTests(unittest.TestCase):
     def test_chatgpt_remains_material_visual_creator(self):
         for parts in (
             ("AGENTS.md",),
-            ("CLAUDE.md",),
             ("docs", "AI_WORKFLOW.md"),
             ("docs", "AI_MODEL_AND_ROLE_ROUTING.md"),
             ("docs", "governance", "OWNER_VISUAL_INTEGRITY_STANDARD.md"),
@@ -313,6 +313,7 @@ class ProductTrustTests(unittest.TestCase):
             self.assertIn("ChatGPT", body)
             self.assertRegex(body, r"(?i)creat(e|es|or)")
             self.assertRegex(body, r"(?i)material")
+        self.assertIn("@AGENTS.md", _read("CLAUDE.md"))
         authority = " ".join(
             _read("docs", "AI_MODEL_AND_ROLE_ROUTING.md").split()
         )
@@ -331,6 +332,83 @@ class ProductTrustTests(unittest.TestCase):
         self.assertIn("Gate Candidate applies to a release", body)
         self.assertIn("Routine and Bounded releases", body)
         self.assertIn("do not require a Candidate admission record", body)
+
+
+class WorkflowEfficiencyTests(unittest.TestCase):
+    def test_launcher_uses_current_gate_without_stale_friction(self):
+        body = _read("CODEX_PROMPT.md")
+        for stale in (
+            "CURRENT_STATE.md",
+            "ACTIVE_INITIATIVES.md",
+            "delete the branch immediately",
+            "ask before creating",
+        ):
+            self.assertNotIn(stale, body)
+        self.assertIn("current Azure `origin/main`", body)
+        self.assertIn("continue through tests", body)
+        self.assertIn("eligible lifecycle", body)
+
+    def test_openai_role_defaults_require_actual_runtime_verification(self):
+        body = " ".join(_read("docs", "AI_MODEL_AND_ROLE_ROUTING.md").split())
+        self.assertIn("Manager | **GPT-6 Astra, Medium**", body)
+        self.assertIn("Implementer | **Sol, High**", body)
+        self.assertIn("Delegated helper | **Sol, Medium**", body)
+        self.assertNotIn("current central manager has Pete's explicit", body)
+        self.assertIn("verify the effective runtime setting", body)
+        self.assertIn("inherited parent setting", body)
+        self.assertIn("do not churn a setting", body)
+
+    def test_complete_transfer_requires_access_acceptance_without_credentials(self):
+        bodies = [
+            _read("docs", "AI_WORKFLOW.md"),
+            _read("docs", "AI_MODEL_AND_ROLE_ROUTING.md"),
+            _read("docs", "governance", "MANAGER_SESSION_HANDOFF.md"),
+            _read("docs", "governance", "PEERSLATE_OWNER_DELIVERY_GUIDE.md"),
+        ]
+        joined = " ".join(body.lower() for body in bodies)
+        self.assertIn("without a hidden codex supervisor", joined)
+        self.assertIn("receiver acceptance", joined)
+        self.assertIn("project/repository access", joined)
+        self.assertIn("session-only authority", joined)
+        self.assertIn("credentials", joined)
+        manager = parse_yaml_subset(
+            _read("docs", "governance", "CURRENT_BASELINE.yaml")
+        )["manager"]
+        self.assertIn("Any supported environment", manager["eligible_tools"])
+        self.assertIn("access-verified", manager["eligible_tools"])
+
+    def test_usage_and_completion_fields_preserve_subset_and_evidence_boundaries(self):
+        completion = " ".join(
+            _read(
+                "docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md"
+            ).lower().split()
+        )
+        self.assertIn("cached-input subset", completion)
+        self.assertIn("reasoning-output subset already included in output", completion)
+        self.assertIn("never a live-usage", completion)
+        self.assertIn("merge-gate claim", completion)
+        self.assertIn("known waiting", completion)
+        self.assertIn("never infer waiting", completion)
+        for field in ("accepted outcome", "rework", "interventions"):
+            self.assertIn(field, completion)
+
+    def test_event_driven_reporting_and_single_continuity_pointer(self):
+        routing = _read("docs", "AI_MODEL_AND_ROLE_ROUTING.md")
+        normalized = " ".join(routing.lower().split())
+        for term in (
+            "acknowledgement loops",
+            "periodic model turns",
+            "cache warmers",
+            "duplicate reviews",
+            "unrelated audits",
+        ):
+            self.assertIn(term, normalized)
+        self.assertEqual(
+            routing.lower().count("session-continuity:session-continuity"), 1
+        )
+        self.assertIn("session-health advisories are approximate, non-gating", normalized)
+        self.assertIn("continuity never transfers authorization or ownership", normalized)
+        self.assertNotIn(r"c:\users", routing.lower())
 
 
 class NoGlobalFreezeTests(unittest.TestCase):
@@ -362,7 +440,7 @@ class NoGlobalFreezeTests(unittest.TestCase):
     def test_handoff_and_completion_are_proportional(self):
         handoff = _read("docs", "governance", "MANAGER_SESSION_HANDOFF.md")
         completion = _read("docs", "templates", "OWNER_TECHNICAL_COMPLETION_REPORT.md")
-        self.assertIn("Use this only when another task will continue", handoff)
+        self.assertIn("Use this only when ownership changes", handoff)
         self.assertIn("Protected additions - only when applicable", completion)
         self.assertLess(len(handoff.split()), 300)
         self.assertLess(len(completion.split()), 350)

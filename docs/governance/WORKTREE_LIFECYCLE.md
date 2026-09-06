@@ -79,7 +79,10 @@ Registry and lifecycle mutation commands require `--execute`; without it they
 do not change a worktree or registry. Runtime `verify` is the narrow exception:
 `--runtime-required` plus its trailing command is the explicit action. Use the
 same exact `--task-ref` throughout one task. Commands emit JSON; a guarded
-refusal exits with code 2.
+refusal exits with code 2. Optional readiness and usage reports are captured
+inline only, run with bytecode-cache writes disabled, and time out after 45
+seconds. Missing or failed optional reporting never changes an already
+successful lifecycle payload or exit code.
 
 ### Initialize and grandfather
 
@@ -131,6 +134,15 @@ moved branch, or dirty source is a refusal.
 ```powershell
 python scripts/worktree_lifecycle.py ensure --package "PS-EXAMPLE-001" --task-ref "session:<writer-task-id>" --execute
 ```
+
+After custody completes and the registry lock is released, a successful
+`ensure` runs the read-only `agent_environment_readiness.py` helper against
+the exact returned durable worktree. The JSON response is appended as
+`environment_readiness`. It may inspect Git, lifecycle audit, read preflight,
+sparse support, and fixed Azure DevOps GET access. It never calls `ensure`,
+`finalize-task`, stages a probe, writes a report file, or proves write
+permission. A refusal or any other lifecycle subcommand runs no readiness
+helper.
 
 ### Lease `_control` for a claim transition
 
@@ -185,14 +197,19 @@ does not retire anything, reconcile a registry or extend cleanup authority.
 
 ```powershell
 python scripts/worktree_lifecycle.py control --package "PS-EXAMPLE-001" --task-ref "session:<task-id>" --branch "work/2026-08-23-delivery-close-example-001" --base "origin/main" --execute
-python scripts/worktree_lifecycle.py finalize-task --task-ref "session:<task-id>" --execute
+python scripts/worktree_lifecycle.py finalize-task --task-ref "session:<task-id>" --usage-session-id "<explicit-child-session-uuid>" --execute
 ```
 
 `finalize-task` releases only that task's clean lease, leaves `_control`
 pristine at its current branch/SHA for the next guarded repoint, and retires
 only that task's clean managed ephemeral verifiers. It reports and preserves
 any residue, mismatch, or ambiguity. It never retires a durable package
-worktree or another task's resource.
+worktree or another task's resource. After a successful finalization releases
+its lock, it appends `usage_summary` for the exact UUID in a
+`session:<UUID>` task ref plus each explicitly repeated
+`--usage-session-id`. Duplicate selections are counted once. It reads only
+the selected structured session metadata; missing telemetry is unavailable.
+Incomplete or refused finalization runs no usage helper.
 
 ### Prepare an owner-reassignment successor
 

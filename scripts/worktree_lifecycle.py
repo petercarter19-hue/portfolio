@@ -31,12 +31,17 @@ REGISTRY_RELATIVE_PATH = Path("peerslate") / "worktree_registry.json"
 LOCK_DIRECTORY_NAME = "worktree_registry.lock"
 REFUSAL_EXIT = 2
 GIB = 1024**3
+REPORT_TIMEOUT_SECONDS = 45
 
 PACKAGE_RE = re.compile(r"^PS-[A-Z0-9]+(?:-[A-Z0-9]+)*$")
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,79}$")
 WORK_BRANCH_RE = re.compile(r"^(?:work|codex)/[a-z0-9][a-z0-9._/-]*$")
 DELIVERY_REF_RE = re.compile(r"^(?:task|session|agent|role):[A-Za-z0-9._:/-]{3,180}$")
+SESSION_UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 OWNER_REASSIGNMENT_CONTROL_BRANCH_RE = re.compile(
     r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-owner-reassignment-[a-z0-9-]+$"
 )
@@ -6778,6 +6783,146 @@ def command_evidence_path(
     }
 
 
+def _unavailable_report(reason: str) -> dict[str, Any]:
+    return {"status": "unavailable", "reason": reason}
+
+
+def _run_optional_json_report(
+    helper_name: str,
+    arguments: Sequence[str],
+    *,
+    cwd: Path,
+    timeout_seconds: int = REPORT_TIMEOUT_SECONDS,
+) -> tuple[dict[str, Any], int | None]:
+    helper = Path(__file__).resolve().with_name(helper_name)
+    if not helper.is_file():
+        return _unavailable_report("helper_missing"), None
+    environment = os.environ.copy()
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    try:
+        result = subprocess.run(
+            [sys.executable, "-B", str(helper), *arguments],
+            cwd=str(cwd),
+            text=True,
+            encoding="utf-8",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            timeout=timeout_seconds,
+            env=environment,
+        )
+    except subprocess.TimeoutExpired:
+        return _unavailable_report("helper_timeout"), None
+    except (OSError, subprocess.SubprocessError):
+        return _unavailable_report("helper_unavailable"), None
+    try:
+        report = json.loads(result.stdout)
+    except (json.JSONDecodeError, UnicodeError):
+        return _unavailable_report("helper_output_invalid"), result.returncode
+    if not isinstance(report, dict):
+        return _unavailable_report("helper_output_invalid"), result.returncode
+    return report, result.returncode
+
+
+def _append_startup_readiness(
+    payload: dict[str, Any],
+    args: argparse.Namespace,
+) -> None:
+    try:
+        worktree = Path(str(payload["path"])).resolve()
+    except (KeyError, OSError, RuntimeError, ValueError):
+        payload["environment_readiness"] = _unavailable_report(
+            "durable_worktree_unavailable"
+        )
+        return
+    report, helper_code = _run_optional_json_report(
+        "agent_environment_readiness.py",
+        (
+            "--repo",
+            str(worktree),
+            "--package",
+            args.package,
+            "--task-ref",
+            args.task_ref,
+            "--operation",
+            "write",
+            "--format",
+            "json",
+        ),
+        cwd=worktree,
+    )
+    environment_status = report.get("environment_status")
+    status_matches_exit = (
+        helper_code == 0 and environment_status == "pass"
+    ) or (
+        helper_code == REFUSAL_EXIT
+        and environment_status in {"fail", "unavailable"}
+    )
+    payload["environment_readiness"] = (
+        report if status_matches_exit else _unavailable_report("helper_result_invalid")
+    )
+
+
+def _session_id_from_task_ref(task_ref: str) -> str | None:
+    prefix = "session:"
+    candidate = task_ref[len(prefix) :] if task_ref.startswith(prefix) else ""
+    return candidate.lower() if SESSION_UUID_RE.fullmatch(candidate) else None
+
+
+def _selected_usage_session_ids(args: argparse.Namespace) -> list[str]:
+    selected: list[str] = []
+    default_session = _session_id_from_task_ref(args.task_ref)
+    candidates = ([default_session] if default_session else []) + list(
+        args.usage_session_id
+    )
+    for candidate in candidates:
+        normalized = str(candidate).lower()
+        if normalized not in selected:
+            selected.append(normalized)
+    return selected
+
+
+def _codex_sessions_root() -> Path:
+    configured_home = os.environ.get("CODEX_HOME")
+    if configured_home:
+        return Path(configured_home).expanduser().resolve() / "sessions"
+    return Path.home().resolve() / ".codex" / "sessions"
+
+
+def _append_completion_usage(
+    payload: dict[str, Any],
+    args: argparse.Namespace,
+    *,
+    cwd: Path,
+) -> None:
+    session_ids = _selected_usage_session_ids(args)
+    if not session_ids:
+        payload["usage_summary"] = _unavailable_report(
+            "exact_session_id_not_selected"
+        )
+        return
+    arguments: list[str] = [
+        "--sessions-root",
+        str(_codex_sessions_root()),
+        "--format",
+        "json",
+    ]
+    for session_id in session_ids:
+        arguments.extend(("--session-id", session_id))
+    report, helper_code = _run_optional_json_report(
+        "agent_usage_summary.py",
+        arguments,
+        cwd=cwd,
+    )
+    report_status = report.get("status")
+    status_matches_exit = (
+        helper_code == 0 and report_status in {"available", "partial"}
+    ) or (helper_code == REFUSAL_EXIT and report_status == "unavailable")
+    payload["usage_summary"] = (
+        report if status_matches_exit else _unavailable_report("helper_result_invalid")
+    )
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -6883,6 +7028,12 @@ def _parser() -> argparse.ArgumentParser:
 
     finalize = subparsers.add_parser("finalize-task", help="release/retire this task's temporary resources")
     finalize.add_argument("--task-ref", required=True)
+    finalize.add_argument(
+        "--usage-session-id",
+        action="append",
+        default=[],
+        help="exact additional team session UUID; repeat once per selected child",
+    )
     finalize.add_argument("--execute", action="store_true")
 
     evidence = subparsers.add_parser("evidence-path", help="allocate a bounded external evidence path")
@@ -6931,6 +7082,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             payload, code = command_evidence_path(context, args), 0
         else:  # pragma: no cover - argparse guarantees this
             raise Refusal("unknown subcommand")
+        if code == 0 and args.subcommand == "ensure":
+            try:
+                _append_startup_readiness(payload, args)
+            except Exception:
+                payload["environment_readiness"] = _unavailable_report(
+                    "reporting_unavailable"
+                )
+        elif code == 0 and args.subcommand == "finalize-task":
+            try:
+                _append_completion_usage(payload, args, cwd=context.root)
+            except Exception:
+                payload["usage_summary"] = _unavailable_report(
+                    "reporting_unavailable"
+                )
         print(json.dumps({"ok": code == 0, **payload}, indent=2, sort_keys=True))
         return code
     except Refusal as error:

@@ -29,7 +29,7 @@ authenticated_workshop_fg_proof:
 
 manager:
   role: "package_designated_session_manager"
-  eligible_tools: "ChatGPT Work/Codex or Claude Co-Work when the package assigns the role"
+  eligible_tools: "Any supported environment explicitly assigned and access-verified under docs/AI_MODEL_AND_ROLE_ROUTING.md; no platform inherits repository or production authority"
   owner_decision_date: "2026-07-31"
   delivery_model: "lean_risk_based_self_managed_writer"
   responsibilities: "Resolve real cross-lane ownership, product, visual-authority, and protected-risk decisions; do not duplicate ordinary writer review."

@@ -1,47 +1,41 @@
 @AGENTS.md
 @docs/AI_WORKFLOW.md
+@docs/governance/CURRENT_BASELINE.yaml
+@docs/governance/DOCUMENT_CONTROL.md
 
 > **MANDATORY PRE-WORK GATE**
-> Follow [`START_HERE.md`](START_HERE.md) before a write, migration,
-> deployment, or product decision. Fetch Azure `origin/main`, read
-> `CURRENT_BASELINE.yaml` and `DOCUMENT_CONTROL.md`, choose Routine, Bounded
-> or Protected, and read the package claim. Before implementation edits, pass
-> the exact `delivery_preflight.py --intent write --fetch --require-clean`
-> command. For a control-only activation/state transition, run `--intent read`
-> before editing, commit only the exact claim on its dedicated control branch,
-> then pass the matching control intent before PR; do not edit implementation
-> surfaces in that control commit.
+> Follow `START_HERE.md` before any write or consequential decision. Read the
+> exact active claim and pass the required preflight. Root `AGENTS.md` and its
+> canonical routing pointer control shared rules; this file adds only Claude
+> host details.
 
-`DOCUMENT_CONTROL.md` identifies the governing Constitution and
-Roadmap. Historical documents remain evidence, not extra gates.
+Use the current baseline and document control to resolve the active Constitution and
+Roadmap. Do not revive historical parallel state files.
 
 # Claude / Claude Code instructions
 
-Claude Code may own an explicitly assigned branch and claimed surfaces. An
-implementation assignment normally continues through implementation,
-validation, review correction, Azure PR, and accepted merge. A review-only or
-narrower assignment does only what it says. Independent reviewers are
-read-only and need no writer claim.
+Claude may manage, architect, implement, or independently review only the role
+the active package assigns. A complete authorized transfer may give an accepted
+Claude manager the bounded package through ordinary closeout without a Codex
+supervisor. Repository writer, review, production, and credential authority
+remain separate.
 
-The writer validates and completes one self-review. A manager handoff occurs
-only for a real ownership transfer, conflict, risk trigger, package rule, or
-owner request.
+Before a major package, confirm the effective Claude model and mode with
+`/model` and `/status`. Record unavailable settings honestly. Do not switch
+models or modes merely to repeat accepted work.
 
-There is no fixed writer count. Proceed when branches, paths, and hierarchical
-domains are disjoint; stop on an actual collision. Preserve other work and use
-the generic claim authorize, transfer, pause, resume, and close transitions when
-state changes. Keep a paused branch and its exact checkpoint intact, and retain
-the reviewed remote implementation branch until claim close.
-Handoffs use package, task reference, branch, exact pushed SHA, and explicit
-relinquishment. They do not require a person's or account's identity.
+A real ownership transfer proves the exact Azure repository and branch source,
+the receiving Claude task and stable organization/project/account context
+needed to demonstrate access, and explicit receiver acceptance. Do not record a
+legal name or email when a non-personal platform/project identifier suffices.
+Never transfer credentials, MFA, tokens, cookies, browser state, or session-only
+authority.
 
-For protected data, identity, privacy, authorization, migration, deletion,
-publication, consequential AI, shared infrastructure, or materially revised
-visual direction, follow the named package and specialist authority. ChatGPT
-creates materially revised production-intent visual authority; Claude
-implements the accepted authority.
+An assigned writer continues through implementation, focused tests, one self-review
+of the complete diff, accepted corrections, required review, Azure PR,
+accepted merge, evidence, and closeout unless the claim is narrower. A reviewer
+is read-only. Report meaningful events compactly and stop when the required
+outcome is complete.
 
-Azure DevOps is repository authority. Never push directly to `main`. A merge
-does not deploy: production deployment is manual-only and requires an exact
-main SHA plus Pete's explicit authorization reference. Never stage secrets,
-credentials, `.env`, or `.claude/launch.json`.
+Azure DevOps is repository authority. Never push directly to `main`. Merge,
+deployment, schema, enablement, and live proof remain separate states.

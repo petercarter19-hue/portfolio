@@ -1,49 +1,36 @@
 # PeerSlate Manager/Writer Handoff
 
-Use this only when another task will continue an active branch, take shared
-surfaces, or resolve a real cross-claim decision. A self-managed implementation
-writer continuing through PR and merge needs no handoff.
+Use this only when ownership changes.
+Use this only when another task will continue an active branch. A writer
+continuing its own package needs no handoff.
 
 ## Required transfer record
 
-- Package and one-sentence outcome
-- Routine, Bounded, or Protected
-- Opaque from/to task references and explicit relinquishment
-- Branch, authoritative base SHA, and exact pushed checkpoint SHA
-- Claimed and forbidden paths/domains
-- Completed work and verification
-- Open finding or owner decision
-- Repository state and production state, separately
-- One next action
+- Package, status, delivery path, outcome, scope, exclusions, and one next action
+- Exact from/to task references, assigned manager/writer/reviewer roles, and
+  explicit relinquishment when it is a voluntary transfer
+- Receiving platform plus the stable account/organization, project and
+  repository identifiers needed to prove access; avoid personal identity when
+  durable non-personal identifiers suffice
+- Configured model/effort and how the effective setting was verified; state
+  unavailable evidence honestly
+- Authoritative base, branch, exact pushed checkpoint SHA, changed files,
+  tests, review evidence, open findings, and separate PR/pipeline/deployment/live
+  states
+- Receiver access proof and explicit acceptance before the receiver writes
 
-Do not require or record a person's legal name, account identity, email,
-credential, MFA, token, cookie, or session material. Chat history alone is not
-an ownership transfer.
+Never transfer passwords, MFA, tokens, cookies, browser state, private session
+files, or session-only authority. Chat history, a created task, or a zero exit
+code is not receiver acceptance.
 
-For an in-place transfer, the prior writer first commits, pushes, and stops.
-From current main, create a dedicated
-`work/YYYY-MM-DD-delivery-transfer-<slug>` control branch. Change only the
-claim's `writer_ref` and `handoff` object. The handoff must contain opaque
-`from_ref` and `to_ref` values, the exact pushed `checkpoint_sha`, and
-`relinquished: true`. Commit, then run:
+A complete authorized cross-platform transfer lets the accepted receiver manage
+the bounded package through architecture within scope, implementation,
+verification, review coordination, corrections, Azure PR/merge, evidence and
+closeout. It does not require the originating Codex manager to remain active.
+Independent review and owner/production gates still apply.
 
-```bash
-python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent transfer --fetch --require-clean
-```
-
-Merge the one-claim control PR before the receiver writes. Stop if the pushed
-SHA, relinquishment, or collision proof is missing.
-
-## Owner-reassignment recovery
-
-Owner reassignment is not a voluntary transfer and must never assert
-relinquishment. Use it only with Pete's exact opaque authorization and the
-fail-closed `prepare-owner-reassignment` protocol in `START_HERE.md` and
-`WORKTREE_LIFECYCLE.md`.
-
-That protocol proves the fetched old checkpoint, creates an absent successor
-branch non-force, preserves the old branch and worktree, and records an exact
-`owner_reassignment` handoff while changing only `writer_ref`, `branch`, and
-`handoff`. Merge the one-claim recovery PR before receiver `ensure` or writes.
-Any collision, race, moved ref, dirty source, missing preparation proof, or
-ambiguous registry state is a stop.
+For a voluntary writer transfer, push the checkpoint and use the one-claim
+`transfer` transition in `START_HERE.md`. For recovery without relinquishment,
+use its fail-closed `owner-reassignment` protocol. Merge the control PR before
+the receiver writes; stop on missing acceptance, access, source, custody, or
+collision proof.

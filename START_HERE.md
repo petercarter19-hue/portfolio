@@ -148,7 +148,12 @@ python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent activate --
 
 Merge the control PR, then run `worktree_lifecycle.py ensure --package
 <PACKAGE-ID> --task-ref <WRITER-REF> --execute` to create or return the one
-durable implementation worktree. There is no numeric writer, class, or
+durable implementation worktree. Its `environment_readiness` field is the
+automatic read-only startup observation for that exact worktree. Assess
+`fail` or `unavailable` against the requested operation; only the existing
+preflight and custody rules gate work. The observation never rolls back
+successful custody or proves authority.
+There is no numeric writer, class, or
 production-capable-lane cap. Disjoint writers may all proceed. Duplicate
 branches, overlapping claimed paths, and hierarchical domain collisions fail
 closed. Reviewers consume no writer claim and default to Azure or the pushed
@@ -381,7 +386,12 @@ verification are separate truthful states.
 
 Use `docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md` once. Record outcome,
 base/final SHA, changed paths, tests, review, PR/merge state, deployment state,
-honest limits, and next action. Stop for a real ownership, privacy,
+honest limits, next action, and the non-gating `usage_summary` returned by
+`worktree_lifecycle.py finalize-task`. An exact `session:<UUID>` task ref
+selects the root session automatically; repeat `--usage-session-id <UUID>`
+only for explicitly selected child sessions. Do not infer missing waiting,
+outcome, rework, intervention, model, or cost evidence from token counters.
+Stop for a real ownership, privacy,
 authorization, migration, deletion, or material-visual conflict - not an
 unrelated historical record.
 

@@ -10,6 +10,16 @@ applied.
 - Outcome and member/site effect:
 - Package manager and why (including ChatGPT Work yes/no when relevant):
 - Triggered specialists and return target:
+- Exact root and selected child session IDs, configured model/effort by role,
+  and effective-setting verification (or `unavailable`):
+- Optional observed local usage summary: input tokens, cached-input subset,
+  output tokens, and reasoning-output subset already included in output; or an
+  honest unavailable reason. This is never a live-usage, quota, billing, price,
+  invoice, or merge-gate claim:
+- Observed elapsed time and known waiting, with source pointers. Never infer
+  waiting from silence, timestamp gaps, or token totals:
+- Accepted outcome, rework, and interventions, with bounded completion-evidence
+  or manual source pointers; otherwise `unavailable`:
 - Branch, base SHA, final SHA, and changed paths:
 - Verification performed and result:
 - Release state: local only / PR / merged / pipeline verified / live verified

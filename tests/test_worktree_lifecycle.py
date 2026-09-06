@@ -1,6 +1,7 @@
 import copy
 import contextlib
 import importlib.util
+import io
 import json
 import os
 import subprocess
@@ -21,6 +22,13 @@ LIFECYCLE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 sys.modules[SPEC.name] = LIFECYCLE
 SPEC.loader.exec_module(LIFECYCLE)
+
+
+def invoke(*arguments: str) -> tuple[int, dict]:
+    output = io.StringIO()
+    with contextlib.redirect_stdout(output):
+        code = LIFECYCLE.main(arguments)
+    return code, json.loads(output.getvalue())
 
 
 def git(root: Path, *arguments: str) -> str:
@@ -5940,6 +5948,271 @@ class ControlCustodyTests(unittest.TestCase):
             broken['control_custody_transitions'] = bad
             with self.assertRaises(LIFECYCLE.Refusal):
                 LIFECYCLE.validate_control_custody_registry(broken)
+
+
+ROOT_SESSION = "01a0783a-f99a-71a1-8124-2e58ec64f06b"
+CHILD_SESSION = "01a0783c-0195-7e51-b4e6-56e824c8c1f8"
+
+
+class LifecycleReportingHookTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory(prefix="lifecycle-reporting-")
+        self.root = Path(self.temporary.name)
+        self.context = SimpleNamespace(root=self.root)
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    @staticmethod
+    def readiness_result(status: str = "pass") -> subprocess.CompletedProcess[str]:
+        code = 0 if status == "pass" else LIFECYCLE.REFUSAL_EXIT
+        return subprocess.CompletedProcess(
+            args=[],
+            returncode=code,
+            stdout=json.dumps(
+                {
+                    "schema_version": 1,
+                    "environment_status": status,
+                    "operation_authority": "unproven",
+                    "checks": [],
+                }
+            ),
+            stderr="",
+        )
+
+    @staticmethod
+    def usage_result(status: str = "available") -> subprocess.CompletedProcess[str]:
+        code = 0 if status in {"available", "partial"} else LIFECYCLE.REFUSAL_EXIT
+        return subprocess.CompletedProcess(
+            args=[],
+            returncode=code,
+            stdout=json.dumps(
+                {
+                    "schema_version": 1,
+                    "status": status,
+                    "sessions_selected": 1,
+                    "sessions_available": 1 if code == 0 else 0,
+                }
+            ),
+            stderr="",
+        )
+
+    def test_successful_ensure_runs_readiness_after_command_and_preserves_payload(self):
+        events: list[str] = []
+
+        def ensured(_context, _args):
+            events.append("custody_complete")
+            return {"status": "created", "path": str(self.root), "head": "a" * 40}
+
+        def ran(command, **kwargs):
+            events.append("report_started")
+            self.assertEqual(command[1], "-B")
+            self.assertEqual(command[-2:], ["--format", "json"])
+            self.assertEqual(kwargs["timeout"], LIFECYCLE.REPORT_TIMEOUT_SECONDS)
+            self.assertEqual(kwargs["env"]["PYTHONDONTWRITEBYTECODE"], "1")
+            return self.readiness_result()
+
+        with (
+            patch.object(LIFECYCLE, "_repo_context", return_value=self.context),
+            patch.object(LIFECYCLE, "command_ensure", side_effect=ensured),
+            patch.object(LIFECYCLE.subprocess, "run", side_effect=ran),
+        ):
+            code, payload = invoke(
+                "--repo",
+                str(self.root),
+                "ensure",
+                "--package",
+                "PS-TEST-001",
+                "--task-ref",
+                f"session:{ROOT_SESSION}",
+                "--execute",
+            )
+
+        self.assertEqual(code, 0)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["head"], "a" * 40)
+        self.assertEqual(payload["environment_readiness"]["environment_status"], "pass")
+        self.assertEqual(events, ["custody_complete", "report_started"])
+
+    def test_refused_ensure_and_audit_never_run_optional_reporting(self):
+        with (
+            patch.object(LIFECYCLE, "_repo_context", return_value=self.context),
+            patch.object(
+                LIFECYCLE,
+                "command_ensure",
+                side_effect=LIFECYCLE.Refusal("synthetic refusal"),
+            ),
+            patch.object(LIFECYCLE, "command_audit", return_value={"status": "ok"}),
+            patch.object(LIFECYCLE.subprocess, "run") as runner,
+        ):
+            refused_code, refused = invoke(
+                "--repo",
+                str(self.root),
+                "ensure",
+                "--package",
+                "PS-TEST-001",
+                "--task-ref",
+                f"session:{ROOT_SESSION}",
+                "--execute",
+            )
+            audit_code, audit = invoke("--repo", str(self.root), "audit")
+
+        self.assertEqual(refused_code, LIFECYCLE.REFUSAL_EXIT)
+        self.assertFalse(refused["ok"])
+        self.assertNotIn("environment_readiness", refused)
+        self.assertEqual(audit_code, 0)
+        self.assertTrue(audit["ok"])
+        self.assertNotIn("environment_readiness", audit)
+        self.assertNotIn("usage_summary", audit)
+        runner.assert_not_called()
+
+    def test_incomplete_finalize_never_runs_usage_reporting(self):
+        custody = {
+            "status": "incomplete",
+            "task_ref": f"session:{ROOT_SESSION}",
+            "retained": [{"path": "bounded", "blockers": ["synthetic"]}],
+        }
+        with (
+            patch.object(LIFECYCLE, "_repo_context", return_value=self.context),
+            patch.object(
+                LIFECYCLE,
+                "command_finalize_task",
+                return_value=(custody, LIFECYCLE.REFUSAL_EXIT),
+            ),
+            patch.object(LIFECYCLE.subprocess, "run") as runner,
+        ):
+            code, payload = invoke(
+                "--repo",
+                str(self.root),
+                "finalize-task",
+                "--task-ref",
+                f"session:{ROOT_SESSION}",
+                "--execute",
+            )
+        self.assertEqual(code, LIFECYCLE.REFUSAL_EXIT)
+        self.assertFalse(payload["ok"])
+        self.assertNotIn("usage_summary", payload)
+        runner.assert_not_called()
+
+    def test_successful_finalize_selects_root_and_explicit_child_once(self):
+        commands: list[list[str]] = []
+
+        def ran(command, **_kwargs):
+            commands.append(command)
+            return self.usage_result()
+
+        with (
+            patch.object(LIFECYCLE, "_repo_context", return_value=self.context),
+            patch.object(
+                LIFECYCLE,
+                "command_finalize_task",
+                return_value=(
+                    {"status": "complete", "task_ref": f"session:{ROOT_SESSION}"},
+                    0,
+                ),
+            ),
+            patch.object(LIFECYCLE.subprocess, "run", side_effect=ran),
+        ):
+            code, payload = invoke(
+                "--repo",
+                str(self.root),
+                "finalize-task",
+                "--task-ref",
+                f"session:{ROOT_SESSION}",
+                "--usage-session-id",
+                ROOT_SESSION,
+                "--usage-session-id",
+                CHILD_SESSION,
+                "--usage-session-id",
+                CHILD_SESSION,
+                "--execute",
+            )
+
+        self.assertEqual(code, 0)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["status"], "complete")
+        self.assertEqual(payload["usage_summary"]["status"], "available")
+        command = commands[0]
+        selected = [
+            command[index + 1]
+            for index, value in enumerate(command)
+            if value == "--session-id"
+        ]
+        self.assertEqual(selected, [ROOT_SESSION, CHILD_SESSION])
+
+    def test_timeout_and_nonzero_pass_claim_stay_non_gating_and_unavailable(self):
+        custody = {"status": "complete", "task_ref": f"session:{ROOT_SESSION}"}
+        cases = (
+            subprocess.TimeoutExpired(cmd=["python"], timeout=1),
+            RuntimeError("sensitive unexpected helper failure"),
+            subprocess.CompletedProcess(
+                args=[],
+                returncode=9,
+                stdout=json.dumps({"status": "available"}),
+                stderr="sensitive detail must not surface",
+            ),
+        )
+        for failure in cases:
+            with self.subTest(failure=type(failure).__name__):
+                runner_patch = (
+                    patch.object(LIFECYCLE.subprocess, "run", side_effect=failure)
+                    if isinstance(failure, BaseException)
+                    else patch.object(LIFECYCLE.subprocess, "run", return_value=failure)
+                )
+                with (
+                    patch.object(LIFECYCLE, "_repo_context", return_value=self.context),
+                    patch.object(
+                        LIFECYCLE,
+                        "command_finalize_task",
+                        return_value=(custody.copy(), 0),
+                    ),
+                    runner_patch,
+                ):
+                    before = sorted(
+                        path.relative_to(self.root) for path in self.root.rglob("*")
+                    )
+                    code, payload = invoke(
+                        "--repo",
+                        str(self.root),
+                        "finalize-task",
+                        "--task-ref",
+                        f"session:{ROOT_SESSION}",
+                        "--execute",
+                    )
+                    after = sorted(
+                        path.relative_to(self.root) for path in self.root.rglob("*")
+                    )
+                    self.assertEqual(code, 0)
+                    self.assertTrue(payload["ok"])
+                    self.assertEqual(payload["status"], "complete")
+                    self.assertEqual(payload["usage_summary"]["status"], "unavailable")
+                    self.assertEqual(before, after)
+                    self.assertNotIn("sensitive", json.dumps(payload))
+
+    def test_non_session_task_ref_reports_honest_unavailable_without_scanning(self):
+        with (
+            patch.object(LIFECYCLE, "_repo_context", return_value=self.context),
+            patch.object(
+                LIFECYCLE,
+                "command_finalize_task",
+                return_value=({"status": "complete", "task_ref": "task:test"}, 0),
+            ),
+            patch.object(LIFECYCLE.subprocess, "run") as runner,
+        ):
+            code, payload = invoke(
+                "--repo",
+                str(self.root),
+                "finalize-task",
+                "--task-ref",
+                "task:test",
+                "--execute",
+            )
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            payload["usage_summary"],
+            {"status": "unavailable", "reason": "exact_session_id_not_selected"},
+        )
+        runner.assert_not_called()
 
 
 if __name__ == "__main__":

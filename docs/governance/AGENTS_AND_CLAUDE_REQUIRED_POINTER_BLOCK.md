@@ -1,10 +1,15 @@
-# Required pointer block for AGENTS.md and CLAUDE.md
+# Required pointer block for root agent instructions
 
 > **MANDATORY PRE-WORK GATE**
-> Before a write, code change, migration, deployment, or product decision, open
-> `/START_HERE.md`, inspect the checkout, fetch authoritative `origin/main`,
-> and read `docs/governance/CURRENT_BASELINE.yaml`. Classify the work as
-> Routine, Bounded, or Protected; then read only the assigned package and
-> specialist authority that the path requires. Stop for a real ownership,
-> privacy, authorization, migration, or visual-authority conflict. Use
-> `/docs/templates/OWNER_TECHNICAL_COMPLETION_REPORT.md` proportionately.
+> Before a write or consequential decision, open `/START_HERE.md`, inspect the
+> checkout, establish current Azure `origin/main`, and read the current
+> baseline, lanes, exact claim, and only the triggered specialist authority.
+> Use the claim's exact task reference and required preflight. Follow the
+> central role/model and capability policy through
+> `/docs/AI_MODEL_AND_ROLE_ROUTING.md`; verify the effective model and effort
+> in the actual task. Use the proportional completion record once. Stop for a
+> real failed gate, collision, trust boundary, or missing consequential
+> decision.
+
+Keep shared policy in root `AGENTS.md`; host-specific files import or point to
+it and must not copy the complete policy.

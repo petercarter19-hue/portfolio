@@ -5,18 +5,19 @@ operations._
 
 ## Default flow
 
-Accepted assignments have equivalent lifecycle/delivery capabilities across
-runtimes; coordination grants no exclusive privilege. Preserve actual caller
-identity, independent handoff/recovery review, and receiver acceptance.
+Equivalent assignments keep the same lifecycle across runtimes; coordination
+grants no exclusive privilege. Preserve actual caller identity and reviewed
+acceptance.
 `docs/governance/WORKTREE_LIFECYCLE.md` governs lost-task custody recovery;
 `START_HERE.md` governs required-check repair admission, retaining Azure CI and
-branch policies. Configuration or identity strings alone do not prove access.
+branch policies. Configuration does not prove access.
 
 1. Follow `START_HERE.md`, fetch Azure main, preserve unrelated work, and read
    the current package claim.
 2. Choose Routine, Bounded, or Protected. On an initialized developer machine,
    reuse the package's one registered durable worktree and pass its exact
-   writer `--task-ref` to mutating preflight.
+   writer `--task-ref` to mutating preflight. `ensure` includes
+   non-gating read-only readiness.
 3. The assigned writer implements, validates, self-reviews the complete diff,
    corrects findings, opens the PR, and merges accepted work.
 4. Add an independent exact-SHA review only when Protected risk, the package,
@@ -148,9 +149,10 @@ fetched checkpoint, and reruns collisions. Preserve the remote implementation
 branch through close so squash-merge byte proof remains reproducible. If it was
 deleted, re-push the exact reviewed branch before retrying close.
 
-Record outcome, base/final SHA, changed paths, tests, review, PR/merge and
-deployment states, limits, and next action once. Candidate, Launch, Operate, Retire, visual acceptance,
-and full-site audits are event-driven. None blocks unrelated Routine or Bounded work.
+Record outcome, SHAs, changes, tests, review, release states, limits, next
+action, and exact-session `finalize-task` usage or unavailable once. Candidate,
+Launch, Operate, Retire, visual acceptance, and full-site audits are
+event-driven. None blocks unrelated Routine or Bounded work.
 
 ## Stop conditions
 

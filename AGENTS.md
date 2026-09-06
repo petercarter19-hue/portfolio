@@ -113,6 +113,10 @@ handoffs are evidence, not additional gates.
   `git worktree add`. Reuse the active package's one registered durable full
   worktree through `scripts/worktree_lifecycle.py ensure`, or use exact
   bookkeeping-only `adopt` when its claim branch already has a worktree.
+- A successful `ensure` returns an inline `environment_readiness` observation
+  for the exact durable worktree. Inspect it before the requested operation.
+  It is read-only evidence and cannot grant authority or change successful
+  custody when optional authentication or network evidence is unavailable.
 - Reviewers default to the immutable Azure/pushed diff and create no worktree.
   They may share the package worktree read-only only when coordinated with its
   writer and there is no concurrent mutation. Runnable isolation leases the
@@ -122,6 +126,10 @@ handoffs are evidence, not additional gates.
   mutex- and task-leased `_control` singleton. Successful temporary work is
   finalized in the same task; a refusal preserves the exact path and reports
   the blocker.
+- A successful `finalize-task` appends inline usage for an exact session task
+  reference and only explicitly selected child session IDs. Missing local
+  telemetry is reported as unavailable and never changes lifecycle success,
+  merge authority, or a billing claim.
 - Owner reassignment is a fail-closed recovery, not a voluntary transfer. It
   requires Pete's exact opaque authorization reference, preserves the old
   branch and old-writer worktrees, creates a distinct absent successor branch

@@ -273,7 +273,7 @@ is not proof that it is installed, connected or active here.
 | Browser inspection | For affected user journeys, inspect rendered states, relevant desktop/mobile sizes, keyboard behavior, errors and degraded behavior. Use authorized sessions and the privacy and visual rules above. Report unavailable evidence honestly. |
 | Exact-candidate review | Freeze and identify the commit being reviewed. Use a fresh read-only reviewer when a risk, package or owner requirement applies. Changing a model or application alone is not independence; corrections require the affected evidence to be checked again. |
 | Governed worktrees | Reuse the package's registered durable worktree. Agent count does not justify extra checkouts. Codex or Cursor automatic creation and cleanup cannot replace `WORKTREE_LIFECYCLE.md`; preserve custody and use its tools. |
-| Continuity | Record material decisions, checkpoints and results once in exact-task continuity when available. Handoffs identify the source task, repository evidence and remaining work. Verify cross-machine imports; never transfer credentials or session-only authority. |
+| Continuity | Use the host-resolved `session-continuity:session-continuity` skill when available; report it unavailable when absent. Session-health advisories are approximate, non-gating evidence. Keep coherent work in its current task while it remains healthy; judge a sensible phase boundary or signs of confusion before an explicit handoff. If Pete intentionally chooses to stay, record that choice through the exact-session continuity command and suppress the unchanged condition. Continuity never transfers authorization or ownership automatically. |
 | Goals | Create a tracked goal only when Pete explicitly requests one. Give it a bounded outcome and observable completion criteria; use a token budget only when requested. A goal does not authorize a new package or additional operations. |
 | Scheduling | Schedule later or recurring work only when Pete requests it. Define the trigger, evidence, useful output and action boundary. Start monitoring with a read-only change digest; a schedule grants no production or cleanup authority. |
 | Verification and stopping | Run required gates and focused behavioral checks proportional to the change. Broaden or repeat for changed inputs, failures or unresolved requirements. Stop when the authorized outcome and required checks are complete; do not add tests that merely restate the implementation or policy. |
@@ -290,15 +290,20 @@ identical failures, stop retrying and report the blocker.
 | Stable role | Current choice | Use |
 |---|---|---|
 | Architect | **GPT-6 Astra** | New or materially changed architecture; increase effort for difficult tradeoffs |
-| Manager | **GPT-6 Astra, Medium** | Default OpenAI package management; exceptions require Pete's direction. The current central manager has Pete's explicit **Astra, High** override. |
+| Manager | **GPT-6 Astra, Medium** | Required OpenAI management default. An exception requires Pete's explicit per-session choice after the concrete need is explained. |
 | Implementer | **Sol, High** | Repository implementation, tests, documentation, corrections and closeout |
 | Delegated helper | **Sol, Medium** | Bounded supporting work under the assigned writer or manager |
 | Independent reviewer | **Fresh GPT-6 Astra, High** | Exact-SHA, risk-triggered review and audit findings; use deeper effort when the risk needs it |
 
-Apply these assignments without changing host settings automatically. Preserve
-Pete's explicit exceptions within their assigned scope. Compare accepted
-outcomes, corrections, elapsed time and observed usage, including delegated
-work; do not run duplicate implementations solely to fill model roles.
+At supported launch or session change, select the assigned model and effort and
+verify the effective runtime setting. Handoff labels, inherited parent settings,
+and requested values are not verification; unavailable inspection stays unverified. Preserve
+Pete's explicit exceptions and do not churn a setting that is verified and correct.
+
+Compare accepted outcomes, corrections, elapsed time and observed usage,
+including delegated work. Report compactly on state changes, completed evidence,
+or required action. Do not create duplicate implementations, duplicate reviews,
+acknowledgement loops, periodic model turns, cache warmers, or unrelated audits.
 
 An assigned writer with through-merge repository authority completes routine
 commit, push, PR and accepted merge without another Pete approval pause.
@@ -435,6 +440,11 @@ Every substantial handoff contains:
 5. tests and exact results, evidence, and accepted deviations;
 6. findings, risks, conflicts, stop controls, and next action; and
 7. PR, pipeline, deployment, and live status stated separately.
+
+A complete transfer also records actual receiver platform/account context,
+project/repository access, acceptance, and source relinquishment. Credentials
+and session-only authority never travel. The accepted receiver may complete
+ordinary delivery without a hidden Codex supervisor or active originating task.
 
 ## PS-AI-OPS requirements
 

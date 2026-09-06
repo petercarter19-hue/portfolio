@@ -15,6 +15,13 @@ no overlapping hierarchical domain. Disjoint work proceeds independently.
 | Explicitly narrower task | Only the boundary Pete or the claim states. |
 | Production operation | Never inherited from repository work; Pete separately authorizes the exact action and SHA. |
 
+A complete owner-authorized package transfer to Cursor, Claude, Grok, or
+another supported environment may make its accepted manager responsible for
+the bounded package through closeout. It needs no Codex supervisor. Verify the
+receiving task, actual platform/account/project/repository access, exact
+source, configured and effective model/effort, and explicit acceptance first.
+Portable instructions never make credentials or session authority portable.
+
 Independent review remains useful without becoming another waiting writer. The
 reviewer reads the frozen SHA and evidence, returns findings, and does not own
 the implementation branch. The writer corrects findings and records the final
@@ -97,8 +104,12 @@ package's claim, receipt, and evidence paths remain permanently package-owned.
 ### Transfer ownership
 
 > The prior writer pushed [SHA] and relinquishes [package]. Transfer the claim
-> from task reference [from] to [to], preserving branch and scope. Do not record
-> or request a person's account identity or credentials.
+> from exact task reference [from] to [to], preserving branch and scope. Record
+> receiver [platform/task], the stable non-secret account/organization,
+> project, and repository identifiers used to verify access, configured and
+> effective model/effort, the successful source-access check, and explicit
+> receiver acceptance. Do not request or transfer credentials, MFA, tokens,
+> cookies, browser state, private session files, or session-only authority.
 
 ### Recover ownership without relinquishment
 
