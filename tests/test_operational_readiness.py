@@ -72,7 +72,7 @@ class GitleaksConfigurationTests(unittest.TestCase):
         # suite reused the qualification suite's call idiom with its own
         # actor literals, which the deliberately narrow member-[ab] class
         # does not cover. Same shape, own file, own actor class.
-        self.assertEqual(10, len(allowlists))
+        self.assertEqual(11, len(allowlists))
         self.assertEqual(
             {
                 'description': (
@@ -197,6 +197,7 @@ class GitleaksConfigurationTests(unittest.TestCase):
         audit_scan_line = '^\\n?- \\[OK\\] Pattern scan of the extracted origin/main tree \\(excluding `tests/`, `docs/`\\) for `Account[K]ey=`, `SharedAccessSignature`, `sk-ant-api`, AWS `AKIA…`, private-[k]ey blocks, `Instrumentation[K]ey=`, `Pwd=`/`Password=`, `DefaultEndpointsProtocol=`, `Server=tcp:`, hardcoded `SECRET_KEY` literals: \\*\\*no suspicious hits\\*\\*\\. The only `\\.database\\.windows\\.net` matches are hostname-suffix normalization constants in `db\\.py:26-27` and `scripts/apply_sql_migrations\\.py:142-143` — config parsing, not credentials\\.\\r?$'
 
         expected = {
+            r'^tests/test_living_resume_editor_service\.py$': ['^\\n?RECORD_[K]EY = "163429f8-dd55-4415-9f68-e4653af47a88"\\r?$', '^\\n?PARENT_[K]EY = "07078187-e956-43e3-9d3e-a22b260788d1"\\r?$'],
             audit_scan_path: [audit_scan_line],
             r'^services/community_cursor\.py$': [
                 r'^\s*token,\s+max_age='
@@ -260,6 +261,38 @@ class GitleaksConfigurationTests(unittest.TestCase):
                 allowlist,
                 'a commit-pinned allowlist cannot survive a squash merge',
             )
+
+
+    def test_living_resume_uuid_allowlist_rejects_path_and_assignment_drift(self):
+        import re
+
+        with open(os.path.join(ROOT, '.gitleaks.toml'), 'rb') as config_file:
+            entry = tomllib.load(config_file)['allowlists'][-1]
+        path = 'tests/test_living_resume_editor_service.py'
+        # Build synthetic assignment strings without adding scanner findings
+        # to this regression module itself.
+        fixtures = (
+            ('RECORD', '163429f8-dd55-4415-9f68-e4653af47a88'),
+            ('PARENT', '07078187-e956-43e3-9d3e-a22b260788d1'),
+        )
+
+        def allows(candidate_path, line):
+            return (any(re.search(pattern, candidate_path) for pattern in entry['paths'])
+                    and any(re.search(pattern, line) for pattern in entry['regexes']))
+
+        for name, value in fixtures:
+            line = name + '_KEY = "' + value + '"'
+            with self.subTest(name=name):
+                self.assertTrue(allows(path, line))
+                self.assertTrue(allows(path, line + '\r'))
+                for other_path in ('tests/other.py', path.upper(), 'prefix/' + path, path + '.bak'):
+                    self.assertFalse(allows(other_path, line))
+                for changed in (line.lower(), line.replace(' = ', '='), ' ' + line,
+                                line.replace(value, value[:-1] + '0'),
+                                line.replace(name, 'OTHER'), line.replace('"', "'"),
+                                line + '; api_' + 'key = "' + 'synthetic-credential-123456789abcdef' + '"',
+                                line + ' # trailing text'):
+                    self.assertFalse(allows(path, changed))
 
 
 class OperationalHealthRouteTests(unittest.TestCase):

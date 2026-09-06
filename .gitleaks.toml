@@ -154,3 +154,14 @@ condition = "AND"
 paths = ['''^artifacts/2026-08-03-overnight-site-azure-audit/D-repo-tests-deps\.md$''']
 regexTarget = "line"
 regexes = ['''^\n?- \[OK\] Pattern scan of the extracted origin/main tree \(excluding `tests/`, `docs/`\) for `Account[K]ey=`, `SharedAccessSignature`, `sk-ant-api`, AWS `AKIA…`, private-[k]ey blocks, `Instrumentation[K]ey=`, `Pwd=`/`Password=`, `DefaultEndpointsProtocol=`, `Server=tcp:`, hardcoded `SECRET_KEY` literals: \*\*no suspicious hits\*\*\. The only `\.database\.windows\.net` matches are hostname-suffix normalization constants in `db\.py:26-27` and `scripts/apply_sql_migrations\.py:142-143` — config parsing, not credentials\.\r?$''']
+
+[[allowlists]]
+description = "Known non-secret Living Resume editor record and parent UUID fixtures; exact assignments only."
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^tests/test_living_resume_editor_service\.py$''']
+regexTarget = "line"
+regexes = [
+  '''^\n?RECORD_[K]EY = "163429f8-dd55-4415-9f68-e4653af47a88"\r?$''',
+  '''^\n?PARENT_[K]EY = "07078187-e956-43e3-9d3e-a22b260788d1"\r?$''',
+]
