@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-STUDIO-001",
+  "state": "active",
+  "outcome": "Deliver the approved MVP1 Package 1 repository-only nonvisual private resume command foundation, managed by session 01a07722-6290-7751-811e-4c4767adfadd and written by agent:codex/mvp1-resume-backend/01a07722-6290-7751-811e-4c4767adfadd/resume_backend_writer: owner editor read with concurrency tokens and atomic, idempotent create, update, and private removal for roles, accomplishments, skills, and credentials in the existing canonical career domain. Derive identity server-side, preserve member wording, keep records private and unpublished, reject foreign or forged parents and exposed, relation-bearing, or publication-history-bearing records, require credential completion state, and return typed no-store outcomes. Register proposed additive SQL with gate null; no SQL execution or proof is authorized. Exclude configuration and flags, UI, public adapters, publication, AI and providers, identities and live data, deployment, and production. Repository completion is not runtime or pilot readiness.",
+  "assignment": "implementation",
+  "writer_ref": "agent:codex/mvp1-resume-backend/01a07722-6290-7751-811e-4c4767adfadd/resume_backend_writer",
+  "branch": "work/2026-09-06-resume-studio-private-commands",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "c86af0d2ed1da057a6a052c0dd9ef8d69f9f3218",
+  "owner_outcome_ref": "session:01a06e5b-05d4-7023-8266-2bd5d6abccbd/delegation:2026-09-06/proceed-mvp1-package1-backend-through-merge",
+  "surfaces": [
+    "peerslate_api.py",
+    "services/database_service.py",
+    "services/living_resume_editor_service.py",
+    "tests/test_peerslate_api.py",
+    "tests/test_database_service.py",
+    "tests/test_living_resume_editor_service.py",
+    "tests/test_living_resume_editor_migration.py",
+    "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-001_private_commands.sql",
+    "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-001_private_commands_rollback.sql",
+    "SQL FIles/Verification/PS-RESUME-EDIT-001_private_commands_verify.sql",
+    "SQL FIles/Migrations/registry.json",
+    "docs/governance/lane_claims/PS-RESUME-STUDIO-001.json",
+    "docs/governance/lane_claims/evidence/PS-RESUME-STUDIO-001.md",
+    "docs/governance/lane_claims/receipts/PS-RESUME-STUDIO-001.json"
+  ],
+  "domains": [
+    "runtime:living-resume:private-editor-commands",
+    "schema:living-resume:private-editor-commands",
+    "privacy:living-resume:private-drafts",
+    "testing:living-resume:private-editor-commands"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-RESUME-STUDIO-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
