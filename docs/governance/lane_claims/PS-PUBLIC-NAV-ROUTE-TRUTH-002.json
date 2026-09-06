@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "package": "PS-PUBLIC-NAV-ROUTE-TRUTH-002",
+  "state": "active",
+  "outcome": "Manager session:01a0771f-2e74-7370-a55d-b64ac140ea52; sole writer agent:/root/nav_writer. Deliver existing-design nonvisual navigation and safe sign-in returns using the existing server destination mechanism across shell, account, launchpad, search, mobile and noscript. Preserve /app fallback pending real member Profile, My Story and Feed. Remove Capture, Slate Board and Workshop navigation promotion; preserve saved content, shared onboarding voice/input, safe legacy links and privacy. Journal excluded; Projects deferred. Leave all four preview routes, referring card/template and their sitemap behavior unchanged. Complete governed activation, implementation, targeted tests, independent exact-SHA review, accepted merge and close without routine owner commit/merge stops. Coordinate exclusive app.py/base.html custody with backend-only MVP1. No new visual direction, runtime/data deletion, deployment, production, flags, schema, identity/provider change, legal-product creation, unrelated cleanup or Package 2.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/nav_writer",
+  "branch": "work/2026-09-06-public-nav-route-truth-002",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "336b5d19326740f2160bec7f9dc63142b7986817",
+  "owner_outcome_ref": "session:01a06e5b-05d4-7023-8266-2bd5d6abccbd/delegation:2026-09-06/proceed-navigation1-nonvisual-through-merge",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-PUBLIC-NAV-ROUTE-TRUTH-002.json",
+    "docs/governance/lane_claims/receipts/PS-PUBLIC-NAV-ROUTE-TRUTH-002.json",
+    "docs/governance/lane_claims/evidence/PS-PUBLIC-NAV-ROUTE-TRUTH-002.md",
+    "docs/initiatives/PS-PUBLIC-NAV-ROUTE-TRUTH-002/README.md",
+    "docs/initiatives/PS-PUBLIC-NAV-ROUTE-TRUTH-002/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "docs/initiatives/PS-PUBLIC-NAV-ROUTE-TRUTH-002/POST_DEPLOY_CRAWL_MATRIX.md",
+    "safe_return.py",
+    "app.py",
+    "auth_routes.py",
+    "templates/base.html",
+    "templates/owner_workspace.html",
+    "templates/partials/homepage/_voice_hero.html",
+    "templates/partials/profile_tabs.html",
+    "tests/test_public_nav_route_truth.py",
+    "tests/test_signin_member_arrival.py",
+    "tests/test_navigation.py",
+    "tests/test_shared_shell_convergence.py",
+    "tests/test_auth.py",
+    "tests/test_search_visibility.py",
+    "tests/test_owner_home.py",
+    "tests/test_homepage_scenes.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-PUBLIC-NAV-ROUTE-TRUTH-002.md"
+  ],
+  "domains": [
+    "navigation:shared-shell",
+    "navigation:route-truth",
+    "auth:safe-return",
+    "content:homepage-destination-truth"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
