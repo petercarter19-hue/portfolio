@@ -72,7 +72,7 @@ class GitleaksConfigurationTests(unittest.TestCase):
         # suite reused the qualification suite's call idiom with its own
         # actor literals, which the deliberately narrow member-[ab] class
         # does not cover. Same shape, own file, own actor class.
-        self.assertEqual(9, len(allowlists))
+        self.assertEqual(10, len(allowlists))
         self.assertEqual(
             {
                 'description': (
@@ -193,7 +193,11 @@ class GitleaksConfigurationTests(unittest.TestCase):
         # is still narrow enough that any other line in the file fails the scan.
         # Values are the FULL regex list for that path, so an entry that grows
         # a second pattern has to say so here rather than slipping through.
+        audit_scan_path = '^artifacts/2026-08-03-overnight-site-azure-audit/D-repo-tests-deps\\.md$'
+        audit_scan_line = '^\\n?- \\[OK\\] Pattern scan of the extracted origin/main tree \\(excluding `tests/`, `docs/`\\) for `Account[K]ey=`, `SharedAccessSignature`, `sk-ant-api`, AWS `AKIA…`, private-[k]ey blocks, `Instrumentation[K]ey=`, `Pwd=`/`Password=`, `DefaultEndpointsProtocol=`, `Server=tcp:`, hardcoded `SECRET_KEY` literals: \\*\\*no suspicious hits\\*\\*\\. The only `\\.database\\.windows\\.net` matches are hostname-suffix normalization constants in `db\\.py:26-27` and `scripts/apply_sql_migrations\\.py:142-143` — config parsing, not credentials\\.\\r?$'
+
         expected = {
+            audit_scan_path: [audit_scan_line],
             r'^services/community_cursor\.py$': [
                 r'^\s*token,\s+max_age='
                 r'CURSOR_MAX_AGE_SECONDS\s*$'
