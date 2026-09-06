@@ -494,3 +494,127 @@ any new unregistered host-created worktree immediately. The lifecycle cannot
 truthfully promise that such pre-instruction creation never occurs; it makes
 the growth visible and prevents that checkout from becoming an accepted local
 mutation lane.
+
+## Durable control custody and guarded writers
+
+`control-custody` extends the existing machine-local registry; it does not change
+claims, branches, Git history, review requirements, CI, production authority, or
+original task history. A receiver uses its own exact task/session/agent reference.
+No permanently reachable original chat is required. All runtimes use the same
+commands and gates.
+
+The host/orchestrator supplies `PEERSLATE_CALLER_REF` with the actual caller's
+existing reference; `--task-ref` must agree. This is a launcher attestation, **not
+cryptographic or platform-session authentication**. A process sharing the same OS
+principal can forge environment variables, edit files directly, or bypass these
+tools. Do not relabel a receiver as the former task. Before revocation, the owner
+must obtain host/orchestrator evidence that previous writers and unguarded child
+processes are stopped or otherwise quiescent. A clean Git checkout alone cannot
+establish process quiescence. UNKNOWN source liveness requires explicit owner
+revocation and a separate quiescence reference; this command does not invent or
+independently verify unavailable runtime proof.
+
+Read the current control record from `audit`/the registry. The `control` command
+also returns `lease_token`. Prepare an external JSON proof with exactly these
+fields (replace all illustrative values with exact current evidence):
+
+```json
+{
+  "path": "C:/actual/managed/_control",
+  "package": "PS-EXACT-PACKAGE-001",
+  "branch": "work/exact-current-branch",
+  "head": "<exact 40 character current HEAD>",
+  "from_ref": "task:actual-source",
+  "to_ref": "agent:actual-receiver",
+  "old_lease": {
+    "task_ref": "task:actual-source",
+    "purpose": "control",
+    "package": "PS-EXACT-PACKAGE-001",
+    "acquired_at": "<exact current lease timestamp>"
+  },
+  "old_token": "<exact current lease token>",
+  "owner_ref": "session:owner/exact-authorization",
+  "review_ref": "agent:independent/exact-review",
+  "quiescence_ref": "session:host/exact-quiescence-evidence",
+  "source_liveness": "UNKNOWN",
+  "owner_revocation": true
+}
+```
+
+A detached branch is represented by JSON null. Evidence references are distinct
+attestations that must resolve in the owner's actual evidence system, not merely
+labels to invent. The independent reviewer cannot be either participant. The
+receiver acceptance reference must differ from owner, review, and quiescence
+references. The host must establish receiver access and obtain actual acceptance
+before invoking receiver-side commands; the local receipt cannot authenticate
+remote human decisions.
+
+```text
+python -B scripts/worktree_lifecycle.py --repo <repo> control-custody propose --task-ref <actual-caller> --proof-file <external-proof.json> --execute
+python -B scripts/worktree_lifecycle.py --repo <repo> control-custody accept --task-ref <actual-receiver> --transition <returned-id> --acceptance-ref <receiver-evidence-ref> --execute
+python -B scripts/worktree_lifecycle.py --repo <repo> control-custody complete --task-ref <actual-receiver> --transition <returned-id> --execute
+python -B scripts/worktree_lifecycle.py --repo <repo> control-run --task-ref <actual-receiver> --lease-token <returned-current-token> --execute -- <command> <arguments>
+```
+
+The source or named receiver can propose; only the separately invoked receiving
+caller can accept and complete. Proposal and acceptance are durably journaled in
+optional `control_custody_transitions`; absence remains compatible with legacy
+registries. Pending custody fences ordinary lifecycle reconciliation and guarded
+writers. Completion compares the exact old lease, path, package, branch, and HEAD
+against both the registry and live Git, then atomically replaces ownership and
+marks the journal completed in one existing registry write. No Git mutation is
+needed. Retry the same transition after interruption: a pre-commit interruption
+retains accepted state; a lost response after commit returns completed. A process
+crash leaving the existing registry lock requires host-verified stale-lock
+reconciliation; this feature never breaks locks automatically.
+
+The lease token hashes the path and exact lease. The whole-second acquired_at
+field remains schema-compatible and uses a monotonic logical clock for fresh
+leases, which may briefly lead wall-clock time during rapid transfers. Old tokens
+fail after transfer; a revoked identity cannot silently reacquire even after the
+receiver releases. Any further return to that identity needs an explicit custody
+transition. On a custody-aware registry, normal control acquisition/release and
+finalization require matching `PEERSLATE_CALLER_REF` and
+`PEERSLATE_CONTROL_LEASE_TOKEN` supplied by the launcher. Original unchanged
+legacy task release remains compatible.
+
+`control-run` retains the existing exclusive registry lock for the entire direct
+subprocess invocation and propagates the token to its environment. A competing
+guarded writer or transfer is refused while that lock is held. Run direct bounded
+commands that wait for all their children; do not launch detached writers or nest
+another lifecycle command requiring this same lock. These guarantees cover
+cooperating tool-mediated writes only, not arbitrary filesystem access. Maintain
+host quiescence controls for older processes and re-run the unchanged applicable
+preflight, independent exact-candidate review, and CI before delivery.
+
+Guarded commands verify the starting branch and HEAD against the registry before
+launch. After any normal child exit, including a nonzero exit, the tool re-reads
+live Git while retaining the lock and atomically refreshes the registered HEAD
+without changing the lease token. An unexpected branch switch or disappearing
+checkout instead persists `control_guard_failure`, retaining both expected and
+observed state and fencing further operations. It does not adopt the new branch.
+An interrupted child or interrupted final registry write may leave a known
+starting record and a later live HEAD; this is refused on the next invocation.
+An explicit owner-reviewed reconciliation manifest is then required, including
+old record, observed Git state, exact intended branch/HEAD, and external process
+quiescence. This extension does not supply a generic reconciliation command or
+authorize manual registry editing; obtaining that separately reviewed repair is
+a real recovery boundary. Never infer or silently adopt the later HEAD.
+
+The optional strictly validated `control_lease_clock` preserves the last issued
+logical clock across release. Fresh acquisitions advance it even when the same
+caller, package, path, and wall-clock instant repeat. Legacy registries omit it
+and seed the first value from active leases and custody history; it is persisted
+through the same locked atomic registry writes as the lease.
+
+If a proposed or accepted receiver is permanently unavailable, a replacement
+receiver can submit a new proof with optional `supersedes` containing the exact
+pending transition id. Keep the exact source path/package/branch/HEAD/lease/token,
+name the different real receiver, set explicit owner revocation, and provide fresh
+owner, independent-review, and quiescence references. The new proposal atomically
+marks the former journal `superseded` and records the replacement proposal;
+there is no interval permitting a writer. Original acceptance/history remains
+preserved, and the superseded receiver can no longer accept or complete it. The
+replacement then performs the ordinary receiver acceptance and completion. This
+is a reviewed target replacement, not cancellation or restoration of the old
+source's write access.

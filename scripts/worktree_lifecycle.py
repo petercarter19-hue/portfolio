@@ -21,7 +21,7 @@ import sys
 import tempfile
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterator, Sequence
 
@@ -1822,6 +1822,351 @@ def validate_owner_reassignment_registry(registry: dict[str, Any]) -> None:
     _validate_pending_operation(registry)
     _validate_head_reconciliation_custody(registry)
     _validate_closed_custody_registry(registry)
+    validate_control_custody_registry(registry)
+
+
+# Custody receipts are local operational attestations, not identity credentials.
+CONTROL_CUSTODY_FIELDS = {
+    "id", "state", "path", "package", "branch", "head", "from_ref", "to_ref",
+    "old_lease", "old_token", "new_lease", "owner_ref", "review_ref", "quiescence_ref",
+    "source_liveness", "owner_revocation", "acceptance_ref", "accepted_by", "supersedes",
+}
+
+
+def _custody_generation_time(registry: dict[str, Any]) -> str:
+    # Whole-second schema retained; monotonic logical lease clock avoids replay.
+    previous = [r.get("lease", {}).get("acquired_at") for r in registry.get("worktrees", []) if r.get("lease")]
+    previous += [t["new_lease"]["acquired_at"] for t in registry.get("control_custody_transitions", [])]
+    last_issued = registry.get("control_lease_clock")
+    if last_issued is not None:
+        _validate_utc_timestamp(last_issued, field="control lease clock")
+        previous.append(last_issued)
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    for value in previous:
+        if value:
+            now = max(now, datetime.fromisoformat(value.replace("Z", "+00:00")) + timedelta(seconds=1))
+    generation = now.isoformat().replace("+00:00", "Z")
+    registry["control_lease_clock"] = generation
+    return generation
+
+
+def control_lease_token(record: dict[str, Any]) -> str:
+    return hashlib.sha256(json.dumps(
+        {"path": record.get("path"), "lease": record.get("lease")},
+        sort_keys=True, separators=(",", ":"),
+    ).encode("utf-8")).hexdigest()
+
+
+def control_custody_caller() -> str:
+    # An orchestrator may inject a real task identity. Never relabel another task.
+    actual = os.environ.get("PEERSLATE_CALLER_REF")
+    if not actual:
+        raise Refusal("caller identity unavailable; trusted launcher must supply PEERSLATE_CALLER_REF")
+    return _validate_delivery_ref(actual)
+
+
+def validate_control_custody_registry(registry: dict[str, Any]) -> None:
+    if "control_lease_clock" in registry:
+        _validate_utc_timestamp(registry["control_lease_clock"], field="control lease clock")
+    failure = registry.get("control_guard_failure")
+    if failure is not None:
+        fields = {"path", "lease_token", "expected_branch", "expected_head", "observed_branch", "observed_head", "returncode"}
+        if not isinstance(failure, dict) or set(failure) != fields:
+            raise Refusal("control guard failure record is malformed")
+        if not isinstance(failure["path"], str) or not Path(failure["path"]).is_absolute():
+            raise Refusal("control guard failure path is invalid")
+        if not isinstance(failure["lease_token"], str) or not re.fullmatch(r"[a-f0-9]{64}", failure["lease_token"]):
+            raise Refusal("control guard failure token is invalid")
+        for key in ("expected_branch", "observed_branch"):
+            if failure[key] is not None and (not isinstance(failure[key], str) or not failure[key]):
+                raise Refusal("control guard failure branch is invalid")
+        for key in ("expected_head", "observed_head"):
+            if failure[key] is not None and (not isinstance(failure[key], str) or not SHA_RE.fullmatch(failure[key])):
+                raise Refusal("control guard failure HEAD is invalid")
+        if type(failure["returncode"]) is not int:
+            raise Refusal("control guard failure exit status is invalid")
+    history = registry.get("control_custody_transitions", [])
+    if not isinstance(history, list):
+        raise Refusal("control custody history must be a list")
+    ids: set[str] = set()
+    active = 0
+    generations: dict[str, dict[str, Any]] = {}
+    spent: set[str] = set()
+    issued: set[str] = set()
+    revoked: set[str] = set()
+    for item in history:
+        if not isinstance(item, dict) or set(item) != CONTROL_CUSTODY_FIELDS:
+            raise Refusal("control custody transition fields are malformed")
+        if not isinstance(item["id"], str) or not re.fullmatch(r"[a-f0-9]{32}", item["id"]) or item["id"] in ids:
+            raise Refusal("control custody transition id is invalid or duplicated")
+        ids.add(item["id"])
+        if not isinstance(item["state"], str) or item["state"] not in {"proposed", "accepted", "completed", "superseded"}:
+            raise Refusal("control custody state is invalid")
+        for key in ("from_ref", "to_ref", "owner_ref", "review_ref", "quiescence_ref"):
+            if not isinstance(item[key], str):
+                raise Refusal("control custody reference must be text")
+            _validate_delivery_ref(item[key])
+        if item["from_ref"] == item["to_ref"] or item["review_ref"] in {item["from_ref"], item["to_ref"]}:
+            raise Refusal("control custody requires a distinct receiver and independent reviewer")
+        proofs = [item[k] for k in ("owner_ref", "review_ref", "quiescence_ref")]
+        if len(set(proofs)) != 3:
+            raise Refusal("control custody proof references must be distinct")
+        _validate_package(item["package"])
+        if not isinstance(item["path"], str) or not Path(item["path"]).is_absolute():
+            raise Refusal("control custody path must be absolute")
+        if item["branch"] is not None and (not isinstance(item["branch"], str) or not WORK_BRANCH_RE.fullmatch(item["branch"])):
+            raise Refusal("control custody branch is invalid")
+        if not isinstance(item["head"], str) or not SHA_RE.fullmatch(item["head"]):
+            raise Refusal("control custody HEAD is invalid")
+        if not isinstance(item["source_liveness"], str) or item["source_liveness"] not in {"QUIESCENT", "UNKNOWN"} or type(item["owner_revocation"]) is not bool:
+            raise Refusal("control custody source status is invalid")
+        if item["source_liveness"] == "UNKNOWN" and not item["owner_revocation"]:
+            raise Refusal("unknown source requires explicit owner revocation")
+        for key, who in (("old_lease", "from_ref"), ("new_lease", "to_ref")):
+            validate_owner_reassignment_control_lease(item[key], task_ref=item[who], package=item["package"])
+        if item["old_token"] != control_lease_token({"path": item["path"], "lease": item["old_lease"]}):
+            raise Refusal("control custody old lease token mismatch")
+        if item["old_lease"]["acquired_at"] >= item["new_lease"]["acquired_at"]:
+            raise Refusal("control custody generation did not advance")
+        path_key = _path_key(item["path"])
+        previous = generations.get(path_key)
+        new_token = control_lease_token({"path": item["path"], "lease": item["new_lease"]})
+        if item["old_token"] in spent or new_token in issued or new_token in spent:
+            raise Refusal("control custody generation is duplicated or replayed")
+        if item["from_ref"] in revoked:
+            raise Refusal("control custody source identity remains revoked")
+        if item["supersedes"] is not None:
+            if not previous or previous["state"] != "superseded" or item["supersedes"] != previous["id"]:
+                raise Refusal("custody supersession does not match prior pending target")
+            if any(item[k] != previous[k] for k in ("path", "package", "branch", "head", "from_ref", "old_lease", "old_token")):
+                raise Refusal("custody supersession changed the exact source tuple")
+            if item["to_ref"] == previous["to_ref"] or not item["owner_revocation"]:
+                raise Refusal("custody supersession requires a different receiver and owner revocation")
+            old_refs = {previous[k] for k in ("owner_ref", "review_ref", "quiescence_ref")}
+            if any(item[k] in old_refs for k in ("owner_ref", "review_ref", "quiescence_ref")):
+                raise Refusal("custody supersession requires fresh evidence references")
+            if item["new_lease"]["acquired_at"] <= previous["new_lease"]["acquired_at"]:
+                raise Refusal("custody supersession generation did not advance")
+        elif previous and previous["state"] == "superseded":
+            raise Refusal("superseded custody requires its exact successor link")
+        elif previous:
+            prior_lease = previous["new_lease"]
+            old_time = item["old_lease"]["acquired_at"]
+            if previous["state"] != "completed" or old_time < prior_lease["acquired_at"] or (
+                old_time == prior_lease["acquired_at"] and item["old_lease"] != prior_lease
+            ):
+                raise Refusal("control custody generation chain is inconsistent")
+        generations[path_key] = item
+        issued.add(new_token)
+        if item["state"] == "completed":
+            spent.add(item["old_token"])
+            revoked.add(item["from_ref"])
+            revoked.discard(item["to_ref"])
+        if item["state"] == "proposed" or (item["state"] == "superseded" and item["accepted_by"] is None):
+            if item["acceptance_ref"] is not None or item["accepted_by"] is not None:
+                raise Refusal("unaccepted custody contains an acceptance")
+        else:
+            if not isinstance(item["acceptance_ref"], str):
+                raise Refusal("control custody acceptance is missing")
+            _validate_delivery_ref(item["acceptance_ref"])
+            if item["accepted_by"] != item["to_ref"] or item["acceptance_ref"] in proofs:
+                raise Refusal("control custody acceptance mismatch")
+        if item["state"] in {"proposed", "accepted"}:
+            active += 1
+            record = _record_by_path(registry, item["path"])
+            if not record or record.get("kind") != "control_singleton" or record.get("state") != "active" or any(
+                record.get(k) != item[k] for k in ("package", "branch", "head")
+            ) or record.get("task_ref") != item["from_ref"] or record.get("lease") != item["old_lease"]:
+                raise Refusal("pending custody no longer matches exact source record")
+    if any(t["state"] == "superseded" for t in generations.values()):
+        raise Refusal("superseded custody has no replacement proposal")
+    for record in registry.get("worktrees", []):
+        if record.get("kind") != "control_singleton" or not record.get("lease"):
+            continue
+        lease = record["lease"]
+        latest = generations.get(_path_key(record["path"]))
+        if not latest or latest["state"] != "completed":
+            continue
+        if not isinstance(lease, dict):
+            raise Refusal("current control lease is malformed")
+        _validate_utc_timestamp(lease.get("acquired_at"), field="current control generation")
+        if control_lease_token(record) in spent or lease.get("task_ref") in revoked:
+            raise Refusal("current control lease replays a revoked generation or identity")
+        if record.get("task_ref") != lease.get("task_ref") or record.get("package") != lease.get("package"):
+            raise Refusal("current control record and lease identity differ")
+        latest_lease = latest["new_lease"]
+        if lease["acquired_at"] < latest_lease["acquired_at"] or (
+            lease["acquired_at"] == latest_lease["acquired_at"] and lease != latest_lease
+        ):
+            raise Refusal("current control lease predates or conflicts with completed custody")
+    if active > 1 or (active and registry.get("pending") is not None):
+        raise Refusal("overlapping custody or lifecycle transition")
+
+
+def _custody_pending(registry: dict[str, Any]) -> bool:
+    return registry.get("control_guard_failure") is not None or any(t["state"] in {"proposed", "accepted"} for t in registry.get("control_custody_transitions", []))
+
+
+def require_control_custody_fence(registry: dict[str, Any], record: dict[str, Any], *, task_ref: str, lease_token: str) -> None:
+    validate_control_custody_registry(registry)
+    if _custody_pending(registry):
+        raise Refusal("control custody transition is pending; writers are fenced")
+    if not record.get("lease") or record["lease"].get("task_ref") != task_ref or record.get("task_ref") != task_ref:
+        raise Refusal("caller does not hold the current control lease")
+    if not lease_token and not registry.get("control_custody_transitions"):
+        return
+    if not lease_token or lease_token != control_lease_token(record):
+        raise Refusal("stale or missing control lease token")
+
+
+def _custody_existing_guard(registry: dict[str, Any], task_ref: str) -> None:
+    if _custody_pending(registry):
+        raise Refusal("control custody transition is pending")
+    history = registry.get("control_custody_transitions", [])
+    if history:
+        if task_ref != control_custody_caller():
+            raise Refusal("claimed task differs from launcher caller")
+        for r in registry["worktrees"]:
+            if r.get("kind") == "control_singleton" and r.get("lease"):
+                if task_ref != control_custody_caller():
+                    raise Refusal("claimed task differs from launcher caller")
+                require_control_custody_fence(registry, r, task_ref=task_ref,
+                    lease_token=os.environ.get("PEERSLATE_CONTROL_LEASE_TOKEN", ""))
+    revoked = set()
+    for transition in history:
+        if transition["state"] == "completed":
+            revoked.add(transition["from_ref"])
+            revoked.discard(transition["to_ref"])
+    if task_ref in revoked:
+        controls = [r for r in registry["worktrees"] if r.get("kind") == "control_singleton"]
+        if not any(r.get("lease") and r["lease"].get("task_ref") == task_ref for r in controls):
+            raise Refusal("revoked task cannot reacquire control; use explicit custody transfer")
+
+
+def command_control_custody(context: RepoContext, args: argparse.Namespace) -> dict[str, Any]:
+    _require_execute(args.execute)
+    caller = control_custody_caller()
+    if caller != args.task_ref:
+        raise Refusal("claimed task differs from launcher caller")
+    with _registry_lock(context.registry_path):
+        registry = _load_registry(context.registry_path)
+        assert registry is not None
+        _assert_registry_identity(context, registry)
+        if registry.get("pending") or registry.get("control_guard_failure"):
+            raise Refusal("reconcile existing lifecycle operation or guarded branch failure before custody")
+        record = _control_record(context, registry)
+        if record is None:
+            raise Refusal("active control record required")
+        history = registry.setdefault("control_custody_transitions", [])
+        if args.action == "propose":
+            if not args.proof_file:
+                raise Refusal("propose requires exact proof file")
+            try:
+                proof = json.loads(Path(args.proof_file).read_text(encoding="utf-8"))
+            except (OSError, ValueError) as error:
+                raise Refusal("unreadable custody proof") from error
+            required = {"path", "package", "branch", "head", "from_ref", "to_ref", "old_lease", "old_token", "owner_ref", "review_ref", "quiescence_ref", "source_liveness", "owner_revocation"}
+            if not isinstance(proof, dict) or set(proof) not in (required, required | {"supersedes"}):
+                raise Refusal("custody proof requires exact fields")
+            proof.setdefault("supersedes", None)
+            for key in ("from_ref", "to_ref"):
+                if not isinstance(proof[key], str):
+                    raise Refusal("custody participant reference must be text")
+                _validate_delivery_ref(proof[key])
+            if caller not in {proof["from_ref"], proof["to_ref"]}:
+                raise Refusal("proposal caller must be a named participant")
+            existing = next((t for t in history if all(t[k] == v for k, v in proof.items())), None)
+            if existing:
+                return {"status": existing["state"], "transition": existing}
+            pending_target = next((t for t in history if t["state"] in {"proposed", "accepted"}), None)
+            if pending_target:
+                if proof["supersedes"] != pending_target["id"]:
+                    raise Refusal("another custody transition is pending; exact supersedes id required")
+                pending_target["state"] = "superseded"
+            elif proof["supersedes"] is not None:
+                raise Refusal("no matching pending custody target to supersede")
+            item = dict(proof, id=secrets.token_hex(16), state="proposed", acceptance_ref=None, accepted_by=None,
+                new_lease={"task_ref": proof["to_ref"], "purpose": "control", "package": proof["package"],
+                           "acquired_at": _custody_generation_time(registry)})
+            history.append(item)
+        else:
+            item = next((t for t in history if t["id"] == args.transition), None)
+            if item is None:
+                raise Refusal("unknown custody transition")
+            if caller != item["to_ref"]:
+                raise Refusal("only actual receiving caller can accept or complete custody")
+            if item["state"] == "superseded":
+                raise Refusal("receiver custody proposal was superseded")
+            if item["state"] == "completed":
+                if args.action == "accept" and args.acceptance_ref != item["acceptance_ref"]:
+                    raise Refusal("acceptance replay differs")
+                return {"status": "completed", "transition": item, "lease_token": control_lease_token({"path": item["path"], "lease": item["new_lease"]})}
+            if args.action == "accept":
+                if item["state"] == "accepted" and args.acceptance_ref != item["acceptance_ref"]:
+                    raise Refusal("acceptance replay differs")
+                item.update(state="accepted", accepted_by=caller, acceptance_ref=args.acceptance_ref)
+            elif item["state"] != "accepted":
+                raise Refusal("receiver acceptance required before completion")
+        validate_control_custody_registry(registry)
+        if _path_key(record["path"]) != _path_key(item["path"]):
+            raise Refusal("custody path differs from control singleton")
+        live = _worktree_at(context.root, _canonical(record["path"]))
+        if live is None or (live.get("branch"), live.get("head")) != (item["branch"], item["head"]):
+            raise Refusal("custody live branch/HEAD compare-and-swap failed")
+        pristine, residue = _is_pristine(_canonical(record["path"]))
+        if not pristine:
+            raise Refusal("custody requires quiescent pristine checkout", blockers=residue)
+        if args.action == "complete":
+            # One atomic replacement commits both ownership and completed journal.
+            record.update(task_ref=item["to_ref"], lease=item["new_lease"], updated_at=_utc_now())
+            item["state"] = "completed"
+        _atomic_write(context.registry_path, registry)
+        return {"status": item["state"], "transition": item, "lease_token": control_lease_token(record)}
+
+
+def command_control_run(context: RepoContext, args: argparse.Namespace) -> dict[str, Any]:
+    _require_execute(args.execute)
+    caller = control_custody_caller()
+    if caller != args.task_ref:
+        raise Refusal("claimed task differs from launcher caller")
+    command = list(args.command)
+    if command and command[0] == "--":
+        command.pop(0)
+    if not command:
+        raise Refusal("guarded subprocess command required")
+    with _registry_lock(context.registry_path):
+        registry = _load_registry(context.registry_path)
+        assert registry is not None
+        _assert_registry_identity(context, registry)
+        if registry.get("pending"):
+            raise Refusal("lifecycle operation pending")
+        record = _control_record(context, registry)
+        if record is None:
+            raise Refusal("control singleton unavailable")
+        require_control_custody_fence(registry, record, task_ref=caller, lease_token=args.lease_token)
+        before = _worktree_at(context.root, _canonical(record["path"]))
+        if before is None or (before.get("branch"), before.get("head")) != (record.get("branch"), record.get("head")):
+            raise Refusal("guarded starting branch/HEAD differs from registry; owner-manifest reconciliation required")
+        environment = dict(os.environ, PEERSLATE_CONTROL_LEASE_TOKEN=args.lease_token)
+        result = subprocess.run(command, cwd=record["path"], env=environment, check=False)
+        # A nonzero child can still commit. Observe under the same lock before
+        # releasing custody, and never silently authorize a branch switch.
+        live = _worktree_at(context.root, _canonical(record["path"]))
+        if live is None or live.get("branch") != record.get("branch"):
+            registry["control_guard_failure"] = {
+                "path": record["path"], "lease_token": args.lease_token,
+                "expected_branch": record.get("branch"), "expected_head": record.get("head"),
+                "observed_branch": live.get("branch") if live else None,
+                "observed_head": live.get("head") if live else None,
+                "returncode": result.returncode,
+            }
+            _atomic_write(context.registry_path, registry)
+            raise Refusal("guarded command changed branch or removed checkout; owner-manifest reconciliation required")
+        record["head"] = live.get("head")
+        record["updated_at"] = _utc_now()
+        _atomic_write(context.registry_path, registry)
+        return {"status": "command_completed", "returncode": result.returncode, "lease_token": args.lease_token,
+                "head": record["head"], "branch": record["branch"]}
 
 
 def _load_registry(path: Path, *, required: bool = True) -> dict[str, Any] | None:
@@ -2633,6 +2978,8 @@ def _reconcile_pending(
     # journal/record/preparation graph even when an internal caller supplied a
     # dictionary without going through ``_load_registry``.
     validate_owner_reassignment_registry(registry)
+    if _custody_pending(registry):
+        raise Refusal("control custody transition pending; use receiver completion")
     pending = registry.get("pending")
     if not pending:
         return None
@@ -3648,6 +3995,7 @@ def _acquire_control_locked(
     branch: str | None,
     includes: Sequence[str],
 ) -> tuple[dict[str, Any], bool]:
+    _custody_existing_guard(registry, task_ref)
     managed_root = _canonical(registry["managed_root"])
     path = managed_root / "_control"
     _assert_managed_target(registry, path)
@@ -3666,7 +4014,7 @@ def _acquire_control_locked(
             "task_ref": task_ref,
             "purpose": purpose,
             "package": package,
-            "acquired_at": _utc_now(),
+            "acquired_at": _custody_generation_time(registry),
         }
         record = _new_record(
             path=path,
@@ -3760,7 +4108,7 @@ def _acquire_control_locked(
         "purpose": purpose,
         "package": package,
         "acquired_at": (
-            lease.get("acquired_at") if same_lease and lease else _utc_now()
+            lease.get("acquired_at") if same_lease and lease else _custody_generation_time(registry)
         ),
     }
     before = {
@@ -3810,7 +4158,7 @@ def _acquire_control_locked(
             "task_ref": task_ref,
             "lease": target_lease,
             "sparse_paths": sparse_paths,
-            "updated_at": _utc_now(),
+            "updated_at": _custody_generation_time(registry),
         }
     )
     registry["pending"] = None
@@ -3831,6 +4179,7 @@ def command_control(context: RepoContext, args: argparse.Namespace) -> dict[str,
         recovered = _reconcile_pending(context, registry)
         record = _control_record(context, registry)
         if args.release:
+            _custody_existing_guard(registry, task_ref)
             if record is None or not record.get("lease"):
                 raise Refusal("control singleton has no active lease")
             if record["lease"].get("task_ref") != task_ref:
@@ -3868,6 +4217,7 @@ def command_control(context: RepoContext, args: argparse.Namespace) -> dict[str,
         "branch": record["branch"],
         "head": record["head"],
         "lease": record["lease"],
+        "lease_token": control_lease_token(record),
         "recovered_pending": recovered,
     }
 
@@ -6112,6 +6462,7 @@ def command_finalize_task(
                 lease = record.get("lease")
                 if not lease or lease.get("task_ref") != task_ref:
                     continue
+                _custody_existing_guard(registry, task_ref)
                 pristine, residue = _is_pristine(_canonical(record["path"]))
                 if pristine:
                     live = _worktree_at(context.root, _canonical(record["path"]))
@@ -6465,6 +6816,19 @@ def _parser() -> argparse.ArgumentParser:
     control.add_argument("--release", action="store_true")
     control.add_argument("--execute", action="store_true")
 
+    custody = subparsers.add_parser("control-custody", help="journal owner-authorized custody recovery")
+    custody.add_argument("action", choices=["propose", "accept", "complete"])
+    custody.add_argument("--task-ref", required=True)
+    custody.add_argument("--proof-file")
+    custody.add_argument("--transition")
+    custody.add_argument("--acceptance-ref")
+    custody.add_argument("--execute", action="store_true")
+    guarded = subparsers.add_parser("control-run", help="run one current-lease guarded command")
+    guarded.add_argument("--task-ref", required=True)
+    guarded.add_argument("--lease-token", required=True)
+    guarded.add_argument("--execute", action="store_true")
+    guarded.add_argument("command", nargs=argparse.REMAINDER)
+
     owner_reassignment = subparsers.add_parser(
         "prepare-owner-reassignment",
         help="guard and create one exact owner-authorized successor branch",
@@ -6548,6 +6912,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             payload, code = command_ensure(context, args), 0
         elif args.subcommand == "control":
             payload, code = command_control(context, args), 0
+        elif args.subcommand == "control-custody":
+            payload, code = command_control_custody(context, args), 0
+        elif args.subcommand == "control-run":
+            payload = command_control_run(context, args)
+            code = payload["returncode"]
         elif args.subcommand == "prepare-owner-reassignment":
             payload, code = command_prepare_owner_reassignment(context, args), 0
         elif args.subcommand == "verify":

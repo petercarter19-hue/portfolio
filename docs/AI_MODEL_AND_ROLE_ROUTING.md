@@ -65,16 +65,21 @@ package-exit record.
 Selection is based on the package outcome and evidence needed, not vendor
 preference.
 
-| Primary outcome or evidence | Default package manager | Use when |
+| Primary outcome or evidence | Package manager environment | Use when |
 |---|---|---|
-| Member experience and product readiness | **Codex or ChatGPT Work, according to available tools** | Choose the environment that can inspect the repository, authorized browser session, rendered states and supporting evidence needed by the package. Existing tools and useful continuity decide the assignment; a product package does not require a host transfer when its current manager can do the work. |
-| Repository and technical truth | **Codex** | The primary work is repository evidence, code, tests, security, schema, backend, protected operations, Azure PR/pipeline truth, or release reconciliation. Codex may manage a bounded technical package directly. |
-| Explicit Claude planning coordination | **Claude Co-Work** | The active package expressly assigns cross-artifact planning, architecture coordination, or a Claude-centered delivery lane. Claude Co-Work management is distinct from Claude Code writing. |
+| Member experience and product readiness | **Assigned capable environment** | Use the environment with access to the authorized browser session, rendered states, repository and supporting evidence needed by the package. |
+| Repository and technical truth | **Assigned capable environment** | The assigned manager may own repository evidence, code, tests, protected operations, Azure PR/pipeline truth and release reconciliation through package completion. |
+| Complete package on another platform | **Assigned external-platform manager** | Cursor, Claude or another capable platform may manage and deliver the whole assigned package end to end. No hidden Codex manager or Codex supervisory approval is required. |
 
-Codex is the default manager when the primary outcome is repository truth,
-code, tests, security, schema, backend, protected operations, or release
-evidence. Claude Co-Work is selected only by an explicit active-package
-assignment.
+For packages assigned to OpenAI, Codex is the default manager when the primary
+outcome is repository truth. This default does not require an external-platform
+package to transfer management or obtain Codex supervision. Claude Co-Work
+management is distinct from Claude Code writing; each role needs its own
+explicit assignment.
+
+The accepted package assigns its manager and writer explicitly. Platform choice
+does not create an additional management layer or change review, claim, CI,
+visual acceptance or production boundaries.
 
 ChatGPT Work is not mandatory for every package. A Routine or simple Bounded
 package may be self-managed by its sole writer when a separate manager would
@@ -285,14 +290,20 @@ identical failures, stop retrying and report the blocker.
 | Stable role | Current choice | Use |
 |---|---|---|
 | Architect | **GPT-6 Astra** | New or materially changed architecture; increase effort for difficult tradeoffs |
-| Implementer | **GPT-6 Astra** | Repository implementation, tests, documentation, corrections and closeout; start with moderate effort and use less for focused work |
+| Manager | **GPT-6 Astra, Medium** | Default OpenAI package management; exceptions require Pete's direction. The current central manager has Pete's explicit **Astra, High** override. |
+| Implementer | **Sol, High** | Repository implementation, tests, documentation, corrections and closeout |
+| Delegated helper | **Sol, Medium** | Bounded supporting work under the assigned writer or manager |
 | Independent reviewer | **Fresh GPT-6 Astra, High** | Exact-SHA, risk-triggered review and audit findings; use deeper effort when the risk needs it |
 
-These are defaults, not a compulsory model hierarchy. Sol remains optional when
-actual availability, responsiveness or measured total effort supports it. Compare
-accepted outcomes, corrections, elapsed time and observed usage, including
-delegated work; neither cheaper tokens nor a benchmark proves lower PeerSlate
-task cost. Do not run duplicate implementations solely to fill model roles.
+Apply these assignments without changing host settings automatically. Preserve
+Pete's explicit exceptions within their assigned scope. Compare accepted
+outcomes, corrections, elapsed time and observed usage, including delegated
+work; do not run duplicate implementations solely to fill model roles.
+
+An assigned writer with through-merge repository authority completes routine
+commit, push, PR and accepted merge without another Pete approval pause.
+Explicit write_only claims, independent review, CI and production boundaries
+remain binding; manager assignment alone does not grant writer authority.
 
 Use the lowest reasoning effort that meets the task's evidence standard. Reserve
 Max for difficult reasoning and Ultra for substantial work with useful parallel
@@ -444,8 +455,9 @@ Every substantial handoff contains:
   the workflow cadence and one fresh reviewer.
 - **PS-AI-OPS-009:** Packages use stable role names; this document is the
   periodically verified model-version authority.
-- **PS-AI-OPS-010:** Cross-vendor work is used only for a bounded independent
-  risk question, never to duplicate the delivery route.
+- **PS-AI-OPS-010:** An assigned external platform may manage and deliver a
+  complete package end to end. Cross-platform review addresses a bounded
+  independent risk question; it does not duplicate management or delivery.
 - **PS-AI-OPS-011:** Original ChatGPT is the sole creator of new or materially
   revised production-intent visual authority. Existing Pete-locked authorities
   remain valid; ChatGPT Work and implementation/review agents may compare and

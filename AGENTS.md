@@ -17,6 +17,12 @@
 > control intent with `--fetch --require-clean` before PR. Do not change an
 > implementation surface in that control commit.
 >
+> Required-check repair has one separately reviewed admission mode:
+> `repair-activate` / `repair-merge`, documented in `START_HERE.md`. It requires
+> an exact external owner approval and independent precommit review manifest,
+> a current control lease token, and normal Azure CI and branch policies.
+> It never converts an ordinary failed preflight into permission.
+>
 > A failed preflight is a stop, not permission to make another branch or
 > worktree. New work requires Pete's explicit outcome and the one-claim
 > activation flow in `START_HERE.md`.
@@ -49,6 +55,21 @@ handoffs are evidence, not additional gates.
 - Preserve unrelated work, secrets, production data, and user-authored content.
 
 ## Ownership and delivery
+
+- Equivalent authorized assignments use equivalent lifecycle, delivery and
+  review capabilities in Codex, Cursor, Claude and other runtimes. ChatGPT may
+  coordinate the program; that role confers no exclusive technical privilege.
+  Use each caller's actual opaque reference, never another task's identity.
+- Host launchers supply `PEERSLATE_CALLER_REF` for every runtime under the same
+  contract. The value is an identity attestation, not a cryptographic boundary
+  against another process with the same OS privileges. Use receiver acceptance
+  and reviewed owner-revocation recovery when original task continuity is lost;
+  do not depend on a permanently reachable chat or infer revocation from age.
+- After a control custody transition, use the current lease token for preflight
+  and `control-run` for direct control-tree writes. Existing unguarded writers
+  require separately established quiescence before recovery; shared tooling
+  alone cannot stop raw filesystem writes. Preserve history and existing
+  independent precommit and exact-commit merge review.
 
 - One writer owns each mutable surface. Any number of writers may proceed when
   their branches, claimed paths, and hierarchical domains are disjoint. There

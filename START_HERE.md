@@ -54,6 +54,63 @@ dedicated control branch, then runs the matching control intent with `--fetch
 
 ## 3. Activate only a selected outcome
 
+### Required-check repair when claim-only CI cannot pass
+
+This is a durable, narrowly scoped alternative for a required security or
+delivery-check repair. It changes the existing local admission predicates,
+not Azure policies or the requirement for real CI. Ordinary activation stays
+claim-only. Product/pipeline changes, unrelated claims and unreviewed bytes
+cannot use this path. Ownership collisions still stop it.
+
+1. Obtain Pete's exact selected outcome and the actual writer's accepted
+   control custody. Use `control-custody` recovery in
+   `docs/governance/WORKTREE_LIFECYCLE.md` if the old chat is lost; require
+   external quiescence and the receiver's own acceptance. Do not spoof the
+   original task or treat a launched process as acceptance.
+2. Prepare the full candidate outside the checkout before implementation
+   writes. Create a fresh Protected claim plus only the supported gate-repair
+   files. `REPAIR_SURFACES` in `scripts/delivery_preflight.py` is the fixed
+   boundary; changing that boundary itself requires exact independent review.
+   Reserve exactly those files plus the claim's fixed receipt/evidence paths.
+3. Prepare an external JSON manifest with exactly `authorization`,
+   `precommit_review`, and `merge_review`. Authorization contains
+   `schema_version: 1`, `package`, actual `writer_ref`,
+   `owner_authorization_ref`, `failure_evidence_ref`, exact `base_sha`,
+   dedicated activation `branch`, and `files` mapping repository-relative
+   regular-file paths to exact Git blob IDs (including the claim). Owner and
+   failure references must identify real reviewable decisions/evidence.
+4. Independent precommit review records `reviewer_ref`, `review_ref`,
+   `result: pass`, and `authorization_sha256`: SHA-256 of UTF-8 JSON for the
+   authorization with sorted keys, separators `(',', ':')`, and
+   `ensure_ascii=False`. Keep `merge_review: null` at activation. Opaque
+   references attest external decisions; this tool does not authenticate them.
+5. After that review and the owner's explicit authorization, materialize and
+   commit those exact files from the actual leased control task using guarded
+   writes. Run `--intent repair-activate --repair-manifest <absolute-path>
+   --owner-authorization-ref <owner-ref> --lease-token <current-token>
+   --task-ref <actual-writer> --package <package> --fetch --require-clean`.
+   The optional `--repo <checkout>` selects the validated repository explicitly;
+   every ordinary identity/collision/base check still applies.
+6. Obtain independent review of the exact commit. Store the ordinary review
+   receipt schema in the external manifest's `merge_review`, naming that SHA.
+   Run the same preflight with `--intent repair-merge --candidate-sha <SHA>`.
+   HEAD must equal the reviewed commit; no unreviewed tail is admitted.
+7. Open a normal Azure PR and require every existing server policy, full scan
+   and CI check against the actual source/target. Local repair admission does
+   **not** attest that CI passed. Do not use skip-CI, policy waivers, forced
+   merge or direct-main pushes. Preserve the independent review and owner
+   manifest in the package evidence after merge through its ordinary durable
+   worktree, then continue normal lifecycle operations. This admission grants
+   no deployment authority.
+
+Before these mechanisms have reached accepted main, executing an external
+reviewed copy is a one-use bootstrap exception requiring Pete's explicit
+hash-bound approval. The code cannot grant its own acceptance. Keep the
+bootstrap separate from the durable rules and preserve all current claim
+collisions; stage scanner-only admission before lifecycle changes if needed.
+
+### Ordinary activation
+
 Pete first names the exact outcome. From current main, lease the permanent
 sparse control singleton for a clean
 `work/YYYY-MM-DD-delivery-activation-<slug>` branch, then add exactly one

@@ -1,5 +1,6 @@
 import copy
 import io
+import hashlib
 import json
 import os
 import subprocess
@@ -8,6 +9,7 @@ import unittest
 from argparse import Namespace
 from contextlib import ExitStack, nullcontext, redirect_stdout
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from scripts import delivery_preflight as preflight
@@ -4400,7 +4402,7 @@ class EvidenceErrataTests(unittest.TestCase):
         )
         self.assertTrue(
             any(
-            "valid only for evidence-errata, owner-reassignment, or supersede"
+            "valid only for evidence-errata, owner-reassignment, supersede, or repair admission"
             in e
             for e in errors
         )
@@ -4752,6 +4754,231 @@ class OperationsOnlyCloseTests(unittest.TestCase):
         self.target_claim["writer_ref"] = self.proof["source_task_ref"]
         self.review["reviewer_ref"] = self.claim["writer_ref"]
         self.assertTrue(self.run_close())
+
+
+class RepairAdmissionTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name) / 'candidate'
+        self.root.mkdir()
+        self.manifest_path = Path(self.temp.name) / 'approval.json'
+        self.package = 'PS-REPAIR-TEST-001'
+        self.claim_path = preflight.claim_relative_path(self.package)
+        self.files = {self.claim_path: 'a' * 40, '.gitleaks.toml': 'b' * 40}
+        self.args = SimpleNamespace(package=self.package, intent='repair-activate',
+            task_ref='agent:cursor/actual-receiver', owner_authorization_ref='session:pete/decision',
+            repair_manifest=str(self.manifest_path), candidate_sha='c' * 40, candidate_worktree='')
+        self.facts = SimpleNamespace(origin_main='d' * 40, head='c' * 40,
+            branch='work/2026-09-06-delivery-activation-repair-test',
+            branch_paths=tuple(self.files), worktree_paths=(), main_paths=())
+        self.claim = dict(package=self.package, writer_ref=self.args.task_ref,
+            owner_outcome_ref=self.args.owner_authorization_ref, delivery_path='Protected',
+            review_requirement='independent', repository_authority='through_merge',
+            production_authority='withheld',
+            surfaces=sorted(set(self.files) | set(preflight.control_relative_paths(self.package))))
+        self.manifest = {'authorization': dict(schema_version=1, package=self.package,
+            writer_ref=self.args.task_ref, owner_authorization_ref=self.args.owner_authorization_ref,
+            failure_evidence_ref='task:ci/build-2515', base_sha=self.facts.origin_main,
+            branch=self.facts.branch, files=dict(self.files)),
+            'precommit_review': dict(reviewer_ref='agent:claude/independent-reviewer',
+                review_ref='session:review/precommit', result='pass', authorization_sha256=''),
+            'merge_review': None}
+        self.sign_manifest()
+
+    def sign_manifest(self):
+        self.manifest['precommit_review']['authorization_sha256'] = hashlib.sha256(
+            json.dumps(self.manifest['authorization'], sort_keys=True,
+                separators=(',', ':'), ensure_ascii=False).encode()).hexdigest()
+
+    def git(self, root, *args):
+        if args[0] == 'rev-parse':
+            return self.files[args[1].split(':', 1)[1]]
+        if args[0] == 'ls-tree':
+            return '100644 blob ' + self.files[args[-1]] + '\t' + args[-1]
+        raise AssertionError(args)
+
+    def evaluate(self):
+        self.manifest_path.write_text(json.dumps(self.manifest), encoding='utf-8')
+        with patch.object(preflight, '_git', side_effect=self.git):
+            return preflight.validate_repair_admission(self.root, self.args, self.facts, self.claim)
+
+    def test_admits_exact_independent_owner_selected_repair_without_claiming_ci(self):
+        facts, errors = self.evaluate()
+        self.assertEqual([], errors)
+        self.assertIn('not verified', facts['server_ci'])
+
+    def test_write_only_activation_passes_direct_and_full_admission(self):
+        self.claim['repository_authority'] = 'write_only'
+        self.assertEqual([], self.evaluate()[1])
+        self.assertEqual([], self.evaluate_full()[1])
+
+    def test_write_only_merge_fails_even_with_exact_independent_receipt(self):
+        self.claim['repository_authority'] = 'write_only'
+        self.args.intent = 'repair-merge'
+        self.manifest['merge_review'] = self.receipt()
+        for errors in (self.evaluate()[1], self.evaluate_full()[1]):
+            self.assertTrue(any('exact owner-selected Protected independent claim' in e for e in errors), errors)
+
+    def test_through_merge_activation_and_merge_remain_valid(self):
+        for intent in ('repair-activate', 'repair-merge'):
+            with self.subTest(intent=intent):
+                self.args.intent = intent
+                self.manifest['merge_review'] = self.receipt() if intent == 'repair-merge' else None
+                self.assertEqual([], self.evaluate()[1])
+                self.assertEqual([], self.evaluate_full()[1])
+
+    def test_write_only_activation_preserves_other_claim_gates(self):
+        self.claim['repository_authority'] = 'write_only'
+        original = copy.deepcopy(self.claim)
+        for field, value in (('writer_ref', 'agent:other/writer'),
+                             ('owner_outcome_ref', 'session:other/owner'),
+                             ('delivery_path', 'Standard'),
+                             ('review_requirement', 'self'),
+                             ('production_authority', 'allowed'),
+                             ('repository_authority', 'unrestricted'), ('repository_authority', [])):
+            with self.subTest(field=field):
+                self.claim = dict(original, **{field: value})
+                self.assertTrue(any('exact owner-selected Protected independent claim' in e for e in self.evaluate()[1]))
+
+    def test_write_only_activation_preserves_manifest_schema_owner_and_review_binding(self):
+        self.claim['repository_authority'] = 'write_only'
+        baseline = copy.deepcopy(self.manifest)
+        cases = [('extra_authorization_key', lambda m: m['authorization'].update(extra=True)),
+                 ('different_owner', lambda m: m['authorization'].update(owner_authorization_ref='session:other/owner')),
+                 ('different_file', lambda m: m['authorization']['files'].update({'.gitleaks.toml': 'f' * 40})),
+                 ('stale_review', lambda m: m['precommit_review'].update(authorization_sha256='0' * 64)),
+                 ('self_review', lambda m: m['precommit_review'].update(reviewer_ref=self.args.task_ref))]
+        for label, mutate in cases:
+            with self.subTest(case=label):
+                self.manifest = copy.deepcopy(baseline)
+                mutate(self.manifest)
+                self.assertTrue(self.evaluate()[1])
+
+    def test_all_runtimes_use_same_role_predicates(self):
+        for runtime in ('codex', 'cursor', 'claude', 'another-runtime'):
+            with self.subTest(runtime=runtime):
+                ref = 'agent:' + runtime + '/actual-receiver'
+                self.args.task_ref = self.claim['writer_ref'] = ref
+                self.manifest['authorization']['writer_ref'] = ref
+                self.sign_manifest()
+                self.assertEqual([], self.evaluate()[1])
+
+    def test_rejects_unapproved_blob_change(self):
+        self.files['.gitleaks.toml'] = 'e' * 40
+        self.assertTrue(any('blob' in e for e in self.evaluate()[1]))
+
+    def test_rejects_changed_owner_manifest_without_new_review(self):
+        self.manifest['authorization']['failure_evidence_ref'] = 'task:other/failure'
+        self.assertTrue(any('precommit' in e for e in self.evaluate()[1]))
+
+    def test_rejects_self_review(self):
+        self.manifest['precommit_review']['reviewer_ref'] = self.args.task_ref
+        self.assertTrue(any('precommit' in e for e in self.evaluate()[1]))
+
+    def test_rejects_new_pipeline_or_product_surface_even_with_matching_hashes(self):
+        for path in ('azure-pipelines.yml', 'app.py'):
+            with self.subTest(path=path):
+                self.files[path] = 'f' * 40
+                self.manifest['authorization']['files'] = dict(self.files)
+                self.facts.branch_paths = tuple(self.files)
+                self.claim['surfaces'].append(path)
+                self.sign_manifest()
+                self.assertTrue(any('unsupported surface' in e for e in self.evaluate()[1]))
+
+    def test_rejects_scope_reservation_beyond_manifest(self):
+        self.claim['surfaces'].append('app.py')
+        self.assertTrue(any('reserve exactly' in e for e in self.evaluate()[1]))
+
+    def test_rejects_another_claim(self):
+        self.files[preflight.claim_relative_path('PS-OTHER-001')] = 'f' * 40
+        self.manifest['authorization']['files'] = dict(self.files)
+        self.sign_manifest()
+        self.assertTrue(any('unsupported surface' in e for e in self.evaluate()[1]))
+
+    def test_rejects_uncommitted_or_divergent_candidate(self):
+        self.facts.worktree_paths = ('extra.txt',)
+        self.assertTrue(any('clean tree' in e for e in self.evaluate()[1]))
+        self.facts.worktree_paths = ()
+        self.facts.main_paths = ('main-moved.txt',)
+        self.assertTrue(any('divergent' in e for e in self.evaluate()[1]))
+
+    def test_rejects_symlink_file_mode(self):
+        original = self.git
+        def symlink(root, *args):
+            return original(root, *args).replace('100644', '120000')
+        self.manifest_path.write_text(json.dumps(self.manifest), encoding='utf-8')
+        with patch.object(preflight, '_git', side_effect=symlink):
+            errors = preflight.validate_repair_admission(self.root, self.args, self.facts, self.claim)[1]
+        self.assertTrue(any('mode' in e for e in errors))
+
+    def receipt(self):
+        return dict(schema_version=1, package=self.package, candidate_sha=self.facts.head,
+            review_type='independent', reviewer_ref='agent:independent/exact-commit',
+            result='pass', reviewed_at='2026-09-06T12:00:00Z', findings=[],
+            evidence_ref='session:review/exact-commit')
+
+    def test_merge_requires_exact_reviewed_commit(self):
+        self.args.intent = 'repair-merge'
+        self.assertTrue(self.evaluate()[1])
+        self.manifest['merge_review'] = self.receipt()
+        self.assertEqual([], self.evaluate()[1])
+        self.manifest['merge_review']['candidate_sha'] = 'f' * 40
+        self.assertTrue(any('exact HEAD' in e for e in self.evaluate()[1]))
+
+    def test_rejects_failed_review_and_production_authority(self):
+        self.args.intent = 'repair-merge'
+        self.manifest['merge_review'] = self.receipt()
+        self.manifest['merge_review']['result'] = 'revise'
+        self.claim['production_authority'] = 'allowed'
+        self.assertGreaterEqual(len(self.evaluate()[1]), 2)
+
+    def test_ordinary_activation_still_is_a_distinct_mode(self):
+        parser = preflight.build_parser()
+        for intent in ('activate', 'repair-activate', 'repair-merge'):
+            self.assertEqual(intent, parser.parse_args(['--package', self.package,
+                '--intent', intent]).intent)
+
+    def evaluate_full(self, *, registry='initialized', other_claim=None):
+        value = claim(package=self.package, **{
+            key: val for key, val in self.claim.items() if key != 'package'})
+        repo_facts = facts(**vars(self.facts))
+        request = args(self.args.intent, **{
+            key: val for key, val in vars(self.args).items() if key != 'intent'},
+            lease_token='opaque-current-token')
+        value['activated_from_main'] = self.facts.origin_main
+        candidate = {self.package.casefold(): value}
+        authority = {}
+        if other_claim:
+            authority[other_claim['package'].casefold()] = other_claim
+            candidate.update(authority)
+        self.manifest_path.write_text(json.dumps(self.manifest), encoding='utf-8')
+        with patch.object(preflight, '_git', side_effect=self.git):
+            return EvaluationTests().run_evaluate(request, value, repo_facts,
+                origin_claims=authority, candidate_claims=candidate,
+                local=patch.object(preflight, 'evaluate_local_worktree_context',
+                    return_value=({'registry': registry}, [], [])))
+
+    def test_full_admission_preserves_ordinary_one_claim_only_and_collision_gates(self):
+        self.assertEqual([], self.evaluate_full()[1])
+        self.args.intent = 'activate'
+        self.assertTrue(any('activation must change only' in e for e in self.evaluate_full()[1]))
+        self.args.intent = 'repair-activate'
+        other = claim(package='PS-OTHER-001', number=2,
+            surfaces=claimed_surfaces('PS-OTHER-001', '.gitleaks.toml'))
+        self.assertTrue(any('collision' in e for e in self.evaluate_full(other_claim=other)[1]))
+
+    def test_full_admission_rejects_ci_or_uninitialized_registry_bypass(self):
+        for state in ('ci_skipped', 'not_initialized', 'test_stub'):
+            with self.subTest(state=state):
+                self.assertTrue(any('initialized receiver-leased' in e
+                                    for e in self.evaluate_full(registry=state)[1]))
+
+    def test_full_merge_reuses_activation_gates_and_requires_exact_receipt(self):
+        self.args.intent = 'repair-merge'
+        self.assertTrue(any('receipt' in e for e in self.evaluate_full()[1]))
+        self.manifest['merge_review'] = self.receipt()
+        self.assertEqual([], self.evaluate_full()[1])
 
 
 if __name__ == "__main__":

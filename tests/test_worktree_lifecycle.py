@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -5648,6 +5649,297 @@ class WorktreeLifecycleTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, source)
         self.assertEqual(source.count('"worktree", "remove"'), 1)
+
+
+class ControlCustodyTests(unittest.TestCase):
+    def setUp(self):
+        self.f = RepositoryFixture()
+        self.addCleanup(self.f.cleanup)
+        self.f.initialize()
+        code, result = self.f.run('control', '--task-ref', self.f.writer, '--package', self.f.package,
+                                  '--branch', self.f.branch, '--base', self.f.main_sha, '--execute')
+        self.assertEqual(code, 0, result)
+        self.context = LIFECYCLE._repo_context(str(self.f.repo))
+        self.receiver = 'agent:generic-receiver'
+        self.proof = dict(path=result['path'], package=self.f.package, branch=self.f.branch,
+                          head=self.f.main_sha, from_ref=self.f.writer, to_ref=self.receiver,
+                          old_lease=result['lease'], old_token=result['lease_token'],
+                          owner_ref='session:owner/authorization', review_ref='agent:independent-review',
+                          quiescence_ref='session:host/quiescence', source_liveness='UNKNOWN', owner_revocation=True)
+        self.proof_path = self.f.base / 'proof.json'
+
+    def command(self, action, caller=None, **kwargs):
+        args = SimpleNamespace(action=action, task_ref=caller or self.receiver, execute=True,
+                               proof_file=str(self.proof_path), transition=None, acceptance_ref=None)
+        for k, v in kwargs.items():
+            setattr(args, k, v)
+        self.proof_path.write_text(json.dumps(self.proof), encoding='utf-8')
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': caller or self.receiver}):
+            return LIFECYCLE.command_control_custody(self.context, args)
+
+    def accepted(self):
+        item = self.command('propose')['transition']
+        self.command('accept', transition=item['id'], acceptance_ref='agent:receiver/acceptance')
+        return item['id']
+
+    def test_lost_source_receiver_acceptance_transfer_and_idempotency(self):
+        ident = self.accepted()
+        out = self.command('complete', transition=ident)
+        self.assertEqual(out['status'], 'completed')
+        self.assertNotEqual(out['lease_token'], self.proof['old_token'])
+        self.assertEqual(self.command('complete', transition=ident)['lease_token'], out['lease_token'])
+        self.assertEqual(self.command('propose')['status'], 'completed')
+        reg = LIFECYCLE._load_registry(self.context.registry_path)
+        record = LIFECYCLE._control_record(self.context, reg)
+        self.assertEqual(record['task_ref'], self.receiver)
+        LIFECYCLE.require_control_custody_fence(reg, record, task_ref=self.receiver, lease_token=out['lease_token'])
+        with self.assertRaises(LIFECYCLE.Refusal):
+            LIFECYCLE.require_control_custody_fence(reg, record, task_ref=self.receiver, lease_token=self.proof['old_token'])
+        with self.assertRaises(LIFECYCLE.Refusal):
+            LIFECYCLE.require_control_custody_fence(reg, record, task_ref=self.f.writer, lease_token=out['lease_token'])
+        record['lease'] = None
+        with self.assertRaises(LIFECYCLE.Refusal):
+            LIFECYCLE._custody_existing_guard(reg, self.f.writer)
+
+    def test_source_cannot_accept_and_mismatched_caller(self):
+        ident = self.command('propose')['transition']['id']
+        with self.assertRaises(LIFECYCLE.Refusal):
+            self.command('accept', caller=self.f.writer, transition=ident, acceptance_ref='agent:source/pretend')
+        with self.assertRaises(LIFECYCLE.Refusal):
+            self.command('complete', transition=ident)
+
+    def test_malformed_and_mismatched_proofs_fail_closed(self):
+        for key, value in [('owner_revocation', False), ('head', 'a'*40), ('old_token', 'b'*64),
+                           ('review_ref', self.receiver), ('quiescence_ref', self.proof['owner_ref']),
+                           ('old_lease', {}), ('source_liveness', []), ('from_ref', []), ('to_ref', {})]:
+            with self.subTest(key=key):
+                old = self.proof[key]
+                self.proof[key] = value
+                with self.assertRaises(LIFECYCLE.Refusal):
+                    self.command('propose')
+                self.proof[key] = old
+        ident = self.command('propose')['transition']['id']
+        with self.assertRaises(LIFECYCLE.Refusal):
+            self.command('accept', transition=ident, acceptance_ref=self.proof['review_ref'])
+
+    def test_interrupted_atomic_commit_retries_from_accepted_journal(self):
+        ident = self.accepted()
+        original = LIFECYCLE._atomic_write
+        with patch.object(LIFECYCLE, '_atomic_write', side_effect=OSError('synthetic interruption')):
+            with self.assertRaises(OSError):
+                self.command('complete', transition=ident)
+        reg = LIFECYCLE._load_registry(self.context.registry_path)
+        self.assertEqual(reg['control_custody_transitions'][0]['state'], 'accepted')
+        self.assertEqual(LIFECYCLE._control_record(self.context, reg)['task_ref'], self.f.writer)
+        self.assertEqual(self.command('complete', transition=ident)['status'], 'completed')
+
+    def test_pending_blocks_normal_mutation_and_guarded_writer_lock(self):
+        ident = self.command('propose')['transition']['id']
+        reg = LIFECYCLE._load_registry(self.context.registry_path)
+        with self.assertRaises(LIFECYCLE.Refusal):
+            LIFECYCLE._reconcile_pending(self.context, reg)
+        self.command('accept', transition=ident, acceptance_ref='agent:receiver/acceptance')
+        out = self.command('complete', transition=ident)
+        started = self.f.base / "writer-started"
+        stop = self.f.base / "writer-stop"
+        errors = []
+        script = "from pathlib import Path; import time; Path(" + repr(str(started)) + ").touch(); \\nwhile not Path(" + repr(str(stop)) + ").exists(): time.sleep(0.02)"
+        script = script.replace("\\n", "\n")
+        def run():
+            try:
+                LIFECYCLE.command_control_run(self.context, SimpleNamespace(execute=True, task_ref=self.receiver,
+                    lease_token=out['lease_token'], command=[sys.executable, '-B', '-c', script]))
+            except Exception as exc:
+                errors.append(exc)
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.receiver}):
+            worker = threading.Thread(target=run)
+            worker.start()
+            try:
+                deadline = time.monotonic() + 5
+                while not started.exists() and time.monotonic() < deadline:
+                    time.sleep(0.02)
+                self.assertTrue(started.exists(), errors)
+                with self.assertRaises(LIFECYCLE.Refusal):
+                    with LIFECYCLE._registry_lock(self.context.registry_path):
+                        pass
+            finally:
+                stop.touch()
+                worker.join(5)
+        self.assertFalse(worker.is_alive())
+        self.assertFalse(errors, errors)
+
+    def test_live_head_changed_after_acceptance_fails_cas(self):
+        ident = self.accepted()
+        path = Path(self.proof['path'])
+        git(path, 'commit', '--allow-empty', '-m', 'unexpected external writer')
+        with self.assertRaises(LIFECYCLE.Refusal):
+            self.command('complete', transition=ident)
+        reg = LIFECYCLE._load_registry(self.context.registry_path)
+        self.assertEqual(reg['control_custody_transitions'][0]['state'], 'accepted')
+
+    def test_after_atomic_write_interruption_is_already_completed(self):
+        ident = self.accepted()
+        atomic = LIFECYCLE._atomic_write
+        def committed_then_interrupted(*args):
+            atomic(*args)
+            raise OSError('synthetic lost response after atomic commit')
+        with patch.object(LIFECYCLE, '_atomic_write', side_effect=committed_then_interrupted):
+            with self.assertRaises(OSError):
+                self.command('complete', transition=ident)
+        self.assertEqual(self.command('complete', transition=ident)['status'], 'completed')
+
+    def test_guarded_success_and_nonzero_commit_refresh_head(self):
+        for exit_code in (0, 7):
+            with self.subTest(exit_code=exit_code), patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.f.writer}):
+                script = "import subprocess,sys; subprocess.run(['git','commit','--allow-empty','-m','guarded'],check=True,stdout=subprocess.DEVNULL); sys.exit(" + str(exit_code) + ")"
+                out = LIFECYCLE.command_control_run(self.context, SimpleNamespace(execute=True, task_ref=self.f.writer,
+                    lease_token=self.proof['old_token'], command=[sys.executable, '-B', '-c', script]))
+                self.assertEqual(out['returncode'], exit_code)
+                reg = LIFECYCLE._load_registry(self.context.registry_path)
+                record = LIFECYCLE._control_record(self.context, reg)
+                self.assertEqual(record['head'], git(Path(record['path']), 'rev-parse', 'HEAD'))
+                self.assertEqual(LIFECYCLE.control_lease_token(record), self.proof['old_token'])
+
+    def test_guarded_branch_switch_persists_truthful_fence(self):
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.f.writer}):
+            with self.assertRaises(LIFECYCLE.Refusal):
+                LIFECYCLE.command_control_run(self.context, SimpleNamespace(execute=True, task_ref=self.f.writer,
+                    lease_token=self.proof['old_token'], command=['git', 'switch', '-c', 'work/unexpected']))
+        reg = LIFECYCLE._load_registry(self.context.registry_path)
+        failure = reg['control_guard_failure']
+        self.assertEqual(failure['expected_branch'], self.f.branch)
+        self.assertEqual(failure['observed_branch'], 'work/unexpected')
+        with self.assertRaises(LIFECYCLE.Refusal):
+            LIFECYCLE.require_control_custody_fence(reg, LIFECYCLE._control_record(self.context, reg),
+                task_ref=self.f.writer, lease_token=self.proof['old_token'])
+        with self.assertRaises(LIFECYCLE.Refusal):
+            self.command('propose')
+
+    def test_completed_history_rejects_revoked_lease_and_duplicate_receipt(self):
+        ident = self.accepted()
+        self.command('complete', transition=ident)
+        reg = LIFECYCLE._load_registry(self.context.registry_path)
+        restored = copy.deepcopy(reg)
+        record = LIFECYCLE._control_record(self.context, restored)
+        record.update(task_ref=self.proof['from_ref'], lease=copy.deepcopy(self.proof['old_lease']))
+        with self.assertRaises(LIFECYCLE.Refusal):
+            LIFECYCLE.validate_owner_reassignment_registry(restored)
+        with self.assertRaises(LIFECYCLE.Refusal):
+            LIFECYCLE.require_control_custody_fence(restored, record, task_ref=self.proof['from_ref'], lease_token=self.proof['old_token'])
+        duplicate = copy.deepcopy(reg['control_custody_transitions'][0])
+        duplicate['id'] = 'f' * 32
+        reg['control_custody_transitions'].append(duplicate)
+        with self.assertRaises(LIFECYCLE.Refusal):
+            LIFECYCLE.validate_owner_reassignment_registry(reg)
+
+    def test_explicit_return_then_release_fresh_acquire_and_package_change(self):
+        original = self.f.writer
+        ident = self.accepted()
+        self.command('complete', transition=ident)
+        reg = LIFECYCLE._load_registry(self.context.registry_path)
+        record = LIFECYCLE._control_record(self.context, reg)
+        self.proof.update(from_ref=self.receiver, to_ref=original,
+                          old_lease=copy.deepcopy(record['lease']), old_token=LIFECYCLE.control_lease_token(record))
+        self.receiver = original
+        returned = self.command('complete', transition=self.accepted())
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': original,
+                                    'PEERSLATE_CONTROL_LEASE_TOKEN': returned['lease_token']}):
+            code, payload = self.f.run('control', '--task-ref', original, '--release', '--base', self.f.main_sha, '--execute')
+            self.assertEqual(code, 0, payload)
+            code, payload = self.f.run('control', '--task-ref', original, '--package', 'PS-ANOTHER-PACKAGE-001',
+                                      '--branch', self.f.branch, '--base', self.f.main_sha, '--execute')
+            self.assertEqual(code, 0, payload)
+        self.assertNotEqual(payload['lease_token'], returned['lease_token'])
+        reg = LIFECYCLE._load_registry(self.context.registry_path)
+        LIFECYCLE.validate_owner_reassignment_registry(reg)
+        LIFECYCLE.require_control_custody_fence(reg, LIFECYCLE._control_record(self.context, reg),
+            task_ref=original, lease_token=payload['lease_token'])
+
+    def test_fresh_receiver_acquisition_can_be_next_transfer_source(self):
+        ident = self.accepted()
+        out = self.command('complete', transition=ident)
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.receiver,
+                                    'PEERSLATE_CONTROL_LEASE_TOKEN': out['lease_token']}):
+            code, payload = self.f.run('control', '--task-ref', self.receiver, '--release', '--base', self.f.main_sha, '--execute')
+            self.assertEqual(code, 0, payload)
+            code, payload = self.f.run('control', '--task-ref', self.receiver, '--package', 'PS-ANOTHER-PACKAGE-001',
+                                      '--branch', self.f.branch, '--base', self.f.main_sha, '--execute')
+            self.assertEqual(code, 0, payload)
+        self.proof.update(package='PS-ANOTHER-PACKAGE-001', from_ref=self.receiver, to_ref='agent:third-receiver',
+                          old_lease=payload['lease'], old_token=payload['lease_token'])
+        self.receiver = 'agent:third-receiver'
+        self.assertEqual(self.command('complete', transition=self.accepted())['status'], 'completed')
+
+    def test_frozen_clock_reacquisition_always_issues_fresh_token(self):
+        from datetime import datetime, timezone
+        frozen = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        reg = LIFECYCLE._load_registry(self.context.registry_path)
+        record = LIFECYCLE._control_record(self.context, reg)
+        tokens = [LIFECYCLE.control_lease_token(record)]
+        # Execute in process with the real registry lock and Git worktree, while
+        # every wall-clock observation returns the same instant.
+        with patch.object(LIFECYCLE, 'datetime') as clock:
+            clock.now.return_value = frozen
+            clock.fromisoformat.side_effect = datetime.fromisoformat
+            clock.strptime.side_effect = datetime.strptime
+            for _ in range(3):
+                args = SimpleNamespace(execute=True, task_ref=self.f.writer, package=self.f.package,
+                    base=self.f.main_sha, branch=self.f.branch, purpose='control', include=[], release=True)
+                LIFECYCLE.command_control(self.context, args)
+                args.release = False
+                out = LIFECYCLE.command_control(self.context, args)
+                self.assertNotIn(out['lease_token'], tokens)
+                reg = LIFECYCLE._load_registry(self.context.registry_path)
+                record = LIFECYCLE._control_record(self.context, reg)
+                for old in tokens:
+                    with self.assertRaises(LIFECYCLE.Refusal):
+                        LIFECYCLE.require_control_custody_fence(reg, record, task_ref=self.f.writer, lease_token=old)
+                tokens.append(out['lease_token'])
+
+    def test_lease_clock_absence_compatible_and_malformed_fails_closed(self):
+        reg = LIFECYCLE._load_registry(self.context.registry_path)
+        reg.pop('control_lease_clock', None)
+        LIFECYCLE.validate_owner_reassignment_registry(reg)
+        for value in (None, '', 0, {}, [], '2026-01-01', '2026-01-01T00:00:00.1Z'):
+            with self.subTest(value=value):
+                reg['control_lease_clock'] = value
+                with self.assertRaises(LIFECYCLE.Refusal):
+                    LIFECYCLE.validate_owner_reassignment_registry(reg)
+
+    def test_lost_pending_receiver_supersession_preserves_fence_and_history(self):
+        old_receiver = self.receiver
+        old_id = self.accepted()
+        self.receiver = 'agent:replacement-receiver'
+        self.proof.update(to_ref=self.receiver, supersedes='e' * 32,
+                          owner_ref='session:owner/replacement', review_ref='agent:review/replacement',
+                          quiescence_ref='session:host/replacement')
+        with self.assertRaises(LIFECYCLE.Refusal):
+            self.command('propose')
+        self.proof['supersedes'] = old_id
+        proposed = self.command('propose')
+        reg = LIFECYCLE._load_registry(self.context.registry_path)
+        self.assertEqual([t['state'] for t in reg['control_custody_transitions']], ['superseded', 'proposed'])
+        self.assertEqual(reg['control_custody_transitions'][0]['accepted_by'], old_receiver)
+        with self.assertRaises(LIFECYCLE.Refusal):
+            LIFECYCLE.require_control_custody_fence(reg, LIFECYCLE._control_record(self.context, reg),
+                task_ref=self.f.writer, lease_token=self.proof['old_token'])
+        with self.assertRaises(LIFECYCLE.Refusal):
+            self.command('accept', caller=old_receiver, transition=old_id, acceptance_ref='agent:receiver/acceptance')
+        new_id = proposed['transition']['id']
+        self.command('accept', transition=new_id, acceptance_ref='agent:replacement/acceptance')
+        self.assertEqual(self.command('complete', transition=new_id)['status'], 'completed')
+        reg = LIFECYCLE._load_registry(self.context.registry_path)
+        self.assertEqual([t['state'] for t in reg['control_custody_transitions']], ['superseded', 'completed'])
+        self.assertEqual(LIFECYCLE._control_record(self.context, reg)['task_ref'], self.receiver)
+
+    def test_legacy_shape_and_strict_history(self):
+        reg = LIFECYCLE._load_registry(self.context.registry_path)
+        LIFECYCLE.validate_control_custody_registry(reg)
+        for bad in (None, {}, 'bad'):
+            broken = copy.deepcopy(reg)
+            broken['control_custody_transitions'] = bad
+            with self.assertRaises(LIFECYCLE.Refusal):
+                LIFECYCLE.validate_control_custody_registry(broken)
 
 
 if __name__ == "__main__":

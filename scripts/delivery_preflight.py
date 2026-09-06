@@ -11,6 +11,7 @@ production operation; that boundary is enforced by
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -75,6 +76,7 @@ ASSIGNMENTS = {"implementation"}
 REPOSITORY_AUTHORITIES = {"through_merge", "write_only"}
 REVIEW_REQUIREMENTS = {"self", "independent"}
 MUTATING_INTENTS = {
+    "repair-activate", "repair-merge",
     "activate", "authorize", "extend-surfaces", "write", "transfer",
     "owner-reassignment", "pause", "resume", "merge", "close", "supersede",
     "evidence-errata",
@@ -83,10 +85,20 @@ MUTATING_INTENTS = {
 # sparse _control singleton and its claim is read from the branch copy, but
 # unlike the lifecycle transitions it must leave every claim byte-identical.
 CONTROL_INTENTS = {
+    "repair-activate", "repair-merge",
     "activate", "authorize", "extend-surfaces", "transfer",
     "owner-reassignment", "pause", "resume", "close", "supersede",
     "evidence-errata",
 }
+REPAIR_INTENTS = {"repair-activate", "repair-merge"}
+REPAIR_SURFACES = frozenset({
+    ".gitleaks.toml", "scripts/worktree_lifecycle.py",
+    "scripts/delivery_preflight.py", "tests/test_worktree_lifecycle.py",
+    "tests/test_delivery_preflight.py", "tests/test_control_custody_recovery.py",
+    "tests/test_repair_admission.py", "tests/test_operational_readiness.py",
+    "AGENTS.md", "START_HERE.md", "docs/AI_WORKFLOW.md",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+})
 # PS-DELIVERY-SIMPLIFICATION-CLOSE-REPAIR-001: the delivery-control
 # simplification bootstrap introduced the per-package claim model itself, so
 # its independently reviewed candidate necessarily carried the two legacy
@@ -829,6 +841,17 @@ def evaluate_local_worktree_context(
         return context, errors, warnings
 
     record = matches[0]
+    if record.get("kind") == "control_singleton":
+        try:
+            if (registry.get("control_custody_transitions") or args.intent in REPAIR_INTENTS):
+                if lifecycle_registry.control_custody_caller() != getattr(args, "task_ref", ""):
+                    raise lifecycle_registry.Refusal("claimed task differs from launcher caller")
+            lifecycle_registry.require_control_custody_fence(
+                registry, record, task_ref=getattr(args, "task_ref", ""),
+                lease_token=getattr(args, "lease_token", ""),
+            )
+        except lifecycle_registry.Refusal as exc:
+            errors.append("control custody fence: " + str(exc))
     context.update(
         {
             "enforced": True,
@@ -2304,11 +2327,133 @@ def _require_control_delta(
     return before
 
 
+def validate_repair_admission(
+    root: Path, args: argparse.Namespace, facts: RepoFacts, claim: dict
+) -> tuple[dict, list[str]]:
+    """Hash-bound exception to claim-only ordering, never a CI/policy waiver.
+
+    References are auditable owner/reviewer attestations, as elsewhere in this
+    tool, not cryptographic identity proof. The normal PR policies remain the
+    actual server-side merge gate. No network setting or ref is changed here.
+    """
+    errors: list[str] = []
+    result = {"server_ci": "required; not verified by local admission",
+              "ordinary_activation": False}
+    if facts.main_paths or getattr(facts, "behind", 0):
+        errors.append("repair must start from current main without divergent main changes")
+    if getattr(args, "candidate_worktree", ""):
+        return result, ["repair cannot substitute another candidate worktree"]
+    manifest_path = getattr(args, "repair_manifest", "")
+    if not manifest_path:
+        return result, ["repair requires an external approval manifest"]
+    try:
+        path = Path(manifest_path).resolve(strict=True)
+        if path.is_relative_to(root.resolve()):
+            return result, ["repair approval manifest must be outside the candidate tree"]
+        manifest = _read_json(path)
+    except (OSError, ValueError, PreflightError) as exc:
+        return result, ["repair approval manifest cannot be read: " + str(exc)]
+    if not isinstance(manifest, dict) or set(manifest) != {
+        "authorization", "precommit_review", "merge_review"
+    }:
+        return result, ["repair approval manifest has an inexact schema"]
+    authorization = manifest["authorization"]
+    required = {"schema_version", "package", "writer_ref", "owner_authorization_ref",
+                "failure_evidence_ref", "base_sha", "branch", "files"}
+    if not isinstance(authorization, dict) or set(authorization) != required:
+        return result, ["repair authorization has an inexact schema"]
+    if authorization["schema_version"] != 1:
+        errors.append("repair authorization schema_version must be 1")
+    for field in ("writer_ref", "owner_authorization_ref", "failure_evidence_ref"):
+        if not isinstance(authorization[field], str) or not REF_RE.fullmatch(authorization[field]):
+            errors.append("repair authorization has invalid " + field)
+    for field, expected in {
+        "package": args.package, "writer_ref": args.task_ref,
+        "owner_authorization_ref": getattr(args, "owner_authorization_ref", ""),
+        "base_sha": facts.origin_main, "branch": facts.branch,
+    }.items():
+        if authorization[field] != expected:
+            errors.append("repair authorization does not match " + field)
+    if not SHA_RE.fullmatch(str(authorization["base_sha"])):
+        errors.append("repair base must be an exact Git commit")
+    if authorization["owner_authorization_ref"] == authorization["writer_ref"]:
+        errors.append("repair owner authorization must be distinct from the writer")
+    allowed_repository_authorities = ("through_merge",)
+    if args.intent == "repair-activate":
+        allowed_repository_authorities += ("write_only",)
+    if (claim.get("writer_ref") != args.task_ref
+            or claim.get("owner_outcome_ref") != authorization["owner_authorization_ref"]
+            or claim.get("delivery_path") != "Protected"
+            or claim.get("review_requirement") != "independent"
+            or claim.get("repository_authority") not in allowed_repository_authorities
+            or claim.get("production_authority") != "withheld"):
+        errors.append("repair requires the exact owner-selected Protected independent claim")
+    files = authorization["files"]
+    expected_claim = claim_relative_path(args.package)
+    if not isinstance(files, dict) or not files:
+        return result, errors + ["repair files must be an exact nonempty blob map"]
+    if expected_claim not in files or not (set(files) - {expected_claim}):
+        errors.append("repair must contain its own activation claim and a gate correction")
+    if set(files) - (REPAIR_SURFACES | {expected_claim}):
+        errors.append("repair contains an unsupported surface; pipeline and product changes are prohibited")
+    if set(facts.branch_paths) != set(files) or facts.worktree_paths:
+        errors.append("repair candidate paths differ from the approved clean tree")
+    if _scope_errors(files, claim.get("surfaces", [])):
+        errors.append("repair files exceed the declared claim surfaces")
+    if set(claim.get("surfaces", [])) != set(files) | set(control_relative_paths(args.package)):
+        errors.append("repair claim must reserve exactly approved files and fixed control surfaces")
+    for filename, blob in files.items():
+        try:
+            canonical = normalize_path(filename) if isinstance(filename, str) else None
+        except ValueError:
+            canonical = None
+        if (canonical != filename
+                or not isinstance(blob, str) or not SHA_RE.fullmatch(blob)):
+            errors.append("repair file mapping must use canonical paths and exact Git blob IDs")
+            continue
+        try:
+            actual = _git(root, "rev-parse", f"{facts.head}:{filename}")
+            mode = _git(root, "ls-tree", facts.head, "--", filename).split()[0]
+        except (PreflightError, IndexError):
+            errors.append("repair file cannot be resolved: " + filename)
+            continue
+        if actual != blob or mode != "100644":
+            errors.append("repair blob or regular-file mode changed: " + filename)
+    digest = hashlib.sha256(json.dumps(authorization, sort_keys=True,
+        separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+    result["authorization_sha256"] = digest
+    precommit = manifest["precommit_review"]
+    if not isinstance(precommit, dict) or set(precommit) != {
+        "reviewer_ref", "review_ref", "result", "authorization_sha256"
+    }:
+        errors.append("repair requires an exact precommit review record")
+    else:
+        if (precommit["result"] != "pass" or precommit["authorization_sha256"] != digest
+                or precommit["reviewer_ref"] in {args.task_ref, authorization["owner_authorization_ref"]}
+                or not all(isinstance(precommit[k], str) and REF_RE.fullmatch(precommit[k])
+                           for k in ("reviewer_ref", "review_ref"))):
+            errors.append("repair precommit review must independently approve this exact manifest")
+    if args.intent == "repair-merge":
+        review = manifest["merge_review"]
+        if not isinstance(review, dict):
+            errors.append("repair merge requires the exact independent candidate receipt")
+        else:
+            errors.extend(validate_receipt(review, claim))
+            if (review.get("candidate_sha") != facts.head
+                    or getattr(args, "candidate_sha", "") != facts.head):
+                errors.append("repair merge review must match exact HEAD without a post-review tail")
+    elif manifest["merge_review"] is not None:
+        errors.append("repair activation manifest must not preseed a merge receipt")
+    return result, errors
+
+
 def evaluate(
     args: argparse.Namespace, *, root: Path = ROOT
 ) -> tuple[dict, list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
+    if args.intent not in REPAIR_INTENTS and getattr(args, "repair_manifest", ""):
+        errors.append("repair manifest is valid only for repair admission")
     work_root = root
     if args.intent == "merge" and args.candidate_worktree:
         work_root = Path(args.candidate_worktree).resolve()
@@ -2394,10 +2539,11 @@ def evaluate(
         "evidence-errata",
         "owner-reassignment",
         "supersede",
+        *REPAIR_INTENTS,
     }:
         errors.append(
             "--owner-authorization-ref is valid only for evidence-errata, "
-            "owner-reassignment, or supersede"
+            "owner-reassignment, supersede, or repair admission"
         )
 
     if args.intent == "read":
@@ -2454,7 +2600,7 @@ def evaluate(
             "and exact completed preparation proof"
         )
 
-    if args.intent == "activate":
+    if args.intent == "activate" or args.intent in REPAIR_INTENTS:
         if not ACTIVATION_BRANCH_RE.fullmatch(facts.branch):
             errors.append("activation requires the delivery-activation branch pattern")
         if claim.get("state") != "active":
@@ -2480,12 +2626,22 @@ def evaluate(
         if added != [package_key] or removed or changed:
             errors.append("activation must add exactly one claim and preserve all others")
         expected = claim_relative_path(args.package)
-        if set(facts.branch_paths) != {expected}:
+        if args.intent == "activate" and set(facts.branch_paths) != {expected}:
             errors.append(f"activation must change only {expected}")
         if claim.get("activated_from_main") != facts.origin_main:
             errors.append("new claim activated_from_main must equal current origin/main")
         if claim.get("branch") == facts.branch:
             errors.append("activation and implementation branches must differ")
+        if args.intent in REPAIR_INTENTS:
+            if registry_context.get("registry") != "initialized":
+                errors.append("repair requires the initialized receiver-leased control singleton")
+            if not getattr(args, "lease_token", ""):
+                errors.append("repair requires an explicit current lease token")
+            repair_facts, repair_errors = validate_repair_admission(
+                work_root, args, facts, claim
+            )
+            payload["repair_admission"] = repair_facts
+            errors.extend(repair_errors)
 
     elif args.intent == "authorize":
         if (
@@ -3211,6 +3367,7 @@ def evaluate(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repo", default="", help="repository checkout to validate; defaults to this script's checkout")
     parser.add_argument("--package", required=True)
     parser.add_argument(
         "--intent",
@@ -3218,6 +3375,8 @@ def build_parser() -> argparse.ArgumentParser:
         choices=[
             "read",
             "activate",
+            "repair-activate",
+            "repair-merge",
             "authorize",
             "extend-surfaces",
             "write",
@@ -3237,6 +3396,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--require-clean", action="store_true")
     parser.add_argument("--candidate-sha", default="")
     parser.add_argument("--candidate-worktree", default="")
+    parser.add_argument("--repair-manifest", default="",
+                        help="external hash-bound owner and review manifest for repair admission")
+    parser.add_argument("--lease-token", default="",
+                        help="current lifecycle generation token; required after custody recovery")
     parser.add_argument(
         "--task-ref",
         default="",
@@ -3247,7 +3410,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         help=(
             "opaque owner reference required by evidence-errata, "
-            "owner-reassignment, and supersede; invalid for every other intent"
+            "owner-reassignment, supersede, and repair admission"
         ),
     )
     return parser
@@ -3256,7 +3419,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        facts, errors, warnings = evaluate(args)
+        facts, errors, warnings = evaluate(args, root=Path(args.repo).resolve() if args.repo else ROOT)
     except (PreflightError, ValueError) as exc:
         facts = {}
         errors = [str(exc)]

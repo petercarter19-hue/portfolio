@@ -5,29 +5,34 @@ operations._
 
 ## Default flow
 
+Accepted assignments have equivalent lifecycle/delivery capabilities across
+runtimes; coordination grants no exclusive privilege. Preserve actual caller
+identity, independent handoff/recovery review, and receiver acceptance.
+`docs/governance/WORKTREE_LIFECYCLE.md` governs lost-task custody recovery;
+`START_HERE.md` governs required-check repair admission, retaining Azure CI and
+branch policies. Configuration or identity strings alone do not prove access.
+
 1. Follow `START_HERE.md`, fetch Azure main, preserve unrelated work, and read
    the current package claim.
 2. Choose Routine, Bounded, or Protected. On an initialized developer machine,
    reuse the package's one registered durable worktree and pass its exact
    writer `--task-ref` to mutating preflight.
-3. The assigned implementation writer completes the scoped repository work:
-   implementation, focused validation, complete-diff self-review, review
-   correction, PR, and accepted merge.
+3. The assigned writer implements, validates, self-reviews the complete diff,
+   corrects findings, opens the PR, and merges accepted work.
 4. Add an independent exact-SHA review only when Protected risk, the package,
    or Pete requires it. The reviewer is read-only, consumes no writer claim,
    and defaults to the Azure/pushed diff without creating a worktree.
 5. Report merge, deployment, schema, enablement, and live verification as
    separate states.
 
-Specialist reviews and full-site audits are event-driven. None is required
+Specialist reviews and audits are event-driven; none is required
 unless its delivery path or package specifically triggers it. Use
 [capability routing](AI_MODEL_AND_ROLE_ROUTING.md#capability-use) for model and tool choices.
 
 ## Concurrency and collision rule
 
-Any number of writers may proceed with unique branches, non-overlapping
-normalized paths and hierarchical domains. There are no fixed writer,
-lane-class, shared-foundation, direction or production-capable counts.
+Writers may proceed without capacity limits on unique branches and disjoint
+normalized paths and hierarchical domains.
 Review-only tasks claim no mutable surfaces.
 
 Each package permanently owns its claim, receipt and evidence paths; other
@@ -35,9 +40,8 @@ claims cannot reserve them or a broad parent. Paused work releases product
 paths/domains but reserves its branch. Closed work releases implementation
 ownership, not its historical control namespace.
 
-A collision is a stop for the colliding packages only. Disjoint main movement
-does not expire a reviewed candidate. Movement across one of its claimed
-surfaces does.
+Collisions stop only affected packages. Disjoint main movement preserves review;
+movement across a claimed surface expires it.
 
 ## Worktree lifecycle
 
@@ -82,7 +86,7 @@ The implementation writer has repository authority through merge unless the
 claim is explicitly `write_only`. Reviewers are claim-free.
 No separate owner merge grant is required.
 
-Every merge freezes and pushes one exact candidate and records a receipt.
+Every merge requires one frozen, pushed candidate and receipt.
 Routine and Bounded writers complete self-review and issue a `self` receipt
 whose opaque reviewer reference equals their writer reference. Protected work
 uses the required read-only independent reviewer. Correct findings and freeze
@@ -92,8 +96,8 @@ generic review receipt and fixed runtime-inert
 SHA, receipt, remote branch tip, claimed paths, evidence-only tail, and
 non-colliding main movement.
 
-An explicitly narrowed `write_only` claim cannot merge. If Pete later expands
-that exact assignment, a `delivery-authorize` control PR may change only
+A `write_only` claim cannot merge. Pete may expand that assignment through a
+`delivery-authorize` control PR changing only
 `repository_authority` from `write_only` to `through_merge` and replace
 `owner_outcome_ref` with the new opaque decision reference. Validate it with
 `--intent authorize`, merge the control PR, and then use the ordinary review
@@ -102,12 +106,12 @@ and merge path. This transition is not needed for normal implementation claims.
 Use an Azure PR. Current-target CI and unresolved comments still apply. A green
 PR or a merge is repository truth, not deployment truth.
 
-For a current claim, run merge preflight in its clean durable implementation
-worktree and pass `--task-ref <WRITER-REF>`; do not create a verifier checkout.
+For current claims, run merge preflight in the clean durable worktree with
+`--task-ref <WRITER-REF>`; create no verifier.
 
-If a frozen candidate predates generic claims, use the current-main script from
-a clean verifier with `--candidate-worktree <FROZEN-WORKTREE>`; the old branch
-stays byte-for-byte unchanged while current `origin/main` supplies authority.
+For candidates predating generic claims, use the current-main script in a clean
+verifier with `--candidate-worktree <FROZEN-WORKTREE>`. Preserve the old branch
+bytes; current `origin/main` supplies authority.
 
 ```bash
 python scripts/delivery_preflight.py --package <PACKAGE-ID> --intent merge --candidate-sha <REVIEWED-SHA> --candidate-worktree <FROZEN-WORKTREE> --fetch --require-clean
@@ -144,9 +148,8 @@ fetched checkpoint, and reruns collisions. Preserve the remote implementation
 branch through close so squash-merge byte proof remains reproducible. If it was
 deleted, re-push the exact reviewed branch before retrying close.
 
-Use one proportional completion record. Core evidence is outcome, base/final
-SHA, changed paths, tests, review, PR/merge state, deployment state, honest
-limit, and next action. Candidate, Launch, Operate, Retire, visual acceptance,
+Record outcome, base/final SHA, changed paths, tests, review, PR/merge and
+deployment states, limits, and next action once. Candidate, Launch, Operate, Retire, visual acceptance,
 and full-site audits are event-driven. None blocks unrelated Routine or Bounded work.
 
 ## Stop conditions
