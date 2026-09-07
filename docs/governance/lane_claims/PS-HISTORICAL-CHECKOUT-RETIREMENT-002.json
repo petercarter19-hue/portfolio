@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-HISTORICAL-CHECKOUT-RETIREMENT-002",
-  "state": "active",
+  "state": "closed",
   "outcome": "Replace paused partial-transfer package PS-HISTORICAL-CHECKOUT-RETIREMENT-001 with a current-authority Protected implementation of the same bounded historical checkout retirement mechanism and the same 29-target eligible cleanup. Preserve package 001, its branch, worktree, refs, and evidence until package 002 closes. Retire only independently reviewed immutable-allowlist targets that pass action-time custody, pristine, server-tip, recovery, nesting, reparse, and collision checks. Exclude unregistered, detached, unique, dirty, nested, reparse, primary, control, Synthetic, paused, superseded, reassignment, and protected work. Preserve all refs and evidence; perform no raw worktree deletion, Git GC, history rewrite, production, deployment, schema, identity, product, or visual action.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/historical_writer",
@@ -33,6 +33,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "191684f80714b5e62164ed2d789e7490917d6bb8",
+  "closed_at": "2026-09-07T20:56:17Z"
 }
