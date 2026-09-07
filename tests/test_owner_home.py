@@ -29,6 +29,9 @@ class OwnerHomeRetirementTests(unittest.TestCase):
             "PEERSLATE_OPPORTUNITY_SLATE_ENABLED": app.config.get(
                 "PEERSLATE_OPPORTUNITY_SLATE_ENABLED"
             ),
+            "PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED": app.config.get(
+                "PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED"
+            ),
         }
         app.config.update(
             TESTING=True,
@@ -38,6 +41,7 @@ class OwnerHomeRetirementTests(unittest.TestCase):
             PEERSLATE_WORKSHOP_ENABLED=False,
             PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
             PEERSLATE_OPPORTUNITY_SLATE_ENABLED=True,
+            PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED=True,
         )
         self.client = app.test_client()
 
@@ -53,36 +57,39 @@ class OwnerHomeRetirementTests(unittest.TestCase):
         self.assertIn("My PeerSlate", body)
         self.assertIn("private starting point, not your Profile", body)
         self.assertIn('aria-label="Your PeerSlate destinations"', body)
-        self.assertIn('href="/app/capture"', body)
         self.assertIn('href="/app/settings"', body)
         self.assertIn('href="/interview-studio"', body)
         self.assertIn('href="/the-slate"', body)
-        self.assertIn("My Opportunities", body)
+        self.assertIn('href="/opportunity-slate"', body)
+        self.assertIn("Opportunity Slate", body)
         self.assertNotIn("Owner Home", body)
         self.assertNotIn("Capture a Moment", body)
         self.assertNotIn("/app/profile", body)
         self.assertNotIn('class="profile-tabs', body)
         self.assertEqual(body.count("<main"), 1)
 
-    def test_capture_is_an_equal_destination_not_the_home(self):
+    def test_capture_is_preserved_without_launchpad_promotion(self):
         body = self.client.get("/app").get_data(as_text=True)
-        self.assertEqual(body.count('class="owner-app__destination"'), 5)
-        self.assertEqual(body.count('href="/app/capture"'), 1)
+        self.assertEqual(body.count('class="owner-app__destination"'), 4)
+        self.assertNotIn('href="/app/capture"', body)
+        self.assertNotEqual(self.client.get("/app/capture").status_code, 404)
         self.assertNotIn("owner-app__primary", body)
 
-    def test_workshop_is_rendered_only_when_its_real_route_is_enabled(self):
+    def test_workshop_is_not_promoted_when_its_real_route_is_enabled(self):
         hidden = self.client.get("/app").get_data(as_text=True)
         self.assertNotIn('href="/app/workshop"', hidden)
 
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
         visible = self.client.get("/app").get_data(as_text=True)
-        self.assertIn('href="/app/workshop"', visible)
-        self.assertIn(">Workshop<", visible)
+        self.assertNotIn('href="/app/workshop"', visible)
+        self.assertNotIn(">Workshop<", visible)
+        self.assertNotEqual(self.client.get("/app/workshop").status_code, 404)
 
     def test_gated_destinations_are_absent_when_off_and_real_when_on(self):
         app.config.update(
             PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=False,
             PEERSLATE_OPPORTUNITY_SLATE_ENABLED=False,
+            PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED=False,
         )
         hidden = self.client.get("/app").get_data(as_text=True)
         self.assertNotIn('href="/the-slate"', hidden)
@@ -93,6 +100,7 @@ class OwnerHomeRetirementTests(unittest.TestCase):
         app.config.update(
             PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
             PEERSLATE_OPPORTUNITY_SLATE_ENABLED=True,
+            PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED=True,
         )
         visible = self.client.get("/app").get_data(as_text=True)
         self.assertIn('href="/the-slate"', visible)

@@ -76,6 +76,7 @@ class SharedShellConvergenceTests(unittest.TestCase):
         "PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED",
         "PEERSLATE_WORKSHOP_ENABLED",
         "PEERSLATE_OPPORTUNITY_SLATE_ENABLED",
+        "PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED",
         "PEERSLATE_AUTH_CLIENT_ID",
     )
 
@@ -91,6 +92,7 @@ class SharedShellConvergenceTests(unittest.TestCase):
             PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
             PEERSLATE_WORKSHOP_ENABLED=True,
             PEERSLATE_OPPORTUNITY_SLATE_ENABLED=True,
+            PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED=True,
             PEERSLATE_AUTH_CLIENT_ID="shared-shell-test-client",
         )
         self.client = app.test_client()
@@ -153,14 +155,13 @@ class SharedShellConvergenceTests(unittest.TestCase):
             "/petec/resume#overview",
             "/the-slate",
             "/interview-studio",
-            "/app/workshop",
             "/opportunity-slate",
         ]
         for links in representations:
             self.assertEqual([link["href"] for link in links], expected_hrefs)
             self.assertEqual(
                 [link["href"] for link in links if link["current"] == "page"],
-                ["/app/workshop"],
+                [],
             )
 
         records = _search_records(html)
@@ -173,8 +174,6 @@ class SharedShellConvergenceTests(unittest.TestCase):
     def test_existing_availability_flags_remove_destinations_everywhere(self):
         flag_cases = (
             ("PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED", "/the-slate"),
-            ("PEERSLATE_WORKSHOP_ENABLED", "/app/workshop"),
-            ("PEERSLATE_OPPORTUNITY_SLATE_ENABLED", "/opportunity-slate"),
         )
         markers = (
             '<ul class="platform-nav__links"',
@@ -190,6 +189,18 @@ class SharedShellConvergenceTests(unittest.TestCase):
                     self.assertNotIn(href, [link["href"] for link in _links(html, marker)])
                 self.assertNotIn(href, [record["href"] for record in _search_records(html)])
                 app.config[flag] = True
+        app.config.update(
+            PEERSLATE_OPPORTUNITY_SLATE_ENABLED=False,
+            PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED=False,
+        )
+        _, html = self.render("/")
+        for marker in markers:
+            self.assertNotIn(
+                "/opportunity-slate", [link["href"] for link in _links(html, marker)]
+            )
+        app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
+        _, html = self.render("/")
+        self.assertNotIn("/app/workshop", html.split("</header>", 1)[0])
 
     def test_protected_search_is_navigation_only_and_not_owner_capture(self):
         _, html = self.render("/app")
@@ -231,7 +242,6 @@ class SharedShellConvergenceTests(unittest.TestCase):
             "/petec/resume#overview",
             "/the-slate",
             "/interview-studio",
-            "/app/workshop",
             "/opportunity-slate",
             "/app",
             "/app/settings",
@@ -257,8 +267,9 @@ class SharedShellConvergenceTests(unittest.TestCase):
         self.assertIn("Sign in to open Interview Studio", html)
         self.assertIn("Sign in to practice in Interview Studio", html)
         self.assertNotIn("public Interview Studio", html)
-        self.assertIn("Pete's Project Work", html)
-        self.assertIn("See public project evidence", html)
+        self.assertIn("My Story", html)
+        self.assertIn("The person behind the work", html)
+        self.assertNotIn("Pete's Project Work", html)
         self.assertNotIn("Project Update", html)
 
     def test_static_accessibility_contracts_are_explicit(self):

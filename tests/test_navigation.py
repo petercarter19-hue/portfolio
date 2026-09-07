@@ -67,6 +67,7 @@ class NavigationTests(unittest.TestCase):
             'PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED': community,
             'PEERSLATE_WORKSHOP_ENABLED': workshop,
             'PEERSLATE_OPPORTUNITY_SLATE_ENABLED': opportunity,
+            'PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED': opportunity,
         }
         originals = {key: app.config.get(key) for key in values}
         app.config.update(values)
@@ -322,30 +323,23 @@ class NavigationTests(unittest.TestCase):
                         links['Opportunity Slate']['attributes']['href'],
                         '/opportunity-slate',
                     )
-                    self.assertLess(
-                        menu.index('>Workshop</a>'),
-                        menu.index('>Opportunity Slate</a>'),
-                    )
+                    self.assertNotIn('>Workshop</a>', menu)
 
     def test_opportunity_slate_link_shows_aria_current_on_its_own_room(self):
-        original_flag = app.config.get('PEERSLATE_OPPORTUNITY_SLATE_ENABLED')
-        app.config['PEERSLATE_OPPORTUNITY_SLATE_ENABLED'] = True
-        try:
-            links = {
-                link['text']: link
-                for link in self.parse_platform_links('/opportunity-slate')
-            }
-        finally:
-            app.config['PEERSLATE_OPPORTUNITY_SLATE_ENABLED'] = original_flag
+        with self.destination_flags(opportunity=True):
+            client = self.signed_in_client()
+            response = client.get('/opportunity-slate', base_url='http://localhost')
+            self.assertIn(response.status_code, (200, 503))
+            parser = PlatformNavigationParser()
+            parser.feed(response.get_data(as_text=True))
+            links = {link['text']: link for link in parser.links}
         self.assertIn('Opportunity Slate', links)
         self.assertEqual(
             links['Opportunity Slate']['attributes'].get('aria-current'), 'page'
         )
 
-    def test_header_search_json_parses_with_opportunity_slate_in_both_workshop_states(self):
-        """The Opportunity Slate record sits after Workshop's
-        ``{% if workshop_nav_enabled %}...{% endif %}`` block, so the JSON
-        must stay valid whether or not that flag is on."""
+    def test_header_search_json_ignores_workshop_navigation_flag(self):
+        """Workshop stays absent while Opportunity Slate remains valid."""
         for workshop_enabled in (True, False):
             with self.subTest(workshop_nav_enabled=workshop_enabled), self.destination_flags(
                 workshop=workshop_enabled, opportunity=True
@@ -365,7 +359,7 @@ class NavigationTests(unittest.TestCase):
                     'See how your evidence lines up with a role',
                 )
                 self.assertIn('role', entry['keys'])
-                self.assertEqual('Workshop' in titles, workshop_enabled)
+                self.assertNotIn('Workshop', titles)
 
     # ------------------------------------------------------------------
     # PS-SHELL-001 — the Editorial Top Bar
@@ -514,20 +508,35 @@ class NavigationTests(unittest.TestCase):
         )
 
         paths = ('/', '/interview-studio', '/opportunity-slate', '/petec/resume')
+        opportunity_is_private = (
+            'opportunity_slate_v2.room' in app.view_functions
+        )
         # Anonymous first: signed_in_client() flips application config.
         anonymous = {
             path: self.client.get(path, base_url='http://localhost').get_data(
                 as_text=True
             )
             for path in paths
+            if not (opportunity_is_private and path == '/opportunity-slate')
         }
+        if opportunity_is_private:
+            gated = self.client.get(
+                '/opportunity-slate', base_url='http://localhost'
+            )
+            self.assertEqual(302, gated.status_code)
+            self.assertEqual(
+                '/auth/sign-in?return_to=/opportunity-slate',
+                gated.headers['Location'],
+            )
         signed_in = self.signed_in_client()
         for path in paths:
             with self.subTest(path=path):
-                for html in (anonymous[path],
-                             signed_in.get(
-                                 path, base_url='http://localhost'
-                             ).get_data(as_text=True)):
+                renders = [signed_in.get(
+                    path, base_url='http://localhost'
+                ).get_data(as_text=True)]
+                if path in anonymous:
+                    renders.insert(0, anonymous[path])
+                for html in renders:
                     self.assertIn('class="platform-brand__logo"', html)
                     self.assertIn('images/peerslate-logo-header.png', html)
 
@@ -538,6 +547,9 @@ class NavigationTests(unittest.TestCase):
         touches, and it sits beside a logo that is always there.
         """
         paths = ('/interview-studio', '/opportunity-slate', '/petec/resume')
+        opportunity_is_private = (
+            'opportunity_slate_v2.room' in app.view_functions
+        )
         # Anonymous first: signed_in_client() flips application config, so a
         # client created before it would not stay anonymous.
         with self.destination_flags(opportunity=True):
@@ -546,6 +558,7 @@ class NavigationTests(unittest.TestCase):
                     as_text=True
                 )
                 for path in paths
+                if not (opportunity_is_private and path == '/opportunity-slate')
             }
 
             signed_in = self.signed_in_client()
@@ -573,10 +586,11 @@ class NavigationTests(unittest.TestCase):
                         html.index('class="platform-room-title"'),
                     )
 
-                    anonymous = anonymous_renders[path]
-                    self.assertNotIn('data-ps-shell-room-title', anonymous)
-                    self.assertNotIn('platform-room-title', anonymous)
-                    self.assertIn('platform-brand__logo', anonymous)
+                    if path in anonymous_renders:
+                        anonymous = anonymous_renders[path]
+                        self.assertNotIn('data-ps-shell-room-title', anonymous)
+                        self.assertNotIn('platform-room-title', anonymous)
+                        self.assertIn('platform-brand__logo', anonymous)
 
         # A route that is not one of the five destinations names no room, and
         # shows the mark alone rather than an empty brand slot.
@@ -649,10 +663,11 @@ class NavigationTests(unittest.TestCase):
         self.assertIn('>Settings</a>', menu)
         self.assertIn('href="/app/settings"', menu)
         self.assertNotIn('>Help<', menu)
-        # Every one of the five destinations is still reachable from the sheet.
+        # Every promoted destination is reachable from the sheet.
         for label in ('Pete&#39;s Slate', 'Community', 'Interview Studio',
-                      'Workshop', 'Opportunity Slate'):
+                      'Opportunity Slate'):
             self.assertEqual(menu.count(f'>{label}</a>'), 1)
+        self.assertNotIn('>Workshop</a>', menu)
 
     def test_shell_offers_no_notification_or_add_control(self):
         """Neither has a real backing contract: no notification route, model
@@ -732,7 +747,6 @@ class NavigationTests(unittest.TestCase):
             '/petec/my-story',
             '/petec/skills',
             '/petec/resume',
-            '/petec/slate-board',
             '/peerslate',
             '/petec/about',
             '/petec/hobbies',

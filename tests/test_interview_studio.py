@@ -3209,95 +3209,28 @@ _INTERVIEW_JS_VERSION_TOKEN = re.compile(
     r'(/static/[A-Za-z0-9_./-]+\?v=)[0-9a-f]+'
 )
 
-# Captured from this package's own slice-3/4 base (via the exact GET request
-# the test below issues, run against a `git stash`-clean pre-change working
-# tree, then re-captured after this package's changes with the JS and CSS
-# version tokens normalized away). Confirmed byte-for-byte identical to the
-# pre-change render of the same route in the same working tree once both
-# tokens are normalized.
-# Recaptured 2026-08-12 by PS-SHELL-001 under an owner-authorized, narrowly
-# scoped amendment to that lane's writable_surfaces (see the lane's third
-# owner_decisions entry in docs/governance/CURRENT_LANES.json). Reason: both
-# routes render the SHARED global shell, so the Editorial Top Bar changed these
-# constants by construction. This is NOT an Interview Studio regression, and
-# nothing in the Interview Studio body, template, style, script, or any other
-# assertion in this file was changed.
-#
-# Proven shell-markup-only, not asserted. An independent reviewer rendered the
-# same route with the BASE base.html injected through a Jinja ChoiceLoader —
-# touching no file — and then replaced the <header class="global-header"> block
-# and the <ul class="global-tabsource"> list with placeholders in both
-# documents, which made them byte-identical. Corroborating signal: both routes
-# moved by exactly +3427 bytes, the same delta on two different pages, which is
-# only possible if the change lives entirely in the part they share.
-#
-# Regenerate with:
-#   artifacts/2026-08-12-shell-editorial-top-bar/recapture_interview_bytelock.py
-# Second recapture, same round: the byte LENGTHS below are unchanged from the
-# first recapture (114833 / 114610) because the anonymous HTML is byte-identical
-# — only the two sha256 values moved. The renders embed public-navigation.css's
-# ?v= content fingerprint, and this test normalizes only the Interview JS/CSS
-# token, so any shell stylesheet edit changes the digest while leaving the
-# markup untouched. Identical lengths across a CSS-only change is the proof.
-#
-# NOTE for the Interview lane: this lock is brittle by construction. It will
-# break on every future shared-shell stylesheet change, with no markup delta to
-# show for it. Normalizing the shell stylesheet's token the way the Interview
-# token is already normalized would fix that permanently. Deliberately NOT done
-# here: PS-SHELL-001's amendment is scope-limited to these four constants, and
-# changing this test's normalization logic is that lane's call, not this one's.
-# Third and final recapture, taken from a pure `git checkout` tree after the
-# rebase onto main 68d14a4. Byte lengths are unchanged again (114833 / 114610)
-# across all three recaptures — the markup has been stable throughout; only
-# embedded ?v= content tokens moved, which are fixed-width and so leave the
-# length untouched. That invariance is the evidence the shell markup settled.
-#
-# Capture these ONLY from a tree whose files git wrote. The token comes from
-# the bytes on disk (app.py `_static_file_version`), so a working tree where
-# tooling authored a file directly can yield a digest that a clean checkout
-# does not reproduce — which is what happened to the previous value. CI checks
-# out from git, so a checkout-derived digest is the one that holds there.
-#
-# Fourth recapture, 2026-08-13, owner round 2 (the always-revealed logo, the
-# F1/F2 findings, and the shell colour-consistency pass). Taken from a clean
-# tree: every affected file was committed, deleted and re-checked-out, and disk
-# bytes were confirmed equal to the git blob for public-navigation.css,
-# base.html, public-mobile-nav.js, public-site-search.js, style.css,
-# site-search.js, mobile-nav.js and interview-studio.css before capture.
-#
-# BYTE LENGTHS DID NOT MOVE — 114833 / 114610 for the fourth time running. That
-# is the point: the round's one template edit is inside a Jinja {# #} comment,
-# which never reaches the response, so the anonymous Interview markup is
-# byte-identical and only the embedded public-navigation.css ?v= fingerprint
-# changed. Proven rather than assumed, on both routes: the new token
-# 9b25c57dc7ed occurs exactly once, and substituting the pre-round token
-# 4a797a2823ce back into the normalized document reproduces the previously
-# locked sha256 exactly, at identical length.
-# PS-SIGNIN-MEMBER-ARRIVAL-001 recapture: +26 bytes, which is exactly the
-# two header controls now offering to return the member to
-# /interview-studio (17 chars) instead of /app (4), twice. That is the fix
-# working on this page: a signed-out reader who signs in from here now
-# comes back here. Proven by rendering this exact request before and after
-# -- the only other diff is a versioned asset token, now normalized above.
-# PS-OWNER-HOME-RETIREMENT-001 recapture: +8 bytes on each route, exactly
-# two global account controls changing `My Slate` to the truthful temporary
-# `My PeerSlate` label. No Interview Studio markup or behavior changed.
-# PS-SHARED-SHELL-CONVERGENCE-001 recapture: the shared server-rendered
-# destination, account, search and no-JavaScript chrome changed while the
-# flag-off Interview markers, access status, cache policy, robots contract,
-# history render and on/off/on determinism were re-proved unchanged below.
-FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH = 114806
-FLAG_OFF_INTERVIEW_STUDIO_SHA256 = (
-    '8a4287d4e1f76c18639cbcfc9b178384ba7e4af327cadf2832d4895af00240b0'
+# The shared shell is intentionally allowed to evolve independently. Freeze the
+# complete route-owned main content while the assertions below continue to bind
+# response status, cache/robots behavior, public markers, assets, and flag-toggle
+# determinism. This avoids treating an approved global navigation edit as an
+# Interview Studio body regression.
+def _interview_main_payload(body):
+    marker = '<main id="main-content"'
+    start = body.index(marker)
+    start = body.index('>', start) + 1
+    end = body.index('</main>', start)
+    return _INTERVIEW_JS_VERSION_TOKEN.sub(r'\1TOKEN', body[start:end]).encode(
+        'utf-8'
+    )
+
+
+FLAG_OFF_INTERVIEW_STUDIO_MAIN_BYTE_LENGTH = 96753
+FLAG_OFF_INTERVIEW_STUDIO_MAIN_SHA256 = (
+    'b49c5492202a88fb5b11fe771ca7f33584af80b83e9ba64381f79f6ce2d20c62'
 )
-# PS-SIGNIN-MEMBER-ARRIVAL-001 recapture: +42 bytes, exactly the two header
-# controls now returning to /interview-studio/history (25 chars) rather
-# than /app (4), twice.
-# The Shared Shell convergence recapture covers this history route under the
-# same flag-off semantic, access, cache and toggle assertions.
-FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH = 114607
-FLAG_OFF_INTERVIEW_STUDIO_HISTORY_SHA256 = (
-    'e486a3e5f6fdcd841404159258dd3d4b3d7a26bd4346be8f9a0b96fef32ae14d'
+FLAG_OFF_INTERVIEW_STUDIO_HISTORY_MAIN_BYTE_LENGTH = 96530
+FLAG_OFF_INTERVIEW_STUDIO_HISTORY_MAIN_SHA256 = (
+    'ddcbf60d9ce72830f89cdb9cc3ab1c487c3164adf34dedbfa97aa8c842e4c0d3'
 )
 
 
@@ -3347,12 +3280,12 @@ class _InterviewStudioAuthenticatedTestCase(unittest.TestCase):
 
 
 class InterviewStudioFlagOffByteComparabilityTests(unittest.TestCase):
-    """Slice 1 item 9: flag off is byte-comparable to the pre-change public
-    page. Deliberately does not touch PEERSLATE_TRUST_EASYAUTH_HEADERS or any
-    other global auth config — those change the shared base.html header's
-    rendered auth-state markup and would make an unrelated site-wide setting
-    look like an Interview Studio regression. The golden values below were
-    captured from this exact unmodified default configuration."""
+    """Flag-off route content stays byte-comparable across shell changes.
+
+    Deliberately does not touch global authentication settings. The locked
+    payload is the complete main landmark owned by Interview Studio; shared
+    navigation remains covered by its own route-truth tests.
+    """
 
     def setUp(self):
         self.original_flag = app.config.get('PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED')
@@ -3376,20 +3309,25 @@ class InterviewStudioFlagOffByteComparabilityTests(unittest.TestCase):
         ):
             self.assertIn(marker, body)
         self.assertNotIn('data-storage-scope', body)
-        normalized = _INTERVIEW_JS_VERSION_TOKEN.sub(r'\1TOKEN', body)
-        self.assertEqual(len(response.data), FLAG_OFF_INTERVIEW_STUDIO_BYTE_LENGTH)
+        main_payload = _interview_main_payload(body)
         self.assertEqual(
-            hashlib.sha256(normalized.encode('utf-8')).hexdigest(),
-            FLAG_OFF_INTERVIEW_STUDIO_SHA256,
+            len(main_payload), FLAG_OFF_INTERVIEW_STUDIO_MAIN_BYTE_LENGTH
+        )
+        self.assertEqual(
+            hashlib.sha256(main_payload).hexdigest(),
+            FLAG_OFF_INTERVIEW_STUDIO_MAIN_SHA256,
         )
 
         history_response = self.client.get('/interview-studio/history', base_url='http://localhost')
         history_body = history_response.get_data(as_text=True)
-        history_normalized = _INTERVIEW_JS_VERSION_TOKEN.sub(r'\1TOKEN', history_body)
-        self.assertEqual(len(history_response.data), FLAG_OFF_INTERVIEW_STUDIO_HISTORY_BYTE_LENGTH)
+        history_main_payload = _interview_main_payload(history_body)
         self.assertEqual(
-            hashlib.sha256(history_normalized.encode('utf-8')).hexdigest(),
-            FLAG_OFF_INTERVIEW_STUDIO_HISTORY_SHA256,
+            len(history_main_payload),
+            FLAG_OFF_INTERVIEW_STUDIO_HISTORY_MAIN_BYTE_LENGTH,
+        )
+        self.assertEqual(
+            hashlib.sha256(history_main_payload).hexdigest(),
+            FLAG_OFF_INTERVIEW_STUDIO_HISTORY_MAIN_SHA256,
         )
 
         # Config-toggling determinism (mirrors test_journal_frontend.py's

@@ -149,18 +149,10 @@
    assumption A3); shell_account_initial is the account control's initial. No
    photo: no truthful avatar source exists for the signed-in viewer.
 
-   shell_destinations is the one description of the five product destinations.
-   The inline row, the room switcher and the phone bar all read it, so a
-   destination cannot drift between them. Each `sub` is the existing search
-   index wording for the same room — no new claim is authored here. Availability
-   is resolved once here so the inline row, switcher, Menu, search and phone bar
-   cannot advertise a flag-off route. #}{% set shell_account_name = ((current_member.display_name | trim) if (current_member and current_member.display_name and (current_member.display_name | trim)) else 'PeerSlate member') %}{% set shell_account_initial = shell_account_name[:1] | upper %}{% set shell_signed_in = auth_navigation_state == 'authenticated' %}{% set shell_destinations = [
-    {'label': "Pete's Slate", 'href': portfolio_home_url ~ '#overview', 'current': is_portfolio_path, 'sub': "Pete Carter's public Overview", 'icon': 'slate', 'keys': 'pete slate profile overview public', 'show': true},
-    {'label': 'Community', 'href': url_for('the_slate'), 'current': _p.startswith('/the-slate'), 'sub': 'Visible to signed-in PeerSlate members', 'icon': 'community', 'keys': 'the slate hub feed people community goals progress proof connect', 'show': community_public_pilot_enabled | default(false)},
-    {'label': 'Interview Studio', 'href': interview_studio_url, 'current': _p.startswith('/interview-studio'), 'sub': 'Practice, coaching, video, and growth', 'icon': 'interview', 'keys': 'interview me interview ai video practice questions star behavioral coach mock answer', 'show': true},
-    {'label': 'Workshop', 'href': workshop_url, 'current': _p.startswith('/app/workshop'), 'sub': 'Your private information library', 'icon': 'workshop', 'keys': 'workshop my information private library knowledge add information', 'show': workshop_nav_enabled | default(false)},
-    {'label': 'Opportunity Slate', 'href': opportunity_slate_url, 'current': _p.startswith('/opportunity-slate'), 'sub': 'See how your evidence lines up with a role', 'icon': 'opportunity', 'keys': 'opportunity slate role job posting alignment requirements evidence match analysis', 'show': opportunity_slate_available | default(false)}
-] | selectattr('show') | list %}{# Export job keys are deliberately
+   shell_destinations comes from the server's declared route contract. The
+   inline row, room switcher, Menu, search and no-script fallback consume the
+   same verified list, so an unavailable route cannot be promoted by one
+   representation alone. #}{% set shell_account_name = ((current_member.display_name | trim) if (current_member and current_member.display_name and (current_member.display_name | trim)) else 'PeerSlate member') %}{% set shell_account_initial = shell_account_name[:1] | upper %}{% set shell_signed_in = auth_navigation_state == 'authenticated' %}{# Export job keys are deliberately
    indistinguishable when a status row is unreadable. Hidden shell recovery
    links must not reflect that untrusted path back into an otherwise identical
    404 body, so only this opaque-key surface returns through Settings. A direct
@@ -371,8 +363,7 @@
                            accessible name — aria-label on a role-less element
                            is discarded, leaving the panel unnamed. #}
                         <div class="platform-account__menu" id="platform-account-menu" role="group" aria-label="Account" data-platform-account-menu hidden>
-                            <a class="platform-account__item" href="{{ owner_workspace_url }}">My PeerSlate</a>
-                            <a class="platform-account__item" href="/app/settings">Settings</a>
+                            {% for destination in account_destinations %}<a class="platform-account__item" href="{{ destination.href }}">{{ destination.label }}</a>{% endfor %}
                             <form class="nav-sign-out platform-account__form" method="post" action="{{ auth_sign_out_url }}" data-ps-auth-control="authenticated"{% if auth_navigation_state != 'authenticated' %} hidden{% endif %}>
                                 <button class="nav-sign-out__btn platform-account__item" type="submit">Sign out</button>
                             </form>
@@ -396,8 +387,7 @@
                        same server-derived state as every other account
                        control. #}
                     <div class="platform-menu__account" data-ps-auth-control="authenticated"{% if auth_navigation_state != 'authenticated' %} hidden{% endif %}>
-                        <a class="platform-menu__account-item" href="{{ owner_workspace_url }}">My PeerSlate</a>
-                        <a class="platform-menu__account-item" href="/app/settings">Settings</a>
+                        {% for destination in account_destinations %}<a class="platform-menu__account-item" href="{{ destination.href }}">{{ destination.label }}</a>{% endfor %}
                         <form class="nav-sign-out platform-menu__account-form" method="post" action="{{ auth_sign_out_url }}">
                             <button class="nav-sign-out__btn platform-menu__account-item" type="submit">Sign out</button>
                         </form>
@@ -441,8 +431,7 @@
                 </ul>
                 <div class="platform-nojs-navigation__account">
                     {% if shell_signed_in %}
-                    <a href="{{ owner_workspace_url }}">My PeerSlate</a>
-                    <a href="/app/settings">Settings</a>
+                    {% for destination in account_destinations %}<a href="{{ destination.href }}">{{ destination.label }}</a>{% endfor %}
                     <form method="post" action="{{ auth_sign_out_url }}">
                         <button type="submit">Sign out</button>
                     </form>
@@ -574,22 +563,8 @@
        member's own Profile. #}
     <script id="nav-search-data" type="application/json">
     [
-        {% if is_protected_app_path %}
-        {"title": "My PeerSlate", "sub": "Your private starting point", "href": "{{ owner_workspace_url }}", "keys": "my peerslate start workspace home"},
-        {"title": "Settings", "sub": "Account controls", "href": "{{ url_for('owner.settings') }}", "keys": "settings account my data export"},
-        {% for destination in shell_destinations %}{"title": {{ destination.label | tojson }}, "sub": {{ destination.sub | tojson }}, "href": {{ destination.href | tojson }}, "keys": {{ destination['keys'] | tojson }}},{% endfor %}
-        {"title": "Why PeerSlate", "sub": "Why the platform exists", "href": "{{ peerslate_home_url }}", "keys": "why peerslate about mission journal private first how it works"}
-        {% else %}
-        {"title": "Pete's Slate", "sub": "Pete Carter's public Overview", "href": "{{ portfolio_home_url }}#overview", "keys": "pete slate profile overview public"},
-        {"title": "My Story", "sub": "The person behind the work", "href": "{{ portfolio_story_url }}", "keys": "story about journey bio my story personal life"},
-        {"title": "Skills in practice", "sub": "Sources behind the skills", "href": "{{ portfolio_skills_url }}", "keys": "skills sources mbse sysml cameo doors expertise supporting work"},
-        {"title": "Slate Board", "sub": "Goals, wins, and progress", "href": "{{ portfolio_url('slate-board') }}", "keys": "board goals whiteboard badges tracking momentum trophy streak"},
-        {"title": "Résumé", "sub": "Detailed career record", "href": "{{ portfolio_resume_url }}#resume-start", "keys": "resume résumé career experience education certifications pmp jobs roles clearance"},
-        {% for destination in shell_destinations if destination.icon != 'slate' %}{"title": {{ destination.label | tojson }}, "sub": {{ destination.sub | tojson }}, "href": {{ destination.href | tojson }}, "keys": {{ destination['keys'] | tojson }}},{% endfor %}
-        {"title": "Contact", "sub": "Email and LinkedIn", "href": "{{ portfolio_contact_url }}", "keys": "contact email message linkedin reach hire connect"},
-        {"title": "Download résumé", "sub": "One-page PDF", "href": "{{ url_for('static', filename='files/pete-carter-resume.pdf') }}", "keys": "download resume résumé pdf file print ats"},
-        {"title": "Why PeerSlate", "sub": "Why the platform exists", "href": "{{ peerslate_home_url }}", "keys": "why peerslate about mission journal private first how it works"}
-        {% endif %}
+        {% set search_destinations = member_search_destinations if is_protected_app_path else public_search_destinations %}
+        {% for destination in search_destinations %}{"title": {{ destination.label | tojson }}, "sub": {{ destination.sub | tojson }}, "href": {{ destination.href | tojson }}, "keys": {{ destination['keys'] | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}
     ]
     </script>
 
@@ -619,7 +594,7 @@
        content read as shared product logic. The More slot opens the same
        server-rendered sheet the header Menu opens, so there is one
        destination list, not two. #}
-    <ul class="global-tabsource" data-global-tabsource hidden>{% for destination in shell_destinations if destination.icon in ['slate', 'community', 'interview'] %}
+    <ul class="global-tabsource" data-global-tabsource hidden>{% for destination in phone_destinations %}
         <li><a href="{{ destination.href }}"{% if destination.icon == 'interview' %} aria-label="Interview Studio"{% endif %} {% if destination.current %}aria-current="page"{% endif %}><svg class="mobile-tabbar__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ shell_bar_icons[destination.icon] }}"/></svg><span class="mobile-tabbar__label">{{ 'Interview' if destination.icon == 'interview' else destination.label }}</span></a></li>{% endfor %}
         {# Slot 4 is a button, not a destination — it opens the sheet. Rendered
            here so its mark and label come from the server like every other

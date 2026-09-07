@@ -765,14 +765,7 @@ class WorkshopChromeScopeTests(unittest.TestCase):
 
 
 class WorkshopNavigationTests(unittest.TestCase):
-    """The global nav shows Workshop whenever the flag is on.
-
-    Owner decision 2026-08-02: the entry is discoverable to every visitor so
-    people can find Workshop; that same decision also removed the sign-in
-    wall from the route itself (doc 20 section 6d) — a signed-out visitor
-    now gets the real page over honestly-labeled sample content, not a
-    sign-in redirect.
-    """
+    """Workshop stays directly available without global promotion."""
 
     def setUp(self):
         self.client = app.test_client()
@@ -805,17 +798,14 @@ class WorkshopNavigationTests(unittest.TestCase):
 
         self.assertNotIn(">Workshop<", nav)
 
-    def test_workshop_present_after_interview_studio_when_signed_out(self):
-        # Owner decision 2026-08-02: discoverable to everyone, so a visitor
-        # can find it and sign in. The route stays protected regardless.
+    def test_workshop_absent_when_flag_on_and_signed_out(self):
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
         with patch("auth_routes.get_optional_identity", return_value=None):
             nav = self._nav_html()
 
-        self.assertIn(">Workshop<", nav)
-        self.assertLess(nav.index(">Interview Studio<"), nav.index(">Workshop<"))
+        self.assertNotIn(">Workshop<", nav)
 
-    def test_workshop_present_after_interview_studio_when_signed_in_and_flag_on(self):
+    def test_workshop_absent_when_flag_on_and_signed_in(self):
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
         with patch(
             "auth_routes.get_optional_identity",
@@ -823,8 +813,7 @@ class WorkshopNavigationTests(unittest.TestCase):
         ):
             nav = self._nav_html()
 
-        self.assertIn(">Workshop<", nav)
-        self.assertLess(nav.index(">Interview Studio<"), nav.index(">Workshop<"))
+        self.assertNotIn(">Workshop<", nav)
 
     def test_nav_entry_signed_out_visitor_gets_preview_never_another_owners_data(self):
         # Owner decision 2026-08-02 (doc 20 section 6d) supersedes the prior
@@ -841,7 +830,7 @@ class WorkshopNavigationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("wk-status-banner--preview", response.data.decode("utf-8"))
 
-    def test_search_data_includes_workshop_whenever_the_flag_is_on(self):
+    def test_search_data_excludes_workshop_even_when_the_flag_is_on(self):
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = True
         with patch("auth_routes.get_optional_identity", return_value=None):
             signed_out = self._search_data()
@@ -851,8 +840,8 @@ class WorkshopNavigationTests(unittest.TestCase):
         ):
             signed_in = self._search_data()
 
-        self.assertIn('"title": "Workshop"', signed_out)
-        self.assertIn('"title": "Workshop"', signed_in)
+        self.assertNotIn('"title": "Workshop"', signed_out)
+        self.assertNotIn('"title": "Workshop"', signed_in)
 
     def test_search_data_excludes_workshop_when_flag_off_even_if_signed_in(self):
         app.config["PEERSLATE_WORKSHOP_ENABLED"] = False

@@ -106,18 +106,18 @@ class HomepageSceneTests(unittest.TestCase):
         for retired in ('/feed-living-stream', '/the-slate/my-slate',
                         '/the-slate/daily'):
             self.assertNotIn(retired, self.html)
-        # Primary CTA, mic, Private Journal card, and the week link all go
-        # through sign-in.
-        self.assertGreaterEqual(self.html.count('href="/auth/sign-in"'), 4)
+        # Primary CTA, mic, and the week link all go through sign-in.
+        self.assertEqual(self.html.count('href="/auth/sign-in"'), 3)
         # The ghost button explains the product instead of opening a demo.
         self.assertIn('href="/peerslate">See how it works</a>', self.html)
         for href in ('/petec/my-story', '/petec/skills', '/petec/resume',
-                     '/petec/slate-board', '/petec/projects',
                      '/interview-studio'):
             self.assertIn('href="%s' % href, self.html)
             target = href.split('#')[0].split('?')[0]
             status = self.client.get(target).status_code
             self.assertIn(status, (200, 302), target)
+        for held in ('/petec/slate-board', '/petec/projects', '/app/workshop'):
+            self.assertNotIn('href="%s' % held, self.html)
         # The sign-in gate answers: 302 to the provider when Easy Auth is
         # configured, or the honest "not configured yet" 503 explainer in
         # this test environment. Either way it is a real route, not a 404.

@@ -187,10 +187,10 @@ class Resume2Tests(unittest.TestCase):
         parser = ProfileTabsParser()
         parser.feed(response_text)
 
-        self.assertEqual(len(parser.links), 3)
+        self.assertEqual(len(parser.links), 2)
         self.assertEqual(
             [link['text'] for link in parser.links],
-            ['My Story', 'Slate Board', 'Résumé'],
+            ['My Story', 'Résumé'],
         )
         current_links = [
             link
@@ -535,7 +535,7 @@ class Resume2Tests(unittest.TestCase):
                 parser.feed(response.get_data(as_text=True))
                 self.assertEqual(
                     [link['text'] for link in parser.links],
-                    ['My Story', 'Slate Board', 'Résumé'],
+                    ['My Story', 'Résumé'],
                 )
 
         for path in (

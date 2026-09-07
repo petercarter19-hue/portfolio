@@ -1277,11 +1277,8 @@ class CommunityRouteAndApiTests(unittest.TestCase):
         self.assertEqual(response.headers["X-Robots-Tag"], "noindex, nofollow")
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
 
-    def test_signed_out_deep_links_return_to_the_exact_page(self):
-        contribution_key = str(uuid4())
+    def test_signed_out_declared_deep_links_return_to_the_exact_page(self):
         for path in (
-            f"/the-slate/posts/{POST_KEY}",
-            f"/the-slate/posts/{POST_KEY}/contributions/{contribution_key}",
             "/the-slate/policy",
             "/the-slate/recently-deleted",
         ):
@@ -1291,6 +1288,26 @@ class CommunityRouteAndApiTests(unittest.TestCase):
                 self.assertEqual(
                     response.headers["Location"],
                     f"/auth/sign-in?return_to={path}",
+                )
+                self.assertEqual(
+                    response.headers["X-Robots-Tag"], "noindex, nofollow"
+                )
+                self.assertEqual(
+                    response.headers["Cache-Control"], "private, no-store"
+                )
+
+    def test_signed_out_opaque_deep_links_collapse_without_reflecting_keys(self):
+        contribution_key = str(uuid4())
+        for path in (
+            f"/the-slate/posts/{POST_KEY}",
+            f"/the-slate/posts/{POST_KEY}/contributions/{contribution_key}",
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(
+                    response.headers["Location"],
+                    "/auth/sign-in?return_to=/the-slate",
                 )
                 self.assertEqual(
                     response.headers["X-Robots-Tag"], "noindex, nofollow"

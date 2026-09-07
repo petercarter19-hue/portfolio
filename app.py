@@ -34,6 +34,7 @@ from identity import (
 from services.database_service import DatabaseServiceError
 from owner_authorization import is_owner
 from auth_routes import _render_identity_storage_unavailable, _safe_return_path, auth
+from safe_return import navigation_destinations
 # PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001. The account-export budgets
 # are declared next to the routes they govern (owner_routes.py) and read by
 # the post-registration wrapper further down rather than restated there, so
@@ -1171,6 +1172,26 @@ def shared_navigation_urls():
 
         return f'{portfolio_base_url}/{path.lstrip("/")}'
 
+    def destination_group(surface, order=()):
+        records = navigation_destinations(surface, request.path)
+        if order:
+            positions = {key: position for position, key in enumerate(order)}
+            records.sort(key=lambda item: positions.get(item['key'], len(positions)))
+        for record in records:
+            if record['href'].startswith('/petec'):
+                record['href'] = portfolio_base_url + record['href'][len('/petec'):]
+        return records
+
+    shell_destinations = destination_group(
+        'shell', ('slate', 'community', 'interview', 'opportunity')
+    )
+    account_destinations = destination_group(
+        'account', ('workspace', 'settings')
+    )
+    launchpad_destinations = destination_group(
+        'launchpad', ('opportunity', 'interview', 'community', 'settings')
+    )
+
     return {
         # One central brand value keeps the public platform name easy to
         # change later if Pete decides between PeerSlate and PureSlate.
@@ -1198,6 +1219,27 @@ def shared_navigation_urls():
         # search index from rebuilding a profile-scoped /interview-me link.
         'interview_studio_url': url_for('interview_studio'),
         'is_portfolio_path': request.path == '/petec' or request.path.startswith('/petec/'),
+        # Every rendered navigation representation consumes these groups from
+        # safe_return.DESTINATIONS. The server verifies route registration and
+        # feature availability before any destination reaches a template.
+        'shell_destinations': shell_destinations,
+        'phone_destinations': destination_group(
+            'phone', ('slate', 'community', 'interview')
+        ),
+        'account_destinations': account_destinations,
+        'launchpad_destinations': launchpad_destinations,
+        'member_search_destinations': destination_group(
+            'member_search',
+            ('workspace', 'settings', 'slate', 'community', 'interview', 'opportunity', 'why'),
+        ),
+        'public_search_destinations': destination_group(
+            'public_search',
+            ('slate', 'story', 'skills', 'resume', 'community', 'interview', 'opportunity', 'contact', 'resume_download', 'why'),
+        ),
+        'profile_destinations': destination_group('profile', ('story', 'resume')),
+        'home_card_destinations': destination_group(
+            'home_card', ('story', 'skills', 'interview', 'community')
+        ),
         # The shared search index must not advertise the pre-pilot Community
         # views once the new Community feed has replaced them (Pete,
         # 2026-08-03). Their routes redirect, but offering a retired page in
@@ -4523,7 +4565,7 @@ def sitemap_xml():
     public_paths = [
         '/', '/experience',
         '/petec/my-story', '/petec/skills', '/petec/resume',
-        '/petec/slate-board', '/peerslate', '/petec/about',
+        '/peerslate', '/petec/about',
         '/petec/hobbies', '/petec/contact',
         '/career-search', '/my-network', '/explore-profiles', '/for-recruiters',
     ]

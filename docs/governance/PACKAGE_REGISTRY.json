@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-29",
+  "updated_at": "2026-09-06",
   "classification_checkpoint": "c0450dbd675554e7363c8fc262a6d4f8bf2c6921",
   "current_checkpoint_at_creation": "fdb71c604f81d305b971775bd28aeac964231ebe",
   "authority_note": "This is a complete rationalization index, not delivery authority. CURRENT_LANES.json and CURRENT_BASELINE.yaml remain authoritative for current lifecycle and release state.",
@@ -72,6 +72,7 @@
       "PS-PROFILE-CONNECTIONS-PROVIDER-INTEGRATION-001",
       "PS-PROFILE-EXPERIENCE-001",
       "PS-PROFILE-MEDIA-VOICE-PROVIDERS-001",
+      "PS-PUBLIC-NAV-ROUTE-TRUTH-002",
       "PS-REPOSITORY-RATIONALIZATION-001",
       "PS-RESUME-PUBLIC-REFINE-001",
       "PS-RULES-001",
@@ -168,11 +169,11 @@
     ]
   },
   "counts": {
-    "current_protect": 76,
+    "current_protect": 77,
     "future_finish": 33,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 144
+    "total": 145
   }
 }

@@ -25,44 +25,12 @@
 
         <nav class="owner-app__destinations" aria-label="Your PeerSlate destinations">
             <ul class="owner-app__destination-list">
-                {% if workshop_nav_enabled %}
-                <li>
-                    <a class="owner-app__destination" href="{{ workshop_url }}">
-                        <span class="owner-app__destination-title">Workshop</span>
-                        <span class="owner-app__destination-copy">Use your private information library.</span>
+                {% for destination in launchpad_destinations %}<li>
+                    <a class="owner-app__destination" href="{{ destination.href }}">
+                        <span class="owner-app__destination-title">{{ destination.label }}</span>
+                        <span class="owner-app__destination-copy">{{ destination.sub }}</span>
                     </a>
-                </li>
-                {% endif %}
-                {% if opportunity_slate_available %}<li>
-                    <a class="owner-app__destination" href="{{ opportunity_slate_url }}">
-                        <span class="owner-app__destination-title">My Opportunities</span>
-                        <span class="owner-app__destination-copy">Review opportunities and how your evidence lines up.</span>
-                    </a>
-                </li>{% endif %}
-                <li>
-                    <a class="owner-app__destination" href="{{ interview_studio_url }}">
-                        <span class="owner-app__destination-title">Interview Studio</span>
-                        <span class="owner-app__destination-copy">Practice, prepare, and return to your interview work.</span>
-                    </a>
-                </li>
-                {% if community_public_pilot_enabled %}<li>
-                    <a class="owner-app__destination" href="{{ url_for('the_slate') }}">
-                        <span class="owner-app__destination-title">Community</span>
-                        <span class="owner-app__destination-copy">Visit the member community.</span>
-                    </a>
-                </li>{% endif %}
-                <li>
-                    <a class="owner-app__destination" href="{{ url_for('owner.capture') }}">
-                        <span class="owner-app__destination-title">Capture</span>
-                        <span class="owner-app__destination-copy">Add a private note, voice capture, or photo.</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="owner-app__destination" href="{{ url_for('owner.settings') }}">
-                        <span class="owner-app__destination-title">Settings</span>
-                        <span class="owner-app__destination-copy">Manage your account and My Data controls.</span>
-                    </a>
-                </li>
+                </li>{% endfor %}
             </ul>
         </nav>
 

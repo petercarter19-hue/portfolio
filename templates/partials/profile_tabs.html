@@ -9,20 +9,9 @@
 <nav class="profile-tabs{% if is_resume_page %} profile-tabs--resume{% endif %}" aria-label="Pete Carter profile tabs">
     <div class="site-container profile-tabs__inner">
         <div class="profile-tabs__list" data-mobile-tabsource>
-            <a class="profile-tab" href="{{ portfolio_story_url }}" {% if request.path in ['/my-story', '/petec/my-story'] %}aria-current="page"{% endif %}>
-                My Story
-            </a>
-            {% if is_owner_app_path %}
-            <a class="profile-tab" href="{{ portfolio_url('projects') }}">
-                Work
-            </a>
-            {% endif %}
-            <a class="profile-tab" href="{{ portfolio_url('slate-board') }}" {% if request.path in ['/slate-board', '/petec/slate-board'] %}aria-current="page"{% endif %}>
-                Slate Board
-            </a>
-            <a class="profile-tab" href="{{ portfolio_resume_url }}{% if not is_owner_app_path %}#resume-start{% endif %}" {% if is_resume_page %}aria-current="page"{% endif %}>
-                {% if is_owner_app_path %}Resume{% else %}Résumé{% endif %}
-            </a>
+            {% for destination in profile_destinations %}<a class="profile-tab" href="{{ destination.href }}" {% if destination.current %}aria-current="page"{% endif %}>
+                {{ destination.label }}
+            </a>{% endfor %}
         </div>
         {% if is_resume_page %}
         {% if ask_pete_evidence_companion_enabled | default(false) %}

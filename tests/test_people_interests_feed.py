@@ -66,13 +66,14 @@ class PeopleInterestsPageTests(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.headers["Location"].endswith("/the-slate"))
 
-    def test_slate_board_remains_reachable_from_the_landing(self):
-        # Pete's Slate navigation still never leaks into Community. Slate
-        # Board remains discoverable through the public destination search.
+    def test_slate_board_direct_route_remains_without_landing_promotion(self):
+        # Saved public content remains reachable at its existing address, but
+        # the Community landing no longer promotes Slate Board as a product.
         html = self.client.get("/the-slate").get_data(as_text=True)
-        self.assertIn("Slate Board", html)
-        self.assertIn('"href": "/petec/slate-board"', html)
+        self.assertNotIn("Slate Board", html)
+        self.assertNotIn('"href": "/petec/slate-board"', html)
         self.assertNotIn('class="profile-tabs', html)
+        self.assertEqual(self.client.get("/petec/slate-board").status_code, 200)
 
     def test_page_keeps_global_header_without_the_retired_switcher(self):
         html = self.client.get("/the-slate").get_data(as_text=True)

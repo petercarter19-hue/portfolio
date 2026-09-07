@@ -174,28 +174,20 @@ class SearchIndexTemplateTests(unittest.TestCase):
             start : cls.template.index("</script>", start)
         ]
 
-    def test_each_branch_reads_the_single_shared_community_destination(self):
-        # Shared Shell convergence defines Community once, then both protected
-        # and public search branches consume the same destination collection.
-        destination_block = self.template.split(
-            "{% set shell_destinations = [", 1
-        )[1].split("] | selectattr('show') | list %}", 1)[0]
-        self.assertEqual(destination_block.count("'label': 'Community'"), 1)
-        self.assertEqual(
-            destination_block.count("'href': url_for('the_slate')"), 1
-        )
-        self.assertEqual(
-            self.index_block.count("{% for destination in shell_destinations"),
-            2,
-        )
+    def test_search_branches_consume_server_owned_destination_lists(self):
+        # The server validates Community and the other destinations once.
+        # The template selects the audience-appropriate verified collection;
+        # it does not recreate route or availability policy in Jinja.
         self.assertIn(
-            "{% for destination in shell_destinations %}", self.index_block
-        )
-        self.assertIn(
-            "{% for destination in shell_destinations if "
-            "destination.icon != 'slate' %}",
+            "{% set search_destinations = member_search_destinations if "
+            "is_protected_app_path else public_search_destinations %}",
             self.index_block,
         )
+        self.assertEqual(
+            self.index_block.count("{% for destination in search_destinations %}"),
+            1,
+        )
+        self.assertNotIn("'label': 'Community'", self.template)
 
     def test_no_branch_offers_a_living_stream_or_legacy_slate_entry(self):
         for title in RETIRED_SEARCH_TITLES:

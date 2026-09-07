@@ -44,6 +44,9 @@ class AuthenticationFlowTests(unittest.TestCase):
             "PEERSLATE_WORKSHOP_ENABLED": app.config.get(
                 "PEERSLATE_WORKSHOP_ENABLED"
             ),
+            "PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED": app.config.get(
+                "PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"
+            ),
             "PEERSLATE_ENFORCE_CANONICAL_HOST": app.config.get(
                 "PEERSLATE_ENFORCE_CANONICAL_HOST"
             ),
@@ -63,6 +66,7 @@ class AuthenticationFlowTests(unittest.TestCase):
             PEERSLATE_AUTH_ISSUER=None,
             PEERSLATE_AUTH_PROVIDER_NAME="aad",
             PEERSLATE_WORKSHOP_ENABLED=False,
+            PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=False,
             PEERSLATE_ENFORCE_CANONICAL_HOST=False,
             PEERSLATE_CANONICAL_HOST="peerslate.com",
             PEERSLATE_AZURE_HOSTNAME="",
@@ -426,7 +430,10 @@ class AuthenticationFlowTests(unittest.TestCase):
         first_row.assert_not_called()
 
     def test_return_to_is_restricted_to_bounded_private_app_paths(self):
-        app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        app.config.update(
+            PEERSLATE_TRUST_EASYAUTH_HEADERS=True,
+            PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
+        )
         rejected_values = (
             "https://attacker.example/app",
             "//attacker.example/app",
@@ -435,6 +442,7 @@ class AuthenticationFlowTests(unittest.TestCase):
             "/app#fragment",
             "/app\\outside",
             "/app//outside",
+            "/app/settings?tab=account",
             "/petec/resume",
             "/app\x00outside",
             "/app" + ("x" * 2049),
@@ -475,20 +483,20 @@ class AuthenticationFlowTests(unittest.TestCase):
                 self.assertEqual(response.headers["Location"], default_location)
 
         accepted_values = {
-            "/app/settings?tab=account": (
+            "/app/settings": (
                 "/.auth/login/aad?post_login_redirect_uri="
-                "%2Fauth%2Fcomplete%3Freturn_to%3D%2Fapp%2Fsettings%3Ftab%253Daccount"
+                "%2Fauth%2Fcomplete%3Freturn_to%3D%2Fapp%2Fsettings"
             ),
             # PS-COMMUNITY-AUTH-WALL-001: authenticated Community destinations
-            # return the member to the exact Feed, post, or contribution.
+            # return the member to the exact Feed. Opaque object URLs collapse
+            # to that declared parent rather than crossing the provider.
             "/the-slate": (
                 "/.auth/login/aad?post_login_redirect_uri="
                 "%2Fauth%2Fcomplete%3Freturn_to%3D%2Fthe-slate"
             ),
             "/the-slate/posts/0f5b2c1a2e3d4c5b6a798877665544332211aabb": (
                 "/.auth/login/aad?post_login_redirect_uri="
-                "%2Fauth%2Fcomplete%3Freturn_to%3D%2Fthe-slate%2Fposts"
-                "%2F0f5b2c1a2e3d4c5b6a798877665544332211aabb"
+                "%2Fauth%2Fcomplete%3Freturn_to%3D%2Fthe-slate"
             ),
             # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: the canonical
             # route, its history destination, and a mode query string all

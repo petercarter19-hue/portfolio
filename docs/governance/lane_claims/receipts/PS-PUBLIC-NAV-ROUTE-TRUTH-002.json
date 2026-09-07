@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "package": "PS-PUBLIC-NAV-ROUTE-TRUTH-002",
+  "candidate_sha": "4e57fe3cb151e18206ebae47f82189386ac1a5de",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/nav_correction_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-07T18:54:24Z",
+  "findings": [
+    {
+      "severity": "major",
+      "status": "resolved",
+      "summary": "Candidate 460035b5fa37492bdb976c8fc153a6e234abf1de collapsed the legitimate /app/workshop/work and resumable /app/workshop/work/session returns to the Workshop parent. Candidate 91689b95b40da31d3818c00cfea8d641d9730165 restores both exact GET/HEAD landings only when both actual Workshop flags are enabled, retains safe-parent collapse for the review and reset leaves, and adds no navigation promotion."
+    },
+    {
+      "severity": "major",
+      "status": "resolved",
+      "summary": "Candidate 5c58b8c39567ef45c4dfd7072c1d6fec3621ee75 made preview-handler hashing portable but sliced each function from its def line, omitting its Flask route decorator. Candidate 4e57fe3cb151e18206ebae47f82189386ac1a5de freezes each complete decorator-and-handler source slice from the accepted activation base and adds negative proof that a route-decorator change alters the payload and digest."
+    },
+    {
+      "severity": "informational",
+      "status": "informational",
+      "summary": "Independent changed-candidate review passed exact candidate 4e57fe3cb151e18206ebae47f82189386ac1a5de with no outstanding findings. The prior independent review of unchanged runtime candidate 91689b95b40da31d3818c00cfea8d641d9730165 remains applicable, including its 42 safe-return assertions."
+    },
+    {
+      "severity": "informational",
+      "status": "informational",
+      "summary": "Writer correction verification passed 614 total affected tests with 611 passed and 3 intentional skips. The final decorator-freeze correction then passed 12 tests in each fresh legacy and V2 process. Synthetic browser evidence covers the unchanged rendered navigation scope. Genuine browser 200%/400% zoom and production/live proof remain unverified release evidence and are not claimed as passing."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-PUBLIC-NAV-ROUTE-TRUTH-002.md"
+}

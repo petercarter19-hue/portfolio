@@ -63,16 +63,16 @@ class OwnerLaunchpadAccessibilityTests(unittest.TestCase):
         self.assertEqual(body.count("<h1"), 1)
         self.assertIn('aria-labelledby="owner-workspace-title"', body)
         self.assertIn('aria-label="Your PeerSlate destinations"', body)
-        self.assertEqual(body.count('class="owner-app__destination"'), 6)
+        self.assertEqual(body.count('class="owner-app__destination"'), 4)
         for label in (
-            "Workshop",
-            "My Opportunities",
+            "Opportunity Slate",
             "Interview Studio",
             "Community",
-            "Capture",
             "Settings",
         ):
             self.assertIn(f'>{label}<', body)
+        for held_label in ("Workshop", "Capture", "Slate Board"):
+            self.assertNotIn(f'>{held_label}<', body)
         self.assertNotIn("javascript:", body.lower())
         self.assertNotIn("onclick=", body.lower())
         self.assertNotIn("data-open-chat", body)

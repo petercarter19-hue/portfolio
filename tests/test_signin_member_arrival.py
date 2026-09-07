@@ -14,6 +14,7 @@ where a member may be returned to.
 import re
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 
 import auth_routes
@@ -34,9 +35,19 @@ class SafeReturnContractTests(unittest.TestCase):
         self.context.push()
         self.original = {
             key: app.config.get(key)
-            for key in ("PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED",)
+            for key in (
+                "PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED",
+                "PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED",
+                "PEERSLATE_WORKSHOP_ENABLED",
+            )
         }
-        app.config["PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED"] = True
+        endpoints = {rule.endpoint for rule in app.url_map.iter_rules()}
+        self.v2_registered = "opportunity_slate_v2.room" in endpoints
+        app.config.update(
+            PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED=self.v2_registered,
+            PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED=True,
+            PEERSLATE_WORKSHOP_ENABLED=True,
+        )
 
     def tearDown(self):
         for key, value in self.original.items():
@@ -46,20 +57,19 @@ class SafeReturnContractTests(unittest.TestCase):
                 app.config[key] = value
         self.context.pop()
 
-    def test_every_registered_destination_round_trips(self):
-        for destination in PROTECTED_DESTINATIONS:
-            with self.subTest(prefix=destination.prefix):
-                self.assertEqual(
-                    destination.prefix, safe_return_path(destination.prefix)
-                )
-                nested = destination.prefix + "/nested/page"
-                self.assertEqual(nested, safe_return_path(nested))
+    def test_only_registered_exact_destinations_round_trip(self):
+        for path in ("/app", "/the-slate", "/interview-studio"):
+            with self.subTest(path=path):
+                self.assertEqual(path, safe_return_path(path))
+                self.assertEqual("/app", safe_return_path(path + "/nested/page"))
 
     def test_opportunity_slate_is_a_valid_destination_and_was_the_live_defect(self):
         # The exact value opportunity_slate_v2_routes builds for a signed-out
         # GET.  Before this package it resolved to "/app": the member signed in
         # and was dropped on their workspace with no explanation.  Proven live
         # 2026-08-16 with a real authenticated session.
+        if not self.v2_registered:
+            self.skipTest("the fresh process registered the legacy blueprint")
         self.assertEqual("/opportunity-slate", safe_return_path("/opportunity-slate"))
         self.assertEqual(
             "/opportunity-slate?step=replace",
@@ -116,7 +126,7 @@ class SafeReturnContractTests(unittest.TestCase):
         limit = safe_return.MAX_RETURN_PATH_LENGTH
         at_limit = "/app/" + ("x" * (limit - len("/app/")))
         self.assertEqual(limit, len(at_limit))
-        self.assertEqual(at_limit, safe_return_path(at_limit))
+        self.assertEqual("/app", safe_return_path(at_limit))
 
         over_limit = at_limit + "x"
         self.assertEqual(limit + 1, len(over_limit))
@@ -166,8 +176,9 @@ class NoProducerDisagreesWithTheConsumerTests(unittest.TestCase):
     """
 
     def test_every_producer_delegates_to_the_shared_validator(self):
-        with app.test_request_context("/"):
-            app.config["PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED"] = True
+        with app.test_request_context("/"), patch.dict(
+            app.config, {"PEERSLATE_WORKSHOP_ENABLED": True}
+        ):
             # A value only the canonical validator rejects: the weak copies
             # this replaced had no allowlist, no dot-segment rule and no
             # /.auth exclusion, so each would have returned it unchanged.
@@ -176,8 +187,13 @@ class NoProducerDisagreesWithTheConsumerTests(unittest.TestCase):
             self.assertEqual(
                 "/app/workshop", workshop_routes._safe_return_path(hostile)
             )
+            expected_opportunity_default = (
+                "/opportunity-slate"
+                if "opportunity_slate_v2.room" in app.view_functions
+                else "/app"
+            )
             self.assertEqual(
-                "/opportunity-slate",
+                expected_opportunity_default,
                 opportunity_slate_v2_routes._safe_return_path(hostile),
             )
 
@@ -217,11 +233,15 @@ class SignInRoundTripTests(unittest.TestCase):
                 "TESTING",
                 "PEERSLATE_TRUST_EASYAUTH_HEADERS",
                 "PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED",
+                "PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED",
             )
         }
+        endpoints = {rule.endpoint for rule in app.url_map.iter_rules()}
+        self.v2_registered = "opportunity_slate_v2.room" in endpoints
         app.config["TESTING"] = True
         app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
-        app.config["PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED"] = True
+        app.config["PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED"] = self.v2_registered
+        app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = True
 
     def tearDown(self):
         for key, value in self.original.items():
@@ -236,29 +256,29 @@ class SignInRoundTripTests(unittest.TestCase):
         return parse_qs(urlsplit(redirect_uri).query)["return_to"][0]
 
     def test_sign_in_preserves_every_registered_destination(self):
-        for destination in PROTECTED_DESTINATIONS:
-            with self.subTest(prefix=destination.prefix):
+        for path in safe_return.available_prefixes():
+            with self.subTest(path=path):
                 response = self.client.get(
-                    "/auth/sign-in", query_string={"return_to": destination.prefix}
+                    "/auth/sign-in", query_string={"return_to": path}
                 )
                 self.assertEqual(302, response.status_code)
                 self.assertEqual(
-                    destination.prefix,
+                    path,
                     self._return_to_of(response.headers["Location"]),
                 )
 
     def test_complete_lands_a_signed_in_member_on_every_registered_destination(self):
         # This is the assertion whose absence hid the defect: the half of the
         # round trip that actually decides where the member ends up.
-        for destination in PROTECTED_DESTINATIONS:
-            with self.subTest(prefix=destination.prefix):
+        for path in safe_return.available_prefixes():
+            with self.subTest(path=path):
                 response = self.client.get(
                     "/auth/complete",
-                    query_string={"return_to": destination.prefix},
+                    query_string={"return_to": path},
                     headers=easy_auth_header("member-round-trip"),
                 )
                 self.assertEqual(302, response.status_code)
-                self.assertEqual(destination.prefix, response.headers["Location"])
+                self.assertEqual(path, response.headers["Location"])
 
     def test_complete_rejects_the_full_hostile_matrix(self):
         for candidate in (
@@ -297,6 +317,8 @@ class SignInRoundTripTests(unittest.TestCase):
         own return-target builder instead, which is the half that was
         disagreeing with the consumer.
         """
+        if not self.v2_registered:
+            self.skipTest("the fresh process registered the legacy blueprint")
         with app.test_request_context("/opportunity-slate?step=replace"):
             from flask import request
 
@@ -318,6 +340,8 @@ class SignInRoundTripTests(unittest.TestCase):
         # Pre-existing correct behaviour that must survive the refactor: a
         # member signing in after an expired-session POST lands on the room,
         # not on a path that only accepts POST.
+        if not self.v2_registered:
+            self.skipTest("the fresh process registered the legacy blueprint")
         with app.test_request_context("/opportunity-slate/source", method="POST"):
             self.assertEqual(
                 "/opportunity-slate",
@@ -340,6 +364,7 @@ class HeaderReturnsMemberToTheirPageTests(unittest.TestCase):
             )
         }
         app.config["PEERSLATE_TRUST_EASYAUTH_HEADERS"] = True
+        app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = True
 
     def tearDown(self):
         for key, value in self.original.items():
@@ -387,9 +412,14 @@ class HeaderReturnsMemberToTheirPageTests(unittest.TestCase):
         with app.test_request_context(
             "/auth/complete?return_to=/opportunity-slate"
         ):
-            app.config["PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED"] = True
+            v2_registered = any(
+                rule.endpoint == "opportunity_slate_v2.room"
+                for rule in app.url_map.iter_rules()
+            )
+            app.config["PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED"] = v2_registered
             self.assertEqual(
-                "/opportunity-slate", auth_routes._current_return_target()
+                "/opportunity-slate" if v2_registered else "/app",
+                auth_routes._current_return_target(),
             )
 
     def test_auth_surfaces_never_reflect_a_hostile_return_to(self):
