@@ -287,37 +287,56 @@ identical failures, stop retrying and report the blocker.
 
 ## Current OpenAI model routing
 
-| Stable role | Current choice | Use |
+| Assigned work or decision | Current choice | Use |
 |---|---|---|
-| Architect | **GPT-6 Astra** | New or materially changed architecture; increase effort for difficult tradeoffs |
-| Manager | **GPT-6 Astra, Medium** | Required OpenAI management default. An exception requires Pete's explicit per-session choice after the concrete need is explained. |
-| Implementer | **Sol, High** | Repository implementation, tests, documentation, corrections and closeout |
-| Delegated helper | **Sol, Medium** | Bounded supporting work under the assigned writer or manager |
-| Independent reviewer | **Fresh GPT-6 Astra, High** | Exact-SHA, risk-triggered review and audit findings; use deeper effort when the risk needs it |
+| Site or package management | **GPT-6 Astra, Medium** | Required OpenAI management default. Discuss an exception with Pete only after explaining the concrete need. |
+| Known-cause implementation | **Sol, High** | Implementation, associated tests, debugging, complete-diff self-review and corrections |
+| Bounded supporting work | **Sol, Medium** | Evidence collection and routine documentation under the assigned writer or manager |
+| Consequential architecture or cross-package decision | **GPT-6 Astra, High** | Architecture or coordination whose decision materially affects multiple systems or packages |
+| Difficult unresolved debugging or integration | **GPT-6 Astra, Medium or High** | Use only when the unresolved cause or integration risk needs broader reasoning; state that reason first |
+| Consequential independent security, privacy or architecture review | **Fresh GPT-6 Astra, High** | Exact-candidate review of the defined consequential risk |
+| Routine bounded independent review, release or closeout execution | **Sol, High** | Focused exact-candidate conformance review or ordinary authorized delivery execution |
+| Demanding well-bounded implementation | **Sol, Extra High** | Selectively for an unusually demanding implementation with clear boundaries; state the concrete need first |
 
 At supported launch or session change, select the assigned model and effort and
 verify the effective runtime setting. Handoff labels, inherited parent settings,
-and requested values are not verification; unavailable inspection stays unverified. Preserve
-Pete's explicit exceptions and do not churn a setting that is verified and correct.
+and requested values are not verification; unavailable inspection stays unverified.
+Preserve Pete's explicit exceptions and do not churn a setting that is verified
+and correct. Apply new routing at a new assignment or natural work boundary; do
+not switch an active Navigation task or frozen reviewer merely to propagate this
+table.
+
+Choose by the actual work and risk. A title alone never increases effort or
+selects a different model. There is no mandatory architect or premium reviewer.
+Explain the concrete reason before changing the implementation model or
+increasing effort, and do not escalate to compensate for missing access, tools or
+a queue. Risk-based independent-review triggers and explicit package overrides
+remain binding.
 
 Compare accepted outcomes, corrections, elapsed time and observed usage,
-including delegated work. Report compactly on state changes, completed evidence,
-or required action. Do not create duplicate implementations, duplicate reviews,
-acknowledgement loops, periodic model turns, cache warmers, or unrelated audits.
+including delegated work. Package managers retain detailed evidence and execute
+their CI and review path. Send the central manager only an actionable
+cross-package blocker or new decision beyond package scope, a concrete dependency
+or custody change that recipient must act on, a completed accepted outcome, or an
+answer to Pete's explicit status request. Coordinate ordinary dependencies with
+the affected owner without copying central by default. Central may end its turn
+and react to the next callback; do not add central polling or duplicate result
+collection merely to keep it active. Do not create duplicate implementations,
+duplicate reviews, acknowledgement loops, periodic model turns, cache warmers,
+or unrelated audits.
 
 An assigned writer with through-merge repository authority completes routine
 commit, push, PR and accepted merge without another Pete approval pause.
 Explicit write_only claims, independent review, CI and production boundaries
 remain binding; manager assignment alone does not grant writer authority.
 
-Use the lowest reasoning effort that meets the task's evidence standard. Reserve
-Max for difficult reasoning and Ultra for substantial work with useful parallel
-parts; full capability use does not mean maximum effort on every task. A package
-that explicitly pins a model or review control keeps that requirement within
-its exact authorized scope. If it is unavailable, report the conflict rather
-than silently weakening it. Otherwise use an available capable option and state
-any material limitation. This policy changes no host settings or PeerSlate's
-runtime AI models.
+Use the assigned reasoning effort that meets the task's evidence standard; full
+capability use does not mean maximum effort on every task. A package that
+explicitly pins a model or review control keeps that requirement within its
+exact authorized scope. If it is unavailable, report the conflict rather than
+silently weakening it. Otherwise use an available capable option and state any
+material limitation. This policy changes no host settings or PeerSlate's runtime
+AI models.
 
 Capability references: [OpenAI model guidance](https://developers.openai.com/api/docs/guides/latest-model),
 [Codex models and effort](https://learn.chatgpt.com/docs/models),
@@ -362,8 +381,8 @@ major package or audit. Do not treat a remembered marketing nickname or an
 
 1. One capable writer performs the bounded update and complete-diff review.
 2. Run deterministic checks and the relevant guardrails.
-3. Use a premium reviewer only when product meaning changes, evidence conflicts,
-   or another mandatory trigger applies.
+3. Add an independent reviewer only when product meaning changes, evidence
+   conflicts, or another mandatory trigger applies; select it by the actual risk.
 4. Do not deploy merely to record documentation.
 
 ## Audit role and reporting

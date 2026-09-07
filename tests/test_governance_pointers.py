@@ -350,13 +350,28 @@ class WorkflowEfficiencyTests(unittest.TestCase):
 
     def test_openai_role_defaults_require_actual_runtime_verification(self):
         body = " ".join(_read("docs", "AI_MODEL_AND_ROLE_ROUTING.md").split())
-        self.assertIn("Manager | **GPT-6 Astra, Medium**", body)
-        self.assertIn("Implementer | **Sol, High**", body)
-        self.assertIn("Delegated helper | **Sol, Medium**", body)
+        for route in (
+            "Site or package management | **GPT-6 Astra, Medium**",
+            "Known-cause implementation | **Sol, High**",
+            "Bounded supporting work | **Sol, Medium**",
+            "Consequential architecture or cross-package decision | **GPT-6 Astra, High**",
+            "Difficult unresolved debugging or integration | **GPT-6 Astra, Medium or High**",
+            "Consequential independent security, privacy or architecture review | **Fresh GPT-6 Astra, High**",
+            "Routine bounded independent review, release or closeout execution | **Sol, High**",
+            "Demanding well-bounded implementation | **Sol, Extra High**",
+        ):
+            with self.subTest(route=route):
+                self.assertIn(route, body)
         self.assertNotIn("current central manager has Pete's explicit", body)
+        self.assertNotIn("Independent reviewer | **Fresh GPT-6 Astra, High**", body)
         self.assertIn("verify the effective runtime setting", body)
         self.assertIn("inherited parent setting", body)
         self.assertIn("do not churn a setting", body)
+        self.assertIn("A title alone never increases effort", body)
+        self.assertIn("There is no mandatory architect or premium reviewer", body)
+        self.assertIn("Explain the concrete reason before changing the implementation model", body)
+        self.assertIn("new assignment or natural work boundary", body)
+        self.assertIn("do not switch an active Navigation task or frozen reviewer", body)
 
     def test_complete_transfer_requires_access_acceptance_without_credentials(self):
         bodies = [
@@ -408,6 +423,10 @@ class WorkflowEfficiencyTests(unittest.TestCase):
         )
         self.assertIn("session-health advisories are approximate, non-gating", normalized)
         self.assertIn("continuity never transfers authorization or ownership", normalized)
+        self.assertIn("send the central manager only an actionable cross-package blocker", normalized)
+        self.assertIn("coordinate ordinary dependencies with the affected owner", normalized)
+        self.assertIn("central may end its turn and react to the next callback", normalized)
+        self.assertIn("do not add central polling or duplicate result collection", normalized)
         self.assertNotIn(r"c:\users", routing.lower())
 
 
