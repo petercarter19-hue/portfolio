@@ -35,7 +35,15 @@
     "tests/test_homepage_scenes.py",
     "templates/homepage.html",
     "templates/partials/homepage/_story_future_scene.html",
-    "templates/experience.html"
+    "templates/experience.html",
+    "docs/governance/PACKAGE_REGISTRY.json",
+    "tests/test_community_public_pilot.py",
+    "tests/test_community_replaces_old_slate.py",
+    "tests/test_interview_studio.py",
+    "tests/test_owner_home_accessibility.py",
+    "tests/test_people_interests_feed.py",
+    "tests/test_resume2.py",
+    "tests/test_workshop_checkpoint.py"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-PUBLIC-NAV-ROUTE-TRUTH-002.md"
