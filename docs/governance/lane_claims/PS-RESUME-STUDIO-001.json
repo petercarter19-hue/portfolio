@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-RESUME-STUDIO-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver the approved MVP1 Package 1 repository-only nonvisual private resume command foundation, managed by session 01a07722-6290-7751-811e-4c4767adfadd and written by agent:codex/mvp1-resume-backend/01a07722-6290-7751-811e-4c4767adfadd/resume_backend_writer: owner editor read with concurrency tokens and atomic, idempotent create, update, and private removal for roles, accomplishments, skills, and credentials in the existing canonical career domain. Derive identity server-side, preserve member wording, keep records private and unpublished, reject foreign or forged parents and exposed, relation-bearing, or publication-history-bearing records, require credential completion state, and return typed no-store outcomes. Register proposed additive SQL with gate null; no SQL execution or proof is authorized. Exclude configuration and flags, UI, public adapters, publication, AI and providers, identities and live data, deployment, and production. Repository completion is not runtime or pilot readiness.",
   "assignment": "implementation",
   "writer_ref": "agent:codex/mvp1-resume-backend/01a07722-6290-7751-811e-4c4767adfadd/resume_backend_writer",
@@ -39,6 +39,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "012204c7acef081a088631b040f75ac54ca582d1",
+  "closed_at": "2026-09-07T02:24:05Z"
 }
