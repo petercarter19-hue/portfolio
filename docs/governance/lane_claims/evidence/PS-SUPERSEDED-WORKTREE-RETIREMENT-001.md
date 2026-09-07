@@ -58,3 +58,13 @@ and untracked `GROK_STATUS.md` remain preserved. The file's supported external
 copy is recorded separately under evidence allocation
 `e3c45973f8ec3a42c0eca564` with SHA-256
 `AA31F48A5E67E3E572EB1F984D9E29AB9327A1D59527D32AC06F44A7725E5572`.
+
+<!-- evidence-errata-authorization: session:01a07158-684b-74a2-a47e-7ca0e91889b7/owner-finish-2026-09-07 -->
+
+## Accepted operational completion
+
+- The independently reviewed mechanism candidate `774992de20149d44b5a8d445ed6ae9e5d4e9f850` was accepted by implementation PR 962 after required build 2645. Its mechanism bytes reached main at `9cf83d82f306a60486ca62764b5595bca76c2c2d`.
+- Before source removal, the only old package residue, `GROK_STATUS.md`, was preserved at evidence allocation `e3c45973f8ec3a42c0eca564`. The copy is 3,207 bytes with SHA-256 `AA31F48A5E67E3E572EB1F984D9E29AB9327A1D59527D32AC06F44A7725E5572`.
+- The original registered task `session:01a07158-684b-74a2-a47e-7ca0e91889b7` removed only that untracked source file, proved the old worktree pristine, and ran the merged ordinary `retire` command with expected HEAD `cd17e72a2e8e65c2a234439e6bfbc71943d99721`.
+- The retirement returned `ok=true`, `status=retired`, `recovered_pending=null`. The old path is absent from the filesystem and Git worktree list. Its local and server branch refs both remain at `cd17e72a2e8e65c2a234439e6bfbc71943d99721`; the preserved external copy remains byte-exact; registry pending is null and its lock is absent.
+- Package closure PR 963 passed required build 2647 and was accepted on main at `43fb592ff97b5e1490a40b2e027180969712808e`. The claim records the accepted mechanism merge SHA `9cf83d82f306a60486ca62764b5595bca76c2c2d`. No branch, tag, stash, or history was deleted, and no production or deployment action occurred.
