@@ -8,6 +8,13 @@ from flask import Blueprint, current_app, jsonify, request
 from identity import AuthenticationRequired, get_current_identity
 from services.database_service import DatabaseServiceError, database_service
 from services.journal_service import JournalServiceError, journal_service
+from services.living_resume_editor_service import (
+    LivingResumeEditorConflictError,
+    LivingResumeEditorNotFoundError,
+    LivingResumeEditorUnavailableError,
+    LivingResumeEditorValidationError,
+    living_resume_editor_service,
+)
 from services.moment_service import validate_moment_proposal
 
 
@@ -137,6 +144,18 @@ def protect_json_writes():
     return None
 
 
+@peerslate_api.after_request
+def protect_owner_living_resume_responses(response):
+    """Never let any owner editor response enter a browser or proxy cache."""
+
+    if request.path == "/api/living-resume/me" or request.path.startswith(
+        "/api/living-resume/me/"
+    ):
+        response.headers["Cache-Control"] = "private, no-store"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
 @peerslate_api.errorhandler(ApiValidationError)
 def handle_validation_error(error):
     return jsonify({"success": False, "message": str(error)}), 400
@@ -215,6 +234,30 @@ def get_dashboard():
 @require_identity
 def get_owner_living_resume():
     identity = get_current_identity()
+    view = request.args.get("view")
+    if view is not None:
+        if view != "editor":
+            raise ApiValidationError("view has an unsupported value.")
+        try:
+            editor = living_resume_editor_service.get_editor(identity.user_key)
+        except LivingResumeEditorNotFoundError:
+            return jsonify(
+                {
+                    "success": False,
+                    "code": "not_found",
+                    "message": "Living Resume not found.",
+                }
+            ), 404
+        except LivingResumeEditorUnavailableError:
+            current_app.logger.error("Living Resume editor read failed.")
+            return jsonify(
+                {
+                    "success": False,
+                    "code": "unavailable",
+                    "message": "Living Resume editing is temporarily unavailable.",
+                }
+            ), 503
+        return jsonify({"success": True, "editor": editor})
     try:
         result_sets = database_service.execute_procedure(
             "usp_GetOwnerLivingResume", [("@UserKey", identity.user_key)]
@@ -225,6 +268,48 @@ def get_owner_living_resume():
         return jsonify({"success": False, "message": "Living Resume not found."}), 404
     resume = database_service.name_result_sets(result_sets, LIVING_RESUME_SECTIONS)
     return jsonify({"success": True, "living_resume": resume})
+
+
+@peerslate_api.post("/living-resume/me/commands")
+@require_living_resume_database
+@require_identity
+def commit_owner_living_resume_command():
+    identity = get_current_identity()
+    try:
+        result = living_resume_editor_service.commit(identity.user_key, _json_body())
+    except LivingResumeEditorValidationError as error:
+        return jsonify(
+            {"success": False, "code": error.code, "message": str(error)}
+        ), 400
+    except LivingResumeEditorNotFoundError:
+        return jsonify(
+            {
+                "success": False,
+                "code": "not_found",
+                "message": "Living Resume record not found.",
+            }
+        ), 404
+    except LivingResumeEditorConflictError as error:
+        payload = {"success": False, "code": error.code, "message": str(error)}
+        if error.code == "changed":
+            payload["current"] = error.current
+        return jsonify(payload), 409
+    except LivingResumeEditorUnavailableError:
+        current_app.logger.error("Living Resume editor command failed.")
+        return jsonify(
+            {
+                "success": False,
+                "code": "unavailable",
+                "message": "Living Resume editing is temporarily unavailable.",
+            }
+        ), 503
+    status = (
+        201
+        if result["receipt"]["outcome"] == "created"
+        and not result["receipt"]["replayed"]
+        else 200
+    )
+    return jsonify({"success": True, **result}), status
 
 
 @peerslate_api.get("/public/profiles/<string:profile_slug>/living-resume")

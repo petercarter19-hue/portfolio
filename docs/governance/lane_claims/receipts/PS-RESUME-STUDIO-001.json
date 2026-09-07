@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-STUDIO-001",
+  "candidate_sha": "8de1f650563723e4d391c944bef42e2b3a3dc0ef",
+  "review_type": "independent",
+  "reviewer_ref": "agent:codex/mvp1-resume-backend-review/01a07722-6290-7751-811e-4c4767adfadd",
+  "result": "pass",
+  "reviewed_at": "2026-09-07T00:48:50Z",
+  "findings": [
+    {
+      "id": "R1-dynamic-sql-delimiter",
+      "status": "resolved",
+      "severity": "high",
+      "summary": "Removed an unmatched closing parenthesis from the command procedure and added an extracted dynamic-SQL delimiter regression. This is static validation and does not claim SQL Server compilation or execution."
+    },
+    {
+      "id": "R2-long-json-text",
+      "status": "resolved",
+      "severity": "high",
+      "summary": "Replaced JSON_VALUE for all six create/update summary and wording reads with OPENJSON nvarchar(max) extraction and retained the 8000 UTF-16-unit boundary."
+    },
+    {
+      "id": "R3-typed-input-errors",
+      "status": "resolved",
+      "severity": "medium",
+      "summary": "Non-string command types, unsupported lone-surrogate text, and malformed bracketed verification URLs now return typed Living Resume validation errors, including through the owner API."
+    },
+    {
+      "id": "R4-subtype-and-parent-revalidation",
+      "status": "resolved",
+      "severity": "medium",
+      "summary": "Role and credential mutations lock and require the owner-scoped matching subtype and one affected row. Accomplishment mutations revalidate the locked owner experience parent and its private, unpublished, history-free entity before writing a receipt."
+    },
+    {
+      "id": "R5-parent-before-child-lock-order",
+      "status": "resolved",
+      "severity": "medium",
+      "summary": "Accomplishment update/remove now discovers its candidate parent without retaining a child lock, locks and validates the parent first, then locks and revalidates the exact child, owner, parent, and expected version."
+    },
+    {
+      "id": "R6-rollback-ledger-delete-shape",
+      "status": "resolved",
+      "severity": "medium",
+      "summary": "Changed the proposed rollback ledger deletion to the repository-recognized equivalent T-SQL form while preserving the exact migration predicate and transaction."
+    }
+  ],
+  "evidence_ref": "lane_claims/evidence/PS-RESUME-STUDIO-001.md"
+}

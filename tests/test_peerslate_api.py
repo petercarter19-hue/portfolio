@@ -6,6 +6,11 @@ from unittest.mock import patch
 
 from app import app
 from services.database_service import DatabaseServiceError
+from services.living_resume_editor_service import (
+    LivingResumeEditorConflictError,
+    LivingResumeEditorUnavailableError,
+    LivingResumeEditorValidationError,
+)
 
 
 class PeerSlateApiTests(unittest.TestCase):
@@ -152,7 +157,16 @@ class PeerSlateApiTests(unittest.TestCase):
         self.assertNotIn(b'data-break-api=', break_feed.data)
 
     def test_living_resume_database_routes_are_feature_flagged_off(self):
-        self.assertEqual(self.client.get("/api/living-resume/me").status_code, 404)
+        owner = self.client.get("/api/living-resume/me")
+        command = self.client.post(
+            "/api/living-resume/me/commands",
+            headers={"X-PeerSlate-Request": "same-origin"},
+            json={},
+        )
+        self.assertEqual(owner.status_code, 404)
+        self.assertEqual(command.status_code, 404)
+        self.assertEqual(owner.headers["Cache-Control"], "private, no-store")
+        self.assertEqual(command.headers["Cache-Control"], "private, no-store")
         self.assertEqual(
             self.client.get("/api/public/profiles/example/living-resume").status_code,
             404,
@@ -244,6 +258,137 @@ class PeerSlateApiTests(unittest.TestCase):
             set(payload),
             {"profile", "chapters", "achievements", "skills", "skill_proofs", "timeline"},
         )
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+
+    @patch("peerslate_api.living_resume_editor_service.get_editor")
+    def test_owner_editor_view_uses_server_identity_and_is_never_cached(self, get_editor):
+        app.config["PEERSLATE_LIVING_RESUME_DB_ENABLED"] = True
+        get_editor.return_value = {"profile": {"profile_key": "private"}, "roles": []}
+
+        response = self.client.get(
+            "/api/living-resume/me?view=editor&user_key=someone-else"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        get_editor.assert_called_once_with("test-user-1")
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+        self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
+
+    @patch("peerslate_api.living_resume_editor_service.commit")
+    def test_owner_command_uses_server_identity_and_same_origin(self, commit):
+        app.config["PEERSLATE_LIVING_RESUME_DB_ENABLED"] = True
+        commit.return_value = {
+            "receipt": {"outcome": "created", "replayed": False},
+            "current": {"record_key": "private"},
+        }
+        body = {"command_id": "browser-value", "user_key": "someone-else"}
+
+        response = self.client.post(
+            "/api/living-resume/me/commands",
+            headers={"X-PeerSlate-Request": "same-origin"},
+            json=body,
+        )
+
+        self.assertEqual(response.status_code, 201)
+        commit.assert_called_once_with("test-user-1", body)
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+
+    @patch("peerslate_api.living_resume_editor_service.commit")
+    def test_owner_command_replay_is_200(self, commit):
+        app.config["PEERSLATE_LIVING_RESUME_DB_ENABLED"] = True
+        commit.return_value = {
+            "receipt": {"outcome": "created", "replayed": True},
+            "current": {"record_key": "private"},
+        }
+        response = self.client.post(
+            "/api/living-resume/me/commands",
+            headers={"X-PeerSlate-Request": "same-origin"},
+            json={},
+        )
+        self.assertEqual(response.status_code, 200)
+
+    @patch("peerslate_api.living_resume_editor_service.commit")
+    def test_owner_command_returns_typed_safe_errors_and_current_conflict(self, commit):
+        app.config["PEERSLATE_LIVING_RESUME_DB_ENABLED"] = True
+        cases = (
+            (LivingResumeEditorValidationError("Bad command."), 400, "invalid"),
+            (
+                LivingResumeEditorConflictError(
+                    "Changed.", code="changed", current={"row_version": "next"}
+                ),
+                409,
+                "changed",
+            ),
+            (LivingResumeEditorUnavailableError(), 503, "unavailable"),
+        )
+        for error, status, code in cases:
+            with self.subTest(code=code):
+                commit.side_effect = error
+                response = self.client.post(
+                    "/api/living-resume/me/commands",
+                    headers={"X-PeerSlate-Request": "same-origin"},
+                    json={},
+                )
+                self.assertEqual(response.status_code, status)
+                self.assertEqual(response.get_json()["code"], code)
+                self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+                self.assertNotIn("SQL", response.get_data(as_text=True))
+        self.assertEqual(response.get_json().get("current"), None)
+
+    def test_owner_command_without_same_origin_is_rejected_and_never_cached(self):
+        app.config["PEERSLATE_LIVING_RESUME_DB_ENABLED"] = True
+        response = self.client.post("/api/living-resume/me/commands", json={})
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+
+    def test_owner_command_malformed_types_unicode_and_urls_return_typed_400(self):
+        app.config["PEERSLATE_LIVING_RESUME_DB_ENABLED"] = True
+        base = {
+            "command_id": "00000000-0000-4000-8000-000000000001",
+            "type": "create_role",
+            "record_key": "00000000-0000-4000-8000-000000000002",
+            "parent_key": None,
+            "expected_version": None,
+            "values": {
+                "role_title": "Engineer",
+                "employer_name": "PeerSlate",
+                "location_text": None,
+                "summary": None,
+                "start_date": None,
+                "end_date": None,
+                "date_precision": "unknown",
+                "employment_type": None,
+                "current_role": False,
+            },
+        }
+        credential = {
+            **base,
+            "type": "create_credential",
+            "values": {
+                "name": "Azure Fundamentals",
+                "issuer": "Microsoft",
+                "identifier": None,
+                "issue_date": "2026-01-02",
+                "expiration_date": None,
+                "verification_url": "http://[",
+                "completion_status": "completed",
+            },
+        }
+        cases = (
+            {**base, "type": []},
+            {**base, "values": {**base["values"], "summary": "bad\ud800text"}},
+            credential,
+        )
+        for body in cases:
+            with self.subTest(command_type=body["type"]):
+                response = self.client.post(
+                    "/api/living-resume/me/commands",
+                    headers={"X-PeerSlate-Request": "same-origin"},
+                    json=body,
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.get_json()["code"], "invalid")
+                self.assertEqual(response.headers["Cache-Control"], "private, no-store")
 
     @patch("peerslate_api.database_service.execute_procedure")
     def test_public_living_resume_passes_only_clean_slug(self, execute):

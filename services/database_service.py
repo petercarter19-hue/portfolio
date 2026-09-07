@@ -112,7 +112,12 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_ListCapturesForOwner",
         "usp_ListKnowledgeItemsForOwner",
         "usp_ListMomentPlacementsForOwner",
+        # PS-RESUME-STUDIO-001: the private Living Resume editor projection
+        # and its single closed, owner-scoped atomic command boundary. The
+        # proposed schema remains unapplied while its registry gate is null.
+        "usp_CommitLivingResumeCommandForOwner",
         "usp_GetOwnerLivingResume",
+        "usp_GetOwnerLivingResumeEditor",
         "usp_GetPublicLivingResumeBySlug",
         "usp_GetSlateSpaceForUser",
         "usp_GetTodayBreakFeedForUser",

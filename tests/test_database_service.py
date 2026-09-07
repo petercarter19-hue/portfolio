@@ -348,7 +348,9 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_ListCapturesForOwner",
             "usp_ListKnowledgeItemsForOwner",
             "usp_ListMomentPlacementsForOwner",
+            "usp_CommitLivingResumeCommandForOwner",
             "usp_GetOwnerLivingResume",
+            "usp_GetOwnerLivingResumeEditor",
             "usp_GetPublicLivingResumeBySlug",
             "usp_GetSlateSpaceForUser",
             "usp_GetTodayBreakFeedForUser",
@@ -509,8 +511,27 @@ class DatabaseServiceTests(unittest.TestCase):
             connection_foundation,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 145)
+        self.assertEqual(len(expected), 147)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
+
+    def test_living_resume_editor_procedures_are_exactly_allowlisted(self):
+        expected = {
+            "usp_CommitLivingResumeCommandForOwner",
+            "usp_GetOwnerLivingResumeEditor",
+        }
+
+        self.assertTrue(expected.issubset(ALLOWED_PROCEDURES))
+        self.assertEqual(
+            {
+                name
+                for name in ALLOWED_PROCEDURES
+                if "LivingResume" in name and name not in {
+                    "usp_GetOwnerLivingResume",
+                    "usp_GetPublicLivingResumeBySlug",
+                }
+            },
+            expected,
+        )
 
     def test_photo_procedures_are_explicitly_allowlisted(self):
         expected = {

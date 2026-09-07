@@ -2667,6 +2667,16 @@
         "operator": "Claude Fable 5 / work-2026-09-01-myopp-member-import-001",
         "notes": "Owner-authorized bounded disposable-proof envelope per session:4b21c2ac-0236-4dc0-af54-2c15e6f126ce/pete-chat-2026-08-31/disposable-proof-envelope-c4-through-c9-yes-i-do; attempt a2 (a1 proved verified=1 but was not recorded due to an operator output-capture error, its database deleted with ResourceNotFound confirmed); no production or staging action."
       }
+    },
+    {
+      "id": "PS-RESUME-EDIT-001",
+      "forward": "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-001_private_commands.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-001_private_commands_rollback.sql",
+      "requires": [
+        "PS-PLAT-007"
+      ],
+      "summary": "Proposed private Living Resume editor: owner-scoped role, accomplishment, skill, and credential create/update/remove commands with parent row-version fences, atomic canonical writes, immutable UUID-and-digest receipts, explicit credential completion state, and protection for published or history-bearing records. Repository candidate only; no database application or runtime proof.",
+      "gate": null
     }
   ]
 }
