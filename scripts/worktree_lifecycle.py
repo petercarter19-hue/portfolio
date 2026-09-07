@@ -2480,6 +2480,48 @@ def _claim_from_origin_main(context: RepoContext, package: str) -> dict[str, Any
     return claim
 
 
+def _ordinary_retirement_claim(
+    context: RepoContext, package: str
+) -> dict[str, Any]:
+    """Return a fetched claim that permits its original writer to retire custody."""
+
+    claim = _claim_from_origin_main(context, package)
+    state = claim.get("state")
+    if state == "closed":
+        return claim
+    if state != "superseded":
+        raise Refusal(
+            "durable retirement requires a closed or eligible superseded claim "
+            "on fetched origin/main"
+        )
+    supersession = claim.get("supersession")
+    replacements = (
+        supersession.get("superseded_by") if isinstance(supersession, dict) else None
+    )
+    if (
+        not isinstance(replacements, list)
+        or not replacements
+        or not all(
+            isinstance(replacement, str)
+            and PACKAGE_RE.fullmatch(replacement)
+            and replacement != package
+            for replacement in replacements
+        )
+        or len(replacements) != len(set(replacements))
+    ):
+        raise Refusal(
+            "superseded retirement requires a nonempty exact replacement package list"
+        )
+    for replacement in replacements:
+        replacement_claim = _claim_from_origin_main(context, replacement)
+        if replacement_claim.get("state") != "closed":
+            raise Refusal(
+                "superseded retirement replacement claim is not closed on fetched "
+                f"origin/main: {replacement}"
+            )
+    return claim
+
+
 def _active_claim(
     context: RepoContext, package: str, task_ref: str
 ) -> dict[str, Any]:
@@ -5309,11 +5351,17 @@ def _retirement_blockers(
     if record.get("kind") == "durable":
         package = record.get("package")
         try:
-            claim = _claim_from_origin_main(context, str(package))
-            if claim.get("state") != "closed":
-                blockers.append("durable package claim is not closed on origin/main")
+            claim = _ordinary_retirement_claim(context, str(package))
             if claim.get("branch") != record.get("branch"):
-                blockers.append("closed claim branch does not match the registry")
+                blockers.append("retirement claim branch does not match the registry")
+            branch = record.get("branch")
+            local_head = (
+                _ref_sha(context, f"refs/heads/{branch}")
+                if isinstance(branch, str)
+                else None
+            )
+            if local_head != expected_head:
+                blockers.append("local branch ref does not equal expected HEAD")
         except Refusal as error:
             blockers.append(str(error))
     return blockers
@@ -5400,13 +5448,13 @@ def command_retire(context: RepoContext, args: argparse.Namespace) -> dict[str, 
         )
     package = _validate_package(str(snapshot_record.get("package")))
     _fetch_origin_main(context)
+    if snapshot_record.get("kind") == "durable":
+        _ordinary_retirement_claim(context, package)
     server_proof = _claim_branch_proof(
         context,
         package,
         expected_head,
-        required_state="closed"
-        if snapshot_record.get("kind") == "durable"
-        else None,
+        required_state=None,
     )
     with _registry_lock(context.registry_path):
         registry = _load_registry(context.registry_path)
@@ -5422,15 +5470,24 @@ def command_retire(context: RepoContext, args: argparse.Namespace) -> dict[str, 
             # exact and the new tip is already durable; otherwise preserve it.
             live = _worktree_at(context.root, path)
             pristine, residue = _is_pristine(path) if path.exists() else (False, [])
-            claim = _claim_from_origin_main(context, str(record.get("package")))
+            claim = _ordinary_retirement_claim(
+                context, str(record.get("package"))
+            )
+            recorded_head = record.get("head")
             reconcilable = (
                 record.get("state") == "active"
                 and record.get("task_ref") == task_ref
+                and isinstance(recorded_head, str)
+                and SHA_RE.fullmatch(recorded_head) is not None
+                and _is_ancestor(context, recorded_head, expected_head)
                 and live is not None
                 and live.get("branch") == record.get("branch")
                 and live.get("head") == expected_head
+                and _ref_sha(
+                    context, f"refs/heads/{record.get('branch')}"
+                )
+                == expected_head
                 and pristine
-                and claim.get("state") == "closed"
                 and claim.get("branch") == record.get("branch")
                 and server_proof.package == record.get("package")
                 and server_proof.branch == record.get("branch")

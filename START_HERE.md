@@ -418,7 +418,12 @@ authorization, migration, deletion, or material-visual conflict - not an
 unrelated historical record.
 
 After claim close, retire a package worktree only through the exact registered
-path, task, and expected HEAD. The guard requires a closed fetched claim,
-pristine tracked/untracked/ignored state, an exact server-confirmed claimed-
-branch tip (never a stale local ref or local-only tag), and ordinary non-force
-Git removal. Otherwise it preserves the worktree and states the blocker.
+path, task, and expected HEAD. The same original registered task may also retire
+after terminal supersession when the fetched claim names at least one exact
+replacement package and every named replacement claim is closed on fetched
+main. The guard requires the claim and registry branch to match, pristine
+tracked/untracked/ignored state, exact live/local/server HEAD custody, and
+ancestor-safe reconciliation of an older registry HEAD. Removal remains
+ordinary non-force Git removal; supersession never grants a cleanup writer or
+replacement writer the original task's custody. Otherwise the tool preserves
+the worktree and states the blocker.

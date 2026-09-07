@@ -599,6 +599,48 @@ class WorktreeLifecycleTests(unittest.TestCase):
         self.addCleanup(fixture.cleanup)
         return fixture
 
+    def publish_superseded_claim(
+        self, fixture: RepositoryFixture, *, replacement_state: str = "closed"
+    ) -> str:
+        replacement = "PS-TEST-LIFECYCLE-REPLACEMENT-001"
+        fixture.write_claim("superseded")
+        claim_path = (
+            fixture.repo
+            / "docs"
+            / "governance"
+            / "lane_claims"
+            / f"{fixture.package}.json"
+        )
+        claim = json.loads(claim_path.read_text(encoding="utf-8"))
+        claim["superseded_at"] = "2026-09-07T00:00:00Z"
+        claim["supersession"] = {
+            "owner_authorization_ref": "session:owner/superseded-retirement",
+            "superseded_by": [replacement],
+        }
+        claim_path.write_text(json.dumps(claim, indent=2) + "\n", encoding="utf-8")
+        replacement_path = claim_path.with_name(f"{replacement}.json")
+        replacement_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "package": replacement,
+                    "state": replacement_state,
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        git(
+            fixture.repo,
+            "add",
+            claim_path.relative_to(fixture.repo).as_posix(),
+            replacement_path.relative_to(fixture.repo).as_posix(),
+        )
+        git(fixture.repo, "commit", "-m", "supersede test claim")
+        git(fixture.repo, "push", "origin", "main")
+        return replacement
+
     def owner_reassignment_setup(
         self, label: str
     ) -> tuple[RepositoryFixture, str, str, str, Path, Path]:
@@ -2590,6 +2632,180 @@ class WorktreeLifecycleTests(unittest.TestCase):
             os.chdir(previous_cwd)
         self.assertEqual(fixture.registry_path.read_bytes(), poisoned)
         self.assertTrue(target_path.exists())
+
+    def test_retire_superseded_original_custody_reconciles_ancestor_head(self):
+        fixture = self.fixture()
+        fixture.initialize()
+        code, ensured = fixture.run(
+            "ensure",
+            "--package",
+            fixture.package,
+            "--task-ref",
+            fixture.writer,
+            "--execute",
+        )
+        self.assertEqual(code, 0, ensured)
+        durable = Path(ensured["path"])
+        (durable / "sample.txt").write_text("superseded candidate\n", encoding="utf-8")
+        git(durable, "add", "sample.txt")
+        git(durable, "commit", "-m", "superseded candidate")
+        candidate = git(durable, "rev-parse", "HEAD")
+        git(durable, "push", "-u", "origin", f"HEAD:refs/heads/{fixture.branch}")
+        self.publish_superseded_claim(fixture)
+
+        code, retired = fixture.run(
+            "retire",
+            "--path",
+            str(durable),
+            "--task-ref",
+            fixture.writer,
+            "--expected-head",
+            candidate,
+            "--execute",
+        )
+        self.assertEqual(code, 0, retired)
+        self.assertFalse(durable.exists())
+        registry = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        record = next(
+            item for item in registry["worktrees"] if item.get("package") == fixture.package
+        )
+        self.assertEqual(record["state"], "retired")
+        self.assertEqual(record["previous_head"], fixture.main_sha)
+        self.assertEqual(record["head"], candidate)
+        self.assertEqual(git(fixture.repo, "rev-parse", fixture.branch), candidate)
+        self.assertEqual(
+            git(fixture.repo, "rev-parse", f"refs/remotes/origin/{fixture.branch}"),
+            candidate,
+        )
+
+    def test_retire_superseded_refuses_open_replacement_wrong_task_and_residue(self):
+        fixture = self.fixture()
+        fixture.initialize()
+        code, ensured = fixture.run(
+            "ensure",
+            "--package",
+            fixture.package,
+            "--task-ref",
+            fixture.writer,
+            "--execute",
+        )
+        self.assertEqual(code, 0, ensured)
+        durable = Path(ensured["path"])
+        git(durable, "push", "-u", "origin", f"HEAD:refs/heads/{fixture.branch}")
+        replacement = self.publish_superseded_claim(
+            fixture, replacement_state="active"
+        )
+
+        code, open_replacement = fixture.run(
+            "retire",
+            "--path",
+            str(durable),
+            "--task-ref",
+            fixture.writer,
+            "--expected-head",
+            fixture.main_sha,
+            "--execute",
+        )
+        self.assertEqual(code, 2, open_replacement)
+        self.assertIn(replacement, open_replacement["error"])
+        replacement_path = (
+            fixture.repo
+            / "docs"
+            / "governance"
+            / "lane_claims"
+            / f"{replacement}.json"
+        )
+        replacement_claim = json.loads(replacement_path.read_text(encoding="utf-8"))
+        replacement_claim["state"] = "closed"
+        replacement_path.write_text(
+            json.dumps(replacement_claim, indent=2) + "\n", encoding="utf-8"
+        )
+        git(
+            fixture.repo,
+            "add",
+            replacement_path.relative_to(fixture.repo).as_posix(),
+        )
+        git(fixture.repo, "commit", "-m", "close replacement claim")
+        git(fixture.repo, "push", "origin", "main")
+
+        code, wrong_task = fixture.run(
+            "retire",
+            "--path",
+            str(durable),
+            "--task-ref",
+            "task:not-original-custody",
+            "--expected-head",
+            fixture.main_sha,
+            "--execute",
+        )
+        self.assertEqual(code, 2, wrong_task)
+        self.assertIn("does not own", wrong_task["error"])
+
+        (durable / "untracked.tmp").write_text("preserve\n", encoding="utf-8")
+        code, residue = fixture.run(
+            "retire",
+            "--path",
+            str(durable),
+            "--task-ref",
+            fixture.writer,
+            "--expected-head",
+            fixture.main_sha,
+            "--execute",
+        )
+        self.assertEqual(code, 2, residue)
+        self.assertTrue(any("residue" in item for item in residue["blockers"]))
+        self.assertTrue(durable.exists())
+
+    def test_retire_superseded_refuses_nonancestor_registry_head(self):
+        fixture = self.fixture()
+        fixture.initialize()
+        code, ensured = fixture.run(
+            "ensure",
+            "--package",
+            fixture.package,
+            "--task-ref",
+            fixture.writer,
+            "--execute",
+        )
+        self.assertEqual(code, 0, ensured)
+        durable = Path(ensured["path"])
+        (durable / "sample.txt").write_text("target history\n", encoding="utf-8")
+        git(durable, "add", "sample.txt")
+        git(durable, "commit", "-m", "target history")
+        candidate = git(durable, "rev-parse", "HEAD")
+        git(durable, "push", "-u", "origin", f"HEAD:refs/heads/{fixture.branch}")
+
+        git(fixture.repo, "checkout", "-b", "work/unrelated-history", "origin/main")
+        (fixture.repo / "unrelated.txt").write_text("unrelated\n", encoding="utf-8")
+        git(fixture.repo, "add", "unrelated.txt")
+        git(fixture.repo, "commit", "-m", "unrelated history")
+        unrelated = git(fixture.repo, "rev-parse", "HEAD")
+        git(fixture.repo, "checkout", "main")
+        self.publish_superseded_claim(fixture)
+
+        registry = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        record = next(
+            item for item in registry["worktrees"] if item.get("package") == fixture.package
+        )
+        record["head"] = unrelated
+        fixture.registry_path.write_text(
+            json.dumps(registry, indent=2) + "\n", encoding="utf-8"
+        )
+        exact_registry = fixture.registry_path.read_bytes()
+        code, refused = fixture.run(
+            "retire",
+            "--path",
+            str(durable),
+            "--task-ref",
+            fixture.writer,
+            "--expected-head",
+            candidate,
+            "--execute",
+        )
+        self.assertEqual(code, 2, refused)
+        self.assertIn("cannot be safely reconciled", refused["error"])
+        self.assertEqual(fixture.registry_path.read_bytes(), exact_registry)
+        self.assertTrue(durable.exists())
 
     def test_retire_refuses_dirty_ignored_untracked_live_cwd_and_unpushed(self):
         fixture = self.fixture()

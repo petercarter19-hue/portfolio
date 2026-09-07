@@ -403,7 +403,15 @@ hash manifests, retention, recovery ownership, and what may remain in Git.
 
 Use `retire` only for an exact registered managed path. A temporary worktree
 may be retired only by its creating task. A durable package worktree also
-requires a fetched closed claim and a recoverable exact branch/HEAD.
+requires either a fetched closed claim or a fetched terminal `superseded` claim
+whose nonempty `superseded_by` list names only fetched closed replacement
+claims. Superseded retirement retains the original registry `task_ref`; it does
+not give the replacement or a cleanup writer custody. The claim branch,
+registry branch, live HEAD, local branch ref, and server tip must match the
+expected HEAD. Reconciliation of an older registry HEAD is allowed only when it
+is an available ancestor of that expected HEAD. Pristine, managed-root,
+reparse, nesting, pending-operation, mutex, and ordinary non-force removal
+guards remain unchanged.
 
 ```powershell
 python scripts/worktree_lifecycle.py retire --path "C:\Users\peter\Documents\PeerSlateWorktrees\PS-EXAMPLE-001" --task-ref "session:<writer-task-id>" --expected-head "<40-character-sha>" --execute

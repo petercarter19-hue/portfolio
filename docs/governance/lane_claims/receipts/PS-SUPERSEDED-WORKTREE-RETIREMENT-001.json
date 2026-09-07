@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "package": "PS-SUPERSEDED-WORKTREE-RETIREMENT-001",
+  "candidate_sha": "774992de20149d44b5a8d445ed6ae9e5d4e9f850",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/historical_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-07T22:49:42Z",
+  "findings": [
+    {
+      "status": "informational",
+      "summary": "The independent reviewer confirmed the remote branch tip was exact at candidate 774992de20149d44b5a8d445ed6ae9e5d4e9f850 and found no correctness, safety, or scope issues. The review was read-only."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-SUPERSEDED-WORKTREE-RETIREMENT-001.md"
+}
