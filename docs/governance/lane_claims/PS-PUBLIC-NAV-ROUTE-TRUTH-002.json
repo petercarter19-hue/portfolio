@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-PUBLIC-NAV-ROUTE-TRUTH-002",
-  "state": "active",
+  "state": "closed",
   "outcome": "Manager session:01a0771f-2e74-7370-a55d-b64ac140ea52; sole writer agent:/root/nav_writer. Deliver existing-design nonvisual navigation and safe sign-in returns using the existing server destination mechanism across shell, account, launchpad, search, mobile and noscript. Preserve /app fallback pending real member Profile, My Story and Feed. Remove Capture, Slate Board and Workshop navigation promotion; preserve saved content, shared onboarding voice/input, safe legacy links and privacy. Journal excluded; Projects deferred. Leave all four preview routes, referring card/template and their sitemap behavior unchanged. Complete governed activation, implementation, targeted tests, independent exact-SHA review, accepted merge and close without routine owner commit/merge stops. Coordinate exclusive app.py/base.html custody with backend-only MVP1. No new visual direction, runtime/data deletion, deployment, production, flags, schema, identity/provider change, legal-product creation, unrelated cleanup or Package 2.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/nav_writer",
@@ -57,6 +57,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "ed96a8c4e6e451350f2ec89e516591e2203aeb7a",
+  "closed_at": "2026-09-07T19:23:30Z"
 }
