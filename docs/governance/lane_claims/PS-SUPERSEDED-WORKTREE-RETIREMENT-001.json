@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-SUPERSEDED-WORKTREE-RETIREMENT-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Add a narrow Protected ordinary-retirement path for a terminal superseded package under its exact original registered task reference. Require the fetched superseded claim's branch to match, a nonempty superseded_by list whose replacement claims are all fetched/current and closed, exact live/local/server expected HEAD custody, ancestor-safe registry HEAD reconciliation, pristine state, and every existing path, branch, reparse, nesting, pending, lock, and non-force removal guard. Preserve all branches, refs, tags, stashes, history, and unrelated work. Do not grant a cleanup-writer override or authorize production, deployment, schema, identity, product, visual, raw deletion, ref deletion, Git GC, reset, or history rewrite.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/historical_writer",
@@ -29,6 +29,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "9cf83d82f306a60486ca62764b5595bca76c2c2d",
+  "closed_at": "2026-09-07T23:10:41Z"
 }
