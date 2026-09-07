@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "package": "PS-AI-SPECIALIST-ROUTING-001",
+  "state": "active",
+  "outcome": "Apply Pete's approved OpenAI specialist routing at natural assignment boundaries: Astra Medium managers by default; Sol High for known-cause implementation, tests, debugging, self-review and corrections; Sol Medium for bounded evidence and routine documentation; Astra High for consequential architecture and cross-package decisions and consequential independent security, privacy or architecture review; Astra Medium or High for difficult unresolved debugging or integration according to stated risk; Sol High for routine bounded independent review, release and closeout execution; and Sol Extra High selectively for demanding well-bounded implementation. Require a concrete reason before implementation-model changes or effort increases, preserve explicit overrides, avoid title-based escalation and mandatory architect or premium-reviewer assignments, and do not churn active or frozen assignments. Update only the approved current global and programme model paragraphs outside the repository with exact snapshot evidence. No product, runtime tooling, paused-package, visual, deployment, schema, identity or production change.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0783c-0195-7e51-b4e6-56e824c8c1f8",
+  "branch": "work/2026-09-06-ai-specialist-routing-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "b8956ed64e3ab1cfafe6abbd26a31b8cba15d039",
+  "owner_outcome_ref": "session:01a06e5b-05d4-7023-8266-2bd5d6abccbd/turn:01a07944-630f-7f63-aded-aa52674ee298",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-AI-SPECIALIST-ROUTING-001.json",
+    "docs/governance/lane_claims/receipts/PS-AI-SPECIALIST-ROUTING-001.json",
+    "docs/governance/lane_claims/evidence/PS-AI-SPECIALIST-ROUTING-001.md",
+    "docs/AI_MODEL_AND_ROLE_ROUTING.md",
+    "tests/test_governance_pointers.py"
+  ],
+  "domains": [
+    "governance:ai-specialist-routing",
+    "testing:governance-pointers"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-AI-SPECIALIST-ROUTING-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
