@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-HISTORICAL-CHECKOUT-RETIREMENT-002",
+  "state": "active",
+  "outcome": "Replace paused partial-transfer package PS-HISTORICAL-CHECKOUT-RETIREMENT-001 with a current-authority Protected implementation of the same bounded historical checkout retirement mechanism and the same 29-target eligible cleanup. Preserve package 001, its branch, worktree, refs, and evidence until package 002 closes. Retire only independently reviewed immutable-allowlist targets that pass action-time custody, pristine, server-tip, recovery, nesting, reparse, and collision checks. Exclude unregistered, detached, unique, dirty, nested, reparse, primary, control, Synthetic, paused, superseded, reassignment, and protected work. Preserve all refs and evidence; perform no raw worktree deletion, Git GC, history rewrite, production, deployment, schema, identity, product, or visual action.",
+  "assignment": "implementation",
+  "writer_ref": "agent:/root/historical_writer",
+  "branch": "work/2026-09-07-historical-checkout-retirement-002",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "50d9105067453329375871a0395ebe9aae5491fa",
+  "owner_outcome_ref": "session:01a07158-684b-74a2-a47e-7ca0e91889b7/owner-finish-2026-09-07",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-HISTORICAL-CHECKOUT-RETIREMENT-002.json",
+    "docs/governance/lane_claims/receipts/PS-HISTORICAL-CHECKOUT-RETIREMENT-002.json",
+    "docs/governance/lane_claims/evidence/PS-HISTORICAL-CHECKOUT-RETIREMENT-002.md",
+    "AGENTS.md",
+    "START_HERE.md",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+    "scripts/worktree_lifecycle.py",
+    "tests/test_worktree_lifecycle.py",
+    "docs/governance/worktree_retirement_allowlists/PS-HISTORICAL-CHECKOUT-RETIREMENT-002.json"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-HISTORICAL-CHECKOUT-RETIREMENT-002.md"
+  ],
+  "domains": [
+    "governance:delivery:closed-custody-retirement",
+    "tooling:worktree-lifecycle:closed-custody-retirement",
+    "tooling:worktree-lifecycle:historical-checkout-retirement"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
