@@ -449,6 +449,41 @@ to the original task and records the cleanup caller separately in
 Git removal helper as `retire`. It never resets, cleans, force-removes, prunes,
 runs garbage collection, or deletes/moves a branch, tag, or ref.
 
+### Retire one reviewed historical checkout
+
+`retire-historical` is limited to an exact target in the cleanup package's
+merged allowlist. It does not adopt old custody or infer that an old writer is
+unavailable. Run it from the cleanup package's active durable worktree only
+after the independently reviewed mechanism and receipt are accepted on main:
+
+```powershell
+python scripts/worktree_lifecycle.py retire-historical --cleanup-package "PS-HISTORICAL-CHECKOUT-RETIREMENT-002" --task-ref "agent:<cleanup-writer>" --path "C:\exact\historical\worktree" --branch "work/YYYY-MM-DD-exact-branch" --expected-head "<40-character-server-sha>" --owner-authorization-ref "session:<owner-decision>" --execute
+```
+
+The manifest preserves each original grandfathered registry record by digest.
+At admission, the tool requires the lifecycle surfaces, package claim,
+allowlist, and review evidence to be ordinary Git blobs with identical bytes
+at the reviewed candidate, fetched main, and cleanup HEAD. The executing script
+must equal the reviewed main blob. The accepted receipt must be an ordinary
+identical blob on fetched main and cleanup HEAD, and its identity is retained
+in the recovery proof. The caller, owner, and independent reviewer
+must be distinct, and the cleanup worktree, branch, local ref, server tip,
+registry identity, and pristine state must agree.
+
+The target must remain one registered active `grandfathered_observation` with
+null package, task, and lease, exactly matching one manifest tuple and digest.
+Exactly one live Git worktree may match either its path or branch, and that
+entry, the local branch ref, and server branch tip must all equal the reviewed
+HEAD. Active, paused, or superseded claim custody; duplicates;
+detached, missing, nested, primary, managed, synthetic, reassignment,
+protected, or reparse paths; and tracked, untracked, or ignored residue refuse.
+The registry mutex closes main, cleanup-branch, target-branch, and registry
+races. An immutable before/after journal supports only the exact same-request
+recovery: a still-present target is re-proved and preserved; an absent target
+can publish only its recorded proof. The sole removal is ordinary non-force
+`git worktree remove`. Branches, tags, refs, stashes, history, and object storage
+remain untouched.
+
 ## Non-negotiable retirement refusals
 
 The tool preserves the worktree and exits with a refusal when any check is

@@ -319,6 +319,28 @@ Merge that control PR before implementation merge.
   proof.
   Ordinary non-force `git worktree remove` is the only removal; branches, tags,
   and refs are never deleted.
+- Retire an allowlisted historical checkout: use `retire-historical` only from
+  the exact active durable worktree of its Protected cleanup package after the
+  mechanism, allowlist, claim, evidence, and independent-pass receipt have
+  merged. Supply one exact allowlisted path/branch/HEAD tuple and Pete's owner
+  authorization reference:
+
+  ```bash
+  python scripts/worktree_lifecycle.py retire-historical --cleanup-package <CLEANUP-PACKAGE> --task-ref <CLEANUP-WRITER-REF> --path <EXACT-CANONICAL-PATH> --branch <EXACT-BRANCH> --expected-head <EXACT-SERVER-SHA> --owner-authorization-ref <OWNER-REF> --execute
+  ```
+
+  Admission requires the claim and evidence bytes, allowlist, and every shared
+  lifecycle surface to match at the reviewed candidate, fetched main, and the
+  cleanup branch, while the accepted receipt must match on main and the cleanup
+  branch. The target must still be exactly the clean, registered
+  grandfathered observation reviewed in the allowlist, with matching live,
+  local-ref, and server-ref custody. Active, paused, or superseded claims;
+  duplicate live path or branch custody; detached or nested worktrees; primary, managed, synthetic,
+  reassignment, protected, or reparse paths; and tracked, untracked, or ignored
+  residue all refuse. A crash journal can reconcile only the same request.
+  Removal uses ordinary non-force `git worktree remove`; it never deletes refs,
+  prunes, collects garbage, rewrites history, resets, cleans, or recursively
+  deletes a path.
 - Pause: push the exact work branch, set the claim to `paused` with that fetched
   checkpoint on a `delivery-pause` branch, then run `--intent pause`. Do not
   merge unfinished implementation merely to release ownership.

@@ -1,5 +1,6 @@
 import copy
 import contextlib
+import hashlib
 import importlib.util
 import io
 import json
@@ -164,6 +165,432 @@ class RepositoryFixture:
 
     def cleanup(self) -> None:
         self.temporary.cleanup()
+
+
+class HistoricalCheckoutRetirementTests(unittest.TestCase):
+    def setup_historical(self, label="sample"):
+        fixture = RepositoryFixture()
+        self.addCleanup(fixture.cleanup)
+        (fixture.repo / "scripts/worktree_lifecycle.py").write_bytes(SCRIPT.read_bytes())
+        (fixture.repo / "docs/governance/WORKTREE_LIFECYCLE.md").write_text(
+            "historical contract\n", encoding="utf-8"
+        )
+        (fixture.repo / "tests/test_worktree_lifecycle.py").write_text(
+            "historical tests\n", encoding="utf-8"
+        )
+        git(fixture.repo, "add", ".")
+        git(fixture.repo, "commit", "-m", "install historical mechanism")
+        git(fixture.repo, "push", "origin", "main")
+        target = fixture.base / "historical"
+        branch = f"work/2026-09-07-historical-target-{label}"
+        git(fixture.repo, "worktree", "add", "-b", branch, str(target), "HEAD")
+        head = git(target, "rev-parse", "HEAD")
+        git(target, "push", "origin", f"HEAD:refs/heads/{branch}")
+        fixture.initialize()
+        registry = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        before = next(record for record in registry["worktrees"] if record["path"] == str(target))
+        package = "PS-HISTORICAL-CLEANUP-TEST-001"
+        writer = f"agent:historical-writer-{label}"
+        cleanup_branch = f"work/2026-09-07-historical-cleanup-{label}"
+        owner = f"session:historical-owner/{label}"
+        evidence = f"docs/governance/lane_claims/evidence/{package}.md"
+        receipt_path = f"docs/governance/lane_claims/receipts/{package}.json"
+        claim_path = f"docs/governance/lane_claims/{package}.json"
+        allowlist_path = (
+            f"docs/governance/worktree_retirement_allowlists/{package}.json"
+        )
+        claim = {
+            "schema_version": 1,
+            "package": package,
+            "state": "active",
+            "outcome": "test historical retirement",
+            "assignment": "implementation",
+            "writer_ref": writer,
+            "branch": cleanup_branch,
+            "delivery_path": "Protected",
+            "repository_authority": "through_merge",
+            "production_authority": "withheld",
+            "owner_outcome_ref": owner,
+            "review_requirement": "independent",
+            "surfaces": [
+                claim_path,
+                evidence,
+                receipt_path,
+                allowlist_path,
+                *sorted(LIFECYCLE.CLOSED_CUSTODY_REQUIRED_SURFACES),
+            ],
+            "evidence_surfaces": [evidence],
+            "domains": [
+                *sorted(LIFECYCLE.CLOSED_CUSTODY_REQUIRED_DOMAINS),
+                "tooling:worktree-lifecycle:historical-checkout-retirement",
+            ],
+        }
+        entry = {
+            "path": str(target),
+            "branch": branch,
+            "expected_head": head,
+            "registry_record_sha256": hashlib.sha256(
+                json.dumps(before, sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest(),
+        }
+        manifest = {
+            "schema_version": 1,
+            "cleanup_package": package,
+            "owner_authorization_ref": owner,
+            "repository_common_dir": str(fixture.repo / ".git"),
+            "repository_primary_root": str(fixture.repo),
+            "targets": [entry],
+        }
+        for relative, value in ((claim_path, claim), (allowlist_path, manifest)):
+            destination = fixture.repo / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+        (fixture.repo / evidence).parent.mkdir(parents=True, exist_ok=True)
+        (fixture.repo / evidence).write_text(
+            "reviewed historical mechanism and list\n", encoding="utf-8"
+        )
+        git(fixture.repo, "add", ".")
+        git(fixture.repo, "commit", "-m", "historical reviewed candidate")
+        candidate = git(fixture.repo, "rev-parse", "HEAD")
+        receipt = {
+            "schema_version": 1,
+            "package": package,
+            "candidate_sha": candidate,
+            "review_type": "independent",
+            "reviewer_ref": f"agent:historical-reviewer-{label}",
+            "result": "pass",
+            "reviewed_at": "2026-09-07T00:00:00Z",
+            "findings": [],
+            "evidence_ref": evidence,
+        }
+        (fixture.repo / receipt_path).parent.mkdir(parents=True, exist_ok=True)
+        (fixture.repo / receipt_path).write_text(
+            json.dumps(receipt) + "\n", encoding="utf-8"
+        )
+        git(fixture.repo, "add", ".")
+        git(fixture.repo, "commit", "-m", "accept historical review")
+        git(fixture.repo, "push", "origin", "main")
+        code, ensured = fixture.run(
+            "ensure", "--package", package, "--task-ref", writer, "--execute"
+        )
+        self.assertEqual(code, 0, ensured)
+        cleanup = Path(ensured["path"])
+        git(cleanup, "push", "origin", f"HEAD:refs/heads/{cleanup_branch}")
+        args = dict(
+            cleanup_package=package,
+            task_ref=writer,
+            path=str(target),
+            branch=branch,
+            expected_head=head,
+            owner_authorization_ref=owner,
+            execute=True,
+        )
+        return fixture, target, cleanup, args, before
+
+    def invoke(self, fixture, cleanup, args, **overrides):
+        values = {**args, **overrides}
+        with contextlib.chdir(cleanup):
+            return LIFECYCLE.command_retire_historical(
+                LIFECYCLE._repo_context(fixture.repo), SimpleNamespace(**values)
+            )
+
+    def test_historical_cli_preserves_refs_stash_and_control_registry_fields(self):
+        fixture, target, cleanup, args, before = self.setup_historical("happy")
+        git(fixture.repo, "tag", "historical-recovery", args["expected_head"])
+        (fixture.repo / "sample.txt").write_text("retained stash\n", encoding="utf-8")
+        git(fixture.repo, "stash", "push", "-m", "historical preservation")
+        refs = git(fixture.repo, "for-each-ref", "--format=%(refname) %(objectname)")
+        before_registry = LIFECYCLE._load_registry(fixture.registry_path)
+        transitions = copy.deepcopy(before_registry.get("control_custody_transitions", []))
+        lease_clock = before_registry.get("control_lease_clock")
+        command = ["retire-historical"]
+        for key, value in args.items():
+            command.append("--" + key.replace("_", "-"))
+            if key != "execute":
+                command.append(value)
+        code, result = fixture.run(*command, cwd=cleanup)
+        self.assertEqual(code, 0, result)
+        self.assertEqual(result["status"], "retired_historical")
+        self.assertFalse(target.exists())
+        self.assertNotIn(str(target), git(fixture.repo, "worktree", "list", "--porcelain"))
+        self.assertEqual(
+            refs, git(fixture.repo, "for-each-ref", "--format=%(refname) %(objectname)")
+        )
+        registry = LIFECYCLE._load_registry(fixture.registry_path)
+        record = next(item for item in registry["worktrees"] if item["path"] == str(target))
+        for key, value in before.items():
+            if key != "updated_at":
+                self.assertEqual(record[key], "retired" if key == "state" else value)
+        self.assertIsNone(registry["pending"])
+        self.assertEqual(record["historical_retirement"]["before_record"], before)
+        self.assertEqual(registry.get("control_custody_transitions", []), transitions)
+        self.assertEqual(registry.get("control_lease_clock"), lease_clock)
+
+    def test_historical_refuses_inexact_request_and_original_record_drift(self):
+        fixture, target, cleanup, args, before = self.setup_historical("identity")
+        original = fixture.registry_path.read_bytes()
+        for override in (
+            {"execute": False},
+            {"task_ref": "agent:other-writer"},
+            {"owner_authorization_ref": "session:other-owner"},
+            {"expected_head": "a" * 40},
+            {"path": str(fixture.repo)},
+            {"branch": "work/2026-09-07-other"},
+        ):
+            with self.subTest(override=override), self.assertRaises(LIFECYCLE.Refusal):
+                self.invoke(fixture, cleanup, args, **override)
+            self.assertTrue(target.exists())
+            self.assertEqual(fixture.registry_path.read_bytes(), original)
+        for key, value in (
+            ("kind", "durable"),
+            ("task_ref", "agent:original"),
+            ("package", fixture.package),
+            ("lease", {}),
+            ("extra", "changed"),
+        ):
+            registry = json.loads(original)
+            record = next(item for item in registry["worktrees"] if item["path"] == str(target))
+            record[key] = value
+            fixture.registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            changed = fixture.registry_path.read_bytes()
+            with self.subTest(key=key), self.assertRaises(LIFECYCLE.Refusal):
+                self.invoke(fixture, cleanup, args)
+            self.assertTrue(target.exists())
+            self.assertEqual(fixture.registry_path.read_bytes(), changed)
+        fixture.registry_path.write_bytes(original)
+
+    def test_historical_refuses_residue_nested_repository_detached_and_reparse(self):
+        fixture, target, cleanup, args, before = self.setup_historical("residue")
+        original = fixture.registry_path.read_bytes()
+        source = (target / "sample.txt").read_bytes()
+        for relative in ("sample.txt", "untracked.txt", "ignored.cache"):
+            (target / relative).write_text("do not remove\n", encoding="utf-8")
+            with self.subTest(path=relative), self.assertRaises(LIFECYCLE.Refusal):
+                self.invoke(fixture, cleanup, args)
+            if relative == "sample.txt":
+                (target / relative).write_bytes(source)
+            else:
+                (target / relative).unlink()
+            self.assertEqual(fixture.registry_path.read_bytes(), original)
+        nested = target / "nested"
+        nested.mkdir()
+        git(nested, "init")
+        with self.assertRaises(LIFECYCLE.Refusal):
+            self.invoke(fixture, cleanup, args)
+        git(target, "checkout", "--detach", args["expected_head"])
+        with self.assertRaises(LIFECYCLE.Refusal):
+            self.invoke(fixture, cleanup, args)
+        with patch.object(
+            LIFECYCLE,
+            "_has_reparse_component",
+            side_effect=lambda value, **_: str(value).casefold()
+            == str(target).casefold(),
+        ):
+            with self.assertRaisesRegex(LIFECYCLE.Refusal, "protected path"):
+                self.invoke(fixture, cleanup, args)
+        self.assertTrue(target.exists())
+        self.assertEqual(fixture.registry_path.read_bytes(), original)
+
+    def test_historical_refuses_protected_claim_and_server_race(self):
+        fixture, target, cleanup, args, before = self.setup_historical("race")
+        original = fixture.registry_path.read_bytes()
+        for state in ("active", "paused", "superseded"):
+            with patch.object(
+                LIFECYCLE,
+                "_strict_live_claims",
+                return_value=[{"branch": args["branch"], "state": state}],
+            ), self.assertRaises(LIFECYCLE.Refusal):
+                self.invoke(fixture, cleanup, args)
+        with patch.object(
+            LIFECYCLE, "_remote_branch_tuple", return_value={}
+        ), self.assertRaises(LIFECYCLE.Refusal):
+            self.invoke(fixture, cleanup, args)
+        self.assertEqual(fixture.registry_path.read_bytes(), original)
+        self.assertTrue(target.exists())
+
+    def test_historical_refuses_disjoint_live_worktree_on_same_branch(self):
+        fixture, target, cleanup, args, before = self.setup_historical("same-branch")
+        duplicate = fixture.base / "disjoint-same-branch"
+        git(
+            fixture.repo,
+            "worktree",
+            "add",
+            "--force",
+            str(duplicate),
+            args["branch"],
+        )
+        original = fixture.registry_path.read_bytes()
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "live worktree identity"):
+            self.invoke(fixture, cleanup, args)
+        self.assertTrue(target.exists())
+        self.assertTrue(duplicate.exists())
+        self.assertEqual(fixture.registry_path.read_bytes(), original)
+
+    def test_historical_refuses_local_ref_and_remote_tip_drift(self):
+        fixture, target, cleanup, args, before = self.setup_historical("refs")
+        cleanup_head = git(cleanup, "rev-parse", "HEAD")
+        git(fixture.repo, "update-ref", f"refs/heads/{args['branch']}", cleanup_head)
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "local branch"):
+            self.invoke(fixture, cleanup, args)
+        git(fixture.repo, "update-ref", f"refs/heads/{args['branch']}", args["expected_head"])
+        git(fixture.repo, "push", "--force", "origin", f"{cleanup_head}:refs/heads/{args['branch']}")
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "server branch moved"):
+            self.invoke(fixture, cleanup, args)
+        self.assertTrue(target.exists())
+
+    def test_historical_refuses_missing_or_changed_cleanup_receipt(self):
+        receipt_relative = (
+            "docs/governance/lane_claims/receipts/"
+            "PS-HISTORICAL-CLEANUP-TEST-001.json"
+        )
+        for label, remove, expected in (
+            ("receipt-missing", True, "not an ordinary reviewed Git blob"),
+            ("receipt-changed", False, "changed since accepted review"),
+        ):
+            with self.subTest(case=label):
+                fixture, target, cleanup, args, before = self.setup_historical(label)
+                receipt = cleanup / receipt_relative
+                if remove:
+                    git(cleanup, "rm", receipt_relative)
+                else:
+                    receipt.write_text(
+                        receipt.read_text(encoding="utf-8") + "\n",
+                        encoding="utf-8",
+                    )
+                    git(cleanup, "add", receipt_relative)
+                git(cleanup, "commit", "-m", label)
+                cleanup_branch = git(cleanup, "branch", "--show-current")
+                git(cleanup, "push", "--force", "origin", f"HEAD:refs/heads/{cleanup_branch}")
+                original = fixture.registry_path.read_bytes()
+                with self.assertRaisesRegex(LIFECYCLE.Refusal, expected):
+                    self.invoke(fixture, cleanup, args)
+                self.assertTrue(target.exists())
+                self.assertEqual(fixture.registry_path.read_bytes(), original)
+
+    def test_historical_refuses_unreviewed_manifest_mechanism_claim_and_evidence(self):
+        for label, relative, expected in (
+            (
+                "manifest",
+                "docs/governance/worktree_retirement_allowlists/PS-HISTORICAL-CLEANUP-TEST-001.json",
+                "allowlist changed",
+            ),
+            ("claim", "docs/governance/lane_claims/PS-HISTORICAL-CLEANUP-TEST-001.json", "claim changed"),
+            (
+                "evidence",
+                "docs/governance/lane_claims/evidence/PS-HISTORICAL-CLEANUP-TEST-001.md",
+                "evidence changed",
+            ),
+            ("mechanism", "scripts/worktree_lifecycle.py", "surface is not exact"),
+        ):
+            with self.subTest(surface=label):
+                fixture, target, cleanup, args, before = self.setup_historical(label)
+                path = fixture.repo / relative
+                path.write_text(path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+                git(fixture.repo, "add", ".")
+                git(fixture.repo, "commit", "-m", f"unreviewed {label} change")
+                git(fixture.repo, "push", "origin", "main")
+                original = fixture.registry_path.read_bytes()
+                with self.assertRaisesRegex(LIFECYCLE.Refusal, expected):
+                    self.invoke(fixture, cleanup, args)
+                self.assertTrue(target.exists())
+                self.assertEqual(fixture.registry_path.read_bytes(), original)
+
+    def test_historical_rejects_duplicate_json_keys_and_target_custody(self):
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "duplicate JSON keys"):
+            json.loads('{"targets": [], "targets": []}', object_pairs_hook=LIFECYCLE._historical_json_pairs)
+        fixture, target, cleanup, args, before = self.setup_historical("duplicates")
+        manifest_path = fixture.repo / (
+            "docs/governance/worktree_retirement_allowlists/"
+            f"{args['cleanup_package']}.json"
+        )
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["targets"].append(copy.deepcopy(manifest["targets"][0]))
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        git(fixture.repo, "add", ".")
+        git(fixture.repo, "commit", "-m", "duplicate reviewed target")
+        git(fixture.repo, "push", "origin", "main")
+        with patch.object(
+            LIFECYCLE,
+            "_historical_reviewed_blob",
+            side_effect=lambda context, refs, path, label: LIFECYCLE._git_blob_sha(
+                context, "origin/main", path
+            ),
+        ), self.assertRaisesRegex(LIFECYCLE.Refusal, "duplicates path or branch"):
+            self.invoke(fixture, cleanup, args)
+        self.assertTrue(target.exists())
+
+    def test_historical_present_recovery_reproves_and_never_retries_removal(self):
+        fixture, target, cleanup, args, before = self.setup_historical("present")
+        with patch.object(
+            LIFECYCLE,
+            "_ordinary_worktree_remove",
+            side_effect=RuntimeError("interrupted"),
+        ), self.assertRaises(RuntimeError):
+            self.invoke(fixture, cleanup, args)
+        pending = fixture.registry_path.read_bytes()
+        (target / "ignored.cache").write_text("retain\n", encoding="utf-8")
+        with self.assertRaises(LIFECYCLE.Refusal):
+            self.invoke(fixture, cleanup, args)
+        self.assertEqual(fixture.registry_path.read_bytes(), pending)
+        (target / "ignored.cache").unlink()
+        with patch.object(LIFECYCLE, "_ordinary_worktree_remove") as remove:
+            result = self.invoke(fixture, cleanup, args)
+            remove.assert_not_called()
+        self.assertEqual(result["status"], "preserved_after_interruption")
+        self.assertTrue(target.exists())
+        self.assertIsNone(LIFECYCLE._load_registry(fixture.registry_path)["pending"])
+
+    def test_historical_absent_recovery_preserves_proof_after_main_movement(self):
+        fixture, target, cleanup, args, before = self.setup_historical("absent")
+        remove = LIFECYCLE._ordinary_worktree_remove
+
+        def interrupted(context, path):
+            remove(context, path)
+            raise RuntimeError("interrupted after remove")
+
+        with patch.object(
+            LIFECYCLE, "_ordinary_worktree_remove", side_effect=interrupted
+        ), self.assertRaises(RuntimeError):
+            self.invoke(fixture, cleanup, args)
+        proof = LIFECYCLE._load_registry(fixture.registry_path)["pending"]["after_record"][
+            "historical_retirement"
+        ]
+        (fixture.repo / "unrelated.txt").write_text(
+            "disjoint main movement\n", encoding="utf-8"
+        )
+        git(fixture.repo, "add", ".")
+        git(fixture.repo, "commit", "-m", "unrelated main movement")
+        git(fixture.repo, "push", "origin", "main")
+        result = self.invoke(fixture, cleanup, args)
+        self.assertEqual(result["status"], "retired_historical_recovered")
+        self.assertEqual(result["custody_proof"], proof)
+        self.assertFalse(target.exists())
+
+    def test_historical_journal_poison_and_other_caller_cannot_publish_custody(self):
+        fixture, target, cleanup, args, before = self.setup_historical("poison")
+        with patch.object(
+            LIFECYCLE,
+            "_ordinary_worktree_remove",
+            side_effect=RuntimeError("interrupted"),
+        ), self.assertRaises(RuntimeError):
+            self.invoke(fixture, cleanup, args)
+        original = fixture.registry_path.read_bytes()
+        registry = LIFECYCLE._load_registry(fixture.registry_path)
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, "resume the exact"):
+            LIFECYCLE._reconcile_pending(LIFECYCLE._repo_context(fixture.repo), registry)
+        with self.assertRaises(LIFECYCLE.Refusal):
+            self.invoke(fixture, cleanup, args, task_ref="agent:different-writer")
+        for field, value in (
+            ("path", str(fixture.repo)),
+            ("started_at", "2026-09-07T00:00:00Z"),
+        ):
+            poisoned = json.loads(original)
+            poisoned["pending"][field] = value
+            fixture.registry_path.write_text(json.dumps(poisoned), encoding="utf-8")
+            with self.assertRaises(LIFECYCLE.Refusal):
+                LIFECYCLE._load_registry(fixture.registry_path)
+        fixture.registry_path.write_bytes(original)
+        self.assertTrue(target.exists())
 
 
 class WorktreeLifecycleTests(unittest.TestCase):

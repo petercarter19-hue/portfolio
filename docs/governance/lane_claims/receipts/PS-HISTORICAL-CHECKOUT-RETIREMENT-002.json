@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-HISTORICAL-CHECKOUT-RETIREMENT-002",
+  "candidate_sha": "5209703d40da5cc6fd7889a62b717ac3cc7dad50",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/historical_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-07T20:23:26Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Candidate fa599d6354045977b012067001be6756deb8f343 allowed an unregistered disjoint live worktree to share the target branch. Accepted candidate 5209703d40da5cc6fd7889a62b717ac3cc7dad50 requires exactly one live entry matching either the target path or target branch before removal and none during absent recovery; the focused disjoint same-branch test passes."
+    },
+    {
+      "status": "resolved",
+      "summary": "Candidate fa599d6354045977b012067001be6756deb8f343 read the accepted receipt only from main. Accepted candidate 5209703d40da5cc6fd7889a62b717ac3cc7dad50 requires one ordinary identical receipt blob on fetched main and cleanup HEAD, stores that blob identity in the recovery proof, and refuses missing or changed cleanup receipt bytes without requiring the receipt in the reviewed candidate."
+    },
+    {
+      "status": "informational",
+      "summary": "The same independent reviewer re-attested an exact-SHA PASS for 5209703d40da5cc6fd7889a62b717ac3cc7dad50 at 2026-09-07T20:23:26Z after confirming the remote branch tip remained exact and no findings were outstanding. The review was read-only."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-HISTORICAL-CHECKOUT-RETIREMENT-002.md"
+}

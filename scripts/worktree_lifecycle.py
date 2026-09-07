@@ -1725,6 +1725,7 @@ def _validate_pending_operation(registry: dict[str, Any]) -> None:
         "create": _validate_pending_create,
         "retire": _validate_pending_retire,
         "retire_closed_custody": _validate_pending_closed_custody,
+        "retire_historical": _validate_pending_historical,
         "control_repoint": _validate_pending_control_repoint,
         "owner_reassignment_branch_create": (
             _validate_pending_owner_reassignment_branch_create
@@ -1827,6 +1828,7 @@ def validate_owner_reassignment_registry(registry: dict[str, Any]) -> None:
     _validate_pending_operation(registry)
     _validate_head_reconciliation_custody(registry)
     _validate_closed_custody_registry(registry)
+    _validate_historical_registry(registry)
     validate_control_custody_registry(registry)
 
 
@@ -2992,10 +2994,13 @@ def _reconcile_pending(
         "create",
         "retire",
         "retire_closed_custody",
+        "retire_historical",
         "control_repoint",
         "owner_reassignment_branch_create",
     }:
         raise Refusal("registry contains an unknown pending operation")
+    if pending.get("operation") == "retire_historical":
+        raise Refusal("resume the exact retire-historical request to reconcile its journal")
     if pending.get("operation") == "owner_reassignment_branch_create":
         return _reconcile_owner_reassignment_branch_create(
             context, registry, pending
@@ -4860,7 +4865,9 @@ def _finalize_owner_reassignment_worktree_create(
     preparation["consumed_on_main"] = transition["origin_main"]
 
 
-def _strict_live_claims(context: RepoContext) -> list[dict[str, Any]]:
+def _strict_live_claims(
+    context: RepoContext, *, include_superseded: bool = False
+) -> list[dict[str, Any]]:
     names = _git_optional(
         context.root,
         "ls-tree",
@@ -4893,7 +4900,9 @@ def _strict_live_claims(context: RepoContext) -> list[dict[str, Any]]:
             raise Refusal(f"authoritative claim has an invalid package: {name}")
         if state not in {"active", "paused", "closed", "superseded"}:
             raise Refusal(f"authoritative claim has an invalid state: {name}")
-        if state in {"active", "paused"}:
+        if state in {"active", "paused"} or (
+            include_superseded and state == "superseded"
+        ):
             _validate_work_branch(str(claim.get("branch", "")))
             claims.append(claim)
     return claims
@@ -5697,6 +5706,544 @@ def _closed_custody_pending_matches(
         and proof.get("owner_authorization_ref") == owner_authorization_ref
         and proof.get("source_unavailable_ref") == source_unavailable_ref
     )
+
+
+def _historical_digest(value: dict[str, Any]) -> str:
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
+def _historical_target(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict) or set(value) != {
+        "path",
+        "branch",
+        "expected_head",
+        "registry_record_sha256",
+    }:
+        raise Refusal("historical allowlist target fields are inexact")
+    _exact_canonical_argument_path(value["path"])
+    _validate_work_branch(value["branch"])
+    _validate_sha(value["expected_head"])
+    if not isinstance(value["registry_record_sha256"], str) or not re.fullmatch(
+        r"[0-9a-f]{64}", value["registry_record_sha256"]
+    ):
+        raise Refusal("historical record digest is invalid")
+    return value
+
+
+def _historical_after(proof: dict[str, Any]) -> dict[str, Any]:
+    after = json.loads(json.dumps(proof["before_record"]))
+    after.update(
+        state="retired",
+        retired_at=proof["recorded_at"],
+        updated_at=proof["recorded_at"],
+        historical_retirement=proof,
+    )
+    return after
+
+
+def _validate_historical_proof(proof: Any) -> None:
+    if (
+        not isinstance(proof, dict)
+        or set(proof)
+        != {
+            "schema_version",
+            "cleanup_package",
+            "cleanup_task_ref",
+            "cleanup_path",
+            "cleanup_branch",
+            "cleanup_head",
+            "owner_authorization_ref",
+            "reviewed_candidate",
+            "reviewer_ref",
+            "lifecycle_script_blob",
+            "allowlist_blob",
+            "cleanup_claim_blob",
+            "review_evidence_blob",
+            "review_receipt_blob",
+            "authoritative_main",
+            "target",
+            "before_record",
+            "recorded_at",
+        }
+        or type(proof.get("schema_version")) is not int
+        or proof["schema_version"] != 1
+    ):
+        raise Refusal("historical retirement proof is inexact")
+    _validate_package(proof["cleanup_package"])
+    for key in ("cleanup_task_ref", "owner_authorization_ref", "reviewer_ref"):
+        _validate_delivery_ref(proof[key])
+    if len(
+        {
+            proof["cleanup_task_ref"],
+            proof["owner_authorization_ref"],
+            proof["reviewer_ref"],
+        }
+    ) != 3:
+        raise Refusal("historical caller, owner and reviewer must be distinct")
+    _exact_canonical_argument_path(proof["cleanup_path"])
+    _validate_work_branch(proof["cleanup_branch"])
+    for key in (
+        "cleanup_head",
+        "reviewed_candidate",
+        "lifecycle_script_blob",
+        "allowlist_blob",
+        "cleanup_claim_blob",
+        "review_evidence_blob",
+        "review_receipt_blob",
+        "authoritative_main",
+    ):
+        _validate_sha(proof[key])
+    _validate_utc_timestamp(proof["recorded_at"], field="recorded_at")
+    target = _historical_target(proof["target"])
+    before = proof["before_record"]
+    if (
+        not isinstance(before, dict)
+        or before.get("kind") != "grandfathered_observation"
+        or before.get("state") != "active"
+        or any(before.get(key) is not None for key in ("package", "task_ref", "lease"))
+        or before.get("path") != target["path"]
+        or before.get("branch") != target["branch"]
+        or before.get("head") != target["expected_head"]
+        or "historical_retirement" in before
+        or _historical_digest(before) != target["registry_record_sha256"]
+    ):
+        raise Refusal("historical proof lost exact original observation custody")
+
+
+def _validate_pending_historical(
+    registry: dict[str, Any], pending: dict[str, Any]
+) -> None:
+    if set(pending) != {
+        "operation",
+        "path",
+        "before_record",
+        "after_record",
+        "started_at",
+    }:
+        raise Refusal("historical journal fields are inexact")
+    after = pending.get("after_record")
+    if not isinstance(after, dict):
+        raise Refusal("historical journal has no after-record")
+    proof = after.get("historical_retirement")
+    _validate_historical_proof(proof)
+    if (
+        after != _historical_after(proof)
+        or pending["before_record"] != proof["before_record"]
+        or pending["path"] != proof["target"]["path"]
+        or pending["started_at"] != proof["recorded_at"]
+    ):
+        raise Refusal("historical journal snapshots lost custody")
+    matches = [
+        record
+        for record in registry["worktrees"]
+        if isinstance(record, dict)
+        and _path_key(str(record.get("path", ""))) == _path_key(pending["path"])
+    ]
+    if matches != [pending["before_record"]]:
+        raise Refusal("historical journal lacks one exact original record")
+
+
+def _validate_historical_registry(registry: dict[str, Any]) -> None:
+    for record in registry["worktrees"]:
+        if not isinstance(record, dict) or "historical_retirement" not in record:
+            continue
+        proof = record["historical_retirement"]
+        _validate_historical_proof(proof)
+        if record != _historical_after(proof):
+            raise Refusal("historical retired record changed original custody")
+        matches = [
+            item
+            for item in registry["worktrees"]
+            if isinstance(item, dict)
+            and _path_key(str(item.get("path", ""))) == _path_key(record["path"])
+        ]
+        if matches != [record]:
+            raise Refusal("historical retired path is duplicated")
+
+
+def _historical_json_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise Refusal("historical allowlist contains duplicate JSON keys")
+        result[key] = value
+    return result
+
+
+def _historical_reviewed_blob(
+    context: RepoContext,
+    refs: Sequence[str],
+    path: str,
+    *,
+    label: str,
+) -> str:
+    blobs: list[str] = []
+    for ref in refs:
+        entry = _git(context.root, "ls-tree", ref, "--", path).split()
+        if (
+            len(entry) != 4
+            or entry[0] not in {"100644", "100755"}
+            or entry[1] != "blob"
+        ):
+            raise Refusal(f"{label} is not an ordinary reviewed Git blob")
+        blobs.append(entry[2])
+    if len(set(blobs)) != 1:
+        raise Refusal(f"{label} changed since accepted review")
+    return blobs[0]
+
+
+def _historical_authority(
+    context: RepoContext, registry: dict[str, Any], args: argparse.Namespace
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    claim = _closed_custody_cleanup_claim(
+        context,
+        package=args.cleanup_package,
+        task_ref=args.task_ref,
+        owner_authorization_ref=args.owner_authorization_ref,
+    )
+    manifest_path = (
+        "docs/governance/worktree_retirement_allowlists/"
+        f"{args.cleanup_package}.json"
+    )
+    if (
+        "tooling:worktree-lifecycle:historical-checkout-retirement"
+        not in claim["domains"]
+        or manifest_path not in claim["surfaces"]
+    ):
+        raise Refusal("cleanup claim lacks exact historical retirement authority")
+    cleanup_path = _canonical(Path.cwd())
+    cleanup_head = _validate_sha(_git(cleanup_path, "rev-parse", "HEAD"))
+    record = _unique_active_durable_record(
+        registry,
+        package=args.cleanup_package,
+        path=cleanup_path,
+        branch=claim["branch"],
+        task_ref=args.task_ref,
+        label="historical cleanup caller",
+    )
+    _closed_custody_worktree_proof(
+        context,
+        registry,
+        record,
+        path=cleanup_path,
+        branch=claim["branch"],
+        expected_head=cleanup_head,
+        label="historical cleanup caller",
+    )
+    receipt, script_blob = _accepted_closed_custody_review(
+        context,
+        package=args.cleanup_package,
+        cleanup_task_ref=args.task_ref,
+        cleanup_head=cleanup_head,
+    )
+    refs = (receipt["candidate_sha"], "origin/main", cleanup_head)
+    allowlist_blob = _historical_reviewed_blob(
+        context, refs, manifest_path, label="historical allowlist"
+    )
+    claim_path = f"docs/governance/lane_claims/{args.cleanup_package}.json"
+    claim_blob = _historical_reviewed_blob(
+        context, refs, claim_path, label="historical cleanup claim"
+    )
+    evidence_path = str(receipt["evidence_ref"])
+    evidence_blob = _historical_reviewed_blob(
+        context, refs, evidence_path, label="historical review evidence"
+    )
+    receipt_path = f"docs/governance/lane_claims/receipts/{args.cleanup_package}.json"
+    receipt_blob = _historical_reviewed_blob(
+        context,
+        ("origin/main", cleanup_head),
+        receipt_path,
+        label="historical review receipt",
+    )
+    try:
+        manifest = json.loads(
+            _git(context.root, "show", f"origin/main:{manifest_path}"),
+            object_pairs_hook=_historical_json_pairs,
+        )
+    except json.JSONDecodeError as error:
+        raise Refusal("historical allowlist is invalid JSON") from error
+    if (
+        not isinstance(manifest, dict)
+        or set(manifest)
+        != {
+            "schema_version",
+            "cleanup_package",
+            "owner_authorization_ref",
+            "repository_common_dir",
+            "repository_primary_root",
+            "targets",
+        }
+        or type(manifest.get("schema_version")) is not int
+        or manifest["schema_version"] != 1
+    ):
+        raise Refusal("historical allowlist schema is inexact")
+    if (
+        manifest["cleanup_package"] != args.cleanup_package
+        or manifest["owner_authorization_ref"] != args.owner_authorization_ref
+        or manifest["repository_common_dir"] != str(context.common_dir)
+        or manifest["repository_primary_root"] != str(context.primary_root)
+        or registry.get("repository_common_dir") != str(context.common_dir)
+        or registry.get("repository_primary_root") != str(context.primary_root)
+    ):
+        raise Refusal("historical allowlist owner or repository identity is inexact")
+    targets = manifest["targets"]
+    if not isinstance(targets, list) or not targets:
+        raise Refusal("historical allowlist must enumerate targets")
+    for target in targets:
+        _historical_target(target)
+    if (
+        len({_path_key(target["path"]) for target in targets}) != len(targets)
+        or len({target["branch"].casefold() for target in targets}) != len(targets)
+    ):
+        raise Refusal("historical allowlist duplicates path or branch custody")
+    selected = [target for target in targets if target["path"] == args.path]
+    if (
+        len(selected) != 1
+        or selected[0]["branch"] != args.branch
+        or selected[0]["expected_head"] != args.expected_head
+    ):
+        raise Refusal("request does not equal one exact accepted allowlist target")
+    return selected[0], {
+        "schema_version": 1,
+        "cleanup_package": args.cleanup_package,
+        "cleanup_task_ref": args.task_ref,
+        "cleanup_path": str(cleanup_path),
+        "cleanup_branch": claim["branch"],
+        "cleanup_head": cleanup_head,
+        "owner_authorization_ref": args.owner_authorization_ref,
+        "reviewed_candidate": receipt["candidate_sha"],
+        "reviewer_ref": receipt["reviewer_ref"],
+        "lifecycle_script_blob": script_blob,
+        "allowlist_blob": allowlist_blob,
+        "cleanup_claim_blob": claim_blob,
+        "review_evidence_blob": evidence_blob,
+        "review_receipt_blob": receipt_blob,
+        "authoritative_main": _ref_sha(context, "origin/main"),
+    }
+
+
+def _historical_target_proof(
+    context: RepoContext,
+    registry: dict[str, Any],
+    target: dict[str, Any],
+    *,
+    absent: bool,
+) -> dict[str, Any]:
+    path = _exact_canonical_argument_path(target["path"])
+    matches = [
+        record
+        for record in registry["worktrees"]
+        if isinstance(record, dict)
+        and (
+            _path_key(str(record.get("path", ""))) == _path_key(path)
+            or record.get("branch") == target["branch"]
+        )
+    ]
+    if len(matches) != 1:
+        raise Refusal("historical target registry custody is ambiguous")
+    record = matches[0]
+    if (
+        record.get("kind") != "grandfathered_observation"
+        or record.get("state") != "active"
+        or any(record.get(key) is not None for key in ("package", "task_ref", "lease"))
+        or record.get("path") != str(path)
+        or record.get("branch") != target["branch"]
+        or record.get("head") != target["expected_head"]
+        or _historical_digest(record) != target["registry_record_sha256"]
+    ):
+        raise Refusal("historical target no longer equals its original reviewed observation")
+    protected_identity = (str(path) + target["branch"]).casefold()
+    if (
+        _is_within(path, context.primary_root)
+        or _is_within(path, registry["managed_root"])
+        or _is_within(Path.cwd(), path)
+        or _has_reparse_component(path)
+        or any(
+            marker in protected_identity
+            for marker in ("synthetic", "reassignment", "protected")
+        )
+    ):
+        raise Refusal("historical target has protected path or custody")
+    entries = _worktrees(context.root)
+    live_custody = [
+        entry
+        for entry in entries
+        if _path_key(entry["worktree"]) == _path_key(path)
+        or entry.get("branch") == target["branch"]
+    ]
+    for other in entries:
+        other_path = _canonical(other["worktree"])
+        if other_path != path and (
+            _is_within(path, other_path) or _is_within(other_path, path)
+        ):
+            raise Refusal("historical target has nested Git custody")
+    for other in registry["worktrees"]:
+        if isinstance(other, dict) and other != record and other.get("state") == "active":
+            other_path = _canonical(str(other.get("path", "")))
+            if _is_within(path, other_path) or _is_within(other_path, path):
+                raise Refusal("historical target has nested active registry custody")
+    if _ref_sha(context, f"refs/heads/{target['branch']}") != target["expected_head"]:
+        raise Refusal("historical local branch no longer equals expected HEAD")
+    if absent:
+        if os.path.lexists(path) or live_custody:
+            raise Refusal("historical absent-side recovery is ambiguous")
+        return record
+    if (
+        not path.is_dir()
+        or len(live_custody) != 1
+        or _path_key(live_custody[0]["worktree"]) != _path_key(path)
+        or live_custody[0].get("branch") != target["branch"]
+        or live_custody[0].get("head") != target["expected_head"]
+        or _current_branch(path) != target["branch"]
+        or _git(path, "rev-parse", "HEAD") != target["expected_head"]
+    ):
+        raise Refusal("historical live worktree identity is inexact")
+    _assert_same_repository(context, path)
+    pristine, residue = _is_pristine(path)
+    if not pristine:
+        raise Refusal(
+            "historical target has tracked, untracked or ignored residue",
+            blockers=residue,
+        )
+    stack = [path]
+    while stack:
+        directory = stack.pop()
+        with os.scandir(directory) as children:
+            for child in children:
+                info = child.stat(follow_symlinks=False)
+                if getattr(info, "st_file_attributes", 0) & 1024 or child.is_symlink():
+                    raise Refusal("historical target contains reparse or symlink content")
+                if child.name == ".git" and Path(child.path) != path / ".git":
+                    raise Refusal("historical target contains a nested repository")
+                if child.is_dir(follow_symlinks=False):
+                    stack.append(Path(child.path))
+    return record
+
+
+def command_retire_historical(
+    context: RepoContext, args: argparse.Namespace
+) -> dict[str, Any]:
+    """Remove one reviewed historical copy without adopting its old custody."""
+
+    _require_execute(args.execute)
+    _validate_package(args.cleanup_package)
+    _validate_delivery_ref(args.task_ref)
+    _validate_delivery_ref(args.owner_authorization_ref)
+    path = _exact_canonical_argument_path(args.path)
+    _validate_work_branch(args.branch)
+    _validate_sha(args.expected_head)
+    _fetch_origin_main(context)
+    main = _ref_sha(context, "origin/main")
+    protected_claims = _strict_live_claims(context, include_superseded=True)
+    if any(claim["branch"] == args.branch for claim in protected_claims):
+        raise Refusal("historical branch has an active, paused or superseded claim")
+    with _registry_lock(context.registry_path):
+        registry = _load_registry(context.registry_path)
+        assert registry is not None
+        _assert_registry_identity(context, registry)
+        pending = registry.get("pending")
+        if pending is not None and pending.get("operation") != "retire_historical":
+            raise Refusal("an unrelated pending operation blocks historical retirement")
+        target, authority = _historical_authority(context, registry, args)
+        absent = not os.path.lexists(path)
+        if absent and pending is None:
+            raise Refusal("historical target is absent without this operation journal")
+        record = _historical_target_proof(
+            context, registry, target, absent=absent
+        )
+        if pending is not None:
+            proof = pending["after_record"]["historical_retirement"]
+            if (
+                proof["target"] != target
+                or proof["before_record"] != record
+                or any(
+                    proof[key] != value
+                    for key, value in authority.items()
+                    if key != "authoritative_main"
+                )
+            ):
+                raise Refusal(
+                    "historical journal is not this exact caller and reviewed request"
+                )
+        else:
+            proof = {
+                **authority,
+                "target": target,
+                "before_record": json.loads(json.dumps(record)),
+                "recorded_at": _utc_now(),
+            }
+        # Main movement is allowed during crash recovery only when accepted
+        # mechanism, allowlist, claim, evidence, and caller identity remain exact.
+        if authority["authoritative_main"] != main or _ref_sha(
+            context, "origin/main"
+        ) != main:
+            raise Refusal("main moved during historical admission")
+        terminal = _remote_branch_tuple(
+            context, ("main", authority["cleanup_branch"], args.branch)
+        )
+        if terminal != {
+            "main": main,
+            authority["cleanup_branch"]: authority["cleanup_head"],
+            args.branch: args.expected_head,
+        }:
+            raise Refusal(
+                "main, cleanup or historical server branch moved at commit boundary"
+            )
+        if _load_registry(context.registry_path) != registry:
+            raise Refusal("registry changed during historical admission")
+        _historical_target_proof(context, registry, target, absent=absent)
+        cleanup_record = _unique_active_durable_record(
+            registry,
+            package=args.cleanup_package,
+            path=Path(authority["cleanup_path"]),
+            branch=authority["cleanup_branch"],
+            task_ref=args.task_ref,
+            label="historical cleanup caller",
+        )
+        _closed_custody_worktree_proof(
+            context,
+            registry,
+            cleanup_record,
+            path=Path(authority["cleanup_path"]),
+            branch=authority["cleanup_branch"],
+            expected_head=authority["cleanup_head"],
+            label="historical cleanup caller",
+        )
+        after = _historical_after(proof)
+        if pending is not None and not absent:
+            registry["pending"] = None
+            _atomic_write(context.registry_path, registry)
+            return {
+                "status": "preserved_after_interruption",
+                "path": str(path),
+                "custody_proof": proof,
+            }
+        if pending is None:
+            registry["pending"] = {
+                "operation": "retire_historical",
+                "path": str(path),
+                "before_record": record,
+                "after_record": after,
+                "started_at": proof["recorded_at"],
+            }
+            _atomic_write(context.registry_path, registry)
+            _ordinary_worktree_remove(context, path)
+        if os.path.lexists(path) or _worktree_at(context.root, path) is not None:
+            raise Refusal(
+                "historical removal did not complete; exact journal retained"
+            )
+        registry["worktrees"][registry["worktrees"].index(record)] = after
+        registry["pending"] = None
+        _atomic_write(context.registry_path, registry)
+        return {
+            "status": "retired_historical_recovered"
+            if pending
+            else "retired_historical",
+            "path": str(path),
+            "custody_proof": proof,
+        }
 
 
 def command_retire_closed_custody(
@@ -7026,6 +7573,21 @@ def _parser() -> argparse.ArgumentParser:
     )
     retire_closed_custody.add_argument("--execute", action="store_true")
 
+    historical = subparsers.add_parser(
+        "retire-historical",
+        help="retire one reviewed allowlisted historical copy",
+    )
+    for flag in (
+        "cleanup-package",
+        "task-ref",
+        "path",
+        "branch",
+        "expected-head",
+        "owner-authorization-ref",
+    ):
+        historical.add_argument("--" + flag, required=True)
+    historical.add_argument("--execute", action="store_true")
+
     finalize = subparsers.add_parser("finalize-task", help="release/retire this task's temporary resources")
     finalize.add_argument("--task-ref", required=True)
     finalize.add_argument(
@@ -7076,6 +7638,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             payload, code = command_retire(context, args), 0
         elif args.subcommand == "retire-closed-custody":
             payload, code = command_retire_closed_custody(context, args), 0
+        elif args.subcommand == "retire-historical":
+            payload, code = command_retire_historical(context, args), 0
         elif args.subcommand == "finalize-task":
             payload, code = command_finalize_task(context, args)
         elif args.subcommand == "evidence-path":

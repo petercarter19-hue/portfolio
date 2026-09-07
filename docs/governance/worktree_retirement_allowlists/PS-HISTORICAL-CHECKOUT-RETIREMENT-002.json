@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "cleanup_package": "PS-HISTORICAL-CHECKOUT-RETIREMENT-002",
+  "owner_authorization_ref": "session:01a07158-684b-74a2-a47e-7ca0e91889b7/owner-finish-2026-09-07",
+  "repository_common_dir": "C:\\Users\\peter\\Documents\\portfolio\\.git",
+  "repository_primary_root": "C:\\Users\\peter\\Documents\\portfolio",
+  "targets": [
+    {
+      "path": "C:\\Users\\peter\\.codex\\worktrees\\c86c\\portfolio",
+      "branch": "work/2026-07-28-api-foundation-gate-0-001",
+      "expected_head": "bd96ee1d23e0e1198fb98f02c1f80f19d7b928f4",
+      "registry_record_sha256": "4be55a5f43fb00eb81fb38e15bbae36e54566ba9b0f193b3cd0608dfde95bfd3"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\Codex\\2026-08-17\\referenced-chatgpt-conversation-this-is-an\\work\\peerslate-ai-workflow-close",
+      "branch": "work/2026-08-17-delivery-pause-portable-session-manager-002-one-file",
+      "expected_head": "6c955d05828a503e1194597ddaec774ed219104e",
+      "registry_record_sha256": "3af7887ddbca869e8406cbc3e6da937cc28e96d4a9a88a1e651b0b7aff9a2a83"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\Codex\\2026-08-17\\referenced-chatgpt-conversation-this-is-an\\work\\peerslate-ai-workflow-one-file",
+      "branch": "work/2026-08-17-portable-session-manager-002-one-file",
+      "expected_head": "cd0bef14a7dee423c184dced7c7d5f700b0f0197",
+      "registry_record_sha256": "17a4632b0c41349afc5b53ceffd4f26642988e598cebd6ba2c78211da0f225d3"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\Codex\\2026-08-17\\referenced-chatgpt-conversation-this-is-an\\work\\peerslate-portable-manager-activation",
+      "branch": "work/2026-08-17-delivery-activation-portable-session-manager-002-one-file",
+      "expected_head": "815db282832d7b9c5724d38a0f69b3b92a0f50f7",
+      "registry_record_sha256": "677e73c246c82eb4de67f5827a2bc78d49382be153692b25cda0d28a0ed8e5e3"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\Codex\\2026-08-17\\referenced-chatgpt-conversation-this-is-an\\work\\peerslate-portable-manager-pause",
+      "branch": "work/2026-08-17-delivery-pause-portable-session-manager-002",
+      "expected_head": "538cec97847467da0da0ba07d97b08adfb207be3",
+      "registry_record_sha256": "31f1490bbf82e28f2936061fda4940bd63537e070f2da03bff5b73df0f82b603"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-connect-002-anchor-repair-20260813",
+      "branch": "work/2026-08-13-delivery-activation-connect-002-merge-admission-anchor",
+      "expected_head": "c4399ddfd564310512a241f6390ba142b5b76f22",
+      "registry_record_sha256": "2a8aa7d19c1c62b3faef95a7db5e8ef3de8451ad811be01f89f23718d2736136"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-connect-002-profile-relationships-20260813",
+      "branch": "work/2026-08-13-connect-002-profile-relationships",
+      "expected_head": "db20e2285f82c0f61baa73c49cd6f0bee0771620",
+      "registry_record_sha256": "80606e86ff4764d621457d2dd683e5694c846fa54278ea488e4043c6d03fad7b"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-connect-002-provider-merge-20260813",
+      "branch": "work/2026-08-13-connect-002-provider-merge-001",
+      "expected_head": "f6b0e0809ef2fd21afc764162e9f0962911b3dcb",
+      "registry_record_sha256": "e2732a4248a0c4d6a49760b905b8b94fdfc8497de832abf0cb30323ed26580c7"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-delivery-activation-profile-experience-20260810",
+      "branch": "work/2026-08-10-delivery-activation-profile-experience-001",
+      "expected_head": "015a5f17a8fd1fdf3315f9f8c113c2209ab8a8ab",
+      "registry_record_sha256": "c6c4f202c724aba68efc9d782d093b3b2c9d6f7b6cbed000b41ba692060c3422"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-delivery-activation-workshop-retirement-20260811",
+      "branch": "work/2026-08-11-delivery-activation-workshop-experience-retirement",
+      "expected_head": "8b0c29facfe1ff8468c6baa550dc80000e9f093c",
+      "registry_record_sha256": "3b47dea677a7ffd17b37318b358d279f67ba4e88a035a33fe04b376b75721b6f"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-delivery-pause-control",
+      "branch": "work/2026-08-22-delivery-pause-delivery-control-signin",
+      "expected_head": "dd1f5434c7033d552e801c5ae8867c8924ed5950",
+      "registry_record_sha256": "a1297973d9ce52d1c6b3057f1ab9240ea4a7b49fcaec8f50151bad00b99f8123"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-delivery-pause-signin",
+      "branch": "work/2026-08-22-delivery-pause-signin-member-arrival",
+      "expected_head": "05f12ba02f308a6e11b20d7a89c68c80d1caa48d",
+      "registry_record_sha256": "268469736260258df7c1611e60bc9fec0176ac82f9fa2a512b727b17653a3b0d"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-interview-enablement-20260812",
+      "branch": "work/2026-08-12-interview-studio-enablement",
+      "expected_head": "61af32da46bba07463669d33293f29eae4348c8d",
+      "registry_record_sha256": "6a5f3c63506692caffbcc2d955a31bbd2399b6bac64784122ed56c3e23da3cc3"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-member-feedback-direction-20260815",
+      "branch": "work/2026-08-15-member-feedback-direction",
+      "expected_head": "9e5391a5519e4fa6dd9dbab8db140d3690ac746d",
+      "registry_record_sha256": "d199718bcf4bb991eefbdc6c5618d812cf396dc619d3ca22d85ce93ee41703a2"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-profile-core-activation-20260812",
+      "branch": "work/2026-08-12-delivery-activation-profile-core-001",
+      "expected_head": "530887b6ffebb081d26c72f06af2d07ea24c6061",
+      "registry_record_sha256": "0ccf44594c267c9a4c9088cfb3d0aed8cc732f3ab87e2ba727c662e3038af25e"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-profile-core-foundation-20260812",
+      "branch": "work/2026-08-12-profile-core-foundation-001",
+      "expected_head": "aa1fc7e889fa63e31a432074da5c5040698f4aea",
+      "registry_record_sha256": "5f3c37b6cdab7ac108c5d7e8f106b0f66ca6ae6a336378ed35f2af01f3dcbd43"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-profile-core-grant-20260812",
+      "branch": "work/2026-08-12-delivery-grant-profile-core-integration-001",
+      "expected_head": "fcd32ce7e87ab84bedb9ee681d1470774ea393f0",
+      "registry_record_sha256": "7556cc618f377b5219baee844de53568aea3b145d6c4a25023bd9031542b68ee"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-profile-direction-activation-20260811",
+      "branch": "work/2026-08-11-delivery-activation-profile-direction",
+      "expected_head": "65c97cb61a23cef6f922825e965e668b4d795fe9",
+      "registry_record_sha256": "ed4706ca625601c1077a837ca1af46e68f5fdf302a1944d90b215c8192cd118c"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-profile-direction-close-20260812",
+      "branch": "work/2026-08-12-delivery-close-profile-experience-001",
+      "expected_head": "0b52090542b43564e6c17b4c1b43c8d8d1d889ed",
+      "registry_record_sha256": "64cb1eeefb5f48afd1ffa70af63253c7f9737c5d5afe63a272942f0652ba115b"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-profile-direction-grant-20260812",
+      "branch": "work/2026-08-12-delivery-grant-profile-experience-001",
+      "expected_head": "78dc8e5afabf3f47b9613e3679deb0c54c1a2825",
+      "registry_record_sha256": "34f87790d9500bd3e98cd7a81f75d2a7996d9b335f78fee5cd2926aa9b12bac6"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-profile-experience-build-20260812",
+      "branch": "work/2026-08-12-profile-experience-build-001",
+      "expected_head": "78b0203fb8fbbbedefa9de499427755d02ac6fa2",
+      "registry_record_sha256": "76bb78edfa2ead82508ccf62e184481daf041553843e5eacd070005a3303a011"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-profile-experience-direction-20260811",
+      "branch": "work/2026-08-11-profile-experience-direction-001",
+      "expected_head": "7790e2684ad5a65a0371338f8b94f878276f36c7",
+      "registry_record_sha256": "fe60371b66144bdfb15af64fb9b688ea37395f59668785de060d00aec302d79d"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-site-audit-package-queue-20260813",
+      "branch": "work/2026-08-13-site-audit-package-queue-001",
+      "expected_head": "1b2b20808e20bd99af07e657622502cc7605bcb9",
+      "registry_record_sha256": "4cf7c72fadc5fa2cf746fb969cbe752431eeb67bf2bd952e751cc8e24268889e"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-site-audit-package-queue-pause-20260813",
+      "branch": "work/2026-08-13-delivery-pause-site-audit-package-queue",
+      "expected_head": "1a641331c7d45a388462e89c00f36981b621b106",
+      "registry_record_sha256": "249a6b148213932ec76be3eea61164c7685166bd7566b08fc9dd48e953f68042"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-site-audit-packages-activation-20260813",
+      "branch": "work/2026-08-13-delivery-activation-site-audit-packages",
+      "expected_head": "824c27aba19ddc8172dc10bd0239f2958a3ff197",
+      "registry_record_sha256": "d9fc00a320c9abfd9fd17d068a292ceb840b01707c9c24f163adebbeeca13880"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-trust-safety-direction-20260815",
+      "branch": "work/2026-08-15-trust-safety-direction",
+      "expected_head": "41086bdde7b05e603ad915f9fe802579d41275f5",
+      "registry_record_sha256": "cffb791a96a4ec9280aade3025a40d3fea4e63bea2695b1b96e5df2424226bff"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-workshop-experience-001",
+      "branch": "work/2026-08-09-workshop-experience-001",
+      "expected_head": "553535478705f7fa3ff6bcd3725b8d08b9ebdb26",
+      "registry_record_sha256": "36a9dcf22be425ee853c475c379a963e659b3b8de85fea900042250ef1c0caf7"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-worktrees\\portable-session-manager-002",
+      "branch": "work/2026-08-16-portable-session-manager-002",
+      "expected_head": "37c5a04414edb0b1cef5412ed3278a3ac1418d12",
+      "registry_record_sha256": "4311459813deee0a4c4d0d37c65578b488795920d8f9dee8bdbec31ac3f79e25"
+    },
+    {
+      "path": "C:\\Users\\peter\\Documents\\portfolio-worktrees\\portable-session-manager-002-activation",
+      "branch": "work/2026-08-16-delivery-activation-portable-session-manager-002",
+      "expected_head": "049f742d7cc895c7c4b18d57c454922f05f77d0c",
+      "registry_record_sha256": "5fb3512cf6a0cba03f9c0eb55f886c5980cd34ab67127dba6b5f27612c117493"
+    }
+  ]
+}
