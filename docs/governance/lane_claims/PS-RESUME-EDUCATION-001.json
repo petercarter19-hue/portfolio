@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-RESUME-EDUCATION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Complete MVP1 Package 1 private Resume education create, update and remove in existing career_chapters/career_education, with zero/one/many owner records, schema-derived fields and preserved existing data, owner isolation, subtype and parent integrity, private/publication dependency guards, validation, optimistic concurrency, idempotency and atomic receipts. Reuse existing command/API contracts; add proposed SQL only with null gate. No SQL engine proof/apply, infrastructure, UI/presentation/intake, public adapters, publication-policy changes, AI/providers, identities, settings, deployment or live enablement. Assignment-specific writer model: gpt-6-astra medium.",
   "assignment": "implementation",
   "writer_ref": "session:01a07e6b-67aa-76f3-a7c1-accdb9feb151",
@@ -35,5 +35,7 @@
   ],
   "review_requirement": "independent",
   "handoff": null,
-  "checkpoint_sha": null
+  "checkpoint_sha": null,
+  "merged_sha": "e081f42ad2899bc313b63dce15361f9d48df5607",
+  "closed_at": "2026-09-08T01:29:21Z"
 }
