@@ -2677,6 +2677,16 @@
       ],
       "summary": "Proposed private Living Resume editor: owner-scoped role, accomplishment, skill, and credential create/update/remove commands with parent row-version fences, atomic canonical writes, immutable UUID-and-digest receipts, explicit credential completion state, and protection for published or history-bearing records. Repository candidate only; no database application or runtime proof.",
       "gate": null
+    },
+    {
+      "id": "PS-RESUME-EDIT-002",
+      "forward": "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-002_education_commands.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-002_education_commands_rollback.sql",
+      "requires": [
+        "PS-RESUME-EDIT-001"
+      ],
+      "summary": "Proposed owner-scoped education create/update/private removal in existing career chapters and education subtype; extends editor read and closed receipt vocabularies, preserves existing command guards and data. Repository validation only; engine and driver proof withheld.",
+      "gate": null
     }
   ]
 }

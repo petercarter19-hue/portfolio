@@ -65,6 +65,7 @@ def editor_sets(*, role=True):
         [],
         [],
         [],
+        [],
     ]
 
 
@@ -262,7 +263,7 @@ class LivingResumeEditorServiceTests(unittest.TestCase):
         self.database = MagicMock()
         self.service = LivingResumeEditorService(self.database)
 
-    def test_owner_read_has_five_strict_sections_and_explicit_capabilities(self):
+    def test_owner_read_has_six_strict_sections_and_explicit_capabilities(self):
         self.database.execute_procedure.return_value = editor_sets()
         editor = self.service.get_editor("owner-1")
 

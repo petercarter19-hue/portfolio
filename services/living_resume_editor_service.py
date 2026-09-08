@@ -19,11 +19,11 @@ from uuid import UUID
 from services.database_service import DatabaseServiceError, database_service
 
 
-EDITOR_SECTIONS = ("profile", "roles", "accomplishments", "skills", "credentials")
+EDITOR_SECTIONS = ("profile", "roles", "accomplishments", "skills", "credentials", "education")
 COMMAND_TYPES = frozenset(
     f"{operation}_{record_type}"
     for operation in ("create", "update", "remove")
-    for record_type in ("role", "accomplishment", "skill", "credential")
+    for record_type in ("role", "accomplishment", "skill", "credential", "education")
 )
 DATE_PRECISIONS = frozenset({"day", "month", "year", "unknown"})
 EMPLOYMENT_TYPES = frozenset(
@@ -39,6 +39,14 @@ EMPLOYMENT_TYPES = frozenset(
     }
 )
 CREDENTIAL_STATUSES = frozenset({"planned", "in_progress", "completed"})
+
+# Education uses the existing canonical chapter precision/status vocabulary.
+EDUCATION_DATE_PRECISIONS = DATE_PRECISIONS | {"approximate"}
+EDUCATION_STATUSES = frozenset({"planned", "admitted", "in_progress", "completed", "paused", "withdrawn"})
+_EDUCATION_FIELDS = frozenset({
+    "title", "institution_name", "degree_name", "field_of_study", "education_status",
+    "grade_text", "location_text", "summary", "start_date", "end_date", "date_precision",
+})
 
 _ENVELOPE_FIELDS = frozenset(
     {"command_id", "type", "record_key", "parent_key", "expected_version", "values"}
@@ -87,6 +95,7 @@ _CREDENTIAL_FIELDS = frozenset(
 )
 
 _EDITOR_ROW_FIELDS = {
+    "education": _EDUCATION_FIELDS | {"record_key", "row_version", "editable", "blocked_reason"},
     "profile": frozenset({"profile_key", "profile_slug", "display_name"}),
     "roles": frozenset(
         {
@@ -336,7 +345,31 @@ def _credential_values(raw: object) -> dict[str, object]:
     }
 
 
+def _education_values(raw: object) -> dict[str, object]:
+    values = _validate_exact_fields(raw, _EDUCATION_FIELDS)
+    precision = _choice(values, "date_precision", EDUCATION_DATE_PRECISIONS) or "unknown"
+    start = _date_value(values, "start_date")
+    end = _date_value(values, "end_date")
+    # Unlike role commands, the canonical education contract allows end-only dates.
+    if start is not None and end is not None and start > end:
+        raise LivingResumeEditorValidationError("end_date cannot be before start_date.")
+    return {
+        "title": _text(values, "title", 300, required=True),
+        "institution_name": _text(values, "institution_name", 300, required=True),
+        "degree_name": _text(values, "degree_name", 300),
+        "field_of_study": _text(values, "field_of_study", 300),
+        "education_status": _choice(values, "education_status", EDUCATION_STATUSES, required=True),
+        "grade_text": _text(values, "grade_text", 100),
+        "location_text": _text(values, "location_text", 300),
+        "summary": _text(values, "summary", 8000),
+        "start_date": _normalized_date(start, precision),
+        "end_date": _normalized_date(end, precision),
+        "date_precision": precision,
+    }
+
+
 _VALUE_VALIDATORS = {
+    "education": _education_values,
     "role": _role_values,
     "accomplishment": _accomplishment_values,
     "skill": _skill_values,
@@ -469,6 +502,8 @@ class LivingResumeEditorService:
         editor["capabilities"] = {
             "commands": sorted(COMMAND_TYPES),
             "credential_completion_statuses": sorted(CREDENTIAL_STATUSES),
+            "education_statuses": sorted(EDUCATION_STATUSES),
+            "education_date_precisions": sorted(EDUCATION_DATE_PRECISIONS),
             "date_precisions": sorted(DATE_PRECISIONS),
             "employment_types": sorted(EMPLOYMENT_TYPES),
         }
@@ -507,6 +542,13 @@ class LivingResumeEditorService:
                 raise LivingResumeEditorUnavailableError()
         if section == "credentials" and output["completion_status"] not in CREDENTIAL_STATUSES | {None}:
             raise LivingResumeEditorUnavailableError()
+        if section == "education" and (
+            not isinstance(output["education_status"], str)
+            or output["education_status"] not in EDUCATION_STATUSES
+            or not isinstance(output["date_precision"], str)
+            or output["date_precision"] not in EDUCATION_DATE_PRECISIONS
+        ):
+            raise LivingResumeEditorUnavailableError()
         return output
 
     @staticmethod
@@ -517,6 +559,7 @@ class LivingResumeEditorService:
             "accomplishment": "accomplishments",
             "skill": "skills",
             "credential": "credentials",
+            "education": "education",
         }[record_type]
         rows = editor.get(section)
         if not isinstance(rows, list):

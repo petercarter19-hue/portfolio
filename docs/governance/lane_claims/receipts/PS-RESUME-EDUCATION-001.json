@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-EDUCATION-001",
+  "candidate_sha": "bdd4811b2ff39da2ccbb00f69b884d5a1b992953",
+  "review_type": "independent",
+  "reviewer_ref": "agent:01a07e6b-67aa-76f3-a7c1-accdb9feb151/education_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-08T01:14:54Z",
+  "findings": [
+    {
+      "id": "R1-preserve-original-education-wording",
+      "status": "resolved",
+      "severity": "high",
+      "summary": "Education updates preserve hidden original_member_wording; initial create wording is retained and a focused regression covers preservation. Same independent reviewer passed the exact corrected candidate."
+    },
+    {
+      "id": "R2-repository-test-runner",
+      "status": "resolved",
+      "severity": "medium",
+      "summary": "CI exposed a pytest dependency and undiscovered function tests. Both modules now use repository unittest discovery without pytest. Same reviewer confirmed all test/parameter semantics and actual 19-method, 38-subtest discovery with pytest imports refused; runtime and SQL remain unchanged."
+    }
+  ],
+  "evidence_ref": "lane_claims/evidence/PS-RESUME-EDUCATION-001.md"
+}
