@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-EDUCATION-001",
+  "state": "active",
+  "outcome": "Complete MVP1 Package 1 private Resume education create, update and remove in existing career_chapters/career_education, with zero/one/many owner records, schema-derived fields and preserved existing data, owner isolation, subtype and parent integrity, private/publication dependency guards, validation, optimistic concurrency, idempotency and atomic receipts. Reuse existing command/API contracts; add proposed SQL only with null gate. No SQL engine proof/apply, infrastructure, UI/presentation/intake, public adapters, publication-policy changes, AI/providers, identities, settings, deployment or live enablement. Assignment-specific writer model: gpt-6-astra medium.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a07e6b-67aa-76f3-a7c1-accdb9feb151",
+  "branch": "work/2026-09-07-resume-education-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "a2aaa65b1ef9e37783b0d085c98ceb5fbc739661",
+  "owner_outcome_ref": "session:01a0789c-c166-7eb0-8588-517c27f13b86/delegation:01a07e6b-67aa-76f3-a7c1-accdb9feb151/education-backend-through-merge",
+  "surfaces": [
+    "services/living_resume_editor_service.py",
+    "tests/test_living_resume_editor_service.py",
+    "tests/test_resume_education.py",
+    "tests/test_resume_education_migration.py",
+    "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-002_education_commands.sql",
+    "SQL FIles/Migrations/proposed/PS-RESUME-EDIT-002_education_commands_rollback.sql",
+    "SQL FIles/Verification/PS-RESUME-EDIT-002_education_commands_verify.sql",
+    "SQL FIles/Migrations/registry.json",
+    "docs/governance/lane_claims/PS-RESUME-EDUCATION-001.json",
+    "docs/governance/lane_claims/evidence/PS-RESUME-EDUCATION-001.md",
+    "docs/governance/lane_claims/receipts/PS-RESUME-EDUCATION-001.json"
+  ],
+  "domains": [
+    "runtime:living-resume:private-editor-commands",
+    "schema:living-resume:private-editor-commands",
+    "privacy:living-resume:private-drafts",
+    "testing:living-resume:private-editor-commands"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-RESUME-EDUCATION-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null
+}
