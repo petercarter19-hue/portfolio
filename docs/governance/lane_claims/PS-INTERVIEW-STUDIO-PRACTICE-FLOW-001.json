@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-INTERVIEW-STUDIO-PRACTICE-FLOW-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver the approved MVP1 Interview Studio question-answer-review-History flow on the existing destination without mandatory New Session or Finish Session ceremony. Fix competing setup/completion states, misleading empty counts, setup dismissal/focus, review/retry/improvement continuity across modes and History, repeated-action/error handling, and obstructive gaps or redundant controls. Preserve existing browser-local records without deletion or silent migration, current coaching and sibling-mode truth, authenticated access, APIs, and storage boundaries. Reconcile the new package charter and existing Experience Polish charter. Exclude broader visual redesign, Focus/popout or video expansion, providers, storage migration or cloud sync, private follow-up, onboarding, schema, production configuration, and deployment.",
   "assignment": "implementation",
   "writer_ref": "session:01a0839f-4e24-7d00-bbbd-333265688a81",
@@ -41,6 +41,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "6ad85945e1a59eba59a96af3c98fc1ae279a9849",
+  "closed_at": "2026-09-09T02:56:33Z"
 }
