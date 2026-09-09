@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-BROWSER-CI-001",
+  "state": "active",
+  "outcome": "Make the selected existing 11-test Interview Studio operability browser suite a required Azure CI job: install a pinned browser-only dependency set and its matching Chromium build, run the exact module separately with synthetic local Flask identity and provider fixtures, report explicit discovered, executed, skipped, failure and error counts, and fail when the module or any required method is absent, renamed, zero, skipped or unsuccessful. Preserve ordinary local optional discovery and all Interview functionality, visuals, access, storage and provider boundaries. In the same authorized package, update the current PeerSlate OpenAI role-routing table to Pete's September 9 direction: former Sol High assignments use Sol Extra High and former Sol Medium assignments use Sol High, while Astra assignments remain unchanged. No broad browser matrix, live identity/provider/storage proof, production-stage change, schema, deployment, enablement, billing or destructive operation.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a087e2-fd56-79f0-a696-6a4fc1fd44ba",
+  "branch": "work/2026-09-09-mvp1-browser-ci-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "2ae32a6caa643835a6e0e4d55dfb6ca73dfc9887",
+  "owner_outcome_ref": "pete-chat-2026-09-09/mvp1-browser-ci-and-current-role-routing-followthrough",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MVP1-BROWSER-CI-001.json",
+    "docs/governance/lane_claims/evidence/PS-MVP1-BROWSER-CI-001.md",
+    "docs/governance/lane_claims/receipts/PS-MVP1-BROWSER-CI-001.json",
+    "azure-pipelines.yml",
+    "requirements-browser-ci.txt",
+    "scripts/run_interview_browser_ci.py",
+    "tests/test_interview_browser_ci_runner.py",
+    "docs/AI_MODEL_AND_ROLE_ROUTING.md",
+    "tests/test_governance_pointers.py"
+  ],
+  "domains": [
+    "infrastructure:ci:interview-studio-browser",
+    "testing:interview-studio:browser-ci",
+    "governance:ai-model-role-routing"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MVP1-BROWSER-CI-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
