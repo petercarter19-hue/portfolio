@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "package": "PS-INTERVIEW-STUDIO-PRACTICE-FLOW-001",
+  "state": "active",
+  "outcome": "Deliver the approved MVP1 Interview Studio question-answer-review-History flow on the existing destination without mandatory New Session or Finish Session ceremony. Fix competing setup/completion states, misleading empty counts, setup dismissal/focus, review/retry/improvement continuity across modes and History, repeated-action/error handling, and obstructive gaps or redundant controls. Preserve existing browser-local records without deletion or silent migration, current coaching and sibling-mode truth, authenticated access, APIs, and storage boundaries. Reconcile the new package charter and existing Experience Polish charter. Exclude broader visual redesign, Focus/popout or video expansion, providers, storage migration or cloud sync, private follow-up, onboarding, schema, production configuration, and deployment.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0839f-4e24-7d00-bbbd-333265688a81",
+  "branch": "work/2026-09-08-interview-studio-practice-flow-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "1f1a4d2d6d472156454a98bd73b5718cd6181aa0",
+  "owner_outcome_ref": "session:01a0789c-c166-7eb0-8588-517c27f13b86/pete-chat-2026-09-08/approved-interview-studio-mvp1-practice-flow",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-INTERVIEW-STUDIO-PRACTICE-FLOW-001.json",
+    "docs/governance/lane_claims/evidence/PS-INTERVIEW-STUDIO-PRACTICE-FLOW-001.md",
+    "docs/governance/lane_claims/receipts/PS-INTERVIEW-STUDIO-PRACTICE-FLOW-001.json",
+    "docs/governance/PACKAGE_REGISTRY.json",
+    "docs/initiatives/PS-INTERVIEW-STUDIO-PRACTICE-FLOW-001/README.md",
+    "docs/initiatives/PS-INTERVIEW-STUDIO-PRACTICE-FLOW-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "docs/initiatives/PS-INTERVIEW-STUDIO-EXPERIENCE-POLISH-001/README.md",
+    "templates/interview_studio.html",
+    "static/css/interview-studio.css",
+    "static/js/interview-studio.js",
+    "tests/test_interview_studio.py",
+    "tests/test_interview_studio_operability_browser.py",
+    "tests/test_interview_studio_practice_flow_browser.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-INTERVIEW-STUDIO-PRACTICE-FLOW-001.md"
+  ],
+  "domains": [
+    "runtime:interview-studio:practice-flow",
+    "ux:interview-studio:question-answer-review-history",
+    "persistence:interview-studio:browser-local-practice-state",
+    "accessibility:interview-studio:practice-flow-focus-reflow",
+    "governance:initiative:interview-studio-practice-flow",
+    "governance:initiative:interview-studio-experience-polish",
+    "governance:package-registry:interview-studio-practice-flow"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
