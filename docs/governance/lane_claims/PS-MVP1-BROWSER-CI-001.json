@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-BROWSER-CI-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Make the selected existing 11-test Interview Studio operability browser suite a required Azure CI job: install a pinned browser-only dependency set and its matching Chromium build, run the exact module separately with synthetic local Flask identity and provider fixtures, report explicit discovered, executed, skipped, failure and error counts, and fail when the module or any required method is absent, renamed, zero, skipped or unsuccessful. Preserve ordinary local optional discovery and all Interview functionality, visuals, access, storage and provider boundaries. In the same authorized package, update the current PeerSlate OpenAI role-routing table to Pete's September 9 direction: former Sol High assignments use Sol Extra High and former Sol Medium assignments use Sol High, while Astra assignments remain unchanged. No broad browser matrix, live identity/provider/storage proof, production-stage change, schema, deployment, enablement, billing or destructive operation.",
   "assignment": "implementation",
   "writer_ref": "session:01a087e2-fd56-79f0-a696-6a4fc1fd44ba",
@@ -33,6 +33,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "a87c09489d0dfa029a738d02a7ebe90badf06a99",
+  "closed_at": "2026-09-09T22:54:20Z"
 }
