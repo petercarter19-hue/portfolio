@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-AZURE-STARTUP-SEVEN-WORKLOAD-001",
-  "state": "paused",
+  "state": "active",
   "outcome": "Implement, independently review, and activate Pete's seven-workload Microsoft for Startups plan: scale only peerslate-database from SQL S1 to S2 and peerslateacr from Basic to Premium; add a privacy-safe daily Azure Speech regression suite using 6.25 hours of generated synthetic audio, bounded/resumable requests, aggregate-only reporting, and the existing primary/recovery schedule; report simultaneous five-of-seven and seven-of-seven continuity; and recalibrate alerts while preserving the subscription-wide 550-dollar monthly ceiling. Grant the dedicated qualification identity only exact Speech inference and registry metadata-read roles. Count only complete UTC Cost Management days strictly above 1 dollar; count Foundry once; exclude DevOps; keep the Startups portal authoritative. Expected all-in spend is about 427.32 dollars monthly. API Management is fallback-only and unauthorized. Retain no audio, transcripts, private content, prompts, credentials, tokens, IDs, or provider payloads. No app deployment, schema/data mutation, DNS, product AI routing, resource creation/deletion, private endpoint, registry write, secrets, advertising, or external marketing operation.",
   "assignment": "implementation",
   "writer_ref": "session:01a046b3-74fc-7903-a336-3f1647f81d1c/codex/azure-seven-workload-writer",
