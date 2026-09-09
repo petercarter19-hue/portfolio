@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-06",
+  "updated_at": "2026-09-08",
   "classification_checkpoint": "c0450dbd675554e7363c8fc262a6d4f8bf2c6921",
   "current_checkpoint_at_creation": "fdb71c604f81d305b971775bd28aeac964231ebe",
   "authority_note": "This is a complete rationalization index, not delivery authority. CURRENT_LANES.json and CURRENT_BASELINE.yaml remain authoritative for current lifecycle and release state.",
@@ -55,6 +55,7 @@
       "PS-INTERVIEW-STUDIO-FUNCTIONAL-V1-001",
       "PS-INTERVIEW-STUDIO-INTEGRATION-001",
       "PS-INTERVIEW-STUDIO-OPERABILITY-001",
+      "PS-INTERVIEW-STUDIO-PRACTICE-FLOW-001",
       "PS-INTERVIEW-STUDIO-VISUAL-FIDELITY-001",
       "PS-LEGACY-PROJECTS-PRIVACY-CONTAINMENT-001",
       "PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001",
@@ -169,11 +170,11 @@
     ]
   },
   "counts": {
-    "current_protect": 77,
+    "current_protect": 78,
     "future_finish": 33,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 145
+    "total": 146
   }
 }

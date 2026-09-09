@@ -9,6 +9,23 @@ restoration or Ask My Slate.
 **Runtime status:** No Interview code, layout, device, or release change is
 authorized.
 
+## MVP1 practice-flow reconciliation — 2026-09-08
+
+Pete selected the simpler question -> answer -> review -> History direction
+for MVP1. `PS-INTERVIEW-STUDIO-PRACTICE-FLOW-001` owns the bounded functional
+correction: no mandatory New Session or Finish Session ceremony, truthful empty
+state, optional dismissible setup, review/improvement/retry continuity, and
+preservation of existing browser-local records. The earlier session-model
+question is settled for that MVP1 journey and is no longer an acceptance gate
+for this package.
+
+This Experience Polish package remains planned for MVP4. It retains the broader
+answer-canvas and rail composition, same-page Focus versus optional pop-out
+comparison, video stage/device journey, progressive transcript presentation,
+and owner-reviewed visual refinement. It must treat the accepted MVP1 practice
+flow as its starting contract and must not recreate artificial session
+restrictions or rebuild the functional continuity work.
+
 ## Owner outcome
 
 Interview Me becomes a comfortably bounded answer canvas. Video Practice looks

@@ -801,7 +801,7 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
 
     def test_progressive_review_and_improve_states_reuse_existing_lifecycle(self):
         source = Path('static/js/interview-studio.js').read_text(encoding='utf-8')
-        clear_block = source.split('function clearReviewState()', 1)[1].split('function restoreDraft', 1)[0]
+        clear_block = source.split('function clearReviewState(options)', 1)[1].split('function restoreDraft', 1)[0]
         self.assertIn('setHidden(feedbackBlock, true)', clear_block)
         self.assertIn('setHidden(improveBlock, true)', clear_block)
         submit_block = source.split('function submitReview(options)', 1)[1].split("answerForm.addEventListener", 1)[0]
@@ -1824,7 +1824,7 @@ class InterviewStudioAssetTests(unittest.TestCase):
         source = _studio_script()
         reader = source.split('function readHistoryStore()', 1)[1].split('function safeHistoryText', 1)[0]
         self.assertIn('Array.isArray(stored) ? stored : []', reader)
-        records = source.split('function readHistoryRecords()', 1)[1].split('function addHistoryRecord', 1)[0]
+        records = source.split('function readHistoryRecords()', 1)[1].split('function reviewFromHistoryRecord', 1)[0]
         self.assertIn('readHistoryStore().map(sanitizeHistoryRecord).filter(Boolean)', records)
         self.assertNotIn('writeJSON', records)
         sanitize = source.split('function sanitizeHistoryRecord(record)', 1)[1].split('function readHistoryRecords()', 1)[0]
@@ -3922,9 +3922,9 @@ class InterviewStudioStorageIsolationTests(_InterviewStudioAuthenticatedTestCase
             "return writeJSON(historyKey, records.slice(0, 100));", script,
         )
         self.assertIn('if (!found) return false;', script)
-        self.assertIn(
-            "removed\n            ? 'Session record deleted from this browser.'", script,
-        )
+        self.assertIn('var removed = removeHistoryRecordAndActiveState(record);', script)
+        self.assertIn('if (!removeStored(activeReviewKey)) return false;', script)
+        self.assertIn('This record could not be deleted in this browser right now.', script)
 
 
 # ---------------------------------------------------------------------------
@@ -3976,16 +3976,15 @@ class InterviewStudioAuthenticatedShellTests(_InterviewStudioAuthenticatedTestCa
         for marker in (
             'data-is-auth-rail',
             'is-auth__rail-title">Interview Studio<',
-            'is-auth__rail-eyebrow">Current session<',
-            'is-auth__rail-eyebrow">Session tools<',
+            'is-auth__rail-eyebrow">Current practice<',
+            'is-auth__rail-eyebrow">Practice tools<',
             'data-is-rail-summary-context',
             'data-is-rail-summary-stage',
             'data-is-rail-summary-level',
             'data-is-rail-summary-family',
-            'data-is-finish-session-label',
-            'data-is-finish-session-truth',
         ):
             self.assertIn(marker, html)
+        rail = html.split('data-is-auth-rail', 1)[1].split('</aside>', 1)[0]
         # Exact locked copy (architecture 03 section 6, brief item 2).
         self.assertIn(
             'Drafts and History stay in this browser for this account. '
@@ -4001,8 +4000,8 @@ class InterviewStudioAuthenticatedShellTests(_InterviewStudioAuthenticatedTestCa
         )
         # Exact locked copy (brief item 5, clearing consequence -- History).
         self.assertIn('Clearing browser data may remove these practice records.', html)
-        # Session-finished truth line starts hidden until the session ends.
-        self.assertIn('data-is-finish-session-truth hidden', html)
+        self.assertNotIn('data-is-finish-session', rail)
+        self.assertNotIn('Open-ended session', rail)
 
     @patch('identity.database_service.first_row')
     def test_authenticated_operability_controls_are_single_and_programmatically_related(self, first_row):
@@ -4030,9 +4029,9 @@ class InterviewStudioAuthenticatedShellTests(_InterviewStudioAuthenticatedTestCa
         self.assertEqual(html.count('id="is-settings-dialog"'), 1)
         self.assertIn('data-is-session-setup-open', rail)
         self.assertIn('data-is-js-control', rail)
-        self.assertIn('Applying changes starts a new browser-local session.', html)
+        self.assertIn('Use the defaults or adjust the context for your next question.', html)
         self.assertIn('data-is-session-setup-cancel', html)
-        self.assertIn('data-is-start-session>Apply changes<', html)
+        self.assertIn('data-is-start-session>Use this setup<', html)
 
         ids = re.findall(r'\bid="([^"]+)"', html)
         self.assertEqual(len(ids), len(set(ids)), 'authenticated render contains duplicate IDs')
@@ -4086,7 +4085,7 @@ class InterviewStudioConsequenceStackContractTests(unittest.TestCase):
             'function resetConsequenceStack()',
             'function appendAnswerSnapshot(label, answerText)',
             'function buildCoachingSection(review, revised)',
-            'function appendAuthenticatedAttempt(answerText, review, attemptNumber)',
+            'function appendAuthenticatedAttempt(answerText, review, attemptNumber, options)',
             # Slice 5-6 review item 2 (R2): appendAuthenticatedImprovement now
             # also receives the originating review (needed for the "Add
             # context or evidence" sub-flow's resubmission), and
@@ -4094,7 +4093,7 @@ class InterviewStudioConsequenceStackContractTests(unittest.TestCase):
             # additionalContext/onSuccess/onError params so the same request
             # path can either append the first draft or update an
             # already-appended one in place.
-            'function appendAuthenticatedImprovement(payload, review, question, priorAnswer)',
+            'function appendAuthenticatedImprovement(payload, review, question, priorAnswer, options)',
             'function startAuthenticatedImprove(review, selectedIds, additionalContext, onSuccess, onError)',
         ):
             self.assertIn(fn, script)
@@ -4121,7 +4120,7 @@ class InterviewStudioConsequenceStackContractTests(unittest.TestCase):
         self.assertNotIn('setHidden(answeringBlock, false)', success_handler)
         # appendAuthenticatedAttempt seals the live submitted card into a
         # permanent node and hides the reusable live display.
-        stack_fn = script.split('function appendAuthenticatedAttempt(answerText, review, attemptNumber) {', 1)[1].split('\n    }\n', 1)[0]
+        stack_fn = script.split('function appendAuthenticatedAttempt(answerText, review, attemptNumber, options) {', 1)[1].split('\n    }\n', 1)[0]
         self.assertIn('setHidden(submittedBlock, true);', stack_fn)
         self.assertIn('appendAnswerSnapshot(', stack_fn)
 
@@ -4132,9 +4131,8 @@ class InterviewStudioConsequenceStackContractTests(unittest.TestCase):
         self.assertIn('function makeCompletedChip(label)', script)
         self.assertIn("improveButton.replaceWith(makeCompletedChip('Improvement draft created'));", script)
         self.assertIn("makeCompletedChip('Revision reviewed')", script)
-        self.assertIn("completed ? 'Session finished' : 'Finish session'", script)
-        self.assertIn('function setFinishSessionCompleted(completed)', script)
-        self.assertIn("text(one('[data-is-finish-session-label]', button), completed ? 'Session finished' : 'Finish session');", script)
+        self.assertIn("makeCompletedChip('Improvement draft restored')", script)
+        self.assertIn("makeActionButton('secondary', 'Edit and retry'", script)
 
     def test_marker_gate_pattern_matches_the_server_exactly(self):
         """The client marker regex must match app.py's
@@ -4170,7 +4168,7 @@ class InterviewStudioConsequenceStackContractTests(unittest.TestCase):
         this is the concrete case where trusting confirmations (not the
         regex) is the only way the gate can ever catch it."""
         script = _studio_script()
-        improve_fn = script.split('function appendAuthenticatedImprovement(payload, review, question, priorAnswer) {', 1)[1].split(
+        improve_fn = script.split('function appendAuthenticatedImprovement(payload, review, question, priorAnswer, options) {', 1)[1].split(
             "\n    function startAuthenticatedImprove(", 1
         )[0]
         self.assertIn(
@@ -4894,79 +4892,32 @@ class InterviewStudioSlice56RecompositionTests(_InterviewStudioAuthenticatedTest
         self.assertLess(device_settings.index('releaseMedia(true)'), device_settings.index('resetVideoUi()'))
         self.assertLess(device_settings.index('resetVideoUi()'), device_settings.index('enableCamera()'))
 
-    # -- Session Complete (visual 11) ------------------------------------------
-    def test_session_complete_authenticated_composition_and_summary_counts(self):
+    # -- MVP1 practice flow ----------------------------------------------------
+    def test_authenticated_practice_has_no_finish_or_empty_completion_ceremony(self):
+        html = self._authenticated_html('practice-flow-member')
+        rail = html.split('data-is-auth-rail', 1)[1].split('</aside>', 1)[0]
+        self.assertIn('Practice setup', rail)
+        self.assertIn('Current practice', rail)
+        self.assertIn('Practice tools', rail)
+        self.assertNotIn('data-is-finish-session', rail)
+        self.assertNotIn('Open-ended session', rail)
+        self.assertNotIn('data-is-rail-completed', rail)
+
+    def test_review_workspace_is_browser_local_and_restorable(self):
         script = _studio_script()
-        self.assertIn(
-            "text(one('[data-is-complete-title]'), 'You finished this practice session.');",
-            script,
-        )
-        # Practiced and reviewed counts stay explicitly distinct in one
-        # sentence (architecture 03 section 5), never a single blended count.
-        summary_block = script.split("text(one('[data-is-complete-title]'), 'You finished", 1)[1].split(
-            'var latestForClearer', 1
-        )[0]
-        self.assertIn('questions were', summary_block)
-        self.assertIn('reviewed in this browser.', summary_block)
-
-    def test_session_complete_html_carries_the_three_cards_and_browser_truth(self):
-        html = self._authenticated_html('complete-member')
-        self.assertIn('is-complete__cards', html)
-        self.assertIn('data-is-complete-clearer', html)
-        self.assertIn('This session is stored only in this browser for this account.', html)
-        self.assertIn('Practice the next focus', html)
-        self.assertIn('Open History', html)
-
-    def test_session_complete_gold_rule_and_action_arrows(self):
-        """Review finding P1-2d (lock 11): a thin gold rule sits under the
-        summary line, spanning the card row's width; all three actions get
-        the trailing arrow icon lock 11 shows (verified live: the rule's
-        computed border-top color is #c5a264)."""
-        html = self._authenticated_html('complete-arrows-member')
-        complete_block = html.split('is-complete-title', 1)[1].split('is-auth__rail-completed', 1)[0]
-        self.assertIn('<hr class="is-complete__rule">', complete_block)
-        for hook in ('data-is-complete-practice-next', 'data-is-complete-new-session', 'data-is-complete-history'):
-            with self.subTest(hook=hook):
-                nearby = complete_block.split(hook, 1)[1][:400]
-                self.assertIn('<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/>', nearby)
-        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
-        self.assertIn('.is-complete__rule {', css)
-        self.assertIn('border-top: 1px solid var(--is-gold);', css)
-
-    def test_completed_questions_rail_group_wiring(self):
-        """Review finding P1-2d (lock 11): the rail's "Completed questions"
-        group (checkmark + truncated title) is built by
-        renderSessionComplete() from the same reviewed-answer records the
-        main "Questions reviewed" card uses, and cleared by
-        resetConsequenceStack() -- the hook clearReviewState() (called by
-        renderQuestion()/startNewSession() on every new question or
-        session) already fires. Verified live end to end: seeding a v2
-        history record for the current session and clicking "Finish
-        session" populated the rail group with the icon + full question
-        text (CSS-truncated, not JS-truncated -- the established pattern
-        this file already uses for History rows); clicking "Practice the
-        next focus" (which calls renderQuestion() -> clearReviewState())
-        hid it and emptied the list again."""
-        html = self._authenticated_html('rail-completed-member')
-        self.assertIn('<div class="is-auth__rail-completed" data-is-rail-completed hidden>', html)
-        self.assertIn('<p class="is-auth__rail-eyebrow">Completed questions</p>', html)
-        self.assertIn('<ol class="is-auth__rail-completed-list" data-is-rail-completed-list></ol>', html)
-        script = _studio_script()
-        render_fn = script.split('function renderSessionComplete() {', 1)[1].split(
-            '\n    function setFinishSessionCompleted', 1
-        )[0]
-        self.assertIn("var railCompleted = one('[data-is-rail-completed]');", render_fn)
-        self.assertIn("var railCompletedList = one('[data-is-rail-completed-list]');", render_fn)
-        self.assertIn('setHidden(railCompleted, records.length === 0);', render_fn)
-        self.assertIn('label.textContent = record.question;', render_fn)
-        reset_fn = script.split('function resetConsequenceStack() {', 1)[1].split(
-            '\n    function appendAnswerSnapshot', 1
-        )[0]
-        self.assertIn("var railCompleted = one('[data-is-rail-completed]');", reset_fn)
-        self.assertIn('setHidden(railCompleted, true);', reset_fn)
-        self.assertIn('railCompletedList.replaceChildren();', reset_fn)
-        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
-        self.assertIn('.is-auth__rail-completed-list li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }', css)
+        for marker in (
+            "var activeReviewKey = storagePrefix + ':active-review';",
+            'function persistActiveReviewWorkspace(record)',
+            'function persistActiveImprovement(draft, confirmations)',
+            'function restoreActiveReviewWorkspace()',
+            'restoreActiveReviewWorkspace();',
+            'not yet in History',
+        ):
+            self.assertIn(marker, script)
+        set_mode = script.split('function setMode(mode, updateUrl) {', 1)[1].split('\n    }\n', 1)[0]
+        self.assertNotIn('clearReviewState()', set_mode)
+        history = script.split('function showHistoryView() {', 1)[1].split('\n    }\n', 1)[0]
+        self.assertNotIn('clearReviewState()', history)
 
     # -- History (visuals 12/16/17) --------------------------------------------
     def test_history_four_states_and_exact_gate_copy(self):

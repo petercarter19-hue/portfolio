@@ -80,6 +80,14 @@
         }
     }
 
+    function readStored(key) {
+        try {
+            return { ok: true, value: window.localStorage.getItem(key) };
+        } catch (error) {
+            return { ok: false, value: null };
+        }
+    }
+
     function writeJSON(key, value) {
         try {
             window.localStorage.setItem(key, JSON.stringify(value));
@@ -90,7 +98,12 @@
     }
 
     function removeStored(key) {
-        try { window.localStorage.removeItem(key); } catch (error) { /* storage unavailable */ }
+        try {
+            window.localStorage.removeItem(key);
+            return true;
+        } catch (error) {
+            return false;
+        }
     }
 
     function storageAvailable() {
@@ -354,6 +367,7 @@
         historyKey = storagePrefix + ':history';
         sessionKey = storagePrefix + ':session';
     }
+    var activeReviewKey = storagePrefix + ':active-review';
 
     function migrateLegacyBrowserState() {
         /* V2 uses its own keys so a failed migration never destroys V1 local
@@ -584,6 +598,9 @@
         session.replacementSeen = Array.isArray(restoredSession.replacementSeen)
             ? restoredSession.replacementSeen.filter(function (value) { return typeof value === 'string'; })
             : [];
+        session.attemptNumber = Number.isFinite(restoredSession.attemptNumber)
+            ? Math.max(1, Math.floor(restoredSession.attemptNumber))
+            : 1;
     }
     if (!session.questionTrail.length) {
         session.questionTrail.push(nextLocalQuestion(session.family, session.level, [], [], session.context));
@@ -606,6 +623,7 @@
             context: session.context,
             questionTrail: session.questionTrail,
             currentQuestionIndex: session.currentQuestionIndex,
+            attemptNumber: session.attemptNumber,
             reviewedQuestionIds: session.reviewedQuestionIds,
             replacementSeen: session.replacementSeen
         });
@@ -619,7 +637,7 @@
         var levelOption = levelSelect && levelSelect.options[levelSelect.selectedIndex];
         var levelLabel = levelOption ? levelOption.text : labelExperienceLevel(session.level);
         if (summary) {
-            summary.textContent = contextLabel(session.context) + ' / ' + labelInterviewStage(session.context.interview_stage) + ' / ' + levelLabel + ' / ' + labelFamily(session.family) + ' / open session';
+            summary.textContent = contextLabel(session.context) + ' / ' + labelInterviewStage(session.context.interview_stage) + ' / ' + levelLabel + ' / ' + labelFamily(session.family);
         }
         text(one('[data-is-session-level]'), levelLabel);
         text(one('[data-is-session-family]'), labelFamily(session.family));
@@ -816,7 +834,6 @@
             releaseMedia(true);
             resetVideoUi();
         }
-        if (session.mode === 'me' && mode !== 'me') clearReviewState();
         if (session.mode === 'ai' && mode !== 'ai') cancelPendingAi(true);
         session.mode = mode;
         root.setAttribute('data-is-active-mode', mode);
@@ -945,7 +962,6 @@
         if (session.mode === 'video' && !prepareVideoContextChange('Discard the active recording or transcript draft and return to History?')) {
             return false;
         }
-        clearReviewState();
         cancelPendingAi(true);
         if (session.mode === 'video') {
             releaseMedia(true);
@@ -976,7 +992,6 @@
         if (session.mode === 'video' && !prepareVideoContextChange('Discard the active recording or transcript draft and return to Interview Studio?')) {
             return false;
         }
-        clearReviewState();
         cancelPendingAi(true);
         if (session.mode === 'video') {
             releaseMedia(true);
@@ -1044,7 +1059,8 @@
         }
     });
 
-    function clearReviewState() {
+    function clearReviewState(options) {
+        options = options || {};
         cancelPendingReview();
         cancelPendingImprovement();
         session.currentReview = null;
@@ -1052,7 +1068,7 @@
         session.reviewSource = 'me';
         session.reviewRecordId = '';
         session.reviewDurationSeconds = 0;
-        session.attemptNumber = 1;
+        if (!options.preserveAttempt) session.attemptNumber = 1;
         setHidden(answeringBlock, false);
         answer.readOnly = false;
         answeringBlock.removeAttribute('aria-busy');
@@ -1079,6 +1095,7 @@
         setHidden(one('[data-is-answer-context-form]'), true);
         one('[data-is-add-answer-context]').setAttribute('aria-expanded', 'false');
         if (authenticated) resetConsequenceStack();
+        if (!options.preserveWorkspace) removeStored(activeReviewKey);
         setStage(1);
         syncAnswerState();
     }
@@ -1106,16 +1123,16 @@
         var reviewed = session.reviewedQuestionIds.length;
         var trailCount = session.questionTrail.length;
         var progressCopy = reviewed
-            ? reviewed + (reviewed === 1 ? ' answer reviewed · open session' : ' answers reviewed · open session')
-            : 'Open session · answer as much or as little as you need';
+            ? reviewed + (reviewed === 1 ? ' answer reviewed · keep practicing' : ' answers reviewed · keep practicing')
+            : 'Choose a question and answer when you are ready';
         text(one('[data-is-question-position]'), progressCopy);
         text(one('[data-is-video-question-position]'), progressCopy);
-        text(one('[data-is-review-question]'), 'Question ' + (session.currentQuestionIndex + 1) + ' in an open session');
+        text(one('[data-is-review-question]'), 'Question ' + (session.currentQuestionIndex + 1) + ' in this practice');
         updateUpNextCount(Math.max(0, trailCount - session.currentQuestionIndex - 1));
         text(one('[data-is-rail-question]'), currentQuestion().text);
         var progress = one('[data-is-progress]');
         if (progress) {
-            progress.textContent = 'Open session';
+            progress.textContent = 'Practice';
             progress.setAttribute('aria-label', progressCopy);
         }
         var videoProgress = one('[data-is-video-progress]');
@@ -1173,7 +1190,10 @@
         var referenceMatches = Boolean(session.aiReference && session.aiReferenceQuestion === question.text);
         text(one('[data-is-ai-reference-text]'), referenceMatches ? session.aiReference : '');
         setHidden(reference, !referenceMatches || Boolean(showReference && !showReference.checked));
-        clearReviewState();
+        clearReviewState({
+            preserveWorkspace: Boolean(options.preserveReviewWorkspace),
+            preserveAttempt: Boolean(options.preserveAttempt)
+        });
         if (!options.keepDraft) restoreDraft();
         persistSession();
         renderQueue();
@@ -1219,6 +1239,7 @@
         window.clearTimeout(autosaveTimer);
         autosaveTimer = null;
         if (!answer) return;
+        if (authenticated && session.currentReview) return;
         if (answer.value) {
             saveDraft(false);
         } else {
@@ -1233,9 +1254,13 @@
         window.clearTimeout(autosaveTimer);
         autosaveTimer = window.setTimeout(function () { saveDraft(false); }, 700);
     });
-    answer.addEventListener('blur', function () { if (answer.value) saveDraft(false); });
+    answer.addEventListener('blur', function () {
+        if (answer.value && !(authenticated && session.currentReview)) saveDraft(false);
+    });
 
-    function hasDraft() { return answer.value.trim().length > 0; }
+    function hasDraft() {
+        return !(authenticated && session.currentReview) && answer.value.trim().length > 0;
+    }
     function confirmReplace() {
         var enabled = one('[data-is-confirm-navigation]');
         return !hasDraft() || !enabled || !enabled.checked || window.confirm('Move to another question? This draft will stay saved in this browser.');
@@ -1265,12 +1290,12 @@
         stopDictation('interrupted');
         if (session.mode === 'me') {
             persistCurrentAnswerDraft();
-            if (hasDraft() && !window.confirm('Start a new session? Your typed draft stays saved in this browser, but this workspace will move to the new session.')) {
-                announce('New session cancelled. Your browser-local draft is unchanged.');
+            if (hasDraft() && !window.confirm('Use a different practice setup? Your typed draft stays saved in this browser, but the workspace will move to a matching question.')) {
+                announce('Setup change cancelled. Your browser-local draft is unchanged.');
                 return false;
             }
         }
-        if (session.mode === 'video' && !prepareVideoContextChange('Start a new session and discard the current local recording or transcript draft?')) return false;
+        if (session.mode === 'video' && !prepareVideoContextChange('Change practice setup and discard the current local recording or transcript draft?')) return false;
         if (session.mode === 'ai') cancelPendingAi(true);
         cancelPendingReview();
         cancelPendingImprovement();
@@ -1336,7 +1361,7 @@
         if (options.restoreFocus !== false && sessionSetupInvoker && document.contains(sessionSetupInvoker)) {
             window.requestAnimationFrame(function () { sessionSetupInvoker.focus(); });
         }
-        if (options.announce !== false) announce(options.message || 'Session setup closed. No changes were applied.');
+        if (options.announce !== false) announce(options.message || 'Practice setup closed. No changes were applied.');
     }
 
     function openSessionSetup(invoker) {
@@ -1348,7 +1373,7 @@
         window.requestAnimationFrame(function () {
             if (sessionKindSelect) sessionKindSelect.focus();
         });
-        announce('Session setup opened. Applying changes starts a new browser-local session.');
+        announce('Practice setup opened. Use the defaults or adjust the context for your next question.');
     }
 
     function syncNewSessionFields() {
@@ -1414,12 +1439,11 @@
         renderQuestion();
         if (authenticated) {
             closeSessionSetup({ restoreFocus: false, announce: false });
-            setFinishSessionCompleted(false);
         }
         if (nextMode === 'me') answer.focus();
         else if (nextMode === 'video') cameraEnable.focus();
         else if (aiQuestionInput) aiQuestionInput.focus();
-        announce('New ' + contextLabel(session.context) + ' session ready. Practice as many questions as you need.');
+        announce(contextLabel(session.context) + ' setup applied. Practice as many questions as you need.');
     }
 
     if (levelSelect) levelSelect.value = session.level;
@@ -2008,6 +2032,129 @@
         return readHistoryStore().map(sanitizeHistoryRecord).filter(Boolean);
     }
 
+    function reviewFromHistoryRecord(record) {
+        return {
+            verdict: record.verdict,
+            encouragement: record.encouragement,
+            whatCameThroughClearly: record.whatCameThroughClearly,
+            strengths: record.strengths,
+            improvements: record.improvements,
+            strongerApproach: record.strongerApproach,
+            focusedFollowUp: record.focusedFollowUp,
+            dimensions: record.dimensions,
+            evidenceSuggestions: []
+        };
+    }
+
+    function activeReviewWorkspaceFromValue(value) {
+        if (!value || value.version !== 1 || typeof value.recordId !== 'string' || typeof value.questionId !== 'string') return null;
+        var improvement = null;
+        if (value.improvement && typeof value.improvement === 'object' && !Array.isArray(value.improvement)) {
+            var draft = safeHistoryText(value.improvement.draft, 5000);
+            improvement = {
+                draft: draft,
+                confirmations: Array.isArray(value.improvement.confirmations)
+                    ? value.improvement.confirmations.filter(function (item) { return typeof item === 'string'; }).slice(0, 12)
+                    : [],
+                evidenceUsed: []
+            };
+        }
+        return {
+            version: 1,
+            recordId: value.recordId.slice(0, 160),
+            questionId: value.questionId.slice(0, 160),
+            improvement: improvement
+        };
+    }
+
+    function readActiveReviewWorkspace() {
+        return activeReviewWorkspaceFromValue(readJSON(activeReviewKey, null));
+    }
+
+    function persistActiveReviewWorkspace(record) {
+        if (!authenticated || !record || !record.id) return false;
+        return writeJSON(activeReviewKey, {
+            version: 1,
+            recordId: record.id,
+            questionId: questionId({ family: record.family, text: record.question }),
+            improvement: null,
+            updatedAt: new Date().toISOString()
+        });
+    }
+
+    function persistActiveImprovement(draft, confirmations) {
+        var workspace = readActiveReviewWorkspace();
+        if (!workspace || workspace.questionId !== questionId(currentQuestion())) return false;
+        return writeJSON(activeReviewKey, {
+            version: 1,
+            recordId: workspace.recordId,
+            questionId: workspace.questionId,
+            improvement: {
+                draft: String(draft).slice(0, 5000),
+                confirmations: Array.isArray(confirmations) ? confirmations.slice(0, 12) : []
+            },
+            updatedAt: new Date().toISOString()
+        });
+    }
+
+    function clearActiveImprovement() {
+        var workspace = readActiveReviewWorkspace();
+        if (!workspace) return true;
+        return writeJSON(activeReviewKey, {
+            version: 1,
+            recordId: workspace.recordId,
+            questionId: workspace.questionId,
+            improvement: null,
+            updatedAt: new Date().toISOString()
+        });
+    }
+
+    function restoreActiveReviewWorkspace() {
+        if (!authenticated) return false;
+        var workspace = readActiveReviewWorkspace();
+        if (!workspace || workspace.questionId !== questionId(currentQuestion())) return false;
+        var record = readHistoryRecords().filter(function (item) {
+            return item.id === workspace.recordId && item.reviewVersion === 'v2';
+        })[0];
+        if (!record || !record.answer) {
+            removeStored(activeReviewKey);
+            return false;
+        }
+        var review = reviewFromHistoryRecord(record);
+        session.currentReview = review;
+        session.currentAnswer = record.answer;
+        session.reviewSource = record.mode;
+        // A restored accepted review remains immutable History. A later
+        // retry or revised review must create another record.
+        session.reviewRecordId = '';
+        session.reviewDurationSeconds = record.durationSeconds;
+        session.attemptNumber = record.attemptNumber;
+        answer.value = record.answer;
+        answer.readOnly = false;
+        text(one('[data-is-submitted-text]'), record.answer);
+        setHidden(answeringBlock, true);
+        setHidden(submittedBlock, true);
+        setHidden(reviewingBlock, true);
+        setAuthPendingBand(false);
+        renderReview(review);
+        setStage(workspace.improvement ? 4 : 3);
+        appendAuthenticatedAttempt(record.answer, review, record.attemptNumber, {
+            restoring: true,
+            improvementPresent: Boolean(workspace.improvement)
+        });
+        if (workspace.improvement) {
+            appendAuthenticatedImprovement(
+                workspace.improvement,
+                review,
+                currentQuestion(),
+                record.answer,
+                { restoring: true }
+            );
+        }
+        syncAnswerState();
+        return true;
+    }
+
     // PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001 slice 2: each mutator
     // now returns the real write outcome (the draft-save failure pattern)
     // instead of discarding it, so a caller can surface a truthful result
@@ -2030,12 +2177,62 @@
         return writeJSON(historyKey, records);
     }
 
-    function removeHistoryRecord(recordId) {
-        if (!recordId) return true;
-        var records = readHistoryStore().filter(function (record) {
+    function removeHistoryRecord(recordId, sourceRecords) {
+        if (!recordId || !Array.isArray(sourceRecords)) return false;
+        var records = sourceRecords.filter(function (record) {
             return !record || typeof record !== 'object' || Array.isArray(record) || record.id !== recordId;
         });
         return writeJSON(historyKey, records);
+    }
+
+    function removeHistoryRecordAndActiveState(record) {
+        if (!record || !record.id) return false;
+        var historySnapshot = readStored(historyKey);
+        var activeReviewSnapshot = readStored(activeReviewKey);
+        if (!historySnapshot.ok || !activeReviewSnapshot.ok) return false;
+        var historyRecords;
+        var activeReviewValue;
+        try {
+            historyRecords = historySnapshot.value === null ? [] : JSON.parse(historySnapshot.value);
+            activeReviewValue = activeReviewSnapshot.value === null ? null : JSON.parse(activeReviewSnapshot.value);
+        } catch (error) {
+            return false;
+        }
+        if (!Array.isArray(historyRecords)) return false;
+        var workspace = activeReviewWorkspaceFromValue(activeReviewValue);
+        if (activeReviewSnapshot.value !== null && !workspace) return false;
+        var answerDraftKey = draftKey(record.question);
+        var answerDraftSnapshot = { ok: true, value: null };
+        var removesActiveReview = workspace && workspace.recordId === record.id;
+
+        if (removesActiveReview) {
+            answerDraftSnapshot = readStored(answerDraftKey);
+            if (!answerDraftSnapshot.ok) return false;
+            if (!removeStored(activeReviewKey)) return false;
+            if (!removeStored(answerDraftKey)) {
+                if (activeReviewSnapshot.value !== null) {
+                    try { window.localStorage.setItem(activeReviewKey, activeReviewSnapshot.value); } catch (error) { /* best-effort rollback */ }
+                }
+                return false;
+            }
+        }
+
+        if (!removeHistoryRecord(record.id, historyRecords)) {
+            if (removesActiveReview) {
+                try {
+                    if (activeReviewSnapshot.value !== null) window.localStorage.setItem(activeReviewKey, activeReviewSnapshot.value);
+                    if (answerDraftSnapshot.value !== null) window.localStorage.setItem(answerDraftKey, answerDraftSnapshot.value);
+                } catch (error) { /* best-effort rollback */ }
+            }
+            return false;
+        }
+
+        if (removesActiveReview && workspace.questionId === questionId(currentQuestion())) {
+            clearReviewState({ preserveWorkspace: true });
+            answer.value = '';
+            syncAnswerState();
+        }
+        return true;
     }
 
     // A review list can legitimately be empty: the coach sets a maximum of four
@@ -2667,11 +2864,41 @@
         advanceQuestion();
     }
 
+    function beginEditableRetry(answerText) {
+        var nextAttempt = session.attemptNumber + 1;
+        if (!removeStored(activeReviewKey)) {
+            announce('The editable retry could not start because its browser-local recovery state could not be cleared. Your reviewed answer is still available.');
+            return;
+        }
+        clearReviewState({ preserveWorkspace: true });
+        session.attemptNumber = nextAttempt;
+        var sessionSaved = persistSession();
+        answer.value = answerText || '';
+        var draftSaved = answer.value
+            ? saveDraft(false)
+            : removeStored(draftKey(currentQuestion().text));
+        var retrySaved = sessionSaved && draftSaved;
+        syncAnswerState();
+        setAutosaveState(
+            retrySaved ? 'saved' : 'failed',
+            retrySaved
+                ? (answer.value ? 'Editable retry · saved in this browser' : 'New attempt · original preserved in History')
+                : 'Browser save failed — keep this page open to retain the editable retry'
+        );
+        answer.focus();
+        announce(retrySaved
+            ? (answer.value
+                ? 'The reviewed answer is editable for another attempt. The saved review remains in History.'
+                : 'A new attempt is ready. The saved review remains in History.')
+            : 'The editable retry is available on this page, but it could not be saved in this browser. Keep this page open to retain it.');
+    }
+
     /* Appends the frozen AnswerCard snapshot and its CoachingSection for one
        validated attempt (architecture 03 section 1). `attemptNumber` is the
        attempt this answer belongs to (1 = the original answer, 2+ = a
        reviewed revision). */
-    function appendAuthenticatedAttempt(answerText, review, attemptNumber) {
+    function appendAuthenticatedAttempt(answerText, review, attemptNumber, options) {
+        options = options || {};
         var revised = attemptNumber > 1;
         setHidden(submittedBlock, true);
 
@@ -2694,8 +2921,10 @@
         if (revised) {
             built.actions.append(
                 makeActionButton('primary', 'Next question', function () { goToNextQuestion(); }),
-                makeActionButton('secondary', 'Revise again', function () { startAuthenticatedImprove(review); }),
-                makeActionButton('secondary', 'Finish session', function () { finishCurrentSession(); }),
+                options.improvementPresent
+                    ? makeCompletedChip('Improvement draft restored')
+                    : makeActionButton('secondary', 'Revise again', function () { startAuthenticatedImprove(review); }),
+                makeActionButton('secondary', 'Edit and retry', function () { beginEditableRetry(answerText); }),
                 makeCompletedChip('Revision reviewed')
             );
         } else {
@@ -2704,7 +2933,8 @@
                 startAuthenticatedImprove(review);
             });
             built.actions.append(
-                improveButton,
+                options.improvementPresent ? makeCompletedChip('Improvement draft restored') : improveButton,
+                makeActionButton('secondary', 'Edit and retry', function () { beginEditableRetry(answerText); }),
                 makeActionButton('secondary', 'Next question', function () { goToNextQuestion(); })
             );
         }
@@ -2719,7 +2949,7 @@
            so no one is shown a door that will not open. */
         appendModelAnswerAction(built.actions);
 
-        revealAppendedSection(built.heading);
+        if (!options.restoring) revealAppendedSection(built.heading);
     }
 
     /* ---------------------------------------------------------------------
@@ -2828,7 +3058,8 @@
         return { toggle: toggle, form: form };
     }
 
-    function appendAuthenticatedImprovement(payload, review, question, priorAnswer) {
+    function appendAuthenticatedImprovement(payload, review, question, priorAnswer, options) {
+        options = options || {};
         var section = document.createElement('section');
         section.className = 'is-stack__coaching is-stack__improve';
         section.setAttribute('data-is-stack-node', '');
@@ -2870,10 +3101,13 @@
                 confirmations = Array.isArray(updatedPayload.confirmations) ? updatedPayload.confirmations : null;
                 setBasis(updatedPayload);
                 syncMarkers();
+                var saved = persistImprovementState();
                 autoGrowTextarea(draft);
                 setHidden(contextParts.form, true);
                 contextParts.toggle.setAttribute('aria-expanded', 'false');
-                announce('Coach-assisted draft updated with the context you supplied. Verify the wording before using it.');
+                announce(saved
+                    ? 'Coach-assisted draft updated with the context you supplied. Verify the wording before using it.'
+                    : 'The draft was updated on this page, but it could not be saved in this browser. Keep this page open to retain it.');
             }, function () {
                 done();
                 announce('That update did not complete. Your previous draft is unchanged.');
@@ -2893,7 +3127,10 @@
         markerChip.className = 'is-stack__marker-chip';
         var draftLabel = document.createElement('p');
         draftLabel.className = 'is-stack__draft-label';
-        draftLabel.textContent = 'Coach-assisted draft · editable';
+        var savedDraftLabel = options.restoring
+            ? 'Coach-assisted draft · restored, editable, not yet in History'
+            : 'Coach-assisted draft · editable, not yet in History';
+        draftLabel.textContent = savedDraftLabel;
         var draftTools = document.createElement('div');
         draftTools.className = 'is-stack__draft-tools';
         var micButton = document.createElement('button');
@@ -2915,6 +3152,14 @@
         draft.setAttribute('aria-label', 'Editable improved draft');
         draft.setAttribute('data-is-autogrow', '');
         draftBox.appendChild(draft);
+
+        function persistImprovementState() {
+            var saved = persistActiveImprovement(draft.value, confirmations || []);
+            draftLabel.textContent = saved
+                ? savedDraftLabel
+                : 'Coach-assisted draft · editable · browser save unavailable';
+            return saved;
+        }
 
         var dictationStatus = document.createElement('p');
         dictationStatus.className = 'is__dictation-live';
@@ -2974,7 +3219,13 @@
             submitReview({ isRevision: true });
         });
         var keepOriginalButton = makeActionButton('secondary', 'Keep original answer', function () {
+            if (!clearActiveImprovement()) {
+                draftLabel.textContent = 'Coach-assisted draft · editable · browser save unavailable';
+                announce('The improvement draft could not be cleared from this browser. It remains open so you can try again.');
+                return;
+            }
             section.remove();
+            announce('The unsaved improvement draft was closed. Your reviewed answer remains in History.');
         });
         actions.append(reviewRevisedButton, keepOriginalButton);
         section.appendChild(actions);
@@ -3000,12 +3251,16 @@
             var words = draft.value.trim() ? draft.value.trim().split(/\s+/).length : 0;
             draftCount.textContent = words + ' words';
         }
-        draft.addEventListener('input', syncMarkers);
+        draft.addEventListener('input', function () {
+            syncMarkers();
+            persistImprovementState();
+        });
         syncMarkers();
+        persistImprovementState();
 
         appendStackNode(section);
         autoGrowTextarea(draft);
-        revealAppendedSection(heading);
+        if (!options.restoring) revealAppendedSection(heading);
     }
 
     /* Requests one coach-assisted improvement draft, either appending it
@@ -3231,6 +3486,7 @@
             };
             var savedToHistory = Boolean(reviewRecordId) && updateHistoryRecord(reviewRecordId, record);
             if (!savedToHistory) savedToHistory = addHistoryRecord(record);
+            if (savedToHistory) persistActiveReviewWorkspace(record);
             removeStored(draftKey(question.text));
             announce(savedToHistory
                 ? 'Coach review ready. Review the clear strengths and one focused next step.'
@@ -4850,8 +5106,8 @@
                 deleteButton.textContent = '⋮';
                 deleteButton.addEventListener('click', function () {
                     if (!window.confirm('Delete this Interview Studio record from this browser?')) return;
-                    var removed = removeHistoryRecord(record.id);
-                    renderHistory();
+                    var removed = removeHistoryRecordAndActiveState(record);
+                    if (removed) renderHistory();
                     announce(removed
                         ? 'Session record deleted from this browser.'
                         : 'This record could not be deleted in this browser right now. It may still be visible below.');
@@ -5147,7 +5403,12 @@
     historyDetail.addEventListener('click', function (event) { if (event.target === historyDetail) closeHistoryDetail(); });
     one('[data-is-history-detail-delete]').addEventListener('click', function () {
         if (!historyDetailRecordId || !window.confirm('Delete this Interview Studio record from this browser?')) return;
-        var removed = removeHistoryRecord(historyDetailRecordId);
+        var recordToRemove = readHistoryRecords().filter(function (record) { return record.id === historyDetailRecordId; })[0];
+        var removed = removeHistoryRecordAndActiveState(recordToRemove);
+        if (!removed) {
+            announce('This record could not be deleted in this browser right now. It may still be visible below.');
+            return;
+        }
         historyDetailOpenedWithPush = false;
         if (historyDetail.open) historyDetail.close();
         historyDetailRecordId = '';
@@ -5155,9 +5416,7 @@
         params.delete('session');
         window.history.replaceState({}, '', root.getAttribute('data-history-url') + (params.toString() ? '?' + params.toString() : ''));
         renderHistory();
-        announce(removed
-            ? 'Session record deleted from this browser.'
-            : 'This record could not be deleted in this browser right now. It may still be visible below.');
+        announce('Session record deleted from this browser.');
     });
 
     /* Settings */
@@ -5301,7 +5560,8 @@
     root.setAttribute('data-is-enhanced', 'true');
 
     /* Initial render */
-    renderQuestion();
+    renderQuestion({ preserveReviewWorkspace: true, preserveAttempt: true });
+    restoreActiveReviewWorkspace();
     refreshAutogrow();
     syncModeControls(initialMode);
     if (initialView === 'history') {

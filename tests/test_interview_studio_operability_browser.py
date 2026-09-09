@@ -58,6 +58,34 @@ def _mapped_user(*_args, **_kwargs):
     }
 
 
+def _review_payload():
+    return {
+        "verdict": "A clear answer with one useful next step.",
+        "encouragement": "The action and outcome are easy to follow.",
+        "whatCameThroughClearly": ["You owned the action."],
+        "strengths": ["Specific action"],
+        "improvements": ["Add the size of the result."],
+        "strongerApproach": "Keep the structure and quantify the outcome.",
+        "focusedFollowUp": "What changed because of your work?",
+        "dimensions": [
+            {
+                "key": key,
+                "status": "clear",
+                "rationale": "Clear enough for this test.",
+                "nextAction": "Add one verified detail.",
+            }
+            for key in (
+                "situation_clarity",
+                "action_ownership",
+                "evidence",
+                "outcome",
+                "reflection",
+            )
+        ],
+        "evidenceSuggestions": [],
+    }
+
+
 @unittest.skipUnless(
     sync_playwright is not None and CHROME_EXECUTABLE,
     "Playwright and Google Chrome are required for Interview Studio browser proof",
@@ -257,7 +285,7 @@ class InterviewStudioOperabilityBrowserTests(unittest.TestCase):
         self.assertFalse(page.locator("[data-is-session-setup]").get_attribute("hidden"))
         self.assertEqual(page.evaluate("document.activeElement.dataset.isSessionKind"), "")
         self.assertIn(
-            "Applying changes starts a new browser-local session.",
+            "Use the defaults or adjust the context for your next question.",
             page.locator("[data-is-session-setup-consequence]").inner_text(),
         )
         self._capture(
@@ -279,7 +307,7 @@ class InterviewStudioOperabilityBrowserTests(unittest.TestCase):
         self.assertEqual(launcher.get_attribute("aria-expanded"), "false")
         self.assertTrue(page.locator("[data-is-session-setup]").get_attribute("hidden") is not None)
         self.assertTrue(page.evaluate("document.activeElement.hasAttribute('data-is-answer')"))
-        self.assertIn("session ready", page.locator("[data-is-live]").inner_text().lower())
+        self.assertIn("setup applied", page.locator("[data-is-live]").inner_text().lower())
 
     def test_settings_focus_trap_escape_close_and_backdrop_return(self):
         page = self._page(768, 1024)
@@ -343,6 +371,254 @@ class InterviewStudioOperabilityBrowserTests(unittest.TestCase):
             any("A draft that must remain local while History opens." in item for item in stored),
             stored,
         )
+
+    def test_review_and_unsaved_improvement_survive_modes_history_and_refresh(self):
+        page = self._page(1440, 900)
+        review = _review_payload()
+        page.route(
+            "**/api/interview/review",
+            lambda route: route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps({"review": review}),
+            ),
+        )
+        page.route(
+            "**/api/interview/improve",
+            lambda route: route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps(
+                    {
+                        "improvement": {
+                            "draft": "I led the recovery and restored service within one hour.",
+                            "changes": ["Added a concrete result"],
+                            "confirmations": [],
+                            "evidenceUsed": [],
+                        }
+                    }
+                ),
+            ),
+        )
+
+        page.locator("[data-is-answer]").fill(
+            "I led a recovery, coordinated the team, and restored service."
+        )
+        page.locator("[data-is-review]").click()
+        page.locator(".is-stack__coaching").first.wait_for(state="visible")
+        self.assertIn("A clear answer", page.locator(".is-stack__coaching").first.inner_text())
+
+        page.locator('[data-is-mode="ai"]').click()
+        page.locator('[data-is-mode="me"]').click()
+        self.assertTrue(page.locator(".is-stack__coaching").first.is_visible())
+
+        page.locator("[data-is-history-link]").click()
+        page.wait_for_url("**/interview-studio/history")
+        self.assertEqual(page.locator(".is-history__row").count(), 1)
+        page.locator('[data-is-mode="me"]').click()
+        self.assertTrue(page.locator(".is-stack__coaching").first.is_visible())
+
+        page.get_by_role("button", name="Improve My Answer").click()
+        improved = page.locator('textarea[aria-label="Editable improved draft"]')
+        improved.wait_for(state="visible")
+        improved.fill("I led the recovery and restored service in 47 minutes.")
+        page.locator('[data-is-mode="video"]').click()
+        page.locator('[data-is-mode="me"]').click()
+        self.assertEqual(improved.input_value(), "I led the recovery and restored service in 47 minutes.")
+
+        page.reload(wait_until="load")
+        restored = page.locator('textarea[aria-label="Editable improved draft"]')
+        restored.wait_for(state="visible")
+        self.assertEqual(restored.input_value(), "I led the recovery and restored service in 47 minutes.")
+        self.assertIn("not yet in History", page.locator(".is-stack__draft-label").inner_text())
+        page.locator("[data-is-history-link]").click()
+        page.wait_for_url("**/interview-studio/history")
+        self.assertEqual(page.locator(".is-history__row").count(), 1)
+        page.locator('[data-is-mode="me"]').click()
+        page.get_by_role("button", name="Keep original answer").click()
+        page.get_by_role("button", name="Edit and retry").click()
+        answer = page.locator("[data-is-answer]")
+        self.assertTrue(answer.is_visible())
+        self.assertTrue(answer.is_editable())
+        self.assertEqual(
+            answer.input_value(),
+            "I led a recovery, coordinated the team, and restored service.",
+        )
+        page.locator("[data-is-history-link]").click()
+        page.wait_for_url("**/interview-studio/history")
+        self.assertEqual(page.locator(".is-history__row").count(), 1)
+
+        page.locator('[data-is-mode="me"]').click()
+        page.reload(wait_until="load")
+        answer = page.locator("[data-is-answer]")
+        self.assertEqual(
+            answer.input_value(),
+            "I led a recovery, coordinated the team, and restored service.",
+        )
+        page.locator("[data-is-review]").click()
+        page.locator(".is-stack__coaching").first.wait_for(state="visible")
+        page.locator("[data-is-history-link]").click()
+        page.wait_for_url("**/interview-studio/history")
+        self.assertEqual(page.locator(".is-history__row").count(), 2)
+        attempt_numbers = page.evaluate(
+            """() => {
+                const key = Object.keys(localStorage).find((item) => item.endsWith(':history'));
+                return JSON.parse(localStorage.getItem(key)).map((record) => record.attemptNumber);
+            }"""
+        )
+        self.assertEqual(attempt_numbers, [2, 1])
+
+        page.evaluate("window.confirm = () => true")
+        page.locator(".is-history__row-delete").first.click()
+        self.assertEqual(page.locator(".is-history__row").count(), 1)
+        active_residue = page.evaluate(
+            """() => Object.keys(localStorage).filter(
+                (key) => key.endsWith(':active-review') || key.includes(':draft:')
+            )"""
+        )
+        self.assertEqual(active_residue, [])
+        page.reload(wait_until="load")
+        page.locator('[data-is-mode="me"]').click()
+        self.assertEqual(page.locator("[data-is-answer]").input_value(), "")
+
+    def test_storage_failures_keep_review_actions_visible_and_truthful(self):
+        page = self._page(1440, 900)
+        page.route(
+            "**/api/interview/review",
+            lambda route: route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps({"review": _review_payload()}),
+            ),
+        )
+        page.route(
+            "**/api/interview/improve",
+            lambda route: route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps(
+                    {
+                        "improvement": {
+                            "draft": "A stronger browser-local draft.",
+                            "changes": ["Added a concrete result"],
+                            "confirmations": [],
+                            "evidenceUsed": [],
+                        }
+                    }
+                ),
+            ),
+        )
+        page.locator("[data-is-answer]").fill("A reviewed answer that must remain visible.")
+        page.locator("[data-is-review]").click()
+        page.locator(".is-stack__coaching").first.wait_for(state="visible")
+        page.get_by_role("button", name="Improve My Answer").click()
+        improvement = page.locator(".is-stack__improve")
+        improvement.wait_for(state="visible")
+
+        page.evaluate(
+            """() => {
+                Storage.prototype.__practiceSetItem = Storage.prototype.setItem;
+                Storage.prototype.setItem = () => { throw new Error('storage unavailable'); };
+            }"""
+        )
+        page.get_by_role("button", name="Keep original answer").click()
+        self.assertTrue(improvement.is_visible())
+        page.wait_for_function(
+            "document.querySelector('[data-is-live]').textContent.includes('could not be cleared')"
+        )
+        page.evaluate(
+            """() => {
+                Storage.prototype.setItem = Storage.prototype.__practiceSetItem;
+                delete Storage.prototype.__practiceSetItem;
+            }"""
+        )
+        page.evaluate(
+            """() => {
+                Storage.prototype.__practiceRemoveItem = Storage.prototype.removeItem;
+                Storage.prototype.removeItem = () => { throw new Error('storage unavailable'); };
+            }"""
+        )
+        page.get_by_role("button", name="Edit and retry").click()
+        self.assertTrue(page.locator(".is-stack__coaching").first.is_visible())
+        page.wait_for_function(
+            "document.querySelector('[data-is-live]').textContent.includes('could not start')"
+        )
+        page.evaluate(
+            """() => {
+                Storage.prototype.removeItem = Storage.prototype.__practiceRemoveItem;
+                delete Storage.prototype.__practiceRemoveItem;
+            }"""
+        )
+        page.locator("[data-is-history-link]").click()
+        page.wait_for_url("**/interview-studio/history")
+        self.assertEqual(page.locator(".is-history__row").count(), 1)
+        page.evaluate(
+            """() => {
+                window.confirm = () => true;
+                Storage.prototype.__practiceGetItem = Storage.prototype.getItem;
+                Storage.prototype.getItem = () => { throw new Error('storage unreadable'); };
+            }"""
+        )
+        page.locator(".is-history__row-delete").click()
+        self.assertEqual(page.locator(".is-history__row").count(), 1)
+        page.wait_for_function(
+            "document.querySelector('[data-is-live]').textContent.includes('could not be deleted')"
+        )
+        page.evaluate(
+            """() => {
+                Storage.prototype.getItem = Storage.prototype.__practiceGetItem;
+                delete Storage.prototype.__practiceGetItem;
+            }"""
+        )
+        preserved_records = page.evaluate(
+            """() => {
+                const key = Object.keys(localStorage).find((item) => item.endsWith(':history'));
+                return key ? JSON.parse(localStorage.getItem(key)) : [];
+            }"""
+        )
+        self.assertEqual(len(preserved_records), 1)
+        active_workspace = page.evaluate(
+            """() => {
+                const key = Object.keys(localStorage).find((item) => item.endsWith(':active-review'));
+                return key ? JSON.parse(localStorage.getItem(key)) : null;
+            }"""
+        )
+        self.assertEqual(active_workspace["improvement"]["draft"], "A stronger browser-local draft.")
+        page.evaluate(
+            """() => {
+                window.confirm = () => true;
+                Storage.prototype.__practiceRemoveItem = Storage.prototype.removeItem;
+                Storage.prototype.removeItem = () => { throw new Error('storage unavailable'); };
+            }"""
+        )
+        page.locator(".is-history__row-delete").click()
+        self.assertEqual(page.locator(".is-history__row").count(), 1)
+        active_workspace = page.evaluate(
+            """() => {
+                const key = Object.keys(localStorage).find((item) => item.endsWith(':active-review'));
+                return key ? JSON.parse(localStorage.getItem(key)) : null;
+            }"""
+        )
+        self.assertEqual(active_workspace["improvement"]["draft"], "A stronger browser-local draft.")
+        page.wait_for_function(
+            "document.querySelector('[data-is-live]').textContent.includes('could not be deleted')"
+        )
+        page.evaluate(
+            """() => {
+                Storage.prototype.removeItem = Storage.prototype.__practiceRemoveItem;
+                delete Storage.prototype.__practiceRemoveItem;
+            }"""
+        )
+
+    def test_authenticated_flow_omits_finish_and_keeps_setup_dismissible(self):
+        page = self._page(390, 844)
+        self.assertEqual(page.locator("[data-is-finish-session]").count(), 0)
+        self.assertEqual(page.locator("[data-is-panel=complete]").count(), 0)
+        launcher = page.locator("[data-is-session-setup-open]")
+        launcher.click()
+        page.keyboard.press("Escape")
+        self.assertTrue(page.locator("[data-is-session-setup]").get_attribute("hidden") is not None)
+        page.wait_for_function("document.activeElement.hasAttribute('data-is-session-setup-open')")
 
     def test_video_history_guard_refusal_preserves_the_local_transcript(self):
         page = self._page(390, 844, path="/interview-studio?mode=video")

@@ -209,7 +209,7 @@
                 hidden
             >
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-                <span>Session setup</span>
+                <span>Practice setup</span>
             </button>
 
             <button
@@ -226,28 +226,14 @@
             </button>
 
             <div class="is-auth__rail-detail">
-                <p class="is-auth__rail-eyebrow">Current session</p>
+                <p class="is-auth__rail-eyebrow">Current practice</p>
                 <ul class="is-auth__summary">
                     <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg><span data-is-rail-summary-context>General practice</span></li>
                     <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span data-is-rail-summary-stage>General stage</span></li>
                     <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M2 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M10 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/></svg><span data-is-rail-summary-level>Experienced</span></li>
                     <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9l6 6M15 9l-6 6"/></svg><span data-is-rail-summary-family>Behavioral</span></li>
-                    <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M8.2 14.5a7 7 0 1 1 7.6 0c-.8.6-1.3 1.3-1.5 2.2h-4.6c-.2-.9-.7-1.6-1.5-2.2Z"/></svg><span>Open-ended session</span></li>
                 </ul>
-                {# Review finding P1-2d (lock 11): the rail's "Completed
-                   questions" group is missing -- built here, populated by
-                   renderSessionComplete() from the same reviewed-answer
-                   records the main "Questions reviewed" card already uses,
-                   and cleared/hidden by resetConsequenceStack() (which
-                   clearReviewState()/startNewSession() already call on
-                   every new question or session, per the append-only
-                   stack's own established reset hook). #}
-                <div class="is-auth__rail-completed" data-is-rail-completed hidden>
-                    <p class="is-auth__rail-eyebrow">Completed questions</p>
-                    <ol class="is-auth__rail-completed-list" data-is-rail-completed-list></ol>
-                </div>
-
-                <p class="is-auth__rail-eyebrow">Session tools</p>
+                <p class="is-auth__rail-eyebrow">Practice tools</p>
                 {# Architect ruling R4 (slice 5-6 review): "Question trail" is a
                    preserved capability -- the locked rail does not show it, so
                    it is added quietly here, styled consistent with the rail's
@@ -261,12 +247,6 @@
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>
                     <span>Question trail</span>
                 </button>
-                <button class="is-auth__rail-action is-auth__rail-finish" type="button" data-is-finish-session>
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 4h13l-3 4 3 4H5"/></svg>
-                    <span data-is-finish-session-label>Finish session</span>
-                </button>
-                <p class="is-auth__rail-finish-truth" data-is-finish-session-truth hidden>This session is stored only in this browser for this account.</p>
-
                 <p class="is-auth__rail-truth">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
                     <span>Drafts and History stay in this browser for this account. They do not sync across devices.</span>
@@ -277,9 +257,9 @@
 
         <section class="is__disclosure is__session-setup" data-is-controls data-is-session-setup {% if interview_authenticated %}id="is-session-setup" hidden aria-labelledby="is-session-setup-title"{% else %}{% if interview_initial_view == 'history' %}hidden{% endif %} aria-label="New Session"{% endif %}>
             <div class="is__setup-summary">
-                <div><p class="is__eyebrow"{% if interview_authenticated %} id="is-session-setup-title"{% endif %}>{% if interview_authenticated %}Session setup{% else %}New Session{% endif %}</p><strong data-is-setup-summary-text>General practice / Experienced / Behavioral / open session</strong></div>
+                <div><p class="is__eyebrow"{% if interview_authenticated %} id="is-session-setup-title"{% endif %}>{% if interview_authenticated %}Practice setup{% else %}New Session{% endif %}</p><strong data-is-setup-summary-text>General practice / Experienced / Behavioral{% if not interview_authenticated %} / open session{% endif %}</strong></div>
                 {% if not interview_authenticated %}<button class="is__button is__button--quiet" type="button" data-is-new-session-focus>Change setup</button>{% endif %}
-            </div>{% if interview_authenticated %}<p class="is-auth__setup-consequence" data-is-session-setup-consequence>Applying changes starts a new browser-local session. PeerSlate will ask before replacing a non-empty draft or discarding an active recording.</p>{% endif %}
+            </div>{% if interview_authenticated %}<p class="is-auth__setup-consequence" data-is-session-setup-consequence>Use the defaults or adjust the context for your next question. Drafts and reviewed answers stay in this browser; PeerSlate asks before leaving unfinished work.</p>{% endif %}
             <form class="is__disclosure-body is__setup-body" data-is-new-session-form>
                 <label class="is__select">
                     <span>Preparing for</span>
@@ -350,7 +330,7 @@
                     </select>
                     <span id="is-ai-mode-note" class="is__sr-only" data-is-ai-mode-note>Grounded only in {{ interview_profile.first_name }}&rsquo;s approved public history.</span>
                 </label>
-                {% if interview_authenticated %}<div class="is__actions is-auth__setup-actions"><button class="is__button is__button--quiet" type="button" data-is-session-setup-cancel>Cancel</button><button class="is__button is__button--primary" type="submit" data-is-start-session>Apply changes</button></div>{% else %}<button class="is__button is__button--primary" type="submit" data-is-start-session>Start this session</button>{% endif %}
+                {% if interview_authenticated %}<div class="is__actions is-auth__setup-actions"><button class="is__button is__button--quiet" type="button" data-is-session-setup-cancel>Cancel</button><button class="is__button is__button--primary" type="submit" data-is-start-session>Use this setup</button></div>{% else %}<button class="is__button is__button--primary" type="submit" data-is-start-session>Start this session</button>{% endif %}
             </form>
         </section>
 
@@ -1373,55 +1353,7 @@
                 </article>
             </section>
 
-            <section class="is__panel is__complete-panel{% if interview_authenticated %} is-complete-auth{% endif %}" data-is-panel="complete" hidden aria-labelledby="is-complete-title">
-                {%- if interview_authenticated %}
-                {# Slice 5-6 review item 3 (visual 11): centered scoreless
-                   completion composition -- reuses the same
-                   data-is-complete-* hooks the public column layout below
-                   already populates (renderSessionComplete() only gained new
-                   authenticated-only element targets, no rewritten
-                   behavior), so both branches share one render function. #}
-                <div class="is-complete">
-                    <span class="is-complete__check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg></span>
-                    <p class="is-complete__eyebrow">Session complete</p>
-                    <h2 id="is-complete-title" class="is__title is__title--section" data-is-complete-title>You finished this practice session.</h2>
-                    <p class="is__sub" data-is-complete-summary>Questions were practiced and reviewed in this browser.</p>
-                    <hr class="is-complete__rule">
-                    <div class="is-complete__cards">
-                        <section class="is__card is-complete__card">
-                            <span class="is-complete__card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M8.2 14.5a7 7 0 1 1 7.6 0c-.8.6-1.3 1.3-1.5 2.2h-4.6c-.2-.9-.7-1.6-1.5-2.2Z"/></svg></span>
-                            <p class="is-complete__card-eyebrow">From this session</p>
-                            <p class="is-complete__card-heading">What became clearer</p>
-                            <p class="is-complete__card-body" data-is-complete-clearer>Complete a reviewed answer to see what became clearer.</p>
-                        </section>
-                        <section class="is__card is-complete__card">
-                            <span class="is-complete__card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></span>
-                            <p class="is-complete__card-eyebrow">Next focus from this session</p>
-                            <p class="is-complete__card-body" data-is-complete-next-focus>Complete a reviewed answer to see one focused next practice suggestion.</p>
-                        </section>
-                        <section class="is__card is-complete__card" aria-labelledby="is-complete-outcomes-title">
-                            <span class="is-complete__card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></span>
-                            <p class="is-complete__card-eyebrow" id="is-complete-outcomes-title">Questions reviewed</p>
-                            <p class="is__empty" data-is-complete-empty>No reviewed answers were added in this session. Your local draft remains available when you return to practice.</p>
-                            <ol class="is-complete__list" data-is-complete-list hidden></ol>
-                        </section>
-                    </div>
-                    <p class="is-complete__truth">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M12 11v5"/></svg>
-                        <span>This session is stored only in this browser for this account.</span>
-                    </p>
-                    <div class="is__actions is__complete-actions is-complete__actions">
-                        <button class="is__button is__button--primary" type="button" data-is-complete-practice-next>Practice the next focus <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg></button>
-                        <button class="is__button" type="button" data-is-complete-new-session>Start a new session <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg></button>
-                        <a class="is__button" href="{{ url_for('interview_studio_history') }}" data-is-complete-history>Open History <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg></a>
-                    </div>
-                    <div class="is__complete-facts is__sr-only" aria-hidden="true">
-                        <div><strong data-is-complete-reviewed>0</strong><span>reviewed answers</span></div>
-                        <div><strong data-is-complete-questions>0</strong><span>questions practiced</span></div>
-                        <div><strong data-is-complete-context>General practice</strong><span>practice context</span></div>
-                    </div>
-                </div>
-                {%- else %}
+{% if not interview_authenticated %}            <section class="is__panel is__complete-panel{% if interview_authenticated %} is-complete-auth{% endif %}" data-is-panel="complete" hidden aria-labelledby="is-complete-title">
                 <div class="is__content-grid is__content-grid--complete">
                     <div class="is__main-column is__task-stage">
                         <p class="is__eyebrow">Session complete</p>
@@ -1454,8 +1386,7 @@
                         </section>
                     </aside>
                 </div>
-                {%- endif %}
-            </section>
+            </section>{% endif %}
 
             <section class="is__panel" data-is-panel="history" {% if interview_initial_view != 'history' %}hidden{% endif %} aria-labelledby="is-history-title">
                 {%- if interview_authenticated %}
