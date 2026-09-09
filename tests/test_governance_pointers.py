@@ -352,12 +352,12 @@ class WorkflowEfficiencyTests(unittest.TestCase):
         body = " ".join(_read("docs", "AI_MODEL_AND_ROLE_ROUTING.md").split())
         for route in (
             "Site or package management | **GPT-6 Astra, Medium**",
-            "Known-cause implementation | **Sol, High**",
-            "Bounded supporting work | **Sol, Medium**",
+            "Known-cause implementation | **Sol, Extra High**",
+            "Bounded supporting work | **Sol, High**",
             "Consequential architecture or cross-package decision | **GPT-6 Astra, High**",
             "Difficult unresolved debugging or integration | **GPT-6 Astra, Medium or High**",
             "Consequential independent security, privacy or architecture review | **Fresh GPT-6 Astra, High**",
-            "Routine bounded independent review, release or closeout execution | **Sol, High**",
+            "Routine bounded independent review, release or closeout execution | **Sol, Extra High**",
             "Demanding well-bounded implementation | **Sol, Extra High**",
         ):
             with self.subTest(route=route):

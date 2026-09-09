@@ -107,6 +107,39 @@ stages:
     displayName: Build
     condition: ne(variables['Build.Reason'], 'Schedule')
     jobs:
+      - job: InterviewStudioBrowserCI
+        displayName: Interview Studio browser CI
+        timeoutInMinutes: 20
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - checkout: self
+            fetchDepth: 1
+            persistCredentials: false
+            clean: true
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(pythonVersion)'
+            displayName: Use Python $(pythonVersion)
+
+          - script: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt -r requirements-browser-ci.txt
+              python -m pip check
+            displayName: Install pinned browser CI dependencies
+
+          - script: python -m playwright install --with-deps chromium --no-shell
+            displayName: Install pinned Playwright Chromium
+            env:
+              PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
+
+          - script: python scripts/run_interview_browser_ci.py
+            displayName: Run required Interview Studio browser suite
+            env:
+              ANTHROPIC_API_KEY: test-key-for-ci-only
+              PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
+
       - job: BuildJob
         pool:
           vmImage: $(vmImageName)
