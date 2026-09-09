@@ -1,15 +1,23 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-BROWSER-CI-001",
-  "candidate_sha": "e25c146144ef61e0aaf61c08825f45c7757c586f",
+  "candidate_sha": "6e2d083cd898c3697c68be52cd25a7361d55263a",
   "review_type": "independent",
   "reviewer_ref": "agent:/root/mvp_quality_package_manager/browser_ci_review",
   "result": "pass",
-  "reviewed_at": "2026-09-09T21:29:27Z",
+  "reviewed_at": "2026-09-09T22:39:42Z",
   "findings": [
     {
+      "status": "resolved",
+      "summary": "Owner-supplied Grok review arrived after the original implementation merged but before claim closure. It correctly requested a scoped regression contract for the already strict required YAML job and a fresh-process import of the actual 11-method suite. The final correction adds both in the existing claimed runner-test file; the Interview suite bodies, runtime, provider boundary, visuals, and production stages remain unchanged."
+    },
+    {
+      "status": "resolved",
+      "summary": "Independent correction review rejected superseded candidate c720c40f6063491894158c617ddeabd2b72d8e14 because the contract still allowed the strict runner step to carry enabled: false. Final candidate 6e2d083cd898c3697c68be52cd25a7361d55263a rejects that bypass along with continueOnError, direct unittest substitution, and shell fallback."
+    },
+    {
       "status": "informational",
-      "summary": "The independent Sol Extra High reviewer accepted exact candidate e25c146144ef61e0aaf61c08825f45c7757c586f against base 70fe5f862f5fe27b3fd94b449abd0e23513f2406 with no findings. The reviewer independently ran all 11 selected Interview Studio browser methods with 0 skips, reran 36 focused runner and governance tests, exercised the fail-closed negative probes, and checked the required-job YAML and pinned browser dependency contract. Azure-hosted execution remained the ordinary PR check."
+      "summary": "The independent Sol Extra High reviewer accepted exact final candidate 6e2d083cd898c3697c68be52cd25a7361d55263a against merged base df8ee80024267888333474c4c5e4672063125af4 with no findings. The reviewer independently ran all 38 focused runner and governance tests and the four bypass mutations. Azure-hosted corrected-candidate execution remains the ordinary protected PR gate."
     }
   ],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-MVP1-BROWSER-CI-001.md"
