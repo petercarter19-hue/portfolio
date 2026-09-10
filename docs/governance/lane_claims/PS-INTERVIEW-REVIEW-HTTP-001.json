@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "package": "PS-INTERVIEW-REVIEW-HTTP-001",
+  "state": "active",
+  "outcome": "Prove one local synthetic authenticated-member Interview Studio Review click reaches the real Flask /api/interview/review route with app.client.messages.create stubbed in-process: the expected question and answer must arrive at that provider boundary, the stub must be invoked, and the returned review must render in the browser. Do not intercept or fulfill the review HTTP response in Playwright. Reuse existing synthetic identity and provider-stub patterns, isolate and restore test application configuration, and prove no live provider, identity, or SQL calls. Add one dedicated fail-closed runner that executes exactly this one test with zero skips, failures, or errors. Do not edit the existing eleven browser-test bodies, shared browser-CI runner, pipeline, Interview production runtime, visuals, storage, identity, or schema. Required-CI wiring is a later coordination dependency. No production, deployment, paid-provider, or live-member proof.",
+  "assignment": "implementation",
+  "writer_ref": "session:cursor-grok-interview-review-http-001",
+  "branch": "work/2026-09-09-interview-review-http-001",
+  "delivery_path": "Bounded",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "82c6a42636e87742ca90f121c36db2ab60d33b78",
+  "owner_outcome_ref": "pete-chat-2026-09-09/grok-interview-review-http-contract",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-INTERVIEW-REVIEW-HTTP-001.json",
+    "docs/governance/lane_claims/evidence/PS-INTERVIEW-REVIEW-HTTP-001.md",
+    "docs/governance/lane_claims/receipts/PS-INTERVIEW-REVIEW-HTTP-001.json",
+    "tests/test_interview_review_http_browser.py",
+    "scripts/run_interview_review_http_browser.py",
+    "tests/test_interview_review_http_browser_runner.py"
+  ],
+  "domains": [
+    "testing:interview-studio:review-http-contract"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-INTERVIEW-REVIEW-HTTP-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
