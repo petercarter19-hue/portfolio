@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-FACT-POLICY-001",
+  "candidate_sha": "bbebce4b0dc1bd76c0497e6a370b00b5fcede30c",
+  "review_type": "independent",
+  "reviewer_ref": "agent:cursor-security-review-mvp1-fact-policy-001",
+  "result": "pass",
+  "reviewed_at": "2026-09-11T04:35:00Z",
+  "findings": [
+    {
+      "severity": "informational",
+      "status": "informational",
+      "summary": "Owner isolation, private defaults, restore-without-regrant, payload-aware idempotency, flag-off/unauthenticated 404, same-origin writes, and fail-closed unapplied SQL had no medium-or-higher findings on exact candidate bbebce4b0dc1bd76c0497e6a370b00b5fcede30c."
+    },
+    {
+      "severity": "informational",
+      "status": "informational",
+      "summary": "Entry-policy writes require the same-origin custom header and Origin match. Sec-Fetch-Site is not also checked, unlike some sibling APIs. That is defense-in-depth only and was not a blocking CSRF path."
+    },
+    {
+      "severity": "informational",
+      "status": "informational",
+      "summary": "Proposed SQL stays unapplied and unallowlisted. SqlEntryPolicyRepository does not call the proposed commit procedure. Live schema, identity, providers, and production remain withheld."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MVP1-FACT-POLICY-001.md"
+}

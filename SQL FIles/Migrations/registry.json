@@ -2687,6 +2687,16 @@
       ],
       "summary": "Proposed owner-scoped education create/update/private removal in existing career chapters and education subtype; extends editor read and closed receipt vocabularies, preserves existing command guards and data. Repository validation only; engine and driver proof withheld.",
       "gate": null
+    },
+    {
+      "id": "PS-ENTRY-POLICY-001",
+      "forward": "SQL FIles/Migrations/proposed/PS-ENTRY-POLICY-001_entry_metadata.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-ENTRY-POLICY-001_entry_metadata_rollback.sql",
+      "requires": [
+        "PS-RESUME-EDIT-002"
+      ],
+      "summary": "Proposed owner-scoped entry metadata, independent Resume display / visitor-AI / private-assistance controls, lifecycle and recovery window, payload-aware command receipts, project commands, and nullable career_achievements.chapter_id for standalone achievements. Repository candidate only; no database application or runtime proof.",
+      "gate": null
     }
   ]
 }

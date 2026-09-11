@@ -53,6 +53,10 @@ from opportunity_slate_v2_routes import (
 # Limiter); it is read by the post-registration wrapper further down rather
 # than restated there, so the declaration and the application cannot drift.
 from ask_pete_direct_routes import PLANNED_RATE_LIMITS, ask_pete_direct
+from entry_policy_routes import (
+    PLANNED_RATE_LIMITS as ENTRY_POLICY_RATE_LIMITS,
+    entry_policy,
+)
 # PS-WORKSHOP-001 W2a: registers additional view functions onto the SAME
 # `workshop` Blueprint instance above (import-time side effect only, no
 # name from this module is otherwise used here) — see
@@ -362,6 +366,12 @@ app.config.update(
     # Enablement is Pete's decision, not a config change.
     PEERSLATE_ASK_PETE_DIRECT_ENABLED=(
         os.environ.get('PEERSLATE_ASK_PETE_DIRECT_ENABLED', 'false').lower() == 'true'
+    ),
+    # PS-MVP1-FACT-POLICY-001: owner-scoped entry-policy API. Off by default.
+    # Routes read this with `is True`. Schema remains unapplied; enablement
+    # does not apply SQL or grant production authority.
+    PEERSLATE_ENTRY_POLICY_ENABLED=(
+        os.environ.get('PEERSLATE_ENTRY_POLICY_ENABLED', 'false').lower() == 'true'
     ),
     PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY=PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY,
     # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: the transition flag
@@ -822,6 +832,9 @@ else:
 # flipped without a redeploy, and so the flag-off refusal is identical for a
 # cross-site and a same-origin caller.
 app.register_blueprint(ask_pete_direct)
+# PS-MVP1-FACT-POLICY-001. Registered unconditionally; the flag gate lives in
+# the blueprint so off remains a neutral 404 without a missing route.
+app.register_blueprint(entry_policy)
 # PS-COMMUNITY-AUTH-WALL-001: the legacy fixture-backed people_interests_api
 # is never registered. No feature-flag state may resurrect a public or
 # fixture Community surface — flag off means unavailable, not "older feed".
@@ -938,6 +951,11 @@ for _community_endpoint, _community_limit in {
 for _direct_endpoint, _direct_limit in PLANNED_RATE_LIMITS.items():
     app.view_functions[_direct_endpoint] = limiter.limit(_direct_limit)(
         app.view_functions[_direct_endpoint]
+    )
+
+for _entry_policy_endpoint, _entry_policy_limit in ENTRY_POLICY_RATE_LIMITS.items():
+    app.view_functions[_entry_policy_endpoint] = limiter.limit(_entry_policy_limit)(
+        app.view_functions[_entry_policy_endpoint]
     )
 
 # PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001: the same post-registration
