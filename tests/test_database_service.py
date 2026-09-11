@@ -477,6 +477,18 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_GetConnectionRelationshipCommandForActor",
             "usp_GetConnectionRelationshipSnapshotForActor",
         }
+        # PS-MVP1-RESUME-EDITOR-001: owner-scoped entry-policy browser
+        # procedures plus Resume draft get/commit. Worker expiry sweep stays
+        # off this exact set.
+        entry_policy = {
+            "usp_CommitEntryPolicyCommandForOwner",
+            "usp_GetEntryPolicyEntryForOwner",
+            "usp_ListEntryPolicyEntriesForOwner",
+        }
+        resume_draft = {
+            "usp_CommitResumeDraftCommandForOwner",
+            "usp_GetResumeDraftForOwner",
+        }
         expected = (
             base
             | oppslate_os1
@@ -491,6 +503,8 @@ class DatabaseServiceTests(unittest.TestCase):
             | interview_ai_telemetry
             | account_export
             | connection_foundation
+            | entry_policy
+            | resume_draft
         )
         # The groups above must not overlap each other — a name counted
         # twice would silently shrink the real union below the true count
@@ -509,9 +523,11 @@ class DatabaseServiceTests(unittest.TestCase):
             interview_ai_telemetry,
             account_export,
             connection_foundation,
+            entry_policy,
+            resume_draft,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 147)
+        self.assertEqual(len(expected), 152)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_living_resume_editor_procedures_are_exactly_allowlisted(self):

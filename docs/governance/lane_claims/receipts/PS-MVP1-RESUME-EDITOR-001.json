@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-RESUME-EDITOR-001",
+  "candidate_sha": "5cc22184f345099ee069ca49e861557e5c7915bd",
+  "review_type": "independent",
+  "reviewer_ref": "agent:cursor-security-review-mvp1-resume-editor-001",
+  "result": "pass",
+  "reviewed_at": "2026-09-11T15:07:25Z",
+  "findings": [
+    {
+      "severity": "informational",
+      "status": "informational",
+      "summary": "Owner isolation, server-derived identity, same-origin writes, private no-store responses, draft overlay that does not publish or restore sharing, stale-version 409 with preserved input, flag-off/unauthenticated 404, and fail-closed unapplied SQL had no medium-or-higher findings on exact candidate 5cc22184f345099ee069ca49e861557e5c7915bd."
+    },
+    {
+      "severity": "informational",
+      "status": "informational",
+      "summary": "LivingResumeCanonicalCatalog still calls SqlEntryPolicyRepository.load_owner, which remains snapshot-fail-closed; access metadata therefore defaults until list/get is used after a separately applied schema. That does not publish, restore permissions, or expose another member."
+    },
+    {
+      "severity": "informational",
+      "status": "informational",
+      "summary": "Proposed SQL PS-RESUME-DRAFT-001 stays unapplied with gate null. Allowlisting five browser procedures is not engine proof. In-memory stores are test-only. Production, live identity, and schema application remain withheld."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MVP1-RESUME-EDITOR-001.md"
+}

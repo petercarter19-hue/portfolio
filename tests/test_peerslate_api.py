@@ -23,6 +23,7 @@ class PeerSlateApiTests(unittest.TestCase):
             "PEERSLATE_DATABASE_UI_ENABLED": app.config.get("PEERSLATE_DATABASE_UI_ENABLED"),
             "PEERSLATE_LIVING_RESUME_DB_ENABLED": app.config.get("PEERSLATE_LIVING_RESUME_DB_ENABLED"),
             "PEERSLATE_TRUST_EASYAUTH_HEADERS": app.config.get("PEERSLATE_TRUST_EASYAUTH_HEADERS"),
+            "PEERSLATE_RESUME_EDITOR_ENABLED": app.config.get("PEERSLATE_RESUME_EDITOR_ENABLED"),
         }
         app.config.update(
             TESTING=True,
@@ -32,6 +33,7 @@ class PeerSlateApiTests(unittest.TestCase):
             PEERSLATE_DATABASE_UI_ENABLED=False,
             PEERSLATE_LIVING_RESUME_DB_ENABLED=False,
             PEERSLATE_TRUST_EASYAUTH_HEADERS=False,
+            PEERSLATE_RESUME_EDITOR_ENABLED=False,
         )
         self.client = app.test_client()
 
@@ -273,6 +275,26 @@ class PeerSlateApiTests(unittest.TestCase):
         get_editor.assert_called_once_with("test-user-1")
         self.assertEqual(response.headers["Cache-Control"], "private, no-store")
         self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
+
+    @patch("peerslate_api.living_resume_editor_service.get_editor")
+    def test_owner_editor_view_advertises_draft_overlay_only_when_flag_on(self, get_editor):
+        app.config["PEERSLATE_LIVING_RESUME_DB_ENABLED"] = True
+        get_editor.return_value = {
+            "profile": {"profile_key": "private"},
+            "roles": [],
+            "capabilities": {"commands": ["create_role"]},
+        }
+
+        off = self.client.get("/api/living-resume/me?view=editor")
+        self.assertEqual(off.status_code, 200)
+        self.assertNotIn("draft_overlay_path", off.get_json()["editor"].get("capabilities", {}))
+
+        app.config["PEERSLATE_RESUME_EDITOR_ENABLED"] = True
+        on = self.client.get("/api/living-resume/me?view=editor")
+        capabilities = on.get_json()["editor"]["capabilities"]
+        self.assertTrue(capabilities["draft_overlay"])
+        self.assertEqual(capabilities["draft_overlay_path"], "/api/resume-drafts/me")
+        self.assertEqual(capabilities["draft_editor_path"], "/app/resume")
 
     @patch("peerslate_api.living_resume_editor_service.commit")
     def test_owner_command_uses_server_identity_and_same_origin(self, commit):

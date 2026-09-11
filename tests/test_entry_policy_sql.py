@@ -67,14 +67,62 @@ class EntryPolicySqlTests(unittest.TestCase):
         self.assertIn("verified", self.verify)
         self.assertIn("runtime proof remains outstanding", self.verify)
 
-    def test_browser_procedures_are_named_but_not_shared_allowlisted(self):
+    def test_browser_procedures_are_allowlisted_and_workers_are_not(self):
         for name in ENTRY_POLICY_BROWSER_PROCEDURES:
             self.assertIn(name, self.forward)
-            self.assertNotIn(name, ALLOWED_PROCEDURES)
+            self.assertIn(name, ALLOWED_PROCEDURES)
         self.assertTrue(ENTRY_POLICY_WORKER_PROCEDURES)
         self.assertTrue(ENTRY_POLICY_WORKER_PROCEDURES.isdisjoint(ENTRY_POLICY_BROWSER_PROCEDURES))
         for name in ENTRY_POLICY_WORKER_PROCEDURES:
             self.assertNotIn(name, ALLOWED_PROCEDURES)
+
+    def test_sql_row_mapping_renames_parent_and_recovery_columns(self):
+        from services.entry_policy_repository import map_entry_policy_row
+
+        mapped = map_entry_policy_row(
+            {
+                "entry_key": "00000000-0000-4000-8000-000000000001",
+                "canonical_type": "role",
+                "canonical_key": "00000000-0000-4000-8000-000000000001",
+                "category": "experience",
+                "parent_entry_key": None,
+                "content_version": 7,
+                "access_revision": 3,
+                "resume_display": 1,
+                "visitor_ai": 0,
+                "private_assistance_excluded": 0,
+                "lifecycle": "active",
+                "recover_until_utc": None,
+            }
+        )
+        self.assertEqual(mapped["parent_key"], None)
+        self.assertEqual(mapped["recover_until"], None)
+        self.assertTrue(mapped["resume_display"])
+        self.assertFalse(mapped["visitor_ai"])
+        self.assertEqual(mapped["content_version"], 7)
+
+    def test_command_adapter_binds_owner_request_and_json(self):
+        from unittest.mock import MagicMock
+
+        from services.entry_policy_repository import SqlEntryPolicyRepository
+
+        database = MagicMock()
+        database.last_row.return_value = {
+            "committed": 1,
+            "replayed": 0,
+            "outcome": "updated",
+            "request_digest": "abc",
+        }
+        result = SqlEntryPolicyRepository(database).commit_command(
+            "owner-a",
+            "00000000-0000-4000-8000-000000000009",
+            '{"type":"edit"}',
+        )
+        self.assertTrue(result["committed"])
+        database.last_row.assert_called_once()
+        args = database.last_row.call_args[0]
+        self.assertEqual(args[0], "usp_CommitEntryPolicyCommandForOwner")
+        self.assertEqual(args[1][0], ("@UserKey", "owner-a"))
 
 
 if __name__ == "__main__":

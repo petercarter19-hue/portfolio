@@ -257,6 +257,12 @@ def get_owner_living_resume():
                     "message": "Living Resume editing is temporarily unavailable.",
                 }
             ), 503
+        if current_app.config.get("PEERSLATE_RESUME_EDITOR_ENABLED") is True:
+            capabilities = dict(editor.get("capabilities") or {})
+            capabilities["draft_overlay"] = True
+            capabilities["draft_overlay_path"] = "/api/resume-drafts/me"
+            capabilities["draft_editor_path"] = "/app/resume"
+            editor = {**editor, "capabilities": capabilities}
         return jsonify({"success": True, "editor": editor})
     try:
         result_sets = database_service.execute_procedure(

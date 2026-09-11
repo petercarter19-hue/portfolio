@@ -11,6 +11,7 @@ from services.living_resume_editor_service import (
     LivingResumeEditorUnavailableError,
     LivingResumeEditorValidationError,
     normalize_command,
+    save_mode_for_record,
     utf16_length,
 )
 
@@ -272,6 +273,8 @@ class LivingResumeEditorServiceTests(unittest.TestCase):
         self.assertIs(editor["roles"][0]["editable"], True)
         self.assertEqual(editor["credentials"], [])
         self.assertIn("create_credential", editor["capabilities"]["commands"])
+        self.assertTrue(editor["capabilities"]["published_records_use_draft_overlay"])
+        self.assertEqual(editor["roles"][0]["save_mode"], "canonical")
         self.database.execute_procedure.assert_called_once_with(
             "usp_GetOwnerLivingResumeEditor", (("@UserKey", "owner-1"),)
         )
@@ -423,6 +426,20 @@ class LivingResumeEditorServiceTests(unittest.TestCase):
         self.database.execute_procedure.return_value = contradictory_state
         with self.assertRaises(LivingResumeEditorUnavailableError):
             self.service.get_editor("owner-1")
+
+    def test_published_records_are_readable_as_draft_overlay_not_canonical_writes(self):
+        rows = editor_sets()
+        rows[1][0]["editable"] = 0
+        rows[1][0]["blocked_reason"] = "published_or_history_bearing"
+        self.database.execute_procedure.return_value = rows
+        editor = self.service.get_editor("owner-1")
+        role = editor["roles"][0]
+        self.assertIs(role["editable"], False)
+        self.assertEqual(role["blocked_reason"], "published_or_history_bearing")
+        self.assertEqual(role["save_mode"], "draft_overlay")
+        self.assertEqual(save_mode_for_record(role), "draft_overlay")
+        self.assertTrue(editor["capabilities"]["published_records_use_draft_overlay"])
+        self.assertTrue(editor["capabilities"]["canonical_commands_do_not_publish"])
 
 
 if __name__ == "__main__":

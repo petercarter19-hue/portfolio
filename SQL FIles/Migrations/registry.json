@@ -2697,6 +2697,16 @@
       ],
       "summary": "Proposed owner-scoped entry metadata, independent Resume display / visitor-AI / private-assistance controls, lifecycle and recovery window, payload-aware command receipts, project commands, and nullable career_achievements.chapter_id for standalone achievements. Repository candidate only; no database application or runtime proof.",
       "gate": null
+    },
+    {
+      "id": "PS-RESUME-DRAFT-001",
+      "forward": "SQL FIles/Migrations/proposed/PS-RESUME-DRAFT-001_resume_drafts.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-RESUME-DRAFT-001_resume_drafts_rollback.sql",
+      "requires": [
+        "PS-ENTRY-POLICY-001"
+      ],
+      "summary": "Proposed owner-scoped Resume draft overlay: versioned drafts, payload-aware command receipts, content-token and access-revision fences, and review that cannot publish or restore permissions. Repository candidate only; no database application or runtime proof.",
+      "gate": null
     }
   ]
 }

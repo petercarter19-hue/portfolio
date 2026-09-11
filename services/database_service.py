@@ -224,13 +224,15 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_CompletePublicCommunityMediaCleanup",
         "usp_GetPublicCommunityMedia",
         "usp_DeletePublicCommunityMedia",
-        # PS-MVP1-FACT-POLICY-001 browser procedures are named in
-        # services/entry_policy_repository.py (ENTRY_POLICY_BROWSER_PROCEDURES)
-        # and remain unlisted here. The exact-set lock in
-        # tests/test_database_service.py is outside this package's surfaces, so
-        # this allowlist stays unchanged. execute_procedure therefore remains
-        # fail-closed for the proposed entry-policy procedures until a later
-        # claimed allowlist update. Schema application is separately withheld.
+        # PS-MVP1-RESUME-EDITOR-001: owner-scoped entry-policy and resume-draft
+        # browser procedures. Allowlisting is the exact-set integration closed A
+        # left to B. Schema remains unapplied; worker sweep procedures stay
+        # unlisted. Enablement or merge does not apply SQL.
+        "usp_CommitEntryPolicyCommandForOwner",
+        "usp_GetEntryPolicyEntryForOwner",
+        "usp_ListEntryPolicyEntriesForOwner",
+        "usp_CommitResumeDraftCommandForOwner",
+        "usp_GetResumeDraftForOwner",
     }
 )
 

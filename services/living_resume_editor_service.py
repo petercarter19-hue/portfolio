@@ -4,6 +4,12 @@ The browser supplies a closed command vocabulary and opaque record keys.  It
 never supplies an owner, table name, visibility, approval, or publication
 state.  SQL resolves the authenticated owner and performs the whole command
 and receipt write atomically.
+
+Published or history-bearing records stay blocked here
+(``blocked_reason=published_or_history_bearing``). Overlay edits for those
+records belong to ``ResumeDraftService`` and must not change already-shared
+facts. Never-published private records may still use these commands where
+the guards allow.
 """
 
 from __future__ import annotations
@@ -20,6 +26,25 @@ from services.database_service import DatabaseServiceError, database_service
 
 
 EDITOR_SECTIONS = ("profile", "roles", "accomplishments", "skills", "credentials", "education")
+SECTION_RECORD_TYPES = {
+    "roles": "role",
+    "accomplishments": "accomplishment",
+    "skills": "skill",
+    "credentials": "credential",
+    "education": "education",
+}
+
+
+def save_mode_for_record(row: Mapping[str, object] | object) -> str:
+    """Canonical commands vs draft overlay. Does not publish or grant access."""
+
+    if not isinstance(row, Mapping):
+        return "draft_overlay"
+    if row.get("editable") is True:
+        return "canonical"
+    return "draft_overlay"
+
+
 COMMAND_TYPES = frozenset(
     f"{operation}_{record_type}"
     for operation in ("create", "update", "remove")
@@ -377,6 +402,15 @@ _VALUE_VALIDATORS = {
 }
 
 
+def normalize_editor_values(record_type: str, values: object) -> dict[str, object]:
+    """Validate closed editor field sets for draft overlay reuse."""
+
+    validator = _VALUE_VALIDATORS.get(record_type)
+    if validator is None:
+        raise LivingResumeEditorValidationError("canonical_type has an unsupported value.")
+    return validator(values)
+
+
 def normalize_command(payload: object) -> tuple[dict[str, object], str, str]:
     if not isinstance(payload, Mapping) or set(payload) - _ENVELOPE_FIELDS:
         raise LivingResumeEditorValidationError("The command contains unsupported fields.")
@@ -506,6 +540,8 @@ class LivingResumeEditorService:
             "education_date_precisions": sorted(EDUCATION_DATE_PRECISIONS),
             "date_precisions": sorted(DATE_PRECISIONS),
             "employment_types": sorted(EMPLOYMENT_TYPES),
+            "published_records_use_draft_overlay": True,
+            "canonical_commands_do_not_publish": True,
         }
         return editor
 
@@ -524,6 +560,7 @@ class LivingResumeEditorService:
                 raise LivingResumeEditorUnavailableError()
             if not output["editable"] and output["blocked_reason"] != "published_or_history_bearing":
                 raise LivingResumeEditorUnavailableError()
+            output["save_mode"] = save_mode_for_record(output)
         if "current_role" in output:
             output["current_role"] = _bit(output["current_role"])
         for key in ("start_date", "end_date", "issue_date", "expiration_date"):

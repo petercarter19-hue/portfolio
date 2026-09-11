@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | PeerSlate{% endblock %}
+
+{% block meta_description %}Private Resume editor. Saves stay private and do not publish.{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-editor.css') }}">
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
+{% block content %}
+<section class="owner-app resume-editor" aria-labelledby="resume-editor-title">
+    <div class="owner-app__panel resume-editor__panel">
+        <header class="resume-editor__intro">
+            <p class="owner-app__eyebrow">Private Resume</p>
+            <h1 id="resume-editor-title">Edit your Resume</h1>
+            <p>
+                Welcome, {{ member.display_name or 'PeerSlate member' }}.
+                This editor is private. Saving keeps a draft overlay and does not
+                publish, share, or change what visitors already see.
+            </p>
+            <p class="resume-editor__privacy-note">
+                Already-shared facts stay as they are until you publish later.
+                Stale drafts cannot overwrite newer corrections or restore
+                revoked permissions. Review does not publish.
+            </p>
+        </header>
+
+        <div
+            id="resume-editor-status"
+            class="resume-editor__status"
+            role="status"
+            aria-live="polite"
+        ></div>
+
+        <p class="resume-editor__toolbar">
+            <button type="button" class="resume-editor__button" id="resume-editor-reload">Reload</button>
+            <button type="button" class="resume-editor__button resume-editor__button--secondary" id="resume-editor-review">
+                Review without publishing
+            </button>
+        </p>
+
+        <div id="resume-editor-lists" data-workspace-url="{{ workspace_url }}" data-commands-url="{{ commands_url }}" data-review-url="{{ review_url }}"></div>
+
+        <section class="resume-editor__add" aria-labelledby="resume-editor-add-title">
+            <h2 id="resume-editor-add-title">Add a private education record</h2>
+            <p>New facts are saved privately. Display and visitor AI stay off.</p>
+            <form id="resume-editor-add-education">
+                <p>
+                    <label for="new-education-title">Program or title</label>
+                    <input id="new-education-title" name="title" type="text" maxlength="300" required autocomplete="off">
+                </p>
+                <p>
+                    <label for="new-education-institution">Institution</label>
+                    <input id="new-education-institution" name="institution_name" type="text" maxlength="300" required autocomplete="off">
+                </p>
+                <p>
+                    <label for="new-education-status">Status</label>
+                    <select id="new-education-status" name="education_status" required>
+                        <option value="in_progress">In progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="planned">Planned</option>
+                        <option value="admitted">Admitted</option>
+                        <option value="paused">Paused</option>
+                        <option value="withdrawn">Withdrawn</option>
+                    </select>
+                </p>
+                <p>
+                    <button type="submit" class="resume-editor__button">Save privately</button>
+                </p>
+            </form>
+        </section>
+    </div>
+</section>
+<script src="{{ url_for('static', filename='js/resume-editor.js') }}" defer></script>
+{% endblock %}
