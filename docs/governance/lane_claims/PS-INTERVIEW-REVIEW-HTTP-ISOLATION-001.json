@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-INTERVIEW-REVIEW-HTTP-ISOLATION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Correct the Interview Review HTTP browser test so class setup registers restore of application configuration, limiter state, identity/provider patches, logging, and allocated server/browser resources incrementally. Partial setUpClass failure must restore that state even though unittest skips tearDownClass. One cleanup failure must not prevent remaining cleanup. Add a focused regression that simulates Chromium launch failure and proves restore. Do not change Interview runtime, visuals, the existing eleven browser tests, the shared browser-CI runner, or azure-pipelines.yml. Required-CI wiring remains a later coordination dependency. No production, deployment, paid-provider, or live-member proof.",
   "assignment": "implementation",
   "writer_ref": "session:cursor-grok-interview-review-http-001",
@@ -27,6 +27,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "427760819fde3cf2844085e7c262b2707693d86f",
+  "closed_at": "2026-09-11T00:21:00Z"
 }
