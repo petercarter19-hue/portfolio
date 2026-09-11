@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-RESUME-EDITOR-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver MVP1 increment B: a usable private Resume editor with versioned drafts, direct editing, private save/reopen, and Profile/common-shell integration where contracts are already resolved. Editor saves must not change already-shared facts; stale drafts must not overwrite newer My Data corrections or restore revoked permissions; review and preview must not publish. Admit the bounded closed-A SQL adapter and ALLOWED_PROCEDURES exact-set integration needed for durable owner commands, plus additive proposed draft SQL. Do not apply schema, enable production flags, start Packages C–G or full My Data UI, or invent unresolved shared identity mapping. Keep /app as the neutral member ingress until a real Profile route is viable. Preserve approved visuals, valid deep links, sparse/dense content and accessibility. Profile and Resume remain separate.",
   "assignment": "implementation",
   "writer_ref": "session:cursor-grok-mvp1-resume-editor-001",
@@ -55,6 +55,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "3cf3c4df83d0199756a9f3e9c52005f2a831ff34",
+  "closed_at": "2026-09-11T15:21:12Z"
 }
