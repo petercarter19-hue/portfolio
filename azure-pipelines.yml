@@ -140,6 +140,12 @@ stages:
               ANTHROPIC_API_KEY: test-key-for-ci-only
               PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
 
+          - script: python scripts/run_interview_review_http_browser.py
+            displayName: Run required Interview Review HTTP browser suite
+            env:
+              ANTHROPIC_API_KEY: test-key-for-ci-only
+              PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
+
       - job: BuildJob
         pool:
           vmImage: $(vmImageName)
