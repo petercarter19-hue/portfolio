@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-FACT-POLICY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver MVP1 increment A: owner-scoped entry metadata, independent Resume display / visitor-AI / private-assistance controls, lifecycle versions, closed command vocabulary with payload-aware idempotency and atomic conflicts, deletion/restore/30-day expiry including counted dependent groups, and one-time project plus standalone-achievement command support on existing career/knowledge adapters. Propose additive SQL and procedure allowlist only; do not apply schema. Exercise service/API wiring without My Data UI, Packages B–G, production, identity, or live providers.",
   "assignment": "implementation",
   "writer_ref": "session:cursor-grok-mvp1-fact-policy-001",
@@ -40,6 +40,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "dea55102eb627953384f974948c252f831e0fcab",
+  "closed_at": "2026-09-11T05:11:44Z"
 }
