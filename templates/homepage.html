@@ -1,31 +1,17 @@
 {% extends "base.html" %}
 
-{#  HOMEPAGE — three-scene overhaul (PS-HOME-STORY-001, 2026-07-16),
-    plus the Interview Studio illustrative walkthrough
-    (PS-HOME-INTERVIEW-DEMO-001, 2026-07-19)
+{#  HOMEPAGE — early MVP1 interim home (PS-MVP1-SHELL-ALIGNMENT-001)
     ============================================================
-    Voice-first hero → Living Résumé scene → Interview Studio walkthrough →
-    My Story + Future scene → final invitation band. Approved by Pete from
-    three mockups; the detailed My Story + Future brief lives in
-    docs/initiatives/PS-HOME-STORY-001/. The Interview walkthrough brief
-    lives in docs/initiatives/PS-HOME-INTERVIEW-DEMO-001/.
-
-    Rules kept: the shared global header/footer from base.html are reused
-    untouched; every CTA resolves through existing endpoints; all content
-    comes from the same server-side sources as the live My Story page and
-    résumé (see _build_home_context in app.py — no second copy of Pete's
-    content); the Interview walkthrough is fixed fictional content with no
-    input, storage, or AI request — see the scene partial's own comment.
-    This is the homepage's first JavaScript, added only for that scene's
-    deterministic state toggling (see static/js/homepage-interview-demo.js).
-
-    The previous cinematic homepage remains at /experience for comparison
-    and rollback.
-#}
+    Resume-first product explanation, optional labeled public résumé
+    example, current Interview Studio walkthrough, and a truthful start
+    action. Capture, Journal, Projects, Workshop, and Slate Board are not
+    advertised. The previous five-scene marketing homepage, including the
+    My Story biography dump, is not the current public pitch. The older
+    cinematic page remains at /experience. #}
 
 {% block title %}PeerSlate — Your Work. Your Story. Your Future.{% endblock %}
 
-{% block meta_description %}Say what happened — PeerSlate helps make it useful. Capture moments, wins, lessons, and ideas by speaking or typing, then choose when they support your story, skills, interview practice, or community.{% endblock %}
+{% block meta_description %}Keep a private career record, publish a résumé when you choose, and let visitors see and ask about only what you permit.{% endblock %}
 
 {% block body_class %}peerslate-home-page home-v3-page{% endblock %}
 
@@ -41,7 +27,6 @@
     {% include "partials/homepage/_voice_hero.html" %}
     {% include "partials/homepage/_living_resume_scene.html" %}
     {% include "partials/homepage/_interview_demo_scene.html" %}
-    {% include "partials/homepage/_story_future_scene.html" %}
     {% include "partials/homepage/_invite_band.html" %}
 </div>
 {% endblock %}

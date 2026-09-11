@@ -1,30 +1,28 @@
-{# Scene 2 — Living Résumé. The preview card renders from resume_data.json —
-   the same approved source as the live résumé pages — so the homepage can
-   never drift from Pete's real, approved numbers. The mockup's tab strip
-   (Summary/Impact/…) is deliberately omitted: fake tabs would be dead
-   controls. The four-step strip links to the real destinations instead. #}
+{# Labeled public example. The preview card renders from resume_data.json —
+   the same approved source as the live résumé pages — so this example cannot
+   drift from Pete's public résumé. It is not the visitor's account. #}
 <section class="hv-resume" aria-labelledby="hv-resume-title">
     <div class="site-container hv-resume__inner">
 
         <div class="hv-resume__copy">
-            <p class="hv-eyebrow"><span aria-hidden="true">&#10022;</span> Living R&eacute;sum&eacute;</p>
+            <p class="hv-eyebrow"><span aria-hidden="true">&#10022;</span> Public example</p>
             <h2 class="hv-scene-title" id="hv-resume-title">
-                Your work, <em>grounded in the real thing.</em>
+                Pete Carter&rsquo;s public r&eacute;sum&eacute;, <em>grounded in the real thing.</em>
             </h2>
             <p class="hv-scene-lede">
-                PeerSlate connects measurable impact, skills, experience, and
-                approved evidence&mdash;so every claim can be inspected, not
-                just read.
+                This is one member&rsquo;s published page. Measurable impact,
+                skills, experience, and approved evidence stay inspectable.
+                Your own résumé stays private until you publish it.
             </p>
             <div class="hv-actions">
                 <a class="hv-btn hv-btn--primary" href="{{ portfolio_resume_url }}">
-                    <span aria-hidden="true">&#10022;</span> Explore Pete&rsquo;s R&eacute;sum&eacute;
+                    <span aria-hidden="true">&#10022;</span> Open the public example
                 </a>
                 <a class="hv-btn hv-btn--ghost" href="{{ portfolio_skills_url }}">See sources used</a>
             </div>
             <p class="hv-trust">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z"/><path d="m9 12 2 2 4-4"/></svg>
-                Public r&eacute;sum&eacute; view. Only approved information is shown.
+                Public example. Only approved information is shown.
             </p>
         </div>
 

@@ -1,9 +1,10 @@
-"""PS-HOME-STORY-001 — three-scene homepage tests.
+"""PS-MVP1-SHELL-ALIGNMENT-001 — interim homepage tests.
 
-Pins the acceptance criteria that matter most: the shared header survives,
-every CTA resolves through a real route, the scene content comes from the
-approved live sources, the banned mockup content never appears, and the
-old homepage remains reachable at /experience for rollback.
+Pins the Resume-first public home: shared header survives, start actions
+resolve through real routes, the labeled public example uses approved
+résumé source, Capture/Journal/Projects/Workshop/Slate Board are not
+advertised, the Interview Studio walkthrough remains, and the old cinematic
+homepage remains reachable at /experience.
 """
 
 import os
@@ -51,21 +52,38 @@ class HomepageSceneTests(unittest.TestCase):
     # ---- scene content ----
 
     def test_scene_headlines_present(self):
-        self.assertIn('Say what happened.', self.html)
-        self.assertIn('grounded in the real thing.', self.html)
-        self.assertIn('Go beyond', self.html)
-        self.assertIn('Enter once. Link everywhere. Publish deliberately.',
-                      self.html)
+        self.assertIn('Your r&eacute;sum&eacute;.', self.html)
+        self.assertIn('Grounded in work you can stand behind.', self.html)
+        self.assertIn('Public example', self.html)
+        self.assertIn('Practice how your', self.html)
+        self.assertIn('Private first. Publish when you choose.', self.html)
 
-    def test_four_act_labels_match_live_story(self):
+    def test_capture_hero_and_story_pitch_are_absent(self):
+        for banned in (
+            'Say what happened.',
+            'What happened today',
+            'Talk about what happened',
+            'Create a Capture',
+            'hv-hero__stage',
+            'class="hv-mic"',
+            'class="hv-week"',
+            'class="hv-story"',
+            'Go beyond',
+            'Enter once. Link everywhere. Publish deliberately.',
+            'Explore a living Slate',
+        ):
+            self.assertNotIn(banned, self.html)
+
+    def test_four_act_story_dump_is_not_the_product_pitch(self):
         for label in ('This is me now', 'How I became this person',
                       'The life around the work', 'Still becoming'):
-            self.assertIn(label, self.html)
+            self.assertNotIn(label, self.html)
 
-    def test_live_polaroid_captions_present(self):
-        self.assertIn('100 miles. 10 days. One goal.', self.html)
-        self.assertIn('Places that changed me.', self.html)
-        self.assertIn('Always get outside.', self.html)
+    def test_live_polaroid_captions_absent_from_home(self):
+        for caption in ('100 miles. 10 days. One goal.',
+                        'Places that changed me.',
+                        'Always get outside.'):
+            self.assertNotIn(caption, self.html)
 
     def test_banned_mockup_captions_absent(self):
         for banned in ('First marathon — 2018', 'First marathon - 2018',
@@ -73,12 +91,14 @@ class HomepageSceneTests(unittest.TestCase):
                        'Hawaii — perspective'):
             self.assertNotIn(banned, self.html)
 
-    def test_future_card_uses_approved_content(self):
-        self.assertIn('Systems Engineering Ph.D.', self.html)
-        self.assertIn('University of South Alabama', self.html)
-        self.assertIn('January 2027', self.html)
-        self.assertIn('Cameo Systems Modeler', self.html)
-        self.assertIn('Mentoring', self.html)
+    def test_public_example_is_explicitly_labeled(self):
+        self.assertIn('Pete Carter&rsquo;s public r&eacute;sum&eacute;',
+                      self.html)
+        self.assertIn('This is one member&rsquo;s published page.', self.html)
+        self.assertIn('Public example. Only approved information is shown.',
+                      self.html)
+        self.assertIn('See a public résumé example', self.html)
+        self.assertIn('Open the public example', self.html)
 
     def test_no_browser_local_board_notes(self):
         lowered = self.html.lower()
@@ -99,45 +119,78 @@ class HomepageSceneTests(unittest.TestCase):
     # ---- links ----
 
     def test_ctas_resolve_to_real_routes(self):
-        # PS-COMMUNITY-AUTH-WALL-001: the working Living Stream demo is
-        # retired, so the hero's capture actions lead through sign-in to the
-        # real private capture experience. No homepage CTA points at the
-        # retired demo or legacy Slate subviews any more.
         for retired in ('/feed-living-stream', '/the-slate/my-slate',
                         '/the-slate/daily'):
             self.assertNotIn(retired, self.html)
-        # Primary CTA, mic, and the week link all go through sign-in.
-        self.assertEqual(self.html.count('href="/auth/sign-in"'), 3)
-        # The ghost button explains the product instead of opening a demo.
-        self.assertIn('href="/peerslate">See how it works</a>', self.html)
-        for href in ('/petec/my-story', '/petec/skills', '/petec/resume',
-                     '/interview-studio'):
-            self.assertIn('href="%s' % href, self.html)
+        self.assertIn('href="/auth/sign-in">', self.html)
+        self.assertIn('Sign in to get started', self.html)
+        self.assertIn('href="/petec/resume">', self.html)
+        self.assertIn('href="/interview-studio"', self.html)
+        for href in ('/petec/resume', '/petec/skills', '/petec/my-story',
+                     '/interview-studio', '/auth/sign-in'):
             target = href.split('#')[0].split('?')[0]
             status = self.client.get(target).status_code
-            self.assertIn(status, (200, 302), target)
-        for held in ('/petec/slate-board', '/petec/projects', '/app/workshop'):
-            self.assertNotIn('href="%s' % held, self.html)
-        # The sign-in gate answers: 302 to the provider when Easy Auth is
-        # configured, or the honest "not configured yet" 503 explainer in
-        # this test environment. Either way it is a real route, not a 404.
+            self.assertIn(status, (200, 302, 503), target)
+        for held in ('/petec/slate-board', '/petec/projects', '/app/workshop',
+                     '/app/capture'):
+            self.assertNotIn('href="%s"' % held, self.html)
         self.assertIn(self.client.get('/auth/sign-in').status_code, (302, 503))
 
-    def test_read_the_chapters_anchor_exists_on_story_page(self):
-        self.assertIn('href="/petec/my-story#act-becoming"', self.html)
-        story_html = self.client.get('/petec/my-story').get_data(as_text=True)
-        self.assertIn('id="act-becoming"', story_html)
+    def test_homepage_does_not_advertise_deferred_launchers(self):
+        main = self.html.split('<main', 1)[1]
+        for banned in ('Workshop', 'Slate Board', 'Capture a Moment',
+                       'Private Journal', 'Projects'):
+            self.assertNotIn(banned, main)
+
+    def test_signed_in_home_continues_to_my_peerslate(self):
+        originals = {
+            key: app.config.get(key)
+            for key in ('PEERSLATE_ALLOW_DEV_IDENTITY', 'PEERSLATE_DEV_USER_KEY')
+        }
+        app.config['PEERSLATE_ALLOW_DEV_IDENTITY'] = True
+        app.config['PEERSLATE_DEV_USER_KEY'] = 'homepage-interim-member'
+        try:
+            html = app.test_client().get('/', base_url='http://localhost').get_data(
+                as_text=True
+            )
+        finally:
+            for key, value in originals.items():
+                if value is None:
+                    app.config.pop(key, None)
+                else:
+                    app.config[key] = value
+        self.assertIn('Continue to My PeerSlate', html)
+        self.assertIn('href="/app">', html)
+        self.assertNotIn('Sign in to get started', html)
+
+    def test_opportunity_slate_is_listed_when_available(self):
+        originals = {
+            key: app.config.get(key)
+            for key in (
+                'PEERSLATE_OPPORTUNITY_SLATE_ENABLED',
+                'PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED',
+            )
+        }
+        endpoints = {rule.endpoint for rule in app.url_map.iter_rules()}
+        v2_registered = 'opportunity_slate_v2.room' in endpoints
+        app.config['PEERSLATE_OPPORTUNITY_SLATE_ENABLED'] = not v2_registered
+        app.config['PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED'] = v2_registered
+        try:
+            html = app.test_client().get('/').get_data(as_text=True)
+        finally:
+            for key, value in originals.items():
+                if value is None:
+                    app.config.pop(key, None)
+                else:
+                    app.config[key] = value
+        self.assertIn('Opportunity Slate', html)
+        self.assertIn('href="/opportunity-slate"', html)
 
     # ---- semantics ----
 
-    def test_polaroids_are_semantic_figures(self):
-        self.assertEqual(self.html.count('hv-polaroid hv-polaroid--'), 3)
-        self.assertIn('<figcaption', self.html)
-        self.assertIn('Pete running a 10K race wearing bib number 4465',
-                      self.html)
-
-    def test_act_index_is_an_ordered_list(self):
-        self.assertIn('<ol class="hv-acts"', self.html)
+    def test_interim_hero_uses_copy_only_layout(self):
+        self.assertIn('hv-hero--interim', self.html)
+        self.assertEqual(self.html.count('<h1'), 1)
 
 
 class HomepageInterviewDemoTests(unittest.TestCase):
@@ -161,7 +214,7 @@ class HomepageInterviewDemoTests(unittest.TestCase):
         cls.client = app.test_client()
         cls.html = cls.client.get('/').get_data(as_text=True)
         start = cls.html.index('data-home-interview-demo')
-        end = cls.html.index('class="hv-story"', start)
+        end = cls.html.index('class="hv-invite"', start)
         cls.scene = cls.html[start:end]
         with open(cls.JS_PATH, encoding='utf-8') as f:
             cls.js = f.read()
@@ -170,12 +223,12 @@ class HomepageInterviewDemoTests(unittest.TestCase):
 
     # ---- placement and structure ----
 
-    def test_scene_present_between_resume_and_story(self):
+    def test_scene_present_between_resume_and_invite(self):
         resume_index = self.html.index('class="hv-resume"')
         scene_index = self.html.index('data-home-interview-demo')
-        story_index = self.html.index('class="hv-story"')
+        invite_index = self.html.index('class="hv-invite"')
         self.assertLess(resume_index, scene_index)
-        self.assertLess(scene_index, story_index)
+        self.assertLess(scene_index, invite_index)
 
     def test_four_states_server_rendered(self):
         self.assertIn('data-int-state="1"', self.scene)
@@ -191,9 +244,10 @@ class HomepageInterviewDemoTests(unittest.TestCase):
         self.assertNotIn('hidden', self.scene[state1_idx:state1_tag_end])
 
     def test_existing_scenes_untouched(self):
-        for marker in ('class="hv-hero"', 'class="hv-resume"',
-                       'class="hv-story"', 'class="hv-invite"'):
+        for marker in ('class="hv-hero hv-hero--interim"', 'class="hv-resume"',
+                       'class="hv-invite"'):
             self.assertIn(marker, self.html)
+        self.assertNotIn('class="hv-story"', self.html)
 
     # ---- truth boundary ----
 
@@ -252,8 +306,8 @@ class HomepageInterviewDemoTests(unittest.TestCase):
         self.assertNotIn('Placed after Living', self.html)
         self.assertNotIn('hv-int-sequence-note', self.html)
         self.assertNotIn('Homepage scene', self.html)
-        # The eyebrow still names the product, exactly as the sibling scenes
-        # ("Living Résumé", "My Story + Slate") do.
+        # The eyebrow still names the product, exactly as the sibling scene
+        # ("Public example") does.
         self.assertIn(
             '<p class="hv-eyebrow"><span aria-hidden="true">&#10022;</span>'
             ' Interview Studio</p>',

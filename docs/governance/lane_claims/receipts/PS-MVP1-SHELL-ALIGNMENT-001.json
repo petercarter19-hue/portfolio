@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-SHELL-ALIGNMENT-001",
+  "candidate_sha": "b055a3dae0ca86383c5059d45c9a5b5deb69159e",
+  "review_type": "self",
+  "reviewer_ref": "session:cursor-grok-mvp1-shell-alignment-001",
+  "result": "pass",
+  "reviewed_at": "2026-09-11T02:58:00Z",
+  "findings": [
+    {
+      "severity": "resolved",
+      "status": "resolved",
+      "summary": "Public `/` no longer uses the Capture hero, mic stage, destination rail, week timeline, or My Story biography dump as the product pitch. The start action is sign-in, or Continue to My PeerSlate when the shared shell is authenticated."
+    },
+    {
+      "severity": "resolved",
+      "status": "resolved",
+      "summary": "Azure Build 2784 failed because the unclaimed smoke contract still pins the established document title and because an initiatives folder is not allowed without PACKAGE_REGISTRY, which another active package owns. Candidate b055a3dae0ca86383c5059d45c9a5b5deb69159e restores that title and keeps package records on the claimed evidence path."
+    },
+    {
+      "severity": "informational",
+      "status": "informational",
+      "summary": "This receipt does not claim Azure CI on the corrected candidate, merge, deploy, or live homepage proof. Production authority remains withheld."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MVP1-SHELL-ALIGNMENT-001.md"
+}

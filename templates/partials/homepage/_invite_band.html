@@ -1,12 +1,18 @@
-{# Scene 4 — final invitation band. One sentence, one real destination. #}
-<section class="hv-invite" aria-label="Explore a living Slate">
+{# Closing band: one truthful start action, plus the labeled public example. #}
+<section class="hv-invite" aria-label="Start with PeerSlate">
     <div class="site-container hv-invite__inner">
         <p class="hv-invite__line">
             <span class="hv-invite__spark" aria-hidden="true">&#10022;</span>
-            Enter once. Link everywhere. Publish deliberately.
+            Private first. Publish when you choose.
         </p>
-        <a class="hv-inline-link hv-invite__link" href="{{ portfolio_home_url }}">
-            Explore a living Slate <span aria-hidden="true">&rarr;</span>
+        {% if shell_signed_in %}
+        <a class="hv-inline-link hv-invite__link" href="{{ url_for('auth.owner_workspace') }}">
+            Continue to My PeerSlate <span aria-hidden="true">&rarr;</span>
         </a>
+        {% else %}
+        <a class="hv-inline-link hv-invite__link" href="{{ url_for('auth.sign_in') }}">
+            Sign in to get started <span aria-hidden="true">&rarr;</span>
+        </a>
+        {% endif %}
     </div>
 </section>

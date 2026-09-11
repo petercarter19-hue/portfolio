@@ -204,6 +204,59 @@
     align-items: start;
 }
 
+/* PS-MVP1-SHELL-ALIGNMENT-001: Capture stage, destination rail, and week
+   timeline are gone. Interim home is copy-only so the three-column Capture
+   grid cannot collapse into empty named areas. */
+.home-v3 .hv-hero--interim .hv-hero__inner {
+    display: block;
+    max-width: 44rem;
+}
+
+.home-v3 .hv-hero--interim .hv-hero__copy { padding-top: 0; }
+
+.home-v3 .hv-hero--interim .hv-hero__lede { max-width: 38rem; }
+
+.home-v3 .hv-hero--interim .hv-audience {
+    display: block;
+    max-width: 38rem;
+    line-height: 1.55;
+}
+
+.home-v3 .hv-hero__now {
+    margin-top: 1.8rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--hv-line);
+}
+
+.home-v3 .hv-hero__now-label {
+    margin: 0 0 0.55rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--hv-muted);
+}
+
+.home-v3 .hv-hero__now ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.home-v3 .hv-hero__now a {
+    color: var(--hv-indigo);
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.home-v3 .hv-hero__now a:hover {
+    color: var(--hv-indigo-strong);
+    text-decoration: underline;
+}
+
 .home-v3 .hv-hero__copy { grid-area: copy; padding-top: 1.2rem; }
 
 .home-v3 .hv-hero__title {
@@ -1343,6 +1396,12 @@
             "week week";
     }
 
+    .home-v3 .hv-hero--interim .hv-hero__inner {
+        display: block;
+        grid-template-columns: none;
+        grid-template-areas: none;
+    }
+
     .home-v3 .hv-destinations {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
@@ -1387,6 +1446,12 @@
             "stage"
             "dest"
             "week";
+    }
+
+    .home-v3 .hv-hero--interim .hv-hero__inner {
+        display: block;
+        grid-template-columns: none;
+        grid-template-areas: none;
     }
 
     .home-v3 .hv-week { grid-template-columns: 1fr; }
