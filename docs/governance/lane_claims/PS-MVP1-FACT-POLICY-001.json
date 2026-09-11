@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-FACT-POLICY-001",
+  "state": "active",
+  "outcome": "Deliver MVP1 increment A: owner-scoped entry metadata, independent Resume display / visitor-AI / private-assistance controls, lifecycle versions, closed command vocabulary with payload-aware idempotency and atomic conflicts, deletion/restore/30-day expiry including counted dependent groups, and one-time project plus standalone-achievement command support on existing career/knowledge adapters. Propose additive SQL and procedure allowlist only; do not apply schema. Exercise service/API wiring without My Data UI, Packages B–G, production, identity, or live providers.",
+  "assignment": "implementation",
+  "writer_ref": "session:cursor-grok-mvp1-fact-policy-001",
+  "branch": "work/2026-09-11-mvp1-fact-policy-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "019ddfc407f161b17d7c0261b286d2cab9bf8326",
+  "owner_outcome_ref": "pete-chat-2026-09-10/mvp1-package-a-fact-policy",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MVP1-FACT-POLICY-001.json",
+    "docs/governance/lane_claims/evidence/PS-MVP1-FACT-POLICY-001.md",
+    "docs/governance/lane_claims/receipts/PS-MVP1-FACT-POLICY-001.json",
+    "services/entry_policy_service.py",
+    "services/entry_policy_repository.py",
+    "entry_policy_routes.py",
+    "tests/test_entry_policy_service.py",
+    "tests/test_entry_policy_routes.py",
+    "tests/test_entry_policy_sql.py",
+    "SQL FIles/Migrations/proposed/PS-ENTRY-POLICY-001_entry_metadata.sql",
+    "SQL FIles/Migrations/proposed/PS-ENTRY-POLICY-001_entry_metadata_rollback.sql",
+    "SQL FIles/Verification/PS-ENTRY-POLICY-001_entry_metadata_verify.sql",
+    "SQL FIles/Migrations/registry.json",
+    "services/database_service.py",
+    "app.py"
+  ],
+  "domains": [
+    "privacy:entry-policy",
+    "schema:entry-policy",
+    "runtime:entry-policy",
+    "testing:entry-policy"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MVP1-FACT-POLICY-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
