@@ -9,14 +9,17 @@ when Playwright or Chrome is absent; the dedicated runner fails closed on skip.
 from __future__ import annotations
 
 import base64
+import io
 import json
 import logging
 import threading
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from werkzeug.serving import make_server
 
+import identity
+import app as app_module
 from app import INTERVIEW_FAMILY_DIMENSIONS, app, limiter
 
 try:
@@ -38,6 +41,17 @@ KNOWN_ANSWER = (
 )
 UNIQUE_VERDICT = "Flask reached this review"
 BEHAVIORAL_DIMENSIONS = INTERVIEW_FAMILY_DIMENSIONS["behavioral"]
+_CONFIG_KEYS = (
+    "TESTING",
+    "PEERSLATE_ALLOW_DEV_IDENTITY",
+    "PEERSLATE_DEV_USER_KEY",
+    "PEERSLATE_TRUST_EASYAUTH_HEADERS",
+    "PEERSLATE_AUTH_ISSUER",
+    "PEERSLATE_AUTH_PROVIDER_NAME",
+    "PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED",
+    "PEERSLATE_OWNER_USER_KEYS",
+    "PEERSLATE_OWNER_EMAILS",
+)
 
 
 class _FakeContentBlock:
@@ -96,6 +110,126 @@ def _review_payload():
     }
 
 
+def snapshot_review_http_runtime():
+    """Capture process-global Interview test fixtures for isolation checks."""
+    return {
+        "config": {key: app.config.get(key) for key in _CONFIG_KEYS},
+        "limiter_enabled": limiter.enabled,
+        "werkzeug_level": logging.getLogger("werkzeug").level,
+    }
+
+
+def _restore_review_http_runtime(snapshot):
+    app.config.update(snapshot["config"])
+    limiter.enabled = snapshot["limiter_enabled"]
+    logging.getLogger("werkzeug").setLevel(snapshot["werkzeug_level"])
+
+
+def _stop_started_patch(patcher):
+    try:
+        patcher.stop()
+    except RuntimeError:
+        return
+
+
+def _shutdown_local_server(server, thread):
+    try:
+        if thread.is_alive():
+            server.shutdown()
+            thread.join(timeout=5)
+    finally:
+        server.server_close()
+
+
+def _close_browser(browser):
+    browser.close()
+
+
+def _stop_playwright(playwright_runtime):
+    playwright_runtime.stop()
+
+
+def install_review_http_runtime_fixtures(cls):
+    """Install isolated Flask/identity/provider fixtures with class cleanups.
+
+    Each resource is registered with ``addClassCleanup`` immediately after it is
+    acquired so a later ``setUpClass`` failure still restores state. unittest
+    runs class cleanups in reverse order and continues after a cleanup error.
+    Restore of application configuration is registered first so it runs last.
+    """
+    snapshot = {
+        "config": {key: app.config.get(key) for key in _CONFIG_KEYS},
+        "limiter_enabled": limiter.enabled,
+        "werkzeug_level": logging.getLogger("werkzeug").level,
+    }
+    cls.addClassCleanup(_restore_review_http_runtime, snapshot)
+
+    cls.provider_calls = []
+    cls.identity_calls = []
+
+    def mapped_user(*args, **kwargs):
+        cls.identity_calls.append((args, kwargs))
+        return _mapped_user(*args, **kwargs)
+
+    def fake_messages_create(**kwargs):
+        cls.provider_calls.append(kwargs)
+        return _FakeProviderResponse(json.dumps(_review_payload()))
+
+    app.config.update(
+        TESTING=True,
+        PEERSLATE_ALLOW_DEV_IDENTITY=False,
+        PEERSLATE_DEV_USER_KEY=None,
+        PEERSLATE_TRUST_EASYAUTH_HEADERS=True,
+        PEERSLATE_AUTH_ISSUER=None,
+        PEERSLATE_AUTH_PROVIDER_NAME="aad",
+        PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED=True,
+        PEERSLATE_OWNER_USER_KEYS="",
+        PEERSLATE_OWNER_EMAILS="",
+    )
+    limiter.enabled = False
+
+    identity_patch = patch(
+        "identity.database_service.first_row",
+        side_effect=mapped_user,
+    )
+    identity_patch.start()
+    cls.addClassCleanup(_stop_started_patch, identity_patch)
+    cls.identity_patch = identity_patch
+
+    provider_patch = patch(
+        "app.client.messages.create",
+        side_effect=fake_messages_create,
+    )
+    provider_patch.start()
+    cls.addClassCleanup(_stop_started_patch, provider_patch)
+    cls.provider_patch = provider_patch
+
+    logging.getLogger("werkzeug").setLevel(logging.ERROR)
+
+    server = make_server("127.0.0.1", 0, app)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    cls.addClassCleanup(_shutdown_local_server, server, thread)
+    thread.start()
+    cls.server = server
+    cls.server_thread = thread
+    cls.base_url = f"http://127.0.0.1:{server.server_port}"
+
+
+def start_review_http_browser(cls, playwright_factory=None, chrome_executable=None):
+    """Start Playwright and Chromium, registering each cleanup before the next step."""
+    factory = sync_playwright if playwright_factory is None else playwright_factory
+    executable = CHROME_EXECUTABLE if chrome_executable is None else chrome_executable
+    playwright_runtime = factory().start()
+    cls.addClassCleanup(_stop_playwright, playwright_runtime)
+    cls.playwright = playwright_runtime
+    browser = playwright_runtime.chromium.launch(
+        executable_path=executable,
+        headless=True,
+    )
+    cls.addClassCleanup(_close_browser, browser)
+    cls.browser = browser
+
+
 @unittest.skipUnless(
     sync_playwright is not None and CHROME_EXECUTABLE,
     "Playwright and Google Chrome are required for Interview Review HTTP proof",
@@ -105,78 +239,8 @@ class InterviewReviewHttpBrowserTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.original_config = {
-            key: app.config.get(key)
-            for key in (
-                "TESTING",
-                "PEERSLATE_ALLOW_DEV_IDENTITY",
-                "PEERSLATE_DEV_USER_KEY",
-                "PEERSLATE_TRUST_EASYAUTH_HEADERS",
-                "PEERSLATE_AUTH_ISSUER",
-                "PEERSLATE_AUTH_PROVIDER_NAME",
-                "PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED",
-                "PEERSLATE_OWNER_USER_KEYS",
-                "PEERSLATE_OWNER_EMAILS",
-            )
-        }
-        app.config.update(
-            TESTING=True,
-            PEERSLATE_ALLOW_DEV_IDENTITY=False,
-            PEERSLATE_DEV_USER_KEY=None,
-            PEERSLATE_TRUST_EASYAUTH_HEADERS=True,
-            PEERSLATE_AUTH_ISSUER=None,
-            PEERSLATE_AUTH_PROVIDER_NAME="aad",
-            PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED=True,
-            PEERSLATE_OWNER_USER_KEYS="",
-            PEERSLATE_OWNER_EMAILS="",
-        )
-        cls.limiter_was_enabled = limiter.enabled
-        limiter.enabled = False
-        cls.provider_calls = []
-        cls.identity_calls = []
-
-        def mapped_user(*args, **kwargs):
-            cls.identity_calls.append((args, kwargs))
-            return _mapped_user(*args, **kwargs)
-
-        def fake_messages_create(**kwargs):
-            cls.provider_calls.append(kwargs)
-            return _FakeProviderResponse(json.dumps(_review_payload()))
-
-        cls.identity_patch = patch(
-            "identity.database_service.first_row",
-            side_effect=mapped_user,
-        )
-        cls.provider_patch = patch(
-            "app.client.messages.create",
-            side_effect=fake_messages_create,
-        )
-        cls.identity_patch.start()
-        cls.provider_patch.start()
-        cls.werkzeug_logger = logging.getLogger("werkzeug")
-        cls.werkzeug_log_level = cls.werkzeug_logger.level
-        cls.werkzeug_logger.setLevel(logging.ERROR)
-        cls.server = make_server("127.0.0.1", 0, app)
-        cls.server_thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
-        cls.server_thread.start()
-        cls.base_url = f"http://127.0.0.1:{cls.server.server_port}"
-        cls.playwright = sync_playwright().start()
-        cls.browser = cls.playwright.chromium.launch(
-            executable_path=CHROME_EXECUTABLE,
-            headless=True,
-        )
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.browser.close()
-        cls.playwright.stop()
-        cls.server.shutdown()
-        cls.server_thread.join(timeout=5)
-        cls.provider_patch.stop()
-        cls.identity_patch.stop()
-        cls.werkzeug_logger.setLevel(cls.werkzeug_log_level)
-        limiter.enabled = cls.limiter_was_enabled
-        app.config.update(cls.original_config)
+        install_review_http_runtime_fixtures(cls)
+        start_review_http_browser(cls)
 
     def test_review_click_reaches_flask_with_stubbed_provider(self):
         context = self.browser.new_context(
@@ -237,6 +301,72 @@ class InterviewReviewHttpBrowserTests(unittest.TestCase):
             UNIQUE_VERDICT,
             page.locator("[data-is-verdict]").text_content() or "",
         )
+
+
+class InterviewReviewHttpBrowserCleanupTests(unittest.TestCase):
+    """Prove partial class setup cannot leak Interview application fixtures."""
+
+    def test_chromium_launch_failure_restores_runtime_fixtures(self):
+        before = snapshot_review_http_runtime()
+        playwright_stopped = []
+
+        class FakePlaywright:
+            def start(self):
+                runtime = Mock()
+                runtime.stop.side_effect = lambda: playwright_stopped.append("stop")
+                runtime.chromium.launch.side_effect = RuntimeError(
+                    "synthetic Chromium launch failure"
+                )
+                return runtime
+
+        class Probe(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                install_review_http_runtime_fixtures(cls)
+                start_review_http_browser(cls, playwright_factory=FakePlaywright)
+
+            def test_unreachable(self):
+                raise AssertionError("setUpClass must fail before the test body")
+
+        result = unittest.TextTestRunner(stream=io.StringIO(), verbosity=0).run(
+            unittest.defaultTestLoader.loadTestsFromTestCase(Probe)
+        )
+        error_text = " ".join(
+            str(item) for pair in result.errors for item in pair[1:]
+        )
+        self.assertIn("synthetic Chromium launch failure", error_text)
+        self.assertEqual(playwright_stopped, ["stop"])
+        after = snapshot_review_http_runtime()
+        self.assertEqual(after["config"], before["config"])
+        self.assertEqual(after["limiter_enabled"], before["limiter_enabled"])
+        self.assertEqual(after["werkzeug_level"], before["werkzeug_level"])
+        self.assertNotIsInstance(identity.database_service.first_row, Mock)
+        self.assertNotIsInstance(app_module.client.messages.create, Mock)
+
+    def test_remaining_class_cleanups_run_after_one_failure(self):
+        ran = []
+
+        class Probe(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                cls.addClassCleanup(ran.append, "restore_config")
+
+                def boom():
+                    ran.append("boom")
+                    raise RuntimeError("synthetic cleanup failure")
+
+                cls.addClassCleanup(boom)
+                cls.addClassCleanup(ran.append, "close_browser")
+
+            def test_ok(self):
+                return
+
+        result = unittest.TextTestRunner(stream=io.StringIO(), verbosity=0).run(
+            unittest.defaultTestLoader.loadTestsFromTestCase(Probe)
+        )
+        error_text = " ".join(str(item) for pair in result.errors for item in pair[1:])
+        self.assertIn("synthetic cleanup failure", error_text)
+        self.assertEqual(ran, ["close_browser", "boom", "restore_config"])
 
 
 if __name__ == "__main__":

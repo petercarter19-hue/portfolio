@@ -118,6 +118,20 @@ class InterviewReviewHttpBrowserRunnerTests(unittest.TestCase):
         self.assertEqual(summary["executed"], 1)
         self.assertEqual(summary["skipped"], 0)
 
+    def test_cleanup_regressions_pass_without_changing_required_method_set(self):
+        from tests.test_interview_review_http_browser import (
+            InterviewReviewHttpBrowserCleanupTests,
+        )
+
+        self.assertEqual(EXPECTED_METHODS, ("test_review_click_reaches_flask_with_stubbed_provider",))
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(
+            InterviewReviewHttpBrowserCleanupTests
+        )
+        ok, summary = execute_suite(suite, 2, stream=io.StringIO())
+        self.assertTrue(ok)
+        self.assertEqual(summary["executed"], 2)
+        self.assertEqual(summary["skipped"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
