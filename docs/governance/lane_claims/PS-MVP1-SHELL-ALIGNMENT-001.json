@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-SHELL-ALIGNMENT-001",
+  "state": "active",
+  "outcome": "Deliver the early MVP1 accurate interim homepage and remaining advertised-launcher cleanup on the already merged shared shell and public-nav registry. Replace Capture/fixture homepage framing with a concise Resume-first public home, a real start action, and an optional explicitly labeled public example. Do not advertise Workshop, Slate Board, Capture, Journal, or Projects. Keep Opportunity Slate. Reuse PS-SHARED-SHELL-CONVERGENCE-001 and PS-PUBLIC-NAV-ROUTE-TRUTH-002. No intake, media, visitor AI, schema, identity, provider, or production deployment. Live release verification of already merged shell work remains a later authorized step.",
+  "assignment": "implementation",
+  "writer_ref": "session:cursor-grok-mvp1-shell-alignment-001",
+  "branch": "work/2026-09-11-mvp1-shell-alignment-001",
+  "delivery_path": "Bounded",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "b28ca52c7c3d375939742ffbf37d1fe3e21bd582",
+  "owner_outcome_ref": "pete-chat-2026-09-10/mvp1-grok-handoff-start-s-shell-alignment",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MVP1-SHELL-ALIGNMENT-001.json",
+    "docs/governance/lane_claims/evidence/PS-MVP1-SHELL-ALIGNMENT-001.md",
+    "docs/governance/lane_claims/receipts/PS-MVP1-SHELL-ALIGNMENT-001.json",
+    "docs/initiatives/PS-MVP1-SHELL-ALIGNMENT-001/README.md",
+    "docs/initiatives/PS-MVP1-SHELL-ALIGNMENT-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "app.py",
+    "templates/homepage.html",
+    "templates/partials/homepage/_voice_hero.html",
+    "templates/partials/homepage/_living_resume_scene.html",
+    "templates/partials/homepage/_interview_demo_scene.html",
+    "templates/partials/homepage/_story_future_scene.html",
+    "templates/partials/homepage/_invite_band.html",
+    "static/css/homepage-scenes.css",
+    "tests/test_homepage_scenes.py",
+    "tests/test_public_nav_route_truth.py",
+    "tests/test_navigation.py"
+  ],
+  "domains": [
+    "content:homepage-interim-alignment",
+    "navigation:mvp1-early-shell-alignment",
+    "testing:homepage-interim-alignment"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MVP1-SHELL-ALIGNMENT-001.md"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
