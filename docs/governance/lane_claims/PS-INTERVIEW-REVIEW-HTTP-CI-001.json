@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "package": "PS-INTERVIEW-REVIEW-HTTP-CI-001",
+  "state": "active",
+  "outcome": "Make the existing Interview Review HTTP browser runner a required Azure CI check: every eligible PR must run python scripts/run_interview_review_http_browser.py on the required CI path. A missing test, skipped test, browser launch failure, test failure, or runner error must fail that required check. Reuse the existing InterviewStudioBrowserCI installation and runner conventions. Add focused pipeline contract coverage proving the runner cannot silently be omitted, disabled, or allowed to fail without failing the check. Preserve ordinary backend discovery and the existing eleven-test browser suite. Do not duplicate the full backend suite in the browser job. Do not change Interview runtime, visuals, identity, storage, schema, or production deployment.",
+  "assignment": "implementation",
+  "writer_ref": "session:cursor-grok-interview-review-http-001",
+  "branch": "work/2026-09-11-interview-review-http-ci-001",
+  "delivery_path": "Bounded",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "72eb02797e60c55ba353f402c30712be544f9994",
+  "owner_outcome_ref": "pete-chat-2026-09-10/interview-review-http-required-ci",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-INTERVIEW-REVIEW-HTTP-CI-001.json",
+    "docs/governance/lane_claims/evidence/PS-INTERVIEW-REVIEW-HTTP-CI-001.md",
+    "docs/governance/lane_claims/receipts/PS-INTERVIEW-REVIEW-HTTP-CI-001.json",
+    "azure-pipelines.yml",
+    "tests/test_interview_review_http_browser_ci.py"
+  ],
+  "domains": [
+    "infrastructure:ci:interview-review-http-browser",
+    "testing:interview-studio:review-http-ci"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-INTERVIEW-REVIEW-HTTP-CI-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
