@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-MEDIA-BACKEND-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Deliver bounded MVP1 D backend as dark injected Python services/tests: owner-scoped private photo readiness via existing scan-before-decode contracts; a separate synthetic generated-illustration catalog with stable provenance, search, pagination and withdrawal; versioned selection, slot crops, preview, private Add, words-only and later immutable publication for story_banner and experience_support. Enforce owner/version/lifecycle, finite crop bounds, stale/deleted/withdrawn assets, idempotent replay/conflict, authorize-before-bytes plus recheck, and failure preserving current publication. Artwork is never biographical evidence. DeepSeek implements, tests and self-corrects; Codex owns admission, Git/PR/CI/merge and independent Sol Extra High review. No C surfaces, shared routes/UI/registration/allowlist/schema, production collection/rights/count/storage/public delivery, live data/providers/identity, schema apply, deployment, D frontend, E-G or full My Data UI.",
   "assignment": "implementation",
   "writer_ref": "session:01a0935a-1de0-7d33-8214-14a28e24e80b",
@@ -32,6 +32,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "9bce8818e0559b6a0592ac50fbd913f912dc4eda",
+  "closed_at": "2026-09-12T03:54:57Z"
 }
