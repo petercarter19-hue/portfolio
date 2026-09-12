@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-AI-PACKAGE-MANAGER-ROUTING-001",
+  "candidate_sha": "f3391ad31e17e22699afeed8ec754ea07f091480",
+  "review_type": "self",
+  "reviewer_ref": "session:01a097ad-2e35-7521-9c16-0a6c69bf3660",
+  "result": "pass",
+  "reviewed_at": "2026-09-12T22:36:24Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-AI-PACKAGE-MANAGER-ROUTING-001.md"
+}

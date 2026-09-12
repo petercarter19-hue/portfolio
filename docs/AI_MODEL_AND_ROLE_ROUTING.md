@@ -1,6 +1,6 @@
 # PeerSlate AI Model and Role Routing
 
-**Operational standard:** September 5, 2026
+**Operational standard:** September 12, 2026
 
 This is the central authority for model versions and stable delivery roles.
 Packages name roles, not model versions. Verify the available model and resolved
@@ -289,7 +289,8 @@ identical failures, stop retrying and report the blocker.
 
 | Assigned work or decision | Current choice | Use |
 |---|---|---|
-| Site or package management | **GPT-6 Astra, Medium** | Required OpenAI management default. Discuss an exception with Pete only after explaining the concrete need. |
+| Site management | **GPT-6 Astra, Medium** | Required OpenAI site-management default. |
+| Package management | **Sol, Extra High** | Required OpenAI package-management default. |
 | Known-cause implementation | **Sol, Extra High** | Implementation, associated tests, debugging, complete-diff self-review and corrections |
 | Bounded supporting work | **Sol, High** | Evidence collection and routine documentation under the assigned writer or manager |
 | Consequential architecture or cross-package decision | **GPT-6 Astra, High** | Architecture or coordination whose decision materially affects multiple systems or packages |
@@ -297,6 +298,9 @@ identical failures, stop retrying and report the blocker.
 | Consequential independent security, privacy or architecture review | **Fresh GPT-6 Astra, High** | Exact-candidate review of the defined consequential risk |
 | Routine bounded independent review, release or closeout execution | **Sol, Extra High** | Focused exact-candidate conformance review or ordinary authorized delivery execution |
 | Demanding well-bounded implementation | **Sol, Extra High** | Selectively for an unusually demanding implementation with clear boundaries; state the concrete need first |
+
+Site managers use Astra Medium; package managers use Sol Extra High. Discuss an
+exception with Pete only after explaining the concrete need.
 
 At supported launch or session change, select the assigned model and effort and
 verify the effective runtime setting. Handoff labels, inherited parent settings,

@@ -351,7 +351,8 @@ class WorkflowEfficiencyTests(unittest.TestCase):
     def test_openai_role_defaults_require_actual_runtime_verification(self):
         body = " ".join(_read("docs", "AI_MODEL_AND_ROLE_ROUTING.md").split())
         for route in (
-            "Site or package management | **GPT-6 Astra, Medium**",
+            "Site management | **GPT-6 Astra, Medium**",
+            "Package management | **Sol, Extra High**",
             "Known-cause implementation | **Sol, Extra High**",
             "Bounded supporting work | **Sol, High**",
             "Consequential architecture or cross-package decision | **GPT-6 Astra, High**",
@@ -362,6 +363,11 @@ class WorkflowEfficiencyTests(unittest.TestCase):
         ):
             with self.subTest(route=route):
                 self.assertIn(route, body)
+        self.assertNotIn("Site or package management", body)
+        self.assertIn(
+            "Site managers use Astra Medium; package managers use Sol Extra High",
+            body,
+        )
         self.assertNotIn("current central manager has Pete's explicit", body)
         self.assertNotIn("Independent reviewer | **Fresh GPT-6 Astra, High**", body)
         self.assertIn("verify the effective runtime setting", body)
