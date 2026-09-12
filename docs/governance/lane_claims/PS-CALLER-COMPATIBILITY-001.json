@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "package": "PS-CALLER-COMPATIBILITY-001",
+  "state": "active",
+  "outcome": "Repair caller identity compatibility so authorized Codex and external agents can use governed lifecycle and preflight without manual environment setup. Resolve actual native Codex thread identity, retain legacy attestation with conflict detection, and add scoped registry-backed external caller contexts prepared during handoff. Preserve current ownership, pending custody, revoked writers, lease tokens, guarded child scope, review and CI. No product, production, credentials, external agent launch or schema changes.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a097f4-9de5-7723-9b13-65124d7ad4eb",
+  "branch": "work/2026-09-12-caller-compatibility-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "d14949325ddd9060dc490697a636e4f885c0c56e",
+  "owner_outcome_ref": "session:01a0882f-9e94-74d3-8812-0c85df1f5aae/owner:fix-caller-compatibility-2026-09-12",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-CALLER-COMPATIBILITY-001.json",
+    "docs/governance/lane_claims/evidence/PS-CALLER-COMPATIBILITY-001.md",
+    "docs/governance/lane_claims/receipts/PS-CALLER-COMPATIBILITY-001.json",
+    "scripts/worktree_lifecycle.py",
+    "scripts/delivery_preflight.py",
+    "tests/test_worktree_lifecycle.py",
+    "tests/test_delivery_preflight.py",
+    "tests/test_control_custody_recovery.py",
+    "tests/test_caller_context.py",
+    "tests/test_governance_pointers.py",
+    "AGENTS.md",
+    "START_HERE.md",
+    "docs/governance/WORKTREE_LIFECYCLE.md",
+    "docs/initiatives/PS-CALLER-COMPATIBILITY-001/README.md",
+    "docs/initiatives/PS-CALLER-COMPATIBILITY-001/OWNER_TECHNICAL_COMPLETION_REPORT.md"
+  ],
+  "domains": [
+    "governance:caller-compatibility"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-CALLER-COMPATIBILITY-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
