@@ -4,7 +4,7 @@
   "state": "active",
   "outcome": "Deliver MVP1 C: a private Resume typing/voice/document composer and optional guide using existing A/B canonical and private-draft commands. Explicit Add creates versioned submissions and truthful saved/unresolved/failed receipts; source/proposal/idempotency/lifecycle fences prevent silent shared corrections, regrant or resurrection. Uncertain/inferred changes require reconciliation. Preserve direct editing and approved visuals. Use entrance-specific fixture policy until onboarding retention/limits are selected; proposed SQL stays gate:null and unapplied. Codex owns authenticated admission/repository delivery; DeepSeek is the sole delegated implementation/testing/correction worker. Independent exact-candidate review and CI remain required. Production, schema apply, live identity/providers, D-G and full My Data UI are withheld.",
   "assignment": "implementation",
-  "writer_ref": "session:01a08dfb-7229-75f0-8017-07dd590f1795",
+  "writer_ref": "session:1f54dff0-ea02-46b9-b097-ae7608178396",
   "branch": "work/2026-09-11-mvp1-intake-guide-001",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
@@ -65,7 +65,12 @@
     "docs/governance/lane_claims/evidence/PS-MVP1-INTAKE-GUIDE-001.md"
   ],
   "review_requirement": "independent",
-  "handoff": null,
+  "handoff": {
+    "from_ref": "session:01a08dfb-7229-75f0-8017-07dd590f1795",
+    "to_ref": "session:1f54dff0-ea02-46b9-b097-ae7608178396",
+    "checkpoint_sha": "4e09e841780d5b4abd1b49e9f7c4ad7ba953a6be",
+    "relinquished": true
+  },
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null
