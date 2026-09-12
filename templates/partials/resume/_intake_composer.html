@@ -1,0 +1,198 @@
+{# MVP1 C: private Resume composer and optional guide.
+   One composer keeps typing, the in-field microphone, document attachments and
+   explicit Add together. Nothing here saves on its own: only Add creates an
+   immutable submission, and only unambiguous facts are saved privately.
+   Rendering is entirely server-driven; when the feature flag is off the
+   caller never includes this partial. #}
+{# The scrim belongs to the centered first-use welcome state and to the mobile
+   sheet dismissal; it is hidden in the docked desktop state. #}
+<div class="resume-intake__scrim" id="resume-intake-scrim" hidden></div>
+<aside
+    class="resume-intake"
+    id="resume-intake"
+    data-intake-workspace-url="{{ url_for('resume_intake.get_intake_workspace') }}"
+    data-intake-submit-url="{{ url_for('resume_intake.post_submission') }}"
+    data-intake-recording-url="{{ url_for('resume_intake.post_recording') }}"
+    data-intake-decision-url="{{ url_for('resume_intake.post_proposal_decision') }}"
+    data-intake-purge-url="{{ url_for('resume_intake.post_source_purge') }}"
+    data-guide-url="{{ url_for('resume_intake.get_guide_state') }}"
+    data-guide-status-url="{{ url_for('resume_intake.post_guide_status') }}"
+    aria-labelledby="resume-intake-title"
+>
+    <header class="resume-intake__header">
+        <p class="resume-intake__eyebrow">Build your r&eacute;sum&eacute;</p>
+        <button type="button" class="resume-intake__quiet" id="resume-intake-hide">
+            Hide guide
+        </button>
+    </header>
+
+    <div id="resume-intake-guide">
+        <span class="resume-intake__handle" aria-hidden="true"></span>
+        <h2 id="resume-intake-title" class="resume-intake__title">Your r&eacute;sum&eacute; is taking shape.</h2>
+
+        {# The receipt is written from the real Add response. It never claims
+           more than what was confirmed saved. #}
+        <div class="resume-intake__receipt" id="resume-intake-receipt" role="status" aria-live="polite">
+            <p class="resume-intake__receipt-empty">Nothing added yet. Type, speak or attach a file, then press Add.</p>
+        </div>
+
+        <section class="resume-intake__question" aria-labelledby="resume-intake-question">
+            <h3 id="resume-intake-question" class="resume-intake__question-prompt">What would you like to add?</h3>
+            <p class="resume-intake__context" id="resume-intake-context" hidden></p>
+        </section>
+
+        <section class="resume-intake__direct" aria-labelledby="resume-intake-direct-title">
+            <h3 id="resume-intake-direct-title" class="resume-intake__direct-title">Add a fact directly</h3>
+            <p class="resume-intake__hint">
+                Facts you type here are saved privately when you press Add. New entries stay hidden
+                from visitors and from visitor AI until you decide otherwise.
+            </p>
+            <fieldset class="resume-intake__direct-fields" id="resume-intake-direct-fields">
+                <p>
+                    <label for="resume-intake-type">Type</label>
+                    <select id="resume-intake-type" name="record_type">
+                        <option value="">Nothing structured</option>
+                        <option value="role">Role</option>
+                        <option value="skill">Strength</option>
+                        <option value="education">Education</option>
+                        <option value="credential">Credential</option>
+                        <option value="accomplishment">Impact</option>
+                    </select>
+                </p>
+                <p data-role-field hidden>
+                    <label for="resume-intake-role-title">Role title</label>
+                    <input id="resume-intake-role-title" name="role_title" type="text" maxlength="300" autocomplete="off">
+                </p>
+                <p data-role-field hidden>
+                    <label for="resume-intake-employer">Employer</label>
+                    <input id="resume-intake-employer" name="employer_name" type="text" maxlength="300" autocomplete="off">
+                </p>
+                <p data-skill-field hidden>
+                    <label for="resume-intake-skill">Strength</label>
+                    <input id="resume-intake-skill" name="name" type="text" maxlength="200" autocomplete="off">
+                </p>
+                <p data-education-field hidden>
+                    <label for="resume-intake-education-title">Program or title</label>
+                    <input id="resume-intake-education-title" name="title" type="text" maxlength="300" autocomplete="off">
+                </p>
+                <p data-education-field hidden>
+                    <label for="resume-intake-institution">Institution</label>
+                    <input id="resume-intake-institution" name="institution_name" type="text" maxlength="300" autocomplete="off">
+                </p>
+                <p data-education-field hidden>
+                    <label for="resume-intake-education-status">Status</label>
+                    <select id="resume-intake-education-status" name="education_status">
+                        <option value="in_progress">In progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="planned">Planned</option>
+                        <option value="admitted">Admitted</option>
+                        <option value="paused">Paused</option>
+                        <option value="withdrawn">Withdrawn</option>
+                    </select>
+                </p>
+                <p data-credential-field hidden>
+                    <label for="resume-intake-credential">Credential</label>
+                    <input id="resume-intake-credential" name="credential_name" type="text" maxlength="300" autocomplete="off">
+                </p>
+                <p data-credential-field hidden>
+                    <label for="resume-intake-issuer">Issuer</label>
+                    <input id="resume-intake-issuer" name="issuer_name" type="text" maxlength="300" autocomplete="off">
+                </p>
+                <p data-credential-field hidden>
+                    <label for="resume-intake-credential-status">Status</label>
+                    <select id="resume-intake-credential-status" name="completion_status">
+                        <option value="in_progress">In progress</option>
+                        <option value="planned">Planned</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </p>
+                <p data-credential-field data-credential-completed-field hidden>
+                    <label for="resume-intake-credential-issue-date">Issue date</label>
+                    <input id="resume-intake-credential-issue-date" name="issue_date" type="date">
+                </p>
+                <p data-accomplishment-field hidden>
+                    <label for="resume-intake-wording">What you did</label>
+                    <input id="resume-intake-wording" name="wording" type="text" maxlength="300" autocomplete="off">
+                </p>
+                <p data-accomplishment-field hidden>
+                    <label for="resume-intake-parent">Which entry does this belong to?</label>
+                    <select id="resume-intake-parent" name="parent_key"></select>
+                </p>
+                <p>
+                    <button type="button" class="resume-intake__quiet" id="resume-intake-add-fact">
+                        Queue this fact
+                    </button>
+                </p>
+            </fieldset>
+            {# Explicit clears: the member deliberately empties a field on an
+               existing entry. Unspecified fields are never sent at all. #}
+            <fieldset class="resume-intake__clears" id="resume-intake-clears" hidden></fieldset>
+            <ul class="resume-intake__queued" id="resume-intake-queued" aria-label="Facts queued for this Add"></ul>
+        </section>
+
+        <form class="resume-intake__composer" id="resume-intake-composer" enctype="multipart/form-data">
+            <label class="resume-intake__sr" for="resume-intake-text">Your answer</label>
+            <textarea
+                id="resume-intake-text"
+                name="text"
+                rows="5"
+                maxlength="20000"
+                placeholder="One project I worked on involved..."
+            ></textarea>
+            <ul class="resume-intake__attachments" id="resume-intake-attachments" aria-label="Attached files"></ul>
+            <div class="resume-intake__row">
+                <label class="resume-intake__file">
+                    <span class="resume-intake__file-label">Add files</span>
+                    <input
+                        type="file"
+                        id="resume-intake-file"
+                        multiple
+                        accept=".pdf,.docx,.txt,.webm,.wav,.mp3,.ogg,.m4a,.aac,audio/*"
+                    >
+                </label>
+                <button type="button" class="resume-intake__mic" id="resume-intake-mic" aria-pressed="false">
+                    <span class="resume-intake__sr">Start recording</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V7a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v3"/></svg>
+                </button>
+                <button type="submit" class="resume-intake__add" id="resume-intake-add">
+                    Add
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </button>
+            </div>
+        </form>
+
+        <p class="resume-intake__lock" id="resume-intake-draft-state">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2M6 10h12v9H6z"/></svg>
+            <span id="resume-intake-draft-label">Draft answer &middot; Not added yet</span>
+        </p>
+        <p class="resume-intake__hint">
+            <strong>Why we ask.</strong> A work example can strengthen your r&eacute;sum&eacute; and help
+            your AI explain your contribution.
+        </p>
+        <p class="resume-intake__actions">
+            <button type="button" class="resume-intake__quiet" id="resume-intake-skip">Skip question</button>
+            <button type="button" class="resume-intake__quiet" id="resume-intake-complete">Mark guide complete</button>
+        </p>
+    </div>
+
+    <section class="resume-intake__pending" aria-labelledby="resume-intake-pending-title">
+        <h3 id="resume-intake-pending-title">Waiting for your decision</h3>
+        <p class="resume-intake__hint">
+            Nothing here changes what visitors see, and nothing is saved until you decide.
+        </p>
+        <ul class="resume-intake__proposals" id="resume-intake-proposals"></ul>
+    </section>
+
+    <p class="resume-intake__footer">
+        <span aria-hidden="true">&#128274;</span> Private draft. Nothing is published.
+    </p>
+    <p class="resume-intake__status" id="resume-intake-status" role="status" aria-live="polite"></p>
+</aside>
+
+<p class="resume-intake__reopen">
+    <button type="button" class="resume-intake__reopen-button" id="resume-intake-reopen" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>
+        Guide me
+        <span class="resume-intake__reopen-hint">Continue your answer.</span>
+    </button>
+</p>

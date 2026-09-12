@@ -57,6 +57,26 @@ FORBIDDEN_CLIENT_FIELDS = frozenset(
 MAX_TEXT = 8000
 
 
+# PS-MVP1-INTAKE-GUIDE-001: an additive, best-effort commit observer. The
+# composer registers one so a manual editor save/discard fences that record's
+# still-pending intake references. Observers never change the editor command's
+# own outcome, and an editor command never depends on them.
+_COMMIT_OBSERVERS: list = []
+
+
+def register_commit_observer(observer) -> None:
+    if callable(observer) and observer not in _COMMIT_OBSERVERS:
+        _COMMIT_OBSERVERS.append(observer)
+
+
+def _notify_commit_observers(owner, command_type, record_key, result) -> None:
+    for observer in list(_COMMIT_OBSERVERS):
+        try:
+            observer(owner, command_type, record_key, result)
+        except Exception:  # noqa: BLE001 - an observer must never break a command
+            continue
+
+
 class ResumeDraftValidationError(ValueError):
     code = "invalid"
 
@@ -303,6 +323,7 @@ class ResumeDraftService:
         }
         if command["type"] != "review_candidate":
             self._save(owner, snapshot, command)
+            _notify_commit_observers(owner, command["type"], command.get("record_key"), result)
         result["replayed"] = False
         result["publishes"] = False
         result["request_digest"] = command["digest"]

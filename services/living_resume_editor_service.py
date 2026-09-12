@@ -411,6 +411,65 @@ def normalize_editor_values(record_type: str, values: object) -> dict[str, objec
     return validator(values)
 
 
+def normalize_editor_intent(record_type: str, values: object) -> dict[str, object]:
+    """Normalize only fields the member supplied, without inventing defaults.
+
+    Intake matches a partial command before it knows whether the command will
+    create a record or propose a change. Required and cross-field rules are
+    enforced later against the complete create or merged-change payload. This
+    helper still applies the canonical vocabulary, scalar types, lengths, date
+    syntax, and enum choices to every supplied field.
+    """
+
+    expected = {
+        "role": _ROLE_FIELDS,
+        "education": _EDUCATION_FIELDS,
+        "credential": _CREDENTIAL_FIELDS,
+        "skill": _SKILL_FIELDS,
+        "accomplishment": _ACCOMPLISHMENT_FIELDS,
+    }.get(record_type)
+    if expected is None:
+        raise LivingResumeEditorValidationError("canonical_type has an unsupported value.")
+    supplied = _validate_exact_fields(values, expected)
+    text_limits = {
+        "role_title": 300,
+        "employer_name": 300,
+        "location_text": 300,
+        "summary": 8000,
+        "degree_name": 300,
+        "field_of_study": 300,
+        "grade_text": 100,
+        "title": 300,
+        "institution_name": 300,
+        "name": 300 if record_type == "credential" else 200,
+        "issuer": 300,
+        "identifier": 300,
+        "verification_url": 1000,
+        "wording": 8000,
+        "metric_value": 100,
+        "metric_label": 300,
+    }
+    normalized: dict[str, object] = {}
+    for name in supplied:
+        if name == "current_role":
+            normalized[name] = _boolean(supplied, name)
+        elif name in {"start_date", "end_date", "issue_date", "expiration_date"}:
+            parsed = _date_value(supplied, name)
+            normalized[name] = parsed.isoformat() if parsed else None
+        elif name == "date_precision":
+            choices = EDUCATION_DATE_PRECISIONS if record_type == "education" else DATE_PRECISIONS
+            normalized[name] = _choice(supplied, name, choices)
+        elif name == "employment_type":
+            normalized[name] = _choice(supplied, name, EMPLOYMENT_TYPES)
+        elif name == "education_status":
+            normalized[name] = _choice(supplied, name, EDUCATION_STATUSES, required=True)
+        elif name == "completion_status":
+            normalized[name] = _choice(supplied, name, CREDENTIAL_STATUSES, required=True)
+        else:
+            normalized[name] = _text(supplied, name, text_limits[name])
+    return normalized
+
+
 def normalize_command(payload: object) -> tuple[dict[str, object], str, str]:
     if not isinstance(payload, Mapping) or set(payload) - _ENVELOPE_FIELDS:
         raise LivingResumeEditorValidationError("The command contains unsupported fields.")

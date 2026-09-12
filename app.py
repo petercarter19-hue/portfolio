@@ -61,6 +61,10 @@ from resume_draft_routes import (
     PLANNED_RATE_LIMITS as RESUME_DRAFT_RATE_LIMITS,
     resume_draft,
 )
+from resume_intake_routes import (
+    PLANNED_RATE_LIMITS as RESUME_INTAKE_RATE_LIMITS,
+    resume_intake,
+)
 # PS-WORKSHOP-001 W2a: registers additional view functions onto the SAME
 # `workshop` Blueprint instance above (import-time side effect only, no
 # name from this module is otherwise used here) — see
@@ -383,6 +387,23 @@ app.config.update(
     # authority.
     PEERSLATE_RESUME_EDITOR_ENABLED=(
         os.environ.get('PEERSLATE_RESUME_EDITOR_ENABLED', 'false').lower() == 'true'
+    ),
+    # PS-MVP1-INTAKE-GUIDE-001: the private Resume composer (typing, in-field
+    # microphone, document attachment and explicit Add) and its optional guide.
+    # Off by default. Routes read this with `is True`. Schema remains unapplied;
+    # enablement does not apply SQL, publish, start onboarding, or grant
+    # production authority.
+    PEERSLATE_RESUME_INTAKE_ENABLED=(
+        os.environ.get('PEERSLATE_RESUME_INTAKE_ENABLED', 'false').lower() == 'true'
+    ),
+    # Resume onboarding's file/voice limits and retention are NOT selected.
+    # This second flag must also be on before the composer will run on the
+    # clearly labelled synthetic fixture policy; without it every Add answers
+    # an honest 503 policy-not-selected instead of silently adopting My Data's
+    # numbers as an onboarding promise. Local/preview and tests only.
+    PEERSLATE_RESUME_INTAKE_FIXTURE_POLICY_ENABLED=(
+        os.environ.get('PEERSLATE_RESUME_INTAKE_FIXTURE_POLICY_ENABLED', 'false').lower()
+        == 'true'
     ),
     PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY=PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY,
     # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: the transition flag
@@ -849,6 +870,10 @@ app.register_blueprint(entry_policy)
 # PS-MVP1-RESUME-EDITOR-001. Registered unconditionally; the flag gate lives
 # in the blueprint so off remains a neutral 404 without a missing route.
 app.register_blueprint(resume_draft)
+# PS-MVP1-INTAKE-GUIDE-001. Registered unconditionally; the flag gate lives in
+# the blueprint so off remains a neutral 404 without a missing route. The
+# unselected onboarding policy stays a second, independent refusal.
+app.register_blueprint(resume_intake)
 # PS-COMMUNITY-AUTH-WALL-001: the legacy fixture-backed people_interests_api
 # is never registered. No feature-flag state may resurrect a public or
 # fixture Community surface — flag off means unavailable, not "older feed".
@@ -975,6 +1000,11 @@ for _entry_policy_endpoint, _entry_policy_limit in ENTRY_POLICY_RATE_LIMITS.item
 for _resume_draft_endpoint, _resume_draft_limit in RESUME_DRAFT_RATE_LIMITS.items():
     app.view_functions[_resume_draft_endpoint] = limiter.limit(_resume_draft_limit)(
         app.view_functions[_resume_draft_endpoint]
+    )
+
+for _resume_intake_endpoint, _resume_intake_limit in RESUME_INTAKE_RATE_LIMITS.items():
+    app.view_functions[_resume_intake_endpoint] = limiter.limit(_resume_intake_limit)(
+        app.view_functions[_resume_intake_endpoint]
     )
 
 # PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001: the same post-registration

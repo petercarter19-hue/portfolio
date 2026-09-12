@@ -489,6 +489,17 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_CommitResumeDraftCommandForOwner",
             "usp_GetResumeDraftForOwner",
         }
+        # PS-MVP1-INTAKE-GUIDE-001: the owner-scoped composer. Worker job and
+        # source-sweep procedures stay off this exact set.
+        resume_intake = {
+            "usp_GetResumeIntakeWorkspaceForOwner",
+            "usp_CommitResumeIntakeSubmissionForOwner",
+            "usp_ClaimResumeIntakeRecordingForOwner",
+            "usp_CommitResumeIntakeRecordingForOwner",
+            "usp_CommitResumeIntakeProposalDecisionForOwner",
+            "usp_SetResumeGuideStatusForOwner",
+            "usp_PurgeResumeIntakeSourceForOwner",
+        }
         expected = (
             base
             | oppslate_os1
@@ -505,6 +516,7 @@ class DatabaseServiceTests(unittest.TestCase):
             | connection_foundation
             | entry_policy
             | resume_draft
+            | resume_intake
         )
         # The groups above must not overlap each other — a name counted
         # twice would silently shrink the real union below the true count
@@ -525,9 +537,10 @@ class DatabaseServiceTests(unittest.TestCase):
             connection_foundation,
             entry_policy,
             resume_draft,
+            resume_intake,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 152)
+        self.assertEqual(len(expected), 159)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_living_resume_editor_procedures_are_exactly_allowlisted(self):

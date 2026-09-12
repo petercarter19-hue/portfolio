@@ -233,6 +233,19 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_ListEntryPolicyEntriesForOwner",
         "usp_CommitResumeDraftCommandForOwner",
         "usp_GetResumeDraftForOwner",
+        # PS-MVP1-INTAKE-GUIDE-001: owner-scoped composer submissions,
+        # proposals, guide status and source purge. Every one resolves
+        # @UserKey itself. The three worker procedures (job claim/complete and
+        # the expired-source sweep) are deliberately absent. Schema remains
+        # unapplied and the onboarding policy is unselected; allowlisting does
+        # not apply SQL or start onboarding.
+        "usp_GetResumeIntakeWorkspaceForOwner",
+        "usp_CommitResumeIntakeSubmissionForOwner",
+        "usp_CommitResumeIntakeRecordingForOwner",
+        "usp_ClaimResumeIntakeRecordingForOwner",
+        "usp_CommitResumeIntakeProposalDecisionForOwner",
+        "usp_SetResumeGuideStatusForOwner",
+        "usp_PurgeResumeIntakeSourceForOwner",
     }
 )
 

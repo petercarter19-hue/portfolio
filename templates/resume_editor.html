@@ -7,6 +7,9 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-editor.css') }}">
+{% if config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-intake.css') }}">
+{% endif %}
 <meta name="robots" content="noindex, nofollow">
 {% endblock %}
 
@@ -73,6 +76,13 @@
             </form>
         </section>
     </div>
+    {% if config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) %}
+    {% include "partials/resume/_intake_composer.html" %}
+    {% endif %}
 </section>
 <script src="{{ url_for('static', filename='js/resume-editor.js') }}" defer></script>
+{% if config.get('PEERSLATE_RESUME_INTAKE_ENABLED', false) %}
+<script src="{{ url_for('static', filename='js/dictation.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/resume-intake.js') }}" defer></script>
+{% endif %}
 {% endblock %}

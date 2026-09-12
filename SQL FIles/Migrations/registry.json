@@ -2707,6 +2707,16 @@
       ],
       "summary": "Proposed owner-scoped Resume draft overlay: versioned drafts, payload-aware command receipts, content-token and access-revision fences, and review that cannot publish or restore permissions. Repository candidate only; no database application or runtime proof.",
       "gate": null
+    },
+    {
+      "id": "PS-RESUME-INTAKE-001",
+      "forward": "SQL FIles/Migrations/proposed/PS-RESUME-INTAKE-001_resume_intake.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-RESUME-INTAKE-001_resume_intake_rollback.sql",
+      "requires": [
+        "PS-RESUME-DRAFT-001"
+      ],
+      "summary": "Proposed owner-scoped composer intake: immutable Add submissions, owner-scoped sources, durable jobs with a source/submission/policy/lifecycle fence, typed proposals with exact source spans, payload-aware command receipts, member-chosen guide status and purged-source text removal. Repository candidate only; no database application or runtime proof.",
+      "gate": null
     }
   ]
 }

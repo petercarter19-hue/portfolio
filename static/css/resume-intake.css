@@ -1,0 +1,498 @@
+/* MVP1 increment C: private Resume composer and optional guide.
+
+   Scoped entirely under .resume-intake / .resume-intake__reopen /
+   .resume-intake__scrim and the one modifier class the script adds to the
+   editor section, so no other surface is restyled.
+
+   Three accepted states, driven by data-state on the aside:
+     * welcome  - the centered first-use composition over a scrim;
+     * docked   - the later desktop right rail;
+     * mobile   - a bottom sheet with a floating "Guide me" reopen chip.
+   Colours follow the approved visual: warm ivory surface, forest-green serif
+   headings, muted blue body text, restrained gold accent, one green Add. */
+
+.resume-editor {
+    display: grid;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+@media (min-width: 64rem) {
+    .resume-editor {
+        grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
+    }
+    /* The centered welcome takes the composer out of the flow, so the editor
+       keeps one full-width column behind the scrim. */
+    .resume-editor.resume-editor--intake-welcome {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.resume-intake {
+    background: #fffdf8;
+    border: 1px solid rgba(31, 78, 66, 0.16);
+    border-top: 3px solid #c8a24a;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 30px rgba(24, 39, 58, 0.08);
+    color: #2c4a63;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    padding: 1.1rem 1.15rem 1.25rem;
+}
+
+.resume-intake[hidden] {
+    display: none;
+}
+
+@media (min-width: 64rem) {
+    .resume-intake[data-state="docked"] {
+        position: sticky;
+        top: 1rem;
+    }
+    /* Centered first-use welcome card. */
+    .resume-intake[data-state="welcome"] {
+        position: fixed;
+        top: 8vh;
+        inset-inline: 0;
+        margin-inline: auto;
+        width: min(680px, 92vw);
+        max-height: 84vh;
+        overflow: auto;
+        z-index: 30;
+    }
+}
+
+.resume-intake__scrim {
+    background: rgba(20, 35, 50, 0.3);
+    border: 0;
+    inset: 0;
+    position: fixed;
+    z-index: 25;
+}
+
+.resume-intake__scrim[hidden] {
+    display: none;
+}
+
+.resume-intake__handle {
+    display: none;
+}
+
+.resume-intake__header {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+
+.resume-intake__eyebrow {
+    color: #1f4e42;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.resume-intake__title {
+    color: #1f4e42;
+    font-family: "Newsreader", Georgia, serif;
+    font-size: 1.55rem;
+    line-height: 1.15;
+    margin: 0.35rem 0 0.75rem;
+}
+
+.resume-intake__quiet,
+.resume-intake__file-label {
+    background: none;
+    border: 0;
+    color: #1f4e42;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.2rem 0.1rem;
+    text-decoration: underline;
+}
+
+.resume-intake__quiet:hover,
+.resume-intake__file-label:hover {
+    color: #123529;
+}
+
+.resume-intake__receipt {
+    background: #e8f2ea;
+    border: 1px solid rgba(31, 78, 66, 0.18);
+    border-radius: 0.5rem;
+    margin: 0 0 0.9rem;
+    padding: 0.6rem 0.75rem;
+}
+
+.resume-intake__receipt-empty {
+    color: #4a6280;
+    margin: 0;
+}
+
+.resume-intake__receipt-saved {
+    color: #17503f;
+    font-weight: 700;
+    margin: 0;
+}
+
+.resume-intake__receipt-detail {
+    color: #35604f;
+    margin: 0.2rem 0 0;
+}
+
+.resume-intake__question-prompt {
+    color: #1f4e42;
+    font-family: "Newsreader", Georgia, serif;
+    font-size: 1.1rem;
+    margin: 0 0 0.15rem;
+}
+
+.resume-intake__context {
+    color: #4a6280;
+    font-size: 0.85rem;
+    margin: 0 0 0.5rem;
+}
+
+.resume-intake__direct {
+    border: 1px dashed rgba(31, 78, 66, 0.24);
+    border-radius: 0.5rem;
+    margin: 0.5rem 0 0.9rem;
+    padding: 0.6rem 0.75rem 0.75rem;
+}
+
+.resume-intake__direct-title {
+    color: #1f4e42;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.resume-intake__hint {
+    color: #4a6280;
+    font-size: 0.82rem;
+    margin: 0.3rem 0 0.5rem;
+}
+
+.resume-intake__direct-fields label,
+.resume-intake__clears label,
+.resume-intake__composer label {
+    color: #2c4a63;
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+}
+
+.resume-intake__clears label {
+    display: inline-flex;
+    font-weight: 400;
+    gap: 0.3rem;
+    margin-right: 0.75rem;
+}
+
+.resume-intake__direct-fields p,
+.resume-intake__clears {
+    margin: 0 0 0.5rem;
+}
+
+.resume-intake__clears {
+    border: 0;
+    padding: 0;
+}
+
+.resume-intake__clears legend {
+    color: #4a6280;
+    font-size: 0.78rem;
+}
+
+.resume-intake__direct-fields input,
+.resume-intake__direct-fields select,
+.resume-intake__composer textarea {
+    border: 1px solid rgba(44, 74, 99, 0.28);
+    border-radius: 0.4rem;
+    color: #1c2f42;
+    font: inherit;
+    max-width: 100%;
+    padding: 0.45rem 0.55rem;
+    width: 100%;
+}
+
+.resume-intake__composer textarea {
+    min-height: 7rem;
+    resize: vertical;
+}
+
+.resume-intake__queued,
+.resume-intake__attachments,
+.resume-intake__proposals {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+}
+
+.resume-intake__queued li,
+.resume-intake__attachments li,
+.resume-intake__proposals li {
+    border-top: 1px solid rgba(44, 74, 99, 0.12);
+    padding: 0.45rem 0;
+}
+
+.resume-intake__tag {
+    color: #17503f;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.resume-intake__row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+}
+
+.resume-intake__file input {
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    width: 1px;
+}
+
+.resume-intake__mic {
+    align-items: center;
+    background: #fff;
+    border: 1px solid rgba(44, 74, 99, 0.3);
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    height: 2.4rem;
+    justify-content: center;
+    padding: 0;
+    width: 2.4rem;
+}
+
+.resume-intake__mic svg {
+    fill: none;
+    height: 1.2rem;
+    stroke: #2c4a63;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
+    width: 1.2rem;
+}
+
+.resume-intake__mic[aria-pressed="true"] {
+    background: #f6e3e3;
+    border-color: #a33a3a;
+}
+
+.resume-intake__mic[aria-pressed="true"] svg {
+    stroke: #a33a3a;
+}
+
+.resume-intake__add {
+    align-items: center;
+    background: #17503f;
+    border: 0;
+    border-radius: 0.4rem;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-weight: 700;
+    gap: 0.35rem;
+    margin-left: auto;
+    padding: 0.55rem 1rem;
+}
+
+.resume-intake__add:disabled,
+.resume-intake__mic:disabled {
+    cursor: progress;
+    opacity: 0.6;
+}
+
+.resume-intake__add svg {
+    fill: none;
+    height: 1rem;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    width: 1rem;
+}
+
+.resume-intake__lock {
+    align-items: center;
+    color: #4a6280;
+    display: flex;
+    font-size: 0.82rem;
+    gap: 0.35rem;
+    margin: 0.55rem 0 0.35rem;
+}
+
+.resume-intake__lock svg {
+    fill: none;
+    height: 0.95rem;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.6;
+    width: 0.95rem;
+}
+
+.resume-intake__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: space-between;
+    margin: 0.4rem 0 0;
+}
+
+.resume-intake__pending {
+    border-top: 1px solid rgba(44, 74, 99, 0.14);
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+}
+
+.resume-intake__pending h3 {
+    color: #1f4e42;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.resume-intake__proposal-quote {
+    color: #1c2f42;
+    font-style: italic;
+    margin: 0.15rem 0 0.35rem;
+}
+
+.resume-intake__proposal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.resume-intake__footer {
+    border-top: 1px solid rgba(44, 74, 99, 0.14);
+    color: #4a6280;
+    font-size: 0.82rem;
+    margin: 1rem 0 0;
+    padding-top: 0.65rem;
+}
+
+.resume-intake__status:empty {
+    display: none;
+}
+
+.resume-intake__status {
+    color: #17503f;
+    font-size: 0.85rem;
+    margin: 0.5rem 0 0;
+}
+
+.resume-intake__status[data-kind="error"] {
+    color: #8f2f2f;
+}
+
+.resume-intake__reopen {
+    margin: 0.5rem 0 0;
+}
+
+.resume-intake__reopen-button {
+    align-items: center;
+    background: #fff;
+    border: 1px solid rgba(44, 74, 99, 0.3);
+    border-radius: 0.5rem;
+    color: #1f4e42;
+    cursor: pointer;
+    display: inline-flex;
+    flex-wrap: wrap;
+    font: inherit;
+    font-weight: 700;
+    gap: 0.4rem;
+    padding: 0.55rem 0.9rem;
+}
+
+.resume-intake__reopen-button[hidden] {
+    display: none;
+}
+
+.resume-intake__reopen-button svg {
+    fill: none;
+    height: 1.05rem;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
+    width: 1.05rem;
+}
+
+.resume-intake__reopen-hint {
+    color: #4a6280;
+    font-size: 0.78rem;
+    font-weight: 400;
+}
+
+.resume-intake__sr {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+}
+
+/* Mobile / narrow (including 200% zoom on a desktop viewport): the guide is a
+   bottom sheet with a grab handle, and the reopen affordance is the approved
+   floating "Guide me" chip. */
+@media (max-width: 63.99rem) {
+    .resume-intake {
+        border-radius: 1rem 1rem 0 0;
+        bottom: 0;
+        left: 0;
+        max-height: 76vh;
+        overflow: auto;
+        padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+        position: fixed;
+        right: 0;
+        z-index: 30;
+    }
+    .resume-intake__handle {
+        background: rgba(44, 74, 99, 0.28);
+        border-radius: 999px;
+        display: block;
+        height: 0.28rem;
+        margin: 0 auto 0.5rem;
+        width: 2.4rem;
+    }
+    .resume-intake__composer textarea {
+        min-height: 5.5rem;
+    }
+    .resume-intake__reopen-button {
+        border-radius: 999px;
+        /* Clear of the global mobile tab bar so the chip is never covered. */
+        bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+        box-shadow: 0 8px 20px rgba(24, 39, 58, 0.22);
+        position: fixed;
+        right: 1rem;
+        z-index: 60;
+    }
+}
+
+/* Forced-colors and reduced-motion safety: the sheet/chip stay visible and
+   nothing depends on colour alone. */
+@media (prefers-reduced-motion: reduce) {
+    .resume-intake,
+    .resume-intake__reopen-button {
+        transition: none;
+    }
+}
