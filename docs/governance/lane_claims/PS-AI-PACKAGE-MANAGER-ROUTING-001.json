@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "package": "PS-AI-PACKAGE-MANAGER-ROUTING-001",
+  "state": "active",
+  "outcome": "Apply Pete's approved OpenAI management routing at new assignments and natural boundaries: keep site management on GPT-6 Astra Medium and route package management to Sol Extra High. Preserve Astra High for consequential architecture or cross-package decisions and for consequential independent security, privacy, or architecture review; preserve Sol Extra High for routine bounded independent review, release, or closeout execution; preserve every explicit package override; and do not churn active or frozen assignments. Update only the current repository model-routing authority and its exact guardrail test. Historical evidence remains historical. No product runtime model, DeepSeek policy, worker routing, visual, deployment, schema, identity, billing, provider, or production change.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a097ad-2e35-7521-9c16-0a6c69bf3660",
+  "branch": "work/2026-09-12-ai-package-manager-routing-docs-001",
+  "delivery_path": "Bounded",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "4d29d52d7c5d393472e5d240fff1052d4a0ef358",
+  "owner_outcome_ref": "session:01a0789c-c166-7eb0-8588-517c27f13b86/pete-2026-09-12/package-manager-sol-extra-high-routing",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-AI-PACKAGE-MANAGER-ROUTING-001.json",
+    "docs/governance/lane_claims/receipts/PS-AI-PACKAGE-MANAGER-ROUTING-001.json",
+    "docs/governance/lane_claims/evidence/PS-AI-PACKAGE-MANAGER-ROUTING-001.md",
+    "docs/AI_MODEL_AND_ROLE_ROUTING.md",
+    "tests/test_governance_pointers.py"
+  ],
+  "domains": [
+    "governance:ai-package-manager-routing",
+    "testing:governance-pointers"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-AI-PACKAGE-MANAGER-ROUTING-001.md"
+  ],
+  "review_requirement": "self",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
