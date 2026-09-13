@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-MY-DATA-MANAGEMENT-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Private My Data management behind default-off PEERSLATE_MY_DATA_ENABLED: a signed-in member opens Settings > My Data, browses category and Activity views, searches and filters existing canonical facts, opens the accepted composer overlay, adds private information, resolves duplicates or conflicts, edits facts, inspects sources, changes stored permission intent, deletes entries, views Recently deleted, and restores entries privately. Reuses the accepted entry-policy and resume-intake APIs with no app.py change, no schema apply, and no production enablement. Missing PEERSLATE_MY_DATA_ENABLED behaves as false. Protected delivery with independent exact-candidate review and Codex final review before merge.",
   "assignment": "implementation",
   "writer_ref": "session:51a31f4f-9441-4249-a7df-ff1803e3c839",
@@ -46,6 +46,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "3ab3c187516bcd1cd4d899d8c1a4b9325dd6e0e0",
+  "closed_at": "2026-09-13T16:43:37Z"
 }
