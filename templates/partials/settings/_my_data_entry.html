@@ -1,0 +1,48 @@
+{# Client side entry card blueprint. Cloned by static/js/my-data.js for every
+   visible entry. No member data is rendered here on the server. #}
+<template id="my-data-entry-template">
+    <article class="my-data__entry" data-entry-key="">
+        <label class="my-data__select">
+            <input type="checkbox" data-entry-select>
+            <span class="my-data__label">Select this entry</span>
+        </label>
+        <h3 class="my-data__entry-title" data-entry-title></h3>
+        <p class="my-data__entry-detail" data-entry-detail></p>
+        <p class="my-data__entry-dates" data-entry-dates hidden></p>
+        <ul class="my-data__sharing" aria-label="Sharing state">
+            <li data-entry-flag="private" hidden>Private</li>
+            <li data-entry-flag="resume" hidden>Shown on résumé</li>
+            <li data-entry-flag="visitor_ai" hidden>Available to visitor AI</li>
+            <li data-entry-flag="excluded" hidden>Excluded from private AI</li>
+            <li data-entry-flag="deleted" hidden>Recently deleted</li>
+        </ul>
+        <div class="my-data__entry-actions">
+            <button type="button" data-entry-edit>Edit</button>
+            <button type="button" data-entry-permissions aria-expanded="false">Sharing</button>
+            <button type="button" data-entry-delete>Delete</button>
+            <button type="button" data-entry-restore hidden>Restore</button>
+        </div>
+        <form class="my-data__permissions" data-entry-permissions-form hidden>
+            <label>
+                <input type="checkbox" data-permission="resume_display">
+                Show on résumé
+            </label>
+            <label>
+                <input type="checkbox" data-permission="visitor_ai">
+                Allow visitor AI
+            </label>
+            <details>
+                <summary>Additional settings</summary>
+                <label>
+                    <input type="checkbox" data-permission="private_assistance_excluded">
+                    Exclude from private AI assistance
+                </label>
+                <p>
+                    Exclusion applies to future assistance. It does not undo
+                    processing already used to organize what you shared.
+                </p>
+            </details>
+            <button type="submit">Save sharing</button>
+        </form>
+    </article>
+</template>

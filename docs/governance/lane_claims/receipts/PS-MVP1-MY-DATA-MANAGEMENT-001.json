@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-MY-DATA-MANAGEMENT-001",
+  "candidate_sha": "5e1a187c64c71fa83e70caa74659e7b00061060f",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0882f-9e94-74d3-8812-0c85df1f5aae",
+  "result": "pass",
+  "reviewed_at": "2026-09-13T14:58:09Z",
+  "findings": [
+    {
+      "id": "C1-proposal-wording-field-boundaries",
+      "status": "resolved",
+      "severity": "high",
+      "summary": "The proposal editor copied one combined sentence into every proposed field (role_title, employer_name and location all received the same wording). Each proposed field now has its own editor prefilled with that field's value, and Use-my-wording submits per-field values with untouched fields sent exactly as proposed. Browser regression captures the submitted confirmed_values. PASS at 5e1a187c64c71fa83e70caa74659e7b00061060f."
+    },
+    {
+      "id": "C2-current-role-boolean-correction",
+      "status": "resolved",
+      "severity": "medium",
+      "summary": "The inline correction editor stringified every value, so editing a role title submitted current_role as the string \"true\" and the server rejected it as invalid. Boolean fields now render as checkboxes and submit real booleans through a shared typed-field helper used by both the inline and proposal editors. Browser regression proves true-kept-true, true-to-false, and false-to-true. PASS at 5e1a187c64c71fa83e70caa74659e7b00061060f."
+    },
+    {
+      "id": "C3-deletion-activity-lifecycle-date",
+      "status": "resolved",
+      "severity": "medium",
+      "summary": "Activity dated deletions with content timestamps (a September 2 correction displayed as the September 13 deletion date). The service now exposes deleted_at through _present, and both Activity builders date deletions strictly from the lifecycle timestamp, inventing no dated event when it is absent; _delete still leaves content stamps untouched. Unit regressions pin distinct Sept 1/2/13 stamps and the no-invention rule; browser regression pins the API, refreshed timeline, and bootstrap rendering. PASS at 5e1a187c64c71fa83e70caa74659e7b00061060f."
+    },
+    {
+      "id": "C4-final-verdict",
+      "status": "informational",
+      "severity": "minor",
+      "summary": "Independent PASS on the exact candidate recorded 2026-09-13T14:58:09Z; Codex final decision session:01a0882f-9e94-74d3-8812-0c85df1f5aae/evt-9f052107-75a6-4bd9-a6f7-cf03018e50cb returned PASS and released the review hold. Affected suites 71/71 unit and 12/12 browser executed green; Azure CI build 2901 on refs/pull/1017/merge completed succeeded. Scope, writer identity, and the reviewed code are preserved; production deployment and feature activation remain separately authorized."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MVP1-MY-DATA-MANAGEMENT-001.md"
+}

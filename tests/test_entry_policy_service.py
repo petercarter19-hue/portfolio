@@ -297,6 +297,36 @@ class EntryPolicyServiceTests(unittest.TestCase):
                 },
             )
 
+    def test_present_exposes_the_lifecycle_timestamp(self):
+        self.create(self.owner_a, role_title="Engineer", employer_name="PeerSlate")
+        created = self.service.get_entry(self.owner_a, key(1))["entry"]
+        self.assertIsNone(created["deleted_at"])
+        deleted = self.service.commit(
+            self.owner_a,
+            {
+                "request_id": str(uuid4()),
+                "type": "delete",
+                "entry_key": key(1),
+                "expected_content_version": 1,
+                "expected_access_revision": 1,
+                "dependent_keys": [],
+            },
+        )["entries"][0]
+        self.assertEqual(deleted["lifecycle"], "deleted")
+        self.assertEqual(deleted["deleted_at"], "2026-09-11T00:00:00Z")
+        # Deleting never rewrites the content timestamps.
+        self.assertEqual(deleted["updated_at"], created["updated_at"])
+        restored = self.service.commit(
+            self.owner_a,
+            {
+                "request_id": str(uuid4()),
+                "type": "restore",
+                "entry_key": key(1),
+                "expected_access_revision": 2,
+            },
+        )["entries"][0]
+        self.assertIsNone(restored["deleted_at"])
+
     def test_unknown_command_is_refused_before_storage(self):
         store = InMemoryEntryPolicyRepository()
         service = EntryPolicyService(repository=store, clock=self.clock)
@@ -463,6 +493,79 @@ class EntryPolicyServiceTests(unittest.TestCase):
         self.assertFalse(current["resume_display"])
         self.assertEqual(result["match"]["decision"], "equivalent")
 
+    def test_resolve_match_equivalent_with_identical_values_stays_quiet(self):
+        original = self.create(
+            self.owner_a,
+            entry=1,
+            canonical_type="knowledge",
+            title="About me",
+            wording="Same wording",
+            classification="personal",
+        )["entries"][0]
+        self.create(
+            self.owner_a,
+            entry=2,
+            canonical_type="knowledge",
+            title="About me",
+            wording="Same wording",
+            classification="personal",
+        )
+        self.clock.now = self.clock.now + timedelta(hours=1)
+        current = self.service.commit(
+            self.owner_a,
+            {
+                "request_id": str(uuid4()),
+                "type": "resolve_match",
+                "entry_key": key(1),
+                "candidate_key": key(2),
+                "match_decision": "equivalent",
+                "expected_content_version": original["content_version"],
+            },
+        )["entries"][0]
+        # Established contract holds: values adopted, version moves, no
+        # permission grants. But nothing changed, so updated_at stays put
+        # and Activity keeps reading this entry as added, not corrected.
+        self.assertEqual(current["values"]["wording"], "Same wording")
+        self.assertEqual(
+            current["content_version"], original["content_version"] + 1
+        )
+        self.assertFalse(current["resume_display"])
+        self.assertEqual(current["updated_at"], original["updated_at"])
+        self.assertEqual(current["updated_at"], current["created_at"])
+
+    def test_resolve_match_equivalent_with_new_values_moves_updated(self):
+        original = self.create(
+            self.owner_a,
+            entry=1,
+            canonical_type="knowledge",
+            title="About me",
+            wording="First version",
+            classification="personal",
+        )["entries"][0]
+        self.create(
+            self.owner_a,
+            entry=2,
+            canonical_type="knowledge",
+            title="About me",
+            wording="Corrected wording",
+            classification="personal",
+        )
+        self.clock.now = self.clock.now + timedelta(hours=1)
+        current = self.service.commit(
+            self.owner_a,
+            {
+                "request_id": str(uuid4()),
+                "type": "resolve_match",
+                "entry_key": key(1),
+                "candidate_key": key(2),
+                "match_decision": "equivalent",
+                "expected_content_version": original["content_version"],
+            },
+        )["entries"][0]
+        self.assertEqual(current["values"]["wording"], "Corrected wording")
+        self.assertNotEqual(current["updated_at"], original["updated_at"])
+        self.assertNotEqual(current["updated_at"], current["created_at"])
+
     def test_recategorize_and_permanent_delete_are_closed_owner_commands(self):
         created = self.create(
             self.owner_a,
@@ -507,6 +610,101 @@ class EntryPolicyServiceTests(unittest.TestCase):
             self.service.get_entry(self.owner_a, key(1))
         with self.assertRaises(EntryPolicyNotFoundError):
             self.service.get_entry(self.owner_b, key(1))
+
+    def test_create_stamps_created_and_updated_together(self):
+        created = self.create(
+            self.owner_a, role_title="Engineer", employer_name="PeerSlate"
+        )["entries"][0]
+
+        self.assertEqual(created["created_at"], "2026-09-11T00:00:00Z")
+        self.assertEqual(created["updated_at"], "2026-09-11T00:00:00Z")
+
+    def test_direct_correction_moves_updated_but_keeps_created(self):
+        created = self.create(
+            self.owner_a, role_title="Engineer", employer_name="PeerSlate"
+        )["entries"][0]
+        self.clock.now = datetime(2026, 9, 12, 12, 30, tzinfo=timezone.utc)
+        updated = self.service.commit(
+            self.owner_a,
+            {
+                "request_id": str(uuid4()),
+                "type": "edit",
+                "entry_key": key(1),
+                "expected_content_version": created["content_version"],
+                "values": {"role_title": "Senior Engineer", "employer_name": "PeerSlate"},
+            },
+        )["entries"][0]
+
+        self.assertEqual(updated["created_at"], "2026-09-11T00:00:00Z")
+        self.assertEqual(updated["updated_at"], "2026-09-12T12:30:00Z")
+
+    def test_recategorize_moves_updated_but_keeps_created(self):
+        created = self.create(
+            self.owner_a,
+            canonical_type="knowledge",
+            title="About me",
+            wording="Private note",
+            classification="personal",
+        )["entries"][0]
+        self.clock.now = datetime(2026, 9, 12, tzinfo=timezone.utc)
+        moved = self.service.commit(
+            self.owner_a,
+            {
+                "request_id": str(uuid4()),
+                "type": "recategorize",
+                "entry_key": key(1),
+                "expected_content_version": created["content_version"],
+                "category": "personal",
+            },
+        )["entries"][0]
+
+        self.assertEqual(moved["created_at"], "2026-09-11T00:00:00Z")
+        self.assertEqual(moved["updated_at"], "2026-09-12T00:00:00Z")
+
+    def test_sharing_and_lifecycle_changes_do_not_read_as_corrections(self):
+        created = self.create(
+            self.owner_a, role_title="Engineer", employer_name="PeerSlate"
+        )["entries"][0]
+        self.clock.now = datetime(2026, 9, 12, tzinfo=timezone.utc)
+        shared = self.service.commit(
+            self.owner_a,
+            {
+                "request_id": str(uuid4()),
+                "type": "change_permissions",
+                "entry_key": key(1),
+                "expected_access_revision": created["access_revision"],
+                "permissions": {"resume_display": True},
+            },
+        )["entries"][0]
+
+        self.assertTrue(shared["resume_display"])
+        self.assertEqual(shared["updated_at"], "2026-09-11T00:00:00Z")
+
+    def test_legacy_entries_without_stamps_stay_readable(self):
+        repository = self.service.repository
+        snapshot = repository.load_owner(self.owner_a)
+        snapshot["entries"][key(9)] = {
+            "entry_key": key(9),
+            "canonical_type": "role",
+            "category": "experience",
+            "parent_key": None,
+            "content_version": 1,
+            "access_revision": 1,
+            "resume_display": False,
+            "visitor_ai": False,
+            "private_assistance_excluded": False,
+            "lifecycle": "active",
+            "deleted_at": None,
+            "recover_until": None,
+            "values": {"role_title": "Legacy", "employer_name": "PeerSlate"},
+        }
+        repository.save_owner(self.owner_a, snapshot)
+
+        listed = self.service.list_entries(self.owner_a)["entries"]
+
+        self.assertEqual(len(listed), 1)
+        self.assertIsNone(listed[0]["created_at"])
+        self.assertIsNone(listed[0]["updated_at"])
 
     def test_sql_adapter_stays_fail_closed_against_the_current_allowlist(self):
         from services.entry_policy_repository import (

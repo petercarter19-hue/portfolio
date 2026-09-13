@@ -4,6 +4,9 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/owner-app.css') }}">
+{% if my_data_enabled %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/my-data.css') }}">
+{% endif %}
 <style>
     .owner-app__panel--settings dd {
         overflow-wrap: anywhere;
@@ -79,6 +82,9 @@
             </div>
         </dl>
 
+        {% if my_data_enabled %}
+        {% include "partials/settings/_my_data_shell.html" %}
+        {% else %}
         <section class="owner-app__section" aria-labelledby="my-data-title">
             <h2 id="my-data-title">My Data</h2>
             <p>
@@ -138,6 +144,7 @@
                 </div>
             </dl>
         </section>
+        {% endif %}
 
         {% if account_export_enabled %}
         {#
@@ -171,4 +178,10 @@
         </form>
     </section>
 </div>
+{% if my_data_enabled %}
+{% if my_data_bootstrap_json %}
+<script type="application/json" id="my-data-bootstrap">{{ my_data_bootstrap_json | safe }}</script>
+{% endif %}
+<script src="{{ url_for('static', filename='js/my-data.js') }}" defer></script>
+{% endif %}
 {% endblock %}

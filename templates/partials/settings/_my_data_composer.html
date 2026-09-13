@@ -1,0 +1,58 @@
+{# Composer overlay. One panel keeps typing, voice, documents, Add, receipts,
+   corrections and the optional guide together. Closing preserves the draft
+   and the list position. An outside click never dismisses an active
+   recording. The guide stays inside this overlay and is never required. #}
+<div class="my-data__overlay" data-my-data-overlay hidden>
+    <div class="my-data__dialog" role="dialog" aria-modal="true" aria-labelledby="my-data-composer-title">
+        <div class="my-data__dialog-head">
+            <h3 id="my-data-composer-title">Add information</h3>
+            <button type="button" data-my-data-close aria-label="Close and keep draft">
+                Close
+            </button>
+        </div>
+
+        <p class="my-data__hint">
+            Share as much as you like in your own words, then press Add once.
+            Everything you save starts private.
+        </p>
+
+        <label class="my-data__label" for="my-data-text">Details</label>
+        <textarea id="my-data-text" data-my-data-text rows="6"
+                  placeholder="Example: Led quality engineering at Acme from 2019 to 2023 and shipped automated checks that cut release defects by half."></textarea>
+
+        <div class="my-data__composer-row">
+            <button type="button" data-my-data-mic aria-pressed="false">
+                Record voice
+            </button>
+            <label class="my-data__file">
+                Attach documents
+                <input type="file" data-my-data-file multiple
+                       accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain">
+            </label>
+        </div>
+        <p class="my-data__limits" data-my-data-limits>
+            Documents stay under 10 MB each. Voice recordings stay under
+            3 minutes each. You can attach more than one file or recording.
+        </p>
+        <ul class="my-data__attachments" data-my-data-attachments></ul>
+
+        <p class="my-data__draft" data-my-data-draft role="status" aria-live="polite"></p>
+
+        <div class="my-data__composer-actions">
+            <button type="button" class="owner-app__primary" data-my-data-add>
+                Add
+            </button>
+            <button type="button" data-my-data-discard>
+                Discard draft
+            </button>
+        </div>
+
+        <div class="my-data__receipt" data-my-data-receipt role="status" aria-live="polite"></div>
+        <div class="my-data__proposals" data-my-data-proposals></div>
+
+        <details class="my-data__guide" data-my-data-guide>
+            <summary>Guide me (optional)</summary>
+            <div data-my-data-guide-body></div>
+        </details>
+    </div>
+</div>

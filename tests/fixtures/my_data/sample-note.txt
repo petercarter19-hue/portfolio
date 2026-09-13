@@ -1,0 +1,2 @@
+Member supplied background note for the My Data browser proof.
+It exercises the composer document staging path with a small plain text file.

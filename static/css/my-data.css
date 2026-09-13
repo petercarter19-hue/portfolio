@@ -1,0 +1,215 @@
+/* Private My Data entrance. Desktop overlay dialog, mobile bottom sheet. */
+
+.my-data__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: end;
+    margin: 1.5rem 0 1rem;
+}
+
+.my-data__views {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.my-data__views [role="tab"] {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(10, 27, 54, 0.28);
+    background: transparent;
+    font: 600 0.95rem/1.4 Inter, sans-serif;
+    cursor: pointer;
+}
+
+.my-data__views [role="tab"][aria-selected="true"] {
+    background: #0a1b36;
+    color: #fff;
+}
+
+.my-data__search,
+.my-data__filter {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.my-data__search input,
+.my-data__filter select {
+    min-height: 44px;
+    font: 400 1rem/1.5 Inter, sans-serif;
+}
+
+.my-data__status {
+    min-height: 1.5em;
+    margin: 0.5rem 0;
+}
+
+.my-data__activity {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.my-data__entry {
+    border: 1px solid rgba(10, 27, 54, 0.16);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin: 0 0 0.75rem;
+}
+
+.my-data__sharing {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.5rem 0;
+    padding: 0;
+}
+
+.my-data__sharing li {
+    font-size: 0.85rem;
+    border: 1px solid rgba(10, 27, 54, 0.28);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+}
+
+.my-data__entry-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.my-data__entry-actions button,
+.my-data__bulk button,
+.my-data__composer-actions button,
+.my-data__composer-row button,
+.my-data__dialog-head button,
+.my-data__attachments button,
+.my-data__proposal button,
+.my-data__confirm button,
+.my-data__permissions button {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Every interactive row is itself a 44px target: the label (not the
+   native checkbox) is what the member taps. */
+.my-data__select,
+.my-data__permissions label,
+.my-data__file {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+}
+
+.my-data__guide summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    cursor: pointer;
+}
+
+.my-data__editor input {
+    min-height: 44px;
+    font-size: 1rem;
+}
+
+.my-data__proposal label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+}
+
+.my-data__proposal input[type="text"] {
+    min-height: 44px;
+    font-size: 1rem;
+    flex: 1;
+}
+
+.my-data__dialog button:focus-visible,
+.my-data__dialog input:focus-visible,
+.my-data__dialog select:focus-visible,
+.my-data__dialog textarea:focus-visible,
+.my-data__dialog summary:focus-visible,
+.my-data__entry-actions button:focus-visible,
+.my-data__views [role="tab"]:focus-visible {
+    outline: 3px solid #0a1b36;
+    outline-offset: 2px;
+}
+
+.my-data__overlay {
+    position: fixed;
+    inset: 0;
+    /* Above all site chrome (the mobile tab bar sits at z 1150) so the
+       modal composer stays tappable on phones. */
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 27, 54, 0.45);
+    padding: 1rem;
+}
+
+.my-data__overlay[hidden] {
+    display: none;
+}
+
+.my-data__dialog {
+    background: #fff;
+    border-radius: 1rem;
+    width: min(44rem, 100%);
+    max-height: min(90vh, 60rem);
+    overflow: auto;
+    padding: 1.5rem;
+}
+
+.my-data__dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.my-data__dialog textarea {
+    width: 100%;
+    font: 400 1rem/1.6 Inter, sans-serif;
+}
+
+.my-data__composer-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.my-data__composer-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+    .my-data__overlay {
+        align-items: end;
+        padding: 0;
+    }
+
+    .my-data__dialog {
+        border-radius: 1rem 1rem 0 0;
+        width: 100%;
+        max-height: 92dvh;
+        padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .my-data__overlay,
+    .my-data__dialog {
+        transition: none;
+    }
+}

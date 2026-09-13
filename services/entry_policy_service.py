@@ -254,6 +254,31 @@ def _normalize_values(canonical_type: str, values: object, *, required: bool) ->
     return normalized
 
 
+def _moment_text(now: datetime) -> str:
+    """Render a snapshot timestamp as a JSON-safe UTC ISO string.
+
+    Stored as text (not datetime) so owner snapshots survive JSON
+    round-trips such as the SQL command log without custom encoders.
+    """
+    moment = now if now.tzinfo is not None else now.replace(tzinfo=timezone.utc)
+    return moment.isoformat().replace("+00:00", "Z")
+
+
+def _present_moment(value):
+    """Render an optional lifecycle timestamp as a JSON-safe UTC ISO string.
+
+    Snapshots built before a stamp existed carry None; datetimes render
+    like recover_until; already-text values pass through untouched.
+    """
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        moment = value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
+        return moment.isoformat().replace("+00:00", "Z")
+    text = str(value)
+    return text or None
+
+
 def _present(entry: dict, *, now: datetime) -> dict:
     recover_until = entry.get("recover_until")
     return {
@@ -267,6 +292,9 @@ def _present(entry: dict, *, now: datetime) -> dict:
         "visitor_ai": entry["visitor_ai"],
         "private_assistance_excluded": entry["private_assistance_excluded"],
         "lifecycle": entry["lifecycle"],
+        "created_at": entry.get("created_at"),
+        "updated_at": entry.get("updated_at"),
+        "deleted_at": _present_moment(entry.get("deleted_at")),
         "recover_until": recover_until.isoformat().replace("+00:00", "Z") if recover_until else None,
         "expired": bool(
             entry["lifecycle"] == LIFECYCLE_DELETED
@@ -436,6 +464,8 @@ class EntryPolicyService:
             "visitor_ai": False,
             "private_assistance_excluded": False,
             "lifecycle": LIFECYCLE_ACTIVE,
+            "created_at": _moment_text(now),
+            "updated_at": _moment_text(now),
             "deleted_at": None,
             "recover_until": None,
             "values": values,
@@ -454,6 +484,7 @@ class EntryPolicyService:
         values = _normalize_values(entry["canonical_type"], command["values"], required=True)
         entry["values"] = values
         entry["content_version"] += 1
+        entry["updated_at"] = _moment_text(now)
         return [entry["entry_key"]], {
             "outcome": "updated",
             "entries": [_present(entry, now=now)],
@@ -469,6 +500,7 @@ class EntryPolicyService:
             raise EntryPolicyValidationError("Invalid category.")
         entry["category"] = category
         entry["content_version"] += 1
+        entry["updated_at"] = _moment_text(now)
         return [entry["entry_key"]], {
             "outcome": "recategorized",
             "entries": [_present(entry, now=now)],
@@ -603,7 +635,15 @@ class EntryPolicyService:
         self._require_content_version(entry, command)
         decision = command["match_decision"]
         if decision == "equivalent":
-            entry["values"] = dict(candidate.get("values") or {})
+            adopted = dict(candidate.get("values") or {})
+            # A truly identical duplicate stays quiet: the canonical values
+            # are still adopted and the version still moves (established
+            # contract), but updated_at only moves when the member's
+            # resolution actually changes content. Otherwise Activity
+            # would report a correction that never happened.
+            if adopted != dict(entry.get("values") or {}):
+                entry["updated_at"] = _moment_text(now)
+            entry["values"] = adopted
             entry["content_version"] += 1
         elif decision == "additional_detail":
             merged = dict(entry.get("values") or {})
@@ -616,6 +656,7 @@ class EntryPolicyService:
             )
             entry["values"] = merged
             entry["content_version"] += 1
+            entry["updated_at"] = _moment_text(now)
         snapshot["match_decisions"][command["request_id"]] = {
             "entry_key": entry["entry_key"],
             "candidate_key": candidate["entry_key"],

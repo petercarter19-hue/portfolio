@@ -1,0 +1,99 @@
+{# Private My Data entrance. Rendered only when PEERSLATE_MY_DATA_ENABLED is on.
+   Gate off keeps the read-only truth-state summary in owner_settings.html. #}
+<section class="owner-app__section owner-app__section--my-data" aria-labelledby="my-data-title">
+    <h2 id="my-data-title">My Data</h2>
+    <p>
+        Your experience helps PeerSlate work better for you. It helps you build
+        your résumé and get assistance that reflects your background and goals.
+        Start with whatever you’d like to share. You can add or change details
+        anytime.
+    </p>
+    <p>
+        Your information starts private. You choose what appears on your résumé
+        and what visitors can learn through your AI.
+    </p>
+    <p class="owner-app__note" role="note">
+        Public effects are not active yet. Your sharing choices are saved for
+        the future and nothing is shown publicly or to visitor AI today.
+    </p>
+
+    <div id="my-data" data-my-data-root
+         data-my-data-enabled="true"
+         data-my-data-entries-url="{{ my_data_entries_url }}"
+         data-my-data-entry-command-url="{{ my_data_entry_command_url }}"
+         data-my-data-intake-workspace-url="{{ my_data_intake_workspace_url }}"
+         data-my-data-intake-submit-url="{{ my_data_intake_submit_url }}"
+         data-my-data-intake-recording-url="{{ my_data_intake_recording_url }}"
+         data-my-data-intake-decision-url="{{ my_data_intake_decision_url }}"
+         data-my-data-intake-purge-url="{{ my_data_intake_purge_url }}"
+         data-my-data-guide-url="{{ my_data_guide_url }}"
+         data-my-data-guide-status-url="{{ my_data_guide_status_url }}">
+        <div class="my-data__toolbar" role="toolbar" aria-label="My Data views and filters">
+            <div class="my-data__views" role="tablist" aria-label="Views">
+                <button type="button" role="tab" aria-selected="true" data-my-data-view="category" id="my-data-tab-category">By category</button>
+                <button type="button" role="tab" aria-selected="false" data-my-data-view="activity" id="my-data-tab-activity">Activity</button>
+            </div>
+            <label class="my-data__search">
+                <span class="my-data__label">Search</span>
+                <input type="search" data-my-data-search autocomplete="off"
+                       aria-label="Search your information">
+            </label>
+            <label class="my-data__filter">
+                <span class="my-data__label">Category</span>
+                <select data-my-data-category aria-label="Filter by category">
+                    <option value="">Every category</option>
+                    <option value="experience">Work history</option>
+                    <option value="education">Education</option>
+                    <option value="skill">Skills</option>
+                    <option value="achievement">Achievements</option>
+                    <option value="credential">Credentials</option>
+                    <option value="project">Project experience</option>
+                    <option value="personal">About me</option>
+                </select>
+            </label>
+            <label class="my-data__filter">
+                <span class="my-data__label">Sharing</span>
+                <select data-my-data-permission aria-label="Filter by sharing state">
+                    <option value="all">Everything</option>
+                    <option value="private">Private</option>
+                    <option value="resume">Shown on résumé</option>
+                    <option value="visitor_ai">Available to visitor AI</option>
+                    <option value="excluded">Excluded from private AI</option>
+                    <option value="recently_deleted">Recently deleted</option>
+                </select>
+            </label>
+        </div>
+
+        <p class="my-data__status" data-my-data-status role="status" aria-live="polite"></p>
+
+        <div data-my-data-panels>
+            <div data-my-data-panel="category" role="tabpanel" aria-labelledby="my-data-tab-category">
+                <div data-my-data-groups></div>
+            </div>
+            <div data-my-data-panel="activity" role="tabpanel" aria-labelledby="my-data-tab-activity" hidden>
+                <ol data-my-data-activity class="my-data__activity"></ol>
+            </div>
+        </div>
+
+        <div class="my-data__bulk" data-my-data-bulk hidden>
+            <p data-my-data-bulk-count></p>
+            <button type="button" data-my-data-bulk-resume>Show on résumé</button>
+            <button type="button" data-my-data-bulk-private>Make private</button>
+        </div>
+
+        <div class="owner-app__actions">
+            <button type="button" class="owner-app__primary" data-my-data-open>
+                Add information
+            </button>
+        </div>
+
+        {% include "partials/settings/_my_data_entry.html" %}
+        {% include "partials/settings/_my_data_composer.html" %}
+    </div>
+    <noscript>
+        <p>
+            My Data needs JavaScript for the composer overlay. Your saved
+            information stays private and unchanged.
+        </p>
+    </noscript>
+</section>

@@ -228,9 +228,15 @@ class OwnerSettingsTests(unittest.TestCase):
     def test_settings_template_adds_no_javascript_or_fake_field(self):
         template = Path("templates/owner_settings.html").read_text(encoding="utf-8")
 
-        self.assertNotIn("<script", template.lower())
+        # The gate-on entrance needs exactly two script tags: the JSON
+        # bootstrap payload and the deferred bundle include. No inline
+        # script body and no other script tag may appear.
+        lowered = template.lower()
+        self.assertEqual(lowered.count("<script"), 2)
+        self.assertIn('id="my-data-bootstrap"', template)
+        self.assertIn('filename=\'js/my-data.js\'', template)
         for field_tag in ("<input", "<select", "<textarea"):
-            self.assertNotIn(field_tag, template.lower())
+            self.assertNotIn(field_tag, lowered)
 
     def test_template_local_css_supports_mobile_reflow_and_long_values(self):
         template = Path("templates/owner_settings.html").read_text(encoding="utf-8")

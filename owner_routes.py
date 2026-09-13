@@ -361,7 +361,88 @@ def settings():
         account_export_enabled=export_enabled,
         export_included_count=export_included_count,
         export_total_count=export_total_count,
+        **_my_data_template_context(),
     )
+
+
+@owner.get("/app/settings/my-data")
+def my_data():
+    """Render the signed-in member's Settings with the My Data entrance."""
+    try:
+        identity = get_current_identity()
+    except AuthenticationRequired:
+        return redirect(url_for("auth.sign_in", return_to="/app/settings/my-data"))
+    except DatabaseServiceError:
+        current_app.logger.error("PeerSlate owner settings identity lookup failed.")
+        return _render_owner_unavailable()
+
+    export_enabled = _account_export_enabled()
+    export_included_count = None
+    export_total_count = None
+    if export_enabled:
+        domains = account_export_experience_service.domain_summary()
+        export_included_count = domains["included_count"]
+        export_total_count = domains["total_count"]
+
+    return render_template(
+        "owner_settings.html",
+        page_title="Settings",
+        member=identity,
+        account_export_enabled=export_enabled,
+        export_included_count=export_included_count,
+        export_total_count=export_total_count,
+        **_my_data_template_context(),
+    )
+
+
+def _my_data_enabled():
+    # Missing configuration behaves as disabled. Tests set it explicitly.
+    # The environment-backed wiring arrives in a small follow-on package
+    # after the active media claim releases app.py.
+    return current_app.config.get("PEERSLATE_MY_DATA_ENABLED", False) is True
+
+
+def _my_data_template_context():
+    enabled = _my_data_enabled()
+    context = {
+        "my_data_enabled": enabled,
+        "my_data_bootstrap_json": None,
+    }
+    if not enabled:
+        return context
+    try:
+        endpoint_urls = {
+            "my_data_entries_url": url_for("entry_policy.list_entry_policy_entries"),
+            "my_data_entry_command_url": url_for("entry_policy.commit_entry_policy_command"),
+            "my_data_intake_workspace_url": url_for("resume_intake.get_intake_workspace"),
+            "my_data_intake_submit_url": url_for("resume_intake.post_submission"),
+            "my_data_intake_recording_url": url_for("resume_intake.post_recording"),
+            "my_data_intake_decision_url": url_for("resume_intake.post_proposal_decision"),
+            "my_data_intake_purge_url": url_for("resume_intake.post_source_purge"),
+            "my_data_guide_url": url_for("resume_intake.get_guide_state"),
+            "my_data_guide_status_url": url_for("resume_intake.post_guide_status"),
+        }
+    except Exception:  # noqa: BLE001 - route map must never break Settings
+        current_app.logger.error("PeerSlate My Data endpoint mapping failed.")
+        return context
+    context.update(endpoint_urls)
+    try:
+        from services.my_data_service import MyDataService
+
+        overview = MyDataService().overview(get_current_identity().user_key)
+        # Mirror Flask's tojson escaping (<, >, &) so member-authored values
+        # can never break out of the JSON script block; default=_json_value
+        # stays because intake rows may carry datetime/UUID objects.
+        context["my_data_bootstrap_json"] = (
+            json.dumps(overview, default=_json_value)
+            .replace("<", "\\u003c")
+            .replace(">", "\\u003e")
+            .replace("&", "\\u0026")
+        )
+    except Exception:  # noqa: BLE001 - bootstrap is a first-paint aid only
+        current_app.logger.error("PeerSlate My Data bootstrap failed.")
+        context["my_data_bootstrap_json"] = None
+    return context
 
 
 def _account_export_enabled():
