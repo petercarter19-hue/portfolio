@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "package": "PS-INTERVIEW-RECOVERY-MOBILE-NAV-001",
+  "state": "active",
+  "outcome": "Correct approved audit findings F2 and F3 only. For public Interview Studio, preserve the answer after failed coaching, expose one request-capable recovery action, keep Keep editing request-free, and make one Retry activation produce one browser POST without duplicate attempt or History. At 320px and 390px, preserve the accepted nonmodal Menu while removing Interview fixed or sticky controls from visual and keyboard competition; preserve Escape and opener focus return, outside dismissal, desktop, public/authenticated distinctions, no-JavaScript navigation, reduced motion, forced colors and reflow. Reproduce both defects before edits with deterministic local stubs. The accepted Grok 4.6 task is sole writer; Protected independent review is required. Exclude F1, F4, homepage, redesign, Interview architecture, app.py, resume/My Data/media/editor, database/schema, pipeline, provider/auth, deployment and production. PACKAGE_REGISTRY.json is deferred while PS-AZURE-STARTUP-SEVEN-WORKLOAD-001 owns it; do not merge until a governed same-package extension adds the released path and registration, affected validation repeats, and one exact candidate passes independent review.",
+  "assignment": "implementation",
+  "writer_ref": "session:fc6eb84c-de86-4d81-bcae-95fd74ac8e0b",
+  "branch": "work/2026-09-13-interview-recovery-mobile-nav-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "492d69b53427a4c4ac12fae4d9b4ffaf321dcf4e",
+  "owner_outcome_ref": "session:01a0789c-c166-7eb0-8588-517c27f13b86/delegation:2026-09-13/grok-4.6-f2-f3-repair-approved",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-INTERVIEW-RECOVERY-MOBILE-NAV-001.json",
+    "docs/governance/lane_claims/evidence/PS-INTERVIEW-RECOVERY-MOBILE-NAV-001.md",
+    "docs/governance/lane_claims/receipts/PS-INTERVIEW-RECOVERY-MOBILE-NAV-001.json",
+    "docs/initiatives/PS-INTERVIEW-RECOVERY-MOBILE-NAV-001/README.md",
+    "docs/initiatives/PS-INTERVIEW-RECOVERY-MOBILE-NAV-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "static/js/interview-studio.js",
+    "static/css/interview-studio.css",
+    "static/js/public-mobile-nav.js",
+    "static/css/public-navigation.css",
+    "templates/interview_studio.html",
+    "templates/base.html",
+    "tests/test_interview_recovery_mobile_nav.py",
+    "tests/test_interview_recovery_mobile_nav_browser.py",
+    "scripts/run_interview_recovery_mobile_nav_browser.py",
+    "tests/test_interview_studio.py",
+    "tests/test_navigation.py",
+    "tests/test_shared_shell_convergence.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-INTERVIEW-RECOVERY-MOBILE-NAV-001.md"
+  ],
+  "domains": [
+    "runtime:interview-studio:coaching-recovery",
+    "ux:interview-studio:single-recovery-path",
+    "accessibility:interview-studio:mobile-menu-focus-reflow",
+    "runtime:shared-shell:mobile-menu-interview-interaction",
+    "testing:interview-studio:recovery-mobile-navigation",
+    "governance:initiative:interview-recovery-mobile-navigation",
+    "governance:package-registry:interview-recovery-mobile-navigation"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
