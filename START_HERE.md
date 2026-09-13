@@ -46,6 +46,16 @@ uses `read` before the edit, changes and commits only the exact claim on its
 dedicated control branch, then runs the matching control intent with `--fetch
 --require-clean` before PR. It may not change an implementation surface.
 
+Codex lifecycle and mutating preflight calls resolve the actual
+`CODEX_THREAD_ID` automatically as `session:<UUID>`; they never use inherited
+`CODEX_SESSION_ID`. Legacy `PEERSLATE_CALLER_REF` remains compatible, but it
+must agree with native identity. For a Pete-operated handoff to an external
+runtime, the current control-lease holder registers a scoped caller context as
+documented in `docs/governance/WORKTREE_LIFECYCLE.md` and supplies its opaque ID
+in the handoff. The receiver passes `--caller-context <ID>`; Pete does not set a
+user or global environment variable. A context identifies the caller only and
+does not grant a claim, lease, custody, repository, or production authority.
+
 | Path | Use for | Additional authority |
 |---|---|---|
 | Routine | Copy, isolated correction, focused test, internal refactor, documentation | Code and focused verification. |

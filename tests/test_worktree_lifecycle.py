@@ -25,6 +25,27 @@ sys.modules[SPEC.name] = LIFECYCLE
 SPEC.loader.exec_module(LIFECYCLE)
 
 
+_IDENTITY_ENVIRONMENT = None
+
+
+def setUpModule() -> None:
+    global _IDENTITY_ENVIRONMENT
+    _IDENTITY_ENVIRONMENT = patch.dict(
+        os.environ,
+        {
+            "CODEX_THREAD_ID": "",
+            "PEERSLATE_CALLER_REF": "",
+            LIFECYCLE.CALLER_CONTEXT_ENV: "",
+        },
+    )
+    _IDENTITY_ENVIRONMENT.start()
+
+
+def tearDownModule() -> None:
+    assert _IDENTITY_ENVIRONMENT is not None
+    _IDENTITY_ENVIRONMENT.stop()
+
+
 def invoke(*arguments: str) -> tuple[int, dict]:
     output = io.StringIO()
     with contextlib.redirect_stdout(output):
@@ -130,9 +151,14 @@ class RepositoryFixture:
         return sha
 
     def run(self, *arguments: str, cwd: Path | None = None) -> tuple[int, dict]:
+        environment = os.environ.copy()
+        # Synthetic fixture tasks exercise legacy identity-free behavior unless
+        # an individual test supplies an explicit launcher/context identity.
+        environment["CODEX_THREAD_ID"] = ""
         result = subprocess.run(
             [sys.executable, "-B", str(SCRIPT), "--repo", str(self.repo), *arguments],
             cwd=cwd or self.repo,
+            env=environment,
             text=True,
             encoding="utf-8",
             stdout=subprocess.PIPE,
@@ -1954,6 +1980,68 @@ class WorktreeLifecycleTests(unittest.TestCase):
         )
         self.assertEqual(code, 0, finished)
         self.assertFalse(retained_path.exists())
+
+    def test_runtime_verification_propagates_context_in_both_workspace_modes(self):
+        fixture = self.fixture()
+        git(fixture.repo, "push", "origin", f"main:refs/heads/{fixture.branch}")
+        fixture.initialize()
+        context_id = "a" * 32
+        receiver = "agent:external-verifier"
+        repository_context = LIFECYCLE._repo_context(fixture.repo)
+        registry = json.loads(fixture.registry_path.read_text(encoding="utf-8"))
+        registry.setdefault("caller_contexts", []).append(
+            {
+                "id": context_id,
+                "state": "active",
+                "repository_common_dir": str(repository_context.common_dir),
+                "receiver_ref": receiver,
+                "package": fixture.package,
+                "registered_by": "task:context-registrar",
+                "owner_authorization_ref": "session:owner/runtime-context",
+                "registered_at": "2026-09-12T00:00:00Z",
+                "revoked_at": None,
+                "revoked_by": None,
+                "revocation_authorization_ref": None,
+            }
+        )
+        fixture.registry_path.write_text(
+            json.dumps(registry, indent=2) + "\n", encoding="utf-8"
+        )
+        environment = {
+            "PEERSLATE_CALLER_REF": "",
+            "CODEX_THREAD_ID": "",
+            LIFECYCLE.CALLER_CONTEXT_ENV: "",
+        }
+        for mode in ("control", "ephemeral"):
+            with self.subTest(mode=mode):
+                observed = fixture.base / f"{mode}-verification-context.txt"
+                script = (
+                    "import os; from pathlib import Path; "
+                    f"Path({str(observed)!r}).write_text("
+                    "os.environ.get('PEERSLATE_CALLER_CONTEXT','') + '|' + "
+                    "os.environ.get('PEERSLATE_CALLER_REF',''), encoding='utf-8')"
+                )
+                arguments = [
+                    "verify",
+                    "--package",
+                    fixture.package,
+                    "--candidate-sha",
+                    fixture.main_sha,
+                    "--task-ref",
+                    receiver,
+                    "--caller-context",
+                    context_id,
+                    "--runtime-required",
+                ]
+                if mode == "ephemeral":
+                    arguments.append("--ephemeral")
+                arguments.extend(["--", sys.executable, "-B", "-c", script])
+                with patch.dict(os.environ, environment):
+                    code, payload = fixture.run(*arguments)
+                self.assertEqual(code, 0, payload)
+                self.assertEqual(
+                    observed.read_text(encoding="utf-8"), context_id + "|"
+                )
 
     def test_runtime_preflight_refuses_missing_command_and_unsafe_include_without_growth(self):
         fixture = self.fixture()
@@ -6325,13 +6413,186 @@ class ControlCustodyTests(unittest.TestCase):
         for k, v in kwargs.items():
             setattr(args, k, v)
         self.proof_path.write_text(json.dumps(self.proof), encoding='utf-8')
-        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': caller or self.receiver}):
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': caller or self.receiver, 'CODEX_THREAD_ID': ''}):
             return LIFECYCLE.command_control_custody(self.context, args)
 
     def accepted(self):
         item = self.command('propose')['transition']
         self.command('accept', transition=item['id'], acceptance_ref='agent:receiver/acceptance')
         return item['id']
+
+    def register_context(self, *, package=None, receiver=None, token=None, owner_ref=None):
+        args = SimpleNamespace(
+            action='register',
+            task_ref=self.f.writer,
+            package=package or self.f.package,
+            receiver_ref=receiver or self.receiver,
+            context_id=None,
+            owner_authorization_ref=owner_ref or 'session:owner/context-registration',
+            lease_token=self.proof['old_token'] if token is None else token,
+            caller_context='',
+            execute=True,
+        )
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.f.writer, 'CODEX_THREAD_ID': ''}):
+            return LIFECYCLE.command_caller_context(self.context, args)
+
+    def test_context_registration_before_acceptance_grants_no_custody(self):
+        registered = self.register_context()
+        self.assertEqual(registered['status'], 'registered')
+        self.assertEqual(registered['owner_authorization_ref'], 'session:owner/context-registration')
+        registry = LIFECYCLE._load_registry(self.context.registry_path)
+        control = LIFECYCLE._control_record(self.context, registry)
+        self.assertEqual(control['task_ref'], self.f.writer)
+        self.assertEqual(control['lease'], self.proof['old_lease'])
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': '', 'CODEX_THREAD_ID': ''}):
+            code, unscoped = self.f.run(
+                'control', '--task-ref', self.receiver,
+                '--caller-context', registered['caller_context'], '--base', self.f.main_sha,
+                '--execute'
+            )
+            self.assertEqual(code, LIFECYCLE.REFUSAL_EXIT, unscoped)
+            self.assertIn('requires an exact operation package', unscoped['error'])
+            code, refused = self.f.run(
+                'control', '--task-ref', self.receiver, '--package', self.f.package,
+                '--caller-context', registered['caller_context'], '--base', self.f.main_sha,
+                '--execute'
+            )
+        self.assertEqual(code, LIFECYCLE.REFUSAL_EXIT, refused)
+        self.assertIn('does not hold the current control lease', refused['error'])
+
+        proposed = self.command('propose')['transition']
+        receiver_args = SimpleNamespace(
+            action='accept', task_ref=self.receiver, execute=True,
+            proof_file=None, transition=proposed['id'],
+            acceptance_ref='agent:receiver/context-acceptance',
+            caller_context=registered['caller_context'],
+        )
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': '', 'CODEX_THREAD_ID': ''}):
+            accepted = LIFECYCLE.command_control_custody(self.context, receiver_args)
+            self.assertEqual(accepted['status'], 'accepted')
+            receiver_args.action = 'complete'
+            receiver_args.acceptance_ref = None
+            completed = LIFECYCLE.command_control_custody(self.context, receiver_args)
+        self.assertEqual(completed['status'], 'completed')
+        registry = LIFECYCLE._load_registry(self.context.registry_path)
+        self.assertEqual(
+            LIFECYCLE._control_record(self.context, registry)['task_ref'], self.receiver
+        )
+
+    def test_no_history_control_reconciles_explicit_and_native_identity(self):
+        request = SimpleNamespace(
+            execute=True,
+            task_ref=self.f.writer,
+            package=self.f.package,
+            base=self.f.main_sha,
+            release=False,
+            purpose='identity-conflict-test',
+            branch=self.f.branch,
+            include=[],
+            caller_context='',
+        )
+        environment = {
+            'PEERSLATE_CALLER_REF': self.f.writer,
+            'CODEX_THREAD_ID': '01a097f4-9de5-7723-9b13-65124d7ad4eb',
+        }
+        with patch.dict(os.environ, environment):
+            with self.assertRaisesRegex(LIFECYCLE.Refusal, 'identities disagree'):
+                LIFECYCLE.command_control(self.context, request)
+
+    def test_context_registration_supports_fresh_unclaimed_package(self):
+        fresh_package = 'PS-FRESH-CALLER-CONTEXT-001'
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.f.writer, 'CODEX_THREAD_ID': ''}):
+            code, released = self.f.run(
+                'control', '--task-ref', self.f.writer, '--release',
+                '--base', self.f.main_sha, '--execute'
+            )
+            self.assertEqual(code, 0, released)
+            code, leased = self.f.run(
+                'control', '--task-ref', self.f.writer, '--package', fresh_package,
+                '--branch', self.f.branch, '--base', self.f.main_sha, '--execute'
+            )
+            self.assertEqual(code, 0, leased)
+        registered = self.register_context(
+            package=fresh_package,
+            token=leased['lease_token'],
+            owner_ref='session:owner/fresh-package-context',
+        )
+        self.assertEqual(registered['package'], fresh_package)
+        self.assertEqual(
+            registered['owner_authorization_ref'],
+            'session:owner/fresh-package-context',
+        )
+
+    def test_context_registration_and_revocation_require_current_lease(self):
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, 'stale or missing'):
+            self.register_context(token='')
+        with self.assertRaisesRegex(LIFECYCLE.Refusal, 'stale or missing'):
+            self.register_context(token='f' * 64)
+        registered = self.register_context()
+        revoke = SimpleNamespace(
+            action='revoke', task_ref=self.f.writer, package=None,
+            receiver_ref=None, context_id=registered['caller_context'],
+            owner_authorization_ref='session:owner/context-revocation',
+            lease_token='', caller_context='', execute=True,
+        )
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.f.writer, 'CODEX_THREAD_ID': ''}):
+            with self.assertRaisesRegex(LIFECYCLE.Refusal, 'stale or missing'):
+                LIFECYCLE.command_caller_context(self.context, revoke)
+            revoke.lease_token = self.proof['old_token']
+            revoked = LIFECYCLE.command_caller_context(self.context, revoke)
+        self.assertEqual(revoked['status'], 'revoked')
+        self.assertEqual(
+            revoked['revocation_authorization_ref'],
+            'session:owner/context-revocation',
+        )
+        registry = LIFECYCLE._load_registry(self.context.registry_path)
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': '', 'CODEX_THREAD_ID': ''}), self.assertRaisesRegex(
+            LIFECYCLE.Refusal, 'revoked'
+        ):
+            LIFECYCLE.resolve_caller_ref(
+                registry=registry,
+                repository_common_dir=self.context.common_dir,
+                caller_context=registered['caller_context'],
+                task_ref=self.receiver,
+                package=self.f.package,
+            )
+
+    def test_control_run_propagates_scoped_context_without_bare_identity(self):
+        registered = self.register_context()
+        transition = self.command('propose')['transition']['id']
+        receiver = SimpleNamespace(
+            action='accept', task_ref=self.receiver, execute=True,
+            proof_file=None, transition=transition,
+            acceptance_ref='agent:receiver/context-acceptance',
+            caller_context=registered['caller_context'],
+        )
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': '', 'CODEX_THREAD_ID': ''}):
+            LIFECYCLE.command_control_custody(self.context, receiver)
+            receiver.action = 'complete'
+            receiver.acceptance_ref = None
+            completed = LIFECYCLE.command_control_custody(self.context, receiver)
+            observed = self.f.base / 'guarded-context.txt'
+            script = (
+                "import os; from pathlib import Path; "
+                f"Path({str(observed)!r}).write_text("
+                "os.environ.get('PEERSLATE_CALLER_CONTEXT','') + '|' + "
+                "os.environ.get('PEERSLATE_CALLER_REF',''), encoding='utf-8')"
+            )
+            result = LIFECYCLE.command_control_run(
+                self.context,
+                SimpleNamespace(
+                    execute=True,
+                    task_ref=self.receiver,
+                    lease_token=completed['lease_token'],
+                    caller_context=registered['caller_context'],
+                    command=[sys.executable, '-B', '-c', script],
+                ),
+            )
+        self.assertEqual(result['returncode'], 0)
+        self.assertEqual(
+            observed.read_text(encoding='utf-8'),
+            registered['caller_context'] + '|',
+        )
 
     def test_lost_source_receiver_acceptance_transfer_and_idempotency(self):
         ident = self.accepted()
@@ -6402,7 +6663,7 @@ class ControlCustodyTests(unittest.TestCase):
                     lease_token=out['lease_token'], command=[sys.executable, '-B', '-c', script]))
             except Exception as exc:
                 errors.append(exc)
-        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.receiver}):
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.receiver, 'CODEX_THREAD_ID': ''}):
             worker = threading.Thread(target=run)
             worker.start()
             try:
@@ -6441,7 +6702,7 @@ class ControlCustodyTests(unittest.TestCase):
 
     def test_guarded_success_and_nonzero_commit_refresh_head(self):
         for exit_code in (0, 7):
-            with self.subTest(exit_code=exit_code), patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.f.writer}):
+            with self.subTest(exit_code=exit_code), patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.f.writer, 'CODEX_THREAD_ID': ''}):
                 script = "import subprocess,sys; subprocess.run(['git','commit','--allow-empty','-m','guarded'],check=True,stdout=subprocess.DEVNULL); sys.exit(" + str(exit_code) + ")"
                 out = LIFECYCLE.command_control_run(self.context, SimpleNamespace(execute=True, task_ref=self.f.writer,
                     lease_token=self.proof['old_token'], command=[sys.executable, '-B', '-c', script]))
@@ -6452,7 +6713,7 @@ class ControlCustodyTests(unittest.TestCase):
                 self.assertEqual(LIFECYCLE.control_lease_token(record), self.proof['old_token'])
 
     def test_guarded_branch_switch_persists_truthful_fence(self):
-        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.f.writer}):
+        with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.f.writer, 'CODEX_THREAD_ID': ''}):
             with self.assertRaises(LIFECYCLE.Refusal):
                 LIFECYCLE.command_control_run(self.context, SimpleNamespace(execute=True, task_ref=self.f.writer,
                     lease_token=self.proof['old_token'], command=['git', 'switch', '-c', 'work/unexpected']))
@@ -6494,7 +6755,8 @@ class ControlCustodyTests(unittest.TestCase):
         self.receiver = original
         returned = self.command('complete', transition=self.accepted())
         with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': original,
-                                    'PEERSLATE_CONTROL_LEASE_TOKEN': returned['lease_token']}):
+                                    'PEERSLATE_CONTROL_LEASE_TOKEN': returned['lease_token'],
+                                    'CODEX_THREAD_ID': ''}):
             code, payload = self.f.run('control', '--task-ref', original, '--release', '--base', self.f.main_sha, '--execute')
             self.assertEqual(code, 0, payload)
             code, payload = self.f.run('control', '--task-ref', original, '--package', 'PS-ANOTHER-PACKAGE-001',
@@ -6510,7 +6772,8 @@ class ControlCustodyTests(unittest.TestCase):
         ident = self.accepted()
         out = self.command('complete', transition=ident)
         with patch.dict(os.environ, {'PEERSLATE_CALLER_REF': self.receiver,
-                                    'PEERSLATE_CONTROL_LEASE_TOKEN': out['lease_token']}):
+                                    'PEERSLATE_CONTROL_LEASE_TOKEN': out['lease_token'],
+                                    'CODEX_THREAD_ID': ''}):
             code, payload = self.f.run('control', '--task-ref', self.receiver, '--release', '--base', self.f.main_sha, '--execute')
             self.assertEqual(code, 0, payload)
             code, payload = self.f.run('control', '--task-ref', self.receiver, '--package', 'PS-ANOTHER-PACKAGE-001',

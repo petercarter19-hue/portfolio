@@ -23,6 +23,27 @@ CANDIDATE = "c" * 40
 BASE = "d" * 40
 
 
+_IDENTITY_ENVIRONMENT = None
+
+
+def setUpModule() -> None:
+    global _IDENTITY_ENVIRONMENT
+    _IDENTITY_ENVIRONMENT = patch.dict(
+        os.environ,
+        {
+            "CODEX_THREAD_ID": "",
+            "PEERSLATE_CALLER_REF": "",
+            "PEERSLATE_CALLER_CONTEXT": "",
+        },
+    )
+    _IDENTITY_ENVIRONMENT.start()
+
+
+def tearDownModule() -> None:
+    assert _IDENTITY_ENVIRONMENT is not None
+    _IDENTITY_ENVIRONMENT.stop()
+
+
 def claimed_surfaces(package, *product_paths):
     return [*product_paths, *preflight.control_relative_paths(package)]
 
@@ -1134,6 +1155,11 @@ class LocalWorktreeRegistryTests(unittest.TestCase):
         value = value or claim()
         repo_facts = repo_facts or facts(repository=str(worktree))
         environment = {key: "" for key in preflight.CI_ENVIRONMENT_KEYS}
+        environment.update(
+            CODEX_THREAD_ID="",
+            PEERSLATE_CALLER_REF="",
+            PEERSLATE_CALLER_CONTEXT="",
+        )
         if simulate_ci:
             environment["TF_BUILD"] = "True"
         with patch.dict(os.environ, environment), patch.object(
@@ -2219,6 +2245,26 @@ class EvaluationTests(unittest.TestCase):
                 return_value=(context, ["registry blocker"], ["legacy warning"]),
             ),
         )
+        self.assertEqual(context, payload["worktree_registry"])
+        self.assertIn("registry blocker", errors)
+        self.assertIn("legacy warning", warnings)
+
+    def test_read_with_caller_context_validates_local_registry(self):
+        value = claim()
+        context = {"registry": "initialized", "current_kind": "durable"}
+        local_registry = patch.object(
+            preflight,
+            "evaluate_local_worktree_context",
+            return_value=(context, ["registry blocker"], ["legacy warning"]),
+        )
+        with patch.dict(os.environ, {"PEERSLATE_CALLER_CONTEXT": ""}):
+            payload, errors, warnings = self.run_evaluate(
+                args("read", caller_context="a" * 32),
+                value,
+                facts(),
+                local_registry=local_registry,
+            )
+
         self.assertEqual(context, payload["worktree_registry"])
         self.assertIn("registry blocker", errors)
         self.assertIn("legacy warning", warnings)

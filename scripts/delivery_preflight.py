@@ -730,9 +730,55 @@ def evaluate_local_worktree_context(
     }
     errors: list[str] = []
     warnings: list[str] = []
-    if args.intent not in MUTATING_INTENTS:
+    caller_context = getattr(args, "caller_context", "")
+    try:
+        context_id = lifecycle_registry._caller_context_identifier(caller_context)
+    except lifecycle_registry.Refusal as exc:
+        errors.append("caller identity: " + str(exc))
         return context, errors, warnings
-    if _is_ci_environment():
+    if not context_id and lifecycle_registry._caller_identity_supplied(
+        caller_context
+    ):
+        try:
+            lifecycle_registry.resolve_caller_ref(
+                task_ref=getattr(args, "task_ref", "") or None
+            )
+        except lifecycle_registry.Refusal as exc:
+            errors.append("caller identity: " + str(exc))
+            return context, errors, warnings
+    if args.intent not in MUTATING_INTENTS:
+        if context_id:
+            common_dir = _git_common_dir(root)
+            registry_path = common_dir / WORKTREE_REGISTRY_REL
+            context["path"] = str(registry_path)
+            if not registry_path.exists():
+                context["registry"] = "not_initialized"
+                errors.append("caller context requires the initialized repository registry")
+                return context, errors, warnings
+            try:
+                registry = _read_json(registry_path)
+                recorded_common = _canonical_local_path(
+                    registry.get("repository_common_dir")
+                )
+                actual_common = _canonical_local_path(str(common_dir))
+                if recorded_common != actual_common:
+                    raise ValueError(
+                        "machine-local worktree registry belongs to a different Git common directory"
+                    )
+                lifecycle_registry.resolve_caller_ref(
+                    registry=registry,
+                    repository_common_dir=common_dir,
+                    caller_context=context_id,
+                    task_ref=getattr(args, "task_ref", "") or None,
+                    package=str(claim.get("package", "")),
+                )
+            except (PreflightError, ValueError, lifecycle_registry.Refusal) as exc:
+                context["registry"] = "invalid"
+                errors.append("caller identity: " + str(exc))
+                return context, errors, warnings
+            context.update(enforced=True, registry="initialized")
+        return context, errors, warnings
+    if _is_ci_environment() and not context_id:
         context["registry"] = "ci_skipped"
         if args.intent == "owner-reassignment":
             errors.append(
@@ -748,6 +794,11 @@ def evaluate_local_worktree_context(
     context["path"] = str(registry_path)
     if not registry_path.is_file():
         context["registry"] = "not_initialized"
+        if context_id:
+            errors.append(
+                "caller context requires the initialized repository registry"
+            )
+            return context, errors, warnings
         message = (
             "machine-local worktree registry is not initialized; "
             "run worktree_lifecycle.py init on this machine"
@@ -806,6 +857,21 @@ def evaluate_local_worktree_context(
         errors.append(str(exc))
         return context, errors, warnings
 
+    package = str(claim.get("package", ""))
+    try:
+        if registry.get(
+            "control_custody_transitions"
+        ) or lifecycle_registry._caller_identity_supplied(caller_context):
+            lifecycle_registry.resolve_caller_ref(
+                registry=registry,
+                repository_common_dir=common_dir,
+                caller_context=context_id,
+                task_ref=getattr(args, "task_ref", "") or None,
+                package=package,
+            )
+    except lifecycle_registry.Refusal as exc:
+        errors.append("caller identity: " + str(exc))
+
     matches: list[dict] = []
     grandfathered_other = 0
     seen_paths: set[str] = set()
@@ -843,9 +909,16 @@ def evaluate_local_worktree_context(
     record = matches[0]
     if record.get("kind") == "control_singleton":
         try:
-            if (registry.get("control_custody_transitions") or args.intent in REPAIR_INTENTS):
-                if lifecycle_registry.control_custody_caller() != getattr(args, "task_ref", ""):
-                    raise lifecycle_registry.Refusal("claimed task differs from launcher caller")
+            if args.intent in REPAIR_INTENTS and not registry.get(
+                "control_custody_transitions"
+            ):
+                lifecycle_registry.resolve_caller_ref(
+                    registry=registry,
+                    repository_common_dir=common_dir,
+                    caller_context=context_id,
+                    task_ref=getattr(args, "task_ref", "") or None,
+                    package=package,
+                )
             lifecycle_registry.require_control_custody_fence(
                 registry, record, task_ref=getattr(args, "task_ref", ""),
                 lease_token=getattr(args, "lease_token", ""),
@@ -897,7 +970,6 @@ def evaluate_local_worktree_context(
     if record.get("branch") != facts.branch:
         errors.append("current worktree branch does not match its registry record")
 
-    package = str(claim.get("package", ""))
     if args.intent in {"write", "merge"}:
         if record.get("kind") != "durable":
             errors.append("write and merge require the package durable worktree")
@@ -2547,6 +2619,27 @@ def evaluate(
         )
 
     if args.intent == "read":
+        try:
+            context_id = lifecycle_registry._caller_context_identifier(
+                getattr(args, "caller_context", "")
+            )
+        except lifecycle_registry.Refusal as exc:
+            errors.append("caller identity: " + str(exc))
+            context_id = ""
+        if context_id:
+            registry_context, registry_errors, registry_warnings = (
+                evaluate_local_worktree_context(
+                    root=work_root,
+                    args=args,
+                    claim=branch_claim
+                    or authority_claim
+                    or {"package": args.package},
+                    facts=facts,
+                )
+            )
+            payload["worktree_registry"] = registry_context
+            errors.extend(registry_errors)
+            warnings.extend(registry_warnings)
         return payload, errors, warnings
     if args.intent == "grant":
         errors.append(
@@ -3404,6 +3497,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--task-ref",
         default="",
         help="opaque task/session ref required by an initialized local worktree registry",
+    )
+    parser.add_argument(
+        "--caller-context",
+        default="",
+        help="registered scoped external caller context; guarded children inherit it",
     )
     parser.add_argument(
         "--owner-authorization-ref",

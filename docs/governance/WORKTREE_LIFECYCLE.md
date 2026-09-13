@@ -563,16 +563,47 @@ original task history. A receiver uses its own exact task/session/agent referenc
 No permanently reachable original chat is required. All runtimes use the same
 commands and gates.
 
-The host/orchestrator supplies `PEERSLATE_CALLER_REF` with the actual caller's
-existing reference; `--task-ref` must agree. This is a launcher attestation, **not
+Codex callers resolve the native `CODEX_THREAD_ID` as `session:<UUID>` without
+user setup. Inherited `CODEX_SESSION_ID` is never an identity source. The legacy
+`PEERSLATE_CALLER_REF` launcher attestation remains compatible. When more than one
+explicit, native, or registered source is present, every source must resolve to
+the same caller and `--task-ref` must agree.
+
+An external receiver uses one opaque caller context stored in this repository's
+existing machine registry. It binds the canonical Git common directory, exact
+receiver reference, package, registering caller, Pete's authorization reference,
+registration time, and live or revoked status. It is not a caller-authored file.
+The current control-lease holder registers it while holding that package's exact
+lease and token:
+
+```text
+python -B scripts/worktree_lifecycle.py --repo <repo> caller-context register --task-ref <current-controller> --package <package> --receiver-ref <external-receiver> --owner-authorization-ref <owner-evidence-ref> --lease-token <current-token> --execute
+```
+
+Registration may occur before the package claim or receiver acceptance exists,
+so a normal Pete-operated handoff is not circular. The current control record
+must already name the target package. Registration does not change that record,
+grant custody, activate a claim, create a branch, or confer repository authority.
+The handoff supplies the returned ID and the receiver adds
+`--caller-context <ID>` to lifecycle and delivery-preflight calls. Pete does not
+set a user or global environment variable. Every use reloads the registry and
+checks the exact repository, receiver, package, live status, and any other
+available identity source. Revoke a context under the same current package lease
+with new owner evidence:
+
+```text
+python -B scripts/worktree_lifecycle.py --repo <repo> caller-context revoke --task-ref <current-controller> --context-id <ID> --owner-authorization-ref <revocation-evidence-ref> --lease-token <current-token> --execute
+```
+
+Native, explicit, and registered contexts are operational attestations, **not
 cryptographic or platform-session authentication**. A process sharing the same OS
 principal can forge environment variables, edit files directly, or bypass these
-tools. Do not relabel a receiver as the former task. Before revocation, the owner
-must obtain host/orchestrator evidence that previous writers and unguarded child
-processes are stopped or otherwise quiescent. A clean Git checkout alone cannot
-establish process quiescence. UNKNOWN source liveness requires explicit owner
-revocation and a separate quiescence reference; this command does not invent or
-independently verify unavailable runtime proof.
+tools. Do not relabel a receiver as the former task. Before custody revocation,
+the owner must obtain host/orchestrator evidence that previous writers and
+unguarded child processes are stopped or otherwise quiescent. A clean Git
+checkout alone cannot establish process quiescence. UNKNOWN source liveness
+requires explicit owner revocation and a separate quiescence reference; this
+command does not invent or independently verify unavailable runtime proof.
 
 Read the current control record from `audit`/the registry. The `control` command
 also returns `lease_token`. Prepare an external JSON proof with exactly these
@@ -611,9 +642,9 @@ remote human decisions.
 
 ```text
 python -B scripts/worktree_lifecycle.py --repo <repo> control-custody propose --task-ref <actual-caller> --proof-file <external-proof.json> --execute
-python -B scripts/worktree_lifecycle.py --repo <repo> control-custody accept --task-ref <actual-receiver> --transition <returned-id> --acceptance-ref <receiver-evidence-ref> --execute
-python -B scripts/worktree_lifecycle.py --repo <repo> control-custody complete --task-ref <actual-receiver> --transition <returned-id> --execute
-python -B scripts/worktree_lifecycle.py --repo <repo> control-run --task-ref <actual-receiver> --lease-token <returned-current-token> --execute -- <command> <arguments>
+python -B scripts/worktree_lifecycle.py --repo <repo> control-custody accept --task-ref <actual-receiver> --caller-context <ID-if-external> --transition <returned-id> --acceptance-ref <receiver-evidence-ref> --execute
+python -B scripts/worktree_lifecycle.py --repo <repo> control-custody complete --task-ref <actual-receiver> --caller-context <ID-if-external> --transition <returned-id> --execute
+python -B scripts/worktree_lifecycle.py --repo <repo> control-run --task-ref <actual-receiver> --caller-context <ID-if-external> --lease-token <returned-current-token> --execute -- <command> <arguments>
 ```
 
 The source or named receiver can propose; only the separately invoked receiving
@@ -634,18 +665,24 @@ leases, which may briefly lead wall-clock time during rapid transfers. Old token
 fail after transfer; a revoked identity cannot silently reacquire even after the
 receiver releases. Any further return to that identity needs an explicit custody
 transition. On a custody-aware registry, normal control acquisition/release and
-finalization require matching `PEERSLATE_CALLER_REF` and
-`PEERSLATE_CONTROL_LEASE_TOKEN` supplied by the launcher. Original unchanged
-legacy task release remains compatible.
+finalization require the resolved caller plus `PEERSLATE_CONTROL_LEASE_TOKEN`.
+Original unchanged legacy task release remains compatible.
 
 `control-run` retains the existing exclusive registry lock for the entire direct
-subprocess invocation and propagates the token to its environment. A competing
+subprocess invocation and propagates the token and opaque scoped context to its
+environment. It removes the bare legacy caller variable when a context is in
+use, so nested lifecycle and preflight calls must revalidate the registration.
+A competing
 guarded writer or transfer is refused while that lock is held. Run direct bounded
 commands that wait for all their children; do not launch detached writers or nest
 another lifecycle command requiring this same lock. These guarantees cover
 cooperating tool-mediated writes only, not arbitrary filesystem access. Maintain
 host quiescence controls for older processes and re-run the unchanged applicable
 preflight, independent exact-candidate review, and CI before delivery.
+
+Runtime-required `verify` commands likewise pass the scoped context to both the
+reusable control workspace and ephemeral verifier child without a bare legacy
+caller value, so nested governed commands revalidate the same package binding.
 
 Guarded commands verify the starting branch and HEAD against the registry before
 launch. After any normal child exit, including a nonzero exit, the tool re-reads

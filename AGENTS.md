@@ -60,11 +60,18 @@ handoffs are evidence, not additional gates.
   review capabilities in Codex, Cursor, Claude and other runtimes. ChatGPT may
   coordinate the program; that role confers no exclusive technical privilege.
   Use each caller's actual opaque reference, never another task's identity.
-- Host launchers supply `PEERSLATE_CALLER_REF` for every runtime under the same
-  contract. The value is an identity attestation, not a cryptographic boundary
-  against another process with the same OS privileges. Use receiver acceptance
-  and reviewed owner-revocation recovery when original task continuity is lost;
-  do not depend on a permanently reachable chat or infer revocation from age.
+- Codex callers resolve their native `CODEX_THREAD_ID` as `session:<UUID>`;
+  inherited `CODEX_SESSION_ID` is never caller identity. The legacy
+  `PEERSLATE_CALLER_REF` launcher attestation remains supported, and any
+  disagreement between explicit, native, and registered context identity fails.
+  External runtimes use a package-scoped caller context registered by the
+  current control-lease holder with Pete's exact authorization reference; users
+  do not configure identity environment variables. Registration grants no
+  claim, lease, custody, or repository authority. These values remain operational
+  attestations, not cryptographic boundaries against another process with the
+  same OS privileges. Use receiver acceptance and reviewed owner-revocation
+  recovery when original task continuity is lost; do not depend on a permanently
+  reachable chat or infer revocation from age.
 - After a control custody transition, use the current lease token for preflight
   and `control-run` for direct control-tree writes. Existing unguarded writers
   require separately established quiescence before recovery; shared tooling

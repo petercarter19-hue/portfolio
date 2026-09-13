@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-CALLER-COMPATIBILITY-001",
+  "candidate_sha": "388ae824c211aefd5942768786aea7a133650ca6",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a09829-21dd-7ba0-b8ef-bdf1d319d745",
+  "result": "pass",
+  "reviewed_at": "2026-09-13T01:00:43Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-CALLER-COMPATIBILITY-001.md"
+}

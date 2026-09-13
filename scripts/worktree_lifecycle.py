@@ -42,6 +42,8 @@ SESSION_UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
     re.IGNORECASE,
 )
+CALLER_CONTEXT_ID_RE = re.compile(r"^[a-f0-9]{32}$")
+CALLER_CONTEXT_ENV = "PEERSLATE_CALLER_CONTEXT"
 OWNER_REASSIGNMENT_CONTROL_BRANCH_RE = re.compile(
     r"^work/[0-9]{4}-[0-9]{2}-[0-9]{2}-delivery-owner-reassignment-[a-z0-9-]+$"
 )
@@ -1838,6 +1840,11 @@ CONTROL_CUSTODY_FIELDS = {
     "old_lease", "old_token", "new_lease", "owner_ref", "review_ref", "quiescence_ref",
     "source_liveness", "owner_revocation", "acceptance_ref", "accepted_by", "supersedes",
 }
+CALLER_CONTEXT_FIELDS = {
+    "id", "state", "repository_common_dir", "receiver_ref", "package",
+    "registered_by", "owner_authorization_ref", "registered_at", "revoked_at",
+    "revoked_by", "revocation_authorization_ref",
+}
 
 
 def _custody_generation_time(registry: dict[str, Any]) -> str:
@@ -1864,15 +1871,165 @@ def control_lease_token(record: dict[str, Any]) -> str:
     ).encode("utf-8")).hexdigest()
 
 
-def control_custody_caller() -> str:
-    # An orchestrator may inject a real task identity. Never relabel another task.
-    actual = os.environ.get("PEERSLATE_CALLER_REF")
-    if not actual:
-        raise Refusal("caller identity unavailable; trusted launcher must supply PEERSLATE_CALLER_REF")
-    return _validate_delivery_ref(actual)
+def _caller_context_identifier(argument: str | None = None) -> str:
+    supplied = "" if argument is None else argument
+    if not isinstance(supplied, str):
+        raise Refusal("caller context identifier is invalid")
+    inherited = os.environ.get(CALLER_CONTEXT_ENV, "")
+    if supplied and inherited and supplied != inherited:
+        raise Refusal("caller context argument differs from guarded child context")
+    value = supplied or inherited
+    if value and not CALLER_CONTEXT_ID_RE.fullmatch(value):
+        raise Refusal("caller context identifier is invalid")
+    return value
+
+
+def _caller_identity_supplied(argument: str | None = None) -> bool:
+    return bool(
+        _caller_context_identifier(argument)
+        or os.environ.get("PEERSLATE_CALLER_REF", "")
+        or os.environ.get("CODEX_THREAD_ID", "")
+    )
+
+
+def validate_caller_context_registry(
+    registry: dict[str, Any], *, repository_common_dir: Path | None = None
+) -> None:
+    contexts = registry.get("caller_contexts", [])
+    if not isinstance(contexts, list):
+        raise Refusal("caller contexts must be a list")
+    identifiers: set[str] = set()
+    active_receivers: set[tuple[str, str]] = set()
+    for item in contexts:
+        if not isinstance(item, dict) or set(item) != CALLER_CONTEXT_FIELDS:
+            raise Refusal("caller context fields are malformed")
+        identifier = item["id"]
+        if (
+            not isinstance(identifier, str)
+            or not CALLER_CONTEXT_ID_RE.fullmatch(identifier)
+            or identifier in identifiers
+        ):
+            raise Refusal("caller context identifier is invalid or duplicated")
+        identifiers.add(identifier)
+        if not isinstance(item["state"], str) or item["state"] not in {
+            "active",
+            "revoked",
+        }:
+            raise Refusal("caller context state is invalid")
+        common_dir = item["repository_common_dir"]
+        if not isinstance(common_dir, str) or not Path(common_dir).is_absolute():
+            raise Refusal("caller context repository common directory is invalid")
+        if repository_common_dir is not None and _path_key(common_dir) != _path_key(repository_common_dir):
+            raise Refusal("caller context belongs to a different Git common directory")
+        for field in ("receiver_ref", "registered_by", "owner_authorization_ref"):
+            _validate_delivery_ref(item[field])
+        _validate_package(item["package"])
+        _validate_utc_timestamp(item["registered_at"], field="caller context registration")
+        if item["receiver_ref"] == item["registered_by"]:
+            raise Refusal("caller context receiver must differ from its registrar")
+        if item["state"] == "active":
+            if any(
+                item[field] is not None
+                for field in ("revoked_at", "revoked_by", "revocation_authorization_ref")
+            ):
+                raise Refusal("active caller context contains revocation fields")
+            key = (item["receiver_ref"], item["package"])
+            if key in active_receivers:
+                raise Refusal("caller context receiver/package is duplicated")
+            active_receivers.add(key)
+        else:
+            _validate_utc_timestamp(item["revoked_at"], field="caller context revocation")
+            _validate_delivery_ref(item["revoked_by"])
+            _validate_delivery_ref(item["revocation_authorization_ref"])
+            if item["revoked_at"] < item["registered_at"]:
+                raise Refusal("caller context revocation predates registration")
+
+
+def _active_caller_context_record(
+    registry: dict[str, Any],
+    *,
+    repository_common_dir: Path,
+    context_id: str,
+) -> dict[str, Any]:
+    validate_caller_context_registry(
+        registry, repository_common_dir=repository_common_dir
+    )
+    matches = [
+        item for item in registry.get("caller_contexts", []) if item["id"] == context_id
+    ]
+    if len(matches) != 1:
+        raise Refusal("caller context is unknown")
+    record = matches[0]
+    if record["state"] != "active":
+        raise Refusal("caller context is revoked")
+    return record
+
+
+def resolve_caller_ref(
+    *,
+    registry: dict[str, Any] | None = None,
+    repository_common_dir: Path | None = None,
+    caller_context: str | None = None,
+    task_ref: str | None = None,
+    package: str | None = None,
+) -> str:
+    """Resolve one actual caller without treating requested authority as identity."""
+
+    identities: list[tuple[str, str]] = []
+    explicit = os.environ.get("PEERSLATE_CALLER_REF", "")
+    if explicit:
+        identities.append(("explicit launcher", _validate_delivery_ref(explicit)))
+    native = os.environ.get("CODEX_THREAD_ID", "")
+    if native:
+        if not SESSION_UUID_RE.fullmatch(native):
+            raise Refusal("native CODEX_THREAD_ID is not an exact UUID")
+        identities.append(("native Codex thread", f"session:{native.lower()}"))
+    context_id = _caller_context_identifier(caller_context)
+    if context_id:
+        if registry is None or repository_common_dir is None:
+            raise Refusal("caller context requires the initialized repository registry")
+        if package is None:
+            raise Refusal("caller context requires an exact operation package")
+        operation_package = _validate_package(package)
+        context_record = _active_caller_context_record(
+            registry,
+            repository_common_dir=repository_common_dir,
+            context_id=context_id,
+        )
+        if context_record["package"] != operation_package:
+            raise Refusal("caller context package differs from the operation")
+        identities.append(("registered caller context", context_record["receiver_ref"]))
+    if not identities:
+        raise Refusal(
+            "caller identity unavailable; use native CODEX_THREAD_ID or a registered caller context"
+        )
+    resolved = identities[0][1]
+    if any(identity != resolved for _, identity in identities[1:]):
+        raise Refusal("explicit, native, and registered caller identities disagree")
+    if task_ref is not None and resolved != task_ref:
+        raise Refusal("claimed task differs from resolved caller")
+    return resolved
+
+
+def control_custody_caller(
+    *,
+    registry: dict[str, Any] | None = None,
+    repository_common_dir: Path | None = None,
+    caller_context: str | None = None,
+    task_ref: str | None = None,
+    package: str | None = None,
+) -> str:
+    return resolve_caller_ref(
+        registry=registry,
+        repository_common_dir=repository_common_dir,
+        caller_context=caller_context,
+        task_ref=task_ref,
+        package=package,
+    )
 
 
 def validate_control_custody_registry(registry: dict[str, Any]) -> None:
+    validate_caller_context_registry(registry)
     if "control_lease_clock" in registry:
         _validate_utc_timestamp(registry["control_lease_clock"], field="control lease clock")
     failure = registry.get("control_guard_failure")
@@ -2026,17 +2183,30 @@ def require_control_custody_fence(registry: dict[str, Any], record: dict[str, An
         raise Refusal("stale or missing control lease token")
 
 
-def _custody_existing_guard(registry: dict[str, Any], task_ref: str) -> None:
+def _custody_existing_guard(
+    registry: dict[str, Any],
+    task_ref: str,
+    *,
+    context: RepoContext | None = None,
+    caller_context: str | None = None,
+    package: str | None = None,
+) -> None:
     if _custody_pending(registry):
         raise Refusal("control custody transition is pending")
     history = registry.get("control_custody_transitions", [])
-    if history:
-        if task_ref != control_custody_caller():
-            raise Refusal("claimed task differs from launcher caller")
+    identity_supplied = _caller_identity_supplied(caller_context)
+    if history or identity_supplied:
+        if context is None:
+            raise Refusal("caller resolution requires repository context")
+        control_custody_caller(
+            registry=registry,
+            repository_common_dir=context.common_dir,
+            caller_context=caller_context,
+            task_ref=task_ref,
+            package=package,
+        )
         for r in registry["worktrees"]:
             if r.get("kind") == "control_singleton" and r.get("lease"):
-                if task_ref != control_custody_caller():
-                    raise Refusal("claimed task differs from launcher caller")
                 require_control_custody_fence(registry, r, task_ref=task_ref,
                     lease_token=os.environ.get("PEERSLATE_CONTROL_LEASE_TOKEN", ""))
     revoked = set()
@@ -2050,11 +2220,180 @@ def _custody_existing_guard(registry: dict[str, Any], task_ref: str) -> None:
             raise Refusal("revoked task cannot reacquire control; use explicit custody transfer")
 
 
+def _require_resolved_caller_for_registry(
+    context: RepoContext,
+    registry: dict[str, Any],
+    args: argparse.Namespace,
+    *,
+    task_ref: str,
+    package: str | None,
+) -> str | None:
+    caller_context = getattr(args, "caller_context", "")
+    if not registry.get(
+        "control_custody_transitions"
+    ) and not _caller_identity_supplied(caller_context):
+        return None
+    return resolve_caller_ref(
+        registry=registry,
+        repository_common_dir=context.common_dir,
+        caller_context=caller_context,
+        task_ref=task_ref,
+        package=package,
+    )
+
+
+def command_caller_context(
+    context: RepoContext, args: argparse.Namespace
+) -> dict[str, Any]:
+    _require_execute(args.execute)
+    owner_ref = _validate_delivery_ref(args.owner_authorization_ref)
+    with _registry_lock(context.registry_path):
+        registry = _load_registry(context.registry_path)
+        assert registry is not None
+        _assert_registry_identity(context, registry)
+        if registry.get("pending") or registry.get("control_guard_failure"):
+            raise Refusal(
+                "reconcile existing lifecycle operation or guarded branch failure before caller context"
+            )
+        validate_control_custody_registry(registry)
+        record = _control_record(context, registry)
+        if record is None or record.get("state") != "active":
+            raise Refusal("active control record required for caller context")
+        contexts = registry.setdefault("caller_contexts", [])
+        if args.action == "register":
+            package = _validate_package(args.package)
+            receiver = _validate_delivery_ref(args.receiver_ref)
+            caller = resolve_caller_ref(
+                registry=registry,
+                repository_common_dir=context.common_dir,
+                caller_context=getattr(args, "caller_context", ""),
+                task_ref=args.task_ref,
+                package=package,
+            )
+            if not args.lease_token or args.lease_token != control_lease_token(
+                record
+            ):
+                raise Refusal("stale or missing control lease token")
+            require_control_custody_fence(
+                registry,
+                record,
+                task_ref=caller,
+                lease_token=args.lease_token,
+            )
+            if record.get("package") != package:
+                raise Refusal("control lease package differs from caller context package")
+            if receiver == caller:
+                raise Refusal("caller context receiver must differ from its registrar")
+            active = [
+                item
+                for item in contexts
+                if item["state"] == "active"
+                and item["receiver_ref"] == receiver
+                and item["package"] == package
+            ]
+            if active:
+                existing = active[0]
+                if (
+                    existing["registered_by"] != caller
+                    or existing["owner_authorization_ref"] != owner_ref
+                ):
+                    raise Refusal(
+                        "receiver/package already has a different active caller context"
+                    )
+                return {
+                    "status": "active",
+                    "caller_context": existing["id"],
+                    "receiver_ref": receiver,
+                    "package": package,
+                    "registered_by": caller,
+                    "owner_authorization_ref": owner_ref,
+                }
+            item = {
+                "id": secrets.token_hex(16),
+                "state": "active",
+                "repository_common_dir": str(context.common_dir),
+                "receiver_ref": receiver,
+                "package": package,
+                "registered_by": caller,
+                "owner_authorization_ref": owner_ref,
+                "registered_at": _utc_now(),
+                "revoked_at": None,
+                "revoked_by": None,
+                "revocation_authorization_ref": None,
+            }
+            contexts.append(item)
+            validate_caller_context_registry(
+                registry, repository_common_dir=context.common_dir
+            )
+            _atomic_write(context.registry_path, registry)
+            return {
+                "status": "registered",
+                "caller_context": item["id"],
+                "receiver_ref": receiver,
+                "package": package,
+                "registered_by": caller,
+                "owner_authorization_ref": owner_ref,
+            }
+
+        context_id = args.context_id
+        if not isinstance(context_id, str) or not CALLER_CONTEXT_ID_RE.fullmatch(
+            context_id
+        ):
+            raise Refusal("caller context identifier is invalid")
+        target = next((item for item in contexts if item["id"] == context_id), None)
+        if target is None:
+            raise Refusal("caller context is unknown")
+        package = target["package"]
+        caller = resolve_caller_ref(
+            registry=registry,
+            repository_common_dir=context.common_dir,
+            caller_context=getattr(args, "caller_context", ""),
+            task_ref=args.task_ref,
+            package=package,
+        )
+        if not args.lease_token or args.lease_token != control_lease_token(record):
+            raise Refusal("stale or missing control lease token")
+        require_control_custody_fence(
+            registry,
+            record,
+            task_ref=caller,
+            lease_token=args.lease_token,
+        )
+        if record.get("package") != package:
+            raise Refusal("control lease package differs from caller context package")
+        if target["state"] == "revoked":
+            if (
+                target["revoked_by"] != caller
+                or target["revocation_authorization_ref"] != owner_ref
+            ):
+                raise Refusal("caller context revocation replay differs")
+        else:
+            target.update(
+                state="revoked",
+                revoked_at=_utc_now(),
+                revoked_by=caller,
+                revocation_authorization_ref=owner_ref,
+            )
+            validate_caller_context_registry(
+                registry, repository_common_dir=context.common_dir
+            )
+            _atomic_write(context.registry_path, registry)
+        return {
+            "status": "revoked",
+            "caller_context": target["id"],
+            "receiver_ref": target["receiver_ref"],
+            "package": package,
+            "registered_by": target["registered_by"],
+            "owner_authorization_ref": target["owner_authorization_ref"],
+            "revoked_by": target["revoked_by"],
+            "revocation_authorization_ref": target[
+                "revocation_authorization_ref"
+            ],
+        }
+
+
 def command_control_custody(context: RepoContext, args: argparse.Namespace) -> dict[str, Any]:
     _require_execute(args.execute)
-    caller = control_custody_caller()
-    if caller != args.task_ref:
-        raise Refusal("claimed task differs from launcher caller")
     with _registry_lock(context.registry_path):
         registry = _load_registry(context.registry_path)
         assert registry is not None
@@ -2080,6 +2419,13 @@ def command_control_custody(context: RepoContext, args: argparse.Namespace) -> d
                 if not isinstance(proof[key], str):
                     raise Refusal("custody participant reference must be text")
                 _validate_delivery_ref(proof[key])
+            caller = control_custody_caller(
+                registry=registry,
+                repository_common_dir=context.common_dir,
+                caller_context=getattr(args, "caller_context", ""),
+                task_ref=args.task_ref,
+                package=proof["package"],
+            )
             if caller not in {proof["from_ref"], proof["to_ref"]}:
                 raise Refusal("proposal caller must be a named participant")
             existing = next((t for t in history if all(t[k] == v for k, v in proof.items())), None)
@@ -2100,6 +2446,13 @@ def command_control_custody(context: RepoContext, args: argparse.Namespace) -> d
             item = next((t for t in history if t["id"] == args.transition), None)
             if item is None:
                 raise Refusal("unknown custody transition")
+            caller = control_custody_caller(
+                registry=registry,
+                repository_common_dir=context.common_dir,
+                caller_context=getattr(args, "caller_context", ""),
+                task_ref=args.task_ref,
+                package=item["package"],
+            )
             if caller != item["to_ref"]:
                 raise Refusal("only actual receiving caller can accept or complete custody")
             if item["state"] == "superseded":
@@ -2133,9 +2486,6 @@ def command_control_custody(context: RepoContext, args: argparse.Namespace) -> d
 
 def command_control_run(context: RepoContext, args: argparse.Namespace) -> dict[str, Any]:
     _require_execute(args.execute)
-    caller = control_custody_caller()
-    if caller != args.task_ref:
-        raise Refusal("claimed task differs from launcher caller")
     command = list(args.command)
     if command and command[0] == "--":
         command.pop(0)
@@ -2150,11 +2500,24 @@ def command_control_run(context: RepoContext, args: argparse.Namespace) -> dict[
         record = _control_record(context, registry)
         if record is None:
             raise Refusal("control singleton unavailable")
+        context_id = _caller_context_identifier(
+            getattr(args, "caller_context", "")
+        )
+        caller = control_custody_caller(
+            registry=registry,
+            repository_common_dir=context.common_dir,
+            caller_context=context_id,
+            task_ref=args.task_ref,
+            package=record.get("package"),
+        )
         require_control_custody_fence(registry, record, task_ref=caller, lease_token=args.lease_token)
         before = _worktree_at(context.root, _canonical(record["path"]))
         if before is None or (before.get("branch"), before.get("head")) != (record.get("branch"), record.get("head")):
             raise Refusal("guarded starting branch/HEAD differs from registry; owner-manifest reconciliation required")
         environment = dict(os.environ, PEERSLATE_CONTROL_LEASE_TOKEN=args.lease_token)
+        if context_id:
+            environment.pop("PEERSLATE_CALLER_REF", None)
+            environment[CALLER_CONTEXT_ENV] = context_id
         result = subprocess.run(command, cwd=record["path"], env=environment, check=False)
         # A nonzero child can still commit. Observe under the same lock before
         # releasing custody, and never silently authorize a branch switch.
@@ -3212,6 +3575,10 @@ def _create_registered_worktree(
 
 def command_init(context: RepoContext, args: argparse.Namespace) -> dict[str, Any]:
     _require_execute(args.execute)
+    if _caller_context_identifier(getattr(args, "caller_context", "")):
+        raise Refusal(
+            "caller context cannot initialize an absent repository registry"
+        )
     task_ref = _validate_task_ref(args.task_ref)
     managed_root = _canonical(
         args.managed_root
@@ -3302,6 +3669,9 @@ def command_adopt(context: RepoContext, args: argparse.Namespace) -> dict[str, A
         registry = _load_registry(context.registry_path)
         assert registry is not None
         _assert_registry_identity(context, registry)
+        _require_resolved_caller_for_registry(
+            context, registry, args, task_ref=task_ref, package=package
+        )
         recovered = _reconcile_pending(context, registry)
         if _path_key(path) == _path_key(context.primary_root):
             raise Refusal("the primary worktree cannot be adopted as package-durable")
@@ -3415,6 +3785,9 @@ def command_ensure(context: RepoContext, args: argparse.Namespace) -> dict[str, 
         registry = _load_registry(context.registry_path)
         assert registry is not None
         _assert_registry_identity(context, registry)
+        _require_resolved_caller_for_registry(
+            context, registry, args, task_ref=task_ref, package=package
+        )
         recovered = _reconcile_pending(context, registry)
         durable = _existing_durable(registry, package)
         if len(durable) > 1:
@@ -4046,8 +4419,15 @@ def _acquire_control_locked(
     base: str,
     branch: str | None,
     includes: Sequence[str],
+    caller_context: str | None = None,
 ) -> tuple[dict[str, Any], bool]:
-    _custody_existing_guard(registry, task_ref)
+    _custody_existing_guard(
+        registry,
+        task_ref,
+        context=context,
+        caller_context=caller_context,
+        package=package,
+    )
     managed_root = _canonical(registry["managed_root"])
     path = managed_root / "_control"
     _assert_managed_target(registry, path)
@@ -4231,7 +4611,13 @@ def command_control(context: RepoContext, args: argparse.Namespace) -> dict[str,
         recovered = _reconcile_pending(context, registry)
         record = _control_record(context, registry)
         if args.release:
-            _custody_existing_guard(registry, task_ref)
+            _custody_existing_guard(
+                registry,
+                task_ref,
+                context=context,
+                caller_context=getattr(args, "caller_context", ""),
+                package=record.get("package") if record else package,
+            )
             if record is None or not record.get("lease"):
                 raise Refusal("control singleton has no active lease")
             if record["lease"].get("task_ref") != task_ref:
@@ -4253,6 +4639,9 @@ def command_control(context: RepoContext, args: argparse.Namespace) -> dict[str,
                 "task_ref": task_ref,
                 "recovered_pending": recovered,
             }
+        _require_resolved_caller_for_registry(
+            context, registry, args, task_ref=task_ref, package=package
+        )
         record, created = _acquire_control_locked(
             context,
             registry,
@@ -4262,6 +4651,7 @@ def command_control(context: RepoContext, args: argparse.Namespace) -> dict[str,
             base=args.base,
             branch=args.branch,
             includes=args.include,
+            caller_context=getattr(args, "caller_context", ""),
         )
     return {
         "status": "created_and_leased" if created else "leased",
@@ -5004,6 +5394,9 @@ def command_prepare_owner_reassignment(
     with _registry_lock(context.registry_path):
         registry = _load_registry(context.registry_path)
         assert registry is not None
+        _require_resolved_caller_for_registry(
+            context, registry, args, task_ref=task_ref, package=package
+        )
         control = _owner_reassignment_control_admission(
             context,
             registry,
@@ -5212,7 +5605,12 @@ def command_prepare_owner_reassignment(
     }
 
 
-def _command_environment(context: RepoContext, task_ref: str) -> dict[str, str]:
+def _command_environment(
+    context: RepoContext,
+    task_ref: str,
+    *,
+    caller_context: str | None = None,
+) -> dict[str, str]:
     digest = hashlib.sha256(task_ref.encode("utf-8")).hexdigest()[:16]
     runtime = context.common_dir / "peerslate" / "runtime" / digest
     runtime.mkdir(parents=True, exist_ok=True)
@@ -5226,18 +5624,29 @@ def _command_environment(context: RepoContext, task_ref: str) -> dict[str, str]:
             "PYTHONPYCACHEPREFIX": str(runtime / "pycache"),
         }
     )
+    context_id = _caller_context_identifier(caller_context)
+    if context_id:
+        environment.pop("PEERSLATE_CALLER_REF", None)
+        environment[CALLER_CONTEXT_ENV] = context_id
     return environment
 
 
 def _run_verification(
-    context: RepoContext, path: Path, task_ref: str, command: Sequence[str]
+    context: RepoContext,
+    path: Path,
+    task_ref: str,
+    command: Sequence[str],
+    *,
+    caller_context: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     if not command:
         raise Refusal("runtime-required verification needs a command after '--'")
     return subprocess.run(
         list(command),
         cwd=path,
-        env=_command_environment(context, task_ref),
+        env=_command_environment(
+            context, task_ref, caller_context=caller_context
+        ),
         text=True,
         encoding="utf-8",
         stdout=subprocess.PIPE,
@@ -5460,6 +5869,9 @@ def command_retire(context: RepoContext, args: argparse.Namespace) -> dict[str, 
         registry = _load_registry(context.registry_path)
         assert registry is not None
         _assert_registry_identity(context, registry)
+        _require_resolved_caller_for_registry(
+            context, registry, args, task_ref=task_ref, package=package
+        )
         recovered = _reconcile_pending(context, registry)
         record = _record_by_path(registry, path)
         if record is None:
@@ -6200,6 +6612,13 @@ def command_retire_historical(
         registry = _load_registry(context.registry_path)
         assert registry is not None
         _assert_registry_identity(context, registry)
+        _require_resolved_caller_for_registry(
+            context,
+            registry,
+            args,
+            task_ref=args.task_ref,
+            package=args.cleanup_package,
+        )
         pending = registry.get("pending")
         if pending is not None and pending.get("operation") != "retire_historical":
             raise Refusal("an unrelated pending operation blocks historical retirement")
@@ -6337,6 +6756,13 @@ def command_retire_closed_custody(
         registry = _load_registry(context.registry_path)
         assert registry is not None
         _assert_registry_identity(context, registry)
+        _require_resolved_caller_for_registry(
+            context,
+            registry,
+            args,
+            task_ref=cleanup_task_ref,
+            package=cleanup_package,
+        )
         pending = registry.get("pending")
         if pending is not None:
             if not isinstance(pending, dict) or not _closed_custody_pending_matches(
@@ -6603,6 +7029,13 @@ def command_verify(
         raise Refusal(
             "candidate SHA must equal the exact fetched claimed-branch tip"
         )
+    if _caller_context_identifier(getattr(args, "caller_context", "")):
+        snapshot = _load_registry(context.registry_path)
+        assert snapshot is not None
+        _assert_registry_identity(context, snapshot)
+        _require_resolved_caller_for_registry(
+            context, snapshot, args, task_ref=task_ref, package=package
+        )
     command = list(args.command)
     if command and command[0] == "--":
         command = command[1:]
@@ -6633,6 +7066,9 @@ def command_verify(
             registry = _load_registry(context.registry_path)
             assert registry is not None
             _assert_registry_identity(context, registry)
+            _require_resolved_caller_for_registry(
+                context, registry, args, task_ref=task_ref, package=package
+            )
             recovered = _reconcile_pending(context, registry)
             path_token = hashlib.sha256(task_ref.encode("utf-8")).hexdigest()[:12]
             path = (
@@ -6751,7 +7187,13 @@ def command_verify(
         # Arbitrary verification never runs while the machine-local registry
         # lock is held.  Retirement requires a fresh post-command server proof.
         try:
-            result = _run_verification(context, path, task_ref, command)
+            result = _run_verification(
+                context,
+                path,
+                task_ref,
+                command,
+                caller_context=getattr(args, "caller_context", ""),
+            )
         except OSError as error:
             command_error = f"{type(error).__name__}: {error}"
             with _registry_lock(context.registry_path):
@@ -6969,9 +7411,16 @@ def command_verify(
             base=candidate,
             branch=None,
             includes=includes,
+            caller_context=getattr(args, "caller_context", ""),
         )
         path = _canonical(record["path"])
-        result = _run_verification(context, path, task_ref, command)
+        result = _run_verification(
+            context,
+            path,
+            task_ref,
+            command,
+            caller_context=getattr(args, "caller_context", ""),
+        )
         pristine, residue = _is_pristine(path)
         released = result.returncode == 0 and pristine
         if released:
@@ -7007,6 +7456,30 @@ def command_finalize_task(
     snapshot = _load_registry(context.registry_path)
     assert snapshot is not None
     _assert_registry_identity(context, snapshot)
+    context_id = _caller_context_identifier(getattr(args, "caller_context", ""))
+    context_package = None
+    if context_id:
+        context_package = _active_caller_context_record(
+            snapshot,
+            repository_common_dir=context.common_dir,
+            context_id=context_id,
+        )["package"]
+    _require_resolved_caller_for_registry(
+        context, snapshot, args, task_ref=task_ref, package=context_package
+    )
+    if context_id:
+        unrelated = [
+            record.get("path")
+            for record in snapshot["worktrees"]
+            if record.get("state") == "active"
+            and record.get("task_ref") == task_ref
+            and record.get("package") not in {None, context_package}
+        ]
+        if unrelated:
+            raise Refusal(
+                "caller context cannot finalize resources for another package",
+                blockers=[str(path) for path in unrelated],
+            )
     snapshot_ephemeral = [
         record
         for record in snapshot["worktrees"]
@@ -7049,6 +7522,33 @@ def command_finalize_task(
         registry = _load_registry(context.registry_path)
         assert registry is not None
         _assert_registry_identity(context, registry)
+        locked_context_package = None
+        if context_id:
+            locked_context_package = _active_caller_context_record(
+                registry,
+                repository_common_dir=context.common_dir,
+                context_id=context_id,
+            )["package"]
+        _require_resolved_caller_for_registry(
+            context,
+            registry,
+            args,
+            task_ref=task_ref,
+            package=locked_context_package,
+        )
+        if context_id:
+            locked_unrelated = [
+                record.get("path")
+                for record in registry["worktrees"]
+                if record.get("state") == "active"
+                and record.get("task_ref") == task_ref
+                and record.get("package") not in {None, locked_context_package}
+            ]
+            if locked_unrelated:
+                raise Refusal(
+                    "caller context cannot finalize resources for another package",
+                    blockers=[str(path) for path in locked_unrelated],
+                )
         recovered = _reconcile_pending(context, registry)
         locked_leased = [
             record
@@ -7071,7 +7571,13 @@ def command_finalize_task(
                 lease = record.get("lease")
                 if not lease or lease.get("task_ref") != task_ref:
                     continue
-                _custody_existing_guard(registry, task_ref)
+                _custody_existing_guard(
+                    registry,
+                    task_ref,
+                    context=context,
+                    caller_context=getattr(args, "caller_context", ""),
+                    package=record.get("package"),
+                )
                 pristine, residue = _is_pristine(_canonical(record["path"]))
                 if pristine:
                     live = _worktree_at(context.root, _canonical(record["path"]))
@@ -7327,6 +7833,9 @@ def command_evidence_path(
         registry = _load_registry(context.registry_path)
         assert registry is not None
         _assert_registry_identity(context, registry)
+        _require_resolved_caller_for_registry(
+            context, registry, args, task_ref=task_ref, package=package
+        )
         recovered = _reconcile_pending(context, registry)
         evidence_root = _canonical(registry["evidence_root"])
         current = _worktrees(context.root)
@@ -7535,6 +8044,13 @@ def _parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="subcommand", required=True)
 
+    def add_caller_context(command: argparse.ArgumentParser) -> None:
+        command.add_argument(
+            "--caller-context",
+            default="",
+            help="registered scoped external caller context; guarded children inherit it",
+        )
+
     audit = subparsers.add_parser("audit", help="read-only registry/Git reconciliation")
     audit.add_argument("--json", action="store_true", help="accepted for compatibility; JSON is always emitted")
 
@@ -7543,17 +8059,20 @@ def _parser() -> argparse.ArgumentParser:
     init.add_argument("--evidence-root", required=True)
     init.add_argument("--managed-root")
     init.add_argument("--execute", action="store_true")
+    add_caller_context(init)
 
     adopt = subparsers.add_parser("adopt", help="adopt an exact existing worktree")
     adopt.add_argument("--package", required=True)
     adopt.add_argument("--path", required=True)
     adopt.add_argument("--task-ref", required=True)
     adopt.add_argument("--execute", action="store_true")
+    add_caller_context(adopt)
 
     ensure = subparsers.add_parser("ensure", help="create/reuse one durable package worktree")
     ensure.add_argument("--package", required=True)
     ensure.add_argument("--task-ref", required=True)
     ensure.add_argument("--execute", action="store_true")
+    add_caller_context(ensure)
 
     control = subparsers.add_parser("control", help="lease the reusable sparse control singleton")
     control.add_argument("--task-ref", required=True)
@@ -7564,6 +8083,20 @@ def _parser() -> argparse.ArgumentParser:
     control.add_argument("--include", action="append", default=[])
     control.add_argument("--release", action="store_true")
     control.add_argument("--execute", action="store_true")
+    add_caller_context(control)
+
+    caller = subparsers.add_parser(
+        "caller-context", help="register or revoke one scoped external caller context"
+    )
+    caller.add_argument("action", choices=["register", "revoke"])
+    caller.add_argument("--task-ref", required=True)
+    caller.add_argument("--package")
+    caller.add_argument("--receiver-ref")
+    caller.add_argument("--context-id")
+    caller.add_argument("--owner-authorization-ref", required=True)
+    caller.add_argument("--lease-token", required=True)
+    caller.add_argument("--execute", action="store_true")
+    add_caller_context(caller)
 
     custody = subparsers.add_parser("control-custody", help="journal owner-authorized custody recovery")
     custody.add_argument("action", choices=["propose", "accept", "complete"])
@@ -7572,11 +8105,13 @@ def _parser() -> argparse.ArgumentParser:
     custody.add_argument("--transition")
     custody.add_argument("--acceptance-ref")
     custody.add_argument("--execute", action="store_true")
+    add_caller_context(custody)
     guarded = subparsers.add_parser("control-run", help="run one current-lease guarded command")
     guarded.add_argument("--task-ref", required=True)
     guarded.add_argument("--lease-token", required=True)
     guarded.add_argument("--execute", action="store_true")
     guarded.add_argument("command", nargs=argparse.REMAINDER)
+    add_caller_context(guarded)
 
     owner_reassignment = subparsers.add_parser(
         "prepare-owner-reassignment",
@@ -7595,6 +8130,7 @@ def _parser() -> argparse.ArgumentParser:
         ),
     )
     owner_reassignment.add_argument("--execute", action="store_true")
+    add_caller_context(owner_reassignment)
 
     verify = subparsers.add_parser("verify", help="diff-only or runnable exact-SHA verification")
     verify.add_argument("--package", required=True)
@@ -7604,12 +8140,14 @@ def _parser() -> argparse.ArgumentParser:
     verify.add_argument("--include", action="append", default=[])
     verify.add_argument("--ephemeral", action="store_true")
     verify.add_argument("command", nargs=argparse.REMAINDER)
+    add_caller_context(verify)
 
     retire = subparsers.add_parser("retire", help="retire one exact managed worktree")
     retire.add_argument("--path", required=True)
     retire.add_argument("--task-ref", required=True)
     retire.add_argument("--expected-head", required=True)
     retire.add_argument("--execute", action="store_true")
+    add_caller_context(retire)
 
     retire_closed_custody = subparsers.add_parser(
         "retire-closed-custody",
@@ -7629,6 +8167,7 @@ def _parser() -> argparse.ArgumentParser:
         "--source-unavailable-ref", required=True
     )
     retire_closed_custody.add_argument("--execute", action="store_true")
+    add_caller_context(retire_closed_custody)
 
     historical = subparsers.add_parser(
         "retire-historical",
@@ -7644,6 +8183,7 @@ def _parser() -> argparse.ArgumentParser:
     ):
         historical.add_argument("--" + flag, required=True)
     historical.add_argument("--execute", action="store_true")
+    add_caller_context(historical)
 
     finalize = subparsers.add_parser("finalize-task", help="release/retire this task's temporary resources")
     finalize.add_argument("--task-ref", required=True)
@@ -7654,6 +8194,7 @@ def _parser() -> argparse.ArgumentParser:
         help="exact additional team session UUID; repeat once per selected child",
     )
     finalize.add_argument("--execute", action="store_true")
+    add_caller_context(finalize)
 
     evidence = subparsers.add_parser("evidence-path", help="allocate a bounded external evidence path")
     evidence.add_argument("--package", required=True)
@@ -7664,6 +8205,7 @@ def _parser() -> argparse.ArgumentParser:
     evidence.add_argument("--retention-reason", default="package evidence")
     evidence.add_argument("--close-condition", default="package close and custody verification")
     evidence.add_argument("--execute", action="store_true")
+    add_caller_context(evidence)
     return parser
 
 
@@ -7682,6 +8224,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             payload, code = command_ensure(context, args), 0
         elif args.subcommand == "control":
             payload, code = command_control(context, args), 0
+        elif args.subcommand == "caller-context":
+            payload, code = command_caller_context(context, args), 0
         elif args.subcommand == "control-custody":
             payload, code = command_control_custody(context, args), 0
         elif args.subcommand == "control-run":
