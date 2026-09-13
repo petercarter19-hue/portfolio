@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-CALLER-COMPATIBILITY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Repair caller identity compatibility so authorized Codex and external agents can use governed lifecycle and preflight without manual environment setup. Resolve actual native Codex thread identity, retain legacy attestation with conflict detection, and add scoped registry-backed external caller contexts prepared during handoff. Preserve current ownership, pending custody, revoked writers, lease tokens, guarded child scope, review and CI. No product, production, credentials, external agent launch or schema changes.",
   "assignment": "implementation",
   "writer_ref": "session:01a097f4-9de5-7723-9b13-65124d7ad4eb",
@@ -37,6 +37,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "f522dea0c73337111b365cc7cf9beedb31c3eff1",
+  "closed_at": "2026-09-13T01:20:56Z"
 }
