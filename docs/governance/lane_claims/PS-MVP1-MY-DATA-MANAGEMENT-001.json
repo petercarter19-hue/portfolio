@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-MY-DATA-MANAGEMENT-001",
+  "state": "active",
+  "outcome": "Private My Data management behind default-off PEERSLATE_MY_DATA_ENABLED: a signed-in member opens Settings > My Data, browses category and Activity views, searches and filters existing canonical facts, opens the accepted composer overlay, adds private information, resolves duplicates or conflicts, edits facts, inspects sources, changes stored permission intent, deletes entries, views Recently deleted, and restores entries privately. Reuses the accepted entry-policy and resume-intake APIs with no app.py change, no schema apply, and no production enablement. Missing PEERSLATE_MY_DATA_ENABLED behaves as false. Protected delivery with independent exact-candidate review and Codex final review before merge.",
+  "assignment": "implementation",
+  "writer_ref": "session:51a31f4f-9441-4249-a7df-ff1803e3c839",
+  "branch": "work/2026-09-12-my-data-management-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "f5ed3af2b5d893e176a3543c7621c831561084fa",
+  "owner_outcome_ref": "owner:user:2026-09-12:cursor-muse-spark-my-data-all",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MVP1-MY-DATA-MANAGEMENT-001.json",
+    "docs/governance/lane_claims/evidence/PS-MVP1-MY-DATA-MANAGEMENT-001.md",
+    "docs/governance/lane_claims/receipts/PS-MVP1-MY-DATA-MANAGEMENT-001.json",
+    "docs/initiatives/PS-MVP1-MY-DATA-MANAGEMENT-001/README.md",
+    "docs/initiatives/PS-MVP1-MY-DATA-MANAGEMENT-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "owner_routes.py",
+    "templates/owner_settings.html",
+    "services/my_data_service.py",
+    "templates/partials/settings/_my_data_shell.html",
+    "templates/partials/settings/_my_data_entry.html",
+    "templates/partials/settings/_my_data_composer.html",
+    "static/css/my-data.css",
+    "static/js/my-data.js",
+    "scripts/run_my_data_browser_tests.py",
+    "tests/fixtures/my_data",
+    "tests/test_my_data_service.py",
+    "tests/test_my_data_routes.py",
+    "tests/test_my_data_browser.py",
+    "tests/test_owner_settings.py"
+  ],
+  "domains": [
+    "privacy:my-data",
+    "runtime:my-data",
+    "testing:my-data",
+    "governance:initiative:my-data-management"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MVP1-MY-DATA-MANAGEMENT-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
