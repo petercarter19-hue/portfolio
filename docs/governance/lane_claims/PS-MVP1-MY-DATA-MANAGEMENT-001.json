@@ -30,7 +30,9 @@
     "tests/test_my_data_service.py",
     "tests/test_my_data_routes.py",
     "tests/test_my_data_browser.py",
-    "tests/test_owner_settings.py"
+    "tests/test_owner_settings.py",
+    "services/entry_policy_service.py",
+    "tests/test_entry_policy_service.py"
   ],
   "domains": [
     "privacy:my-data",
