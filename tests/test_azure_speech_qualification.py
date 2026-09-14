@@ -6,11 +6,14 @@ import tempfile
 import unittest
 from dataclasses import replace
 from datetime import date
+from decimal import Decimal
 from pathlib import Path
 from unittest import mock
 
 from services.azure_speech_qualification import (
     MAX_AUDIO_SECONDS,
+    MAX_PRICE_USD_PER_AUDIO_HOUR,
+    PRICE_USD_PER_AUDIO_HOUR,
     TARGET_AUDIO_SECONDS,
     SpeechProgress,
     SpeechQualificationError,
@@ -21,13 +24,19 @@ from services.azure_speech_qualification import (
     progress_to_json,
     score_transcript,
 )
+from services.speech_transcription_service import (
+    SpeechTranscriptionError,
+    SpeechTranscriptionService,
+)
 from scripts.run_speech_quality_evaluations import (
     AzureCliCredential,
     EXPECTED_PROOF_AUTHORIZATION_REF,
     EXPECTED_APP_CONFIGURATION_ENDPOINT,
     EXPECTED_SPEECH_ENDPOINT,
+    LAST_SUCCESS_KEY,
     MarkerStoreError,
     PROOF_CONSUMED_KEY,
+    PROGRESS_KEY,
     _consume_proof_authorization,
     _execute_profiles,
     _preflight_speech_credential,
@@ -115,8 +124,10 @@ class AzureSpeechQualificationTests(unittest.TestCase):
         self.assertEqual(len({item.key for item in cases}), 8)
         self.assertIn("Interview Studio", {item.product for item in cases})
         self.assertIn("Opportunity Slate", {item.product for item in cases})
-        self.assertEqual(TARGET_AUDIO_SECONDS, 22_500)
-        self.assertEqual(MAX_AUDIO_SECONDS, 23_400)
+        self.assertEqual(TARGET_AUDIO_SECONDS, 36_900)
+        self.assertEqual(MAX_AUDIO_SECONDS, 37_800)
+        self.assertEqual(PRICE_USD_PER_AUDIO_HOUR, Decimal("0.10"))
+        self.assertEqual(MAX_PRICE_USD_PER_AUDIO_HOUR, Decimal("0.36"))
 
     def test_score_reduces_transcript_to_numeric_structural_results(self):
         case = load_cases(FIXTURE)[0]
@@ -252,6 +263,17 @@ class AzureSpeechQualificationTests(unittest.TestCase):
         self.assertTrue(report["quality_checks_passed"])
         serialized = json.dumps(report)
         self.assertNotIn(cases[0].text, serialized)
+
+    def test_possible_billed_cost_reports_promotional_and_standard_ceilings(self):
+        cases = load_cases(FIXTURE)
+        progress = speech_progress(
+            cases,
+            attempts={cases[0].key: MAX_AUDIO_SECONDS},
+        )
+        report = privacy_safe_report(cases, progress, mode="test")
+        self.assertEqual(report["possible_billed_audio_seconds"], 37_800)
+        self.assertEqual(report["maximum_possible_cost_usd"], 1.05)
+        self.assertEqual(report["maximum_standard_rate_cost_usd"], 3.78)
 
     def test_tampered_progress_metadata_is_not_reported(self):
         case = load_cases(FIXTURE)[0]
@@ -397,6 +419,23 @@ class AzureSpeechQualificationTests(unittest.TestCase):
             with self.assertRaises(SpeechQualificationError):
                 _require_execution_authority(args)
 
+    def test_transcription_adapter_refuses_hostile_redirects(self):
+        credential = mock.Mock()
+        credential.get_token.return_value = mock.Mock(token="opaque-token")
+        session = mock.Mock()
+        session.post.return_value = mock.Mock(status_code=307)
+        service = SpeechTranscriptionService(
+            endpoint=EXPECTED_SPEECH_ENDPOINT,
+            credential=credential,
+            session=session,
+        )
+
+        with self.assertRaisesRegex(SpeechTranscriptionError, "speech_failed"):
+            service.transcribe(b"fictional-audio", "audio/mpeg")
+
+        session.post.assert_called_once()
+        self.assertFalse(session.post.call_args.kwargs["allow_redirects"])
+
     def test_proof_authorization_is_exact_and_consumed_once(self):
         store = ProofMarkerStore()
         with self.assertRaisesRegex(SpeechQualificationError, "invalid"):
@@ -412,6 +451,27 @@ class AzureSpeechQualificationTests(unittest.TestCase):
         with self.assertRaisesRegex(SpeechQualificationError, "consumed"):
             _consume_proof_authorization(store, EXPECTED_PROOF_AUTHORIZATION_REF)
         self.assertEqual(store.write_count, 1)
+
+    def test_proof_uses_new_progress_keys_and_preserves_legacy_markers(self):
+        self.assertEqual(
+            PROGRESS_KEY,
+            "qualification/speech/proof-progress/2026-09-14-10-5h-one-use",
+        )
+        self.assertEqual(
+            LAST_SUCCESS_KEY,
+            "qualification/speech/proof-last-success-day/2026-09-14-10-5h-one-use",
+        )
+        self.assertNotEqual(PROGRESS_KEY, "qualification/speech/progress")
+        self.assertNotEqual(
+            LAST_SUCCESS_KEY,
+            "qualification/speech/last-success-day",
+        )
+        source = (ROOT / "scripts" / "run_speech_quality_evaluations.py").read_text(
+            encoding="utf-8"
+        )
+        main = source[source.index("def main()") :]
+        self.assertIn("store.read(PROGRESS_KEY)", main)
+        self.assertIn("store.read(LAST_SUCCESS_KEY)", main)
 
     def test_credential_preflight_happens_before_proof_consumption(self):
         source = (ROOT / "scripts" / "run_speech_quality_evaluations.py").read_text(
@@ -493,7 +553,12 @@ class AzureSpeechQualificationTests(unittest.TestCase):
         )
         self.assertIn("name: qualificationSpeechProofEndpoint", pipeline)
         self.assertIn("displayName: One-time Speech proof endpoint", pipeline)
-        self.assertIn("default: ''", pipeline)
+        self.assertIn("name: qualificationSpeechProofAuthorizationRef", pipeline)
+        self.assertIn(
+            "displayName: One-time Speech proof authorization reference",
+            pipeline,
+        )
+        self.assertGreaterEqual(pipeline.count("default: ''"), 2)
         self.assertIn(
             "qualificationSpeechEndpoint: "
             "${{ parameters.qualificationSpeechProofEndpoint }}",
@@ -501,9 +566,10 @@ class AzureSpeechQualificationTests(unittest.TestCase):
         )
         self.assertIn(
             "qualificationSpeechAuthorizationRef: "
-            f"'{EXPECTED_PROOF_AUTHORIZATION_REF}'",
+            "${{ parameters.qualificationSpeechProofAuthorizationRef }}",
             pipeline,
         )
+        self.assertNotIn(EXPECTED_PROOF_AUTHORIZATION_REF, pipeline)
         self.assertIn(
             "PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF: "
             "$(qualificationSpeechAuthorizationRef)",

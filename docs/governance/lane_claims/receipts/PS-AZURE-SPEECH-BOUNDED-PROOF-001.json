@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "package": "PS-AZURE-SPEECH-BOUNDED-PROOF-001",
+  "candidate_sha": "69af03350e272a70c7a539d08d5161a7c1f2da5f",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/azure_recovery_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-14T18:46:34Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Rejected candidate c182b51de03aa512ca82ae9aa823b42df6cbb676 reused legacy proof progress state and allowed the HTTP client to follow redirects. The accepted candidate uses new one-use marker keys without reading or overwriting legacy state, and the claimed shared Speech adapter explicitly disables redirects."
+    },
+    {
+      "status": "informational",
+      "summary": "Exact candidate 69af03350e272a70c7a539d08d5161a7c1f2da5f at base ee4994b91bfb0255637d53204d895943dc996195 passed independent review with no actionable findings. The reviewer reproduced 96 passing tests and 11 passing subtests, confirmed a hostile 307 yields one POST then fail-closed speech_failed, and confirmed scheduled Speech parameters remain empty by default. No Azure query, mutation, audio generation, pipeline run, paid call, deployment, push, or PR action occurred during review."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-AZURE-SPEECH-BOUNDED-PROOF-001.md"
+}

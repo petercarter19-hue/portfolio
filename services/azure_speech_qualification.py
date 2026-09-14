@@ -11,9 +11,10 @@ from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-TARGET_AUDIO_SECONDS = 22_500  # 6.25 hours at $0.18/hour = $1.125/day.
-MAX_AUDIO_SECONDS = 23_400  # 6.5-hour fail-closed ceiling.
-PRICE_USD_PER_AUDIO_HOUR = Decimal("0.18")
+TARGET_AUDIO_SECONDS = 36_900  # 10.25 hours at $0.10/hour = $1.025.
+MAX_AUDIO_SECONDS = 37_800  # 10.5-hour fail-closed ceiling.
+PRICE_USD_PER_AUDIO_HOUR = Decimal("0.10")
+MAX_PRICE_USD_PER_AUDIO_HOUR = Decimal("0.36")
 MAX_REQUESTS = 8
 SAMPLE_WORD_LIMIT = 400
 PROGRESS_SCHEMA_VERSION = 2
@@ -422,9 +423,11 @@ def progress_to_json(progress: SpeechProgress) -> str:
     )
 
 
-def estimated_cost_usd(audio_seconds: int) -> Decimal:
+def estimated_cost_usd(
+    audio_seconds: int, *, price: Decimal = PRICE_USD_PER_AUDIO_HOUR
+) -> Decimal:
     return (
-        Decimal(audio_seconds) / Decimal(3600) * PRICE_USD_PER_AUDIO_HOUR
+        Decimal(audio_seconds) / Decimal(3600) * price
     ).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
 
 
@@ -482,6 +485,12 @@ def privacy_safe_report(
         "possible_billed_audio_hours": round(attempted_audio_seconds / 3600, 4),
         "maximum_possible_cost_usd": float(
             estimated_cost_usd(attempted_audio_seconds)
+        ),
+        "maximum_standard_rate_cost_usd": float(
+            estimated_cost_usd(
+                attempted_audio_seconds,
+                price=MAX_PRICE_USD_PER_AUDIO_HOUR,
+            )
         ),
         "possible_spend_target_reached": (
             TARGET_AUDIO_SECONDS <= attempted_audio_seconds <= MAX_AUDIO_SECONDS

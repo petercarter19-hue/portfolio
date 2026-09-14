@@ -44,13 +44,16 @@ DEFAULT_FIXTURE = (
     / "azure_startup_qualification"
     / "speech_eval_cases.json"
 )
-PROGRESS_KEY = "qualification/speech/progress"
-LAST_SUCCESS_KEY = "qualification/speech/last-success-day"
+PROGRESS_KEY = "qualification/speech/proof-progress/2026-09-14-10-5h-one-use"
+LAST_SUCCESS_KEY = (
+    "qualification/speech/proof-last-success-day/2026-09-14-10-5h-one-use"
+)
 PROOF_CONSUMED_KEY = (
-    "qualification/speech/proof-authorization-consumed/2026-09-13-runtime-fix"
+    "qualification/speech/proof-authorization-consumed/2026-09-14-10-5h-one-use"
 )
 EXPECTED_PROOF_AUTHORIZATION_REF = (
-    "continuity:event:evt-9aa26bec-b6f6-4c19-a55b-9eedbc4eca65"
+    "session:01a09d58-4477-7b43-873a-0af993f00c85/"
+    "owner-authorization:2026-09-14/azure-speech-proof-10.5h-one-use"
 )
 EXPECTED_SPEECH_ENDPOINT = "https://peerslate-foundry.cognitiveservices.azure.com"
 EXPECTED_APP_CONFIGURATION_ENDPOINT = (

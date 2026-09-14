@@ -75,6 +75,7 @@ class SpeechTranscriptionService:
                     "definition": (None, definition, "application/json"),
                 },
                 timeout=(5, self.timeout_seconds),
+                allow_redirects=False,
             )
         except requests.Timeout as error:
             raise SpeechTranscriptionError("speech_timeout") from error
