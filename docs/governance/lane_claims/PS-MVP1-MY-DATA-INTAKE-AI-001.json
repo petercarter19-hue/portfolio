@@ -44,7 +44,8 @@
     "tests/test_my_data_service.py",
     "tests/test_my_data_intake_ai.py",
     "tests/test_my_data_drafts.py",
-    "tests/test_my_data_intake_sources.py"
+    "tests/test_my_data_intake_sources.py",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "domains": [
     "privacy:my-data:intake-ai",
