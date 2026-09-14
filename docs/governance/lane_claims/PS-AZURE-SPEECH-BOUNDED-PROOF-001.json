@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-AZURE-SPEECH-BOUNDED-PROOF-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Prepare and, only after Pete gives fresh exact action-time authorization, run one manual Azure Speech synthetic proof through the existing pipeline. Bind the new reference to a new one-use marker; never reset or reuse older authorization or profile markers. Preflight Azure Identity import and the first Entra token before consuming authority. Use only the existing identity, pinned endpoint, temporary fictional audio, at most eight profiles, and 10.5 attempted audio hours. Current retail bounds: about 1.05 dollars at the primary promo meter and no more than 3.78 dollars at the standard meter. Retain aggregate-only metrics; never replay failed or ambiguous attempts. Scheduled Speech stays off. Daily enablement needs a separate owner-selected Protected follow-up after proof success, complete-day Cost Management evidence above 1 dollar, and Startups portal recognition. Exclude access expansion, new resources or secrets, marker reset, private content, app deployment, schema or data mutation, DNS, API Management, advertising, and marketing. PACKAGE_REGISTRY.json remains owned by PS-MVP1-MY-DATA-INTAKE-AI-001 and must be added by governed surface extension before merge.",
   "assignment": "implementation",
   "writer_ref": "session:01a09d58-4477-7b43-873a-0af993f00c85",
@@ -36,6 +36,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "d6521d3a61f232745e367e80118f60a71df94c18",
+  "closed_at": "2026-09-14T19:01:02Z"
 }
