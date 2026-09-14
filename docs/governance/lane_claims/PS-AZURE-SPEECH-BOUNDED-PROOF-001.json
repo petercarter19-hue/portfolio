@@ -21,7 +21,8 @@
     "scripts/run_speech_quality_evaluations.py",
     "tests/test_azure_speech_qualification.py",
     "services/azure_speech_qualification.py",
-    "docs/governance/PACKAGE_REGISTRY.json"
+    "docs/governance/PACKAGE_REGISTRY.json",
+    "services/speech_transcription_service.py"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-AZURE-SPEECH-BOUNDED-PROOF-001.md"
