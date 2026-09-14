@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-MY-DATA-INTAKE-AI-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Private My Data intake and Luna Extra High processing on collision-free surfaces: server-persisted cross-device composer drafts with 30-day inactivity expiry and truthful conflict recovery; typed, selectable-text document, and English voice input through the accepted intake lifecycle; private inspectable and separately deletable sources; GPT 5.6 Luna reasoning effort xhigh with strict structured extraction and semantic comparison; exact-then-semantic member-scoped matching with new, equivalent, additional-detail, contradiction, and uncertain outcomes; targeted proposals and private-by-default canonical saves; manual recovery during provider failure; no AI authority over ownership, permissions, publication, deletion, or canonical writes; no public-effect claim, schema application, live provider use, feature enablement, or deployment.",
   "assignment": "implementation",
   "writer_ref": "agent:/root/internal_corrections",
@@ -68,6 +68,6 @@
     "owner_authorization_ref": "session:01a09bca-2913-7cd1-8108-2595e2533cab/owner-internal-finish"
   },
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "35c6c02904c0257d97963378686b76b55e5178f8",
+  "closed_at": "2026-09-14T12:07:14Z"
 }
