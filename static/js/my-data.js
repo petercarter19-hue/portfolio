@@ -11,7 +11,10 @@
  *  - a transcript that arrives after more typing is appended, never overwriting;
  *  - closing the overlay preserves the draft and the list position;
  *  - an outside click never dismisses an active recording;
- *  - unsubmitted draft text is kept in memory only, never browser storage;
+ *  - unsubmitted drafts persist on the server across signed-in devices and
+ *    expire after 30 days without edits; never browser storage;
+ *  - a draft that changed on another device keeps the member's unsaved words
+ *    and offers a truthful recovery choice;
  *  - new facts start private; sharing changes are explicit member choices.
  */
 (function () {
@@ -33,6 +36,9 @@
         guide: root.getAttribute('data-my-data-guide-url'),
         guideStatus: root.getAttribute('data-my-data-guide-status-url')
     };
+    // The draft endpoints live on the same blueprint as submissions; derive
+    // the draft URL from the submit URL so no template change is needed.
+    urls.draft = urls.submit ? urls.submit.replace(/\/submissions$/, '/draft') : null;
 
     var state = {
         view: 'category',
@@ -56,7 +62,12 @@
         guideLoaded: false,
         bodyOverflow: undefined,
         hostIsolation: undefined,
-        lastOpener: null
+        lastOpener: null,
+        draftVersion: null,
+        draftLoadId: 0,
+        draftTimer: null,
+        draftUnsupported: false,
+        transcriptSources: []
     };
 
     function el(selector, scope) {
@@ -715,6 +726,7 @@
             composer.bodyOverflow = document.body.style.overflow || '';
         }
         document.body.style.overflow = 'hidden';
+        loadDraft();
         var text = el('[data-my-data-text]', root);
         if (text) {
             text.focus();
@@ -794,7 +806,213 @@
         }
     }
 
-    function renderReceipt(body) {
+    /* -- server drafts -------------------------------------------------- */
+
+    function draftDescriptors() {
+        var attachments = [];
+        composer.files.forEach(function (staged, index) {
+            if (staged.descriptor) {
+                attachments.push(staged.descriptor);
+                return;
+            }
+            var file = staged.file;
+            if (!file) {
+                return;
+            }
+            attachments.push({
+                client_key: 'attachment-' + index,
+                kind: 'document',
+                declared_content_type: file.type || '',
+                filename: file.name || ('attachment-' + index)
+            });
+        });
+        composer.transcriptSources.forEach(function (entry) {
+            attachments.push({
+                client_key: entry.client_key,
+                kind: 'recording',
+                source_key: entry.source_key
+            });
+        });
+        return attachments;
+    }
+
+    function loadDraft() {
+        if (!urls.draft) {
+            return;
+        }
+        composer.draftLoadId += 1;
+        var loadId = composer.draftLoadId;
+        window.fetch(urls.draft, { credentials: 'same-origin' })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (body) {
+                if (loadId !== composer.draftLoadId) {
+                    return;
+                }
+                if (!body || body.success !== true) {
+                    if (body && body.code === 'unavailable') {
+                        composer.draftUnsupported = true;
+                    }
+                    return;
+                }
+                var draft = body.draft;
+                if (!draft) {
+                    return;
+                }
+                var text = el('[data-my-data-text]', root);
+                var localText = text ? String(text.value || '') : '';
+                var serverText = typeof draft.text === 'string' ? draft.text : '';
+                var serverVersion = draft.version;
+                if (!localText) {
+                    composer.draftVersion = serverVersion;
+                    if (text && serverText) {
+                        text.value = serverText;
+                        setDraftNote('Draft recovered from your other device. Drafts expire after 30 days without edits.');
+                    }
+                } else if (localText === serverText) {
+                    composer.draftVersion = serverVersion;
+                } else if (composer.draftVersion !== serverVersion) {
+                    renderDraftConflict({
+                        conflicts: [{
+                            draft_key: 'composer',
+                            reason: 'version_changed',
+                            server_version: serverVersion,
+                            server_draft: draft
+                        }],
+                        proposed_values: { text: localText }
+                    });
+                }
+                var reattach = 0;
+                (draft.attachments || []).forEach(function (entry) {
+                    if (!entry || !entry.needs_reattach) {
+                        return;
+                    }
+                    var known = composer.files.some(function (staged) {
+                        return staged.descriptor
+                            && staged.descriptor.client_key === entry.client_key
+                            && staged.descriptor.kind === entry.kind;
+                    });
+                    if (!known) {
+                        composer.files.push({ descriptor: entry });
+                        reattach += 1;
+                    }
+                });
+                if (reattach) {
+                    renderAttachments();
+                    setDraftNote('Draft recovered. Reattach ' + reattach + (reattach === 1 ? ' file' : ' files') + ' to include prior documents.');
+                }
+            })
+            .catch(function () { /* memory-only fallback keeps working */ });
+    }
+
+    function scheduleDraftSave() {
+        if (!urls.draft || composer.draftUnsupported) {
+            return;
+        }
+        if (composer.draftTimer) {
+            window.clearTimeout(composer.draftTimer);
+        }
+        composer.draftTimer = window.setTimeout(function () {
+            saveDraft(null);
+        }, 800);
+    }
+
+    function saveDraft(overwriteVersion) {
+        if (!urls.draft || composer.draftUnsupported) {
+            return;
+        }
+        var payload = {
+            request_id: newRequestId(),
+            expected_version: overwriteVersion === null || overwriteVersion === undefined
+                ? composer.draftVersion
+                : overwriteVersion,
+            text: composerText(),
+            items: [],
+            attachments: draftDescriptors()
+        };
+        window.fetch(urls.draft, sameOriginOptions('PUT', JSON.stringify(payload), {
+            'Content-Type': 'application/json'
+        }))
+            .then(function (response) {
+                return response.json().then(function (body) {
+                    return { status: response.status, body: body };
+                });
+            })
+            .then(function (result) {
+                var body = result.body || {};
+                if (result.status === 409 && body.code === 'draft_conflict') {
+                    renderDraftConflict(body);
+                    return;
+                }
+                if (body.success === true && body.draft) {
+                    composer.draftVersion = body.draft.version;
+                }
+            })
+            .catch(function () { /* the next keystroke retries */ });
+    }
+
+    function deleteServerDraft() {
+        composer.draftVersion = null;
+        composer.transcriptSources = [];
+        if (!urls.draft || composer.draftUnsupported) {
+            return;
+        }
+        window.fetch(urls.draft, sameOriginOptions('DELETE', JSON.stringify({
+            request_id: newRequestId()
+        }), {
+            'Content-Type': 'application/json'
+        })).catch(function () { /* discard stays local on failure */ });
+    }
+
+    function renderDraftConflict(body) {
+        var host = el('[data-my-data-proposals]', root);
+        if (!host) {
+            return;
+        }
+        host.textContent = '';
+        var conflict = (body.conflicts || [])[0] || {};
+        var server = conflict.server_draft || {};
+        setDraftNote('That draft changed on another device. Your unsaved words are kept here. Choose which copy to keep.');
+        var card = document.createElement('article');
+        card.className = 'my-data__proposal';
+        var heading = document.createElement('h4');
+        heading.textContent = 'Two versions of your draft';
+        card.appendChild(heading);
+        var mine = document.createElement('blockquote');
+        mine.textContent = ((body.proposed_values || {}).text) || composerText() || '';
+        card.appendChild(mine);
+        var theirs = document.createElement('blockquote');
+        theirs.textContent = server.text || '';
+        card.appendChild(theirs);
+        var row = document.createElement('div');
+        var keepMine = document.createElement('button');
+        keepMine.type = 'button';
+        keepMine.textContent = 'Keep my words';
+        var useTheirs = document.createElement('button');
+        useTheirs.type = 'button';
+        useTheirs.textContent = 'Use other version';
+        row.appendChild(keepMine);
+        row.appendChild(useTheirs);
+        card.appendChild(row);
+        host.appendChild(card);
+        keepMine.addEventListener('click', function () {
+            saveDraft(conflict.server_version || null);
+            setDraftNote('Saving your words over the other version.');
+        });
+        useTheirs.addEventListener('click', function () {
+            var text = el('[data-my-data-text]', root);
+            if (text && typeof server.text === 'string') {
+                text.value = server.text;
+            }
+            composer.draftVersion = server.version || null;
+            host.textContent = '';
+            setDraftNote('Other version loaded. Your files were kept.');
+            scheduleDraftSave();
+        });
+    }
+
+    function renderReceipt(body, options) {
         var box = el('[data-my-data-receipt]', root);
         if (!box) {
             return;
@@ -821,7 +1039,18 @@
             line.textContent = 'Nothing was saved yet.';
         }
         box.appendChild(line);
-        renderProposals(body);
+        var providerDown = (body.results || []).some(function (row) {
+            return row && row.provider_issue;
+        });
+        if (providerDown) {
+            var notice = document.createElement('p');
+            notice.textContent = 'The organizer is unavailable right now. Your words are kept for review. Retry the Add or type the details directly.';
+            box.appendChild(notice);
+        }
+        if (!(options && options.preserveProposalHost)) {
+            renderProposals(body);
+            renderResultNotes(body);
+        }
     }
 
     function renderProposals(body) {
@@ -915,6 +1144,115 @@
         return card;
     }
 
+    function renderResultNotes(body) {
+        var host = el('[data-my-data-proposals]', root);
+        if (!host) {
+            return;
+        }
+        (body.results || []).forEach(function (row) {
+            if (!row || typeof row !== 'object') {
+                return;
+            }
+            if (row.provider_issue) {
+                var issue = document.createElement('p');
+                issue.textContent = 'The organizer is unavailable right now. Your words are kept for review. Retry the Add or type the details directly.';
+                host.appendChild(issue);
+            }
+            if (row.outcome !== 'duplicate' && !(row.already_saved && row.already_saved.length)) {
+                return;
+            }
+            var card = document.createElement('article');
+            card.className = 'my-data__proposal';
+            var heading = document.createElement('h4');
+            heading.textContent = row.message || 'Already saved. Nothing new was added.';
+            card.appendChild(heading);
+            var keepActions = row.keep_separate_actions || (row.keep_separate ? [row.keep_separate] : []);
+            keepActions.forEach(function (keep, index) {
+                var actionHost = card;
+                if (keepActions.length > 1) {
+                    actionHost = document.createElement('div');
+                    actionHost.className = 'my-data__proposal-action';
+                    var actionLabel = document.createElement('p');
+                    var recordLabel = String(keep.record_type || 'item').replace(/_/g, ' ');
+                    actionLabel.textContent = 'Equivalent ' + (index + 1) + ': ' + recordLabel;
+                    actionHost.appendChild(actionLabel);
+                    card.appendChild(actionHost);
+                }
+                var action = document.createElement('button');
+                action.type = 'button';
+                action.textContent = 'Keep as separate';
+                actionHost.appendChild(action);
+                action.addEventListener('click', function () {
+                    submitKeepSeparate(keep, action);
+                });
+            });
+            host.appendChild(card);
+        });
+    }
+
+    function removeResolvedKeepSeparateAction(action) {
+        if (!action) {
+            return;
+        }
+        var card = action.closest('.my-data__proposal');
+        var actionHost = action.closest('.my-data__proposal-action');
+        if (actionHost) {
+            actionHost.remove();
+        } else {
+            action.remove();
+        }
+        if (card && !card.querySelector('button')) {
+            card.remove();
+        }
+    }
+
+    function submitKeepSeparate(keep, action) {
+        setDraftNote('Saving privately…');
+        var request;
+        if (keep && keep.override_key) {
+            request = {
+                type: 'keep_extracted_separate',
+                request_id: newRequestId(),
+                override_key: keep.override_key
+            };
+        } else {
+            request = {
+                type: 'add_submission',
+                request_id: newRequestId(),
+                text: null,
+                items: [{
+                    client_key: keep.client_key || 'separate-1',
+                    record_type: keep.record_type,
+                    values: keep.values || {},
+                    explicit_clears: keep.explicit_clears || [],
+                    as_separate: true
+                }],
+                attachments: []
+            };
+        }
+        var form = new FormData();
+        form.append('request', JSON.stringify(request));
+        window.fetch(urls.submit, sameOriginOptions('POST', form))
+            .then(function (response) {
+                return response.json().then(function (body) {
+                    return { status: response.status, body: body };
+                });
+            })
+            .then(function (result) {
+                if (result.body && result.body.success === true) {
+                    renderReceipt(result.body, { preserveProposalHost: true });
+                    removeResolvedKeepSeparateAction(action);
+                    setDraftNote('Saved privately. Your unfinished draft is still here.');
+                } else {
+                    renderReceipt(result.body || {});
+                }
+                return refreshInventory();
+            })
+            .catch(function () {
+                setDraftNote('Saving failed before reaching PeerSlate. Your words are preserved.');
+            });
+    }
+
     function submitAdd() {
         var text = composerText();
         if (!text && !composer.files.length) {
@@ -924,6 +1262,9 @@
         var form = new FormData();
         var attachments = [];
         composer.files.forEach(function (staged, index) {
+            if (!staged.file) {
+                return;
+            }
             var key = 'attachment-' + index;
             form.append('file:' + key, staged.file, staged.file.name || key);
             attachments.push({
@@ -963,10 +1304,12 @@
                     composer.files = [];
                     renderAttachments();
                     composer.requestId = newRequestId();
+                    deleteServerDraft();
                     setDraftNote('');
                 } else if (body.input_preserved !== false) {
                     setDraftNote('Your words are preserved above. Nothing was discarded.');
                     composer.requestId = newRequestId();
+                    scheduleDraftSave();
                 }
                 return refreshInventory();
             })
@@ -983,13 +1326,18 @@
         list.textContent = '';
         composer.files.forEach(function (staged, index) {
             var item = document.createElement('li');
-            item.textContent = (staged.file.name || 'file') + ' (' + staged.file.size + ' bytes) ';
+            if (staged.descriptor) {
+                item.textContent = (staged.descriptor.filename || 'file') + ' (reattach to include) ';
+            } else {
+                item.textContent = (staged.file.name || 'file') + ' (' + staged.file.size + ' bytes) ';
+            }
             var remove = document.createElement('button');
             remove.type = 'button';
             remove.textContent = 'Remove';
             remove.addEventListener('click', function () {
                 composer.files.splice(index, 1);
                 renderAttachments();
+                scheduleDraftSave();
             });
             item.appendChild(remove);
             list.appendChild(item);
@@ -1067,9 +1415,16 @@
             .then(function (body) {
                 var transcript = body && (body.transcript || body.provider_transcript || '');
                 if (transcript) {
+                    if (body.source_key) {
+                        composer.transcriptSources.push({
+                            client_key: body.client_key || ('clip-' + composer.transcriptSources.length),
+                            source_key: body.source_key
+                        });
+                    }
                     var text = el('[data-my-data-text]', root);
                     text.value = text.value ? text.value + ' ' + transcript : transcript;
                     renderReceipt(body);
+                    scheduleDraftSave();
                     setDraftNote('Transcript added below your words. Nothing was overwritten.');
                 } else {
                     setDraftNote('Transcription is unavailable. Your recording is kept privately. Try again.');
@@ -1245,6 +1600,7 @@
                 renderReceipt(null);
                 el('[data-my-data-proposals]', root).textContent = '';
                 composer.requestId = newRequestId();
+                deleteServerDraft();
                 setDraftNote('Draft discarded.');
             });
         }
@@ -1266,6 +1622,7 @@
                 renderAttachments();
                 if (composer.files.length) {
                     setDraftNote('Draft kept. Press Add when ready.');
+                    scheduleDraftSave();
                 }
             });
         }
@@ -1293,6 +1650,7 @@
                 if (text.value) {
                     setDraftNote('Draft kept. Press Add when ready.');
                 }
+                scheduleDraftSave();
             });
         }
     }

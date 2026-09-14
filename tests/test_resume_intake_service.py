@@ -558,22 +558,29 @@ class FieldIntentTests(unittest.TestCase):
         )
 
     def test_composer_shaped_partial_change_preserves_other_fields(self):
-        # Exactly the shape the composer emits when the member fills only the
-        # subject fields: no null padding and no default booleans.
+        # Exactly the shape the composer emits when the member changes one
+        # filled field: no null padding and no default booleans. An identical
+        # restatement with no change is a quiet duplicate instead.
         proposal = self.partial_change(
-            {"role_title": "Systems Engineer", "employer_name": "Northrop Grumman"}
+            {
+                "role_title": "Systems Engineer",
+                "employer_name": "Northrop Grumman",
+                "employment_type": "part_time",
+            }
         )
+        self.assertEqual(proposal["kind"], "contradiction")
         self.assertEqual(
-            set(proposal["proposed_values"]), {"role_title", "employer_name"}
+            set(proposal["proposed_values"]),
+            {"role_title", "employer_name", "employment_type"},
         )
         decided = self.accept(proposal)
         self.assertEqual(decided["outcome"], "saved")
         merged = self.overlay_values()
+        self.assertEqual(merged["employment_type"], "part_time")
         self.assertEqual(merged["summary"], ROLE_VALUES["summary"])
         self.assertEqual(merged["start_date"], ROLE_VALUES["start_date"])
         self.assertEqual(merged["date_precision"], "month")
         self.assertTrue(merged["current_role"])
-        self.assertEqual(merged["employment_type"], "full_time")
 
     def test_adding_one_detail_keeps_every_other_field(self):
         proposal = self.partial_change(

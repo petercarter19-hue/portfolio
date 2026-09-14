@@ -1,0 +1,431 @@
+"""Luna Extra High structured extraction and semantic comparison.
+
+My Data intake is configured to request GPT 5.6 Luna processing with reasoning
+effort ``xhigh`` and a strict JSON schema, then validates every candidate
+before it can become a proposal. This adapter does not prove that a live Luna
+deployment ran. The adapter owns no canonical fact, chooses no ownership or
+permissions, and never falls back to another model, effort, or free-form mode:
+a rejected configuration or a malformed payload is a provider failure, and the
+member's input stays preserved for retry or manual entry.
+
+Shortlist candidates always come from the caller, already scoped to the
+authenticated member and already eligible for private processing. The model
+compares against that shortlist only and returns one outcome per candidate:
+``new``, ``equivalent``, ``additional_detail``, ``contradiction``, or
+``uncertain``.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Mapping, Sequence
+from uuid import uuid4
+
+from services.ai_foundation.contracts import (
+    REASONING_EFFORT_XHIGH,
+    Audience,
+    ExtractionPurpose,
+    StructuredRequest,
+    StructuredResult,
+)
+from services.ai_foundation.errors import (
+    ExecutionLimitError,
+    ProviderUnavailableError,
+)
+
+
+EXTRACTION_MODEL = "gpt-5.6-luna"
+EXTRACTION_SCHEMA_NAME = "my_data_intake_extraction_v1"
+EXTRACTION_OUTCOMES = frozenset(
+    {"new", "equivalent", "additional_detail", "contradiction", "uncertain"}
+)
+UNSPECIFIED_RECORD_TYPE = "unspecified"
+TEXT_VALUES_KEY = "text"
+
+
+def new_request_id() -> str:
+    return str(uuid4())
+
+
+class ExtractionError(RuntimeError):
+    """The provider could not produce usable structured extraction."""
+
+    def __init__(self, code: str):
+        self.code = code
+        super().__init__(code)
+
+
+@dataclass(frozen=True)
+class ExtractionCandidate:
+    """One validated model candidate with its source span and outcome."""
+
+    record_type: str
+    values: dict
+    outcome: str
+    span_start: int
+    span_end: int
+    quote: str
+    match_reference: str | None = None
+    provided_fields: tuple = ()
+    confidence: str = "uncertain"
+
+
+def _nullable_string() -> dict:
+    return {"type": ["string", "null"]}
+
+
+def _nullable_boolean() -> dict:
+    return {"type": ["boolean", "null"]}
+
+
+# Closed extracted-value object: every declared property is required and
+# additionalProperties is false. Optional member values use null, not omitted
+# keys. ``text`` is the unspecified-wording field; ``current_role`` is boolean.
+EXTRACTED_VALUE_PROPERTIES: dict = {
+    "text": _nullable_string(),
+    "role_title": _nullable_string(),
+    "employer_name": _nullable_string(),
+    "location_text": _nullable_string(),
+    "summary": _nullable_string(),
+    "start_date": _nullable_string(),
+    "end_date": _nullable_string(),
+    "date_precision": _nullable_string(),
+    "employment_type": _nullable_string(),
+    "current_role": _nullable_boolean(),
+    "title": _nullable_string(),
+    "institution_name": _nullable_string(),
+    "degree_name": _nullable_string(),
+    "field_of_study": _nullable_string(),
+    "education_status": _nullable_string(),
+    "grade_text": _nullable_string(),
+    "name": _nullable_string(),
+    "issuer": _nullable_string(),
+    "identifier": _nullable_string(),
+    "issue_date": _nullable_string(),
+    "expiration_date": _nullable_string(),
+    "verification_url": _nullable_string(),
+    "completion_status": _nullable_string(),
+    "wording": _nullable_string(),
+    "metric_value": _nullable_string(),
+    "metric_label": _nullable_string(),
+}
+
+
+def _closed_object(properties: dict) -> dict:
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": list(properties),
+        "additionalProperties": False,
+    }
+
+
+EXTRACTION_RESPONSE_SCHEMA: dict = _closed_object(
+    {
+        "candidates": {
+            "type": "array",
+            "items": _closed_object(
+                {
+                    "record_type": {"type": "string"},
+                    "values": _closed_object(EXTRACTED_VALUE_PROPERTIES),
+                    "outcome": {"type": "string"},
+                    "span_start": {"type": "integer"},
+                    "span_end": {"type": "integer"},
+                    "quote": {"type": "string"},
+                    "match_reference": _nullable_string(),
+                    "provided_fields": {
+                        "type": ["array", "null"],
+                        "items": {"type": "string"},
+                    },
+                    "confidence": _nullable_string(),
+                }
+            ),
+        }
+    }
+)
+
+
+EXTRACTION_INSTRUCTIONS = (
+    "Extract privately held career facts from the member material. "
+    "For each distinct fact return one candidate with its exact source span, "
+    "the proposed record type, only the fields the material states, and one "
+    "outcome. Compare against the supplied member shortlist only: return "
+    "equivalent when the material restates a listed fact with no new meaning, "
+    "additional_detail when it adds detail to a listed fact, contradiction "
+    "when it conflicts with a listed fact, new when it matches nothing "
+    "listed, and uncertain when the material is ambiguous. Quote exactly the "
+    "material slice between span_start and span_end. Never invent a person, "
+    "employer, role, date, technology, duty, metric, or result."
+)
+
+
+def _json_dumps(value: object) -> str:
+    import json as _json
+
+    return _json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+
+def _shortlist_index(shortlist: Sequence[Mapping[str, Any]]) -> dict:
+    index = {}
+    for entry in shortlist or []:
+        key = entry.get("record_key") if isinstance(entry, Mapping) else None
+        if isinstance(key, str) and key:
+            index[key] = entry
+    return index
+
+
+def _validate_candidate(
+    raw: object,
+    *,
+    text: str,
+    allowed_fields: Mapping[str, frozenset],
+    shortlist: Mapping[str, Mapping[str, Any]],
+) -> ExtractionCandidate:
+    if not isinstance(raw, Mapping):
+        raise ExtractionError("malformed_candidate")
+    record_type = raw.get("record_type")
+    values = raw.get("values")
+    outcome = raw.get("outcome")
+    span_start = raw.get("span_start")
+    span_end = raw.get("span_end")
+    quote = raw.get("quote")
+    if record_type == UNSPECIFIED_RECORD_TYPE:
+        fields = frozenset({TEXT_VALUES_KEY})
+    elif isinstance(record_type, str) and record_type in allowed_fields:
+        fields = allowed_fields[record_type]
+    else:
+        raise ExtractionError("unknown_record_type")
+    if not isinstance(values, Mapping):
+        raise ExtractionError("malformed_values")
+    values = {
+        name: value
+        for name, value in values.items()
+        if value is not None
+    }
+    unknown = [name for name in values if name not in fields]
+    if unknown:
+        raise ExtractionError("unknown_value_fields")
+    if outcome not in EXTRACTION_OUTCOMES:
+        raise ExtractionError("unknown_outcome")
+    if (
+        isinstance(span_start, bool)
+        or not isinstance(span_start, int)
+        or isinstance(span_end, bool)
+        or not isinstance(span_end, int)
+        or span_start < 0
+        or span_end < span_start
+        or span_end > len(text)
+    ):
+        raise ExtractionError("invalid_span")
+    if not isinstance(quote, str) or not quote or quote != text[span_start:span_end]:
+        raise ExtractionError("span_quote_mismatch")
+    match_reference = raw.get("match_reference")
+    if outcome == "equivalent":
+        if not isinstance(match_reference, str) or match_reference not in shortlist:
+            raise ExtractionError("equivalent_needs_listed_match")
+    elif outcome in {"additional_detail", "contradiction"}:
+        if not isinstance(match_reference, str) or match_reference not in shortlist:
+            raise ExtractionError("matched_needs_listed_match")
+    elif match_reference is not None and (
+        not isinstance(match_reference, str) or match_reference not in shortlist
+    ):
+        raise ExtractionError("unknown_match_reference")
+    provided = raw.get("provided_fields")
+    if provided is None:
+        provided = tuple(values.keys())
+    elif not isinstance(provided, list) or any(not isinstance(name, str) for name in provided):
+        raise ExtractionError("malformed_provided_fields")
+    else:
+        provided = tuple(name for name in provided if name in fields)
+    if not provided:
+        provided = tuple(values.keys())
+    confidence = raw.get("confidence") or "uncertain"
+    if confidence not in {"certain", "uncertain"}:
+        raise ExtractionError("unknown_confidence")
+    return ExtractionCandidate(
+        record_type=record_type,
+        values=dict(values),
+        outcome=outcome,
+        span_start=span_start,
+        span_end=span_end,
+        quote=quote,
+        match_reference=match_reference if isinstance(match_reference, str) else None,
+        provided_fields=provided,
+        confidence=confidence,
+    )
+
+
+def validate_extraction_payload(
+    payload: object,
+    *,
+    text: str,
+    allowed_fields: Mapping[str, frozenset],
+    shortlist: Sequence[Mapping[str, Any]] | None = None,
+) -> list[ExtractionCandidate]:
+    """Validate a provider payload into candidates, or raise ExtractionError."""
+
+    if not isinstance(payload, Mapping):
+        raise ExtractionError("malformed_payload")
+    raw_candidates = payload.get("candidates")
+    if not isinstance(raw_candidates, list):
+        raise ExtractionError("malformed_candidates")
+    index = _shortlist_index(shortlist)
+    return [
+        _validate_candidate(
+            raw, text=text, allowed_fields=allowed_fields, shortlist=index
+        )
+        for raw in raw_candidates
+    ]
+
+
+class MyDataExtractionAdapter:
+    """Configured to request Luna extraction behind an injected provider."""
+
+    def __init__(
+        self,
+        provider=None,
+        *,
+        model: str = EXTRACTION_MODEL,
+        reasoning_effort: str = REASONING_EFFORT_XHIGH,
+        schema_name: str = EXTRACTION_SCHEMA_NAME,
+    ) -> None:
+        if model != EXTRACTION_MODEL:
+            raise ExtractionError("unsupported_model")
+        if reasoning_effort != REASONING_EFFORT_XHIGH:
+            raise ExtractionError("unsupported_effort")
+        self._provider = provider
+        self._model = model
+        self._reasoning_effort = reasoning_effort
+        self._schema_name = schema_name
+
+    @property
+    def model(self) -> str:
+        return self._model
+
+    @property
+    def reasoning_effort(self) -> str:
+        return self._reasoning_effort
+
+    @property
+    def schema_name(self) -> str:
+        return self._schema_name
+
+    def build_request(
+        self,
+        text: str,
+        *,
+        request_id: str | None = None,
+        shortlist: Sequence[Mapping[str, Any]] | None = None,
+        purpose: ExtractionPurpose = ExtractionPurpose.MY_DATA_INTAKE_EXTRACTION,
+    ) -> StructuredRequest:
+        """Build the exact structured call. No network happens here."""
+
+        cleaned = (text or "").strip()
+        if not cleaned:
+            raise ExtractionError("empty_input")
+        listed = [
+            {
+                "record_key": entry.get("record_key"),
+                "record_type": entry.get("record_type"),
+                "values": entry.get("values") or {},
+            }
+            for entry in (shortlist or [])
+            if isinstance(entry, Mapping)
+        ]
+        return StructuredRequest(
+            request_id=request_id or new_request_id(),
+            product="my_data_intake",
+            purpose=purpose,
+            audience=Audience.OWNER,
+            subject_key="member",
+            instructions=EXTRACTION_INSTRUCTIONS,
+            input_text=(
+                "Member shortlist (compare only against these):\n"
+                + _json_dumps(listed)
+                + "\n\nMember material:\n"
+                + cleaned
+            ),
+            schema_name=self._schema_name,
+            reasoning_effort=self._reasoning_effort,
+        )
+
+    def extract(
+        self,
+        text: str,
+        *,
+        allowed_fields: Mapping[str, frozenset],
+        shortlist: Sequence[Mapping[str, Any]] | None = None,
+        request_id: str | None = None,
+    ) -> list[ExtractionCandidate]:
+        """Extract validated candidates, or raise ExtractionError."""
+
+        if self._provider is None:
+            raise ExtractionError("provider_unavailable")
+        request = self.build_request(text, request_id=request_id, shortlist=shortlist)
+        try:
+            result = self._provider(
+                request, response_schema=EXTRACTION_RESPONSE_SCHEMA
+            )
+        except (ProviderUnavailableError, ExecutionLimitError) as error:
+            raise ExtractionError("provider_unavailable") from error
+        except ExtractionError:
+            raise
+        except Exception as error:
+            raise ExtractionError("provider_failed") from error
+        payload = result.payload if isinstance(result, StructuredResult) else result
+        if isinstance(result, StructuredResult):
+            if result.schema_name != self._schema_name:
+                raise ExtractionError("schema_mismatch")
+            if result.model_name not in (None, self._model):
+                raise ExtractionError("model_mismatch")
+        return validate_extraction_payload(
+            payload, text=(text or "").strip(), allowed_fields=allowed_fields,
+            shortlist=shortlist,
+        )
+
+
+@dataclass
+class FakeExtractionCall:
+    request: StructuredRequest
+    schema: Mapping[str, Any]
+
+
+class DeterministicFakeExtractionAdapter(MyDataExtractionAdapter):
+    """Test double that records its calls and returns scripted candidates.
+
+    Scripted items carry ``record_type``, ``values``, ``outcome`` and
+    ``quote`` (plus optional ``match_reference``, ``provided_fields`` and
+    ``confidence``). The fake locates each quote inside the actual request
+    text and derives exact spans, so span validation still runs for real. A
+    quote absent from the text is a test authoring error, not a silent pass.
+    """
+
+    def __init__(self, scripted: Sequence[Mapping[str, Any]] | None = None):
+        super().__init__(provider=self._fake_provider)
+        self.scripted = [dict(item) for item in (scripted or [])]
+        self.calls: list[FakeExtractionCall] = []
+        self.fail_with: str | None = None
+
+    def _fake_provider(self, request, *, response_schema):
+        self.calls.append(FakeExtractionCall(request=request, schema=response_schema))
+        if self.fail_with:
+            raise ExtractionError(self.fail_with)
+        material = request.input_text.split("\nMember material:\n", 1)[-1]
+        candidates = []
+        for item in self.scripted:
+            quote = item.get("quote") or ""
+            start = material.find(quote)
+            if not isinstance(quote, str) or not quote or start < 0:
+                raise ExtractionError("fake_quote_not_found")
+            candidates.append({
+                "record_type": item.get("record_type"),
+                "values": item.get("values") or {},
+                "outcome": item.get("outcome"),
+                "span_start": start,
+                "span_end": start + len(quote),
+                "quote": quote,
+                "match_reference": item.get("match_reference"),
+                "provided_fields": item.get("provided_fields"),
+                "confidence": item.get("confidence") or "uncertain",
+            })
+        return {"candidates": candidates}

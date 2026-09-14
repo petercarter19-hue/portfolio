@@ -59,6 +59,24 @@ class HandoffReason(str, Enum):
     PROVIDER_UNAVAILABLE = "provider_unavailable"
 
 
+class ExtractionPurpose(str, Enum):
+    """Closed purpose vocabulary for structured intake extraction work.
+
+    Answer-oriented :class:`Purpose` values must never route extraction or
+    matching traffic: those flows need their own explicit scope so a future
+    purpose change cannot silently widen what the intake adapter may ask for.
+    """
+
+    MY_DATA_INTAKE_EXTRACTION = "my_data_intake_extraction"
+    MY_DATA_INTAKE_MATCHING = "my_data_intake_matching"
+
+
+#: The only reasoning effort the accepted intake contract permits. The
+#: provider adapter refuses any other value rather than silently downgrading.
+REASONING_EFFORT_XHIGH = "xhigh"
+ALLOWED_REASONING_EFFORTS = frozenset({REASONING_EFFORT_XHIGH})
+
+
 @dataclass(frozen=True)
 class AIRequest:
     request_id: str
@@ -212,3 +230,60 @@ class GroundedAnswer:
                 question=question,
             ),
         )
+
+
+@dataclass(frozen=True)
+class StructuredRequest:
+    """One strict structured-output extraction or matching call.
+
+    ``instructions`` carry the closed extraction contract and ``input_text``
+    carries member material as data. ``schema_name`` selects the exact JSON
+    schema the provider must satisfy, and ``reasoning_effort`` must be the
+    accepted ``xhigh`` value: the provider refuses anything else.
+    """
+
+    request_id: str
+    product: str
+    purpose: ExtractionPurpose
+    audience: Audience
+    subject_key: str
+    instructions: str = field(repr=False)
+    input_text: str = field(repr=False)
+    schema_name: str
+    reasoning_effort: str = REASONING_EFFORT_XHIGH
+
+    def __post_init__(self) -> None:
+        _bounded_identifier("request_id", self.request_id)
+        _bounded_identifier("product", self.product, maximum=100)
+        _bounded_identifier("subject_key", self.subject_key)
+        _required_text("instructions", self.instructions)
+        _required_text("input_text", self.input_text)
+        _bounded_identifier("schema_name", self.schema_name, maximum=100)
+        if not isinstance(self.purpose, ExtractionPurpose):
+            raise ValueError("purpose must be an ExtractionPurpose")
+        if not isinstance(self.audience, Audience):
+            raise ValueError("audience must be an Audience")
+        if self.reasoning_effort not in ALLOWED_REASONING_EFFORTS:
+            raise ValueError("reasoning effort is not the accepted contract value")
+
+
+@dataclass(frozen=True)
+class StructuredResult:
+    """A validated structured provider payload with its usage record."""
+
+    request_id: str
+    schema_name: str
+    model_name: str | None
+    payload: object
+    input_tokens: int
+    output_tokens: int
+
+    def __post_init__(self) -> None:
+        _bounded_identifier("request_id", self.request_id)
+        _bounded_identifier("schema_name", self.schema_name, maximum=100)
+        if self.model_name is not None:
+            _bounded_identifier("model_name", self.model_name, maximum=100)
+        for label, value in (("input_tokens", self.input_tokens),
+                             ("output_tokens", self.output_tokens)):
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"{label} must be a non-negative integer")

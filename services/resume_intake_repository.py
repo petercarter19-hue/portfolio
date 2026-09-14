@@ -218,6 +218,11 @@ def empty_intake_snapshot() -> dict[str, Any]:
         "proposals": {},
         "receipts": {},
         "guide": {},
+        # Unsubmitted composer drafts live here, never in submissions,
+        # sources, proposals, or canonical entries. Draft rows are private,
+        # unmatched, and version-checked; the SQL read maps them only when
+        # its declared procedure returns draft rows.
+        "drafts": {},
     }
 
 
@@ -236,7 +241,7 @@ def validate_snapshot(payload: object) -> dict[str, Any]:
     for name in ("lifecycle_epoch", "policy_version"):
         if not isinstance(payload[name], int) or isinstance(payload[name], bool):
             raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
-    for name in ("submissions", "sources", "jobs", "proposals", "receipts", "guide"):
+    for name in ("submissions", "sources", "jobs", "proposals", "receipts", "guide", "drafts"):
         if not isinstance(payload[name], dict):
             raise ResumeIntakeStoreUnavailable("Resume intake storage is unavailable.")
     snapshot = {key: payload[key] for key in _SNAPSHOT_KEYS}
@@ -430,11 +435,16 @@ def map_declared_workspace(payload: object) -> dict[str, Any]:
 
 
 class ResumeIntakeRepository(Protocol):
+    supports_atomic_source_actions: bool
+
     def load_owner(self, owner_user_key: str) -> dict[str, Any]:
         """Return a mutable owner-scoped snapshot."""
 
     def save_owner(self, owner_user_key, snapshot, command=None):
         """Replace that owner's snapshot, optionally through a closed command."""
+
+    def owner_guard(self, owner_user_key):
+        """Serialize one source-bound owner mutation from read through commit."""
 
     def claim_recording(self, owner_user_key, request_id, payload, *, now=None):
         """Reserve one durable provider lease or return pending/replay/conflict."""
@@ -442,12 +452,23 @@ class ResumeIntakeRepository(Protocol):
     def unit_of_work(self, draft_service=None):
         """Return the transaction/unit-of-work the service commits through."""
 
+    def with_drafts(self, owner_user_key: str, mutator, *, create: bool = False):
+        """Run ``mutator`` on the live owner snapshot under the owner lock.
+
+        The mutator may change only the drafts map. A missing owner is passed
+        as ``None`` unless ``create`` is true.
+        """
+
 
 class InMemoryResumeIntakeRepository:
     """Process-local store. Never a live database; owners stay isolated."""
 
     persistence_label = "in_memory_not_live_db"
     is_live_database = False
+    # Draft rows live in the snapshot section, so the in-memory store keeps
+    # them with the same owner isolation as every other intake record.
+    supports_drafts = True
+    supports_atomic_source_actions = True
 
     def __init__(self) -> None:
         self._owners: dict[str, dict[str, Any]] = {}
@@ -461,8 +482,26 @@ class InMemoryResumeIntakeRepository:
                 return empty_intake_snapshot()
             return copy.deepcopy(existing)
 
+    def owner_guard(self, owner_user_key):
+        # The process-local test adapter uses one re-entrant lock for all owner
+        # snapshots. Service operations hold it from source validation through
+        # canonical/intake commit, so purge cannot interleave at that boundary.
+        return self._lock
+
     def save_owner(self, owner_user_key, snapshot, command=None):
         with self._lock:
+            # Drafts use their own owner-scoped CAS path. A non-draft command
+            # works from a detached snapshot that may have been loaded before a
+            # newer draft save completed, so carrying that stale draft section
+            # into a whole-owner replacement would acknowledge v2 and then
+            # silently restore v1. Preserve the live draft map at the same lock
+            # boundary as every whole-owner replacement.
+            current = self._owners.get(owner_user_key)
+            replacement = copy.deepcopy(snapshot)
+            if command is not None:
+                replacement["drafts"] = copy.deepcopy(
+                    (current or {}).get("drafts") or {}
+                )
             if (
                 isinstance(command, dict)
                 and command.get("procedure") == COMMAND_PROCEDURES["transcribe_recording"]
@@ -470,7 +509,7 @@ class InMemoryResumeIntakeRepository:
                 payload = command.get("payload") or {}
                 key = (str(owner_user_key), str(command.get("request_id")))
                 claim = self._recording_claims.get(key)
-                current = self._owners.get(owner_user_key) or empty_intake_snapshot()
+                current = current or empty_intake_snapshot()
                 bindings = {
                     "request_digest": payload.get("request_digest"),
                     "lease_id": payload.get("lease_id"),
@@ -497,12 +536,25 @@ class InMemoryResumeIntakeRepository:
                     raise ResumeIntakeStoreUnavailable(
                         "The recording claim changed before finalization."
                     )
-                self._owners[owner_user_key] = copy.deepcopy(snapshot)
+                self._owners[owner_user_key] = replacement
                 claim["state"] = "completed"
                 claim["completed_at"] = datetime.now(timezone.utc).isoformat()
                 return None
-            self._owners[owner_user_key] = copy.deepcopy(snapshot)
+            self._owners[owner_user_key] = replacement
             return None
+
+    def with_drafts(self, owner_user_key: str, mutator, *, create: bool = False):
+        """Owner-scoped draft CAS against current owner state."""
+
+        with self._lock:
+            existing = self._owners.get(owner_user_key)
+            if existing is None:
+                if not create:
+                    return mutator(None)
+                existing = empty_intake_snapshot()
+                self._owners[owner_user_key] = existing
+            existing.setdefault("drafts", {})
+            return mutator(existing)
 
     def claim_recording(self, owner_user_key, request_id, payload, *, now=None):
         moment = now or datetime.now(timezone.utc)
@@ -566,9 +618,16 @@ class InMemoryResumeIntakeRepository:
     def unit_of_work(self, draft_service=None):
         return InMemoryIntakeUnitOfWork(self, draft_service)
 
-    def _restore(self, owners: dict[str, dict[str, Any]]) -> None:
+    def _restore(
+        self, owners: dict[str, dict[str, Any]], *, preserve_live_drafts: bool = False
+    ) -> None:
         with self._lock:
-            self._owners = owners
+            restored = copy.deepcopy(owners)
+            if preserve_live_drafts:
+                for owner_user_key, current in self._owners.items():
+                    target = restored.setdefault(owner_user_key, empty_intake_snapshot())
+                    target["drafts"] = copy.deepcopy(current.get("drafts") or {})
+            self._owners = restored
 
 
 class InMemoryIntakeUnitOfWork:
@@ -587,7 +646,8 @@ class InMemoryIntakeUnitOfWork:
         self._catalog_state = None
 
     def __enter__(self):
-        self._intake_state = copy.deepcopy(self.repository._owners)
+        with self.repository._lock:
+            self._intake_state = copy.deepcopy(self.repository._owners)
         if self.draft_service is not None:
             draft_repository = getattr(self.draft_service, "repository", None)
             catalog = getattr(self.draft_service, "catalog", None)
@@ -613,12 +673,19 @@ class InMemoryIntakeUnitOfWork:
         }
 
     def commit(self, owner, snapshot, *, procedure=None, request_id=None, payload=None):
-        self.repository.save_owner(owner, snapshot)
+        command = None
+        if procedure is not None:
+            command = {
+                "procedure": procedure,
+                "request_id": request_id,
+                "payload": payload,
+            }
+        self.repository.save_owner(owner, snapshot, command)
         return None
 
     def rollback(self) -> None:
         if self._intake_state is not None:
-            self.repository._restore(self._intake_state)
+            self.repository._restore(self._intake_state, preserve_live_drafts=True)
         if self.draft_service is not None:
             draft_repository = getattr(self.draft_service, "repository", None)
             catalog = getattr(self.draft_service, "catalog", None)
@@ -638,9 +705,28 @@ class SqlResumeIntakeRepository:
 
     persistence_label = "sql_proposed_unapplied"
     is_live_database = True
+    # The declared procedures persist no draft rows yet, so the service
+    # reports drafts truthfully unavailable on this store instead of
+    # pretending a SQL round trip kept them. Draft procedure and table work
+    # stays a separately authorized schema package.
+    supports_drafts = False
+    # The proposed procedures predate source-bound extracted candidates and do
+    # not validate/consume one inside the same database transaction as the
+    # canonical intent. Fail closed until a separately authorized schema
+    # package supplies that transaction; a process lock is not cross-worker
+    # authority.
+    supports_atomic_source_actions = False
 
     def __init__(self, database=None) -> None:
         self.database = database or database_service
+        # The proposed SQL store is not activated. This lock still prevents a
+        # same-process purge/override split while the closed SQL command keeps
+        # its own database transaction boundary. Cross-process activation
+        # remains unavailable until its separately reviewed schema exists.
+        self._owner_mutation_lock = threading.RLock()
+
+    def owner_guard(self, owner_user_key):
+        return self._owner_mutation_lock
 
     def load_owner(self, owner_user_key: str) -> dict[str, Any]:
         try:
@@ -681,6 +767,11 @@ class SqlResumeIntakeRepository:
                 "Resume intake writes use the closed owner-scoped command procedures."
             )
         return self.commit_command(owner_user_key, procedure, request_id, payload)
+
+    def with_drafts(self, owner_user_key: str, mutator, *, create: bool = False):
+        raise ResumeIntakeStoreUnavailable(
+            "Draft rows are not in the declared SQL procedures."
+        )
 
     def claim_recording(self, owner_user_key, request_id, payload, *, now=None):
         command_json = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))

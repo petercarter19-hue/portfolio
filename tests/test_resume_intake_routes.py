@@ -748,5 +748,205 @@ class GuideHttpTests(IntakeRoutesTestCase):
         self.assertNotIn("Traceback", response.get_data(as_text=True))
 
 
+class DraftHttpTests(IntakeRoutesTestCase):
+    HEADERS = {"X-PeerSlate-Request": "same-origin"}
+
+    def test_draft_round_trip_recovers_across_requests(self):
+        client = self.client()
+        empty = client.get("/api/resume-intake/me/draft")
+        self.assertEqual(empty.status_code, 200)
+        self.assertIsNone(empty.get_json()["draft"])
+        saved = client.put(
+            "/api/resume-intake/me/draft",
+            headers=self.HEADERS,
+            json={"request_id": str(uuid4()), "text": "Systems Engineer notes"},
+        )
+        self.assertEqual(saved.status_code, 200)
+        body = saved.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["draft"]["version"], 1)
+        # A later request recovers the same draft: cross-device recovery.
+        recovered = client.get("/api/resume-intake/me/draft").get_json()
+        self.assertEqual(recovered["draft"]["text"], "Systems Engineer notes")
+        discarded = client.delete("/api/resume-intake/me/draft", headers=self.HEADERS)
+        self.assertTrue(discarded.get_json()["discarded"])
+        self.assertIsNone(client.get("/api/resume-intake/me/draft").get_json()["draft"])
+
+    def test_draft_conflict_returns_409_with_both_versions(self):
+        client = self.client()
+        client.put(
+            "/api/resume-intake/me/draft",
+            headers=self.HEADERS,
+            json={"request_id": str(uuid4()), "text": "Device one"},
+        )
+        conflict = client.put(
+            "/api/resume-intake/me/draft",
+            headers=self.HEADERS,
+            json={"request_id": str(uuid4()), "text": "Device two"},
+        )
+        self.assertEqual(conflict.status_code, 409)
+        body = conflict.get_json()
+        self.assertEqual(body["code"], "draft_conflict")
+        self.assertTrue(body["input_preserved"])
+        self.assertEqual(body["proposed_values"]["text"], "Device two")
+        self.assertEqual(body["conflicts"][0]["server_version"], 1)
+
+    def test_draft_write_needs_same_origin_header(self):
+        response = self.client().put(
+            "/api/resume-intake/me/draft",
+            json={"request_id": str(uuid4()), "text": "hi"},
+        )
+        self.assertEqual(response.status_code, 403)
+
+
+class KeepSeparateHttpTests(IntakeRoutesTestCase):
+    def test_structured_duplicate_then_keep_as_separate_saves(self):
+        client = self.client()
+        values = {
+            "role_title": "Route Duplicate",
+            "employer_name": "Northwind",
+        }
+        first = self.submission(
+            client,
+            {
+                "type": "add_submission",
+                "request_id": str(uuid4()),
+                "items": [{
+                    "client_key": "r1", "record_type": "role", "values": values,
+                }],
+            },
+        )
+        self.assertEqual(first.get_json()["summary"]["saved"], 1)
+        duplicate = self.submission(
+            client,
+            {
+                "type": "add_submission",
+                "request_id": str(uuid4()),
+                "items": [{
+                    "client_key": "r2", "record_type": "role", "values": values,
+                }],
+            },
+        )
+        body = duplicate.get_json()
+        self.assertEqual(body["outcome"], "duplicate")
+        keep = body["results"][0]["keep_separate"]
+        self.assertEqual(keep["values"], values)
+        separate = self.submission(
+            client,
+            {
+                "type": "add_submission",
+                "request_id": str(uuid4()),
+                "items": [{
+                    "client_key": keep["client_key"],
+                    "record_type": keep["record_type"],
+                    "values": keep["values"],
+                    "explicit_clears": keep.get("explicit_clears") or [],
+                    "as_separate": True,
+                }],
+            },
+        )
+        self.assertEqual(separate.get_json()["summary"]["saved"], 1)
+
+
+class ExtractedKeepSeparateHttpTests(IntakeRoutesTestCase):
+    def test_extracted_keep_separate_over_http(self):
+        from services.my_data_extraction_adapter import DeterministicFakeExtractionAdapter
+
+        fake = DeterministicFakeExtractionAdapter()
+        service = ResumeIntakeService(
+            repository=self.repository,
+            draft_service=self.draft_service,
+            document_adapter=ResumeDocumentAdapter(),
+            transcription_adapter=ResumeTranscriptionAdapter(service=self.transcriber),
+            policy=selected_policy_for_tests(),
+            extraction_adapter=fake,
+            matching_exclusions=lambda owner: set(),
+        )
+        app.config["RESUME_INTAKE_SERVICE"] = service
+        client = self.client()
+        values = {
+            "role_title": "Route Duplicate",
+            "employer_name": "Northwind",
+        }
+        first = self.submission(
+            client,
+            {
+                "type": "add_submission",
+                "request_id": str(uuid4()),
+                "items": [{
+                    "client_key": "r1", "record_type": "role", "values": values,
+                }],
+            },
+        )
+        record_key = first.get_json()["saved_items"][0]["record_key"]
+        text = "Route Duplicate at Northwind"
+        fake.scripted.append({
+            "record_type": "role",
+            "values": dict(values),
+            "outcome": "equivalent",
+            "quote": text,
+            "match_reference": record_key,
+            "confidence": "certain",
+        })
+        duplicate = self.submission(
+            client,
+            {
+                "type": "add_submission",
+                "request_id": str(uuid4()),
+                "text": text,
+            },
+        )
+        body = duplicate.get_json()
+        self.assertEqual(body["outcome"], "duplicate")
+        keep = body["results"][0]["keep_separate_actions"][0]
+        self.assertTrue(keep["override_key"])
+        self.assertNotIn("extracted_fields", keep)
+        separate = self.submission(
+            client,
+            {
+                "type": "keep_extracted_separate",
+                "request_id": str(uuid4()),
+                "override_key": keep["override_key"],
+            },
+        )
+        self.assertEqual(separate.get_json()["summary"]["saved"], 1)
+        replay = self.submission(
+            client,
+            {
+                "type": "keep_extracted_separate",
+                "request_id": separate.get_json()["request_id"],
+                "override_key": keep["override_key"],
+            },
+        )
+        self.assertTrue(replay.get_json()["replayed"])
+        source_key = body["submission"]["source_keys"][0]
+        canonical_count = len(service._canonical_items("member-a"))
+        service.purge_source(
+            "member-a",
+            {"request_id": str(uuid4()), "source_key": source_key},
+        )
+        self.assertEqual(len(service._canonical_items("member-a")), canonical_count)
+        stale = self.submission(
+            client,
+            {
+                "type": "keep_extracted_separate",
+                "request_id": str(uuid4()),
+                "override_key": keep["override_key"],
+            },
+        )
+        self.assertEqual(stale.status_code, 409)
+        self.assertEqual(stale.get_json()["error_code"], "source_purged")
+        app.config.update(PEERSLATE_DEV_USER_KEY="member-b")
+        denied = self.submission(
+            client,
+            {
+                "type": "keep_extracted_separate",
+                "request_id": str(uuid4()),
+                "override_key": keep["override_key"],
+            },
+        )
+        self.assertEqual(denied.status_code, 404)
+
+
 if __name__ == "__main__":
     unittest.main()

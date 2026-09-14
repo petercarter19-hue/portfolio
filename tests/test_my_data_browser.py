@@ -40,6 +40,7 @@ from services.resume_draft_repository import (
 from services.resume_draft_service import ResumeDraftService
 from services.resume_guide_service import ResumeGuideService
 from services.resume_intake_document_adapter import ResumeDocumentAdapter
+from services.my_data_extraction_adapter import DeterministicFakeExtractionAdapter
 from services.resume_intake_policy import selected_policy_for_tests
 from services.resume_intake_repository import InMemoryResumeIntakeRepository
 from services.resume_intake_service import ResumeIntakeService
@@ -208,6 +209,15 @@ class MyDataBrowserTests(unittest.TestCase):
         original = app.config.get("ENTRY_POLICY_SERVICE")
         app.config["ENTRY_POLICY_SERVICE"] = self.entry_service
         self.addCleanup(app.config.update, {"ENTRY_POLICY_SERVICE": original})
+        # Composer drafts persist server-side across page loads, so each
+        # journey starts with a pristine draft slate instead of inheriting
+        # another journey's unsent words or version conflicts.
+        try:
+            snapshot = self.intake_repository.load_owner(BROWSER_MEMBER)
+            snapshot["drafts"] = {}
+            self.intake_repository.save_owner(BROWSER_MEMBER, snapshot)
+        except Exception:
+            pass
 
     def _seed(self, canonical_type, values, *, entry_key=None):
         payload = {
@@ -971,6 +981,506 @@ class MyDataBrowserTests(unittest.TestCase):
                 ),
                 44,
             )
+
+    def _swap_intake_service(self, service):
+        original = app.config.get("RESUME_INTAKE_SERVICE")
+        app.config["RESUME_INTAKE_SERVICE"] = service
+        self.addCleanup(app.config.update, {"RESUME_INTAKE_SERVICE": original})
+
+    def _intake_service_with_adapter(self, adapter):
+        return ResumeIntakeService(
+            repository=self.intake_repository,
+            draft_service=self.draft_service,
+            document_adapter=ResumeDocumentAdapter(),
+            transcription_adapter=ResumeTranscriptionAdapter(
+                service=_SilentTranscriber()
+            ),
+            policy=selected_policy_for_tests(),
+            extraction_adapter=adapter,
+            matching_exclusions=lambda owner: set(),
+        )
+
+    def _open_composer(self, page):
+        page.locator("[data-my-data-open]").click()
+        page.locator("[data-my-data-overlay]").wait_for(timeout=10000)
+
+    def test_draft_recovers_text_after_reload(self):
+        page = self._new_page(viewport={"width": 1440, "height": 1000})
+        page.goto(f"{self.base_url}/app/settings/my-data", wait_until="load")
+        page.locator("[data-my-data-groups]").wait_for(timeout=15000)
+        self._open_composer(page)
+        page.locator("[data-my-data-text]").fill("Cross device draft words here")
+        # The debounced server save fires while the member keeps reading.
+        page.wait_for_timeout(2000)
+        page.reload(wait_until="load")
+        page.locator("[data-my-data-groups]").wait_for(timeout=15000)
+        self._open_composer(page)
+        page.wait_for_function(
+            "document.querySelector('[data-my-data-text]').value"
+            ".indexOf('Cross device draft words here') !== -1",
+            timeout=15000,
+        )
+        note = page.locator("[data-my-data-draft]").inner_text()
+        self.assertIn("other device", note)
+        page.locator("[data-my-data-discard]").click()
+        page.wait_for_function(
+            "document.querySelector('[data-my-data-text]').value === ''",
+            timeout=10000,
+        )
+
+    def test_add_result_survives_debounced_draft_autosave(self):
+        page = self._new_page(viewport={"width": 1440, "height": 1000})
+        page.goto(f"{self.base_url}/app/settings/my-data", wait_until="load")
+        page.locator("[data-my-data-groups]").wait_for(timeout=15000)
+        self._open_composer(page)
+        page.locator("[data-my-data-text]").fill(
+            "I led a quixotic-migration project across two teams in 2024."
+        )
+        page.locator("[data-my-data-add]").click()
+        page.wait_for_selector(".my-data__proposal", timeout=20000)
+        quote = page.locator("[data-my-data-proposals]").inner_text()
+        self.assertIn("quixotic-migration", quote)
+        self.assertGreater(page.locator(".my-data__proposal button").count(), 0)
+        # Unresolved Add schedules a debounced draft PUT. That save must
+        # keep the review card, not empty the shared proposal host.
+        page.wait_for_timeout(2000)
+        self.assertIn(
+            "quixotic-migration",
+            page.locator("[data-my-data-proposals]").inner_text(),
+        )
+        self.assertGreater(page.locator(".my-data__proposal button").count(), 0)
+        page.locator("[data-my-data-text]").fill(
+            "I led a quixotic-migration project across two teams in 2024. More words."
+        )
+        page.wait_for_timeout(2000)
+        self.assertIn(
+            "quixotic-migration",
+            page.locator("[data-my-data-proposals]").inner_text(),
+        )
+        self.assertGreater(page.locator(".my-data__proposal button").count(), 0)
+        page.locator("[data-my-data-discard]").click()
+
+    def test_draft_conflict_offers_recovery_choice(self):
+        page = self._new_page(viewport={"width": 1440, "height": 1000})
+        page.goto(f"{self.base_url}/app/settings/my-data", wait_until="load")
+        page.locator("[data-my-data-groups]").wait_for(timeout=15000)
+        self._open_composer(page)
+        page.locator("[data-my-data-text]").fill("Device one words")
+        page.wait_for_timeout(2000)
+        # Another device saves a newer version behind this page's back.
+        saved = self.intake_service.save_draft(
+            BROWSER_MEMBER,
+            {"request_id": str(uuid4()), "text": "Device two words",
+             "expected_version": 1},
+        )
+        self.assertEqual(saved["draft"]["version"], 2)
+        page.locator("[data-my-data-text]").fill("Device one words plus more")
+        page.wait_for_function(
+            "Array.from(document.querySelectorAll('.my-data__proposal h4'))"
+            ".some((node) => node.textContent.indexOf('Two versions') !== -1)",
+            timeout=15000,
+        )
+        cards = page.locator("[data-my-data-proposals]").inner_text()
+        self.assertIn("Device one words plus more", cards)
+        self.assertIn("Device two words", cards)
+        self.assertGreater(
+            page.get_by_role("button", name="Keep my words", exact=True).count(),
+            0,
+        )
+        # A later ordinary draft save must not erase the recovery choice.
+        page.wait_for_timeout(2000)
+        self.assertGreater(
+            page.get_by_role("button", name="Keep my words", exact=True).count(),
+            0,
+        )
+        self.assertGreater(
+            page.get_by_role("button", name="Use other version", exact=True).count(),
+            0,
+        )
+        # The member's unsaved words survive the choice either way.
+        page.get_by_role("button", name="Use other version", exact=True).click()
+        page.wait_for_function(
+            "document.querySelector('[data-my-data-text]').value"
+            ".indexOf('Device two words') !== -1",
+            timeout=10000,
+        )
+        page.locator("[data-my-data-discard]").click()
+
+    def test_reopen_after_other_device_save_shows_conflict(self):
+        self._assert_reopen_conflict(viewport={"width": 1440, "height": 1000})
+
+    def test_mobile_reopen_after_other_device_save_shows_conflict(self):
+        self._assert_reopen_conflict(viewport={"width": 390, "height": 844})
+
+    def _assert_reopen_conflict(self, *, viewport):
+        page = self._new_page(viewport=viewport)
+        page.goto(f"{self.base_url}/app/settings/my-data", wait_until="load")
+        page.locator("[data-my-data-groups]").wait_for(timeout=15000)
+        self._open_composer(page)
+        page.locator("[data-my-data-text]").fill("Device A stale words")
+        page.wait_for_timeout(2000)
+        saved = self.intake_service.save_draft(
+            BROWSER_MEMBER,
+            {"request_id": str(uuid4()), "text": "Device B newer words",
+             "expected_version": 1},
+        )
+        self.assertEqual(saved["draft"]["version"], 2)
+        page.locator("[data-my-data-close]").click()
+        page.wait_for_function(
+            "document.querySelector('[data-my-data-overlay]').hidden === true",
+            timeout=10000,
+        )
+        self._open_composer(page)
+        page.wait_for_function(
+            "Array.from(document.querySelectorAll('.my-data__proposal h4'))"
+            ".some((node) => node.textContent.indexOf('Two versions') !== -1)",
+            timeout=15000,
+        )
+        self.assertIn(
+            "Device A stale words",
+            page.locator("[data-my-data-text]").input_value(),
+        )
+        self.assertEqual(
+            self.intake_service.get_draft(BROWSER_MEMBER)["draft"]["text"],
+            "Device B newer words",
+        )
+        page.wait_for_timeout(2000)
+        self.assertEqual(
+            self.intake_service.get_draft(BROWSER_MEMBER)["draft"]["text"],
+            "Device B newer words",
+        )
+        self.assertGreater(
+            page.get_by_role("button", name="Keep my words", exact=True).count(),
+            0,
+        )
+        page.locator("[data-my-data-discard]").click()
+
+    def test_delayed_draft_get_after_typing_shows_conflict(self):
+        seeded = self.intake_service.save_draft(
+            BROWSER_MEMBER,
+            {"request_id": str(uuid4()), "text": "Server device words"},
+        )
+        self.assertEqual(seeded["draft"]["version"], 1)
+        page = self._new_page(viewport={"width": 1440, "height": 1000})
+        pending_gets = []
+
+        def hold_draft_get(route):
+            if route.request.method == "GET":
+                pending_gets.append(route)
+                return
+            route.continue_()
+
+        page.route("**/api/resume-intake/me/draft", hold_draft_get)
+        page.goto(f"{self.base_url}/app/settings/my-data", wait_until="load")
+        page.locator("[data-my-data-groups]").wait_for(timeout=15000)
+        self._open_composer(page)
+        page.locator("[data-my-data-text]").fill("Local typing after open")
+        deadline = time.time() + 5
+        while not pending_gets and time.time() < deadline:
+            page.wait_for_timeout(50)
+        self.assertEqual(len(pending_gets), 1)
+        pending_gets[0].continue_()
+        page.wait_for_function(
+            "Array.from(document.querySelectorAll('.my-data__proposal h4'))"
+            ".some((node) => node.textContent.indexOf('Two versions') !== -1)",
+            timeout=20000,
+        )
+        self.assertIn(
+            "Local typing after open",
+            page.locator("[data-my-data-text]").input_value(),
+        )
+        self.assertEqual(
+            self.intake_service.get_draft(BROWSER_MEMBER)["draft"]["text"],
+            "Server device words",
+        )
+        page.wait_for_timeout(2000)
+        self.assertEqual(
+            self.intake_service.get_draft(BROWSER_MEMBER)["draft"]["text"],
+            "Server device words",
+        )
+        self.assertGreater(
+            page.get_by_role("button", name="Keep my words", exact=True).count(),
+            0,
+        )
+        page.locator("[data-my-data-discard]").click()
+
+    def test_extracted_duplicate_offers_keep_as_separate(self):
+        text = "Browser Duplicate works at Northwind Traders"
+        fake = DeterministicFakeExtractionAdapter()
+        service = self._intake_service_with_adapter(fake)
+        self._swap_intake_service(service)
+        created = service.submit(
+            BROWSER_MEMBER,
+            {
+                "type": "add_submission",
+                "request_id": str(uuid4()),
+                "items": [{
+                    "client_key": "dup-seed",
+                    "record_type": "role",
+                    "values": {
+                        "role_title": "Browser Duplicate",
+                        "employer_name": "Northwind Traders",
+                    },
+                }],
+            },
+        )
+        record_key = created["saved_items"][0]["record_key"]
+        fake.scripted.append({
+            "record_type": "role",
+            "values": {
+                "role_title": "Browser Duplicate",
+                "employer_name": "Northwind Traders",
+            },
+            "outcome": "equivalent",
+            "quote": text,
+            "match_reference": record_key,
+            "confidence": "certain",
+        })
+        page = self._new_page(viewport={"width": 1440, "height": 1000})
+        page.goto(f"{self.base_url}/app/settings/my-data", wait_until="load")
+        page.locator("[data-my-data-groups]").wait_for(timeout=15000)
+        self._open_composer(page)
+        page.locator("[data-my-data-text]").fill(text)
+        page.locator("[data-my-data-add]").click()
+        page.wait_for_function(
+            "document.querySelector('[data-my-data-receipt]').textContent"
+            ".indexOf('Already saved') !== -1",
+            timeout=20000,
+        )
+        keep = page.get_by_role("button", name="Keep as separate", exact=True)
+        self.assertEqual(keep.count(), 1)
+        before = len(service._canonical_items(BROWSER_MEMBER))
+        keep.click()
+        page.wait_for_function(
+            "document.querySelector('[data-my-data-receipt]').textContent"
+            ".indexOf('Saved privately') !== -1",
+            timeout=20000,
+        )
+        self.assertEqual(
+            len(service._canonical_items(BROWSER_MEMBER)),
+            before + 1,
+        )
+        page.locator("[data-my-data-discard]").click()
+
+    def test_every_extracted_equivalent_renders_its_own_bound_action(self):
+        role_quote = "Browser Multi Role at Contoso"
+        skill_quote = "Browser Multi Skill"
+        fake = DeterministicFakeExtractionAdapter()
+        service = self._intake_service_with_adapter(fake)
+        self._swap_intake_service(service)
+        seeded = service.submit(
+            BROWSER_MEMBER,
+            {
+                "type": "add_submission",
+                "request_id": str(uuid4()),
+                "items": [
+                    {
+                        "client_key": "multi-role", "record_type": "role",
+                        "values": {"role_title": "Browser Multi Role", "employer_name": "Contoso"},
+                    },
+                    {
+                        "client_key": "multi-skill", "record_type": "skill",
+                        "values": {"name": skill_quote},
+                    },
+                ],
+            },
+        )
+        role_key, skill_key = [item["record_key"] for item in seeded["saved_items"]]
+        fake.scripted.extend([
+            {
+                "record_type": "role",
+                "values": {"role_title": "Browser Multi Role", "employer_name": "Contoso"},
+                "outcome": "equivalent", "quote": role_quote,
+                "match_reference": role_key, "confidence": "certain",
+            },
+            {
+                "record_type": "skill", "values": {"name": skill_quote},
+                "outcome": "equivalent", "quote": skill_quote,
+                "match_reference": skill_key, "confidence": "certain",
+            },
+        ])
+        page = self._new_page(viewport={"width": 1440, "height": 1000})
+        page.goto(f"{self.base_url}/app/settings/my-data", wait_until="load")
+        page.locator("[data-my-data-groups]").wait_for(timeout=15000)
+        self._open_composer(page)
+        page.locator("[data-my-data-text]").fill(f"{role_quote}. {skill_quote}.")
+        page.locator("[data-my-data-add]").click()
+        page.wait_for_function(
+            "document.querySelector('[data-my-data-receipt]').textContent"
+            ".indexOf('Already saved') !== -1",
+            timeout=20000,
+        )
+        keep = page.get_by_role("button", name="Keep as separate", exact=True)
+        self.assertEqual(keep.count(), 2)
+        action_text = page.locator(".my-data__proposal-action").all_inner_texts()
+        self.assertEqual(len(action_text), 2)
+        self.assertIn("Equivalent 1: role", action_text[0])
+        self.assertIn("Equivalent 2: skill", action_text[1])
+        before = len(service._canonical_items(BROWSER_MEMBER))
+        keep.nth(1).click()
+        page.wait_for_function(
+            "document.querySelector('[data-my-data-receipt]').textContent"
+            ".indexOf('Saved privately') !== -1",
+            timeout=20000,
+        )
+        current = service._canonical_items(BROWSER_MEMBER)
+        self.assertEqual(len(current), before + 1)
+        self.assertEqual(current[-1]["record_type"], "skill")
+        self.assertEqual(current[-1]["values"]["name"], skill_quote)
+        page.locator("[data-my-data-discard]").click()
+
+    def _assert_mixed_actions_survive_sequential_acceptance(self, viewport, label):
+        role_quote = f"{label} Sequential Role at Contoso"
+        skill_quote = f"{label} Sequential Skill"
+        new_quote = f"{label} Remaining Proposal"
+        unfinished = f"{label} unfinished draft stays here"
+        fake = DeterministicFakeExtractionAdapter()
+        service = self._intake_service_with_adapter(fake)
+        self._swap_intake_service(service)
+        seeded = service.submit(
+            BROWSER_MEMBER,
+            {
+                "type": "add_submission",
+                "request_id": str(uuid4()),
+                "items": [
+                    {
+                        "client_key": f"{label}-role", "record_type": "role",
+                        "values": {"role_title": f"{label} Sequential Role", "employer_name": "Contoso"},
+                    },
+                    {
+                        "client_key": f"{label}-skill", "record_type": "skill",
+                        "values": {"name": skill_quote},
+                    },
+                ],
+            },
+        )
+        role_key, skill_key = [item["record_key"] for item in seeded["saved_items"]]
+        fake.scripted.extend([
+            {
+                "record_type": "role",
+                "values": {"role_title": f"{label} Sequential Role", "employer_name": "Contoso"},
+                "outcome": "equivalent", "quote": role_quote,
+                "match_reference": role_key, "confidence": "certain",
+            },
+            {
+                "record_type": "skill", "values": {"name": skill_quote},
+                "outcome": "equivalent", "quote": skill_quote,
+                "match_reference": skill_key, "confidence": "certain",
+            },
+            {
+                "record_type": "skill", "values": {"name": new_quote},
+                "outcome": "new", "quote": new_quote, "confidence": "certain",
+            },
+        ])
+        page = self._new_page(viewport=viewport)
+        page.goto(f"{self.base_url}/app/settings/my-data", wait_until="load")
+        page.locator("[data-my-data-groups]").wait_for(timeout=15000)
+        self._open_composer(page)
+        page.locator("[data-my-data-text]").fill(
+            ". ".join((role_quote, skill_quote, new_quote))
+        )
+        page.locator("[data-my-data-add]").click()
+        keep = page.get_by_role("button", name="Keep as separate", exact=True)
+        save = page.get_by_role("button", name="Save", exact=True)
+        page.wait_for_function(
+            "document.querySelectorAll('.my-data__proposal-action button').length === 2",
+            timeout=20000,
+        )
+        self.assertEqual(keep.count(), 2)
+        self.assertEqual(save.count(), 1)
+
+        page.locator("[data-my-data-text]").fill(unfinished)
+        page.wait_for_timeout(2000)
+        self.assertEqual(
+            service.get_draft(BROWSER_MEMBER)["draft"]["text"], unfinished
+        )
+        before = len(service._canonical_items(BROWSER_MEMBER))
+        keep.nth(0).click()
+        page.wait_for_function(
+            "document.querySelectorAll('.my-data__proposal-action button').length === 1",
+            timeout=20000,
+        )
+        self.assertEqual(keep.count(), 1)
+        self.assertEqual(save.count(), 1)
+        self.assertEqual(page.locator("[data-my-data-text]").input_value(), unfinished)
+        self.assertEqual(service.get_draft(BROWSER_MEMBER)["draft"]["text"], unfinished)
+        self.assertEqual(len(service._canonical_items(BROWSER_MEMBER)), before + 1)
+
+        keep.nth(0).click()
+        page.wait_for_function(
+            "document.querySelectorAll('.my-data__proposal-action button').length === 0",
+            timeout=20000,
+        )
+        self.assertEqual(keep.count(), 0)
+        self.assertEqual(save.count(), 1)
+        self.assertEqual(page.locator("[data-my-data-text]").input_value(), unfinished)
+        self.assertEqual(service.get_draft(BROWSER_MEMBER)["draft"]["text"], unfinished)
+        self.assertEqual(len(service._canonical_items(BROWSER_MEMBER)), before + 2)
+
+        save.click()
+        page.wait_for_function(
+            "document.querySelectorAll('[data-my-data-proposals] button').length === 0",
+            timeout=20000,
+        )
+        self.assertEqual(len(service._canonical_items(BROWSER_MEMBER)), before + 3)
+        self.assertEqual(page.locator("[data-my-data-text]").input_value(), unfinished)
+        self.assertEqual(service.get_draft(BROWSER_MEMBER)["draft"]["text"], unfinished)
+        page.locator("[data-my-data-discard]").click()
+
+    def test_desktop_keeps_mixed_actions_draft_and_proposal(self):
+        self._assert_mixed_actions_survive_sequential_acceptance(
+            {"width": 1440, "height": 1000}, "Desktop"
+        )
+
+    def test_mobile_keeps_mixed_actions_draft_and_proposal(self):
+        self._assert_mixed_actions_survive_sequential_acceptance(
+            {"width": 390, "height": 844}, "Mobile"
+        )
+
+    def test_provider_failure_keeps_manual_path(self):
+        fake = DeterministicFakeExtractionAdapter()
+        fake.fail_with = "provider_unavailable"
+        self._swap_intake_service(self._intake_service_with_adapter(fake))
+        page = self._new_page(viewport={"width": 1440, "height": 1000})
+        page.goto(f"{self.base_url}/app/settings/my-data", wait_until="load")
+        page.locator("[data-my-data-groups]").wait_for(timeout=15000)
+        self._open_composer(page)
+        page.locator("[data-my-data-text]").fill(
+            "Provider outage journey words stay reviewable"
+        )
+        page.locator("[data-my-data-add]").click()
+        page.wait_for_selector(".my-data__proposal", timeout=20000)
+        receipt = page.locator("[data-my-data-receipt]").inner_text()
+        self.assertIn("unavailable right now", receipt)
+        proposals = page.locator("[data-my-data-proposals]").inner_text()
+        self.assertIn("Provider outage journey words", proposals)
+        # Exactly one provider attempt: no silent second try hides anywhere.
+        self.assertEqual(len(fake.calls), 1)
+        self.assertGreater(page.locator(".my-data__proposal button").count(), 0)
+        page.wait_for_timeout(2000)
+        still = page.locator("[data-my-data-proposals]").inner_text()
+        self.assertIn("Provider outage journey words", still)
+        self.assertGreater(page.locator(".my-data__proposal button").count(), 0)
+        page.locator("[data-my-data-discard]").click()
+
+    def test_oversize_file_refused_before_attach(self):
+        page = self._new_page(viewport={"width": 1440, "height": 1000})
+        page.goto(f"{self.base_url}/app/settings/my-data", wait_until="load")
+        page.locator("[data-my-data-groups]").wait_for(timeout=15000)
+        self._open_composer(page)
+        page.locator("[data-my-data-file]").set_input_files({
+            "name": "too-big.bin",
+            "mimeType": "application/pdf",
+            "buffer": bytes(10_000_001),
+        })
+        page.wait_for_function(
+            "document.querySelector('[data-my-data-draft]').textContent"
+            ".indexOf('over 10 MB') !== -1",
+            timeout=10000,
+        )
+        self.assertEqual(
+            page.locator("[data-my-data-attachments] li").count(), 0
+        )
 
 
 if __name__ == "__main__":

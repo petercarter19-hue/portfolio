@@ -279,8 +279,32 @@ def redact_source_text(snapshot: dict, source_key: str) -> int:
     for source in snapshot.get("sources", {}).values():
         if source.get("source_key") != source_key:
             continue
-        # Structured values are member words held outside source_text.
-        source["structured_values"] = None
+        # Structured values are member words held outside source_text. Pending
+        # extracted equivalents retain identifier-only tombstones so a stale
+        # action is rejected explicitly, while every extracted value is gone.
+        structured = source.get("structured_values")
+        candidates = (
+            structured.get("_extracted_candidates")
+            if isinstance(structured, dict)
+            else None
+        )
+        if isinstance(candidates, list):
+            source["structured_values"] = {
+                "_extracted_candidates": [
+                    {
+                        key: candidate.get(key)
+                        for key in (
+                            "override_key", "record_type", "record_key",
+                            "source_key", "source_version",
+                        )
+                        if candidate.get(key) is not None
+                    } | {"state": "invalidated"}
+                    for candidate in candidates
+                    if isinstance(candidate, dict)
+                ]
+            }
+        else:
+            source["structured_values"] = None
     for proposal in snapshot.get("proposals", {}).values():
         if (proposal.get("binding") or {}).get("source_key") != source_key:
             continue

@@ -60,6 +60,7 @@
       "PS-LEGACY-PROJECTS-PRIVACY-CONTAINMENT-001",
       "PS-LEGACY-PROJECTS-RUNTIME-RETIREMENT-001",
       "PS-MOMENT-001",
+      "PS-MVP1-MY-DATA-INTAKE-AI-001",
       "PS-OPPORTUNITY-SLATE-001",
       "PS-OPPORTUNITY-SLATE-002",
       "PS-OWNER-HOME-RETIREMENT-001",
@@ -170,11 +171,11 @@
     ]
   },
   "counts": {
-    "current_protect": 78,
+    "current_protect": 79,
     "future_finish": 33,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 146
+    "total": 147
   }
 }

@@ -57,6 +57,9 @@ PLANNED_RATE_LIMITS = MappingProxyType(
         "resume_intake.post_recording": "20 per hour",
         "resume_intake.post_proposal_decision": "60 per hour",
         "resume_intake.post_source_purge": "30 per hour",
+        "resume_intake.get_draft": "60 per minute",
+        "resume_intake.put_draft": "60 per hour",
+        "resume_intake.delete_draft": "60 per hour",
         "resume_intake.post_guide_status": "60 per hour",
     }
 )
@@ -298,6 +301,74 @@ def post_source_purge():
         }), 409
     except ResumeIntakeUnavailableError as error:
         return jsonify(_unavailable(error, "The composer is unavailable.")), 503
+    return jsonify(result)
+
+
+@resume_intake.get("/api/resume-intake/me/draft")
+def get_draft():
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({"success": False, "message": "Not found."}), 404
+    try:
+        result = _service().get_draft(identity.user_key)
+    except ResumeIntakeUnavailableError as error:
+        return jsonify({
+            "success": False, "code": "unavailable", "message": str(error),
+        }), 503
+    return jsonify({"success": True, **result})
+
+
+@resume_intake.put("/api/resume-intake/me/draft")
+def put_draft():
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({"success": False, "message": "Not found."}), 404
+    try:
+        result = _service().save_draft(
+            identity.user_key,
+            _json_body(),
+            allow_fixture_policy=_fixture_policy_enabled(),
+        )
+    except ResumeIntakeValidationError as error:
+        return jsonify({"success": False, "code": "invalid", "message": str(error)}), 400
+    except ResumeIntakePolicyError as error:
+        return _policy_response(error)
+    except ResumeIntakeConflictError as error:
+        return jsonify({
+            "success": False,
+            "code": error.error_code,
+            "error_code": error.error_code,
+            "conflicts": error.conflicts,
+            "proposed_values": error.proposed,
+            "input_preserved": error.proposed is not None,
+            "message": str(error),
+        }), 409
+    except ResumeIntakeUnavailableError as error:
+        return jsonify({
+            "success": False, "code": "unavailable", "message": str(error),
+        }), 503
+    return jsonify(result)
+
+
+@resume_intake.delete("/api/resume-intake/me/draft")
+def delete_draft():
+    identity = _identity_or_not_found()
+    if identity is None:
+        return jsonify({"success": False, "message": "Not found."}), 404
+    try:
+        result = _service().discard_draft(
+            identity.user_key,
+            _json_body(),
+            allow_fixture_policy=_fixture_policy_enabled(),
+        )
+    except ResumeIntakeValidationError as error:
+        return jsonify({"success": False, "code": "invalid", "message": str(error)}), 400
+    except ResumeIntakePolicyError as error:
+        return _policy_response(error)
+    except ResumeIntakeUnavailableError as error:
+        return jsonify({
+            "success": False, "code": "unavailable", "message": str(error),
+        }), 503
     return jsonify(result)
 
 

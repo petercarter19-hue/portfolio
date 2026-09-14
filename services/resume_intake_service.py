@@ -34,7 +34,7 @@ import copy
 import threading
 from contextlib import contextmanager
 from dataclasses import dataclass, field as dataclass_field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
 from services.living_resume_editor_service import (
@@ -59,6 +59,10 @@ from services.resume_intake_document_adapter import (
     DocumentIntakeError,
     ResumeDocumentAdapter,
     resume_document_adapter,
+)
+from services.my_data_extraction_adapter import (
+    ExtractionError,
+    MyDataExtractionAdapter,
 )
 from services.resume_intake_jobs import (
     JobFence,
@@ -119,6 +123,12 @@ FORBIDDEN_CLIENT_FIELDS = frozenset(
     }
 )
 MAX_TEXT_UNITS = 20_000
+
+# One unsubmitted composer draft per owner. Draft rows are private input
+# evidence: never matched, never shared, never canonical until Add.
+DRAFT_KEY = "composer"
+DRAFT_MAX_ITEMS = 25
+DRAFT_MAX_ATTACHMENTS = 25
 
 # The closed editable field set per record type. Client-supplied keys must be
 # inside it; an explicit clear must name one of them, never a fabricated key.
@@ -303,6 +313,10 @@ class _ItemPlan:
     prepared: dict | None = None
     reuse_source_key: str | None = None
     parent_key: str | None = None
+    # Explicit member override: save as a separate fact without matching.
+    # Only ever set from the member's own Keep-as-separate decision on a
+    # duplicate receipt, never inferred.
+    as_separate: bool = False
 
 
 class ResumeIntakeService:
@@ -315,6 +329,8 @@ class ResumeIntakeService:
         policy: IntakePolicy | None = None,
         interpreter=None,
         document_pipeline=None,
+        extraction_adapter: MyDataExtractionAdapter | None = None,
+        matching_exclusions=None,
     ) -> None:
         self.repository = repository or InMemoryResumeIntakeRepository()
         self.draft_service = draft_service or resume_draft_service
@@ -322,6 +338,16 @@ class ResumeIntakeService:
         self.transcription_adapter = transcription_adapter or resume_transcription_adapter
         self._policy = policy
         self._interpreter = interpreter or self._default_interpreter
+        # Strict Luna extraction for free-text kinds. None keeps the
+        # deterministic uncertain default, so manual entry works with no
+        # provider at all. A configured adapter that fails never falls back
+        # to another model or effort: the failure stays visible and retryable.
+        self._extraction_adapter = extraction_adapter
+        # Callable(owner) -> container of canonical record keys excluded from
+        # private matching. None means the exclusion source is unwired, so a
+        # configured adapter compares against an empty shortlist rather than
+        # risk comparing member material the member excluded from private AI.
+        self._matching_exclusions = matching_exclusions
         # Deterministic parser seam. Tests inject a recorder that asserts the
         # exact bytes it received; production leaves it None (the shared seam).
         self._document_pipeline = document_pipeline
@@ -456,6 +482,10 @@ class ResumeIntakeService:
     # -- explicit Add ---------------------------------------------------
 
     def submit(self, owner, payload, *, files=None, allow_fixture_policy=False, now=None):
+        if isinstance(payload, dict) and payload.get("type") == "keep_extracted_separate":
+            return self.keep_extracted_separate(
+                owner, payload, allow_fixture_policy=allow_fixture_policy, now=now,
+            )
         policy = self._require_usable_policy(allow_fixture=allow_fixture_policy)
         moment = _utc(now)
         files = files or {}
@@ -541,8 +571,15 @@ class ResumeIntakeService:
                         fail_job(snapshot, job["job_key"], lease["lease_id"],
                                  result.get("code") or "failed", now=moment)
                     else:
+                        # A quiet duplicate processed fully but saved nothing:
+                        # it is skipped, never unresolved and never saved.
+                        job_result = (
+                            "saved" if outcome == "saved"
+                            else "skipped" if outcome == "duplicate"
+                            else "unresolved"
+                        )
                         complete_job(snapshot, job["job_key"], lease["lease_id"],
-                                     result="saved" if outcome == "saved" else "unresolved",
+                                     result=job_result,
                                      outcome=result.get("code") or outcome, now=moment)
                     jobs.append(present_job(snapshot["jobs"][job["job_key"]]))
                     result = dict(result)
@@ -605,7 +642,7 @@ class ResumeIntakeService:
         receipt["persisted"] = True
         for entry in receipt.get("saved_items") or []:
             entry["persisted"] = True
-        return receipt
+        return _present_intake_receipt(receipt)
 
     # -- in-field microphone transcription ------------------------------
 
@@ -924,6 +961,10 @@ class ResumeIntakeService:
     # -- purge / delete a source ----------------------------------------
 
     def purge_source(self, owner, payload, *, now=None):
+        with self.repository.owner_guard(owner):
+            return self._purge_source_guarded(owner, payload, now=now)
+
+    def _purge_source_guarded(self, owner, payload, *, now=None):
         if not isinstance(payload, dict):
             raise ResumeIntakeValidationError("Invalid request.")
         if set(payload) & FORBIDDEN_CLIENT_FIELDS:
@@ -947,12 +988,19 @@ class ResumeIntakeService:
                 )
             return {**self._hydrate_replay(owner, snapshot, existing["result"]), "replayed": True}
         already = source["state"] == "purged"
+        invalidated_candidates = 0
         if not already:
+            for candidate in _source_extracted_candidates(source):
+                if candidate.get("state") != "invalidated":
+                    invalidated_candidates += 1
+                candidate["state"] = "invalidated"
+                candidate.pop("values", None)
+                candidate.pop("consumed_request_id", None)
             source["state"] = "purged"
             source["text"] = None  # purged source text is never resurrected
-            # Structured values are member words too: purge clears them while
-            # the source's provenance keys/versions stay.
-            source["structured_values"] = None
+            # Structured values are member words too. The redaction pass below
+            # clears ordinary values and reduces extracted candidates to
+            # identifier-only invalidated tombstones.
             source["version"] = int(source["version"]) + 1
             source["purged_at"] = moment.isoformat()
             snapshot["lifecycle_epoch"] = int(snapshot["lifecycle_epoch"]) + 1
@@ -970,6 +1018,7 @@ class ResumeIntakeService:
             "source_key": source_key,
             "stale_jobs": stale_jobs,
             "invalidated_proposals": invalidated,
+            "invalidated_extracted_candidates": invalidated_candidates,
             "redacted_proposals": redacted,
             "provenance_retained": True,
             "source_resurrected": False,
@@ -1002,6 +1051,541 @@ class ResumeIntakeService:
             raise ResumeIntakeUnavailableError(proposed={"source_key": source_key}) from error
         winner = self._winner_after_commit(owner, request_id, digest, commit_result)
         return winner if winner is not None else result
+
+    # -- unsubmitted composer drafts ------------------------------------
+
+    def _require_draft_store(self):
+        if not getattr(self.repository, "supports_drafts", False):
+            raise ResumeIntakeUnavailableError(
+                "Draft saving is unavailable here. Your words stay in this browser."
+            )
+
+    def _drop_expired_drafts(self, snapshot, policy, moment):
+        days = policy.draft_inactivity_days
+        if days is None:
+            return 0
+        drafts = snapshot.get("drafts") or {}
+        expired = [
+            key for key, row in drafts.items()
+            if _draft_expires_at(row, days) is not None
+            and _utc(moment) >= _draft_expires_at(row, days)
+        ]
+        for key in expired:
+            del drafts[key]
+        return len(expired)
+
+    def get_draft(self, owner, *, now=None):
+        """Return the owner's unsubmitted composer draft, if one survives."""
+
+        self._require_draft_store()
+        policy = self.policy()
+        moment = _utc(now)
+
+        def read(snapshot):
+            if snapshot is None:
+                return None
+            self._drop_expired_drafts(snapshot, policy, moment)
+            row = (snapshot.get("drafts") or {}).get(DRAFT_KEY)
+            return copy.deepcopy(row) if row is not None else None
+
+        try:
+            row = self.repository.with_drafts(owner, read, create=False)
+        except ResumeIntakeStoreUnavailable as error:
+            raise ResumeIntakeUnavailableError() from error
+        return {
+            "success": True,
+            "draft": present_draft(row) if row is not None else None,
+            "drafts_supported": True,
+            "expires_after_days": policy.draft_inactivity_days,
+        }
+
+    def save_draft(self, owner, payload, *, allow_fixture_policy=False, now=None):
+        """Version-checked draft save. Conflicts keep the member's input."""
+
+        if not isinstance(payload, dict):
+            raise ResumeIntakeValidationError("Invalid request.")
+        if set(payload) & FORBIDDEN_CLIENT_FIELDS:
+            raise ResumeIntakeValidationError("Owner fields cannot be client-supplied.")
+        self._require_draft_store()
+        policy = self._require_usable_policy(allow_fixture=allow_fixture_policy)
+        request_id = _as_uuid(payload.get("request_id"), field="request id")
+        expected = payload.get("expected_version")
+        if expected is not None and (
+            isinstance(expected, bool) or not isinstance(expected, int) or expected < 1
+        ):
+            raise ResumeIntakeValidationError("Invalid draft version.")
+        moment = _utc(now)
+        normalized = self._normalize_draft(payload)
+        held = {}
+
+        def apply(snapshot):
+            drafts = snapshot.setdefault("drafts", {})
+            self._drop_expired_drafts(snapshot, policy, moment)
+            existing = drafts.get(DRAFT_KEY)
+            if existing is not None and existing.get("last_request_id") == request_id:
+                held["outcome"] = "replay"
+                held["record"] = copy.deepcopy(existing)
+                return
+            if existing is None:
+                if expected is not None:
+                    held["outcome"] = "conflict"
+                    held["reason"] = "draft_missing"
+                    held["existing"] = None
+                    return
+                version = 1
+            elif expected != int(existing.get("version") or 0):
+                held["outcome"] = "conflict"
+                held["reason"] = "version_changed"
+                held["existing"] = copy.deepcopy(existing)
+                return
+            else:
+                version = int(existing.get("version") or 0) + 1
+            attachments = self._draft_attachments(snapshot, normalized["attachments"])
+            record = {
+                "draft_key": DRAFT_KEY,
+                "version": version,
+                "state": "active",
+                "text": normalized["text"],
+                "items": normalized["items"],
+                "attachments": attachments,
+                "created_at": (existing or {}).get("created_at") or moment.isoformat(),
+                "updated_at": moment.isoformat(),
+                "expires_at": _draft_expiry_iso(moment, policy.draft_inactivity_days),
+                "last_request_id": request_id,
+            }
+            drafts[DRAFT_KEY] = record
+            held["outcome"] = "saved"
+            held["record"] = copy.deepcopy(record)
+
+        try:
+            self.repository.with_drafts(owner, apply, create=True)
+        except ResumeIntakeStoreUnavailable as error:
+            raise ResumeIntakeUnavailableError(proposed=normalized) from error
+        if held.get("outcome") == "replay":
+            return {
+                "success": True, "draft": present_draft(held["record"]),
+                "replayed": True, "request_id": request_id,
+            }
+        if held.get("outcome") == "conflict":
+            existing = held.get("existing")
+            if held.get("reason") == "draft_missing":
+                raise ResumeIntakeConflictError(
+                    "draft_conflict", [{"draft_key": DRAFT_KEY, "reason": "draft_missing"}],
+                    "That draft is gone. Your unsaved words are kept here.",
+                    proposed=normalized,
+                )
+            raise ResumeIntakeConflictError(
+                "draft_conflict",
+                [{
+                    "draft_key": DRAFT_KEY,
+                    "reason": "version_changed",
+                    "server_version": int((existing or {}).get("version") or 0),
+                    "server_updated_at": (existing or {}).get("updated_at"),
+                    "server_draft": present_draft(existing) if existing else None,
+                }],
+                "That draft changed on another device. "
+                "Your unsaved words are kept here. Choose which copy to keep.",
+                proposed=normalized,
+            )
+        return {
+            "success": True, "draft": present_draft(held["record"]),
+            "replayed": False, "request_id": request_id,
+        }
+
+    def discard_draft(self, owner, payload, *, allow_fixture_policy=False, now=None):
+        """Discard the unsubmitted draft. Idempotent and never a canonical write."""
+
+        if not isinstance(payload, dict):
+            raise ResumeIntakeValidationError("Invalid request.")
+        self._require_draft_store()
+        policy = self._require_usable_policy(allow_fixture=allow_fixture_policy)
+        request_id = payload.get("request_id")
+        if request_id is not None:
+            _as_uuid(request_id, field="request id")
+        moment = _utc(now)
+        held = {"had_draft": False}
+
+        def apply(snapshot):
+            if snapshot is None:
+                held["had_draft"] = False
+                return
+            self._drop_expired_drafts(snapshot, policy, moment)
+            drafts = snapshot.setdefault("drafts", {})
+            held["had_draft"] = drafts.pop(DRAFT_KEY, None) is not None
+
+        try:
+            self.repository.with_drafts(owner, apply, create=False)
+        except ResumeIntakeStoreUnavailable as error:
+            raise ResumeIntakeUnavailableError() from error
+        return {"success": True, "discarded": True, "had_draft": held["had_draft"]}
+
+    def keep_extracted_separate(self, owner, payload, *, allow_fixture_policy=False, now=None):
+        """Save a server-held extracted equivalent as a new private fact."""
+
+        if not getattr(self.repository, "supports_atomic_source_actions", False):
+            raise ResumeIntakeUnavailableError(
+                "Keep as separate is unavailable until source validation and saving share one transaction."
+            )
+        with self.repository.owner_guard(owner):
+            return self._keep_extracted_separate_guarded(
+                owner,
+                payload,
+                allow_fixture_policy=allow_fixture_policy,
+                now=now,
+            )
+
+    def _keep_extracted_separate_guarded(
+        self, owner, payload, *, allow_fixture_policy=False, now=None
+    ):
+
+        if not isinstance(payload, dict):
+            raise ResumeIntakeValidationError("Invalid request.")
+        if set(payload) & FORBIDDEN_CLIENT_FIELDS:
+            raise ResumeIntakeValidationError("Owner fields cannot be client-supplied.")
+        extra = set(payload) - {"type", "request_id", "override_key"}
+        if extra:
+            raise ResumeIntakeValidationError("Unknown keep-separate fields.")
+        policy = self._require_usable_policy(allow_fixture=allow_fixture_policy)
+        request_id = _as_uuid(payload.get("request_id"), field="request id")
+        override_key = payload.get("override_key")
+        if not isinstance(override_key, str) or not override_key.strip():
+            raise ResumeIntakeValidationError("Invalid keep-separate command.")
+        override_key = override_key.strip()
+        moment = _utc(now)
+        digest = _json_digest({
+            "type": "keep_extracted_separate",
+            "override_key": override_key,
+        })
+        snapshot = self._load(owner)
+        existing = snapshot["receipts"].get(request_id)
+        if existing is not None:
+            if existing["request_digest"] != digest:
+                raise ResumeIntakeConflictError(
+                    "idempotency_conflict",
+                    [{"request_id": request_id}],
+                    "That request key was already used for different content.",
+                )
+            return {
+                **self._hydrate_replay(owner, snapshot, existing["result"]),
+                "replayed": True,
+                "request_digest": existing["request_digest"],
+            }
+        keep = self._find_extracted_override(snapshot, override_key)
+        if keep is None:
+            raise ResumeIntakeNotFoundError()
+        if keep.get("state") == "invalidated":
+            raise ResumeIntakeConflictError(
+                "source_purged",
+                [{"override_key": override_key, "reason": "source_purged"}],
+                "That source was removed, so this keep-separate action is no longer available.",
+            )
+        consumed = keep.get("consumed_request_id")
+        if consumed:
+            stored = snapshot["receipts"].get(consumed)
+            if not isinstance(stored, dict) or not isinstance(stored.get("result"), dict):
+                raise ResumeIntakeConflictError(
+                    "idempotency_conflict",
+                    [{"override_key": override_key}],
+                    "That keep-separate action was already used.",
+                )
+            return {
+                **self._hydrate_replay(owner, snapshot, stored["result"]),
+                "replayed": True,
+                "request_digest": stored.get("request_digest"),
+            }
+        # The proposed SQL adapter persists the accepted override as its own
+        # structural submission receipt, while its source JSON remains the
+        # mutable candidate store. Recover that identifier-only consumption
+        # marker after a reload so a new request cannot create the same
+        # canonical fact twice. A purge removes/invalidates the source first,
+        # so it never reaches this replay path.
+        _consumed_request_id, stored = self._find_consumed_extracted_override(
+            snapshot, override_key
+        )
+        if stored is not None:
+            return {
+                **self._hydrate_replay(owner, snapshot, stored["result"]),
+                "replayed": True,
+                "request_digest": stored.get("request_digest"),
+            }
+        record_type, values = self._server_held_extracted_values(keep)
+        plan = _ItemPlan(
+            client_key=f"keep-extracted:{override_key}",
+            kind="structured",
+            record_type=record_type,
+            provided_values=values,
+            as_separate=True,
+            quote=_subject(record_type, values)[:300],
+            confidence="certain",
+        )
+        command = {
+            "request_id": request_id,
+            "request_digest": digest,
+            "proposed": None,
+        }
+        commit_result = None
+        try:
+            with self._unit_of_work() as unit:
+                submission_key = override_key
+                submission_version = 1
+                submission = {
+                    "submission_key": submission_key,
+                    "version": submission_version,
+                    "state": "active",
+                    "entrance": policy.entrance,
+                    "policy_version": policy.version,
+                    "request_id": request_id,
+                    "request_digest": digest,
+                    "created_at": moment.isoformat(),
+                    "source_keys": [],
+                    "proposal_keys": [],
+                    "item_count": 0,
+                }
+                snapshot["submissions"][submission_key] = submission
+                canonical_view: list[dict] = []
+                jobs: list[dict] = []
+                proposals: list[dict] = []
+                source = self._store_source(
+                    snapshot, submission_key, submission_version, plan, moment
+                )
+                fence = JobFence(
+                    source_key=source["source_key"],
+                    source_version=int(source["version"]),
+                    submission_key=submission_key,
+                    submission_version=submission_version,
+                    policy_version=policy.version,
+                    lifecycle_epoch=snapshot["lifecycle_epoch"],
+                )
+                job = enqueue(snapshot, fence, _job_kind(plan.kind), now=moment)
+                lease = lease_job(snapshot, job["job_key"], now=moment)
+                outcome, result = self._process_plan(
+                    owner, snapshot, unit, plan, source, submission_key,
+                    submission_version, policy, command, moment, canonical_view,
+                    proposals,
+                )
+                if outcome == "failed":
+                    fail_job(
+                        snapshot, job["job_key"], lease["lease_id"],
+                        result.get("code") or "failed", now=moment,
+                    )
+                else:
+                    job_result = (
+                        "saved" if outcome == "saved"
+                        else "skipped" if outcome == "duplicate"
+                        else "unresolved"
+                    )
+                    complete_job(
+                        snapshot, job["job_key"], lease["lease_id"],
+                        result=job_result,
+                        outcome=result.get("code") or outcome, now=moment,
+                    )
+                jobs.append(present_job(snapshot["jobs"][job["job_key"]]))
+                result = dict(result)
+                result.setdefault("client_key", plan.client_key)
+                result.setdefault("kind", plan.kind)
+                results = [result]
+                submission["source_keys"] = [source["source_key"]]
+                submission["proposal_keys"] = [row["proposal_key"] for row in proposals]
+                submission["item_count"] = len(results)
+                summary = _summarize(results)
+                receipt = {
+                    "success": True,
+                    "outcome": summary["outcome"],
+                    "replayed": False,
+                    "request_digest": digest,
+                    "request_id": request_id,
+                    "submission": submission,
+                    "results": results,
+                    "summary": summary,
+                    "jobs": jobs,
+                    "proposals": [present_proposal(row) for row in proposals],
+                    "saved_items": canonical_view,
+                    "publishes": False,
+                    "message": _receipt_message(summary),
+                }
+                stored_receipt = receipt_for_storage(receipt)
+                stored_receipt["persisted"] = True
+                for entry in stored_receipt.get("saved_items") or []:
+                    entry["persisted"] = True
+                snapshot["receipts"][request_id] = {
+                    "request_digest": digest,
+                    "submission_key": submission_key,
+                    "result": stored_receipt,
+                }
+                snapshot["last_receipt"] = {
+                    "outcome": receipt["outcome"],
+                    "summary": summary,
+                    "created_at": moment.isoformat(),
+                    "request_id": request_id,
+                }
+                keep["state"] = "consumed"
+                keep["consumed_request_id"] = request_id
+                keep.pop("values", None)
+                commit_result = unit.commit(
+                    owner,
+                    snapshot,
+                    procedure=COMMAND_PROCEDURES["add_submission"],
+                    request_id=request_id,
+                    payload=_submission_payload(command, snapshot, stored_receipt),
+                )
+        except ResumeIntakeStoreUnavailable as error:
+            raise ResumeIntakeUnavailableError() from error
+        winner = self._winner_after_commit(owner, request_id, digest, commit_result)
+        if winner is not None:
+            return winner
+        receipt["persisted"] = True
+        for entry in receipt.get("saved_items") or []:
+            entry["persisted"] = True
+        return _present_intake_receipt(receipt)
+
+    def _find_extracted_override(self, snapshot, override_key):
+        for source in (snapshot.get("sources") or {}).values():
+            for candidate in _source_extracted_candidates(source):
+                if candidate.get("override_key") != override_key:
+                    continue
+                if (
+                    candidate.get("source_key") != source.get("source_key")
+                    or int(candidate.get("source_version") or 0)
+                    != int(source.get("version") or 0)
+                    or source.get("state") != "active"
+                ):
+                    candidate["state"] = "invalidated"
+                    candidate.pop("values", None)
+                    candidate.pop("consumed_request_id", None)
+                return candidate
+        return None
+
+    def _find_consumed_extracted_override(self, snapshot, override_key):
+        for request_id, stored in (snapshot.get("receipts") or {}).items():
+            if (
+                isinstance(stored, dict)
+                and stored.get("submission_key") == override_key
+                and isinstance(stored.get("result"), dict)
+            ):
+                return request_id, stored
+        return None, None
+
+    def _server_held_extracted_values(self, keep):
+        record_type = keep.get("record_type")
+        if record_type not in STRUCTURED_RECORD_TYPES:
+            raise ResumeIntakeConflictError(
+                "reconciliation_required",
+                [{"reason": "record_type_required"}],
+                "Choose what this should become before saving it.",
+            )
+        if keep.get("state") != "pending":
+            raise ResumeIntakeConflictError(
+                "reconciliation_required",
+                [{"override_key": keep.get("override_key"), "reason": "candidate_unavailable"}],
+                "That keep-separate action is no longer available.",
+            )
+        raw = keep.get("values")
+        if not isinstance(raw, dict):
+            raise ResumeIntakeValidationError("Invalid keep-separate command.")
+        values = {}
+        for name, value in raw.items():
+            if name in FORBIDDEN_CLIENT_FIELDS:
+                raise ResumeIntakeValidationError("Owner fields cannot be client-supplied.")
+            if name not in EDITOR_FIELDS[record_type] or value is None:
+                continue
+            values[name] = value
+        if not values:
+            raise ResumeIntakeValidationError("Invalid keep-separate command.")
+        return record_type, values
+
+    def _normalize_draft(self, payload):
+        text = _text(payload.get("text"), field="text")
+        raw_items = payload.get("items") or []
+        if not isinstance(raw_items, list) or len(raw_items) > DRAFT_MAX_ITEMS:
+            raise ResumeIntakeValidationError("Invalid items.")
+        items = []
+        for raw in raw_items:
+            if not isinstance(raw, dict):
+                raise ResumeIntakeValidationError("Invalid items.")
+            record_type = raw.get("record_type")
+            if record_type not in STRUCTURED_RECORD_TYPES:
+                raise ResumeIntakeValidationError("Invalid record type.")
+            values = raw.get("values")
+            if values is None:
+                values = {}
+            if not isinstance(values, dict):
+                raise ResumeIntakeValidationError("Invalid values.")
+            unknown = set(values) - EDITOR_FIELDS[record_type]
+            if unknown or (set(values) & FORBIDDEN_CLIENT_FIELDS):
+                raise ResumeIntakeValidationError("Unknown value fields are not allowed.")
+            clears = raw.get("explicit_clears") or []
+            if not isinstance(clears, list):
+                raise ResumeIntakeValidationError("Invalid explicit clears.")
+            clear_set = set()
+            for name in clears:
+                if not isinstance(name, str) or name not in EDITOR_FIELDS[record_type]:
+                    raise ResumeIntakeValidationError("Invalid explicit clears.")
+                clear_set.add(name)
+            if clear_set & set(values):
+                raise ResumeIntakeValidationError("A field cannot be set and cleared at once.")
+            items.append({
+                "client_key": _text(raw.get("client_key"), field="client key", maximum=200)
+                or str(uuid4()),
+                "record_type": record_type,
+                "values": dict(values),
+                "explicit_clears": sorted(clear_set),
+            })
+        raw_attachments = payload.get("attachments") or []
+        if not isinstance(raw_attachments, list) or len(raw_attachments) > DRAFT_MAX_ATTACHMENTS:
+            raise ResumeIntakeValidationError("Invalid attachments.")
+        attachments = []
+        for raw in raw_attachments:
+            if not isinstance(raw, dict):
+                raise ResumeIntakeValidationError("Invalid attachments.")
+            kind = raw.get("kind")
+            if kind not in {"document", "recording"}:
+                raise ResumeIntakeValidationError("Invalid attachment kind.")
+            client_key = _text(raw.get("client_key"), field="client key", maximum=200, required=True)
+            entry = {"client_key": client_key, "kind": kind}
+            if kind == "document":
+                entry["declared_content_type"] = _text(
+                    raw.get("declared_content_type"), field="content type", maximum=200
+                )
+                entry["filename"] = _text(raw.get("filename"), field="filename", maximum=300)
+            else:
+                entry["duration_seconds"] = raw.get("duration_seconds")
+                source_key = raw.get("source_key")
+                entry["source_key"] = (
+                    _as_uuid(source_key, field="source key") if source_key else None
+                )
+            attachments.append(entry)
+        return {"text": text, "items": items, "attachments": attachments}
+
+    def _draft_attachments(self, snapshot, attachments):
+        """Resolve draft attachment descriptors against live sources.
+
+        A descriptor that names a missing, purged, or unreadable source stays
+        in the draft with ``needs_reattach`` instead of failing the save: an
+        incomplete upload is a truthful reattachment state, never lost input.
+        """
+
+        resolved = []
+        sources = snapshot.get("sources") or {}
+        for entry in attachments:
+            row = dict(entry)
+            source_key = entry.get("source_key")
+            if source_key:
+                source = sources.get(source_key)
+                if (
+                    source is None
+                    or source.get("state") != "active"
+                    or not source.get("text")
+                ):
+                    row["needs_reattach"] = True
+                else:
+                    row["needs_reattach"] = False
+            else:
+                # No server source stands behind this descriptor, so Add
+                # cannot use it yet: documents wait for their bytes and
+                # recordings wait for a transcript.
+                row["needs_reattach"] = True
+            resolved.append(row)
+        return resolved
 
     # -- internals ------------------------------------------------------
 
@@ -1116,7 +1700,28 @@ class ResumeIntakeService:
                         entry["content_changed_since_first_response"] = True
                 hydrated.append(entry)
             result["saved_items"] = hydrated
-        return result
+        # A duplicate receipt replays its keep-as-separate wording from the
+        # still-active purgeable source row, so immutable history never
+        # carries member words yet replay stays fully usable. A purged or
+        # changed source yields no wording, never resurrected text.
+        for row in result.get("results") or []:
+            if not isinstance(row, dict) or row.get("outcome") != "duplicate":
+                continue
+            keep = row.get("keep_separate")
+            if not isinstance(keep, dict) or keep.get("values"):
+                continue
+            if keep.get("override_key"):
+                continue
+            source = (snapshot.get("sources") or {}).get(row.get("intake_source_key"))
+            if (
+                source is not None
+                and source.get("state") == "active"
+                and int(source.get("version") or 0)
+                == int(row.get("intake_source_version") or 0)
+                and isinstance(source.get("structured_values"), dict)
+            ):
+                keep["values"] = copy.deepcopy(source["structured_values"])
+        return _present_intake_receipt(result)
 
     def _normalize_add(self, payload):
         if not isinstance(payload, dict):
@@ -1155,6 +1760,12 @@ class ResumeIntakeService:
                 clear_set.add(name)
             if clear_set & set(values):
                 raise ResumeIntakeValidationError("A field cannot be set and cleared at once.")
+            # Keep-as-separate is an explicit member decision from a
+            # duplicate receipt. Only a real boolean True skips matching;
+            # anything else malformed is refused rather than guessed.
+            as_separate = raw.get("as_separate", False)
+            if as_separate is not True and as_separate is not False:
+                raise ResumeIntakeValidationError("Invalid request to save separately.")
             items.append({
                 "client_key": _text(raw.get("client_key"), field="client key", maximum=200)
                 or str(uuid4()),
@@ -1165,6 +1776,7 @@ class ResumeIntakeService:
                     _as_uuid(raw.get("parent_key"), field="parent key")
                     if raw.get("parent_key") else None
                 ),
+                "as_separate": as_separate,
             })
         raw_attachments = payload.get("attachments") or []
         if not isinstance(raw_attachments, list) or len(raw_attachments) > 25:
@@ -1276,6 +1888,7 @@ class ResumeIntakeService:
                 "values": item["provided_values"],
                 "explicit_clears": item["explicit_clears"],
                 "parent_key": item.get("parent_key"),
+                "as_separate": bool(item.get("as_separate")),
             }
             for item in items
         ]
@@ -1296,7 +1909,8 @@ class ResumeIntakeService:
             "items": [
                 {"client_key": item["client_key"], "record_type": item["record_type"],
                  "values": item["provided_values"], "explicit_clears": item["explicit_clears"],
-                 "parent_key": item.get("parent_key")}
+                 "parent_key": item.get("parent_key"),
+                 "as_separate": bool(item.get("as_separate"))}
                 for item in items
             ],
             "attachments": digest_attachments,
@@ -1325,6 +1939,7 @@ class ResumeIntakeService:
                 provided_values=item["provided_values"],
                 explicit_clears=item["explicit_clears"],
                 parent_key=item.get("parent_key"),
+                as_separate=bool(item.get("as_separate")),
                 quote=_subject(item["record_type"], item["provided_values"])[:300],
                 confidence="certain",
             ))
@@ -1415,7 +2030,9 @@ class ResumeIntakeService:
             snapshot["sources"][source["source_key"]]["text"] = parsed.text
 
         if plan.kind == "structured":
-            match = self._match_existing(owner, plan)
+            match = None
+            if not plan.as_separate:
+                match = self._match_existing(owner, plan)
             if match is None:
                 item = self._save_new_fact(owner, snapshot, unit, plan, submission_key)
                 # Keep the exact first-response values in the mutable, purgeable
@@ -1437,6 +2054,34 @@ class ResumeIntakeService:
                     "saved": True,
                 }
             kind, target, confidence = match
+            if kind == "equivalent":
+                # Identical restatement: keep the existing entry, permissions
+                # and versions untouched, with a quiet truthful receipt. The
+                # member can still keep it as a separate fact explicitly.
+                # Only keys travel in the receipt: member wording stays in
+                # the purgeable source row, never in immutable history.
+                snapshot["sources"][source["source_key"]]["structured_values"] = copy.deepcopy(
+                    dict(plan.provided_values)
+                )
+                return "duplicate", {
+                    "outcome": "duplicate",
+                    "record_type": plan.record_type,
+                    "record_key": (target or {}).get("record_key"),
+                    "intake_source_key": source["source_key"],
+                    "intake_source_version": int(source.get("version") or 1),
+                    "already_saved": [{
+                        "record_key": (target or {}).get("record_key"),
+                        "record_type": plan.record_type,
+                    }],
+                    "keep_separate": {
+                        "client_key": plan.client_key,
+                        "record_type": plan.record_type,
+                        "values": dict(plan.provided_values),
+                        "explicit_clears": list(plan.explicit_clears),
+                    },
+                    "message": "Already saved. Nothing new was added.",
+                    "saved": False,
+                }
             proposal = self._make_proposal(
                 snapshot, plan, source, submission_key, submission_version, policy,
                 command, kind=kind, target=target, confidence=confidence,
@@ -1450,25 +2095,77 @@ class ResumeIntakeService:
                 "saved": False,
             }
         # Text, documents and recordings are extraction: never silently saved.
-        drafts = self._interpreter(plan.source_text or "", plan.kind) or []
+        provider_issue = None
+        duplicates: list[dict] = []
+        if self._extraction_adapter is not None and plan.kind in {"text", "document", "recording"}:
+            drafts, provider_issue = self._extract_with_adapter(owner, plan)
+        else:
+            drafts = self._interpreter(plan.source_text or "", plan.kind) or []
         if not drafts:
+            # The deterministic manual path always survives: a provider
+            # failure leaves editable uncertain wording, never lost input.
             drafts = [{
                 "kind": "inferred_wording", "record_type": "unspecified",
                 "values": {"text": (plan.source_text or "")[:MAX_TEXT_UNITS]},
                 "confidence": "uncertain",
             }]
         created = []
-        for draft in drafts:
+        for draft in drafts or []:
+            if draft.get("outcome") == "equivalent":
+                # A true restatement keeps the existing entry and permissions:
+                # no proposal, no write, just a quiet truthful receipt entry.
+                # A reference that no longer resolves stays visible as an
+                # uncertain proposal instead of silently vanishing.
+                duplicate = self._resolve_equivalent(owner, draft)
+                if duplicate is not None:
+                    duplicates.append({
+                        **duplicate,
+                        "extracted_fields": dict(draft.get("values") or {}),
+                    })
+                    continue
+                draft = {**draft, "kind": "inferred_wording", "confidence": "uncertain"}
+            kind = draft.get("kind") or "inferred_wording"
+            target = None
+            if kind in {"additional_detail", "contradiction"}:
+                # Overlay the listed member-owned fact. A missing, excluded,
+                # unreadable, stale, or unlisted reference fails closed to
+                # uncertain manual review instead of creating a second row.
+                target = self._resolve_matched_target(owner, draft)
+                if target is None:
+                    kind = "inferred_wording"
+                    draft = {**draft, "kind": kind, "confidence": "uncertain"}
             proposal = self._make_proposal(
                 snapshot, plan, source, submission_key, submission_version, policy, command,
-                kind=draft.get("kind") or "inferred_wording",
-                target=None,
+                kind=kind,
+                target=target,
                 confidence=draft.get("confidence") or "uncertain",
                 record_type=draft.get("record_type") or "unspecified",
                 proposed_values=draft.get("values"),
+                provided_fields=draft.get("provided_fields"),
+                quote=draft.get("quote"),
+                span_start=draft.get("span_start"),
+                span_end=draft.get("span_end"),
             )
             created.append(proposal)
             proposals.append(proposal)
+        if duplicates and not created:
+            actions = _bind_extracted_candidates(
+                source, duplicates, submission_key, plan.client_key
+            )
+            return "duplicate", {
+                "outcome": "duplicate",
+                "record_type": plan.record_type,
+                "already_saved": [
+                    {
+                        "record_key": row.get("record_key"),
+                        "record_type": row.get("record_type"),
+                    }
+                    for row in duplicates
+                ],
+                "keep_separate_actions": actions,
+                "message": "Already saved. Nothing new was added.",
+                "saved": False,
+            }
         result = {
             "outcome": "unresolved",
             "record_type": plan.record_type,
@@ -1476,6 +2173,27 @@ class ResumeIntakeService:
             "message": "Captured as a proposal. Nothing is saved until you review it.",
             "saved": False,
         }
+        if duplicates:
+            result["keep_separate_actions"] = _bind_extracted_candidates(
+                source, duplicates, submission_key, plan.client_key
+            )
+            result["already_saved"] = [
+                {
+                    "record_key": row.get("record_key"),
+                    "record_type": row.get("record_type"),
+                }
+                for row in duplicates
+            ]
+            result["message"] += (
+                f" {len(duplicates)}"
+                f" {'item was' if len(duplicates) == 1 else 'items were'} already saved."
+            )
+        if provider_issue is not None:
+            result["provider_issue"] = {"code": provider_issue, "retryable": True}
+            result["message"] += (
+                " The organizer is unavailable right now. Your words are kept "
+                "for review, and you can retry or type them directly."
+            )
         if plan.document:
             # A truncated or partial document is visible, never implied complete.
             result["document"] = plan.document
@@ -1484,8 +2202,11 @@ class ResumeIntakeService:
     def _make_proposal(
         self, snapshot, plan, source, submission_key, submission_version, policy, command,
         *, kind, target=None, confidence="uncertain", record_type=None, proposed_values=None,
+        provided_fields=None, quote=None, span_start=None, span_end=None,
     ):
-        quote = plan.quote or (plan.source_text or "")[:300]
+        quote = quote or plan.quote or (plan.source_text or "")[:300]
+        if span_start is None or span_end is None:
+            span_start, span_end = 0, len(quote)
         spec = ProposalSpec(
             source_key=source["source_key"],
             source_version=int(source["version"]),
@@ -1494,15 +2215,19 @@ class ResumeIntakeService:
             kind=kind,
             record_type=record_type or plan.record_type,
             quote=quote,
-            span_start=0,
-            span_end=len(quote),
+            span_start=span_start,
+            span_end=span_end,
             proposed_values=(
                 proposed_values if proposed_values is not None else _partial_values(plan)
             ),
             target_key=(target or {}).get("record_key"),
             target_content_token=(target or {}).get("content_token"),
             target_access_revision=(target or {}).get("access_revision"),
-            provided_fields=tuple(plan.provided_values.keys()),
+            provided_fields=(
+                tuple(provided_fields)
+                if provided_fields is not None
+                else tuple(plan.provided_values.keys())
+            ),
             explicit_clears=tuple(plan.explicit_clears),
             confidence=confidence,
             command_digest=command["request_digest"],
@@ -1532,8 +2257,11 @@ class ResumeIntakeService:
                 return "ambiguous_match", item, "similar"
             # A conflict is a *changed* existing value, not a newly supplied
             # detail: filling a previously empty field is an addition, while
-            # rewriting or clearing a filled one contradicts the record.
+            # rewriting or clearing a filled one contradicts the record. A
+            # restatement that adds no new meaning is equivalent: the existing
+            # entry and its permissions stay exactly as they are.
             conflict = False
+            addition = False
             for name in EDITOR_FIELDS[plan.record_type]:
                 if name in provided:
                     new = provided.get(name)
@@ -1541,11 +2269,143 @@ class ResumeIntakeService:
                     if _meaningful(new) and _meaningful(old) and new != old:
                         conflict = True
                         break
+                    if _meaningful(new) and not _meaningful(old):
+                        addition = True
                 if name in plan.explicit_clears and _meaningful(existing_values.get(name)):
                     conflict = True
                     break
-            return ("contradiction" if conflict else "additional_detail"), item, "certain"
+            if conflict:
+                return "contradiction", item, "certain"
+            if addition:
+                return "additional_detail", item, "certain"
+            return "equivalent", item, "certain"
         return None
+
+    def _matching_shortlist(self, owner):
+        """Member-scoped comparison candidates, minus private-AI exclusions.
+
+        Only facts the member may use for private processing are comparable.
+        When the exclusion source is unwired or unreadable the shortlist is
+        empty on purpose: the adapter then reports new or uncertain and the
+        member decides, instead of comparing material the member excluded.
+        """
+
+        try:
+            items = self._canonical_items(owner)
+        except ResumeIntakeUnavailableError:
+            return []
+        excluded: set = set()
+        if self._matching_exclusions is None:
+            return []
+        try:
+            excluded = set(self._matching_exclusions(owner) or ())
+        except Exception:
+            return []
+        shortlist = []
+        for item in items:
+            key = item.get("record_key")
+            if not key or key in excluded:
+                continue
+            shortlist.append({
+                "record_key": key,
+                "record_type": item.get("record_type"),
+                "values": item.get("values") or {},
+            })
+        return shortlist
+
+    def _extract_with_adapter(self, owner, plan):
+        """Run strict Luna extraction, or report the provider failure.
+
+        Returns ``(drafts, provider_issue)``. A failure keeps the member's
+        input for the deterministic manual path and marks the result
+        retryable: there is no fallback model, effort, or free-form mode.
+        """
+
+        text = plan.source_text or ""
+        shortlist = self._matching_shortlist(owner)
+        try:
+            candidates = self._extraction_adapter.extract(
+                text,
+                allowed_fields={name: EDITOR_FIELDS[name] for name in EDITOR_FIELDS},
+                shortlist=shortlist,
+            )
+        except ExtractionError as error:
+            return None, error.code
+        drafts = []
+        for candidate in candidates:
+            record_type = candidate.record_type
+            if record_type == "unspecified" or candidate.outcome == "uncertain":
+                kind = "inferred_wording"
+            elif candidate.outcome == "new":
+                kind = "new_fact"
+            elif candidate.outcome == "additional_detail":
+                kind = "additional_detail"
+            elif candidate.outcome == "contradiction":
+                kind = "contradiction"
+            else:
+                kind = "inferred_wording"
+            drafts.append({
+                "kind": kind,
+                "record_type": record_type,
+                "values": dict(candidate.values),
+                "confidence": candidate.confidence,
+                "outcome": candidate.outcome,
+                "match_reference": candidate.match_reference,
+                "provided_fields": list(candidate.provided_fields),
+                "quote": candidate.quote,
+                "span_start": candidate.span_start,
+                "span_end": candidate.span_end,
+            })
+        return drafts, None
+
+    def _resolve_equivalent(self, owner, draft):
+        """Confirm an equivalent reference still exists, or return None."""
+
+        reference = draft.get("match_reference")
+        if not reference:
+            return None
+        try:
+            item = self._find_item(owner, reference)
+        except ResumeIntakeUnavailableError:
+            return None
+        if item is None:
+            return None
+        return {
+            "record_key": item.get("record_key"),
+            "record_type": item.get("record_type"),
+        }
+
+    def _resolve_matched_target(self, owner, draft):
+        """Bind a matched outcome to the current owner-scoped fact, or None.
+
+        Additional-detail and contradiction proposals overlay the listed
+        member-owned item, carrying its content token and access revision so
+        only the member's later accept can apply the change. A missing,
+        excluded, unreadable, stale, or unlisted reference fails closed.
+        """
+
+        reference = draft.get("match_reference")
+        if not isinstance(reference, str) or not reference:
+            return None
+        try:
+            shortlist_keys = {
+                entry.get("record_key")
+                for entry in self._matching_shortlist(owner)
+                if entry.get("record_key")
+            }
+            if reference not in shortlist_keys:
+                return None
+            item = self._find_item(owner, reference)
+        except ResumeIntakeUnavailableError:
+            return None
+        if item is None:
+            return None
+        token = item.get("content_token")
+        if not isinstance(token, str) or not token:
+            return None
+        if item.get("access_revision") is None:
+            return None
+        return item
 
     def _canonical_items(self, owner):
         """Read the owner's existing facts. Fail closed when unreadable.
@@ -1776,7 +2636,47 @@ def _partial_values(plan):
     return values
 
 
-_RECEIPT_WORD_FIELDS = frozenset({"quote", "proposed_values", "confirmed_values", "values", "transcript"})
+_RECEIPT_WORD_FIELDS = frozenset({
+    "quote", "proposed_values", "confirmed_values", "values", "transcript",
+    "extracted_fields",
+})
+
+_EXTRACTED_CANDIDATES_FIELD = "_extracted_candidates"
+
+
+def _source_extracted_candidates(source):
+    raw = source.get("structured_values") if isinstance(source, dict) else None
+    candidates = raw.get(_EXTRACTED_CANDIDATES_FIELD) if isinstance(raw, dict) else None
+    return candidates if isinstance(candidates, list) else []
+
+
+def _bind_extracted_candidates(source, duplicates, submission_key, client_key):
+    """Bind each equivalent to mutable source state; return identifier actions."""
+
+    candidates = list(_source_extracted_candidates(source))
+    actions = []
+    for index, duplicate in enumerate(duplicates):
+        override_key = _stable_key(
+            submission_key, f"keep-separate:{client_key}:{index}"
+        )
+        record_type = duplicate.get("record_type")
+        candidate = {
+            "override_key": override_key,
+            "record_type": record_type,
+            "record_key": duplicate.get("record_key"),
+            "source_key": source["source_key"],
+            "source_version": int(source.get("version") or 1),
+            "state": "pending",
+            "values": copy.deepcopy(duplicate.get("extracted_fields") or {}),
+        }
+        candidates.append(candidate)
+        actions.append({
+            "override_key": override_key,
+            "record_type": record_type,
+            "record_key": duplicate.get("record_key"),
+        })
+    source["structured_values"] = {_EXTRACTED_CANDIDATES_FIELD: candidates}
+    return actions
 
 
 def receipt_for_storage(receipt):
@@ -1786,6 +2686,8 @@ def receipt_for_storage(receipt):
     codes, messages) and is what a same-key retry replays. The member's own
     words live only in the mutable source and proposal rows, which is what
     source purge can redact -- so no receipt copy can resurrect purged text.
+    Extracted keep-separate candidates live only in mutable source-bound state;
+    immutable receipts retain their identifier-only actions.
     """
 
     def scrub(value):
@@ -1796,6 +2698,35 @@ def receipt_for_storage(receipt):
         return value
 
     return scrub(dict(receipt))
+
+
+def _public_keep_separate(keep):
+    """Member-visible keep-separate action. Never returns extracted fields."""
+
+    if not isinstance(keep, dict):
+        return keep
+    if keep.get("override_key"):
+        return {
+            "override_key": keep["override_key"],
+            "record_type": keep.get("record_type"),
+            "record_key": keep.get("record_key"),
+        }
+    return keep
+
+
+def _present_intake_receipt(receipt):
+    if not isinstance(receipt, dict):
+        return receipt
+    presented = copy.deepcopy(receipt)
+    for row in presented.get("results") or []:
+        if isinstance(row, dict) and "keep_separate" in row:
+            row["keep_separate"] = _public_keep_separate(row.get("keep_separate"))
+        if isinstance(row, dict) and "keep_separate_actions" in row:
+            row["keep_separate_actions"] = [
+                _public_keep_separate(keep)
+                for keep in (row.get("keep_separate_actions") or [])
+            ]
+    return presented
 
 
 def _job_kind(kind):
@@ -1889,11 +2820,15 @@ def _summarize(results):
     saved = sum(1 for row in results if row.get("outcome") == "saved")
     unresolved = sum(1 for row in results if row.get("outcome") == "unresolved")
     failed = sum(1 for row in results if row.get("outcome") == "failed")
-    if failed and not (saved or unresolved):
+    duplicates = sum(1 for row in results if row.get("outcome") == "duplicate")
+    counted = saved + unresolved + failed + duplicates
+    if failed and counted == failed:
         outcome = "failed"
-    elif unresolved and not saved and not failed:
+    elif duplicates and counted == duplicates:
+        outcome = "duplicate"
+    elif unresolved and not saved and not failed and not duplicates:
         outcome = "unresolved"
-    elif saved and not failed and not unresolved:
+    elif saved and not failed and not unresolved and not duplicates:
         outcome = "saved"
     else:
         outcome = "partial"
@@ -1902,6 +2837,7 @@ def _summarize(results):
         "saved": saved,
         "unresolved": unresolved,
         "failed": failed,
+        "duplicates": duplicates,
         "total": len(results),
         "all_saved": bool(results) and saved == len(results),
     }
@@ -1910,6 +2846,8 @@ def _summarize(results):
 def _receipt_message(summary):
     if summary["all_saved"]:
         return "Saved privately. Display and visitor AI stay off."
+    if summary.get("duplicates") and summary["total"] == summary["duplicates"]:
+        return "Already saved. Nothing new was added."
     parts = []
     if summary["saved"]:
         parts.append(f"{summary['saved']} saved privately")
@@ -1917,7 +2855,69 @@ def _receipt_message(summary):
         parts.append(f"{summary['unresolved']} needs your review")
     if summary["failed"]:
         parts.append(f"{summary['failed']} could not be saved")
+    if summary.get("duplicates"):
+        parts.append(f"{summary['duplicates']} already saved")
     return "Some of that Add was not saved: " + "; ".join(parts) + "."
+
+
+def _draft_expires_at(row, inactivity_days):
+    """Parse one draft row's expiry moment, or None when it never expires."""
+
+    if inactivity_days is None:
+        return None
+    raw = (row or {}).get("expires_at")
+    if not isinstance(raw, str) or not raw:
+        return None
+    try:
+        moment = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(timezone.utc)
+
+
+def _draft_expiry_iso(moment, inactivity_days):
+    if inactivity_days is None:
+        return None
+    return (moment + timedelta(days=int(inactivity_days))).isoformat()
+
+
+def present_draft(row):
+    """Member-visible draft view. Never exposes another owner's rows."""
+
+    return {
+        "draft_key": row.get("draft_key") or DRAFT_KEY,
+        "version": int(row.get("version") or 0),
+        "state": row.get("state") or "active",
+        "text": row.get("text"),
+        "items": [dict(item) for item in (row.get("items") or [])],
+        "attachments": [dict(item) for item in (row.get("attachments") or [])],
+        "created_at": row.get("created_at"),
+        "updated_at": row.get("updated_at"),
+        "expires_at": row.get("expires_at"),
+    }
+
+
+def sweep_drafts(snapshot, *, now=None, inactivity_days=30):
+    """Drop expired composer drafts. Pure helper for the future expiry worker.
+
+    Reads already enforce expiry, so behavior holds with no worker running;
+    the worker only reclaims storage. Returns the expired draft count.
+    """
+
+    if inactivity_days is None:
+        return 0
+    moment = _utc(now)
+    drafts = snapshot.get("drafts") or {}
+    expired = [
+        key for key, row in drafts.items()
+        if _draft_expires_at(row, inactivity_days) is not None
+        and moment >= _draft_expires_at(row, inactivity_days)
+    ]
+    for key in expired:
+        del drafts[key]
+    return len(expired)
 
 
 def _current_intake_service():
