@@ -8,6 +8,12 @@ trigger: none
 pr: none
 lockBehavior: sequential
 
+parameters:
+  - name: qualificationSpeechProofEndpoint
+    displayName: One-time Speech proof endpoint
+    type: string
+    default: ''
+
 schedules:
   - cron: '20 1 * * *'
     displayName: Primary daily qualification run
@@ -33,16 +39,17 @@ variables:
   qualificationActivationEnabled: 'true'
   qualificationCreditConfirmed: 'true'
   qualificationSpendAuthorizationRef: 'session:01a046b3-74fc-7903-a336-3f1647f81d1c/owner-authorization:2026-09-04/start-seven-azure-workload-plan'
+  qualificationSpeechAuthorizationRef: 'continuity:event:evt-9aa26bec-b6f6-4c19-a55b-9eedbc4eca65'
   # Use the data-plane endpoint so this identity needs no ARM Reader role just
   # to discover a store it already has exact App Configuration data access to.
   qualificationAppConfigurationEndpoint: 'https://peerslate-startup-qualification.azconfig.io'
   qualificationFoundryEndpoint: 'https://peerslate-foundry.openai.azure.com'
   qualificationFoundryDeployment: 'gpt-5.6-luna'
-  # Live WIF requests returned speech_auth_failed with the authorized narrow
-  # Speech role. Keep this empty so schedules skip Speech without touching the
-  # working status, Registry, or Luna stages. Re-enablement requires a reviewed
-  # correction and exact owner authority; keys and broader roles are not used.
-  qualificationSpeechEndpoint: ''
+  # Keep scheduled Speech disabled until one reviewed, manually queued proof
+  # supplies the exact pinned endpoint through the manual-run parameter and
+  # succeeds. Scheduled runs retain the empty default. The runner accepts the
+  # proof authorization exactly once using a durable marker.
+  qualificationSpeechEndpoint: ${{ parameters.qualificationSpeechProofEndpoint }}
   qualificationContainerRegistryEndpoint: 'https://peerslateacr.azurecr.io'
   # Nine distinct product-aligned cases run once: the call count and spend
   # envelope stay identical to the reviewed three-cases-times-three plan.
@@ -101,12 +108,16 @@ stages:
               inlineScript: |
                 set -euo pipefail
                 qualification_subscription_id=$(az account show --query id -o tsv)
+                python -m pip install --disable-pip-version-check --no-input --quiet \
+                  azure-identity==1.25.3 \
+                  azure-mgmt-costmanagement==5.0.0 \
+                  requests==2.34.2
                 qualification_status_file="$AGENT_TEMPDIRECTORY/qualification-status.json"
                 set +e
                 python scripts/azure_startup_qualification_status.py \
                   --subscription-id "$qualification_subscription_id" \
                   --pretty \
-                  --require-qualified-latest-day \
+                  --require-five-qualified-latest-day \
                   > "$qualification_status_file"
                 qualification_status_exit=$?
                 set -e
@@ -114,9 +125,27 @@ stages:
                 python - "$qualification_status_file" "$qualification_summary_file" <<'PY'
                 import json
                 import sys
+                from pathlib import Path
 
-                report = json.load(open(sys.argv[1], encoding="utf-8"))
-                latest = report["latest_day"]
+                def write_summary(lines):
+                    Path(sys.argv[2]).write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+                try:
+                    report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+                    if not isinstance(report, dict):
+                        raise ValueError("status document is not an object")
+                    latest = report.get("latest_day")
+                except (OSError, UnicodeError, json.JSONDecodeError, ValueError):
+                    write_summary(
+                        [
+                            "# Azure startup qualification status",
+                            "",
+                            "Billing status is unavailable for this run.",
+                            "",
+                            "The workload stages continue independently; the tracker remains fail-closed until a valid Azure billing response is available.",
+                        ]
+                    )
+                    raise SystemExit(0)
                 if latest is None:
                     lines = [
                         "# Azure startup qualification status",
@@ -125,15 +154,33 @@ stages:
                         "",
                         "This is a conservative Cost Management estimate. The Microsoft for Startups portal remains authoritative.",
                     ]
-                    open(sys.argv[2], "w", encoding="utf-8").write("\n".join(lines) + "\n")
+                    write_summary(lines)
+                    raise SystemExit(0)
+                if not isinstance(latest, dict):
+                    write_summary(
+                        [
+                            "# Azure startup qualification status",
+                            "",
+                            "Billing status is unavailable for this run.",
+                            "",
+                            "The tracker refused an invalid Azure billing response.",
+                        ]
+                    )
                     raise SystemExit(0)
                 costs = latest["workload_cost_usd"]
                 streaks = report["current_workload_streak_days"]
                 labels = {item["key"]: item["label"] for item in report["workloads"]}
+                known_sources = {
+                    "Azure Cost Management ActualCost estimate",
+                    "Azure Cost Management Cost Details ActualCost fallback",
+                }
+                source = report.get("status_source")
+                source_label = source if source in known_sources else "Azure billing estimate"
                 lines = [
                     "# Azure startup qualification status",
                     "",
                     f"Latest complete UTC day: **{latest['day']}**",
+                    f"Billing data source: **{source_label}**",
                     f"Five-service day qualified: **{'yes' if latest['qualifies_five'] else 'no'}**",
                     f"Seven-service day qualified: **{'yes' if latest['qualifies_seven'] else 'no'}**",
                     f"Current uninterrupted five-service streak: **{report['current_five_workload_streak_days']} days**",
@@ -153,7 +200,14 @@ stages:
                         "This is a conservative Cost Management estimate. The Microsoft for Startups portal remains authoritative.",
                     ]
                 )
-                open(sys.argv[2], "w", encoding="utf-8").write("\n".join(lines) + "\n")
+                if report.get("fallback_reason") == "cost_management_rate_limited":
+                    lines.extend(
+                        [
+                            "",
+                            "Cost Management was rate-limited, so this run used the bounded Azure Cost Details report fallback.",
+                        ]
+                    )
+                write_summary(lines)
                 PY
                 echo "##vso[task.uploadsummary]$qualification_summary_file"
                 exit "$qualification_status_exit"
@@ -473,7 +527,7 @@ stages:
         always(),
         eq(variables['qualificationActivationEnabled'], 'true'),
         eq(variables['qualificationCreditConfirmed'], 'true'),
-        ne(variables['qualificationSpendAuthorizationRef'], ''),
+        ne(variables['qualificationSpeechAuthorizationRef'], ''),
         ne(variables['qualificationSpeechEndpoint'], ''),
         ne(variables['qualificationAppConfigurationEndpoint'], ''),
         ne(variables['qualificationServiceConnectionId'], '')
@@ -495,7 +549,9 @@ stages:
               set -euo pipefail
               sudo apt-get update -qq
               sudo apt-get install -y --no-install-recommends espeak-ng ffmpeg
-              python -m pip install --disable-pip-version-check requests==2.34.2
+              python -m pip install --disable-pip-version-check \
+                azure-identity==1.25.3 \
+                requests==2.34.2
             displayName: Install bounded synthetic-audio runtime
           - task: AzureCLI@2
             displayName: Run Speech quality suite with resumable progress
@@ -571,4 +627,4 @@ stages:
             env:
               PEERSLATE_AZURE_QUALIFICATION_ACTIVATED: $(qualificationActivationEnabled)
               PEERSLATE_AZURE_CREDIT_CONFIRMED: $(qualificationCreditConfirmed)
-              PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF: $(qualificationSpendAuthorizationRef)
+              PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF: $(qualificationSpeechAuthorizationRef)

@@ -6,9 +6,17 @@ The repository implementation and authorized live activation completed SQL S2,
 Container Registry Premium, exact narrow roles, non-secret markers, and the
 $550 budget alerts without deploying the application or changing product data.
 Registry verification passed and Luna reached its September 4 target. Speech
-returned `speech_auth_failed`; three profiles are durably reserved with no
-confirmed success and are not replayed. The pipeline now fail-safe skips Speech
-while the working scheduled stages continue. No seven-service clock is claimed.
+returned `speech_auth_failed`; earlier attempt evidence is retained and is not
+replayed. The September 9 proof reproduced the failure and exposed a missing
+Azure Identity dependency in the isolated Speech pipeline runtime. Pete
+authorized one corrected September 13 proof. The live resource check confirmed
+the existing exact-scope Speech User role and pinned keyless endpoint. Scheduled
+Speech remains disabled by default; one reviewed manual run may override the
+endpoint. Before consuming the new one-use reference, the runner proves the
+runtime dependency and obtains the first Entra token. Daily enablement still
+requires proof success and a separately reviewed follow-up. No seven-service
+clock is claimed before complete-day Cost Management and Startups-portal
+confirmation.
 
 The plan tracks these seven distinct Azure workloads:
 
@@ -34,6 +42,10 @@ workload.
   individual workload streak, so different shortfalls cannot rotate in and
   falsely manufacture a common five-service window. Seven-workload continuity
   is the minimum of all seven individual streaks.
+- A primary-query 429 now falls back to the pinned Microsoft Cost Details SDK.
+  It splits the requested history into exact calendar-month ranges, processes
+  up to four reports in parallel, validates each returned manifest and bounded
+  CSV, and preserves the full 60-day continuity window across billing periods.
 - The registered pipeline retains its 01:20 UTC primary and 13:20 UTC recovery
   schedules, exclusive service-connection lock, and sequential behavior. The
   summary reports latest complete-day costs, per-workload streaks, fixed-five
@@ -85,7 +97,7 @@ The corrected candidate is checked with:
 The review receipt and fixed governance evidence file record exact candidate
 identity and results after that review completes.
 
-## Live state and blocked operation
+## Live state and resumed operation
 
 The verified live state is SQL S2; ACR Premium with admin disabled, public
 access enabled, and legacy registry permissions; the exact Speech User and
@@ -94,10 +106,15 @@ Speech markers; and one unfiltered subscription-wide $550 monthly budget with
 75% Actual, 90% Forecasted, and 100% Actual notifications. Temporary operator
 App Configuration access was removed and verified absent.
 
-Speech cannot be called again safely under current authority. A broader role,
-resource key, new resource, or provider workaround is not authorized. The
-repository fail-safe must remain until a separately authorized, reviewed
-correction is available.
+Pete's September 13 direction authorizes one reviewed, manually queued bounded
+proof using the existing Speech User assignment. Scheduled Speech stays off
+until that proof succeeds and a separately reviewed follow-up enables it. The
+runner first proves the Azure Identity runtime and first Entra token, then
+durably consumes a new exact authorization marker without changing the older
+markers. The new reference cannot be reused on another day. A broader role,
+resource key, new resource, marker reset, or provider workaround remains
+unauthorized. If the proof fails, Speech remains unconfirmed and the working
+five- and six-workload stages continue unchanged.
 
 ## Honest limitations
 

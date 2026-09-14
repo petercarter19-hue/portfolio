@@ -4,11 +4,21 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from unittest import mock
 
-from scripts.azure_startup_qualification_status import _live_query
+from scripts.azure_startup_qualification_status import (
+    AzureBillingReadError,
+    HttpJsonResponse,
+    _cost_details_csv_rows,
+    _cost_details_query,
+    _cost_details_report,
+    _live_query,
+    _monthly_ranges,
+    _validate_cost_details_poll_url,
+    _validated_cost_details_blobs,
+)
 from services.azure_startup_qualification import (
     DEFAULT_WORKLOADS,
     CostDataError,
@@ -53,6 +63,38 @@ def cost_payload(days):
             ],
             "rows": rows,
         }
+    }
+
+
+def cost_details_report_payload(
+    start="2026-09-01", end="2026-09-13", *, byte_count=100, blob_name="report"
+):
+    return {
+        "status": "Completed",
+        "manifest": {
+            "blobCount": 1,
+            "blobs": [
+                {
+                    "blobLink": (
+                        "https://ccmreportstorageeastus.blob.core.windows.net/"
+                        f"armreports/{blob_name}.csv?sv=1&sig=secret"
+                    ),
+                    "byteCount": byte_count,
+                }
+            ],
+            "byteCount": byte_count,
+            "compressData": False,
+            "dataFormat": "Csv",
+            "requestContext": {
+                "requestBody": {
+                    "metric": "ActualCost",
+                    "timePeriod": {"start": start, "end": end},
+                },
+                "requestScope": (
+                    "subscriptions/11111111-1111-1111-1111-111111111111"
+                ),
+            },
+        },
     }
 
 
@@ -252,6 +294,351 @@ class AzureStartupQualificationTests(unittest.TestCase):
         self.assertNotIn(subscription_id, str(raised.exception))
         self.assertNotIn("private-command", str(raised.exception))
 
+    def test_live_query_falls_back_only_when_cost_management_is_rate_limited(self):
+        subscription_id = "11111111-1111-1111-1111-111111111111"
+        with mock.patch(
+            "scripts.azure_startup_qualification_status._cost_management_query",
+            side_effect=AzureBillingReadError("rate_limited", "rate limited"),
+        ) as primary, mock.patch(
+            "scripts.azure_startup_qualification_status._cost_details_query",
+            return_value=cost_payload([("2026-09-12", 1.25)]),
+        ) as fallback:
+            result = _live_query(
+                subscription_id, date(2026, 9, 1), date(2026, 9, 13)
+            )
+        primary.assert_called_once()
+        fallback.assert_called_once_with(
+            subscription_id, date(2026, 9, 1), date(2026, 9, 13)
+        )
+        self.assertEqual(result.fallback_reason, "cost_management_rate_limited")
+        self.assertIn("Cost Details", result.source)
+        rows = cost_rows_from_query(result.payload)
+        self.assertEqual(len(rows), 7)
+        self.assertEqual(rows[0].day, date(2026, 9, 12))
+
+    def test_live_query_does_not_mask_a_non_rate_limit_failure(self):
+        subscription_id = "11111111-1111-1111-1111-111111111111"
+        with mock.patch(
+            "scripts.azure_startup_qualification_status._cost_management_query",
+            side_effect=AzureBillingReadError("unavailable", "query failed"),
+        ) as primary, mock.patch(
+            "scripts.azure_startup_qualification_status._cost_details_query"
+        ) as fallback:
+            with self.assertRaisesRegex(AzureBillingReadError, "query failed"):
+                _live_query(
+                    subscription_id, date(2026, 9, 1), date(2026, 9, 13)
+                )
+        primary.assert_called_once()
+        fallback.assert_not_called()
+
+    def test_cost_details_fallback_splits_the_full_window_by_calendar_month(self):
+        subscription_id = "11111111-1111-1111-1111-111111111111"
+        self.assertEqual(
+            _monthly_ranges(date(2026, 7, 20), date(2026, 9, 13)),
+            (
+                (date(2026, 7, 20), date(2026, 7, 31)),
+                (date(2026, 8, 1), date(2026, 8, 31)),
+                (date(2026, 9, 1), date(2026, 9, 13)),
+            ),
+        )
+        with mock.patch(
+            "scripts.azure_startup_qualification_status._cost_details_report",
+            return_value=None,
+        ) as report:
+            payload = _cost_details_query(
+                subscription_id, date(2026, 7, 20), date(2026, 9, 13)
+            )
+        self.assertEqual(cost_rows_from_query(payload), ())
+        self.assertEqual(
+            sorted(call.args[1:] for call in report.call_args_list),
+            [
+                (date(2026, 7, 20), date(2026, 7, 31)),
+                (date(2026, 8, 1), date(2026, 8, 31)),
+                (date(2026, 9, 1), date(2026, 9, 13)),
+            ],
+        )
+
+    def test_cost_details_polling_requests_exact_period_and_terminates(self):
+        subscription_id = "11111111-1111-1111-1111-111111111111"
+        poll_url = (
+            "https://management.azure.com/subscriptions/"
+            f"{subscription_id}/providers/Microsoft.CostManagement/"
+            "costDetailsOperationResults/22222222-2222-2222-2222-222222222222"
+            "?api-version=2025-03-01"
+        )
+        credential = mock.Mock()
+        client = mock.Mock()
+        responses = [
+            HttpJsonResponse(
+                202, None, {"location": poll_url, "retry-after": "1"}
+            ),
+            HttpJsonResponse(200, cost_details_report_payload(), {}),
+        ]
+        with mock.patch(
+            "scripts.azure_startup_qualification_status._cost_management_client",
+            return_value=(credential, client),
+        ), mock.patch(
+            "scripts.azure_startup_qualification_status._cost_details_http_response",
+            side_effect=responses,
+        ) as request, mock.patch(
+            "scripts.azure_startup_qualification_status.time.sleep"
+        ) as sleep:
+            result = _cost_details_report(
+                subscription_id=subscription_id,
+                start=date(2026, 9, 1),
+                end=date(2026, 9, 13),
+            )
+        self.assertEqual(result, cost_details_report_payload())
+        self.assertEqual(request.call_count, 2)
+        self.assertEqual(request.call_args_list[0].kwargs["method"], "POST")
+        self.assertEqual(
+            request.call_args_list[0].kwargs["body"]["timePeriod"],
+            {"start": "2026-09-01", "end": "2026-09-13"},
+        )
+        self.assertEqual(request.call_args_list[1].kwargs["url"], poll_url)
+        self.assertEqual(request.call_args_list[1].kwargs["method"], "GET")
+        sleep.assert_called_once_with(1)
+        client.close.assert_called_once()
+        credential.close.assert_called_once()
+
+    def test_cost_details_polling_stops_at_the_attempt_boundary(self):
+        subscription_id = "11111111-1111-1111-1111-111111111111"
+        poll_url = (
+            "https://management.azure.com/subscriptions/"
+            f"{subscription_id}/providers/Microsoft.CostManagement/"
+            "costDetailsOperationResults/22222222-2222-2222-2222-222222222222"
+            "?api-version=2025-03-01"
+        )
+        credential = mock.Mock()
+        client = mock.Mock()
+        pending = [
+            HttpJsonResponse(
+                202,
+                None,
+                {"location": poll_url, "retry-after": "60"},
+            )
+        ] + [
+            HttpJsonResponse(202, None, {"retry-after": "60"})
+            for _ in range(15)
+        ]
+        with mock.patch(
+            "scripts.azure_startup_qualification_status._cost_management_client",
+            return_value=(credential, client),
+        ), mock.patch(
+            "scripts.azure_startup_qualification_status._cost_details_http_response",
+            side_effect=pending,
+        ) as request, mock.patch(
+            "scripts.azure_startup_qualification_status.time.sleep"
+        ) as sleep:
+            with self.assertRaisesRegex(
+                AzureBillingReadError, "report generation timed out"
+            ):
+                _cost_details_report(
+                    subscription_id=subscription_id,
+                    start=date(2026, 9, 1),
+                    end=date(2026, 9, 13),
+                )
+        self.assertEqual(request.call_count, 16)
+        self.assertEqual(sleep.call_count, 15)
+        client.close.assert_called_once()
+        credential.close.assert_called_once()
+
+    def test_cost_details_polling_stops_at_the_wall_clock_deadline(self):
+        subscription_id = "11111111-1111-1111-1111-111111111111"
+        poll_url = (
+            "https://management.azure.com/subscriptions/"
+            f"{subscription_id}/providers/Microsoft.CostManagement/"
+            "costDetailsOperationResults/22222222-2222-2222-2222-222222222222"
+            "?api-version=2025-03-01"
+        )
+        credential = mock.Mock()
+        client = mock.Mock()
+        with mock.patch(
+            "scripts.azure_startup_qualification_status.MAX_COST_DETAILS_POLL_WAIT_SECONDS",
+            1,
+        ), mock.patch(
+            "scripts.azure_startup_qualification_status._cost_management_client",
+            return_value=(credential, client),
+        ), mock.patch(
+            "scripts.azure_startup_qualification_status._cost_details_http_response",
+            return_value=HttpJsonResponse(
+                202, None, {"location": poll_url, "retry-after": "60"}
+            ),
+        ) as request, mock.patch(
+            "scripts.azure_startup_qualification_status.time.monotonic",
+            side_effect=[100.0, 100.0],
+        ), mock.patch(
+            "scripts.azure_startup_qualification_status.time.sleep"
+        ) as sleep:
+            with self.assertRaisesRegex(
+                AzureBillingReadError, "report generation timed out"
+            ):
+                _cost_details_report(
+                    subscription_id=subscription_id,
+                    start=date(2026, 9, 1),
+                    end=date(2026, 9, 13),
+                )
+        request.assert_not_called()
+        sleep.assert_not_called()
+        client.close.assert_called_once()
+        credential.close.assert_called_once()
+
+    def test_cost_details_polling_refuses_an_untrusted_origin(self):
+        with self.assertRaisesRegex(AzureBillingReadError, "polling URL is invalid"):
+            _validate_cost_details_poll_url(
+                "https://attacker.example/steal?api-version=2025-03-01",
+                subscription_id="11111111-1111-1111-1111-111111111111",
+            )
+
+    def test_cost_details_manifest_binds_the_exact_requested_period(self):
+        blobs = _validated_cost_details_blobs(
+            cost_details_report_payload(),
+            subscription_id="11111111-1111-1111-1111-111111111111",
+            start=date(2026, 9, 1),
+            end=date(2026, 9, 13),
+        )
+        self.assertEqual(len(blobs), 1)
+        wrong_period = cost_details_report_payload()
+        wrong_period["manifest"]["requestContext"]["requestBody"]["timePeriod"] = {
+            "start": "2026-09-02",
+            "end": "2026-09-13",
+        }
+        with self.assertRaisesRegex(AzureBillingReadError, "manifest is invalid"):
+            _validated_cost_details_blobs(
+                wrong_period,
+                subscription_id="11111111-1111-1111-1111-111111111111",
+                start=date(2026, 9, 1),
+                end=date(2026, 9, 13),
+            )
+
+    def test_cost_details_fallback_enforces_global_blob_and_byte_limits(self):
+        subscription_id = "11111111-1111-1111-1111-111111111111"
+
+        def report_for_period(_subscription_id, start, end, *, byte_count):
+            return cost_details_report_payload(
+                start.isoformat(),
+                end.isoformat(),
+                byte_count=byte_count,
+                blob_name=start.isoformat(),
+            )
+
+        with mock.patch(
+            "scripts.azure_startup_qualification_status._cost_details_report",
+            side_effect=lambda *args: report_for_period(*args, byte_count=6_000_000),
+        ), mock.patch(
+            "scripts.azure_startup_qualification_status._download_cost_details_blob"
+        ) as download:
+            with self.assertRaisesRegex(AzureBillingReadError, "global limit"):
+                _cost_details_query(
+                    subscription_id, date(2026, 6, 15), date(2026, 9, 13)
+                )
+        download.assert_not_called()
+
+        with mock.patch(
+            "scripts.azure_startup_qualification_status._cost_details_report",
+            side_effect=lambda *args: report_for_period(*args, byte_count=100),
+        ), mock.patch(
+            "scripts.azure_startup_qualification_status._download_cost_details_blob"
+        ) as download:
+            with self.assertRaisesRegex(AzureBillingReadError, "global limit"):
+                _cost_details_query(
+                    subscription_id, date(2026, 5, 1), date(2026, 9, 13)
+                )
+        download.assert_not_called()
+
+    def test_cost_details_csv_accepts_modern_and_legacy_usd_cost_fields(self):
+        modern = (
+            "Date,ChargeType,MeterCategory,ResourceId,CostInUSD\n"
+            "2026-09-12,Usage,Foundry Models,/private/modern,1.25\n"
+        )
+        legacy = (
+            "Date,ChargeType,MeterCategory,ResourceId,"
+            "CostInBillingCurrency,BillingCurrencyCode\n"
+            "2026-09-12,Usage,Foundry Tools,/private/legacy,1.30,USD\n"
+        )
+        modern_rows = _cost_details_csv_rows(
+            modern, start=date(2026, 9, 1), end=date(2026, 9, 13)
+        )
+        legacy_rows = _cost_details_csv_rows(
+            legacy, start=date(2026, 9, 1), end=date(2026, 9, 13)
+        )
+        self.assertEqual(modern_rows[0][0], "1.25")
+        self.assertEqual(modern_rows[0][2], "Foundry Models")
+        self.assertEqual(legacy_rows[0][0], "1.30")
+        self.assertEqual(legacy_rows[0][2], "Foundry Tools")
+
+    def test_cost_details_csv_filters_dates_and_non_usage_charges(self):
+        content = (
+            "Date,ChargeType,MeterCategory,ResourceId,CostInUSD\n"
+            "2026-08-31,Usage,Foundry Models,/private/old,4.00\n"
+            "2026-09-12,Purchase,Foundry Models,/private/purchase,5.00\n"
+        )
+        self.assertEqual(
+            _cost_details_csv_rows(
+                content, start=date(2026, 9, 1), end=date(2026, 9, 13)
+            ),
+            [],
+        )
+
+    def test_cost_details_csv_refuses_non_usd_billing_currency(self):
+        content = (
+            "Date,ChargeType,MeterCategory,ResourceId,"
+            "CostInBillingCurrency,BillingCurrency\n"
+            "2026-09-12,Usage,Foundry Models,/private/resource,1.25,EUR\n"
+        )
+        with self.assertRaisesRegex(AzureBillingReadError, "not in USD"):
+            _cost_details_csv_rows(
+                content, start=date(2026, 9, 1), end=date(2026, 9, 13)
+            )
+
+    def test_cost_details_csv_rows_round_trip_through_cost_parser(self):
+        content = (
+            "Date,ChargeType,MeterCategory,ResourceId,CostInUSD\n"
+            "2026-09-12,Usage,Foundry Models,/private/resource,1.25\n"
+        )
+        rows = _cost_details_csv_rows(
+            content, start=date(2026, 9, 1), end=date(2026, 9, 13)
+        )
+        payload = {
+            "properties": {
+                "columns": [
+                    {"name": "CostUSD", "type": "Number"},
+                    {"name": "UsageDate", "type": "String"},
+                    {"name": "ServiceName", "type": "String"},
+                    {"name": "ResourceId", "type": "String"},
+                    {"name": "Currency", "type": "String"},
+                ],
+                "rows": rows,
+            }
+        }
+        parsed = cost_rows_from_query(payload)
+        self.assertEqual(parsed[0].cost_micro_usd, 1_250_000)
+        self.assertEqual(parsed[0].service_name, "Foundry Models")
+
+    def test_cost_details_no_data_period_is_valid(self):
+        report = {"status": "NoDataFound"}
+        self.assertEqual(
+            _validated_cost_details_blobs(
+                report,
+                subscription_id="11111111-1111-1111-1111-111111111111",
+                start=date(2026, 9, 1),
+                end=date(2026, 9, 13),
+            ),
+            (),
+        )
+
+    def test_cost_details_query_uses_every_month_even_when_one_has_no_data(self):
+        subscription_id = "11111111-1111-1111-1111-111111111111"
+        with mock.patch(
+            "scripts.azure_startup_qualification_status._cost_details_report",
+            return_value=None,
+        ) as report:
+            payload = _cost_details_query(
+                subscription_id, date(2026, 9, 1), date(2026, 9, 13)
+            )
+        self.assertEqual(cost_rows_from_query(payload), ())
+        report.assert_called_once()
+
     def test_schedule_definition_is_active_and_uses_two_daily_windows(self):
         pipeline = (ROOT / "pipelines" / "azure-startup-qualification.yml").read_text(
             encoding="utf-8"
@@ -279,6 +666,12 @@ class AzureStartupQualificationTests(unittest.TestCase):
         self.assertIn("qualificationMinimumCallIntervalSeconds: '65'", pipeline)
         self.assertNotIn("--only-show-errors 2>/dev/null || true", pipeline)
         self.assertIn("if latest is None:", pipeline)
+        self.assertIn("--require-five-qualified-latest-day", pipeline)
+        self.assertNotIn("--require-qualified-latest-day \\\n", pipeline)
+        self.assertIn("Billing status is unavailable for this run.", pipeline)
+        self.assertIn("azure-identity==1.25.3", pipeline)
+        self.assertIn("azure-mgmt-costmanagement==5.0.0", pipeline)
+        self.assertIn("requests==2.34.2", pipeline)
         self.assertIn("--hard-cap-usd", pipeline)
         self.assertIn("PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF", pipeline)
         self.assertIn("daily product-quality evaluation", pipeline)

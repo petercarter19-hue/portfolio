@@ -22,10 +22,15 @@ from services.azure_speech_qualification import (
     score_transcript,
 )
 from scripts.run_speech_quality_evaluations import (
+    AzureCliCredential,
+    EXPECTED_PROOF_AUTHORIZATION_REF,
     EXPECTED_APP_CONFIGURATION_ENDPOINT,
     EXPECTED_SPEECH_ENDPOINT,
     MarkerStoreError,
+    PROOF_CONSUMED_KEY,
+    _consume_proof_authorization,
     _execute_profiles,
+    _preflight_speech_credential,
     _require_execution_authority,
 )
 
@@ -62,6 +67,19 @@ class MemoryMarkerStore:
         if self.write_count == self.fail_on_write:
             raise MarkerStoreError("speech_marker_write_failed")
         self.value = value
+
+
+class ProofMarkerStore:
+    def __init__(self):
+        self.values = {}
+        self.write_count = 0
+
+    def read_optional(self, key):
+        return self.values.get(key, "")
+
+    def write(self, key, value, *, content_type=None):
+        self.write_count += 1
+        self.values[key] = value
 
 
 class RecordingTranscriber:
@@ -357,7 +375,7 @@ class AzureSpeechQualificationTests(unittest.TestCase):
         gates = {
             "PEERSLATE_AZURE_QUALIFICATION_ACTIVATED": "true",
             "PEERSLATE_AZURE_CREDIT_CONFIRMED": "true",
-            "PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF": "owner-ref",
+            "PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF": EXPECTED_PROOF_AUTHORIZATION_REF,
         }
         with mock.patch.dict(os.environ, gates, clear=True), mock.patch(
             "scripts.run_speech_quality_evaluations.shutil.which",
@@ -378,6 +396,59 @@ class AzureSpeechQualificationTests(unittest.TestCase):
             args.app_configuration_endpoint = "https://attacker.example"
             with self.assertRaises(SpeechQualificationError):
                 _require_execution_authority(args)
+
+    def test_proof_authorization_is_exact_and_consumed_once(self):
+        store = ProofMarkerStore()
+        with self.assertRaisesRegex(SpeechQualificationError, "invalid"):
+            _consume_proof_authorization(store, "another-owner-ref")
+        self.assertEqual(store.write_count, 0)
+
+        _consume_proof_authorization(store, EXPECTED_PROOF_AUTHORIZATION_REF)
+        self.assertEqual(
+            store.values[PROOF_CONSUMED_KEY], EXPECTED_PROOF_AUTHORIZATION_REF
+        )
+        self.assertEqual(store.write_count, 1)
+
+        with self.assertRaisesRegex(SpeechQualificationError, "consumed"):
+            _consume_proof_authorization(store, EXPECTED_PROOF_AUTHORIZATION_REF)
+        self.assertEqual(store.write_count, 1)
+
+    def test_credential_preflight_happens_before_proof_consumption(self):
+        source = (ROOT / "scripts" / "run_speech_quality_evaluations.py").read_text(
+            encoding="utf-8"
+        )
+        main = source[source.index("def main()") :]
+        self.assertLess(
+            main.index("credential = _preflight_speech_credential()"),
+            main.index("_consume_proof_authorization(store, authorization_ref)"),
+        )
+
+        with self.assertRaisesRegex(SpeechQualificationError, "speech_auth_failed"):
+            _preflight_speech_credential(
+                identity_import=mock.Mock(side_effect=ImportError("missing")),
+                credential_factory=mock.Mock(),
+            )
+
+    def test_cli_credential_primes_one_token_then_refreshes(self):
+        responses = [
+            subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="a" * 80, stderr=""
+            ),
+            subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="b" * 80, stderr=""
+            ),
+        ]
+        with mock.patch(
+            "scripts.run_speech_quality_evaluations.subprocess.run",
+            side_effect=responses,
+        ) as run:
+            credential = AzureCliCredential()
+            credential.prime()
+            first = credential.get_token("ignored").token
+            second = credential.get_token("ignored").token
+        self.assertEqual(first, "a" * 80)
+        self.assertEqual(second, "b" * 80)
+        self.assertEqual(run.call_count, 2)
 
     def test_runner_is_dry_run_by_default_and_never_starts_audio_tools(self):
         with mock.patch.dict(os.environ, {}, clear=True):
@@ -416,11 +487,28 @@ class AzureSpeechQualificationTests(unittest.TestCase):
         self.assertEqual(report["mode"], "refused")
         self.assertNotIn("https://", completed.stdout)
 
-    def test_registered_pipeline_fail_safe_disables_speech_only(self):
+    def test_registered_pipeline_keeps_speech_scheduled_off_until_proof(self):
         pipeline = (ROOT / "pipelines" / "azure-startup-qualification.yml").read_text(
             encoding="utf-8"
         )
-        self.assertIn("qualificationSpeechEndpoint: ''", pipeline)
+        self.assertIn("name: qualificationSpeechProofEndpoint", pipeline)
+        self.assertIn("displayName: One-time Speech proof endpoint", pipeline)
+        self.assertIn("default: ''", pipeline)
+        self.assertIn(
+            "qualificationSpeechEndpoint: "
+            "${{ parameters.qualificationSpeechProofEndpoint }}",
+            pipeline,
+        )
+        self.assertIn(
+            "qualificationSpeechAuthorizationRef: "
+            f"'{EXPECTED_PROOF_AUTHORIZATION_REF}'",
+            pipeline,
+        )
+        self.assertIn(
+            "PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF: "
+            "$(qualificationSpeechAuthorizationRef)",
+            pipeline,
+        )
         self.assertIn(
             "ne(variables['qualificationSpeechEndpoint'], '')",
             pipeline,

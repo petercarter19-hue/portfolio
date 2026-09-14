@@ -14,6 +14,7 @@ import tempfile
 import time
 from dataclasses import replace
 from datetime import datetime, timezone
+from importlib import import_module
 from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import urlsplit
@@ -45,10 +46,17 @@ DEFAULT_FIXTURE = (
 )
 PROGRESS_KEY = "qualification/speech/progress"
 LAST_SUCCESS_KEY = "qualification/speech/last-success-day"
+PROOF_CONSUMED_KEY = (
+    "qualification/speech/proof-authorization-consumed/2026-09-13-runtime-fix"
+)
+EXPECTED_PROOF_AUTHORIZATION_REF = (
+    "continuity:event:evt-9aa26bec-b6f6-4c19-a55b-9eedbc4eca65"
+)
 EXPECTED_SPEECH_ENDPOINT = "https://peerslate-foundry.cognitiveservices.azure.com"
 EXPECTED_APP_CONFIGURATION_ENDPOINT = (
     "https://peerslate-startup-qualification.azconfig.io"
 )
+SPEECH_TOKEN_SCOPE = "https://cognitiveservices.azure.com/.default"
 
 
 class MarkerStoreError(RuntimeError):
@@ -58,29 +66,64 @@ class MarkerStoreError(RuntimeError):
 class AzureCliCredential:
     """Minimal token adapter that reuses AzureCLI task workload identity auth."""
 
-    def get_token(self, _scope):
-        completed = subprocess.run(
-            [
-                "az",
-                "account",
-                "get-access-token",
-                "--scope",
-                "https://cognitiveservices.azure.com/.default",
-                "--query",
-                "accessToken",
-                "--output",
-                "tsv",
-                "--only-show-errors",
-            ],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=45,
-        )
+    def __init__(self):
+        self._prefetched_token = ""
+
+    @staticmethod
+    def _request_token():
+        try:
+            completed = subprocess.run(
+                [
+                    "az",
+                    "account",
+                    "get-access-token",
+                    "--scope",
+                    SPEECH_TOKEN_SCOPE,
+                    "--query",
+                    "accessToken",
+                    "--output",
+                    "tsv",
+                    "--only-show-errors",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=45,
+            )
+        except subprocess.TimeoutExpired as error:
+            raise RuntimeError("speech_auth_failed") from error
         token = completed.stdout.strip()
-        if completed.returncode != 0 or not token:
+        if (
+            completed.returncode != 0
+            or not 40 <= len(token) <= 24_000
+            or any(char.isspace() for char in token)
+        ):
             raise RuntimeError("speech_auth_failed")
+        return token
+
+    def prime(self):
+        """Acquire the first request token before consuming proof authority."""
+
+        self._prefetched_token = self._request_token()
+
+    def get_token(self, _scope):
+        token = self._prefetched_token or self._request_token()
+        self._prefetched_token = ""
         return SimpleNamespace(token=token)
+
+
+def _preflight_speech_credential(
+    *, identity_import=import_module, credential_factory=AzureCliCredential
+):
+    """Prove the runtime and first Entra token before consuming one-use authority."""
+
+    try:
+        identity_import("azure.identity")
+        credential = credential_factory()
+        credential.prime()
+    except Exception as error:
+        raise SpeechQualificationError("speech_auth_failed") from error
+    return credential
 
 
 class AppConfigurationMarkerStore:
@@ -114,6 +157,49 @@ class AppConfigurationMarkerStore:
         if completed.returncode != 0:
             raise MarkerStoreError("speech_marker_read_failed")
         return completed.stdout.rstrip("\r\n")
+
+    def read_optional(self, key: str) -> str:
+        completed = subprocess.run(
+            [
+                "az",
+                "appconfig",
+                "kv",
+                "list",
+                "--endpoint",
+                self.endpoint,
+                "--key",
+                key,
+                "--auth-mode",
+                "login",
+                "--fields",
+                "key",
+                "value",
+                "--output",
+                "json",
+                "--only-show-errors",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=45,
+        )
+        if completed.returncode != 0 or len(completed.stdout) > 16_000:
+            raise MarkerStoreError("speech_marker_read_failed")
+        try:
+            payload = json.loads(completed.stdout)
+        except json.JSONDecodeError as error:
+            raise MarkerStoreError("speech_marker_read_failed") from error
+        if payload == []:
+            return ""
+        if (
+            not isinstance(payload, list)
+            or len(payload) != 1
+            or not isinstance(payload[0], dict)
+            or payload[0].get("key") != key
+            or not isinstance(payload[0].get("value"), str)
+        ):
+            raise MarkerStoreError("speech_marker_read_failed")
+        return payload[0]["value"]
 
     def write(self, key: str, value: str, *, content_type: str | None = None) -> None:
         command = [
@@ -164,8 +250,11 @@ def _require_execution_authority(args: argparse.Namespace) -> None:
         raise SpeechQualificationError("qualification activation is not confirmed")
     if os.getenv("PEERSLATE_AZURE_CREDIT_CONFIRMED") != "true":
         raise SpeechQualificationError("Azure startup credit is not confirmed")
-    if not os.getenv("PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF", "").strip():
-        raise SpeechQualificationError("spend authorization reference is missing")
+    if (
+        os.getenv("PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF")
+        != EXPECTED_PROOF_AUTHORIZATION_REF
+    ):
+        raise SpeechQualificationError("speech proof authorization is invalid")
     _require_exact_origin(
         args.endpoint,
         EXPECTED_SPEECH_ENDPOINT,
@@ -181,6 +270,20 @@ def _require_execution_authority(args: argparse.Namespace) -> None:
     for executable in ("az", "espeak-ng", "ffmpeg", "ffprobe"):
         if shutil.which(executable) is None:
             raise SpeechQualificationError(f"required audio tool is unavailable: {executable}")
+
+
+def _consume_proof_authorization(store, authorization_ref: str) -> None:
+    if authorization_ref != EXPECTED_PROOF_AUTHORIZATION_REF:
+        raise SpeechQualificationError("speech proof authorization is invalid")
+    if store.read_optional(PROOF_CONSUMED_KEY):
+        raise SpeechQualificationError("speech proof authorization is consumed")
+    store.write(
+        PROOF_CONSUMED_KEY,
+        authorization_ref,
+        content_type="text/plain",
+    )
+    if store.read_optional(PROOF_CONSUMED_KEY) != authorization_ref:
+        raise SpeechQualificationError("speech proof authorization was not confirmed")
 
 
 def _require_exact_origin(value: str, expected: str, label: str) -> None:
@@ -438,7 +541,12 @@ def main() -> int:
             SpeechTranscriptionService,
         )
 
+        credential = _preflight_speech_credential()
         store = AppConfigurationMarkerStore(args.app_configuration_endpoint)
+        authorization_ref = os.getenv(
+            "PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF", ""
+        )
+        _consume_proof_authorization(store, authorization_ref)
         progress = progress_from_json(
             store.read(PROGRESS_KEY),
             expected_day=today,
@@ -454,7 +562,6 @@ def main() -> int:
         _emit(privacy_safe_report(cases, empty, mode="refused", stop_category=str(error)))
         return 2
 
-    credential = AzureCliCredential()
     transcriber = SpeechTranscriptionService(
         endpoint=args.endpoint,
         credential=credential,

@@ -1,19 +1,23 @@
 {
   "schema_version": 1,
   "package": "PS-AZURE-STARTUP-SEVEN-WORKLOAD-001",
-  "candidate_sha": "496cd9c5175148da149fe3e5b93d0a49805af0aa",
+  "candidate_sha": "46d06c43ebb5265e6a6b7cd5d60e692928bc441d",
   "review_type": "independent",
-  "reviewer_ref": "agent:/root/azure_activation_review",
+  "reviewer_ref": "agent:/root/azure_recovery_review",
   "result": "pass",
-  "reviewed_at": "2026-09-04T14:10:02Z",
+  "reviewed_at": "2026-09-14T01:31:18Z",
   "findings": [
     {
       "status": "resolved",
-      "summary": "The first fail-safe candidate 955c631bdadb33ce44851dc7b54c604d4bc53c46 left stale instructions that could have repeated completed Azure operations or reset three durable Speech reservations. Both documentation conflicts were removed."
+      "summary": "Candidate 57c4f600d2c639ccdb2c1b4deb88624833db866a was rejected because its fallback did not preserve the full historical continuity window across billing months. Candidate 97ab3d8e2d83bf25139e707e680021d2e2a46005 was rejected because report limits were not global and asynchronous polling could outlive its declared bound. Candidate cc841a686016dd7ef46b2d139a08769f4136f762 was rejected because the wall-clock boundary excluded credential and HTTP duration. Every finding was accepted and corrected."
     },
     {
       "status": "informational",
-      "summary": "The reviewer accepted exact candidate 496cd9c5175148da149fe3e5b93d0a49805af0aa with no findings against authoritative base 4e4266403bf347bb19e644325150a1fc3c4b7943. Thirty-nine focused tests, YAML parsing, claimed-path checks, diff hygiene, remote identity, and read preflight passed. Speech alone is fail-safe skipped; working status, Registry, and Luna stages remain enabled. No Azure mutation or paid call occurred during review."
+      "summary": "Sol Extra High reviewer agent:/root/azure_sol_xhigh_review accepted exact candidate ac013001565b5178b4f581f53f9b567c706fcb52 with no findings against merge base 2ae32a6caa643835a6e0e4d55dfb6ca73dfc9887 and observed origin/main dddd5d155396784d55c15762fac0f363b998ff91. The reviewer inspected the complete package diff and correction chain; rechecked the monotonic deadline, request reserve, credential/connect/read bounds, disabled retries, global manifest limits, month slicing, USD/date filtering, five-versus-seven semantics, privacy boundaries, Speech default-off behavior, and one-use authorization handling. Eighty-five focused tests, Python compilation, YAML parsing, the default zero-spend Speech dry run, package-surface Claude/Opus scan, Protected read preflight, and diff hygiene passed. The reviewer performed no live Azure query, paid request, deployment, pipeline execution, or mutation and did not independently repeat the reported bounded live probe."
+    },
+    {
+      "status": "informational",
+      "summary": "Sol High reviewer agent:/root/azure_recovery_review accepted exact integrated candidate 46d06c43ebb5265e6a6b7cd5d60e692928bc441d with no findings against origin/main 0cdf6520fcbdc1a716005a1a00773cf25384142e. All twelve package implementation, documentation, and registry blobs were byte-identical to previously accepted candidate ac013001565b5178b4f581f53f9b567c706fcb52; the claim exactly matched merged owner-reassignment PR 1024. Eighty-five focused tests plus six subtests, Protected read preflight, diff hygiene, Python AST parsing, JSON parsing, and the default zero-request, zero-audio, zero-cost Speech dry run passed. The reviewer performed no live Azure query, paid request, pipeline execution, deployment, mutation, repository edit, commit, push, or PR change."
     }
   ],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-AZURE-STARTUP-SEVEN-WORKLOAD-001.md"

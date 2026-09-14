@@ -14,15 +14,22 @@
 
 SQL S2, Container Registry Premium, seven-service reporting, the $550 budget
 alerts, and the existing Registry and Luna automation are active. Live
-Microsoft Entra requests to Speech returned `speech_auth_failed` with the
-owner-authorized narrow Speech role. Three September 4 profiles were durably
-reserved before those refused provider calls; none is replayed.
+Microsoft Entra requests to Speech returned `speech_auth_failed` on September
+4, and three profiles were durably reserved before those refused provider
+calls; none is replayed.
 
-The scheduled pipeline therefore has an explicitly empty Speech endpoint so
-future runs skip that stage while the working stages continue. Speech is not a
-confirmed qualifying workload, and no seven-service clock is claimed.
-Re-enablement requires a separately reviewed correction and exact owner
-authority; this package does not add a broader role or use resource keys.
+The September 9 bounded proof also failed at authentication after reserving one
+profile. The root cause was a missing Azure Identity runtime dependency in the
+isolated Speech job, not a missing live role. Pete authorized one corrected
+proof on September 13. Scheduled Speech remains disabled by default. One
+reviewed manual run may supply the pinned endpoint through its one-time proof
+parameter. Before consuming that new exact authorization, the runner now proves
+the Azure Identity import and obtains the first Entra token. Its new durable
+consumption marker preserves the older consumed authorization markers and
+refuses reuse. Daily enablement still requires proof success plus a separately
+reviewed follow-up.
+Speech is not a confirmed qualifying workload, and no seven-service clock is
+claimed until complete-day Cost Management and the Startups portal confirm it.
 
 ## Selected outcome
 
@@ -133,7 +140,11 @@ zero-or-one bounded page count; repository names and tokens are never emitted.
 
 Cost Management is queried by UTC day, ServiceName, and resource ID. The
 privacy-safe report aggregates only the seven allowlisted workloads, emits no
-resource IDs, and reports:
+resource IDs. If the primary query is rate-limited, the tracker
+uses Microsoft's Cost Details SDK to request each calendar-month slice of the
+full window in parallel, then applies the same USD-only, complete-day rules.
+That fallback is bounded to four concurrent reports, 15 minutes per report,
+four CSV blobs, 20 MB, and 50,000 rows. It reports:
 
 - whether at least five and all seven exceeded $1 on the latest complete day;
 - each workload's uninterrupted streak, the fifth-highest fixed-workload
@@ -155,7 +166,11 @@ Actual budget notifications are complete. The budget amount, dates, contact,
 locale, empty filter, and time grain were preserved.
 
 These are recorded results, not instructions to repeat an operation. In
-particular, the Speech progress marker now contains three durable September 4
-attempt reservations and must not be reset, emptied, or replayed. Any rollback,
-role expansion, marker replacement, Speech re-enablement, or other live change
-requires a new exact owner authorization and fresh precondition proof.
+particular, the earlier Speech attempt evidence and consumed authorization
+markers must not be reset, emptied, or replayed. Pete's September 13
+authorization covers one corrected, manually queued bounded proof. The runner
+proves the runtime and first Entra token before durably consuming its new exact
+reference, and refuses reuse. Daily endpoint enablement is a separate reviewed
+follow-up permitted only after success. Role expansion, marker replacement, or
+another live change still requires new exact owner authorization and fresh
+precondition proof.

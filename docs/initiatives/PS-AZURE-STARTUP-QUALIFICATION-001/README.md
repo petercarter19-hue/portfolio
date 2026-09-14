@@ -13,9 +13,17 @@ Registry Premium, simultaneous five-of-seven and seven-of-seven reporting,
 the pinned Registry check, and the existing Luna automation are live. The
 resumable Speech runner preserved three September 4 pre-call reservations, but
 the provider returned `speech_auth_failed` with the authorized narrow role.
-Speech is now fail-safe skipped by an explicitly empty pipeline endpoint; it is
-not a confirmed qualifying workload and no seven-service clock is claimed.
-Re-enablement requires a reviewed correction and exact owner authority.
+The September 9 bounded proof reproduced the authentication failure and exposed
+the isolated job's missing Azure Identity dependency. Pete authorized one
+corrected September 13 proof. The existing exact-scope Cognitive Services
+Speech User assignment and pinned keyless endpoint remain unchanged. Scheduled
+Speech therefore remains disabled by default. One reviewed manual run may
+override the endpoint with the pinned value. Before consuming Pete's new exact
+one-use reference, the runner proves the Azure Identity import and first Entra
+token. It preserves the older consumed marker and refuses reuse. Daily
+enablement requires that proof to pass and a separately reviewed follow-up. No
+seven-service clock is claimed until a complete Cost Management day exceeds
+the conservative threshold and the Startups portal agrees.
 
 The five-workload calculation uses the fifth-highest individual service streak,
 so rotating shortfalls cannot manufacture continuity. The exact Azure resize,
@@ -124,10 +132,10 @@ is excluded because Cost Management is incomplete until later.
 ## Why Foundry API usage counts differently from Cursor
 
 Calls sent to the Azure-hosted Microsoft Foundry deployment are Azure service
-usage and can contribute to the AI workload's Azure spend.  Cursor, Claude,
+usage and can contribute to the AI workload's Azure spend. An editor assistant,
 ChatGPT, or an OpenAI API account billed outside Azure does **not** become Azure
-usage merely because it is used to write PeerSlate code.  The included runner
-therefore calls the Azure endpoint directly.  Microsoft documents GPT-5.6 Luna
+usage merely because it is used to write PeerSlate code. The included runner
+therefore calls the Azure endpoint directly. Microsoft documents GPT-5.6 Luna
 version `2026-07-09` as supported by the Azure OpenAI Responses API and
 recommends Microsoft Entra authentication.
 
@@ -235,19 +243,20 @@ than one-time spikes.
    reads, and the reviewed Luna limits.
 6. The separate scheduled pipeline is registered and only its dedicated
    workload identity has the bounded read/inference/marker permissions.
-7. Speech is fail-safe skipped after live `speech_auth_failed` results. Three
-   September 4 attempts remain durably reserved and must not be reset or
-   replayed. Re-enablement needs a reviewed correction and exact owner
-   authority; no seven-service clock is claimed.
+7. Scheduled Speech remains disabled while one reviewed, manually queued proof
+   is prepared under Pete's September 13 authorization. Earlier attempt and
+   consumption evidence is preserved and never reset or replayed. The exact
+   Speech User role and keyless authentication remain unchanged. The corrected
+   runner proves its dependency and token before consuming the new proof
+   marker. Daily Speech requires proof success and a reviewed follow-up; no
+   seven-service clock is claimed before complete-day Cost Management and
+   Startups-portal confirmation.
 8. Check complete Cost Management days and the Startups portal daily.  Missing
    data, a workload at or below $1, a failed evaluation, or a budget alert
    requires diagnosis; it never silently advances the local streak.
 
-## Claude and Xcode
+## Local tooling and Xcode
 
-Full Xcode is not required.  Git works through Apple's standalone Command Line
-Tools.  Claude can implement repository work only when it is given the same
-repository, Azure CLI session, role assignment, package claim, worktree, and
-governance instructions.  It does not automatically inherit Codex tools or
-authority.  This package intentionally makes Codex the manager/writer and does
-not require Claude for operation.
+Full Xcode is not required. Git works through Apple's standalone Command Line
+Tools. This package's automation runs in Azure and does not depend on a local
+editor or coding assistant for daily operation.
