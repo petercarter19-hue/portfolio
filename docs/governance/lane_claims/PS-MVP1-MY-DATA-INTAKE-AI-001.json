@@ -4,8 +4,8 @@
   "state": "active",
   "outcome": "Private My Data intake and Luna Extra High processing on collision-free surfaces: server-persisted cross-device composer drafts with 30-day inactivity expiry and truthful conflict recovery; typed, selectable-text document, and English voice input through the accepted intake lifecycle; private inspectable and separately deletable sources; GPT 5.6 Luna reasoning effort xhigh with strict structured extraction and semantic comparison; exact-then-semantic member-scoped matching with new, equivalent, additional-detail, contradiction, and uncertain outcomes; targeted proposals and private-by-default canonical saves; manual recovery during provider failure; no AI authority over ownership, permissions, publication, deletion, or canonical writes; no public-effect claim, schema application, live provider use, feature enablement, or deployment.",
   "assignment": "implementation",
-  "writer_ref": "session:51a31f4f-9441-4249-a7df-ff1803e3c839",
-  "branch": "work/2026-09-13-my-data-intake-ai-001",
+  "writer_ref": "agent:/root/internal_corrections",
+  "branch": "work/2026-09-13-my-data-intake-ai-internal-001",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
   "production_authority": "withheld",
@@ -57,7 +57,15 @@
     "docs/governance/lane_claims/evidence/PS-MVP1-MY-DATA-INTAKE-AI-001.md"
   ],
   "review_requirement": "independent",
-  "handoff": null,
+  "handoff": {
+    "type": "owner_reassignment",
+    "from_ref": "session:51a31f4f-9441-4249-a7df-ff1803e3c839",
+    "to_ref": "agent:/root/internal_corrections",
+    "from_branch": "work/2026-09-13-my-data-intake-ai-001",
+    "to_branch": "work/2026-09-13-my-data-intake-ai-internal-001",
+    "checkpoint_sha": "d417f202d5c02f6295fb5cfb77da8a95f9cb2873",
+    "owner_authorization_ref": "session:01a09bca-2913-7cd1-8108-2595e2533cab/owner-internal-finish"
+  },
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null
