@@ -19,7 +19,9 @@
     "docs/initiatives/PS-AZURE-SPEECH-BOUNDED-PROOF-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
     "pipelines/azure-startup-qualification.yml",
     "scripts/run_speech_quality_evaluations.py",
-    "tests/test_azure_speech_qualification.py"
+    "tests/test_azure_speech_qualification.py",
+    "services/azure_speech_qualification.py",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-AZURE-SPEECH-BOUNDED-PROOF-001.md"
