@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "package": "PS-RESUME-ACCESS-2026-09-13",
+  "state": "active",
+  "outcome": "Implement truthful quiet-preview response policy for the canonical public resume and its exact public data/PDF resources while preserving the accepted homepage bytes, canonical and legacy resume routes, private app behavior, content-versioned application assets, authentication, compression, redirects, status and body behavior, and no-JavaScript core reading. Keep the sitemap valid and empty, remove its robots.txt advertisement while retaining public crawlability and private exclusions, apply noindex response guidance to the selected public HTML/PDF/JSON responses, and prevent the public resume PDF from receiving immutable year-long caching. Protected independent exact-candidate review and normal Azure CI/PR/accepted merge are required. Exclude app.py and tests/test_navigation.py until a later governed surface extension after their active claims release. Exclude docs/governance/PACKAGE_REGISTRY.json entirely. Do not change resume_data.json content, generic member publication, schema, authentication/provider behavior, deployment, production configuration, vendor submissions, DNS, or external network policy.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a09dbf-a3f2-7f70-baad-eb98729de1ac",
+  "branch": "work/2026-09-14-resume-access-2026-09-13",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "b1d20ac0cbc7609a5dc2cbf2fac60f9d2bfb00f5",
+  "owner_outcome_ref": "session:01a09dae-e20c-7d32-bcfa-e1c243b2d356/owner-direction:priority-corporate-resume-access",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-RESUME-ACCESS-2026-09-13.json",
+    "docs/governance/lane_claims/evidence/PS-RESUME-ACCESS-2026-09-13.md",
+    "docs/governance/lane_claims/receipts/PS-RESUME-ACCESS-2026-09-13.json",
+    "services/response_policy.py",
+    "tests/test_response_policy.py",
+    "tests/test_search_visibility.py",
+    "tests/test_http_edge_security.py",
+    "tests/test_public_nav_route_truth.py",
+    "tests/test_projects.py",
+    "scripts/verify_deployment_smoke.py",
+    "tests/test_operational_readiness.py"
+  ],
+  "domains": [
+    "privacy:resume-access",
+    "runtime:legacy-response-policy",
+    "testing:resume-access-response-policy"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-RESUME-ACCESS-2026-09-13.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
