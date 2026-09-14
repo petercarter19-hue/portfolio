@@ -46,7 +46,10 @@
     "peerslate_api.py",
     "tests/test_database_service.py",
     "tests/test_peerslate_api.py",
-    "SQL FIles/Migrations/proposed/PS-RESUME-DRAFT-001_resume_drafts.sql"
+    "SQL FIles/Migrations/proposed/PS-RESUME-DRAFT-001_resume_drafts.sql",
+    "services/resume_intake_service.py",
+    "services/resume_intake_repository.py",
+    "tests/test_resume_intake_sql.py"
   ],
   "domains": [
     "privacy:resume-media",
