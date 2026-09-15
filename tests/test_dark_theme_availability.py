@@ -106,7 +106,9 @@ class DarkThemeAvailabilityTests(unittest.TestCase):
 
         homepage = self.html('/')
         self.assertEqual(homepage.count('id="theme-toggle"'), 1)
-        self.assertEqual(homepage.count('data-theme-toggle-proxy'), 1)
+        # The minimal homepage owns no local controls; the shared header remains
+        # the single theme-switch home when the dormant override is enabled.
+        self.assertEqual(homepage.count('data-theme-toggle-proxy'), 0)
         self.assertEqual(homepage.count('js/theme-toggle.js'), 1)
         self.assertEqual(homepage.count("localStorage.getItem('ps-theme')"), 1)
 

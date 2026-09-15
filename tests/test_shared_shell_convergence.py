@@ -262,15 +262,35 @@ class SharedShellConvergenceTests(unittest.TestCase):
                 self.assertEqual(len(re.findall(r"<h1(?:\s|>)", html)), 1)
                 self.assertIn(identity_tag, html)
 
-    def test_homepage_destination_copy_is_truthful(self):
+    def test_homepage_minimal_entry_copy_is_truthful(self):
         _, html = self.render("/")
-        self.assertIn("Sign in to open Interview Studio", html)
-        self.assertIn("Sign in to practice in Interview Studio", html)
-        self.assertNotIn("public Interview Studio", html)
-        self.assertIn("My Story", html)
-        self.assertIn("The person behind the work", html)
-        self.assertNotIn("Pete's Project Work", html)
-        self.assertNotIn("Project Update", html)
+        main = re.search(
+            r'<main\b[^>]*\bid="main-content"[^>]*>(.*?)</main>',
+            html,
+            flags=re.DOTALL,
+        ).group(1)
+        self.assertIn("Your Work. Your Story. Your Future.", main)
+        self.assertIn(
+            (
+                "A considered beginning. PeerSlate is taking shape. "
+                "Access is by invitation as we prepare for what’s next."
+            ),
+            main,
+        )
+        self.assertRegex(
+            main,
+            r'src="/static/images/cinematic/hero-aurora\.jpg(?:\?[^\"]+)?"',
+        )
+        self.assertNotIn("href=", main)
+        for retired_copy in (
+            "Sign in to open Interview Studio",
+            "Sign in to practice in Interview Studio",
+            "My Story",
+            "The person behind the work",
+            "Pete's Project Work",
+            "Project Update",
+        ):
+            self.assertNotIn(retired_copy, main)
 
     def test_static_accessibility_contracts_are_explicit(self):
         for selector in (

@@ -1,36 +1,41 @@
 {% extends "base.html" %}
 
-{#  HOMEPAGE — early MVP1 interim home (PS-MVP1-SHELL-ALIGNMENT-001)
+{#  HOMEPAGE — MVP1 minimal entry (PS-MVP1-MINIMAL-HOMEPAGE-001)
     ============================================================
-    Resume-first product explanation, optional labeled public résumé
-    example, current Interview Studio walkthrough, and a truthful start
-    action. Capture, Journal, Projects, Workshop, and Slate Board are not
-    advertised. The previous five-scene marketing homepage, including the
-    My Story biography dump, is not the current public pitch. The older
-    cinematic page remains at /experience. #}
+    The accepted shared shell frames one expressive PeerSlate visual and
+    one short headline. Product explanation and entry actions belong to the
+    shell or their destination pages, not to this deliberately quiet body. #}
 
 {% block title %}PeerSlate — Your Work. Your Story. Your Future.{% endblock %}
 
-{% block meta_description %}Keep a private career record, publish a résumé when you choose, and let visitors see and ask about only what you permit.{% endblock %}
+{% block meta_description %}PeerSlate — Your Work. Your Story. Your Future.{% endblock %}
 
-{% block body_class %}peerslate-home-page home-v3-page{% endblock %}
+{% block body_class %}peerslate-home-page home-v3-page homepage-minimal-page{% endblock %}
 
 {% block extra_head %}
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/homepage-scenes.css') }}"
+    href="{{ url_for('static', filename='css/homepage-minimal.css') }}"
 >
 {% endblock %}
 
 {% block content %}
-<div class="home-v3">
-    {% include "partials/homepage/_voice_hero.html" %}
-    {% include "partials/homepage/_living_resume_scene.html" %}
-    {% include "partials/homepage/_interview_demo_scene.html" %}
-    {% include "partials/homepage/_invite_band.html" %}
-</div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/homepage-interview-demo.js') }}" defer></script>
+<section class="homepage-minimal" aria-labelledby="homepage-minimal-title">
+    <div class="site-container homepage-minimal__inner">
+        <div class="homepage-minimal__visual" aria-hidden="true">
+            <img
+                src="{{ url_for('static', filename='images/cinematic/hero-aurora.jpg') }}"
+                alt=""
+                width="3840"
+                height="2160"
+                decoding="async"
+                fetchpriority="high"
+            >
+        </div>
+        <h1 id="homepage-minimal-title">Your Work. Your Story. Your Future.</h1>
+        <p class="homepage-minimal__status">
+            A considered beginning. PeerSlate is taking shape. Access is by invitation as we prepare for what’s next.
+        </p>
+    </div>
+</section>
 {% endblock %}

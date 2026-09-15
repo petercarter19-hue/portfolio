@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-MINIMAL-HOMEPAGE-001",
+  "candidate_sha": "33ecd9bbe148d589538743be8458d36732b26b51",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/independent_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-15T22:12:13Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MVP1-MINIMAL-HOMEPAGE-001.md"
+}

@@ -1,500 +1,138 @@
-"""PS-MVP1-SHELL-ALIGNMENT-001 — interim homepage tests.
+"""PS-MVP1-MINIMAL-HOMEPAGE-001 — minimal public homepage contract."""
 
-Pins the Resume-first public home: shared header survives, start actions
-resolve through real routes, the labeled public example uses approved
-résumé source, Capture/Journal/Projects/Workshop/Slate Board are not
-advertised, the Interview Studio walkthrough remains, and the old cinematic
-homepage remains reachable at /experience.
-"""
-
-import os
 import unittest
 from pathlib import Path
+import re
 
 from app import app
 
 
-class HomepageSceneTests(unittest.TestCase):
+class HomepageMinimalTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        app.config['TESTING'] = True
+        app.config["TESTING"] = True
         cls.client = app.test_client()
-        cls.html = cls.client.get('/').get_data(as_text=True)
+        cls.response = cls.client.get("/")
+        cls.html = cls.response.get_data(as_text=True)
+        cls.main = re.search(
+            r'<main\b[^>]*\bid="main-content"[^>]*>(.*?)</main>',
+            cls.html,
+            flags=re.DOTALL,
+        ).group(1)
+        cls.css = Path("static/css/homepage-minimal.css").read_text(
+            encoding="utf-8"
+        )
 
-    # ---- shell ----
-
-    def test_homepage_renders(self):
-        self.assertEqual(self.client.get('/').status_code, 200)
-
-    def test_single_h1(self):
-        self.assertEqual(self.html.count('<h1'), 1)
-
-    def test_shared_global_header_has_public_destinations_and_menu(self):
-        for expected in ('class="global-header"', "Pete&#39;s Slate",
-                         'Interview Studio', 'Why PeerSlate',
-                         'data-platform-menu-toggle', 'Sign In'):
-            self.assertIn(expected, self.html)
-        # Flag-off destinations are not advertised by any shell representation.
-        self.assertNotIn('>Community</a>', self.html)
-        self.assertNotIn('Ask Pete AI', self.html)
-
-    def test_no_mockup_only_navigation(self):
-        for banned in ('How It Works', 'Explore a Slate', 'For Teams',
-                       'Pricing', 'Create My Slate'):
-            self.assertNotIn(banned, self.html)
-
-    def test_old_homepage_still_reachable_for_rollback(self):
-        response = self.client.get('/experience')
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('cinematic-home-page',
-                      response.get_data(as_text=True))
-
-    # ---- scene content ----
-
-    def test_scene_headlines_present(self):
-        self.assertIn('Your r&eacute;sum&eacute;.', self.html)
-        self.assertIn('Grounded in work you can stand behind.', self.html)
-        self.assertIn('Public example', self.html)
-        self.assertIn('Practice how your', self.html)
-        self.assertIn('Private first. Publish when you choose.', self.html)
-
-    def test_capture_hero_and_story_pitch_are_absent(self):
-        for banned in (
-            'Say what happened.',
-            'What happened today',
-            'Talk about what happened',
-            'Create a Capture',
-            'hv-hero__stage',
-            'class="hv-mic"',
-            'class="hv-week"',
-            'class="hv-story"',
-            'Go beyond',
-            'Enter once. Link everywhere. Publish deliberately.',
-            'Explore a living Slate',
+    def test_homepage_renders_in_the_shared_shell(self):
+        self.assertEqual(self.response.status_code, 200)
+        for expected in (
+            'class="global-header"',
+            'href="#main-content"',
+            'id="main-content"',
+            'class="footer"',
+            'Sign In',
         ):
-            self.assertNotIn(banned, self.html)
+            self.assertIn(expected, self.html)
 
-    def test_four_act_story_dump_is_not_the_product_pitch(self):
-        for label in ('This is me now', 'How I became this person',
-                      'The life around the work', 'Still becoming'):
-            self.assertNotIn(label, self.html)
-
-    def test_live_polaroid_captions_absent_from_home(self):
-        for caption in ('100 miles. 10 days. One goal.',
-                        'Places that changed me.',
-                        'Always get outside.'):
-            self.assertNotIn(caption, self.html)
-
-    def test_banned_mockup_captions_absent(self):
-        for banned in ('First marathon — 2018', 'First marathon - 2018',
-                       'Bali — reset &amp; refocus', 'Bali — reset & refocus',
-                       'Hawaii — perspective'):
-            self.assertNotIn(banned, self.html)
-
-    def test_public_example_is_explicitly_labeled(self):
-        self.assertIn('Pete Carter&rsquo;s public r&eacute;sum&eacute;',
-                      self.html)
-        self.assertIn('This is one member&rsquo;s published page.', self.html)
-        self.assertIn('Public example. Only approved information is shown.',
-                      self.html)
-        self.assertIn('See a public résumé example', self.html)
-        self.assertIn('Open the public example', self.html)
-
-    def test_no_browser_local_board_notes(self):
-        lowered = self.html.lower()
-        for banned in ('grocery', 'second home', 'guitar'):
-            self.assertNotIn(banned, lowered)
-
-    def test_resume_metrics_come_from_live_source(self):
-        for value in ('30+', '9 / $19.2M', '$36M+', '70%', '35%'):
-            self.assertIn(value, self.html)
-        self.assertIn('The Career Constellation', self.html)
-        self.assertIn('Northrop Grumman', self.html)
-
-    def test_no_fabricated_trusted_by_logos(self):
-        for banned in ('Google', 'Microsoft', 'NVIDIA', 'Deloitte',
-                       'amazon'):
-            self.assertNotIn(banned, self.html)
-
-    # ---- links ----
-
-    def test_ctas_resolve_to_real_routes(self):
-        for retired in ('/feed-living-stream', '/the-slate/my-slate',
-                        '/the-slate/daily'):
-            self.assertNotIn(retired, self.html)
-        self.assertIn('href="/auth/sign-in">', self.html)
-        self.assertIn('Sign in to get started', self.html)
-        self.assertIn('href="/petec/resume">', self.html)
-        self.assertIn('href="/interview-studio"', self.html)
-        for href in ('/petec/resume', '/petec/skills', '/petec/my-story',
-                     '/interview-studio', '/auth/sign-in'):
-            target = href.split('#')[0].split('?')[0]
-            status = self.client.get(target).status_code
-            self.assertIn(status, (200, 302, 503), target)
-        for held in ('/petec/slate-board', '/petec/projects', '/app/workshop',
-                     '/app/capture'):
-            self.assertNotIn('href="%s"' % held, self.html)
-        self.assertIn(self.client.get('/auth/sign-in').status_code, (302, 503))
-
-    def test_homepage_does_not_advertise_deferred_launchers(self):
-        main = self.html.split('<main', 1)[1]
-        for banned in ('Workshop', 'Slate Board', 'Capture a Moment',
-                       'Private Journal', 'Projects'):
-            self.assertNotIn(banned, main)
-
-    def test_signed_in_home_continues_to_my_peerslate(self):
-        originals = {
-            key: app.config.get(key)
-            for key in ('PEERSLATE_ALLOW_DEV_IDENTITY', 'PEERSLATE_DEV_USER_KEY')
-        }
-        app.config['PEERSLATE_ALLOW_DEV_IDENTITY'] = True
-        app.config['PEERSLATE_DEV_USER_KEY'] = 'homepage-interim-member'
-        try:
-            html = app.test_client().get('/', base_url='http://localhost').get_data(
-                as_text=True
-            )
-        finally:
-            for key, value in originals.items():
-                if value is None:
-                    app.config.pop(key, None)
-                else:
-                    app.config[key] = value
-        self.assertIn('Continue to My PeerSlate', html)
-        self.assertIn('href="/app">', html)
-        self.assertNotIn('Sign in to get started', html)
-
-    def test_opportunity_slate_is_listed_when_available(self):
-        originals = {
-            key: app.config.get(key)
-            for key in (
-                'PEERSLATE_OPPORTUNITY_SLATE_ENABLED',
-                'PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED',
-            )
-        }
-        endpoints = {rule.endpoint for rule in app.url_map.iter_rules()}
-        v2_registered = 'opportunity_slate_v2.room' in endpoints
-        app.config['PEERSLATE_OPPORTUNITY_SLATE_ENABLED'] = not v2_registered
-        app.config['PEERSLATE_OPPORTUNITY_SLATE_V2_ENABLED'] = v2_registered
-        try:
-            html = app.test_client().get('/').get_data(as_text=True)
-        finally:
-            for key, value in originals.items():
-                if value is None:
-                    app.config.pop(key, None)
-                else:
-                    app.config[key] = value
-        self.assertIn('Opportunity Slate', html)
-        self.assertIn('href="/opportunity-slate"', html)
-
-    # ---- semantics ----
-
-    def test_interim_hero_uses_copy_only_layout(self):
-        self.assertIn('hv-hero--interim', self.html)
-        self.assertEqual(self.html.count('<h1'), 1)
-
-
-class HomepageInterviewDemoTests(unittest.TestCase):
-    """PS-HOME-INTERVIEW-DEMO-001 — illustrative homepage walkthrough.
-
-    Pins placement, the four-state server-rendered contract, the
-    no-input/no-request/no-storage boundary, the two owner-required copy
-    corrections, and the accessibility contract that can be verified from
-    server-rendered HTML and the static JS/CSS source. See
-    docs/initiatives/PS-HOME-INTERVIEW-DEMO-001/ for the full architecture.
-    """
-
-    JS_PATH = os.path.join(os.path.dirname(__file__), '..', 'static', 'js',
-                            'homepage-interview-demo.js')
-    CSS_PATH = os.path.join(os.path.dirname(__file__), '..', 'static', 'css',
-                             'homepage-scenes.css')
-
-    @classmethod
-    def setUpClass(cls):
-        app.config['TESTING'] = True
-        cls.client = app.test_client()
-        cls.html = cls.client.get('/').get_data(as_text=True)
-        start = cls.html.index('data-home-interview-demo')
-        end = cls.html.index('class="hv-invite"', start)
-        cls.scene = cls.html[start:end]
-        with open(cls.JS_PATH, encoding='utf-8') as f:
-            cls.js = f.read()
-        with open(cls.CSS_PATH, encoding='utf-8') as f:
-            cls.css = f.read()
-
-    # ---- placement and structure ----
-
-    def test_scene_present_between_resume_and_invite(self):
-        resume_index = self.html.index('class="hv-resume"')
-        scene_index = self.html.index('data-home-interview-demo')
-        invite_index = self.html.index('class="hv-invite"')
-        self.assertLess(resume_index, scene_index)
-        self.assertLess(scene_index, invite_index)
-
-    def test_four_states_server_rendered(self):
-        self.assertIn('data-int-state="1"', self.scene)
-        for n in (2, 3, 4):
-            marker = 'data-int-state="%d"' % n
-            self.assertIn(marker, self.scene)
-            idx = self.scene.index(marker)
-            # the section tag carries `hidden` before its closing '>'
-            tag_end = self.scene.index('>', idx)
-            self.assertIn('hidden', self.scene[idx:tag_end])
-        state1_idx = self.scene.index('data-int-state="1"')
-        state1_tag_end = self.scene.index('>', state1_idx)
-        self.assertNotIn('hidden', self.scene[state1_idx:state1_tag_end])
-
-    def test_existing_scenes_untouched(self):
-        for marker in ('class="hv-hero hv-hero--interim"', 'class="hv-resume"',
-                       'class="hv-invite"'):
-            self.assertIn(marker, self.html)
-        self.assertNotIn('class="hv-story"', self.html)
-
-    # ---- truth boundary ----
-
-    def test_no_answer_input_in_scene(self):
-        for banned in ('<form', '<textarea', '<input'):
-            self.assertNotIn(banned, self.scene)
-
-    def test_no_media_apis_in_scene_script(self):
-        for banned in ('getUserMedia', 'mediaDevices', 'MediaRecorder',
-                       'SpeechRecognition', 'AudioContext'):
-            self.assertNotIn(banned, self.js)
-
-    def test_no_network_apis_in_scene_script(self):
-        for banned in ('fetch(', 'XMLHttpRequest', 'sendBeacon',
-                       'WebSocket', 'EventSource'):
-            self.assertNotIn(banned, self.js)
-
-    def test_no_storage_apis_in_scene_script(self):
-        for banned in ('localStorage', 'sessionStorage', 'indexedDB',
-                       'document.cookie', 'caches.'):
-            self.assertNotIn(banned, self.js)
-
-    def test_truth_bar_server_rendered(self):
-        for label in ('Fictional example', 'No visitor input',
-                      'No AI request', 'No answer or practice data stored'):
-            self.assertIn(label, self.scene)
-
-    def test_no_pete_attribution_in_walkthrough(self):
-        self.assertEqual(self.scene.count('Pete'), 1)
-        self.assertIn('not Pete&rsquo;s and not the visitor&rsquo;s',
-                      self.scene)
-
-    def test_final_cta_resolves_to_interview_studio(self):
-        self.assertIn('Sign in to practice in Interview Studio',
-                      self.scene)
-        self.assertIn('Sign in to open Interview Studio', self.scene)
-        self.assertGreaterEqual(self.scene.count('href="/interview-studio"'), 2)
-        self.assertEqual(self.client.get('/interview-studio').status_code, 200)
-
-    # ---- copy corrections and banned language ----
-
-    def test_no_internal_design_rationale_published_to_visitors(self):
-        """The homepage must not publish our own design notes as visitor copy.
-
-        This scene used to carry a sequence note explaining, to us, where the
-        scene sits in the page order ("Placed after Living Résumé ... so the
-        homepage moves from capture, to presentation, to practice, to what
-        comes next"), and an eyebrow that named the internal artefact
-        ("Homepage scene · Interview Studio") rather than the product. Both
-        were removed on 2026-08-03 (site visual parity audit, finding 8).
-        The earlier banned wording of that same note is still checked, so the
-        original correction's intent survives its deletion.
-        """
-        self.assertNotIn('capture, to proof, to practice', self.html)
-        self.assertNotIn('capture, to presentation, to practice', self.html)
-        self.assertNotIn('Placed after Living', self.html)
-        self.assertNotIn('hv-int-sequence-note', self.html)
-        self.assertNotIn('Homepage scene', self.html)
-        # The eyebrow still names the product, exactly as the sibling scene
-        # ("Public example") does.
+    def test_document_identity_and_quiet_preview_policy_are_preserved(self):
         self.assertIn(
-            '<p class="hv-eyebrow"><span aria-hidden="true">&#10022;</span>'
-            ' Interview Studio</p>',
-            self.scene)
-
-    def test_retry_does_not_invent_outcomes(self):
-        self.assertNotIn('repeatable review process', self.html)
+            "<title>PeerSlate — Your Work. Your Story. Your Future.</title>",
+            self.html,
+        )
+        body_tag = re.search(r"<body\b[^>]*>", self.html).group(0)
+        self.assertIn("home-v3-page", body_tag)
+        self.assertIn("homepage-minimal-page", body_tag)
         self.assertIn(
-            'That alignment kept the transition on schedule and avoided '
-            'a delivery slip.', self.scene)
+            '<meta name="robots" content="noindex, nofollow, noarchive, noimageindex">',
+            self.html,
+        )
 
-    def test_no_private_history_language(self):
-        for banned in ('Use my history', 'your history', 'signed in',
-                       'saved to your account'):
-            self.assertNotIn(banned, self.scene)
+    def test_body_has_one_headline_and_one_expressive_visual(self):
+        self.assertEqual(len(re.findall(r"<h1\b", self.main)), 1)
+        self.assertEqual(
+            re.search(r"<h1\b[^>]*>(.*?)</h1>", self.main, re.DOTALL)
+            .group(1)
+            .strip(),
+            "Your Work. Your Story. Your Future.",
+        )
+        images = re.findall(r"<img\b[^>]*>", self.main, re.DOTALL)
+        self.assertEqual(len(images), 1)
+        self.assertRegex(
+            images[0],
+            r'src="/static/images/cinematic/hero-aurora\.jpg(?:\?[^\"]+)?"',
+        )
 
-    # ---- interaction and accessibility contract ----
+    def test_body_has_the_owner_requested_progress_note(self):
+        self.assertIn(
+            (
+                "A considered beginning. PeerSlate is taking shape. "
+                "Access is by invitation as we prepare for what’s next."
+            ),
+            self.main,
+        )
+        self.assertEqual(
+            len(re.findall(r'class="homepage-minimal__status"', self.main)),
+            1,
+        )
 
-    def test_buttons_have_explicit_type(self):
-        import re
-        buttons = re.findall(r'<button\b[^>]*>', self.scene)
-        self.assertGreater(len(buttons), 0)
-        for button in buttons:
-            self.assertIn('type="button"', button)
+    def test_visual_is_decorative_and_layout_stable(self):
+        image = re.search(r"<img\b[^>]*>", self.main, re.DOTALL).group(0)
+        for attribute in (
+            'alt=""',
+            'width="3840"',
+            'height="2160"',
+            'decoding="async"',
+            'fetchpriority="high"',
+        ):
+            self.assertIn(attribute, image)
+        self.assertIn(
+            'class="homepage-minimal__visual" aria-hidden="true"',
+            self.main,
+        )
+        self.assertIn("background: var(--ps-primary-soft", self.css)
 
-    def test_step_rail_semantics(self):
-        self.assertEqual(self.scene.count('data-int-step="'), 4)
-        self.assertEqual(self.scene.count('aria-current="step"'), 1)
-        idx = self.scene.index('aria-current="step"')
-        self.assertIn('data-int-step="1"', self.scene[max(0, idx - 200):idx])
+    def test_homepage_loads_only_its_minimal_page_asset(self):
+        self.assertIn('/static/css/homepage-minimal.css', self.html)
+        self.assertNotIn('/static/css/homepage-scenes.css', self.html)
+        self.assertNotIn("/static/js/homepage-interview-demo.js", self.html)
 
-    def test_live_region_present_and_empty(self):
-        self.assertEqual(self.scene.count('data-int-live'), 1)
-        idx = self.scene.index('role="status"')
-        tag_end = self.scene.index('</p>', idx)
-        self.assertNotIn('Step', self.scene[idx:tag_end])
+    def test_body_has_no_entry_action_or_form(self):
+        for tag_name in ("a", "button", "form", "input", "textarea", "select"):
+            self.assertEqual(
+                len(re.findall(rf"<{tag_name}\b", self.main)),
+                0,
+                f"homepage body unexpectedly contains <{tag_name}>",
+            )
 
-    def test_state_headings_are_focus_targets(self):
-        # each of the four modal steps leads with an <h3 class="hv-int-state__title"
-        # tabindex="-1"> so a keyboard/step transition can move focus to it.
-        self.assertEqual(self.scene.count('hv-int-state__title'), 4)
-        self.assertEqual(self.scene.count('tabindex="-1"'), 4)
+    def test_body_does_not_advertise_superseded_product_scenes(self):
+        for banned in (
+            "Say what happened",
+            "Keep a private career record",
+            "Public example",
+            "Capture",
+            "Journal",
+            "Projects",
+            "Workshop",
+            "Interview Studio",
+            "Create My Slate",
+            "Get Started",
+        ):
+            self.assertNotIn(banned, self.main)
 
-    def test_walkthrough_uses_a_modal_dialog(self):
-        # The pop-out walkthrough is a labelled modal dialog that ships
-        # `hidden` (closed) in server HTML — JS opens it.
-        self.assertIn('data-int-overlay', self.scene)
-        ov_idx = self.scene.index('data-int-overlay')
-        ov_tag_end = self.scene.index('>', ov_idx)
-        self.assertIn('hidden', self.scene[ov_idx:ov_tag_end])
-        self.assertIn('role="dialog"', self.scene)
-        self.assertIn('aria-modal="true"', self.scene)
-        self.assertIn('aria-labelledby="hv-int-modal-title"', self.scene)
-
-    def test_open_trigger_is_a_js_gated_button(self):
-        idx = self.scene.index('data-int-open')
-        tag = self.scene[self.scene.rfind('<', 0, idx):self.scene.index('>', idx) + 1]
-        self.assertTrue(tag.startswith('<button'), tag)
-        self.assertIn('type="button"', tag)
-        self.assertIn('hv-int-controls', tag)
-
-    def test_poster_carries_question_and_truth_without_js(self):
-        # The always-visible poster (before the modal) holds the question and
-        # the truth bar, so a no-JS visitor still sees the essentials.
-        poster = self.scene[self.scene.index('hv-int-poster'):
-                            self.scene.index('data-int-overlay')]
-        self.assertIn('Tell me about a time you led a team through a '
-                      'major change', poster)
-        for label in ('Fictional example', 'No visitor input',
-                      'No AI request', 'No answer or practice data stored'):
-            self.assertIn(label, poster)
-
-    def test_written_practice_replaces_voice_first_switch(self):
-        self.assertIn('Write your answer in your own words', self.scene)
-        self.assertIn('Dictation is optional in the real Studio', self.scene)
-        for banned in ('Voice first', 'Voice is front and center',
-                       'Illustrative voice transcript', 'data-int-method'):
-            self.assertNotIn(banned, self.scene)
-
-    def test_processing_status_matches_released_studio(self):
-        for label in ('Answer received', 'Checking the question rubric',
-                      'Preparing bottom-line feedback',
-                      'The submitted text is attached to this coaching request.',
-                      'Reviewing relevance, structure, specificity, and result.',
-                      'Feedback appears only when the complete review is ready.'):
-            self.assertIn(label, self.scene)
-        self.assertEqual(self.scene.count('hv-int-status-row'), 3)
-        self.assertEqual(self.scene.count('hv-int-status-row is-done'), 1)
-        self.assertEqual(self.scene.count('hv-int-status-row is-current'), 1)
-
-    def test_bottom_line_score_is_truthfully_labelled(self):
-        self.assertIn('Bottom line first.', self.scene)
-        self.assertIn('aria-label="Overall interview score: 72 out of 100"',
-                      self.scene)
-        self.assertIn('Practice signal &mdash; not an employer prediction',
-                      self.scene)
-
-    def test_modal_theme_proxy_is_dormant_while_dark_theme_is_unavailable(self):
-        self.assertNotIn('data-theme-toggle-proxy', self.scene)
-
-        source = Path(
-            'templates/partials/homepage/_interview_demo_scene.html'
-        ).read_text(encoding='utf-8')
-        self.assertEqual(source.count('data-theme-toggle-proxy'), 1)
-        self.assertIn('role="switch"', source)
-        self.assertIn('hv-int-theme-label">Theme</span>', source)
-        self.assertIn('theme-toggle__track', source)
-        self.assertIn('theme-toggle__thumb', source)
-
-    def test_modal_truth_is_accessible(self):
-        start = self.scene.index('class="hv-int-modal__truth"')
-        end = self.scene.index('>', start)
-        self.assertNotIn('aria-hidden', self.scene[start:end])
-
-    def test_controller_restores_only_inertness_it_added(self):
-        self.assertIn("element.setAttribute('inert', '')", self.js)
-        self.assertIn("element.removeAttribute('inert')", self.js)
-        self.assertIn('inertedElements.push(element)', self.js)
-
-    def test_cinematic_dark_tokens_are_demo_scoped(self):
-        self.assertIn('body[data-theme="dark"] .hv-int-portal', self.css)
-        for value in ('#03101d', '#071a2b', '#091827', '#0c2235',
-                      '#f4efe6', '#f4bd58', '#f1bd5c'):
-            self.assertIn(value, self.css)
-
-    def test_nojs_fallback_present(self):
-        # Without JS the modal can't open, so the poster keeps a normal anchor
-        # to the real Studio (class hv-int-nojs, revealed when JS is absent).
-        idx = self.scene.index('hv-int-nojs')
-        tag = self.scene[self.scene.rfind('<', 0, idx):self.scene.index('>', idx) + 1]
-        self.assertTrue(tag.startswith('<a'), tag)
-        self.assertIn('href="/interview-studio"', tag)
-        self.assertIn('Sign in to open Interview Studio', self.scene)
-
-    def test_reduced_motion_css_covers_scene(self):
-        self.assertIn('@media (prefers-reduced-motion: reduce)', self.css)
-        rm_idx = self.css.index('@media (prefers-reduced-motion: reduce)')
-        rm_block_end = self.css.index('}\n}', rm_idx)
-        self.assertIn('.home-v3 *', self.css[rm_idx:rm_block_end])
-        # the scene relies on that shared blanket rule; confirm it appears
-        # before the scene's own CSS section in the file.
-        scene_idx = self.css.index('PS-HOME-INTERVIEW-DEMO-001')
-        self.assertLess(rm_idx, scene_idx)
-
-    def test_no_fixed_viewport_heights_in_scene_css(self):
-        # The design source squeezed the whole scene into one viewport with
-        # fixed `height: calc(100vh - …)` + `overflow: hidden`. That anti-
-        # pattern stays banned. The modal, however, legitimately caps its OWN
-        # height to the viewport with `max-height` and scrolls internally —
-        # standard dialog behavior — so max-height viewport units are allowed.
-        import re
-        scene_css = self.css[self.css.index('PS-HOME-INTERVIEW-DEMO-001'):]
-        # Strip the modal's legitimate `max-height:` viewport caps, then any
-        # remaining viewport-height unit is a fixed lock (the squeeze).
-        guard = re.sub(r'max-height:[^;]*;', '', scene_css)
-        for banned in ('100vh', '100svh'):
-            self.assertNotIn(banned, guard)
-        # the scene container itself must not lock to the viewport or clip
-        scene_block = scene_css[scene_css.index('.home-v3 .hv-interview {'):]
-        scene_block = scene_block[:scene_block.index('}')]
-        self.assertNotIn('100vh', scene_block)
-        self.assertNotIn('overflow: hidden', scene_block)
-        # the modal caps with max-height (not a fixed height)
-        modal_block = scene_css[scene_css.index('.home-v3 .hv-int-modal {'):]
-        modal_block = modal_block[:modal_block.index('}')]
-        self.assertIn('max-height', modal_block)
-
-    def test_display_overrides_do_not_fight_the_hidden_attribute(self):
-        # Regression test: `.home-v3 .hv-int-explain { display: flex; ... }`
-        # is more specific than the UA `[hidden] { display: none }` rule, so
-        # the server-rendered `hidden` attribute on the inactive method
-        # panel was silently ignored until a matching `[hidden]` override
-        # was added. Any scene selector that both (a) sets `display:` and
-        # (b) targets an element the template ships with a static `hidden`
-        # attribute must have a same-selector `[hidden] { display: none }`
-        # companion rule. Several such elements exist: the method-explanation
-        # panel (display:flex), the modal overlay (display:grid), and the
-        # Back/Next/Finish controls (shared .hv-btn display:inline-flex) — all
-        # of which JS toggles via the `hidden` attribute.
-        for selector in ('.hv-int-overlay[hidden]', '.hv-int-back[hidden]',
-                         '.hv-int-next[hidden]',
-                         '.hv-int-finish[hidden]'):
-            self.assertIn(selector, self.css)
-            idx = self.css.index(selector)
-            line_end = self.css.index('}', idx)
-            self.assertIn('display: none', self.css[idx:line_end])
+    def test_layout_is_natural_flow_without_motion(self):
+        normalized_css = " ".join(self.css.lower().split())
+        self.assertNotIn("position: fixed", normalized_css)
+        self.assertNotIn("position: absolute", normalized_css)
+        self.assertNotIn("height: 100vh", normalized_css)
+        self.assertNotIn(
+            "overflow: hidden",
+            normalized_css.split(".homepage-minimal__visual", 1)[0],
+        )
+        self.assertNotIn("animation:", normalized_css)
+        self.assertNotIn("transition:", normalized_css)
+        for token in ("--ps-canvas", "--ps-ink", "--ps-primary-soft"):
+            self.assertIn(token, self.css)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
