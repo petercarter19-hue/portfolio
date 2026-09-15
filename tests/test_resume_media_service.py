@@ -9,6 +9,7 @@ real malware scanning, live identity, or deployment behavior.
 """
 
 import io
+import json
 import threading
 import unittest
 from dataclasses import replace
@@ -56,6 +57,10 @@ PHOTO_BANNER_CROP = {"x": 0.1, "y": 0.15, "width": 0.75, "height": 0.7}
 PHOTO_EXPERIENCE_CROP = {"x": 0.3, "y": 0.1, "width": 0.4286, "height": 0.8}
 ART_BANNER_CROP = {"x": 0.05, "y": 0.2, "width": 0.84375, "height": 0.5}
 ART_EXPERIENCE_CROP = {"x": 0.2, "y": 0.2, "width": 0.50625, "height": 0.6}
+
+# SQL rowversion values above JavaScript's exact-integer range must cross the
+# browser boundary as canonical decimal text.
+LARGE_PHOTO_VERSION = 289_360_691_352_306_692
 
 
 class FakeCaptureError(RuntimeError):
@@ -207,6 +212,19 @@ class ResumeMediaServiceTest(unittest.TestCase):
             source["expected_digest"] = record.digest
         return source
 
+    def seed_large_photo(self, version=LARGE_PHOTO_VERSION):
+        return self.repository.seed_owner_photo(
+            owner_id=OWNER_A,
+            source_id="source-large-version",
+            state="ready",
+            digest=sha256_hex(b"synthetic-large-version-photo"),
+            width=1400,
+            height=500,
+            derivative_ref="photo/v1/source-large-version-preview.jpg",
+            version=version,
+            version_token="%016x" % version,
+        )
+
     def art_asset(self, asset_id="art-1", *, label="Quiet Forest", category="Nature",
                   tags=("forest",), width=1600, height=900, version=1,
                   lifecycle="active", provenance=None, rights=None):
@@ -304,13 +322,15 @@ class PhotoReadinessTests(ResumeMediaServiceTest):
         self.assertEqual(refreshed["state"], "ready")
         self.assertTrue(refreshed["retryable"])
         stored = self.repository.get_owner_photo(OWNER_A, ingest["source_id"])
-        self.assertEqual(stored.version, 1)
+        # Placement versions retain the exact authoritative Photo Capture
+        # rowversion; they are not a process-local refresh counter.
+        self.assertEqual(stored.version, 2)
         again = self.service.refresh_private_photo(
             owner_id=OWNER_A, source_id=ingest["source_id"]
         )
         self.assertEqual(again["state"], "ready")
         self.assertEqual(
-            self.repository.get_owner_photo(OWNER_A, ingest["source_id"]).version, 1
+            self.repository.get_owner_photo(OWNER_A, ingest["source_id"]).version, 3
         )
         self.assertEqual(self.capture.confirm_attempts, 0)
 
@@ -578,6 +598,12 @@ class CropAndPreviewTests(ResumeMediaServiceTest):
             {
                 "slot",
                 "source_kind",
+                # PS-MVP1-MEDIA-INTEGRATION-001: the owner may name the exact
+                # reviewed source again when a slot is adjusted, so the stable
+                # asset identity is part of the safe preview. The raw digest,
+                # storage key and provider locator stay private (asserted below).
+                "asset_id",
+                "asset_version",
                 "decorative",
                 "biographical_evidence",
                 "orientation",
@@ -607,6 +633,86 @@ class CropAndPreviewTests(ResumeMediaServiceTest):
             "exif",
         ):
             self.assertNotIn(forbidden, serialized)
+
+    def test_large_owner_photo_version_is_canonical_text_in_saved_and_review(self):
+        record = self.seed_large_photo()
+        preview = self.stage_photo(SLOT_STORY_BANNER, PHOTO_BANNER_CROP, record=record)
+        self.assertEqual(preview["asset_version"], str(LARGE_PHOTO_VERSION))
+
+        self.service.add_media_choices(
+            owner_id=OWNER_A,
+            request_uuid="add-large-version",
+            expected_draft_version=0,
+            choices=[
+                self.photo_choice(record, SLOT_STORY_BANNER, PHOTO_BANNER_CROP)
+            ],
+        )
+        # Persistence keeps the exact Python/SQL integer; only browser-facing
+        # projections serialize it as canonical decimal text.
+        stored_placement = self.repository.get_draft(OWNER_A).placement_for(
+            SLOT_STORY_BANNER
+        )
+        self.assertIsNotNone(stored_placement)
+        self.assertEqual(stored_placement.asset_version, LARGE_PHOTO_VERSION)
+
+        saved = self.service.draft_media_view(owner_id=OWNER_A)
+        self.assertEqual(
+            saved["slots"][SLOT_STORY_BANNER]["asset_version"],
+            str(LARGE_PHOTO_VERSION),
+        )
+        review = self.service.review_draft(
+            owner_id=OWNER_A,
+            expected_draft_version=saved["draft_version"],
+            expected_publication_version=0,
+        )
+        self.assertEqual(
+            review["slots"][SLOT_STORY_BANNER]["asset_version"],
+            str(LARGE_PHOTO_VERSION),
+        )
+
+        for view in (preview, saved, review):
+            transported = json.loads(canonical_json(view))
+            if "slots" in transported:
+                value = transported["slots"][SLOT_STORY_BANNER]["asset_version"]
+            else:
+                value = transported["asset_version"]
+            self.assertIsInstance(value, str)
+            self.assertEqual(int(value), LARGE_PHOTO_VERSION)
+
+    def test_source_version_validation_keeps_canonical_text_and_rejects_unsafe(self):
+        maximum = 0x7FFF_FFFF_FFFF_FFFF
+        record = self.art_asset(asset_id="art-max", version=maximum)
+        preview = self.service.stage_placement(
+            owner_id=OWNER_A,
+            slot=SLOT_STORY_BANNER,
+            source={
+                "kind": "generated_illustration",
+                "asset_id": record.asset_id,
+                "asset_version": str(maximum),
+            },
+            crop=ART_BANNER_CROP,
+            alt_text=ART_ALT_TEXT,
+            decorative=True,
+        )
+        # The canonical text normalizes to the exact bigint and comes back out
+        # as text because it is above the JavaScript safe-integer range.
+        self.assertEqual(preview["asset_version"], str(maximum))
+
+        for value in ("01", "+1", "1.0", "not-a-number", True, 1.5, 2**63, -1):
+            with self.assertRaises(ResumeMediaError) as caught:
+                self.service.stage_placement(
+                    owner_id=OWNER_A,
+                    slot=SLOT_STORY_BANNER,
+                    source={
+                        "kind": "generated_illustration",
+                        "asset_id": record.asset_id,
+                        "asset_version": value,
+                    },
+                    crop=ART_BANNER_CROP,
+                    alt_text=ART_ALT_TEXT,
+                    decorative=True,
+                )
+            self.assertEqual(caught.exception.code, "invalid-source")
 
     def test_crops_persist_separately_per_slot_for_one_asset(self):
         record = self.ready_photo()

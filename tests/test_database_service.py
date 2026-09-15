@@ -500,6 +500,15 @@ class DatabaseServiceTests(unittest.TestCase):
             "usp_SetResumeGuideStatusForOwner",
             "usp_PurgeResumeIntakeSourceForOwner",
         }
+        # PS-MVP1-MEDIA-INTEGRATION-001: the two owner-scoped private Resume
+        # media procedures. They fence the same Resume draft version the draft
+        # commands use. Publication, worker, catalog-write and storage
+        # procedures stay off this exact set, and allowlisting does not apply
+        # the proposed PS-RESUME-MEDIA-001 schema.
+        resume_media = {
+            "usp_GetResumeMediaDraftForOwner",
+            "usp_CommitResumeMediaCommandForOwner",
+        }
         expected = (
             base
             | oppslate_os1
@@ -517,6 +526,7 @@ class DatabaseServiceTests(unittest.TestCase):
             | entry_policy
             | resume_draft
             | resume_intake
+            | resume_media
         )
         # The groups above must not overlap each other — a name counted
         # twice would silently shrink the real union below the true count
@@ -538,9 +548,10 @@ class DatabaseServiceTests(unittest.TestCase):
             entry_policy,
             resume_draft,
             resume_intake,
+            resume_media,
         )
         self.assertEqual(sum(len(group) for group in groups), len(expected))
-        self.assertEqual(len(expected), 159)
+        self.assertEqual(len(expected), 161)
         self.assertEqual(set(ALLOWED_PROCEDURES), expected)
 
     def test_living_resume_editor_procedures_are_exactly_allowlisted(self):

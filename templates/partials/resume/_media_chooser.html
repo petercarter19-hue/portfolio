@@ -1,0 +1,346 @@
+{# MVP1 D: scoped private Resume photo chooser.
+
+   One chooser keeps My photos, the curated PeerSlate library, per-slot
+   assignments, the member caption, the placement preview and the explicit Add
+   together. Nothing here saves on its own: choosing, previewing, swapping and
+   cropping are owner-scoped pending state, and only "Add photos to résumé"
+   writes the reviewed placements to the private draft. No route in this
+   package publishes or shares anything. #}
+<aside
+    class="resume-media"
+    id="resume-media"
+    aria-labelledby="resume-media-title"
+    data-media-workspace-url="{{ url_for('resume_media.get_resume_media_workspace') }}"
+    data-media-upload-url="{{ url_for('resume_media.post_resume_media_photo') }}"
+    data-media-refresh-url-template="{{ url_for('resume_media.post_resume_media_photo_refresh', source_id='__SOURCE__') }}"
+    data-media-photo-url-template="{{ url_for('resume_media.get_resume_media_photo_preview', source_id='__SOURCE__') }}"
+    data-media-library-url="{{ url_for('resume_media.get_resume_media_library') }}"
+    data-media-library-thumbnail-url-template="{{ url_for('resume_media.get_resume_media_library_thumbnail', asset_id='__ASSET__', asset_version=0) }}"
+    data-media-placement-url="{{ url_for('resume_media.post_resume_media_placement') }}"
+    data-media-placement-preview-url-template="{{ url_for('resume_media.get_resume_media_placement_preview', slot='__SLOT__') }}"
+    data-media-placement-media-url-template="{{ url_for('resume_media.get_resume_media_placement_media', slot='__SLOT__') }}"
+    data-media-draft-media-url-template="{{ url_for('resume_media.get_resume_media_draft_placement_media', slot='__SLOT__') }}"
+    data-media-placement-swap-url="{{ url_for('resume_media.post_resume_media_placement_swap') }}"
+    data-media-commands-url="{{ url_for('resume_media.post_resume_media_command') }}"
+>
+    <header class="resume-media__header">
+        <p class="resume-media__eyebrow">Photos</p>
+        <button type="button" class="resume-media__quiet" id="resume-media-hide">
+            Hide guide
+        </button>
+    </header>
+
+    <div id="resume-media-guide">
+        <span class="resume-media__handle" aria-hidden="true"></span>
+        <h2 id="resume-media-title" class="resume-media__title">Choose photos for your r&eacute;sum&eacute;.</h2>
+        <p class="resume-media__intro">Use your own photos or explore the PeerSlate library.</p>
+
+        <div class="resume-media__tabs" role="tablist" aria-label="Photo sources">
+            <button
+                type="button"
+                role="tab"
+                class="resume-media__tab"
+                id="resume-media-tab-photos"
+                aria-controls="resume-media-panel-photos"
+                aria-selected="true"
+            >My photos</button>
+            <button
+                type="button"
+                role="tab"
+                class="resume-media__tab"
+                id="resume-media-tab-library"
+                aria-controls="resume-media-panel-library"
+                aria-selected="false"
+                tabindex="-1"
+            >PeerSlate library</button>
+        </div>
+
+        <section
+            class="resume-media__panel"
+            id="resume-media-panel-photos"
+            role="tabpanel"
+            aria-labelledby="resume-media-tab-photos"
+        >
+            <p class="resume-media__hint">
+                Your uploads are private. Each one is scanned and processed before it can
+                be chosen, and it is never added to your r&eacute;sum&eacute; here.
+            </p>
+            <ul class="resume-media__grid" id="resume-media-photos" aria-label="Your uploaded photos"></ul>
+            <p class="resume-media__empty" id="resume-media-photos-empty">
+                No photos uploaded yet.
+            </p>
+            <label class="resume-media__upload">
+                <span>Upload photos</span>
+                <input
+                    type="file"
+                    id="resume-media-upload"
+                    name="photo"
+                    accept="image/jpeg,image/png"
+                >
+            </label>
+        </section>
+
+        <section
+            class="resume-media__panel"
+            id="resume-media-panel-library"
+            role="tabpanel"
+            aria-labelledby="resume-media-tab-library"
+            hidden
+        >
+            <p class="resume-media__hint">AI generated images for illustration.</p>
+            <p class="resume-media__search">
+                <label for="resume-media-library-search">Search the image library</label>
+                <input
+                    type="search"
+                    id="resume-media-library-search"
+                    autocomplete="off"
+                    placeholder="Search the image library..."
+                >
+            </p>
+            <ul
+                class="resume-media__grid"
+                id="resume-media-library-results"
+                aria-label="PeerSlate library illustrations"
+            ></ul>
+            <p class="resume-media__empty" id="resume-media-library-empty" hidden>
+                No library images match that search.
+            </p>
+            <p class="resume-media__error" id="resume-media-library-error" role="status" hidden></p>
+            <p class="resume-media__more">
+                <button type="button" class="resume-media__quiet" id="resume-media-library-more" hidden>
+                    Show more
+                </button>
+            </p>
+        </section>
+
+        <section class="resume-media__assignments" aria-labelledby="resume-media-assignments-title">
+            <h3 id="resume-media-assignments-title">Selected for your r&eacute;sum&eacute;</h3>
+            <ul class="resume-media__slots">
+                <li class="resume-media__slot" id="resume-media-slot-story_banner" data-slot="story_banner">
+                    <span class="resume-media__slot-name">My Story banner</span>
+                    <span class="resume-media__slot-value" id="resume-media-slot-story_banner-value">
+                        Nothing selected yet.
+                    </span>
+                    <button
+                        type="button"
+                        class="resume-media__quiet resume-media__slot-remove"
+                        id="resume-media-slot-story_banner-remove"
+                    >Remove</button>
+                </li>
+                <li class="resume-media__slot" id="resume-media-slot-experience_support" data-slot="experience_support">
+                    <span class="resume-media__slot-name">Experience photo</span>
+                    <span class="resume-media__slot-value" id="resume-media-slot-experience_support-value">
+                        Nothing selected yet.
+                    </span>
+                    <button
+                        type="button"
+                        class="resume-media__quiet resume-media__slot-remove"
+                        id="resume-media-slot-experience_support-remove"
+                    >Remove</button>
+                </li>
+            </ul>
+            <p class="resume-media__count" id="resume-media-selected-count">0 selected &middot; Not added yet</p>
+        </section>
+
+        <p class="resume-media__caption">
+            <label for="resume-media-caption">Add a caption or tell us what these photos mean to you...</label>
+            <textarea id="resume-media-caption" maxlength="500" rows="3"></textarea>
+            <span class="resume-media__hint">
+                A caption you type is your own wording. It is never filled in from a library
+                label, tag or prompt.
+            </span>
+        </p>
+
+        <p class="resume-media__actions">
+            <button type="button" class="resume-media__primary" id="resume-media-preview-placement">
+                Preview placement
+            </button>
+            <button type="button" class="resume-media__quiet" id="resume-media-keep-words">
+                Keep it words only
+            </button>
+        </p>
+    </div>
+
+    <div id="resume-media-preview" hidden>
+        <div class="resume-media__header">
+            <button type="button" class="resume-media__quiet" id="resume-media-preview-back">
+                <span aria-hidden="true">&larr;</span> Back
+            </button>
+            <button type="button" class="resume-media__quiet" id="resume-media-preview-hide">
+                Hide guide
+            </button>
+        </div>
+        <h2 class="resume-media__title" id="resume-media-preview-title">See them on your r&eacute;sum&eacute;.</h2>
+        <p class="resume-media__intro">Check the placement and crop before adding.</p>
+
+        <ul class="resume-media__preview-slots">
+            <li class="resume-media__preview-slot" id="resume-media-preview-slot-story_banner" data-slot="story_banner">
+                <span class="resume-media__preview-view">
+                    <img
+                        class="resume-media__preview-image"
+                        id="resume-media-preview-image-story_banner"
+                        alt=""
+                        hidden
+                    >
+                </span>
+                <h3>My Story banner</h3>
+                <p class="resume-media__slot-value" id="resume-media-preview-label-story_banner">
+                    Nothing selected for this slot.
+                </p>
+                <button type="button" class="resume-media__quiet" id="resume-media-crop-story_banner">
+                    Adjust crop
+                </button>
+                <fieldset class="resume-media__crop" id="resume-media-crop-fields-story_banner" hidden>
+                    <legend>My Story banner crop</legend>
+                    <p>
+                        <label for="resume-media-crop-story_banner-x">Left</label>
+                        <input id="resume-media-crop-story_banner-x" data-crop="x" type="number" min="0" max="1" step="0.01" inputmode="decimal">
+                        <label for="resume-media-crop-story_banner-y">Top</label>
+                        <input id="resume-media-crop-story_banner-y" data-crop="y" type="number" min="0" max="1" step="0.01" inputmode="decimal">
+                    </p>
+                    <p>
+                        <label for="resume-media-crop-story_banner-width">Width</label>
+                        <input id="resume-media-crop-story_banner-width" data-crop="width" type="number" min="0.01" max="1" step="0.01" inputmode="decimal">
+                        <label for="resume-media-crop-story_banner-height">Height</label>
+                        <input id="resume-media-crop-story_banner-height" data-crop="height" type="number" min="0.01" max="1" step="0.01" inputmode="decimal">
+                    </p>
+                    <p class="resume-media__crop-actions">
+                        <button type="button" class="resume-media__quiet" id="resume-media-crop-apply-story_banner">
+                            Apply crop
+                        </button>
+                        <span class="resume-media__hint">Keep the shape your r&eacute;sum&eacute; shows.</span>
+                    </p>
+                </fieldset>
+            </li>
+            <li class="resume-media__preview-slot" id="resume-media-preview-slot-experience_support" data-slot="experience_support">
+                <span class="resume-media__preview-view">
+                    <img
+                        class="resume-media__preview-image"
+                        id="resume-media-preview-image-experience_support"
+                        alt=""
+                        hidden
+                    >
+                </span>
+                <h3>Experience photo</h3>
+                <p class="resume-media__slot-value" id="resume-media-preview-label-experience_support">
+                    Nothing selected for this slot.
+                </p>
+                <button type="button" class="resume-media__quiet" id="resume-media-crop-experience_support">
+                    Adjust crop
+                </button>
+                <fieldset class="resume-media__crop" id="resume-media-crop-fields-experience_support" hidden>
+                    <legend>Experience photo crop</legend>
+                    <p>
+                        <label for="resume-media-crop-experience_support-x">Left</label>
+                        <input id="resume-media-crop-experience_support-x" data-crop="x" type="number" min="0" max="1" step="0.01" inputmode="decimal">
+                        <label for="resume-media-crop-experience_support-y">Top</label>
+                        <input id="resume-media-crop-experience_support-y" data-crop="y" type="number" min="0" max="1" step="0.01" inputmode="decimal">
+                    </p>
+                    <p>
+                        <label for="resume-media-crop-experience_support-width">Width</label>
+                        <input id="resume-media-crop-experience_support-width" data-crop="width" type="number" min="0.01" max="1" step="0.01" inputmode="decimal">
+                        <label for="resume-media-crop-experience_support-height">Height</label>
+                        <input id="resume-media-crop-experience_support-height" data-crop="height" type="number" min="0.01" max="1" step="0.01" inputmode="decimal">
+                    </p>
+                    <p class="resume-media__crop-actions">
+                        <button type="button" class="resume-media__quiet" id="resume-media-crop-apply-experience_support">
+                            Apply crop
+                        </button>
+                        <span class="resume-media__hint">Keep the shape your r&eacute;sum&eacute; shows.</span>
+                    </p>
+                </fieldset>
+            </li>
+        </ul>
+
+        <p class="resume-media__actions">
+            <button type="button" class="resume-media__secondary" id="resume-media-swap">
+                Swap placements
+            </button>
+            <button type="button" class="resume-media__secondary" id="resume-media-change-photos">
+                Change photos
+            </button>
+        </p>
+        <p class="resume-media__count" id="resume-media-preview-count">0 photos &middot; Not added yet</p>
+        <p class="resume-media__hint" id="resume-media-preview-provenance">
+            PeerSlate library &middot; AI generated illustrations.
+        </p>
+        <button type="button" class="resume-media__primary" id="resume-media-add">
+            Add photos to r&eacute;sum&eacute;
+        </button>
+        <p class="resume-media__lock">
+            <span aria-hidden="true">&#128274;</span>
+            Adds these photos to your private r&eacute;sum&eacute;. Nothing is published.
+        </p>
+    </div>
+
+    {# One status region stays visible in both the chooser and the placement
+       review state, so a real outcome is never reported off-screen. #}
+    <p class="resume-media__status" id="resume-media-status" role="status" aria-live="polite"></p>
+    <p class="resume-media__retry" id="resume-media-retry-row" hidden>
+        <button type="button" class="resume-media__quiet" id="resume-media-retry"></button>
+    </p>
+
+    <p class="resume-media__footer">
+        <span aria-hidden="true">&#128274;</span>
+        Your uploads stay private unless you choose to share them.
+    </p>
+</aside>
+
+{# The placement preview is the member's own private draft placement, shown in
+   the main column with an explicit "Not added yet" badge until Add saves it. #}
+<section class="resume-media__placement" id="resume-media-placement" aria-labelledby="resume-media-placement-title">
+        <h3 id="resume-media-placement-title">Placement preview</h3>
+        <figure class="resume-media__frame resume-media__frame--story" data-slot="story_banner">
+            <p class="resume-media__placeholder" id="resume-media-placement-empty-story_banner">
+                Add a story banner
+                <span>Optional</span>
+            </p>
+            <span class="resume-media__frame-view">
+                <img
+                    class="resume-media__frame-image"
+                    id="resume-media-placement-image-story_banner"
+                    alt=""
+                    hidden
+                >
+            </span>
+            <span class="resume-media__story-text">
+                Tell your story.
+                <span class="resume-media__story-optional">Optional. Add anytime.</span>
+            </span>
+            <figcaption class="resume-media__badge" id="resume-media-placement-badge-story_banner" hidden>
+                Placement preview &middot; Not added yet
+            </figcaption>
+            <p class="resume-media__attribution" id="resume-media-placement-attribution-story_banner" hidden></p>
+            <button type="button" class="resume-media__quiet" id="resume-media-placement-change-story_banner">
+                Change banner
+            </button>
+        </figure>
+        <figure class="resume-media__frame resume-media__frame--experience" data-slot="experience_support">
+            <p class="resume-media__placeholder" id="resume-media-placement-empty-experience_support">
+                Add an experience photo
+                <span>Optional</span>
+            </p>
+            <span class="resume-media__frame-view">
+                <img
+                    class="resume-media__frame-image"
+                    id="resume-media-placement-image-experience_support"
+                    alt=""
+                    hidden
+                >
+            </span>
+            <figcaption class="resume-media__badge" id="resume-media-placement-badge-experience_support" hidden>
+                Placement preview &middot; Not added yet
+            </figcaption>
+            <p class="resume-media__attribution" id="resume-media-placement-attribution-experience_support" hidden></p>
+            <button type="button" class="resume-media__quiet" id="resume-media-placement-change-experience_support">
+                Change photo
+            </button>
+        </figure>
+</section>
+
+<p class="resume-media__reopen">
+    <button type="button" class="resume-media__reopen-button" id="resume-media-reopen" hidden>
+        Choose photos
+        <span class="resume-media__reopen-hint">Optional.</span>
+    </button>
+</p>

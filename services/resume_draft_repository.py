@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import json
+import threading
 from typing import Any, Protocol
 from uuid import UUID
 
@@ -65,6 +66,23 @@ class ResumeDraftStoreUnavailable(RuntimeError):
     """SQL draft port cannot run (unapplied schema, allowlist, or connection)."""
 
 
+class ResumeDraftVersionConflict(RuntimeError):
+    """The owner's draft changed before this command could apply.
+
+    Raised by an atomic draft-store command when the stored version no longer
+    matches the version the caller fenced. Nothing is written.
+    """
+
+    def __init__(self, current: int | None = None, expected: int | None = None):
+        super().__init__("The draft changed before this command.")
+        self.current = current
+        self.expected = expected
+
+
+class ResumeDraftIdempotencyConflict(RuntimeError):
+    """One request id was already committed for different command semantics."""
+
+
 class CanonicalReadUnavailable(RuntimeError):
     """Canonical editor source could not be read. Not a success."""
 
@@ -87,26 +105,82 @@ class ResumeDraftRepository(Protocol):
     def save_owner(self, owner_user_key: str, snapshot: dict[str, Any]) -> None:
         """Replace that owner's draft snapshot atomically."""
 
+    # Stores that carry more than one writer's state (the private editor text
+    # commands and the Resume media commands share this draft) also expose
+    # ``atomic_command_supported = True`` and
+    # ``commit_owner_command(owner, expected_version=..., apply=...)``. The
+    # store fences the exact expected version, runs ``apply(live)`` — which
+    # returns False to make no change — and persists once. A store without that
+    # contract may not carry shared media state; callers fail closed instead of
+    # racing a whole-snapshot save.
+
 
 class InMemoryResumeDraftRepository:
     """Process-local store. Never a live database and never shared across owners."""
 
     persistence_label = "in_memory_not_live_db"
     command_port = False
+    # Single-process atomic command support: one lock per store instance, so
+    # two services that share this store cannot both win the same version.
+    # This is process-local only; it is not multi-process or durable safety.
+    atomic_command_supported = True
+    media_command_supported = True
 
     def __init__(self) -> None:
         self._owners: dict[str, dict[str, Any]] = {}
+        self._lock = threading.RLock()
 
     def load_owner(self, owner_user_key: str) -> dict[str, Any]:
-        existing = self._owners.get(owner_user_key)
-        if existing is None:
-            return empty_draft_snapshot()
-        return copy.deepcopy(existing)
+        with self._lock:
+            existing = self._owners.get(owner_user_key)
+            if existing is None:
+                return empty_draft_snapshot()
+            return copy.deepcopy(existing)
 
     def save_owner(self, owner_user_key: str, snapshot: dict[str, Any]) -> None:
-        stored = copy.deepcopy(snapshot)
-        stored.pop("_pending_command", None)
-        self._owners[owner_user_key] = stored
+        with self._lock:
+            stored = copy.deepcopy(snapshot)
+            stored.pop("_pending_command", None)
+            stored.pop("_base_version", None)
+            self._owners[owner_user_key] = stored
+
+    def commit_owner_command(
+        self, owner_user_key: str, *, expected_version: int, apply: Any
+    ) -> dict[str, Any]:
+        """Atomically apply one fenced command to this owner's draft.
+
+        The store owns the only lock, so every writer that shares this store —
+        the editor's text commands and the Resume media commands — serializes
+        here. The exact expected version is re-checked inside the lock, and the
+        apply function runs before anything is persisted, so a conflict leaves
+        the stored snapshot untouched.
+        """
+
+        with self._lock:
+            existing = self._owners.get(owner_user_key)
+            live = (
+                copy.deepcopy(existing)
+                if existing is not None
+                else empty_draft_snapshot()
+            )
+            # The apply function checks for an exact confirmed replay first and
+            # returns False for it, so an accepted command is never reported as
+            # stale merely because the shared version moved on afterwards. Only
+            # a real change must satisfy the version fence, and the caller's
+            # mutations live on a private copy until the fence passes.
+            current = int(live.get("draft_version") or 0)
+            changed = apply(live)
+            if changed is False:
+                return copy.deepcopy(live)
+            if current != int(expected_version):
+                raise ResumeDraftVersionConflict(
+                    current=current, expected=int(expected_version)
+                )
+            stored = copy.deepcopy(live)
+            stored.pop("_pending_command", None)
+            stored.pop("_base_version", None)
+            self._owners[owner_user_key] = stored
+            return copy.deepcopy(stored)
 
 
 class SqlResumeDraftRepository:
@@ -114,6 +188,16 @@ class SqlResumeDraftRepository:
 
     persistence_label = "sql_proposed_unapplied"
     command_port = True
+    # The proposed command procedure owns its transaction and re-fences the
+    # exact expected draft version against the same resume_drafts row used by
+    # the media procedure. The proposal remains unapplied/unproven, but this
+    # adapter now truthfully implements the fenced callback contract.
+    atomic_command_supported = True
+    # This adapter persists text commands only. Media commands use
+    # SqlResumeMediaDraftStore, whose procedure also fences authoritative media
+    # sources; do not accept this store as the media command port merely because
+    # both procedures coordinate through the shared draft row.
+    media_command_supported = False
 
     def __init__(self, database=None) -> None:
         self.database = database or database_service
@@ -133,6 +217,27 @@ class SqlResumeDraftRepository:
             header = header_rows[0]
             snapshot["draft_version"] = int(header.get("draft_version") or 0)
             snapshot["base_publication_version"] = header.get("base_publication_version")
+            receipts = header.get("command_receipts_json") or []
+            if isinstance(receipts, str):
+                try:
+                    receipts = json.loads(receipts)
+                except ValueError as error:
+                    raise ResumeDraftStoreUnavailable(
+                        "Resume drafts are unavailable."
+                    ) from error
+            if not isinstance(receipts, list):
+                raise ResumeDraftStoreUnavailable("Resume drafts are unavailable.")
+            for receipt in receipts:
+                if not isinstance(receipt, dict):
+                    raise ResumeDraftStoreUnavailable("Resume drafts are unavailable.")
+                request_id = _as_key(receipt.get("request_id"))
+                request_digest = str(receipt.get("request_digest") or "")
+                if not request_id or len(request_digest) != 64:
+                    raise ResumeDraftStoreUnavailable("Resume drafts are unavailable.")
+                snapshot["receipts"][request_id] = {
+                    "request_digest": request_digest,
+                    "outcome": str(receipt.get("outcome") or ""),
+                }
         for row in item_rows or []:
             key = _as_key(row.get("record_key"))
             if not key:
@@ -181,16 +286,57 @@ class SqlResumeDraftRepository:
     def save_owner(self, owner_user_key: str, snapshot: dict[str, Any]) -> None:
         pending = snapshot.get("_pending_command") if isinstance(snapshot, dict) else None
         if isinstance(pending, dict) and pending.get("request_id") and pending.get("command_json"):
-            self.commit_command(
+            result_sets = self.commit_command(
                 owner_user_key,
                 pending["request_id"],
                 pending["command_json"],
             )
+            rows = result_sets[0] if result_sets else []
+            if not rows:
+                raise ResumeDraftStoreUnavailable("Resume drafts are unavailable.")
+            row = rows[0]
+            outcome = str(row.get("outcome") or "")
+            if outcome == "stale_draft":
+                raise ResumeDraftVersionConflict(
+                    current=row.get("current_draft_version"),
+                    expected=row.get("expected_draft_version"),
+                )
+            if outcome == "idempotency_conflict":
+                raise ResumeDraftIdempotencyConflict()
+            if not bool(row.get("committed")):
+                raise ResumeDraftStoreUnavailable("Resume drafts are unavailable.")
             return
         raise ResumeDraftStoreUnavailable(
             "SQL resume-draft writes use usp_CommitResumeDraftCommandForOwner."
         )
 
+    def commit_owner_command(
+        self, owner_user_key: str, *, expected_version: int, apply: Any
+    ) -> dict[str, Any]:
+        """Apply locally, then let the procedure arbitrate replay/version.
+
+        The Python callback only prepares the closed command. The procedure
+        runs exact-replay arbitration before its locked version fence and owns
+        the transaction, so the autocommit connection cannot split receipt,
+        item, and shared-version changes. A fresh read supplies the committed
+        result instead of reporting the speculative local copy as durable.
+        """
+
+        live = self.load_owner(owner_user_key)
+        changed = apply(live)
+        if changed is False:
+            return live
+        pending = live.get("_pending_command")
+        if not isinstance(pending, dict):
+            raise ResumeDraftStoreUnavailable("Resume drafts are unavailable.")
+        try:
+            body = json.loads(str(pending.get("command_json") or ""))
+        except (TypeError, ValueError) as error:
+            raise ResumeDraftStoreUnavailable("Resume drafts are unavailable.") from error
+        if body.get("expected_draft_version") != int(expected_version):
+            raise ResumeDraftStoreUnavailable("Resume drafts are unavailable.")
+        self.save_owner(owner_user_key, live)
+        return self.load_owner(owner_user_key)
 
 class InMemoryCanonicalCatalog:
     """Test catalog. Never a live database. Owners are isolated."""

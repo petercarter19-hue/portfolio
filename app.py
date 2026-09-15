@@ -65,6 +65,10 @@ from resume_intake_routes import (
     PLANNED_RATE_LIMITS as RESUME_INTAKE_RATE_LIMITS,
     resume_intake,
 )
+from resume_media_routes import (
+    PLANNED_RATE_LIMITS as RESUME_MEDIA_RATE_LIMITS,
+    resume_media,
+)
 # PS-WORKSHOP-001 W2a: registers additional view functions onto the SAME
 # `workshop` Blueprint instance above (import-time side effect only, no
 # name from this module is otherwise used here) — see
@@ -404,6 +408,17 @@ app.config.update(
     PEERSLATE_RESUME_INTAKE_FIXTURE_POLICY_ENABLED=(
         os.environ.get('PEERSLATE_RESUME_INTAKE_FIXTURE_POLICY_ENABLED', 'false').lower()
         == 'true'
+    ),
+    # PS-MVP1-MEDIA-INTEGRATION-001: the scoped private Resume photo chooser
+    # (My photos, the curated PeerSlate library, placement preview and explicit
+    # Add to the private draft). Off by default. Routes read this with
+    # `is True`. There is no configured media application until one is
+    # explicitly injected, so an enabled flag without wiring answers an honest
+    # unavailable instead of using a fixture catalog. Schema remains proposed
+    # and unapplied; enablement applies no SQL, publishes nothing, and grants
+    # no production authority.
+    PEERSLATE_RESUME_MEDIA_ENABLED=(
+        os.environ.get('PEERSLATE_RESUME_MEDIA_ENABLED', 'false').lower() == 'true'
     ),
     PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY=PEERSLATE_OPPSLATE_CONTEXT_SIGNING_KEY,
     # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: the transition flag
@@ -874,6 +889,11 @@ app.register_blueprint(resume_draft)
 # the blueprint so off remains a neutral 404 without a missing route. The
 # unselected onboarding policy stays a second, independent refusal.
 app.register_blueprint(resume_intake)
+# PS-MVP1-MEDIA-INTEGRATION-001. Registered unconditionally; the flag gate
+# lives in the blueprint so off remains a neutral 404 without a missing route.
+# The owner's private media application must be explicitly injected; there is
+# no implicit fixture catalog and no publication route in this package.
+app.register_blueprint(resume_media)
 # PS-COMMUNITY-AUTH-WALL-001: the legacy fixture-backed people_interests_api
 # is never registered. No feature-flag state may resurrect a public or
 # fixture Community surface — flag off means unavailable, not "older feed".
@@ -1005,6 +1025,11 @@ for _resume_draft_endpoint, _resume_draft_limit in RESUME_DRAFT_RATE_LIMITS.item
 for _resume_intake_endpoint, _resume_intake_limit in RESUME_INTAKE_RATE_LIMITS.items():
     app.view_functions[_resume_intake_endpoint] = limiter.limit(_resume_intake_limit)(
         app.view_functions[_resume_intake_endpoint]
+    )
+
+for _resume_media_endpoint, _resume_media_limit in RESUME_MEDIA_RATE_LIMITS.items():
+    app.view_functions[_resume_media_endpoint] = limiter.limit(_resume_media_limit)(
+        app.view_functions[_resume_media_endpoint]
     )
 
 # PS-SETTINGS-ACCOUNT-EXPORT-AVAILABILITY-001: the same post-registration

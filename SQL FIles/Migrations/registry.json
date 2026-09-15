@@ -2717,6 +2717,17 @@
       ],
       "summary": "Proposed owner-scoped composer intake: immutable Add submissions, owner-scoped sources, durable jobs with a source/submission/policy/lifecycle fence, typed proposals with exact source spans, payload-aware command receipts, member-chosen guide status and purged-source text removal. Repository candidate only; no database application or runtime proof.",
       "gate": null
+    },
+    {
+      "id": "PS-RESUME-MEDIA-001",
+      "forward": "SQL FIles/Migrations/proposed/PS-RESUME-MEDIA-001_resume_media.sql",
+      "rollback": "SQL FIles/Migrations/proposed/PS-RESUME-MEDIA-001_resume_media_rollback.sql",
+      "requires": [
+        "PS-RESUME-DRAFT-001",
+        "PS-CAPTURE-MEDIA-001"
+      ],
+      "summary": "Proposed owner-scoped private Resume media placements: the two named decorative slots with per-slot crop, presentation version, alt/decorative and member caption semantics, plus closed add_media and keep_words_only command receipts. The command procedure opens its own transaction, fences the shared Resume draft version, re-validates each owner-photo placement's exact Photo Capture row version, lifecycle and derivative digest inside that transaction, and stores and compares one validated semantic digest so an exact retry replays instead of conflicting. Curated catalog placements have no authoritative catalog table in this proposal, so the durable path refuses them until the catalog fence arrives. Repository candidate only; no publication, storage, scan, or runtime proof.",
+      "gate": null
     }
   ]
 }

@@ -246,6 +246,13 @@ ALLOWED_PROCEDURES = frozenset(
         "usp_CommitResumeIntakeProposalDecisionForOwner",
         "usp_SetResumeGuideStatusForOwner",
         "usp_PurgeResumeIntakeSourceForOwner",
+        # PS-MVP1-MEDIA-INTEGRATION-001: the two owner-scoped private Resume
+        # media procedures. Each resolves @UserKey itself and fences the same
+        # Resume draft version the accepted draft commands use. There is no
+        # publication, worker, catalog-write or storage procedure here, and
+        # allowlisting a proposed name does not apply PS-RESUME-MEDIA-001.
+        "usp_GetResumeMediaDraftForOwner",
+        "usp_CommitResumeMediaCommandForOwner",
     }
 )
 

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-MEDIA-INTEGRATION-001",
+  "candidate_sha": "f07f359fd9e0141b42d61afdc2b49c410ba0417e",
+  "review_type": "independent",
+  "reviewer_ref": "session:a8691db3-693b-4b2e-9d2f-37105eaf80c8",
+  "result": "pass",
+  "reviewed_at": "2026-09-15T00:06:14Z",
+  "findings": [
+    {
+      "id": "C1-intake-authoritative-version-and-canonical-digest",
+      "status": "resolved",
+      "severity": "high",
+      "summary": "Build 2915 failed because the intake caller staged the draft overlay without the expected_draft_version and request_digest the claimed callee reads. The overlay decision now takes items and the authoritative draft version from one _canonical_view read, and stages expected_draft_version plus request_digest from ResumeDraftService.command_digest of the same normalized command the in-memory/direct paths commit. CALLEE_COMMAND_KEYS[resume_draft] carries the two fields; malformed versions fail closed; digest computation stays inside the draft-error mapping. Negative control reproduced the missing-path failure pre-repair. PASS at f07f359fd9e0141b42d61afdc2b49c410ba0417e."
+    },
+    {
+      "id": "C2-nested-transaction-ownership",
+      "status": "resolved",
+      "severity": "high",
+      "summary": "The draft callee no longer owns a transaction unconditionally. It declares an ownership flag, begins a transaction only when @@TRANCOUNT = 0 (direct autocommit driver), commits only its own transaction on every returning path, and rolls back only when it owns one; nested under the intake transaction it participates and commits or rolls back nothing, preserving outer-intake atomicity. Replay-before-version-fence ordering and the semantic receipt digest are unchanged. The previous test assertion was replaced by strictly stronger positive contract checks. PASS at f07f359fd9e0141b42d61afdc2b49c410ba0417e."
+    },
+    {
+      "id": "final-verdict",
+      "status": "informational",
+      "severity": "minor",
+      "summary": "Independent exact-candidate PASS issued 2026-09-15T00:06:14Z by the reviewer reporting model Muse Spark 1.3, under the continuity reference session:a8691db3-693b-4b2e-9d2f-37105eaf80c8 supplied by Pete; the reviewer could not introspect its own opaque session identifier, so that reference is the assigned continuity identity rather than a self-verified one. The reviewer independently verified all five committed blob SHA-256 values and the static call/transaction paths; test counts were writer-reported and not independently rerun, and review elapsed time and usage are unknown. This PASS is independent evidence for repository merge admission only; it grants no deployment, schema, enablement or live-operation authority."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-MVP1-MEDIA-INTEGRATION-001.md"
+}

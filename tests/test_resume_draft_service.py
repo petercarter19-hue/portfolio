@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import threading
 import unittest
 from uuid import UUID, uuid4
 
 from services.resume_draft_repository import InMemoryCanonicalCatalog, InMemoryResumeDraftRepository
 from services.resume_draft_service import (
+    SHARED_MEDIA_STATE_ATTRIBUTE,
     ResumeDraftConflictError,
     ResumeDraftNotFoundError,
     ResumeDraftService,
@@ -72,6 +74,32 @@ def published_role(owner_catalog, key=ROLE_KEY, **values):
             "private_assistance_excluded": False,
         },
     )
+
+
+class BarrierDraftStore(InMemoryResumeDraftRepository):
+    """Shared store that lets two callers load one snapshot before either saves.
+
+    The first read in each worker thread waits on a two-party barrier, so both
+    commands observe the same draft version and no receipt. That is the exact
+    window the receipt read in ``ResumeDraftService.commit`` races against.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.load_barrier = threading.Barrier(2)
+        self._load_waiters = set()
+        self._armed = True
+
+    def disarm(self):
+        self._armed = False
+
+    def load_owner(self, owner_user_key):
+        snapshot = super().load_owner(owner_user_key)
+        ident = threading.get_ident()
+        if self._armed and ident not in self._load_waiters:
+            self._load_waiters.add(ident)
+            self.load_barrier.wait(timeout=5)
+        return snapshot
 
 
 class ResumeDraftServiceTests(unittest.TestCase):
@@ -198,6 +226,94 @@ class ResumeDraftServiceTests(unittest.TestCase):
         with self.assertRaises(ResumeDraftConflictError) as raised:
             self.service.commit(OWNER_A, {**body, "values": {"summary": "Different"}})
         self.assertEqual(raised.exception.error_code, "idempotency_conflict")
+
+    def shared_text_service(self, store):
+        setattr(store, SHARED_MEDIA_STATE_ATTRIBUTE, True)
+        return ResumeDraftService(repository=store, catalog=self.catalog)
+
+    @staticmethod
+    def run_concurrent_commits(services, bodies):
+        outcomes = []
+
+        def attempt(service, body):
+            try:
+                outcomes.append(("ok", service.commit(OWNER_A, body)))
+            except ResumeDraftConflictError as error:
+                outcomes.append(("conflict", error.error_code))
+
+        threads = [
+            threading.Thread(target=attempt, args=(service, body))
+            for service, body in zip(services, bodies)
+        ]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=10)
+        return outcomes
+
+    def concurrent_body(self, request_id, **values):
+        return {
+            "request_id": request_id,
+            "type": "save_item",
+            "record_key": ROLE_KEY,
+            "record_type": "role",
+            "expected_content_token": "1",
+            "expected_access_revision": 1,
+            "expected_draft_version": 0,
+            "values": values,
+        }
+
+    def test_concurrent_identical_text_commands_converge_on_stored_receipt(self):
+        store = BarrierDraftStore()
+        services = [self.shared_text_service(store) for _ in range(2)]
+        request_id = str(uuid4())
+        body = self.concurrent_body(request_id, summary="Concurrent once")
+
+        outcomes = self.run_concurrent_commits(services, [body, dict(body)])
+        store.disarm()
+
+        self.assertEqual([entry[0] for entry in outcomes], ["ok", "ok"], outcomes)
+        self.assertEqual(
+            [entry[1]["outcome"] for entry in outcomes], ["saved", "saved"]
+        )
+        # One service wrote once; the identical concurrent caller converged on
+        # that stored success instead of receiving a false stale conflict.
+        self.assertEqual(
+            sorted(entry[1]["replayed"] for entry in outcomes), [False, True]
+        )
+        stored = store.load_owner(OWNER_A)
+        self.assertEqual(stored["draft_version"], 1)
+        self.assertEqual(len(stored["receipts"]), 1)
+        self.assertEqual(len(stored["items"]), 1)
+        self.assertEqual(
+            stored["receipts"][request_id]["request_digest"],
+            outcomes[0][1]["request_digest"],
+        )
+
+    def test_concurrent_changed_text_body_is_an_idempotency_conflict(self):
+        store = BarrierDraftStore()
+        services = [self.shared_text_service(store) for _ in range(2)]
+        request_id = str(uuid4())
+        bodies = [
+            self.concurrent_body(request_id, summary="First wording"),
+            self.concurrent_body(request_id, summary="Different wording"),
+        ]
+
+        outcomes = self.run_concurrent_commits(services, bodies)
+        store.disarm()
+
+        winners = [entry for entry in outcomes if entry[0] == "ok"]
+        conflicts = [entry for entry in outcomes if entry[0] == "conflict"]
+        self.assertEqual(len(winners), 1, outcomes)
+        self.assertEqual(len(conflicts), 1, outcomes)
+        self.assertEqual(conflicts[0][1], "idempotency_conflict")
+        stored = store.load_owner(OWNER_A)
+        self.assertEqual(stored["draft_version"], 1)
+        self.assertEqual(len(stored["receipts"]), 1)
+        self.assertEqual(
+            stored["receipts"][request_id]["request_digest"],
+            winners[0][1]["request_digest"],
+        )
 
     def test_review_does_not_publish(self):
         result = self.service.commit(

@@ -108,6 +108,12 @@ BEGIN TRY
             SET XACT_ABORT ON;
             SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
+            /* db.py uses an autocommit connection. Own the transaction inside
+               the procedure so the two result sets are one consistent read
+               and every lock is released by this procedure. */
+            BEGIN TRY
+            BEGIN TRANSACTION;
+
             DECLARE @ProfileId bigint;
             SELECT @ProfileId = profile.profile_id
             FROM dbo.member_profiles AS profile WITH (UPDLOCK, HOLDLOCK)
@@ -119,11 +125,35 @@ BEGIN TRY
             IF @ProfileId IS NULL
                 THROW 52202, ''RESUME_DRAFT_NOT_FOUND'', 1;
 
-            SELECT
-                draft.draft_version,
-                draft.base_publication_version
+            /* Fix the shared-resource lock order explicitly: owner draft,
+               receipt range, then items. Keep the public reader at exactly two
+               result sets by carrying receipts in the header JSON column. */
+            DECLARE @ReadDraftId bigint;
+            DECLARE @ReadDraftVersion int;
+            DECLARE @ReadBasePublicationVersion int;
+            SELECT @ReadDraftId = draft.resume_draft_id,
+                   @ReadDraftVersion = draft.draft_version,
+                   @ReadBasePublicationVersion = draft.base_publication_version
             FROM dbo.resume_drafts AS draft WITH (UPDLOCK, HOLDLOCK)
             WHERE draft.owner_profile_id = @ProfileId;
+
+            DECLARE @CommandReceiptsJson nvarchar(max);
+            SELECT @CommandReceiptsJson = (
+                SELECT
+                    CONVERT(nvarchar(36), receipt.request_id) AS request_id,
+                    receipt.request_digest,
+                    receipt.outcome
+                FROM dbo.resume_draft_command_receipts AS receipt WITH (UPDLOCK, HOLDLOCK)
+                WHERE receipt.owner_profile_id = @ProfileId
+                ORDER BY receipt.created_at_utc, receipt.request_id
+                FOR JSON PATH
+            );
+
+            SELECT
+                @ReadDraftVersion AS draft_version,
+                @ReadBasePublicationVersion AS base_publication_version,
+                JSON_QUERY(COALESCE(@CommandReceiptsJson, N''[]'')) AS command_receipts_json
+            WHERE @ReadDraftId IS NOT NULL;
 
             SELECT
                 item.record_key,
@@ -138,6 +168,13 @@ BEGIN TRY
               ON item.resume_draft_id = draft.resume_draft_id
             WHERE draft.owner_profile_id = @ProfileId
             ORDER BY item.record_type, item.record_key;
+
+            COMMIT TRANSACTION;
+            END TRY
+            BEGIN CATCH
+                IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+                THROW;
+            END CATCH;
         END;
     ');
 
@@ -152,6 +189,20 @@ BEGIN TRY
             SET XACT_ABORT ON;
             SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
+            /* The driver is autocommit, so receipt arbitration, the shared
+               draft-version fence, item mutation and receipt insertion must be
+               owned by one internal transaction. A nested intake call already
+               owns the outer transaction, so this callee participates in it
+               and never commits or rolls the caller back. */
+            DECLARE @OwnTransaction bit = 0;
+            IF @@TRANCOUNT = 0
+            BEGIN
+                BEGIN TRANSACTION;
+                SET @OwnTransaction = 1;
+            END;
+
+            BEGIN TRY
+
             DECLARE @ProfileId bigint;
             SELECT @ProfileId = profile.profile_id
             FROM dbo.member_profiles AS profile WITH (UPDLOCK, HOLDLOCK)
@@ -163,9 +214,31 @@ BEGIN TRY
             IF @ProfileId IS NULL
                 THROW 52202, ''RESUME_DRAFT_NOT_FOUND'', 1;
 
-            DECLARE @Digest char(64) = LOWER(CONVERT(char(64), HASHBYTES(''SHA2_256'', CONVERT(varbinary(max), @CommandJson)), 2));
+            IF @CommandJson IS NULL OR ISJSON(@CommandJson) <> 1
+                THROW 52204, ''RESUME_DRAFT_VALIDATION'', 1;
+
+            /* The application computes the receipt digest from the normalized
+               command semantics. Use that exact digest for both first commit
+               and replay; hashing this transport envelope is not equivalent. */
+            DECLARE @IncomingDigest nvarchar(128) = JSON_VALUE(@CommandJson, ''$.request_digest'');
+            IF @IncomingDigest IS NULL
+               OR LEN(@IncomingDigest) <> 64
+               OR @IncomingDigest COLLATE Latin1_General_100_BIN2 LIKE ''%[^0-9a-f]%''
+                THROW 52204, ''RESUME_DRAFT_VALIDATION'', 1;
+            DECLARE @Digest char(64) = CONVERT(char(64), @IncomingDigest);
             DECLARE @ExistingDigest char(64);
             DECLARE @ExistingOutcome nvarchar(40);
+
+            /* Every reader and both text/media writers acquire the shared
+               owner draft before a receipt row. The version is intentionally
+               not evaluated yet: an exact receipt replay still wins before
+               the expected-version fence below. */
+            DECLARE @DraftId bigint;
+            DECLARE @DraftVersion int;
+            SELECT @DraftId = draft.resume_draft_id,
+                   @DraftVersion = draft.draft_version
+            FROM dbo.resume_drafts AS draft WITH (UPDLOCK, HOLDLOCK)
+            WHERE draft.owner_profile_id = @ProfileId;
 
             SELECT @ExistingDigest = receipt.request_digest,
                    @ExistingOutcome = receipt.outcome
@@ -176,7 +249,19 @@ BEGIN TRY
             IF @ExistingDigest IS NOT NULL
             BEGIN
                 IF @ExistingDigest <> @Digest
-                    THROW 52203, ''RESUME_DRAFT_IDEMPOTENCY_CONFLICT'', 1;
+                BEGIN
+                    /* RESUME_DRAFT_IDEMPOTENCY_CONFLICT is returned as a
+                       stable outcome row so adapters do not parse engine
+                       error text and can map the conflict deterministically. */
+                    IF @OwnTransaction = 1 COMMIT TRANSACTION;
+                    SELECT CONVERT(bit, 0) AS committed,
+                           CONVERT(bit, 0) AS replayed,
+                           N''idempotency_conflict'' AS outcome,
+                           @ExistingDigest AS request_digest,
+                           CONVERT(bit, 0) AS publishes;
+                    RETURN;
+                END;
+                IF @OwnTransaction = 1 COMMIT TRANSACTION;
                 SELECT CONVERT(bit, 1) AS committed,
                        CONVERT(bit, 1) AS replayed,
                        @ExistingOutcome AS outcome,
@@ -186,8 +271,34 @@ BEGIN TRY
             END;
 
             DECLARE @CommandType nvarchar(40) = JSON_VALUE(@CommandJson, ''$.type'');
+            DECLARE @ExpectedDraftVersion int = TRY_CONVERT(int, JSON_VALUE(@CommandJson, ''$.expected_draft_version''));
             IF @CommandType NOT IN (N''save_item'', N''discard_item'', N''create_private_item'', N''review_candidate'')
+               OR @ExpectedDraftVersion IS NULL
+               OR @ExpectedDraftVersion < 0
                 THROW 52204, ''RESUME_DRAFT_VALIDATION'', 1;
+
+            /* Both text and media commands acquire this same owner draft row
+               before their domain-specific writes. Exact replay was resolved
+               above, so only a genuinely new command reaches the fence. */
+            IF @DraftId IS NULL AND @ExpectedDraftVersion = 0
+            BEGIN
+                INSERT dbo.resume_drafts (owner_profile_id, draft_version)
+                VALUES (@ProfileId, 0);
+                SELECT @DraftId = SCOPE_IDENTITY(), @DraftVersion = 0;
+            END;
+
+            IF ISNULL(@DraftVersion, 0) <> @ExpectedDraftVersion
+               OR @DraftId IS NULL
+            BEGIN
+                IF @OwnTransaction = 1 COMMIT TRANSACTION;
+                SELECT CONVERT(bit, 0) AS committed,
+                       CONVERT(bit, 0) AS replayed,
+                       N''stale_draft'' AS outcome,
+                       @DraftVersion AS current_draft_version,
+                       @ExpectedDraftVersion AS expected_draft_version,
+                       CONVERT(bit, 0) AS publishes;
+                RETURN;
+            END;
 
             IF @CommandType = N''review_candidate''
             BEGIN
@@ -195,6 +306,7 @@ BEGIN TRY
                     (owner_profile_id, request_id, request_digest, command_type, outcome)
                 VALUES
                     (@ProfileId, @RequestId, @Digest, @CommandType, N''reviewed'');
+                IF @OwnTransaction = 1 COMMIT TRANSACTION;
                 SELECT CONVERT(bit, 1) AS committed,
                        CONVERT(bit, 0) AS replayed,
                        N''reviewed'' AS outcome,
@@ -244,21 +356,6 @@ BEGIN TRY
                     THROW 52205, ''RESUME_DRAFT_CHANGED'', 1;
             END;
 
-            DECLARE @DraftId bigint;
-            DECLARE @DraftVersion int;
-
-            SELECT @DraftId = draft.resume_draft_id,
-                   @DraftVersion = draft.draft_version
-            FROM dbo.resume_drafts AS draft WITH (UPDLOCK, HOLDLOCK)
-            WHERE draft.owner_profile_id = @ProfileId;
-
-            IF @DraftId IS NULL
-            BEGIN
-                INSERT dbo.resume_drafts (owner_profile_id, draft_version)
-                VALUES (@ProfileId, 0);
-                SELECT @DraftId = SCOPE_IDENTITY(), @DraftVersion = 0;
-            END;
-
             IF @CommandType = N''save_item''
             BEGIN
                 MERGE dbo.resume_draft_items WITH (UPDLOCK, HOLDLOCK) AS target
@@ -293,6 +390,7 @@ BEGIN TRY
                 VALUES
                     (@ProfileId, @RequestId, @Digest, @CommandType, N''saved'');
 
+                IF @OwnTransaction = 1 COMMIT TRANSACTION;
                 SELECT CONVERT(bit, 1) AS committed,
                        CONVERT(bit, 0) AS replayed,
                        N''saved'' AS outcome,
@@ -317,6 +415,7 @@ BEGIN TRY
                 VALUES
                     (@ProfileId, @RequestId, @Digest, @CommandType, N''discarded'');
 
+                IF @OwnTransaction = 1 COMMIT TRANSACTION;
                 SELECT CONVERT(bit, 1) AS committed,
                        CONVERT(bit, 0) AS replayed,
                        N''discarded'' AS outcome,
@@ -331,6 +430,7 @@ BEGIN TRY
                     (owner_profile_id, request_id, request_digest, command_type, outcome)
                 VALUES
                     (@ProfileId, @RequestId, @Digest, @CommandType, N''created'');
+                IF @OwnTransaction = 1 COMMIT TRANSACTION;
                 SELECT CONVERT(bit, 1) AS committed,
                        CONVERT(bit, 0) AS replayed,
                        N''created'' AS outcome,
@@ -338,6 +438,13 @@ BEGIN TRY
                        CONVERT(bit, 0) AS publishes;
                 RETURN;
             END;
+
+            THROW 52204, ''RESUME_DRAFT_VALIDATION'', 1;
+            END TRY
+            BEGIN CATCH
+                IF @OwnTransaction = 1 AND XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+                THROW;
+            END CATCH;
         END;
     ');
 

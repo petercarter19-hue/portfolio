@@ -13,6 +13,7 @@ production flags.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from typing import Any
@@ -29,6 +30,8 @@ from services.resume_draft_repository import (
     CanonicalValidationError,
     LivingResumeCanonicalCatalog,
     ResumeDraftStoreUnavailable,
+    ResumeDraftIdempotencyConflict,
+    ResumeDraftVersionConflict,
     SqlResumeDraftRepository,
     empty_draft_snapshot,
 )
@@ -62,6 +65,14 @@ MAX_TEXT = 8000
 # still-pending intake references. Observers never change the editor command's
 # own outcome, and an editor command never depends on them.
 _COMMIT_OBSERVERS: list = []
+
+# PS-MVP1-MEDIA-INTEGRATION-001: when Resume media placements are stored inside
+# this same private draft snapshot, the store is marked here so a text command
+# preserves the media state it did not author. A media command applies its own
+# placement change to the live snapshot it fences, so neither surface can
+# silently overwrite the other. Durable SQL keeps placements in dedicated
+# tables fenced by this same draft version and does not set this marker.
+SHARED_MEDIA_STATE_ATTRIBUTE = "resume_media_state_present"
 
 
 def register_commit_observer(observer) -> None:
@@ -134,6 +145,10 @@ def _require_int(value, *, field: str) -> int:
 
 def _command_json(command: dict) -> str:
     body = {key: command[key] for key in command if key != "digest"}
+    # The SQL command receipt must use the same normalized semantic digest as
+    # the service's in-memory receipt. Hashing this transport JSON would be a
+    # different contract (and would make every durable retry look changed).
+    body["request_digest"] = command["digest"]
     return json.dumps(body, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
 
 
@@ -153,20 +168,156 @@ class ResumeDraftService:
         snapshot.setdefault("items", {})
         snapshot.setdefault("receipts", {})
         snapshot.setdefault("base_publication_version", None)
+        # Version this command is fenced against. The shared-draft atomic
+        # command boundary re-checks it inside the store, so a text save and a
+        # media save cannot both win the same version.
+        snapshot["_base_version"] = int(snapshot["draft_version"])
         return snapshot
 
-    def _save(self, owner: str, snapshot: dict, command: dict | None = None) -> None:
+    def _save(self, owner: str, snapshot: dict, command: dict | None = None) -> bool:
         if command is not None:
             snapshot["_pending_command"] = {
                 "request_id": command["request_id"],
                 "command_json": _command_json(command),
             }
+        shares_media_state = getattr(self.repository, SHARED_MEDIA_STATE_ATTRIBUTE, False)
+        if shares_media_state:
+            # Media placements share this draft but are authored only by media
+            # commands, so a text command may not save a whole snapshot: it
+            # must apply only its own record/receipt change through the
+            # store's atomic command boundary and leave media state (and every
+            # other concurrent change) exactly as stored.
+            return self._save_shared_draft(owner, snapshot, command)
         try:
             self.repository.save_owner(owner, snapshot)
+        except ResumeDraftVersionConflict as error:
+            raise ResumeDraftConflictError(
+                "changed",
+                [
+                    {
+                        "field": "draft_version",
+                        "current": error.current,
+                        "expected": error.expected,
+                    }
+                ],
+                "The draft changed before this command.",
+                proposed=(command or {}).get("values"),
+            ) from error
+        except ResumeDraftIdempotencyConflict as error:
+            raise ResumeDraftConflictError(
+                "idempotency_conflict",
+                [{"request_id": (command or {}).get("request_id")}],
+                "That request was already used for different content.",
+                proposed=(command or {}).get("values"),
+            ) from error
         except ResumeDraftStoreUnavailable as error:
             raise ResumeDraftUnavailableError(
                 proposed=(command or {}).get("values")
             ) from error
+        return False
+
+    def _save_shared_draft(
+        self, owner: str, snapshot: dict, command: dict | None
+    ) -> bool:
+        """Apply one text command through the shared draft's atomic boundary.
+
+        Returns True only when the store proved this exact command was already
+        committed and therefore wrote nothing new.
+        """
+
+        commit = getattr(self.repository, "commit_owner_command", None)
+        if not callable(commit) or not getattr(
+            self.repository, "atomic_command_supported", False
+        ):
+            # A store that carries shared media state but cannot fence and
+            # apply one command atomically would let two writers overwrite each
+            # other. Refuse rather than race.
+            raise ResumeDraftUnavailableError(
+                proposed=(command or {}).get("values")
+            )
+        expected_version = snapshot.get("_base_version")
+        if expected_version is None:
+            raise ResumeDraftUnavailableError(
+                proposed=(command or {}).get("values")
+            )
+        record_key = command.get("record_key") if command else None
+        pending = snapshot.get("_pending_command")
+        receipt_keys = set((snapshot.get("receipts") or {}).keys())
+        request_id = command.get("request_id") if command else None
+        request_digest = command.get("digest") if command else None
+        base_publication_version = snapshot.get("base_publication_version")
+        # Preserve this command's own version behaviour exactly: some commands
+        # (a private-record creation) deliberately do not advance the draft
+        # version, so the store applies the observed delta rather than always
+        # bumping by one.
+        version_delta = int(snapshot.get("draft_version") or 0) - int(expected_version)
+        replayed = False
+
+        def apply(live: dict) -> bool:
+            nonlocal replayed
+            live_receipts = dict(live.get("receipts") or {})
+            stored_receipt = (
+                live_receipts.get(request_id) if request_id is not None else None
+            )
+            if stored_receipt is not None:
+                # The receipt read that preceded this command ran before the
+                # store's lock. Another writer can commit the same request in
+                # that window: an exact replay must converge on the stored
+                # success without another write, while the same request id
+                # carrying different content is an idempotency conflict.
+                if str(stored_receipt.get("request_digest") or "") != str(
+                    request_digest or ""
+                ):
+                    raise ResumeDraftIdempotencyConflict()
+                replayed = True
+                return False
+            live_items = dict(live.get("items") or {})
+            if record_key:
+                if record_key in (snapshot.get("items") or {}):
+                    live_items[record_key] = copy.deepcopy(snapshot["items"][record_key])
+                else:
+                    live_items.pop(record_key, None)
+            live["items"] = live_items
+            for key in receipt_keys:
+                live_receipts[key] = copy.deepcopy(snapshot["receipts"][key])
+            live["receipts"] = live_receipts
+            live["base_publication_version"] = base_publication_version
+            live["draft_version"] = int(live.get("draft_version") or 0) + version_delta
+            if isinstance(pending, dict):
+                live["_pending_command"] = copy.deepcopy(pending)
+            return True
+
+        try:
+            commit(
+                owner,
+                expected_version=int(expected_version),
+                apply=apply,
+            )
+        except ResumeDraftVersionConflict as error:
+            raise ResumeDraftConflictError(
+                "changed",
+                [
+                    {
+                        "field": "draft_version",
+                        "current": error.current,
+                        "expected": error.expected,
+                    }
+                ],
+                "The draft changed before this command.",
+                proposed=(command or {}).get("values"),
+            ) from error
+        except ResumeDraftIdempotencyConflict as error:
+            raise ResumeDraftConflictError(
+                "idempotency_conflict",
+                [{"request_id": (command or {}).get("request_id")}],
+                "That request was already used for different content.",
+                proposed=(command or {}).get("values"),
+            ) from error
+        except ResumeDraftStoreUnavailable as error:
+            raise ResumeDraftUnavailableError(
+                proposed=(command or {}).get("values")
+            ) from error
+        return replayed
 
     def _catalog_list(self, owner: str) -> tuple[list[dict], str]:
         try:
@@ -231,6 +382,17 @@ class ResumeDraftService:
                 "schema_applied": False,
             },
         }
+
+    def command_digest(self, payload: object) -> str:
+        """The canonical semantic digest for one draft command payload.
+
+        The intake boundary stages a command the SQL callee replays by this
+        digest, so it must equal the digest every other path computes from the
+        same normalized command semantics (including the expected draft
+        version and request id).
+        """
+
+        return self._normalize_command(payload)["digest"]
 
     def _present_item(self, item: dict, overlay: dict | None) -> dict:
         presented = {
@@ -321,10 +483,11 @@ class ResumeDraftService:
             "item": result.get("item"),
             "review_digest": result.get("review_digest"),
         }
+        replayed = False
         if command["type"] != "review_candidate":
-            self._save(owner, snapshot, command)
+            replayed = bool(self._save(owner, snapshot, command))
             _notify_commit_observers(owner, command["type"], command.get("record_key"), result)
-        result["replayed"] = False
+        result["replayed"] = replayed
         result["publishes"] = False
         result["request_digest"] = command["digest"]
         result["workspace"] = self.get_workspace(owner)

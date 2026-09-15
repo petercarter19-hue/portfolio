@@ -1,0 +1,669 @@
+/* MVP1 increment D: scoped private Resume photo chooser.
+
+   Everything is scoped under .resume-media / .resume-media__* so no other
+   surface is restyled. Colours follow the accepted Resume room: warm ivory
+   surface, deep forest-green serif headings, muted blue body text, restrained
+   gold accent, one solid green primary action. The placement preview keeps the
+   Story banner's cream text region and shows the supporting Experience photo
+   alongside it on desktop and below the Experience text on mobile. */
+
+.resume-media {
+    background: #fffdf8;
+    border: 1px solid rgba(31, 78, 66, 0.16);
+    border-top: 3px solid #c8a24a;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 30px rgba(24, 39, 58, 0.08);
+    color: #2c4a63;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    padding: 1.1rem 1.15rem 1.25rem;
+}
+
+.resume-media[hidden],
+.resume-media__reopen-button[hidden],
+.resume-media__header[hidden] {
+    display: none;
+}
+
+.resume-media__header {
+    align-items: baseline;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+
+.resume-media__eyebrow {
+    color: #6d5a1f;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.resume-media__title {
+    color: #1f4e42;
+    font-family: "Newsreader", Georgia, "Times New Roman", serif;
+    font-size: 1.35rem;
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 0.35rem 0 0.25rem;
+}
+
+.resume-media__intro,
+.resume-media__hint {
+    color: #2c4a63;
+    font-size: 0.88rem;
+    margin: 0 0 0.6rem;
+}
+
+.resume-media__handle {
+    display: none;
+}
+
+.resume-media__tabs {
+    border-bottom: 1px solid rgba(31, 78, 66, 0.16);
+    display: flex;
+    gap: 1rem;
+    margin: 0.4rem 0 0.85rem;
+}
+
+.resume-media__tab {
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: #4a6278;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    padding: 0.5rem 0.15rem;
+}
+
+.resume-media__tab[aria-selected="true"] {
+    border-bottom-color: #1f4e42;
+    color: #1f4e42;
+}
+
+.resume-media__panel[hidden] {
+    display: none;
+}
+
+.resume-media__grid {
+    display: grid;
+    gap: 0.6rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+@media (min-width: 48rem) {
+    .resume-media__grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.resume-media__card {
+    background: #fbf8f1;
+    border: 1px solid rgba(31, 78, 66, 0.14);
+    border-radius: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin: 0;
+    overflow: hidden;
+    padding: 0.4rem;
+    position: relative;
+}
+
+.resume-media__card[data-selected="true"] {
+    border-color: #1f4e42;
+    box-shadow: 0 0 0 1px #1f4e42 inset;
+}
+
+/* Selected-state checkmark on the chosen thumbnail. */
+.resume-media__card[data-selected="true"]::after {
+    background: #1f4e42;
+    border-radius: 999px;
+    color: #fffdf8;
+    content: "\2713";
+    font-size: 0.72rem;
+    line-height: 1;
+    padding: 0.2rem 0.3rem;
+    position: absolute;
+    right: 0.55rem;
+    top: 0.55rem;
+}
+
+.resume-media__thumb {
+    aspect-ratio: 4 / 3;
+    background: #f1ece1;
+    border-radius: 0.45rem;
+    display: block;
+    object-fit: cover;
+    width: 100%;
+}
+
+.resume-media__thumb--empty {
+    align-items: center;
+    color: #7a8ba0;
+    display: flex;
+    font-size: 1.4rem;
+    justify-content: center;
+}
+
+.resume-media__card-state,
+.resume-media__card-label {
+    color: #2c4a63;
+    font-size: 0.78rem;
+    margin: 0;
+}
+
+.resume-media__card-state[data-state="ready"] {
+    color: #1f4e42;
+    font-weight: 600;
+}
+
+.resume-media__card-state[data-state="rejected"],
+.resume-media__card-state[data-state="quarantined"] {
+    color: #8a2f22;
+    font-weight: 600;
+}
+
+.resume-media__quiet {
+    align-self: flex-start;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(31, 78, 66, 0.3);
+    border-radius: 0.45rem;
+    color: #1f4e42;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.5rem;
+}
+
+.resume-media__quiet:hover {
+    background: #f3efe4;
+}
+
+.resume-media__quiet[disabled] {
+    cursor: progress;
+    opacity: 0.6;
+}
+
+.resume-media__upload {
+    align-items: center;
+    background: #ffffff;
+    border: 1px dashed rgba(31, 78, 66, 0.4);
+    border-radius: 0.6rem;
+    color: #1f4e42;
+    cursor: pointer;
+    display: flex;
+    flex-wrap: wrap;
+    font-weight: 600;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 0.6rem;
+    padding: 0.6rem;
+}
+
+.resume-media__upload span {
+    overflow-wrap: normal;
+    white-space: nowrap;
+}
+
+.resume-media__upload input {
+    max-width: 100%;
+}
+
+.resume-media__search label,
+.resume-media__caption label {
+    color: #1f4e42;
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.resume-media__search input,
+.resume-media__caption textarea,
+.resume-media__crop input {
+    border: 1px solid rgba(31, 78, 66, 0.3);
+    border-radius: 0.45rem;
+    font: inherit;
+    max-width: 100%;
+    padding: 0.45rem 0.55rem;
+    width: 100%;
+}
+
+.resume-media__caption textarea {
+    resize: vertical;
+}
+
+.resume-media__assignments {
+    border-top: 1px solid rgba(31, 78, 66, 0.14);
+    margin-top: 0.9rem;
+    padding-top: 0.7rem;
+}
+
+.resume-media__assignments h3 {
+    color: #1f4e42;
+    font-size: 0.92rem;
+    margin: 0 0 0.45rem;
+}
+
+.resume-media__slots {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.resume-media__slot {
+    align-items: baseline;
+    border-bottom: 1px solid rgba(31, 78, 66, 0.1);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.6rem;
+    padding: 0.4rem 0;
+}
+
+.resume-media__slot-name {
+    color: #1f4e42;
+    font-weight: 600;
+}
+
+.resume-media__slot-value {
+    color: #2c4a63;
+    flex: 1 1 8rem;
+}
+
+.resume-media__count {
+    color: #4a6278;
+    font-size: 0.85rem;
+    margin: 0.5rem 0 0.2rem;
+}
+
+.resume-media__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.6rem 0 0;
+}
+
+.resume-media__primary {
+    background: #1f4e42;
+    border: 1px solid #1f4e42;
+    border-radius: 0.5rem;
+    color: #fffdf8;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    padding: 0.6rem 1rem;
+    width: 100%;
+}
+
+.resume-media__primary:hover {
+    background: #173c33;
+}
+
+.resume-media__secondary {
+    background: #ffffff;
+    border: 1px solid rgba(31, 78, 66, 0.35);
+    border-radius: 0.5rem;
+    color: #1f4e42;
+    cursor: pointer;
+    flex: 1 1 8rem;
+    font: inherit;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+}
+
+.resume-media__status {
+    color: #1f4e42;
+    font-size: 0.85rem;
+    min-height: 1.2rem;
+    margin: 0.5rem 0 0;
+}
+
+.resume-media__status[data-kind="error"] {
+    color: #8a2f22;
+}
+
+.resume-media__status[data-kind="pending"] {
+    color: #6d5a1f;
+}
+
+.resume-media__retry {
+    margin: 0.35rem 0 0;
+}
+
+.resume-media__retry[hidden] {
+    display: none;
+}
+
+.resume-media__error {
+    color: #8a2f22;
+    font-size: 0.85rem;
+}
+
+.resume-media__preview-slots {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.resume-media__preview-slot {
+    border: 1px solid rgba(31, 78, 66, 0.14);
+    border-radius: 0.6rem;
+    margin-bottom: 0.6rem;
+    padding: 0.5rem;
+}
+
+.resume-media__preview-slot h3 {
+    color: #1f4e42;
+    font-size: 0.9rem;
+    margin: 0.35rem 0 0.15rem;
+}
+
+/* The reviewed crop rectangle drives one shared view calculation: the frame
+   shows exactly the normalized crop the server validated and persisted. */
+.resume-media__preview-view,
+.resume-media__frame-view {
+    border-radius: 0.45rem;
+    display: block;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+
+.resume-media__preview-view {
+    aspect-ratio: 24 / 10;
+}
+
+.resume-media__frame--story .resume-media__frame-view {
+    aspect-ratio: 3 / 1;
+}
+
+.resume-media__frame--experience .resume-media__frame-view {
+    aspect-ratio: 3 / 2;
+}
+
+.resume-media__preview-image,
+.resume-media__frame-image {
+    display: block;
+    height: 100%;
+    left: 0;
+    max-width: none;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    width: 100%;
+}
+
+.resume-media__preview-image[hidden],
+.resume-media__frame-image[hidden] {
+    display: none;
+}
+
+.resume-media__crop {
+    border: 1px dashed rgba(31, 78, 66, 0.35);
+    border-radius: 0.5rem;
+    margin: 0.5rem 0 0;
+    padding: 0.4rem 0.5rem;
+}
+
+.resume-media__crop legend {
+    color: #1f4e42;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.resume-media__crop p {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.3rem 0;
+}
+
+.resume-media__crop label {
+    flex: 0 1 auto;
+    font-size: 0.78rem;
+}
+
+.resume-media__crop input {
+    flex: 1 1 4rem;
+    width: auto;
+}
+
+.resume-media__crop-actions {
+    align-items: center;
+}
+
+.resume-media__lock,
+.resume-media__footer {
+    color: #4a6278;
+    font-size: 0.8rem;
+    margin: 0.6rem 0 0;
+}
+
+.resume-media__placement {
+    background: #fffdf8;
+    border: 1px solid rgba(31, 78, 66, 0.14);
+    border-radius: 0.75rem;
+    padding: 0.9rem;
+}
+
+.resume-media__placement[hidden] {
+    display: none;
+}
+
+.resume-media__placement h3 {
+    color: #1f4e42;
+    font-family: "Newsreader", Georgia, "Times New Roman", serif;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    margin: 0 0 0.6rem;
+    text-transform: uppercase;
+}
+
+.resume-media__frame {
+    border: 1px dashed rgba(31, 78, 66, 0.3);
+    border-radius: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0 0 0.75rem;
+    padding: 0.5rem;
+}
+
+.resume-media__frame-image {
+    border-radius: 0.45rem;
+    display: block;
+    object-fit: cover;
+    width: 100%;
+}
+
+.resume-media__placeholder {
+    align-items: center;
+    background: #f6f2e8;
+    border-radius: 0.45rem;
+    color: #4a6278;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+    gap: 0.15rem;
+    justify-content: center;
+    margin: 0;
+    min-height: 6.5rem;
+    padding: 0.75rem;
+    text-align: center;
+}
+
+.resume-media__placeholder[hidden] {
+    display: none;
+}
+
+.resume-media__placeholder span {
+    color: #7a8ba0;
+    font-size: 0.78rem;
+}
+
+/* The Story banner keeps its cream text region over the image. */
+.resume-media__story-text {
+    background: rgba(250, 246, 236, 0.92);
+    border-radius: 0.45rem;
+    color: #2c4a63;
+    display: block;
+    font-size: 0.85rem;
+    padding: 0.45rem 0.6rem;
+}
+
+.resume-media__story-optional {
+    color: #7a8ba0;
+    display: block;
+    font-size: 0.76rem;
+}
+
+.resume-media__badge {
+    align-self: flex-end;
+    background: rgba(23, 60, 51, 0.9);
+    border-radius: 0.35rem;
+    color: #fffdf8;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.45rem;
+}
+
+.resume-media__badge[hidden] {
+    display: none;
+}
+
+.resume-media__attribution {
+    color: #6d5a1f;
+    font-size: 0.74rem;
+    margin: 0;
+}
+
+.resume-media__attribution[hidden] {
+    display: none;
+}
+
+.resume-media__reopen-button {
+    background: #fffdf8;
+    border: 1px solid rgba(31, 78, 66, 0.3);
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(24, 39, 58, 0.12);
+    color: #1f4e42;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    padding: 0.5rem 0.9rem;
+}
+
+.resume-media__reopen-hint {
+    color: #7a8ba0;
+    font-weight: 400;
+    margin-left: 0.35rem;
+}
+
+.resume-media :focus-visible,
+.resume-media__reopen-button:focus-visible {
+    outline: 3px solid #b87900;
+    outline-offset: 2px;
+}
+
+@media (min-width: 64rem) {
+    /* The chooser is the Resume room's right rail when it is present. The
+       composer's own stylesheet declares the same rail for its layout; this
+       scoped rule keeps the room correct when only the chooser is enabled and
+       keeps the centered composer welcome state full width. */
+    section.resume-editor:has(> .resume-media) {
+        align-items: start;
+        display: grid;
+        gap: 1.25rem;
+        grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
+    }
+    section.resume-editor:has(> .resume-media).resume-editor--intake-welcome {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    /* Desktop keeps the wide Story banner and the landscape Experience photo
+       alongside it. */
+    .resume-media__placement {
+        display: grid;
+        gap: 0.9rem;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
+    .resume-media__placement h3 {
+        grid-column: 1 / -1;
+        margin-bottom: 0;
+    }
+    .resume-media__frame {
+        margin-bottom: 0;
+    }
+}
+
+/* Narrow screens (including 200% zoom on a desktop viewport) use the same
+   accepted mobile behavior as the private composer: a bottom sheet with a
+   grab handle, clear of the global mobile tab bar, and a floating reopen
+   chip. When the composer's own sheet is open it is the active guide and this
+   sheet starts closed instead of stacking under it. */
+@media (max-width: 63.99rem) {
+    .resume-media {
+        border-radius: 1rem 1rem 0 0;
+        bottom: 0;
+        left: 0;
+        max-height: 76vh;
+        overflow: auto;
+        padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+        position: fixed;
+        right: 0;
+        z-index: 24;
+    }
+    .resume-media__handle {
+        background: rgba(44, 74, 99, 0.28);
+        border-radius: 999px;
+        display: block;
+        height: 0.28rem;
+        margin: 0 auto 0.5rem;
+        width: 2.4rem;
+    }
+    .resume-media__reopen-button {
+        border-radius: 999px;
+        /* Clear of the global mobile tab bar so the chip is never covered. */
+        bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+        box-shadow: 0 8px 20px rgba(24, 39, 58, 0.22);
+        position: fixed;
+        right: 1rem;
+        z-index: 60;
+    }
+}
+
+@media (max-width: 40rem) {
+    /* Mobile stacks the frames, keeping the Experience photo below the
+       Experience text that precedes this block. */
+    .resume-media__placement {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .resume-media * {
+        scroll-behavior: auto;
+        transition: none !important;
+    }
+}
+
+@media (forced-colors: active) {
+    .resume-media,
+    .resume-media__card,
+    .resume-media__primary,
+    .resume-media__quiet,
+    .resume-media__frame {
+        border: 1px solid CanvasText;
+    }
+    .resume-media__primary {
+        background: ButtonFace;
+        color: ButtonText;
+    }
+}

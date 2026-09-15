@@ -146,6 +146,16 @@ stages:
               ANTHROPIC_API_KEY: test-key-for-ci-only
               PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
 
+          # PS-MVP1-MEDIA-INTEGRATION-001. Strict fail-closed runner: a missing
+          # suite, empty discovery, changed required method set, any skip or any
+          # failure exits non-zero. It reuses this job's pinned
+          # requirements-browser-ci.txt and Playwright Chromium.
+          - script: python scripts/run_resume_media_browser_tests.py
+            displayName: Run required Resume media browser suite
+            env:
+              ANTHROPIC_API_KEY: test-key-for-ci-only
+              PLAYWRIGHT_BROWSERS_PATH: $(Pipeline.Workspace)/ms-playwright
+
       - job: BuildJob
         pool:
           vmImage: $(vmImageName)

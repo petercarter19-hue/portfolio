@@ -51,6 +51,8 @@ from services.resume_media_repository import (
     SOURCE_KIND_GENERATED_ILLUSTRATION,
     SOURCE_KIND_OWNER_PHOTO,
     SOURCE_KINDS,
+    SLOT_SPECS,
+    TERMINAL_READINESS_STATES,
     CropRect,
     DraftMediaRecord,
     MediaAuthorization,
@@ -59,6 +61,7 @@ from services.resume_media_repository import (
     PublicationRecord,
     RequestReceipt,
     ResumeMediaRepositoryError,
+    SlotSpec,
     assert_no_catalog_claim,
     catalog_provenance_view,
     catalog_rights_view,
@@ -75,8 +78,9 @@ from services.resume_media_repository import (
 
 
 SCOPE_OWNER_PREVIEW = "owner_preview"
+SCOPE_OWNER_DRAFT = "owner_draft"
 SCOPE_PUBLISHED = "published"
-MEDIA_SCOPES = (SCOPE_OWNER_PREVIEW, SCOPE_PUBLISHED)
+MEDIA_SCOPES = (SCOPE_OWNER_PREVIEW, SCOPE_OWNER_DRAFT, SCOPE_PUBLISHED)
 
 MAX_REQUEST_UUID_LENGTH = 128
 
@@ -189,6 +193,53 @@ def validate_crop(
     )
 
 
+def slot_spec(slot: Any) -> SlotSpec:
+    """Return one slot's bounded presentation contract, refusing the portrait."""
+
+    name = resolve_placement_slot(slot)
+    spec = SLOT_SPECS.get(name)
+    if spec is None:  # pragma: no cover - every allowed slot declares a spec
+        raise ResumeMediaError("invalid-slot")
+    return spec
+
+
+def centered_slot_crop(*, slot: Any, width: Any, height: Any) -> CropRect:
+    """Derive the largest centered crop that already carries the slot's shape.
+
+    Used when a source moves between slots, where reusing the previous slot's
+    crop geometry would present the wrong shape. The result is validated by the
+    same geometry contract the repository re-applies at commit time.
+    """
+
+    name = resolve_placement_slot(slot)
+    try:
+        source_width = int(width)
+        source_height = int(height)
+    except (TypeError, ValueError) as error:
+        raise ResumeMediaError("invalid-source") from error
+    if source_width <= 0 or source_height <= 0:
+        raise ResumeMediaError("invalid-source")
+    spec = slot_spec(name)
+    source_aspect = source_width / source_height
+    if source_aspect >= spec.aspect:
+        crop_height = 1.0
+        crop_width = (spec.aspect * source_height) / source_width
+    else:
+        crop_width = 1.0
+        crop_height = source_width / (spec.aspect * source_height)
+    crop_width = min(crop_width, 1.0)
+    crop_height = min(crop_height, 1.0)
+    candidate = {
+        "x": round((1.0 - crop_width) / 2.0, CROP_PRECISION),
+        "y": round((1.0 - crop_height) / 2.0, CROP_PRECISION),
+        "width": round(crop_width, CROP_PRECISION),
+        "height": round(crop_height, CROP_PRECISION),
+    }
+    return validate_crop(
+        candidate, slot=name, width=source_width, height=source_height
+    )
+
+
 def _translate(function: Any, *args: Any, **kwargs: Any) -> Any:
     """Map repository seam codes onto stable service outcomes."""
 
@@ -214,6 +265,22 @@ def _lifecycle_conflict(lifecycle: str) -> ResumeMediaConflict:
             LIFECYCLE_WITHDRAWN: "source-withdrawn",
         }.get(str(lifecycle), "source-unavailable")
     )
+
+
+def _photo_state_error(record: Any) -> ResumeMediaError:
+    """Stable conflict for a source that exists but cannot be served."""
+
+    lifecycle = str(getattr(record, "lifecycle", "") or "")
+    if lifecycle and lifecycle != LIFECYCLE_ACTIVE:
+        return _lifecycle_conflict(lifecycle)
+    state = str(getattr(record, "state", "") or "")
+    if state in (READINESS_REJECTED, READINESS_QUARANTINED):
+        return ResumeMediaConflict("source-rejected")
+    if state == READINESS_FAILED:
+        return ResumeMediaConflict("source-failed")
+    if state != READINESS_READY:
+        return ResumeMediaConflict("source-not-ready")
+    return ResumeMediaError("source-unavailable")
 
 
 # --- Photo Capture readiness seam ------------------------------------------
@@ -252,6 +319,27 @@ def _hex_digest(value: Any) -> str:
     return text.lower()
 
 
+def _row_version_number(value: Any) -> int:
+    """Return an exact SQL-bigint Photo Capture row-version value.
+
+    Resume placements use a numeric asset version for both source kinds. Photo
+    Capture's authoritative version is SQL ``rowversion``; retain all eight
+    bytes as one non-negative Python integer so the proposed SQL fence can
+    compare the reviewed placement with the locked source row.
+    """
+
+    token = _hex_digest(value)
+    if len(token) != 16 or any(character not in "0123456789abcdef" for character in token):
+        raise ResumeMediaError("source-unavailable")
+    version = int(token, 16)
+    # The proposed placement schema uses bigint. Refuse values whose high bit
+    # cannot be represented by SQL Server bigint instead of wrapping or losing
+    # source-version identity at the durable fence.
+    if version > 0x7FFF_FFFF_FFFF_FFFF:
+        raise ResumeMediaError("source-unavailable")
+    return version
+
+
 class ResumePhotoReadinessAdapter:
     """Map Photo Capture's source lifecycle onto Resume readiness.
 
@@ -276,10 +364,12 @@ class ResumePhotoReadinessAdapter:
         source_id = str(row.get("source_key") or row.get("source_id") or "")
         if not source_id:
             raise ResumeMediaError("source-unavailable")
+        raw_version = row.get("row_version") or row.get("version_token")
         record = {
             "source_id": source_id,
             "state": state,
-            "version_token": _hex_digest(row.get("row_version") or row.get("version_token")),
+            "version_token": _hex_digest(raw_version),
+            "source_version": _row_version_number(raw_version),
             "digest": "",
             "width": 0,
             "height": 0,
@@ -393,9 +483,28 @@ def _require_text(value: Any, code: str, *, max_length: int = 0) -> str:
 
 
 def _require_version(value: Any, code: str = "invalid-request") -> int:
-    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+    # SQL rowversion values can exceed JavaScript's exact-integer range. The
+    # browser therefore round-trips large versions as canonical decimal text;
+    # normalize that one lossless representation at the API boundary.
+    if isinstance(value, str) and value.isascii() and value.isdecimal():
+        if value != "0" and value.startswith("0"):
+            raise ResumeMediaError(code)
+        value = int(value)
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or value < 0
+        or value > 0x7FFF_FFFF_FFFF_FFFF
+    ):
         raise ResumeMediaError(code)
     return int(value)
+
+
+def _browser_safe_version(value: int) -> int | str:
+    """Keep exact versions across JSON/JavaScript without numeric rounding."""
+
+    version = int(value)
+    return version if version <= 9_007_199_254_740_991 else str(version)
 
 
 def _normalize_source_ref(source: Any) -> dict[str, Any]:
@@ -499,7 +608,11 @@ def review_placement_view(placement: MediaPlacement) -> dict[str, Any]:
     return {
         "asset_kind": placement.source_kind,
         "asset_id": placement.asset_id,
-        "asset_version": placement.asset_version,
+        # SQL rowversion values can exceed JavaScript's exact-integer range.
+        # Every browser-facing saved/review projection uses the same canonical
+        # decimal text as the staged preview; the internal Python/SQL value
+        # stays an exact integer.
+        "asset_version": _browser_safe_version(placement.asset_version),
         "crop": placement.crop.as_dict(),
         "presentation_version": placement.presentation_version,
         "alt_text": placement.alt_text,
@@ -555,6 +668,12 @@ class ResumeMediaService:
         self._photo_readiness = photo_readiness
         self._staged: dict[tuple[str, str], MediaPlacement] = {}
         self._lock = threading.RLock()
+
+    @property
+    def repository(self) -> Any:
+        """The repository this service commands (wiring and diagnostic access)."""
+
+        return self._repository
 
     # -- shared helpers ----------------------------------------------------
 
@@ -805,6 +924,10 @@ class ResumeMediaService:
         return {
             "slot": placement.slot,
             "source_kind": placement.source_kind,
+            # Enough for the owner to name the exact reviewed source again.
+            # The raw digest, storage key and provider locator stay private.
+            "asset_id": placement.asset_id,
+            "asset_version": _browser_safe_version(placement.asset_version),
             "decorative": placement.decorative,
             "biographical_evidence": False,
             "orientation": resolved.orientation,
@@ -828,6 +951,61 @@ class ResumeMediaService:
 
     # -- private photo readiness -------------------------------------------
 
+    def media_versions(self, *, owner_id: str) -> dict[str, int]:
+        """The owner's current private draft and publication versions."""
+
+        owner = _require_text(owner_id, "required")
+        draft = self._repository_call(self._repository.get_draft, owner_id=owner)
+        publication = self._repository_call(
+            self._repository.get_publication, owner_id=owner
+        )
+        return {
+            "draft_version": int(draft.version),
+            "publication_version": int(publication.version),
+        }
+
+    def owner_photo_view(self, *, owner_id: str) -> tuple[dict[str, Any], ...]:
+        """Safe owner view of the mirrored private photo sources.
+
+        Never exposes original filenames, storage keys, provider locators, scan
+        metadata or digests. A source that is not ready is reported as
+        ineligible, and a rejected or quarantined source is honestly terminal.
+        """
+
+        owner = _require_text(owner_id, "required")
+        records = self._repository_call(
+            self._repository.list_owner_photos, owner_id=owner
+        )
+        entries: list[dict[str, Any]] = []
+        for record in records:
+            selectable = (
+                record.lifecycle == LIFECYCLE_ACTIVE
+                and record.state == READINESS_READY
+                and bool(record.digest)
+                and int(record.width) > 0
+                and int(record.height) > 0
+            )
+            entries.append(
+                {
+                    "source_id": record.source_id,
+                    "state": record.state,
+                    "lifecycle": record.lifecycle,
+                    "orientation": record.orientation,
+                    "width": int(record.width),
+                    "height": int(record.height),
+                    "content_type": str(record.content_type),
+                    "selectable": selectable,
+                    "preview_available": selectable,
+                    "retryable": (
+                        record.lifecycle == LIFECYCLE_ACTIVE
+                        and record.state not in TERMINAL_READINESS_STATES
+                    ),
+                    "reason_code": record.reason_code,
+                }
+            )
+        entries.sort(key=lambda entry: entry["source_id"])
+        return tuple(entries)
+
     def ingest_private_photo(self, *, owner_id: str, upload: Any) -> dict[str, Any]:
         """Start one owner-private photo upload through the readiness seam."""
 
@@ -837,7 +1015,7 @@ class ResumeMediaService:
         record = self._photo_readiness.create_source(owner, upload)
         stored = self._repository_call(
             self._repository.create_owner_photo,
-            record=self._photo_repository_record(owner, record, version=0),
+            record=self._photo_repository_record(owner, record),
         )
         return {"source_id": stored.source_id, "state": stored.state}
 
@@ -872,9 +1050,6 @@ class ResumeMediaService:
             # The provider answered for a different source than the one that
             # was requested: fail closed and write nothing.
             raise ResumeMediaConflict("source-changed")
-        version = previous.version
-        if record["state"] == READINESS_READY and record["digest"] != previous.digest:
-            version = previous.version + 1
         # Compare-and-set against the exact prior lifecycle/version/token under
         # the repository lock, addressed by the requested owner/source identity
         # rather than a provider-returned row identity: a restriction, deletion,
@@ -884,9 +1059,7 @@ class ResumeMediaService:
             self._repository.update_owner_photo_state,
             owner_id=owner,
             source_id=source,
-            record=self._photo_repository_record(
-                owner, {**record, "source_id": source}, version=version
-            ),
+            record=self._photo_repository_record(owner, {**record, "source_id": source}),
             expected_lifecycle=previous.lifecycle,
             expected_version=previous.version,
             expected_version_token=previous.version_token,
@@ -899,7 +1072,7 @@ class ResumeMediaService:
         }
 
     def _photo_repository_record(
-        self, owner_id: str, record: Mapping[str, Any], *, version: int
+        self, owner_id: str, record: Mapping[str, Any]
     ) -> OwnerPhotoRecord:
         return OwnerPhotoRecord(
             owner_id=owner_id,
@@ -912,7 +1085,7 @@ class ResumeMediaService:
             content_type=str(record.get("content_type") or ""),
             byte_length=int(record.get("byte_length") or 0),
             derivative_ref=record.get("derivative_ref"),
-            version=int(version),
+            version=int(record["source_version"]),
             reason_code=record.get("reason_code"),
         )
 
@@ -1043,6 +1216,97 @@ class ResumeMediaService:
         slot_name = resolve_placement_slot(slot)
         with self._lock:
             return self._staged.pop((owner, slot_name), None) is not None
+
+    def staged_placement_view(self, *, owner_id: str) -> dict[str, Any]:
+        """Owner-scoped view of pending slot choices. Never a draft write."""
+
+        owner = _require_text(owner_id, "required")
+        staged: dict[str, Any] = {}
+        for slot in PLACEMENT_SLOTS:
+            placement = self._staged_placement(owner, slot)
+            if placement is None:
+                continue
+            preview = self.preview_placement(owner_id=owner, slot=slot)
+            if preview is not None:
+                staged[slot] = preview
+        return staged
+
+    def draft_media_view(self, *, owner_id: str) -> dict[str, Any]:
+        """Safe owner view of the saved private draft media state.
+
+        This is the draft, not the publication: nothing here is shared, and an
+        unavailable or revoked source is reported honestly rather than served.
+        """
+
+        owner = _require_text(owner_id, "required")
+        draft = self._repository_call(self._repository.get_draft, owner_id=owner)
+        slots: dict[str, Any] = {}
+        for slot in PLACEMENT_SLOTS:
+            placement = draft.placement_for(slot)
+            if placement is None:
+                slots[slot] = None
+                continue
+            entry: dict[str, Any] = {
+                "slot": slot,
+                "source_kind": placement.source_kind,
+                **review_placement_view(placement),
+            }
+            try:
+                resolved = self._resolve_source(
+                    owner, self._source_ref_for_placement(placement)
+                )
+            except ResumeMediaError:
+                entry["media_available"] = False
+            else:
+                entry.update(
+                    {
+                        "media_available": True,
+                        "orientation": resolved.orientation,
+                        "width": resolved.width,
+                        "height": resolved.height,
+                    }
+                )
+            slots[slot] = entry
+        return {"draft_version": draft.version, "slots": slots}
+
+    def swap_staged_placements(self, *, owner_id: str) -> dict[str, Any]:
+        """Swap two staged sources and give each one its new slot's shape.
+
+        The previous slot's crop geometry is never reused for the other shape:
+        each swapped source is resolved again and receives a crop that already
+        carries the target slot's presentation aspect.
+        """
+
+        owner = _require_text(owner_id, "required")
+        current = {slot: self._staged_placement(owner, slot) for slot in PLACEMENT_SLOTS}
+        if any(placement is None for placement in current.values()):
+            raise ResumeMediaConflict("required")
+        draft = self._repository_call(self._repository.get_draft, owner_id=owner)
+        moved = {
+            PLACEMENT_SLOTS[0]: current[PLACEMENT_SLOTS[1]],
+            PLACEMENT_SLOTS[1]: current[PLACEMENT_SLOTS[0]],
+        }
+        previews: dict[str, Any] = {}
+        with self._lock:
+            for slot, source_placement in moved.items():
+                resolved = self._resolve_source(
+                    owner, self._source_ref_for_placement(source_placement)
+                )
+                rect = centered_slot_crop(
+                    slot=slot, width=resolved.width, height=resolved.height
+                )
+                semantics = {
+                    "alt_text": source_placement.alt_text,
+                    "decorative": source_placement.decorative,
+                    "caption": source_placement.caption,
+                }
+                self._assert_catalog_claim(owner, resolved, semantics)
+                placement = self._semantic_placement(
+                    draft, slot, resolved, rect, semantics
+                )
+                self._staged[(owner, slot)] = placement
+                previews[slot] = self._preview_payload(placement, resolved)
+        return {"slots": previews}
 
     # -- private Add -------------------------------------------------------
 
@@ -1355,6 +1619,12 @@ class ResumeMediaService:
             raise ResumeMediaError("invalid-request")
         if scope == SCOPE_OWNER_PREVIEW:
             placement = self._staged_placement(owner, slot_name)
+        elif scope == SCOPE_OWNER_DRAFT:
+            # The saved private draft placement: this is what the member sees
+            # after an explicit Add, including after a reload, and it is a
+            # different state from the pending staged preview.
+            draft = self._repository_call(self._repository.get_draft, owner_id=owner)
+            placement = draft.placement_for(slot_name)
         else:
             publication = self._repository_call(
                 self._repository.get_publication, owner_id=owner
@@ -1385,6 +1655,92 @@ class ResumeMediaService:
             # replaced, so re-query the readiness port after the read.
             if not self._readiness_unchanged(owner, authorization):
                 return None
+        return {
+            "stream": io.BytesIO(data),
+            "content_type": authorization.content_type,
+            "byte_length": len(data),
+        }
+
+    def open_private_photo_preview(
+        self, *, owner_id: str, source_id: Any
+    ) -> dict[str, Any] | None:
+        """Authorize, read, recheck, and only then return one private preview.
+
+        The My photos chooser shows an owner's own uploaded source before that
+        source is staged for a placement slot. The read path is the same
+        contract a placement read uses: deny before reading storage, verify the
+        exact bytes, then re-query the authoritative readiness source so a
+        restriction, deletion, replacement or version change that lands during
+        the read discards the bytes instead of serving them.
+        """
+
+        owner = _require_text(owner_id, "required")
+        source = _require_text(source_id, "required")
+        authorization = self._repository_call(
+            self._repository.get_source_authorization,
+            owner_id=owner,
+            source_id=source,
+        )
+        if authorization is None:
+            record = self._repository_call(
+                self._repository.get_owner_photo, owner_id=owner, source_id=source
+            )
+            if record is None:
+                raise ResumeMediaDenied()
+            raise _photo_state_error(record)
+        data = self._read_bytes(owner, authorization)
+        if (
+            len(data) != authorization.byte_length
+            or sha256_hex(data) != authorization.expected_digest
+        ):
+            raise ResumeMediaError("media-unavailable")
+        current = self._repository_call(
+            self._repository.get_source_authorization,
+            owner_id=owner,
+            source_id=source,
+        )
+        if current != authorization:
+            return None
+        if not self._readiness_unchanged(owner, authorization):
+            return None
+        return {
+            "stream": io.BytesIO(data),
+            "content_type": authorization.content_type,
+            "byte_length": len(data),
+        }
+
+    def open_library_thumbnail(
+        self, *, owner_id: str, asset_id: Any, asset_version: Any, slot: Any
+    ) -> dict[str, Any] | None:
+        """Authorize, read, recheck, and only then return one catalog derivative."""
+
+        owner = _require_text(owner_id, "required")
+        asset = _require_text(asset_id, "required")
+        version = _require_version(asset_version)
+        slot_name = resolve_placement_slot(slot)
+        authorization = self._repository_call(
+            self._repository.get_catalog_thumbnail_authorization,
+            asset_id=asset,
+            version=version,
+            slot=slot_name,
+        )
+        if authorization is None:
+            return None
+        data = self._read_bytes(owner, authorization)
+        if (
+            len(data) != authorization.byte_length
+            or sha256_hex(data) != authorization.expected_digest
+        ):
+            raise ResumeMediaError("media-unavailable")
+        current = self._repository_call(
+            self._repository.get_catalog_thumbnail_authorization,
+            asset_id=asset,
+            version=version,
+            slot=slot_name,
+        )
+        if current != authorization:
+            # Withdrawn, replaced or re-versioned during the read: drop bytes.
+            return None
         return {
             "stream": io.BytesIO(data),
             "content_type": authorization.content_type,
@@ -1427,6 +1783,9 @@ class ResumeMediaService:
     ) -> bool:
         if scope == SCOPE_OWNER_PREVIEW:
             current_placement = self._staged_placement(owner_id, placement.slot)
+        elif scope == SCOPE_OWNER_DRAFT:
+            draft = self._repository_call(self._repository.get_draft, owner_id=owner_id)
+            current_placement = draft.placement_for(placement.slot)
         else:
             publication = self._repository_call(
                 self._repository.get_publication, owner_id=owner_id

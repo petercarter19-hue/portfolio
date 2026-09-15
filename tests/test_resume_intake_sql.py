@@ -41,6 +41,7 @@ from services.resume_intake_repository import (
     CALLEE_TYPE_VOCABULARY,
     COMMAND_KEY_SETS,
     COMMAND_PROCEDURES,
+    InMemoryResumeIntakeRepository,
     RESUME_INTAKE_BROWSER_PROCEDURES,
     RESUME_INTAKE_WORKER_PROCEDURES,
     ResumeIntakeStoreUnavailable,
@@ -621,11 +622,126 @@ class ResumeIntakeSqlTests(unittest.TestCase):
             "usp_CommitResumeDraftCommandForOwner",
         )
         # The editor callee owns a transaction and rolls back on failure, which
-        # rolls the whole outer member action back. The draft callee has none,
-        # so it participates in the caller's transaction.
+        # rolls the whole outer member action back.
         self.assertIn("BEGIN TRANSACTION", editor)
         self.assertIn("ROLLBACK TRANSACTION", editor)
-        self.assertNotIn("BEGIN TRANSACTION", draft)
+        # The draft callee is called directly by the autocommit driver and
+        # nested inside the intake transaction. It owns a transaction only when
+        # it is the outermost caller; nested, it participates and never commits
+        # or rolls the caller back.
+        self.assertIn("DECLARE @OwnTransaction bit = 0", draft)
+        self.assertIn("IF @@TRANCOUNT = 0", draft)
+        self.assertIn("SET @OwnTransaction = 1", draft)
+        self.assertIn("IF @OwnTransaction = 1 COMMIT TRANSACTION;", draft)
+        self.assertIn(
+            "IF @OwnTransaction = 1 AND XACT_STATE() <> 0 ROLLBACK TRANSACTION;",
+            draft,
+        )
+        # Every returning path releases the transaction it owns, and no
+        # unguarded commit or rollback survives inside the callee.
+        self.assertEqual(
+            draft.count("IF @OwnTransaction = 1 COMMIT TRANSACTION;"),
+            draft.count("RETURN;"),
+        )
+        unguarded = draft.replace(
+            "IF @OwnTransaction = 1 COMMIT TRANSACTION;", ""
+        ).replace(
+            "IF @OwnTransaction = 1 AND XACT_STATE() <> 0 ROLLBACK TRANSACTION;", ""
+        )
+        self.assertNotIn("COMMIT TRANSACTION", unguarded)
+        self.assertNotIn("ROLLBACK TRANSACTION", unguarded)
+        self.assertEqual(draft.count("BEGIN TRY"), 1)
+        self.assertEqual(draft.count("BEGIN CATCH"), 1)
+        # The exact replay still wins before the expected-version fence.
+        self.assertLess(
+            draft.index("IF @ExistingDigest IS NOT NULL"),
+            draft.index("IF ISNULL(@DraftVersion, 0) <> @ExpectedDraftVersion"),
+        )
+
+    def test_overlay_decision_fences_the_version_observed_before_commit(self):
+        catalog = InMemoryCanonicalCatalog()
+        draft = ResumeDraftService(
+            repository=InMemoryResumeDraftRepository(), catalog=catalog
+        )
+        service = ResumeIntakeService(
+            repository=InMemoryResumeIntakeRepository(),
+            draft_service=draft,
+            policy=selected_policy_for_tests(),
+        )
+        existing_key = str(uuid4())
+        catalog.put_item(
+            "owner-a",
+            {
+                "record_key": existing_key,
+                "record_type": "role",
+                "content_token": "1",
+                "access_revision": 1,
+                "editable": True,
+                "blocked_reason": None,
+                "save_mode": "canonical",
+                "values": {
+                    "role_title": "Systems Engineer", "employer_name": "Northrop Grumman",
+                    "location_text": None, "summary": "Keeps the summary.",
+                    "start_date": "2025-01-01", "end_date": None, "date_precision": "month",
+                    "employment_type": "full_time", "current_role": True,
+                },
+                "resume_display": False,
+                "visitor_ai": False,
+                "private_assistance_excluded": False,
+            },
+        )
+        created = service.submit(
+            "owner-a",
+            {
+                "type": "add_submission",
+                "request_id": str(uuid4()),
+                "items": [{"client_key": "r1", "record_type": "role",
+                           "values": {"role_title": "Systems Engineer",
+                                      "employer_name": "Northrop Grumman",
+                                      "location_text": "Huntsville, Alabama"},
+                           "explicit_clears": []}],
+            },
+        )
+        proposal = created["proposals"][0]
+
+        # A concurrent draft save lands after the decision's authoritative read
+        # but before the overlay commit, so the fence must reject it.
+        real_workspace = draft.get_workspace
+        advanced = {"done": False}
+
+        def racing_workspace(owner):
+            workspace = real_workspace(owner)
+            if not advanced["done"]:
+                advanced["done"] = True
+                draft.commit(
+                    owner,
+                    {
+                        "request_id": str(uuid4()),
+                        "type": "save_item",
+                        "record_key": existing_key,
+                        "record_type": "role",
+                        "expected_content_token": "1",
+                        "expected_access_revision": 1,
+                        "values": {"summary": "Concurrent save"},
+                    },
+                )
+            return workspace
+
+        draft.get_workspace = racing_workspace
+        try:
+            with self.assertRaises(ResumeIntakeConflictError) as caught:
+                service.decide(
+                    "owner-a",
+                    {
+                        "request_id": str(uuid4()),
+                        "proposal_key": proposal["proposal_key"],
+                        "decision": "accept",
+                        "confirmed_values": proposal["proposed_values"],
+                    },
+                )
+        finally:
+            draft.get_workspace = real_workspace
+        self.assertEqual(caught.exception.error_code, "changed")
 
     def test_previous_candidate_body_fails_the_transaction_assertion(self):
         """A fixture of b08b04a1's body must fail the same check."""
@@ -1133,7 +1249,7 @@ class ResumeIntakeSqlTests(unittest.TestCase):
 
     def test_emitted_draft_intent_matches_the_real_draft_contract(self):
         simulator = DeclaredIntakeSimulator()
-        service, repository, catalog, _draft = _sql_service(simulator)
+        service, repository, catalog, draft = _sql_service(simulator)
         existing_key = str(uuid4())
         catalog.put_item(
             "owner-a",
@@ -1169,6 +1285,22 @@ class ResumeIntakeSqlTests(unittest.TestCase):
             },
         )
         proposal = created["proposals"][0]
+        # Advance the authoritative draft first so a fabricated default version
+        # cannot satisfy the contract.
+        draft.commit(
+            "owner-a",
+            {
+                "request_id": str(uuid4()),
+                "type": "save_item",
+                "record_key": existing_key,
+                "record_type": "role",
+                "expected_content_token": "1",
+                "expected_access_revision": 1,
+                "values": {"summary": "Existing draft wording"},
+            },
+        )
+        observed_version = draft.get_workspace("owner-a")["draft_version"]
+        self.assertEqual(observed_version, 1)
         service.decide(
             "owner-a",
             {
@@ -1186,6 +1318,15 @@ class ResumeIntakeSqlTests(unittest.TestCase):
         self.assertEqual(command["expected_access_revision"], 1)
         self.assertEqual(set(command["values"]),
                          {"role_title", "employer_name", "location_text"})
+        # The staged intent carries the authoritative version and the canonical
+        # semantic digest of exactly this command, not placeholders.
+        self.assertEqual(command["expected_draft_version"], observed_version)
+        rebuilt = {
+            key: value for key, value in command.items() if key != "request_digest"
+        }
+        rebuilt["request_id"] = draft_intents[0]["request_id"]
+        self.assertRegex(command["request_digest"], r"^[0-9a-f]{64}$")
+        self.assertEqual(draft.command_digest(rebuilt), command["request_digest"])
         CalleeContractValidator().validate("resume_draft", draft_intents[0]["request_id"], command)
 
     def test_each_operation_emits_its_declared_key_set(self):

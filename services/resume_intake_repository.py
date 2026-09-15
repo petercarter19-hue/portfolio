@@ -178,7 +178,9 @@ CALLEE_COMMAND_KEYS = {
     "living_resume": frozenset(
         {"command_id", "type", "record_key", "parent_key", "expected_version", "values"}
     ),
-    # PS-RESUME-DRAFT-001: the drafted-values overlay command.
+    # PS-RESUME-DRAFT-001: the drafted-values overlay command. The callee
+    # replays on its canonical semantic digest and fences the shared draft
+    # version, so the staged intent carries both explicitly.
     "resume_draft": frozenset(
         {
             "type",
@@ -186,6 +188,8 @@ CALLEE_COMMAND_KEYS = {
             "record_type",
             "expected_content_token",
             "expected_access_revision",
+            "expected_draft_version",
+            "request_digest",
             "values",
             "intended_permission_expansions",
         }

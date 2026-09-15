@@ -2407,11 +2407,13 @@ class ResumeIntakeService:
             return None
         return item
 
-    def _canonical_items(self, owner):
-        """Read the owner's existing facts. Fail closed when unreadable.
+    def _canonical_view(self, owner):
+        """Read the owner's existing facts and draft version in one read.
 
         Treating an unreadable catalog as empty would let the composer save a
-        duplicate and mis-route a change to an existing fact as a new one.
+        duplicate and mis-route a change to an existing fact as a new one. The
+        same read supplies the authoritative draft version an overlay command
+        fences against, so no caller ever guesses it.
         """
 
         try:
@@ -2422,7 +2424,18 @@ class ResumeIntakeService:
         items = workspace.get("items")
         if not isinstance(items, list):
             raise ResumeIntakeUnavailableError()
-        return [item for item in items if not item.get("orphaned")]
+        draft_version = workspace.get("draft_version")
+        if (
+            isinstance(draft_version, bool)
+            or not isinstance(draft_version, int)
+            or draft_version < 0
+        ):
+            raise ResumeIntakeUnavailableError()
+        return [item for item in items if not item.get("orphaned")], draft_version
+
+    def _canonical_items(self, owner):
+        items, _draft_version = self._canonical_view(owner)
+        return items
 
     def _save_new_fact(self, owner, snapshot, unit, plan, submission_key):
         record_key = _stable_key(submission_key, f"fact:{plan.client_key}")
@@ -2530,8 +2543,12 @@ class ResumeIntakeService:
             )
             return self._save_new_fact(owner, snapshot, unit, plan, proposal["proposal_key"])
         # A change to an existing fact goes through B's private draft overlay,
-        # against the versions captured when the proposal was made.
-        existing = self._find_item(owner, target_key)
+        # against the versions captured when the proposal was made. The same
+        # read supplies the authoritative draft version fenced below.
+        items, expected_draft_version = self._canonical_view(owner)
+        existing = next(
+            (item for item in items if item.get("record_key") == target_key), None
+        )
         if existing is None:
             raise ResumeIntakeNotFoundError()
         clears = list(proposal.get("explicit_clears") or [])
@@ -2554,6 +2571,7 @@ class ResumeIntakeService:
             "record_type": existing.get("record_type") or record_type,
             "expected_content_token": proposal.get("target_content_token"),
             "expected_access_revision": proposal.get("target_access_revision"),
+            "expected_draft_version": expected_draft_version,
             "values": partial,
             "intended_permission_expansions": {"resume_display": False, "visitor_ai": False},
         }
@@ -2567,14 +2585,18 @@ class ResumeIntakeService:
             "values_source": "member_supplied",
             "persisted": False,
         }
+        # The draft procedure takes @RequestId as its own parameter and reads
+        # only its declared JSON keys, so the request id must not appear inside
+        # the command body. The digest is the canonical semantic digest of the
+        # same normalized command the in-memory path commits, so a retried
+        # intent replays and a changed one conflicts.
         try:
+            callee_command = {k: v for k, v in payload.items() if k != "request_id"}
+            callee_command["request_digest"] = self.draft_service.command_digest(payload)
             applied = unit.apply_canonical_command(
                 owner, payload, projected,
                 boundary="resume_draft", request_id=overlay_request_id,
-                # The draft procedure takes @RequestId as its own parameter and
-                # reads only its declared JSON keys, so the request id must not
-                # appear inside the command body.
-                callee_command={k: v for k, v in payload.items() if k != "request_id"},
+                callee_command=callee_command,
             )
         except ResumeDraftConflictError as error:
             raise ResumeIntakeConflictError(

@@ -725,7 +725,19 @@ class MediaStoragePort(Protocol):
 
 @runtime_checkable
 class ResumeMediaRepository(Protocol):
-    """Repository seam the Resume media service depends on."""
+    """Repository seam the Resume media service depends on.
+
+    A shared-draft commit has to fence the placement's SOURCE lifecycle against
+    a concurrent restriction, withdrawal, deletion or replacement, not just
+    re-read it once. An in-process source repository therefore exposes
+    ``lifecycle_guard`` — the same reentrant lock every source mutation takes —
+    and the commit holds it across source revalidation and the draft write
+    (lock order: source lifecycle, then draft store). A durable source adapter
+    that fences inside its own database transaction declares
+    ``durable_source_fence = True`` on the durable draft store instead. A source
+    repository with neither contract is not an authoritative fence, and the
+    media wiring refuses it rather than revalidating without serialization.
+    """
 
     def get_draft(self, owner_id: str) -> DraftMediaRecord: ...
 
@@ -759,6 +771,9 @@ class ResumeMediaRepository(Protocol):
         self, owner_id: str, source_id: str
     ) -> OwnerPhotoRecord | None: ...
 
+    def list_owner_photos(self, owner_id: str) -> Sequence[OwnerPhotoRecord]:
+        """Every mirrored private source for one owner, in a stable order."""
+
     def create_owner_photo(self, record: OwnerPhotoRecord) -> OwnerPhotoRecord: ...
 
     def update_owner_photo_state(
@@ -789,6 +804,23 @@ class ResumeMediaRepository(Protocol):
     def get_media_authorization(
         self, *, owner_id: str, placement: MediaPlacement
     ) -> MediaAuthorization | None: ...
+
+    def get_source_authorization(
+        self, *, owner_id: str, source_id: str
+    ) -> MediaAuthorization | None:
+        """Authorize one owner-private source preview before any bytes move.
+
+        The My photos chooser renders an upload before it is staged for a slot,
+        so it needs the same authorize-then-read contract a placement read uses.
+        This is a read gate, not a placement: the returned authorization is
+        bound to the exact source version, digest, dimensions and byte length,
+        and the caller re-reads it after the bytes are read.
+        """
+
+    def get_catalog_thumbnail_authorization(
+        self, *, asset_id: str, version: int, slot: str
+    ) -> MediaAuthorization | None:
+        """Authorize one curated catalog derivative read for one presentation slot."""
 
 
 # --- synthetic in-memory doubles (test-only) -------------------------------
@@ -871,6 +903,17 @@ class InMemoryResumeMediaRepository:
         # write so a test can inject a restriction/deletion/version race
         # between service validation and the atomic repository write.
         self.on_commit_entry: Any = None
+
+    @property
+    def lifecycle_guard(self) -> Any:
+        """The reentrant lock every source read and mutation already takes.
+
+        A shared-draft commit holds this across source revalidation and the
+        draft write, so a restriction, withdrawal, deletion or replacement can
+        never land between the commit's source read and its persisted write.
+        """
+
+        return self._lock
 
     # -- deterministic bookkeeping used by tests ---------------------------
 
@@ -1184,6 +1227,16 @@ class InMemoryResumeMediaRepository:
         with self._lock:
             return self._owner_photos.get((str(owner_id), str(source_id)))
 
+    def list_owner_photos(self, owner_id: str) -> tuple[OwnerPhotoRecord, ...]:
+        owner = str(owner_id)
+        with self._lock:
+            records = [
+                record
+                for (candidate_owner, _), record in self._owner_photos.items()
+                if candidate_owner == owner
+            ]
+        return tuple(sorted(records, key=lambda record: record.source_id))
+
     def get_catalog_asset(
         self, asset_id: str, version: int | None = None
     ) -> CatalogAssetRecord | None:
@@ -1340,6 +1393,60 @@ class InMemoryResumeMediaRepository:
                 height=record.height,
             )
         return None
+
+    def get_source_authorization(
+        self, *, owner_id: str, source_id: str
+    ) -> MediaAuthorization | None:
+        """Authorize one private source preview: owner, lifecycle and readiness."""
+
+        record = self.get_owner_photo(owner_id, source_id)
+        if record is None or record.lifecycle != LIFECYCLE_ACTIVE:
+            return None
+        if record.state != READINESS_READY:
+            return None
+        if not record.digest or record.width <= 0 or record.height <= 0:
+            return None
+        return MediaAuthorization(
+            slot="",
+            accessor=ACCESSOR_PHOTO_READINESS,
+            asset_version=record.version,
+            asset_digest=record.digest,
+            expected_digest=record.digest,
+            byte_length=record.byte_length,
+            content_type=record.content_type,
+            source_id=record.source_id,
+            source_version_token=record.version_token,
+            width=record.width,
+            height=record.height,
+        )
+
+    def get_catalog_thumbnail_authorization(
+        self, *, asset_id: str, version: int, slot: str
+    ) -> MediaAuthorization | None:
+        """Authorize one active catalog derivative read for one slot shape."""
+
+        if slot not in SLOT_SPECS:
+            return None
+        record = self.get_catalog_asset(asset_id, version)
+        if record is None or record.lifecycle != LIFECYCLE_ACTIVE:
+            return None
+        if record.origin != SOURCE_KIND_GENERATED_ILLUSTRATION:
+            return None
+        derivative = record.derivative_for(slot)
+        if derivative is None:
+            return None
+        return MediaAuthorization(
+            slot=slot,
+            accessor=ACCESSOR_STORAGE,
+            asset_version=record.version,
+            asset_digest=record.digest,
+            expected_digest=derivative.digest,
+            byte_length=derivative.byte_length,
+            content_type=derivative.content_type,
+            ref=derivative.ref,
+            width=record.width,
+            height=record.height,
+        )
 
     # -- write paths (atomic with rollback) --------------------------------
 
