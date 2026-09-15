@@ -18,7 +18,8 @@
     "templates/homepage.html",
     "static/css/homepage-minimal.css",
     "tests/test_homepage_scenes.py",
-    "tests/test_dark_theme_availability.py"
+    "tests/test_dark_theme_availability.py",
+    "tests/test_shared_shell_convergence.py"
   ],
   "domains": [
     "content:homepage-minimal-entry",
