@@ -5,11 +5,13 @@ import sys
 import tempfile
 import unittest
 from dataclasses import replace
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
+import scripts.run_speech_quality_evaluations as speech_runner
 from services.azure_speech_qualification import (
     MAX_AUDIO_SECONDS,
     MAX_PRICE_USD_PER_AUDIO_HOUR,
@@ -29,6 +31,7 @@ from services.speech_transcription_service import (
     SpeechTranscriptionService,
 )
 from scripts.run_speech_quality_evaluations import (
+    AppConfigurationMarkerStore,
     AzureCliCredential,
     EXPECTED_PROOF_AUTHORIZATION_REF,
     EXPECTED_APP_CONFIGURATION_ENDPOINT,
@@ -38,9 +41,11 @@ from scripts.run_speech_quality_evaluations import (
     PROOF_CONSUMED_KEY,
     PROGRESS_KEY,
     _consume_proof_authorization,
+    _create_marker_store,
     _execute_profiles,
     _preflight_speech_credential,
     _require_execution_authority,
+    _validated_last_success_day,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,16 +84,40 @@ class MemoryMarkerStore:
 
 
 class ProofMarkerStore:
-    def __init__(self):
-        self.values = {}
+    def __init__(
+        self,
+        values=None,
+        *,
+        fail_on_read_key=None,
+        fail_on_write_key=None,
+        corrupt_readback_key=None,
+    ):
+        self.values = dict(values or {})
         self.write_count = 0
+        self.operations = []
+        self.fail_on_read_key = fail_on_read_key
+        self.fail_on_write_key = fail_on_write_key
+        self.corrupt_readback_key = corrupt_readback_key
 
     def read_optional(self, key):
-        return self.values.get(key, "")
+        self.operations.append(("read_optional", key))
+        if key == self.fail_on_read_key:
+            raise MarkerStoreError("speech_marker_read_failed")
+        value = self.values.get(key)
+        if key == self.corrupt_readback_key and key in self.values:
+            return value + "-corrupt"
+        return value
 
     def write(self, key, value, *, content_type=None):
         self.write_count += 1
+        self.operations.append(("write", key))
+        if key == self.fail_on_write_key:
+            raise MarkerStoreError("speech_marker_write_failed")
         self.values[key] = value
+
+
+class FakeResourceNotFoundError(Exception):
+    pass
 
 
 class RecordingTranscriber:
@@ -115,6 +144,49 @@ def fake_audio_generator(case, directory, _target, _maximum):
     path = directory / f"{case.key}.fake"
     path.write_bytes(case.key.encode("utf-8"))
     return path, case.text, 2813
+
+
+def run_main_with_marker_store(store):
+    execute_profiles = mock.Mock(
+        side_effect=lambda _cases, progress, **_kwargs: (
+            progress,
+            "speech_test_stop",
+        )
+    )
+    emitted = []
+    args = SimpleNamespace(
+        fixture=FIXTURE,
+        endpoint=EXPECTED_SPEECH_ENDPOINT,
+        app_configuration_endpoint=EXPECTED_APP_CONFIGURATION_ENDPOINT,
+        timeout_seconds=1200,
+        execute=True,
+    )
+    with mock.patch.dict(
+        os.environ,
+        {
+            "PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF": (
+                EXPECTED_PROOF_AUTHORIZATION_REF
+            )
+        },
+        clear=True,
+    ), mock.patch.object(
+        speech_runner, "_arguments", return_value=args
+    ), mock.patch.object(
+        speech_runner, "_require_execution_authority"
+    ), mock.patch.object(
+        speech_runner, "_preflight_speech_credential", return_value=mock.Mock()
+    ), mock.patch.object(
+        speech_runner, "_create_marker_store", return_value=store
+    ), mock.patch.object(
+        speech_runner, "_execute_profiles", execute_profiles
+    ), mock.patch.object(
+        speech_runner, "_emit", side_effect=emitted.append
+    ), mock.patch(
+        "services.speech_transcription_service.SpeechTranscriptionService",
+        return_value=mock.Mock(),
+    ):
+        return_code = speech_runner.main()
+    return return_code, execute_profiles, emitted
 
 
 class AzureSpeechQualificationTests(unittest.TestCase):
@@ -436,6 +508,138 @@ class AzureSpeechQualificationTests(unittest.TestCase):
         session.post.assert_called_once()
         self.assertFalse(session.post.call_args.kwargs["allow_redirects"])
 
+    def test_sdk_marker_store_distinguishes_missing_from_read_failure(self):
+        client = mock.Mock()
+        store = AppConfigurationMarkerStore(
+            client=client,
+            setting_factory=lambda **values: SimpleNamespace(**values),
+            not_found_error=FakeResourceNotFoundError,
+        )
+        client.get_configuration_setting.side_effect = FakeResourceNotFoundError()
+        self.assertIsNone(store.read_optional(PROOF_CONSUMED_KEY))
+        with self.assertRaisesRegex(MarkerStoreError, "speech_marker_read_failed"):
+            store.read(PROGRESS_KEY)
+
+        client.get_configuration_setting.side_effect = None
+        client.get_configuration_setting.return_value = SimpleNamespace(
+            key=PROOF_CONSUMED_KEY,
+            label=None,
+            value="",
+        )
+        self.assertEqual(store.read_optional(PROOF_CONSUMED_KEY), "")
+
+        client.get_configuration_setting.side_effect = RuntimeError(
+            "private provider diagnostic"
+        )
+        with self.assertRaises(MarkerStoreError) as caught:
+            store.read_optional(PROOF_CONSUMED_KEY)
+        self.assertEqual(str(caught.exception), "speech_marker_read_failed")
+        self.assertNotIn("private", str(caught.exception))
+
+    def test_sdk_marker_store_validates_exact_unlabeled_reads_and_writes(self):
+        client = mock.Mock()
+        setting_factory = mock.Mock(
+            side_effect=lambda **values: SimpleNamespace(**values)
+        )
+        store = AppConfigurationMarkerStore(
+            client=client,
+            setting_factory=setting_factory,
+            not_found_error=FakeResourceNotFoundError,
+        )
+        existing = SimpleNamespace(
+            key=PROGRESS_KEY,
+            label=None,
+            value="bounded-progress",
+        )
+        client.get_configuration_setting.return_value = existing
+        self.assertEqual(store.read(PROGRESS_KEY), "bounded-progress")
+        client.get_configuration_setting.assert_called_once_with(
+            key=PROGRESS_KEY,
+            label=None,
+        )
+
+        written = SimpleNamespace(
+            key=PROGRESS_KEY,
+            label=None,
+            value="new-progress",
+        )
+        client.set_configuration_setting.return_value = written
+        store.write(
+            PROGRESS_KEY,
+            "new-progress",
+            content_type="application/json",
+        )
+        setting_factory.assert_called_once_with(
+            key=PROGRESS_KEY,
+            label=None,
+            value="new-progress",
+            content_type="application/json",
+        )
+        stored_argument = client.set_configuration_setting.call_args.args[0]
+        self.assertEqual(
+            (
+                stored_argument.key,
+                stored_argument.label,
+                stored_argument.value,
+                stored_argument.content_type,
+            ),
+            (
+                PROGRESS_KEY,
+                None,
+                "new-progress",
+                "application/json",
+            ),
+        )
+
+        client.get_configuration_setting.side_effect = None
+        client.get_configuration_setting.return_value = SimpleNamespace(
+            key=PROGRESS_KEY,
+            label="unexpected",
+            value="new-progress",
+        )
+        with self.assertRaisesRegex(MarkerStoreError, "speech_marker_read_failed"):
+            store.read(PROGRESS_KEY)
+
+    def test_marker_store_factory_uses_sdk_with_cli_workload_identity(self):
+        client = mock.Mock()
+        credential = mock.Mock()
+        client_factory = mock.Mock(return_value=client)
+        credential_factory = mock.Mock(return_value=credential)
+        setting_factory = mock.Mock()
+        app_configuration = SimpleNamespace(
+            AzureAppConfigurationClient=client_factory,
+            ConfigurationSetting=setting_factory,
+        )
+        identity = SimpleNamespace(AzureCliCredential=credential_factory)
+        exceptions = SimpleNamespace(
+            ResourceNotFoundError=FakeResourceNotFoundError
+        )
+
+        store = _create_marker_store(
+            EXPECTED_APP_CONFIGURATION_ENDPOINT,
+            app_configuration_import=lambda _name: app_configuration,
+            identity_import=lambda _name: identity,
+            exceptions_import=lambda _name: exceptions,
+        )
+
+        credential_factory.assert_called_once_with(process_timeout=45)
+        client_factory.assert_called_once_with(
+            base_url=EXPECTED_APP_CONFIGURATION_ENDPOINT,
+            credential=credential,
+        )
+        self.assertIs(store.client, client)
+        self.assertIs(store.setting_factory, setting_factory)
+
+        with self.assertRaisesRegex(
+            MarkerStoreError, "speech_marker_runtime_failed"
+        ):
+            _create_marker_store(
+                EXPECTED_APP_CONFIGURATION_ENDPOINT,
+                app_configuration_import=mock.Mock(
+                    side_effect=ImportError("private module failure")
+                ),
+            )
+
     def test_proof_authorization_is_exact_and_consumed_once(self):
         store = ProofMarkerStore()
         with self.assertRaisesRegex(SpeechQualificationError, "invalid"):
@@ -452,16 +656,185 @@ class AzureSpeechQualificationTests(unittest.TestCase):
             _consume_proof_authorization(store, EXPECTED_PROOF_AUTHORIZATION_REF)
         self.assertEqual(store.write_count, 1)
 
+        for malformed in ("", "another-reference"):
+            with self.subTest(malformed=malformed):
+                malformed_store = ProofMarkerStore(
+                    {PROOF_CONSUMED_KEY: malformed}
+                )
+                with self.assertRaisesRegex(
+                    SpeechQualificationError,
+                    "consumption marker is invalid",
+                ):
+                    _consume_proof_authorization(
+                        malformed_store,
+                        EXPECTED_PROOF_AUTHORIZATION_REF,
+                    )
+                self.assertEqual(malformed_store.write_count, 0)
+
+    def test_empty_fresh_store_is_initialized_before_authorization_consumption(self):
+        store = ProofMarkerStore()
+        return_code, execute_profiles, emitted = run_main_with_marker_store(store)
+
+        self.assertEqual(return_code, 3)
+        self.assertIn(PROGRESS_KEY, store.values)
+        self.assertEqual(
+            store.values[PROOF_CONSUMED_KEY], EXPECTED_PROOF_AUTHORIZATION_REF
+        )
+        self.assertEqual(execute_profiles.call_count, 1)
+        self.assertEqual(emitted[-1]["mode"], "executed")
+        self.assertEqual(emitted[-1]["stop_category"], "speech_test_stop")
+        self.assertLess(
+            store.operations.index(("write", PROGRESS_KEY)),
+            store.operations.index(("read_optional", LAST_SUCCESS_KEY)),
+        )
+        self.assertLess(
+            store.operations.index(("read_optional", LAST_SUCCESS_KEY)),
+            store.operations.index(("write", PROOF_CONSUMED_KEY)),
+        )
+
+    def test_malformed_fresh_markers_never_consume_or_enter_provider_path(self):
+        today = datetime.now(timezone.utc).date()
+        foreign_progress = {
+            "schema_version": 2,
+            "fixture_digest": "0" * 64,
+            "attempts": {"foreign-profile": 1},
+            "results": {"foreign-profile": {"private": "payload"}},
+        }
+        malformed_states = {
+            "empty progress": {PROGRESS_KEY: ""},
+            "stale foreign progress": {
+                PROGRESS_KEY: json.dumps(
+                    {
+                        **foreign_progress,
+                        "day": (today - timedelta(days=1)).isoformat(),
+                    }
+                )
+            },
+            "future foreign progress": {
+                PROGRESS_KEY: json.dumps(
+                    {
+                        **foreign_progress,
+                        "day": (today + timedelta(days=1)).isoformat(),
+                    }
+                )
+            },
+            "malformed success": {LAST_SUCCESS_KEY: "not-a-date"},
+            "empty consumption": {PROOF_CONSUMED_KEY: ""},
+        }
+        for label, values in malformed_states.items():
+            with self.subTest(label=label):
+                store = ProofMarkerStore(values)
+                return_code, execute_profiles, emitted = run_main_with_marker_store(
+                    store
+                )
+                self.assertEqual(return_code, 2)
+                self.assertEqual(execute_profiles.call_count, 0)
+                self.assertEqual(emitted[-1]["mode"], "refused")
+                self.assertNotIn(
+                    ("write", PROOF_CONSUMED_KEY),
+                    store.operations,
+                )
+
+    def test_fresh_progress_access_failures_never_consume_or_enter_provider_path(self):
+        failing_stores = {
+            "read": ProofMarkerStore(fail_on_read_key=PROGRESS_KEY),
+            "write": ProofMarkerStore(fail_on_write_key=PROGRESS_KEY),
+            "readback": ProofMarkerStore(corrupt_readback_key=PROGRESS_KEY),
+        }
+        for label, store in failing_stores.items():
+            with self.subTest(label=label):
+                return_code, execute_profiles, emitted = run_main_with_marker_store(
+                    store
+                )
+                self.assertEqual(return_code, 2)
+                self.assertEqual(execute_profiles.call_count, 0)
+                self.assertEqual(emitted[-1]["mode"], "refused")
+                self.assertNotIn(
+                    ("write", PROOF_CONSUMED_KEY),
+                    store.operations,
+                )
+
+    def test_already_complete_state_skips_without_consuming_authorization(self):
+        cases = load_cases(FIXTURE)
+        per_case = TARGET_AUDIO_SECONDS // len(cases)
+        results = {
+            case.key: score_transcript(
+                case,
+                expected_text=case.text,
+                transcript=case.text,
+                audio_seconds=per_case,
+                latency_seconds=1,
+            )
+            for case in cases
+        }
+        first_key = cases[0].key
+        recorded_seconds = sum(result.audio_seconds for result in results.values())
+        results[first_key] = replace(
+            results[first_key],
+            audio_seconds=(
+                results[first_key].audio_seconds
+                + TARGET_AUDIO_SECONDS
+                - recorded_seconds
+            ),
+        )
+        today = datetime.now(timezone.utc).date()
+        store = ProofMarkerStore(
+            {
+                PROGRESS_KEY: progress_to_json(
+                    speech_progress(cases, results, day=today)
+                ),
+                LAST_SUCCESS_KEY: today.isoformat(),
+            }
+        )
+
+        return_code, execute_profiles, emitted = run_main_with_marker_store(store)
+
+        self.assertEqual(return_code, 0)
+        self.assertEqual(execute_profiles.call_count, 0)
+        self.assertTrue(emitted[-1]["already_complete"])
+        self.assertEqual(emitted[-1]["mode"], "skipped")
+        self.assertNotIn(("write", PROOF_CONSUMED_KEY), store.operations)
+
+    def test_last_success_marker_accepts_only_canonical_nonfuture_dates(self):
+        today = date(2026, 9, 15)
+        self.assertEqual(
+            _validated_last_success_day("2026-09-14", today),
+            date(2026, 9, 14),
+        )
+        self.assertIsNone(_validated_last_success_day(None, today))
+        for invalid in ("", "not-a-date", "2026-9-14", "2026-09-16"):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(
+                SpeechQualificationError,
+                "success marker is invalid",
+            ):
+                _validated_last_success_day(invalid, today)
+
     def test_proof_uses_new_progress_keys_and_preserves_legacy_markers(self):
         self.assertEqual(
             PROGRESS_KEY,
-            "qualification/speech/proof-progress/2026-09-14-10-5h-one-use",
+            "qualification/speech/proof-progress/"
+            "2026-09-15-marker-recovery-10-5h-one-use",
         )
         self.assertEqual(
             LAST_SUCCESS_KEY,
-            "qualification/speech/proof-last-success-day/2026-09-14-10-5h-one-use",
+            "qualification/speech/proof-last-success-day/"
+            "2026-09-15-marker-recovery-10-5h-one-use",
+        )
+        self.assertEqual(
+            PROOF_CONSUMED_KEY,
+            "qualification/speech/proof-authorization-consumed/"
+            "2026-09-15-marker-recovery-10-5h-one-use",
         )
         self.assertNotEqual(PROGRESS_KEY, "qualification/speech/progress")
+        self.assertNotEqual(
+            PROGRESS_KEY,
+            "qualification/speech/proof-progress/2026-09-14-10-5h-one-use",
+        )
+        self.assertNotEqual(
+            PROOF_CONSUMED_KEY,
+            "qualification/speech/proof-authorization-consumed/"
+            "2026-09-14-10-5h-one-use",
+        )
         self.assertNotEqual(
             LAST_SUCCESS_KEY,
             "qualification/speech/last-success-day",
@@ -470,8 +843,8 @@ class AzureSpeechQualificationTests(unittest.TestCase):
             encoding="utf-8"
         )
         main = source[source.index("def main()") :]
-        self.assertIn("store.read(PROGRESS_KEY)", main)
-        self.assertIn("store.read(LAST_SUCCESS_KEY)", main)
+        self.assertIn("store.read_optional(PROGRESS_KEY)", main)
+        self.assertIn("store.read_optional(LAST_SUCCESS_KEY)", main)
 
     def test_credential_preflight_happens_before_proof_consumption(self):
         source = (ROOT / "scripts" / "run_speech_quality_evaluations.py").read_text(
@@ -480,8 +853,17 @@ class AzureSpeechQualificationTests(unittest.TestCase):
         main = source[source.index("def main()") :]
         self.assertLess(
             main.index("credential = _preflight_speech_credential()"),
+            main.index("store = _create_marker_store"),
+        )
+        self.assertLess(
+            main.index("store = _create_marker_store"),
+            main.index("store.read_optional(PROGRESS_KEY)"),
+        )
+        self.assertLess(
+            main.index("store.read_optional(LAST_SUCCESS_KEY)"),
             main.index("_consume_proof_authorization(store, authorization_ref)"),
         )
+        self.assertNotIn('"appconfig"', source)
 
         with self.assertRaisesRegex(SpeechQualificationError, "speech_auth_failed"):
             _preflight_speech_credential(
@@ -575,6 +957,7 @@ class AzureSpeechQualificationTests(unittest.TestCase):
             "$(qualificationSpeechAuthorizationRef)",
             pipeline,
         )
+        self.assertIn("azure-appconfiguration==1.9.0", pipeline)
         self.assertIn(
             "ne(variables['qualificationSpeechEndpoint'], '')",
             pipeline,

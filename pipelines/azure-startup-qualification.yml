@@ -555,6 +555,7 @@ stages:
               sudo apt-get update -qq
               sudo apt-get install -y --no-install-recommends espeak-ng ffmpeg
               python -m pip install --disable-pip-version-check \
+                azure-appconfiguration==1.9.0 \
                 azure-identity==1.25.3 \
                 requests==2.34.2
             displayName: Install bounded synthetic-audio runtime

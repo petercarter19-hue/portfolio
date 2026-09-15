@@ -44,16 +44,22 @@ DEFAULT_FIXTURE = (
     / "azure_startup_qualification"
     / "speech_eval_cases.json"
 )
-PROGRESS_KEY = "qualification/speech/proof-progress/2026-09-14-10-5h-one-use"
+PROGRESS_KEY = (
+    "qualification/speech/proof-progress/"
+    "2026-09-15-marker-recovery-10-5h-one-use"
+)
 LAST_SUCCESS_KEY = (
-    "qualification/speech/proof-last-success-day/2026-09-14-10-5h-one-use"
+    "qualification/speech/proof-last-success-day/"
+    "2026-09-15-marker-recovery-10-5h-one-use"
 )
 PROOF_CONSUMED_KEY = (
-    "qualification/speech/proof-authorization-consumed/2026-09-14-10-5h-one-use"
+    "qualification/speech/proof-authorization-consumed/"
+    "2026-09-15-marker-recovery-10-5h-one-use"
 )
 EXPECTED_PROOF_AUTHORIZATION_REF = (
     "session:01a09d58-4477-7b43-873a-0af993f00c85/"
-    "owner-authorization:2026-09-14/azure-speech-proof-10.5h-one-use"
+    "owner-authorization:2026-09-14/"
+    "azure-speech-marker-recovery-10.5h-one-use"
 )
 EXPECTED_SPEECH_ENDPOINT = "https://peerslate-foundry.cognitiveservices.azure.com"
 EXPECTED_APP_CONFIGURATION_ENDPOINT = (
@@ -130,110 +136,86 @@ def _preflight_speech_credential(
 
 
 class AppConfigurationMarkerStore:
-    def __init__(self, endpoint: str):
-        self.endpoint = endpoint
+    """Exact, unlabeled App Configuration markers through the supported SDK."""
 
-    def read(self, key: str) -> str:
-        completed = subprocess.run(
-            [
-                "az",
-                "appconfig",
-                "kv",
-                "show",
-                "--endpoint",
-                self.endpoint,
-                "--key",
-                key,
-                "--auth-mode",
-                "login",
-                "--query",
-                "value",
-                "--output",
-                "tsv",
-                "--only-show-errors",
-            ],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=45,
-        )
-        if completed.returncode != 0:
-            raise MarkerStoreError("speech_marker_read_failed")
-        return completed.stdout.rstrip("\r\n")
+    def __init__(self, *, client, setting_factory, not_found_error):
+        self.client = client
+        self.setting_factory = setting_factory
+        self.not_found_error = not_found_error
 
-    def read_optional(self, key: str) -> str:
-        completed = subprocess.run(
-            [
-                "az",
-                "appconfig",
-                "kv",
-                "list",
-                "--endpoint",
-                self.endpoint,
-                "--key",
-                key,
-                "--auth-mode",
-                "login",
-                "--fields",
-                "key",
-                "value",
-                "--output",
-                "json",
-                "--only-show-errors",
-            ],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=45,
-        )
-        if completed.returncode != 0 or len(completed.stdout) > 16_000:
-            raise MarkerStoreError("speech_marker_read_failed")
-        try:
-            payload = json.loads(completed.stdout)
-        except json.JSONDecodeError as error:
-            raise MarkerStoreError("speech_marker_read_failed") from error
-        if payload == []:
-            return ""
+    @staticmethod
+    def _validated_value(setting, key: str) -> str:
         if (
-            not isinstance(payload, list)
-            or len(payload) != 1
-            or not isinstance(payload[0], dict)
-            or payload[0].get("key") != key
-            or not isinstance(payload[0].get("value"), str)
+            setting is None
+            or getattr(setting, "key", None) != key
+            or getattr(setting, "label", None) not in {None, ""}
+            or not isinstance(getattr(setting, "value", None), str)
         ):
             raise MarkerStoreError("speech_marker_read_failed")
-        return payload[0]["value"]
+        return setting.value
+
+    def _read_setting(self, key: str):
+        try:
+            return self.client.get_configuration_setting(key=key, label=None)
+        except self.not_found_error:
+            return None
+        except Exception as error:
+            raise MarkerStoreError("speech_marker_read_failed") from error
+
+    def read(self, key: str) -> str:
+        return self._validated_value(self._read_setting(key), key)
+
+    def read_optional(self, key: str) -> str | None:
+        setting = self._read_setting(key)
+        return None if setting is None else self._validated_value(setting, key)
 
     def write(self, key: str, value: str, *, content_type: str | None = None) -> None:
-        command = [
-            "az",
-            "appconfig",
-            "kv",
-            "set",
-            "--endpoint",
-            self.endpoint,
-            "--key",
-            key,
-            "--value",
-            value,
-            "--auth-mode",
-            "login",
-            "--yes",
-            "--output",
-            "none",
-            "--only-show-errors",
-        ]
-        if content_type:
-            command.extend(["--content-type", content_type])
-        completed = subprocess.run(
-            command,
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=45,
-        )
-        if completed.returncode != 0:
+        if not isinstance(value, str) or len(value) > 12_000:
             raise MarkerStoreError("speech_marker_write_failed")
+        setting = self.setting_factory(
+            key=key,
+            label=None,
+            value=value,
+            content_type=content_type,
+        )
+        try:
+            stored = self.client.set_configuration_setting(setting)
+        except Exception as error:
+            raise MarkerStoreError("speech_marker_write_failed") from error
+        if (
+            stored is None
+            or getattr(stored, "key", None) != key
+            or getattr(stored, "label", None) not in {None, ""}
+            or getattr(stored, "value", None) != value
+        ):
+            raise MarkerStoreError("speech_marker_write_failed")
+
+
+def _create_marker_store(
+    endpoint: str,
+    *,
+    app_configuration_import=import_module,
+    identity_import=import_module,
+    exceptions_import=import_module,
+):
+    """Build the marker adapter without loading Azure packages in dry-run mode."""
+
+    try:
+        app_configuration = app_configuration_import("azure.appconfiguration")
+        identity = identity_import("azure.identity")
+        exceptions = exceptions_import("azure.core.exceptions")
+        credential = identity.AzureCliCredential(process_timeout=45)
+        client = app_configuration.AzureAppConfigurationClient(
+            base_url=endpoint,
+            credential=credential,
+        )
+    except Exception as error:
+        raise MarkerStoreError("speech_marker_runtime_failed") from error
+    return AppConfigurationMarkerStore(
+        client=client,
+        setting_factory=app_configuration.ConfigurationSetting,
+        not_found_error=exceptions.ResourceNotFoundError,
+    )
 
 
 def _arguments() -> argparse.Namespace:
@@ -278,8 +260,11 @@ def _require_execution_authority(args: argparse.Namespace) -> None:
 def _consume_proof_authorization(store, authorization_ref: str) -> None:
     if authorization_ref != EXPECTED_PROOF_AUTHORIZATION_REF:
         raise SpeechQualificationError("speech proof authorization is invalid")
-    if store.read_optional(PROOF_CONSUMED_KEY):
-        raise SpeechQualificationError("speech proof authorization is consumed")
+    consumed_ref = store.read_optional(PROOF_CONSUMED_KEY)
+    if consumed_ref is not None:
+        if consumed_ref == EXPECTED_PROOF_AUTHORIZATION_REF:
+            raise SpeechQualificationError("speech proof authorization is consumed")
+        raise SpeechQualificationError("speech proof consumption marker is invalid")
     store.write(
         PROOF_CONSUMED_KEY,
         authorization_ref,
@@ -287,6 +272,42 @@ def _consume_proof_authorization(store, authorization_ref: str) -> None:
     )
     if store.read_optional(PROOF_CONSUMED_KEY) != authorization_ref:
         raise SpeechQualificationError("speech proof authorization was not confirmed")
+
+
+def _validated_last_success_day(value: str | None, today):
+    if value is None:
+        return None
+    try:
+        parsed = datetime.strptime(value, "%Y-%m-%d").date()
+    except (TypeError, ValueError) as error:
+        raise SpeechQualificationError("speech success marker is invalid") from error
+    if parsed.isoformat() != value or parsed > today:
+        raise SpeechQualificationError("speech success marker is invalid")
+    return parsed
+
+
+def _progress_from_one_use_marker(
+    value: str,
+    *,
+    expected_day,
+    expected_fixture_digest: str,
+):
+    if not value or len(value) > 12_000:
+        raise SpeechQualificationError("speech progress marker is invalid")
+    try:
+        payload = json.loads(value)
+    except (TypeError, ValueError) as error:
+        raise SpeechQualificationError("speech progress marker is invalid") from error
+    if (
+        not isinstance(payload, dict)
+        or payload.get("day") != expected_day.isoformat()
+    ):
+        raise SpeechQualificationError("speech progress marker is invalid")
+    return progress_from_json(
+        value,
+        expected_day=expected_day,
+        expected_fixture_digest=expected_fixture_digest,
+    )
 
 
 def _require_exact_origin(value: str, expected: str, label: str) -> None:
@@ -545,22 +566,40 @@ def main() -> int:
         )
 
         credential = _preflight_speech_credential()
-        store = AppConfigurationMarkerStore(args.app_configuration_endpoint)
-        authorization_ref = os.getenv(
-            "PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF", ""
-        )
-        _consume_proof_authorization(store, authorization_ref)
-        progress = progress_from_json(
-            store.read(PROGRESS_KEY),
-            expected_day=today,
-            expected_fixture_digest=fixture_digest,
+        store = _create_marker_store(args.app_configuration_endpoint)
+        encoded_progress = store.read_optional(PROGRESS_KEY)
+        if encoded_progress is not None:
+            progress = _progress_from_one_use_marker(
+                encoded_progress,
+                expected_day=today,
+                expected_fixture_digest=fixture_digest,
+            )
+        else:
+            encoded_progress = progress_to_json(empty)
+            store.write(
+                PROGRESS_KEY,
+                encoded_progress,
+                content_type="application/json",
+            )
+            if store.read_optional(PROGRESS_KEY) != encoded_progress:
+                raise SpeechQualificationError(
+                    "speech marker initialization was not confirmed"
+                )
+            progress = empty
+        last_success_day = _validated_last_success_day(
+            store.read_optional(LAST_SUCCESS_KEY),
+            today,
         )
         privacy_safe_report(cases, progress, mode="resume_check")
-        if store.read(LAST_SUCCESS_KEY) == today.isoformat():
+        if last_success_day == today:
             report = privacy_safe_report(cases, progress, mode="skipped")
             report["already_complete"] = True
             _emit(report)
             return 0 if report["quality_checks_passed"] else 4
+        authorization_ref = os.getenv(
+            "PEERSLATE_AZURE_SPEND_AUTHORIZATION_REF", ""
+        )
+        _consume_proof_authorization(store, authorization_ref)
     except (ImportError, MarkerStoreError, SpeechQualificationError) as error:
         _emit(privacy_safe_report(cases, empty, mode="refused", stop_category=str(error)))
         return 2

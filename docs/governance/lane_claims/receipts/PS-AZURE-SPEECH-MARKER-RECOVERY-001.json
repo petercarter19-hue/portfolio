@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "package": "PS-AZURE-SPEECH-MARKER-RECOVERY-001",
+  "candidate_sha": "fabde12b8dc42b82e6d7424c0c8d395b615b970a",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/azure_recovery_review",
+  "result": "pass",
+  "reviewed_at": "2026-09-15T01:35:07Z",
+  "findings": [
+    {
+      "status": "resolved",
+      "summary": "Candidate f2c3a20771700f2892125559799459240a98a9a8 consumed authorization before fresh progress and success state was ready and carried optional initiative paperwork that created an unnecessary registry gate. The accepted candidate initializes and confirms truly absent progress, validates optional success state before consumption, and uses only the fixed package evidence and receipt records."
+    },
+    {
+      "status": "resolved",
+      "summary": "Candidate 0b8916ff6a56a8abf7e26d0c16ebb580fdb478a9 conflated true not-found with stored empty values and did not validate success-marker dates. The accepted candidate uses None only for not-found and rejects empty, foreign, malformed, or future state before provider entry."
+    },
+    {
+      "status": "resolved",
+      "summary": "Candidate d400f5fefa7e4db5cf233a9fca951041ff4470a7 allowed the legacy parser to reset different-day progress before validating foreign content. The accepted candidate rejects stale or future one-use progress before the legacy parser, authorization consumption, or provider entry."
+    },
+    {
+      "status": "informational",
+      "summary": "Exact candidate fabde12b8dc42b82e6d7424c0c8d395b615b970a at base 378edf507bdb6ec15641e935b59bda7cc60aac06 passed independent review with no actionable findings. The reviewer reproduced 337 passing tests and 199 passing adversarial subtests; confirmed exact three-path scope, clean remote identity, dry-run zero activity, SDK compatibility, old-marker isolation, all pre-consumption gates, non-replay, schedule-off defaults, bounded fictional profiles, and aggregate-only privacy. No Azure, Speech, audio, pipeline, PR, push, or repository mutation occurred during review."
+    }
+  ],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-AZURE-SPEECH-MARKER-RECOVERY-001.md"
+}
