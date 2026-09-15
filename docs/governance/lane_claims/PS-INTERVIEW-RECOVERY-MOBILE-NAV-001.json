@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-INTERVIEW-RECOVERY-MOBILE-NAV-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Correct approved audit findings F2 and F3 only. For public Interview Studio, preserve the answer after failed coaching, expose one request-capable recovery action, keep Keep editing request-free, and make one Retry activation produce one browser POST without duplicate attempt or History. At 320px and 390px, preserve the accepted nonmodal Menu while removing Interview fixed or sticky controls from visual and keyboard competition; preserve Escape and opener focus return, outside dismissal, desktop, public/authenticated distinctions, no-JavaScript navigation, reduced motion, forced colors and reflow. Reproduce both defects before edits with deterministic local stubs. The accepted Grok 4.6 task is sole writer; Protected independent review is required. Exclude F1, F4, homepage, redesign, Interview architecture, app.py, resume/My Data/media/editor, database/schema, pipeline, provider/auth, deployment and production. PACKAGE_REGISTRY.json is deferred while PS-AZURE-STARTUP-SEVEN-WORKLOAD-001 owns it; do not merge until a governed same-package extension adds the released path and registration, affected validation repeats, and one exact candidate passes independent review.",
   "assignment": "implementation",
   "writer_ref": "session:fc6eb84c-de86-4d81-bcae-95fd74ac8e0b",
@@ -46,6 +46,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "49d725d4b780e1ae49d7c4681c3e70c9eb57d993",
+  "closed_at": "2026-09-15T18:16:49Z"
 }
