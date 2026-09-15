@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-MINIMAL-HOMEPAGE-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Replace the long signed-out public homepage with Pete's selected minimal MVP1 composition inside the accepted shared shell: one expressive existing PeerSlate visual, the short headline 'Your Work. Your Story. Your Future.', generous whitespace, and no body-level login panel or call to action. Remove legacy homepage scene and demo dependencies from public / only while preserving their shared assets, the shell account controls, authentication routes, noindex and security policy. Desktop should read as one concise screen at ordinary height; small screens and 200% zoom use readable natural-flow reflow without clipping. Do not advertise capabilities, destinations, biography, fixtures, Workshop, Slate Board, Capture, Journal, Projects, or retired-product concepts. No app.py, base shell, navigation, identity, provider, schema, configuration, deployment, or production mutation.",
   "assignment": "implementation",
   "writer_ref": "session:01a0a4f1-90df-7561-95cc-5d6c40df571e",
@@ -32,6 +32,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "d79311463d6c7a6f57b04e9091ab7636bd5c090e",
+  "closed_at": "2026-09-15T22:40:06Z"
 }
