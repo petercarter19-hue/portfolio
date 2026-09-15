@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-MVP1-MEDIA-INTEGRATION-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Complete remaining MVP1 D Resume media integration using accepted backend PS-MVP1-MEDIA-BACKEND-001: private upload/readiness, scoped My photos/library chooser, per-slot crop/placement previews, and explicit atomic versioned Add photos to resume. Preserve accepted desktop/mobile authority, separate portrait, words-only behavior, staged choices across tabs/guide closure and confirmed crops across reload. Wire browser through Flask and application commands; retain owner/draft/version/lifecycle/revocation and scan-before-decode boundaries. Qualify persistence honestly; proposed SQL only, gate:null and unapplied. Codex manager owns authenticated admission/Git/PR/CI/merge; DeepSeek sole implementation/tests/self-review/corrections; independent Sol Extra High exact-candidate and desktop/mobile review. No publication E, M/F/G, production deployment/enablement/schema apply, live identities/providers, paid storage, production artwork collection/rights/count decisions or bulk generation.",
   "assignment": "implementation",
   "writer_ref": "session:ses_f645cf206ffekbrQk3coCXK3GC",
@@ -72,6 +72,6 @@
     "relinquished": true
   },
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "35103690a6effcea87b3156e80dc521b8c6c1371",
+  "closed_at": "2026-09-15T00:55:11Z"
 }
