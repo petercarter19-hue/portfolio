@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-AZURE-SPEECH-MARKER-RECOVERY-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Correct Azure Speech proof marker access after run 2989 refused before provider activity with speech_marker_read_failed. Never replay run 2989 or reuse its authorization, progress, success, or consumption markers because consumption is ambiguous. Replace the fragile optional lookup with a supported App Configuration data-plane client on the existing identity; add privacy-safe failure categories and regressions; bind one fresh manual attempt to a new exact reference and new marker keys. Preserve zero provider calls until the new consumption marker is read, written, and confirmed. Use only existing identity and endpoints, exactly eight fictional profiles, a 36,900-second target, 37,800-second cap, and aggregate-only evidence. Scheduled Speech stays off; daily enablement remains a separate Protected follow-up after proof, complete-day cost evidence, and portal recognition. Exclude access expansion, resources or secrets, old-marker mutation, private content, deployment, schema or production-data mutation, DNS, API Management, advertising, and marketing. PACKAGE_REGISTRY.json remains owned by PS-INTERVIEW-RECOVERY-MOBILE-NAV-001 and needs governed surface extension after release.",
   "assignment": "implementation",
   "writer_ref": "session:01a09d58-4477-7b43-873a-0af993f00c85",
@@ -33,6 +33,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "7708126174aeaf91ebb6c5d80adc2e297c8b42e8",
+  "closed_at": "2026-09-15T02:20:27Z"
 }
