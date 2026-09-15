@@ -23,7 +23,9 @@
     "tests/test_projects.py",
     "scripts/verify_deployment_smoke.py",
     "tests/test_operational_readiness.py",
-    "app.py"
+    "app.py",
+    "tests/test_navigation.py",
+    "tests/test_interview_studio.py"
   ],
   "domains": [
     "privacy:resume-access",
