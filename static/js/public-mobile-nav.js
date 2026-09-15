@@ -99,6 +99,14 @@
             if (menu.hidden) return;
             setMenuOpen(false, menu.contains(document.activeElement));
         });
+
+        document.addEventListener('focusin', function (event) {
+            if (menu.hidden) return;
+            var target = event.target;
+            if (menu.contains(target)) return;
+            if (menuOpener && menuOpener.contains(target)) return;
+            setMenuOpen(false, false);
+        });
     }
 
     /* ---- Disclosure controls: the room switcher and the account menu ----

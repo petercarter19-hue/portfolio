@@ -302,6 +302,10 @@ class SharedShellConvergenceTests(unittest.TestCase):
         self.assertIn("menu.contains(document.activeElement)", MOBILE_JS)
         self.assertIn("panel.contains(document.activeElement)", MOBILE_JS)
         self.assertGreaterEqual(MOBILE_JS.count("window.addEventListener('resize'"), 2)
+        self.assertIn("has-platform-menu-open", MOBILE_JS)
+        self.assertIn("addEventListener('focusin'", MOBILE_JS)
+        self.assertIn("setMenuOpen(false, false)", MOBILE_JS)
+        self.assertNotIn("aria-modal", MOBILE_JS)
 
     def test_retired_scripts_are_deleted_and_unreferenced_by_the_shell(self):
         self.assertFalse((ROOT / "static" / "js" / "site-search.js").exists())

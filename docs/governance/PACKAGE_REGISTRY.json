@@ -50,6 +50,7 @@
       "PS-INTERVIEW-FOCUS-UI-001",
       "PS-INTERVIEW-LOCAL-REVIEW-001",
       "PS-INTERVIEW-PUBLIC-GATE-001",
+      "PS-INTERVIEW-RECOVERY-MOBILE-NAV-001",
       "PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001",
       "PS-INTERVIEW-AI-EXTRACT-001",
       "PS-INTERVIEW-STUDIO-CALIBRATION-001",
@@ -172,11 +173,11 @@
     ]
   },
   "counts": {
-    "current_protect": 80,
+    "current_protect": 81,
     "future_finish": 33,
     "reconcile": 6,
     "historical_evidence": 23,
     "retire_supersede": 6,
-    "total": 148
+    "total": 149
   }
 }

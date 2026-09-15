@@ -410,6 +410,29 @@ class InterviewStudioRealStudioTests(unittest.TestCase):
         self.assertIn('data-is-camera-enable', video_html)
         self.assertIn('not uploaded, analyzed, or retained', video_html)
 
+    def test_coaching_recovery_hides_the_ordinary_review_control(self):
+        script = _studio_script()
+        self.assertIn('var coachingRecoveryVisible = false;', script)
+        self.assertIn('function setCoachingRecoveryVisible(visible)', script)
+        self.assertIn('setHidden(button, coachingRecoveryVisible);', script)
+        self.assertIn("if (coachingRecoveryVisible) return;", script)
+        keep_editing = script.split(
+            "keepEditingButton.addEventListener('click'", 1
+        )[1].split("retryCoachingButton.addEventListener('click'", 1)[0]
+        self.assertIn('setCoachingRecoveryVisible(false);', keep_editing)
+        self.assertNotIn('submitReview()', keep_editing)
+        retry = script.split(
+            "retryCoachingButton.addEventListener('click'", 1
+        )[1].split("one('[data-is-retry]').addEventListener('click'", 1)[0]
+        self.assertIn('submitReview();', retry)
+        css = Path('static/css/interview-studio.css').read_text(encoding='utf-8')
+        hide_rule = css.split(
+            'body.has-platform-menu-open.interview-studio-page .is__composer-actions',
+            1,
+        )[1].split('}', 1)[0]
+        self.assertIn('visibility: hidden;', hide_rule)
+        self.assertIn('pointer-events: none;', hide_rule)
+
     def test_owner_question_controls_use_one_modal_and_no_legacy_new_question_row(self):
         html = self.html('/interview-studio?mode=me')
         self.assertEqual(html.count('data-is-custom-question-dialog'), 1)

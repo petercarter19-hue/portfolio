@@ -753,6 +753,7 @@
     var errorActions = one('[data-is-error-actions]');
     var retryCoachingButton = one('[data-is-retry-coaching]');
     var keepEditingButton = one('[data-is-keep-editing]');
+    var coachingRecoveryVisible = false;
     if (authenticated) {
         text(retryCoachingButton, 'Try review again');
         text(keepEditingButton, 'Continue editing');
@@ -1081,6 +1082,7 @@
         setHidden(improveBlock, true);
         setHidden(improveEmpty, false);
         setHidden(improveContent, true);
+        coachingRecoveryVisible = false;
         setHidden(reviewError, true);
         setHidden(errorActions, true);
         text(submittedLabel, 'Your submitted answer · preserved');
@@ -1204,9 +1206,27 @@
         var value = answer.value.trim();
         var words = value ? value.split(/\s+/).length : 0;
         text(wordCount, words);
-        reviewButton.disabled = !writtenPracticeEnabled || !value || Boolean(reviewController);
+        var allowPrimaryReview = writtenPracticeEnabled && Boolean(value) && !reviewController && !coachingRecoveryVisible;
+        all('[data-is-review]').forEach(function (button) {
+            button.disabled = !allowPrimaryReview;
+            setHidden(button, coachingRecoveryVisible);
+            if (coachingRecoveryVisible) {
+                button.setAttribute('tabindex', '-1');
+                button.setAttribute('aria-hidden', 'true');
+            } else {
+                button.removeAttribute('tabindex');
+                button.removeAttribute('aria-hidden');
+            }
+        });
         if (retryCoachingButton) retryCoachingButton.disabled = Boolean(reviewController);
         autoGrowTextarea(answer);
+    }
+
+    function setCoachingRecoveryVisible(visible) {
+        coachingRecoveryVisible = Boolean(visible);
+        setHidden(reviewError, !coachingRecoveryVisible);
+        setHidden(errorActions, !coachingRecoveryVisible);
+        syncAnswerState();
     }
 
     // The locked authenticated card shows only the word count in steady
@@ -3393,6 +3413,7 @@
         setHidden(improveBlock, true);
         setHidden(improveEmpty, false);
         setHidden(improveContent, true);
+        coachingRecoveryVisible = false;
         setHidden(reviewError, true);
         setHidden(errorActions, true);
         text(submittedLabel, authenticated
@@ -3501,6 +3522,7 @@
             if (error.name === 'AbortError') return;
             answer.readOnly = false;
             answeringBlock.removeAttribute('aria-busy');
+            coachingRecoveryVisible = true;
             syncAnswerState();
             setHidden(answeringBlock, false);
             setHidden(submittedBlock, true);
@@ -3522,8 +3544,7 @@
                 text(submittedLabel, 'Your answer · preserved and editable');
                 text(reviewErrorText, error.message + ' Your answer is still here. Edit it or retry the coaching request without re-entering your work.');
             }
-            setHidden(reviewError, false);
-            setHidden(errorActions, false);
+            setCoachingRecoveryVisible(true);
             if (reviewError) reviewError.focus();
             announce('The review could not be completed. Your answer is safe.');
         });
@@ -3531,6 +3552,7 @@
 
     answerForm.addEventListener('submit', function (event) {
         event.preventDefault();
+        if (coachingRecoveryVisible) return;
         submitReview();
     });
 
@@ -3560,6 +3582,7 @@
     answer.addEventListener('keydown', function (event) {
         if (event.key !== 'Enter' || (!event.ctrlKey && !event.metaKey)) return;
         event.preventDefault();
+        if (coachingRecoveryVisible) return;
         if (typeof answerForm.requestSubmit === 'function') answerForm.requestSubmit();
         else submitReview();
     });
@@ -3586,8 +3609,17 @@
 
     if (keepEditingButton) {
         keepEditingButton.addEventListener('click', function () {
+            if (authenticated) {
+                resetDraftBadge();
+                var recoveredBand = one('.is-auth__band');
+                if (recoveredBand) recoveredBand.classList.remove('is-auth__band--failed');
+            }
+            setCoachingRecoveryVisible(false);
             answer.readOnly = false;
+            answeringBlock.removeAttribute('aria-busy');
+            setHidden(answeringBlock, false);
             answer.focus();
+            announce('You can keep editing. Review My Answer is available again.');
         });
     }
 

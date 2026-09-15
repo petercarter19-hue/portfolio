@@ -2941,6 +2941,11 @@ body.interview-studio-page #chat-toggle {
         backdrop-filter: blur(16px);
     }
 
+    body.has-platform-menu-open.interview-studio-page .is__composer-actions {
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     body.has-mobile-tabbar.interview-studio-page .is__composer-actions {
         bottom: calc(3.9rem + env(safe-area-inset-bottom, 0px));
     }
