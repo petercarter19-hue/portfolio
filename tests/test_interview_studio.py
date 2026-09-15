@@ -3321,7 +3321,10 @@ class InterviewStudioFlagOffByteComparabilityTests(unittest.TestCase):
     def test_flag_off_anonymous_html_is_byte_comparable_to_the_pre_change_baseline(self):
         response = self.client.get('/interview-studio', base_url='http://localhost')
         self.assertEqual(response.status_code, 200)
-        self.assertNotIn('X-Robots-Tag', response.headers)
+        self.assertEqual(
+            response.headers['X-Robots-Tag'],
+            'noindex, nofollow, noarchive, noimageindex',
+        )
         self.assertEqual(response.headers['Cache-Control'], 'no-cache, must-revalidate')
         body = response.get_data(as_text=True)
         for marker in (

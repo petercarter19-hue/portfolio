@@ -106,7 +106,7 @@ class ProjectsBoardTests(unittest.TestCase):
             urlsplit(location.text).path
             for location in root.findall('sitemap:url/sitemap:loc', namespace)
         ]
-        self.assertTrue(paths)
+        self.assertEqual(paths, [])
         self.assertNotIn('/projects', paths)
         self.assertNotIn('/petec/projects', paths)
         self.assertNotIn('/work', paths)

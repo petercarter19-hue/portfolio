@@ -2,7 +2,6 @@ import json
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from urllib.parse import urlsplit
 
 from app import app
 
@@ -10,6 +9,9 @@ from app import app
 QUIET_PREVIEW_DIRECTIVE = (
     b'<meta name="robots" '
     b'content="noindex, nofollow, noarchive, noimageindex">'
+)
+QUIET_PREVIEW_X_ROBOTS_TAG = (
+    "noindex, nofollow, noarchive, noimageindex"
 )
 
 
@@ -53,8 +55,34 @@ class SearchVisibilityQuietPreviewTests(unittest.TestCase):
                 )
                 self.assertEqual(response.status_code, 200)
                 self.assertIn(QUIET_PREVIEW_DIRECTIVE, response.data)
+                self.assertEqual(
+                    response.headers.get("X-Robots-Tag"),
+                    QUIET_PREVIEW_X_ROBOTS_TAG,
+                )
 
-    def test_every_route_still_advertised_by_the_sitemap_is_noindex(self):
+    def test_public_html_errors_receive_quiet_preview_response_guidance(self):
+        response = self.client.get(
+            "/member-not-published/resume",
+            base_url="https://peerslate.com",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.mimetype, "text/html")
+        self.assertEqual(
+            response.headers.get("X-Robots-Tag"),
+            QUIET_PREVIEW_X_ROBOTS_TAG,
+        )
+
+    def test_private_app_namespace_does_not_gain_quiet_preview_guidance(self):
+        for path in ("/app", "/app/settings"):
+            with self.subTest(path=path):
+                response = self.client.get(
+                    path,
+                    base_url="https://peerslate.com",
+                )
+                self.assertNotIn("X-Robots-Tag", response.headers)
+
+    def test_sitemap_is_valid_and_empty_during_quiet_preview(self):
         sitemap_response = self.client.get(
             "/sitemap.xml",
             base_url="https://peerslate.com",
@@ -63,17 +91,8 @@ class SearchVisibilityQuietPreviewTests(unittest.TestCase):
         root = ET.fromstring(sitemap_response.get_data(as_text=True))
         namespace = {"sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"}
         locations = root.findall("sitemap:url/sitemap:loc", namespace)
-        self.assertTrue(locations)
-
-        for location in locations:
-            path = urlsplit(location.text).path
-            with self.subTest(path=path):
-                response = self.client.get(
-                    path,
-                    base_url="https://peerslate.com",
-                )
-                self.assertEqual(response.status_code, 200)
-                self.assertIn(QUIET_PREVIEW_DIRECTIVE, response.data)
+        self.assertEqual(locations, [])
+        self.assertEqual(list(root), [])
 
     def test_crawlers_can_read_the_noindex_directive(self):
         body = self.client.get(
@@ -96,6 +115,7 @@ class SearchVisibilityQuietPreviewTests(unittest.TestCase):
         ):
             with self.subTest(protected_path=protected_path):
                 self.assertIn(protected_path, body)
+        self.assertNotIn("Sitemap:", body)
 
     def test_sitemap_never_advertises_the_members_only_community(self):
         # PS-COMMUNITY-AUTH-WALL-001: no protected Community route belongs in
@@ -114,11 +134,7 @@ class SearchVisibilityQuietPreviewTests(unittest.TestCase):
                     "sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"
                 }
                 locations = root.findall("sitemap:url/sitemap:loc", namespace)
-                self.assertTrue(locations)
-                for location in locations:
-                    path = urlsplit(location.text).path
-                    with self.subTest(flag=flag, path=path):
-                        self.assertFalse(path.startswith("/the-slate"))
+                self.assertEqual(locations, [])
         finally:
             app.config["PEERSLATE_COMMUNITY_PUBLIC_PILOT_ENABLED"] = original_flag
 
@@ -140,11 +156,7 @@ class SearchVisibilityQuietPreviewTests(unittest.TestCase):
                     "sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"
                 }
                 locations = root.findall("sitemap:url/sitemap:loc", namespace)
-                self.assertTrue(locations)
-                for location in locations:
-                    path = urlsplit(location.text).path
-                    with self.subTest(flag=flag, path=path):
-                        self.assertFalse(path.startswith("/interview-studio"))
+                self.assertEqual(locations, [])
         finally:
             app.config["PEERSLATE_INTERVIEW_STUDIO_AUTHENTICATED"] = original_flag
 
@@ -228,10 +240,7 @@ class ShellSearchScopeTests(unittest.TestCase):
         )
         root = ET.fromstring(sitemap.get_data(as_text=True))
         namespace = {"sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-        for location in root.findall("sitemap:url/sitemap:loc", namespace):
-            path = urlsplit(location.text).path
-            with self.subTest(path=path):
-                self.assertFalse(path.startswith("/app"))
+        self.assertEqual(root.findall("sitemap:url/sitemap:loc", namespace), [])
 
     def test_there_is_exactly_one_search_field_in_the_shell(self):
         """The released shell carried two: a header field hidden below

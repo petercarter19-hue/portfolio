@@ -160,14 +160,13 @@ class PublicNavigationRouteTruthTests(unittest.TestCase):
                 {item["key"] for item in navigation_destinations("shell")},
             )
 
-    def test_sitemap_removes_slate_board_and_preserves_all_four_previews(self):
+    def test_quiet_preview_sitemap_advertises_no_public_route(self):
         response = self.client.get("/sitemap.xml", base_url="https://peerslate.com")
+        self.assertEqual(response.status_code, 200)
         root = ET.fromstring(response.get_data(as_text=True))
         namespace = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
         paths = [node.text.removeprefix("https://peerslate.com") for node in root.findall("s:url/s:loc", namespace)]
-        self.assertNotIn("/petec/slate-board", paths)
-        for path in PREVIEW_PATHS:
-            self.assertEqual(1, paths.count(path))
+        self.assertEqual(paths, [])
 
     def test_declared_safe_returns_are_exact_and_route_aware(self):
         exact = (

@@ -32,6 +32,11 @@ from identity import (
     get_optional_principal,
 )
 from services.database_service import DatabaseServiceError
+from services.response_policy import (
+    empty_sitemap_xml as response_policy_empty_sitemap_xml,
+    resolve_response_policy,
+    robots_txt as response_policy_robots_txt,
+)
 from owner_authorization import is_owner
 from auth_routes import _render_identity_storage_unavailable, _safe_return_path, auth
 from safe_return import navigation_destinations
@@ -837,24 +842,83 @@ def _compress_public_text_response(response):
 
 @app.after_request
 def _cache_current_static_versions(response):
-    """Give exactly the current version of a static file a one-year cache.
+    """Apply the final public response and static-cache policy.
 
     The token in the URL is compared against the file's live content hash,
     so only a URL that names the bytes actually being served is marked
     immutable. A stale or hand-typed token, or an unversioned request (for
     example an image referenced from inside a CSS file), receives only the
-    bounded fallback policy and can never pin an old version for a year.
+    bounded fallback policy and can never pin an old version for a year. The
+    canonical public resume PDF is the deliberate exception: every spelling
+    of its version token stays bounded so a revised resume is not pinned for
+    a year.
+
+    Flask runs after-request handlers in reverse registration order. This
+    handler therefore observes the privacy/cache headers established by
+    ``prevent_stale_html`` below and runs before compression, so compression
+    sees the final cache and privacy decision.
     """
-    if request.endpoint == 'static' and 200 <= response.status_code < 300:
-        filename = (request.view_args or {}).get('filename')
-        requested = request.args.get('v')
-        if filename and requested and requested == _static_file_version(filename):
-            response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
-        elif (
-            filename
-            and filename.lower().endswith(_VERSIONED_STATIC_SUFFIXES)
+    canonical_static_filename = None
+    requested_static_version = None
+    current_static_version = None
+    static_cache_eligible = False
+    existing_cache_directive_names = {
+        directive.strip().partition('=')[0].lower()
+        for directive in response.headers.get('Cache-Control', '').split(',')
+        if directive.strip()
+    }
+    has_protective_cache_directive = bool(
+        existing_cache_directive_names
+        & {'private', 'no-store', 'no-transform'}
+    )
+
+    if request.endpoint == 'static':
+        requested_filename = (request.view_args or {}).get('filename')
+        resolved = _canonical_static_file(requested_filename)
+        if resolved:
+            canonical_static_filename = resolved[0]
+            static_cache_eligible = canonical_static_filename.lower().endswith(
+                _VERSIONED_STATIC_SUFFIXES
+            )
+            if static_cache_eligible:
+                current_static_version = _static_file_version(
+                    canonical_static_filename
+                )
+        requested_static_version = request.args.get('v')
+
+    # Preserve the established application-asset cache assignment before the
+    # shared policy applies its one exact PDF exception. This intentionally
+    # replaces Flask's default no-cache header for recognized application
+    # assets, as the pre-existing versioning contract did.
+    if (
+        request.endpoint == 'static'
+        and 200 <= response.status_code < 300
+        and not has_protective_cache_directive
+    ):
+        if (
+            static_cache_eligible
+            and requested_static_version
+            and requested_static_version == current_static_version
         ):
+            response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        elif static_cache_eligible:
             response.headers['Cache-Control'] = _STATIC_FALLBACK_CACHE_CONTROL
+
+    policy = resolve_response_policy(
+        request.path,
+        response_mimetype=response.mimetype,
+        canonical_static_filename=canonical_static_filename,
+        status_code=response.status_code,
+        existing_x_robots_tag=response.headers.get('X-Robots-Tag'),
+        existing_cache_control=response.headers.get('Cache-Control'),
+        static_cache_eligible=static_cache_eligible,
+        requested_static_version=requested_static_version,
+        current_static_version=current_static_version,
+    )
+    if policy.x_robots_tag is not None:
+        response.headers['X-Robots-Tag'] = policy.x_robots_tag
+    if policy.cache_control is not None:
+        response.headers['Cache-Control'] = policy.cache_control
     return response
 
 
@@ -4580,56 +4644,26 @@ def server_error(e):
 
 # -------------------------------------------------------
 # SEARCH-ENGINE BASICS
-# robots.txt tells crawlers they're welcome; sitemap.xml lists the
-# public pages so search engines find everything. Both are built
-# here (not static files) so the sitemap always uses the visitor's
-# own host and stays in sync with the routes.
+# robots.txt keeps public crawling available while excluding private
+# namespaces. The intentionally empty sitemap remains valid XML without
+# advertising quiet-preview routes. Both are served here rather than as
+# static files so their endpoint names and response behavior remain stable.
 # -------------------------------------------------------
 
 @app.route('/robots.txt')
 def robots_txt():
-    # The private member surfaces and JSON APIs are already protected by
-    # server-side authorization; excluding them here simply keeps them out of
-    # crawl budget and out of search results for signed-in URLs.
-    lines = [
-        'User-agent: *',
-        'Allow: /',
-        'Disallow: /app',
-        'Disallow: /api/',
-        'Disallow: /owner',
-        'Disallow: /the-slate',
-        # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: correct in both
-        # flag states (architecture 04 section 1) — de-indexing a soon-private
-        # practice tool early is harmless, so this ships unconditionally
-        # rather than waiting on enablement.
-        'Disallow: /interview-studio',
-        f'Sitemap: {request.url_root.rstrip("/")}/sitemap.xml',
-    ]
-    return app.response_class('\n'.join(lines) + '\n', mimetype='text/plain')
+    return app.response_class(
+        response_policy_robots_txt(),
+        mimetype='text/plain',
+    )
 
 
 @app.route('/sitemap.xml')
 def sitemap_xml():
-    # The canonical public pages worth indexing (redirect-only and
-    # API routes are deliberately left out).
-    # PS-COMMUNITY-AUTH-WALL-001: no protected Community route belongs in the
-    # public sitemap.
-    # PS-INTERVIEW-STUDIO-AUTHENTICATED-EXPERIENCE-001: /interview-studio is
-    # removed unconditionally (both flag states), matching robots.txt above.
-    public_paths = [
-        '/', '/experience',
-        '/petec/my-story', '/petec/skills', '/petec/resume',
-        '/peerslate', '/petec/about',
-        '/petec/hobbies', '/petec/contact',
-        '/career-search', '/my-network', '/explore-profiles', '/for-recruiters',
-    ]
-    base = request.url_root.rstrip('/')
-    urls = ''.join(f'<url><loc>{base}{path}</loc></url>' for path in public_paths)
-    xml = (
-        '<?xml version="1.0" encoding="UTF-8"?>'
-        f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
+    return app.response_class(
+        response_policy_empty_sitemap_xml(),
+        mimetype='application/xml',
     )
-    return app.response_class(xml, mimetype='application/xml')
 
 
 # -------------------------------------------------------

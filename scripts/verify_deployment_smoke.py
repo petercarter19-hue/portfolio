@@ -28,6 +28,9 @@ except ModuleNotFoundError:  # Direct ``python scripts/...`` execution.
 
 
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+QUIET_PREVIEW_X_ROBOTS_TAG = (
+    'noindex, nofollow, noarchive, noimageindex'
+)
 
 
 @dataclass(frozen=True)
@@ -36,9 +39,11 @@ class SmokeCheck:
     expected_status: int = 200
     expected_content_type: str | None = None
     required_texts: tuple[str, ...] = ()
+    forbidden_texts: tuple[str, ...] = ()
     required_json: dict[str, str] | None = None
     required_headers: Mapping[str, str] = field(default_factory=dict)
     expected_xml_root: str | None = None
+    expected_xml_child_count: int | None = None
     # A route that may legitimately be gated behind sign-in declares the exact
     # redirect it is allowed to answer with instead. Only that precise
     # destination passes: any other 3xx, a 404, a 500, or a transport failure
@@ -60,7 +65,7 @@ def build_checks(
     *,
     base_url: str = 'https://peerslate.com',
 ) -> tuple[SmokeCheck, ...]:
-    normalized_base = base_url.rstrip('/')
+    del base_url  # The quiet crawl documents are deliberately host-independent.
     checks = (
         SmokeCheck(
             '/healthz',
@@ -82,6 +87,9 @@ def build_checks(
                 '<title>PeerSlate — Your Work. Your Story. Your Future.</title>',
                 'home-v3-page',
             ),
+            required_headers={
+                'x-robots-tag': QUIET_PREVIEW_X_ROBOTS_TAG,
+            },
         ),
         SmokeCheck(
             # Public while the authenticated transition is off; once
@@ -95,17 +103,27 @@ def build_checks(
                 '<title>Interview Studio | PeerSlate</title>',
                 'data-interview-studio',
             ),
+            required_headers={
+                'x-robots-tag': QUIET_PREVIEW_X_ROBOTS_TAG,
+            },
             allowed_signed_out_redirect='/auth/sign-in?return_to=/interview-studio',
         ),
         SmokeCheck(
             '/robots.txt',
             expected_content_type='text/plain',
-            required_texts=(f'Sitemap: {normalized_base}/sitemap.xml',),
+            required_texts=(
+                'User-agent: *',
+                'Allow: /',
+                'Disallow: /app',
+                'Disallow: /api/',
+            ),
+            forbidden_texts=('Sitemap:',),
         ),
         SmokeCheck(
             '/sitemap.xml',
             expected_content_type='application/xml',
             expected_xml_root='urlset',
+            expected_xml_child_count=0,
         ),
     )
     return checks
@@ -274,6 +292,11 @@ def verify_checks(
                 raise SmokeFailure(
                     f'{check.path} did not contain {required_text!r}'
                 )
+        for forbidden_text in check.forbidden_texts:
+            if forbidden_text in decoded:
+                raise SmokeFailure(
+                    f'{check.path} unexpectedly contained {forbidden_text!r}'
+                )
 
         if check.required_json is not None:
             try:
@@ -287,16 +310,30 @@ def verify_checks(
                     f'{check.path} JSON did not match the exact public contract'
                 )
 
-        if check.expected_xml_root is not None:
+        if (
+            check.expected_xml_root is not None
+            or check.expected_xml_child_count is not None
+        ):
             try:
                 root = ET.fromstring(decoded)
             except ET.ParseError as error:
                 raise SmokeFailure(f'{check.path} returned invalid XML') from error
             local_name = root.tag.rsplit('}', 1)[-1]
-            if local_name != check.expected_xml_root:
+            if (
+                check.expected_xml_root is not None
+                and local_name != check.expected_xml_root
+            ):
                 raise SmokeFailure(
                     f'{check.path} XML root was {local_name!r}; expected '
                     f'{check.expected_xml_root!r}'
+                )
+            if (
+                check.expected_xml_child_count is not None
+                and len(root) != check.expected_xml_child_count
+            ):
+                raise SmokeFailure(
+                    f'{check.path} XML contained {len(root)} child element(s); '
+                    f'expected {check.expected_xml_child_count}'
                 )
 
         passed.append(check.path)

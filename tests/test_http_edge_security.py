@@ -23,9 +23,14 @@ from app import (
     app,
     _address_without_port,
     _canonical_static_file,
+    _cache_current_static_versions,
     _client_rate_limit_key,
     _compress_public_text_response,
     _static_file_version,
+)
+from services.response_policy import (
+    PUBLIC_STATIC_FALLBACK_CACHE_CONTROL,
+    QUIET_PREVIEW_X_ROBOTS_TAG,
 )
 
 
@@ -353,7 +358,7 @@ class CrawlerExclusionTests(unittest.TestCase):
                 self.assertIn(path, body)
         # The public site must still be crawlable.
         self.assertIn("Allow: /", body)
-        self.assertIn("Sitemap:", body)
+        self.assertNotIn("Sitemap:", body)
 
     def test_sitemap_lists_no_private_path(self):
         body = self.client.get("/sitemap.xml").get_data(as_text=True)
@@ -540,7 +545,71 @@ class StaticVersioningTests(unittest.TestCase):
             response.headers["Cache-Control"],
             "public, max-age=31536000, immutable",
         )
+        self.assertNotIn("X-Robots-Tag", response.headers)
         response.close()
+
+    def test_resume_json_alone_receives_quiet_preview_guidance(self):
+        selected = self.client.get("/static/data/resume_data.json")
+        ordinary = self.client.get("/static/data/story_data.json")
+
+        self.assertEqual(selected.status_code, 200)
+        self.assertEqual(selected.mimetype, "application/json")
+        self.assertEqual(
+            selected.headers.get("X-Robots-Tag"),
+            QUIET_PREVIEW_X_ROBOTS_TAG,
+        )
+        self.assertNotIn("X-Robots-Tag", ordinary.headers)
+        selected.close()
+        ordinary.close()
+
+    def test_resume_pdf_is_bounded_for_every_version_spelling(self):
+        current = _static_file_version("files/pete-carter-resume.pdf")
+        self.assertRegex(current, r"^[0-9a-f]{12}$")
+
+        for token in (None, current, "deadbeef0000"):
+            with self.subTest(token=token):
+                url = "/static/files/pete-carter-resume.pdf"
+                if token is not None:
+                    url += f"?v={token}"
+                response = self.client.get(url)
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.mimetype, "application/pdf")
+                self.assertEqual(
+                    response.headers.get("X-Robots-Tag"),
+                    QUIET_PREVIEW_X_ROBOTS_TAG,
+                )
+                self.assertEqual(
+                    response.headers.get("Cache-Control"),
+                    PUBLIC_STATIC_FALLBACK_CACHE_CONTROL,
+                )
+                self.assertNotIn(
+                    "immutable",
+                    response.headers.get("Cache-Control", ""),
+                )
+                response.close()
+
+    def test_static_policy_preserves_protective_cache_directives(self):
+        version = _static_file_version("css/style.css")
+        url = f"/static/css/style.css?v={version}"
+
+        for existing in (
+            "private, no-store",
+            "no-store, max-age=0",
+            "public, max-age=31536000, no-transform",
+        ):
+            with self.subTest(existing=existing), app.test_request_context(
+                url,
+                headers={"Accept-Encoding": "gzip"},
+            ):
+                response = Response("public css " * 500, mimetype="text/css")
+                response.headers["Cache-Control"] = existing
+
+                finalized = _cache_current_static_versions(response)
+                compressed = _compress_public_text_response(finalized)
+
+                self.assertEqual(compressed.headers["Cache-Control"], existing)
+                self.assertIsNone(compressed.headers.get("Content-Encoding"))
 
     def test_a_stale_or_wrong_token_is_never_cached_long(self):
         # A visitor must never be pinned to old bytes: only a token that

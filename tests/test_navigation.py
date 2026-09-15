@@ -765,7 +765,7 @@ class NavigationTests(unittest.TestCase):
         ]
         self.assertEqual(
             locations,
-            [f'https://peerslate.com{path}' for path in expected_paths],
+            [],
         )
 
 

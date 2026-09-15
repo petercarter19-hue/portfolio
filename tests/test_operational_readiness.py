@@ -21,6 +21,7 @@ from scripts.candidate_artifact import build_manifest, write_manifest
 from scripts.verify_deployment_smoke import (
     DEFAULT_CHECKS,
     HttpResult,
+    QUIET_PREVIEW_X_ROBOTS_TAG,
     SmokeFailure,
     build_checks,
     fetch_url,
@@ -611,7 +612,7 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
                     '<title>PeerSlate — Your Work. Your Story. Your Future.'
                     '</title><body class="home-v3-page">'
                 ),
-                {},
+                {'x-robots-tag': QUIET_PREVIEW_X_ROBOTS_TAG},
             ),
             '/interview-studio': (
                 'text/html; charset=utf-8',
@@ -619,11 +620,16 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
                     '<title>Interview Studio | PeerSlate</title>'
                     '<main data-interview-studio>'
                 ),
-                {},
+                {'x-robots-tag': QUIET_PREVIEW_X_ROBOTS_TAG},
             ),
             '/robots.txt': (
                 'text/plain; charset=utf-8',
-                'Sitemap: https://peerslate.com/sitemap.xml',
+                (
+                    'User-agent: *\n'
+                    'Allow: /\n'
+                    'Disallow: /app\n'
+                    'Disallow: /api/\n'
+                ),
                 {},
             ),
             '/sitemap.xml': (
@@ -672,16 +678,50 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
                 ),
             )
 
-    def test_candidate_contract_uses_candidate_host(self):
+    def test_candidate_contract_keeps_quiet_crawl_documents_host_independent(self):
         checks = build_checks(
             'unversioned',
             base_url='https://candidate.example',
         )
         robots = next(check for check in checks if check.path == '/robots.txt')
-        self.assertEqual(
-            ('Sitemap: https://candidate.example/sitemap.xml',),
-            robots.required_texts,
-        )
+        self.assertIn('Allow: /', robots.required_texts)
+        self.assertEqual(('Sitemap:',), robots.forbidden_texts)
+        sitemap = next(check for check in checks if check.path == '/sitemap.xml')
+        self.assertEqual(0, sitemap.expected_xml_child_count)
+
+    def test_contract_rejects_sitemap_advertisement_and_nonempty_sitemap(self):
+        robots = next(check for check in DEFAULT_CHECKS if check.path == '/robots.txt')
+        sitemap = next(check for check in DEFAULT_CHECKS if check.path == '/sitemap.xml')
+
+        def advertised_sitemap(url, timeout_seconds):
+            del url, timeout_seconds
+            return HttpResult(
+                200,
+                'text/plain',
+                b'User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /api/\nSitemap: https://example.test/sitemap.xml\n',
+            )
+
+        with self.assertRaisesRegex(SmokeFailure, 'unexpectedly contained'):
+            verify_checks(
+                'https://example.test',
+                checks=(robots,),
+                fetcher=advertised_sitemap,
+            )
+
+        def nonempty_sitemap(url, timeout_seconds):
+            del url, timeout_seconds
+            return HttpResult(
+                200,
+                'application/xml',
+                b'<urlset><url><loc>https://example.test/</loc></url></urlset>',
+            )
+
+        with self.assertRaisesRegex(SmokeFailure, '1 child element'):
+            verify_checks(
+                'https://example.test',
+                checks=(sitemap,),
+                fetcher=nonempty_sitemap,
+            )
 
     def test_contract_rejects_wrong_status(self):
         def fake_fetch(url, timeout_seconds):
@@ -755,6 +795,7 @@ class DeploymentSmokeScriptTests(unittest.TestCase):
                 200,
                 'text/html',
                 b'<title>PeerSlate</title><p>Interview Studio is unavailable.</p>',
+                {'x-robots-tag': QUIET_PREVIEW_X_ROBOTS_TAG},
             )
 
         with self.assertRaisesRegex(SmokeFailure, 'did not contain'):
