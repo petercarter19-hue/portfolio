@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "package": "PS-AZURE-SPEECH-MARKER-RECOVERY-001",
+  "state": "active",
+  "outcome": "Correct Azure Speech proof marker access after run 2989 refused before provider activity with speech_marker_read_failed. Never replay run 2989 or reuse its authorization, progress, success, or consumption markers because consumption is ambiguous. Replace the fragile optional lookup with a supported App Configuration data-plane client on the existing identity; add privacy-safe failure categories and regressions; bind one fresh manual attempt to a new exact reference and new marker keys. Preserve zero provider calls until the new consumption marker is read, written, and confirmed. Use only existing identity and endpoints, exactly eight fictional profiles, a 36,900-second target, 37,800-second cap, and aggregate-only evidence. Scheduled Speech stays off; daily enablement remains a separate Protected follow-up after proof, complete-day cost evidence, and portal recognition. Exclude access expansion, resources or secrets, old-marker mutation, private content, deployment, schema or production-data mutation, DNS, API Management, advertising, and marketing. PACKAGE_REGISTRY.json remains owned by PS-INTERVIEW-RECOVERY-MOBILE-NAV-001 and needs governed surface extension after release.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a09d58-4477-7b43-873a-0af993f00c85",
+  "branch": "work/2026-09-14-azure-speech-marker-recovery-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "34e7b1cecc890bcb4544abbadadd96c60df71745",
+  "owner_outcome_ref": "continuity:event:evt-a6617fea-6b67-4ca0-a7c0-f4ecf145fe6a",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-AZURE-SPEECH-MARKER-RECOVERY-001.json",
+    "docs/governance/lane_claims/evidence/PS-AZURE-SPEECH-MARKER-RECOVERY-001.md",
+    "docs/governance/lane_claims/receipts/PS-AZURE-SPEECH-MARKER-RECOVERY-001.json",
+    "docs/initiatives/PS-AZURE-SPEECH-MARKER-RECOVERY-001/README.md",
+    "docs/initiatives/PS-AZURE-SPEECH-MARKER-RECOVERY-001/OWNER_TECHNICAL_COMPLETION_REPORT.md",
+    "pipelines/azure-startup-qualification.yml",
+    "scripts/run_speech_quality_evaluations.py",
+    "tests/test_azure_speech_qualification.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-AZURE-SPEECH-MARKER-RECOVERY-001.md"
+  ],
+  "domains": [
+    "operations:azure-startup-qualification:speech-marker-recovery",
+    "finance:azure-speech:bounded-proof-recovery",
+    "ai:azure-speech:synthetic-regression:marker-recovery",
+    "testing:azure-startup-qualification:speech-marker-recovery"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
