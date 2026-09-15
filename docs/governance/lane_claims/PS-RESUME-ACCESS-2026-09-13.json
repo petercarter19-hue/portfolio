@@ -22,7 +22,8 @@
     "tests/test_public_nav_route_truth.py",
     "tests/test_projects.py",
     "scripts/verify_deployment_smoke.py",
-    "tests/test_operational_readiness.py"
+    "tests/test_operational_readiness.py",
+    "app.py"
   ],
   "domains": [
     "privacy:resume-access",
