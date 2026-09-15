@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "package": "PS-MVP1-MINIMAL-HOMEPAGE-001",
+  "state": "active",
+  "outcome": "Replace the long signed-out public homepage with Pete's selected minimal MVP1 composition inside the accepted shared shell: one expressive existing PeerSlate visual, the short headline 'Your Work. Your Story. Your Future.', generous whitespace, and no body-level login panel or call to action. Remove legacy homepage scene and demo dependencies from public / only while preserving their shared assets, the shell account controls, authentication routes, noindex and security policy. Desktop should read as one concise screen at ordinary height; small screens and 200% zoom use readable natural-flow reflow without clipping. Do not advertise capabilities, destinations, biography, fixtures, Workshop, Slate Board, Capture, Journal, Projects, or retired-product concepts. No app.py, base shell, navigation, identity, provider, schema, configuration, deployment, or production mutation.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0a4f1-90df-7561-95cc-5d6c40df571e",
+  "branch": "work/2026-09-15-mvp1-minimal-homepage-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "74e2d9fd313bf983ab6574c4b53ab52ea9e826a6",
+  "owner_outcome_ref": "session:01a08dfb-7229-75f0-8017-07dd590f1795/pete-direction:2026-09-15/minimal-homepage-visual-headline-only",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-MVP1-MINIMAL-HOMEPAGE-001.json",
+    "docs/governance/lane_claims/evidence/PS-MVP1-MINIMAL-HOMEPAGE-001.md",
+    "docs/governance/lane_claims/receipts/PS-MVP1-MINIMAL-HOMEPAGE-001.json",
+    "templates/homepage.html",
+    "static/css/homepage-minimal.css",
+    "tests/test_homepage_scenes.py",
+    "tests/test_dark_theme_availability.py"
+  ],
+  "domains": [
+    "content:homepage-minimal-entry",
+    "visual:homepage:minimal-entry",
+    "testing:homepage-minimal-entry"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-MVP1-MINIMAL-HOMEPAGE-001.md"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
