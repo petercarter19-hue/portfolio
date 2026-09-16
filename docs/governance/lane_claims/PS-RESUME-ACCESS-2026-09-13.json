@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-RESUME-ACCESS-2026-09-13",
-  "state": "active",
+  "state": "closed",
   "outcome": "Implement truthful quiet-preview response policy for the canonical public resume and its exact public data/PDF resources while preserving the accepted homepage bytes, canonical and legacy resume routes, private app behavior, content-versioned application assets, authentication, compression, redirects, status and body behavior, and no-JavaScript core reading. Keep the sitemap valid and empty, remove its robots.txt advertisement while retaining public crawlability and private exclusions, apply noindex response guidance to the selected public HTML/PDF/JSON responses, and prevent the public resume PDF from receiving immutable year-long caching. Protected independent exact-candidate review and normal Azure CI/PR/accepted merge are required. Exclude app.py and tests/test_navigation.py until a later governed surface extension after their active claims release. Exclude docs/governance/PACKAGE_REGISTRY.json entirely. Do not change resume_data.json content, generic member publication, schema, authentication/provider behavior, deployment, production configuration, vendor submissions, DNS, or external network policy.",
   "assignment": "implementation",
   "writer_ref": "session:01a09dbf-a3f2-7f70-baad-eb98729de1ac",
@@ -38,6 +38,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "5eb5be6fc623640dede07d7529d00a5ae0bb7e32",
+  "closed_at": "2026-09-16T16:37:54Z"
 }
