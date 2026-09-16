@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-CONTRACTS-SAFE-CUSTODY-001",
-  "state": "paused",
+  "state": "active",
   "outcome": "Correct delivery/routing instructions and cross-harness assignment rules; add deterministic early OpenCode session capture; implement compatible dormant Protected partial-release and main-reconciliation tooling, adversarial tests, and compact current-record projections; then stage the accepted lifecycle-registry and CURRENT_LANES.json schema cutover at qualified owner boundaries while preserving freezes, committed reconciliation, and fail-closed legacy-client behavior.",
   "assignment": "implementation",
   "writer_ref": "session:01a09dac-536f-7191-8ec6-25f5caaae0f2",
