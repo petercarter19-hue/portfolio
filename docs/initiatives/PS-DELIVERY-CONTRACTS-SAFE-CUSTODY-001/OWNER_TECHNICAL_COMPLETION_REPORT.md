@@ -1,42 +1,21 @@
-# Candidate A completion record
+# Delivery contracts and safe custody: technical completion status
 
-- Task/package and delivery path: `PS-DELIVERY-CONTRACTS-SAFE-CUSTODY-001`, Protected
-- Outcome: Compatible dormant delivery safe-custody tooling and aligned routing,
-  lifecycle, handoff and completion contracts.
-- Writer: `session:01a09dac-536f-7191-8ec6-25f5caaae0f2`, configured Sol High.
-- Owner outcome: `session:01a09d45-70e5-71a2-9260-264f31ca9e41/delegation:2026-09-13/p1-approved-recommended-changes`
-- Base: `34e7b1cecc890bcb4544abbadadd96c60df71745`
-- Candidate SHA: the immutable pushed branch tip reported with this record;
-  embedding a commit's own SHA in its tree would be self-referential
-- Verification: after the first correction, 444 full delivery/lifecycle/Control
-  Room/governance tests passed in 859.866s. The remaining domain-coverage
-  correction passed 290 affected delivery-preflight/safe-custody/governance
-  tests in 46.647s; Python compilation and `git diff --check` passed.
-- Independent review: exact SHA `e6c4b9a4f66e963a476213578cd7ec091775b357`
-  returned REVISE. Rereview of exact SHA
-  `9032fbb5f05fdc9c9b45cee19b4865d01d5362f8` passed those five findings and
-  returned one remaining Medium domain-coverage finding. That finding is
-  narrowly corrected in this replacement candidate; fresh exact-SHA rereview
-  is pending.
-- Release state: local Candidate A only; no implementation PR, merge, deployment,
-  registry migration, index cutover, schema action, or enablement
-- Dependencies and custody: none on Media product completion. Activation followed
-  the completed Interview/Media control-window sequence and `_control` was
-  released immediately after activation.
-- Deferred Candidate B: qualify/quiesce active writers, migrate the existing
-  registry to schema 2 with exact backup, then separately review and merge the
-  strict CURRENT_LANES schema-4 cutover.
-- Local staging: fake-process contract passed with no provider call; originals
-  still match the approved exact-byte baseline and nothing was installed.
-  Staged SHA-256 values: global AGENTS
-  `6baf5d6c014e6da0d268490e02752fcfabe9a7deb1f09c7c70fdb44bb8a03ae8`;
-  skill `9fadbb813c94abc9529250a840efbbb5dd61ebf5398978b18bd805a6ddde4e32`;
-  OpenCode AGENTS
-  `4ec537014c0d9583113451fdeac3fa1bc85b0f67e779019cd86af70181fa1533`;
-  agent `089cf7df76e57194028d32a751989510941647e20a1b3a913de1599ed5be2eb8`;
-  helper `fbd370fa948b264b5fe8d96a78320ff82ba97e78ac204d4547735b3a01c637dc`;
-  fake test `dbc5d52abf5373e215844ca7d428eb56988a43bf12a6ba23e89959d258f588b3`
-- Known limits: cooperating-tool boundary only; no claim of protection from an
-  arbitrary same-OS raw filesystem writer or cross-machine qualification
-- Next action: obtain fresh Pete-operated Grok independent review of the exact
-  pushed replacement Candidate A SHA before opening the implementation PR
+- Package and delivery path: `PS-DELIVERY-CONTRACTS-SAFE-CUSTODY-001`, Protected; production authority withheld.
+- Writer: `session:01a09dac-536f-7191-8ec6-25f5caaae0f2`, Sol High.
+- Owner outcome: `session:01a09d45-70e5-71a2-9260-264f31ca9e41/delegation:2026-09-13/p1-approved-recommended-changes`.
+- At this report's pre-merge snapshot, the package claim was active and this documentation awaited exact-SHA independent review and Protected merge. Subsequent review, merge, and claim status belongs to the authoritative receipt, evidence, and claim; no deployment is asserted here.
+
+## Accepted delivery and custody
+
+- Candidate A's compatible delivery, lifecycle, routing, projection, and adversarial-test implementation was independently reviewed and merged in PR 1046 as main `1485b3d2bc98547654a8f2d08b527c84e4ae86ba`. Sol Extra High passed exact implementation `2958ee1593f880b48f34d8967be7e27a8821410e`; Pete supplied an external Grok PASS for the later registry-integrated exact candidate `93f906ce136332f1ba5aee3869a4551c440dcde6`. At this report's pre-review snapshot, the fixed receipt and evidence recorded those historical Candidate A reviews, not this report update; later review status belongs to the authoritative receipt.
+- Following Candidate A acceptance, all six separately reviewed local OpenCode helper files were installed with per-file original-byte checks and final reviewed-byte verification. The retained `P1_LOCAL_INSTALL_20260916T010957Z/installation-manifest.json` records their original, reviewed, and installed SHA-256 values and preserved originals. The fake-process test used no paid provider.
+- At the qualified owner boundary, the one machine-local lifecycle registry migrated atomically from schema 1 to schema 2 with deterministic backup and after-state digest proof. The accepted dependency then advanced `CURRENT_LANES.json` to schema 4 with exact `safe_custody_v1` capabilities in PR 1073, main `7fd5c19c3877f48865b832ecd80283c4af09e373`; its claim was subsequently closed. The live registry is schema 2 and the accepted index is schema 4. This is a guarded delivery-control cutover, not production deployment or a product/database schema change.
+- A narrow accepted lifecycle claim-path validation repair in PR 1078, main `17926f436d60f203db8ad5b7b5e31c12867686cc`, preserves filename/package binding and duplicate safety before keyed claim validation; its dependency claim was closed. The original P1 claim was resumed as active before this report snapshot.
+- The original P1 branch was reconciled through the supported journal from preserved checkpoint C `8345307b00eeab5370df6b183c1c17e8098556dc` to pinned accepted main M `10bcfeb345040c9de727b5ea180f9fedd73af4b8`. The journal completed, its block cleared, and pushed result R `01df08ddc47c00c9e24d077e70f1d394cde867b4` has a tree byte-identical to M. The two owned conflicts resolved to exact accepted-main lifecycle code and test bytes; no other resolution-time path was edited.
+
+## Validation and remaining boundary
+
+- Candidate A's five-correction regression passed 444 delivery/lifecycle/Control Room/governance tests; its final domain-coverage correction passed 290 affected tests. Registry integration passed 32 registry/governance and 27 safe-custody tests plus Azure build 3056. Exact log and review provenance remain in the fixed package evidence.
+- After reconciliation, 421 delivery/lifecycle/governance-pointer/package-registry tests passed in 915.171 seconds. A separate 51-test Control Room run passed with a process-local placeholder key and no provider call. Fetched Protected `--intent write`, diff check, clean-worktree, local/remote SHA, journal, and tree-equality checks passed for R. The first combined test import, without the required app key, ran zero tests and is not counted as a pass.
+- This report and the companion README correct stale pre-cutover wording. These documentation edits do not change executable code, tests, the historical review receipt, local installed files, the machine registry, or the package claim. At this report's pre-merge snapshot, the remaining gates were exact-SHA independent review, current-target Protected PR/CI/merge, and ordinary claim close; their outcomes belong in the authoritative receipt, evidence, and claim. No production, provider, identity, billing, product-package, or database operation is authorized or claimed.
+- Safe-custody enforcement remains a cooperating-tool boundary; it does not prevent an arbitrary same-OS raw filesystem writer or establish universal cross-machine quiescence. Each future operation still requires its own action-time gates.

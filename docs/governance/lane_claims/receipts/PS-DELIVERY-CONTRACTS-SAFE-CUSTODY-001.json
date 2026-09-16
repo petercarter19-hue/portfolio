@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "package": "PS-DELIVERY-CONTRACTS-SAFE-CUSTODY-001",
-  "candidate_sha": "93f906ce136332f1ba5aee3869a4551c440dcde6",
+  "candidate_sha": "c5e0c8776fd0a9bc12d653e27bba98d4a206daee",
   "review_type": "independent",
-  "reviewer_ref": "agent:grok-owner-supplied-2026-09-15",
+  "reviewer_ref": "agent:/root/p1_final_review",
   "result": "pass",
-  "reviewed_at": "2026-09-16T00:26:35Z",
+  "reviewed_at": "2026-09-16T22:24:37Z",
   "findings": [
     {
       "status": "resolved",
@@ -38,6 +38,10 @@
     {
       "status": "informational",
       "summary": "Pete supplied an external Grok independent-review PASS with no findings for exact candidate 93f906ce136332f1ba5aee3869a4551c440dcde6. The review verified exact local, tracking, PR-source, and merge-tree identity; ancestry from accepted main and the prior reviewed candidate; byte-identical original implementation paths; the exact package-registry delta and accounting; unchanged reviewed local staging preconditions; and successful focused validation and Azure build 3056. No external session identifier was provided or inferred."
+    },
+    {
+      "status": "informational",
+      "summary": "Independent reviewer agent:/root/p1_final_review, reported as gpt-5.6-sol at Extra High, returned PASS with no findings on exact final substantive candidate c5e0c8776fd0a9bc12d653e27bba98d4a206daee. The preceding 545e99e8fd410c98537406e93288030f27b410bd report candidate also received PASS; the c5e0c877 change only time-anchored status wording in the same two claimed non-evidence report paths. The reviewer confirmed ordinary Protected close eligibility after required receipt-tail, PR, CI, and accepted merge."
     }
   ],
   "evidence_ref": "docs/governance/lane_claims/evidence/PS-DELIVERY-CONTRACTS-SAFE-CUSTODY-001.md"

@@ -28,3 +28,53 @@ The staging-manifest verification log hashes to `5828a17dd9138e59e13bed4c8f2683f
 Candidate B remains deferred: no live machine-registry migration, lifecycle-registry schema cutover, or `CURRENT_LANES.json` schema-4 cutover is included here. Candidate A acceptance does not complete or close Candidate B; the active package retains future cutover custody until a separately authorized, staged, reviewed, and accepted transition. Production, product-package, identity, billing, provider, and deployment authority remain withheld.
 
 Repository rollback is a normal revert of the accepted Candidate A merge. Local-file installation is separately gated by exact original-byte checks and preserves recoverable originals and installation evidence; it must stop without overwrite on any drift.
+
+## Candidate B and final P1 report review: later status
+
+The preceding Candidate A staging, deferred-boundary, and rollback sections
+record that candidate's review-time state. They are not claims about the later
+installation or Candidate B cutover. Candidate A was accepted in PR 1046 as
+main `1485b3d2bc98547654a8f2d08b527c84e4ae86ba`, and the six reviewed
+local OpenCode files were subsequently installed with original-byte and final
+reviewed-byte checks. The retained
+`P1_LOCAL_INSTALL_20260916T010957Z/installation-manifest.json` records those
+hashes and recoverable originals; the fake-process test made no provider call.
+The existing machine registry was separately qualified and migrated to schema
+2 with its deterministic backup. The independently reviewed schema-4 index
+cutover was accepted in PR 1073 as main
+`7fd5c19c3877f48865b832ecd80283c4af09e373`, and its dependency claim
+was closed. The accepted claim-path repair in PR 1078, main
+`17926f436d60f203db8ad5b7b5e31c12867686cc`, was also closed before the
+original P1 claim resumed. None of these actions deployed to production.
+
+The original P1 branch reconciled through completed journal operation
+`e63886d994d4667e4759961a884cf843fc13c7d5310ac19812fd6eaa6cb0e2bf`
+from preserved C `8345307b00eeab5370df6b183c1c17e8098556dc` to pinned M
+`10bcfeb345040c9de727b5ea180f9fedd73af4b8`. Result R
+`01df08ddc47c00c9e24d077e70f1d394cde867b4` was pushed, clean, and
+tree-identical to M. The later substantive delivery-report candidate
+`c5e0c8776fd0a9bc12d653e27bba98d4a206daee` changes only this package's
+claimed README and owner technical completion report relative to M; accepted
+code, tests, index, and claim bytes remain unchanged.
+
+Independent reviewer `agent:/root/p1_final_review`, manager-reported as
+`gpt-5.6-sol` Extra High, returned PASS with no findings on exact candidate
+`c5e0c8776fd0a9bc12d653e27bba98d4a206daee`. The reviewer had also
+returned PASS on the preceding report candidate
+`545e99e8fd410c98537406e93288030f27b410bd`; the final candidate only
+time-anchors status wording in those same two non-evidence paths. The
+reviewer confirmed that this substantive path delta permits ordinary
+Protected close after the fixed review tail, accepted PR/CI/merge, and
+claim-only close. The matching receipt's required `reviewed_at` value
+`2026-09-16T22:24:37Z` is this writer's UTC receipt-recording time, not an
+invented reviewer execution or completion timestamp.
+
+After R, 421 delivery/lifecycle/governance-pointer/package-registry tests
+passed in 915.171 seconds, and 51 Control Room tests passed separately using a
+process-local placeholder key with no provider call. The initial combined
+import without that key ran zero tests and is not counted as a pass. The final
+report-wording change passed 32 focused governance-pointer/package-registry
+tests, `git diff --check`, and fetched Protected write preflight. This fixed
+receipt/evidence tail is not part of the reviewed substantive SHA; it changes
+no implementation behavior. At this recording point Protected PR, CI, merge,
+and P1 claim close still remain, with production authority withheld.

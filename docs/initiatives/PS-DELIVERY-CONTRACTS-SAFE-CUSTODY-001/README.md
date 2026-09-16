@@ -9,21 +9,31 @@ Production authority: withheld
 
 Keep repository and local delivery guidance consistent across supported
 runtimes, persist an OpenCode worker identity before uncertain dispatch, and
-deliver compatible dormant tooling for monotonic scope release and guarded main
-reconciliation.
+deliver gated tooling for monotonic scope release and guarded main
+reconciliation. Candidate A introduced it compatibly and dormant; the later
+qualified Candidate B cutover enabled its index capabilities.
 
-Candidate A adds the dual-version validators, exact proof shapes, durable
-freeze/journal behavior, migration command, instructions, read-only projection,
-and adversarial compatibility tests. It does not change `CURRENT_LANES.json`,
-migrate the machine-local registry, enable a new operation, install local files,
-deploy, or perform a production/schema action.
+Candidate A's compatible delivery and routing code was reviewed and accepted in
+PR 1046 at `1485b3d2bc98547654a8f2d08b527c84e4ae86ba`. Its six separately
+reviewed local OpenCode helper files were installed after acceptance with
+original-byte checks and a fake-process/no-provider test; the installation
+manifest is retained outside the repository.
 
-Candidate B is a later separately reviewed cutover. At a qualified owner
-boundary it must establish writer quiescence, execute the supported one-registry
-schema-1-to-2 migration with exact backup, and then advance the repository index
-to strict schema 4. Until both fences are accepted, current schema 3/1 behavior
-continues and every new scope-release/reconciliation entry point refuses before
-mutation.
+Candidate B's qualified, atomic migration of the existing machine registry to
+schema 2 has completed with its deterministic backup. The separately reviewed
+schema-4 `CURRENT_LANES.json` cutover was accepted in PR 1073 at
+`7fd5c19c3877f48865b832ecd80283c4af09e373`. The index now declares the
+`safe_custody_v1` capabilities; each use still requires its exact live claim,
+caller, accepted-tool, worktree, and journal gates. A narrow claim-path safety
+repair was accepted in PR 1078 at
+`17926f436d60f203db8ad5b7b5e31c12867686cc`. The original package then
+resumed and completed its journaled, non-rewriting reconciliation from preserved
+checkpoint `8345307b00eeab5370df6b183c1c17e8098556dc` to pinned main
+`10bcfeb345040c9de727b5ea180f9fedd73af4b8`. Its resulting merge commit
+`01df08ddc47c00c9e24d077e70f1d394cde867b4` has the same tree as that
+accepted main. At this report's pre-merge snapshot, the package claim was
+active and not yet closed; the authoritative claim and review evidence record
+subsequent status.
 
 ## Candidate A acceptance
 
@@ -43,16 +53,19 @@ mutation.
 - Migration binds the actual caller, runs only from accepted delivery-tool
   bytes, self-digests schema-2 state, and proves its exact backup again on
   already-migrated recovery.
-- Old accepted clients refuse the future schema versions before side effects.
-- OpenCode helper staging proves create-new invocation evidence, early structured
-  primary-session capture, separate streams, ambiguity refusal, and no automatic
-  replay, using only a fake process.
-- An independent reviewer assesses the exact immutable Candidate A SHA before
-  any implementation PR is opened.
+- Old accepted clients refuse schema-2/4 state before side effects.
+- Reviewed OpenCode helper staging and its post-acceptance installation prove
+  create-new invocation evidence, early structured primary-session capture,
+  separate streams, ambiguity refusal, and no automatic replay with a fake
+  process and no provider call.
+- Independent reviewers assessed the exact Candidate A and schema-cutover
+  candidates before their respective implementation PRs.
 
 ## Exclusions
 
-No product package is touched. No `PACKAGE_REGISTRY.json`, Media, Corporate,
-MyData, Interview, Azure delivery surface, paid provider, production flag,
-database schema, or deployment is in scope. Existing sealed-QA exceptions and
-owner-reassignment recovery controls remain intact.
+The accepted Candidate A registration changed only this package's
+`PACKAGE_REGISTRY.json` accounting. No product package, Media, Corporate,
+MyData, Interview, unrelated Azure CI/pipeline surface, paid provider,
+production flag, database schema, or deployment is part of this package.
+Existing sealed-QA exceptions and owner-reassignment recovery controls remain
+intact.
