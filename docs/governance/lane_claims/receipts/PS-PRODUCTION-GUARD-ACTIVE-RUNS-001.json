@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-PRODUCTION-GUARD-ACTIVE-RUNS-001",
+  "candidate_sha": "e9ea21d61f4d3a44ca2201632776e6cdfe754122",
+  "review_type": "independent",
+  "reviewer_ref": "session:01a0a7d0-cb46-7a02-8ed7-795203c33b74",
+  "result": "pass",
+  "reviewed_at": "2026-09-16T13:38:19Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-PRODUCTION-GUARD-ACTIVE-RUNS-001.md"
+}

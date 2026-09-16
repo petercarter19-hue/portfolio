@@ -21,9 +21,20 @@ from dataclasses import dataclass
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 MIGRATION_ID_RE = re.compile(r"^PS-[A-Z0-9]+(?:-[A-Z0-9]+)*$")
 AUTHORIZATION_REFERENCE_RE = re.compile(r"^[ -~]{8,240}$")
-ACTIVE_STATUSES = {"notStarted", "inProgress", "postponed"}
+ACTIVE_STATUSES = {"notStarted", "inProgress", "cancelling", "postponed"}
 AUTOMATIC_REASONS = {"individualCI", "batchedCI"}
+# BuildReason values returned by Azure DevOps REST 7.1. The `none` and `all`
+# filter sentinels are not unambiguous reasons for an individual build.
+SUPPORTED_RUN_REASONS = AUTOMATIC_REASONS | {
+    "manual", "schedule", "scheduleForced", "userCreated",
+    "validateShelveset", "checkInShelveset", "pullRequest",
+    "buildCompletion", "resourceTrigger", "triggered",
+}
 MAX_BUILD_PAGES = 20
+# Azure BuildStatus flags: inProgress=1, cancelling=4, postponed=8,
+# notStarted=32. Filter on the server before bounded pagination; the API has
+# no sourceVersion filter, so exact-SHA matching remains client-side.
+ACTIVE_STATUS_FILTER = "45"
 
 
 class PreflightError(ValueError):
@@ -160,6 +171,7 @@ def read_exact_sha_runs(
             # ignored, so exact-SHA matching must happen on every response
             # page.
             "branchName": "refs/heads/main",
+            "statusFilter": ACTIVE_STATUS_FILTER,
             "queryOrder": "queueTimeDescending",
             "$top": "50",
             "api-version": "7.1",
@@ -189,15 +201,26 @@ def read_exact_sha_runs(
             raise PreflightError(
                 f"could not read exact-SHA Azure run state: {type(exc).__name__}"
             ) from exc
+        if not isinstance(payload, dict):
+            raise PreflightError("Azure build-state response has an invalid shape")
         values = payload.get("value")
         if not isinstance(values, list):
             raise PreflightError("Azure build-state response has an invalid shape")
-        matching.extend(
-            item
-            for item in values
-            if isinstance(item, dict)
-            and item.get("sourceVersion") == source_version
-        )
+        for item in values:
+            if (
+                not isinstance(item, dict)
+                or type(item.get("id")) is not int
+                or item["id"] <= 0
+                or not isinstance(item.get("sourceVersion"), str)
+                or not SHA_RE.fullmatch(item["sourceVersion"])
+                or not isinstance(item.get("reason"), str)
+                or item["reason"] not in SUPPORTED_RUN_REASONS
+                or not isinstance(item.get("status"), str)
+                or item.get("status") not in ACTIVE_STATUSES
+            ):
+                raise PreflightError("Azure build-state response has an invalid run")
+            if item["sourceVersion"] == source_version:
+                matching.append(item)
         if not next_token:
             return matching
         if next_token in seen_tokens:
