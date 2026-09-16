@@ -16,11 +16,14 @@ from services.azure_speech_qualification import (
     MAX_AUDIO_SECONDS,
     MAX_PRICE_USD_PER_AUDIO_HOUR,
     PRICE_USD_PER_AUDIO_HOUR,
+    PROGRESS_SCHEMA_VERSION,
+    SCORING_CONTRACT_VERSION,
     TARGET_AUDIO_SECONDS,
     SpeechProgress,
     SpeechQualificationError,
     case_contract_digest,
     load_cases,
+    normalized_words,
     privacy_safe_report,
     progress_from_json,
     progress_to_json,
@@ -200,6 +203,7 @@ class AzureSpeechQualificationTests(unittest.TestCase):
         self.assertEqual(MAX_AUDIO_SECONDS, 37_800)
         self.assertEqual(PRICE_USD_PER_AUDIO_HOUR, Decimal("0.10"))
         self.assertEqual(MAX_PRICE_USD_PER_AUDIO_HOUR, Decimal("0.36"))
+        self.assertIn("follow-up", cases[1].required_terms)
 
     def test_score_reduces_transcript_to_numeric_structural_results(self):
         case = load_cases(FIXTURE)[0]
@@ -216,6 +220,130 @@ class AzureSpeechQualificationTests(unittest.TestCase):
         self.assertEqual(result.required_term_recall_milli, 1000)
         self.assertEqual(result.token_count_ratio_milli, 1000)
         self.assertNotIn(case.text, json.dumps(result.as_dict()))
+
+    def test_historical_numeric_formatting_counterfactual_scores_equivalently(self):
+        case = load_cases(FIXTURE)[-1]
+        transcripts = (
+            case.text.replace("one point eight", "1.8").replace(
+                "September fourth", "September 4th"
+            ),
+            case.text.replace(
+                "September fourth, twenty twenty-six",
+                "September fourth twenty twenty-six",
+            ),
+        )
+        for transcript in transcripts:
+            with self.subTest(transcript=transcript):
+                result = score_transcript(
+                    case,
+                    expected_text=case.text,
+                    transcript=transcript,
+                    audio_seconds=2813,
+                    latency_seconds=1,
+                )
+                self.assertEqual(result.sample_word_error_rate_milli, 0)
+                self.assertEqual(result.required_term_recall_milli, 1000)
+                self.assertEqual(result.token_count_ratio_milli, 1000)
+                self.assertTrue(result.quality_passed)
+
+    def test_numeric_date_currency_and_year_equivalents_are_bounded(self):
+        equivalents = (
+            ("five", "5"),
+            ("seven", "7"),
+            ("zero", "0"),
+            ("one point eight", "1.8"),
+            ("one dollar", "$1"),
+            ("one dollar", "1 dollar"),
+            ("September fourth", "September 4th"),
+            ("September fourth", "September 4"),
+            ("October fifteenth", "October 15th"),
+            ("twenty twenty-six", "2026"),
+            ("positive one", "+1"),
+            ("plus one", "one"),
+        )
+        for words, digits in equivalents:
+            with self.subTest(words=words, digits=digits):
+                self.assertEqual(normalized_words(words), normalized_words(digits))
+        self.assertEqual(
+            normalized_words("September fourth, twenty twenty-six"),
+            normalized_words("September fourth twenty twenty-six"),
+        )
+        self.assertEqual(
+            normalized_words("September fourth twenty twenty-six"),
+            normalized_words("September 4 2026"),
+        )
+        self.assertNotEqual(
+            normalized_words("September fourth twenty twenty-six"),
+            normalized_words("September fourteenth twenty twenty-six"),
+        )
+        self.assertNotEqual(
+            normalized_words("September fourth twenty twenty-six"),
+            normalized_words("September fourth twenty twenty-five"),
+        )
+
+    def test_wrong_numeric_meaning_loses_only_its_required_term_credit(self):
+        mismatches = (
+            ("one point eight", "18"),
+            ("one point eight", "1.08"),
+            ("one point eight", "-1.8"),
+            ("one point eight", "−1.8"),
+            ("one point eight", "1.8e3"),
+            ("one dollar", "€1"),
+            ("one dollar", "1 cent"),
+            ("one dollar", "1"),
+            ("one dollar", "$1 cent"),
+            ("one dollar", "one dollar fifty cents"),
+            ("September fourth", "September 14"),
+            ("September fourth", "October 4"),
+            ("five", "fifteen"),
+            ("seven", "seventy"),
+            ("seven", "7up"),
+            ("one", "one hundred"),
+            ("one", "one trillion"),
+            ("one", "1abc"),
+            ("one", "1 hundred"),
+            ("one", "1,000"),
+            ("one", "1,8"),
+            ("twenty", "twenty twenty six hundred"),
+            ("one", "someone"),
+        )
+        template = load_cases(FIXTURE)[-1]
+        for required, wrong in mismatches:
+            with self.subTest(required=required, wrong=wrong):
+                case = replace(
+                    template,
+                    required_terms=(required, "alpha", "beta", "gamma", "delta"),
+                )
+                result = score_transcript(
+                    case,
+                    expected_text=f"{required} alpha beta gamma delta",
+                    transcript=f"{wrong} alpha beta gamma delta",
+                    audio_seconds=1,
+                    latency_seconds=0,
+                )
+                self.assertNotEqual(
+                    normalized_words(required), normalized_words(wrong)
+                )
+                self.assertEqual(result.required_term_recall_milli, 800)
+                self.assertTrue(result.quality_passed)
+
+    def test_exact_and_repeated_reference_samples_pass_for_all_profiles(self):
+        for case in load_cases(FIXTURE):
+            for repetitions in (1, 2):
+                with self.subTest(case=case.key, repetitions=repetitions):
+                    reference = " ".join([case.text] * repetitions)
+                    result = score_transcript(
+                        case,
+                        expected_text=reference,
+                        transcript=reference,
+                        audio_seconds=2813,
+                        latency_seconds=1,
+                    )
+                    self.assertEqual(result.sample_word_error_rate_milli, 0)
+                    self.assertEqual(result.required_term_recall_milli, 1000)
+                    self.assertEqual(result.token_count_ratio_milli, 1000)
+                    self.assertEqual(result.punctuation_coverage_milli, 1000)
+                    self.assertTrue(result.quality_passed)
 
     def test_progress_round_trip_contains_no_audio_or_transcript(self):
         case = load_cases(FIXTURE)[0]
@@ -241,7 +369,7 @@ class AzureSpeechQualificationTests(unittest.TestCase):
     def test_old_progress_day_starts_a_fresh_empty_day(self):
         payload = json.dumps(
             {
-                "schema_version": 2,
+                "schema_version": PROGRESS_SCHEMA_VERSION,
                 "day": "2026-09-03",
                 "fixture_digest": case_contract_digest(load_cases(FIXTURE)),
                 "attempts": {},
@@ -281,6 +409,34 @@ class AzureSpeechQualificationTests(unittest.TestCase):
                 encoded,
                 expected_day=date(2026, 9, 4),
                 expected_fixture_digest=case_contract_digest(changed),
+            )
+
+    def test_old_scoring_version_and_digest_are_refused(self):
+        cases = load_cases(FIXTURE)
+        current_digest = case_contract_digest(cases)
+        old_digest = "3c6b4450ab879d6caa91cc2eb89b16d6695f613d2bc4924d828f6446028aafa4"
+        self.assertEqual(SCORING_CONTRACT_VERSION, "english_numeric_v1")
+        self.assertNotEqual(current_digest, old_digest)
+        old_payload = {
+            "schema_version": 2,
+            "day": "2026-09-04",
+            "fixture_digest": old_digest,
+            "attempts": {},
+            "results": {},
+        }
+        with self.assertRaisesRegex(SpeechQualificationError, "version"):
+            progress_from_json(
+                json.dumps(old_payload),
+                expected_day=date(2026, 9, 4),
+                expected_fixture_digest=current_digest,
+            )
+        with self.assertRaisesRegex(SpeechQualificationError, "digest"):
+            progress_from_json(
+                json.dumps(
+                    {**old_payload, "schema_version": PROGRESS_SCHEMA_VERSION}
+                ),
+                expected_day=date(2026, 9, 4),
+                expected_fixture_digest=current_digest,
             )
 
     def test_progress_total_above_audio_ceiling_fails_closed(self):
@@ -335,6 +491,13 @@ class AzureSpeechQualificationTests(unittest.TestCase):
         self.assertTrue(report["quality_checks_passed"])
         serialized = json.dumps(report)
         self.assertNotIn(cases[0].text, serialized)
+
+        results[first] = replace(results[first], quality_passed=False)
+        quality_failed = privacy_safe_report(
+            cases, speech_progress(cases, results), mode="test"
+        )
+        self.assertTrue(quality_failed["success_marker_eligible"])
+        self.assertFalse(quality_failed["quality_checks_passed"])
 
     def test_possible_billed_cost_reports_promotional_and_standard_ceilings(self):
         cases = load_cases(FIXTURE)

@@ -17,11 +17,112 @@ PRICE_USD_PER_AUDIO_HOUR = Decimal("0.10")
 MAX_PRICE_USD_PER_AUDIO_HOUR = Decimal("0.36")
 MAX_REQUESTS = 8
 SAMPLE_WORD_LIMIT = 400
-PROGRESS_SCHEMA_VERSION = 2
+PROGRESS_SCHEMA_VERSION = 3
+SCORING_CONTRACT_VERSION = "english_numeric_v1"
 
 _IDENTIFIER = re.compile(r"^[a-z][a-z0-9_]{2,63}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_WORD = re.compile(r"[a-z0-9]+(?:'[a-z0-9]+)?")
+_EVALUATION_LEXEME = re.compile(
+    r"[$€£]|[+-−]?(?:\d{1,3}(?:,\d{3})+|\d+(?:[.,]\d+)+|\d+)"
+    r"(?:[a-z][a-z0-9]*)?|[a-z0-9]+(?:'[a-z0-9]+)?|[.,;:?!]"
+)
+_LITERAL_NUMBER = re.compile(
+    r"[+-−]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?"
+)
+_LITERAL_ORDINAL = re.compile(
+    r"([+]?(?:\d{1,3}(?:,\d{3})+|\d+))(st|nd|rd|th)"
+)
+_CARDINAL_UNITS = {
+    "zero": 0,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19,
+}
+_CARDINAL_TENS = {
+    "twenty": 20,
+    "thirty": 30,
+    "forty": 40,
+    "fifty": 50,
+    "sixty": 60,
+    "seventy": 70,
+    "eighty": 80,
+    "ninety": 90,
+}
+_ORDINAL_UNITS = {
+    "first": 1,
+    "second": 2,
+    "third": 3,
+    "fourth": 4,
+    "fifth": 5,
+    "sixth": 6,
+    "seventh": 7,
+    "eighth": 8,
+    "ninth": 9,
+    "tenth": 10,
+    "eleventh": 11,
+    "twelfth": 12,
+    "thirteenth": 13,
+    "fourteenth": 14,
+    "fifteenth": 15,
+    "sixteenth": 16,
+    "seventeenth": 17,
+    "eighteenth": 18,
+    "nineteenth": 19,
+    "twentieth": 20,
+    "thirtieth": 30,
+}
+_MONTHS = {
+    "january": 1,
+    "february": 2,
+    "march": 3,
+    "april": 4,
+    "may": 5,
+    "june": 6,
+    "july": 7,
+    "august": 8,
+    "september": 9,
+    "october": 10,
+    "november": 11,
+    "december": 12,
+}
+_CURRENCY_SYMBOLS = {"$": "usd-dollar", "€": "eur", "£": "gbp"}
+_CURRENCY_UNITS = {
+    "dollar": "usd-dollar",
+    "dollars": "usd-dollar",
+    "cent": "usd-cent",
+    "cents": "usd-cent",
+    "euro": "eur",
+    "euros": "eur",
+    "pound": "gbp",
+    "pounds": "gbp",
+}
+_SIGN_WORDS = {"minus": "-", "negative": "-", "plus": "+", "positive": "+"}
+_UNSUPPORTED_SCALES = {"hundred", "thousand", "million", "billion", "trillion"}
+_NUMERIC_SPAN_WORDS = (
+    set(_CARDINAL_UNITS)
+    | set(_CARDINAL_TENS)
+    | set(_ORDINAL_UNITS)
+    | set(_SIGN_WORDS)
+    | _UNSUPPORTED_SCALES
+    | {"and", "point"}
+)
+_TOKEN_BOUNDARIES = {".", ",", ";", ":", "?", "!"}
 _ALLOWED_PROFILES = {
     "clean",
     "fast",
@@ -141,12 +242,12 @@ def load_cases(path: Path) -> tuple[SpeechEvaluationCase, ...]:
             or any(not isinstance(term, str) for term in terms)
         ):
             raise SpeechQualificationError("required terms are malformed")
-        normalized_terms = tuple(
-            _bounded_text(
-                " ".join(normalized_words(term)), "required term", maximum=48
-            )
-            for term in terms
+        bounded_terms = tuple(
+            _bounded_text(term, "required term", maximum=48) for term in terms
         )
+        normalized_terms = tuple(normalized_words(term) for term in bounded_terms)
+        if any(not term for term in normalized_terms):
+            raise SpeechQualificationError("required terms are malformed")
         if len(normalized_terms) != len(set(normalized_terms)):
             raise SpeechQualificationError("required terms must be unique")
         speed = raw["speed_wpm"]
@@ -165,7 +266,7 @@ def load_cases(path: Path) -> tuple[SpeechEvaluationCase, ...]:
                 ),
                 profile=profile,
                 text=_bounded_text(raw["text"], "synthetic text", maximum=1800),
-                required_terms=normalized_terms,
+                required_terms=bounded_terms,
                 speed_wpm=speed,
                 pitch=pitch,
             )
@@ -179,28 +280,340 @@ def load_cases(path: Path) -> tuple[SpeechEvaluationCase, ...]:
 def case_contract_digest(cases: Sequence[SpeechEvaluationCase]) -> str:
     """Bind progress to every material, ordered fixture input."""
 
-    canonical = [
-        {
-            "key": case.key,
-            "product": case.product,
-            "capability": case.capability,
-            "benchmark_ref": case.benchmark_ref,
-            "profile": case.profile,
-            "text": case.text,
-            "required_terms": list(case.required_terms),
-            "speed_wpm": case.speed_wpm,
-            "pitch": case.pitch,
-        }
-        for case in cases
-    ]
+    canonical = {
+        "scoring_contract_version": SCORING_CONTRACT_VERSION,
+        "cases": [
+            {
+                "key": case.key,
+                "product": case.product,
+                "capability": case.capability,
+                "benchmark_ref": case.benchmark_ref,
+                "profile": case.profile,
+                "text": case.text,
+                "required_terms": list(case.required_terms),
+                "speed_wpm": case.speed_wpm,
+                "pitch": case.pitch,
+            }
+            for case in cases
+        ],
+    }
     encoded = json.dumps(
         canonical, ensure_ascii=False, separators=(",", ":"), sort_keys=True
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _canonical_number(value: str) -> str:
+    value = value.replace("−", "-")
+    sign = "-" if value.startswith("-") else ""
+    unsigned = value.lstrip("+-").replace(",", "")
+    if "." in unsigned:
+        whole, fraction = unsigned.split(".", 1)
+        fraction = fraction.rstrip("0")
+        unsigned = f"{int(whole)}.{fraction}" if fraction else str(int(whole))
+    else:
+        unsigned = str(int(unsigned))
+    return sign + unsigned
+
+
+def _expected_ordinal_suffix(value: int) -> str:
+    if 10 <= value % 100 <= 20:
+        return "th"
+    return {1: "st", 2: "nd", 3: "rd"}.get(value % 10, "th")
+
+
+def _parse_word_number(
+    tokens: Sequence[str], index: int
+) -> tuple[str, int, int] | None:
+    if index >= len(tokens):
+        return None
+    token = tokens[index]
+    if token in _CARDINAL_UNITS:
+        return "cardinal", _CARDINAL_UNITS[token], 1
+    if token in _ORDINAL_UNITS:
+        return "ordinal", _ORDINAL_UNITS[token], 1
+    if token in _CARDINAL_TENS:
+        value = _CARDINAL_TENS[token]
+        if index + 1 < len(tokens):
+            next_token = tokens[index + 1]
+            if next_token in _CARDINAL_UNITS and 1 <= _CARDINAL_UNITS[next_token] <= 9:
+                return "cardinal", value + _CARDINAL_UNITS[next_token], 2
+            if next_token in _ORDINAL_UNITS and 1 <= _ORDINAL_UNITS[next_token] <= 9:
+                return "ordinal", value + _ORDINAL_UNITS[next_token], 2
+        return "cardinal", value, 1
+    return None
+
+
+def _parse_supported_number(
+    tokens: Sequence[str], index: int
+) -> tuple[str, str, int] | None:
+    if index >= len(tokens):
+        return None
+    start = index
+    word_sign = ""
+    if tokens[index] in _SIGN_WORDS:
+        word_sign = _SIGN_WORDS[tokens[index]]
+        index += 1
+        if index >= len(tokens):
+            return None
+
+    token = tokens[index]
+    ordinal = _LITERAL_ORDINAL.fullmatch(token)
+    if ordinal:
+        if word_sign == "-":
+            return None
+        value = int(ordinal.group(1).lstrip("+").replace(",", "") or "0")
+        if ordinal.group(2) != _expected_ordinal_suffix(value):
+            return None
+        consumed = index - start + 1
+        if (
+            start + consumed < len(tokens)
+            and tokens[start + consumed] in _NUMERIC_SPAN_WORDS
+        ):
+            return None
+        return "ordinal", str(value), consumed
+    if _LITERAL_NUMBER.fullmatch(token):
+        if word_sign and token.startswith(("+", "-")):
+            return None
+        value = _canonical_number(word_sign + token)
+        consumed = index - start + 1
+        if (
+            start + consumed < len(tokens)
+            and tokens[start + consumed] in _NUMERIC_SPAN_WORDS
+        ):
+            return None
+        return "cardinal", value, consumed
+
+    integer = _parse_word_number(tokens, index)
+    if integer and integer[0] == "cardinal":
+        _, integer_value, integer_count = integer
+        point_index = index + integer_count
+        if point_index < len(tokens) and tokens[point_index] == "point":
+            fraction_index = point_index + 1
+            fraction: list[str] = []
+            while (
+                fraction_index < len(tokens)
+                and tokens[fraction_index] in _CARDINAL_UNITS
+                and 0 <= _CARDINAL_UNITS[tokens[fraction_index]] <= 9
+            ):
+                fraction.append(str(_CARDINAL_UNITS[tokens[fraction_index]]))
+                fraction_index += 1
+            if not fraction or (
+                fraction_index < len(tokens)
+                and tokens[fraction_index] in _NUMERIC_SPAN_WORDS
+            ):
+                return None
+            value = _canonical_number(
+                f"{word_sign}{integer_value}.{''.join(fraction)}"
+            )
+            return "cardinal", value, fraction_index - start
+
+    year = _parse_supported_year(tokens, index)
+    if year is not None:
+        value, count = year
+        return "cardinal", _canonical_number(word_sign + value), count + index - start
+
+    if integer:
+        kind, value, count = integer
+        after_number = index + count
+        if (
+            after_number < len(tokens)
+            and tokens[after_number] in _NUMERIC_SPAN_WORDS
+        ):
+            return None
+        if word_sign and kind == "ordinal":
+            return None
+        canonical = (
+            _canonical_number(word_sign + str(value))
+            if kind == "cardinal"
+            else str(value)
+        )
+        return kind, canonical, after_number - start
+    return None
+
+
+def _parse_supported_year(
+    tokens: Sequence[str], index: int
+) -> tuple[str, int] | None:
+    if index >= len(tokens) or tokens[index] != "twenty":
+        return None
+    year_tail = _parse_word_number(tokens, index + 1)
+    if (
+        year_tail is None
+        or year_tail[0] != "cardinal"
+        or not 20 <= year_tail[1] <= 99
+    ):
+        return None
+    after_year = index + 1 + year_tail[2]
+    if after_year < len(tokens) and tokens[after_year] in _NUMERIC_SPAN_WORDS:
+        return None
+    return str(2000 + year_tail[1]), after_year - index
+
+
+def _looks_like_numeric_start(token: str) -> bool:
+    return bool(
+        _LITERAL_NUMBER.fullmatch(token)
+        or _LITERAL_ORDINAL.fullmatch(token)
+        or token in _CARDINAL_UNITS
+        or token in _CARDINAL_TENS
+        or token in _ORDINAL_UNITS
+        or token in _SIGN_WORDS
+        or token[:1].isdigit()
+        or token[:1] in {"+", "-", "−"}
+    )
+
+
+def _opaque_numeric_span(tokens: Sequence[str], index: int) -> tuple[str, int]:
+    end = index
+    while end < len(tokens) and (
+        tokens[end] in _NUMERIC_SPAN_WORDS
+        or _LITERAL_NUMBER.fullmatch(tokens[end])
+        or _LITERAL_ORDINAL.fullmatch(tokens[end])
+        or tokens[end][:1].isdigit()
+    ):
+        end += 1
+    if end == index:
+        end += 1
+    return "numeric-unsupported:" + "-".join(tokens[index:end]), end - index
+
+
+def _date_token(tokens: Sequence[str], index: int) -> tuple[str, int] | None:
+    month = _MONTHS.get(tokens[index])
+    if month is None:
+        return None
+    day_index = index + 1
+    day = _parse_supported_number(tokens, day_index)
+    if day is None:
+        word_day = _parse_word_number(tokens, day_index)
+        if word_day is not None:
+            following = day_index + word_day[2]
+            if _parse_supported_year(tokens, following) is not None:
+                day = word_day[0], str(word_day[1]), word_day[2]
+    if day is None or "." in day[1] or day[1].startswith("-"):
+        return None
+    day_value = int(day[1])
+    if not 1 <= day_value <= 31:
+        return None
+    return f"date:{month:02d}-{day_value:02d}", day[2] + 1
+
+
+def _money_from_symbol(
+    tokens: Sequence[str], index: int
+) -> tuple[str, int] | None:
+    currency = _CURRENCY_SYMBOLS.get(tokens[index])
+    if currency is None:
+        return None
+    number = _parse_supported_number(tokens, index + 1)
+    if number is None or number[0] != "cardinal":
+        return None
+    consumed = number[2] + 1
+    following = index + consumed
+    if following < len(tokens) and tokens[following] in _CURRENCY_UNITS:
+        unit = _CURRENCY_UNITS[tokens[following]]
+        consumed += 1
+        if unit != currency:
+            return f"money-conflict:{currency}:{unit}:{number[1]}", consumed
+    compound = _following_currency_amount(tokens, index + consumed)
+    if compound is not None:
+        unit, amount, extra = compound
+        return (
+            f"money-unsupported-compound:{currency}:{number[1]}:{unit}:{amount}",
+            consumed + extra,
+        )
+    return f"money:{currency}:{number[1]}", consumed
+
+
+def _following_currency_amount(
+    tokens: Sequence[str], index: int
+) -> tuple[str, str, int] | None:
+    start = index
+    if index < len(tokens) and tokens[index] == "and":
+        index += 1
+    number = _parse_supported_number(tokens, index)
+    if number is None or number[0] != "cardinal":
+        return None
+    unit_index = index + number[2]
+    if unit_index >= len(tokens):
+        return None
+    unit = _CURRENCY_UNITS.get(tokens[unit_index])
+    if unit is None:
+        return None
+    return unit, number[1], unit_index - start + 1
+
+
+def _money_from_unit(
+    tokens: Sequence[str], index: int, number: tuple[str, str, int]
+) -> tuple[str, int] | None:
+    following = index + number[2]
+    if number[0] != "cardinal" or following >= len(tokens):
+        return None
+    currency = _CURRENCY_UNITS.get(tokens[following])
+    if currency is None:
+        return None
+    consumed = number[2] + 1
+    compound = _following_currency_amount(tokens, index + consumed)
+    if compound is not None:
+        unit, amount, extra = compound
+        return (
+            f"money-unsupported-compound:{currency}:{number[1]}:{unit}:{amount}",
+            consumed + extra,
+        )
+    return f"money:{currency}:{number[1]}", consumed
+
+
 def normalized_words(value: str) -> tuple[str, ...]:
-    return tuple(_WORD.findall(value.casefold()))
+    """Return bounded evaluation tokens, not a general natural-language parse."""
+
+    lexemes = tuple(_EVALUATION_LEXEME.findall(value.casefold()))
+    normalized: list[str] = []
+    index = 0
+    while index < len(lexemes):
+        if lexemes[index] in _TOKEN_BOUNDARIES:
+            index += 1
+            continue
+        date_value = _date_token(lexemes, index)
+        if date_value is not None:
+            token, consumed = date_value
+            normalized.append(token)
+            index += consumed
+            continue
+        money_symbol = _money_from_symbol(lexemes, index)
+        if money_symbol is not None:
+            token, consumed = money_symbol
+            normalized.append(token)
+            index += consumed
+            continue
+        number = _parse_supported_number(lexemes, index)
+        if number is not None:
+            money_unit = _money_from_unit(lexemes, index, number)
+            if money_unit is not None:
+                token, consumed = money_unit
+                normalized.append(token)
+                index += consumed
+                continue
+            kind, canonical, consumed = number
+            normalized.append(f"{kind}:{canonical}")
+            index += consumed
+            continue
+        if _looks_like_numeric_start(lexemes[index]):
+            token, consumed = _opaque_numeric_span(lexemes, index)
+            normalized.append(token)
+            index += consumed
+            continue
+        normalized.append(lexemes[index])
+        index += 1
+    return tuple(normalized)
+
+
+def _contains_token_sequence(
+    observed: Sequence[str], required: Sequence[str]
+) -> bool:
+    if not required or len(required) > len(observed):
+        return False
+    return any(
+        tuple(observed[index : index + len(required)]) == tuple(required)
+        for index in range(len(observed) - len(required) + 1)
+    )
 
 
 def rounded_audio_seconds(value: float) -> int:
@@ -246,8 +659,10 @@ def score_transcript(
     sample_observed = observed[: max(SAMPLE_WORD_LIMIT, len(sample_expected))]
     edit_distance = _edit_distance(sample_expected, sample_observed)
     word_error_rate = min(2.0, edit_distance / len(sample_expected))
-    observed_text = " ".join(observed)
-    recalled = sum(term in observed_text for term in case.required_terms)
+    required_terms = tuple(normalized_words(term) for term in case.required_terms)
+    recalled = sum(
+        _contains_token_sequence(observed, term) for term in required_terms
+    )
     term_recall = recalled / len(case.required_terms)
     token_ratio = min(2.0, len(observed) / len(expected))
     expected_punctuation = {mark for mark in "?.!," if mark in expected_text}
