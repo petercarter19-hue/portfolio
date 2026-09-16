@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "package": "PS-PRODUCTION-GUARD-ACTIVE-RUNS-001",
-  "state": "active",
+  "state": "closed",
   "outcome": "Repair the manual production-operation preflight so it exhaustively inspects only relevant nonterminal automatic main-branch runs for the exact source SHA, including cancelling runs, while preserving exact-SHA client filtering, bounded continuation pagination, strict response validation, fail-closed errors, and every existing manual-source, authorization, mutex, lock, and deployment boundary. Add focused positive and adversarial tests, obtain independent Astra High exact-candidate review, and complete normal Azure PR, CI, and accepted merge. Do not retry run 3058, deploy corrected source, perform schema/provider/credential operations, alter pipeline policies, raise pagination bounds, delete build history, or bypass any guard.",
   "assignment": "implementation",
   "writer_ref": "session:01a0a7ce-a6c6-7bf3-809b-5270a6818f31",
@@ -29,6 +29,6 @@
   "review_requirement": "independent",
   "handoff": null,
   "checkpoint_sha": null,
-  "merged_sha": null,
-  "closed_at": null
+  "merged_sha": "e7fc91dfea5fecd9b4ea5fdce732f468a34d09af",
+  "closed_at": "2026-09-16T13:54:17Z"
 }
