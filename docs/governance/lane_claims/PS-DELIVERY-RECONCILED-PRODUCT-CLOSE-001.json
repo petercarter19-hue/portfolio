@@ -4,7 +4,7 @@
   "state": "active",
   "outcome": "Add one fail-closed reconciled-product close path that recognizes an independently reviewed product already accepted on main after a content-equivalent synchronization merge, while preserving ordinary nonempty close, operations-only close, exact-candidate review, and cleanup controls.",
   "assignment": "implementation",
-  "writer_ref": "session:01a0a795-58f9-7391-a58a-b6c042aa0cae",
+  "writer_ref": "session:01a0aac7-a5d5-7020-a573-ff9b1c13c5aa",
   "branch": "work/2026-09-15-delivery-reconciled-product-close-001",
   "delivery_path": "Protected",
   "repository_authority": "through_merge",
@@ -27,7 +27,12 @@
     "testing:delivery-control:reconciled-product-close"
   ],
   "review_requirement": "independent",
-  "handoff": null,
+  "handoff": {
+    "from_ref": "session:01a0a795-58f9-7391-a58a-b6c042aa0cae",
+    "to_ref": "session:01a0aac7-a5d5-7020-a573-ff9b1c13c5aa",
+    "checkpoint_sha": "b2306b1a1cdaf813a399f5274e671938653e716a",
+    "relinquished": true
+  },
   "checkpoint_sha": null,
   "merged_sha": null,
   "closed_at": null
