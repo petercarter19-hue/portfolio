@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "package": "PS-PRODUCTION-GUARD-ACTIVE-RUNS-001",
+  "state": "active",
+  "outcome": "Repair the manual production-operation preflight so it exhaustively inspects only relevant nonterminal automatic main-branch runs for the exact source SHA, including cancelling runs, while preserving exact-SHA client filtering, bounded continuation pagination, strict response validation, fail-closed errors, and every existing manual-source, authorization, mutex, lock, and deployment boundary. Add focused positive and adversarial tests, obtain independent Astra High exact-candidate review, and complete normal Azure PR, CI, and accepted merge. Do not retry run 3058, deploy corrected source, perform schema/provider/credential operations, alter pipeline policies, raise pagination bounds, delete build history, or bypass any guard.",
+  "assignment": "implementation",
+  "writer_ref": "session:01a0a7ce-a6c6-7bf3-809b-5270a6818f31",
+  "branch": "work/2026-09-15-production-guard-active-runs-001",
+  "delivery_path": "Protected",
+  "repository_authority": "through_merge",
+  "production_authority": "withheld",
+  "activated_from_main": "3e9042042d37284c56afc3e5728b4004f49bf9b7",
+  "owner_outcome_ref": "task:01a0789c-c166-7eb0-8588-517c27f13b86/owner-direction:2026-09-15/production-guard-active-runs",
+  "surfaces": [
+    "docs/governance/lane_claims/PS-PRODUCTION-GUARD-ACTIVE-RUNS-001.json",
+    "docs/governance/lane_claims/evidence/PS-PRODUCTION-GUARD-ACTIVE-RUNS-001.md",
+    "docs/governance/lane_claims/receipts/PS-PRODUCTION-GUARD-ACTIVE-RUNS-001.json",
+    "scripts/production_operation_preflight.py",
+    "tests/test_production_operation_preflight.py"
+  ],
+  "evidence_surfaces": [
+    "docs/governance/lane_claims/evidence/PS-PRODUCTION-GUARD-ACTIVE-RUNS-001.md"
+  ],
+  "domains": [
+    "operations:production-deployment-orchestration:active-run-guard",
+    "testing:production-operation-preflight:active-run-pagination",
+    "governance:initiative:production-guard-active-runs"
+  ],
+  "review_requirement": "independent",
+  "handoff": null,
+  "checkpoint_sha": null,
+  "merged_sha": null,
+  "closed_at": null
+}
