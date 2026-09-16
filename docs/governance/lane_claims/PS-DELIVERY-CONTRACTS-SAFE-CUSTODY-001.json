@@ -32,7 +32,8 @@
     "tests/test_worktree_lifecycle.py",
     "tests/test_control_room.py",
     "tests/test_governance_pointers.py",
-    "tests/fixtures/delivery_control_compat"
+    "tests/fixtures/delivery_control_compat",
+    "docs/governance/PACKAGE_REGISTRY.json"
   ],
   "evidence_surfaces": [
     "docs/governance/lane_claims/evidence/PS-DELIVERY-CONTRACTS-SAFE-CUSTODY-001.md"
