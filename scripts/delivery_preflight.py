@@ -3058,6 +3058,203 @@ def _operations_only_close_errors(
         return ["close requires a non-empty reviewed candidate or valid operations completion: " + str(exc)]
 
 
+def _reconciled_product_close_errors(
+    root: Path, claim: dict, receipt: dict, candidate: str, merged: str,
+    remote_tip: str, pinned_main: str,
+) -> list[str] | None:
+    """Verify a reviewed product introduced on main by a content-equivalent merge.
+
+    ``None`` means this is not a synchronization-merge candidate; an invalid
+    recognized graph returns its own refusal and cannot use operations-only.
+    Git history and attributed receipts are operational attestations, not
+    cryptographic authentication of the historical reviewer or proof that the
+    historical receipt was accepted on main.
+    """
+    def parents(commit: str) -> list[str]:
+        values = _git(root, "rev-list", "--parents", "-n", "1", commit).split()
+        if not values or values[0] != commit:
+            raise ValueError("missing or ambiguous reconciliation commit")
+        return values[1:]
+
+    try:
+        sync_parents = parents(candidate)
+    except (PreflightError, ValueError) as exc:
+        return ["reconciled-product close: " + str(exc)]
+    if len(sync_parents) < 2:
+        return None
+
+    def raw_delta(old: str, new: str) -> dict[str, tuple[str, str, str, str, str, str]]:
+        raw = _git(root, "diff-tree", "-r", "--raw", "-z", "--no-renames",
+                   "--abbrev=40", "--no-commit-id", old, new)
+        tokens = [token for token in raw.split("\0") if token]
+        result: dict[str, tuple[str, str, str, str, str, str]] = {}
+        if len(tokens) % 2:
+            raise ValueError("malformed raw product delta")
+        for header, path in zip(tokens[::2], tokens[1::2]):
+            fields = header.split()
+            if len(fields) != 5 or not fields[0].startswith(":"):
+                raise ValueError("malformed raw product tuple")
+            old_mode, new_mode = fields[0][1:], fields[1]
+            old_blob, new_blob, status = fields[2:]
+            if status not in {"A", "D", "M", "T"}:
+                raise ValueError("raw product delta contains unexpected status")
+            if (old_mode not in {"000000", "100644", "100755"}
+                    or new_mode not in {"000000", "100644", "100755"}):
+                raise ValueError("raw product delta contains non-regular mode")
+            if path in result:
+                raise ValueError("duplicate raw product path")
+            result[path] = (path, path, old_mode, new_mode, old_blob, new_blob)
+        return result
+
+    def strict_receipt(ref: str) -> dict:
+        path = receipt_relative_path(package)
+        raw = _git(root, "show", f"{ref}:{path}")
+        def unique_pairs(pairs):
+            value = {}
+            for key, item in pairs:
+                if key in value:
+                    raise ValueError("duplicate review receipt JSON key")
+                value[key] = item
+            return value
+        try:
+            value = json.loads(raw, object_pairs_hook=unique_pairs)
+        except json.JSONDecodeError as exc:
+            raise ValueError("malformed review receipt JSON") from exc
+        if not isinstance(value, dict):
+            raise ValueError("review receipt must be an object")
+        return value
+
+    def regular_record(ref: str, path: str) -> tuple[str, str]:
+        raw = _git(root, "ls-tree", "-z", ref, "--", path)
+        entries = [entry for entry in raw.split("\0") if entry]
+        if len(entries) != 1:
+            raise ValueError("fixed record is missing or ambiguous: " + path)
+        metadata, separator, actual_path = entries[0].partition("\t")
+        fields = metadata.split()
+        if (not separator or actual_path != path or len(fields) != 3
+                or fields[0] not in {"100644", "100755"}
+                or fields[1] != "blob" or not SHA_RE.fullmatch(fields[2])):
+            raise ValueError("fixed record must be a regular Git blob: " + path)
+        return fields[0], fields[2]
+
+    try:
+        package = claim["package"]
+        fixed = {receipt_relative_path(package), evidence_relative_path(package)}
+        if len(sync_parents) != 2:
+            raise ValueError("S must have exactly two ordered parents C,M")
+        original, introduced = sync_parents
+        merged_parents = parents(merged)
+        if introduced != merged or len(merged_parents) != 1:
+            raise ValueError("S parents must be C,M and M must have one parent")
+        pre_merge = merged_parents[0]
+        if _git(root, "rev-parse", f"{candidate}^{{tree}}") != _git(
+            root, "rev-parse", f"{merged}^{{tree}}"
+        ):
+            raise ValueError("S tree must equal M tree")
+        bases = _git(root, "merge-base", "--all", original, pre_merge).splitlines()
+        if len(bases) != 1 or not SHA_RE.fullmatch(bases[0]):
+            raise ValueError("C and M^1 require one unambiguous derived base")
+        original_delta = raw_delta(bases[0], original)
+        introduced_delta = raw_delta(pre_merge, merged)
+        if fixed & set(original_delta) or fixed & set(introduced_delta):
+            # Fixed records are excluded from the *product* comparison only.
+            original_delta = {k: v for k, v in original_delta.items() if k not in fixed}
+            introduced_delta = {k: v for k, v in introduced_delta.items() if k not in fixed}
+        if not original_delta or original_delta != introduced_delta:
+            raise ValueError("nonempty exact B..C and M^1..M product tuples must match")
+        outside = _scope_errors(original_delta, claim.get("surfaces", []))
+        if outside:
+            raise ValueError("reconciled product is outside its claim: " + ", ".join(outside))
+        if not _is_ancestor(root, merged, pinned_main):
+            raise ValueError("M is not on pinned main")
+
+        # Find the one main commit that first introduces both accepted records.
+        introductions = []
+        for state in _git(root, "rev-list", "--reverse", "--ancestry-path",
+                          f"{merged}..{pinned_main}").splitlines():
+            ps = parents(state)
+            if len(ps) != 1 or not _is_ancestor(root, merged, ps[0]):
+                continue
+            paths = set(_git_nul(
+                root, "diff-tree", "-r", "--name-only", "-z", "--no-renames",
+                "--no-commit-id", ps[0], state,
+            ))
+            if fixed <= paths and all(
+                _git_result(root, "cat-file", "-e", f"{ps[0]}:{path}").returncode
+                for path in fixed
+            ):
+                introductions.append((state, ps[0]))
+        if len(introductions) != 1:
+            raise ValueError("accepted receipt/evidence introduction E is not unique")
+        evidence_commit, evidence_parent = introductions[0]
+        evidence_delta = raw_delta(evidence_parent, evidence_commit)
+        if set(evidence_delta) != fixed:
+            raise ValueError("E must introduce only fixed receipt/evidence files")
+        for path in fixed:
+            if evidence_delta[path][3] not in {"100644", "100755"}:
+                raise ValueError("E records must be regular files")
+            expected = regular_record(evidence_commit, path)
+            for ref in (pinned_main, remote_tip):
+                if regular_record(ref, path) != expected:
+                    raise ValueError("accepted fixed record bytes changed")
+
+        if not _is_ancestor(root, candidate, remote_tip):
+            raise ValueError("S is not on preserved remote implementation branch")
+        tail = []
+        state = remote_tip
+        while state != candidate:
+            ps = parents(state)
+            if len(ps) != 1:
+                raise ValueError("S..R tail must be linear")
+            edge = raw_delta(ps[0], state)
+            if set(edge) - fixed:
+                raise ValueError("S..R tail changes non-fixed files")
+            tail.append(state)
+            state = ps[0]
+        historical = []
+        intermediate_final = []
+        for state in reversed(tail):
+            if _git_result(root, "cat-file", "-e", f"{state}:{receipt_relative_path(package)}").returncode:
+                continue
+            record = strict_receipt(state)
+            if record.get("candidate_sha") == original:
+                historical.append((state, record))
+            elif record.get("candidate_sha") == candidate:
+                intermediate_final.append((state, record))
+            else:
+                raise ValueError("S..R contains an unexpected review receipt state")
+        if len(historical) != 1:
+            raise ValueError("exactly one historical C review state H is required")
+        original_review = historical[0][1]
+        final_review = strict_receipt(remote_tip)
+        if final_review != receipt or final_review.get("candidate_sha") != candidate:
+            raise ValueError("final accepted S receipt does not match remote tip")
+        for label, record in (("historical", original_review), ("final", final_review)):
+            failures = validate_receipt(record, claim)
+            if (failures or type(record.get("schema_version")) is not int
+                    or record.get("review_type") != "independent"
+                    or record.get("evidence_ref") != evidence_relative_path(package)):
+                raise ValueError(label + " independent PASS is invalid: " + "; ".join(failures))
+        if original_review.get("reviewer_ref") != final_review.get("reviewer_ref"):
+            raise ValueError("historical and final reviewers differ")
+        for _, record in intermediate_final:
+            failures = validate_receipt(record, claim)
+            if (failures or type(record.get("schema_version")) is not int
+                    or record.get("review_type") != "independent"
+                    or record.get("evidence_ref") != evidence_relative_path(package)
+                    or record.get("reviewer_ref") != final_review.get("reviewer_ref")):
+                raise ValueError("intermediate S review receipt is invalid")
+        if _git(root, "rev-parse", "origin/main") != pinned_main:
+            raise ValueError("pinned main moved during reconciliation")
+        if _remote_branch_tip(root, "main") != pinned_main or _remote_branch_tip(
+            root, claim["branch"]
+        ) != remote_tip:
+            raise ValueError("remote main or implementation tip moved during reconciliation")
+        return []
+    except (PreflightError, ValueError, KeyError, TypeError) as exc:
+        return ["reconciled-product close: " + str(exc)]
+
+
 def _require_control_delta(
     *,
     root: Path,
@@ -3868,10 +4065,17 @@ def evaluate(
                             root, f"{merged_sha}^..{merged_sha}"
                         )
                         if not candidate_paths:
-                            errors.extend(_operations_only_close_errors(
+                            reconciled = _reconciled_product_close_errors(
                                 root, before, receipt, candidate_sha, merged_sha,
-                                remote_tip, merged_paths,
-                            ))
+                                remote_tip, facts.origin_main,
+                            )
+                            if reconciled is None:
+                                errors.extend(_operations_only_close_errors(
+                                    root, before, receipt, candidate_sha, merged_sha,
+                                    remote_tip, merged_paths,
+                                ))
+                            else:
+                                errors.extend(reconciled)
                         outside = _scope_errors(
                             candidate_paths, before.get("surfaces", [])
                         )

@@ -5083,6 +5083,313 @@ class CurrentRepositoryTests(unittest.TestCase):
         self.assertIn("withheld", payload["authority"]["production"])
 
 
+class ReconciledProductCloseGitTests(unittest.TestCase):
+    """Real Git objects for the content-equivalent synchronization graph."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name) / "repo"
+        self.remote = Path(self.temp.name) / "remote.git"
+        self.root.mkdir()
+        self.run_git("init", "-q", "-b", "main")
+        self.run_git("config", "user.name", "Reconciliation Test")
+        self.run_git("config", "user.email", "test@example.invalid")
+        subprocess.run(["git", "init", "--bare", "-q", str(self.remote)], check=True)
+        self.run_git("remote", "add", "origin", str(self.remote))
+        self.package = "PS-TEST-RECONCILED-001"
+        self.product = "src/product.txt"
+        self.claim = claim(
+            package=self.package, writer_ref="task:writer-reconciled",
+            branch="work/reconciled-product-test",
+            surfaces=claimed_surfaces(self.package, self.product),
+        )
+        self.evidence = preflight.evidence_relative_path(self.package)
+        self.receipt_path = preflight.receipt_relative_path(self.package)
+        self.write(self.product, "old\n")
+        self.base = self.commit("base")
+        self.run_git("checkout", "-q", "-b", "original")
+        self.write(self.product, "new\n")
+        self.original = self.commit("reviewed product")
+        self.run_git("checkout", "-q", "main")
+        self.write("docs/unrelated.txt", "main advanced\n")
+        self.commit("unrelated main")
+        self.write(self.product, "new\n")
+        self.merged = self.commit("independent product introduction")
+        tree = self.run_git("rev-parse", f"{self.merged}^{{tree}}")
+        self.sync = self.run_git("commit-tree", tree, "-p", self.original,
+                                 "-p", self.merged, "-m", "sync reviewed product")
+        self.run_git("branch", self.claim["branch"], self.sync)
+        self.run_git("checkout", "-q", self.claim["branch"])
+        self.write(self.evidence, "# Independent review evidence\n")
+        self.write(self.receipt_path, json.dumps(self.review(self.original)))
+        self.historical = self.commit("historical C review")
+        self.final_review = self.review(self.sync)
+        self.write(self.receipt_path, json.dumps(self.final_review))
+        self.tip = self.commit("final S review")
+        self.run_git("push", "-q", "origin", self.claim["branch"])
+        self.run_git("checkout", "-q", "main")
+        self.write(self.evidence, "# Independent review evidence\n")
+        self.write(self.receipt_path, json.dumps(self.final_review))
+        self.introduction = self.commit("accept final review records")
+        self.run_git("push", "-q", "origin", "main")
+
+    def run_git(self, *arguments):
+        completed = subprocess.run(
+            ["git", *arguments], cwd=self.root, text=True,
+            encoding="utf-8", capture_output=True,
+        )
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        return completed.stdout.strip()
+
+    def write(self, relative, content):
+        path = self.root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+
+    def commit(self, message):
+        self.run_git("add", "-A")
+        self.run_git("commit", "-q", "-m", message)
+        return self.run_git("rev-parse", "HEAD")
+
+    def review(self, candidate_sha, **overrides):
+        value = receipt(
+            package=self.package, candidate_sha=candidate_sha,
+            reviewer_ref="agent:independent-reconciled-reviewer",
+            evidence_ref=self.evidence,
+        )
+        value.update(overrides)
+        return value
+
+    def verify(self, **overrides):
+        values = {
+            "root": self.root, "claim": self.claim, "receipt": self.final_review,
+            "candidate": self.sync, "merged": self.merged,
+            "remote_tip": self.tip, "pinned_main": self.introduction,
+        }
+        values.update(overrides)
+        return preflight._reconciled_product_close_errors(**values)
+
+    def test_corporate_shaped_product_is_admitted(self):
+        self.assertEqual(self.merged, self.run_git("merge-base", self.sync, self.merged))
+        self.assertEqual((), preflight._diff_paths(self.root, f"{self.merged}..{self.sync}"))
+        self.assertEqual([], self.verify())
+
+    def test_add_delete_and_rename_have_explicit_raw_path_coverage(self):
+        pre_m = self.run_git("rev-parse", f"{self.merged}^")
+        for action in ("add", "delete", "rename"):
+            with self.subTest(action=action):
+                def change():
+                    if action == "add":
+                        self.write("src/added.txt", "added\n")
+                    elif action == "delete":
+                        self.run_git("rm", "-q", self.product)
+                    else:
+                        self.run_git("mv", self.product, "src/renamed.txt")
+                self.run_git("checkout", "-q", "--detach", self.base)
+                change()
+                c = self.commit(action + " reviewed")
+                self.run_git("checkout", "-q", "--detach", pre_m)
+                change()
+                m = self.commit(action + " introduced")
+                tree = self.run_git("rev-parse", f"{m}^{{tree}}")
+                s = self.run_git("commit-tree", tree, "-p", c, "-p", m,
+                                 "-m", action + " sync")
+                surfaces = claimed_surfaces(
+                    self.package, self.product, "src/added.txt", "src/renamed.txt"
+                )
+                errors = self.verify(candidate=s, merged=m,
+                                     claim={**self.claim, "surfaces": surfaces})
+                self.assertTrue(any("M is not on pinned main" in e for e in errors), errors)
+
+    def test_wrong_ordered_parent_or_merged_commit_refuses(self):
+        self.assertTrue(self.verify(merged=self.original))
+        tree = self.run_git("rev-parse", f"{self.merged}^{{tree}}")
+        reversed_sync = self.run_git("commit-tree", tree, "-p", self.merged,
+                                     "-p", self.original, "-m", "reversed")
+        self.assertTrue(self.verify(candidate=reversed_sync))
+        extra_sync = self.run_git("commit-tree", tree, "-p", self.original,
+                                  "-p", self.merged, "-p", self.base,
+                                  "-m", "extra parent")
+        self.assertTrue(self.verify(candidate=extra_sync))
+
+    def test_ambiguous_derived_base_refuses(self):
+        old_tree = self.run_git("rev-parse", f"{self.base}^{{tree}}")
+        new_tree = self.run_git("rev-parse", f"{self.original}^{{tree}}")
+        a1 = self.run_git("commit-tree", new_tree, "-p", self.base, "-m", "A1")
+        b1 = self.run_git("commit-tree", old_tree, "-p", self.base, "-m", "B1")
+        c = self.run_git("commit-tree", new_tree, "-p", a1, "-p", b1, "-m", "C")
+        pre_m = self.run_git("commit-tree", old_tree, "-p", b1, "-p", a1, "-m", "pre-M")
+        m = self.run_git("commit-tree", new_tree, "-p", pre_m, "-m", "M")
+        s = self.run_git("commit-tree", new_tree, "-p", c, "-p", m, "-m", "S")
+        self.assertEqual(2, len(self.run_git("merge-base", "--all", c, pre_m).splitlines()))
+        self.assertTrue(self.verify(candidate=s, merged=m))
+
+    def test_exact_product_delta_and_claim_are_required(self):
+        self.assertTrue(self.verify(claim={**self.claim, "surfaces": claimed_surfaces(self.package)}))
+        self.assertTrue(self.verify(merged=self.base))
+        altered = self.run_git("commit-tree", self.run_git("rev-parse", f"{self.original}^{{tree}}"),
+                               "-p", self.original, "-p", self.merged, "-m", "wrong tree")
+        self.assertTrue(self.verify(candidate=altered))
+
+    def test_empty_extra_blob_and_mode_product_deltas_refuse(self):
+        pre_m = self.run_git("rev-parse", f"{self.merged}^")
+        same_tree = self.run_git("rev-parse", f"{pre_m}^{{tree}}")
+        empty_m = self.run_git("commit-tree", same_tree, "-p", pre_m, "-m", "empty M")
+        self.assertTrue(self.verify(merged=empty_m))
+        self.run_git("checkout", "-q", "--detach", self.merged)
+        self.write("src/extra.txt", "extra\n")
+        extra_tree_commit = self.commit("extra product")
+        extra_tree = self.run_git("rev-parse", f"{extra_tree_commit}^{{tree}}")
+        extra_m = self.run_git("commit-tree", extra_tree, "-p", pre_m, "-m", "extra M")
+        extra_s = self.run_git("commit-tree", extra_tree, "-p", self.original,
+                               "-p", extra_m, "-m", "extra S")
+        self.assertTrue(self.verify(candidate=extra_s, merged=extra_m))
+        self.run_git("checkout", "-q", "--detach", self.merged)
+        self.write(self.product, "wrong blob\n")
+        blob_tree_commit = self.commit("wrong blob")
+        blob_tree = self.run_git("rev-parse", f"{blob_tree_commit}^{{tree}}")
+        blob_m = self.run_git("commit-tree", blob_tree, "-p", pre_m, "-m", "blob M")
+        blob_s = self.run_git("commit-tree", blob_tree, "-p", self.original,
+                              "-p", blob_m, "-m", "blob S")
+        self.assertTrue(self.verify(candidate=blob_s, merged=blob_m))
+        self.run_git("checkout", "-q", "--detach", self.merged)
+        self.run_git("update-index", "--chmod=+x", self.product)
+        mode_tree = self.run_git("write-tree")
+        mode_m = self.run_git("commit-tree", mode_tree, "-p", pre_m, "-m", "mode M")
+        mode_s = self.run_git("commit-tree", mode_tree, "-p", self.original,
+                              "-p", mode_m, "-m", "mode S")
+        self.assertTrue(self.verify(candidate=mode_s, merged=mode_m))
+
+    def test_receipt_and_record_integrity_are_required(self):
+        self.assertTrue(self.verify(receipt=self.review(self.original)))
+        self.assertTrue(self.verify(remote_tip=self.historical))
+
+    def test_duplicate_or_malformed_historical_receipt_refuses(self):
+        for content, expected in (
+            ('{"candidate_sha":"one","candidate_sha":"two"}', "duplicate review receipt JSON key"),
+            ("{bad JSON", "malformed review receipt JSON"),
+        ):
+            with self.subTest(content=content):
+                self.run_git("checkout", "-q", "--detach", self.sync)
+                self.write(self.evidence, "# Independent review evidence\n")
+                self.write(self.receipt_path, content)
+                self.commit("invalid historical receipt")
+                self.write(self.receipt_path, json.dumps(self.final_review))
+                restored_tip = self.commit("restore accepted final S receipt")
+                errors = self.verify(remote_tip=restored_tip)
+                self.assertTrue(any(expected in e for e in errors), errors)
+
+    def test_missing_or_invalid_historical_review_refuses(self):
+        self.run_git("checkout", "-q", "--detach", self.sync)
+        self.write(self.evidence, "# Independent review evidence\n")
+        self.write(self.receipt_path, json.dumps(self.final_review))
+        no_h = self.commit("final review with no historical C review")
+        errors = self.verify(remote_tip=no_h)
+        self.assertTrue(any("historical" in e for e in errors), errors)
+        self.run_git("checkout", "-q", "--detach", self.sync)
+        self.write(self.evidence, "# Independent review evidence\n")
+        self.write(self.receipt_path, json.dumps(self.review(
+            self.original, findings=[{"status": "open"}],
+        )))
+        self.commit("unresolved C review")
+        self.write(self.receipt_path, json.dumps(self.final_review))
+        invalid_h_tip = self.commit("final review after invalid historical")
+        errors = self.verify(remote_tip=invalid_h_tip)
+        self.assertTrue(any("historical independent PASS is invalid" in e for e in errors), errors)
+
+        self.run_git("checkout", "-q", "--detach", self.sync)
+        self.write(self.evidence, "# Independent review evidence\n")
+        self.write(self.receipt_path, json.dumps(self.review(
+            self.original, reviewer_ref=self.claim["writer_ref"],
+        )))
+        self.commit("self C review")
+        self.write(self.receipt_path, json.dumps(self.final_review))
+        self_tip = self.commit("final review after self historical")
+        errors = self.verify(remote_tip=self_tip)
+        self.assertTrue(any("historical independent PASS is invalid" in e for e in errors), errors)
+
+    def test_intermediate_s_receipt_survives_fixed_evidence_edits(self):
+        self.run_git("checkout", "-q", self.claim["branch"])
+        self.write(self.evidence, "# Temporary evidence revision\n")
+        self.commit("revise fixed evidence")
+        self.write(self.evidence, "# Independent review evidence\n")
+        restored_tip = self.commit("restore fixed evidence")
+        self.run_git("push", "-q", "origin", self.claim["branch"])
+        self.assertEqual([], self.verify(remote_tip=restored_tip))
+
+    def test_unrelated_main_symlink_after_e_does_not_block(self):
+        blob = subprocess.run(
+            ["git", "hash-object", "-w", "--stdin"], cwd=self.root,
+            input="target", text=True, encoding="utf-8", capture_output=True,
+            check=True,
+        ).stdout.strip()
+        self.run_git("update-index", "--add", "--cacheinfo",
+                     f"120000,{blob},docs/unrelated-link")
+        self.run_git("commit", "-q", "-m", "unrelated symlink after E")
+        later_main = self.run_git("rev-parse", "HEAD")
+        self.run_git("push", "-q", "origin", "main")
+        self.assertEqual([], self.verify(pinned_main=later_main))
+
+    def test_ambiguous_historical_state_and_introduction_refuse(self):
+        self.run_git("checkout", "-q", "--detach", self.historical)
+        self.write(self.evidence, "# Updated historical evidence\n")
+        another_h = self.commit("second historical state")
+        self.write(self.receipt_path, json.dumps(self.final_review))
+        final_after_two = self.commit("final after two historical states")
+        self.assertTrue(self.verify(remote_tip=final_after_two))
+        self.run_git("checkout", "-q", "main")
+        self.run_git("rm", "-q", self.evidence, self.receipt_path)
+        self.commit("remove fixed records")
+        self.write(self.evidence, "# Independent review evidence\n")
+        self.write(self.receipt_path, json.dumps(self.final_review))
+        second_e = self.commit("second introduction")
+        self.assertTrue(self.verify(pinned_main=second_e))
+
+    def test_tail_rejects_claim_unrelated_evidence_and_merge(self):
+        self.run_git("checkout", "-q", self.claim["branch"])
+        for path in (preflight.claim_relative_path(self.package),
+                     "docs/governance/lane_claims/evidence/PS-OTHER-001.md"):
+            self.write(path, "unexpected\n")
+            changed = self.commit("unrelated tail edit")
+            self.assertTrue(self.verify(remote_tip=changed))
+        tree = self.run_git("rev-parse", f"{self.tip}^{{tree}}")
+        merge_tail = self.run_git("commit-tree", tree, "-p", self.tip,
+                                  "-p", self.merged, "-m", "tail merge")
+        self.assertTrue(self.verify(remote_tip=merge_tail))
+
+    def test_accepted_fixed_records_cannot_change(self):
+        self.run_git("checkout", "-q", self.claim["branch"])
+        self.write(self.evidence, "# Changed final evidence\n")
+        changed = self.commit("changed final evidence")
+        self.assertTrue(self.verify(remote_tip=changed))
+
+    def test_tail_rejects_product_edit_and_revert(self):
+        self.run_git("checkout", "-q", self.claim["branch"])
+        self.write(self.product, "transient\n")
+        self.commit("product edit")
+        self.write(self.product, "new\n")
+        reverted = self.commit("product revert")
+        self.assertTrue(self.verify(remote_tip=reverted))
+
+    def test_remote_ref_movement_or_absence_refuses(self):
+        self.run_git("checkout", "-q", self.claim["branch"])
+        self.write(self.evidence, "changed evidence\n")
+        moved = self.commit("branch moved")
+        self.run_git("push", "-q", "origin", self.claim["branch"])
+        self.assertTrue(self.verify())
+        self.assertTrue(self.verify(remote_tip=moved))
+        self.run_git("push", "-q", "origin", ":" + self.claim["branch"])
+        self.assertTrue(self.verify())
+
+    def test_remote_main_movement_refuses(self):
+        self.write("docs/main-later.txt", "new main\n")
+        self.commit("main moved")
+        self.run_git("push", "-q", "origin", "main")
+        errors = self.verify()
+        self.assertTrue(any("pinned main moved" in e or "remote main" in e for e in errors), errors)
+
+
 class OperationsOnlyCloseTests(unittest.TestCase):
     """Exercise completion admission with real custody/receipt validators."""
 

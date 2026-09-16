@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "package": "PS-DELIVERY-RECONCILED-PRODUCT-CLOSE-001",
+  "candidate_sha": "06f0eb954d2d3da45adf87eff3e90575cd777ecc",
+  "review_type": "independent",
+  "reviewer_ref": "agent:/root/reconciled_close_reviewer",
+  "result": "pass",
+  "reviewed_at": "2026-09-16T15:55:20Z",
+  "findings": [],
+  "evidence_ref": "docs/governance/lane_claims/evidence/PS-DELIVERY-RECONCILED-PRODUCT-CLOSE-001.md"
+}
